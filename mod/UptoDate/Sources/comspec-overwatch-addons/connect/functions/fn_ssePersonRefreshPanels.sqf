@@ -51,9 +51,37 @@ private _lines = [];
     };
 } forEach _samples;
 
+// Verdict d'identité — remplace la note générique dès qu'une requête a abouti.
+private _queryPending = uiNamespace getVariable ["COMSPEC_SsePerson_QueryPending", false];
+private _query = uiNamespace getVariable ["COMSPEC_SsePerson_Query", []];
+private _verdict = "<t size='0.42' color='#5f7383'>Analyse locale simulée — lancez une requête pour interroger la base.</t>";
+if (_queryPending) then {
+    _verdict = "<t size='0.44' color='#c8e8ff'>INTERROGATION DE LA BASE D’IDENTITÉS…</t>";
+} else {
+    if ((_query isEqualType []) && {(count _query) >= 3}) then {
+        _query params ["_res", "_conf", "_ref"];
+        _verdict = switch (_res) do {
+            case "confirmed": {
+                format [
+                    "<t size='0.46' color='#ff6b5e'>CORRESPONDANCE CONFIRMÉE</t> <t size='0.44' color='#c8e8ff'>%1%2</t> <t size='0.42' color='#7f95a8'>· dossier %3</t>",
+                    _conf toFixed 1, "%", _ref
+                ]
+            };
+            case "possible": {
+                format [
+                    "<t size='0.46' color='#e0a233'>CORRESPONDANCE POSSIBLE</t> <t size='0.44' color='#c8e8ff'>%1%2</t> <t size='0.42' color='#7f95a8'>· dossier %3</t>",
+                    _conf toFixed 1, "%", _ref
+                ]
+            };
+            default {
+                "<t size='0.46' color='#7ee0a0'>AUCUNE CORRESPONDANCE</t> <t size='0.42' color='#7f95a8'>· sujet inconnu de la base</t>"
+            };
+        };
+    };
+};
+
 private _bioTxt = if ((count _lines) > 0) then {
-    (_lines joinString "<br/>")
-    + "<br/><t size='0.42' color='#5f7383'>Analyse locale simulée — le rapprochement relève du poste de commandement.</t>"
+    (_lines joinString "<br/>") + "<br/>" + _verdict
 } else {
     "<t size='0.48' color='#5f7383'>Aucun prélèvement. Présentez la personne au lecteur.</t>"
 };
@@ -79,6 +107,17 @@ private _bits = [];
 _bits pushBack format ["%1 ÉCH.", count _samples];
 if (_photo) then { _bits pushBack "PHOTO ARMÉE"; };
 if ((_sig isEqualType []) && {(count _sig) >= 4}) then { _bits pushBack "SIGNÉ"; } else { _bits pushBack "NON SIGNÉ"; };
+if (_queryPending) then {
+    _bits pushBack "REQUÊTE…";
+} else {
+    if ((_query isEqualType []) && {(count _query) >= 1}) then {
+        _bits pushBack (switch (_query select 0) do {
+            case "confirmed": { "MATCH" };
+            case "possible": { "MATCH ?" };
+            default { "NO MATCH" };
+        });
+    };
+};
 
 (_disp displayCtrl 9525) ctrlSetStructuredText parseText format [
     "<t size='0.5' color='#9ed8b4' align='center'>%1</t>",

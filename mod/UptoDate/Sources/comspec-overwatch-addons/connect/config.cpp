@@ -40,6 +40,8 @@ class CfgFunctions {
             class sseSignAtak {};
             class sseOpenTerminal {};
             class sseHasTerminalItem {};
+            class sseIdentityQuery {};
+            class sseUnitSeed {};
             class giveSeekTerminal {};
             class medevacDialogShow {};
             class medevacDialogSubmit {};

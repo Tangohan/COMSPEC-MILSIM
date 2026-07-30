@@ -2023,3 +2023,10 @@ body.sse-theme-console .flash {
     white-space: pre-wrap;
     overflow-x: auto;
 }
+
+/* Verdict de requête d'identité rendu par le terminal SEEK */
+.sse-idq.is-confirmed { border-color: var(--red); background: var(--red-dark); }
+.sse-idq.is-confirmed .sse-block-title { color: var(--red); }
+.sse-idq.is-possible { border-color: var(--amber); background: var(--amber-dark); }
+.sse-idq.is-possible .sse-block-title { color: var(--amber); }
+.sse-idq.is-none .sse-block-title { color: var(--green); }

@@ -176,6 +176,8 @@ if (_med isEqualType createHashMap && {(count _med) > 0}) then {
 // Nouvelle fiche : aucun échantillon, aucune signature.
 uiNamespace setVariable ["COMSPEC_SsePerson_Samples", []];
 uiNamespace setVariable ["COMSPEC_SsePerson_Signature", []];
+uiNamespace setVariable ["COMSPEC_SsePerson_Query", []];
+uiNamespace setVariable ["COMSPEC_SsePerson_QueryPending", false];
 (_disp displayCtrl 9518) ctrlSetText (profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""]);
 
 [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;

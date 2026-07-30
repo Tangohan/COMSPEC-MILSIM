@@ -148,6 +148,19 @@ private _sampleArr = [];
     };
 } forEach _samples;
 
+// Verdict de la requête d'identité, s'il y en a eu une.
+private _q = uiNamespace getVariable ["COMSPEC_SsePerson_Query", []];
+if (!(_q isEqualType [])) then { _q = []; };
+private _queryJson = "null";
+if ((count _q) >= 3) then {
+    _queryJson = format [
+        '{"result":"%1","confidence":%2,"record_ref":"%3"}',
+        [_q select 0] call _escape,
+        (_q select 1) toFixed 1,
+        [_q select 2] call _escape
+    ];
+};
+
 private _bio = uiNamespace getVariable ["COMSPEC_SsePerson_BioPending", false];
 if ((count _samples) > 0) then { _bio = true; };
 private _photoPending = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoPending", false];
@@ -159,7 +172,7 @@ private _posZ = [_pos select 2, 2] call _fnc_num;
 (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.55' color='#8aa0b4' align='center'>Transmission en cours…</t>";
 
 private _json = format [
-    '{"mapId":1,"status":"%1","last_name":"%2","first_name":"%3","alias":"%4","age_estimated":%5,"nationality":"%6","language_spoken":"%7","distinguishing_marks":"%8","affiliation":"%9","circumstances":"%10","statements":"%11","confidence_level":"moyenne","weapons":[%12],"equipment":[%13],"biometrics_simulated":%14,"consent_recorded":true,"pos_x":%15,"pos_y":%16,"pos_z":%17,"grid_reference":"%18","submitter_callsign":"%19","submitter_steam_id":"%20","target_unit_netid":"%21","case_code":"%22","signature":%23,"medical_context":%24,"biometric_samples":[%25]}',
+    '{"mapId":1,"status":"%1","last_name":"%2","first_name":"%3","alias":"%4","age_estimated":%5,"nationality":"%6","language_spoken":"%7","distinguishing_marks":"%8","affiliation":"%9","circumstances":"%10","statements":"%11","confidence_level":"moyenne","weapons":[%12],"equipment":[%13],"biometrics_simulated":%14,"consent_recorded":true,"pos_x":%15,"pos_y":%16,"pos_z":%17,"grid_reference":"%18","submitter_callsign":"%19","submitter_steam_id":"%20","target_unit_netid":"%21","case_code":"%22","signature":%23,"medical_context":%24,"biometric_samples":[%25],"identity_query":%26}',
     _status,
     [_last] call _escape,
     [_first] call _escape,
@@ -184,7 +197,8 @@ private _json = format [
     [_caseCode] call _escape,
     _sigJson,
     _medJson,
-    _sampleArr joinString ","
+    _sampleArr joinString ",",
+    _queryJson
 ];
 
 private _parsed = [

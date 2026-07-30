@@ -256,6 +256,7 @@ return static function (PDO $pdo): void {
             'signed_terminal_uid' => "VARCHAR(64) DEFAULT NULL",
             'signed_atak_id' => "VARCHAR(64) DEFAULT NULL",
             'signed_at' => 'DATETIME DEFAULT NULL',
+            'identity_query_json' => 'JSON NULL',
         ];
         foreach ($additions as $col => $ddl) {
             if ($columnExists($pdo, 'sse_persons', $col)) {

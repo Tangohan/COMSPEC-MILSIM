@@ -73,6 +73,7 @@ $total = count($persons);
                 $samples = is_array($p['biometric_samples'] ?? null) ? $p['biometric_samples'] : [];
                 $lesions = is_array($med['lesions'] ?? null) ? $med['lesions'] : [];
                 $hits = is_array($p['watchlist'] ?? null) ? $p['watchlist'] : [];
+                $iq = is_array($p['identity_query'] ?? null) ? $p['identity_query'] : [];
                 $custody = is_array($p['custody'] ?? null) ? $p['custody'] : [];
                 $photo = is_array($p['primary_photo'] ?? null) ? $p['primary_photo'] : null;
                 $photoUrl = $photo !== null ? (string) ($photo['url'] ?? '') : '';
@@ -101,6 +102,30 @@ $total = count($persons);
                         </div>
                         <span class="badge badge-status"><?= $h($p['status_label'] ?? '') ?></span>
                     </header>
+
+                    <?php if ($iq !== []):
+                        $iqRes = (string) ($iq['result'] ?? 'none');
+                        $iqClass = $iqRes === 'confirmed' ? 'is-confirmed' : ($iqRes === 'possible' ? 'is-possible' : 'is-none');
+                        $iqLabel = match ($iqRes) {
+                            'confirmed' => 'Correspondance confirmée',
+                            'possible' => 'Correspondance possible',
+                            default => 'Aucune correspondance',
+                        };
+                    ?>
+                        <div class="sse-record-block sse-idq <?= $h($iqClass) ?>">
+                            <div class="sse-block-title">Requête d’identité — terminal</div>
+                            <p class="sse-block-body">
+                                <strong><?= $h($iqLabel) ?></strong>
+                                <?php if ($iqRes !== 'none'): ?>
+                                    · <?= $h((string) ($iq['confidence'] ?? '')) ?>&nbsp;%
+                                    <?php if (!empty($iq['record_ref'])): ?>
+                                        · dossier <?= $h($iq['record_ref']) ?>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </p>
+                            <p class="sse-note">Verdict rendu par le terminal sur relevés simulés.</p>
+                        </div>
+                    <?php endif; ?>
 
                     <?php if ($hits !== []): ?>
                         <div class="sse-record-block sse-hit">

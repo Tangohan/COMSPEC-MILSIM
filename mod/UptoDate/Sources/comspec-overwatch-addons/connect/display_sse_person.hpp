@@ -13,7 +13,8 @@
 //   9511 armement détecté              9521 constat de terrain (ACE Medical)
 //   9512 déclarations                  9522 analyse biométrique
 //                                      9523 bouton iris   9524 bouton ADN
-//                                      9525 bandeau LCD
+//                                      9525 bandeau LCD  9526 barre d’état
+//                                      9527 bouton requête d’identité
 
 #define SEEK_X      (0.235 * safezoneW + safezoneX)
 #define SEEK_W      (0.530 * safezoneW)
@@ -248,20 +249,28 @@ class COMSPEC_SsePerson_Dialog {
         class BtnBio: COMSPEC_RscButton {
             idc = 9514;
             text = "Empreintes";
-            x = COL_R_X; y = (0.363 * safezoneH + safezoneY); w = (0.076 * safezoneW); h = (0.029 * safezoneH);
+            x = COL_R_X; y = (0.363 * safezoneH + safezoneY); w = (0.056 * safezoneW); h = (0.029 * safezoneH);
             action = "['empreintes'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
         };
-        class BtnIris: COMSPEC_RscButton {
+        class BtnIris: BtnBio {
             idc = 9523;
             text = "Iris";
-            x = (0.588 * safezoneW + safezoneX); y = (0.363 * safezoneH + safezoneY); w = (0.075 * safezoneW); h = (0.029 * safezoneH);
+            x = (0.567 * safezoneW + safezoneX);
             action = "['iris'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
         };
-        class BtnDna: COMSPEC_RscButton {
+        class BtnDna: BtnBio {
             idc = 9524;
             text = "ADN";
-            x = (0.670 * safezoneW + safezoneX); y = (0.363 * safezoneH + safezoneY); w = (0.075 * safezoneW); h = (0.029 * safezoneH);
+            x = (0.628 * safezoneW + safezoneX);
             action = "['adn'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
+        };
+        // Interrogation de la base d'identités : exige au moins une acquisition.
+        class BtnQuery: COMSPEC_RscButtonAccent {
+            idc = 9527;
+            text = "REQUÊTE";
+            x = (0.689 * safezoneW + safezoneX); y = (0.363 * safezoneH + safezoneY);
+            w = (0.056 * safezoneW); h = (0.029 * safezoneH);
+            action = "[] call comspec_overwatch_connect_fnc_sseIdentityQuery;";
         };
 
         class BioPanel: RscText {
