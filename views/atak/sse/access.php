@@ -85,6 +85,18 @@ foreach ($codes as $c) {
                 <option value="guest">Invité (code seul)</option>
             </select>
 
+            <label for="clearance_level">Habilitation de lecture accordée</label>
+            <select id="clearance_level" name="clearance_level">
+                <?php foreach (\App\Repositories\SseCaseRepository::CLASSIFICATION_LABELS as $ck => $clabel): ?>
+                    <option value="<?= $h($ck) ?>" <?= $ck === 'interne' ? 'selected' : '' ?>><?= $h($clabel) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <p class="sse-note">
+                Jusqu’où le porteur du code lit en clair sur les écrans expurgés. Au plus
+                bas, il ne voit ni identité, ni lieu, ni source. N’accordez que ce que la
+                personne doit voir : c’est un plafond, il ne se lève pas en cours de session.
+            </p>
+
             <div class="grid-2">
                 <div>
                     <label for="ttl_hours">Validité du code</label>

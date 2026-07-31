@@ -6,6 +6,7 @@ namespace App\Services\Sse;
 
 use App\Core\Session;
 use App\Repositories\SseAccessCodeRepository;
+use App\Repositories\SseCaseRepository;
 
 final class SseAccessCodeService
 {
@@ -31,12 +32,18 @@ final class SseAccessCodeService
         int $ttlHours,
         int $sessionTtlMinutes,
         int $maxUses,
-        ?int $caseId = null
+        ?int $caseId = null,
+        string $clearanceLevel = SseCaseRepository::CLASS_INTERNAL
     ): array {
         $ttlHours = max(1, min(72, $ttlHours));
         $sessionTtlMinutes = max(30, min(72 * 60, $sessionTtlMinutes));
         $maxUses = max(1, min(50, $maxUses));
         $grantType = $grantType === 'guest' ? 'guest' : 'member';
+        // Une habilitation inconnue retombe au plancher : on n'accorde jamais par
+        // défaut de valeur, seulement par défaut de refus.
+        if (!isset(SseRedactionService::LEVELS[$clearanceLevel])) {
+            $clearanceLevel = SseCaseRepository::CLASS_INTERNAL;
+        }
 
         $plain = $this->generatePlainCode();
         $id = $this->repo->create([
@@ -45,6 +52,7 @@ final class SseAccessCodeService
             'code_hint' => substr($plain, 0, 4) . '···',
             'label' => $label !== '' ? $label : 'Accès temporaire',
             'grant_type' => $grantType,
+            'clearance_level' => $clearanceLevel,
             'case_id' => $caseId,
             'created_by' => $createdBy,
             'expires_at' => date('Y-m-d H:i:s', time() + $ttlHours * 3600),
@@ -97,6 +105,13 @@ final class SseAccessCodeService
         Session::set(self::SESSION_TENANT, $tenantId);
         Session::set(self::SESSION_CODE_ID, (int) $row['id']);
         Session::set(self::SESSION_SCOPE, $caseId !== null ? [$caseId] : 'all');
+
+        // Habilitation de lecture portée par le code. Absente ou inconnue : plancher.
+        $carried = (string) ($row['clearance_level'] ?? '');
+        Session::set(
+            SseClearanceService::SESSION_LEVEL,
+            isset(SseRedactionService::LEVELS[$carried]) ? $carried : SseCaseRepository::CLASS_INTERNAL
+        );
         if ($guest) {
             if ($userId === null || $userId < 1) {
                 Session::set('tenant_id', $tenantId);
@@ -148,6 +163,9 @@ final class SseAccessCodeService
         Session::set(self::SESSION_TENANT, $tenantId);
         Session::set(self::SESSION_SCOPE, 'all');
         Session::set(self::SESSION_CODE_ID, 0);
+        // Le personnel n'est pas plafonné par un code : son habilitation vient de
+        // ses permissions, calculées à la lecture.
+        Session::set(SseClearanceService::SESSION_LEVEL, null);
     }
 
     /**

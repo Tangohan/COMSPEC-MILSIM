@@ -506,3 +506,26 @@ caviardé. Ouvrir la page ne doit jamais exposer plus que ce qui a été demand�
 Le formulaire de caviardage fonctionne **sans JavaScript** : la recomposition
 fiche + zone est faite côté serveur. Un caviardage qui échoue en silence parce que
 le script n'a pas tourné laisserait la zone en clair sans que personne s'en aperçoive.
+
+### Habilitation de lecture
+
+Le niveau passé en `?niveau=` est **rabattu** sur le plafond de la session par
+`SseClearanceService::clamp()`. Il n'y a pas de chemin par lequel une demande
+accorde une lecture.
+
+| Source du plafond | Valeur |
+|---|---|
+| Permission `atak.sse.clearance.*` | Niveau correspondant, la plus haute l'emporte |
+| `admin.access` / `atak.sse.grant` | `tres_restreint` |
+| `atak.sse.case.manage` | `confidentiel` |
+| `atak.sse.access` / `atak.sse.cases` | `encadrement` |
+| Invité | `sse_access_codes.clearance_level`, défaut `interne` |
+| Aucun | `interne` |
+
+Une valeur de session inconnue retombe sur `interne` : le repli est un refus,
+jamais une ouverture.
+
+Les rabattements sont inscrits au journal d'activité sous le type `SSE_CLEARANCE`.
+
+Le tableau catégorie → niveau requis n'est pas configurable par communauté : il est
+défini dans `SseRedactionService::CATEGORIES`.

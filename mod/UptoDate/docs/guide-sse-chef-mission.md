@@ -297,7 +297,73 @@ Le tableau en tête de page dit, **avant** de produire le document, ce qui reste
 en clair et ce qui partira au noir. On ne découvre pas ce qu'on a diffusé après
 l'avoir diffusé.
 
-### 7.2 Caviardage manuel
+### 7.2 Qui est habilité à lire quoi
+
+Le niveau demandé dans l'écran est **rabattu sur l'habilitation de la session**. Le
+paramètre de l'adresse exprime une demande, il n'accorde rien : quelqu'un qui le force
+à la main obtient la version à laquelle il a droit, et la tentative part au journal.
+
+Le plafond vient de deux sources, dans cet ordre.
+
+**1. Habilitation explicite** — permissions à assigner aux rôles :
+
+| Permission | Plafond accordé |
+|---|---|
+| `atak.sse.clearance.encadrement` | Encadrement |
+| `atak.sse.clearance.confidentiel` | Confidentiel |
+| `atak.sse.clearance.tres_restreint` | Diffusion très restreinte |
+
+C'est la voie propre dès que vous voulez gérer vos habilitations à la main.
+
+**2. Report des rôles existants** — si aucune habilitation explicite n'est accordée :
+
+| Vous avez déjà | Plafond déduit |
+|---|---|
+| Administration du portail, ou droit d'octroi | Diffusion très restreinte |
+| Gestion des dossiers | Confidentiel |
+| Accès au portail SSE | Encadrement |
+| Rien de tout ça | Diffusion interne |
+
+Ce report est délibéré : sans lui, la mise à jour mettrait tout le monde au plancher
+tant qu'un administrateur n'a pas assigné les nouvelles permissions, et personne ne
+comprendrait pourquoi les dossiers sont devenus illisibles du jour au lendemain. Une
+règle de sécurité qu'on désactive en urgence parce qu'elle a tout cassé ne protège
+plus rien.
+
+**Invités (code d'accès temporaire)** : le plafond est celui que **le code porte**.
+Il se choisit à l'émission du code, écran « Accès et habilitations ». Par défaut,
+Diffusion interne — un invité ne voit ni identité, ni lieu, ni source. On n'accorde
+jamais par défaut de valeur, seulement par défaut de refus.
+
+Le plafond est un plafond : il ne se lève pas en cours de session.
+
+L'écran affiche votre habilitation et **d'où elle vient**. Une habilitation qu'on ne
+peut pas expliquer se conteste mal : l'opérateur doit pouvoir dire à son encadrement
+pourquoi il ne voit pas quelque chose.
+
+### 7.3 Où sont décidées les affectations de catégories
+
+Le tableau du § 7.1 — quelle catégorie exige quel niveau — est défini dans
+`app/Services/Sse/SseRedactionService.php`, constante `CATEGORIES`. Il n'est **pas**
+réglable par communauté aujourd'hui : c'est un choix de doctrine inscrit dans le code.
+
+Si votre doctrine diffère (par exemple : le lieu au même rang que l'identité), c'est
+là qu'il faut le changer, en un seul endroit.
+
+### 7.4 Ce que la classification du dossier fait — et ne fait pas
+
+La classification portée par le dossier (badge Encadrement / Confidentiel / Diffusion
+très restreinte) **ne bloque pas l'ouverture du dossier**. L'écran de déclassification
+signale qu'un dossier est tenu au-dessus de votre habilitation, et tout ce qui relève
+des catégories au-dessus de votre niveau reste noirci — mais la consultation reste
+possible.
+
+C'est volontaire : décider qu'un dossier devient d'un coup inaccessible à ceux qui
+l'ouvraient hier est un arbitrage d'exploitation, pas une décision technique. Si vous
+voulez ce verrouillage, c'est une demande à formuler — il se pose en une ligne dans
+`requireCase()`, mais il verrouillera des dossiers existants.
+
+### 7.5 Caviardage manuel
 
 Noircir une zone précise sur une fiche précise, **quel que soit le niveau** — y
 compris le plus restreint. Un motif est obligatoire : c'est lui qu'on relira pour
@@ -309,7 +375,7 @@ Cas typiques : protection de source, mineur, tiers manifestement non impliqué,
 Le caviardage est levable (bouton « Lever »). La zone redevient alors lisible aux
 niveaux qui l'autorisent — pas à tous.
 
-### 7.3 Ce que « trait noir » veut dire ici
+### 7.6 Ce que « trait noir » veut dire ici
 
 Le texte caviardé **n'est jamais envoyé au navigateur**. La substitution est faite
 côté serveur, la chaîne d'origine ne quitte pas le dossier.

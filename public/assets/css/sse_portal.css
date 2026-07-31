@@ -2360,3 +2360,23 @@ body.sse-theme-console .flash {
     .sse-relation-form,
     .btn { display: none !important; }
 }
+
+/* Habilitation : un niveau refusé doit se voir refusé, pas juste manquer. */
+.sse-clearance-notice .security-notice-code { background: var(--green-dark); color: var(--green); }
+
+.security-notice.is-refused { border-color: var(--amber); }
+.security-notice.is-refused .security-notice-code { background: var(--amber-dark); color: var(--amber); }
+
+.sse-level.is-locked {
+    opacity: .45;
+    cursor: not-allowed;
+    border-style: dashed;
+}
+
+.sse-level.is-locked:hover { border-color: var(--border); }
+
+.sse-level-lock {
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--amber);
+}

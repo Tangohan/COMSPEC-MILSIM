@@ -330,6 +330,35 @@ Post-check :
       (`Ctrl+U` puis rechercher un nom connu du dossier — il ne doit rien ressortir)
 - [ ] Le compte rendu intégral (`/compte-rendu`) reste, lui, en clair
 
+### Habilitation de lecture SSE 1.4.14 (CORRECTIF DE SÉCURITÉ)
+
+Sans ces fichiers, l'écran de déclassification sert la version intégrale à quiconque
+change le paramètre `?niveau=` dans l'adresse. **À uploader avec la déclassification,
+pas après.**
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Sse/SseClearanceService.php` | **Nouveau** — plafond de lecture par session |
+| `app/Services/Sse/SseAccessCodeService.php` | Habilitation portée par un code, déposée en session |
+| `app/Repositories/SseAccessCodeRepository.php` | Colonne `clearance_level` en écriture et lecture |
+| `app/Controllers/Web/SsePortalController.php` | Rabattement du niveau, journal des refus |
+| `bootstrap/atak_sse_portal_migration.php` | `sse_access_codes.clearance_level` + aide `columnExists` |
+| `views/atak/sse/case_declassify.php` | Bandeau d'habilitation, niveaux verrouillés |
+| `views/atak/sse/access.php` | Choix de l'habilitation à l'émission d'un code |
+| `public/assets/css/sse_portal.css` | Styles bandeau et niveau verrouillé |
+
+Post-check :
+
+- [ ] `sse_access_codes.clearance_level` existe
+- [ ] Ouvrir un dossier avec `?niveau=tres_restreint` en compte non habilité :
+      le bandeau « Lecture rabattue » s'affiche et les noms restent noircis
+- [ ] Le journal d'activité porte une ligne `SSE_CLEARANCE` après cette tentative
+- [ ] L'émission d'un code d'accès propose bien « Habilitation de lecture accordée »
+
+**Permissions à assigner** (facultatif — le report des rôles existants fonctionne sans) :
+`atak.sse.clearance.encadrement`, `atak.sse.clearance.confidentiel`,
+`atak.sse.clearance.tres_restreint`.
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

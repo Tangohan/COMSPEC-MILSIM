@@ -15,10 +15,12 @@ use App\Repositories\SseSiteRepository;
 use App\Repositories\SseWatchlistRepository;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseCasePdfService;
+use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseCorrelationService;
 use App\Services\Sse\SseCrossMatchService;
 use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseReportService;
+use App\Services\Tactical\AtakActivityLogService;
 
 final class SsePortalController
 {
@@ -34,6 +36,8 @@ final class SsePortalController
         private ?SseReportService $reports = null,
         private ?SseCorrelationService $correlation = null,
         private ?SseRedactionService $redaction = null,
+        private ?SseClearanceService $clearance = null,
+        private ?AtakActivityLogService $activityLog = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -46,6 +50,8 @@ final class SsePortalController
         $this->reports ??= new SseReportService();
         $this->correlation ??= new SseCorrelationService();
         $this->redaction ??= new SseRedactionService();
+        $this->clearance ??= new SseClearanceService();
+        $this->activityLog ??= new AtakActivityLogService();
     }
 
     /** Sas d’entrée (public) */
@@ -475,11 +481,33 @@ final class SsePortalController
 
         $tenantId = $this->tenantId();
 
-        $level = (string) ($request->query('niveau') ?? '');
-        if (!isset(SseRedactionService::LEVELS[$level])) {
-            // Par défaut, le niveau le plus large : c'est celui qui caviarde le plus.
-            // Ouvrir la page ne doit jamais exposer davantage que ce qu'on demande.
-            $level = SseCaseRepository::CLASS_INTERNAL;
+        $requested = (string) ($request->query('niveau') ?? '');
+        if (!isset(SseRedactionService::LEVELS[$requested])) {
+            // Sans demande explicite, le niveau le plus large : c'est celui qui
+            // caviarde le plus. Ouvrir la page ne doit jamais exposer davantage
+            // que ce qu'on a demandé à voir.
+            $requested = SseCaseRepository::CLASS_INTERNAL;
+        }
+
+        // Le paramètre d'URL exprime un souhait, il n'accorde rien. Le plafond
+        // d'habilitation de la session a toujours le dernier mot.
+        $level = $this->clearance->clamp($requested);
+        $maxLevel = $this->clearance->maxLevel();
+        $refused = $requested !== $level;
+
+        if ($refused) {
+            $this->activityLog->record(
+                $tenantId,
+                1,
+                'SSE_CLEARANCE',
+                sprintf(
+                    'Lecture « %s » demandée sur le dossier %s, servie en « %s » (habilitation insuffisante).',
+                    SseRedactionService::levelLabel($requested),
+                    (string) ($case['reference_code'] ?? ''),
+                    SseRedactionService::levelLabel($level)
+                ),
+                (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
+            );
         }
 
         $data = $this->reports->gatherForRelease($id, $tenantId, $level);
@@ -488,6 +516,11 @@ final class SsePortalController
             'title' => 'Déclassification — ' . ($case['reference_code'] ?? ''),
             'case' => $case,
             'level' => $level,
+            'maxLevel' => $maxLevel,
+            'clearanceOrigin' => $this->clearance->origin(),
+            'clearanceRefused' => $refused,
+            'requestedLevel' => $requested,
+            'caseAboveClearance' => $this->clearance->caseAboveClearance($case),
             'levels' => SseCaseRepository::CLASSIFICATION_LABELS,
             'categories' => SseRedactionService::CATEGORIES,
             'summary' => SseRedactionService::summarise($level),
@@ -809,7 +842,8 @@ final class SsePortalController
             (int) $request->input('ttl_hours', 4),
             (int) $request->input('session_ttl_minutes', 240),
             (int) $request->input('max_uses', 1),
-            ((int) $request->input('case_id', 0)) ?: null
+            ((int) $request->input('case_id', 0)) ?: null,
+            (string) $request->input('clearance_level', SseCaseRepository::CLASS_INTERNAL)
         );
         if ($result['ok']) {
             Session::flash('sse_issued_code', $result['plain']);

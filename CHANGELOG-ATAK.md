@@ -39,6 +39,19 @@ Un automatisme propose, il ne décide pas. Aucune règle ne clôt un site, ne fu
 - Le caviardage est branché sur la source unique des deux comptes rendus : une catégorie ne peut pas être noircie dans le flash et lisible dans le compte rendu initial.
 - La date de recueil reste, l'heure part : savoir « le 14 » n'a pas la même valeur que savoir « le 14 à 03h12 ».
 
+### Ajouté — Habilitation de lecture SSE
+
+- **Plafond d'habilitation par session** : le niveau de diffusion demandé sur l'écran de déclassification est rabattu sur ce que la session a le droit de lire. Le paramètre de l'adresse exprime une demande, il n'accorde rien — le forcer à la main sert la version autorisée et inscrit la tentative au journal.
+- Trois permissions explicites (`atak.sse.clearance.encadrement`, `.confidentiel`, `.tres_restreint`), et à défaut un **report des rôles déjà en place** : administration → très restreint, gestion des dossiers → confidentiel, accès portail → encadrement, rien → interne. Sans ce report, la mise à jour mettrait tout le monde au plancher tant qu'un administrateur n'a pas assigné les nouvelles permissions.
+- **Habilitation portée par un code d'accès invité**, choisie à l'émission. Par défaut Diffusion interne : un invité ne voit ni identité, ni lieu, ni source. On n'accorde jamais par défaut de valeur, seulement par défaut de refus.
+- L'écran affiche l'habilitation **et d'où elle vient**. Une habilitation qu'on ne peut pas expliquer se conteste mal.
+- Les niveaux au-dessus du plafond apparaissent verrouillés au lieu de disparaître : un refus doit se voir refusé, pas manquer.
+- Un dossier tenu au-dessus de l'habilitation du lecteur est signalé. La consultation reste possible — verrouiller d'un coup des dossiers ouverts hier est un arbitrage d'exploitation, pas une décision technique.
+
+### Corrigé
+
+- **L'écran de déclassification ne vérifiait pas qui demandait quoi.** Le niveau était lu tel quel dans l'adresse : n'importe qui pouvant ouvrir un dossier, invité compris, obtenait la version intégrale en changeant un paramètre. Produire un document expurgé et restreindre qui peut le lire sont deux choses différentes ; la première seule ne protégeait rien.
+
 ### Ajouté — Configuration mission maker et Zeus
 
 - **Attributs Eden sur l'unité**, catégorie « COMSPEC — Exploitation SSE » : ce que la base doit répondre (génération automatique, inconnu, signalé, recherché), état civil, nationalité déclarée, langue, référence de dossier antérieur, indice de confiance imposé, graine. Poser un module par PNJ était intenable sur trente civils.
