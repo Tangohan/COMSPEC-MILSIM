@@ -350,18 +350,55 @@ réglable par communauté aujourd'hui : c'est un choix de doctrine inscrit dans 
 Si votre doctrine diffère (par exemple : le lieu au même rang que l'identité), c'est
 là qu'il faut le changer, en un seul endroit.
 
-### 7.4 Ce que la classification du dossier fait — et ne fait pas
+### 7.4 Verrou d'ouverture par classification
 
-La classification portée par le dossier (badge Encadrement / Confidentiel / Diffusion
-très restreinte) **ne bloque pas l'ouverture du dossier**. L'écran de déclassification
-signale qu'un dossier est tenu au-dessus de votre habilitation, et tout ce qui relève
-des catégories au-dessus de votre niveau reste noirci — mais la consultation reste
-possible.
+La classification du dossier peut désormais **fermer** le dossier, pas seulement le
+signaler. Ce verrou est **désarmé par défaut** et s'arme depuis le registre des
+dossiers (`Athena → SSE → Dossiers`, premier panneau).
 
-C'est volontaire : décider qu'un dossier devient d'un coup inaccessible à ceux qui
-l'ouvraient hier est un arbitrage d'exploitation, pas une décision technique. Si vous
-voulez ce verrouillage, c'est une demande à formuler — il se pose en une ligne dans
-`requireCase()`, mais il verrouillera des dossiers existants.
+**Désarmé** (état livré) — la classification s'affiche en badge et noircit les
+catégories concernées sur les versions expurgées, mais n'empêche aucune ouverture.
+
+**Armé** — un dossier dont la classification dépasse l'habilitation du lecteur ne
+s'ouvre plus pour lui : ni la fiche, ni les personnes rattachées, ni les notes, ni
+les preuves, ni les corrélations, ni le compte rendu, ni l'export.
+
+| Classification du dossier | Qui pourra encore l'ouvrir, une fois armé |
+|---|---|
+| Diffusion interne | Tout le monde, invités compris |
+| Encadrement | Tout membre ayant accès au portail SSE |
+| Confidentiel | Administration, droit d'octroi, gestion des dossiers |
+| Diffusion très restreinte | Administration du portail et droit d'octroi |
+
+#### Relisez avant d'armer
+
+Le registre porte une colonne **« Qui pourra encore l'ouvrir »** sur chaque dossier,
+et le panneau du haut donne la répartition par classification.
+
+C'est à relire sérieusement. La classification n'a **jamais** filtré depuis la
+création du portail : les valeurs déjà posées sur vos dossiers ont été choisies sans
+conséquence — quelqu'un a pu cocher « Confidentiel » par prudence, ou « Diffusion
+très restreinte » parce que ça sonnait bien. Armer le verrou transforme
+rétroactivement ces choix en décisions d'exclusion que personne n'a prises.
+
+Le panneau indique aussi combien de dossiers **vous** seriez fermés. Il ne peut pas
+mesurer l'effet sur les autres : le portail ne parle pas à la place des habilitations
+de chacun. Passez en revue avec la personne qui tient les rôles.
+
+#### Qui peut armer
+
+Les détenteurs du droit d'octroi (`atak.sse.grant`) ou l'administration. Armer ce
+verrou ferme des dossiers à d'autres — ce n'est pas un réglage d'affichage, et il ne
+doit pas être desserrable par celui qu'il gêne.
+
+L'armement et le désarmement partent au journal d'activité.
+
+#### Repli
+
+Si la table de réglages est absente ou injoignable, le verrou est considéré
+**désarmé**. C'est un choix assumé : un portail qui verrouille tout parce qu'une
+table manque est plus dangereux qu'un verrou temporairement inactif — on découvre le
+second, on subit le premier en pleine opération.
 
 ### 7.5 Caviardage manuel
 

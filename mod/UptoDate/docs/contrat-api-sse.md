@@ -529,3 +529,20 @@ Les rabattements sont inscrits au journal d'activité sous le type `SSE_CLEARANC
 
 Le tableau catégorie → niveau requis n'est pas configurable par communauté : il est
 défini dans `SseRedactionService::CATEGORIES`.
+
+### Verrou d'ouverture par classification
+
+Réglage par communauté, table `sse_portal_settings`, clé `case_classification_lock`.
+**Désarmé par défaut**, et toute erreur de lecture retombe sur désarmé.
+
+Armé, `SsePortalController::requireCase()` renvoie `null` quand la classification du
+dossier dépasse le plafond d'habilitation de la session — ce qui ferme d'un coup les
+10 écrans qui passent par cette méthode.
+
+Bascule : `POST /atak/sse/dossiers/verrou-classification` (`enable=0|1`), réservée à
+`atak.sse.grant` ou `admin.access`. La route doit être déclarée **avant**
+`POST /atak/sse/dossiers/{id}` : le routeur retient le premier motif correspondant.
+
+Le registre expose `caseLockEnabled`, `lockedForMe` et `myClearance` pour la revue
+préalable. `lockedForMe` ne vaut que pour la session courante : le portail ne peut
+pas énumérer les habilitations des autres membres.

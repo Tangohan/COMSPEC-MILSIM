@@ -6,6 +6,7 @@ namespace App\Services\Sse;
 
 use App\Core\Session;
 use App\Repositories\SseCaseRepository;
+use App\Repositories\SsePortalSettingsRepository;
 
 /**
  * Habilitation de lecture SSE — jusqu'où la session courante peut lire en clair.
@@ -50,9 +51,65 @@ final class SseClearanceService
         SseCaseRepository::CLASS_RESTRICTED => 'atak.sse.clearance.tres_restreint',
     ];
 
-    public function __construct(private ?SseAccessCodeService $access = null)
-    {
+    public function __construct(
+        private ?SseAccessCodeService $access = null,
+        private ?SsePortalSettingsRepository $settings = null,
+    ) {
         $this->access ??= new SseAccessCodeService();
+        $this->settings ??= new SsePortalSettingsRepository();
+    }
+
+    /**
+     * Le verrou d'ouverture par classification est-il armé pour cette communauté ?
+     *
+     * Désarmé par défaut : voir SsePortalSettingsRepository::CASE_LOCK pour la
+     * raison. Il s'arme depuis le registre des dossiers, après revue de ce qu'il
+     * fermerait.
+     */
+    public function caseLockEnabled(int $tenantId): bool
+    {
+        return $this->settings->getBool($tenantId, SsePortalSettingsRepository::CASE_LOCK, false);
+    }
+
+    /**
+     * Qui pourra encore ouvrir un dossier de cette classification, une fois le
+     * verrou armé. Formulé en rôles, pas en permissions : c'est ce que
+     * l'encadrement lit pour décider.
+     */
+    public static function whoCanOpen(string $classification): string
+    {
+        // Chaque libellé se suffit à lui-même : dans le registre les dossiers ne
+        // sont pas triés par classification, un « idem ci-dessus » ne renverrait
+        // à rien de visible.
+        return match ($classification) {
+            SseCaseRepository::CLASS_RESTRICTED =>
+                'Administration du portail et droit d’octroi',
+            SseCaseRepository::CLASS_CONFIDENTIAL =>
+                'Administration, droit d’octroi, gestion des dossiers',
+            SseCaseRepository::CLASS_COMMAND =>
+                'Tout membre ayant accès au portail SSE',
+            default =>
+                'Tout le monde, invités compris',
+        };
+    }
+
+    /**
+     * Nombre de dossiers qu'armer le verrou rendrait inaccessibles à la session
+     * courante — la seule mesure que le portail peut donner honnêtement sans
+     * énumérer les habilitations de chaque membre.
+     *
+     * @param list<array<string, mixed>> $cases
+     */
+    public function countLockedForMe(array $cases): int
+    {
+        $n = 0;
+        foreach ($cases as $case) {
+            if ($this->caseAboveClearance($case)) {
+                $n++;
+            }
+        }
+
+        return $n;
     }
 
     /**

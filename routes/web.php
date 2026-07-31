@@ -552,6 +552,7 @@ return function (Router $router) {
     $router->get('/atak/sse/dossiers', [SsePortalController::class, 'casesIndex'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/nouveau', [SsePortalController::class, 'caseCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/dossiers', [SsePortalController::class, 'caseStore'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/verrou-classification', [SsePortalController::class, 'caseLockToggle'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}', [SsePortalController::class, 'caseShow'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}', [SsePortalController::class, 'caseUpdate'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/personnes', [SsePortalController::class, 'caseLinkPerson'], $mwSsePortal);

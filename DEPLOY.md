@@ -359,6 +359,34 @@ Post-check :
 `atak.sse.clearance.encadrement`, `atak.sse.clearance.confidentiel`,
 `atak.sse.clearance.tres_restreint`.
 
+### Verrou de classification SSE 1.4.14
+
+| Fichier | Rôle |
+|---|---|
+| `app/Repositories/SsePortalSettingsRepository.php` | **Nouveau** — réglages portail par communauté |
+| `app/Services/Sse/SseClearanceService.php` | Bascule du verrou, libellés de revue |
+| `app/Controllers/Web/SsePortalController.php` | Verrou dans `requireCase()`, données de revue, bascule |
+| `bootstrap/atak_sse_portal_migration.php` | Table `sse_portal_settings` |
+| `routes/web.php` | `POST /atak/sse/dossiers/verrou-classification` |
+| `views/atak/sse/cases.php` | Panneau de revue, colonne « Qui pourra encore l'ouvrir » |
+| `public/assets/css/sse_portal.css` | État du verrou |
+
+**Attention à l'ordre des routes** : `POST /atak/sse/dossiers/verrou-classification`
+doit rester déclarée **avant** `POST /atak/sse/dossiers/{id}`. Le routeur retient le
+premier motif qui correspond ; dans l'autre ordre, `{id}` capte
+« verrou-classification » et la bascule part dans la mise à jour de dossier.
+
+Post-check :
+
+- [ ] La table `sse_portal_settings` existe
+- [ ] Le registre affiche le panneau « Verrou d'ouverture par classification » en **DÉSARMÉ**
+- [ ] La colonne « Qui pourra encore l'ouvrir » est renseignée sur chaque dossier
+- [ ] Après armement, un compte non habilité ne peut plus ouvrir un dossier confidentiel
+- [ ] Le journal porte une ligne `SSE_CLEARANCE` à l'armement
+
+> Ne pas armer avant d'avoir relu les classifications existantes. Elles n'ont jamais
+> filtré : certaines ont été posées sans conséquence.
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SseAccessCodeRepository;
 use App\Repositories\SseCaseRepository;
+use App\Repositories\SsePortalSettingsRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\SseSiteRepository;
 use App\Repositories\SseWatchlistRepository;
@@ -38,6 +39,7 @@ final class SsePortalController
         private ?SseRedactionService $redaction = null,
         private ?SseClearanceService $clearance = null,
         private ?AtakActivityLogService $activityLog = null,
+        private ?SsePortalSettingsRepository $settings = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -52,6 +54,7 @@ final class SsePortalController
         $this->redaction ??= new SseRedactionService();
         $this->clearance ??= new SseClearanceService();
         $this->activityLog ??= new AtakActivityLogService();
+        $this->settings ??= new SsePortalSettingsRepository();
     }
 
     /** Sas d’entrée (public) */
@@ -175,6 +178,9 @@ final class SsePortalController
             'title' => 'Dossiers — Renseignement interpersonnel',
             'cases' => $list,
             'caseCounts' => $counts,
+            'caseLockEnabled' => $this->clearance->caseLockEnabled($tenantId),
+            'lockedForMe' => $this->clearance->countLockedForMe($list),
+            'myClearance' => $this->clearance->maxLevel(),
             'canManage' => $this->canManage(),
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),
@@ -460,6 +466,48 @@ final class SsePortalController
             'canExport' => $this->canExport(),
             'activeNav' => 'dossiers',
         ]);
+    }
+
+    /**
+     * Arme ou désarme le verrou d'ouverture par classification.
+     *
+     * Réservé à ceux qui peuvent déjà octroyer des accès : armer ce verrou ferme
+     * des dossiers à d'autres, ce n'est pas un réglage d'affichage.
+     */
+    public function caseLockToggle(Request $request, array $params = []): Response
+    {
+        $back = url('atak/sse/dossiers');
+
+        if (!$this->canGrant() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $tenantId = $this->tenantId();
+        $enable = (string) $request->input('enable', '0') === '1';
+        $this->settings->setBool(
+            $tenantId,
+            SsePortalSettingsRepository::CASE_LOCK,
+            $enable,
+            (int) Session::get('user_id') ?: null
+        );
+
+        $this->activityLog->record(
+            $tenantId,
+            1,
+            'SSE_CLEARANCE',
+            $enable
+                ? 'Verrou d’ouverture par classification ARMÉ : les dossiers au-dessus de l’habilitation d’un lecteur ne s’ouvrent plus.'
+                : 'Verrou d’ouverture par classification DÉSARMÉ : la classification redevient un signalement.',
+            (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
+        );
+
+        Session::flash('success', $enable
+            ? 'Verrou armé. Les dossiers au-dessus de l’habilitation d’un lecteur ne s’ouvrent plus pour lui.'
+            : 'Verrou désarmé. La classification redevient un signalement, sans fermeture.');
+
+        return Response::redirect($back);
     }
 
     /**
@@ -905,6 +953,16 @@ final class SsePortalController
         }
         $scope = $this->access->caseScope();
         if ($scope !== null && !in_array($id, $scope, true)) {
+            return null;
+        }
+
+        // Verrou par classification — désarmé par défaut. Tant qu'il ne l'est pas,
+        // la classification signale sans fermer : elle n'a jamais filtré depuis la
+        // création du portail, et les valeurs déjà posées sur les dossiers ont été
+        // choisies sans conséquence. Les transformer d'office en décisions
+        // d'exclusion fermerait des dossiers que personne n'a voulu fermer.
+        if ($this->clearance->caseLockEnabled($this->tenantId())
+            && $this->clearance->caseAboveClearance($case)) {
             return null;
         }
 

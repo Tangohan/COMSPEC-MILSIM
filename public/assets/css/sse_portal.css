@@ -2380,3 +2380,11 @@ body.sse-theme-console .flash {
     font-size: .7rem;
     color: var(--amber);
 }
+
+/* Verrou de classification : son état doit se lire d'un coup d'œil. */
+.sse-lock-panel { border-left: 3px solid var(--muted); }
+.sse-lock-panel.is-armed { border-left-color: var(--red); }
+.sse-lock-panel.is-armed .panel-meta { color: var(--red); font-weight: 800; letter-spacing: .12em; }
+.sse-lock-panel .panel-meta { color: var(--muted); font-weight: 800; letter-spacing: .12em; }
+
+.sse-who-opens { font-size: .78rem; max-width: 26ch; }
