@@ -387,6 +387,31 @@ Post-check :
 > Ne pas armer avant d'avoir relu les classifications existantes. Elles n'ont jamais
 > filtré : certaines ont été posées sans conséquence.
 
+### Contournements compte rendu / PDF 1.4.14 (CORRECTIF DE SÉCURITÉ)
+
+`/compte-rendu` et l'export PDF servaient le dossier **intégral** sans contrôle
+d'habilitation, ce qui rendait l'écran de déclassification inopérant. **À uploader
+avec le reste du lot habilitation, pas après.**
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Sse/SseCasePdfService.php` | Caviardage de l'export + bandeau de niveau imprimé |
+| `app/Services/Sse/SseClearanceService.php` | Caviardage des écrans de travail |
+| `app/Repositories/SsePortalSettingsRepository.php` | Réglage `redact_working_screens` |
+| `app/Controllers/Web/SsePortalController.php` | Rabattement compte rendu / PDF / écrans, bascule à deux réglages |
+| `views/atak/sse/case_report.php` | Bandeau « compte rendu partiel » |
+| `views/atak/sse/cases.php` | Second interrupteur |
+| `public/assets/css/sse_portal.css` | Séparateur de panneau |
+
+Post-check :
+
+- [ ] Avec un compte non pleinement habilité, `/compte-rendu` affiche le bandeau
+      « Compte rendu partiel » et les noms sont noircis
+- [ ] L'export PDF du même dossier porte le bandeau rouge « VERSION EXPURGÉE »
+      avec la liste des catégories au noir
+- [ ] Le registre des dossiers propose les **deux** interrupteurs, tous deux DÉSARMÉS
+- [ ] Le journal porte une ligne `SSE_CLEARANCE` après chaque export PDF
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

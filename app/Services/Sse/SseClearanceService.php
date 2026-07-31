@@ -72,6 +72,41 @@ final class SseClearanceService
     }
 
     /**
+     * Les écrans de travail sont-ils caviardés pour cette communauté ?
+     *
+     * Distinct du verrou de dossier : les documents de diffusion sont **toujours**
+     * rabattus sur l'habilitation du lecteur, c'est leur objet. Les écrans de
+     * travail ne le sont que sur décision, parce que les caviarder retire des
+     * informations dont la cellule se sert pour travailler.
+     */
+    public function workingRedactionEnabled(int $tenantId): bool
+    {
+        return $this->settings->getBool($tenantId, SsePortalSettingsRepository::WORKING_REDACTION, false);
+    }
+
+    /**
+     * Rabat une liste de fiches personnes si les écrans de travail sont caviardés.
+     *
+     * @param list<array<string, mixed>> $people
+     * @return list<array<string, mixed>>
+     */
+    public function redactPeopleForScreens(array $people, int $tenantId, ?int $caseId = null): array
+    {
+        if ($people === [] || !$this->workingRedactionEnabled($tenantId)) {
+            return $people;
+        }
+
+        $redaction = new SseRedactionService();
+        $manual = $caseId !== null ? $redaction->listForCase($caseId, $tenantId) : [];
+
+        return $redaction->apply(
+            ['case' => [], 'people' => $people, 'sites' => []],
+            $this->maxLevel(),
+            $manual
+        )['people'];
+    }
+
+    /**
      * Qui pourra encore ouvrir un dossier de cette classification, une fois le
      * verrou armé. Formulé en rôles, pas en permissions : c'est ce que
      * l'encadrement lit pour décider.

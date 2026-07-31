@@ -8,6 +8,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,string> $statuses */
 /** @var bool $canManage */
 /** @var bool $caseLockEnabled */
+/** @var bool $screensRedacted */
 /** @var int $lockedForMe */
 /** @var string $myClearance */
 $total = count($cases);
@@ -185,6 +186,7 @@ $statusBadge = static function (string $key): string {
         <?php if (!empty($canGrant)): ?>
             <form method="post" action="<?= $h(url('atak/sse/dossiers/verrou-classification')) ?>">
                 <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="reglage" value="verrou">
                 <input type="hidden" name="enable" value="<?= !empty($caseLockEnabled) ? '0' : '1' ?>">
                 <button class="btn <?= !empty($caseLockEnabled) ? 'btn--ghost' : '' ?>" type="submit">
                     <?= !empty($caseLockEnabled) ? 'Désarmer le verrou' : 'Armer le verrou' ?>
@@ -195,6 +197,42 @@ $statusBadge = static function (string $key): string {
                 Seuls les détenteurs du droit d’octroi peuvent armer ce verrou : il ferme
                 des dossiers à d’autres, ce n’est pas un réglage d’affichage.
             </p>
+        <?php endif; ?>
+
+        <hr class="sse-sep">
+
+        <div class="sse-block-title">
+            Caviardage des écrans de travail —
+            <?= !empty($screensRedacted) ? 'ARMÉ' : 'DÉSARMÉ' ?>
+        </div>
+        <?php if (!empty($screensRedacted)): ?>
+            <p>
+                Le registre des personnes, la fiche dossier et les corrélations sont
+                rabattus sur l’habilitation du lecteur, comme les documents de diffusion.
+            </p>
+        <?php else: ?>
+            <p>
+                Les documents de diffusion — compte rendu, PDF, version expurgée — sont
+                <strong>toujours</strong> rabattus sur l’habilitation du lecteur : c’est
+                leur objet. Les écrans de travail, eux, restent intégraux.
+            </p>
+            <p class="sse-note">
+                Les armer retire des informations que la cellule utilise toute la séance.
+                Selon la doctrine retenue pour les catégories, cela peut retirer les noms
+                à ceux qui en ont besoin pour travailler. À armer une fois les
+                habilitations réellement réparties.
+            </p>
+        <?php endif; ?>
+
+        <?php if (!empty($canGrant)): ?>
+            <form method="post" action="<?= $h(url('atak/sse/dossiers/verrou-classification')) ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="reglage" value="ecrans">
+                <input type="hidden" name="enable" value="<?= !empty($screensRedacted) ? '0' : '1' ?>">
+                <button class="btn <?= !empty($screensRedacted) ? 'btn--ghost' : '' ?>" type="submit">
+                    <?= !empty($screensRedacted) ? 'Rendre les écrans intégraux' : 'Caviarder les écrans de travail' ?>
+                </button>
+            </form>
         <?php endif; ?>
     </div>
 </section>

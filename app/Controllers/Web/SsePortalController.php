@@ -179,6 +179,7 @@ final class SsePortalController
             'cases' => $list,
             'caseCounts' => $counts,
             'caseLockEnabled' => $this->clearance->caseLockEnabled($tenantId),
+            'screensRedacted' => $this->clearance->workingRedactionEnabled($tenantId),
             'lockedForMe' => $this->clearance->countLockedForMe($list),
             'myClearance' => $this->clearance->maxLevel(),
             'canManage' => $this->canManage(),
@@ -256,6 +257,14 @@ final class SsePortalController
             }
         }
         $available = $this->persons->listForContext($this->tenantId(), 1, ['limit' => 100]);
+
+        // Écrans de travail : rabattus seulement si la communauté l'a décidé.
+        // Les caviardages manuels du dossier s'appliquent ici aussi — une zone
+        // noircie à la main doit l'être partout, pas seulement sur le document
+        // de diffusion, sinon le caviardage ne veut rien dire.
+        $people = $this->clearance->redactPeopleForScreens($people, $this->tenantId(), $id);
+        $available = $this->clearance->redactPeopleForScreens($available, $this->tenantId(), $id);
+
         $caseSites = $this->sites->listForCase($id, $this->tenantId());
         $siteCounts = $this->sites->countsForSites(
             array_map(static fn (array $s): int => (int) ($s['id'] ?? 0), $caseSites),
@@ -400,11 +409,30 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id));
         }
-        if ($this->requireCase($id) === null) {
+        $case = $this->requireCase($id);
+        if ($case === null) {
             return Response::redirect(url('atak/sse/dossiers'));
         }
 
-        return $this->pdf->export($this->tenantId(), $id);
+        $tenantId = $this->tenantId();
+        $level = $this->clearance->maxLevel();
+
+        // Un PDF sort du portail et circule ensuite tout seul : c'est le support
+        // sur lequel un caviardage manquant coûte le plus cher, puisqu'on ne peut
+        // plus le rattraper une fois le fichier transmis.
+        $this->activityLog->record(
+            $tenantId,
+            1,
+            'SSE_CLEARANCE',
+            sprintf(
+                'Export PDF du dossier %s en « %s ».',
+                (string) ($case['reference_code'] ?? $id),
+                SseRedactionService::levelLabel($level)
+            ),
+            (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
+        );
+
+        return $this->pdf->export($tenantId, $id, $level);
     }
 
     public function personsIndex(Request $request, array $params = []): Response
@@ -429,9 +457,14 @@ final class SsePortalController
             $list[$i]['custody'] = $custody[$pid] ?? [];
         }
 
+        // Écrans de travail : rabattus seulement si la communauté l'a décidé.
+        $list = $this->clearance->redactPeopleForScreens($list, $tenantId);
+
         return $this->portalView('atak.sse.persons', [
             'title' => 'Personnes identifiées',
             'persons' => $list,
+            'screensRedacted' => $this->clearance->workingRedactionEnabled($tenantId),
+            'myClearance' => $this->clearance->maxLevel(),
             'canManage' => $this->canManage(),
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),
@@ -456,11 +489,22 @@ final class SsePortalController
 
         $tenantId = $this->tenantId();
 
+        // Le compte rendu est servi au plafond d'habilitation du lecteur, pas en
+        // intégral. Sans ça, l'écran de déclassification ne servait à rien : il
+        // suffisait de venir ici pour obtenir le même contenu en clair.
+        // Un lecteur pleinement habilité voit tout — le rabattement ne coûte rien
+        // à ceux qui y ont droit.
+        $level = $this->clearance->maxLevel();
+        $partial = SseRedactionService::summarise($level)['hidden'] !== [];
+
         return $this->portalView('atak.sse.case_report', [
             'title' => 'Compte rendu — ' . ($case['reference_code'] ?? ''),
             'case' => $case,
-            'flash' => $this->reports->buildFlashReport($id, $tenantId),
-            'initial' => $this->reports->buildInitialReport($id, $tenantId),
+            'level' => $level,
+            'partial' => $partial,
+            'clearanceOrigin' => $this->clearance->origin(),
+            'flash' => $this->reports->buildFlashReport($id, $tenantId, $level),
+            'initial' => $this->reports->buildInitialReport($id, $tenantId, $level),
             'canManage' => $this->canManage(),
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),
@@ -486,26 +530,41 @@ final class SsePortalController
 
         $tenantId = $this->tenantId();
         $enable = (string) $request->input('enable', '0') === '1';
-        $this->settings->setBool(
-            $tenantId,
-            SsePortalSettingsRepository::CASE_LOCK,
-            $enable,
-            (int) Session::get('user_id') ?: null
-        );
+
+        // Deux réglages sur la même bascule : le verrou d'ouverture et le
+        // caviardage des écrans de travail. Ils se décident au même endroit mais
+        // ne s'arment pas ensemble — fermer un dossier et noircir un registre
+        // n'ont pas les mêmes conséquences sur le travail quotidien.
+        $which = (string) $request->input('reglage', 'verrou');
+        $key = $which === 'ecrans'
+            ? SsePortalSettingsRepository::WORKING_REDACTION
+            : SsePortalSettingsRepository::CASE_LOCK;
+
+        $this->settings->setBool($tenantId, $key, $enable, (int) Session::get('user_id') ?: null);
+
+        $labels = $which === 'ecrans'
+            ? [
+                'on' => 'Caviardage des écrans de travail ARMÉ : registre, fiche dossier et corrélations sont rabattus sur l’habilitation du lecteur.',
+                'off' => 'Caviardage des écrans de travail DÉSARMÉ : les écrans de travail redeviennent intégraux.',
+                'flash_on' => 'Écrans de travail caviardés. Les documents de diffusion l’étaient déjà.',
+                'flash_off' => 'Écrans de travail intégraux. Les documents de diffusion restent rabattus.',
+            ]
+            : [
+                'on' => 'Verrou d’ouverture par classification ARMÉ : les dossiers au-dessus de l’habilitation d’un lecteur ne s’ouvrent plus.',
+                'off' => 'Verrou d’ouverture par classification DÉSARMÉ : la classification redevient un signalement.',
+                'flash_on' => 'Verrou armé. Les dossiers au-dessus de l’habilitation d’un lecteur ne s’ouvrent plus pour lui.',
+                'flash_off' => 'Verrou désarmé. La classification redevient un signalement, sans fermeture.',
+            ];
 
         $this->activityLog->record(
             $tenantId,
             1,
             'SSE_CLEARANCE',
-            $enable
-                ? 'Verrou d’ouverture par classification ARMÉ : les dossiers au-dessus de l’habilitation d’un lecteur ne s’ouvrent plus.'
-                : 'Verrou d’ouverture par classification DÉSARMÉ : la classification redevient un signalement.',
+            $enable ? $labels['on'] : $labels['off'],
             (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
         );
 
-        Session::flash('success', $enable
-            ? 'Verrou armé. Les dossiers au-dessus de l’habilitation d’un lecteur ne s’ouvrent plus pour lui.'
-            : 'Verrou désarmé. La classification redevient un signalement, sans fermeture.');
+        Session::flash('success', $enable ? $labels['flash_on'] : $labels['flash_off']);
 
         return Response::redirect($back);
     }
@@ -649,6 +708,17 @@ final class SsePortalController
         }
 
         $graph = $this->correlation->graphForCase($id, $this->tenantId());
+
+        // Le graphe désigne les personnes par leur identité : même régime que les
+        // autres écrans de travail.
+        if ($this->clearance->workingRedactionEnabled($this->tenantId())) {
+            foreach ($graph['nodes'] as $key => $node) {
+                if (($node['type'] ?? '') !== 'person') {
+                    continue;
+                }
+                $graph['nodes'][$key]['label'] = SseRedactionService::bar((string) ($node['label'] ?? ''));
+            }
+        }
 
         return $this->portalView('atak.sse.case_correlations', [
             'title' => 'Corrélations — ' . ($case['reference_code'] ?? ''),

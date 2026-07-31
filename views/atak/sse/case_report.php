@@ -5,6 +5,9 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,mixed> $case */
 /** @var string $flash */
 /** @var string $initial */
+/** @var string $level */
+/** @var bool $partial */
+/** @var string $clearanceOrigin */
 ?>
 <div class="breadcrumb">
     Athena / SSE /
@@ -28,6 +31,20 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
         <?= $h($case['title'] ?? '') ?>
     </div>
 </div>
+
+<?php if (!empty($partial)): ?>
+<div class="security-notice is-refused">
+    <div class="security-notice-code">HAB</div>
+    <div>
+        <strong>Compte rendu partiel — habilitation « <?= $h(\App\Services\Sse\SseRedactionService::levelLabel($level)) ?> »</strong>
+        <span>
+            <?= $h($clearanceOrigin ?? '') ?>
+            Les éléments au-dessus de votre habilitation sont noircis ci-dessous.
+            Ce n’est pas la version intégrale du dossier.
+        </span>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="security-notice">
     <div class="security-notice-code">SEC-07</div>
@@ -66,8 +83,8 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
         <pre class="sse-report" id="sse-initial"><?= $h($initial) ?></pre>
         <button class="btn btn--ghost btn--sm" type="button" data-copy="#sse-initial">Copier</button>
         <p class="sse-note">
-            Ce document est intégral. Pour une version diffusable hors du cercle qui
-            détient le dossier, passez par la
+            Ce document est servi au niveau de votre habilitation. Pour produire une
+            version destinée à un cercle plus large, passez par la
             <a class="link" href="<?= $h(url('atak/sse/dossiers/' . (int) ($case['id'] ?? 0) . '/declassification')) ?>">déclassification</a> :
             elle caviarde automatiquement tout ce qui dépasse le niveau visé.
         </p>

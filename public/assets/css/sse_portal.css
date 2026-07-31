@@ -2388,3 +2388,4 @@ body.sse-theme-console .flash {
 .sse-lock-panel .panel-meta { color: var(--muted); font-weight: 800; letter-spacing: .12em; }
 
 .sse-who-opens { font-size: .78rem; max-width: 26ch; }
+.sse-sep { border: 0; border-top: 1px solid var(--border); margin: 18px 0 14px; }

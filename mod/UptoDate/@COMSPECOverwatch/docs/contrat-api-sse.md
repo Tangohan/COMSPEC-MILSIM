@@ -546,3 +546,20 @@ Bascule : `POST /atak/sse/dossiers/verrou-classification` (`enable=0|1`), réser
 Le registre expose `caseLockEnabled`, `lockedForMe` et `myClearance` pour la revue
 préalable. `lockedForMe` ne vaut que pour la session courante : le portail ne peut
 pas énumérer les habilitations des autres membres.
+
+### Deux régimes de rabattement
+
+**Toujours rabattus** (aucun réglage) : `/declassification`, `/compte-rendu`, `/pdf`.
+Ce sont les surfaces de diffusion ; `SseCasePdfService::export()` prend un troisième
+paramètre `?string $releaseLevel` et imprime un bandeau portant le niveau de
+production et les catégories noircies.
+
+**Rabattus sur décision** : registre des personnes, fiche dossier, corrélations.
+Réglage `redact_working_screens` dans `sse_portal_settings`, désarmé par défaut.
+Point d'entrée `SseClearanceService::redactPeopleForScreens()`.
+
+Non couverts : registre des sites, fiche site, écran de croisement.
+
+La bascule `POST /atak/sse/dossiers/verrou-classification` porte un champ `reglage`
+(`verrou` | `ecrans`) : les deux réglages se décident au même endroit mais ne
+s'arment pas ensemble.

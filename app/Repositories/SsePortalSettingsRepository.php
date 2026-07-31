@@ -31,6 +31,21 @@ final class SsePortalSettingsRepository
      */
     public const CASE_LOCK = 'case_classification_lock';
 
+    /**
+     * Caviardage des écrans de travail (registre des personnes, fiche dossier,
+     * corrélations).
+     *
+     * Désarmé par défaut, pour une raison différente du verrou de dossier : les
+     * documents de diffusion sont toujours rabattus, parce que c'est leur objet.
+     * Les écrans de travail, eux, sont ce que la cellule renseignement regarde
+     * toute la séance. Les caviarder change le quotidien de tout le monde d'un
+     * coup, et selon la doctrine retenue pour les catégories, peut retirer les
+     * noms à ceux qui en ont besoin pour travailler.
+     *
+     * À armer une fois que les habilitations sont réellement réparties.
+     */
+    public const WORKING_REDACTION = 'redact_working_screens';
+
     private Database $db;
 
     public function __construct(?Database $db = null)

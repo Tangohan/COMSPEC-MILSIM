@@ -400,6 +400,44 @@ Si la table de réglages est absente ou injoignable, le verrou est considéré
 table manque est plus dangereux qu'un verrou temporairement inactif — on découvre le
 second, on subit le premier en pleine opération.
 
+### 7.5 Où le rabattement s'applique — deux régimes
+
+L'habilitation ne couvre pas tout de la même façon, et c'est délibéré.
+
+**Documents de diffusion — toujours rabattus, sans réglage :**
+
+| Écran | Comportement |
+|---|---|
+| Version expurgée | Niveau demandé, rabattu sur votre habilitation |
+| Compte rendu (`/compte-rendu`) | Servi à votre habilitation, bandeau « compte rendu partiel » si vous n'avez pas tout |
+| Export PDF | Servi à votre habilitation, bandeau rouge imprimé sur le document |
+
+Ces trois-là sont faits pour sortir du portail. Un caviardage manquant sur un PDF
+ne se rattrape plus une fois le fichier transmis, et le document doit dire de
+lui-même à quel niveau il a été produit — sinon une version expurgée est
+indiscernable d'une version complète une fois imprimée.
+
+**Écrans de travail — rabattus seulement si vous l'armez :**
+
+| Écran | Concerné |
+|---|---|
+| Registre des personnes | Identités, lieux, sources, relevés |
+| Fiche dossier | Personnes rattachées |
+| Corrélations | Désignation des personnes dans le graphe |
+
+Ce second interrupteur est dans le même panneau que le verrou, au registre des
+dossiers. Il est **désarmé par défaut** : ces écrans sont ce que la cellule regarde
+toute la séance, et selon la doctrine retenue au § 7.1, les caviarder retire les
+noms à ceux qui en ont besoin pour travailler — l'identité y est classée
+« Confidentiel », donc invisible à un simple membre.
+
+Armez-le une fois vos habilitations réellement réparties, ou après avoir ajusté la
+doctrine des catégories.
+
+**Non couvert à ce jour** : le registre des sites et la fiche site (qui portent des
+lieux et des équipes), ainsi que l'écran de croisement. Ils restent intégraux dans
+les deux régimes.
+
 ### 7.5 Caviardage manuel
 
 Noircir une zone précise sur une fiche précise, **quel que soit le niveau** — y
