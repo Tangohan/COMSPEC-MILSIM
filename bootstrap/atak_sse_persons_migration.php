@@ -325,6 +325,32 @@ return static function (PDO $pdo): void {
         $log("  [OK] sse_relations\n");
     }
 
+    // Caviardage manuel : une zone noircie sur une fiche précise, motivée et signée.
+    // Le caviardage automatique par niveau de diffusion n'est pas stocké — c'est une
+    // règle, elle se recalcule ; la stocker figerait un état qui doit suivre les
+    // corrections apportées au dossier.
+    if (!$tableExists($pdo, 'sse_redactions') && $tableExists($pdo, 'sse_persons')) {
+        $pdo->exec(
+            "CREATE TABLE sse_redactions (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                tenant_id INT UNSIGNED NOT NULL,
+                case_id INT UNSIGNED DEFAULT NULL,
+                target_type VARCHAR(16) NOT NULL DEFAULT 'person',
+                target_id INT UNSIGNED NOT NULL,
+                field VARCHAR(64) NOT NULL,
+                category VARCHAR(24) NOT NULL DEFAULT 'identite',
+                reason VARCHAR(255) DEFAULT NULL,
+                author_label VARCHAR(80) DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_sse_redaction (tenant_id, target_type, target_id, field),
+                KEY idx_sse_redactions_case (tenant_id, case_id),
+                CONSTRAINT fk_sse_redactions_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+        $log("  [OK] sse_redactions\n");
+    }
+
     if (!$tableExists($pdo, 'sse_biometric_samples') && $tableExists($pdo, 'sse_persons')) {
         $pdo->exec(
             "CREATE TABLE sse_biometric_samples (

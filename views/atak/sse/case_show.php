@@ -288,6 +288,9 @@ $classBadge = match ($classKey) {
         <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/correlations')) ?>">
             Voir les corrélations
         </a>
+        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/declassification')) ?>">
+            Version expurgée
+        </a>
     </div>
 </section>
 

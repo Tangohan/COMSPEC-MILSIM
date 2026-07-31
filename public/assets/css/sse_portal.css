@@ -2245,3 +2245,118 @@ body.sse-theme-console .flash {
     .sse-edge-rel { justify-self: start; }
     .sse-edge-tags { justify-content: flex-start; }
 }
+
+
+/* ============================================================
+   Déclassification et caviardage
+   ============================================================ */
+
+/* Choix du niveau de diffusion : le plus large à gauche, donc le plus caviardé. */
+.sse-level-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.sse-level {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    text-decoration: none;
+}
+
+.sse-level:hover { border-color: var(--green); }
+
+.sse-level.is-active {
+    border-color: var(--green);
+    background: var(--green-dark);
+    color: var(--text-strong);
+}
+
+.sse-level-rank {
+    font-family: var(--mono);
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+}
+
+.sse-level.is-active .sse-level-rank { color: var(--green); border-color: var(--green); }
+
+.sse-level-label {
+    font-size: .82rem;
+    letter-spacing: .02em;
+}
+
+.sse-release-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    margin-bottom: 16px;
+}
+
+.sse-release-summary p {
+    margin: 4px 0 0;
+    font-size: .84rem;
+    color: var(--text-strong);
+}
+
+.sse-category-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sse-category-table th {
+    text-align: left;
+    font-size: .6rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.sse-category-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: .84rem;
+    vertical-align: top;
+}
+
+/* Le caviardage est fait côté serveur : ce qui arrive ici est déjà une suite de
+   blocs pleins. Cette règle ne masque rien, elle rend seulement les barres nettes
+   — et surtout elle empêche que le rendu suggère un texte sous-jacent. */
+.sse-report.is-redacted {
+    position: relative;
+}
+
+.sse-report.is-redacted::before {
+    content: "VERSION EXPURGÉE";
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-family: var(--sans);
+    font-size: .58rem;
+    font-weight: 800;
+    letter-spacing: .18em;
+    color: var(--classified);
+    pointer-events: none;
+}
+
+/* Impression : les barres doivent rester noires même en économie d'encre. */
+@media print {
+    .sse-report.is-redacted { color: #000; background: #fff; }
+    .sse-level-picker,
+    .sse-relation-form,
+    .btn { display: none !important; }
+}

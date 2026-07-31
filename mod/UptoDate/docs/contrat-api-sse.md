@@ -436,3 +436,73 @@ rattachement de l'élément.
 Point d'entrée unique côté SQF : `comspec_overwatch_connect_fnc_sseApplyProfile`,
 whitelistée en `remoteExec`. Les champs vides ne sont pas écrits, un profil partiel
 complète la génération déterministe au lieu de l'écraser.
+
+---
+
+## Déclassification et caviardage (1.4.14)
+
+### Table `sse_redactions`
+
+Caviardages **manuels** : une zone noircie sur une fiche précise, motivée et signée.
+
+| Colonne | Rôle |
+|---|---|
+| `target_type` / `target_id` | `person` ou `site` |
+| `field` | Zone noircie (`alias`, `grid_reference`, `signature`, `rooms`…) |
+| `category` | `identite`, `lieu`, `biometrie`, `source`, `horodatage` |
+| `reason` | Motif — relu pour décider de lever le caviardage |
+| `author_label` | Qui l'a posé |
+
+Clé unique `(tenant_id, target_type, target_id, field)`.
+
+**Le caviardage automatique par niveau n'est pas stocké.** C'est une règle, elle se
+recalcule à chaque lecture ; la stocker figerait un état qui doit suivre les
+corrections apportées au dossier.
+
+### Échelle de diffusion
+
+| Niveau | Rang | Catégories lisibles en clair |
+|---|---|---|
+| `interne` | 0 | aucune |
+| `encadrement` | 1 | Lieu, Horodatage |
+| `confidentiel` | 2 | Identité, Lieu, Biométrie, Horodatage |
+| `tres_restreint` | 3 | toutes |
+
+Une catégorie est lisible si `rang(niveau de diffusion) >= rang(niveau requis)`.
+La **source** exige le rang le plus élevé : on peut souvent dire *ce qui* a été
+trouvé sans dire *qui* l'a trouvé, l'inverse est rarement vrai.
+
+### Point d'application
+
+`SseReportService::gatherForRelease($caseId, $tenantId, $level)` — seule et unique
+entrée. `buildFlashReport()` et `buildInitialReport()` acceptent un troisième
+paramètre `?string $releaseLevel` ; à `null` (défaut) le document est intégral,
+et les appels existants sont inchangés.
+
+Brancher le caviardage sur la source commune des deux comptes rendus garantit
+qu'une catégorie ne peut pas être noircie dans l'un et lisible dans l'autre.
+
+### Garantie de rendu
+
+Le texte caviardé est remplacé **côté serveur** par une suite de blocs pleins
+(`█`). La chaîne d'origine ne quitte jamais la base et n'apparaît pas dans la
+réponse HTTP.
+
+Un trait noir obtenu en CSS (`color: black; background: black`) laisserait le texte
+dans le document : copier-coller, code source, lecteur d'écran, cache navigateur.
+
+La longueur est quantifiée par pas de 4, bornée à [4, 24] blocs : une barre
+exactement proportionnelle révélerait la longueur du texte d'origine.
+
+### Portail
+
+`GET /atak/sse/dossiers/{id}/declassification?niveau=…`,
+`POST /atak/sse/dossiers/{id}/caviardage`,
+`POST /atak/sse/dossiers/{id}/caviardage/{redactionId}/supprimer`.
+
+Sans paramètre `niveau`, l'écran ouvre sur `interne` — le plus large, donc le plus
+caviardé. Ouvrir la page ne doit jamais exposer plus que ce qui a été demandé.
+
+Le formulaire de caviardage fonctionne **sans JavaScript** : la recomposition
+fiche + zone est faite côté serveur. Un caviardage qui échoue en silence parce que
+le script n'a pas tourné laisserait la zone en clair sans que personne s'en aperçoive.

@@ -17,6 +17,7 @@ use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseCasePdfService;
 use App\Services\Sse\SseCorrelationService;
 use App\Services\Sse\SseCrossMatchService;
+use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseReportService;
 
 final class SsePortalController
@@ -32,6 +33,7 @@ final class SsePortalController
         private ?SseCasePdfService $pdf = null,
         private ?SseReportService $reports = null,
         private ?SseCorrelationService $correlation = null,
+        private ?SseRedactionService $redaction = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -43,6 +45,7 @@ final class SsePortalController
         $this->pdf ??= new SseCasePdfService();
         $this->reports ??= new SseReportService();
         $this->correlation ??= new SseCorrelationService();
+        $this->redaction ??= new SseRedactionService();
     }
 
     /** Sas d’entrée (public) */
@@ -451,6 +454,106 @@ final class SsePortalController
             'canExport' => $this->canExport(),
             'activeNav' => 'dossiers',
         ]);
+    }
+
+    /**
+     * Déclassification : version diffusable du dossier à un niveau donné.
+     *
+     * Le texte caviardé est remplacé côté serveur. Une barre obtenue en CSS
+     * laisserait le texte dans la page — copier-coller, code source, lecteur
+     * d'écran — ce qui reviendrait à ne rien caviarder du tout.
+     */
+    public function caseDeclassify(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $case = $this->requireCase($id);
+        if ($case === null) {
+            Session::flash('error', 'Dossier introuvable ou hors de votre périmètre.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $tenantId = $this->tenantId();
+
+        $level = (string) ($request->query('niveau') ?? '');
+        if (!isset(SseRedactionService::LEVELS[$level])) {
+            // Par défaut, le niveau le plus large : c'est celui qui caviarde le plus.
+            // Ouvrir la page ne doit jamais exposer davantage que ce qu'on demande.
+            $level = SseCaseRepository::CLASS_INTERNAL;
+        }
+
+        $data = $this->reports->gatherForRelease($id, $tenantId, $level);
+
+        return $this->portalView('atak.sse.case_declassify', [
+            'title' => 'Déclassification — ' . ($case['reference_code'] ?? ''),
+            'case' => $case,
+            'level' => $level,
+            'levels' => SseCaseRepository::CLASSIFICATION_LABELS,
+            'categories' => SseRedactionService::CATEGORIES,
+            'summary' => SseRedactionService::summarise($level),
+            'people' => $data['people'] ?? [],
+            'sites' => $data['sites'] ?? [],
+            'flash' => $this->reports->buildFlashReport($id, $tenantId, $level),
+            'initial' => $this->reports->buildInitialReport($id, $tenantId, $level),
+            'manual' => $this->redaction->listForCase($id, $tenantId),
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'dossiers',
+        ]);
+    }
+
+    /** Pose un trait noir sur une zone précise. */
+    public function caseRedactionStore(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/dossiers/' . $id . '/declassification');
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        // Le formulaire présente « fiche » et « zone » séparément parce que c'est ainsi
+        // qu'on y pense. La recomposition est faite ici et non en JavaScript : un
+        // caviardage doit fonctionner même sans script, sinon la zone reste en clair
+        // sans que personne s'en aperçoive.
+        [$type, $targetId] = array_pad(explode(':', (string) $request->input('target', ''), 2), 2, '');
+        [$field, $category] = array_pad(explode('|', (string) $request->input('field_pair', ''), 2), 2, '');
+
+        $ok = $this->redaction->add($this->tenantId(), $id, [
+            'target_type' => $type !== '' ? $type : (string) $request->input('target_type', 'person'),
+            'target_id' => $targetId !== '' ? (int) $targetId : (int) $request->input('target_id', 0),
+            'field' => $field !== '' ? $field : (string) $request->input('field', ''),
+            'category' => $category !== '' ? $category : (string) $request->input('category', 'identite'),
+            'reason' => (string) $request->input('reason', ''),
+            'author_label' => (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Analyste'),
+        ]);
+
+        Session::flash($ok ? 'success' : 'error', $ok
+            ? 'Zone caviardée.'
+            : 'Caviardage refusé — vérifiez la fiche et la zone désignées.');
+
+        return Response::redirect($back);
+    }
+
+    /** Retire un trait noir. */
+    public function caseRedactionDelete(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/dossiers/' . $id . '/declassification');
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $this->redaction->remove((int) ($params['redactionId'] ?? 0), $this->tenantId());
+        Session::flash('success', 'Caviardage retiré — la zone redevient lisible aux niveaux qui l’autorisent.');
+
+        return Response::redirect($back);
     }
 
     /** Graphe de corrélation du dossier. */

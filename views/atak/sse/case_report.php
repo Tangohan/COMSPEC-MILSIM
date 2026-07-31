@@ -65,6 +65,12 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
     <div class="panel-body">
         <pre class="sse-report" id="sse-initial"><?= $h($initial) ?></pre>
         <button class="btn btn--ghost btn--sm" type="button" data-copy="#sse-initial">Copier</button>
+        <p class="sse-note">
+            Ce document est intégral. Pour une version diffusable hors du cercle qui
+            détient le dossier, passez par la
+            <a class="link" href="<?= $h(url('atak/sse/dossiers/' . (int) ($case['id'] ?? 0) . '/declassification')) ?>">déclassification</a> :
+            elle caviarde automatiquement tout ce qui dépasse le niveau visé.
+        </p>
     </div>
 </section>
 

@@ -30,11 +30,36 @@ final class SseReportService
         private ?SsePersonRepository $persons = null,
         private ?SseSiteRepository $sites = null,
         private ?SseCrossMatchService $cross = null,
+        private ?SseRedactionService $redaction = null,
     ) {
         $this->cases ??= new SseCaseRepository();
         $this->persons ??= new SsePersonRepository();
         $this->sites ??= new SseSiteRepository();
         $this->cross ??= new SseCrossMatchService();
+        $this->redaction ??= new SseRedactionService();
+    }
+
+    /**
+     * Version diffusable du jeu de données, caviardée pour le niveau demandé.
+     *
+     * Le caviardage est branché ici, sur la source unique des deux comptes rendus :
+     * une catégorie oubliée est oubliée partout, jamais noircie dans le flash et en
+     * clair dans le compte rendu initial.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function gatherForRelease(int $caseId, int $tenantId, string $releaseLevel): ?array
+    {
+        $data = $this->gather($caseId, $tenantId);
+        if ($data === null) {
+            return null;
+        }
+
+        return $this->redaction->apply(
+            $data,
+            $releaseLevel,
+            $this->redaction->listForCase($caseId, $tenantId)
+        );
     }
 
     /**
@@ -72,9 +97,11 @@ final class SseReportService
     /**
      * Compte rendu initial d'exploitation, à l'échelle du dossier.
      */
-    public function buildInitialReport(int $caseId, int $tenantId): string
+    public function buildInitialReport(int $caseId, int $tenantId, ?string $releaseLevel = null): string
     {
-        $data = $this->gather($caseId, $tenantId);
+        $data = $releaseLevel === null
+            ? $this->gather($caseId, $tenantId)
+            : $this->gatherForRelease($caseId, $tenantId, $releaseLevel);
         if ($data === null) {
             return '';
         }
@@ -178,9 +205,11 @@ final class SseReportService
     /**
      * Compte rendu flash : ce qui justifie d'interrompre le TOC, rien de plus.
      */
-    public function buildFlashReport(int $caseId, int $tenantId): string
+    public function buildFlashReport(int $caseId, int $tenantId, ?string $releaseLevel = null): string
     {
-        $data = $this->gather($caseId, $tenantId);
+        $data = $releaseLevel === null
+            ? $this->gather($caseId, $tenantId)
+            : $this->gatherForRelease($caseId, $tenantId, $releaseLevel);
         if ($data === null) {
             return '';
         }

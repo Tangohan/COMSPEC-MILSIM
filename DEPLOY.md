@@ -302,6 +302,34 @@ Post-check :
 - [ ] Une fiche transmise sans code dossier, avec **un seul** dossier ouvert, y arrive seule
 - [ ] Le journal d'activité montre une ligne `SSE_AUTO` après ce classement
 
+### Déclassification et caviardage SSE 1.4.14
+
+Table `sse_redactions` créée par la même migration SSE que `sse_relations` (§ 1).
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Sse/SseRedactionService.php` | **Nouveau** — niveaux, catégories, barres, caviardage manuel |
+| `app/Services/Sse/SseReportService.php` | `gatherForRelease()`, niveau de diffusion sur les deux comptes rendus |
+| `app/Controllers/Web/SsePortalController.php` | Écran déclassification, pose et levée de caviardage |
+| `bootstrap/atak_sse_persons_migration.php` | Table `sse_redactions` |
+| `routes/web.php` | `/atak/sse/dossiers/{id}/declassification` et `/caviardage` |
+| `views/atak/sse/case_declassify.php` | **Nouveau** — écran version expurgée |
+| `views/atak/sse/case_report.php` | Renvoi vers la déclassification |
+| `views/atak/sse/case_show.php` | Bouton « Version expurgée » |
+| `public/assets/css/sse_portal.css` | Sélecteur de niveau, tableau des catégories, styles d'impression |
+
+**Ordre d'upload** : `SseRedactionService.php` avant `SseReportService.php` — ce
+dernier l'instancie dans son constructeur, et une classe manquante fait tomber
+les deux écrans de compte rendu, pas seulement la déclassification.
+
+Post-check :
+
+- [ ] La table `sse_redactions` existe
+- [ ] `/atak/sse/dossiers/{id}/declassification` s'ouvre sur « Diffusion interne »
+- [ ] À ce niveau, aucun nom de personne n'apparaît dans le code source de la page
+      (`Ctrl+U` puis rechercher un nom connu du dossier — il ne doit rien ressortir)
+- [ ] Le compte rendu intégral (`/compte-rendu`) reste, lui, en clair
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

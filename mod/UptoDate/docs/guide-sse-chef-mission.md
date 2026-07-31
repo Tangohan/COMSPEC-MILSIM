@@ -264,7 +264,68 @@ c'est un acte, pas une vue.
 
 ---
 
-## 7. Trame de séance
+## 7. Déclassification et caviardage
+
+`Athena → SSE → Dossiers → [dossier] → Version expurgée`
+
+Le compte rendu de la section précédente est **intégral**. Pour le diffuser au-delà
+du cercle qui détient le dossier — un allié, un échelon supérieur, un débriefing
+ouvert — il faut une version expurgée.
+
+### 7.1 Déclassification par niveau
+
+Choisissez le niveau de diffusion visé. Tout ce qui est **au-dessus** de ce niveau
+part au noir automatiquement.
+
+| Catégorie | Lisible à partir de | Ce qu'elle couvre |
+|---|---|---|
+| **Identité** | Confidentiel | Nom, prénom, alias, naissance, nationalité, pièce d'identité |
+| **Lieu** | Encadrement | Grilles, désignation des sites, pièces où les objets ont été trouvés |
+| **Biométrie** | Confidentiel | Références de relevés, référence de dossier antérieur |
+| **Source** | Diffusion très restreinte | Indicatif de l'opérateur, équipe, identifiant de terminal, signature |
+| **Horodatage** | Encadrement | Heures précises — un enchaînement d'horaires reconstitue un itinéraire |
+
+**La source est la catégorie la plus protégée**, et c'est délibéré : on peut souvent
+se permettre de dire *ce qui* a été trouvé sans dire *qui* l'a trouvé, alors que
+l'inverse est rarement vrai.
+
+La page ouvre par défaut sur **Diffusion interne**, le niveau le plus large — donc
+celui qui caviarde le plus. Ouvrir l'écran ne doit jamais exposer plus que ce qu'on
+a demandé à voir.
+
+Le tableau en tête de page dit, **avant** de produire le document, ce qui restera
+en clair et ce qui partira au noir. On ne découvre pas ce qu'on a diffusé après
+l'avoir diffusé.
+
+### 7.2 Caviardage manuel
+
+Noircir une zone précise sur une fiche précise, **quel que soit le niveau** — y
+compris le plus restreint. Un motif est obligatoire : c'est lui qu'on relira pour
+décider de lever le caviardage.
+
+Cas typiques : protection de source, mineur, tiers manifestement non impliqué,
+élément dont la véracité est contestée.
+
+Le caviardage est levable (bouton « Lever »). La zone redevient alors lisible aux
+niveaux qui l'autorisent — pas à tous.
+
+### 7.3 Ce que « trait noir » veut dire ici
+
+Le texte caviardé **n'est jamais envoyé au navigateur**. La substitution est faite
+côté serveur, la chaîne d'origine ne quitte pas le dossier.
+
+C'est le point sur lequel la plupart des implémentations se trompent : un trait noir
+obtenu en habillage (`color: black; background: black`) laisse le texte dans la page.
+Il ressort au copier-coller, dans le code source, dans un lecteur d'écran et dans le
+cache du navigateur. Autant ne rien caviarder.
+
+La longueur de la barre est en outre **quantifiée** par pas de 4, plafonnée à 24.
+Une barre exactement proportionnelle révélerait la longueur du nom : sur un dossier
+à trois personnes, cela suffit souvent à savoir laquelle est laquelle.
+
+---
+
+## 8. Trame de séance
 
 1. **Avant** — le PC ouvre un dossier sur le portail, note la référence.
 2. **Eden** — deux ou trois PNJ réglés, le reste en génération automatique ;
@@ -284,7 +345,7 @@ c'est un acte, pas une vue.
 
 ---
 
-## 8. Limites assumées
+## 9. Limites assumées
 
 Ce qui **n'est pas** simulé, et ne le sera pas :
 
