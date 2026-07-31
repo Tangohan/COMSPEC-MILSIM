@@ -85,6 +85,9 @@ class CfgFunctions {
             class logTransmission {};
             class logFnError {};
             class callExtLogged {};
+            class outboxPush {};
+            class outboxFlush {};
+            class outboxState {};
             class submitChat {};
             class submitChatPhoto {};
             class openHub {};

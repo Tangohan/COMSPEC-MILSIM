@@ -275,6 +275,13 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         [] call comspec_overwatch_connect_fnc_registerZenSseModules;
     }, [], 8] call CBA_fnc_waitAndExecute;
 
+    // Tampon hors ligne : rejeu des transmissions mises en attente. La boucle est
+    // lente à dessein — c'est fn_outboxFlush qui porte la temporisation, ici on ne
+    // fait que lui donner l'occasion de regarder si la liaison est revenue.
+    [{
+        [] call comspec_overwatch_connect_fnc_outboxFlush;
+    }, 10, []] call CBA_fnc_addPerFrameHandler;
+
     // Identifiants ATAK visibles côté Zeus
     [{
         [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;

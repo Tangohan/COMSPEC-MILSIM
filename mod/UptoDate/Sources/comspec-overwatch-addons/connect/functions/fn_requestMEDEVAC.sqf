@@ -79,7 +79,8 @@ private _parsed = [
     "MEDEVAC",
     true,
     true,
-    "medical"
+    "medical",
+    true
 ] call comspec_overwatch_connect_fnc_callExtLogged;
 _parsed params ["_ok", "", "_detail"];
 

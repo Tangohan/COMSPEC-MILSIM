@@ -52,6 +52,17 @@ Un automatisme propose, il ne décide pas. Aucune règle ne clôt un site, ne fu
 
 - **L'écran de déclassification ne vérifiait pas qui demandait quoi.** Le niveau était lu tel quel dans l'adresse : n'importe qui pouvant ouvrir un dossier, invité compris, obtenait la version intégrale en changeant un paramètre. Produire un document expurgé et restreindre qui peut le lire sont deux choses différentes ; la première seule ne protégeait rien.
 
+### Corrigé — Ce qui était saisi hors liaison était perdu
+
+- Le mod simulait la coupure réseau mais **perdait les données saisies pendant**. Une fiche SSE renseignée dans une cave sans couverture partait dans le vide ; l'opérateur ne l'apprenait qu'au débriefing. La file d'attente existante ne couvrait que les marqueurs de carte.
+- **Tampon hors ligne** pour tout ce qu'un humain rédige : fiche SSE et relevés, point d'intérêt, MEDEVAC, QRF. Rejoués dans l'ordre au rétablissement de la liaison.
+- **Les positions ne sont jamais rejouées**, délibérément : restituer une position vieille de dix minutes montrerait l'élément là où il n'est plus. Une position périmée trompe le poste de commandement au lieu de l'informer.
+- Le tampon vit dans le profil du joueur et survit à un plantage ou une reconnexion — la coupure qui fait perdre des données est rarement propre.
+- Temporisation croissante entre les tentatives : une liaison qui vient de revenir est souvent instable, et marteler l'extension produit une salve d'échecs qui ressemble à une panne.
+- **Péremption assumée et annoncée** : au-delà de 30 minutes ou 5 échecs, l'entrée est écartée et l'opérateur en est informé. Un compte rendu de contact arrivant trois quarts d'heure après les faits se lirait comme une information fraîche. L'abandon n'est jamais silencieux — sinon l'opérateur croit avoir rendu compte.
+- La saisie hors liaison affiche « fiche conservée, ne la ressaisissez pas » plutôt qu'une erreur : une ressaisie produirait deux fiches du même sujet, que l'automatisme A2 signalerait ensuite comme doublon.
+- Compteur `N EN ATTENTE` dans la barre d'état du terminal SEEK : un tampon invisible ne vaut guère mieux qu'une perte.
+
 ### Corrigé — Le compte rendu et le PDF contournaient la déclassification
 
 - **`/compte-rendu` servait le dossier intégral sans aucun contrôle d'habilitation.** Il suffisait de ne pas passer par l'écran de déclassification pour obtenir le même contenu en clair : l'écran expurgé ne protégeait donc rien. Le compte rendu est désormais servi au plafond du lecteur, avec un bandeau quand il est partiel.

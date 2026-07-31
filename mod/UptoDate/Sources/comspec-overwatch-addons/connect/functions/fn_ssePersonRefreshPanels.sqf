@@ -141,11 +141,23 @@ private _caseTxt = if (_case isEqualTo "") then {
 } else {
     format ["<t color='#9ed8b4'>%1</t>", _case]
 };
+// Transmissions en attente : un tampon invisible ne vaut guère mieux qu'une
+// perte. L'opérateur doit voir qu'il a des fiches non parties avant de quitter
+// l'objectif, sinon il repart en croyant avoir rendu compte.
+private _outbox = ["get"] call comspec_overwatch_connect_fnc_outboxState;
+private _pending = _outbox getOrDefault ["count", 0];
+private _pendingTxt = if (_pending > 0) then {
+    format ["<t color='#e0a233'>%1 EN ATTENTE</t>  ·  ", _pending]
+} else {
+    ""
+};
+
 (_disp displayCtrl 9526) ctrlSetStructuredText parseText format [
-    "<t size='0.38' align='right' color='#c8d4e0'>%1  ·  %5  ·  %2 éch.  ·  %3:%4</t>",
+    "<t size='0.38' align='right' color='#c8d4e0'>%1  ·  %5  ·  %6%2 éch.  ·  %3:%4</t>",
     _linkTxt,
     count _samples,
     if (_hh < 10) then { format ["0%1", _hh] } else { str _hh },
     if (_mm < 10) then { format ["0%1", _mm] } else { str _mm },
-    _caseTxt
+    _caseTxt,
+    _pendingTxt
 ];
