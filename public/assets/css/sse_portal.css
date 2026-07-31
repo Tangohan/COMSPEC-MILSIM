@@ -1,25 +1,35 @@
 :root {
-    --bg: #090b0d;
-    --bg-soft: #0d1013;
-    --surface: #11151a;
-    --surface-2: #151a20;
-    --surface-3: #1a2027;
-    --border: #2d353d;
-    --border-soft: rgba(255,255,255,.07);
-    --text: #d9dee3;
-    --text-strong: #f3f5f7;
-    --muted: #7e8993;
-    --green: #8faa83;
-    --green-bright: #b5d2a7;
-    --green-dark: #1a241c;
-    --amber: #c6a15b;
-    --amber-dark: #2a2112;
-    --red: #bf6666;
-    --red-dark: #2a1616;
-    --blue: #8094a8;
-    --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-    --sans: "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+    /* Charte « SSE Case File » — voir docs/frontend/dc/SSE-CASE-FILE-TOKENS.md.
+       Palette de station de travail : fonds très sombres, un vert vif unique,
+       et trois couleurs sémantiques distinctes (avertissement, alerte, information). */
+    --bg: #07090b;
+    --bg-soft: #0a0e10;
+    --surface: #0a0e10;
+    --surface-2: #0d1114;
+    --surface-3: #14191c;
+    --border: #1b2227;
+    --border-soft: rgba(255,255,255,.05);
+    --text: #a9b6bc;
+    --text-strong: #e8eef1;
+    --muted: #5b686e;
+    --muted-dim: #4a565b;
+    --green: #12d18e;
+    --green-bright: #3ddc9a;
+    --green-dark: #07251b;
+    --amber: #e0a233;
+    --amber-dark: #2a1d08;
+    --red: #ff6b5e;
+    --red-dark: #2a1210;
+    --blue: #6bb2f0;
+    --blue-dark: #0d1c29;
+    --classified: #8f1d1d;
+    --mono: "JetBrains Mono", "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    --sans: "Archivo", "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
 }
+
+/* Archivo est utilisée en largeur condensée (75 %) : c'est la signature de la
+   maquette. Sans la police, la pile de repli reste lisible. */
+body { font-stretch: 75%; }
 
 * { box-sizing: border-box; }
 html { background: var(--bg); }
@@ -1878,3 +1888,475 @@ body.sse-theme-console .flash {
    pour éviter toute confusion de sémantique. */
 .sse-gauge.is-warn > span { background: var(--amber); }
 .sse-gauge.is-alert > span { background: var(--red); }
+
+/* Portrait d'enrôlement — pièce centrale d'une fiche personne */
+.sse-mugshot {
+    flex: 0 0 auto;
+    display: block;
+    width: 56px;
+    height: 68px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.sse-mugshot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: grayscale(.25) contrast(1.05);
+}
+
+.sse-mugshot.is-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    color: var(--muted);
+}
+
+.sse-record-head { gap: .65rem; }
+.sse-record-ident { flex: 1 1 auto; min-width: 0; }
+
+/* Chaîne de possession */
+.sse-custody {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 .6rem;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+}
+
+.sse-custody li {
+    display: flex;
+    align-items: baseline;
+    gap: .45rem;
+    flex-wrap: wrap;
+    font-size: .74rem;
+    position: relative;
+}
+
+.sse-custody li::before {
+    content: "";
+    position: absolute;
+    left: -.72rem;
+    top: .38em;
+    width: 5px;
+    height: 5px;
+    background: var(--green);
+    border-radius: 50%;
+}
+
+.sse-custody-when {
+    font-family: var(--mono);
+    font-size: .66rem;
+    color: var(--muted);
+    min-width: 92px;
+}
+
+.sse-custody-what {
+    color: var(--text-strong);
+    font-weight: 600;
+}
+
+.sse-custody-who {
+    font-family: var(--mono);
+    font-size: .66rem;
+    color: var(--green);
+}
+
+/* ============================================================
+   Exploitation de site (1.4.13)
+   ============================================================ */
+
+.sse-room-list {
+    list-style: none;
+    margin: 0;
+    padding: .5rem .75rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.sse-room-list li {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    padding: .4rem .55rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    font-size: .82rem;
+}
+
+.sse-room-list li.is-checked {
+    border-left: 2px solid var(--green-bright);
+    background: var(--green-dark);
+}
+
+.sse-room-mark {
+    font-family: var(--mono);
+    width: 1.1rem;
+    text-align: center;
+    color: var(--muted);
+}
+
+.sse-room-list li.is-checked .sse-room-mark { color: var(--green-bright); }
+
+.sse-room-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--text-strong);
+}
+
+.sse-room-list form { margin: 0; }
+
+.btn--sm {
+    padding: .2rem .5rem;
+    font-size: .68rem;
+}
+
+/* Compte rendu cinq lignes */
+.sse-report {
+    margin: .5rem 0 0;
+    padding: .7rem .8rem;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--green);
+    font-family: var(--mono);
+    font-size: .76rem;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    overflow-x: auto;
+}
+
+/* Verdict de requête d'identité rendu par le terminal SEEK */
+.sse-idq.is-confirmed { border-color: var(--red); background: var(--red-dark); }
+.sse-idq.is-confirmed .sse-block-title { color: var(--red); }
+.sse-idq.is-possible { border-color: var(--amber); background: var(--amber-dark); }
+.sse-idq.is-possible .sse-block-title { color: var(--amber); }
+.sse-idq.is-none .sse-block-title { color: var(--green); }
+
+
+/* ============================================================
+   Charte SSE Case File — motifs repris de la maquette
+   ============================================================ */
+
+@keyframes sseScan {
+    0%   { transform: translateY(-100%); }
+    100% { transform: translateY(1100%); }
+}
+
+/* Bloc à balayage : donne vie à une vignette biométrique ou à un lecteur. */
+.sse-scan {
+    position: relative;
+    overflow: hidden;
+}
+
+.sse-scan::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 22%;
+    background: linear-gradient(180deg, transparent, rgba(18, 209, 142, .16), transparent);
+    animation: sseScan 4.5s linear infinite;
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sse-scan::after { animation: none; }
+}
+
+/* Vignette absente : hachures, plutôt qu'un tiret dans le vide. */
+.sse-mugshot.is-empty {
+    background: repeating-linear-gradient(135deg,
+        #0c1114, #0c1114 6px,
+        #0e1418 6px, #0e1418 12px);
+    color: var(--muted-dim);
+    font-size: .6rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+}
+
+/* Libellés de la charte : petits, gras, très espacés. */
+.sse-block-title,
+.sse-record-facts dt {
+    font-weight: 800;
+}
+
+
+/* ============================================================
+   Corrélations — graphe de dossier
+   ============================================================ */
+
+/* Pas de canevas ni de moteur de placement : le portail ne charge aucune
+   bibliothèque front, et une grille de cartes se lit mieux qu'un nuage de
+   points sur un dossier de dix entités. */
+.sse-graph {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    padding: 16px 18px 18px;
+}
+
+.sse-node {
+    border: 1px solid var(--border);
+    border-left-width: 3px;
+    background: var(--surface-2);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sse-node.is-person  { border-left-color: var(--green); }
+.sse-node.is-site    { border-left-color: var(--blue); }
+.sse-node.is-room    { border-left-color: var(--muted); }
+.sse-node.is-seizure { border-left-color: var(--amber); }
+
+.sse-node-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sse-node-ref {
+    font-family: var(--mono);
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--text-strong);
+}
+
+.sse-node-kind {
+    font-size: .58rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.sse-node-label {
+    font-size: .88rem;
+    color: var(--text-strong);
+    line-height: 1.3;
+}
+
+.sse-node-detail,
+.sse-node-degree {
+    font-size: .72rem;
+    color: var(--muted);
+}
+
+.sse-node-degree {
+    font-family: var(--mono);
+    color: var(--green);
+}
+
+/* Chaîne de liens : une ligne par arête, lisible de gauche à droite. */
+.sse-edges {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.sse-edge {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-top: 1px solid var(--border-soft);
+    border-left: 3px solid transparent;
+}
+
+.sse-edge:first-child { border-top: 0; }
+
+/* Trois provenances, trois teintes : déduit des données, proposé par une règle,
+   affirmé par un analyste. La distinction doit se voir sans lire l'étiquette. */
+.sse-edge.is-derived { border-left-color: var(--green-dark); }
+.sse-edge.is-rule    { border-left-color: var(--blue); background: rgba(107, 178, 240, .035); }
+.sse-edge.is-posed   { border-left-color: var(--amber); background: rgba(224, 162, 51, .035); }
+
+.sse-edge-from,
+.sse-edge-to {
+    font-size: .85rem;
+    color: var(--text-strong);
+}
+
+.sse-edge-to { text-align: right; }
+
+.sse-edge-rel {
+    font-family: var(--mono);
+    font-size: .72rem;
+    color: var(--green);
+    white-space: nowrap;
+    padding: 0 8px;
+    border-bottom: 1px dashed var(--border);
+}
+
+.sse-edge-tags {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.sse-edge-note {
+    grid-column: 1 / -1;
+    font-size: .74rem;
+    color: var(--muted);
+    font-style: italic;
+}
+
+.badge.is-confirmed    { border-color: var(--green); color: var(--green); }
+.badge.is-corroborated { border-color: var(--blue); color: var(--blue); }
+.badge.is-unverified   { border-color: var(--border); color: var(--muted); }
+.badge.is-conflicting  { border-color: var(--red); color: var(--red); }
+
+/* Formulaire de pose : sujet · lien · sujet sur une ligne, comme la phrase. */
+.sse-relation-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px 14px;
+    align-items: end;
+}
+
+.sse-relation-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sse-relation-form .field--wide { grid-column: 1 / -1; }
+
+.sse-relation-form button { align-self: end; }
+
+@media (max-width: 720px) {
+    .sse-edge {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    .sse-edge-to { text-align: left; }
+    .sse-edge-rel { justify-self: start; }
+    .sse-edge-tags { justify-content: flex-start; }
+}
+
+
+/* ============================================================
+   Déclassification et caviardage
+   ============================================================ */
+
+/* Choix du niveau de diffusion : le plus large à gauche, donc le plus caviardé. */
+.sse-level-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.sse-level {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    text-decoration: none;
+}
+
+.sse-level:hover { border-color: var(--green); }
+
+.sse-level.is-active {
+    border-color: var(--green);
+    background: var(--green-dark);
+    color: var(--text-strong);
+}
+
+.sse-level-rank {
+    font-family: var(--mono);
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+}
+
+.sse-level.is-active .sse-level-rank { color: var(--green); border-color: var(--green); }
+
+.sse-level-label {
+    font-size: .82rem;
+    letter-spacing: .02em;
+}
+
+.sse-release-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    margin-bottom: 16px;
+}
+
+.sse-release-summary p {
+    margin: 4px 0 0;
+    font-size: .84rem;
+    color: var(--text-strong);
+}
+
+.sse-category-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sse-category-table th {
+    text-align: left;
+    font-size: .6rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.sse-category-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: .84rem;
+    vertical-align: top;
+}
+
+/* Le caviardage est fait côté serveur : ce qui arrive ici est déjà une suite de
+   blocs pleins. Cette règle ne masque rien, elle rend seulement les barres nettes
+   — et surtout elle empêche que le rendu suggère un texte sous-jacent. */
+.sse-report.is-redacted {
+    position: relative;
+}
+
+.sse-report.is-redacted::before {
+    content: "VERSION EXPURGÉE";
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-family: var(--sans);
+    font-size: .58rem;
+    font-weight: 800;
+    letter-spacing: .18em;
+    color: var(--classified);
+    pointer-events: none;
+}
+
+/* Impression : les barres doivent rester noires même en économie d'encre. */
+@media print {
+    .sse-report.is-redacted { color: #000; background: #fff; }
+    .sse-level-picker,
+    .sse-relation-form,
+    .btn { display: none !important; }
+}

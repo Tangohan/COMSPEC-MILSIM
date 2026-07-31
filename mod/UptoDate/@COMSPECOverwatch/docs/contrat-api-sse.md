@@ -234,3 +234,275 @@ les champs ci-dessus n’imposent pas de recompilation de `COMSPECExtension`.
 `COMSPEC_Item_SeekTerminal` — « Terminal biométrique SEEK », objet d’inventaire
 (sac / gilet / uniforme). Requis pour ouvrir une fiche ; réglage CBA
 `comspec_sse_require_item` pour rétablir l’accès sans objet.
+
+---
+
+## Exploitation de site (1.4.13)
+
+Les tables `sse_sites`, `sse_site_rooms` et `sse_seizures` existaient depuis la 1.4.0 sans
+être exploitées par aucun code. Elles sont désormais servies.
+
+### `POST /api/sse/sites`
+
+```json
+{
+  "mapId": 1,
+  "name": "Habitation nord — rue basse",
+  "site_type": "habitation",
+  "team_label": "ALPHA",
+  "pos_x": 0, "pos_y": 0, "pos_z": 0,
+  "grid_reference": "045 128",
+  "summary": "",
+  "rooms": ["Entrée", "Séjour", "Cave"],
+  "case_code": "SSE-2026-0004",
+  "submitter_callsign": "ALPHA-1"
+}
+```
+
+`rooms` est facultatif : sans lui, la checklist est prégarnie selon `site_type`.
+`case_code` rattache le site au dossier — c'est la référence métier, jamais un identifiant
+technique. Un code inconnu n'est pas une erreur : le site est créé sans rattachement.
+Réponse `201` : site complet, avec `reference_code` (`SITE-2026-0001`), `rooms` et `seizures`.
+
+Types : `habitation`, `depot`, `poste_ennemi`, `cache`, `vehicule`, `autre`.
+Statuts : `ouvert`, `en_cours`, `cloture`.
+
+### `GET /api/sse/sites` · `GET /api/sse/sites/{id}`
+
+Query de l'index : `mapId`, `status`, `site_type`, `limit`.
+La fiche détaillée porte en plus `five_line_report` (compte rendu généré).
+
+### `POST /api/sse/sites/{id}/rooms/{roomId}`
+
+`{ "checked": true, "notes": "" }` — marque une pièce fouillée. Réponse : site rafraîchi.
+
+### `POST /api/sse/sites/{id}/seizures`
+
+Un objet, ou un lot via `seizures: [...]` :
+
+```json
+{
+  "seizures": [
+    { "category": "arme", "label": "AK-74", "quantity": 1, "room_id": 12 },
+    { "category": "document", "label": "Carnet manuscrit", "quantity": 1 }
+  ],
+  "submitter_callsign": "ALPHA-1"
+}
+```
+
+Natures : `arme`, `munition`, `document`, `radio`, `medical`, `numerique`, `valeur`, `autre`.
+`person_id` rattache la saisie à une fiche personne.
+
+### `POST /api/sse/sites/{id}/close`
+
+`{ "summary": "" }` — vide, le compte rendu cinq lignes généré est retenu.
+
+### Tables
+
+| Élément | Notes |
+|---|---|
+| `sse_sites.reference_code` | Ajoutée en 1.4.13, index `(tenant_id, reference_code)` |
+| `sse_site_rooms` | Checklist ordonnée, `checked` + notes ; index `(tenant_id, site_id)` |
+| `sse_seizures` | Nature, désignation, quantité, pièce et fiche personne |
+| `sse_custody_events` | Alimentée par `site_ouvert`, `saisie`, `site_cloture` |
+
+### Portail
+
+`/atak/sse/sites` (registre, avancement de fouille) et `/atak/sse/sites/{id}` (checklist,
+saisies, compte rendu de clôture). Entrée de navigation « Sites exploités ».
+
+### Extension Arma
+
+**Non couvert.** Aucune commande n'existe encore côté `COMSPECExtension` pour ouvrir un
+site ou verser une saisie depuis le jeu : cela demande de nouvelles commandes et une
+recompilation. L'API est prête et servie.
+
+---
+
+## Requête d'identité (1.4.13)
+
+Champ supplémentaire de `POST /api/sse/persons` :
+
+```json
+{
+  "identity_query": {
+    "result": "confirmed",
+    "confidence": 98.7,
+    "record_ref": "BIO-42871"
+  }
+}
+```
+
+`result` : `none` | `possible` | `confirmed`. Stocké en `sse_persons.identity_query_json`,
+relu sous la clé `identity_query`.
+
+C'est le **verdict rendu par le terminal**, distinct du croisement watchlist calculé par le
+serveur : le premier est un jugement de terrain sur relevés simulés, le second un
+rapprochement nominatif du poste de commandement. La fiche du portail affiche les deux
+séparément — ne pas les fusionner.
+
+Le verdict est déterministe côté jeu : il dérive d'une graine stable par entité
+(`COMSPEC_SSE_Seed`), pour qu'une même personne interrogée deux fois donne le même
+résultat. Le chef de mission peut l'imposer via `COMSPEC_SSE_MatchResult`,
+`COMSPEC_SSE_Confidence` et `COMSPEC_SSE_RecordRef`.
+
+---
+
+## Corrélation et automatismes (1.4.14)
+
+### Table `sse_relations`
+
+Arêtes **posées** — par un analyste depuis le portail, ou par un automatisme.
+
+| Colonne | Rôle |
+|---|---|
+| `from_type` / `from_id`, `to_type` / `to_id` | Extrémités ; types `person`, `site`, `room`, `seizure` |
+| `relation` | `present`, `recovered`, `found_at`, `associe`, `possede`, `contact`, `membre`, `mentionne`, `co_presence`, `meme_individu` |
+| `reliability` | `unverified`, `corroborated`, `confirmed`, `conflicting` |
+| `author_label` | Discriminant de provenance — la valeur `Automatisme` marque une arête posée par une règle |
+| `note` | Sur quoi repose le lien |
+
+Clé unique `(tenant_id, from_type, from_id, to_type, to_id, relation)` : réenregistrer
+la même arête met à jour la fiabilité et la note plutôt que de dupliquer.
+
+**Les arêtes déduites ne sont pas stockées.** « Saisie recueillie sur P02 », « objet
+trouvé en pièce 03 », « P01 rattaché au site A » existent déjà dans les données ; les
+stocker créerait un doublon qui se périme dès qu'une saisie est corrigée. Elles sont
+recalculées à chaque lecture par `SseCorrelationService::graphForCase()`.
+
+### Champ `automation` des réponses
+
+`POST /api/sse/persons`, `POST /api/sse/sites/{id}/rooms/{roomId}` et
+`POST /api/sse/sites/{id}/seizures` renvoient ce que les règles ont fait :
+
+```json
+{
+  "automation": [
+    {
+      "rule": "A1",
+      "label": "Classement automatique",
+      "detail": "Sujet non identifié classée au dossier SSE-2026-0007 : c'était le seul dossier ouvert."
+    }
+  ]
+}
+```
+
+`detail` est un libellé métier en français, directement affichable — le terminal n'a
+aucune correspondance code → texte à maintenir de son côté.
+
+Sur `POST /api/sse/persons`, un classement automatique (règle `A1`) est aussi reporté
+dans `filing` : `linked = true`, `auto = true`, `message` = le libellé. C'est la seule
+action automatique dont le terrain a besoin sur place.
+
+### Règles
+
+| Règle | Déclencheur | Effet |
+|---|---|---|
+| `A1` | Fiche sans code dossier | Rattachement si **un seul** dossier ouvert |
+| `A2` | Relevé biométrique déjà versé sous la même référence de laboratoire | Signalement + relation `meme_individu` (`corroborated`) |
+| `A3` | Croisement watchlist ≥ `HARD_MATCH_SCORE` (85) | Dossier `ouvert` → `en_cours`, note déposée |
+| `A4` | Fiches du même dossier à moins de `CO_PRESENCE_MINUTES` (45) | Relations `co_presence` (`unverified`), plafond `CO_PRESENCE_MAX_LINKS` (5) |
+| `A5` | Toutes les pièces de la checklist cochées | Signalement « prêt pour clôture » |
+| `A6` | Saisie de nature `arme`, `munition`, `numerique`, `document` | Remontée immédiate + note de dossier |
+
+Aucune règle ne clôt un site, ne fusionne des fiches, ni ne déclare une identité.
+Un échec de règle n'échoue jamais la requête : la fiche transmise est enregistrée
+d'abord, les automatismes tournent ensuite.
+
+### Portail
+
+`GET/POST /atak/sse/dossiers/{id}/correlations` et
+`POST /atak/sse/dossiers/{id}/correlations/{relationId}/supprimer`.
+La page distingue les trois provenances — déduit, automatisme, analyste — et ne les
+confond jamais visuellement.
+
+### Configuration mission maker
+
+Variables d'unité lues côté jeu, toutes réglables depuis Eden (attributs
+« COMSPEC — Exploitation SSE ») ou Zeus (module « Profil d'identité SSE ») :
+
+| Variable | Type | Effet |
+|---|---|---|
+| `COMSPEC_SSE_Seed` | Number | Graine fixe ; 0 = dérivée de l'identifiant réseau |
+| `COMSPEC_SSE_MatchResult` | String | `none` / `possible` / `confirmed` |
+| `COMSPEC_SSE_Confidence` | Number | 0-100 ; absente = calculée sur la qualité des relevés |
+| `COMSPEC_SSE_RecordRef` | String | Référence de dossier antérieur affichée |
+| `COMSPEC_SSE_LastName`, `_FirstName`, `_Alias` | String | État civil proposé |
+| `COMSPEC_SSE_Nationality`, `_Language` | String | Nationalité déclarée, langue parlée |
+
+Variable de mission : `COMSPEC_SSE_ActiveCase` (String, publique) — dossier de
+rattachement de l'élément.
+
+Point d'entrée unique côté SQF : `comspec_overwatch_connect_fnc_sseApplyProfile`,
+whitelistée en `remoteExec`. Les champs vides ne sont pas écrits, un profil partiel
+complète la génération déterministe au lieu de l'écraser.
+
+---
+
+## Déclassification et caviardage (1.4.14)
+
+### Table `sse_redactions`
+
+Caviardages **manuels** : une zone noircie sur une fiche précise, motivée et signée.
+
+| Colonne | Rôle |
+|---|---|
+| `target_type` / `target_id` | `person` ou `site` |
+| `field` | Zone noircie (`alias`, `grid_reference`, `signature`, `rooms`…) |
+| `category` | `identite`, `lieu`, `biometrie`, `source`, `horodatage` |
+| `reason` | Motif — relu pour décider de lever le caviardage |
+| `author_label` | Qui l'a posé |
+
+Clé unique `(tenant_id, target_type, target_id, field)`.
+
+**Le caviardage automatique par niveau n'est pas stocké.** C'est une règle, elle se
+recalcule à chaque lecture ; la stocker figerait un état qui doit suivre les
+corrections apportées au dossier.
+
+### Échelle de diffusion
+
+| Niveau | Rang | Catégories lisibles en clair |
+|---|---|---|
+| `interne` | 0 | aucune |
+| `encadrement` | 1 | Lieu, Horodatage |
+| `confidentiel` | 2 | Identité, Lieu, Biométrie, Horodatage |
+| `tres_restreint` | 3 | toutes |
+
+Une catégorie est lisible si `rang(niveau de diffusion) >= rang(niveau requis)`.
+La **source** exige le rang le plus élevé : on peut souvent dire *ce qui* a été
+trouvé sans dire *qui* l'a trouvé, l'inverse est rarement vrai.
+
+### Point d'application
+
+`SseReportService::gatherForRelease($caseId, $tenantId, $level)` — seule et unique
+entrée. `buildFlashReport()` et `buildInitialReport()` acceptent un troisième
+paramètre `?string $releaseLevel` ; à `null` (défaut) le document est intégral,
+et les appels existants sont inchangés.
+
+Brancher le caviardage sur la source commune des deux comptes rendus garantit
+qu'une catégorie ne peut pas être noircie dans l'un et lisible dans l'autre.
+
+### Garantie de rendu
+
+Le texte caviardé est remplacé **côté serveur** par une suite de blocs pleins
+(`█`). La chaîne d'origine ne quitte jamais la base et n'apparaît pas dans la
+réponse HTTP.
+
+Un trait noir obtenu en CSS (`color: black; background: black`) laisserait le texte
+dans le document : copier-coller, code source, lecteur d'écran, cache navigateur.
+
+La longueur est quantifiée par pas de 4, bornée à [4, 24] blocs : une barre
+exactement proportionnelle révélerait la longueur du texte d'origine.
+
+### Portail
+
+`GET /atak/sse/dossiers/{id}/declassification?niveau=…`,
+`POST /atak/sse/dossiers/{id}/caviardage`,
+`POST /atak/sse/dossiers/{id}/caviardage/{redactionId}/supprimer`.
+
+Sans paramètre `niveau`, l'écran ouvre sur `interne` — le plus large, donc le plus
+caviardé. Ouvrir la page ne doit jamais exposer plus que ce qui a été demandé.
+
+Le formulaire de caviardage fonctionne **sans JavaScript** : la recomposition
+fiche + zone est faite côté serveur. Un caviardage qui échoue en silence parce que
+le script n'a pas tourné laisserait la zone en clair sans que personne s'en aperçoive.

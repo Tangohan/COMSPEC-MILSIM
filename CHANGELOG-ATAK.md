@@ -7,6 +7,86 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.14] - 2026-07-30
+
+### Ajouté — Corrélation d'exploitation
+
+- **Graphe de corrélation du dossier** (`Dossiers → Voir les corrélations`) : personnes, sites, pièces et saisies, classés par nombre de liens. Trois provenances distinguées visuellement et jamais confondues — **déduit** (recalculé depuis les saisies), **automatisme** (posé par une règle), **analyste** (hypothèse assumée).
+- Les liens déduits ne sont pas stockés : corriger une fiche corrige le graphe. Un lien stocké se périmerait dès qu'une saisie est rectifiée, et personne ne penserait à aller le corriger.
+- **Pose de relation à la main** entre deux personnes du dossier, avec nature du lien, niveau de fiabilité et justification. Retirable.
+- Table `sse_relations`, clé unique par arête : réenregistrer la même relation met à jour la fiabilité et la note plutôt que de dupliquer.
+
+### Ajouté — Automatismes SSE
+
+Un automatisme propose, il ne décide pas. Aucune règle ne clôt un site, ne fusionne des fiches ni ne déclare une identité — une règle qui se trompe en silence coûte plus cher que dix rappels à faire à la main.
+
+- **Classement automatique** — une fiche transmise sans code dossier rejoint le dossier ouvert **s'il n'y en a qu'un**. Avec plusieurs dossiers ouverts, la règle s'abstient : une fiche non classée se voit, une fiche mal classée passe inaperçue jusqu'au débriefing.
+- **Doublon probable** — deux fiches portant le même relevé biométrique sont signalées et reliées par « même individu que ». Aucune fusion : elle détruirait la fiche la moins complète, qui est parfois celle qui porte l'observation utile.
+- **Correspondance forte** — au-delà de 85 % de similarité avec une liste de surveillance, le dossier passe en exploitation et reçoit une note. Le libellé rappelle qu'un score n'est pas une identification.
+- **Co-présence** — les fiches du même dossier saisies à moins de 45 minutes d'écart sont reliées, en « non vérifié » : c'est une proximité d'horodatage, pas un lien constaté. Plafonné à 5 liens par fiche.
+- **Site prêt pour clôture** — checklist complète signalée au poste de commandement, sans clôturer.
+- **Saisie sensible** — armement, munitions, supports numériques et documents remontent immédiatement, sans attendre la clôture du site.
+- Chaque règle laisse une trace en clair dans le journal d'activité : on peut répondre à « pourquoi cette fiche est-elle dans ce dossier ? » sans lire le code. Les réponses d'API portent un champ `automation` déjà rédigé en français.
+
+### Ajouté — Déclassification et caviardage
+
+- **Version expurgée du dossier** (`Dossiers → Version expurgée`) : on choisit le niveau de diffusion visé, tout ce qui est au-dessus part au noir automatiquement. Cinq catégories caviardables — Identité, Lieu, Biométrie, Source, Horodatage — chacune avec son niveau minimal de lecture en clair.
+- **La source est la catégorie la plus protégée** : on peut souvent dire *ce qui* a été trouvé sans dire *qui* l'a trouvé, l'inverse est rarement vrai.
+- **Caviardage manuel** : noircir une zone précise sur une fiche précise, quel que soit le niveau, avec motif obligatoire — c'est lui qu'on relira pour décider de le lever. Levable à tout moment.
+- La page ouvre par défaut sur le niveau le plus large, donc le plus caviardé : ouvrir l'écran ne doit jamais exposer plus que ce qu'on a demandé à voir. Un tableau annonce ce qui restera en clair **avant** de produire le document.
+- **Le texte caviardé n'est jamais envoyé au navigateur.** La substitution est faite côté serveur. Un trait noir posé en habillage CSS laisserait le texte dans la page — copier-coller, code source, lecteur d'écran, cache — ce qui reviendrait à ne rien caviarder.
+- La longueur des barres est quantifiée par pas de 4 et plafonnée : une barre exactement proportionnelle révélerait la longueur du nom, ce qui suffit souvent à identifier quelqu'un sur un dossier à trois personnes.
+- Le caviardage est branché sur la source unique des deux comptes rendus : une catégorie ne peut pas être noircie dans le flash et lisible dans le compte rendu initial.
+- La date de recueil reste, l'heure part : savoir « le 14 » n'a pas la même valeur que savoir « le 14 à 03h12 ».
+
+### Ajouté — Configuration mission maker et Zeus
+
+- **Attributs Eden sur l'unité**, catégorie « COMSPEC — Exploitation SSE » : ce que la base doit répondre (génération automatique, inconnu, signalé, recherché), état civil, nationalité déclarée, langue, référence de dossier antérieur, indice de confiance imposé, graine. Poser un module par PNJ était intenable sur trente civils.
+- **Trois modules Eden / Zeus**, catégorie « COMSPEC SSE » : *Dossier SSE actif*, *Profil d'identité SSE*, *Doter en terminal SEEK*. Variantes Zeus Enhanced avec boîtes de dialogue, ignorées automatiquement quand les modules de configuration sont déjà visibles — même garde anti-doublon que les zones roleplay.
+- Les champs laissés vides ne sont pas écrits : un profil partiel complète la génération déterministe au lieu de l'écraser. On peut ne forcer que l'alias d'un sujet.
+- Le module « Doter en terminal SEEK » ne dote que les joueurs : un terminal récupérable sur un cadavre ennemi n'est pas l'effet recherché.
+- Fixer la graine rend un sujet identique d'une session à l'autre — pour un scénario rejoué ou une séance de formation.
+
+### Documentation
+
+- Nouveau [guide SSE chef de mission / Zeus](mod/UptoDate/docs/guide-sse-chef-mission.md) : préparation Eden, pilotage Zeus, tableau des six automatismes avec ce que chaque règle ne fait pas, lecture du graphe, trame de séance, limites assumées.
+- Contrat d'API complété (table `sse_relations`, champ `automation`, variables d'unité réglables par le chef de mission).
+
+---
+
+## [1.4.13] - 2026-07-30
+
+### Ajouté — Terminal SEEK
+
+- **Terminal en pages, dans l'écran de l'appareil** : accueil à six tuiles (Sujet, Contexte, Biométrie, Constat, Photo, Dossier), navigation par flèches et bouton Home. Les contrôles sont posés dans la zone d'écran réelle de l'illustration, mesurée sur la texture ; les touches A1, A2, QUERY et SIGN sont posées sur le clavier de l'appareil.
+- **Dossier SSE actif** : la référence est posée une fois pour l'élément, à l'arrivée sur objectif, puis héritée par toutes les fiches sans ressaisie. Visible dans la barre d'état du terminal, réglable depuis le menu ACE ou la page Dossier. Le champ de la fiche devient un repli manuel.
+- **Requête d'identité** : bouton REQUÊTE, interrogation de la base fictive (6 s, barre ACE), verdict `Aucune correspondance` / `Correspondance possible` / `Correspondance confirmée` avec indice de confiance et référence de dossier. Affiché dans le panneau d'analyse et le bandeau LCD, transmis à Athena et repris sur la fiche du portail.
+- **Résultat déterministe** : chaque personne reçoit une graine stable, dérivée de son identifiant réseau ou posée par le chef de mission. Deux interrogations du même sujet donnent le même verdict. La qualité des relevés module le résultat — une acquisition pauvre ne permet pas de confirmer.
+- Le chef de mission peut imposer le verdict par variables d'objet : `COMSPEC_SSE_MatchResult`, `COMSPEC_SSE_Confidence`, `COMSPEC_SSE_RecordRef`.
+- **Dotation du terminal SEEK** depuis Zeus (module Zeus Enhanced et module ACE Zeus), l'objet étant requis pour ouvrir une fiche.
+
+### Ajouté — Exploitation de site
+
+- Dossiers de site avec référence lisible, **checklist de fouille prégarnie selon le type** (habitation, dépôt, poste ennemi, cache, véhicule), saisies catégorisées rattachables à une pièce et à une personne, compte rendu de clôture.
+- Endpoints `/api/sse/sites` (ouverture, consultation, pièces, saisies, clôture) et écrans portail « Sites exploités ».
+
+### Ajouté — Portail SSE
+
+- **Comptes rendus d'exploitation** : flash et compte rendu initial structuré (Situation, Exploitation du site, Personnel, Matériel, Faits marquants, Appréciation, Suites à donner), générés à la lecture depuis les éléments déjà versés au dossier. Remplace l'inventaire par un produit de renseignement : chaque personne y est reprise avec ses relevés et son verdict d'identité, chaque site avec les pièces non traitées.
+- **Sites rattachés au dossier** : un site ouvert depuis le terrain avec la référence active rejoint le dossier, qui agrège désormais personnes, sites et saisies.
+
+- **Charte « SSE Case File »** : palette de station de travail (vert `#12d18e`, trois couleurs sémantiques), Archivo condensé et JetBrains Mono, vignette à balayage sur les portraits, hachures pour les portraits absents.
+- Portrait d'enrôlement et **chaîne de possession** sur la fiche personne — les événements étaient enregistrés depuis la 1.4.0 sans être affichés nulle part.
+- Volumétrie des dossiers (personnes, notes, pièces) et jauge de similarité sur les croisements.
+
+### Corrigé
+
+- **Le terminal ne pouvait plus enregistrer de fiche** (HTTP 422 « identité requise » alors que l'alias était saisi) : l'échappement JSON tronquait les chaînes accentuées — « Décédée » apparaît systématiquement pour un sujet décédé — et n'échappait pas les caractères de contrôle. Le motif de refus du serveur est désormais affiché au lieu d'un générique « vérifiez la liaison ».
+- **Panneau biométrique tronqué** : trois modalités sur deux lignes débordaient, l'ADN était coupé à l'écran.
+- Diagnostic de résolution photo : les dossiers réellement balayés sont listés.
+
+---
+
 ## [1.4.12] - 2026-07-29
 
 ### Ajouté — Terminal biométrique SEEK (renseignement SSE)
@@ -21,6 +101,9 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Exploitation d’un corps** : le terminal préremplit désormais identité, armement et équipement sur une personne décédée (le formulaire restait vide).
 
 ### Ajouté — Portail SSE
+
+- **Comptes rendus d'exploitation** : flash et compte rendu initial structuré (Situation, Exploitation du site, Personnel, Matériel, Faits marquants, Appréciation, Suites à donner), générés à la lecture depuis les éléments déjà versés au dossier. Remplace l'inventaire par un produit de renseignement : chaque personne y est reprise avec ses relevés et son verdict d'identité, chaque site avec les pièces non traitées.
+- **Sites rattachés au dossier** : un site ouvert depuis le terrain avec la référence active rejoint le dossier, qui agrège désormais personnes, sites et saisies.
 
 - **Registre des personnes** en fiches plutôt qu’en tableau : constat de terrain, relevés biométriques avec jauge de qualité, état de signature et classement.
 - `GET /api/sse/persons/by-unit` — fiche déjà ouverte pour une unité Arma donnée.

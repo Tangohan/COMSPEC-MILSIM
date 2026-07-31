@@ -4182,8 +4182,19 @@ public static class Extension
     {
         try
         {
-            var dirCount = 0;
-            foreach (var _ in EnumerateScreenshotDirs()) dirCount++;
+            // Lister les dossiers réellement balayés : « dirs=3 » ne permet pas de savoir
+            // lesquels, donc pas de savoir où Arma a réellement écrit la capture.
+            var dirs = new List<string>();
+            foreach (var d in EnumerateScreenshotDirs())
+            {
+                try
+                {
+                    var name = d.Length > 48 ? "…" + d.Substring(d.Length - 47) : d;
+                    dirs.Add(name.Replace('|', '/'));
+                }
+                catch { /* ignore */ }
+            }
+            var dirCount = dirs.Count;
 
             var srcDir = "none";
             var path = (rawPath ?? "").Trim().Trim('"').Trim('\'').Replace('/', '\\');
@@ -4196,7 +4207,7 @@ public static class Extension
                     srcDir = "name_only";
             }
 
-            return $"{srcDir}|dirs={dirCount}";
+            return $"{srcDir}|dirs={dirCount}|{string.Join(" ; ", dirs)}";
         }
         catch
         {

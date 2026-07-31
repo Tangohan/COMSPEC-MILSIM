@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta charset="utf-8">
+<title>SSE // CASE FILE 26-0042 — IDENTITY EXPLOITATION</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75,400;75,500;75,600;75,700;75,800;75,900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; background:#07090b; font-family:'Archivo',system-ui,sans-serif; color:#d6dee2; -webkit-font-smoothing:antialiased; font-stretch:75%; }
+  a { color:#12d18e; text-decoration:none; }
+  a:hover { color:#fff; }
+  table { border-collapse:collapse; }
+  input { font-family:'Archivo',sans-serif; }
+  ::-webkit-scrollbar { width:9px; height:9px; }
+  ::-webkit-scrollbar-track { background:#0b0f11; }
+  ::-webkit-scrollbar-thumb { background:#242c31; }
+  @keyframes sRise { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:none; } }
+  @keyframes sBar { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+  @keyframes sPulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.28; transform:scale(1.5); } }
+  @keyframes sScan { 0% { transform:translateY(-100%); } 100% { transform:translateY(1100%); } }
+  .s-rise { animation:sRise .34s cubic-bezier(.2,.7,.3,1) both; }
+  .s-bar { transform-origin:left; animation:sBar .75s cubic-bezier(.2,.8,.25,1) both; }
+  .s-pulse { animation:sPulse 2s ease-in-out infinite; }
+  .s-row { transition:background .12s ease; }
+  .s-row:hover { background:#111a1d !important; }
+  .s-btn { transition:background .15s ease, color .15s ease, border-color .15s ease; }
+  .s-tab { transition:color .15s ease, background .15s ease, border-color .15s ease; }
+  .s-bio { position:relative; overflow:hidden; background:#0a0e10; border:1px solid #1b2227; }
+  .s-bio-scan { position:absolute; left:0; right:0; height:22%; background:linear-gradient(180deg,transparent,rgba(18,209,142,.16),transparent); animation:sScan 4.5s linear infinite; }
+  .s-ph { background:repeating-linear-gradient(135deg,#0c1114,#0c1114 6px,#0e1418 6px,#0e1418 12px); border:1px solid #1b2227; display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:800; letter-spacing:.16em; color:#48555b; text-align:center; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:#07090b;">
+
+  <div style="background:#8f1d1d; color:#fff; height:20px; display:flex; align-items:center; justify-content:center; letter-spacing:.34em; font-size:8.5px; font-weight:900; position:sticky; top:0; z-index:40;">{{ classification }} // SSE IDENTITY EXPLOITATION // HANDLE VIA ATHENA CHANNELS</div>
+
+  <!-- HEADER -->
+  <div style="background:#0a0e10; border-bottom:1px solid #1b2227; position:sticky; top:20px; z-index:35;">
+    <div style="padding:11px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+      <div style="width:32px; height:32px; border:1px solid #12d18e; color:#12d18e; font-size:10px; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; letter-spacing:.04em;">SSE</div>
+      <div style="min-width:0;">
+        <div style="font-size:13px; font-weight:900; letter-spacing:.02em; color:#fff; white-space:nowrap;">SENSITIVE SITE EXPLOITATION <span style="color:#3a464c;">//</span> CASE FILE <span style="font-family:'JetBrains Mono',monospace; color:#12d18e;">SSE-26-0042</span></div>
+        <div style="font-size:8.5px; font-weight:800; letter-spacing:.2em; color:#5b686e; margin-top:4px; white-space:nowrap;">ATHENA IDENTITY EXPLOITATION STATION · TOC / CELLULE S2 · 92E RI</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="display:flex; gap:1px; background:#1b2227; flex-wrap:wrap;">
+        <sc-for list="{{ headerMeta }}" as="h" hint-placeholder-count="7">
+          <div style="background:#0a0e10; padding:5px 12px;">
+            <div style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b;">{{ h.k }}</div>
+            <div style="font-size:11px; font-weight:700; font-family:'JetBrains Mono',monospace; color:{{ h.fg }}; margin-top:3px; white-space:nowrap;">{{ h.v }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex; align-items:center; gap:7px; background:#0d1214; border:1px solid #1b2227; padding:0 9px; height:28px; width:172px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4a565b" stroke-width="2.2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
+        <input placeholder="SUBJECT / ID / AUTH CODE" style="border:none; outline:none; background:transparent; font-size:10px; font-weight:700; letter-spacing:.06em; width:100%; color:#d6dee2;">
+      </div>
+      <div class="s-btn" style="height:28px; padding:0 12px; background:#12d18e; color:#04231a; display:flex; align-items:center; font-size:10px; font-weight:900; letter-spacing:.1em; cursor:pointer; white-space:nowrap;">EXPORT CASE FILE</div>
+    </div>
+
+    <!-- PIPELINE -->
+    <div style="display:flex; align-items:stretch; border-top:1px solid #14191c; background:#080b0d; overflow-x:auto;">
+      <sc-for list="{{ pipeline }}" as="p" hint-placeholder-count="6">
+        <div style="display:flex; align-items:center; gap:9px; padding:7px 14px 7px 14px; border-right:1px solid #14191c; white-space:nowrap;">
+          <span class="{{ p.cls }}" style="width:5px; height:5px; border-radius:50%; background:{{ p.dot }}; flex-shrink:0;"></span>
+          <div>
+            <div style="font-size:8px; font-weight:800; letter-spacing:.16em; color:{{ p.fg }};">{{ p.label }}</div>
+            <div style="font-size:9px; font-family:'JetBrains Mono',monospace; color:#4a565b; margin-top:3px;">{{ p.meta }}</div>
+          </div>
+          <span style="font-size:10px; color:#2a343a; margin-left:5px;">{{ p.arrow }}</span>
+        </div>
+      </sc-for>
+      <div style="flex:1; min-width:14px;"></div>
+      <div style="display:flex; align-items:center; gap:8px; padding:0 14px; border-left:1px solid #14191c;">
+        <span class="s-pulse" style="width:5px; height:5px; border-radius:50%; background:#12d18e;"></span>
+        <span style="font-size:9px; font-weight:800; letter-spacing:.14em; color:#12d18e; white-space:nowrap;">LIAISON ARMA 3 ACTIVE</span>
+        <span style="font-size:9px; font-family:'JetBrains Mono',monospace; color:#4a565b; white-space:nowrap;">SYNC 301431Z</span>
+      </div>
+    </div>
+
+    <!-- METRICS -->
+    <div style="display:flex; border-top:1px solid #14191c; background:#0a0e10; overflow-x:auto;">
+      <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="6">
+        <div style="padding:8px 15px; border-right:1px solid #14191c; white-space:nowrap;">
+          <div style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b;">{{ m.k }}</div>
+          <div style="display:flex; align-items:baseline; gap:7px; margin-top:4px;">
+            <span style="font-size:15px; font-weight:900; font-family:'JetBrains Mono',monospace; color:{{ m.fg }};">{{ m.v }}</span>
+            <span style="font-size:9px; font-weight:700; color:#4a565b;">{{ m.note }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- TABS -->
+    <div style="display:flex; border-top:1px solid #14191c; background:#080b0d; overflow-x:auto;">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="8">
+        <div class="s-tab" onClick="{{ t.go }}" style="padding:9px 15px; cursor:pointer; white-space:nowrap; border-bottom:2px solid {{ t.bar }}; background:{{ t.bg }}; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:9.5px; font-weight:900; letter-spacing:.16em; color:{{ t.fg }};">{{ t.label }}</span>
+          <span style="font-size:9px; font-weight:700; font-family:'JetBrains Mono',monospace; color:{{ t.nfg }};">{{ t.n }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:14px; padding:14px 18px 40px 18px; align-items:start;">
+    <div style="min-width:0; display:flex; flex-direction:column; gap:14px;">
+
+      <!-- ===== SUBJECT ROSTER ===== -->
+      <sc-if value="{{ showRoster }}" hint-placeholder-val="{{ true }}">
+        <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227;">
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #1b2227; flex-wrap:wrap;">
+            <span style="font-size:8.5px; font-weight:900; letter-spacing:.2em; color:#12d18e;">SUBJECT ROSTER</span>
+            <span style="font-size:10.5px; font-weight:800; color:#d6dee2;">Individus contrôlés sur site</span>
+            <span style="font-size:9.5px; font-family:'JetBrains Mono',monospace; color:#5b686e;">{{ subjectCount }}</span>
+            <span style="flex:1;"></span>
+            <sc-for list="{{ rosterFilters }}" as="f" hint-placeholder-count="3">
+              <div class="s-btn" style="height:24px; padding:0 9px; border:1px solid #1b2227; background:#0a0e10; display:flex; align-items:center; font-size:9px; font-weight:800; letter-spacing:.1em; color:#93a1a8; cursor:pointer;" style-hover="border-color:#12d18e; color:#12d18e;">{{ f }}</div>
+            </sc-for>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; min-width:1240px;">
+              <thead>
+                <tr style="background:#0a0e10;">
+                  <sc-for list="{{ rosterCols }}" as="c" hint-placeholder-count="11">
+                    <th style="padding:0 11px; height:29px; border-bottom:1px solid #1b2227; font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b; white-space:nowrap; text-align:{{ c.al }};">{{ c.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ roster }}" as="s" hint-placeholder-count="6">
+                  <tr class="s-row" onClick="{{ s.pick }}" style="cursor:pointer; background:{{ s.rowBg }};">
+                    <td style="padding:5px 11px; height:42px; border-bottom:1px solid #14191c;">
+                      <div class="s-ph" style="width:34px; height:34px; font-size:7px; border-color:{{ s.frame }};">{{ s.thumb }}</div>
+                    </td>
+                    <td style="padding:0 11px; height:42px; border-bottom:1px solid #14191c; white-space:nowrap;">
+                      <div style="font-size:10.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#fff;">{{ s.id }}</div>
+                      <div style="font-size:9px; color:#4a565b; margin-top:3px; letter-spacing:.08em;">{{ s.sourceShort }}</div>
+                    </td>
+                    <td style="padding:0 11px; height:42px; border-bottom:1px solid #14191c; white-space:nowrap;">
+                      <div style="font-size:11px; font-weight:800; color:#e8eef1;">{{ s.name }}</div>
+                      <div style="font-size:9px; color:#5b686e; margin-top:3px;">{{ s.alias }}</div>
+                    </td>
+                    <td style="padding:0 11px; height:42px; border-bottom:1px solid #14191c; font-size:10px; font-weight:700; color:#93a1a8; white-space:nowrap;">{{ s.nat }}</td>
+                    <td style="padding:0 11px; height:42px; border-bottom:1px solid #14191c; white-space:nowrap;">
+                      <div style="display:flex; gap:3px;">
+                        <sc-for list="{{ s.bio }}" as="b" hint-placeholder-count="4">
+                          <span style="width:19px; height:15px; display:flex; align-items:center; justify-content:center; font-size:7.5px; font-weight:900; color:{{ b.fg }}; background:{{ b.bg }}; border:1px solid {{ b.bd }};">{{ b.k }}</span>
+                        </sc-for>
+                      </div>
+                    </td>
+                    <td style="padding:0 11px; height:42px; border-bottom:1px solid #14191c; white-space:nowrap;">
+                      <span style="display:inline-block; font-size:9.5px; line-height:15px; font-weight:900; letter-spacing:.08em; padding:1px 7px; color:{{ s.mfg }}; background:{{ s.mbg }}; border:1px solid {{ s.mbd }};">{{ s.match }}</span>
+                    </td>
+                    <td style="padding:0 11px; height:42px; border-bottom:1px solid #14191c; font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace; color:{{ s.scoreFg }}; text-align:right; white-space:nowrap;">{{ s.score }}</td>
+                    <td style="padding:0 11px; height:42px; border-bottom:1px solid #14191c; white-space:nowrap;">
+                      <span style="display:inline-block; font-size:9.5px; line-height:15px; font-weight:900; letter-spacing:.08em; padding:1px 7px; color:{{ s.afg }}; background:{{ s.abg }}; border:1px solid {{ s.abd }};">{{ s.auth }}</span>
+                    </td>
+                    <td style="padding:0 11px; height:42px; border-bottom:1px solid #14191c; font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#93a1a8; white-space:nowrap;">{{ s.terminal }}</td>
+                    <td style="padding:0 11px; height:42px; border-bottom:1px solid #14191c; font-size:10px; font-weight:700; color:#93a1a8; white-space:nowrap;">{{ s.collector }}</td>
+                    <td style="padding:0 11px; height:42px; border-bottom:1px solid #14191c; font-size:10px; font-weight:500; font-family:'JetBrains Mono',monospace; color:#5b686e; white-space:nowrap;">{{ s.dtg }}</td>
+                    <td style="padding:0 11px; height:42px; border-bottom:1px solid #14191c; font-size:10px; font-weight:700; color:#93a1a8; white-space:nowrap;">{{ s.loc }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== SUBJECT DOSSIER ===== -->
+      <sc-if value="{{ showSubject }}" hint-placeholder-val="{{ true }}">
+        <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227;">
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #1b2227; flex-wrap:wrap;">
+            <span style="font-size:8.5px; font-weight:900; letter-spacing:.2em; color:#12d18e;">SUBJECT</span>
+            <span style="font-size:11.5px; font-weight:900; font-family:'JetBrains Mono',monospace; color:#fff;">// {{ sub.id }}</span>
+            <span style="font-size:10.5px; font-weight:800; color:#93a1a8;">{{ sub.display }}</span>
+            <span style="flex:1;"></span>
+            <span style="display:inline-block; font-size:9.5px; font-weight:900; letter-spacing:.1em; padding:2px 8px; color:{{ sub.mfg }}; background:{{ sub.mbg }}; border:1px solid {{ sub.mbd }};">{{ sub.matchLabel }}</span>
+            <span style="display:inline-block; font-size:9.5px; font-weight:900; letter-spacing:.1em; padding:2px 8px; color:{{ sub.afg }}; background:{{ sub.abg }}; border:1px solid {{ sub.abd }};">{{ sub.authLabel }}</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns:212px minmax(0,1fr) minmax(0,1fr); gap:1px; background:#1b2227;">
+            <!-- FIELD PHOTO -->
+            <div style="background:#0d1114; padding:12px;">
+              <div style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b;">FIELD CAPTURE</div>
+              <div class="s-bio" style="aspect-ratio:3/4; margin-top:7px; display:flex; align-items:center; justify-content:center;">
+                <div class="s-bio-scan"></div>
+                <div style="position:absolute; inset:8px; border:1px solid rgba(18,209,142,.22);"></div>
+                <div style="position:absolute; top:8px; left:8px; width:14px; height:14px; border-left:2px solid #12d18e; border-top:2px solid #12d18e;"></div>
+                <div style="position:absolute; top:8px; right:8px; width:14px; height:14px; border-right:2px solid #12d18e; border-top:2px solid #12d18e;"></div>
+                <div style="position:absolute; bottom:8px; left:8px; width:14px; height:14px; border-left:2px solid #12d18e; border-bottom:2px solid #12d18e;"></div>
+                <div style="position:absolute; bottom:8px; right:8px; width:14px; height:14px; border-right:2px solid #12d18e; border-bottom:2px solid #12d18e;"></div>
+                <span style="font-size:8px; font-weight:800; letter-spacing:.16em; color:#48555b; text-align:center;">PHOTOGRAPHIE TERRAIN<br>SEEK II · 1280×1706</span>
+                <div style="position:absolute; bottom:0; left:0; right:0; background:rgba(7,9,11,.86); padding:4px 8px; display:flex; justify-content:space-between;">
+                  <span style="font-size:8px; font-family:'JetBrains Mono',monospace; color:#12d18e;">{{ sub.photoAcq }}</span>
+                  <span style="font-size:8px; font-family:'JetBrains Mono',monospace; color:#5b686e;">{{ sub.dtg }}</span>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:5px; margin-top:8px;">
+                <sc-for list="{{ sub.captureMeta }}" as="c" hint-placeholder-count="4">
+                  <div style="display:flex; justify-content:space-between; gap:8px; border-bottom:1px solid #14191c; padding-bottom:4px;">
+                    <span style="font-size:9px; font-weight:700; letter-spacing:.08em; color:#4a565b;">{{ c.k }}</span>
+                    <span style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#a9b6bc; text-align:right;">{{ c.v }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <!-- DECLARED -->
+            <div style="background:#0d1114; padding:12px; min-width:0;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="width:4px; height:12px; background:#e0a233;"></span>
+                <span style="font-size:8.5px; font-weight:900; letter-spacing:.18em; color:#e0a233;">DECLARED IDENTITY</span>
+                <span style="flex:1;"></span>
+                <span style="font-size:8px; font-weight:800; letter-spacing:.1em; padding:1px 6px; color:#e0a233; background:rgba(224,162,51,.1); border:1px solid rgba(224,162,51,.3);">NON VÉRIFIÉ</span>
+              </div>
+              <div style="font-size:8.5px; font-family:'JetBrains Mono',monospace; color:#4a565b; margin-top:6px;">SOURCE // OPERATOR ENTRY · {{ sub.collector }}</div>
+              <div style="display:flex; flex-direction:column; margin-top:9px;">
+                <sc-for list="{{ sub.declared }}" as="d" hint-placeholder-count="8">
+                  <div style="display:flex; justify-content:space-between; gap:10px; border-bottom:1px solid #14191c; padding:6px 0;">
+                    <span style="font-size:9.5px; font-weight:700; letter-spacing:.06em; color:#5b686e;">{{ d.k }}</span>
+                    <span style="font-size:10.5px; font-weight:700; font-family:{{ d.ff }}; color:{{ d.fg }}; text-align:right;">{{ d.v }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <!-- VERIFIED -->
+            <div style="background:#0d1114; padding:12px; min-width:0;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="width:4px; height:12px; background:#12d18e;"></span>
+                <span style="font-size:8.5px; font-weight:900; letter-spacing:.18em; color:#12d18e;">VERIFIED IDENTITY</span>
+                <span style="flex:1;"></span>
+                <span style="font-size:8px; font-weight:800; letter-spacing:.1em; padding:1px 6px; color:{{ sub.vfg }}; background:{{ sub.vbg }}; border:1px solid {{ sub.vbd }};">{{ sub.vTag }}</span>
+              </div>
+              <div style="font-size:8.5px; font-family:'JetBrains Mono',monospace; color:#4a565b; margin-top:6px;">{{ sub.vSource }}</div>
+              <div style="display:flex; flex-direction:column; margin-top:9px;">
+                <sc-for list="{{ sub.verified }}" as="d" hint-placeholder-count="8">
+                  <div style="display:flex; justify-content:space-between; gap:10px; border-bottom:1px solid #14191c; padding:6px 0;">
+                    <span style="font-size:9.5px; font-weight:700; letter-spacing:.06em; color:#5b686e;">{{ d.k }}</span>
+                    <span style="font-size:10.5px; font-weight:700; font-family:{{ d.ff }}; color:{{ d.fg }}; text-align:right;">{{ d.v }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid #1b2227; padding:10px 13px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b;">FLAGS SUJET</span>
+            <sc-for list="{{ sub.flags }}" as="f" hint-placeholder-count="4">
+              <span style="font-size:9.5px; font-weight:900; letter-spacing:.08em; padding:2px 8px; color:{{ f.fg }}; background:{{ f.bg }}; border:1px solid {{ f.bd }};">{{ f.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== BIOMETRIC RECORD ===== -->
+      <sc-if value="{{ showBio }}" hint-placeholder-val="{{ true }}">
+        <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227;">
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #1b2227; flex-wrap:wrap;">
+            <span style="font-size:8.5px; font-weight:900; letter-spacing:.2em; color:#12d18e;">BIOMETRIC RECORD</span>
+            <span style="font-size:10.5px; font-weight:800; font-family:'JetBrains Mono',monospace; color:#d6dee2;">{{ sub.id }}</span>
+            <span style="flex:1;"></span>
+            <span style="font-size:9.5px; font-family:'JetBrains Mono',monospace; color:#5b686e;">{{ bioSummary }}</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1px; background:#1b2227;">
+            <sc-for list="{{ modalities }}" as="m" hint-placeholder-count="4">
+              <div style="background:#0d1114; padding:11px 12px;">
+                <div style="display:flex; align-items:center; gap:7px;">
+                  <span style="width:4px; height:11px; background:{{ m.tone }};"></span>
+                  <span style="font-size:8.5px; font-weight:900; letter-spacing:.18em; color:#a9b6bc;">{{ m.label }}</span>
+                  <span style="flex:1;"></span>
+                  <span style="font-size:9px; font-weight:900; letter-spacing:.08em; padding:1px 6px; color:{{ m.fg }}; background:{{ m.bg }}; border:1px solid {{ m.bd }};">{{ m.state }}</span>
+                </div>
+                <div class="s-bio" style="aspect-ratio:1; margin-top:9px; display:flex; align-items:center; justify-content:center;">
+                  <sc-if value="{{ m.hasScan }}" hint-placeholder-val="{{ true }}">
+                    <div class="s-bio-scan"></div>
+                  </sc-if>
+                  <span style="font-size:7.5px; font-weight:800; letter-spacing:.14em; color:#48555b; text-align:center; padding:0 8px;">{{ m.ph }}</span>
+                  <div style="position:absolute; bottom:0; left:0; right:0; background:rgba(7,9,11,.85); padding:3px 7px; display:flex; justify-content:space-between;">
+                    <span style="font-size:7.5px; font-family:'JetBrains Mono',monospace; color:{{ m.tone }};">{{ m.acq }}</span>
+                    <span style="font-size:7.5px; font-family:'JetBrains Mono',monospace; color:#5b686e;">{{ m.q }}</span>
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; margin-top:8px;">
+                  <sc-for list="{{ m.rows }}" as="r" hint-placeholder-count="5">
+                    <div style="display:flex; justify-content:space-between; gap:8px; border-bottom:1px solid #14191c; padding:5px 0;">
+                      <span style="font-size:9px; font-weight:700; letter-spacing:.06em; color:#4a565b;">{{ r.k }}</span>
+                      <span style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:{{ r.fg }}; text-align:right;">{{ r.v }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- MATCH -->
+        <div class="s-rise" style="background:#0d1114; border:1px solid {{ match.frame }};">
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #1b2227; background:{{ match.headBg }}; flex-wrap:wrap;">
+            <span style="font-size:8.5px; font-weight:900; letter-spacing:.2em; color:#12d18e;">BIOMETRIC MATCH</span>
+            <span style="font-size:12px; font-weight:900; letter-spacing:.1em; color:{{ match.fg }};">// {{ match.state }}</span>
+            <span style="flex:1;"></span>
+            <span style="font-size:9.5px; font-family:'JetBrains Mono',monospace; color:#5b686e;">QUERY {{ match.query }} · {{ match.engine }}</span>
+          </div>
+          <div style="display:grid; grid-template-columns:168px minmax(0,1.1fr) minmax(0,1fr); gap:1px; background:#1b2227;">
+            <div style="background:#0d1114; padding:12px;">
+              <div style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b;">REFERENCE PHOTO</div>
+              <div class="s-ph" style="aspect-ratio:3/4; margin-top:7px; font-size:7.5px;">PHOTO DE RÉFÉRENCE<br>BASE ATHENA-BIO</div>
+              <div style="margin-top:9px;">
+                <div style="display:flex; justify-content:space-between;">
+                  <span style="font-size:8px; font-weight:800; letter-spacing:.14em; color:#4a565b;">CONFIDENCE</span>
+                  <span style="font-size:11px; font-weight:900; font-family:'JetBrains Mono',monospace; color:{{ match.fg }};">{{ match.score }}</span>
+                </div>
+                <div style="height:4px; background:#14191c; margin-top:5px;"><div class="s-bar" style="height:4px; width:{{ match.pct }}; background:{{ match.fg }};"></div></div>
+                <div style="font-size:8.5px; font-family:'JetBrains Mono',monospace; color:#4a565b; margin-top:5px;">SEUIL CONFIRMÉ ≥ 92.0</div>
+              </div>
+            </div>
+            <div style="background:#0d1114; padding:12px; min-width:0;">
+              <div style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b;">IDENTITÉ CORRESPONDANTE</div>
+              <div style="display:flex; flex-direction:column; margin-top:8px;">
+                <sc-for list="{{ match.identity }}" as="d" hint-placeholder-count="7">
+                  <div style="display:flex; justify-content:space-between; gap:10px; border-bottom:1px solid #14191c; padding:6px 0;">
+                    <span style="font-size:9.5px; font-weight:700; letter-spacing:.06em; color:#5b686e;">{{ d.k }}</span>
+                    <span style="font-size:10.5px; font-weight:700; font-family:{{ d.ff }}; color:{{ d.fg }}; text-align:right;">{{ d.v }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#0d1114; padding:12px; min-width:0;">
+              <div style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b;">SCORES PAR MODALITÉ</div>
+              <div style="display:flex; flex-direction:column; gap:8px; margin-top:9px;">
+                <sc-for list="{{ match.modalityScores }}" as="s" hint-placeholder-count="4">
+                  <div>
+                    <div style="display:flex; justify-content:space-between;">
+                      <span style="font-size:9.5px; font-weight:800; letter-spacing:.08em; color:#a9b6bc;">{{ s.k }}</span>
+                      <span style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:{{ s.fg }};">{{ s.v }}</span>
+                    </div>
+                    <div style="height:3px; background:#14191c; margin-top:4px;"><div class="s-bar" style="height:3px; width:{{ s.pct }}; background:{{ s.fg }};"></div></div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b; margin-top:13px;">DOSSIERS SSE LIÉS</div>
+              <div style="display:flex; flex-direction:column; gap:5px; margin-top:7px;">
+                <sc-for list="{{ match.linkedCases }}" as="l" hint-placeholder-count="3">
+                  <div class="s-row" style="display:flex; align-items:center; gap:9px; border:1px solid #14191c; padding:6px 8px;">
+                    <span style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#12d18e; white-space:nowrap;">{{ l.id }}</span>
+                    <span style="font-size:10px; font-weight:700; color:#a9b6bc; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ l.name }}</span>
+                    <span style="flex:1;"></span>
+                    <span style="font-size:9px; font-family:'JetBrains Mono',monospace; color:#5b686e; white-space:nowrap;">{{ l.dtg }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="border-top:1px solid #1b2227; padding:9px 13px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b;">WATCHLIST FLAGS</span>
+            <sc-for list="{{ match.flags }}" as="f" hint-placeholder-count="3">
+              <span style="font-size:9.5px; font-weight:900; letter-spacing:.08em; padding:2px 8px; color:{{ f.fg }}; background:{{ f.bg }}; border:1px solid {{ f.bd }};">{{ f.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <!-- ===== SITE EXPLOITATION ===== -->
+      <sc-if value="{{ showSite }}" hint-placeholder-val="{{ false }}">
+        <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227;">
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #1b2227; flex-wrap:wrap;">
+            <span style="font-size:8.5px; font-weight:900; letter-spacing:.2em; color:#12d18e;">SITE EXPLOITATION</span>
+            <span style="font-size:10.5px; font-weight:800; color:#d6dee2;">KAMYSH / B4 — plan d’exploitation par zone</span>
+            <span style="flex:1;"></span>
+            <span style="font-size:9.5px; font-family:'JetBrains Mono',monospace; color:#5b686e;">3 niveaux · 8 zones · 17 éléments · 6 sujets</span>
+          </div>
+          <div style="display:grid; grid-template-columns:246px minmax(0,1fr); gap:1px; background:#1b2227;">
+            <div style="background:#0d1114; padding:12px;">
+              <div style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b;">CROQUIS / IMAGERIE</div>
+              <div class="s-ph" style="aspect-ratio:4/5; margin-top:7px; font-size:7.5px;">PLAN DU SITE ANNOTÉ<br>1600×2000</div>
+              <div style="display:flex; flex-direction:column; margin-top:9px;">
+                <sc-for list="{{ siteMeta }}" as="m" hint-placeholder-count="6">
+                  <div style="display:flex; justify-content:space-between; gap:9px; border-bottom:1px solid #14191c; padding:5px 0;">
+                    <span style="font-size:9px; font-weight:700; letter-spacing:.06em; color:#4a565b;">{{ m.k }}</span>
+                    <span style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#a9b6bc; text-align:right;">{{ m.v }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#0d1114; min-width:0;">
+              <sc-for list="{{ zones }}" as="z" hint-placeholder-count="6">
+                <div style="border-bottom:1px solid #14191c;">
+                  <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#0a0e10;">
+                    <span style="width:4px; height:11px; background:{{ z.tone }};"></span>
+                    <span style="font-size:9.5px; font-weight:900; letter-spacing:.14em; color:#e8eef1;">{{ z.code }}</span>
+                    <span style="font-size:10px; font-weight:700; color:#93a1a8;">{{ z.name }}</span>
+                    <span style="flex:1;"></span>
+                    <span style="font-size:9px; font-family:'JetBrains Mono',monospace; color:#5b686e;">{{ z.counts }}</span>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:6px; padding:9px 12px;">
+                    <sc-for list="{{ z.chips }}" as="c" hint-placeholder-count="4">
+                      <div class="s-row" style="display:flex; align-items:center; gap:7px; border:1px solid #1b2227; padding:4px 8px;">
+                        <span style="font-size:8px; font-weight:900; letter-spacing:.1em; color:{{ c.fg }};">{{ c.kind }}</span>
+                        <span style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#a9b6bc;">{{ c.id }}</span>
+                        <span style="font-size:9.5px; font-weight:600; color:#5b686e;">{{ c.name }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== EVIDENCE ===== -->
+      <sc-if value="{{ showEvidence }}" hint-placeholder-val="{{ false }}">
+        <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227;">
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #1b2227; flex-wrap:wrap;">
+            <span style="font-size:8.5px; font-weight:900; letter-spacing:.2em; color:#12d18e;">EVIDENCE REGISTER</span>
+            <span style="font-size:9.5px; font-family:'JetBrains Mono',monospace; color:#5b686e;">{{ evCount }}</span>
+            <span style="flex:1;"></span>
+            <sc-for list="{{ evCats }}" as="c" hint-placeholder-count="8">
+              <div class="s-btn" onClick="{{ c.go }}" style="height:23px; padding:0 8px; border:1px solid {{ c.bd }}; background:{{ c.bg }}; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                <span style="font-size:8.5px; font-weight:900; letter-spacing:.1em; color:{{ c.fg }};">{{ c.label }}</span>
+                <span style="font-size:8.5px; font-family:'JetBrains Mono',monospace; color:{{ c.nfg }};">{{ c.n }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; min-width:1280px;">
+              <thead>
+                <tr style="background:#0a0e10;">
+                  <sc-for list="{{ evCols }}" as="c" hint-placeholder-count="10">
+                    <th style="padding:0 11px; height:29px; border-bottom:1px solid #1b2227; font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b; white-space:nowrap; text-align:{{ c.al }};">{{ c.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ evidence }}" as="e" hint-placeholder-count="10">
+                  <tr class="s-row" style="cursor:pointer;">
+                    <td style="padding:5px 11px; height:40px; border-bottom:1px solid #14191c;">
+                      <div class="s-ph" style="width:44px; height:28px; font-size:6.5px;">{{ e.thumb }}</div>
+                    </td>
+                    <td style="padding:0 11px; height:40px; border-bottom:1px solid #14191c; font-size:10.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#fff; white-space:nowrap;">{{ e.id }}</td>
+                    <td style="padding:0 11px; height:40px; border-bottom:1px solid #14191c; font-size:10.5px; font-weight:800; color:#e8eef1; white-space:nowrap;">{{ e.name }}</td>
+                    <td style="padding:0 11px; height:40px; border-bottom:1px solid #14191c; font-size:9px; font-weight:900; letter-spacing:.1em; color:#93a1a8; white-space:nowrap;">{{ e.cat }}</td>
+                    <td style="padding:0 11px; height:40px; border-bottom:1px solid #14191c; font-size:10px; font-weight:600; color:#93a1a8; white-space:nowrap;">{{ e.loc }}</td>
+                    <td style="padding:0 11px; height:40px; border-bottom:1px solid #14191c; white-space:nowrap;">
+                      <span style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:{{ e.linkFg }};">{{ e.subject }}</span>
+                    </td>
+                    <td style="padding:0 11px; height:40px; border-bottom:1px solid #14191c; font-size:10px; font-weight:700; color:#93a1a8; white-space:nowrap;">{{ e.by }}</td>
+                    <td style="padding:0 11px; height:40px; border-bottom:1px solid #14191c; font-size:10px; font-weight:500; font-family:'JetBrains Mono',monospace; color:#5b686e; white-space:nowrap;">{{ e.dtg }}</td>
+                    <td style="padding:0 11px; height:40px; border-bottom:1px solid #14191c; white-space:nowrap;">
+                      <span style="display:inline-block; font-size:9.5px; line-height:15px; font-weight:900; letter-spacing:.08em; padding:1px 7px; color:{{ e.sfg }}; background:{{ e.sbg }}; border:1px solid {{ e.sbd }};">{{ e.status }}</span>
+                    </td>
+                    <td style="padding:0 11px; height:40px; border-bottom:1px solid #14191c; font-size:9px; font-family:'JetBrains Mono',monospace; color:#5b686e; white-space:nowrap;">{{ e.source }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CHAIN OF CUSTODY -->
+        <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227;">
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #1b2227; flex-wrap:wrap;">
+            <span style="font-size:8.5px; font-weight:900; letter-spacing:.2em; color:#12d18e;">CHAIN OF CUSTODY</span>
+            <span style="font-size:10.5px; font-weight:800; font-family:'JetBrains Mono',monospace; color:#d6dee2;">{{ cocRef }}</span>
+            <span style="flex:1;"></span>
+            <span style="font-size:9.5px; font-weight:900; letter-spacing:.1em; color:#e0a233;">ARCHIVAGE EN ATTENTE</span>
+          </div>
+          <div style="padding:16px 13px 8px 13px; overflow-x:auto;">
+            <div style="display:flex; min-width:960px;">
+              <sc-for list="{{ custody }}" as="c" hint-placeholder-count="5">
+                <div style="flex:1; min-width:0; padding-right:14px;">
+                  <div style="display:flex; align-items:center;">
+                    <div style="width:11px; height:11px; background:{{ c.dot }}; flex-shrink:0;"></div>
+                    <div style="flex:1; height:1px; background:{{ c.line }};"></div>
+                  </div>
+                  <div style="padding-top:10px;">
+                    <div style="font-size:9.5px; font-weight:900; letter-spacing:.16em; color:{{ c.fg }};">{{ c.step }}</div>
+                    <div style="font-size:9.5px; font-family:'JetBrains Mono',monospace; color:#a9b6bc; margin-top:6px;">{{ c.dtg }}</div>
+                    <div style="font-size:10px; font-weight:800; color:#e8eef1; margin-top:4px;">{{ c.by }}</div>
+                    <div style="font-size:9px; font-family:'JetBrains Mono',monospace; color:#5b686e; margin-top:3px;">{{ c.ref }}</div>
+                    <div style="font-size:9.5px; color:#6c7a80; margin-top:6px; line-height:1.5;">{{ c.note }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== AUTHENTICATION ===== -->
+      <sc-if value="{{ showAuth }}" hint-placeholder-val="{{ false }}">
+        <div class="s-rise" style="background:#0d1114; border:1px solid {{ auth.frame }};">
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #1b2227; background:{{ auth.headBg }}; flex-wrap:wrap;">
+            <span style="font-size:8.5px; font-weight:900; letter-spacing:.2em; color:#12d18e;">TERMINAL AUTHENTICATION</span>
+            <span style="font-size:12px; font-weight:900; letter-spacing:.1em; color:{{ auth.fg }};">STATUS // {{ auth.status }}</span>
+            <span style="flex:1;"></span>
+            <span style="font-size:9.5px; font-family:'JetBrains Mono',monospace; color:#5b686e;">{{ auth.subject }}</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:1px; background:#1b2227;">
+            <sc-for list="{{ auth.fields }}" as="f" hint-placeholder-count="7">
+              <div style="background:#0d1114; padding:10px 12px;">
+                <div style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b;">{{ f.k }}</div>
+                <div style="font-size:12px; font-weight:800; font-family:'JetBrains Mono',monospace; color:{{ f.fg }}; margin-top:5px; word-break:break-all;">{{ f.v }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="border-top:1px solid #1b2227; padding:11px 13px; display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:9px;">
+            <sc-for list="{{ auth.checks }}" as="c" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:9px; border:1px solid {{ c.bd }}; background:{{ c.bg }}; padding:7px 10px;">
+                <span style="width:14px; height:14px; border:1px solid {{ c.fg }}; color:{{ c.fg }}; font-size:9px; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0;">{{ c.mark }}</span>
+                <div style="min-width:0;">
+                  <div style="font-size:9.5px; font-weight:900; letter-spacing:.1em; color:{{ c.fg }};">{{ c.label }}</div>
+                  <div style="font-size:9px; color:#6c7a80; margin-top:3px;">{{ c.note }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227;">
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #1b2227;">
+            <span style="font-size:8.5px; font-weight:900; letter-spacing:.2em; color:#12d18e;">TERMINAL REGISTRY</span>
+            <span style="font-size:9.5px; font-family:'JetBrains Mono',monospace; color:#5b686e;">5 terminaux · 1 non enregistré</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; min-width:1080px;">
+              <thead>
+                <tr style="background:#0a0e10;">
+                  <sc-for list="{{ termCols }}" as="c" hint-placeholder-count="9">
+                    <th style="padding:0 11px; height:29px; border-bottom:1px solid #1b2227; font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b; white-space:nowrap; text-align:{{ c.al }};">{{ c.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ terminals }}" as="t" hint-placeholder-count="5">
+                  <tr class="s-row">
+                    <td style="padding:0 11px; height:36px; border-bottom:1px solid #14191c; font-size:10.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#fff; white-space:nowrap;">{{ t.id }}</td>
+                    <td style="padding:0 11px; height:36px; border-bottom:1px solid #14191c; font-size:10px; font-weight:700; color:#93a1a8; white-space:nowrap;">{{ t.model }}</td>
+                    <td style="padding:0 11px; height:36px; border-bottom:1px solid #14191c; font-size:10px; font-weight:500; font-family:'JetBrains Mono',monospace; color:#93a1a8; white-space:nowrap;">{{ t.serial }}</td>
+                    <td style="padding:0 11px; height:36px; border-bottom:1px solid #14191c; font-size:10px; font-weight:700; color:#93a1a8; white-space:nowrap;">{{ t.holder }}</td>
+                    <td style="padding:0 11px; height:36px; border-bottom:1px solid #14191c; font-size:10px; font-weight:500; font-family:'JetBrains Mono',monospace; color:#5b686e; white-space:nowrap;">{{ t.key }}</td>
+                    <td style="padding:0 11px; height:36px; border-bottom:1px solid #14191c; font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#93a1a8; text-align:right; white-space:nowrap;">{{ t.acq }}</td>
+                    <td style="padding:0 11px; height:36px; border-bottom:1px solid #14191c; font-size:10px; font-weight:500; font-family:'JetBrains Mono',monospace; color:#5b686e; white-space:nowrap;">{{ t.last }}</td>
+                    <td style="padding:0 11px; height:36px; border-bottom:1px solid #14191c; white-space:nowrap;">
+                      <span style="display:inline-block; font-size:9.5px; line-height:15px; font-weight:900; letter-spacing:.08em; padding:1px 7px; color:{{ t.fg }}; background:{{ t.bg }}; border:1px solid {{ t.bd }};">{{ t.state }}</span>
+                    </td>
+                    <td style="padding:0 11px; height:36px; border-bottom:1px solid #14191c; font-size:9.5px; font-weight:600; color:#6c7a80;">{{ t.note }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== ACTIVITY LOG (CONSOLE) ===== -->
+      <sc-if value="{{ showActivity }}" hint-placeholder-val="{{ false }}">
+        <div class="s-rise" style="background:#080b0c; border:1px solid #1b2227;">
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #1b2227; background:#0a0e10; flex-wrap:wrap;">
+            <span style="font-size:8.5px; font-weight:900; letter-spacing:.2em; color:#12d18e;">AUTHENTICATION LOG</span>
+            <span style="font-size:9.5px; font-family:'JetBrains Mono',monospace; color:#5b686e;">flux ARMA 3 → ATHENA · 48 événements · temps réel</span>
+            <span style="flex:1;"></span>
+            <span class="s-pulse" style="width:5px; height:5px; border-radius:50%; background:#12d18e;"></span>
+            <span style="font-size:9px; font-weight:800; letter-spacing:.12em; color:#12d18e;">STREAMING</span>
+          </div>
+          <div style="padding:8px 0; overflow-x:auto;">
+            <table style="width:100%; min-width:1120px; font-family:'JetBrains Mono',monospace;">
+              <thead>
+                <tr>
+                  <sc-for list="{{ logCols }}" as="c" hint-placeholder-count="7">
+                    <th style="padding:0 11px; height:24px; font-size:7.5px; font-weight:700; letter-spacing:.18em; color:#3a464c; white-space:nowrap; text-align:{{ c.al }};">{{ c.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ logs }}" as="l" hint-placeholder-count="14">
+                  <tr class="s-row">
+                    <td style="padding:0 11px; height:26px; font-size:10px; font-weight:500; color:#5b686e; white-space:nowrap;">{{ l.dtg }}</td>
+                    <td style="padding:0 11px; height:26px; font-size:10px; font-weight:700; color:{{ l.tfg }}; white-space:nowrap;">{{ l.terminal }}</td>
+                    <td style="padding:0 11px; height:26px; font-size:10px; font-weight:500; color:#93a1a8; white-space:nowrap;">{{ l.op }}</td>
+                    <td style="padding:0 11px; height:26px; font-size:10px; font-weight:500; color:#93a1a8; white-space:nowrap;">{{ l.subject }}</td>
+                    <td style="padding:0 11px; height:26px; font-size:10px; font-weight:700; color:{{ l.afg }}; white-space:nowrap;">{{ l.action }}</td>
+                    <td style="padding:0 11px; height:26px; font-size:10px; font-weight:700; color:{{ l.rfg }}; white-space:nowrap;">{{ l.result }}</td>
+                    <td style="padding:0 11px; height:26px; font-size:10px; font-weight:500; color:#5b686e; text-align:right; white-space:nowrap;">{{ l.code }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <div style="border-top:1px solid #14191c; padding:7px 13px; display:flex; gap:16px; flex-wrap:wrap;">
+            <sc-for list="{{ logLegend }}" as="g" hint-placeholder-count="4">
+              <span style="font-size:9px; font-weight:700; font-family:'JetBrains Mono',monospace; color:{{ g.fg }};">{{ g.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== RELATIONSHIPS ===== -->
+      <sc-if value="{{ showRel }}" hint-placeholder-val="{{ false }}">
+        <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227;">
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #1b2227; flex-wrap:wrap;">
+            <span style="font-size:8.5px; font-weight:900; letter-spacing:.2em; color:#12d18e;">RELATIONSHIP GRAPH</span>
+            <span style="font-size:10.5px; font-weight:800; color:#d6dee2;">SUBJECT ↔ LOCATION ↔ DEVICE ↔ DOCUMENT ↔ BIOMETRIC</span>
+            <span style="flex:1;"></span>
+            <div class="s-btn" style="height:23px; padding:0 9px; border:1px solid #1b2227; background:#0a0e10; display:flex; align-items:center; font-size:9px; font-weight:800; letter-spacing:.1em; color:#93a1a8; cursor:pointer;" style-hover="border-color:#12d18e; color:#12d18e;">CRÉER UN LIEN</div>
+          </div>
+          <div style="padding:14px 13px; overflow-x:auto;">
+            <div style="display:flex; align-items:stretch; gap:0; min-width:1020px;">
+              <sc-for list="{{ graphCols }}" as="g" hint-placeholder-count="5">
+                <div style="flex:1; min-width:0; display:flex;">
+                  <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:7px; padding-bottom:9px; border-bottom:1px solid {{ g.tone }};">
+                      <span style="width:4px; height:10px; background:{{ g.tone }};"></span>
+                      <span style="font-size:8.5px; font-weight:900; letter-spacing:.16em; color:#a9b6bc;">{{ g.label }}</span>
+                      <span style="flex:1;"></span>
+                      <span style="font-size:9px; font-family:'JetBrains Mono',monospace; color:#4a565b;">{{ g.n }}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:6px; padding:9px 10px 0 0;">
+                      <sc-for list="{{ g.nodes }}" as="n" hint-placeholder-count="4">
+                        <div class="s-row" style="border:1px solid {{ n.bd }}; background:{{ n.bg }}; padding:7px 9px;">
+                          <div style="display:flex; align-items:baseline; gap:7px;">
+                            <span style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:{{ n.idFg }}; white-space:nowrap;">{{ n.id }}</span>
+                            <span style="font-size:10px; font-weight:800; color:#d6dee2; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ n.name }}</span>
+                          </div>
+                          <div style="display:flex; align-items:center; justify-content:space-between; gap:7px; margin-top:5px;">
+                            <span style="font-size:9px; color:#5b686e; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ n.detail }}</span>
+                            <span style="font-size:8.5px; font-weight:900; letter-spacing:.06em; padding:0 5px; color:{{ n.cfg }}; background:{{ n.cbg }}; border:1px solid {{ n.cbd }}; white-space:nowrap;">{{ n.conf }}</span>
+                          </div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <div style="width:1px; background:#1b2227; flex-shrink:0;"></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="border-top:1px solid #1b2227; padding:11px 13px;">
+            <div style="font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b;">LIENS ÉTABLIS</div>
+            <div style="overflow-x:auto; margin-top:8px;">
+              <table style="width:100%; min-width:1000px;">
+                <thead>
+                  <tr style="background:#0a0e10;">
+                    <sc-for list="{{ linkCols }}" as="c" hint-placeholder-count="7">
+                      <th style="padding:0 11px; height:27px; border-bottom:1px solid #1b2227; font-size:7.5px; font-weight:800; letter-spacing:.18em; color:#4a565b; white-space:nowrap; text-align:{{ c.al }};">{{ c.label }}</th>
+                    </sc-for>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{ links }}" as="l" hint-placeholder-count="8">
+                    <tr class="s-row">
+                      <td style="padding:0 11px; height:33px; border-bottom:1px solid #14191c; font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#fff; white-space:nowrap;">{{ l.a }}</td>
+                      <td style="padding:0 11px; height:33px; border-bottom:1px solid #14191c; font-size:9px; font-weight:900; letter-spacing:.1em; color:#12d18e; white-space:nowrap;">{{ l.rel }}</td>
+                      <td style="padding:0 11px; height:33px; border-bottom:1px solid #14191c; font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#fff; white-space:nowrap;">{{ l.b }}</td>
+                      <td style="padding:0 11px; height:33px; border-bottom:1px solid #14191c; font-size:10px; font-weight:600; color:#93a1a8;">{{ l.basis }}</td>
+                      <td style="padding:0 11px; height:33px; border-bottom:1px solid #14191c; font-size:9px; font-family:'JetBrains Mono',monospace; color:#5b686e; white-space:nowrap;">{{ l.source }}</td>
+                      <td style="padding:0 11px; height:33px; border-bottom:1px solid #14191c; white-space:nowrap;">
+                        <span style="display:inline-block; font-size:9.5px; line-height:15px; font-weight:900; letter-spacing:.08em; padding:1px 7px; color:{{ l.fg }}; background:{{ l.bg }}; border:1px solid {{ l.bd }};">{{ l.conf }}</span>
+                      </td>
+                      <td style="padding:0 11px; height:33px; border-bottom:1px solid #14191c; font-size:10px; font-weight:600; color:#93a1a8; text-align:right; white-space:nowrap;">{{ l.by }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- ===== RAIL ===== -->
+    <div style="display:flex; flex-direction:column; gap:14px; position:sticky; top:186px;">
+      <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227; padding:12px 14px;">
+        <div style="font-size:7.5px; font-weight:800; letter-spacing:.2em; color:#12d18e;">CASE STATUS</div>
+        <div style="font-size:15px; font-weight:900; letter-spacing:.02em; color:#fff; margin-top:7px;">IDENTITY EXPLOITATION</div>
+        <div style="height:4px; background:#14191c; margin-top:10px;"><div class="s-bar" style="height:4px; width:58%; background:#12d18e;"></div></div>
+        <div style="font-size:9px; font-family:'JetBrains Mono',monospace; color:#5b686e; margin-top:6px;">7 / 12 sujets exploités · 58 %</div>
+        <div style="display:flex; flex-direction:column; margin-top:11px;">
+          <sc-for list="{{ railCase }}" as="c" hint-placeholder-count="6">
+            <div style="display:flex; justify-content:space-between; gap:9px; border-bottom:1px solid #14191c; padding:5px 0;">
+              <span style="font-size:9.5px; font-weight:700; color:#4a565b;">{{ c.k }}</span>
+              <span style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:{{ c.fg }}; text-align:right;">{{ c.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227; padding:12px 14px;">
+        <div style="font-size:7.5px; font-weight:800; letter-spacing:.2em; color:#4a565b;">SITE DATA</div>
+        <div style="display:flex; flex-direction:column; margin-top:9px;">
+          <sc-for list="{{ railSite }}" as="s" hint-placeholder-count="8">
+            <div style="display:flex; justify-content:space-between; gap:9px; border-bottom:1px solid #14191c; padding:5px 0;">
+              <span style="font-size:9.5px; font-weight:700; color:#4a565b;">{{ s.k }}</span>
+              <span style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#a9b6bc; text-align:right;">{{ s.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227; padding:12px 14px;">
+        <div style="font-size:7.5px; font-weight:800; letter-spacing:.2em; color:#4a565b;">COLLECTION SUMMARY</div>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+          <sc-for list="{{ railCollection }}" as="c" hint-placeholder-count="7">
+            <div>
+              <div style="display:flex; justify-content:space-between; gap:9px;">
+                <span style="font-size:9.5px; font-weight:800; letter-spacing:.06em; color:#a9b6bc;">{{ c.label }}</span>
+                <span style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:#5b686e;">{{ c.txt }}</span>
+              </div>
+              <div style="height:3px; background:#14191c; margin-top:4px;"><div class="s-bar" style="height:3px; width:{{ c.pct }}; background:{{ c.tone }};"></div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227;">
+        <div style="font-size:7.5px; font-weight:800; letter-spacing:.2em; color:#4a565b; padding:12px 14px 0 14px;">RECENT ACTIVITY</div>
+        <div style="display:flex; flex-direction:column; margin-top:9px;">
+          <sc-for list="{{ railActivity }}" as="a" hint-placeholder-count="7">
+            <div class="s-row" style="display:flex; gap:9px; padding:7px 14px; border-top:1px solid #14191c;">
+              <span style="width:4px; height:4px; border-radius:50%; background:{{ a.dot }}; flex-shrink:0; margin-top:5px;"></span>
+              <div style="min-width:0;">
+                <div style="font-size:9.5px; font-weight:700; font-family:'JetBrains Mono',monospace; color:{{ a.fg }}; letter-spacing:.04em;">{{ a.act }}</div>
+                <div style="font-size:9px; color:#5b686e; margin-top:3px;">{{ a.meta }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div class="s-rise" style="background:#0d1114; border:1px solid #1b2227;">
+        <div style="font-size:7.5px; font-weight:800; letter-spacing:.2em; color:#4a565b; padding:12px 14px 0 14px;">EXPLOITATION FLAGS</div>
+        <div style="display:flex; flex-direction:column; margin-top:9px;">
+          <sc-for list="{{ railFlags }}" as="f" hint-placeholder-count="5">
+            <div class="s-row" style="display:flex; align-items:center; gap:9px; padding:8px 14px; border-top:1px solid #14191c;">
+              <span class="s-pulse" style="width:4px; height:4px; border-radius:50%; background:{{ f.dot }}; flex-shrink:0;"></span>
+              <div style="min-width:0; flex:1;">
+                <div style="font-size:10px; font-weight:800; color:#d6dee2;">{{ f.txt }}</div>
+                <div style="font-size:9px; color:#5b686e; margin-top:3px;">{{ f.sub }}</div>
+              </div>
+              <span style="font-size:8.5px; font-weight:900; letter-spacing:.08em; padding:1px 6px; color:{{ f.fg }}; background:{{ f.bg }}; border:1px solid {{ f.bd }}; white-space:nowrap;">{{ f.tag }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:#8f1d1d; color:#fff; height:20px; display:flex; align-items:center; justify-content:center; letter-spacing:.34em; font-size:8.5px; font-weight:900;">{{ classification }} // SSE IDENTITY EXPLOITATION</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;classification&quot;: {&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;SECRET // REL TO USA, FVEY&quot;,&quot;options&quot;:[&quot;UNCLASSIFIED&quot;,&quot;CONFIDENTIAL&quot;,&quot;SECRET // REL TO USA, FVEY&quot;,&quot;TOP SECRET // SCI&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Dossier&quot;}, &quot;showScanEffect&quot;: {&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Console&quot;}, &quot;denseRows&quot;: {&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Console&quot;}}">
+const MONO = "'JetBrains Mono',monospace";
+const SANS = "'Archivo',sans-serif";
+const T = {
+  ok:{fg:'#3ddc9a',bg:'rgba(18,209,142,.10)',bd:'rgba(18,209,142,.30)'},
+  warn:{fg:'#e0a233',bg:'rgba(224,162,51,.10)',bd:'rgba(224,162,51,.30)'},
+  bad:{fg:'#ff6b5e',bg:'rgba(255,107,94,.10)',bd:'rgba(255,107,94,.30)'},
+  info:{fg:'#6bb2f0',bg:'rgba(107,178,240,.10)',bd:'rgba(107,178,240,.28)'},
+  neut:{fg:'#93a1a8',bg:'rgba(255,255,255,.04)',bd:'rgba(255,255,255,.10)'}
+};
+const MT = { 'CONFIRMED MATCH':T.ok, 'PARTIAL MATCH':T.warn, 'POSSIBLE MATCH':T.warn, 'NO MATCH':T.neut, 'PENDING':T.info };
+const AT = { 'SIGNED / VALID':T.ok, 'SIGNED / INVALID':T.bad, 'UNSIGNED':T.warn, 'UNKNOWN TERMINAL':T.bad, 'PENDING':T.info };
+
+const SUBJECTS = [
+  { id:'SSE-26-0042-P01', name:'ZAHIROV, Ruslan A.', alias:'« KHASSAN »', nat:'RUS', sex:'M', dob:'14 MAR 1987',
+    match:'CONFIRMED MATCH', score:'97.4', auth:'SIGNED / VALID', terminal:'SEEK-02', collector:'EAGLE-21',
+    dtg:'301425Z JUL 26', loc:'B4 · R+1 · bureau nord', bio:['F','L','R','P'], thumb:'P01',
+    vName:'ZAHIROV, Ruslan Anatolievitch', vRef:'ATH-BIO-004712', vStatus:'WATCHLIST TIER 1',
+    flags:['WATCHLIST T1','RÉSEAU LOGISTIQUE','ARMÉ À L’INTERPELLATION'], authCode:'A7F4-91C2-8E11' },
+  { id:'SSE-26-0042-P02', name:'MAMEDOV, Idris', alias:'aucun alias déclaré', nat:'AZE', sex:'M', dob:'02 SEP 1994',
+    match:'PARTIAL MATCH', score:'71.8', auth:'SIGNED / VALID', terminal:'SEEK-02', collector:'EAGLE-21',
+    dtg:'301438Z JUL 26', loc:'B4 · RDC · hall', bio:['F','L','R','—'], thumb:'P02',
+    vName:'MAMEDOV, I. (probable)', vRef:'ATH-BIO-011904', vStatus:'À VÉRIFIER',
+    flags:['EMPREINTES INDISPONIBLES','RECOUPEMENT E004'], authCode:'C219-77AB-4D30' },
+  { id:'SSE-26-0042-P03', name:'Non déclarée', alias:'« LE CHAUFFEUR »', nat:'INCONNUE', sex:'M', dob:'inconnue',
+    match:'POSSIBLE MATCH', score:'64.2', auth:'UNSIGNED', terminal:'SEEK-04', collector:'HAVOC-09',
+    dtg:'301502Z JUL 26', loc:'Périmètre est · véhicule', bio:['F','—','—','P'], thumb:'P03',
+    vName:'candidat unique — non retenu', vRef:'ATH-BIO-020118', vStatus:'NON VÉRIFIÉ',
+    flags:['DONNÉE NON SIGNÉE','IDENTITÉ REFUSÉE','À RECONTRÔLER'], authCode:'—' },
+  { id:'SSE-26-0042-P04', name:'SAFAROV, Elmir', alias:'« ELMI »', nat:'AZE', sex:'M', dob:'27 JAN 1990',
+    match:'CONFIRMED MATCH', score:'94.1', auth:'SIGNED / VALID', terminal:'SEEK-02', collector:'EAGLE-21',
+    dtg:'301511Z JUL 26', loc:'B4 · sous-sol technique', bio:['F','L','R','P'], thumb:'P04',
+    vName:'SAFAROV, Elmir T.', vRef:'ATH-BIO-007733', vStatus:'ANTÉCÉDENT SSE',
+    flags:['DOSSIER SSE-26-0031','PRÉCURSEURS CHIMIQUES'], authCode:'E884-1C05-77F2' },
+  { id:'SSE-26-0042-P05', name:'Non déclarée', alias:'aucun', nat:'INCONNUE', sex:'F', dob:'inconnue',
+    match:'NO MATCH', score:'—', auth:'SIGNED / VALID', terminal:'SEEK-02', collector:'BISHOP-14',
+    dtg:'301524Z JUL 26', loc:'B4 · R+1 · cuisine', bio:['F','L','R','P'], thumb:'P05',
+    vName:'aucune correspondance base', vRef:'—', vStatus:'INCONNUE EN BASE',
+    flags:['PREMIÈRE ACQUISITION','LIBÉRÉE SUR PLACE'], authCode:'B402-6E19-30AC' },
+  { id:'SSE-26-0042-P06', name:'Individu en fuite', alias:'« LE TROISIÈME »', nat:'INCONNUE', sex:'M', dob:'inconnue',
+    match:'PENDING', score:'—', auth:'UNKNOWN TERMINAL', terminal:'SEEK-?? ', collector:'GHOST-07',
+    dtg:'301531Z JUL 26', loc:'Périmètre est · fuite', bio:['—','—','—','—'], thumb:'—',
+    vName:'acquisition partielle rejetée', vRef:'—', vStatus:'NON EXPLOITABLE',
+    flags:['TERMINAL NON ENREGISTRÉ','SIGNALEMENT DIFFUSÉ'], authCode:'invalide' }
+];
+
+class Component extends DCLogic {
+  state = { tab:'SUBJECTS', sel:'SSE-26-0042-P01' };
+
+  renderVals() {
+    const st = this.state;
+    const s = SUBJECTS.find(x => x.id === st.sel) || SUBJECTS[0];
+    const mt = MT[s.match] || T.neut;
+    const at = AT[s.auth] || T.neut;
+    const isConfirmed = s.match === 'CONFIRMED MATCH';
+    const vt = isConfirmed ? T.ok : (s.match === 'NO MATCH' ? T.neut : T.warn);
+
+    const bioKeyTone = k => k === '—' ? T.bad : T.ok;
+    const tabDefs = [
+      ['OVERVIEW','—'],['SUBJECTS','6'],['BIOMETRICS','21'],['SITE','17'],
+      ['EVIDENCE','17'],['AUTHENTICATION','5'],['ACTIVITY','48'],['RELATIONSHIPS','19']
+    ];
+
+    const modalityFor = () => {
+      const has = c => s.bio.indexOf(c) !== -1;
+      const mk = (label, code, ok, q, acqSuffix, res, ph) => {
+        const t = ok ? T.ok : T.bad;
+        return {
+          label: label, state: ok ? 'CAPTURED' : 'NOT AVAILABLE',
+          fg:t.fg, bg:t.bg, bd:t.bd, tone: ok ? '#12d18e' : '#ff6b5e',
+          hasScan: ok, ph: ph, q: ok ? q : '—',
+          acq: ok ? s.id.replace('-P','-B') + acqSuffix : '—',
+          rows: [
+            { k:'QUALITÉ', v: ok ? q : '—', fg: ok ? '#3ddc9a' : '#ff6b5e' },
+            { k:'DTG', v: ok ? s.dtg.slice(0,7) : '—', fg:'#a9b6bc' },
+            { k:'TERMINAL', v: ok ? s.terminal : '—', fg:'#a9b6bc' },
+            { k:'OPÉRATEUR', v: ok ? s.collector : '—', fg:'#a9b6bc' },
+            { k:'ACQ ID', v: ok ? code : '—', fg:'#a9b6bc' },
+            { k:'EXPLOITATION', v: ok ? res : 'NON ACQUIS', fg: ok ? '#3ddc9a' : '#ff6b5e' }
+          ]
+        };
+      };
+      return [
+        mk('FACE','F-'+s.thumb, has('F'), 'NFIQ 2 · 84', '-F1', isConfirmed ? 'MATCH 97.4' : 'REQUÊTE ENVOYÉE', 'CAPTURE VISAGE<br>1280×1706'),
+        mk('IRIS LEFT','IL-'+s.thumb, has('L'), 'ISO 19794-6 · 71', '-IL', isConfirmed ? 'MATCH 96.1' : 'PAS DE RÉSULTAT', 'IRIS GAUCHE<br>640×480 NIR'),
+        mk('IRIS RIGHT','IR-'+s.thumb, has('R'), 'ISO 19794-6 · 68', '-IR', isConfirmed ? 'MATCH 95.7' : 'PAS DE RÉSULTAT', 'IRIS DROIT<br>640×480 NIR'),
+        mk('FINGERPRINTS','FP-'+s.thumb, has('P'), 'NFIQ 2 · 62 (8/10)', '-FP', isConfirmed ? 'MATCH 92.8' : 'PARTIEL', 'EMPREINTES<br>8 / 10 DOIGTS')
+      ];
+    };
+
+    return {
+      classification: 'SECRET // REL TO USA, FVEY',
+
+      headerMeta: [
+        { k:'OPERATION', v:'ODIN-04', fg:'#fff' },
+        { k:'SITE', v:'KAMYSH / B4', fg:'#fff' },
+        { k:'GRID', v:'38S MC 4218 7734', fg:'#fff' },
+        { k:'DTG OUVERTURE', v:'301402Z JUL 26', fg:'#fff' },
+        { k:'STATUS', v:'EXPLOITATION', fg:'#12d18e' },
+        { k:'RESPONSABLE', v:'EAGLE-21 · OF-2', fg:'#fff' },
+        { k:'TERMINAUX', v:'SEEK-02 / SEEK-04', fg:'#fff' }
+      ],
+
+      pipeline: [
+        { label:'ARMA 3 / SEEK II', meta:'terminal terrain', dot:'#12d18e', fg:'#12d18e', cls:'s-pulse', arrow:'›' },
+        { label:'ACQUISITION', meta:'21 captures', dot:'#3ddc9a', fg:'#a9b6bc', cls:'', arrow:'›' },
+        { label:'TRANSMISSION', meta:'6 lots · 0 perte', dot:'#3ddc9a', fg:'#a9b6bc', cls:'', arrow:'›' },
+        { label:'ATHENA SSE', meta:'dossier 26-0042', dot:'#3ddc9a', fg:'#a9b6bc', cls:'', arrow:'›' },
+        { label:'IDENTITY EXPLOITATION', meta:'7 / 12 traités', dot:'#e0a233', fg:'#e0a233', cls:'', arrow:'›' },
+        { label:'AUTH / MATCH / ARCHIVE', meta:'2 confirmés · 1 non signé', dot:'#ff6b5e', fg:'#ff6b5e', cls:'', arrow:'' }
+      ],
+
+      metrics: [
+        { k:'SUBJECTS', v:'06', note:'contrôlés', fg:'#fff' },
+        { k:'BIOMETRIC CAPTURES', v:'21', note:'/ 24 attendues', fg:'#fff' },
+        { k:'CONFIRMED MATCHES', v:'02', note:'≥ 92.0', fg:'#3ddc9a' },
+        { k:'PENDING ANALYSIS', v:'03', note:'en file', fg:'#e0a233' },
+        { k:'SIGNED RECORDS', v:'04', note:'/ 06 sujets', fg:'#fff' },
+        { k:'FLAGS', v:'05', note:'2 bloquants', fg:'#ff6b5e' }
+      ],
+
+      tabs: tabDefs.map(t => {
+        const on = st.tab === t[0];
+        return {
+          label:t[0], n:t[1],
+          bar: on ? '#12d18e' : 'transparent',
+          bg: on ? '#0f1518' : 'transparent',
+          fg: on ? '#fff' : '#5b686e',
+          nfg: on ? '#12d18e' : '#3a464c',
+          go: () => this.setState({ tab:t[0] })
+        };
+      }),
+
+      showRoster: st.tab === 'SUBJECTS' || st.tab === 'OVERVIEW',
+      showSubject: st.tab === 'SUBJECTS' || st.tab === 'BIOMETRICS' || st.tab === 'OVERVIEW',
+      showBio: st.tab === 'BIOMETRICS' || st.tab === 'SUBJECTS',
+
+      subjectCount: SUBJECTS.length + ' sujets · 4 signés · 1 non signé · 1 terminal inconnu',
+      rosterFilters: ['MATCH','TERMINAL','SIGNATURE'],
+      rosterCols: [
+        { label:'', al:'left' }, { label:'SUBJECT ID', al:'left' }, { label:'IDENTITÉ DÉCLARÉE', al:'left' },
+        { label:'NAT.', al:'left' }, { label:'BIOMÉTRIE', al:'left' }, { label:'MATCH', al:'left' },
+        { label:'SCORE', al:'right' }, { label:'SIGNATURE', al:'left' }, { label:'TERMINAL', al:'left' },
+        { label:'COLLECTEUR', al:'left' }, { label:'DTG', al:'left' }, { label:'LIEU DE CONTRÔLE', al:'left' }
+      ],
+      roster: SUBJECTS.map(x => {
+        const m = MT[x.match] || T.neut, a = AT[x.auth] || T.neut;
+        return {
+          id:x.id, name:x.name, alias:x.alias, nat:x.nat + ' · ' + x.sex, thumb:x.thumb,
+          match:x.match, score:x.score, auth:x.auth, terminal:x.terminal, collector:x.collector,
+          dtg:x.dtg, loc:x.loc,
+          sourceShort: x.auth === 'UNSIGNED' ? 'SOURCE // OPERATOR' : 'SOURCE // SEEK II',
+          bio: x.bio.map(k => { const t = bioKeyTone(k); return { k: k === '—' ? '·' : k, fg:t.fg, bg:t.bg, bd:t.bd }; }),
+          mfg:m.fg, mbg:m.bg, mbd:m.bd,
+          afg:a.fg, abg:a.bg, abd:a.bd,
+          scoreFg: x.match === 'CONFIRMED MATCH' ? '#3ddc9a' : (x.score === '—' ? '#4a565b' : '#e0a233'),
+          frame: st.sel === x.id ? '#12d18e' : '#1b2227',
+          rowBg: st.sel === x.id ? '#101a1d' : 'transparent',
+          pick: () => this.setState({ sel:x.id })
+        };
+      }),
+
+      sub: {
+        id:s.id, display:s.name + ' · ' + s.alias, dtg:s.dtg, collector:s.collector,
+        matchLabel:'MATCH // ' + s.match, mfg:mt.fg, mbg:mt.bg, mbd:mt.bd,
+        authLabel:'AUTH // ' + s.auth, afg:at.fg, abg:at.bg, abd:at.bd,
+        photoAcq: s.bio.indexOf('F') !== -1 ? s.id.replace('-P','-B') + '-F1' : 'NON ACQUIS',
+        captureMeta: [
+          { k:'TERMINAL', v:s.terminal }, { k:'OPÉRATEUR', v:s.collector },
+          { k:'MISSION', v:'ODIN-04' }, { k:'SOURCE', v: s.auth === 'UNSIGNED' ? 'OPERATOR' : 'SEEK II' }
+        ],
+        declared: [
+          { k:'NOM DÉCLARÉ', v:s.name, ff:SANS, fg:'#e8eef1' },
+          { k:'ALIAS', v:s.alias, ff:SANS, fg:'#a9b6bc' },
+          { k:'NATIONALITÉ', v:s.nat, ff:SANS, fg:'#a9b6bc' },
+          { k:'SEXE', v:s.sex, ff:MONO, fg:'#a9b6bc' },
+          { k:'DATE DE NAISSANCE', v:s.dob, ff:MONO, fg:'#a9b6bc' },
+          { k:'SITE DE COLLECTE', v:s.loc, ff:SANS, fg:'#a9b6bc' },
+          { k:'COORDONNÉES', v:'38S MC 4218 7734', ff:MONO, fg:'#a9b6bc' },
+          { k:'DTG', v:s.dtg, ff:MONO, fg:'#a9b6bc' }
+        ],
+        vTag: isConfirmed ? 'VÉRIFIÉ BIOMÉTRIQUEMENT' : (s.match === 'NO MATCH' ? 'AUCUNE CORRESPONDANCE' : 'NON CONFIRMÉ'),
+        vfg:vt.fg, vbg:vt.bg, vbd:vt.bd,
+        vSource: isConfirmed ? 'SOURCE // BIOMETRIC MATCH · ATHENA-BIO' : 'SOURCE // ATHENA ANALYST · en cours',
+        verified: [
+          { k:'IDENTITÉ RETENUE', v:s.vName, ff:SANS, fg: isConfirmed ? '#3ddc9a' : '#93a1a8' },
+          { k:'RÉFÉRENCE BASE', v:s.vRef, ff:MONO, fg:'#a9b6bc' },
+          { k:'STATUT', v:s.vStatus, ff:SANS, fg: isConfirmed ? '#3ddc9a' : '#e0a233' },
+          { k:'SCORE', v:s.score, ff:MONO, fg: isConfirmed ? '#3ddc9a' : '#e0a233' },
+          { k:'MODALITÉS CONCORDANTES', v: isConfirmed ? 'FACE + IRIS L/R + FP' : (s.score === '—' ? 'aucune' : 'FACE seule'), ff:SANS, fg:'#a9b6bc' },
+          { k:'AUTH CODE', v:s.authCode, ff:MONO, fg: s.auth === 'SIGNED / VALID' ? '#3ddc9a' : '#ff6b5e' },
+          { k:'TERMINAL SIGNATAIRE', v:s.terminal, ff:MONO, fg: s.auth === 'UNKNOWN TERMINAL' ? '#ff6b5e' : '#a9b6bc' },
+          { k:'VALIDÉ PAR', v: isConfirmed ? 'ANALYSTE S2 · 301612Z' : 'en attente', ff:MONO, fg:'#a9b6bc' }
+        ],
+        flags: s.flags.map(f => {
+          const t = /NON SIGNÉE|REFUSÉE|NON ENREGISTRÉ|ARMÉ|T1/.test(f) ? T.bad
+            : /INDISPONIBLES|RECONTRÔLER|CHIMIQUES/.test(f) ? T.warn : T.info;
+          return { label:f, fg:t.fg, bg:t.bg, bd:t.bd };
+        })
+      },
+
+      bioSummary: s.bio.filter(k => k !== '—').length + ' / 4 modalités acquises · terminal ' + s.terminal,
+      modalities: modalityFor(),
+
+      match: {
+        state: s.match,
+        fg: mt.fg, frame: isConfirmed ? 'rgba(18,209,142,.35)' : '#1b2227',
+        headBg: isConfirmed ? 'rgba(18,209,142,.06)' : 'transparent',
+        query: s.id.replace('-P','-Q'), engine: 'ATHENA-BIO 2.4 · MULTI-MODAL',
+        score: s.score, pct: (s.score === '—' ? 4 : parseFloat(s.score)) + '%',
+        identity: [
+          { k:'IDENTITÉ', v:s.vName, ff:SANS, fg: isConfirmed ? '#3ddc9a' : '#93a1a8' },
+          { k:'ALIAS CONNUS', v: isConfirmed ? '« KHASSAN », « R.Z. »' : 'aucun enregistré', ff:SANS, fg:'#a9b6bc' },
+          { k:'RÉFÉRENCE BASE', v:s.vRef, ff:MONO, fg:'#a9b6bc' },
+          { k:'STATUT BASE', v:s.vStatus, ff:SANS, fg: isConfirmed ? '#ff6b5e' : '#e0a233' },
+          { k:'PREMIÈRE SAISIE', v: isConfirmed ? 'SSE-25-0188 · 12 NOV 25' : '—', ff:MONO, fg:'#a9b6bc' },
+          { k:'DERNIÈRE SAISIE', v: isConfirmed ? 'SSE-26-0031 · 04 JUN 26' : '—', ff:MONO, fg:'#a9b6bc' },
+          { k:'OCCURRENCES', v: isConfirmed ? '3 dossiers' : '0', ff:MONO, fg:'#a9b6bc' }
+        ],
+        modalityScores: [
+          { k:'FACE', v: isConfirmed ? '97.4' : (s.score === '—' ? '—' : s.score), pct: isConfirmed ? '97%' : '64%', fg: isConfirmed ? '#3ddc9a' : '#e0a233' },
+          { k:'IRIS LEFT', v: isConfirmed ? '96.1' : '—', pct: isConfirmed ? '96%' : '3%', fg: isConfirmed ? '#3ddc9a' : '#4a565b' },
+          { k:'IRIS RIGHT', v: isConfirmed ? '95.7' : '—', pct: isConfirmed ? '95%' : '3%', fg: isConfirmed ? '#3ddc9a' : '#4a565b' },
+          { k:'FINGERPRINTS', v: isConfirmed ? '92.8' : '—', pct: isConfirmed ? '92%' : '3%', fg: isConfirmed ? '#3ddc9a' : '#4a565b' }
+        ],
+        linkedCases: isConfirmed ? [
+          { id:'SSE-26-0031', name:'Dépôt régional — précurseurs', dtg:'04 JUN 26' },
+          { id:'SSE-25-0188', name:'Contrôle routier axe nord', dtg:'12 NOV 25' },
+          { id:'INT-114', name:'Réseau logistique — 3 nœuds', dtg:'21 JUL 26' }
+        ] : [
+          { id:'—', name:'aucun dossier lié', dtg:'—' }
+        ],
+        flags: (isConfirmed ? [['WATCHLIST TIER 1','bad'],['RECHERCHÉ · MANDAT S2','bad'],['RÉSEAU LOGISTIQUE','warn']] : [['AUCUN FLAG BASE','neut']])
+          .map(f => Object.assign({ label:f[0] }, T[f[1]]))
+      },
+
+      showSite: st.tab === 'SITE',
+      showEvidence: st.tab === 'EVIDENCE',
+      showAuth: st.tab === 'AUTHENTICATION',
+      showActivity: st.tab === 'ACTIVITY' || st.tab === 'OVERVIEW',
+      showRel: st.tab === 'RELATIONSHIPS',
+
+      siteMeta: [
+        { k:'GRID', v:'38S MC 4218 7734' }, { k:'TYPE', v:'ADMINISTRATIF' },
+        { k:'ENTRÉE', v:'301402Z' }, { k:'SÉCURISÉ', v:'301419Z' },
+        { k:'RENDU', v:'301741Z' }, { k:'CBRN', v:'NÉGATIF' }
+      ],
+      zones: [
+        { code:'Z-01', name:'RDC · hall d’entrée', tone:'#6bb2f0', counts:'1 sujet · 2 éléments', chips:[
+          { kind:'SUBJ', id:'P02', name:'MAMEDOV, Idris', fg:'#3ddc9a' },
+          { kind:'DOC', id:'E004', name:'Registre de livraisons', fg:'#6bb2f0' },
+          { kind:'MEDIA', id:'E017', name:'Photographies · 12 vues', fg:'#93a1a8' }
+        ]},
+        { code:'Z-02', name:'R+1 · bureau nord', tone:'#ff6b5e', counts:'1 sujet · 4 éléments', chips:[
+          { kind:'SUBJ', id:'P01', name:'ZAHIROV, R. — watchlist T1', fg:'#ff6b5e' },
+          { kind:'DEV', id:'E007', name:'Portable T480 (actif)', fg:'#e0a233' },
+          { kind:'DEV', id:'E008', name:'Clé USB 32 Go', fg:'#e0a233' },
+          { kind:'DOC', id:'E001', name:'Carnet de liaison', fg:'#6bb2f0' },
+          { kind:'BIO', id:'B01-F1', name:'Acquisition visage P01', fg:'#3ddc9a' }
+        ]},
+        { code:'Z-03', name:'R+1 · cuisine', tone:'#6bb2f0', counts:'1 sujet · 0 élément', chips:[
+          { kind:'SUBJ', id:'P05', name:'Non identifiée — no match', fg:'#93a1a8' }
+        ]},
+        { code:'Z-04', name:'Sous-sol technique', tone:'#ff6b5e', counts:'1 sujet · 3 éléments', chips:[
+          { kind:'SUBJ', id:'P04', name:'SAFAROV, E. — antécédent', fg:'#ff6b5e' },
+          { kind:'MAT', id:'E015', name:'Précurseur chimique · 2 bidons', fg:'#ff6b5e' },
+          { kind:'WPN', id:'E013', name:'Fusil — série effacée', fg:'#e0a233' },
+          { kind:'WPN', id:'E014', name:'240 cartouches 7,62', fg:'#e0a233' }
+        ]},
+        { code:'Z-05', name:'Périmètre est · véhicule', tone:'#e0a233', counts:'1 sujet · 2 éléments', chips:[
+          { kind:'SUBJ', id:'P03', name:'« LE CHAUFFEUR » — non signé', fg:'#ff6b5e' },
+          { kind:'DEV', id:'E009', name:'Téléphone verrouillé', fg:'#e0a233' },
+          { kind:'DEV', id:'E016', name:'Carte SIM régionale', fg:'#e0a233' }
+        ]},
+        { code:'Z-06', name:'Périmètre est · axe de fuite', tone:'#5b686e', counts:'1 sujet · 0 élément', chips:[
+          { kind:'SUBJ', id:'P06', name:'Individu en fuite — terminal inconnu', fg:'#ff6b5e' }
+        ]}
+      ],
+
+      evCount: '17 éléments · 12 liés à un sujet',
+      evCats: ['TOUS','DOCUMENTS','DIGITAL','BIOMETRICS','WEAPONS','MATERIALS','MEDIA','PERSONNEL'].map((k, i) => ({
+        label:k, n: [17,2,4,4,2,1,1,3][i],
+        bd: i === 0 ? 'rgba(18,209,142,.35)' : '#1b2227',
+        bg: i === 0 ? 'rgba(18,209,142,.07)' : '#0a0e10',
+        fg: i === 0 ? '#12d18e' : '#93a1a8',
+        nfg: i === 0 ? '#3ddc9a' : '#4a565b',
+        go: () => this.setState({ tab:'EVIDENCE' })
+      })),
+      evCols: [
+        { label:'', al:'left' }, { label:'EVIDENCE ID', al:'left' }, { label:'DÉSIGNATION', al:'left' },
+        { label:'CATÉGORIE', al:'left' }, { label:'ZONE / LIEU', al:'left' }, { label:'SUJET LIÉ', al:'left' },
+        { label:'COLLECTEUR', al:'left' }, { label:'DTG', al:'left' }, { label:'STATUT', al:'left' }, { label:'SOURCE', al:'left' }
+      ],
+      evidence: [
+        ['E001','Carnet manuscrit de liaison','DOCUMENTS','Z-02 · bureau nord','P01','EAGLE-21','301447Z','Exploité','SEEK II'],
+        ['E004','Registre de livraisons 25-26','DOCUMENTS','Z-01 · hall','P02','HAVOC-09','301452Z','Exploité','OPERATOR'],
+        ['E007','Ordinateur portable — actif','DIGITAL','Z-02 · bureau nord','P01','EAGLE-21','301501Z','En analyse','SEEK II'],
+        ['E008','Clé USB 32 Go','DIGITAL','Z-02 · tiroir','P01','EAGLE-21','301506Z','Exploité','SEEK II'],
+        ['E009','Téléphone Android verrouillé','DIGITAL','Z-05 · véhicule','P03','GHOST-07','301518Z','En attente','OPERATOR'],
+        ['E013','Fusil — série effacée','WEAPONS','Z-04 · caisse 2','P04','BISHOP-14','301533Z','En analyse','SEEK II'],
+        ['E014','Lot de 240 cartouches 7,62','WEAPONS','Z-04 · caisse 2','P04','BISHOP-14','301537Z','Exploité','SEEK II'],
+        ['E015','Précurseur chimique — 2 bidons','MATERIALS','Z-04 · sous-sol','P04','BISHOP-14','301544Z','Signalé','SEEK II'],
+        ['E016','Carte SIM opérateur régional','DIGITAL','Z-05 · fouille','P03','GHOST-07','301551Z','Exploité','SEEK II'],
+        ['E017','Photographies du site — 84 vues','MEDIA','Ensemble du site','—','EAGLE-21','301602Z','Exploité','SEEK II'],
+        ['B01-F1','Acquisition visage — P01','BIOMETRICS','Z-02 · bureau nord','P01','EAGLE-21','301425Z','Exploité','SEEK II'],
+        ['B05-FP','Acquisition empreintes — P05','BIOMETRICS','Z-03 · cuisine','P05','BISHOP-14','301524Z','Exploité','SEEK II']
+      ].map(r => {
+        const t = r[7] === 'Exploité' ? T.ok : r[7] === 'En analyse' ? T.info : r[7] === 'En attente' ? T.warn : T.bad;
+        return {
+          thumb:r[0].slice(0,4), id:'SSE-26-0042-'+r[0], name:r[1], cat:r[2], loc:r[3],
+          subject: r[4] === '—' ? '—' : 'SSE-26-0042-'+r[4],
+          linkFg: r[4] === '—' ? '#4a565b' : '#12d18e',
+          by:r[5], dtg:r[6]+' JUL 26', status:r[7], source:'SOURCE // '+r[8],
+          sfg:t.fg, sbg:t.bg, sbd:t.bd
+        };
+      }),
+
+      cocRef: 'SSE-26-0042-E007 — poste de travail',
+      custody: [
+        { step:'COLLECTED', dtg:'301501Z JUL 26', by:'EAGLE-21', ref:'COC-0042-07', note:'Poste saisi allumé, capture RAM avant extinction.', dot:'#12d18e', line:'#12d18e', fg:'#3ddc9a' },
+        { step:'BAGGED', dtg:'301612Z JUL 26', by:'EAGLE-21', ref:'SEAL-88412', note:'Sachet antistatique scellé, étiquette photographiée.', dot:'#12d18e', line:'#12d18e', fg:'#3ddc9a' },
+        { step:'TRANSFERRED', dtg:'302104Z JUL 26', by:'HAVOC-09', ref:'TRF-0042-03', note:'Convoyage TOC, sceau vérifié à la réception.', dot:'#12d18e', line:'#12d18e', fg:'#3ddc9a' },
+        { step:'EXPLOITED', dtg:'310412Z JUL 26', by:'ANALYSTE S2', ref:'EXP-0042-07', note:'Imagerie disque, montage partiel, notes déposées.', dot:'#12d18e', line:'#242c31', fg:'#3ddc9a' },
+        { step:'ARCHIVED', dtg:'en attente', by:'—', ref:'—', note:'Bloqué : partition tertiaire non exploitée.', dot:'#242c31', line:'transparent', fg:'#5b686e' }
+      ],
+
+      auth: {
+        status: s.auth, fg: at.fg,
+        frame: s.auth === 'SIGNED / VALID' ? 'rgba(18,209,142,.35)' : 'rgba(255,107,94,.35)',
+        headBg: s.auth === 'SIGNED / VALID' ? 'rgba(18,209,142,.06)' : 'rgba(255,107,94,.05)',
+        subject: s.id + ' · ' + s.name,
+        fields: [
+          { k:'AUTH CODE', v:s.authCode, fg: s.auth === 'SIGNED / VALID' ? '#3ddc9a' : '#ff6b5e' },
+          { k:'TERMINAL', v:s.terminal, fg: s.auth === 'UNKNOWN TERMINAL' ? '#ff6b5e' : '#fff' },
+          { k:'SIGNATURE', v: s.auth === 'SIGNED / VALID' ? 'VALID' : (s.auth === 'UNSIGNED' ? 'UNSIGNED' : 'INVALID'), fg: at.fg },
+          { k:'OPERATOR', v:s.collector, fg:'#fff' },
+          { k:'ISSUED', v: s.authCode === '—' ? '—' : s.dtg, fg:'#fff' },
+          { k:'MISSION', v:'ODIN-04', fg:'#fff' },
+          { k:'ALGORITHME', v:'HMAC-SHA256', fg:'#a9b6bc' }
+        ],
+        checks: [
+          ['TERMINAL ENREGISTRÉ', s.auth !== 'UNKNOWN TERMINAL', 'présent au registre SEEK'],
+          ['DONNÉE SIGNÉE', s.auth !== 'UNSIGNED', 'signature jointe à l’acquisition'],
+          ['SIGNATURE VALIDE', s.auth === 'SIGNED / VALID', 'clé terminal vérifiée'],
+          ['HORODATAGE COHÉRENT', s.auth !== 'UNKNOWN TERMINAL', 'DTG dans la fenêtre mission'],
+          ['CHAÎNE NON ROMPUE', s.auth === 'SIGNED / VALID', 'aucune modification post-signature']
+        ].map(c => {
+          const t = c[1] ? T.ok : T.bad;
+          return { label:c[0], note:c[2], mark: c[1] ? '✓' : '✕', fg:t.fg, bg:t.bg, bd:t.bd };
+        })
+      },
+      termCols: [
+        { label:'TERMINAL', al:'left' }, { label:'MODÈLE', al:'left' }, { label:'SÉRIE', al:'left' },
+        { label:'PORTEUR', al:'left' }, { label:'EMPREINTE CLÉ', al:'left' }, { label:'ACQUISITIONS', al:'right' },
+        { label:'DERNIER CONTACT', al:'left' }, { label:'ÉTAT', al:'left' }, { label:'NOTE', al:'left' }
+      ],
+      terminals: [
+        ['SEEK-02','SEEK II / v2.4','SK2-88412','EAGLE-21','9f2c…a91b','14','301531Z','ENREGISTRÉ','Terminal principal section Bravo','ok'],
+        ['SEEK-04','SEEK II / v2.4','SK2-88477','HAVOC-09','1b74…e033','5','301518Z','ENREGISTRÉ','Signature absente sur 1 acquisition','warn'],
+        ['SEEK-07','SEEK II / v2.3','SK2-88190','BISHOP-14','c408…aa71','2','301544Z','ENREGISTRÉ','Firmware à mettre à jour','warn'],
+        ['SEEK-??','non identifié','—','GHOST-07','—','1','301531Z','UNKNOWN TERMINAL','Acquisition rejetée par Athena','bad'],
+        ['SEEK-01','SEEK II / v2.4','SK2-88001','TOC / S2','7e31…55c0','0','291944Z','ENREGISTRÉ','Terminal de référence TOC','ok']
+      ].map(r => Object.assign({
+        id:r[0], model:r[1], serial:r[2], holder:r[3], key:r[4], acq:r[5], last:r[6]+' JUL 26', state:r[7], note:r[8]
+      }, T[r[9]])),
+
+      logCols: [
+        { label:'DTG', al:'left' }, { label:'TERMINAL', al:'left' }, { label:'OPERATOR', al:'left' },
+        { label:'SUBJECT', al:'left' }, { label:'ACTION', al:'left' }, { label:'RESULT', al:'left' }, { label:'AUTH CODE', al:'right' }
+      ],
+      logs: [
+        ['301531Z','SEEK-??','GHOST-07','P06','SUBJECT_CREATED','REJECTED · UNKNOWN TERMINAL','—','bad'],
+        ['301524Z','SEEK-02','BISHOP-14','P05','BIOMETRIC_CAPTURE','OK · FACE+IL+IR+FP','B402-6E19-30AC','ok'],
+        ['301522Z','SEEK-02','BISHOP-14','P05','IDENTITY_QUERY','NO MATCH','B402-6E19-30AC','neut'],
+        ['301518Z','SEEK-04','HAVOC-09','P03','AUTH_REQUEST','DENIED · UNSIGNED DATA','—','bad'],
+        ['301514Z','SEEK-04','HAVOC-09','P03','IDENTITY_MATCH','POSSIBLE 64.2','—','warn'],
+        ['301511Z','SEEK-02','EAGLE-21','P04','AUTH_SIGNED','VALID','E884-1C05-77F2','ok'],
+        ['301509Z','SEEK-02','EAGLE-21','P04','IDENTITY_MATCH','CONFIRMED 94.1','E884-1C05-77F2','ok'],
+        ['301505Z','SEEK-02','EAGLE-21','P04','BIOMETRIC_CAPTURE','OK · 4 MODALITÉS','E884-1C05-77F2','ok'],
+        ['301442Z','SEEK-02','EAGLE-21','P02','IDENTITY_QUERY','PARTIAL 71.8','C219-77AB-4D30','warn'],
+        ['301440Z','SEEK-02','EAGLE-21','P02','BIOMETRIC_CAPTURE','OK · FP NOT AVAILABLE','C219-77AB-4D30','warn'],
+        ['301438Z','SEEK-02','EAGLE-21','P02','PHOTO_CAPTURED','OK · 1280×1706','C219-77AB-4D30','ok'],
+        ['301431Z','SEEK-02','EAGLE-21','—','DATA_UPLOAD','OK · LOT 06 · 21 CAPTURES','A7F4-91C2-8E11','ok'],
+        ['301429Z','SEEK-02','EAGLE-21','P01','AUTH_SIGNED','VALID','A7F4-91C2-8E11','ok'],
+        ['301427Z','SEEK-02','EAGLE-21','P01','IDENTITY_MATCH','CONFIRMED 97.4 · WATCHLIST T1','A7F4-91C2-8E11','ok'],
+        ['301426Z','SEEK-02','EAGLE-21','P01','IDENTITY_QUERY','SENT · ATHENA-BIO','A7F4-91C2-8E11','info'],
+        ['301425Z','SEEK-02','EAGLE-21','P01','BIOMETRIC_CAPTURE','OK · 4 MODALITÉS','A7F4-91C2-8E11','ok'],
+        ['301424Z','SEEK-02','EAGLE-21','P01','PHOTO_CAPTURED','OK · 1280×1706','A7F4-91C2-8E11','ok'],
+        ['301422Z','SEEK-02','EAGLE-21','P01','SUBJECT_CREATED','OK','A7F4-91C2-8E11','ok'],
+        ['301419Z','SEEK-01','TOC / S2','—','RECORD_UPDATED','CASE OPENED · SSE-26-0042','—','info']
+      ].map(r => {
+        const t = T[r[7]];
+        return {
+          dtg:r[0]+' JUL 26', terminal:r[1], op:r[2], subject:r[3], action:r[4], result:r[5], code:r[6],
+          tfg: r[1] === 'SEEK-??' ? '#ff6b5e' : '#a9b6bc',
+          afg: r[4] === 'AUTH_SIGNED' || r[4] === 'IDENTITY_MATCH' ? '#12d18e' : '#a9b6bc',
+          rfg: t.fg
+        };
+      }),
+      logLegend: [
+        { label:'■ OK / VALID', fg:'#3ddc9a' },
+        { label:'■ PARTIAL / UNSIGNED', fg:'#e0a233' },
+        { label:'■ REJECTED / DENIED', fg:'#ff6b5e' },
+        { label:'■ SYSTEM / QUERY', fg:'#6bb2f0' }
+      ],
+
+      graphCols: [
+        { label:'SUBJECTS', n:'6', tone:'#12d18e', nodes:[
+          ['P01','ZAHIROV, R.','watchlist T1 · confirmé','CONF','ok'],
+          ['P02','MAMEDOV, I.','partiel 71.8','PART','warn'],
+          ['P03','« LE CHAUFFEUR »','non signé','NS','bad'],
+          ['P04','SAFAROV, E.','antécédent SSE','CONF','ok']
+        ]},
+        { label:'LOCATIONS', n:'6', tone:'#6bb2f0', nodes:[
+          ['Z-02','R+1 bureau nord','P01 · 4 éléments','SITE','info'],
+          ['Z-04','Sous-sol technique','P04 · 3 éléments','SITE','info'],
+          ['Z-05','Périmètre est','P03 · 2 éléments','SITE','info'],
+          ['L-02','Site NE non identifié','14 km · 3 livraisons','PROB','warn']
+        ]},
+        { label:'DEVICES', n:'4', tone:'#e0a233', nodes:[
+          ['E007','Portable T480','image + RAM','CONF','ok'],
+          ['E008','Clé USB 32 Go','image réalisée','CONF','ok'],
+          ['E009','Téléphone Android','verrouillé','WAIT','warn'],
+          ['E016','Carte SIM','IMSI relevé','CONF','ok']
+        ]},
+        { label:'DOCUMENTS', n:'2', tone:'#6bb2f0', nodes:[
+          ['E001','Carnet de liaison','12 pages exploitées','CONF','ok'],
+          ['E004','Registre livraisons','recoupé E007','CONF','ok']
+        ]},
+        { label:'BIOMETRIC RECORDS', n:'21', tone:'#12d18e', nodes:[
+          ['B01','Record P01','4 modalités · match 97.4','CONF','ok'],
+          ['B02','Record P02','3 modalités · FP absent','PART','warn'],
+          ['B04','Record P04','4 modalités · match 94.1','CONF','ok'],
+          ['B06','Record P06','rejeté · terminal inconnu','FAIL','bad']
+        ]}
+      ].map(g => ({
+        label:g.label, n:g.n, tone:g.tone,
+        nodes: g.nodes.map(n => {
+          const t = T[n[4]];
+          return {
+            id:n[0], name:n[1], detail:n[2], conf:n[3],
+            cfg:t.fg, cbg:t.bg, cbd:t.bd,
+            bd: n[4] === 'bad' ? 'rgba(255,107,94,.28)' : '#1b2227',
+            bg: n[4] === 'bad' ? 'rgba(255,107,94,.04)' : '#0a0e10',
+            idFg: g.tone
+          };
+        })
+      })),
+      linkCols: [
+        { label:'ÉLÉMENT A', al:'left' }, { label:'RELATION', al:'left' }, { label:'ÉLÉMENT B', al:'left' },
+        { label:'FONDEMENT', al:'left' }, { label:'SOURCE', al:'left' }, { label:'CONFIANCE', al:'left' }, { label:'ANALYSTE', al:'right' }
+      ],
+      links: [
+        ['P01','PRÉSENT EN','Z-02','Interpellé dans le bureau nord, poste ouvert à son nom','SEEK II','CONFIRMÉ','EAGLE-21','ok'],
+        ['P01','UTILISATEUR DE','E007','Session utilisateur active à la saisie','ATHENA ANALYST','PROBABLE','ANALYSTE S2','warn'],
+        ['P01','IDENTIFIÉ PAR','B01','Match multi-modal 97.4 sur ATHENA-BIO','BIOMETRIC MATCH','CONFIRMÉ','ATHENA-BIO','ok'],
+        ['E007','RECOUPE','E004','Trois mêmes dates et quantités de livraison','ATHENA ANALYST','CONFIRMÉ','ANALYSTE S2','ok'],
+        ['E016','MÊME NUMÉRO','E009','IMSI de la SIM correspond au terminal saisi','ATHENA ANALYST','CONFIRMÉ','ANALYSTE S2','ok'],
+        ['P04','ANTÉCÉDENT','SSE-26-0031','Même sujet biométrique, dossier précurseurs','IMPORTED INTEL','CONFIRMÉ','ATHENA-BIO','ok'],
+        ['P03','ASSOCIÉ À','P01','Déclaré chauffeur du sujet P01, non corroboré','OPERATOR ENTRY','FAIBLE','GHOST-07','bad'],
+        ['E004','DESTINATION','L-02','Adresse de livraison cohérente avec relevé drone','ATHENA ANALYST','PROBABLE','ANALYSTE S2','warn']
+      ].map(r => Object.assign({
+        a:'…-'+r[0], rel:r[1], b: r[2].indexOf('SSE') === 0 ? r[2] : '…-'+r[2], basis:r[3], source:'// '+r[4], conf:r[5], by:r[6]
+      }, T[r[7]])),
+
+      railCase: [
+        { k:'Case file', v:'SSE-26-0042', fg:'#fff' },
+        { k:'Mission', v:'ODIN-04', fg:'#fff' },
+        { k:'Cellule', v:'S2 EXPLOITATION', fg:'#fff' },
+        { k:'Priorité', v:'P1', fg:'#3ddc9a' },
+        { k:'Rapport dû', v:'020800Z AOÛT 26', fg:'#e0a233' },
+        { k:'Archivage', v:'BLOQUÉ', fg:'#ff6b5e' }
+      ],
+      railSite: [
+        { k:'Site', v:'KAMYSH / B4' }, { k:'Grid', v:'38S MC 4218 7734' },
+        { k:'Type', v:'Administratif' }, { k:'Niveaux', v:'2 + sous-sol' },
+        { k:'Entrée', v:'301402Z' }, { k:'Sécurisé', v:'301419Z' },
+        { k:'Rendu', v:'301741Z' }, { k:'Durée', v:'3 h 39' }
+      ],
+      railCollection: [
+        { label:'Subjects', txt:'6 / 6', pct:'100%', tone:'#12d18e' },
+        { label:'Face', txt:'5 / 6', pct:'83%', tone:'#12d18e' },
+        { label:'Iris L/R', txt:'4 / 6', pct:'67%', tone:'#e0a233' },
+        { label:'Fingerprints', txt:'4 / 6', pct:'67%', tone:'#e0a233' },
+        { label:'Digital media', txt:'3 / 5', pct:'60%', tone:'#e0a233' },
+        { label:'Documents', txt:'2 / 2', pct:'100%', tone:'#12d18e' },
+        { label:'Weapons / materials', txt:'2 / 3', pct:'66%', tone:'#e0a233' }
+      ],
+      railActivity: [
+        { act:'IDENTITY_MATCH', meta:'P01 · 97.4 · ATHENA-BIO', dot:'#3ddc9a', fg:'#3ddc9a' },
+        { act:'AUTH_SIGNED', meta:'P04 · SEEK-02 · E884-1C05', dot:'#3ddc9a', fg:'#3ddc9a' },
+        { act:'BIOMETRIC_CAPTURE', meta:'P05 · FACE+IRIS+FP · SEEK-02', dot:'#6bb2f0', fg:'#a9b6bc' },
+        { act:'AUTH_REQUEST', meta:'P03 · refusé · non signé', dot:'#ff6b5e', fg:'#ff6b5e' },
+        { act:'IDENTITY_QUERY', meta:'P02 · partiel 71.8', dot:'#e0a233', fg:'#e0a233' },
+        { act:'DATA_UPLOAD', meta:'lot 06 · 6 sujets · 21 captures', dot:'#6bb2f0', fg:'#a9b6bc' },
+        { act:'SUBJECT_CREATED', meta:'P06 · terminal inconnu', dot:'#ff6b5e', fg:'#ff6b5e' }
+      ],
+      railFlags: [
+        { txt:'Terminal non enregistré', sub:'P06 · acquisition rejetée', tag:'BLOQUANT', dot:'#ff6b5e', t:'bad' },
+        { txt:'Donnée non signée', sub:'P03 · signature absente', tag:'BLOQUANT', dot:'#ff6b5e', t:'bad' },
+        { txt:'Empreintes indisponibles', sub:'P02 · 0/10 doigts', tag:'À TRAITER', dot:'#e0a233', t:'warn' },
+        { txt:'Watchlist Tier 1 sur site', sub:'P01 · remontée S2 régional', tag:'SIGNALÉ', dot:'#6bb2f0', t:'info' },
+        { txt:'Antécédent SSE-26-0031', sub:'P04 · précurseurs chimiques', tag:'OUVERT', dot:'#6bb2f0', t:'info' }
+      ].map(f => Object.assign(f, T[f.t]))
+    };
+  }
+}
+</script>
+</body>
+</html>

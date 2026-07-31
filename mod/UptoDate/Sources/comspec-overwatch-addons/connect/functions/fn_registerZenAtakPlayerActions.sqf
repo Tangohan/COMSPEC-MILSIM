@@ -66,8 +66,47 @@ if (!isNil "zen_custom_modules_fnc_register") then {
     ] call zen_custom_modules_fnc_register;
 };
 
+// --- Dotation du terminal SEEK ---
+// Le terminal est un objet obligatoire pour ouvrir une fiche SSE : sans moyen de
+// le distribuer en jeu, le chef de mission devrait repasser par l’arsenal.
+private _giveSeek = {
+    params ["_unit"];
+    if (isNull _unit || {!(_unit isKindOf "CAManBase")}) exitWith {
+        ["Sélectionnez un fantassin.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+    };
+    // La dotation s’exécute là où l’unité est locale ; l’échec (inventaire plein) est
+    // annoncé au porteur, pas ici — d’où le libellé « transmise » et non « remise ».
+    [_unit, "COMSPEC_Item_SeekTerminal"] remoteExecCall ["comspec_overwatch_connect_fnc_giveSeekTerminal", _unit];
+    [format ["Dotation terminal SEEK transmise à %1.", name _unit], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
+};
+uiNamespace setVariable ["COMSPEC_ZeusGiveSeek", _giveSeek];
+
+if (!isNil "zen_custom_modules_fnc_register") then {
+    [
+        "COMSPEC Roleplay",
+        "Doter du terminal SEEK",
+        {
+            params ["_pos", "_obj"];
+            private _unit = _obj;
+            if (isNull _unit) then {
+                { if (_x isKindOf "CAManBase") exitWith { _unit = _x; }; } forEach (nearestObjects [_pos, ["CAManBase"], 5]);
+            };
+            [_unit] call (uiNamespace getVariable ["COMSPEC_ZeusGiveSeek", {}]);
+        },
+        "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa"
+    ] call zen_custom_modules_fnc_register;
+};
+
 // --- ACE Zeus (modules + menu molette Zeus) ---
 if (!isNil "ace_zeus_fnc_addModule") then {
+    ["COMSPEC ATAK", "Doter du terminal SEEK", {
+        params ["", ["_unit", objNull]];
+        if (isNull _unit) then {
+            { if (_x isKindOf "CAManBase") exitWith { _unit = _x; }; } forEach (curatorSelected select 0);
+        };
+        [_unit] call (uiNamespace getVariable ["COMSPEC_ZeusGiveSeek", {}]);
+    }, "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa"] call ace_zeus_fnc_addModule;
+
     ["COMSPEC ATAK", "Infos / dégâts / brouillage", {
         params ["", ["_unit", objNull]];
         if (isNull _unit || {!isPlayer _unit}) then {

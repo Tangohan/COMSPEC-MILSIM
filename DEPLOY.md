@@ -224,6 +224,112 @@ La migration est idempotente et se rejoue seule au premier appel du dépôt. Si 
 `ALTER TABLE` échouent (droits), l’enregistrement d’une fiche échouera : vérifier
 `sse_persons.medical_context_json` après le premier envoi terrain.
 
+### Exploitation de site SSE 1.4.13
+
+| Fichier | Rôle |
+|---|---|
+| `bootstrap/atak_sse_persons_migration.php` | `sse_sites.reference_code` + index |
+| `app/Repositories/SseSiteRepository.php` | **Nouveau** — sites, pièces, saisies, compte rendu |
+| `app/Controllers/Api/SseApiController.php` | Endpoints `/api/sse/sites*` |
+| `app/Controllers/Web/SsePortalController.php` | Écrans portail sites |
+| `routes/web.php` | Routes API et portail |
+| `views/atak/sse/sites.php` | **Nouveau** — registre des sites |
+| `views/atak/sse/site_show.php` | **Nouveau** — checklist, saisies, clôture |
+| `views/atak/sse/_layout.php` | Entrée de navigation « Sites exploités » |
+| `public/assets/css/sse_portal.css` | Styles checklist et compte rendu |
+
+### Page d'accueil — vidéos hero
+
+| Fichier | Rôle |
+|---|---|
+| `app/Support/Media/VideoSourceProbe.php` | **Nouveau** — sonde de codec, écarte les sources indécodables |
+| `views/home/index.php` | Sélection des sources hero |
+
+Les fichiers `public/assets/video/hero-athena*.mp4` sont en HEVC / QuickTime et
+**illisibles en navigateur** : les réencoder en H.264 avant transfert, voir
+`docs/VIDEO-HERO-ENCODAGE.md`. Transférer les vidéos **en mode binaire**.
+
+### Portail SSE 1.4.13 — charte et requête d'identité
+
+| Fichier | Rôle |
+|---|---|
+| `public/assets/css/sse_portal.css` | Charte « SSE Case File » — jetons, balayage, hachures |
+| `views/atak/sse/_layout.php` | Polices Archivo / JetBrains Mono, cache-buster CSS |
+| `views/atak/sse/persons.php` | Verdict de requête d'identité sur la fiche |
+| `bootstrap/atak_sse_persons_migration.php` | `sse_persons.identity_query_json` |
+| `app/Repositories/SsePersonRepository.php` | Persistance du verdict |
+
+### Comptes rendus SSE et rattachement des sites
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Sse/SseReportService.php` | **Nouveau** — flash et compte rendu initial |
+| `app/Repositories/SseSiteRepository.php` | `case_id`, `listForCase()`, `attachToCase()` |
+| `app/Controllers/Web/SsePortalController.php` | Écran compte rendu, sites du dossier |
+| `app/Controllers/Api/SseApiController.php` | `case_code` sur l'ouverture de site |
+| `bootstrap/atak_sse_persons_migration.php` | `sse_sites.case_id` + index |
+| `routes/web.php` | `/atak/sse/dossiers/{id}/compte-rendu` |
+| `views/atak/sse/case_report.php` | **Nouveau** — écran compte rendu |
+| `views/atak/sse/case_show.php` | Blocs sites rattachés et produits |
+
+### Corrélation et automatismes SSE 1.4.14
+
+Nouveau service d'automatismes + graphe de corrélation. La table `sse_relations` est
+créée par la migration SSE (§ 1) : **uploader `bootstrap/atak_sse_persons_migration.php`
+avant** de rejouer les migrations, sinon la page corrélations ne stockera rien.
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Sse/SseCorrelationService.php` | **Nouveau** — graphe du dossier, arêtes déduites + posées |
+| `app/Services/Sse/SseAutomationService.php` | **Nouveau** — règles A1 à A6 |
+| `app/Repositories/SseSiteRepository.php` | `findSeizure()` — nature normalisée pour les automatismes |
+| `app/Controllers/Web/SsePortalController.php` | Écran corrélations, pose et retrait de relation |
+| `app/Controllers/Api/SseApiController.php` | Déclenchement des automatismes, champ `automation` |
+| `bootstrap/atak_sse_persons_migration.php` | Table `sse_relations` |
+| `routes/web.php` | `/atak/sse/dossiers/{id}/correlations` (+ POST et suppression) |
+| `views/atak/sse/case_correlations.php` | **Nouveau** — écran corrélations |
+| `views/atak/sse/case_show.php` | Bouton « Voir les corrélations » |
+| `public/assets/css/sse_portal.css` | Styles graphe, arêtes, formulaire de relation |
+
+**Ordre d'upload** : le service `SseCorrelationService.php` est référencé par
+`SseAutomationService.php` **et** par la vue. Uploader les deux services avant la vue
+et les routes, sinon la page 500 le temps du transfert.
+
+Post-check :
+
+- [ ] `/atak/sse/dossiers/{id}/correlations` s'ouvre sans erreur
+- [ ] La table `sse_relations` existe
+- [ ] Une fiche transmise sans code dossier, avec **un seul** dossier ouvert, y arrive seule
+- [ ] Le journal d'activité montre une ligne `SSE_AUTO` après ce classement
+
+### Déclassification et caviardage SSE 1.4.14
+
+Table `sse_redactions` créée par la même migration SSE que `sse_relations` (§ 1).
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Sse/SseRedactionService.php` | **Nouveau** — niveaux, catégories, barres, caviardage manuel |
+| `app/Services/Sse/SseReportService.php` | `gatherForRelease()`, niveau de diffusion sur les deux comptes rendus |
+| `app/Controllers/Web/SsePortalController.php` | Écran déclassification, pose et levée de caviardage |
+| `bootstrap/atak_sse_persons_migration.php` | Table `sse_redactions` |
+| `routes/web.php` | `/atak/sse/dossiers/{id}/declassification` et `/caviardage` |
+| `views/atak/sse/case_declassify.php` | **Nouveau** — écran version expurgée |
+| `views/atak/sse/case_report.php` | Renvoi vers la déclassification |
+| `views/atak/sse/case_show.php` | Bouton « Version expurgée » |
+| `public/assets/css/sse_portal.css` | Sélecteur de niveau, tableau des catégories, styles d'impression |
+
+**Ordre d'upload** : `SseRedactionService.php` avant `SseReportService.php` — ce
+dernier l'instancie dans son constructeur, et une classe manquante fait tomber
+les deux écrans de compte rendu, pas seulement la déclassification.
+
+Post-check :
+
+- [ ] La table `sse_redactions` existe
+- [ ] `/atak/sse/dossiers/{id}/declassification` s'ouvre sur « Diffusion interne »
+- [ ] À ce niveau, aucun nom de personne n'apparaît dans le code source de la page
+      (`Ctrl+U` puis rechercher un nom connu du dossier — il ne doit rien ressortir)
+- [ ] Le compte rendu intégral (`/compte-rendu`) reste, lui, en clair
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

@@ -267,10 +267,12 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     [{
         [] call comspec_overwatch_connect_fnc_registerZenRoleplayModules;
         [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
+        [] call comspec_overwatch_connect_fnc_registerZenSseModules;
     }, [], 2] call CBA_fnc_waitAndExecute;
     [{
         [] call comspec_overwatch_connect_fnc_registerZenRoleplayModules;
         [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
+        [] call comspec_overwatch_connect_fnc_registerZenSseModules;
     }, [], 8] call CBA_fnc_waitAndExecute;
 
     // Identifiants ATAK visibles côté Zeus

@@ -558,7 +558,18 @@ return function (Router $router) {
     $router->post('/atak/sse/dossiers/{id}/notes', [SsePortalController::class, 'caseAddNote'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/preuves', [SsePortalController::class, 'caseAddEvidence'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}/pdf', [SsePortalController::class, 'casePdf'], $mwSsePortal);
+    $router->get('/atak/sse/dossiers/{id}/compte-rendu', [SsePortalController::class, 'caseReport'], $mwSsePortal);
+    $router->get('/atak/sse/dossiers/{id}/correlations', [SsePortalController::class, 'caseCorrelations'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/correlations', [SsePortalController::class, 'caseRelationStore'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/correlations/{relationId}/supprimer', [SsePortalController::class, 'caseRelationDelete'], $mwSsePortal);
+    $router->get('/atak/sse/dossiers/{id}/declassification', [SsePortalController::class, 'caseDeclassify'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/caviardage', [SsePortalController::class, 'caseRedactionStore'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/caviardage/{redactionId}/supprimer', [SsePortalController::class, 'caseRedactionDelete'], $mwSsePortal);
     $router->get('/atak/sse/personnes', [SsePortalController::class, 'personsIndex'], $mwSsePortal);
+    $router->get('/atak/sse/sites', [SsePortalController::class, 'sitesIndex'], $mwSsePortal);
+    $router->get('/atak/sse/sites/{id}', [SsePortalController::class, 'siteShow'], $mwSsePortal);
+    $router->post('/atak/sse/sites/{id}/pieces/{roomId}', [SsePortalController::class, 'siteRoomToggle'], $mwSsePortal);
+    $router->post('/atak/sse/sites/{id}/cloture', [SsePortalController::class, 'siteCloseAction'], $mwSsePortal);
     $router->get('/atak/sse/croisements', [SsePortalController::class, 'crossIndex'], $mwSsePortal);
     $router->post('/atak/sse/croisements/watchlist', [SsePortalController::class, 'watchlistStore'], $mwSsePortal);
     $router->get('/atak/sse/acces', [SsePortalController::class, 'accessAdmin'], $mwSsePortal);
@@ -1601,6 +1612,14 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/sse/persons/{id}', [SseApiController::class, 'personsShow']);
     $router->post('/api/sse/persons/{id}/photos', [SseApiController::class, 'personsPhotoStore']);
     $router->post('/api/sse/persons/{id}/biometrics-sim', [SseApiController::class, 'personsBiometricsSim']);
+
+    // Exploitation de site sensible
+    $router->get('/api/sse/sites', [SseApiController::class, 'sitesIndex']);
+    $router->post('/api/sse/sites', [SseApiController::class, 'sitesStore']);
+    $router->get('/api/sse/sites/{id}', [SseApiController::class, 'sitesShow']);
+    $router->post('/api/sse/sites/{id}/rooms/{roomId}', [SseApiController::class, 'siteRoomUpdate']);
+    $router->post('/api/sse/sites/{id}/seizures', [SseApiController::class, 'siteSeizureStore']);
+    $router->post('/api/sse/sites/{id}/close', [SseApiController::class, 'siteClose']);
     
     // Waypoints partagés et itinéraires de patrouille
     $router->get('/api/atak/waypoint-routes', [\App\Controllers\Api\AtakWaypointApiController::class, 'routesIndex']);

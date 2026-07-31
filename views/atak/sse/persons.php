@@ -73,11 +73,25 @@ $total = count($persons);
                 $samples = is_array($p['biometric_samples'] ?? null) ? $p['biometric_samples'] : [];
                 $lesions = is_array($med['lesions'] ?? null) ? $med['lesions'] : [];
                 $hits = is_array($p['watchlist'] ?? null) ? $p['watchlist'] : [];
+                $iq = is_array($p['identity_query'] ?? null) ? $p['identity_query'] : [];
+                $custody = is_array($p['custody'] ?? null) ? $p['custody'] : [];
+                $photo = is_array($p['primary_photo'] ?? null) ? $p['primary_photo'] : null;
+                $photoUrl = $photo !== null ? (string) ($photo['url'] ?? '') : '';
                 $statusSlug = (string) ($p['status'] ?? 'civil');
             ?>
                 <article class="sse-record" data-status="<?= $h($statusSlug) ?>">
                     <header class="sse-record-head">
-                        <div>
+                        <?php if ($photoUrl !== ''): ?>
+                            <a class="sse-mugshot sse-scan" href="<?= $h($photoUrl) ?>" target="_blank" rel="noopener"
+                               title="<?= $h($photo['angle_label'] ?? 'Photographie') ?>">
+                                <img src="<?= $h($photoUrl) ?>"
+                                     alt="Photographie de <?= $h($p['display_name'] ?? 'la personne') ?>"
+                                     loading="lazy">
+                            </a>
+                        <?php else: ?>
+                            <span class="sse-mugshot is-empty" aria-hidden="true">—</span>
+                        <?php endif; ?>
+                        <div class="sse-record-ident">
                             <span class="record-name"><?= $h($p['display_name'] ?? '') ?></span>
                             <span class="record-sub">
                                 Fiche n° <?= $h(str_pad((string) ($p['id'] ?? 0), 4, '0', STR_PAD_LEFT)) ?>
@@ -88,6 +102,30 @@ $total = count($persons);
                         </div>
                         <span class="badge badge-status"><?= $h($p['status_label'] ?? '') ?></span>
                     </header>
+
+                    <?php if ($iq !== []):
+                        $iqRes = (string) ($iq['result'] ?? 'none');
+                        $iqClass = $iqRes === 'confirmed' ? 'is-confirmed' : ($iqRes === 'possible' ? 'is-possible' : 'is-none');
+                        $iqLabel = match ($iqRes) {
+                            'confirmed' => 'Correspondance confirmée',
+                            'possible' => 'Correspondance possible',
+                            default => 'Aucune correspondance',
+                        };
+                    ?>
+                        <div class="sse-record-block sse-idq <?= $h($iqClass) ?>">
+                            <div class="sse-block-title">Requête d’identité — terminal</div>
+                            <p class="sse-block-body">
+                                <strong><?= $h($iqLabel) ?></strong>
+                                <?php if ($iqRes !== 'none'): ?>
+                                    · <?= $h((string) ($iq['confidence'] ?? '')) ?>&nbsp;%
+                                    <?php if (!empty($iq['record_ref'])): ?>
+                                        · dossier <?= $h($iq['record_ref']) ?>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </p>
+                            <p class="sse-note">Verdict rendu par le terminal sur relevés simulés.</p>
+                        </div>
+                    <?php endif; ?>
 
                     <?php if ($hits !== []): ?>
                         <div class="sse-record-block sse-hit">
@@ -165,6 +203,28 @@ $total = count($persons);
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($custody !== []): ?>
+                        <div class="sse-record-block">
+                            <div class="sse-block-title">Chaîne de possession</div>
+                            <ol class="sse-custody">
+                                <?php foreach ($custody as $ev): ?>
+                                    <li>
+                                        <span class="sse-custody-when">
+                                            <?= $h(substr((string) ($ev['created_at'] ?? ''), 0, 16)) ?>
+                                        </span>
+                                        <span class="sse-custody-what"><?= $h($ev['type_label'] ?? '') ?></span>
+                                        <?php if (!empty($ev['label'])): ?>
+                                            <span class="sse-muted"><?= $h($ev['label']) ?></span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($ev['actor'])): ?>
+                                            <span class="sse-custody-who"><?= $h($ev['actor']) ?></span>
+                                        <?php endif; ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ol>
                         </div>
                     <?php endif; ?>
 

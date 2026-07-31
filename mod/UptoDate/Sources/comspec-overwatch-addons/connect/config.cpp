@@ -5,15 +5,18 @@ class CfgPatches {
             "COMSPEC_Module_NoCoverage",
             "COMSPEC_Module_Interference",
             "COMSPEC_Module_Degraded",
-            "COMSPEC_Module_Jammer"
+            "COMSPEC_Module_Jammer",
+            "COMSPEC_Module_SSE_Case",
+            "COMSPEC_Module_SSE_Profile",
+            "COMSPEC_Module_SSE_Equip"
         };
         weapons[] = {};
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.412;
-        versionStr = "1.4.12";
-        versionAr[] = {1, 4, 12};
+        version = 1.414;
+        versionStr = "1.4.14";
+        versionAr[] = {1, 4, 14};
     };
 };
 
@@ -40,6 +43,18 @@ class CfgFunctions {
             class sseSignAtak {};
             class sseOpenTerminal {};
             class sseHasTerminalItem {};
+            class sseIdentityQuery {};
+            class sseUnitSeed {};
+            class sseTerminalPage {};
+            class sseActiveCase {};
+            class sseApplyProfile {};
+            class sseProfilePreset {};
+            class sseModuleTargets {};
+            class moduleSseCase {};
+            class moduleSseProfile {};
+            class moduleSseEquip {};
+            class registerZenSseModules {};
+            class giveSeekTerminal {};
             class medevacDialogShow {};
             class medevacDialogSubmit {};
             class casRequestShow {};
@@ -329,6 +344,9 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_relayZeusAtakEffect { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_giveSeekTerminal { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_sseApplyProfile { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_sseActiveCase { allowedTargets = 0; };
     };
     class Commands {
         mode = 1;
@@ -464,6 +482,12 @@ class CfgFactionClasses
         priority = 2;
         side = 7;
     };
+    class COMSPEC_SSE : NO_CATEGORY
+    {
+        displayName = "COMSPEC SSE";
+        priority = 2;
+        side = 7;
+    };
 };
 
 #include "ui_base.hpp"
@@ -493,4 +517,8 @@ class CfgFactionClasses
 
 // Modules Zeus/Eden roleplay (zones sans couverture, brouillage, etc.)
 #include "modules\module_roleplay_zone.hpp"
+
+// Modules et attributs Eden — exploitation SSE
+#include "modules\module_sse.hpp"
+#include "modules\eden_sse_attributes.hpp"
 #include "CfgEventHandlers.hpp"

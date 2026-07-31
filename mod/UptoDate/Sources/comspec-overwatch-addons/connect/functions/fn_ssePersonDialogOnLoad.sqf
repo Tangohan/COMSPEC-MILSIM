@@ -176,6 +176,14 @@ if (_med isEqualType createHashMap && {(count _med) > 0}) then {
 // Nouvelle fiche : aucun échantillon, aucune signature.
 uiNamespace setVariable ["COMSPEC_SsePerson_Samples", []];
 uiNamespace setVariable ["COMSPEC_SsePerson_Signature", []];
-(_disp displayCtrl 9518) ctrlSetText (profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""]);
+uiNamespace setVariable ["COMSPEC_SsePerson_Query", []];
+uiNamespace setVariable ["COMSPEC_SsePerson_QueryPending", false];
+// Dossier actif de l'élément : hérité sans ressaisie. À défaut, dernier code utilisé.
+private _active = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
+if (_active isEqualTo "") then {
+    _active = profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""];
+};
+(_disp displayCtrl 9518) ctrlSetText _active;
 
-[] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
+// Le terminal s'ouvre sur son accueil ; la page pose aussi la visibilité initiale.
+[0] call comspec_overwatch_connect_fnc_sseTerminalPage;

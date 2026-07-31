@@ -256,6 +256,7 @@ return static function (PDO $pdo): void {
             'signed_terminal_uid' => "VARCHAR(64) DEFAULT NULL",
             'signed_atak_id' => "VARCHAR(64) DEFAULT NULL",
             'signed_at' => 'DATETIME DEFAULT NULL',
+            'identity_query_json' => 'JSON NULL',
         ];
         foreach ($additions as $col => $ddl) {
             if ($columnExists($pdo, 'sse_persons', $col)) {
@@ -272,6 +273,82 @@ return static function (PDO $pdo): void {
             );
             $log("  [OK] index idx_sse_persons_unit\n");
         }
+    }
+
+    // Référence lisible d'un site, saisie et citée sur le terrain.
+    if ($tableExists($pdo, 'sse_sites') && !$columnExists($pdo, 'sse_sites', 'reference_code')) {
+        $pdo->exec("ALTER TABLE sse_sites ADD COLUMN reference_code VARCHAR(48) NOT NULL DEFAULT '' AFTER context_id");
+        $log("  [OK] sse_sites.reference_code\n");
+    }
+    if ($tableExists($pdo, 'sse_sites') && !$indexExists($pdo, 'sse_sites', 'idx_sse_sites_ref')) {
+        $pdo->exec('CREATE INDEX idx_sse_sites_ref ON sse_sites (tenant_id, reference_code)');
+        $log("  [OK] index idx_sse_sites_ref\n");
+    }
+    // Le dossier est l'unité de travail : un site lui est rattaché.
+    if ($tableExists($pdo, 'sse_sites') && !$columnExists($pdo, 'sse_sites', 'case_id')) {
+        $pdo->exec('ALTER TABLE sse_sites ADD COLUMN case_id INT UNSIGNED DEFAULT NULL AFTER context_id');
+        $log("  [OK] sse_sites.case_id\n");
+    }
+    if ($tableExists($pdo, 'sse_sites') && !$indexExists($pdo, 'sse_sites', 'idx_sse_sites_case')) {
+        $pdo->exec('CREATE INDEX idx_sse_sites_case ON sse_sites (tenant_id, case_id)');
+        $log("  [OK] index idx_sse_sites_case\n");
+    }
+    if ($tableExists($pdo, 'sse_site_rooms') && !$indexExists($pdo, 'sse_site_rooms', 'idx_sse_rooms_tenant')) {
+        $pdo->exec('CREATE INDEX idx_sse_rooms_tenant ON sse_site_rooms (tenant_id, site_id)');
+        $log("  [OK] index idx_sse_rooms_tenant\n");
+    }
+
+    // Relations d'exploitation : arêtes posées à la main par l'analyste. Les arêtes
+    // déduites des données (saisie trouvée sur une personne, dans une pièce…) ne sont
+    // pas stockées — elles sont recalculées à la lecture, donc jamais périmées.
+    if (!$tableExists($pdo, 'sse_relations') && $tableExists($pdo, 'sse_persons')) {
+        $pdo->exec(
+            "CREATE TABLE sse_relations (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                tenant_id INT UNSIGNED NOT NULL,
+                case_id INT UNSIGNED DEFAULT NULL,
+                from_type VARCHAR(16) NOT NULL DEFAULT 'person',
+                from_id INT UNSIGNED NOT NULL,
+                to_type VARCHAR(16) NOT NULL DEFAULT 'person',
+                to_id INT UNSIGNED NOT NULL,
+                relation VARCHAR(32) NOT NULL DEFAULT 'associe',
+                reliability VARCHAR(16) NOT NULL DEFAULT 'unverified',
+                note VARCHAR(255) DEFAULT NULL,
+                author_label VARCHAR(80) DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_sse_relation (tenant_id, from_type, from_id, to_type, to_id, relation),
+                KEY idx_sse_relations_case (tenant_id, case_id),
+                CONSTRAINT fk_sse_relations_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+        $log("  [OK] sse_relations\n");
+    }
+
+    // Caviardage manuel : une zone noircie sur une fiche précise, motivée et signée.
+    // Le caviardage automatique par niveau de diffusion n'est pas stocké — c'est une
+    // règle, elle se recalcule ; la stocker figerait un état qui doit suivre les
+    // corrections apportées au dossier.
+    if (!$tableExists($pdo, 'sse_redactions') && $tableExists($pdo, 'sse_persons')) {
+        $pdo->exec(
+            "CREATE TABLE sse_redactions (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                tenant_id INT UNSIGNED NOT NULL,
+                case_id INT UNSIGNED DEFAULT NULL,
+                target_type VARCHAR(16) NOT NULL DEFAULT 'person',
+                target_id INT UNSIGNED NOT NULL,
+                field VARCHAR(64) NOT NULL,
+                category VARCHAR(24) NOT NULL DEFAULT 'identite',
+                reason VARCHAR(255) DEFAULT NULL,
+                author_label VARCHAR(80) DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_sse_redaction (tenant_id, target_type, target_id, field),
+                KEY idx_sse_redactions_case (tenant_id, case_id),
+                CONSTRAINT fk_sse_redactions_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+        $log("  [OK] sse_redactions\n");
     }
 
     if (!$tableExists($pdo, 'sse_biometric_samples') && $tableExists($pdo, 'sse_persons')) {

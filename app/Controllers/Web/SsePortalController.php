@@ -11,10 +11,14 @@ use App\Core\Session;
 use App\Repositories\SseAccessCodeRepository;
 use App\Repositories\SseCaseRepository;
 use App\Repositories\SsePersonRepository;
+use App\Repositories\SseSiteRepository;
 use App\Repositories\SseWatchlistRepository;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseCasePdfService;
+use App\Services\Sse\SseCorrelationService;
 use App\Services\Sse\SseCrossMatchService;
+use App\Services\Sse\SseRedactionService;
+use App\Services\Sse\SseReportService;
 
 final class SsePortalController
 {
@@ -24,16 +28,24 @@ final class SsePortalController
         private ?SseCaseRepository $cases = null,
         private ?SsePersonRepository $persons = null,
         private ?SseWatchlistRepository $watchlist = null,
+        private ?SseSiteRepository $sites = null,
         private ?SseCrossMatchService $cross = null,
         private ?SseCasePdfService $pdf = null,
+        private ?SseReportService $reports = null,
+        private ?SseCorrelationService $correlation = null,
+        private ?SseRedactionService $redaction = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
         $this->cases ??= new SseCaseRepository();
         $this->persons ??= new SsePersonRepository();
         $this->watchlist ??= new SseWatchlistRepository();
+        $this->sites ??= new SseSiteRepository();
         $this->cross ??= new SseCrossMatchService();
         $this->pdf ??= new SseCasePdfService();
+        $this->reports ??= new SseReportService();
+        $this->correlation ??= new SseCorrelationService();
+        $this->redaction ??= new SseRedactionService();
     }
 
     /** Sas d’entrée (public) */
@@ -232,12 +244,19 @@ final class SsePortalController
             }
         }
         $available = $this->persons->listForContext($this->tenantId(), 1, ['limit' => 100]);
+        $caseSites = $this->sites->listForCase($id, $this->tenantId());
+        $siteCounts = $this->sites->countsForSites(
+            array_map(static fn (array $s): int => (int) ($s['id'] ?? 0), $caseSites),
+            $this->tenantId()
+        );
 
         return $this->portalView('atak.sse.case_show', [
             'title' => $case['reference_code'] . ' — ' . $case['title'],
             'case' => $case,
             'people' => $people,
             'availablePeople' => $available,
+            'caseSites' => $caseSites,
+            'siteCounts' => $siteCounts,
             'notes' => $this->cases->listNotes($id, $this->tenantId()),
             'evidence' => $this->cases->listEvidence($id, $this->tenantId()),
             'classifications' => SseCaseRepository::CLASSIFICATION_LABELS,
@@ -384,13 +403,18 @@ final class SsePortalController
             'limit' => 100,
         ]);
 
+        // Chaîne de possession : une seule requête pour tout le registre.
+        $custody = $this->persons->custodyEventsForPersons(
+            array_map(static fn (array $p): int => (int) ($p['id'] ?? 0), $list),
+            $tenantId
+        );
+
         // Relevés biométriques simulés + croisement listes de surveillance.
         foreach ($list as $i => $p) {
-            $list[$i]['biometric_samples'] = $this->persons->listBiometricSamples(
-                (int) ($p['id'] ?? 0),
-                $tenantId
-            );
+            $pid = (int) ($p['id'] ?? 0);
+            $list[$i]['biometric_samples'] = $this->persons->listBiometricSamples($pid, $tenantId);
             $list[$i]['watchlist'] = $this->cross->matchOne($p, $tenantId);
+            $list[$i]['custody'] = $custody[$pid] ?? [];
         }
 
         return $this->portalView('atak.sse.persons', [
@@ -401,6 +425,316 @@ final class SsePortalController
             'canExport' => $this->canExport(),
             'activeNav' => 'personnes',
         ]);
+    }
+
+    /**
+     * Comptes rendus du dossier — flash et compte rendu initial.
+     * Générés à la lecture depuis les événements déjà enregistrés : aucun stockage
+     * dupliqué, le document reflète toujours l'état réel du dossier.
+     */
+    public function caseReport(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $case = $this->requireCase($id);
+        if ($case === null) {
+            Session::flash('error', 'Dossier introuvable ou hors de votre périmètre.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $tenantId = $this->tenantId();
+
+        return $this->portalView('atak.sse.case_report', [
+            'title' => 'Compte rendu — ' . ($case['reference_code'] ?? ''),
+            'case' => $case,
+            'flash' => $this->reports->buildFlashReport($id, $tenantId),
+            'initial' => $this->reports->buildInitialReport($id, $tenantId),
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'dossiers',
+        ]);
+    }
+
+    /**
+     * Déclassification : version diffusable du dossier à un niveau donné.
+     *
+     * Le texte caviardé est remplacé côté serveur. Une barre obtenue en CSS
+     * laisserait le texte dans la page — copier-coller, code source, lecteur
+     * d'écran — ce qui reviendrait à ne rien caviarder du tout.
+     */
+    public function caseDeclassify(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $case = $this->requireCase($id);
+        if ($case === null) {
+            Session::flash('error', 'Dossier introuvable ou hors de votre périmètre.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $tenantId = $this->tenantId();
+
+        $level = (string) ($request->query('niveau') ?? '');
+        if (!isset(SseRedactionService::LEVELS[$level])) {
+            // Par défaut, le niveau le plus large : c'est celui qui caviarde le plus.
+            // Ouvrir la page ne doit jamais exposer davantage que ce qu'on demande.
+            $level = SseCaseRepository::CLASS_INTERNAL;
+        }
+
+        $data = $this->reports->gatherForRelease($id, $tenantId, $level);
+
+        return $this->portalView('atak.sse.case_declassify', [
+            'title' => 'Déclassification — ' . ($case['reference_code'] ?? ''),
+            'case' => $case,
+            'level' => $level,
+            'levels' => SseCaseRepository::CLASSIFICATION_LABELS,
+            'categories' => SseRedactionService::CATEGORIES,
+            'summary' => SseRedactionService::summarise($level),
+            'people' => $data['people'] ?? [],
+            'sites' => $data['sites'] ?? [],
+            'flash' => $this->reports->buildFlashReport($id, $tenantId, $level),
+            'initial' => $this->reports->buildInitialReport($id, $tenantId, $level),
+            'manual' => $this->redaction->listForCase($id, $tenantId),
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'dossiers',
+        ]);
+    }
+
+    /** Pose un trait noir sur une zone précise. */
+    public function caseRedactionStore(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/dossiers/' . $id . '/declassification');
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        // Le formulaire présente « fiche » et « zone » séparément parce que c'est ainsi
+        // qu'on y pense. La recomposition est faite ici et non en JavaScript : un
+        // caviardage doit fonctionner même sans script, sinon la zone reste en clair
+        // sans que personne s'en aperçoive.
+        [$type, $targetId] = array_pad(explode(':', (string) $request->input('target', ''), 2), 2, '');
+        [$field, $category] = array_pad(explode('|', (string) $request->input('field_pair', ''), 2), 2, '');
+
+        $ok = $this->redaction->add($this->tenantId(), $id, [
+            'target_type' => $type !== '' ? $type : (string) $request->input('target_type', 'person'),
+            'target_id' => $targetId !== '' ? (int) $targetId : (int) $request->input('target_id', 0),
+            'field' => $field !== '' ? $field : (string) $request->input('field', ''),
+            'category' => $category !== '' ? $category : (string) $request->input('category', 'identite'),
+            'reason' => (string) $request->input('reason', ''),
+            'author_label' => (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Analyste'),
+        ]);
+
+        Session::flash($ok ? 'success' : 'error', $ok
+            ? 'Zone caviardée.'
+            : 'Caviardage refusé — vérifiez la fiche et la zone désignées.');
+
+        return Response::redirect($back);
+    }
+
+    /** Retire un trait noir. */
+    public function caseRedactionDelete(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/dossiers/' . $id . '/declassification');
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $this->redaction->remove((int) ($params['redactionId'] ?? 0), $this->tenantId());
+        Session::flash('success', 'Caviardage retiré — la zone redevient lisible aux niveaux qui l’autorisent.');
+
+        return Response::redirect($back);
+    }
+
+    /** Graphe de corrélation du dossier. */
+    public function caseCorrelations(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $case = $this->requireCase($id);
+        if ($case === null) {
+            Session::flash('error', 'Dossier introuvable ou hors de votre périmètre.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $graph = $this->correlation->graphForCase($id, $this->tenantId());
+
+        return $this->portalView('atak.sse.case_correlations', [
+            'title' => 'Corrélations — ' . ($case['reference_code'] ?? ''),
+            'case' => $case,
+            'nodes' => $graph['nodes'],
+            'edges' => $graph['edges'],
+            'stored' => $this->correlation->listStored($id, $this->tenantId()),
+            'relationLabels' => SseCorrelationService::RELATION_LABELS,
+            'reliabilityLabels' => SseCorrelationService::RELIABILITY_LABELS,
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'dossiers',
+        ]);
+    }
+
+    /** Pose une relation d'analyste sur le dossier. */
+    public function caseRelationStore(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/dossiers/' . $id . '/correlations');
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $ok = $this->correlation->addRelation($this->tenantId(), $id, [
+            'from_type' => 'person',
+            'from_id' => (int) $request->input('from_id', 0),
+            'to_type' => 'person',
+            'to_id' => (int) $request->input('to_id', 0),
+            'relation' => (string) $request->input('relation', 'associe'),
+            'reliability' => (string) $request->input('reliability', 'unverified'),
+            'note' => (string) $request->input('note', ''),
+            'author_label' => (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Analyste'),
+        ]);
+
+        Session::flash($ok ? 'success' : 'error', $ok
+            ? 'Relation enregistrée.'
+            : 'Relation refusée — vérifiez les deux personnes désignées.');
+
+        return Response::redirect($back);
+    }
+
+    /** Retire une relation posée. */
+    public function caseRelationDelete(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/dossiers/' . $id . '/correlations');
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $this->correlation->deleteRelation((int) ($params['relationId'] ?? 0), $this->tenantId());
+        Session::flash('success', 'Relation retirée.');
+
+        return Response::redirect($back);
+    }
+
+    public function sitesIndex(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $list = $this->sites->listForContext($tenantId, 1, [
+            'status' => $request->query('status'),
+            'site_type' => $request->query('site_type'),
+            'limit' => 100,
+        ]);
+        $counts = $this->sites->countsForSites(
+            array_map(static fn (array $s): int => (int) ($s['id'] ?? 0), $list),
+            $tenantId
+        );
+
+        return $this->portalView('atak.sse.sites', [
+            'title' => 'Sites exploités',
+            'sites' => $list,
+            'siteCounts' => $counts,
+            'statuses' => SseSiteRepository::STATUS_LABELS,
+            'types' => SseSiteRepository::TYPE_LABELS,
+            'filters' => [
+                'status' => (string) $request->query('status', ''),
+                'site_type' => (string) $request->query('site_type', ''),
+            ],
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'sites',
+        ]);
+    }
+
+    public function siteShow(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $site = $this->sites->findById((int) ($params['id'] ?? 0), $tenantId);
+        if ($site === null) {
+            Session::flash('error', 'Site introuvable.');
+
+            return Response::redirect(url('atak/sse/sites'));
+        }
+
+        return $this->portalView('atak.sse.site_show', [
+            'title' => 'Site — ' . ($site['reference_code'] ?? ''),
+            'site' => $site,
+            'fiveLine' => $this->sites->buildFiveLineReport($site),
+            'seizureCategories' => SseSiteRepository::SEIZURE_LABELS,
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'sites',
+        ]);
+    }
+
+    public function siteRoomToggle(Request $request, array $params = []): Response
+    {
+        $siteId = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/sites/' . $siteId);
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $roomId = (int) ($params['roomId'] ?? 0);
+        $checked = (string) $request->input('checked', '0') === '1';
+        if (!$this->sites->setRoomChecked($roomId, $this->tenantId(), $checked, null)) {
+            Session::flash('error', 'Pièce introuvable.');
+
+            return Response::redirect($back);
+        }
+        Session::flash('success', $checked ? 'Pièce marquée fouillée.' : 'Pièce remise en attente.');
+
+        return Response::redirect($back);
+    }
+
+    public function siteCloseAction(Request $request, array $params = []): Response
+    {
+        $siteId = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/sites/' . $siteId);
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $tenantId = $this->tenantId();
+        $site = $this->sites->findById($siteId, $tenantId);
+        if ($site === null) {
+            Session::flash('error', 'Site introuvable.');
+
+            return Response::redirect(url('atak/sse/sites'));
+        }
+
+        $summary = trim((string) $request->input('summary', ''));
+        if ($summary === '') {
+            $summary = $this->sites->buildFiveLineReport($site);
+        }
+        $actor = (string) (Session::get('callsign') ?? Session::get('display_name') ?? 'Commandement');
+        $this->sites->close($siteId, $tenantId, $summary, $actor);
+        Session::flash('success', 'Site clôturé — compte rendu enregistré.');
+
+        return Response::redirect($back);
     }
 
     public function crossIndex(Request $request, array $params = []): Response

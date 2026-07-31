@@ -107,7 +107,8 @@ final class SsePersonRepository
             weapons_json, equipment_json, biometrics_simulated, consent_recorded,
             capture_pos_x, capture_pos_y, capture_pos_z, grid_reference, location_description,
             submitter_user_id, submitter_callsign, submitter_steam_id, target_unit_netid,
-            medical_context_json, signed_by_callsign, signed_terminal_uid, signed_atak_id, signed_at
+            medical_context_json, signed_by_callsign, signed_terminal_uid, signed_atak_id, signed_at,
+            identity_query_json
         ) VALUES (
             :tenant_id, :context_id, :status, :last_name, :first_name, :alias,
             :sex_apparent, :age_estimated, :birth_date, :birth_place, :nationality, :language_spoken,
@@ -116,7 +117,8 @@ final class SsePersonRepository
             :weapons_json, :equipment_json, :biometrics_simulated, :consent_recorded,
             :capture_pos_x, :capture_pos_y, :capture_pos_z, :grid_reference, :location_description,
             :submitter_user_id, :submitter_callsign, :submitter_steam_id, :target_unit_netid,
-            :medical_context_json, :signed_by_callsign, :signed_terminal_uid, :signed_atak_id, :signed_at
+            :medical_context_json, :signed_by_callsign, :signed_terminal_uid, :signed_atak_id, :signed_at,
+            :identity_query_json
         )';
 
         $id = (int) $this->db->insert($sql, [
@@ -161,6 +163,9 @@ final class SsePersonRepository
             'signed_terminal_uid' => $this->nullIfEmpty($signature['terminal_uid'] ?? null),
             'signed_atak_id' => $this->nullIfEmpty($signature['atak_id'] ?? null),
             'signed_at' => ($signature !== [] ? date('Y-m-d H:i:s') : null),
+            'identity_query_json' => is_array($data['identity_query'] ?? null) && $data['identity_query'] !== []
+                ? json_encode($data['identity_query'], JSON_UNESCAPED_UNICODE)
+                : null,
         ]);
 
         $this->addCustodyEvent((int) ($data['tenant_id'] ?? 0), $id, null, 'capture', 'Personne enregistrée', (string) ($data['submitter_callsign'] ?? ''));
@@ -313,6 +318,61 @@ final class SsePersonRepository
         return true;
     }
 
+    /**
+     * Chaîne de possession pour plusieurs fiches, en une requête.
+     * Les événements sont écrits depuis la 1.4.0 (capture, photo, biométrie) mais
+     * n'étaient affichés nulle part.
+     *
+     * @param list<int> $personIds
+     * @return array<int, list<array{type: string, type_label: string, label: string, actor: ?string, created_at: ?string}>>
+     */
+    public function custodyEventsForPersons(array $personIds, int $tenantId): array
+    {
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', $personIds),
+            static fn (int $i): bool => $i > 0
+        )));
+        if ($ids === []) {
+            return [];
+        }
+        $in = implode(',', $ids);
+
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT person_id, event_type, label, actor_callsign, created_at
+                 FROM sse_custody_events
+                 WHERE tenant_id = :t AND person_id IN ({$in})
+                 ORDER BY id ASC",
+                ['t' => $tenantId]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $labels = [
+            'capture' => 'Prise en compte',
+            'biometrie_sim' => 'Relevé biométrique',
+            'photo' => 'Photographie',
+            'transfert' => 'Transfert de garde',
+            'liberation' => 'Remise en liberté',
+        ];
+
+        $out = [];
+        foreach ($rows as $row) {
+            $pid = (int) ($row['person_id'] ?? 0);
+            $type = (string) ($row['event_type'] ?? 'capture');
+            $out[$pid][] = [
+                'type' => $type,
+                'type_label' => $labels[$type] ?? 'Événement',
+                'label' => (string) ($row['label'] ?? ''),
+                'actor' => $row['actor_callsign'] ?? null,
+                'created_at' => $row['created_at'] ?? null,
+            ];
+        }
+
+        return $out;
+    }
+
     private function addCustodyEvent(
         int $tenantId,
         ?int $personId,
@@ -394,6 +454,7 @@ final class SsePersonRepository
             'primary_photo_id' => isset($row['primary_photo_id']) ? (int) $row['primary_photo_id'] : null,
             'target_unit_netid' => $row['target_unit_netid'] ?? null,
             'medical_context' => $this->decodeJsonMap($row['medical_context_json'] ?? null),
+            'identity_query' => $this->decodeJsonMap($row['identity_query_json'] ?? null),
             'signature' => $this->hydrateSignature($row),
             'created_at' => $row['created_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
