@@ -40,10 +40,12 @@ class AtakReportRoutingRepository
         )->fetchAll();
 
         $routedTo = [];
+        $matchedRules = 0;
         
         foreach ($rules as $rule) {
             // Vérifier conditions
             if ($this->matchesConditions($report, $rule)) {
+                $matchedRules++;
                 // Appliquer routage
                 $recipients = $this->routeReport($reportId, $rule);
                 $routedTo = array_merge($routedTo, $recipients);
@@ -53,7 +55,8 @@ class AtakReportRoutingRepository
         return [
             'report_id' => $reportId,
             'routed_to' => $routedTo,
-            'rules_applied' => count($routedTo)
+            'rules_applied' => $matchedRules,
+            'routes_created' => count($routedTo),
         ];
     }
 
@@ -125,8 +128,9 @@ class AtakReportRoutingRepository
         if ($rule['auto_assign_to_roles']) {
             $roles = json_decode($rule['auto_assign_to_roles'], true);
             foreach ($roles as $role) {
-                $this->createRoutingEntry($reportId, $rule['id'], 'ROLE', $role, $rule);
-                $recipients[] = ['type' => 'ROLE', 'identifier' => $role];
+                if ($this->createRoutingEntry($reportId, (int) $rule['id'], 'ROLE', (string) $role, $rule)) {
+                    $recipients[] = ['type' => 'ROLE', 'identifier' => $role];
+                }
             }
         }
 
@@ -134,8 +138,9 @@ class AtakReportRoutingRepository
         if ($rule['auto_assign_to_users']) {
             $users = json_decode($rule['auto_assign_to_users'], true);
             foreach ($users as $userId) {
-                $this->createRoutingEntry($reportId, $rule['id'], 'USER', (string)$userId, $rule);
-                $recipients[] = ['type' => 'USER', 'identifier' => $userId];
+                if ($this->createRoutingEntry($reportId, (int) $rule['id'], 'USER', (string) $userId, $rule)) {
+                    $recipients[] = ['type' => 'USER', 'identifier' => $userId];
+                }
             }
         }
 
@@ -143,8 +148,9 @@ class AtakReportRoutingRepository
         if ($rule['auto_assign_to_units']) {
             $units = json_decode($rule['auto_assign_to_units'], true);
             foreach ($units as $unit) {
-                $this->createRoutingEntry($reportId, $rule['id'], 'UNIT', $unit, $rule);
-                $recipients[] = ['type' => 'UNIT', 'identifier' => $unit];
+                if ($this->createRoutingEntry($reportId, (int) $rule['id'], 'UNIT', (string) $unit, $rule)) {
+                    $recipients[] = ['type' => 'UNIT', 'identifier' => $unit];
+                }
             }
         }
 
@@ -154,10 +160,13 @@ class AtakReportRoutingRepository
     /**
      * Crée une entrée de routage
      */
-    private function createRoutingEntry(int $reportId, int $ruleId, string $type, string $identifier, array $rule): void
+    private function createRoutingEntry(int $reportId, int $ruleId, string $type, string $identifier, array $rule): bool
     {
-        $this->db->execute(
-            "INSERT INTO atak_report_routing_history 
+        $channels = json_decode((string) ($rule['notification_channels'] ?? ''), true);
+        $channel = is_array($channels) && isset($channels[0]) ? (string) $channels[0] : 'in-game';
+
+        return $this->db->execute(
+            "INSERT IGNORE INTO atak_report_routing_history
              (report_id, routing_rule_id, routed_to_type, routed_to_identifier, notification_sent, notification_channel) 
              VALUES (?, ?, ?, ?, ?, ?)",
             [
@@ -165,10 +174,10 @@ class AtakReportRoutingRepository
                 $ruleId,
                 $type,
                 $identifier,
-                $rule['send_notification'] ? 1 : 0,
-                $rule['send_notification'] ? 'in-game' : null
+                0,
+                !empty($rule['send_notification']) ? $channel : null
             ]
-        );
+        ) > 0;
     }
 
     /**
@@ -197,15 +206,19 @@ class AtakReportRoutingRepository
             if ($row['escalate_to_roles']) {
                 $roles = json_decode($row['escalate_to_roles'], true);
                 foreach ($roles as $role) {
-                    $this->createRoutingEntry($row['id'], $row['routing_rule_id'], 'ROLE', $role, [
-                        'send_notification' => true
+                    $created = $this->createRoutingEntry((int) $row['id'], (int) $row['routing_rule_id'], 'ROLE', (string) $role, [
+                        'send_notification' => true,
+                        'notification_channels' => '["in-game"]',
                     ]);
+                    if (!$created) {
+                        continue;
+                    }
+                    $escalated[] = (int) $row['id'];
                 }
-                $escalated[] = $row['id'];
             }
         }
 
-        return $escalated;
+        return array_values(array_unique($escalated));
     }
 
     /**
@@ -235,7 +248,7 @@ class AtakReportRoutingRepository
                 FROM atak_tactical_reports r
                 JOIN atak_report_routing_history rh ON r.id = rh.report_id
                 WHERE " . implode(" AND ", $conditions) . "
-                ORDER BY r.priority DESC, r.report_timestamp DESC";
+                ORDER BY FIELD(r.priority, 'FLASH', 'IMMEDIATE', 'PRIORITY', 'ROUTINE'), r.report_timestamp DESC";
 
         return $this->db->query($sql, $params)->fetchAll();
     }
@@ -243,13 +256,22 @@ class AtakReportRoutingRepository
     /**
      * Marque un routage comme acquitté
      */
-    public function acknowledgeRouting(int $reportId, string $recipientType, string $recipientIdentifier, int $userId): bool
+    public function acknowledgeRouting(
+        int $reportId,
+        int $tenantId,
+        int $contextId,
+        string $recipientType,
+        string $recipientIdentifier,
+        int $userId
+    ): bool
     {
         return $this->db->execute(
-            "UPDATE atak_report_routing_history 
-             SET acknowledged = TRUE, acknowledged_by_user_id = ?, acknowledged_at = NOW()
-             WHERE report_id = ? AND routed_to_type = ? AND routed_to_identifier = ?",
-            [$userId, $reportId, $recipientType, $recipientIdentifier]
-        );
+            "UPDATE atak_report_routing_history rh
+             JOIN atak_tactical_reports r ON r.id = rh.report_id
+             SET rh.acknowledged = TRUE, rh.acknowledged_by_user_id = ?, rh.acknowledged_at = NOW()
+             WHERE rh.report_id = ? AND r.tenant_id = ? AND r.context_id = ?
+               AND rh.routed_to_type = ? AND rh.routed_to_identifier = ?",
+            [$userId, $reportId, $tenantId, $contextId, $recipientType, $recipientIdentifier]
+        ) > 0;
     }
 }

@@ -8599,6 +8599,29 @@ class AtakApiController
         ];
 
         $reportId = $repo->create($data);
+        $routing = [
+            'enabled' => false,
+            'rules_applied' => 0,
+            'routes_created' => 0,
+            'routed_to' => [],
+        ];
+        $routingState = (new \App\Services\Tactical\AtakBridgeModulesService())->get($tenantId);
+        if (($routingState['modules']['report_routing'] ?? true) === true) {
+            try {
+                $routingResult = (new \App\Repositories\AtakReportRoutingRepository())
+                    ->applyRoutingRules($reportId, $tenantId, $mapId);
+                $routing = array_merge($routing, $routingResult, ['enabled' => true]);
+            } catch (\Throwable $exception) {
+                error_log(sprintf(
+                    '[atak_report_routing] report=%d tenant=%d context=%d error=%s',
+                    $reportId,
+                    $tenantId,
+                    $mapId,
+                    $exception->getMessage()
+                ));
+                $routing['error'] = 'routing_unavailable';
+            }
+        }
         
         $activityMeta = $this->buildActivityMeta(
             $tenantId,
@@ -8647,6 +8670,12 @@ class AtakApiController
                 $activityMeta['report_' . strtolower($safeKey)] = (string) $fieldValue;
             }
         }
+        $activityMeta['routing_enabled'] = (bool) ($routing['enabled'] ?? false);
+        $activityMeta['routing_rules_applied'] = (int) ($routing['rules_applied'] ?? 0);
+        $activityMeta['routing_routes_created'] = (int) ($routing['routes_created'] ?? 0);
+        if (isset($routing['error'])) {
+            $activityMeta['routing_error'] = (string) $routing['error'];
+        }
 
         $this->activityLog->record(
             $tenantId,
@@ -8658,6 +8687,9 @@ class AtakApiController
         );
 
         $report = $repo->findById($reportId);
+        if (is_array($report)) {
+            $report['routing'] = $routing;
+        }
         
         return Response::json($report, 201);
     }

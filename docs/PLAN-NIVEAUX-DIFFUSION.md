@@ -1,6 +1,6 @@
 # Plan #25 — niveaux de diffusion ATAK
 
-**Statut :** proposition soumise à décision, sans activation de filtrage  
+**Statut :** phase A engagée, sans activation de filtrage
 **Périmètre recommandé pour le premier lot :** routage des informations ATAK  
 **Hors périmètre :** dossiers SSE, perception directe en jeu
 
@@ -81,6 +81,8 @@ La diffusion décrit la circulation d'une **information rapportée**, pas la per
 
 **But :** obtenir des usages réels sans masquer quoi que ce soit.
 
+Le premier incrément est désormais branché à la création des rapports tactiques : le module `report_routing` applique les règles actives, renvoie son bilan dans la réponse de création et empêche les distributions identiques. Les notifications restent volontairement « en attente » tant qu'un transport n'a pas confirmé leur envoi. La boîte de réception, l'acquittement par destinataire et le job d'escalade restent les incréments suivants de cette phase.
+
 1. Définir quels événements `PING`, `CHAT` et `PHOTO` deviennent des rapports tactiques routables ; conserver les autres dans `atak_intel` si nécessaire.
 2. À l'ingestion, créer le rapport dans le contexte et le tenant authentifiés, puis appeler `applyRoutingRules()` après la transaction d'écriture.
 3. Rendre l'application idempotente : une même règle et un même destinataire ne doivent pas créer plusieurs lignes d'historique lors d'une nouvelle tentative.
@@ -145,4 +147,3 @@ Décider **la phase A seule**. Elle valorise le chantier existant et fournit des
 2. **Source routable :** `PING`, `CHAT` et `PHOTO` doivent-ils tous produire un rapport tactique, ou seulement certains événements/promotions manuelles ?
 3. **Audience par défaut :** pour une information nouvelle sans audience explicite, faut-il conserver la visibilité actuelle, limiter au producteur, ou appliquer un modèle de mission ?
 4. **Autorité :** qui peut modifier l'audience, acquitter pour une unité et forcer une diffusion ou une escalade — auteur, chef d'unité, TOC, administrateur de mission ?
-
