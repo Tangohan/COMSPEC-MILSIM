@@ -8727,26 +8727,163 @@ class AtakApiController
             return $r;
         }
         
-        $actor = $this->guardArmaWrite($request, $r, false);
-        if ($actor instanceof Response) {
-            return $actor;
+        $identity = $this->routingIdentity($request, $r);
+        if ($identity instanceof Response) {
+            return $identity;
         }
 
         $id = (int) ($params['id'] ?? 0);
-        $userId = $actor['user_id'] ?? null;
-        
-        if (!$userId) {
-            return Response::json(['error' => 'User ID required'], 400);
-        }
+        $userId = $identity['user_id'];
 
         $repo = new \App\Repositories\AtakTacticalReportRepository();
-        $success = $repo->acknowledge($id, $userId);
+        $success = $repo->acknowledge($id, $r, $this->mapId($request, true), $userId);
         
         if (!$success) {
             return Response::json(['error' => 'Report not found'], 404);
         }
         
         return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Boîte de réception des rapports routés vers l'utilisateur, ses rôles ou ses unités.
+     * GET /api/atak/reports/routed
+     */
+    public function tacticalReportsRouted(Request $request, array $params = []): Response
+    {
+        $tenant = $this->requireTenant($request);
+        if ($tenant instanceof Response) {
+            return $tenant;
+        }
+        $identity = $this->routingIdentity($request, $tenant);
+        if ($identity instanceof Response) {
+            return $identity;
+        }
+
+        $contextId = $this->mapId($request);
+        $filters = [
+            'unacknowledged_only' => filter_var(
+                $request->query('unacknowledged_only', false),
+                FILTER_VALIDATE_BOOLEAN
+            ),
+            'priority' => $request->query('priority'),
+            'limit' => max(1, min(200, (int) ($request->query('limit', 100) ?? 100))),
+        ];
+        $reports = (new \App\Repositories\AtakReportRoutingRepository())->listForRecipients(
+            $tenant,
+            $contextId,
+            $identity['recipients'],
+            array_filter($filters, static fn ($value): bool => $value !== null && $value !== false && $value !== '')
+        );
+
+        return Response::json([
+            'reports' => $reports,
+            'count' => count($reports),
+        ]);
+    }
+
+    /**
+     * Acquitte une distribution individuelle si elle vise réellement l'appelant.
+     * POST /api/atak/reports/:id/routing/:routingId/acknowledge
+     */
+    public function tacticalReportRoutingAcknowledge(Request $request, array $params = []): Response
+    {
+        $tenant = $this->requireTenant($request);
+        if ($tenant instanceof Response) {
+            return $tenant;
+        }
+        $identity = $this->routingIdentity($request, $tenant);
+        if ($identity instanceof Response) {
+            return $identity;
+        }
+
+        $success = (new \App\Repositories\AtakReportRoutingRepository())->acknowledgeRoutingForRecipients(
+            (int) ($params['routingId'] ?? 0),
+            (int) ($params['id'] ?? 0),
+            $tenant,
+            $this->mapId($request, true),
+            $identity['recipients'],
+            $identity['user_id']
+        );
+        if (!$success) {
+            return Response::json(['error' => 'Routing not found or not assigned to this user'], 404);
+        }
+
+        $this->activityLog->record(
+            $tenant,
+            $this->mapId($request, true),
+            'TACTICAL_REPORT_ROUTING_ACKNOWLEDGED',
+            sprintf('Diffusion du rapport #%d acquittée', (int) ($params['id'] ?? 0)),
+            (string) ($identity['user_id']),
+            [
+                'report_id' => (int) ($params['id'] ?? 0),
+                'routing_id' => (int) ($params['routingId'] ?? 0),
+                'acknowledged_by_user_id' => $identity['user_id'],
+            ]
+        );
+
+        return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Résout uniquement des identifiants détenus par l'appelant ; aucun destinataire ne vient du payload.
+     *
+     * @return array{user_id:int, recipients:list<array{type:string,identifier:string}>}|Response
+     */
+    private function routingIdentity(Request $request, int $tenantId): array|Response
+    {
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if ($userId < 1) {
+            if (!$this->authArma()) {
+                return Response::json(['error' => 'Unauthorized'], 401);
+            }
+            $actor = $this->guardArmaWrite($request, $tenantId, true);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, (string) ($actor['steam_uid'] ?? ''));
+            $userId = (int) ($user['id'] ?? 0);
+        }
+        if ($userId < 1) {
+            return Response::json(['error' => 'Linked user required'], 403);
+        }
+        $user = $this->userRepository->findById($userId, $tenantId);
+        if (!$user || (int) ($user['tenant_id'] ?? 0) !== $tenantId) {
+            return Response::json(['error' => 'User does not belong to this tenant'], 403);
+        }
+
+        $recipients = [['type' => 'USER', 'identifier' => (string) $userId]];
+        $roleIds = $this->userRepository->listOrganizationRoleIdsForUser($userId);
+        foreach ((new \App\Repositories\RoleRepository())->allForTenant($tenantId) as $role) {
+            if (!in_array((int) ($role['id'] ?? 0), $roleIds, true)) {
+                continue;
+            }
+            foreach (['id', 'slug', 'name'] as $field) {
+                $value = trim((string) ($role[$field] ?? ''));
+                if ($value !== '') {
+                    $recipients[] = ['type' => 'ROLE', 'identifier' => $value];
+                }
+            }
+        }
+        foreach ($this->unitRepository->unitIdsForUser($tenantId, $userId) as $unitId) {
+            $unit = $this->unitRepository->findById($unitId, $tenantId);
+            if (!$unit) {
+                continue;
+            }
+            foreach (['id', 'slug', 'code', 'name'] as $field) {
+                $value = trim((string) ($unit[$field] ?? ''));
+                if ($value !== '') {
+                    $recipients[] = ['type' => 'UNIT', 'identifier' => $value];
+                }
+            }
+        }
+
+        $unique = [];
+        foreach ($recipients as $recipient) {
+            $unique[$recipient['type'] . ':' . $recipient['identifier']] = $recipient;
+        }
+
+        return ['user_id' => $userId, 'recipients' => array_values($unique)];
     }
 
     // --- Points d'Intérêt (POI) tactiques ---

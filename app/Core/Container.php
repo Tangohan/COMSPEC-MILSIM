@@ -494,6 +494,12 @@ class Container
             \App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class => new \App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob(
                 \App\Core\Database::getPdo()
             ),
+            \App\Repositories\AtakReportRoutingRepository::class => new \App\Repositories\AtakReportRoutingRepository(),
+            \App\Services\Tactical\AtakBridgeModulesService::class => new \App\Services\Tactical\AtakBridgeModulesService(),
+            \App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class => new \App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob(
+                self::get(\App\Repositories\AtakReportRoutingRepository::class),
+                self::get(\App\Services\Tactical\AtakBridgeModulesService::class)
+            ),
             \App\Services\Cron\CronRunner::class => new \App\Services\Cron\CronRunner(
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
@@ -505,6 +511,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\RoleplayBilanDueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AttendanceRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),

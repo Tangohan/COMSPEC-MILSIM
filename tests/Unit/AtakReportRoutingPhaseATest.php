@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Services\Tactical\AtakBridgeModulesService;
+use App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob;
 use PHPUnit\Framework\TestCase;
 
 final class AtakReportRoutingPhaseATest extends TestCase
@@ -31,5 +32,23 @@ final class AtakReportRoutingPhaseATest extends TestCase
         self::assertStringContainsString('routing_rule_id,', $migration);
         self::assertStringContainsString('routed_to_type,', $migration);
         self::assertStringContainsString('routed_to_identifier', $migration);
+    }
+
+    public function testRoutedInboxAndAcknowledgementRoutesAreRegistered(): void
+    {
+        $routes = file_get_contents(base_path('routes/web.php'));
+
+        self::assertIsString($routes);
+        self::assertStringContainsString("'/api/atak/reports/routed'", $routes);
+        self::assertStringContainsString("'/api/atak/reports/{id}/routing/{routingId}/acknowledge'", $routes);
+    }
+
+    public function testEscalationJobHasAStableCronKey(): void
+    {
+        $reflection = new \ReflectionClass(AtakReportRoutingEscalationsCronJob::class);
+        /** @var AtakReportRoutingEscalationsCronJob $job */
+        $job = $reflection->newInstanceWithoutConstructor();
+
+        self::assertSame('atak_report_routing_escalations', $job->key());
     }
 }

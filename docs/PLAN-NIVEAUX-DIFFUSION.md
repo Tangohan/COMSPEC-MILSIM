@@ -81,15 +81,15 @@ La diffusion décrit la circulation d'une **information rapportée**, pas la per
 
 **But :** obtenir des usages réels sans masquer quoi que ce soit.
 
-Le premier incrément est désormais branché à la création des rapports tactiques : le module `report_routing` applique les règles actives, renvoie son bilan dans la réponse de création et empêche les distributions identiques. Les notifications restent volontairement « en attente » tant qu'un transport n'a pas confirmé leur envoi. La boîte de réception, l'acquittement par destinataire et le job d'escalade restent les incréments suivants de cette phase.
+Le routage est désormais branché à la création des rapports tactiques : le module `report_routing` applique les règles actives, renvoie son bilan dans la réponse de création et empêche les distributions identiques. Une boîte de réception calcule les identités réellement détenues par l'appelant (`USER`, rôles et unités), l'acquittement porte sur une distribution précise, et le job planifié traite les escalades idempotentes. Les notifications restent volontairement « en attente » tant qu'un transport n'a pas confirmé leur envoi.
 
 1. Définir quels événements `PING`, `CHAT` et `PHOTO` deviennent des rapports tactiques routables ; conserver les autres dans `atak_intel` si nécessaire.
 2. À l'ingestion, créer le rapport dans le contexte et le tenant authentifiés, puis appeler `applyRoutingRules()` après la transaction d'écriture.
 3. Rendre l'application idempotente : une même règle et un même destinataire ne doivent pas créer plusieurs lignes d'historique lors d'une nouvelle tentative.
 4. Respecter réellement `notification_channels` ; l'implémentation actuelle enregistre seulement `in-game` et marque la notification envoyée sans preuve d'envoi.
-5. Exposer une boîte de réception routée, limitée aux identités `USER`, `ROLE` et `UNIT` effectivement détenues par l'appelant.
-6. Exposer l'accusé de réception avec contrôle tenant/contexte/destinataire et journal d'audit.
-7. Exécuter `processEscalations()` dans un job planifié idempotent et empêcher les escalades répétées vers le même rôle.
+5. ~~Exposer une boîte de réception routée, limitée aux identités `USER`, `ROLE` et `UNIT` effectivement détenues par l'appelant.~~
+6. ~~Exposer l'accusé de réception avec contrôle tenant/contexte/destinataire et journal d'audit.~~
+7. ~~Exécuter `processEscalations()` dans un job planifié idempotent et empêcher les escalades répétées vers le même rôle.~~
 8. Ajouter métriques et tests : règles évaluées, rapports sans règle, distributions, délais d'acquittement, escalades et doublons évités.
 
 **Critères de sortie :** routage observable de bout en bout, zéro modification des listes/cartes existantes, aucun accès élargi par le nouvel endpoint, et possibilité de désactiver le module par tenant.
