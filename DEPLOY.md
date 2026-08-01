@@ -444,6 +444,30 @@ Post-check :
 
 ---
 
+## 3bis. Contrôle d'intégrité après envoi (recommandé)
+
+```bash
+php tools/audit-integrite.php
+```
+
+Cherche précisément ce qu'un envoi FTP incomplet produit :
+
+| Contrôle | Symptôme sans lui |
+|---|---|
+| Route → classe ou méthode absente | HTTP 500 (déjà vu : `AtakOrderWaypoint`, `ArmaMarkerLabel`) |
+| Vue référencée mais absente | **Page blanche en HTTP 200**, aucune trace dans les journaux |
+| Classe qui ne se charge pas | Écran mort sur tout un domaine |
+| Méthode déclarée deux fois | Cause fréquente du point précédent |
+
+Code de retour 0 si tout est en place, 1 sinon — enchaînable dans un script.
+
+`php -l` ne remplace pas ce contrôle : une méthode déclarée deux fois passe
+l'analyse syntaxique et n'échoue qu'à la compilation de la classe. C'est ainsi
+que les quatre routes `/admin/audit` sont restées mortes sans que rien ne le
+signale.
+
+---
+
 ## 4. Vérification syntaxe PHP (sur le serveur)
 
 ```bash
