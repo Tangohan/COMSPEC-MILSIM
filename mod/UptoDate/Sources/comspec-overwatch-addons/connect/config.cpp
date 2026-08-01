@@ -88,6 +88,7 @@ class CfgFunctions {
             class outboxPush {};
             class outboxFlush {};
             class outboxState {};
+            class wallClockSeconds {};
             class submitChat {};
             class submitChatPhoto {};
             class openHub {};

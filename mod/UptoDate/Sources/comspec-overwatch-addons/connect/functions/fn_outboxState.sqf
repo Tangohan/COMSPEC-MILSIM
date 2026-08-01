@@ -41,12 +41,13 @@ if ((toLower _mode) isEqualTo "clear") exitWith {
     _out
 };
 
+private _now = [] call comspec_overwatch_connect_fnc_wallClockSeconds;
 private _labels = [];
 private _oldest = 0;
 {
     _labels pushBack (_x param [2, "?"]);
-    private _age = time - (_x param [4, time]);
-    if (_age > _oldest) then { _oldest = _age; };
+    private _age = _now - (_x param [4, _now]);
+    if (_age > 0 && { _age > _oldest }) then { _oldest = _age; };
 } forEach _queue;
 
 _out set ["count", count _queue];

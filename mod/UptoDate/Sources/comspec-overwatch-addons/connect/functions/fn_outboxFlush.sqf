@@ -41,6 +41,10 @@ if (!(_maxAge isEqualType 0) || { _maxAge < 60 }) then { _maxAge = 1800; };
 private _maxTries = missionNamespace getVariable ["COMSPEC_OutboxMaxTries", 5];
 if (!(_maxTries isEqualType 0) || { _maxTries < 1 }) then { _maxTries = 5; };
 
+// L'âge se mesure en horloge murale ; la temporisation, elle, reste en temps de
+// mission — c'est une cadence de session, pas une durée à conserver.
+private _now = [] call comspec_overwatch_connect_fnc_wallClockSeconds;
+
 private _remaining = [];
 private _sent = 0;
 private _expired = 0;
@@ -49,9 +53,20 @@ private _failed = 0;
 {
     _x params ["_cmd", "_args", "_label", "_linkCat", "_queuedAt", "_tries"];
 
-    private _age = time - _queuedAt;
+    private _age = _now - _queuedAt;
 
     switch (true) do {
+        // Entrée écrite par une version antérieure, horodatée en temps de mission :
+        // elle est inexploitable et son âge ne veut rien dire. On l'écarte plutôt
+        // que de risquer de rejouer une demande d'une opération précédente.
+        case (_queuedAt < 1000000000 || { _age < 0 }): {
+            _expired = _expired + 1;
+            [
+                "WARN",
+                "Outbox",
+                format ["Horodatage inexploitable, entrée écartée : %1", _label]
+            ] call comspec_overwatch_connect_fnc_log;
+        };
         case (_age > _maxAge): {
             _expired = _expired + 1;
             [
@@ -97,6 +112,14 @@ if (_remaining isEqualTo []) then {
     missionNamespace setVariable ["COMSPEC_OutboxNextAt", time + (_base * (2 ^ (_worst min 5)))];
 };
 
+if (_failed > 0) then {
+    [
+        "WARN",
+        "Outbox",
+        format ["%1 transmission(s) ont échoué et restent en attente (nouvelle tentative différée)", _failed]
+    ] call comspec_overwatch_connect_fnc_log;
+};
+
 if (_sent > 0) then {
     [
         format ["Liaison rétablie — %1 transmission(s) en attente envoyée(s).", _sent],
@@ -108,7 +131,7 @@ if (_sent > 0) then {
 if (_expired > 0) then {
     [
         format [
-            "%1 transmission(s) non parvenue(s) : trop ancienne(s) pour être rejouée(s). À refaire si l'information vaut toujours.",
+            "%1 transmission(s) non parvenue(s) et abandonnée(s). À refaire si l'information vaut toujours.",
             _expired
         ],
         "tactical",

@@ -53,7 +53,11 @@ if ((count _queue) >= _max) then {
     ] call comspec_overwatch_connect_fnc_log;
 };
 
-_queue pushBack [_cmd, _args, _label, _linkCat, time, 0];
+// Horloge murale et non `time` : le tampon vit dans le profil, il traverse les
+// missions. Un horodatage de temps de mission relu à la session suivante donne un
+// âge négatif, donc une entrée qui ne périme jamais.
+private _now = [] call comspec_overwatch_connect_fnc_wallClockSeconds;
+_queue pushBack [_cmd, _args, _label, _linkCat, _now, 0];
 profileNamespace setVariable ["COMSPEC_Outbox", _queue];
 saveProfileNamespace;
 

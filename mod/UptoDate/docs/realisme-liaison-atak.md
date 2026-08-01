@@ -228,6 +228,16 @@ Le tampon vit dans le profil du joueur. Il survit à un plantage du jeu ou à un
 reconnexion : la coupure qui fait perdre des données est rarement propre, un
 tampon en mémoire seule ne servirait à rien dans le cas qui compte.
 
+Chaque entrée est horodatée sur **l'horloge murale**, pas sur le temps de mission.
+C'est ce qui permet à la péremption de fonctionner d'une session à l'autre : le
+temps de mission repart à zéro à chaque partie, si bien qu'une entrée posée à une
+heure de jeu se relirait, la session suivante, avec un âge négatif — donc comme
+jamais périmée. Une demande MEDEVAC de l'opération de samedi se serait rejouée
+dans celle du week-end suivant.
+
+Les entrées écrites par une version antérieure du mod, horodatées en temps de
+mission, sont écartées au premier rejeu plutôt que réinterprétées.
+
 ### Rejeu
 
 Au retour de la liaison, les transmissions partent dans l'ordre de saisie.

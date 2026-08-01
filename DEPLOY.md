@@ -412,6 +412,20 @@ Post-check :
 - [ ] Le registre des dossiers propose les **deux** interrupteurs, tous deux DÉSARMÉS
 - [ ] Le journal porte une ligne `SSE_CLEARANCE` après chaque export PDF
 
+### Correctif audit système (CORRECTIF BLOQUANT)
+
+| Fichier | Rôle |
+|---|---|
+| `app/Controllers/Admin/System/SystemAuditController.php` | Homonymie `rollback()` levée — la classe ne se chargeait pas |
+
+Les quatre routes `/admin/audit` étaient inaccessibles. À uploader indépendamment
+du reste, le correctif ne dépend de rien.
+
+Post-check :
+
+- [ ] `/admin/audit` s'ouvre
+- [ ] Le détail d'une entrée s'ouvre et propose reprise et alerte
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |
