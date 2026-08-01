@@ -26,6 +26,7 @@ Bienvenue dans la documentation complète des features ATAK pour COMSPEC Overwat
 
 | Document | Description | Pour qui |
 |----------|-------------|----------|
+| **[Étude ATAK officiel : fonctions et extensions](ATAK-RECHERCHE-FONCTIONNALITES-EXTENSIONS.md)** | Recherche sourcée, modèle d'extension et propositions de modules optionnels | Product, Architectes, Développeurs |
 | **[Proposition features](NOUVELLES-FEATURES-ATAK-MOD.md)** | 15 features sur 5 phases | Product, PM |
 | **[Comparaison produits](COMPARAISON-PRODUIT-COMSPEC-CTAB-SIT.md)** | COMSPEC vs CTAB/SIT/ATAK | Product, Marketing |
 | **[Documentation ATAK Web](ATAK-WEB-DOCUMENTATION-PRODUIT.md)** | Features interface web | Product, Utilisateurs |
