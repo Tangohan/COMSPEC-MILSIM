@@ -323,15 +323,165 @@ Principes :
 
 ---
 
-## 9. Application au projet COMSPEC
+## 9. Ajouts proposés pour notre mod COMSPEC Overwatch
 
 COMSPEC possède déjà une Tacmap web, une liaison Arma 3, des positions, marqueurs,
-messages, photos, rapports, JTAC et fonctions de commandement. Il ne faut pas les présenter
-comme des fonctions natives d'ATAK officiel. Une future interconnexion devrait commencer
-par une **passerelle expérimentale et isolée** : mapping documenté des identifiants,
-coordonnées et durées de validité, puis tests sur données synthétiques.
+messages, photos, rapports, JTAC, MEDEVAC, QRF, véhicules, météo et fonctions de
+commandement. Il ne faut ni recréer ces fonctions, ni les présenter comme des fonctions
+natives de l'ATAK officiel.
 
-Ordre conseillé pour COMSPEC :
+Les propositions ci-dessous ciblent le **mod actif** dans
+`mod/UptoDate/Sources/comspec-overwatch-addons/`. Elles complètent les quatre addons
+existants : `connect` pour le socle Athena, `atak_athena` pour le pont cTab/BCE,
+`mavik_compat` pour les drones compatibles et `sse_ace` pour l'intégration médicale ACE.
+
+### 9.1 Terminer les chaînes déjà amorcées — priorité immédiate
+
+| Ajout dans le mod | Expérience joueur | Réutilisation du portail | Addon cible | Critère d'acceptation |
+|---|---|---|---|---|
+| **Routes et waypoints synchronisés** | Le chef reçoit une route numérotée sur sa tablette ; le prochain point est mis en avant et peut être déclaré atteint. | API de routes et waypoints déjà disponible. | `connect`, avec rendu optionnel dans `atak_athena` | Création d'une route web de cinq points, réception en jeu, progression puis reprise correcte après reconnexion. |
+| **Timeline enrichie côté jeu** | Les actions importantes produisent des événements cohérents : départ, contact, rapport, blessé, QRF, objectif et fin de mission. | API Replay existante, actuellement seulement partiellement alimentée/restituée. | `connect` | Aucun doublon après reconnexion ; chaque événement possède mission, auteur, position et heure serveur. |
+| **Mission de reconnaissance UAV** | Le chef assigne une route à un drone ; l'opérateur accepte, met en pause ou annule depuis le terminal. | Routes, air assets et flux vidéo existent déjà. | `mavik_compat` + `connect` | Aucun mouvement automatique sans acceptation locale ; perte de liaison = maintien ou retour selon réglage mission. |
+| **File de photos robuste** | Une photo prise hors réseau reste en attente, affiche son état et repart après retour de la liaison. | Dépôt de photos et portail Cams existants. | `connect` / DLL | Une même photo n'est jamais publiée deux fois ; limites de taille, quantité et rétention sont configurables. |
+
+Ces quatre ajouts offrent le meilleur rapport valeur/effort : ils branchent des capacités
+serveur déjà présentes au lieu d'ouvrir de nouveaux domaines fonctionnels.
+
+### 9.2 Nouveaux modules optionnels — P0
+
+#### A. État de liaison compréhensible
+
+Remplacer le simple état connecté/déconnecté par un widget compact : qualité estimée,
+dernier échange réussi, éléments en attente et mode dégradé actif.
+
+- **CBA :** activation, fréquence de test et seuils configurables par mission ;
+- **réseau :** aucun ping supplémentaire si un échange métier récent fournit déjà la mesure ;
+- **UX :** vert/orange/rouge accompagné d'un texte ou pictogramme, jamais la couleur seule ;
+- **acceptation :** une coupure simulée explique immédiatement ce qui reste local et ce
+  qui sera resynchronisé.
+
+#### B. Boîte d'envoi hors ligne commune
+
+Créer un gestionnaire unique pour rapports, marqueurs, QRF, MEDEVAC et photos, au lieu de
+laisser chaque fonction gérer différemment les échecs réseau.
+
+- file persistante bornée, priorité (`urgence`, `normal`, `volumineux`) et backoff ;
+- identifiant d'idempotence conservé jusqu'à l'accusé serveur ;
+- bouton « réessayer » et possibilité de supprimer un élément non critique ;
+- télémétrie agrégée, sans contenu tactique dans les journaux ;
+- **acceptation :** scénario connexion → coupure → cinq actions → reconnexion sans perte
+  ni doublon.
+
+#### C. Ordres avec accusé de réception
+
+Un ordre web ou in-game devient un objet suivi : `reçu`, `lu`, `accepté`, `refusé avec
+motif`, `terminé`. Une expiration empêche qu'un ordre ancien réapparaisse comme actuel.
+
+- destinataire individuel, groupe ou rôle ;
+- accusé manuel pour les ordres critiques, automatique uniquement pour « reçu » ;
+- historique visible au commandement et à l'équipe concernée ;
+- **acceptation :** l'émetteur distingue sans ambiguïté transport réussi et acceptation
+  humaine.
+
+#### D. Checklist pré-mission locale
+
+Avant la mise en liaison : vérification URL, Mission ID, clé communautaire, terminal
+équipé, dépendances optionnelles, carte, espace disque et heure du poste.
+
+- résultat exportable dans le diagnostic existant ;
+- aucun secret affiché ou copié dans le rapport ;
+- profil `joueur`, `chef`, `JTAC`, `médical` ou `UAV` ;
+- **acceptation :** un mauvais Mission ID ou une dépendance absente est détecté avant le
+  premier envoi.
+
+### 9.3 Nouveaux modules optionnels — P1
+
+#### E. Qualité et fraîcheur des contacts
+
+Les icônes indiquent `direct`, `relayé`, `estimé` ou `obsolète`, avec âge et incertitude.
+Après expiration, un contact est grisé puis masqué selon la politique de mission ; il
+n'est jamais déplacé artificiellement pour donner une impression de précision.
+
+#### F. Passation de commandement
+
+Le chef sortant sélectionne situation, tâches ouvertes, derniers rapports et points
+d'attention. Le chef entrant accuse réception d'un résumé borné. Les données brutes ne
+sont pas recopiées : le résumé référence leurs identifiants.
+
+#### G. Couches et profils par rôle
+
+Profils d'affichage `commandement`, `médical`, `logistique`, `UAV` et `renseignement`.
+Chaque profil choisit les couches visibles et le niveau de notifications sans modifier
+les droits serveur. Un filtre d'interface ne doit jamais être traité comme une autorisation.
+
+#### H. Balises logistiques
+
+Ajout rapide d'un point carburant, munitions, réparation, eau ou médical avec quantité
+approximative, état, heure et auteur. Les entrées expirent ou demandent une confirmation
+périodique afin d'éviter les stocks fantômes.
+
+#### I. Journal technique partageable
+
+Générer depuis le hub un diagnostic court : versions des PBO et de la DLL, dépendances
+détectées, état de liaison, dernier code d'erreur et taille des files. Le joueur contrôle
+l'envoi et voit exactement les champs transmis ; clé, chat, coordonnées et identité Steam
+sont exclus par défaut.
+
+### 9.4 Modules expérimentaux — P2
+
+#### J. Relecture d'exercice in-game
+
+Mode séparé de la mission active qui rejoue positions et événements désensibilisés sur
+une carte de débriefing. Un bandeau permanent « REPLAY » et un namespace distinct rendent
+impossible la confusion avec le direct.
+
+#### K. Détection d'incohérences
+
+Signaler localement les sauts impossibles, les horloges décalées, les doublons et une
+position trop ancienne. Le module diagnostique la **donnée** ; il ne qualifie jamais un
+joueur d'ennemi ou de tricheur.
+
+#### L. Interopérabilité CoT expérimentale
+
+Une passerelle distincte traduit d'abord uniquement positions et marqueurs d'exercice.
+Elle ne doit pas être intégrée directement à la DLL tant que le mapping, l'idempotence,
+`stale`, les groupes et les certificats n'ont pas été validés sur un TAK Server isolé.
+
+### 9.5 Ce que nous déconseillons
+
+- **contrôle caméra invisible ou capture périodique imposée** : coût performance et risque
+  de confidentialité ; préférer une capture explicite avec témoin visuel ;
+- **pilotage autonome d'un drone depuis le portail** : conserver une acceptation et une
+  reprise en main côté joueur ;
+- **actions de tir automatiques** : le portail peut préparer une demande simulée, mais un
+  joueur ou Zeus doit la valider et déclencher l'effet en jeu ;
+- **synchronisation de tout vers tous** : appliquer rôles, groupes, portée et expiration ;
+- **nouvel addon monolithique** : placer la logique commune dans `connect` et garder les
+  intégrations cTab, drone ou ACE optionnelles et sans dépendance dure.
+
+### 9.6 Découpage de livraison recommandé
+
+| Sprint | Contenu | Démonstration attendue |
+|---|---|---|
+| **Sprint 1** | État de liaison + boîte d'envoi commune | Rapport, marqueur et MEDEVAC créés hors ligne puis synchronisés une seule fois. |
+| **Sprint 2** | Routes/waypoints + checklist pré-mission | Route web suivie en jeu et diagnostic d'une configuration volontairement erronée. |
+| **Sprint 3** | Ordres accusés + fraîcheur contacts | Commandement suit réception/acceptation ; un contact expiré est clairement différencié. |
+| **Sprint 4** | Photos robustes + profils par rôle | Reprise d'un upload interrompu et interface adaptée sans contournement des droits. |
+| **Pilote** | UAV assisté + passation | Mission drone acceptée localement et relève complète sur serveur d'exercice. |
+
+### 9.7 Règles d'implémentation pour le mod
+
+1. chaque module est désactivable dans CBA et par feature flag serveur ;
+2. les fonctions SQF sont idempotentes et n'utilisent pas de boucle par frame pour le réseau ;
+3. la DLL assure le transport, pas les décisions métier ou l'interface ;
+4. chaque payload porte version de contrat, Mission ID, identifiant d'événement et date ;
+5. les intégrations ACE, cTab/BCE, Mavic et ATAK Enhanced restent optionnelles ;
+6. chaque ajout possède un scénario de test dédié serveur, client hébergé et client dédié ;
+7. toute évolution du contrat conserve une période de compatibilité avec le portail publié.
+
+### 9.8 Trajectoire d'interopérabilité ATAK officiel
+
+Une future interconnexion doit commencer par une **passerelle expérimentale et isolée** :
 
 1. inventaire des objets COMSPEC et de leurs niveaux d'accès ;
 2. profil CoT minimal pour positions et marqueurs non sensibles ;
