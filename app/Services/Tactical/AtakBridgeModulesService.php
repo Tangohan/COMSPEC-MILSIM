@@ -83,6 +83,11 @@ final class AtakBridgeModulesService
                 'label' => 'Miroir Athena → cTab',
                 'description' => 'Diffuse les alertes / BDA envoyés depuis Athena vers les appareils cTab en jeu.',
             ],
+            [
+                'id' => 'report_routing',
+                'label' => 'Routage des rapports tactiques',
+                'description' => 'Applique les règles de distribution aux rapports, sans masquer les données existantes.',
+            ],
         ];
     }
 

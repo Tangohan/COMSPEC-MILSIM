@@ -196,16 +196,18 @@ class AtakTacticalReportRepository
     /**
      * Marque un rapport comme acquitté
      */
-    public function acknowledge(int $id, int $acknowledgedByUserId): bool
+    public function acknowledge(int $id, int $tenantId, int $contextId, int $acknowledgedByUserId): bool
     {
         $sql = "UPDATE atak_tactical_reports 
                 SET acknowledged_by_user_id = :user_id, 
                     acknowledged_at = NOW(),
                     status = CASE WHEN status = 'SUBMITTED' THEN 'ACKNOWLEDGED' ELSE status END
-                WHERE id = :id";
+                WHERE id = :id AND tenant_id = :tenant_id AND context_id = :context_id";
         
         return $this->db->execute($sql, [
             'id' => $id,
+            'tenant_id' => $tenantId,
+            'context_id' => $contextId,
             'user_id' => $acknowledgedByUserId
         ]) > 0;
     }
