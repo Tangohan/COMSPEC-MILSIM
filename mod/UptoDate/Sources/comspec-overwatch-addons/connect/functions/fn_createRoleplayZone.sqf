@@ -89,14 +89,26 @@ if (isNil "COMSPEC_RoleplayZones") then {
 COMSPEC_RoleplayZones pushBack _zone;
 publicVariable "COMSPEC_RoleplayZones";
 
-// Activer le moteur roleplay sur toutes les machines (sinon zones inertes)
-[
-    {
-        missionNamespace setVariable ["comspec_overwatch_roleplay_enabled", true, false];
-        missionNamespace setVariable ["comspec_overwatch_roleplay_visual_effects", true, false];
-        missionNamespace setVariable ["comspec_overwatch_roleplay_network_failures", true, false];
-    }
-] remoteExecCall ["call", 0, true];
+// Activer le moteur roleplay sur toutes les machines (sinon zones inertes).
+//
+// Auparavant fait par remoteExecCall ["call", 0, true]. Deux défauts :
+//   - « call » n'est pas dans CfgRemoteExec >> Commands, qui est en mode 1
+//     (liste blanche). L'appel était donc rejeté et le moteur restait éteint
+//     partout sauf sur le serveur — les zones paraissaient inertes.
+//   - l'y whitelister ouvrirait l'exécution de code arbitraire à distance à
+//     n'importe quel client, ce qu'on ne veut pas dans une partie publique.
+//
+// Des variables publiques font le même travail sans passer par remoteExec, et
+// couvrent en plus les joueurs qui rejoignent en cours de partie — ce que le
+// drapeau JIP de l'ancien appel ne pouvait pas faire, « jip = 0 » étant posé
+// dans la configuration.
+// On ne force que les deux réglages désactivés par défaut, sans lesquels la zone
+// resterait inerte. « effets visuels » est déjà activé par défaut : le forcer
+// n'aurait d'effet que sur les joueurs qui l'ont volontairement coupé — glitchs
+// et parasites se désactivent souvent pour un motif de confort visuel, et une
+// pose de zone par un tiers n'a pas à revenir sur ce choix.
+missionNamespace setVariable ["comspec_overwatch_roleplay_enabled", true, true];
+missionNamespace setVariable ["comspec_overwatch_roleplay_network_failures", true, true];
 
 // Log
 diag_log format ["[COMSPEC Roleplay] Zone créée: %1 à %2 (rayon %3m, intensité %4%%)", 

@@ -351,6 +351,17 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_giveSeekTerminal { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_sseApplyProfile { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_sseActiveCase { allowedTargets = 0; };
+
+        // Ces cinq-là étaient appelées via remoteExec sans figurer ici. « mode = 1 »
+        // étant une liste blanche stricte, les appels étaient rejetés en silence :
+        // les ordres n'arrivaient pas, les zones posées depuis Zeus ne se créaient
+        // pas, et la reprise de session après plantage ne se faisait pas.
+        // allowedTargets reprend la cible réelle de chaque appel, au plus juste.
+        class comspec_overwatch_connect_fnc_receiveOrder { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_restoreAtakSession { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_createRoleplayZone { allowedTargets = 2; };
+        class comspec_overwatch_connect_fnc_createRoleplayZoneFromZeus { allowedTargets = 2; };
+        class comspec_overwatch_connect_fnc_clearDisconnectedAtakState { allowedTargets = 2; };
     };
     class Commands {
         mode = 1;

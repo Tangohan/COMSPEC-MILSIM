@@ -52,6 +52,19 @@ Un automatisme propose, il ne décide pas. Aucune règle ne clôt un site, ne fu
 
 - **L'écran de déclassification ne vérifiait pas qui demandait quoi.** Le niveau était lu tel quel dans l'adresse : n'importe qui pouvant ouvrir un dossier, invité compris, obtenait la version intégrale en changeant un paramètre. Produire un document expurgé et restreindre qui peut le lire sont deux choses différentes ; la première seule ne protégeait rien.
 
+### Corrigé — Cinq appels réseau étaient rejetés en silence
+
+`CfgRemoteExec >> Functions` est en `mode = 1`, c'est-à-dire liste blanche stricte : une fonction absente de la liste voit ses appels distants **rejetés sans message**. Cinq fonctions y manquaient alors qu'elles sont bien appelées via `remoteExec`.
+
+- **`receiveOrder`** — les ordres émis n'arrivaient pas à leur destinataire en multijoueur.
+- **`createRoleplayZoneFromZeus`** et **`createRoleplayZone`** — les zones posées depuis Zeus n'étaient jamais créées côté serveur.
+- **`restoreAtakSession`** et **`clearDisconnectedAtakState`** — la reprise de session après plantage ne se faisait pas.
+
+Chaque entrée porte un `allowedTargets` correspondant à la cible réelle de l'appel, au plus juste plutôt qu'au plus permissif.
+
+- **Le moteur roleplay n'était pas activé sur les autres machines**, ce qui faisait paraître les zones inertes. L'activation passait par `remoteExecCall ["call", 0, true]`, or `Commands` est aussi en liste blanche et `call` n'y figure pas — l'appel était rejeté. L'y ajouter aurait ouvert l'exécution de code arbitraire à distance à n'importe quel client ; l'activation passe désormais par des variables publiques, ce qui couvre en plus les joueurs qui rejoignent en cours de partie — le drapeau JIP de l'ancien appel ne le pouvait pas, `jip = 0` étant posé dans la configuration.
+- Seuls les deux réglages désactivés par défaut sont forcés. « Effets visuels de dégradation » est déjà actif par défaut : le forcer n'aurait touché que les joueurs l'ayant volontairement coupé.
+
 ### Corrigé — Administration : l'audit système était inaccessible
 
 - **`SystemAuditController` ne se chargeait pas** : une méthode `rollback()` y était déclarée deux fois — un accesseur privé vers le service de reprise, et l'action de route publique. PHP échoue à la compilation de la classe, ce qui rendait inaccessibles les quatre routes `/admin/audit` (consultation, détail, reprise, alerte). `php -l` ne le détecte pas : ce n'est pas une erreur d'analyse syntaxique, ce qui explique que le défaut soit passé inaperçu.
