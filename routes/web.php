@@ -1590,6 +1590,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // Rapports tactiques (SPOTREP, SITREP, SALUTE, CONTACT)
     $router->get('/api/atak/reports', [AtakApiController::class, 'tacticalReportsIndex']);
     $router->post('/api/atak/reports', [AtakApiController::class, 'tacticalReportsStore']);
+    $router->get('/api/atak/reports/routed', [AtakApiController::class, 'tacticalReportsRouted']);
     $router->get('/api/atak/terminals', [\App\Controllers\Api\AtakRealismApiController::class, 'terminals']);
     $router->post('/api/atak/terminals', [\App\Controllers\Api\AtakRealismApiController::class, 'terminals']);
     $router->post('/api/atak/terminals/compromise', [\App\Controllers\Api\AtakRealismApiController::class, 'compromise']);
@@ -1604,6 +1605,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/aar-reports/{id}', [\App\Controllers\Api\AarReportsApiController::class, 'store']);
     $router->get('/api/atak/reports/{id}', [AtakApiController::class, 'tacticalReportsShow']);
     $router->post('/api/atak/reports/{id}/acknowledge', [AtakApiController::class, 'tacticalReportsAcknowledge']);
+    $router->post('/api/atak/reports/{id}/routing/{routingId}/acknowledge', [AtakApiController::class, 'tacticalReportRoutingAcknowledge']);
     
     // Points d'Intérêt tactiques
     $router->get('/api/atak/poi', [AtakApiController::class, 'poiIndex']);

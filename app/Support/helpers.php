@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__, 2) . '/bootstrap/error_hint.php';
+
 if (!function_exists('env')) {
     function env(string $key, mixed $default = null): mixed
     {

@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS `user_legal_identities` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `tenant_id` bigint unsigned NOT NULL,
-  `user_id` bigint unsigned NOT NULL,
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
   `first_name` varchar(100) DEFAULT NULL,
   `last_name` varchar(100) DEFAULT NULL,
   `phone` varchar(50) DEFAULT NULL,

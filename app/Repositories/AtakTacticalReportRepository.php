@@ -207,24 +207,20 @@ class AtakTacticalReportRepository
     /**
      * Marque un rapport comme acquitté
      */
-    /**
-     * @param int|null $tenantId Sans ce filtre, une communauté peut acquitter le
-     *   rapport d'une autre — un accusé de réception est un acte, pas une lecture.
-     */
-    public function acknowledge(int $id, int $acknowledgedByUserId, ?int $tenantId = null): bool
+    public function acknowledge(int $id, int $tenantId, int $contextId, int $acknowledgedByUserId): bool
     {
         $sql = "UPDATE atak_tactical_reports 
                 SET acknowledged_by_user_id = :user_id, 
                     acknowledged_at = NOW(),
                     status = CASE WHEN status = 'SUBMITTED' THEN 'ACKNOWLEDGED' ELSE status END
-                WHERE id = :id";
-        $params = ['id' => $id, 'user_id' => $acknowledgedByUserId];
-        if ($tenantId !== null) {
-            $sql .= " AND tenant_id = :tenant_id";
-            $params['tenant_id'] = $tenantId;
-        }
-
-        return $this->db->execute($sql, $params) > 0;
+                WHERE id = :id AND tenant_id = :tenant_id AND context_id = :context_id";
+        
+        return $this->db->execute($sql, [
+            'id' => $id,
+            'tenant_id' => $tenantId,
+            'context_id' => $contextId,
+            'user_id' => $acknowledgedByUserId
+        ]) > 0;
     }
 
     /**

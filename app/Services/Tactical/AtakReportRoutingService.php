@@ -12,32 +12,25 @@ use App\Repositories\AtakTacticalReportRepository;
  * Diffusion dirigée des rapports tactiques — phase A du plan « niveaux
  * d'information » (`docs/PLAN-NIVEAUX-DIFFUSION.md`).
  *
- * ## Ce que ça branche
+ * ## Ce que ça fait
  *
- * `AtakReportRoutingRepository` existait avec un moteur de règles complet —
- * conditions, destinataires, escalade, accusé de réception — et **aucun appelant**.
- * Le chantier avait été commencé puis laissé avant branchement. Ce service est le
- * raccordement manquant, rien de plus : il n'ajoute aucune règle métier au moteur.
+ * Le moteur de règles est appliqué par le contrôleur à la soumission. Ce service
+ * n'en refait rien : il **émet la notification** correspondant à la diffusion déjà
+ * écrite. Sans lui, la diffusion désignait des destinataires que personne n'était
+ * prévenu de lire.
  *
- * ## Pourquoi une enveloppe plutôt qu'un appel direct
+ * ## Pourquoi relire l'historique
  *
- * Un rapport tactique est un compte rendu de terrain. Le routage, lui, est un
- * confort d'organisation : il désigne qui doit le lire en priorité. Si le routage
- * échoue — règle mal formée, table absente parce qu'une migration n'est pas passée,
- * zone introuvable — **le rapport doit rester enregistré quand même**. Perdre un
- * compte rendu de contact parce qu'une règle de diffusion est cassée serait un
- * échange calamiteux.
+ * Les destinataires sont relus dans `atak_report_routing_history` plutôt que déduits
+ * du retour du routage. C'est ce qui a réellement été enregistré qui doit être
+ * notifié, pas ce que l'appelant croyait avoir demandé — et la forme de ce retour
+ * peut changer sans que la notification s'en aperçoive.
  *
- * Le service avale donc les erreurs et les journalise, exactement comme les
- * automatismes SSE.
+ * ## Une notification qui échoue n'annule pas la diffusion
  *
- * ## Il n'y a pas d'interrupteur, et c'est voulu
- *
- * Sans règle enregistrée, `applyRoutingRules()` ne route vers personne et
- * n'écrit rien. Une table de règles vide *est* l'état désactivé. Ajouter un
- * réglage par-dessus donnerait deux façons de désactiver la même chose, donc deux
- * endroits à vérifier quand quelqu'un demande pourquoi son rapport n'est pas
- * arrivé.
+ * La diffusion est déjà en base. Un échec d'émission est tracé avec la mention
+ * « destinataires à prévenir de vive voix », pour que le silence ne passe pas
+ * inaperçu.
  */
 final class AtakReportRoutingService
 {
@@ -54,43 +47,40 @@ final class AtakReportRoutingService
     }
 
     /**
-     * Applique les règles de diffusion à un rapport qui vient d'être enregistré.
+     * Émet la notification correspondant à la diffusion déjà appliquée.
      *
-     * @return list<array{type: string, identifier: mixed}> destinataires désignés
+     * @return int nombre de destinataires notifiés
      */
-    public function onReportSubmitted(
-        int $reportId,
-        int $tenantId,
-        int $contextId,
-        ?string $actorLabel = null
-    ): array {
+    public function notifyForReport(int $reportId, int $tenantId, int $contextId): int
+    {
         if ($reportId < 1 || $tenantId < 1) {
-            return [];
+            return 0;
         }
 
         try {
-            $result = $this->routing->applyRoutingRules($reportId, $tenantId, $contextId);
-        } catch (\Throwable $e) {
-            // Le rapport est déjà en base : on trace et on rend la main.
-            $this->activityLog->record(
-                $tenantId,
-                $contextId,
-                'REPORT_ROUTING',
-                'Diffusion dirigée indisponible pour ce rapport — il reste enregistré et consultable.',
-                $actorLabel ?? 'Portail',
-                ['error' => substr($e->getMessage(), 0, 200)]
-            );
-
-            return [];
+            $history = $this->routing->listForReport($reportId);
+        } catch (\Throwable) {
+            return 0;
+        }
+        if ($history === []) {
+            return 0;
         }
 
-        if (isset($result['error'])) {
-            return [];
+        // Idempotence : une diffusion déjà notifiée ne l'est pas une seconde fois.
+        // Sans cette garde, un rejeu de la soumission — ou un simple double appel —
+        // reposterait la même alerte, et une alerte en double se lit comme deux
+        // événements distincts.
+        $pending = array_filter($history, static fn (array $r): bool => empty($r['notification_sent']));
+        if ($pending === []) {
+            return 0;
         }
 
-        $recipients = is_array($result['routed_to'] ?? null) ? $result['routed_to'] : [];
-        if ($recipients === []) {
-            return [];
+        $recipients = [];
+        foreach ($pending as $row) {
+            $recipients[] = [
+                'type' => (string) ($row['routed_to_type'] ?? ''),
+                'identifier' => (string) ($row['routed_to_identifier'] ?? ''),
+            ];
         }
 
         $this->activityLog->record(
@@ -102,12 +92,12 @@ final class AtakReportRoutingService
                 count($recipients),
                 self::describe($recipients)
             ),
-            $actorLabel ?? 'Portail'
+            'Portail'
         );
 
         $this->notify($reportId, $tenantId, $contextId, $recipients);
 
-        return $recipients;
+        return count($recipients);
     }
 
     /**

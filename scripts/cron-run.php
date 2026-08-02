@@ -10,6 +10,7 @@ declare(strict_types=1);
  *   php scripts/cron-run.php
  *   php scripts/cron-run.php recruitment_retro_reminders
  *   php scripts/cron-run.php request_telemetry_purge
+ *   php scripts/cron-run.php atak_report_routing_escalations
  *
  * Planification recommandée (serveur) : une fois par jour, idéalement tôt le matin.
  */

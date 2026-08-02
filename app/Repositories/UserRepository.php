@@ -190,6 +190,55 @@ class UserRepository
         return self::$tableExistsCache[$table];
     }
 
+    /** @var array<string,bool> */
+    private static array $columnExistsCache = [];
+
+    private function columnExists(string $table, string $column): bool
+    {
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, self::$columnExistsCache)) {
+            return self::$columnExistsCache[$key];
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $stmt->execute([$table, $column]);
+            self::$columnExistsCache[$key] = (bool) $stmt->fetchColumn();
+        } catch (\Throwable) {
+            self::$columnExistsCache[$key] = false;
+        }
+
+        return self::$columnExistsCache[$key];
+    }
+
+    /**
+     * Identité légale (état civil) pour l’annuaire : la table dédiée n’existe que depuis la
+     * migration 20260417103000. Sur une base non migrée, on retombe sur user_profiles puis sur
+     * des colonnes nulles — l’annuaire reste affichable au lieu d’échouer en SQLSTATE 42S02.
+     *
+     * @return array{select: string, join: string, searchable: bool}
+     */
+    private function legalIdentityJoinFragments(string $alias = 'uli', string $userAlias = 'u'): array
+    {
+        foreach (['user_legal_identities', 'user_profiles'] as $table) {
+            if ($this->tableExists($table) && $this->columnExists($table, 'first_name')) {
+                return [
+                    'select' => $alias . '.first_name, ' . $alias . '.last_name',
+                    'join' => 'LEFT JOIN ' . $table . ' ' . $alias . ' ON ' . $alias . '.user_id = ' . $userAlias . '.id',
+                    'searchable' => true,
+                ];
+            }
+        }
+
+        return [
+            'select' => 'NULL AS first_name, NULL AS last_name',
+            'join' => '',
+            'searchable' => false,
+        ];
+    }
+
     /**
      * Jointure fonction métier : une seule ligne par membre (évite le dédoublement
      * quand plusieurs pivots ont encore is_primary = 1).
@@ -1151,6 +1200,7 @@ class UserRepository
         $pack = $this->technicalAccountExclusionPredicate('u');
         $athenaSelect = $hasAthenaIdentifier ? 'u.athena_identifier' : "'' AS athena_identifier";
         $gc = $this->getGradesConfigForDirectory();
+        $legal = $this->legalIdentityJoinFragments('uli', 'u');
 
         $where = ['u.tenant_id = ?', $pack['sql']];
         $params = array_merge([$tenantId], $pack['params']);
@@ -1169,17 +1219,21 @@ class UserRepository
             $athenaFilter = $hasAthenaIdentifier
                 ? " OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)"
                 : '';
-            $where[] = '(u.display_name LIKE ?
-                 OR (uli.first_name IS NOT NULL AND uli.first_name LIKE ?)
+            $legalFilter = $legal['searchable']
+                ? ' OR (uli.first_name IS NOT NULL AND uli.first_name LIKE ?)
                  OR (uli.last_name IS NOT NULL AND uli.last_name LIKE ?)
-                 OR (CONCAT(TRIM(COALESCE(uli.first_name, \'\')), \' \', TRIM(COALESCE(uli.last_name, \'\'))) LIKE ?)
+                 OR (CONCAT(TRIM(COALESCE(uli.first_name, \'\')), \' \', TRIM(COALESCE(uli.last_name, \'\'))) LIKE ?)'
+                : '';
+            $where[] = '(u.display_name LIKE ?' . $legalFilter . '
                  OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
                  OR (u.profile_slug IS NOT NULL AND TRIM(u.profile_slug) <> \'\' AND u.profile_slug LIKE ?)
                  OR (pp.character_name IS NOT NULL AND pp.character_name LIKE ?)' . $athenaFilter . ')';
             $params[] = $term;
-            $params[] = $term;
-            $params[] = $term;
-            $params[] = $term;
+            if ($legal['searchable']) {
+                $params[] = $term;
+                $params[] = $term;
+                $params[] = $term;
+            }
             $params[] = $term;
             $params[] = $term;
             $params[] = $term;
@@ -1189,18 +1243,22 @@ class UserRepository
         }
 
         $jobRole = $this->primaryJobRoleJoinFragments('u');
+        $deployableSelect = $this->personnelProfilesHasColumn('deployable') ? 'pp.deployable' : 'NULL AS deployable';
+        $hasExtras = $this->tableExists('personnel_extras');
+        $extrasSelect = $hasExtras ? 'pex.service_number, pex.date_of_enlistment' : 'NULL AS service_number, NULL AS date_of_enlistment';
+        $extrasJoin = $hasExtras ? 'LEFT JOIN personnel_extras pex ON pex.user_id = u.id' : '';
 
         $sql = 'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', u.avatar_url, u.status, u.role_id,
-                       uli.first_name, uli.last_name,
+                       ' . $legal['select'] . ',
                        ' . $gc['select'] . ',
                        un.name AS unit_name, un.code AS unit_code,
                        pp.character_name, pp.matricule_internal, pp.enlistment_date, ' . $jobRole['select_as_primary_role'] . ',
-                       pp.radio_assigned, pp.readiness_score, pp.rank_display, pp.rank_display_override, pp.deployable,
-                       pex.service_number, pex.date_of_enlistment
+                       pp.radio_assigned, pp.readiness_score, pp.rank_display, pp.rank_display_override, ' . $deployableSelect . ',
+                       ' . $extrasSelect . '
                 FROM users u
-                LEFT JOIN user_legal_identities uli ON uli.user_id = u.id
+                ' . $legal['join'] . '
                 LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
-                LEFT JOIN personnel_extras pex ON pex.user_id = u.id
+                ' . $extrasJoin . '
                 ' . $gc['join'] . '
                 ' . $jobRole['join'] . '
                 LEFT JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = u.tenant_id

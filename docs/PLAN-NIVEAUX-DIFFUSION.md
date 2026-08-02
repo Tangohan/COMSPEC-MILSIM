@@ -1,274 +1,193 @@
-# Plan — Niveaux d'information et chaîne de diffusion
+# Plan #25 — niveaux de diffusion ATAK
 
-Document de conception. **Aucun code n'est écrit avant validation de ce plan.**
+**Statut :** phase A engagée, sans activation de filtrage
+**Périmètre recommandé pour le premier lot :** routage des informations ATAK  
+**Hors périmètre :** dossiers SSE, perception directe en jeu
 
-Objectif énoncé : cesser de considérer que tous les joueurs et Athena connaissent
-la même chose. Un élément trouvé par EAGLE-21 ne doit pas apparaître immédiatement
-partout ; il doit suivre `OBSERVE → REPORT → TRANSMIT → RECEIVE → FUSE → DISSEMINATE`.
+## 1. Décision recherchée
+
+Le besoin de « niveaux de diffusion » recouvre en réalité trois axes indépendants. Ils ne doivent pas être condensés dans un champ unique.
+
+| Axe | Question | Nature |
+|---|---|---|
+| Diffusion | Qui a le droit de consulter l'information ? | Attribut de la donnée |
+| État | Où en est-elle dans la chaîne de traitement ? | Cycle de vie |
+| Routage | À qui l'information est-elle envoyée activement ? | Règle de distribution |
+
+Une observation d'EAGLE-21 peut ainsi être visible par son groupe et le TOC, rester à l'état `OBSERVED` tant qu'elle n'a pas été transmise, et n'être routée à personne si aucune règle ne correspond. Ces valeurs ne se déduisent pas les unes des autres.
+
+La diffusion n'est surtout **pas une classification ordinale**. `TOC` n'est pas « supérieur » à `SQUAD` au sens où une habilitation SECRET est supérieure à une habilitation CONFIDENTIEL. Le cas courant « groupe producteur + TOC, mais pas les groupes voisins » impose un ensemble de destinataires, et non un rang minimal.
+
+## 2. Inventaire vérifié dans le dépôt
+
+### 2.1 Un moteur de routage existe déjà
+
+La migration `migrations/2026_07_24_007_atak_intelligence_enhancements.sql` crée :
+
+- `atak_report_routing_rules`, avec ordre de priorité, conditions JSON, destinataires par rôle, utilisateur ou unité, canaux de notification et paramètres d'escalade ;
+- `atak_report_routing_history`, avec destinataire, notification, accusé de réception et horodatages.
+
+`app/Repositories/AtakReportRoutingRepository.php` fournit déjà les opérations structurantes :
+
+- `applyRoutingRules()` ;
+- `listForRecipient()` ;
+- `acknowledgeRouting()` ;
+- `processEscalations()`.
+
+La recherche des quatre méthodes hors de ce repository ne trouve que de la documentation et le changelog : **le moteur n'a aucun appelant applicatif**. Il s'agit donc d'une amorce fonctionnelle non branchée, à reprendre plutôt que de créer un second système.
+
+### 2.2 Le moteur cible les rapports tactiques, pas `atak_intel`
+
+Le raccordement n'est pas un simple appel de méthode : le repository charge `atak_tactical_reports`, et l'historique possède une clé étrangère `report_id` vers cette table. À l'inverse, `AtakIntelRepository::store()` écrit dans `atak_intel`, une table globale sans `tenant_id`, `context_id`, état ou destinataires.
+
+Cette incompatibilité doit être résolue explicitement en phase A. Deux solutions sont possibles :
+
+1. **Recommandée :** transformer l'intel routable en `atak_tactical_reports`, puis appeler le moteur existant avec l'identifiant du rapport ;
+2. généraliser le moteur autour d'un type et d'un identifiant de ressource, ce qui nécessite une migration plus large et augmente le risque du premier lot.
+
+Brancher directement l'identifiant d'`atak_intel` dans `report_id` serait incorrect et violerait la clé étrangère.
+
+### 2.3 Les champs de visibilité existants ne forment pas une politique commune
+
+Plusieurs objets ATAK possèdent déjà un `visibility_level` (`atak_pois`, `atak_tactical_zones`, `atak_waypoints`). Ces vocabulaires diffèrent (`PUBLIC`, `UNIT`, `COMMAND`, `ALL`, `COMMAND_ONLY`, `RESTRICTED`) et les écritures observées ne constituent pas, à elles seules, un contrôle d'accès transversal.
+
+Ils ne doivent donc pas être réinterprétés brutalement comme des décisions d'exclusion. Une période d'écriture et d'observation est nécessaire avant tout filtrage.
+
+### 2.4 Interrupteur de déploiement
+
+Le dépôt dispose déjà d'un mécanisme de modules ATAK par tenant dans `AtakBridgeModulesService`, stocké sous `storage/cache/atak-modules/`. Le futur filtrage doit être protégé par un interrupteur par tenant. Aucun schéma nommé `sse_portal_settings` n'est présent dans la branche auditée ; il ne faut donc pas fonder l'implémentation sur cette table sans migration ou branche complémentaire.
+
+## 3. Principes non négociables proposés
+
+### 3.1 Le SSE reste hors périmètre
+
+Le SSE possède sa propre classification, ses habilitations et son caviardage. Ajouter une diffusion ATAK aux mêmes fiches créerait deux sources de vérité et rendrait les refus d'accès impossibles à expliquer. Les objets SSE conservent exclusivement leur politique actuelle.
+
+### 3.2 Écrire et mesurer avant de filtrer
+
+Le premier déploiement enregistre les valeurs, les routes appliquées, les destinataires et les accusés de réception, mais ne retire aucune donnée aux lecteurs actuels. Le filtrage ne peut être activé qu'après audit des valeurs réelles, définition d'une valeur de repli et validation métier.
+
+### 3.3 La perception directe ne peut pas être masquée
+
+La diffusion décrit la circulation d'une **information rapportée**, pas la perception du joueur. Si EAGLE-21 voit un véhicule dans le monde de jeu, aucune règle serveur ne doit supprimer cet objet de sa carte ou de son interface locale. Le filtrage futur ne pourra porter que sur les rapports, messages et artefacts issus de leur transmission.
+
+### 3.4 Refus par défaut explicable, jamais silencieux
+
+À terme, chaque exclusion devra produire une raison testable : absence dans l'audience, contexte incorrect, expiration ou règle inactive. Les contrôles doivent rester bornés au tenant et au contexte de mission ; les accusés de réception doivent vérifier que l'utilisateur représente réellement le destinataire ciblé.
+
+## 4. Plan d'exécution
+
+### Phase A — rendre le routage existant utilisable (recommandée maintenant)
+
+**But :** obtenir des usages réels sans masquer quoi que ce soit.
+
+Le routage est désormais branché à la création des rapports tactiques : le module `report_routing` applique les règles actives, renvoie son bilan dans la réponse de création et empêche les distributions identiques. Une boîte de réception calcule les identités réellement détenues par l'appelant (`USER`, rôles et unités), l'acquittement porte sur une distribution précise, et le job planifié traite les escalades idempotentes. Les notifications restent volontairement « en attente » tant qu'un transport n'a pas confirmé leur envoi.
+
+1. Définir quels événements `PING`, `CHAT` et `PHOTO` deviennent des rapports tactiques routables ; conserver les autres dans `atak_intel` si nécessaire.
+2. À l'ingestion, créer le rapport dans le contexte et le tenant authentifiés, puis appeler `applyRoutingRules()` après la transaction d'écriture.
+3. Rendre l'application idempotente : une même règle et un même destinataire ne doivent pas créer plusieurs lignes d'historique lors d'une nouvelle tentative.
+4. Respecter réellement `notification_channels` ; l'implémentation actuelle enregistre seulement `in-game` et marque la notification envoyée sans preuve d'envoi.
+5. ~~Exposer une boîte de réception routée, limitée aux identités `USER`, `ROLE` et `UNIT` effectivement détenues par l'appelant.~~
+6. ~~Exposer l'accusé de réception avec contrôle tenant/contexte/destinataire et journal d'audit.~~
+7. ~~Exécuter `processEscalations()` dans un job planifié idempotent et empêcher les escalades répétées vers le même rôle.~~
+8. Ajouter métriques et tests : règles évaluées, rapports sans règle, distributions, délais d'acquittement, escalades et doublons évités.
+
+**Critères de sortie :** routage observable de bout en bout, zéro modification des listes/cartes existantes, aucun accès élargi par le nouvel endpoint, et possibilité de désactiver le module par tenant.
+
+### Phase B — écrire la diffusion sans l'appliquer
+
+**But :** valider le vocabulaire sur des données réelles.
+
+- Introduire une audience explicite et non ordinale sur les rapports : producteur, utilisateurs, rôles et unités autorisés.
+- Conserver séparément l'état du rapport et l'historique de routage.
+- Prévoir une valeur héritée documentée pour les données antérieures ; ne pas convertir automatiquement les anciens `visibility_level` hétérogènes.
+- Ajouter l'édition, l'audit des changements et un mode « expliquer l'audience ».
+- Mesurer pendant plusieurs missions qui aurait été inclus ou exclu, sans modifier les réponses API.
+
+**Critère de sortie :** les responsables opérationnels valident le vocabulaire et un échantillon d'audiences produites.
+
+### Phase C — filtrage en lecture, sous interrupteur
+
+**But :** faire respecter une audience validée sans casser la perception en jeu.
+
+- Centraliser la décision dans un service unique, utilisé par les listes, détails, exports, notifications et flux temps réel.
+- Activer d'abord en mode simulation, puis pour un tenant pilote.
+- Ne filtrer que les informations rapportées ; exclure les objets issus de la perception locale.
+- Définir le comportement des données historiques et des clients incapables d'envoyer une audience.
+- Journaliser les refus sans révéler le contenu protégé.
+- Prévoir un retour arrière instantané par tenant.
+
+### Phase D — administration et doctrine
+
+**But :** rendre le dispositif gouvernable.
+
+- Éditeur et simulateur de règles (« ce rapport serait envoyé à… »).
+- Modèles par type de mission, versionnement, auteur, dates d'effet et restauration.
+- Tableau des rapports non routés, non acquittés et escaladés.
+- Documentation des rôles responsables et procédure de secours.
+
+## 5. Risques à traiter avant la phase A
+
+- `AtakReportRoutingRepository` suppose `tenant_id` et `context_id`, absents d'`atak_intel` ; ils doivent provenir d'une authentification fiable, pas du corps client seul.
+- `rules_applied` compte actuellement les destinataires créés, pas les règles correspondantes : la métrique doit être renommée ou corrigée.
+- Les insertions d'historique n'ont pas de contrainte d'unicité, donc appels répétés et escalades peuvent dupliquer les distributions.
+- `notification_sent` est initialisé à vrai lorsque la règle demande une notification, même si aucun transport n'a été exécuté.
+- L'accusé de réception ne borne actuellement la mise à jour ni par tenant ni par contexte et ne vérifie pas l'identité du destinataire.
+- L'ordre `priority DESC` sur une valeur textuelle ne garantit pas l'ordre opérationnel attendu.
+
+Ces points ne justifient pas un nouveau moteur ; ils définissent le durcissement minimal nécessaire pour réutiliser celui qui existe.
+
+## 6. Recommandation
+
+Décider **la phase A seule**. Elle valorise le chantier existant et fournit des données réelles, sans changement de visibilité ni exclusion. Les phases B à D restent conditionnées par les réponses ci-dessous et par le retour des premières missions instrumentées.
+
+## 7. Questions à trancher
+
+1. **Organisation réelle :** quels sont exactement les six niveaux ou audiences envisagés, et correspondent-ils à des rôles, des unités, des fonctions de mission ou des groupes ad hoc ?
+2. **Source routable :** `PING`, `CHAT` et `PHOTO` doivent-ils tous produire un rapport tactique, ou seulement certains événements/promotions manuelles ?
+3. **Audience par défaut :** pour une information nouvelle sans audience explicite, faut-il conserver la visibilité actuelle, limiter au producteur, ou appliquer un modèle de mission ?
+4. **Autorité :** qui peut modifier l'audience, acquitter pour une unité et forcer une diffusion ou une escalade — auteur, chef d'unité, TOC, administrateur de mission ?
 
 ---
 
-## 1. Ce qui existe déjà — et qui change l'estimation
+## 8. Compléments apportés après la phase A
 
-Avant de concevoir, inventaire de l'existant réel.
+Travail mené en parallèle du § 5, et convergeant avec lui. Ce qui suit s'ajoute au
+durcissement décrit ci-dessus plutôt qu'il ne le remplace.
 
-### 1.1 Un moteur de routage complet, jamais branché
+### Traité
 
-`migrations/2026_07_24_007_atak_intelligence_enhancements.sql` crée
-`atak_report_routing_rules` et `atak_report_routing_history` :
-
-| Colonne | Rôle |
+| Point du § 5 | État |
 |---|---|
-| `trigger_conditions` (JSON) | type de rapport, priorité, mots-clés, zone |
-| `auto_assign_to_roles` / `_users` / `_units` (JSON) | destinataires |
-| `notification_channels` (JSON) | in-game, e-mail, webhook, Discord |
-| `priority_order`, `is_active` | ordre et activation |
-
-`app/Repositories/AtakReportRoutingRepository.php` implémente `applyRoutingRules()`,
-`routeReport()`, `processEscalations()`, `listForRecipient()`, `acknowledgeRouting()`.
-
-**Rien n'appelle cette classe.** Aucun contrôleur, aucun service. Le chantier a été
-commencé puis abandonné avant branchement.
-
-C'est la nouvelle la plus importante de cet inventaire : une partie du travail est
-déjà faite, et il serait absurde de construire un second système à côté.
-
-### 1.2 Aucune donnée ne porte de portée
-
-| Table | Notion de portée |
-|---|---|
-| `atak_markers`, `atak_intel`, `atak_chat_messages`, `atak_map_shapes` | aucune |
-| `atak_orders`, `sse_persons`, `sse_cases` | aucune |
-| `sse_sites` | `team_label` — libellé d'affichage, pas un filtre |
-| `atak_poi` | `visibility_level`, défaut `'PUBLIC'` — seule trace existante |
-
-Tout est donc visible de tous, et `visibility_level` sur les POI n'est appliqué
-nulle part à la lecture.
-
----
-
-## 2. L'erreur de conception à éviter
-
-L'énoncé mélange trois choses distinctes. Les confondre produirait un système
-incompréhensible à l'usage.
-
-| Axe | Question à laquelle il répond | Nature |
-|---|---|---|
-| **Diffusion** | Qui a le **droit** de voir cette donnée ? | Attribut de la donnée |
-| **État** | Où en est-elle dans la chaîne ? | Cycle de vie |
-| **Routage** | À qui l'**envoie**-t-on activement ? | Règle, déjà construite (§ 1.1) |
-
-Exemple concret : une observation d'EAGLE-21 peut être **diffusable au TOC**
-(diffusion), **encore à l'état « observé »** parce que personne ne l'a transmise
-(état), et **non routée** parce qu'aucune règle ne la concerne (routage).
-
-Ces trois valeurs sont indépendantes. Un seul champ ne peut pas les porter.
-
----
-
-## 3. Modèle proposé
-
-### 3.1 Diffusion — six niveaux
-
-```
-TEAM        binôme / trinôme
-SQUAD       groupe
-PLATOON     section
-TOC         poste de commandement
-INTEL_CELL  cellule renseignement
-ALL         tous
-```
-
-Ce n'est **pas une échelle**, contrairement aux classifications SSE. `TOC` n'est
-pas « plus haut » que `SQUAD` : ce sont des destinataires différents. Le modèle est
-donc un **ensemble**, pas un rang — une donnée peut être diffusée à `SQUAD` **et**
-`TOC` sans l'être à `PLATOON`.
-
-> C'est le point où une implémentation naïve se trompe. Traiter la diffusion comme
-> un niveau croissant, par symétrie avec les habilitations SSE, rendrait impossible
-> le cas le plus courant : le groupe qui a trouvé et le PC, sans les sections
-> voisines.
-
-### 3.2 État — six étapes
-
-| État | Signification | Qui le fait avancer |
-|---|---|---|
-| `observe` | Constaté sur le terrain, pas encore rapporté | l'opérateur |
-| `rapporte` | Rédigé, en attente de transmission | l'opérateur |
-| `transmis` | Parti vers Athena | le mod |
-| `recu` | Arrivé et horodaté côté portail | le serveur |
-| `fusionne` | Recoupé avec d'autres éléments | l'analyste |
-| `diffuse` | Rendu visible à sa diffusion | l'analyste ou une règle |
-
-Le **tampon hors ligne** livré récemment occupe déjà la transition
-`rapporte → transmis` : une fiche saisie hors liaison reste « rapportée » jusqu'au
-rétablissement. La chaîne s'appuie donc sur du réel, pas sur une abstraction.
-
-### 3.3 Portée du chantier
-
-| Donnée | Diffusion | État | Priorité |
-|---|---|---|---|
-| `atak_intel` (SALUTE, SPOTREP) | oui | oui | **1 — c'est le cœur** |
-| `atak_markers`, `atak_map_shapes` | oui | non | 2 |
-| `atak_poi` (+ `visibility_level` existant à reprendre) | oui | oui | 2 |
-| `atak_chat_messages` | oui | non | 3 |
-| `sse_persons`, `sse_cases` | **non** | non | — |
-
-**Le SSE reste hors périmètre.** Il a déjà son propre modèle — classification,
-habilitation, caviardage — construit et documenté. Lui superposer un second système
-de diffusion créerait deux vérités concurrentes sur la même fiche, et la question
-« pourquoi ne vois-je pas ce dossier ? » n'aurait plus de réponse unique.
-
----
-
-## 4. Migration sans casser le portail vivant
-
-Contrainte : déploiement FTP manuel, communauté en activité, aucune fenêtre de
-maintenance. La même méthode que le verrou de classification s'applique.
-
-**Étape 1 — colonnes ajoutées, valeur par défaut = comportement actuel.**
-`diffusion = 'ALL'`, `etat = 'diffuse'` sur tout l'existant. Aucun changement
-visible : ce qui était visible le reste.
-
-**Étape 2 — écriture seulement.** Les nouvelles données portent une diffusion
-réelle, mais la lecture ne filtre pas encore. On observe ce que le champ contient
-en conditions réelles avant qu'il ne cache quoi que ce soit.
-
-**Étape 3 — filtrage à la lecture, sous interrupteur, désarmé par défaut.**
-Réglage `sse_portal_settings` (la table existe et sert déjà à cela).
-
-**Étape 4 — écran de revue avant armement**, comme pour le verrou : « voici ce que
-chaque élément deviendrait invisible à qui ».
-
-> L'étape 2 n'est pas une précaution de confort. Armer un filtre sur un champ dont
-> personne n'a vérifié le contenu, c'est reproduire exactement le problème de la
-> classification SSE : des valeurs posées sans conséquence qui deviennent d'un coup
-> des décisions d'exclusion que personne n'a prises.
-
----
-
-## 5. Ce que je recommande de ne pas faire
-
-**Ne pas cacher aux joueurs ce qu'ils voient en jeu.** Si EAGLE-21 voit un véhicule
-de ses yeux, aucune règle de diffusion ne doit l'empêcher de le voir sur sa carte.
-Le système modélise la circulation de l'information rapportée, pas la perception.
-Confondre les deux produit une frustration immédiate et illégitime.
-
-**Ne pas faire de la diffusion un outil d'administration.** Elle décrit une réalité
-opérationnelle — qui a besoin de savoir — et non une sanction ou un privilège.
-
-**Ne pas rendre l'état obligatoire.** Un opérateur qui pose un marqueur ne doit pas
-avoir à déclarer « observé » puis « rapporté ». L'état doit se déduire des actions
-existantes ; là où il ne se déduit pas, il vaut mieux ne pas le porter.
-
-**Ne pas construire un second moteur de routage.** Celui du § 1.1 existe : le
-brancher, l'éprouver, et seulement ensuite juger s'il manque quelque chose.
-
----
-
-## 6. Phasage proposé
-
-| Phase | Contenu | Dépendance |
-|---|---|---|
-| **A** | Brancher le routage existant sur `atak_intel` : appel de `applyRoutingRules()` à la réception, écran de règles, journal | aucune — code déjà écrit |
-| **B** | Colonne `diffusion` sur `atak_intel` + marqueurs, écriture seule, défaut `ALL` | A |
-| **C** | Filtrage à la lecture sous interrupteur + écran de revue | B, plus une période d'observation réelle |
-| **D** | Colonne `etat` et affichage de la chaîne | C |
-| **E** | Extension aux POI, formes de carte, messagerie | D |
-
-**La phase A a le meilleur rapport valeur / risque** : elle rend utilisable un
-moteur déjà écrit et payé, sans toucher au modèle de données ni à ce que voient les
-joueurs. Elle donne aussi une matière réelle pour décider si les phases suivantes
-valent la peine.
-
----
-
-## 7. Ce que ça change pour l'AAR (#24)
-
-L'AAR consommera ces niveaux : « qui savait quoi, à quel moment » n'a de sens que
-si la donnée porte sa diffusion et son horodatage d'état. Construire l'écran AAR
-**avant** la phase B revient à le refaire ensuite.
-
-D'où l'ordre recommandé : phase A, puis décision sur B/C, puis AAR.
-
----
-
-## 8. Décisions attendues
-
-1. **Phase A seule, ou engagement sur le modèle complet ?**
-2. Le SSE reste-t-il bien hors périmètre ?
-3. La liste des six diffusions correspond-elle à votre organisation réelle
-   (binôme / groupe / section / PC / cellule renseignement) ?
-4. Confirmez-vous que rien de ce qui est **perçu en jeu** ne doit être masqué ?
-
----
-
-## 9. Phase A — livrée
-
-### Ce qui a été fait
-
-Le moteur de règles est branché : `AtakReportRoutingService::onReportSubmitted()`
-est appelé à la soumission d'un rapport tactique, et l'historique de diffusion est
-exposé sur la consultation du rapport (`routing`) et sur la réponse de soumission
-(`routed_to`).
-
-**Aucun interrupteur.** Sans règle enregistrée, le moteur ne route vers personne et
-n'écrit rien : une table de règles vide *est* l'état désactivé. Ajouter un réglage
-par-dessus donnerait deux façons de désactiver la même chose, donc deux endroits à
-vérifier quand quelqu'un demande pourquoi son rapport n'est pas arrivé.
-
-Un échec de routage n'échoue jamais la soumission : le rapport est enregistré
-d'abord, la diffusion est tentée ensuite et tracée si elle échoue. Perdre un compte
-rendu de contact parce qu'une règle est mal formée serait un échange calamiteux.
-
-### La cible a changé, et pourquoi
-
-La demande visait `atak_intel`. L'inventaire l'a écartée :
-
-| | `atak_intel` | `atak_tactical_reports` |
-|---|---|---|
-| `report_type`, `priority`, `summary`, `details` | absents | **présents** |
-| `tenant_id` / `context_id` | **absents** | présents |
-| Clé étrangère de `atak_report_routing_history` | non | **pointe dessus** |
-| `visibility`, `distributed_to` | non | **déjà présents** |
-
-Brancher sur `atak_intel` aurait imposé d'altérer une clé étrangère en base
-vivante, d'ajouter un cloisonnement par communauté à une table qui n'en a pas, et
-d'inventer une priorité. Le moteur a été écrit pour `atak_tactical_reports`, cette
-table est vivante et routée, et elle porte déjà `visibility` — l'axe diffusion du
-§ 3.1 y est prévu.
-
-**Conséquence pour `atak_intel`** : le router reste possible, mais ce n'est pas un
-branchement, c'est une phase de schéma. Elle relève de la phase B.
-
-### Défauts d'isolation corrigés au passage
-
-Deux failles pré-existantes, dans le périmètre touché :
-
-- `GET /api/atak/reports/{id}` appelait `findById($id)` **sans filtre de
-  communauté** : un identifiant deviné suffisait à lire le rapport d'une autre
-  communauté.
-- `POST /api/atak/reports/{id}/acknowledge` de même — et acquitter est un acte,
-  pas une lecture.
-
-`atak_report_routing_history` ne porte pas de `tenant_id` ; le cloisonnement de la
-lecture de diffusion repose donc sur celui du rapport, ce qui est désormais vrai et
-documenté dans `listForReport()`.
-
-**Même classe de défaut relevée ailleurs, non corrigée** : `AtakPoiRepository` et
-`AtakMedevacRepository` exposent aussi un `findById()` sans communauté. Hors du
-périmètre de cette phase — à traiter séparément.
-
-### Phase A complète
-
-La chaîne est entière : règle créée à l'écran → rapport soumis → règles appliquées
-→ notification émise → relève exposée au jeu → diffusion visible sur la fiche.
-
-Deux manques de branchement ont été comblés en chemin, tous deux du même genre que
-le moteur lui-même : `AtakNotificationRepository` n'était exposé par **aucune
-route**, et l'historique de diffusion affirmait des envois qui n'existaient pas.
-
-**Reste côté mod** : relever `GET /api/atak/notifications` et afficher via
-`fn_announce`. Cela demande une reconstruction du PBO, hors de ce qui peut être
-livré par le portail seul.
+| `notification_sent` posé à vrai sans transport | **Corrigé** — le drapeau est désormais posé par `markNotified()`, après émission réelle |
+| Accusé de réception non borné par tenant ni contexte | **Corrigé** (version retenue : celle de la phase A) |
+| Distributions dupliquables par appels répétés | Contrainte d'unicité côté phase A, **plus** une garde d'idempotence à l'émission : une diffusion déjà notifiée ne l'est pas une seconde fois |
+
+### Ajouté
+
+- **Écran de gestion des règles** — `/admin/atak-diffusion-rapports`. Sans lui, le
+  moteur branché tournait à vide : aucune règle n'existait et rien ne permettait
+  d'en créer. Une règle sans destinataire y est refusée, car elle donnerait
+  l'illusion d'une diffusion en place sans en produire aucune.
+- **Émission réelle des notifications** — une diffusion écrit une notification
+  portant destinataires, position et urgence reprise du rapport. Une seule par
+  rapport, et non une par destinataire : des lignes identiques répétées font
+  passer l'alerte pour du bruit.
+- **Route de relève `GET /api/atak/notifications`** — `AtakNotificationRepository`
+  disposait de `create()`, `listActive()` et `pollSince()` sans qu'aucune route ne
+  l'expose. Les notifications écrites n'étaient lisibles par personne ; émettre
+  revenait à écrire dans un tiroir fermé.
+- **`listForReport()`** — le dépôt savait lister les rapports d'un destinataire,
+  pas les destinataires d'un rapport. La diffusion restait invisible depuis la
+  fiche, et une diffusion qu'on ne voit pas ne se vérifie pas.
+
+### Reste ouvert
+
+- **`findById()` n'est toujours pas borné par communauté** dans le dépôt des
+  rapports tactiques : un identifiant deviné suffit à lire le rapport d'une autre
+  communauté. Le cloisonnement est appliqué à l'appel depuis la consultation, mais
+  la signature reste permissive par défaut.
+- Même défaut relevé sur `AtakPoiRepository` et `AtakMedevacRepository`.
+- **Côté mod** : relever `GET /api/atak/notifications` et afficher via
+  `fn_announce`. Demande une reconstruction du PBO.
 
