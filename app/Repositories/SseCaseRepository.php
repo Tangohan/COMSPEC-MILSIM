@@ -225,6 +225,11 @@ final class SseCaseRepository
             $where[] = 'classification = :class';
             $params['class'] = self::normalizeClassification((string) $filters['classification']);
         }
+        $search = trim((string) ($filters['q'] ?? ''));
+        if ($search !== '') {
+            $where[] = '(reference_code LIKE :search OR title LIKE :search OR summary LIKE :search)';
+            $params['search'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
+        }
         $rows = $this->db->fetchAll(
             'SELECT * FROM sse_cases WHERE ' . implode(' AND ', $where) . ' ORDER BY id DESC LIMIT 200',
             $params

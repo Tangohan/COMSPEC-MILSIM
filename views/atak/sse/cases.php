@@ -3,9 +3,10 @@ declare(strict_types=1);
 ob_start();
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 /** @var list<array<string,mixed>> $cases */
-/** @var array{status:string,classification:string} $filters */
+/** @var array{status:string,classification:string,q:string} $filters */
 /** @var array<string,string> $classifications */
 /** @var array<string,string> $statuses */
+/** @var array{total:int,active:int,archive:int} $indexCounts */
 /** @var bool $canManage */
 /** @var bool $caseLockEnabled */
 /** @var bool $screensRedacted */
@@ -72,6 +73,31 @@ $statusBadge = static function (string $key): string {
     </div>
 </div>
 
+<div class="case-workspace">
+<aside class="case-aside" aria-label="Outils du registre">
+    <div class="case-aside-head"><span>Poste analyste</span><strong>OUTILS</strong></div>
+    <form class="case-search" method="get" action="<?= $h(url('atak/sse/dossiers')) ?>" role="search">
+        <label for="case-q">Recherche globale</label>
+        <div class="case-search-control">
+            <input id="case-q" name="q" type="search" value="<?= $h($filters['q'] ?? '') ?>" placeholder="Réf., titre, résumé…">
+            <button type="submit" aria-label="Lancer la recherche">→</button>
+        </div>
+    </form>
+    <nav class="case-aside-nav" aria-label="Vues du registre">
+        <a class="<?= ($filters['status'] ?? '') === '' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers')) ?>"><span>Registre complet</span><b><?= (int) $indexCounts['total'] ?></b></a>
+        <a class="<?= ($filters['status'] ?? '') === 'en_cours' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers?status=en_cours')) ?>"><span>En exploitation</span><b><?= (int) $indexCounts['active'] ?></b></a>
+        <a class="<?= ($filters['status'] ?? '') === 'archive' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers?status=archive')) ?>"><span>Archives</span><b><?= (int) $indexCounts['archive'] ?></b></a>
+    </nav>
+    <div class="case-aside-section">
+        <span>Accès rapides</span>
+        <a href="#registre">↳ Registre des dossiers</a>
+        <a href="#securite">↳ Paramètres de sécurité</a>
+        <a href="<?= $h(url('atak/sse/personnes')) ?>">↳ Index des personnes</a>
+        <a href="<?= $h(url('atak/sse/croisements')) ?>">↳ Outil de croisement</a>
+    </div>
+    <?php if ($canManage): ?><a class="btn case-aside-create" href="<?= $h(url('atak/sse/dossiers/nouveau')) ?>">+ Ouvrir un dossier</a><?php endif; ?>
+</aside>
+<div class="case-workspace-main">
 <div class="metrics-grid">
     <div class="metric">
         <div class="metric-label">Dossiers visibles</div>
@@ -96,6 +122,7 @@ $statusBadge = static function (string $key): string {
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/dossiers')) ?>">
+    <input type="hidden" name="q" value="<?= $h($filters['q'] ?? '') ?>">
     <div class="toolbar-field">
         <label for="status">Statut opérationnel</label>
         <select id="status" name="status">
@@ -122,7 +149,8 @@ $statusBadge = static function (string $key): string {
     </div>
 </form>
 
-<section class="panel sse-lock-panel <?= !empty($caseLockEnabled) ? 'is-armed' : '' ?>">
+<details id="securite" class="panel sse-lock-panel <?= !empty($caseLockEnabled) ? 'is-armed' : '' ?>">
+    <summary>
     <div class="panel-header">
         <div class="panel-title">
             <span class="panel-index">01.00</span>
@@ -130,6 +158,7 @@ $statusBadge = static function (string $key): string {
         </div>
         <div class="panel-meta"><?= !empty($caseLockEnabled) ? 'ARMÉ' : 'DÉSARMÉ' ?></div>
     </div>
+    </summary>
     <div class="panel-body">
         <?php if (!empty($caseLockEnabled)): ?>
             <p>
@@ -235,9 +264,9 @@ $statusBadge = static function (string $key): string {
             </form>
         <?php endif; ?>
     </div>
-</section>
+</details>
 
-<section class="panel">
+<section id="registre" class="panel">
     <div class="panel-header">
         <div class="panel-title">
             <span class="panel-index">01.01</span>
@@ -249,12 +278,13 @@ $statusBadge = static function (string $key): string {
     <?php if ($cases === []): ?>
         <div class="empty-state">
             <div class="empty-state-inner">
-                <div class="empty-symbol">—</div>
-                <strong>Aucun enregistrement</strong>
+                <div class="empty-symbol">SSE-DI</div>
+                <strong>Aucun dossier d’affaire</strong>
                 <p>
-                    Aucun dossier ne correspond au périmètre d’accès de la session active
-                    ou aux critères sélectionnés.
+                    Commencez par qualifier un signalement dans un dossier d’intérêt ;
+                    aucune identité ne sera créée ou confirmée automatiquement.
                 </p>
+                <?php if ($canManage): ?><a class="btn" href="<?= $h(url('atak/sse/interet/nouveau')) ?>">Ouvrir un dossier d’intérêt</a><?php endif; ?>
             </div>
         </div>
     <?php else: ?>
@@ -320,6 +350,15 @@ $statusBadge = static function (string $key): string {
         </div>
     <?php endif; ?>
 </section>
+<div class="sse-ops-grid" aria-label="Situation opérationnelle SSE">
+    <a href="<?= $h(url('atak/sse/croisements')) ?>"><strong>Correspondances à valider</strong><span>File opérateur et facteurs de rapprochement</span></a>
+    <a href="<?= $h(url('atak/sse/interet')) ?>"><strong>Dernières acquisitions terrain</strong><span>Signalements reçus et sujets à qualifier</span></a>
+    <a href="<?= $h(url('atak/sse/personnes')) ?>"><strong>Contrôles récents</strong><span>Personnes et observations disponibles</span></a>
+    <a href="<?= $h(url('atak/sse/interet?status=en_analyse')) ?>"><strong>Dossiers prioritaires</strong><span>Analyse et levées de doute en cours</span></a>
+    <a href="<?= $h(url('atak/sse/interet?status=en_collecte')) ?>"><strong>Collectes en attente</strong><span>Besoins de renseignement à transmettre</span></a>
+</div>
+</div>
+</div>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

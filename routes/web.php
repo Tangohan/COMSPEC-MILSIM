@@ -567,6 +567,10 @@ return function (Router $router) {
     $router->get('/atak/sse/dossiers/{id}/declassification', [SsePortalController::class, 'caseDeclassify'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/caviardage', [SsePortalController::class, 'caseRedactionStore'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/caviardage/{redactionId}/supprimer', [SsePortalController::class, 'caseRedactionDelete'], $mwSsePortal);
+    $router->get('/atak/sse/interet', [SsePortalController::class, 'interestCasesIndex'], $mwSsePortal);
+    $router->get('/atak/sse/interet/nouveau', [SsePortalController::class, 'interestCaseCreateForm'], $mwSsePortal);
+    $router->post('/atak/sse/interet', [SsePortalController::class, 'interestCaseStore'], $mwSsePortal);
+    $router->get('/atak/sse/interet/{id}', [SsePortalController::class, 'interestCaseShow'], $mwSsePortal);
     $router->get('/atak/sse/personnes', [SsePortalController::class, 'personsIndex'], $mwSsePortal);
     $router->get('/atak/sse/sites', [SsePortalController::class, 'sitesIndex'], $mwSsePortal);
     $router->get('/atak/sse/sites/{id}', [SsePortalController::class, 'siteShow'], $mwSsePortal);
