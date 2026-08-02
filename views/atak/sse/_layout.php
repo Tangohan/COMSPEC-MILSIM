@@ -27,11 +27,12 @@ $pageTitle = (string) ($title ?? 'Renseignement interpersonnel');
 $navItems = [
     'dossiers' => ['01', 'Dossiers', url('atak/sse/dossiers')],
     'personnes' => ['02', 'Personnes', url('atak/sse/personnes')],
-    'sites' => ['03', 'Sites exploités', url('atak/sse/sites')],
-    'croisements' => ['04', 'Croisements', url('atak/sse/croisements')],
+    'interet' => ['03', 'Dossiers d’intérêt', url('atak/sse/interet')],
+    'sites' => ['04', 'Sites exploités', url('atak/sse/sites')],
+    'croisements' => ['05', 'Croisements', url('atak/sse/croisements')],
 ];
 if ($canGrant) {
-    $navItems['acces'] = ['05', 'Codes d’accès', url('atak/sse/acces')];
+    $navItems['acces'] = ['06', 'Codes d’accès', url('atak/sse/acces')];
 }
 $themeSwitchUrl = url('atak/sse/apparence');
 $currentPath = (string) ($_SERVER['REQUEST_URI'] ?? url('atak/sse/dossiers'));
@@ -60,7 +61,7 @@ $sessionKindLabel = $isGuest ? 'Session invitée' : 'Session authentifiée';
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75,400;75,600;75,700;75,800;75,900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_portal.css')) ?>?v=202607301900">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_portal.css')) ?>?v=202608021430">
 </head>
 <body class="sse-theme-<?= $h($sseTheme) ?>">
 

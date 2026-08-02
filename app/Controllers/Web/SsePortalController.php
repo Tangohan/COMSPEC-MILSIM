@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SseAccessCodeRepository;
 use App\Repositories\SseCaseRepository;
+use App\Repositories\SseInterestCaseRepository;
 use App\Repositories\SsePortalSettingsRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\SseSiteRepository;
@@ -29,6 +30,7 @@ final class SsePortalController
         private ?SseAccessCodeService $access = null,
         private ?SseAccessCodeRepository $codes = null,
         private ?SseCaseRepository $cases = null,
+        private ?SseInterestCaseRepository $interestCases = null,
         private ?SsePersonRepository $persons = null,
         private ?SseWatchlistRepository $watchlist = null,
         private ?SseSiteRepository $sites = null,
@@ -44,6 +46,7 @@ final class SsePortalController
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
         $this->cases ??= new SseCaseRepository();
+        $this->interestCases ??= new SseInterestCaseRepository();
         $this->persons ??= new SsePersonRepository();
         $this->watchlist ??= new SseWatchlistRepository();
         $this->sites ??= new SseSiteRepository();
@@ -167,7 +170,19 @@ final class SsePortalController
         $list = $this->cases->listForTenant($tenantId, $scope, [
             'status' => $request->query('status'),
             'classification' => $request->query('classification'),
+            'q' => $request->query('q'),
         ]);
+        $allCases = $this->cases->listForTenant($tenantId, $scope);
+        $indexCounts = ['total' => count($allCases), 'active' => 0, 'archive' => 0];
+        foreach ($allCases as $case) {
+            $status = (string) ($case['status'] ?? '');
+            if (in_array($status, ['ouvert', 'en_cours'], true)) {
+                $indexCounts['active']++;
+            }
+            if ($status === 'archive') {
+                $indexCounts['archive']++;
+            }
+        }
 
         $counts = $this->cases->countsForCases(
             array_map(static fn (array $c): int => (int) ($c['id'] ?? 0), $list),
@@ -178,6 +193,7 @@ final class SsePortalController
             'title' => 'Dossiers — Renseignement interpersonnel',
             'cases' => $list,
             'caseCounts' => $counts,
+            'indexCounts' => $indexCounts,
             'caseLockEnabled' => $this->clearance->caseLockEnabled($tenantId),
             'screensRedacted' => $this->clearance->workingRedactionEnabled($tenantId),
             'lockedForMe' => $this->clearance->countLockedForMe($list),
@@ -188,10 +204,66 @@ final class SsePortalController
             'filters' => [
                 'status' => (string) $request->query('status', ''),
                 'classification' => (string) $request->query('classification', ''),
+                'q' => (string) $request->query('q', ''),
             ],
             'classifications' => SseCaseRepository::CLASSIFICATION_LABELS,
             'statuses' => SseCaseRepository::STATUS_LABELS,
             'activeNav' => 'dossiers',
+        ]);
+    }
+
+    public function interestCasesIndex(Request $request, array $params = []): Response
+    {
+        $filters = ['status' => (string) $request->query('status', ''), 'q' => (string) $request->query('q', '')];
+        return $this->portalView('atak.sse.interest_cases', [
+            'title' => 'Dossiers d’intérêt — SSE',
+            'interestCases' => $this->interestCases->listForTenant($this->tenantId(), $filters),
+            'filters' => $filters,
+            'statuses' => SseInterestCaseRepository::STATUSES,
+            'canManage' => $this->canManage(),
+            'activeNav' => 'interet',
+        ]);
+    }
+
+    public function interestCaseCreateForm(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage()) return Response::redirect(url('atak/sse/interet'));
+        return $this->portalView('atak.sse.interest_case_form', [
+            'title' => 'Ouvrir un dossier d’intérêt', 'activeNav' => 'interet', 'canManage' => true,
+            'confidenceLevels' => SseInterestCaseRepository::CONFIDENCE,
+            'interestLevels' => SseInterestCaseRepository::INTEREST,
+        ]);
+    }
+
+    public function interestCaseStore(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+            return Response::redirect(url('atak/sse/interet'));
+        }
+        $designation = trim((string) $request->input('temporary_designation', ''));
+        $reason = trim((string) $request->input('opening_reason', ''));
+        if ($designation === '' || $reason === '') {
+            Session::flash('error', 'La désignation temporaire et le motif d’ouverture sont obligatoires.');
+            return Response::redirect(url('atak/sse/interet/nouveau'));
+        }
+        $fields = ['temporary_designation','suspected_alias','apparent_sex','estimated_age_range','suspected_nationality','suspected_affiliation','confidence_level','interest_level','opening_reason','origin_operator','observed_elements','analysis_facts','analysis_assumptions','analysis_contradictions','analysis_questions','collection_needs','operational_risk','recommendations','source_label','source_reliability','acquisition_at','mission_label'];
+        $data = [];
+        foreach ($fields as $field) $data[$field] = trim((string) $request->input($field, '')) ?: null;
+        $data['temporary_designation'] = $designation; $data['opening_reason'] = $reason;
+        $data['created_by'] = (int) Session::get('user_id') ?: null;
+        $id = $this->interestCases->create($this->tenantId(), $data);
+        Session::flash('success', 'Dossier d’intérêt ouvert. Aucune identité n’a été déduite automatiquement.');
+        return Response::redirect(url('atak/sse/interet/' . $id));
+    }
+
+    public function interestCaseShow(Request $request, array $params = []): Response
+    {
+        $case = $this->interestCases->findForTenant((int) ($params['id'] ?? 0), $this->tenantId());
+        if (!$case) return Response::redirect(url('atak/sse/interet'));
+        return $this->portalView('atak.sse.interest_case_show', [
+            'title' => (string) $case['reference_code'], 'interestCase' => $case,
+            'activeNav' => 'interet', 'canManage' => $this->canManage(),
         ]);
     }
 

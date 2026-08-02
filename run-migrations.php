@@ -3368,6 +3368,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakSseInterestMigrate = require $root . '/bootstrap/atak_sse_interest_cases_migration.php';
+try {
+    echo "Migration atak_sse_interest_cases (SSE — dossiers d’intérêt)…\n";
+    $atakSseInterestMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_interest_cases : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakDonationsMigrate = require $root . '/bootstrap/atak_donations_migration.php';
 try {
     echo "Migration atak_donations (financement ATAK)...\n";

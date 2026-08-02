@@ -1326,12 +1326,12 @@ if (!function_exists('sse_ui_theme_normalize')) {
     {
         $theme = strtolower(trim((string) $theme));
 
-        return array_key_exists($theme, sse_ui_theme_options()) ? $theme : 'archive';
+        return array_key_exists($theme, sse_ui_theme_options()) ? $theme : 'console';
     }
 }
 
 if (!function_exists('sse_ui_theme')) {
-    /** Thème SSE courant (cookie, défaut : registre classifié). */
+    /** Thème SSE courant (cookie, défaut : console Athena). */
     function sse_ui_theme(): string
     {
         return sse_ui_theme_normalize($_COOKIE['sse_ui_theme'] ?? null);

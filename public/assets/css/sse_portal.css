@@ -1234,7 +1234,7 @@ body.sse-theme-console .sse-nav a.is-active::after {
 }
 
 body.sse-theme-console .page-shell {
-    max-width: 1100px;
+    max-width: 1880px;
     margin: 0 auto;
     padding: 44px 20px 80px;
 }
@@ -2389,3 +2389,46 @@ body.sse-theme-console .flash {
 
 .sse-who-opens { font-size: .78rem; max-width: 26ch; }
 .sse-sep { border: 0; border-top: 1px solid var(--border); margin: 18px 0 14px; }
+
+/* Poste dossiers : outils persistants et registre large pour les écrans ops. */
+.case-workspace { display:grid; grid-template-columns:250px minmax(0,1fr); gap:18px; align-items:start; }
+.case-workspace-main { min-width:0; }
+.case-aside { position:sticky; top:16px; border:1px solid var(--line, var(--border)); background:#070a08; }
+.case-aside-head { min-height:48px; padding:0 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line, var(--border)); color:#737c77; font:700 9px var(--mono); letter-spacing:.1em; text-transform:uppercase; }
+.case-aside-head strong { color:var(--green); }
+.case-search { padding:14px; border-bottom:1px solid var(--line, var(--border)); }
+.case-search label,.case-aside-section>span { display:block; margin-bottom:7px; color:#68716c; font:800 9px var(--sans); letter-spacing:.1em; text-transform:uppercase; }
+.case-search-control { display:flex; }
+.case-search-control input { min-width:0; width:100%; min-height:38px!important; }
+.case-search-control button { width:40px; border:1px solid #007b5c; background:#008e69; color:#fff; cursor:pointer; }
+.case-aside-nav { padding:6px 0; border-bottom:1px solid var(--line, var(--border)); }
+.case-aside-nav a { min-height:40px; padding:0 14px; display:flex; align-items:center; justify-content:space-between; border-left:2px solid transparent; color:#929b96; text-decoration:none; font-size:.78rem; }
+.case-aside-nav a:hover,.case-aside-nav a.is-active { background:#0b1310; color:#eef3f0; border-left-color:var(--green); }
+.case-aside-nav b { color:var(--green); font:700 10px var(--mono); }
+.case-aside-section { padding:14px; }
+.case-aside-section a { display:block; padding:5px 0; color:#89938d; font:10px var(--mono); text-decoration:none; }
+.case-aside-section a:hover { color:var(--green-bright); }
+.case-aside-create { width:calc(100% - 28px); margin:0 14px 14px; text-align:center; }
+.sse-lock-panel>summary { list-style:none; cursor:pointer; }
+.sse-lock-panel>summary::-webkit-details-marker { display:none; }
+.sse-lock-panel>summary .panel-title::after { content:"  ·  Ouvrir les réglages"; color:var(--muted); font-size:8px; }
+.sse-lock-panel[open]>summary .panel-title::after { content:"  ·  Masquer les réglages"; }
+@media (max-width:1050px) { .case-workspace{grid-template-columns:1fr}.case-aside{position:static}.case-aside-nav{display:grid;grid-template-columns:repeat(3,1fr)}.case-aside-section{display:none} }
+@media (max-width:640px) { .case-aside-nav{grid-template-columns:1fr} }
+
+/* Dossiers d’intérêt — lecture en quatre blocs, sans confondre état, confiance et priorité. */
+.interest-facts { margin:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1px; background:var(--border); }
+.interest-facts>div { padding:14px; background:var(--surface); }
+.interest-facts dt { margin-bottom:5px; color:var(--muted); font:700 .62rem var(--mono); letter-spacing:.08em; text-transform:uppercase; }
+.interest-facts dd { margin:0; color:var(--text-strong); white-space:normal; }
+body.sse-theme-console .interest-facts { background:var(--line); }
+body.sse-theme-console .interest-facts>div { background:#080b09; }
+@media(max-width:700px){.interest-facts{grid-template-columns:1fr}}
+.sse-ops-grid { margin-top:18px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
+.sse-ops-grid a { min-height:90px; padding:14px; border:1px solid var(--line,var(--border)); background:var(--panel,var(--surface)); text-decoration:none; }
+.sse-ops-grid strong,.sse-ops-grid span { display:block; }
+.sse-ops-grid strong { color:var(--text-strong); font-size:.76rem; text-transform:uppercase; }
+.sse-ops-grid span { margin-top:8px; color:var(--muted); font-size:.68rem; }
+.sse-ops-grid a:hover { border-color:var(--green); background:#0b1310; }
+@media(max-width:1100px){.sse-ops-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.sse-ops-grid{grid-template-columns:1fr}}
