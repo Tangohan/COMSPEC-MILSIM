@@ -243,6 +243,42 @@ class AtakReportRoutingRepository
     /**
      * Marque un routage comme acquitté
      */
+    /**
+     * À qui un rapport a été diffusé.
+     *
+     * Le dépôt savait lister les rapports d'un destinataire, pas les destinataires
+     * d'un rapport. Sans cette lecture, la diffusion reste invisible depuis la
+     * fiche du rapport — et une diffusion qu'on ne voit pas ne se vérifie pas.
+     *
+     * **Cloisonnement par communauté : à la charge de l'appelant.**
+     * `atak_report_routing_history` ne porte pas de `tenant_id` — filtrer dessus
+     * ici échouerait. L'appelant doit donc avoir déjà vérifié que le rapport
+     * appartient bien à sa communauté avant d'appeler cette méthode, ce que fait
+     * la consultation d'un rapport.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listForReport(int $reportId): array
+    {
+        if ($reportId < 1) {
+            return [];
+        }
+
+        try {
+            return $this->db->query(
+                "SELECT rh.*, rr.rule_name
+                   FROM atak_report_routing_history rh
+                   LEFT JOIN atak_report_routing_rules rr ON rr.id = rh.routing_rule_id
+                  WHERE rh.report_id = ?
+                  ORDER BY rh.id ASC",
+                [$reportId]
+            )->fetchAll();
+        } catch (\Throwable) {
+            // Migration non passée : la fiche du rapport doit rester consultable.
+            return [];
+        }
+    }
+
     public function acknowledgeRouting(int $reportId, string $recipientType, string $recipientIdentifier, int $userId): bool
     {
         return $this->db->execute(

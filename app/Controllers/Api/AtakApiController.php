@@ -8657,8 +8657,21 @@ class AtakApiController
             $activityMeta
         );
 
-        $report = $repo->findById($reportId);
-        
+        // Diffusion dirigée : le moteur de règles existait sans appelant. Il est
+        // branché ici, après enregistrement — un échec de routage ne doit jamais
+        // faire perdre un compte rendu de terrain.
+        $routedTo = (new \App\Services\Tactical\AtakReportRoutingService())->onReportSubmitted(
+            $reportId,
+            $tenantId,
+            $mapId,
+            (string) ($data['submitter_callsign'] ?? 'Terrain')
+        );
+
+        $report = $repo->findById($reportId, $tenantId);
+        if (is_array($report)) {
+            $report['routed_to'] = $routedTo;
+        }
+
         return Response::json($report, 201);
     }
 
@@ -8675,12 +8688,19 @@ class AtakApiController
         
         $id = (int) ($params['id'] ?? 0);
         $repo = new \App\Repositories\AtakTacticalReportRepository();
-        $report = $repo->findById($id);
-        
+
+        // Cloisonnement par communauté : sans ce filtre, un identifiant deviné
+        // suffisait à lire le rapport d'une autre communauté.
+        $report = $repo->findById($id, $r);
+
         if (!$report) {
             return Response::json(['error' => 'Report not found'], 404);
         }
-        
+
+        // Diffusion dirigée : le rapport est scopé ci-dessus, la lecture de son
+        // historique de routage l'est donc aussi.
+        $report['routing'] = (new \App\Repositories\AtakReportRoutingRepository())->listForReport($id);
+
         return Response::json($report);
     }
 
@@ -8708,7 +8728,9 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakTacticalReportRepository();
-        $success = $repo->acknowledge($id, $userId);
+        // Acquitter est un acte, pas une lecture : le cloisonnement compte
+        // davantage encore que sur la consultation.
+        $success = $repo->acknowledge($id, $userId, $r);
         
         if (!$success) {
             return Response::json(['error' => 'Report not found'], 404);

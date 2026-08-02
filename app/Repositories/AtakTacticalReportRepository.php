@@ -137,10 +137,21 @@ class AtakTacticalReportRepository
     /**
      * Récupère un rapport par ID
      */
-    public function findById(int $id): ?array
+    /**
+     * @param int|null $tenantId Communauté propriétaire. À `null` seulement pour un
+     *   appel interne dont on sait qu'il porte déjà sur un rapport vérifié : sans
+     *   ce filtre, un identifiant deviné suffit à lire le rapport d'une autre
+     *   communauté.
+     */
+    public function findById(int $id, ?int $tenantId = null): ?array
     {
         $sql = "SELECT * FROM v_atak_tactical_reports WHERE id = :id AND deleted_at IS NULL";
-        $report = $this->db->fetchOne($sql, ['id' => $id]);
+        $params = ['id' => $id];
+        if ($tenantId !== null) {
+            $sql .= " AND tenant_id = :tenant_id";
+            $params['tenant_id'] = $tenantId;
+        }
+        $report = $this->db->fetchOne($sql, $params);
 
         if ($report) {
             if (!empty($report['structured_data'])) {
@@ -196,18 +207,24 @@ class AtakTacticalReportRepository
     /**
      * Marque un rapport comme acquitté
      */
-    public function acknowledge(int $id, int $acknowledgedByUserId): bool
+    /**
+     * @param int|null $tenantId Sans ce filtre, une communauté peut acquitter le
+     *   rapport d'une autre — un accusé de réception est un acte, pas une lecture.
+     */
+    public function acknowledge(int $id, int $acknowledgedByUserId, ?int $tenantId = null): bool
     {
         $sql = "UPDATE atak_tactical_reports 
                 SET acknowledged_by_user_id = :user_id, 
                     acknowledged_at = NOW(),
                     status = CASE WHEN status = 'SUBMITTED' THEN 'ACKNOWLEDGED' ELSE status END
                 WHERE id = :id";
-        
-        return $this->db->execute($sql, [
-            'id' => $id,
-            'user_id' => $acknowledgedByUserId
-        ]) > 0;
+        $params = ['id' => $id, 'user_id' => $acknowledgedByUserId];
+        if ($tenantId !== null) {
+            $sql .= " AND tenant_id = :tenant_id";
+            $params['tenant_id'] = $tenantId;
+        }
+
+        return $this->db->execute($sql, $params) > 0;
     }
 
     /**

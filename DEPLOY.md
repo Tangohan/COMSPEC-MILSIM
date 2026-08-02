@@ -426,6 +426,29 @@ Post-check :
 - [ ] `/admin/audit` s'ouvre
 - [ ] Le détail d'une entrée s'ouvre et propose reprise et alerte
 
+### Diffusion dirigée des rapports — phase A (dont CORRECTIF D'ISOLATION)
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Tactical/AtakReportRoutingService.php` | **Nouveau** — branchement du moteur de règles |
+| `app/Repositories/AtakReportRoutingRepository.php` | `listForReport()` |
+| `app/Repositories/AtakTacticalReportRepository.php` | Cloisonnement de `findById()` et `acknowledge()` |
+| `app/Controllers/Api/AtakApiController.php` | Appel du routage, cloisonnement des deux endpoints |
+
+Prérequis base : `migrations/2026_07_24_007_atak_intelligence_enhancements.sql`,
+appliquée par le lanceur de migrations. Si elle ne l'est pas, le routage est inerte
+et tracé, sans faire échouer la soumission.
+
+Post-check :
+
+- [ ] Soumettre un rapport tactique : il est enregistré (aucune règle en base = aucun routage, c'est normal)
+- [ ] `GET /api/atak/reports/{id}` avec l'identifiant d'un rapport d'une **autre**
+      communauté renvoie désormais 404, plus le rapport
+- [ ] Même vérification sur `/acknowledge`
+
+> Aucune règle de diffusion n'existe en base : le moteur tourne à vide tant que
+> personne n'en crée. C'est l'état attendu après cette montée.
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

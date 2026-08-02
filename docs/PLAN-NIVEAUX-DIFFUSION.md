@@ -200,3 +200,68 @@ D'où l'ordre recommandé : phase A, puis décision sur B/C, puis AAR.
 3. La liste des six diffusions correspond-elle à votre organisation réelle
    (binôme / groupe / section / PC / cellule renseignement) ?
 4. Confirmez-vous que rien de ce qui est **perçu en jeu** ne doit être masqué ?
+
+---
+
+## 9. Phase A — livrée
+
+### Ce qui a été fait
+
+Le moteur de règles est branché : `AtakReportRoutingService::onReportSubmitted()`
+est appelé à la soumission d'un rapport tactique, et l'historique de diffusion est
+exposé sur la consultation du rapport (`routing`) et sur la réponse de soumission
+(`routed_to`).
+
+**Aucun interrupteur.** Sans règle enregistrée, le moteur ne route vers personne et
+n'écrit rien : une table de règles vide *est* l'état désactivé. Ajouter un réglage
+par-dessus donnerait deux façons de désactiver la même chose, donc deux endroits à
+vérifier quand quelqu'un demande pourquoi son rapport n'est pas arrivé.
+
+Un échec de routage n'échoue jamais la soumission : le rapport est enregistré
+d'abord, la diffusion est tentée ensuite et tracée si elle échoue. Perdre un compte
+rendu de contact parce qu'une règle est mal formée serait un échange calamiteux.
+
+### La cible a changé, et pourquoi
+
+La demande visait `atak_intel`. L'inventaire l'a écartée :
+
+| | `atak_intel` | `atak_tactical_reports` |
+|---|---|---|
+| `report_type`, `priority`, `summary`, `details` | absents | **présents** |
+| `tenant_id` / `context_id` | **absents** | présents |
+| Clé étrangère de `atak_report_routing_history` | non | **pointe dessus** |
+| `visibility`, `distributed_to` | non | **déjà présents** |
+
+Brancher sur `atak_intel` aurait imposé d'altérer une clé étrangère en base
+vivante, d'ajouter un cloisonnement par communauté à une table qui n'en a pas, et
+d'inventer une priorité. Le moteur a été écrit pour `atak_tactical_reports`, cette
+table est vivante et routée, et elle porte déjà `visibility` — l'axe diffusion du
+§ 3.1 y est prévu.
+
+**Conséquence pour `atak_intel`** : le router reste possible, mais ce n'est pas un
+branchement, c'est une phase de schéma. Elle relève de la phase B.
+
+### Défauts d'isolation corrigés au passage
+
+Deux failles pré-existantes, dans le périmètre touché :
+
+- `GET /api/atak/reports/{id}` appelait `findById($id)` **sans filtre de
+  communauté** : un identifiant deviné suffisait à lire le rapport d'une autre
+  communauté.
+- `POST /api/atak/reports/{id}/acknowledge` de même — et acquitter est un acte,
+  pas une lecture.
+
+`atak_report_routing_history` ne porte pas de `tenant_id` ; le cloisonnement de la
+lecture de diffusion repose donc sur celui du rapport, ce qui est désormais vrai et
+documenté dans `listForReport()`.
+
+**Même classe de défaut relevée ailleurs, non corrigée** : `AtakPoiRepository` et
+`AtakMedevacRepository` exposent aussi un `findById()` sans communauté. Hors du
+périmètre de cette phase — à traiter séparément.
+
+### Ce qu'il reste pour rendre la phase utilisable
+
+Aucune règle n'existe en base : le moteur tourne à vide tant que personne n'en
+crée. Il manque donc un écran de gestion des règles, ou un jeu de règles initial.
+C'est le prochain incrément, et il ne demande aucune décision d'architecture.
+
