@@ -118,12 +118,29 @@ if ($code !== 0) {
 // --- 2. Vues référencées (texte seul, ne peut pas échouer) ---
 $refs = [];
 foreach (phpFiles($root . '/app') as $file) {
+    $src = file_get_contents($file);
+
+    // Premier argument de view() / portalView().
     if (preg_match_all(
         '/(?:Response::view|portalView|->view)\s*\(\s*[\'"]([a-zA-Z0-9_.\-\/]+)[\'"]/',
-        file_get_contents($file),
+        $src,
         $m
     )) {
         foreach ($m[1] as $v) {
+            $refs[$v][] = shortPath($file, $root);
+        }
+    }
+
+    // Motif dominant du back-office : la vraie vue passe par 'content', le premier
+    // argument n'étant que la mise en page. Sans ce second motif, une vue de
+    // back-office absente échappait entièrement au contrôle — et c'est justement
+    // le cas qui produit une page vide en HTTP 200.
+    if (preg_match_all(
+        '/[\'"]content[\'"]\s*=>\s*[\'"]([a-zA-Z0-9_][a-zA-Z0-9_.\-\/]*\.[a-zA-Z0-9_\-\/]+)[\'"]/',
+        $src,
+        $mc
+    )) {
+        foreach ($mc[1] as $v) {
             $refs[$v][] = shortPath($file, $root);
         }
     }

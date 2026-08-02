@@ -449,6 +449,22 @@ Post-check :
 > Aucune règle de diffusion n'existe en base : le moteur tourne à vide tant que
 > personne n'en crée. C'est l'état attendu après cette montée.
 
+### Écran des règles de diffusion
+
+| Fichier | Rôle |
+|---|---|
+| `app/Controllers/Admin/AdminAtakReportRoutingController.php` | **Nouveau** — gestion des règles |
+| `app/Repositories/AtakReportRoutingRepository.php` | CRUD des règles + correctif du drapeau de notification |
+| `views/admin/atak_report_routing/index.php` | **Nouveau** — écran |
+| `routes/web.php` | `/admin/atak-diffusion-rapports` (+ état, suppression) |
+| `tools/audit-integrite.php` | Couvre désormais les vues passées par `content` |
+
+Post-check :
+
+- [ ] `/admin/atak-diffusion-rapports` s'ouvre et annonce « aucune règle »
+- [ ] Créer une règle sans destinataire est refusé avec un motif explicite
+- [ ] Une règle créée apparaît dans la liste avec sa condition en clair
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

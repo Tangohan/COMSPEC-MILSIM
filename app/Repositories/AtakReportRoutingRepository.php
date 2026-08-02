@@ -165,7 +165,12 @@ class AtakReportRoutingRepository
                 $ruleId,
                 $type,
                 $identifier,
-                $rule['send_notification'] ? 1 : 0,
+                // `notification_sent` doit dire ce qui s'est passé, pas ce qui
+                // était prévu. Aucun envoi n'est effectué ici : marquer 1
+                // ferait croire à une notification reçue et masquerait
+                // l'absence de dispatcher. On enregistre l'intention dans le
+                // canal, et l'envoi reste à 0 tant que rien ne part.
+                0,
                 $rule['send_notification'] ? 'in-game' : null
             ]
         );
@@ -243,6 +248,134 @@ class AtakReportRoutingRepository
     /**
      * Marque un routage comme acquitté
      */
+    /**
+     * Règles de diffusion d'une communauté, dans leur ordre d'application.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRules(int $tenantId): array
+    {
+        try {
+            return $this->db->query(
+                "SELECT * FROM atak_report_routing_rules
+                  WHERE tenant_id = ?
+                  ORDER BY is_active DESC, priority_order ASC, id ASC",
+                [$tenantId]
+            )->fetchAll();
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findRule(int $id, int $tenantId): ?array
+    {
+        try {
+            $row = $this->db->query(
+                "SELECT * FROM atak_report_routing_rules WHERE id = ? AND tenant_id = ?",
+                [$id, $tenantId]
+            )->fetch();
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $row ?: null;
+    }
+
+    /**
+     * Enregistre une règle. Les tableaux vides sont écrits `NULL` et non `[]` :
+     * le moteur teste la présence de la clé, un tableau vide y serait interprété
+     * comme « aucune condition » et ferait correspondre la règle à tout.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function saveRule(int $tenantId, array $data, ?int $id = null): int
+    {
+        $json = static function (mixed $v): ?string {
+            if (!is_array($v) || $v === []) {
+                return null;
+            }
+
+            return json_encode(array_values($v), JSON_UNESCAPED_UNICODE);
+        };
+
+        $conditions = [];
+        foreach (['report_types', 'priorities', 'keywords'] as $k) {
+            if (!empty($data[$k]) && is_array($data[$k])) {
+                $conditions[$k] = array_values($data[$k]);
+            }
+        }
+
+        $params = [
+            'tenant_id' => $tenantId,
+            'rule_name' => trim((string) ($data['rule_name'] ?? '')) ?: 'Règle sans nom',
+            'is_active' => !empty($data['is_active']) ? 1 : 0,
+            'priority_order' => max(1, min(9999, (int) ($data['priority_order'] ?? 100))),
+            'trigger_conditions' => json_encode($conditions, JSON_UNESCAPED_UNICODE),
+            'roles' => $json($data['auto_assign_to_roles'] ?? null),
+            'units' => $json($data['auto_assign_to_units'] ?? null),
+            'send_notification' => !empty($data['send_notification']) ? 1 : 0,
+            'escalate' => !empty($data['escalate_after_minutes'])
+                ? max(1, (int) $data['escalate_after_minutes'])
+                : null,
+        ];
+
+        if ($id !== null && $id > 0) {
+            $params['id'] = $id;
+            $this->db->execute(
+                "UPDATE atak_report_routing_rules
+                    SET rule_name = :rule_name,
+                        is_active = :is_active,
+                        priority_order = :priority_order,
+                        trigger_conditions = :trigger_conditions,
+                        auto_assign_to_roles = :roles,
+                        auto_assign_to_units = :units,
+                        send_notification = :send_notification,
+                        escalate_after_minutes = :escalate
+                  WHERE id = :id AND tenant_id = :tenant_id",
+                $params
+            );
+
+            return $id;
+        }
+
+        return (int) $this->db->insert(
+            "INSERT INTO atak_report_routing_rules
+                (tenant_id, rule_name, is_active, priority_order, trigger_conditions,
+                 auto_assign_to_roles, auto_assign_to_units, send_notification, escalate_after_minutes)
+             VALUES
+                (:tenant_id, :rule_name, :is_active, :priority_order, :trigger_conditions,
+                 :roles, :units, :send_notification, :escalate)",
+            $params
+        );
+    }
+
+    public function deleteRule(int $id, int $tenantId): bool
+    {
+        try {
+            return $this->db->execute(
+                "DELETE FROM atak_report_routing_rules WHERE id = :id AND tenant_id = :t",
+                ['id' => $id, 't' => $tenantId]
+            ) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function toggleRule(int $id, int $tenantId, bool $active): bool
+    {
+        try {
+            return $this->db->execute(
+                "UPDATE atak_report_routing_rules SET is_active = :a WHERE id = :id AND tenant_id = :t",
+                ['a' => $active ? 1 : 0, 'id' => $id, 't' => $tenantId]
+            ) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     /**
      * À qui un rapport a été diffusé.
      *

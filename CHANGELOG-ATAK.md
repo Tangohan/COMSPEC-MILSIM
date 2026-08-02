@@ -60,6 +60,22 @@ Un automatisme propose, il ne décide pas. Aucune règle ne clôt un site, ne fu
 - Un échec de routage n'échoue jamais la soumission : le rapport est enregistré d'abord, la diffusion tentée ensuite et tracée si elle échoue. Perdre un compte rendu de contact parce qu'une règle est mal formée serait un échange calamiteux.
 - **La cible a changé par rapport à la demande initiale.** Le branchement devait porter sur `atak_intel` ; cette table n'a ni `report_type`, ni `priority`, ni `tenant_id`, et la clé étrangère de l'historique de routage pointe sur `atak_tactical_reports`. Router `atak_intel` demanderait d'altérer une clé étrangère en base vivante et d'ajouter un cloisonnement à une table qui n'en a pas — ce n'est pas un branchement mais une phase de schéma, renvoyée à la suite du plan.
 
+### Ajouté — Écran des règles de diffusion
+
+- `/admin/atak-diffusion-rapports` : création, activation et suppression des règles. Sans lui, le moteur branché en phase A tournait à vide, faute de règle à appliquer.
+- Conditions exprimées en clair — types de rapport, priorités, mots-clés — plutôt qu'en JSON brut. Aucune case cochée signifie « tous », ce qui est écrit sous chaque groupe.
+- **Une règle sans destinataire est refusée** : elle donnerait l'illusion d'une diffusion en place tout en n'en produisant aucune.
+- L'écran annonce lui-même qu'une liste vide est l'état normal après installation, pas une panne.
+- **Les notifications ne sont pas émises, et l'écran le dit.** La diffusion enregistre qui doit lire et l'affiche sur la fiche du rapport ; l'envoi en jeu, par courriel ou vers Discord n'est pas branché. Mieux vaut le lire à l'écran que le découvrir en opération.
+
+### Corrigé — L'historique de diffusion affirmait des notifications jamais envoyées
+
+- `createRoutingEntry()` inscrivait `notification_sent = 1` et le canal « in-game » alors qu'aucun envoi n'a lieu. Le drapeau dit désormais ce qui s'est passé — l'intention reste consignée dans le canal, l'envoi reste à zéro tant que rien ne part.
+
+### Corrigé — Angle mort du contrôle d'intégrité
+
+- Le contrôle ne vérifiait que le premier argument de `view()`. Or le back-office passe la vraie vue par `'content' => …`, la mise en page seule étant en premier argument : **une vue de back-office absente échappait entièrement au contrôle**, alors que c'est précisément le cas qui produit une page blanche en HTTP 200. La couverture passe de 68 à 365 vues.
+
 ### Corrigé — Deux lectures inter-communautés sur les rapports tactiques
 
 - `GET /api/atak/reports/{id}` chargeait le rapport **sans filtrer sur la communauté** : un identifiant deviné suffisait à lire le rapport d'une autre communauté.

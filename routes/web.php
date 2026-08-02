@@ -61,6 +61,7 @@ use App\Controllers\Web\AnalyticsBeaconController;
 use App\Controllers\Admin\AdminUnitsController;
 use App\Controllers\Admin\AdminModpackController;
 use App\Controllers\Admin\AdminAtakConfigController;
+use App\Controllers\Admin\AdminAtakReportRoutingController;
 use App\Controllers\Admin\AdminBriefingSlidesController;
 use App\Controllers\Admin\AdminMissionCycleController;
 use App\Controllers\Admin\AdminFireTeamsController;
@@ -1026,6 +1027,10 @@ return function (Router $router) {
     $router->get('/admin/modpacks/{id}/edit', [AdminModpackController::class, 'edit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/modpacks/{id}/update', [AdminModpackController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/modpacks/{id}/delete', [AdminModpackController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-diffusion-rapports/{id}/etat', [AdminAtakReportRoutingController::class, 'toggle'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-diffusion-rapports/{id}/supprimer', [AdminAtakReportRoutingController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-config', [AdminAtakConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config', [AdminAtakConfigController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/access-key', [AdminAtakConfigController::class, 'regenerateAccessKey'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
