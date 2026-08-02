@@ -68,9 +68,18 @@ Un automatisme propose, il ne décide pas. Aucune règle ne clôt un site, ne fu
 - L'écran annonce lui-même qu'une liste vide est l'état normal après installation, pas une panne.
 - **Les notifications ne sont pas émises, et l'écran le dit.** La diffusion enregistre qui doit lire et l'affiche sur la fiche du rapport ; l'envoi en jeu, par courriel ou vers Discord n'est pas branché. Mieux vaut le lire à l'écran que le découvrir en opération.
 
+### Ajouté — Émission réelle des notifications de diffusion
+
+- Une diffusion produit désormais une **notification effective**, écrite dans `atak_realtime_notifications` avec ses destinataires, sa position sur la carte et son urgence.
+- **Une seule notification par rapport**, portant tous les destinataires — et non une par destinataire. Trois lignes identiques dans le bandeau pour un même compte rendu font passer l'alerte pour du bruit, et c'est le bruit qu'on finit par ignorer.
+- L'urgence reprend celle du rapport : un contact `FLASH` s'affiche en critique, une routine en bas de pile. Un compte rendu immédiat n'a pas à ressembler à une routine.
+- Expiration à deux heures : une alerte qui reste affichée une semaine devient un décor.
+- **Nouvelle route de relève `GET /api/atak/notifications`.** `AtakNotificationRepository` avait `create()`, `listActive()` et `pollSince()` mais **aucune route ne l'exposait** : les notifications écrites n'étaient lisibles par personne. Sans cette relève, émettre revenait à écrire dans un tiroir fermé.
+- Une notification qui échoue n'annule pas la diffusion — elle est tracée avec la mention explicite « destinataires à prévenir de vive voix », pour que le silence ne passe pas inaperçu.
+
 ### Corrigé — L'historique de diffusion affirmait des notifications jamais envoyées
 
-- `createRoutingEntry()` inscrivait `notification_sent = 1` et le canal « in-game » alors qu'aucun envoi n'a lieu. Le drapeau dit désormais ce qui s'est passé — l'intention reste consignée dans le canal, l'envoi reste à zéro tant que rien ne part.
+- `createRoutingEntry()` inscrivait `notification_sent = 1` et le canal « in-game » alors qu'aucun envoi n'avait lieu. Le drapeau est désormais posé **après** émission réelle, par `markNotified()`, et décrit donc ce qui s'est passé.
 
 ### Corrigé — Angle mort du contrôle d'intégrité
 

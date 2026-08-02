@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Tactical;
 
+use App\Repositories\AtakNotificationRepository;
 use App\Repositories\AtakReportRoutingRepository;
+use App\Repositories\AtakTacticalReportRepository;
 
 /**
  * Diffusion dirigée des rapports tactiques — phase A du plan « niveaux
@@ -42,9 +44,13 @@ final class AtakReportRoutingService
     public function __construct(
         private ?AtakReportRoutingRepository $routing = null,
         private ?AtakActivityLogService $activityLog = null,
+        private ?AtakNotificationRepository $notifications = null,
+        private ?AtakTacticalReportRepository $reports = null,
     ) {
         $this->routing ??= new AtakReportRoutingRepository();
         $this->activityLog ??= new AtakActivityLogService();
+        $this->notifications ??= new AtakNotificationRepository();
+        $this->reports ??= new AtakTacticalReportRepository();
     }
 
     /**
@@ -99,7 +105,91 @@ final class AtakReportRoutingService
             $actorLabel ?? 'Portail'
         );
 
+        $this->notify($reportId, $tenantId, $contextId, $recipients);
+
         return $recipients;
+    }
+
+    /**
+     * Émet la notification correspondant à une diffusion.
+     *
+     * Une seule notification par rapport, portant tous les destinataires, et non
+     * une par destinataire : trois lignes identiques dans le bandeau pour un même
+     * compte rendu font passer l'alerte pour du bruit, et c'est le bruit qu'on
+     * finit par ignorer.
+     *
+     * L'urgence de la notification reprend celle du rapport — un contact
+     * immédiat n'a pas à s'afficher comme une routine.
+     *
+     * @param list<array<string, mixed>> $recipients
+     */
+    private function notify(int $reportId, int $tenantId, int $contextId, array $recipients): void
+    {
+        $report = $this->reports->findById($reportId, $tenantId);
+        if (!is_array($report)) {
+            return;
+        }
+
+        $roles = [];
+        $units = [];
+        $users = [];
+        foreach ($recipients as $r) {
+            $id = (string) ($r['identifier'] ?? '');
+            if ($id === '') {
+                continue;
+            }
+            match ((string) ($r['type'] ?? '')) {
+                'ROLE' => $roles[] = $id,
+                'UNIT' => $units[] = $id,
+                'USER' => $users[] = $id,
+                default => null,
+            };
+        }
+
+        $priority = match ((string) ($report['priority'] ?? 'ROUTINE')) {
+            'FLASH' => 'CRITICAL',
+            'IMMEDIATE' => 'HIGH',
+            'PRIORITY' => 'MEDIUM',
+            default => 'LOW',
+        };
+
+        $label = trim((string) ($report['report_number'] ?? '')) ?: ('#' . $reportId);
+        $summary = trim((string) ($report['summary'] ?? ''));
+
+        try {
+            $this->notifications->create($tenantId, $contextId, [
+                'notification_type' => 'REPORT_URGENT',
+                'priority' => $priority,
+                'title' => sprintf('%s %s', (string) ($report['report_type'] ?? 'Rapport'), $label),
+                'message' => $summary !== ''
+                    ? $summary
+                    : 'Rapport à traiter — ouvrez la fiche pour le détail.',
+                'source_entity_type' => 'REPORT',
+                'source_entity_id' => $reportId,
+                'target_roles' => $roles !== [] ? json_encode(array_values(array_unique($roles)), JSON_UNESCAPED_UNICODE) : null,
+                'target_units' => $units !== [] ? json_encode(array_values(array_unique($units)), JSON_UNESCAPED_UNICODE) : null,
+                'target_users' => $users !== [] ? json_encode(array_values(array_unique($users)), JSON_UNESCAPED_UNICODE) : null,
+                'show_on_map' => !empty($report['pos_x']) && !empty($report['pos_y']),
+                'map_pos_x' => $report['pos_x'] ?? null,
+                'map_pos_y' => $report['pos_y'] ?? null,
+                // Une alerte de diffusion qui reste affichée une semaine devient un
+                // décor : elle expire avec la pertinence du compte rendu.
+                'expires_at' => date('Y-m-d H:i:s', time() + 7200),
+            ]);
+
+            $this->routing->markNotified($reportId);
+        } catch (\Throwable $e) {
+            // La diffusion est enregistrée : l'absence de notification ne doit pas
+            // l'annuler. On trace pour que le silence ne passe pas inaperçu.
+            $this->activityLog->record(
+                $tenantId,
+                $contextId,
+                'REPORT_ROUTING',
+                'Diffusion enregistrée mais notification non émise — destinataires à prévenir de vive voix.',
+                'Portail',
+                ['error' => substr($e->getMessage(), 0, 200)]
+            );
+        }
     }
 
     /**

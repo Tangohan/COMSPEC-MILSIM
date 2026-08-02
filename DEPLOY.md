@@ -465,6 +465,21 @@ Post-check :
 - [ ] Créer une règle sans destinataire est refusé avec un motif explicite
 - [ ] Une règle créée apparaît dans la liste avec sa condition en clair
 
+### Émission des notifications de diffusion
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Tactical/AtakReportRoutingService.php` | Émission de la notification |
+| `app/Repositories/AtakReportRoutingRepository.php` | `markNotified()` |
+| `app/Controllers/Api/AtakApiController.php` | `GET /api/atak/notifications` |
+| `routes/web.php` | Route de relève |
+
+Post-check :
+
+- [ ] Créer une règle, soumettre un rapport correspondant
+- [ ] `GET /api/atak/notifications` renvoie la notification, avec l'urgence du rapport
+- [ ] La fiche du rapport montre les destinataires ; `notification_sent` vaut 1
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

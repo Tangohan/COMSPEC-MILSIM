@@ -1450,6 +1450,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/mod-report', [AtakApiController::class, 'modReport']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
     $router->get('/api/atak/roleplay-stats', [AtakApiController::class, 'roleplayStats']);
+    $router->get('/api/atak/notifications', [AtakApiController::class, 'notificationsPoll']);
     $router->get('/api/atak/intel-view', [AtakApiController::class, 'intelViewIndex']);
     $router->get('/api/atak/device-alerts', [AtakApiController::class, 'deviceAlertsIndex']);
     $router->get('/api/atak/session-restore', [AtakApiController::class, 'sessionRestore']);

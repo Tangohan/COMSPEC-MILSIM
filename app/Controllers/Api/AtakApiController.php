@@ -8676,6 +8676,40 @@ class AtakApiController
     }
 
     /**
+     * Notifications temps réel destinées au terrain.
+     * GET /api/atak/notifications?since=YYYY-MM-DD HH:MM:SS
+     *
+     * `AtakNotificationRepository` existait avec `create()`, `listActive()` et
+     * `pollSince()` sans qu'aucune route ne l'expose : les notifications écrites
+     * n'étaient lisibles par personne. Sans cette relève, émettre une notification
+     * revenait à l'écrire dans un tiroir fermé.
+     */
+    public function notificationsPoll(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        $repo = new \App\Repositories\AtakNotificationRepository();
+        $since = trim((string) ($request->query('since') ?? ''));
+
+        // Sans borne, une relève renverrait tout l'historique encore actif à
+        // chaque appel : le client rejouerait des alertes déjà vues.
+        $notifications = $since !== ''
+            ? $repo->pollSince($tenantId, $mapId, $since)
+            : $repo->listActive($tenantId, $mapId, ['limit' => 20]);
+
+        return Response::json([
+            'notifications' => $notifications,
+            'count' => count($notifications),
+            'server_time' => date('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /**
      * Récupère un rapport tactique par ID
      * GET /api/atak/reports/:id
      */

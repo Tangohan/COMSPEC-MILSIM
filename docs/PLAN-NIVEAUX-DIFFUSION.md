@@ -259,9 +259,16 @@ documenté dans `listForReport()`.
 `AtakMedevacRepository` exposent aussi un `findById()` sans communauté. Hors du
 périmètre de cette phase — à traiter séparément.
 
-### Ce qu'il reste pour rendre la phase utilisable
+### Phase A complète
 
-Aucune règle n'existe en base : le moteur tourne à vide tant que personne n'en
-crée. Il manque donc un écran de gestion des règles, ou un jeu de règles initial.
-C'est le prochain incrément, et il ne demande aucune décision d'architecture.
+La chaîne est entière : règle créée à l'écran → rapport soumis → règles appliquées
+→ notification émise → relève exposée au jeu → diffusion visible sur la fiche.
+
+Deux manques de branchement ont été comblés en chemin, tous deux du même genre que
+le moteur lui-même : `AtakNotificationRepository` n'était exposé par **aucune
+route**, et l'historique de diffusion affirmait des envois qui n'existaient pas.
+
+**Reste côté mod** : relever `GET /api/atak/notifications` et afficher via
+`fn_announce`. Cela demande une reconstruction du PBO, hors de ce qui peut être
+livré par le portail seul.
 

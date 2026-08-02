@@ -249,6 +249,31 @@ class AtakReportRoutingRepository
      * Marque un routage comme acquitté
      */
     /**
+     * Marque les lignes de diffusion d'un rapport comme réellement notifiées.
+     *
+     * Appelé **après** création de la notification, jamais avant : le drapeau doit
+     * décrire ce qui s'est passé. Le poser à l'insertion, comme c'était le cas,
+     * faisait croire à une notification reçue alors qu'aucun envoi n'existait.
+     */
+    public function markNotified(int $reportId): bool
+    {
+        if ($reportId < 1) {
+            return false;
+        }
+
+        try {
+            return $this->db->execute(
+                "UPDATE atak_report_routing_history
+                    SET notification_sent = 1, notification_sent_at = NOW()
+                  WHERE report_id = :id AND notification_sent = 0",
+                ['id' => $reportId]
+            ) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
      * Règles de diffusion d'une communauté, dans leur ordre d'application.
      *
      * @return list<array<string, mixed>>
