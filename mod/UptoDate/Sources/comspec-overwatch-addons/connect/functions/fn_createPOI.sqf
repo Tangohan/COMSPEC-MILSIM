@@ -52,7 +52,8 @@ private _parsed = [
     format ["POI %1", _poiName],
     true,
     true,
-    "liaison"
+    "liaison",
+    true
 ] call comspec_overwatch_connect_fnc_callExtLogged;
 _parsed params ["_ok", "", "_detail"];
 

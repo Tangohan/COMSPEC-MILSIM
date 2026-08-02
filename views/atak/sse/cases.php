@@ -7,6 +7,10 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,string> $classifications */
 /** @var array<string,string> $statuses */
 /** @var bool $canManage */
+/** @var bool $caseLockEnabled */
+/** @var bool $screensRedacted */
+/** @var int $lockedForMe */
+/** @var string $myClearance */
 $total = count($cases);
 $activeCount = 0;
 foreach ($cases as $c) {
@@ -23,6 +27,12 @@ $classBadge = static function (string $key): string {
         default => 'badge',
     };
 };
+// Répartition par classification : c'est elle qu'on relit avant d'armer le verrou.
+$byClass = [];
+foreach ($cases as $c) {
+    $k = (string) ($c['classification'] ?? 'encadrement');
+    $byClass[$k] = ($byClass[$k] ?? 0) + 1;
+}
 $statusBadge = static function (string $key): string {
     return match ($key) {
         'clos', 'archive' => 'badge badge--gray',
@@ -112,6 +122,121 @@ $statusBadge = static function (string $key): string {
     </div>
 </form>
 
+<section class="panel sse-lock-panel <?= !empty($caseLockEnabled) ? 'is-armed' : '' ?>">
+    <div class="panel-header">
+        <div class="panel-title">
+            <span class="panel-index">01.00</span>
+            Verrou d’ouverture par classification
+        </div>
+        <div class="panel-meta"><?= !empty($caseLockEnabled) ? 'ARMÉ' : 'DÉSARMÉ' ?></div>
+    </div>
+    <div class="panel-body">
+        <?php if (!empty($caseLockEnabled)): ?>
+            <p>
+                Un dossier dont la classification dépasse l’habilitation du lecteur
+                <strong>ne s’ouvre pas</strong> pour lui — ni la fiche, ni les personnes
+                rattachées, ni les notes, ni les corrélations, ni le compte rendu.
+            </p>
+        <?php else: ?>
+            <p>
+                La classification <strong>signale sans fermer</strong> : elle s’affiche en
+                badge et noircit les catégories concernées sur les versions expurgées, mais
+                n’empêche aucune ouverture.
+            </p>
+            <p class="sse-note">
+                Avant d’armer, relisez la colonne « Qui pourra encore l’ouvrir » ci-dessous.
+                La classification n’a jamais filtré depuis la création du portail : les
+                valeurs déjà posées ont été choisies sans conséquence, et les armer les
+                transforme rétroactivement en décisions d’exclusion que personne n’a prises.
+            </p>
+        <?php endif; ?>
+
+        <div class="sse-release-summary">
+            <div>
+                <div class="sse-block-title">Répartition actuelle</div>
+                <p>
+                    <?php
+                    $parts = [];
+                    foreach ($byClass as $ck => $n) {
+                        $parts[] = $n . ' × ' . ($classifications[$ck] ?? $ck);
+                    }
+                    echo $parts === [] ? 'Aucun dossier.' : $h(implode(' · ', $parts));
+                    ?>
+                </p>
+            </div>
+            <div>
+                <div class="sse-block-title">Effet sur vous</div>
+                <p>
+                    <?php if ((int) $lockedForMe === 0): ?>
+                        Aucun de ces dossiers ne vous serait fermé
+                        (habilitation : <?= $h(\App\Services\Sse\SseRedactionService::levelLabel($myClearance)) ?>).
+                    <?php else: ?>
+                        <strong><?= (int) $lockedForMe ?></strong> dossier<?= (int) $lockedForMe > 1 ? 's' : '' ?>
+                        vous <?= (int) $lockedForMe > 1 ? 'seraient fermés' : 'serait fermé' ?>
+                        (habilitation : <?= $h(\App\Services\Sse\SseRedactionService::levelLabel($myClearance)) ?>).
+                    <?php endif; ?>
+                </p>
+                <p class="sse-muted">
+                    Le portail ne peut mesurer l’effet que pour la session courante :
+                    il ne peut pas parler à la place des habilitations des autres.
+                </p>
+            </div>
+        </div>
+
+        <?php if (!empty($canGrant)): ?>
+            <form method="post" action="<?= $h(url('atak/sse/dossiers/verrou-classification')) ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="reglage" value="verrou">
+                <input type="hidden" name="enable" value="<?= !empty($caseLockEnabled) ? '0' : '1' ?>">
+                <button class="btn <?= !empty($caseLockEnabled) ? 'btn--ghost' : '' ?>" type="submit">
+                    <?= !empty($caseLockEnabled) ? 'Désarmer le verrou' : 'Armer le verrou' ?>
+                </button>
+            </form>
+        <?php else: ?>
+            <p class="sse-muted">
+                Seuls les détenteurs du droit d’octroi peuvent armer ce verrou : il ferme
+                des dossiers à d’autres, ce n’est pas un réglage d’affichage.
+            </p>
+        <?php endif; ?>
+
+        <hr class="sse-sep">
+
+        <div class="sse-block-title">
+            Caviardage des écrans de travail —
+            <?= !empty($screensRedacted) ? 'ARMÉ' : 'DÉSARMÉ' ?>
+        </div>
+        <?php if (!empty($screensRedacted)): ?>
+            <p>
+                Le registre des personnes, la fiche dossier et les corrélations sont
+                rabattus sur l’habilitation du lecteur, comme les documents de diffusion.
+            </p>
+        <?php else: ?>
+            <p>
+                Les documents de diffusion — compte rendu, PDF, version expurgée — sont
+                <strong>toujours</strong> rabattus sur l’habilitation du lecteur : c’est
+                leur objet. Les écrans de travail, eux, restent intégraux.
+            </p>
+            <p class="sse-note">
+                Les armer retire des informations que la cellule utilise toute la séance.
+                Selon la doctrine retenue pour les catégories, cela peut retirer les noms
+                à ceux qui en ont besoin pour travailler. À armer une fois les
+                habilitations réellement réparties.
+            </p>
+        <?php endif; ?>
+
+        <?php if (!empty($canGrant)): ?>
+            <form method="post" action="<?= $h(url('atak/sse/dossiers/verrou-classification')) ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="reglage" value="ecrans">
+                <input type="hidden" name="enable" value="<?= !empty($screensRedacted) ? '0' : '1' ?>">
+                <button class="btn <?= !empty($screensRedacted) ? 'btn--ghost' : '' ?>" type="submit">
+                    <?= !empty($screensRedacted) ? 'Rendre les écrans intégraux' : 'Caviarder les écrans de travail' ?>
+                </button>
+            </form>
+        <?php endif; ?>
+    </div>
+</section>
+
 <section class="panel">
     <div class="panel-header">
         <div class="panel-title">
@@ -140,6 +265,7 @@ $statusBadge = static function (string $key): string {
                     <th>Référence</th>
                     <th>Dossier</th>
                     <th>Classification</th>
+                    <th>Qui pourra encore l’ouvrir</th>
                     <th>Statut</th>
                     <th>Contenu</th>
                     <th>Mise à jour</th>
@@ -161,6 +287,9 @@ $statusBadge = static function (string $key): string {
                             <span class="<?= $h($classBadge((string) ($c['classification'] ?? ''))) ?>">
                                 <?= $h($c['classification_label']) ?>
                             </span>
+                        </td>
+                        <td class="sse-muted sse-who-opens">
+                            <?= $h(\App\Services\Sse\SseClearanceService::whoCanOpen((string) ($c['classification'] ?? ''))) ?>
                         </td>
                         <td>
                             <span class="<?= $h($statusBadge((string) ($c['status'] ?? ''))) ?>">

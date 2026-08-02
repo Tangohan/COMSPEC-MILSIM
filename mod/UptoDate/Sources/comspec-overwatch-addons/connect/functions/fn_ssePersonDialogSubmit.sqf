@@ -212,9 +212,24 @@ private _parsed = [
     "SSE fiche personne",
     true,
     true,
-    "system"
+    "system",
+    true
 ] call comspec_overwatch_connect_fnc_callExtLogged;
-_parsed params ["_ok", "", "_detail"];
+_parsed params ["_ok", "_status", "_detail"];
+
+// Liaison coupée : la fiche est en file, pas perdue. Le dire comme un échec
+// pousserait l'opérateur à ressaisir, et on se retrouverait avec deux fiches du
+// même sujet au rétablissement — exactement ce que l'automatisme A2 signale
+// comme doublon.
+if (!_ok && { _status isEqualTo "QUEUED" }) exitWith {
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText
+        "<t size='0.55' color='#e0a233' align='center'>Liaison coupée — fiche conservée, elle partira au rétablissement. Ne la ressaisissez pas.</t>";
+    [
+        "Fiche SSE conservée hors ligne — transmission au rétablissement de la liaison.",
+        "tactical",
+        "warn"
+    ] call comspec_overwatch_connect_fnc_announce;
+};
 
 if (!_ok) exitWith {
     // Le serveur renvoie un motif exploitable (identité manquante, dossier inconnu…).
@@ -262,7 +277,8 @@ if (_bio && { _personId isNotEqualTo "" } && { (count _samples) == 0 }) then {
         "SSE biométrie simulée",
         true,
         true,
-        "system"
+        "system",
+        true
     ] call comspec_overwatch_connect_fnc_callExtLogged;
     _bioParsed params ["_bioOk", "", "_bioDetail"];
     if (!_bioOk) then {

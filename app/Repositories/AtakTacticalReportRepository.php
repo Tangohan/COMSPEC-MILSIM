@@ -137,10 +137,21 @@ class AtakTacticalReportRepository
     /**
      * Récupère un rapport par ID
      */
-    public function findById(int $id): ?array
+    /**
+     * @param int|null $tenantId Communauté propriétaire. À `null` seulement pour un
+     *   appel interne dont on sait qu'il porte déjà sur un rapport vérifié : sans
+     *   ce filtre, un identifiant deviné suffit à lire le rapport d'une autre
+     *   communauté.
+     */
+    public function findById(int $id, ?int $tenantId = null): ?array
     {
         $sql = "SELECT * FROM v_atak_tactical_reports WHERE id = :id AND deleted_at IS NULL";
-        $report = $this->db->fetchOne($sql, ['id' => $id]);
+        $params = ['id' => $id];
+        if ($tenantId !== null) {
+            $sql .= " AND tenant_id = :tenant_id";
+            $params['tenant_id'] = $tenantId;
+        }
+        $report = $this->db->fetchOne($sql, $params);
 
         if ($report) {
             if (!empty($report['structured_data'])) {

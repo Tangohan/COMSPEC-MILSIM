@@ -297,7 +297,148 @@ Le tableau en tête de page dit, **avant** de produire le document, ce qui reste
 en clair et ce qui partira au noir. On ne découvre pas ce qu'on a diffusé après
 l'avoir diffusé.
 
-### 7.2 Caviardage manuel
+### 7.2 Qui est habilité à lire quoi
+
+Le niveau demandé dans l'écran est **rabattu sur l'habilitation de la session**. Le
+paramètre de l'adresse exprime une demande, il n'accorde rien : quelqu'un qui le force
+à la main obtient la version à laquelle il a droit, et la tentative part au journal.
+
+Le plafond vient de deux sources, dans cet ordre.
+
+**1. Habilitation explicite** — permissions à assigner aux rôles :
+
+| Permission | Plafond accordé |
+|---|---|
+| `atak.sse.clearance.encadrement` | Encadrement |
+| `atak.sse.clearance.confidentiel` | Confidentiel |
+| `atak.sse.clearance.tres_restreint` | Diffusion très restreinte |
+
+C'est la voie propre dès que vous voulez gérer vos habilitations à la main.
+
+**2. Report des rôles existants** — si aucune habilitation explicite n'est accordée :
+
+| Vous avez déjà | Plafond déduit |
+|---|---|
+| Administration du portail, ou droit d'octroi | Diffusion très restreinte |
+| Gestion des dossiers | Confidentiel |
+| Accès au portail SSE | Encadrement |
+| Rien de tout ça | Diffusion interne |
+
+Ce report est délibéré : sans lui, la mise à jour mettrait tout le monde au plancher
+tant qu'un administrateur n'a pas assigné les nouvelles permissions, et personne ne
+comprendrait pourquoi les dossiers sont devenus illisibles du jour au lendemain. Une
+règle de sécurité qu'on désactive en urgence parce qu'elle a tout cassé ne protège
+plus rien.
+
+**Invités (code d'accès temporaire)** : le plafond est celui que **le code porte**.
+Il se choisit à l'émission du code, écran « Accès et habilitations ». Par défaut,
+Diffusion interne — un invité ne voit ni identité, ni lieu, ni source. On n'accorde
+jamais par défaut de valeur, seulement par défaut de refus.
+
+Le plafond est un plafond : il ne se lève pas en cours de session.
+
+L'écran affiche votre habilitation et **d'où elle vient**. Une habilitation qu'on ne
+peut pas expliquer se conteste mal : l'opérateur doit pouvoir dire à son encadrement
+pourquoi il ne voit pas quelque chose.
+
+### 7.3 Où sont décidées les affectations de catégories
+
+Le tableau du § 7.1 — quelle catégorie exige quel niveau — est défini dans
+`app/Services/Sse/SseRedactionService.php`, constante `CATEGORIES`. Il n'est **pas**
+réglable par communauté aujourd'hui : c'est un choix de doctrine inscrit dans le code.
+
+Si votre doctrine diffère (par exemple : le lieu au même rang que l'identité), c'est
+là qu'il faut le changer, en un seul endroit.
+
+### 7.4 Verrou d'ouverture par classification
+
+La classification du dossier peut désormais **fermer** le dossier, pas seulement le
+signaler. Ce verrou est **désarmé par défaut** et s'arme depuis le registre des
+dossiers (`Athena → SSE → Dossiers`, premier panneau).
+
+**Désarmé** (état livré) — la classification s'affiche en badge et noircit les
+catégories concernées sur les versions expurgées, mais n'empêche aucune ouverture.
+
+**Armé** — un dossier dont la classification dépasse l'habilitation du lecteur ne
+s'ouvre plus pour lui : ni la fiche, ni les personnes rattachées, ni les notes, ni
+les preuves, ni les corrélations, ni le compte rendu, ni l'export.
+
+| Classification du dossier | Qui pourra encore l'ouvrir, une fois armé |
+|---|---|
+| Diffusion interne | Tout le monde, invités compris |
+| Encadrement | Tout membre ayant accès au portail SSE |
+| Confidentiel | Administration, droit d'octroi, gestion des dossiers |
+| Diffusion très restreinte | Administration du portail et droit d'octroi |
+
+#### Relisez avant d'armer
+
+Le registre porte une colonne **« Qui pourra encore l'ouvrir »** sur chaque dossier,
+et le panneau du haut donne la répartition par classification.
+
+C'est à relire sérieusement. La classification n'a **jamais** filtré depuis la
+création du portail : les valeurs déjà posées sur vos dossiers ont été choisies sans
+conséquence — quelqu'un a pu cocher « Confidentiel » par prudence, ou « Diffusion
+très restreinte » parce que ça sonnait bien. Armer le verrou transforme
+rétroactivement ces choix en décisions d'exclusion que personne n'a prises.
+
+Le panneau indique aussi combien de dossiers **vous** seriez fermés. Il ne peut pas
+mesurer l'effet sur les autres : le portail ne parle pas à la place des habilitations
+de chacun. Passez en revue avec la personne qui tient les rôles.
+
+#### Qui peut armer
+
+Les détenteurs du droit d'octroi (`atak.sse.grant`) ou l'administration. Armer ce
+verrou ferme des dossiers à d'autres — ce n'est pas un réglage d'affichage, et il ne
+doit pas être desserrable par celui qu'il gêne.
+
+L'armement et le désarmement partent au journal d'activité.
+
+#### Repli
+
+Si la table de réglages est absente ou injoignable, le verrou est considéré
+**désarmé**. C'est un choix assumé : un portail qui verrouille tout parce qu'une
+table manque est plus dangereux qu'un verrou temporairement inactif — on découvre le
+second, on subit le premier en pleine opération.
+
+### 7.5 Où le rabattement s'applique — deux régimes
+
+L'habilitation ne couvre pas tout de la même façon, et c'est délibéré.
+
+**Documents de diffusion — toujours rabattus, sans réglage :**
+
+| Écran | Comportement |
+|---|---|
+| Version expurgée | Niveau demandé, rabattu sur votre habilitation |
+| Compte rendu (`/compte-rendu`) | Servi à votre habilitation, bandeau « compte rendu partiel » si vous n'avez pas tout |
+| Export PDF | Servi à votre habilitation, bandeau rouge imprimé sur le document |
+
+Ces trois-là sont faits pour sortir du portail. Un caviardage manquant sur un PDF
+ne se rattrape plus une fois le fichier transmis, et le document doit dire de
+lui-même à quel niveau il a été produit — sinon une version expurgée est
+indiscernable d'une version complète une fois imprimée.
+
+**Écrans de travail — rabattus seulement si vous l'armez :**
+
+| Écran | Concerné |
+|---|---|
+| Registre des personnes | Identités, lieux, sources, relevés |
+| Fiche dossier | Personnes rattachées |
+| Corrélations | Désignation des personnes dans le graphe |
+
+Ce second interrupteur est dans le même panneau que le verrou, au registre des
+dossiers. Il est **désarmé par défaut** : ces écrans sont ce que la cellule regarde
+toute la séance, et selon la doctrine retenue au § 7.1, les caviarder retire les
+noms à ceux qui en ont besoin pour travailler — l'identité y est classée
+« Confidentiel », donc invisible à un simple membre.
+
+Armez-le une fois vos habilitations réellement réparties, ou après avoir ajusté la
+doctrine des catégories.
+
+**Non couvert à ce jour** : le registre des sites et la fiche site (qui portent des
+lieux et des équipes), ainsi que l'écran de croisement. Ils restent intégraux dans
+les deux régimes.
+
+### 7.5 Caviardage manuel
 
 Noircir une zone précise sur une fiche précise, **quel que soit le niveau** — y
 compris le plus restreint. Un motif est obligatoire : c'est lui qu'on relira pour
@@ -309,7 +450,7 @@ Cas typiques : protection de source, mineur, tiers manifestement non impliqué,
 Le caviardage est levable (bouton « Lever »). La zone redevient alors lisible aux
 niveaux qui l'autorisent — pas à tous.
 
-### 7.3 Ce que « trait noir » veut dire ici
+### 7.6 Ce que « trait noir » veut dire ici
 
 Le texte caviardé **n'est jamais envoyé au navigateur**. La substitution est faite
 côté serveur, la chaîne d'origine ne quitte pas le dossier.

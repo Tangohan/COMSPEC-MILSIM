@@ -61,6 +61,7 @@ use App\Controllers\Web\AnalyticsBeaconController;
 use App\Controllers\Admin\AdminUnitsController;
 use App\Controllers\Admin\AdminModpackController;
 use App\Controllers\Admin\AdminAtakConfigController;
+use App\Controllers\Admin\AdminAtakReportRoutingController;
 use App\Controllers\Admin\AdminBriefingSlidesController;
 use App\Controllers\Admin\AdminMissionCycleController;
 use App\Controllers\Admin\AdminFireTeamsController;
@@ -552,6 +553,7 @@ return function (Router $router) {
     $router->get('/atak/sse/dossiers', [SsePortalController::class, 'casesIndex'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/nouveau', [SsePortalController::class, 'caseCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/dossiers', [SsePortalController::class, 'caseStore'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/verrou-classification', [SsePortalController::class, 'caseLockToggle'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}', [SsePortalController::class, 'caseShow'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}', [SsePortalController::class, 'caseUpdate'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/personnes', [SsePortalController::class, 'caseLinkPerson'], $mwSsePortal);
@@ -1025,6 +1027,10 @@ return function (Router $router) {
     $router->get('/admin/modpacks/{id}/edit', [AdminModpackController::class, 'edit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/modpacks/{id}/update', [AdminModpackController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/modpacks/{id}/delete', [AdminModpackController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-diffusion-rapports/{id}/etat', [AdminAtakReportRoutingController::class, 'toggle'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-diffusion-rapports/{id}/supprimer', [AdminAtakReportRoutingController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-config', [AdminAtakConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config', [AdminAtakConfigController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/access-key', [AdminAtakConfigController::class, 'regenerateAccessKey'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1444,6 +1450,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/mod-report', [AtakApiController::class, 'modReport']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
     $router->get('/api/atak/roleplay-stats', [AtakApiController::class, 'roleplayStats']);
+    $router->get('/api/atak/notifications', [AtakApiController::class, 'notificationsPoll']);
     $router->get('/api/atak/intel-view', [AtakApiController::class, 'intelViewIndex']);
     $router->get('/api/atak/device-alerts', [AtakApiController::class, 'deviceAlertsIndex']);
     $router->get('/api/atak/session-restore', [AtakApiController::class, 'sessionRestore']);

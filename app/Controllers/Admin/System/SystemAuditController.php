@@ -21,7 +21,15 @@ class SystemAuditController
         $this->auditLogs ??= new AuditLogRepository();
     }
 
-    private function rollback(): AuditRollbackService
+    /**
+     * Accesseur du service de reprise.
+     *
+     * Nommé `rollbackService()` et non `rollback()` : l'action de route publique
+     * porte déjà ce nom, et deux méthodes homonymes dans une même classe font
+     * échouer PHP à la compilation de la classe — pas à l'analyse syntaxique,
+     * ce qui explique que `php -l` n'y voyait rien.
+     */
+    private function rollbackService(): AuditRollbackService
     {
         return $this->rollbackService ??= \App\Core\Container::get(AuditRollbackService::class);
     }
@@ -76,7 +84,7 @@ class SystemAuditController
             return Response::redirect(url('admin/audit'));
         }
 
-        $assessment = $this->rollback()->assess($row);
+        $assessment = $this->rollbackService()->assess($row);
 
         return Response::view('layout.main', [
             'content' => 'admin.system.audit_show',
@@ -106,7 +114,7 @@ class SystemAuditController
         }
 
         $actorId = (int) Session::get('user_id');
-        $result = $this->rollback()->rollback($row, $actorId);
+        $result = $this->rollbackService()->rollback($row, $actorId);
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect($detailUrl);
@@ -131,7 +139,7 @@ class SystemAuditController
 
         $actorId = (int) Session::get('user_id');
         $note = trim((string) $request->input('alert_note', ''));
-        $result = $this->rollback()->alertStaff($row, $actorId, $note);
+        $result = $this->rollbackService()->alertStaff($row, $actorId, $note);
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect($detailUrl);

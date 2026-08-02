@@ -269,3 +269,4 @@ Certaines parties dérivées de :
 ---
 
 *Dernière mise à jour : 24 juillet 2026*
+- [Plan — Niveaux d'information et chaîne de diffusion](PLAN-NIVEAUX-DIFFUSION.md) — conception, en attente de décision

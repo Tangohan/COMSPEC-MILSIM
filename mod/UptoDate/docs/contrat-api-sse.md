@@ -506,3 +506,60 @@ caviardé. Ouvrir la page ne doit jamais exposer plus que ce qui a été demand�
 Le formulaire de caviardage fonctionne **sans JavaScript** : la recomposition
 fiche + zone est faite côté serveur. Un caviardage qui échoue en silence parce que
 le script n'a pas tourné laisserait la zone en clair sans que personne s'en aperçoive.
+
+### Habilitation de lecture
+
+Le niveau passé en `?niveau=` est **rabattu** sur le plafond de la session par
+`SseClearanceService::clamp()`. Il n'y a pas de chemin par lequel une demande
+accorde une lecture.
+
+| Source du plafond | Valeur |
+|---|---|
+| Permission `atak.sse.clearance.*` | Niveau correspondant, la plus haute l'emporte |
+| `admin.access` / `atak.sse.grant` | `tres_restreint` |
+| `atak.sse.case.manage` | `confidentiel` |
+| `atak.sse.access` / `atak.sse.cases` | `encadrement` |
+| Invité | `sse_access_codes.clearance_level`, défaut `interne` |
+| Aucun | `interne` |
+
+Une valeur de session inconnue retombe sur `interne` : le repli est un refus,
+jamais une ouverture.
+
+Les rabattements sont inscrits au journal d'activité sous le type `SSE_CLEARANCE`.
+
+Le tableau catégorie → niveau requis n'est pas configurable par communauté : il est
+défini dans `SseRedactionService::CATEGORIES`.
+
+### Verrou d'ouverture par classification
+
+Réglage par communauté, table `sse_portal_settings`, clé `case_classification_lock`.
+**Désarmé par défaut**, et toute erreur de lecture retombe sur désarmé.
+
+Armé, `SsePortalController::requireCase()` renvoie `null` quand la classification du
+dossier dépasse le plafond d'habilitation de la session — ce qui ferme d'un coup les
+10 écrans qui passent par cette méthode.
+
+Bascule : `POST /atak/sse/dossiers/verrou-classification` (`enable=0|1`), réservée à
+`atak.sse.grant` ou `admin.access`. La route doit être déclarée **avant**
+`POST /atak/sse/dossiers/{id}` : le routeur retient le premier motif correspondant.
+
+Le registre expose `caseLockEnabled`, `lockedForMe` et `myClearance` pour la revue
+préalable. `lockedForMe` ne vaut que pour la session courante : le portail ne peut
+pas énumérer les habilitations des autres membres.
+
+### Deux régimes de rabattement
+
+**Toujours rabattus** (aucun réglage) : `/declassification`, `/compte-rendu`, `/pdf`.
+Ce sont les surfaces de diffusion ; `SseCasePdfService::export()` prend un troisième
+paramètre `?string $releaseLevel` et imprime un bandeau portant le niveau de
+production et les catégories noircies.
+
+**Rabattus sur décision** : registre des personnes, fiche dossier, corrélations.
+Réglage `redact_working_screens` dans `sse_portal_settings`, désarmé par défaut.
+Point d'entrée `SseClearanceService::redactPeopleForScreens()`.
+
+Non couverts : registre des sites, fiche site, écran de croisement.
+
+La bascule `POST /atak/sse/dossiers/verrou-classification` porte un champ `reglage`
+(`verrou` | `ecrans`) : les deux réglages se décident au même endroit mais ne
+s'arment pas ensemble.

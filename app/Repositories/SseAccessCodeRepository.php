@@ -36,10 +36,10 @@ final class SseAccessCodeRepository
     {
         return (int) $this->db->insert(
             'INSERT INTO sse_access_codes (
-                tenant_id, code_hash, code_hint, label, grant_type, case_id, created_by,
+                tenant_id, code_hash, code_hint, label, grant_type, clearance_level, case_id, created_by,
                 expires_at, session_ttl_minutes, max_uses
             ) VALUES (
-                :tenant_id, :code_hash, :code_hint, :label, :grant_type, :case_id, :created_by,
+                :tenant_id, :code_hash, :code_hint, :label, :grant_type, :clearance_level, :case_id, :created_by,
                 :expires_at, :session_ttl_minutes, :max_uses
             )',
             [
@@ -49,6 +49,7 @@ final class SseAccessCodeRepository
                 'label' => trim((string) ($data['label'] ?? '')),
                 'grant_type' => in_array(($data['grant_type'] ?? ''), ['member', 'guest'], true)
                     ? $data['grant_type'] : 'member',
+                'clearance_level' => (string) ($data['clearance_level'] ?? 'interne'),
                 'case_id' => isset($data['case_id']) && (int) $data['case_id'] > 0 ? (int) $data['case_id'] : null,
                 'created_by' => isset($data['created_by']) ? (int) $data['created_by'] : null,
                 'expires_at' => (string) $data['expires_at'],
@@ -104,7 +105,7 @@ final class SseAccessCodeRepository
     public function listActiveForTenant(int $tenantId): array
     {
         $rows = $this->db->fetchAll(
-            'SELECT id, label, grant_type, case_id, code_hint, expires_at, session_ttl_minutes,
+            'SELECT id, label, grant_type, clearance_level, case_id, code_hint, expires_at, session_ttl_minutes,
                     max_uses, uses_count, created_at, revoked_at
              FROM sse_access_codes
              WHERE tenant_id = :t

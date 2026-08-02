@@ -2360,3 +2360,32 @@ body.sse-theme-console .flash {
     .sse-relation-form,
     .btn { display: none !important; }
 }
+
+/* Habilitation : un niveau refusé doit se voir refusé, pas juste manquer. */
+.sse-clearance-notice .security-notice-code { background: var(--green-dark); color: var(--green); }
+
+.security-notice.is-refused { border-color: var(--amber); }
+.security-notice.is-refused .security-notice-code { background: var(--amber-dark); color: var(--amber); }
+
+.sse-level.is-locked {
+    opacity: .45;
+    cursor: not-allowed;
+    border-style: dashed;
+}
+
+.sse-level.is-locked:hover { border-color: var(--border); }
+
+.sse-level-lock {
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--amber);
+}
+
+/* Verrou de classification : son état doit se lire d'un coup d'œil. */
+.sse-lock-panel { border-left: 3px solid var(--muted); }
+.sse-lock-panel.is-armed { border-left-color: var(--red); }
+.sse-lock-panel.is-armed .panel-meta { color: var(--red); font-weight: 800; letter-spacing: .12em; }
+.sse-lock-panel .panel-meta { color: var(--muted); font-weight: 800; letter-spacing: .12em; }
+
+.sse-who-opens { font-size: .78rem; max-width: 26ch; }
+.sse-sep { border: 0; border-top: 1px solid var(--border); margin: 18px 0 14px; }

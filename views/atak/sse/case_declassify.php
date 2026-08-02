@@ -15,6 +15,11 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var list<array<string,mixed>> $manual */
 /** @var string $flash */
 /** @var string $initial */
+/** @var string $maxLevel */
+/** @var string $clearanceOrigin */
+/** @var bool $clearanceRefused */
+/** @var string $requestedLevel */
+/** @var bool $caseAboveClearance */
 
 $caseId = (int) ($case['id'] ?? 0);
 $base = url('atak/sse/dossiers/' . $caseId . '/declassification');
@@ -68,6 +73,46 @@ $siteFields = [
     </div>
 </div>
 
+<div class="security-notice sse-clearance-notice">
+    <div class="security-notice-code">HAB</div>
+    <div>
+        <strong>Votre habilitation de lecture : <?= $h(Red::levelLabel($maxLevel)) ?></strong>
+        <span>
+            <?= $h($clearanceOrigin) ?>
+            Les niveaux au-dessus vous sont refusés : le paramètre de l’adresse exprime
+            une demande, il n’accorde rien.
+        </span>
+    </div>
+</div>
+
+<?php if (!empty($clearanceRefused)): ?>
+<div class="security-notice is-refused">
+    <div class="security-notice-code">REF</div>
+    <div>
+        <strong>Lecture rabattue</strong>
+        <span>
+            Vous avez demandé « <?= $h(Red::levelLabel($requestedLevel)) ?> », au-dessus de
+            votre habilitation. Le document ci-dessous est servi en
+            « <?= $h(Red::levelLabel($maxLevel)) ?> ». La demande est inscrite au journal.
+        </span>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($caseAboveClearance)): ?>
+<div class="security-notice is-refused">
+    <div class="security-notice-code">CLS</div>
+    <div>
+        <strong>Ce dossier est tenu au-dessus de votre habilitation</strong>
+        <span>
+            Sa classification dépasse ce que vous pouvez lire en clair. Vous y accédez
+            encore parce que le portail ne bloque pas la consultation d’un dossier —
+            mais tout ce qui relève des catégories au-dessus de votre niveau restera noirci.
+        </span>
+    </div>
+</div>
+<?php endif; ?>
+
 <div class="security-notice">
     <div class="security-notice-code">SEC-11</div>
     <div>
@@ -91,11 +136,21 @@ $siteFields = [
     <div class="panel-body">
         <div class="sse-level-picker">
             <?php foreach ($levels as $key => $label): ?>
-                <a class="sse-level <?= $key === $level ? 'is-active' : '' ?>"
-                   href="<?= $h($base . '?niveau=' . rawurlencode((string) $key)) ?>">
-                    <span class="sse-level-rank"><?= (int) Red::levelRank((string) $key) ?></span>
-                    <span class="sse-level-label"><?= $h($label) ?></span>
-                </a>
+                <?php $allowed = Red::levelRank((string) $key) <= Red::levelRank($maxLevel); ?>
+                <?php if ($allowed): ?>
+                    <a class="sse-level <?= $key === $level ? 'is-active' : '' ?>"
+                       href="<?= $h($base . '?niveau=' . rawurlencode((string) $key)) ?>">
+                        <span class="sse-level-rank"><?= (int) Red::levelRank((string) $key) ?></span>
+                        <span class="sse-level-label"><?= $h($label) ?></span>
+                    </a>
+                <?php else: ?>
+                    <span class="sse-level is-locked"
+                          title="Au-dessus de votre habilitation de lecture.">
+                        <span class="sse-level-rank"><?= (int) Red::levelRank((string) $key) ?></span>
+                        <span class="sse-level-label"><?= $h($label) ?></span>
+                        <span class="sse-level-lock" aria-label="Non habilité">✕</span>
+                    </span>
+                <?php endif; ?>
             <?php endforeach; ?>
         </div>
 

@@ -404,7 +404,8 @@ private _parsed = [
     "QRF",
     true,
     true,
-    "liaison"
+    "liaison",
+    true
 ] call comspec_overwatch_connect_fnc_callExtLogged;
 
 _parsed params ["_ok", "", "_detail"];

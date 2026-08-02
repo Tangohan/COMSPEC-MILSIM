@@ -330,6 +330,156 @@ Post-check :
       (`Ctrl+U` puis rechercher un nom connu du dossier — il ne doit rien ressortir)
 - [ ] Le compte rendu intégral (`/compte-rendu`) reste, lui, en clair
 
+### Habilitation de lecture SSE 1.4.14 (CORRECTIF DE SÉCURITÉ)
+
+Sans ces fichiers, l'écran de déclassification sert la version intégrale à quiconque
+change le paramètre `?niveau=` dans l'adresse. **À uploader avec la déclassification,
+pas après.**
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Sse/SseClearanceService.php` | **Nouveau** — plafond de lecture par session |
+| `app/Services/Sse/SseAccessCodeService.php` | Habilitation portée par un code, déposée en session |
+| `app/Repositories/SseAccessCodeRepository.php` | Colonne `clearance_level` en écriture et lecture |
+| `app/Controllers/Web/SsePortalController.php` | Rabattement du niveau, journal des refus |
+| `bootstrap/atak_sse_portal_migration.php` | `sse_access_codes.clearance_level` + aide `columnExists` |
+| `views/atak/sse/case_declassify.php` | Bandeau d'habilitation, niveaux verrouillés |
+| `views/atak/sse/access.php` | Choix de l'habilitation à l'émission d'un code |
+| `public/assets/css/sse_portal.css` | Styles bandeau et niveau verrouillé |
+
+Post-check :
+
+- [ ] `sse_access_codes.clearance_level` existe
+- [ ] Ouvrir un dossier avec `?niveau=tres_restreint` en compte non habilité :
+      le bandeau « Lecture rabattue » s'affiche et les noms restent noircis
+- [ ] Le journal d'activité porte une ligne `SSE_CLEARANCE` après cette tentative
+- [ ] L'émission d'un code d'accès propose bien « Habilitation de lecture accordée »
+
+**Permissions à assigner** (facultatif — le report des rôles existants fonctionne sans) :
+`atak.sse.clearance.encadrement`, `atak.sse.clearance.confidentiel`,
+`atak.sse.clearance.tres_restreint`.
+
+### Verrou de classification SSE 1.4.14
+
+| Fichier | Rôle |
+|---|---|
+| `app/Repositories/SsePortalSettingsRepository.php` | **Nouveau** — réglages portail par communauté |
+| `app/Services/Sse/SseClearanceService.php` | Bascule du verrou, libellés de revue |
+| `app/Controllers/Web/SsePortalController.php` | Verrou dans `requireCase()`, données de revue, bascule |
+| `bootstrap/atak_sse_portal_migration.php` | Table `sse_portal_settings` |
+| `routes/web.php` | `POST /atak/sse/dossiers/verrou-classification` |
+| `views/atak/sse/cases.php` | Panneau de revue, colonne « Qui pourra encore l'ouvrir » |
+| `public/assets/css/sse_portal.css` | État du verrou |
+
+**Attention à l'ordre des routes** : `POST /atak/sse/dossiers/verrou-classification`
+doit rester déclarée **avant** `POST /atak/sse/dossiers/{id}`. Le routeur retient le
+premier motif qui correspond ; dans l'autre ordre, `{id}` capte
+« verrou-classification » et la bascule part dans la mise à jour de dossier.
+
+Post-check :
+
+- [ ] La table `sse_portal_settings` existe
+- [ ] Le registre affiche le panneau « Verrou d'ouverture par classification » en **DÉSARMÉ**
+- [ ] La colonne « Qui pourra encore l'ouvrir » est renseignée sur chaque dossier
+- [ ] Après armement, un compte non habilité ne peut plus ouvrir un dossier confidentiel
+- [ ] Le journal porte une ligne `SSE_CLEARANCE` à l'armement
+
+> Ne pas armer avant d'avoir relu les classifications existantes. Elles n'ont jamais
+> filtré : certaines ont été posées sans conséquence.
+
+### Contournements compte rendu / PDF 1.4.14 (CORRECTIF DE SÉCURITÉ)
+
+`/compte-rendu` et l'export PDF servaient le dossier **intégral** sans contrôle
+d'habilitation, ce qui rendait l'écran de déclassification inopérant. **À uploader
+avec le reste du lot habilitation, pas après.**
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Sse/SseCasePdfService.php` | Caviardage de l'export + bandeau de niveau imprimé |
+| `app/Services/Sse/SseClearanceService.php` | Caviardage des écrans de travail |
+| `app/Repositories/SsePortalSettingsRepository.php` | Réglage `redact_working_screens` |
+| `app/Controllers/Web/SsePortalController.php` | Rabattement compte rendu / PDF / écrans, bascule à deux réglages |
+| `views/atak/sse/case_report.php` | Bandeau « compte rendu partiel » |
+| `views/atak/sse/cases.php` | Second interrupteur |
+| `public/assets/css/sse_portal.css` | Séparateur de panneau |
+
+Post-check :
+
+- [ ] Avec un compte non pleinement habilité, `/compte-rendu` affiche le bandeau
+      « Compte rendu partiel » et les noms sont noircis
+- [ ] L'export PDF du même dossier porte le bandeau rouge « VERSION EXPURGÉE »
+      avec la liste des catégories au noir
+- [ ] Le registre des dossiers propose les **deux** interrupteurs, tous deux DÉSARMÉS
+- [ ] Le journal porte une ligne `SSE_CLEARANCE` après chaque export PDF
+
+### Correctif audit système (CORRECTIF BLOQUANT)
+
+| Fichier | Rôle |
+|---|---|
+| `app/Controllers/Admin/System/SystemAuditController.php` | Homonymie `rollback()` levée — la classe ne se chargeait pas |
+
+Les quatre routes `/admin/audit` étaient inaccessibles. À uploader indépendamment
+du reste, le correctif ne dépend de rien.
+
+Post-check :
+
+- [ ] `/admin/audit` s'ouvre
+- [ ] Le détail d'une entrée s'ouvre et propose reprise et alerte
+
+### Diffusion dirigée des rapports — phase A (dont CORRECTIF D'ISOLATION)
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Tactical/AtakReportRoutingService.php` | **Nouveau** — branchement du moteur de règles |
+| `app/Repositories/AtakReportRoutingRepository.php` | `listForReport()` |
+| `app/Repositories/AtakTacticalReportRepository.php` | Cloisonnement de `findById()` et `acknowledge()` |
+| `app/Controllers/Api/AtakApiController.php` | Appel du routage, cloisonnement des deux endpoints |
+
+Prérequis base : `migrations/2026_07_24_007_atak_intelligence_enhancements.sql`,
+appliquée par le lanceur de migrations. Si elle ne l'est pas, le routage est inerte
+et tracé, sans faire échouer la soumission.
+
+Post-check :
+
+- [ ] Soumettre un rapport tactique : il est enregistré (aucune règle en base = aucun routage, c'est normal)
+- [ ] `GET /api/atak/reports/{id}` avec l'identifiant d'un rapport d'une **autre**
+      communauté renvoie désormais 404, plus le rapport
+- [ ] Même vérification sur `/acknowledge`
+
+> Aucune règle de diffusion n'existe en base : le moteur tourne à vide tant que
+> personne n'en crée. C'est l'état attendu après cette montée.
+
+### Écran des règles de diffusion
+
+| Fichier | Rôle |
+|---|---|
+| `app/Controllers/Admin/AdminAtakReportRoutingController.php` | **Nouveau** — gestion des règles |
+| `app/Repositories/AtakReportRoutingRepository.php` | CRUD des règles + correctif du drapeau de notification |
+| `views/admin/atak_report_routing/index.php` | **Nouveau** — écran |
+| `routes/web.php` | `/admin/atak-diffusion-rapports` (+ état, suppression) |
+| `tools/audit-integrite.php` | Couvre désormais les vues passées par `content` |
+
+Post-check :
+
+- [ ] `/admin/atak-diffusion-rapports` s'ouvre et annonce « aucune règle »
+- [ ] Créer une règle sans destinataire est refusé avec un motif explicite
+- [ ] Une règle créée apparaît dans la liste avec sa condition en clair
+
+### Émission des notifications de diffusion
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Tactical/AtakReportRoutingService.php` | Émission de la notification |
+| `app/Repositories/AtakReportRoutingRepository.php` | `markNotified()` |
+| `app/Controllers/Api/AtakApiController.php` | `GET /api/atak/notifications` |
+| `routes/web.php` | Route de relève |
+
+Post-check :
+
+- [ ] Créer une règle, soumettre un rapport correspondant
+- [ ] `GET /api/atak/notifications` renvoie la notification, avec l'urgence du rapport
+- [ ] La fiche du rapport montre les destinataires ; `notification_sent` vaut 1
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |
@@ -345,6 +495,30 @@ Post-check :
 | ✅ ATHENA-ready | Partial dédié, rendu complet sous `$isBackOfficeShell` |
 | ⚡ Hybride | Coque ATHENA + KPIs/tableaux partagés ; corps de page partiellement legacy |
 | 🔶 Legacy | Coque ATHENA (sidebar/topbar) mais formulaire ou mise en page ancienne |
+
+---
+
+## 3bis. Contrôle d'intégrité après envoi (recommandé)
+
+```bash
+php tools/audit-integrite.php
+```
+
+Cherche précisément ce qu'un envoi FTP incomplet produit :
+
+| Contrôle | Symptôme sans lui |
+|---|---|
+| Route → classe ou méthode absente | HTTP 500 (déjà vu : `AtakOrderWaypoint`, `ArmaMarkerLabel`) |
+| Vue référencée mais absente | **Page blanche en HTTP 200**, aucune trace dans les journaux |
+| Classe qui ne se charge pas | Écran mort sur tout un domaine |
+| Méthode déclarée deux fois | Cause fréquente du point précédent |
+
+Code de retour 0 si tout est en place, 1 sinon — enchaînable dans un script.
+
+`php -l` ne remplace pas ce contrôle : une méthode déclarée deux fois passe
+l'analyse syntaxique et n'échoue qu'à la compilation de la classe. C'est ainsi
+que les quatre routes `/admin/audit` sont restées mortes sans que rien ne le
+signale.
 
 ---
 

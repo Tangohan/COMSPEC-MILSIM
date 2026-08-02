@@ -23,6 +23,16 @@ return static function (PDO $pdo): void {
         return (bool) $st->fetchColumn();
     };
 
+    $columnExists = static function (PDO $pdo, string $table, string $column): bool {
+        $st = $pdo->prepare(
+            'SELECT 1 FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+        );
+        $st->execute([$table, $column]);
+
+        return (bool) $st->fetchColumn();
+    };
+
     if (!$tableExists($pdo, 'tenants')) {
         $log("  [ATTENTION] tenants absente — portail SSE reporté\n");
 
@@ -140,6 +150,7 @@ return static function (PDO $pdo): void {
                 code_hint VARCHAR(16) NOT NULL DEFAULT '',
                 label VARCHAR(160) NOT NULL DEFAULT '',
                 grant_type VARCHAR(16) NOT NULL DEFAULT 'member',
+                clearance_level VARCHAR(24) NOT NULL DEFAULT 'interne',
                 case_id INT UNSIGNED DEFAULT NULL,
                 created_by INT UNSIGNED DEFAULT NULL,
                 expires_at DATETIME NOT NULL,
@@ -156,8 +167,34 @@ return static function (PDO $pdo): void {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
         $log("  [OK] sse_access_codes\n");
-    } else {
-        $log("  [OK] sse_access_codes (déjà présente)\n");
+    }
+
+    // Habilitation portée par un code d'accès : sans elle, un allié invité reste
+    // au plancher de lecture quel que soit ce qu'on voulait lui montrer.
+    if ($tableExists($pdo, 'sse_access_codes') && !$columnExists($pdo, 'sse_access_codes', 'clearance_level')) {
+        $pdo->exec("ALTER TABLE sse_access_codes ADD COLUMN clearance_level VARCHAR(24) NOT NULL DEFAULT 'interne' AFTER grant_type");
+        $log("  [OK] sse_access_codes.clearance_level\n");
+    }
+
+    // Réglages du portail SSE, par communauté. Table clé/valeur volontairement
+    // minimale : il n'existait aucun stockage pour un réglage de sécurité côté
+    // serveur — le thème du portail passe par un cookie, ce qui ne convient pas
+    // pour un verrou que l'utilisateur ne doit pas pouvoir désarmer lui-même.
+    if (!$tableExists($pdo, 'sse_portal_settings')) {
+        $pdo->exec(
+            "CREATE TABLE sse_portal_settings (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                tenant_id INT UNSIGNED NOT NULL,
+                setting_key VARCHAR(64) NOT NULL,
+                setting_value VARCHAR(255) NOT NULL DEFAULT '',
+                updated_by INT UNSIGNED DEFAULT NULL,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_sse_setting (tenant_id, setting_key),
+                CONSTRAINT fk_sse_settings_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+        $log("  [OK] sse_portal_settings\n");
     }
 
     if (!$tableExists($pdo, 'sse_access_grants_log')) {

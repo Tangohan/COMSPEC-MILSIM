@@ -8686,12 +8686,58 @@ class AtakApiController
             $activityMeta
         );
 
-        $report = $repo->findById($reportId);
+        // Émission de la notification correspondant à la diffusion qui vient
+        // d'être appliquée. Les destinataires sont relus depuis l'historique
+        // plutôt que déduits du retour du routage : c'est ce qui a réellement
+        // été écrit qui doit être notifié, pas ce qui était prévu.
+        (new \App\Services\Tactical\AtakReportRoutingService())->notifyForReport(
+            $reportId,
+            $tenantId,
+            $mapId
+        );
+
+        // Cloisonnement : sans ce filtre, un identifiant deviné suffit à lire le
+        // rapport d'une autre communauté.
+        $report = $repo->findById($reportId, $tenantId);
         if (is_array($report)) {
             $report['routing'] = $routing;
         }
-        
+
         return Response::json($report, 201);
+    }
+
+    /**
+     * Notifications temps réel destinées au terrain.
+     * GET /api/atak/notifications?since=YYYY-MM-DD HH:MM:SS
+     *
+     * `AtakNotificationRepository` existait avec `create()`, `listActive()` et
+     * `pollSince()` sans qu'aucune route ne l'expose : les notifications écrites
+     * n'étaient lisibles par personne. Sans cette relève, émettre une notification
+     * revenait à l'écrire dans un tiroir fermé.
+     */
+    public function notificationsPoll(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        $repo = new \App\Repositories\AtakNotificationRepository();
+        $since = trim((string) ($request->query('since') ?? ''));
+
+        // Sans borne, une relève renverrait tout l'historique encore actif à
+        // chaque appel : le client rejouerait des alertes déjà vues.
+        $notifications = $since !== ''
+            ? $repo->pollSince($tenantId, $mapId, $since)
+            : $repo->listActive($tenantId, $mapId, ['limit' => 20]);
+
+        return Response::json([
+            'notifications' => $notifications,
+            'count' => count($notifications),
+            'server_time' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     /**
@@ -8707,12 +8753,19 @@ class AtakApiController
         
         $id = (int) ($params['id'] ?? 0);
         $repo = new \App\Repositories\AtakTacticalReportRepository();
-        $report = $repo->findById($id);
-        
+
+        // Cloisonnement par communauté : sans ce filtre, un identifiant deviné
+        // suffisait à lire le rapport d'une autre communauté.
+        $report = $repo->findById($id, $r);
+
         if (!$report) {
             return Response::json(['error' => 'Report not found'], 404);
         }
-        
+
+        // Diffusion dirigée : le rapport est scopé ci-dessus, la lecture de son
+        // historique de routage l'est donc aussi.
+        $report['routing'] = (new \App\Repositories\AtakReportRoutingRepository())->listForReport($id);
+
         return Response::json($report);
     }
 
@@ -8736,6 +8789,8 @@ class AtakApiController
         $userId = $identity['user_id'];
 
         $repo = new \App\Repositories\AtakTacticalReportRepository();
+        // Acquitter est un acte, pas une lecture : cloisonné par communauté et
+        // par contexte opérationnel.
         $success = $repo->acknowledge($id, $r, $this->mapId($request, true), $userId);
         
         if (!$success) {

@@ -147,3 +147,47 @@ Décider **la phase A seule**. Elle valorise le chantier existant et fournit des
 2. **Source routable :** `PING`, `CHAT` et `PHOTO` doivent-ils tous produire un rapport tactique, ou seulement certains événements/promotions manuelles ?
 3. **Audience par défaut :** pour une information nouvelle sans audience explicite, faut-il conserver la visibilité actuelle, limiter au producteur, ou appliquer un modèle de mission ?
 4. **Autorité :** qui peut modifier l'audience, acquitter pour une unité et forcer une diffusion ou une escalade — auteur, chef d'unité, TOC, administrateur de mission ?
+
+---
+
+## 8. Compléments apportés après la phase A
+
+Travail mené en parallèle du § 5, et convergeant avec lui. Ce qui suit s'ajoute au
+durcissement décrit ci-dessus plutôt qu'il ne le remplace.
+
+### Traité
+
+| Point du § 5 | État |
+|---|---|
+| `notification_sent` posé à vrai sans transport | **Corrigé** — le drapeau est désormais posé par `markNotified()`, après émission réelle |
+| Accusé de réception non borné par tenant ni contexte | **Corrigé** (version retenue : celle de la phase A) |
+| Distributions dupliquables par appels répétés | Contrainte d'unicité côté phase A, **plus** une garde d'idempotence à l'émission : une diffusion déjà notifiée ne l'est pas une seconde fois |
+
+### Ajouté
+
+- **Écran de gestion des règles** — `/admin/atak-diffusion-rapports`. Sans lui, le
+  moteur branché tournait à vide : aucune règle n'existait et rien ne permettait
+  d'en créer. Une règle sans destinataire y est refusée, car elle donnerait
+  l'illusion d'une diffusion en place sans en produire aucune.
+- **Émission réelle des notifications** — une diffusion écrit une notification
+  portant destinataires, position et urgence reprise du rapport. Une seule par
+  rapport, et non une par destinataire : des lignes identiques répétées font
+  passer l'alerte pour du bruit.
+- **Route de relève `GET /api/atak/notifications`** — `AtakNotificationRepository`
+  disposait de `create()`, `listActive()` et `pollSince()` sans qu'aucune route ne
+  l'expose. Les notifications écrites n'étaient lisibles par personne ; émettre
+  revenait à écrire dans un tiroir fermé.
+- **`listForReport()`** — le dépôt savait lister les rapports d'un destinataire,
+  pas les destinataires d'un rapport. La diffusion restait invisible depuis la
+  fiche, et une diffusion qu'on ne voit pas ne se vérifie pas.
+
+### Reste ouvert
+
+- **`findById()` n'est toujours pas borné par communauté** dans le dépôt des
+  rapports tactiques : un identifiant deviné suffit à lire le rapport d'une autre
+  communauté. Le cloisonnement est appliqué à l'appel depuis la consultation, mais
+  la signature reste permissive par défaut.
+- Même défaut relevé sur `AtakPoiRepository` et `AtakMedevacRepository`.
+- **Côté mod** : relever `GET /api/atak/notifications` et afficher via
+  `fn_announce`. Demande une reconstruction du PBO.
+

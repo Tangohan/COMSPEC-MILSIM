@@ -39,6 +39,110 @@ Un automatisme propose, il ne décide pas. Aucune règle ne clôt un site, ne fu
 - Le caviardage est branché sur la source unique des deux comptes rendus : une catégorie ne peut pas être noircie dans le flash et lisible dans le compte rendu initial.
 - La date de recueil reste, l'heure part : savoir « le 14 » n'a pas la même valeur que savoir « le 14 à 03h12 ».
 
+### Ajouté — Habilitation de lecture SSE
+
+- **Plafond d'habilitation par session** : le niveau de diffusion demandé sur l'écran de déclassification est rabattu sur ce que la session a le droit de lire. Le paramètre de l'adresse exprime une demande, il n'accorde rien — le forcer à la main sert la version autorisée et inscrit la tentative au journal.
+- Trois permissions explicites (`atak.sse.clearance.encadrement`, `.confidentiel`, `.tres_restreint`), et à défaut un **report des rôles déjà en place** : administration → très restreint, gestion des dossiers → confidentiel, accès portail → encadrement, rien → interne. Sans ce report, la mise à jour mettrait tout le monde au plancher tant qu'un administrateur n'a pas assigné les nouvelles permissions.
+- **Habilitation portée par un code d'accès invité**, choisie à l'émission. Par défaut Diffusion interne : un invité ne voit ni identité, ni lieu, ni source. On n'accorde jamais par défaut de valeur, seulement par défaut de refus.
+- L'écran affiche l'habilitation **et d'où elle vient**. Une habilitation qu'on ne peut pas expliquer se conteste mal.
+- Les niveaux au-dessus du plafond apparaissent verrouillés au lieu de disparaître : un refus doit se voir refusé, pas manquer.
+- Un dossier tenu au-dessus de l'habilitation du lecteur est signalé. La consultation reste possible — verrouiller d'un coup des dossiers ouverts hier est un arbitrage d'exploitation, pas une décision technique.
+
+### Corrigé
+
+- **L'écran de déclassification ne vérifiait pas qui demandait quoi.** Le niveau était lu tel quel dans l'adresse : n'importe qui pouvant ouvrir un dossier, invité compris, obtenait la version intégrale en changeant un paramètre. Produire un document expurgé et restreindre qui peut le lire sont deux choses différentes ; la première seule ne protégeait rien.
+
+### Ajouté — Diffusion dirigée des rapports tactiques (phase A)
+
+- Le moteur de règles de diffusion **existait sans aucun appelant** : `atak_report_routing_rules`, `atak_report_routing_history` et `AtakReportRoutingRepository` étaient en place, avec conditions, destinataires, escalade et accusé de réception, mais rien ne les invoquait. Le chantier avait été commencé puis laissé avant branchement.
+- Les règles s'appliquent désormais à la soumission d'un rapport tactique. Les destinataires apparaissent dans la réponse (`routed_to`) et sur la consultation du rapport (`routing`).
+- **Pas d'interrupteur, volontairement** : sans règle enregistrée, le moteur ne route vers personne et n'écrit rien. Une table de règles vide *est* l'état désactivé, et ajouter un réglage donnerait deux endroits à vérifier quand un rapport n'arrive pas.
+- Un échec de routage n'échoue jamais la soumission : le rapport est enregistré d'abord, la diffusion tentée ensuite et tracée si elle échoue. Perdre un compte rendu de contact parce qu'une règle est mal formée serait un échange calamiteux.
+- **La cible a changé par rapport à la demande initiale.** Le branchement devait porter sur `atak_intel` ; cette table n'a ni `report_type`, ni `priority`, ni `tenant_id`, et la clé étrangère de l'historique de routage pointe sur `atak_tactical_reports`. Router `atak_intel` demanderait d'altérer une clé étrangère en base vivante et d'ajouter un cloisonnement à une table qui n'en a pas — ce n'est pas un branchement mais une phase de schéma, renvoyée à la suite du plan.
+
+### Ajouté — Écran des règles de diffusion
+
+- `/admin/atak-diffusion-rapports` : création, activation et suppression des règles. Sans lui, le moteur branché en phase A tournait à vide, faute de règle à appliquer.
+- Conditions exprimées en clair — types de rapport, priorités, mots-clés — plutôt qu'en JSON brut. Aucune case cochée signifie « tous », ce qui est écrit sous chaque groupe.
+- **Une règle sans destinataire est refusée** : elle donnerait l'illusion d'une diffusion en place tout en n'en produisant aucune.
+- L'écran annonce lui-même qu'une liste vide est l'état normal après installation, pas une panne.
+- **Les notifications ne sont pas émises, et l'écran le dit.** La diffusion enregistre qui doit lire et l'affiche sur la fiche du rapport ; l'envoi en jeu, par courriel ou vers Discord n'est pas branché. Mieux vaut le lire à l'écran que le découvrir en opération.
+
+### Ajouté — Émission réelle des notifications de diffusion
+
+- Une diffusion produit désormais une **notification effective**, écrite dans `atak_realtime_notifications` avec ses destinataires, sa position sur la carte et son urgence.
+- **Une seule notification par rapport**, portant tous les destinataires — et non une par destinataire. Trois lignes identiques dans le bandeau pour un même compte rendu font passer l'alerte pour du bruit, et c'est le bruit qu'on finit par ignorer.
+- L'urgence reprend celle du rapport : un contact `FLASH` s'affiche en critique, une routine en bas de pile. Un compte rendu immédiat n'a pas à ressembler à une routine.
+- Expiration à deux heures : une alerte qui reste affichée une semaine devient un décor.
+- **Nouvelle route de relève `GET /api/atak/notifications`.** `AtakNotificationRepository` avait `create()`, `listActive()` et `pollSince()` mais **aucune route ne l'exposait** : les notifications écrites n'étaient lisibles par personne. Sans cette relève, émettre revenait à écrire dans un tiroir fermé.
+- Une notification qui échoue n'annule pas la diffusion — elle est tracée avec la mention explicite « destinataires à prévenir de vive voix », pour que le silence ne passe pas inaperçu.
+
+### Corrigé — L'historique de diffusion affirmait des notifications jamais envoyées
+
+- `createRoutingEntry()` inscrivait `notification_sent = 1` et le canal « in-game » alors qu'aucun envoi n'avait lieu. Le drapeau est désormais posé **après** émission réelle, par `markNotified()`, et décrit donc ce qui s'est passé.
+
+### Corrigé — Angle mort du contrôle d'intégrité
+
+- Le contrôle ne vérifiait que le premier argument de `view()`. Or le back-office passe la vraie vue par `'content' => …`, la mise en page seule étant en premier argument : **une vue de back-office absente échappait entièrement au contrôle**, alors que c'est précisément le cas qui produit une page blanche en HTTP 200. La couverture passe de 68 à 365 vues.
+
+### Corrigé — Deux lectures inter-communautés sur les rapports tactiques
+
+- `GET /api/atak/reports/{id}` chargeait le rapport **sans filtrer sur la communauté** : un identifiant deviné suffisait à lire le rapport d'une autre communauté.
+- `POST /api/atak/reports/{id}/acknowledge` de même — et acquitter est un acte, pas une lecture.
+- Les deux sont désormais cloisonnés. `atak_report_routing_history` ne portant pas de `tenant_id`, la lecture de l'historique de diffusion s'appuie sur le cloisonnement du rapport, ce qui est maintenant vrai et documenté à l'endroit qui en dépend.
+- Même classe de défaut relevée sur `AtakPoiRepository` et `AtakMedevacRepository`, hors périmètre de cette phase et signalée dans le plan.
+
+### Corrigé — Cinq appels réseau étaient rejetés en silence
+
+`CfgRemoteExec >> Functions` est en `mode = 1`, c'est-à-dire liste blanche stricte : une fonction absente de la liste voit ses appels distants **rejetés sans message**. Cinq fonctions y manquaient alors qu'elles sont bien appelées via `remoteExec`.
+
+- **`receiveOrder`** — les ordres émis n'arrivaient pas à leur destinataire en multijoueur.
+- **`createRoleplayZoneFromZeus`** et **`createRoleplayZone`** — les zones posées depuis Zeus n'étaient jamais créées côté serveur.
+- **`restoreAtakSession`** et **`clearDisconnectedAtakState`** — la reprise de session après plantage ne se faisait pas.
+
+Chaque entrée porte un `allowedTargets` correspondant à la cible réelle de l'appel, au plus juste plutôt qu'au plus permissif.
+
+- **Le moteur roleplay n'était pas activé sur les autres machines**, ce qui faisait paraître les zones inertes. L'activation passait par `remoteExecCall ["call", 0, true]`, or `Commands` est aussi en liste blanche et `call` n'y figure pas — l'appel était rejeté. L'y ajouter aurait ouvert l'exécution de code arbitraire à distance à n'importe quel client ; l'activation passe désormais par des variables publiques, ce qui couvre en plus les joueurs qui rejoignent en cours de partie — le drapeau JIP de l'ancien appel ne le pouvait pas, `jip = 0` étant posé dans la configuration.
+- Seuls les deux réglages désactivés par défaut sont forcés. « Effets visuels de dégradation » est déjà actif par défaut : le forcer n'aurait touché que les joueurs l'ayant volontairement coupé.
+
+### Corrigé — Administration : l'audit système était inaccessible
+
+- **`SystemAuditController` ne se chargeait pas** : une méthode `rollback()` y était déclarée deux fois — un accesseur privé vers le service de reprise, et l'action de route publique. PHP échoue à la compilation de la classe, ce qui rendait inaccessibles les quatre routes `/admin/audit` (consultation, détail, reprise, alerte). `php -l` ne le détecte pas : ce n'est pas une erreur d'analyse syntaxique, ce qui explique que le défaut soit passé inaperçu.
+- L'accesseur est renommé `rollbackService()`.
+
+### Corrigé — Ce qui était saisi hors liaison était perdu
+
+- Le mod simulait la coupure réseau mais **perdait les données saisies pendant**. Une fiche SSE renseignée dans une cave sans couverture partait dans le vide ; l'opérateur ne l'apprenait qu'au débriefing. La file d'attente existante ne couvrait que les marqueurs de carte.
+- **Tampon hors ligne** pour tout ce qu'un humain rédige : fiche SSE et relevés, point d'intérêt, MEDEVAC, QRF. Rejoués dans l'ordre au rétablissement de la liaison.
+- **Les positions ne sont jamais rejouées**, délibérément : restituer une position vieille de dix minutes montrerait l'élément là où il n'est plus. Une position périmée trompe le poste de commandement au lieu de l'informer.
+- Le tampon vit dans le profil du joueur et survit à un plantage ou une reconnexion — la coupure qui fait perdre des données est rarement propre. Les entrées sont horodatées sur l'horloge murale et non sur le temps de mission : ce dernier repart à zéro à chaque partie, si bien qu'une entrée aurait été relue avec un âge négatif à la session suivante, donc jamais périmée — une demande MEDEVAC de samedi se serait rejouée le week-end suivant.
+- Temporisation croissante entre les tentatives : une liaison qui vient de revenir est souvent instable, et marteler l'extension produit une salve d'échecs qui ressemble à une panne.
+- **Péremption assumée et annoncée** : au-delà de 30 minutes ou 5 échecs, l'entrée est écartée et l'opérateur en est informé. Un compte rendu de contact arrivant trois quarts d'heure après les faits se lirait comme une information fraîche. L'abandon n'est jamais silencieux — sinon l'opérateur croit avoir rendu compte.
+- La saisie hors liaison affiche « fiche conservée, ne la ressaisissez pas » plutôt qu'une erreur : une ressaisie produirait deux fiches du même sujet, que l'automatisme A2 signalerait ensuite comme doublon.
+- Compteur `N EN ATTENTE` dans la barre d'état du terminal SEEK : un tampon invisible ne vaut guère mieux qu'une perte.
+
+### Corrigé — Le compte rendu et le PDF contournaient la déclassification
+
+- **`/compte-rendu` servait le dossier intégral sans aucun contrôle d'habilitation.** Il suffisait de ne pas passer par l'écran de déclassification pour obtenir le même contenu en clair : l'écran expurgé ne protégeait donc rien. Le compte rendu est désormais servi au plafond du lecteur, avec un bandeau quand il est partiel.
+- **L'export PDF produisait lui aussi le dossier intégral.** C'était le pire des trois : un PDF circule seul une fois transmis, un caviardage manquant ne se rattrape plus. L'export est rabattu, et le document porte un bandeau rouge indiquant son niveau de production et les catégories noircies — sans quoi une version expurgée est indiscernable d'une version complète une fois imprimée.
+- La mention « Ce document est intégral » du compte rendu était devenue fausse ; elle est remplacée.
+
+### Ajouté — Caviardage des écrans de travail
+
+- Second interrupteur, distinct du verrou : registre des personnes, fiche dossier et corrélations rabattus sur l'habilitation du lecteur.
+- **Désarmé par défaut**, pour une raison différente du verrou : ces écrans sont ce que la cellule regarde toute la séance, et l'identité étant classée « Confidentiel », les armer retire les noms à un simple membre. À armer une fois les habilitations réparties, ou après ajustement de la doctrine des catégories.
+- Les caviardages manuels d'un dossier s'appliquent aussi sur ces écrans : une zone noircie à la main doit l'être partout, sinon le caviardage ne veut rien dire.
+- Restent intégraux dans les deux régimes : registre des sites, fiche site, écran de croisement.
+
+### Ajouté — Verrou d'ouverture par classification
+
+- La classification d'un dossier peut désormais **fermer** le dossier, et plus seulement le signaler : fiche, personnes rattachées, notes, preuves, corrélations, compte rendu et export deviennent inaccessibles à qui n'a pas l'habilitation.
+- **Désarmé par défaut.** La classification n'a jamais filtré depuis la création du portail : les valeurs déjà posées ont été choisies sans conséquence, et les armer d'office les transformerait rétroactivement en décisions d'exclusion que personne n'a prises.
+- **Écran de revue avant d'armer** : le registre porte une colonne « Qui pourra encore l'ouvrir » sur chaque dossier, la répartition par classification, et le nombre de dossiers que le verrou fermerait au lecteur courant. Le portail ne mesure l'effet que pour la session en cours — il ne parle pas à la place des habilitations des autres.
+- Armement réservé aux détenteurs du droit d'octroi : le verrou ferme des dossiers à d'autres, il ne doit pas être desserrable par celui qu'il gêne. Armement et désarmement partent au journal.
+- Si la table de réglages est injoignable, le verrou est considéré désarmé. Un portail qui verrouille tout parce qu'une table manque est plus dangereux qu'un verrou temporairement inactif : on découvre le second, on subit le premier en pleine opération.
+- Nouvelle table `sse_portal_settings` — le portail n'avait aucun stockage serveur pour un réglage, le thème passant par un cookie, ce qui ne convient pas à un verrou.
+
 ### Ajouté — Configuration mission maker et Zeus
 
 - **Attributs Eden sur l'unité**, catégorie « COMSPEC — Exploitation SSE » : ce que la base doit répondre (génération automatique, inconnu, signalé, recherché), état civil, nationalité déclarée, langue, référence de dossier antérieur, indice de confiance imposé, graine. Poser un module par PNJ était intenable sur trente civils.

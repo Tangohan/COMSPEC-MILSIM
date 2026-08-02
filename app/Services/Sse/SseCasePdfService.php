@@ -19,7 +19,15 @@ final class SseCasePdfService
         $this->persons ??= new SsePersonRepository();
     }
 
-    public function export(int $tenantId, int $caseId): Response
+    /**
+     * Export PDF du dossier.
+     *
+     * `$releaseLevel` : niveau de diffusion auquel produire le document. À `null`,
+     * le PDF est intégral — à ne laisser que pour un appel interne dont on sait
+     * qu'il est déjà encadré. Un PDF circule seul une fois transmis : un caviardage
+     * manquant ne se rattrape plus.
+     */
+    public function export(int $tenantId, int $caseId, ?string $releaseLevel = null): Response
     {
         $case = $this->cases->findById($caseId, $tenantId);
         if ($case === null) {
@@ -37,7 +45,26 @@ final class SseCasePdfService
         $notes = $this->cases->listNotes($caseId, $tenantId);
         $evidence = $this->cases->listEvidence($caseId, $tenantId);
 
-        return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($case, $people, $notes, $evidence): Response {
+        $redactedLabel = '';
+        if ($releaseLevel !== null) {
+            $redaction = new SseRedactionService();
+            $expurged = $redaction->apply(
+                ['case' => $case, 'people' => $people, 'sites' => []],
+                $releaseLevel,
+                $redaction->listForCase($caseId, $tenantId)
+            );
+            $people = $expurged['people'];
+
+            // Le document doit dire de lui-même à quel niveau il a été produit :
+            // une fois imprimé, plus personne ne sait d'où il sort.
+            $hidden = SseRedactionService::summarise($releaseLevel)['hidden'];
+            $redactedLabel = $hidden === []
+                ? 'Version intégrale — ' . SseRedactionService::levelLabel($releaseLevel)
+                : 'VERSION EXPURGÉE — ' . SseRedactionService::levelLabel($releaseLevel)
+                    . ' — au noir : ' . implode(', ', $hidden);
+        }
+
+        return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($case, $people, $notes, $evidence, $redactedLabel): Response {
             if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
                 return (new Response())->setStatusCode(503)->setBody('<p>Export PDF indisponible pour le moment.</p>');
             }
@@ -60,6 +87,15 @@ final class SseCasePdfService
                 . '<strong>DIFFUSION RESTREINTE — RENSEIGNEMENT INTERPERSONNEL</strong><br/>'
                 . 'Classification : ' . $classLabel . ' · Usage opérationnel uniquement · Ne pas redistribuer'
                 . '</div>';
+
+            // Un PDF circule seul : il doit porter son propre niveau de production.
+            // Sans ce bandeau, une version expurgée est indiscernable d'une version
+            // intégrale une fois imprimée, et se retrouve traitée comme complète.
+            if ($redactedLabel !== '') {
+                $html .= '<div style="background-color:#8f1d1d;color:#fff;padding:6px;text-align:center;font-size:10px;">'
+                    . htmlspecialchars($redactedLabel, ENT_QUOTES, 'UTF-8')
+                    . '</div>';
+            }
             $html .= '<h1 style="font-size:16px;color:#111;">Dossier ' . $ref . '</h1>';
             $html .= '<p><strong>Intitulé :</strong> ' . $title . '<br/>'
                 . '<strong>Statut :</strong> ' . htmlspecialchars((string) $case['status_label'], ENT_QUOTES, 'UTF-8') . '</p>';
