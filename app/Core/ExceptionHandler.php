@@ -18,13 +18,15 @@ class ExceptionHandler
             if (!(error_reporting() & $severity)) {
                 return false;
             }
-            // TCPDF : Close() → _destroy(false) unset les props, puis __destruct → _destroy(true)
-            // lit $imagekeys (et parfois d’autres) déjà absentes → Warning PHP 8.2+ hors bloc @.
-            if (
-                ($severity === E_WARNING || $severity === E_NOTICE || $severity === E_USER_WARNING || $severity === E_USER_NOTICE)
-                && str_contains($message, 'TCPDF::$')
-                && str_contains(str_replace('\\', '/', $file), '/tcpdf.php')
-            ) {
+            // TCPDF (bibliothèque tierce embarquée) : Close() → _destroy(false) unset les propriétés,
+            // puis __destruct → _destroy(true) relit $imagekeys & co. déjà absentes ou nulles
+            // (« Undefined property TCPDF::$… », « foreach() argument must be of type array|object »).
+            // Ces avertissements surviennent après l’envoi du PDF : on les journalise sans les
+            // transformer en ErrorException, sinon le téléchargement se solde par une page 500.
+            $isNotice = ($severity & (E_WARNING | E_NOTICE | E_USER_WARNING | E_USER_NOTICE | E_DEPRECATED | E_USER_DEPRECATED)) !== 0;
+            if ($isNotice && str_contains(str_replace('\\', '/', $file), '/tcpdf/')) {
+                error_log('[tcpdf] ' . $message . ' — ' . $file . ':' . $line);
+
                 return true;
             }
             throw new \ErrorException($message, 0, $severity, $file, $line);
@@ -55,6 +57,12 @@ class ExceptionHandler
         } catch (Throwable) {
         }
 
+        // Réponse binaire déjà partie (PDF, export, image…) : y concaténer une page d’erreur
+        // corromprait le fichier téléchargé. On se contente alors de la journalisation.
+        if (self::responseAlreadyStartedAsBinary()) {
+            return;
+        }
+
         $wantsJson = self::clientWantsJson();
 
         if ($wantsJson) {
@@ -79,12 +87,41 @@ class ExceptionHandler
         $path = base_path('views/errors/500.php');
         if (is_file($path)) {
             http_response_code(500);
+            $errorReference = (string) (getenv('REQUEST_ID') ?: ($_ENV['REQUEST_ID'] ?? ''));
+            $errorHint = function_exists('athena_error_hint') ? athena_error_hint($e->getMessage()) : '';
             require $path;
 
             return;
         }
         http_response_code(500);
         echo '<h1>500 Server Error</h1>';
+    }
+
+    /**
+     * Vrai si la réponse a déjà commencé à être envoyée avec un type non HTML/JSON
+     * (Content-Type binaire ou en-tête de téléchargement).
+     */
+    private static function responseAlreadyStartedAsBinary(): bool
+    {
+        if (!headers_sent()) {
+            return false;
+        }
+        foreach (headers_list() as $header) {
+            $lower = strtolower($header);
+            if (str_starts_with($lower, 'content-disposition:') && str_contains($lower, 'attachment')) {
+                return true;
+            }
+            if (!str_starts_with($lower, 'content-type:')) {
+                continue;
+            }
+            if (str_contains($lower, 'text/html') || str_contains($lower, 'application/json')) {
+                return false;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     private static function clientWantsJson(): bool
