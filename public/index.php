@@ -18,6 +18,8 @@ if ($showErrors) {
     ini_set('display_startup_errors', '0');
 }
 
+require_once $root . '/bootstrap/error_hint.php';
+
 // Erreur fatale : journaliser, alerte e-mail, réponse HTTP
 register_shutdown_function(function () use ($showErrors, $root) {
     $err = error_get_last();
@@ -61,6 +63,8 @@ register_shutdown_function(function () use ($showErrors, $root) {
         http_response_code(500);
         $view500 = $root . '/views/errors/500.php';
         if (is_file($view500)) {
+            $errorReference = (string) (getenv('REQUEST_ID') ?: ($_ENV['REQUEST_ID'] ?? ''));
+            $errorHint = athena_error_hint((string) ($err['message'] ?? ''));
             require $view500;
 
             return;
@@ -275,21 +279,13 @@ try {
         }
     }
 
+    $hint = athena_error_hint($e->getMessage());
+
     if ($wantsJson) {
         http_response_code(500);
-        $message = 'Une erreur est survenue. Merci de réessayer plus tard.';
-        $raw = $e->getMessage();
-        if (
-            str_contains($raw, "doesn't exist")
-            || str_contains($raw, 'Base table')
-            || str_contains($raw, '1146')
-            || str_contains($raw, '42S02')
-        ) {
-            $message = 'Cette fonctionnalité n’est pas encore prête sur le serveur. Demandez à un administrateur de lancer la mise à jour de la base, puis réessayez.';
-        }
         echo json_encode([
             'error' => 'server_error',
-            'message' => $message,
+            'message' => $hint !== '' ? $hint : 'Une erreur est survenue. Merci de réessayer plus tard.',
         ], JSON_UNESCAPED_UNICODE);
     } elseif ($showErrors) {
         echo '<pre style="background:#fdd;padding:1em;white-space:pre-wrap;">';
@@ -298,6 +294,14 @@ try {
         echo '</pre>';
     } else {
         http_response_code(500);
+        $view500 = $root . '/views/errors/500.php';
+        if (is_file($view500)) {
+            $errorReference = $rid ?? (string) (getenv('REQUEST_ID') ?: ($_ENV['REQUEST_ID'] ?? ''));
+            $errorHint = $hint;
+            require $view500;
+
+            return;
+        }
         echo '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Erreur</title></head><body><p>Une erreur est survenue. Réessayez plus tard.</p></body></html>';
     }
 }
