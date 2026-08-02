@@ -9066,13 +9066,17 @@ class AtakApiController
         $repo = new \App\Repositories\AtakPoiRepository();
         $body['updated_by_user_id'] = $actor['user_id'] ?? null;
         
-        $success = $repo->update($id, $body);
-        
+        // Cloisonnement : la mise à jour comme la relecture sont bornées à la
+        // communauté appelante. Sans cela, un identifiant deviné permettait de
+        // modifier le point d'intérêt d'une autre communauté — une écriture
+        // silencieuse pour son propriétaire légitime.
+        $success = $repo->update($id, $body, $r);
+
         if (!$success) {
             return Response::json(['error' => 'POI not found'], 404);
         }
-        
-        $poi = $repo->findById($id);
+
+        $poi = $repo->findById($id, $r);
         return Response::json($poi);
     }
 
@@ -9252,7 +9256,9 @@ class AtakApiController
         
         $id = (int) ($params['id'] ?? 0);
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $medevac = $repo->findById($id);
+        // Une demande d'évacuation porte la position d'un blessé : elle ne doit
+        // pas être lisible par une autre communauté.
+        $medevac = $repo->findById($id, $r);
         
         if (!$medevac) {
             return Response::json(['error' => 'MEDEVAC not found'], 404);

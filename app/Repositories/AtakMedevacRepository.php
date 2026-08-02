@@ -162,10 +162,20 @@ class AtakMedevacRepository
     /**
      * Récupère une demande par ID
      */
-    public function findById(int $id): ?array
+    /**
+     * @param int|null $tenantId Communauté propriétaire. Sans ce filtre, un
+     *   identifiant deviné suffit à lire la demande d'évacuation d'une autre
+     *   communauté — position du blessé comprise.
+     */
+    public function findById(int $id, ?int $tenantId = null): ?array
     {
         $sql = "SELECT * FROM v_atak_active_medevac WHERE id = :id";
-        $medevac = $this->db->fetchOne($sql, ['id' => $id]);
+        $params = ['id' => $id];
+        if ($tenantId !== null) {
+            $sql .= " AND tenant_id = :tenant_id";
+            $params['tenant_id'] = $tenantId;
+        }
+        $medevac = $this->db->fetchOne($sql, $params);
 
         if ($medevac) {
             if (!empty($medevac['equipment_needed'])) {

@@ -187,7 +187,10 @@ durcissement décrit ci-dessus plutôt qu'il ne le remplace.
   rapports tactiques : un identifiant deviné suffit à lire le rapport d'une autre
   communauté. Le cloisonnement est appliqué à l'appel depuis la consultation, mais
   la signature reste permissive par défaut.
-- Même défaut relevé sur `AtakPoiRepository` et `AtakMedevacRepository`.
+- ~~Même défaut relevé sur `AtakPoiRepository` et `AtakMedevacRepository`.~~ **Traité** :
+  le point d'intérêt était même modifiable — pas seulement lisible — depuis une autre
+  communauté. Les autres dépôts de la famille appellent `findById()` sur une ligne
+  qu'ils viennent d'écrire, sans exposition.
 - **Côté mod** : relever `GET /api/atak/notifications` et afficher via
   `fn_announce`. Demande une reconstruction du PBO.
 

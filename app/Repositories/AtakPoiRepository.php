@@ -144,10 +144,21 @@ class AtakPoiRepository
     /**
      * Récupère un POI par ID
      */
-    public function findById(int $id): ?array
+    /**
+     * @param int|null $tenantId Communauté propriétaire. À `null` uniquement pour
+     *   un appel interne portant sur une ligne qu'on vient d'écrire : sans ce
+     *   filtre, un identifiant deviné suffit à lire le point d'intérêt d'une
+     *   autre communauté.
+     */
+    public function findById(int $id, ?int $tenantId = null): ?array
     {
         $sql = "SELECT * FROM v_atak_poi WHERE id = :id AND deleted_at IS NULL";
-        $poi = $this->db->fetchOne($sql, ['id' => $id]);
+        $params = ['id' => $id];
+        if ($tenantId !== null) {
+            $sql .= " AND tenant_id = :tenant_id";
+            $params['tenant_id'] = $tenantId;
+        }
+        $poi = $this->db->fetchOne($sql, $params);
 
         if ($poi) {
             if (!empty($poi['properties'])) {
@@ -161,10 +172,19 @@ class AtakPoiRepository
     /**
      * Met à jour un POI
      */
-    public function update(int $id, array $data): bool
+    /**
+     * @param int|null $tenantId Sans ce filtre, une communauté peut **modifier**
+     *   le point d'intérêt d'une autre en devinant son identifiant. Une écriture
+     *   inter-communautés est plus grave qu'une lecture : elle est silencieuse
+     *   pour le propriétaire légitime.
+     */
+    public function update(int $id, array $data, ?int $tenantId = null): bool
     {
         $fields = [];
         $params = ['id' => $id];
+        if ($tenantId !== null) {
+            $params['tenant_id'] = $tenantId;
+        }
 
         $allowedFields = [
             'poi_name', 'poi_code', 'category', 'affiliation', 'certainty',
@@ -192,6 +212,10 @@ class AtakPoiRepository
         }
 
         $sql = "UPDATE atak_poi SET " . implode(', ', $fields) . " WHERE id = :id";
+        if ($tenantId !== null) {
+            $sql .= " AND tenant_id = :tenant_id";
+        }
+
         return $this->db->execute($sql, $params) > 0;
     }
 

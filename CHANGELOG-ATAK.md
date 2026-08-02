@@ -68,6 +68,15 @@ Un automatisme propose, il ne décide pas. Aucune règle ne clôt un site, ne fu
 - L'écran annonce lui-même qu'une liste vide est l'état normal après installation, pas une panne.
 - **Les notifications ne sont pas émises, et l'écran le dit.** La diffusion enregistre qui doit lire et l'affiche sur la fiche du rapport ; l'envoi en jeu, par courriel ou vers Discord n'est pas branché. Mieux vaut le lire à l'écran que le découvrir en opération.
 
+### Corrigé — Écriture et lectures inter-communautés sur les points d'intérêt et les évacuations
+
+Balayage des 22 dépôts exposant une lecture par identifiant. La plupart portent des tables globales de plateforme, où l'absence de cloisonnement est correcte. **Deux points d'entrée étaient réellement exposés**, tous deux dans l'API ATAK :
+
+- **`POST /api/atak/poi/{id}` modifiait le point d'intérêt sans vérifier la communauté.** Ce n'était pas une lecture mais une **écriture** inter-communautés : un identifiant deviné suffisait à altérer le point d'une autre communauté, silencieusement pour son propriétaire légitime.
+- `GET /api/atak/medevac/{id}` renvoyait la demande d'évacuation d'une autre communauté — position du blessé comprise.
+
+Les autres appels à `findById()` de cette famille suivent immédiatement un `create()` ou un `upsert()` et portent sur la ligne qu'on vient d'écrire : aucun risque, aucun changement.
+
 ### Ajouté — Émission réelle des notifications de diffusion
 
 - Une diffusion produit désormais une **notification effective**, écrite dans `atak_realtime_notifications` avec ses destinataires, sa position sur la carte et son urgence.
