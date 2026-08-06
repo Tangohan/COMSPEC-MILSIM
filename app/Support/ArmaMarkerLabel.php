@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace App\Support;
+
 /**
  * Libellés lisibles pour marqueurs Arma / BCE / cTab (évite _USER_DEFINED #… dans l’UI).
  */
