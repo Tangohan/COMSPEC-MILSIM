@@ -1315,7 +1315,7 @@ if (!function_exists('sse_ui_theme_options')) {
             ],
             'console' => [
                 'label' => 'Console Athena',
-                'hint' => 'En-tête Athena, bandeau d’alerte, typographie condensée ops.',
+                'hint' => 'Control Tower sombre, accent cyan, mission et diffusion en barre.',
             ],
         ];
     }
@@ -1354,6 +1354,104 @@ if (!function_exists('sse_ui_theme_persist')) {
         $_COOKIE['sse_ui_theme'] = $theme;
 
         return $theme;
+    }
+}
+
+if (!function_exists('sse_cookie_secure')) {
+    function sse_cookie_secure(): bool
+    {
+        return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || ((int) ($_SERVER['SERVER_PORT'] ?? 0) === 443);
+    }
+}
+
+if (!function_exists('sse_ui_mission_id')) {
+    /** Identifiant de mission active dans le portail SSE (cookie, 0 = aucune). */
+    function sse_ui_mission_id(): int
+    {
+        return max(0, (int) ($_COOKIE['sse_mission_id'] ?? 0));
+    }
+}
+
+if (!function_exists('sse_ui_mission_persist')) {
+    function sse_ui_mission_persist(int $missionId): int
+    {
+        $missionId = max(0, $missionId);
+        setcookie('sse_mission_id', (string) $missionId, [
+            'expires' => time() + 60 * 60 * 24 * 30,
+            'path' => '/',
+            'secure' => sse_cookie_secure(),
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+        $_COOKIE['sse_mission_id'] = (string) $missionId;
+
+        return $missionId;
+    }
+}
+
+if (!function_exists('sse_ui_classification_options')) {
+    /**
+     * Niveaux de diffusion affichés dans la barre de contexte SSE.
+     *
+     * @return array<string, string>
+     */
+    function sse_ui_classification_options(): array
+    {
+        if (class_exists(\App\Repositories\SseCaseRepository::class)) {
+            return \App\Repositories\SseCaseRepository::CLASSIFICATION_LABELS;
+        }
+
+        return [
+            'encadrement' => 'Encadrement',
+            'confidentiel' => 'Confidentiel',
+            'tres_restreint' => 'Diffusion très restreinte',
+            'interne' => 'Diffusion interne',
+        ];
+    }
+}
+
+if (!function_exists('sse_ui_classification_normalize')) {
+    function sse_ui_classification_normalize(?string $code): string
+    {
+        $code = strtolower(trim((string) $code));
+        $opts = sse_ui_classification_options();
+
+        return array_key_exists($code, $opts) ? $code : 'confidentiel';
+    }
+}
+
+if (!function_exists('sse_ui_classification')) {
+    function sse_ui_classification(): string
+    {
+        return sse_ui_classification_normalize($_COOKIE['sse_ui_classification'] ?? null);
+    }
+}
+
+if (!function_exists('sse_ui_classification_persist')) {
+    function sse_ui_classification_persist(string $code): string
+    {
+        $code = sse_ui_classification_normalize($code);
+        setcookie('sse_ui_classification', $code, [
+            'expires' => time() + 60 * 60 * 24 * 365,
+            'path' => '/',
+            'secure' => sse_cookie_secure(),
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+        $_COOKIE['sse_ui_classification'] = $code;
+
+        return $code;
+    }
+}
+
+if (!function_exists('sse_ui_classification_label')) {
+    function sse_ui_classification_label(?string $code = null): string
+    {
+        $code = sse_ui_classification_normalize($code ?? sse_ui_classification());
+        $opts = sse_ui_classification_options();
+
+        return $opts[$code] ?? 'Confidentiel';
     }
 }
 
