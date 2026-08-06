@@ -547,6 +547,8 @@ return function (Router $router) {
     $router->get('/atak/sse/commandement', [SsePortalController::class, 'staffEnter'], [AuthMiddleware::class]);
     $router->get('/atak/sse/quitter', [SsePortalController::class, 'logout']);
     $router->post('/atak/sse/apparence', [SsePortalController::class, 'setTheme']);
+    $router->post('/atak/sse/contexte/mission', [SsePortalController::class, 'setMission'], $mwSsePortal);
+    $router->post('/atak/sse/contexte/classification', [SsePortalController::class, 'setClassification'], $mwSsePortal);
     // Alias back-office (commandement / admin — sans exiger un code d’accès)
     $router->get('/back-office/renseignement/codes', [SsePortalController::class, 'staffEnter'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('atak/sse/commandement')), [AuthMiddleware::class]);

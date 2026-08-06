@@ -15,6 +15,7 @@ use App\Repositories\SsePortalSettingsRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\SseSiteRepository;
 use App\Repositories\SseWatchlistRepository;
+use App\Repositories\TheatreMissionCycleRepository;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseCasePdfService;
 use App\Services\Sse\SseClearanceService;
@@ -42,6 +43,7 @@ final class SsePortalController
         private ?SseClearanceService $clearance = null,
         private ?AtakActivityLogService $activityLog = null,
         private ?SsePortalSettingsRepository $settings = null,
+        private ?TheatreMissionCycleRepository $missions = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -58,6 +60,7 @@ final class SsePortalController
         $this->clearance ??= new SseClearanceService();
         $this->activityLog ??= new AtakActivityLogService();
         $this->settings ??= new SsePortalSettingsRepository();
+        $this->missions ??= new TheatreMissionCycleRepository();
     }
 
     /** Sas d’entrée (public) */
@@ -74,6 +77,8 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/dossiers'));
         }
 
+        $operator = $this->gateOperatorContext();
+
         return Response::view('atak.sse.gate', [
             'title' => 'Accès renseignement interpersonnel',
             'error' => Session::getFlash('error'),
@@ -81,6 +86,9 @@ final class SsePortalController
             'loggedIn' => (int) Session::get('user_id') > 0,
             'sseTheme' => sse_ui_theme(),
             'sseThemeOptions' => sse_ui_theme_options(),
+            'operatorName' => $operator['name'],
+            'operatorMeta' => $operator['meta'],
+            'operatorInitial' => $operator['initial'],
         ]);
     }
 
@@ -94,16 +102,43 @@ final class SsePortalController
         }
 
         sse_ui_theme_persist((string) $request->input('theme', 'archive'));
-        $back = (string) $request->input('back', '');
-        $prefix = (string) parse_url(url('atak/sse'), PHP_URL_PATH);
-        $backPath = (string) (parse_url($back, PHP_URL_PATH) ?: $back);
-        if ($back === '' || $prefix === '' || !str_starts_with($backPath, $prefix)) {
-            $back = $this->access->hasActiveClearance()
-                ? url('atak/sse/dossiers')
-                : url('atak/sse');
+
+        return Response::redirect($this->sseBackUrl((string) $request->input('back', '')));
+    }
+
+    /** Mémorise la mission active du portail SSE (cycle théâtre). */
+    public function setMission(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('atak/sse'));
         }
 
-        return Response::redirect($back);
+        $missionId = (int) $request->input('mission_id', 0);
+        if ($missionId > 0) {
+            $row = $this->missions->findForTenant($this->tenantId(), $missionId);
+            if ($row === null) {
+                $missionId = 0;
+            }
+        }
+        sse_ui_mission_persist($missionId);
+
+        return Response::redirect($this->sseBackUrl((string) $request->input('back', '')));
+    }
+
+    /** Mémorise le niveau de diffusion affiché dans la barre de contexte. */
+    public function setClassification(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('atak/sse'));
+        }
+
+        sse_ui_classification_persist((string) $request->input('classification', 'confidentiel'));
+
+        return Response::redirect($this->sseBackUrl((string) $request->input('back', '')));
     }
 
     /** Entrée commandement depuis le back-office (toujours vers les codes). */
@@ -1070,8 +1105,130 @@ final class SsePortalController
         $data['guestLabel'] = (string) Session::get('sse_guest_label', '');
         $data['sseTheme'] = sse_ui_theme();
         $data['sseThemeOptions'] = sse_ui_theme_options();
+        $ctx = $this->workspaceContext();
+        $data['sseMissions'] = $ctx['missions'];
+        $data['sseMissionId'] = $ctx['missionId'];
+        $data['sseMissionLabel'] = $ctx['missionLabel'];
+        $data['sseClassification'] = $ctx['classification'];
+        $data['sseClassificationLabel'] = $ctx['classificationLabel'];
+        $data['sseClassificationOptions'] = $ctx['classificationOptions'];
 
         return Response::view($view, $data);
+    }
+
+    /**
+     * Contexte mission / diffusion pour la barre supérieure du portail.
+     *
+     * @return array{
+     *   missions: list<array{id:int,title:string,status:string,status_label:string}>,
+     *   missionId: int,
+     *   missionLabel: string,
+     *   classification: string,
+     *   classificationLabel: string,
+     *   classificationOptions: array<string,string>
+     * }
+     */
+    private function workspaceContext(): array
+    {
+        $tenantId = $this->tenantId();
+        $missionsRaw = $tenantId > 0 ? $this->missions->listForTenant($tenantId, 40) : [];
+        $missions = [];
+        foreach ($missionsRaw as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $status = (string) ($row['status'] ?? '');
+            $missions[] = [
+                'id' => $id,
+                'title' => trim((string) ($row['title'] ?? '')) ?: ('Mission #' . $id),
+                'status' => $status,
+                'status_label' => TheatreMissionCycleRepository::statusLabel($status),
+            ];
+        }
+
+        $missionId = sse_ui_mission_id();
+        $missionLabel = 'Aucune mission';
+        $found = false;
+        foreach ($missions as $m) {
+            if ($m['id'] === $missionId) {
+                $missionLabel = $m['title'];
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) {
+            $missionId = 0;
+            if ($missions !== []) {
+                // Préférer une mission en cours, sinon la première (déjà triée).
+                foreach ($missions as $m) {
+                    if ($m['status'] === TheatreMissionCycleRepository::STATUS_EN_COURS) {
+                        $missionId = $m['id'];
+                        $missionLabel = $m['title'];
+                        break;
+                    }
+                }
+                if ($missionId === 0) {
+                    $missionId = $missions[0]['id'];
+                    $missionLabel = $missions[0]['title'];
+                }
+            } else {
+                $missionLabel = 'Aucune mission ouverte';
+            }
+        }
+
+        $classification = sse_ui_classification();
+        $classificationOptions = sse_ui_classification_options();
+
+        return [
+            'missions' => $missions,
+            'missionId' => $missionId,
+            'missionLabel' => $missionLabel,
+            'classification' => $classification,
+            'classificationLabel' => sse_ui_classification_label($classification),
+            'classificationOptions' => $classificationOptions,
+        ];
+    }
+
+    /**
+     * @return array{name:string,meta:string,initial:string}
+     */
+    private function gateOperatorContext(): array
+    {
+        $userId = (int) Session::get('user_id');
+        if ($userId < 1) {
+            return [
+                'name' => 'Opérateur',
+                'meta' => 'Session invitée — code temporaire',
+                'initial' => 'O',
+            ];
+        }
+        $name = trim((string) (Session::get('display_name') ?? ''));
+        $callsign = trim((string) (Session::get('callsign') ?? Session::get('arma_callsign') ?? ''));
+        if ($name === '') {
+            $name = $callsign !== '' ? $callsign : 'Membre Athena';
+        }
+        $meta = $callsign !== '' ? ('Indicatif ' . $callsign) : 'Compte Athena connecté';
+        $initial = mb_strtoupper(mb_substr($name, 0, 1));
+
+        return [
+            'name' => $name,
+            'meta' => $meta,
+            'initial' => $initial !== '' ? $initial : 'A',
+        ];
+    }
+
+    private function sseBackUrl(string $back): string
+    {
+        $prefix = (string) parse_url(url('atak/sse'), PHP_URL_PATH);
+        $backPath = (string) (parse_url($back, PHP_URL_PATH) ?: $back);
+        if ($back === '' || $prefix === '' || !str_starts_with($backPath, $prefix)) {
+            return $this->access->hasActiveClearance()
+                ? url('atak/sse/dossiers')
+                : url('atak/sse');
+        }
+
+        return $back;
     }
 
     private function tenantId(): int
