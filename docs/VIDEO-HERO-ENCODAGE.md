@@ -23,7 +23,7 @@ Chrome, Edge et Firefox ne décodent pas HEVC. Le navigateur accepte pourtant la
 lecteur noir, alors qu'un repli sur l'affiche aurait été préférable.
 
 **État attendu après réencodage** : ISO BMFF (`isom`) + `avc1` (H.264) + AAC, CFR 30 fps.
-Un premier passage avait utiliséé `-an` : image OK, **son mort** — voir
+Un premier passage avait utilisé `-an` : image OK, **son mort** — voir
 `docs/bugs/2026-08-07-hero-videos-hevc-rejetes.md`.
 
 ## Ce qui a été corrigé côté code
