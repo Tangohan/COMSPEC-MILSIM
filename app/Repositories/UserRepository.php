@@ -25,6 +25,7 @@ class UserRepository
     private static ?bool $hasUserRolesTable = null;
 
     private static ?bool $hasEmailLoginOtpEnabledColumn = null;
+    private static ?bool $hasTotpColumns = null;
 
     private static ?bool $hasProfileBannerUrlColumn = null;
 
@@ -101,6 +102,22 @@ class UserRepository
         }
 
         return self::$hasEmailLoginOtpEnabledColumn;
+    }
+
+    public function hasTotpColumns(): bool
+    {
+        if (self::$hasTotpColumns === null) {
+            $stmt = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = 'users'
+                   AND COLUMN_NAME = 'totp_enabled'
+                 LIMIT 1"
+            );
+            self::$hasTotpColumns = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasTotpColumns;
     }
 
     public function hasProfileBannerUrlColumn(): bool
@@ -1552,6 +1569,11 @@ class UserRepository
         if ($this->hasEmailLoginOtpEnabledColumn()) {
             $allowed[] = 'email_login_otp_enabled';
         }
+        if ($this->hasTotpColumns()) {
+            $allowed[] = 'totp_enabled';
+            $allowed[] = 'totp_secret';
+            $allowed[] = 'totp_confirmed_at';
+        }
         if ($this->hasProfileBannerUrlColumn()) {
             $allowed[] = 'profile_banner_url';
         }
@@ -1667,6 +1689,14 @@ class UserRepository
         }
         if ($this->hasProfileBannerUrlColumn()) {
             $set[] = '`profile_banner_url` = NULL';
+        }
+        if ($this->hasTotpColumns()) {
+            $set[] = '`totp_enabled` = 0';
+            $set[] = '`totp_secret` = NULL';
+            $set[] = '`totp_confirmed_at` = NULL';
+        }
+        if ($this->hasEmailLoginOtpEnabledColumn()) {
+            $set[] = '`email_login_otp_enabled` = 0';
         }
 
         $params[] = $userId;

@@ -15,6 +15,9 @@ final class AuditAction
     public const AUTH_PASSWORD_RESET_REQUESTED = 'auth.password_reset_requested';
     public const AUTH_PASSWORD_RESET_COMPLETED = 'auth.password_reset_completed';
     public const AUTH_REGISTER = 'auth.register';
+    public const AUTH_TOTP_ENABLED = 'auth.totp_enabled';
+    public const AUTH_TOTP_DISABLED = 'auth.totp_disabled';
+    public const AUTH_EMAIL_LOGIN_OTP_TOGGLED = 'auth.email_login_otp_toggled';
 
     public const TENANT_CREATED = 'tenant.created';
     public const TENANT_SETUP_COMPLETED = 'tenant.setup_completed';

@@ -273,12 +273,17 @@ class Container
                 self::get(\App\Services\Email\GeoIpLookupService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
             ),
+            \App\Services\Auth\TotpService::class => new \App\Services\Auth\TotpService(),
+            \App\Services\Auth\TotpSecretCipher::class => new \App\Services\Auth\TotpSecretCipher(),
             \App\Services\Auth\LoginSecurityOtpService::class => new \App\Services\Auth\LoginSecurityOtpService(
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\EmailTokenRepository::class),
                 self::get(TenantRepository::class),
-                self::get(\App\Services\EmailService::class)
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Services\Auth\TotpService::class),
+                self::get(\App\Services\Auth\TotpSecretCipher::class)
             ),
+            \App\Services\Qr\QrPngGenerator::class => new \App\Services\Qr\QrPngGenerator(),
             \App\Services\Email\SecurityAlertService::class => new \App\Services\Email\SecurityAlertService(
                 self::get(\App\Services\EmailService::class)
             ),
@@ -604,6 +609,8 @@ class Container
                 self::get(\App\Services\Steam\SteamWebApiService::class),
                 self::get(\App\Services\Auth\LoginSecurityOtpService::class),
                 self::get(\App\Services\Community\LeaveCommunityService::class),
+                self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Services\Qr\QrPngGenerator::class),
             ),
             \App\Services\Account\AccountDataExportService::class => new \App\Services\Account\AccountDataExportService(
                 self::get(UserRepository::class),

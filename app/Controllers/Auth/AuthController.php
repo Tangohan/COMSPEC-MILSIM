@@ -18,7 +18,6 @@ use App\Repositories\PasswordResetRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\LoginSecurityNotificationService;
-use App\Services\Email\EmailTokenPurpose;
 use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Support\LoginIntendedDestination;
@@ -369,6 +368,10 @@ class AuthController
             'title' => __('auth.title_otp'),
             'emailMasked' => (string) ($pending['email_masked'] ?? '—'),
             'expiresAt' => (int) ($pending['expires_at'] ?? 0),
+            'channel' => (string) ($pending['channel'] ?? LoginSecurityOtpService::CHANNEL_EMAIL),
+            'canFallbackEmail' => !empty($pending['can_fallback_email']),
+            'canFallbackTotp' => !empty($pending['can_fallback_totp']),
+            'canResend' => ((string) ($pending['channel'] ?? '')) !== LoginSecurityOtpService::CHANNEL_TOTP,
         ]);
     }
 
@@ -387,33 +390,20 @@ class AuthController
             return Response::redirect(url('login'));
         }
         $code = preg_replace('/\D/', '', (string) $request->input('otp_code', '')) ?? '';
-        $stored = (string) ($pending['token_hash'] ?? '');
-        $userId = (int) ($pending['user_id'] ?? 0);
-        $tenantId = (int) ($pending['tenant_id'] ?? 0);
-        if ($code === '' || strlen($code) !== 6 || $stored === '') {
-            Session::flash('error', __('auth.flash_invalid_code'));
+        $result = $this->loginSecurityOtpService->verifyPendingChallenge($pending, $code);
+        if (!$result['ok']) {
+            $msg = (string) ($result['message'] ?? __('auth.flash_wrong_code'));
+            if (str_contains($msg, 'Trop de tentatives') || str_contains($msg, 'Reconnectez')) {
+                Session::flash('error', $msg);
+
+                return Response::redirect(url('login'));
+            }
+            Session::flash('error', $msg);
 
             return Response::redirect(url('login/otp'));
         }
-
-        // On retrouve le token exact en vérifiant les jetons valides de l’utilisateur.
-        $row = $this->emailTokenRepository->findValidByHash($stored);
-        if (!$row || (string) ($row['purpose'] ?? '') !== EmailTokenPurpose::LOGIN_SECURITY_OTP || (int) ($row['user_id'] ?? 0) !== $userId) {
-            Session::flash('error', __('auth.flash_invalid_or_expired_code'));
-
-            return Response::redirect(url('login/otp'));
-        }
-        $nonce = (string) ($row['nonce'] ?? '');
-        $candidateHash = hash('sha256', $code . '|' . $nonce);
-        if (!hash_equals((string) $row['token_hash'], $candidateHash)) {
-            Session::flash('error', __('auth.flash_wrong_code'));
-
-            return Response::redirect(url('login/otp'));
-        }
-        $this->emailTokenRepository->markConsumed((int) $row['id']);
-        Session::forget('pending_login_security_otp');
-        $user = $this->userRepository->findById($userId, $tenantId);
-        if (!$user || ($user['status'] ?? '') !== 'active') {
+        $user = $result['user'] ?? null;
+        if (!is_array($user) || ($user['status'] ?? '') !== 'active') {
             Session::flash('error', __('auth.flash_account_unavailable'));
 
             return Response::redirect(url('login'));
@@ -435,6 +425,11 @@ class AuthController
 
             return Response::redirect(url('login'));
         }
+        if ((string) ($pending['channel'] ?? '') === LoginSecurityOtpService::CHANNEL_TOTP) {
+            Session::flash('info', 'Utilisez le code affiché dans votre application d’authentification.');
+
+            return Response::redirect(url('login/otp'));
+        }
         $generated = (int) ($pending['generated_at'] ?? 0);
         if ($generated > 0 && (time() - $generated) < LoginSecurityOtpService::RESEND_INTERVAL_SEC) {
             Session::flash('error', __('auth.flash_wait_resend'));
@@ -449,7 +444,53 @@ class AuthController
             return Response::redirect(url('login'));
         }
 
-        return $this->loginSecurityOtpService->beginLoginChallenge($user);
+        return $this->loginSecurityOtpService->beginLoginChallenge($user, LoginSecurityOtpService::CHANNEL_EMAIL);
+    }
+
+    public function switchLoginOtpChannel(Request $request, array $params = []): Response
+    {
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', __('auth.flash_session_expired'));
+
+            return Response::redirect(url('login/otp'));
+        }
+        $pending = Session::get('pending_login_security_otp');
+        if (!is_array($pending) || (int) ($pending['expires_at'] ?? 0) < time()) {
+            Session::forget('pending_login_security_otp');
+            Session::flash('error', __('auth.flash_code_expired'));
+
+            return Response::redirect(url('login'));
+        }
+        $target = (string) $request->input('channel', '');
+        $user = $this->userRepository->findById((int) ($pending['user_id'] ?? 0), (int) ($pending['tenant_id'] ?? 0));
+        if (!$user) {
+            Session::forget('pending_login_security_otp');
+            Session::flash('error', __('auth.flash_account_not_found'));
+
+            return Response::redirect(url('login'));
+        }
+        if ($target === LoginSecurityOtpService::CHANNEL_EMAIL) {
+            if (empty($pending['can_fallback_email']) && !$this->loginSecurityOtpService->isEmailOtpEnabled($user)
+                && !$this->loginSecurityOtpService->isMandatoryForUserId((int) $user['id'])) {
+                Session::flash('error', 'Le code par e-mail n’est pas disponible pour ce compte.');
+
+                return Response::redirect(url('login/otp'));
+            }
+
+            return $this->loginSecurityOtpService->beginLoginChallenge($user, LoginSecurityOtpService::CHANNEL_EMAIL);
+        }
+        if ($target === LoginSecurityOtpService::CHANNEL_TOTP) {
+            if (!$this->loginSecurityOtpService->isTotpEnabled($user)) {
+                Session::flash('error', 'L’application d’authentification n’est pas activée sur ce compte.');
+
+                return Response::redirect(url('login/otp'));
+            }
+
+            return $this->loginSecurityOtpService->beginLoginChallenge($user, LoginSecurityOtpService::CHANNEL_TOTP);
+        }
+        Session::flash('error', __('auth.flash_invalid_choice'));
+
+        return Response::redirect(url('login/otp'));
     }
 
     public function logout(Request $request, array $params = []): Response

@@ -51,6 +51,8 @@ require base_path('views/partials/account/shell_open.php');
 </section>
 
 <p class="account-hub__footer-note">
+    <a href="<?= htmlspecialchars(url('account/security'), ENT_QUOTES, 'UTF-8') ?>">Double vérification</a>
+    ·
     <a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>">Adresse e-mail</a>
     ·
     <a href="<?= htmlspecialchars(url('account'), ENT_QUOTES, 'UTF-8') ?>">Vue d’ensemble</a>

@@ -78,7 +78,13 @@ $navGroups = [
                 'key' => 'mail',
                 'href' => url('account/mail'),
                 'label' => 'Adresse e-mail',
-                'hint' => 'Connexion et double vérification',
+                'hint' => 'Adresse de connexion',
+            ],
+            [
+                'key' => 'security',
+                'href' => url('account/security'),
+                'label' => 'Double vérification',
+                'hint' => 'E-mail ou application d’authentification',
             ],
             [
                 'key' => 'password',
