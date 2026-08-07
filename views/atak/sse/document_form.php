@@ -22,6 +22,13 @@ $prefillStatus = (string) ($prefillStatus ?? ($document['status'] ?? 'brouillon'
 $action = $isEdit
     ? url('atak/sse/documents/' . (int) $document['id'])
     : url('atak/sse/documents');
+$typeHints = [
+    'flash' => 'Gardez-le court : qui, quoi, où, quand, et la recommandation immédiate.',
+    'compte_rendu' => 'Structurez situation → faits → personnel → matériel → suite à donner.',
+    'note_analyse' => 'Séparez faits établis, hypothèses et incertitudes. Indiquez le niveau de confiance.',
+    'synthese' => 'Vue d’ensemble pour un cercle élargi : pas de détail opérationnel inutile.',
+    'diffusion' => 'Version destinée à une diffusion contrôlée — déjà caviardée si besoin.',
+];
 ?>
 <div class="breadcrumb">
     Athena / SSE /
@@ -29,25 +36,26 @@ $action = $isEdit
     <strong><?= $isEdit ? 'Modifier' : 'Nouveau' ?></strong>
 </div>
 
-<div class="page-heading">
-    <div>
-        <div class="page-heading-overline">Exploitation // Rédaction</div>
-        <h1><?= $isEdit ? 'Modifier le document' : 'Nouveau document SSE' ?></h1>
-        <p>
+<section class="sse-desk-hero sse-desk-hero--compact" aria-labelledby="sse-doc-form-title">
+    <div class="sse-desk-hero__main">
+        <div class="sse-desk-hero__kicker">
+            <span class="interest-hero__ref"><?= $isEdit ? $h($document['reference_code'] ?? 'DOC') : 'ATH-SSE-BROUILLON' ?></span>
+            <?php if ($isEdit): ?>
+                <span class="badge"><?= $h($document['status_label'] ?? '') ?></span>
+            <?php else: ?>
+                <span class="badge badge--gray">Nouveau brouillon</span>
+            <?php endif; ?>
+        </div>
+        <h1 id="sse-doc-form-title"><?= $isEdit ? 'Modifier le document' : 'Nouveau document' ?></h1>
+        <p class="sse-desk-hero__lead">
             Rédigez un produit de renseignement structuré. Conservez la classification
             au niveau réel du contenu — la diffusion plus large se fait ensuite via
             caviardage et validation.
         </p>
     </div>
-    <?php if ($isEdit): ?>
-        <div class="page-reference">
-            <strong><?= $h($document['reference_code'] ?? '') ?></strong>
-            <?= $h($document['status_label'] ?? '') ?>
-        </div>
-    <?php endif; ?>
-</div>
+</section>
 
-<section class="panel">
+<section class="panel sse-desk-panel sse-desk-editor">
     <div class="panel-header">
         <div class="panel-title">
             <span class="panel-index">19.11</span>
@@ -67,6 +75,7 @@ $action = $isEdit
                             <option value="<?= $h($k) ?>" <?= $prefillType === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <p class="sse-desk-hint" id="sse-type-hint"><?= $h($typeHints[$prefillType] ?? 'Choisissez le format adapté au destinataire.') ?></p>
                 </div>
                 <div>
                     <label for="classification">Classification</label>
@@ -91,7 +100,7 @@ $action = $isEdit
                         <option value="">Aucun dossier</option>
                         <?php foreach ($cases as $c): ?>
                             <?php if (!empty($c['is_folder'])) { continue; } ?>
-                            <option value="<?= (int) ($c['id'] ?? 0) ?>" <?= $prefillCaseId === (int) ($c['id'] ?? 0) ? 'selected' : '' ?>>
+                            <option value="<?= (int) ($c['id'] ?? 0) ?>" <?= $prefillCaseId === (int) ($c['id'] ?? 0) ? 'selected' : '' ?>">
                                 <?= $h(($c['reference_code'] ?? '') . ' — ' . ($c['title'] ?? '')) ?>
                             </option>
                         <?php endforeach; ?>
@@ -105,20 +114,33 @@ $action = $isEdit
                    placeholder="Ex. Flash — découverte cache armes secteur Nord">
 
             <label for="body">Corps du document</label>
-            <textarea id="body" name="body" rows="22" required
-                      placeholder="Rédigez ici. Structurez par paragraphes clairs : situation, faits, analyse, recommandations."><?= $h($prefillBody) ?></textarea>
-            <p class="muted">
+            <div class="sse-desk-paper">
+                <textarea id="body" name="body" rows="22" required
+                          placeholder="Rédigez ici. Structurez par paragraphes clairs : situation, faits, analyse, recommandations."><?= $h($prefillBody) ?></textarea>
+            </div>
+            <p class="muted sse-desk-footnote">
                 Évitez les noms en clair si le document doit ensuite être diffusé plus largement.
                 Pour une version expurgée à partir d’un dossier, utilisez aussi l’écran de déclassification.
             </p>
 
-            <div class="toolbar-actions" style="margin-top:1rem">
+            <div class="toolbar-actions sse-desk-actions">
                 <button class="btn" type="submit"><?= $isEdit ? 'Enregistrer' : 'Créer le brouillon' ?></button>
                 <a class="btn btn--ghost" href="<?= $h($isEdit ? url('atak/sse/documents/' . (int) $document['id']) : url('atak/sse/documents')) ?>">Annuler</a>
             </div>
         </form>
     </div>
 </section>
+<script>
+(function () {
+    var hints = <?= json_encode($typeHints, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+    var sel = document.getElementById('document_type');
+    var out = document.getElementById('sse-type-hint');
+    if (!sel || !out) { return; }
+    sel.addEventListener('change', function () {
+        out.textContent = hints[sel.value] || 'Choisissez le format adapté au destinataire.';
+    });
+})();
+</script>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';
