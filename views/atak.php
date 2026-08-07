@@ -643,6 +643,18 @@ if ($atakMapConfig) {
   <div class="atak-connection-lost" id="atak-connection-lost" role="alert"><span id="atak-connection-lost-msg">Connexion perdue. Reconnexion…</span></div>
   <div class="atak-error-toast" id="atak-error-toast" role="alert" aria-live="polite"></div>
   <div class="atak-notification-toast" id="atak-notification-toast" role="status" aria-live="polite"></div>
+  <div class="atak-toast-stack" id="atak-toast-stack" aria-live="polite"></div>
+  <div class="atak-command-palette" id="atak-command-palette" aria-hidden="true">
+    <div class="atak-command-box" role="dialog" aria-modal="true" aria-label="Palette de commandes">
+      <div class="atak-command-search">
+        <span aria-hidden="true">⌕</span>
+        <input id="atak-command-input" type="search" placeholder="Rechercher une commande, un module, un indicatif…" autocomplete="off" />
+        <kbd>Échap</kbd>
+      </div>
+      <div class="atak-command-list" id="atak-command-list"></div>
+      <div class="atak-command-footer">↑↓ naviguer · Entrée exécuter · Ctrl+K ouvrir</div>
+    </div>
+  </div>
   <div class="atak-medical-banner" id="atak-medical-banner" role="alert" aria-live="assertive" hidden></div>
 
   <?php if ($currentUser): ?>
@@ -1704,6 +1716,8 @@ if ($atakMapConfig) {
       <button type="button" class="atak-map-tools-fab" id="atak-map-tools-fab" hidden title="Afficher la barre d’outils de la carte">Outils</button>
       <div class="atak-map-tools" id="atak-map-tools" role="toolbar" aria-label="Outils de la carte">
         <div class="atak-map-tools__row" id="atak-map-tools-row">
+          <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" id="atak-command-open" title="Palette de commandes (Ctrl+K)">Commandes</button>
+          <span class="atak-map-tools__sep" data-tool-sep="palette" aria-hidden="true"></span>
           <button type="button" class="atak-map-tools__btn" data-tool="goto" data-tool-slot="goto" title="Aller à une grille (G)">Grille</button>
           <button type="button" class="atak-map-tools__btn" data-tool="me" data-tool-slot="me" title="Centrer sur ma position (H)">Moi</button>
           <button type="button" class="atak-map-tools__btn" data-tool="follow" data-tool-slot="follow" title="Suivre ma position (F)" aria-pressed="false">Suivre</button>
@@ -1755,6 +1769,11 @@ if ($atakMapConfig) {
         </div>
       </div>
       <div class="atak-map-stage">
+      <div class="atak-map-overlay-labels" id="atak-map-tags" aria-hidden="true">
+        <div class="atak-map-tag">Carte <strong id="atak-map-tag-name">—</strong></div>
+        <div class="atak-map-tag">Calque <strong>Opérationnel</strong></div>
+        <div class="atak-map-tag">Réseau <strong id="atak-map-tag-net">—</strong></div>
+      </div>
       <div id="atak-map"></div>
       <div class="atak-replay-banner" id="atak-replay-banner" hidden role="status">
         <span class="atak-replay-banner-text">Relecture en cours — les positions live sont en pause</span>
@@ -1809,8 +1828,33 @@ if ($atakMapConfig) {
         <button type="button" class="atak-panel-chrome-btn atak-panel-chrome-btn--ghost" data-atak-popout-restore="right">Réintégrer ici</button>
       </div>
       <div class="atak-panel-chrome atak-panel-chrome--right" id="atak-panel-right-chrome" role="toolbar" aria-label="Contrôles des effectifs">
-        <span class="atak-panel-chrome-label">Effectifs</span>
+        <span class="atak-panel-chrome-label">Aperçu mission</span>
         <button type="button" class="atak-panel-chrome-btn" id="atak-panel-right-popout" data-atak-popout="right" title="Ouvrir dans une autre fenêtre">Ouvrir dans une autre fenêtre</button>
+      </div>
+      <div class="atak-mission-summary" id="atak-mission-summary">
+        <section class="atak-info-card">
+          <div class="atak-card-head"><span>Mission</span><span class="atak-priority">Live</span></div>
+          <div class="atak-card-body">
+            <div class="atak-metric-big" id="atak-summary-mission-name">Mission</div>
+            <div class="atak-meta" id="atak-summary-mission-meta">En attente de liaison</div>
+            <div class="atak-metric-grid">
+              <div class="atak-metric-cell"><b id="atak-summary-metric-units">0</b><small>Opérateurs</small></div>
+              <div class="atak-metric-cell"><b id="atak-summary-metric-groups">0</b><small>Groupes</small></div>
+            </div>
+          </div>
+        </section>
+        <section class="atak-info-card">
+          <div class="atak-card-head"><span>Forces</span><span>Groupes</span></div>
+          <div class="atak-card-body" id="atak-summary-forces-body">
+            <p class="atak-panel-hint">Les équipes apparaîtront dès qu’un contact est en liaison.</p>
+          </div>
+        </section>
+        <section class="atak-info-card">
+          <div class="atak-card-head"><span>Alertes</span><span id="atak-summary-alerts-count">0</span></div>
+          <div class="atak-card-body" id="atak-summary-alerts-body">
+            <p class="atak-panel-hint">Aucune alerte active.</p>
+          </div>
+        </section>
       </div>
       <details class="atak-air-assets atak-collapse" data-atak-collapse="air-assets" data-atak-collapse-default="0">
         <summary class="atak-air-assets-header atak-collapse-sum">
@@ -1922,6 +1966,8 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-panel-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-shell-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-section-nav.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-command-palette.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-mission-summary.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-ctab.js"></script>
   <script src="<?= $base ?>/assets/js/atak-intel-view.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2015,19 +2061,23 @@ if ($atakMapConfig) {
 
       window.ATAKShowError = function (msg) {
         var el = document.getElementById('atak-error-toast');
-        if (!el) return;
-        el.textContent = msg || 'Erreur';
-        el.classList.add('show');
-        clearTimeout(el._toastTimer);
-        el._toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
+        if (el) {
+          el.textContent = msg || 'Erreur';
+          el.classList.add('show');
+          clearTimeout(el._toastTimer);
+          el._toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
+        }
+        pushC2Toast(msg || 'Erreur', 'error');
       };
       window.ATAKShowNotification = function (msg, opts) {
         var el = document.getElementById('atak-notification-toast');
-        if (!el) return;
-        el.textContent = msg || '';
-        el.classList.add('show');
-        clearTimeout(el._toastTimer);
-        el._toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
+        if (el) {
+          el.textContent = msg || '';
+          el.classList.add('show');
+          clearTimeout(el._toastTimer);
+          el._toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
+        }
+        pushC2Toast(msg || '', (opts && opts.warn) ? 'warn' : 'ok');
         opts = opts || {};
         if (opts.silent !== true && window.ATAKSounds) {
           if (opts.order && typeof window.ATAKSounds.playOrder === 'function') {
@@ -2042,6 +2092,22 @@ if ($atakMapConfig) {
           }
         }
       };
+
+      function pushC2Toast(message, type) {
+        var stack = document.getElementById('atak-toast-stack');
+        if (!stack || !message) return;
+        var toast = document.createElement('div');
+        toast.className = 'atak-c2-toast' + (type === 'error' ? ' error' : (type === 'warn' ? ' warn' : ''));
+        toast.innerHTML = '<strong>' + (type === 'error' ? 'Attention' : (type === 'warn' ? 'Signal' : 'Athena')) + '</strong><span></span>';
+        toast.querySelector('span').textContent = message;
+        stack.appendChild(toast);
+        window.setTimeout(function () {
+          toast.classList.add('is-out');
+          window.setTimeout(function () {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+          }, 220);
+        }, 3800);
+      }
 
       var bootDismissed = false;
       function dismissAtakBoot() {
