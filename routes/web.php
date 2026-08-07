@@ -555,6 +555,8 @@ return function (Router $router) {
     $router->post('/atak/sse/dossiers', [SsePortalController::class, 'caseStore'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/verrou-classification', [SsePortalController::class, 'caseLockToggle'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}', [SsePortalController::class, 'caseShow'], $mwSsePortal);
+    $router->get('/atak/sse/dossiers/{id}/deverrouiller', [SsePortalController::class, 'caseUnlockForm'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/deverrouiller', [SsePortalController::class, 'caseUnlock'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}', [SsePortalController::class, 'caseUpdate'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/personnes', [SsePortalController::class, 'caseLinkPerson'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/notes', [SsePortalController::class, 'caseAddNote'], $mwSsePortal);
@@ -578,6 +580,7 @@ return function (Router $router) {
     $router->post('/atak/sse/sites/{id}/cloture', [SsePortalController::class, 'siteCloseAction'], $mwSsePortal);
     $router->get('/atak/sse/croisements', [SsePortalController::class, 'crossIndex'], $mwSsePortal);
     $router->post('/atak/sse/croisements/watchlist', [SsePortalController::class, 'watchlistStore'], $mwSsePortal);
+    $router->post('/atak/sse/croisements/watchlist/{id}/retirer', [SsePortalController::class, 'watchlistDeactivate'], $mwSsePortal);
     $router->get('/atak/sse/acces', [SsePortalController::class, 'accessAdmin'], $mwSsePortal);
     $router->post('/atak/sse/acces', [SsePortalController::class, 'accessIssue'], $mwSsePortal);
     $router->post('/atak/sse/acces/{id}/revoquer', [SsePortalController::class, 'accessRevoke'], $mwSsePortal);

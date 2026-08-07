@@ -71,6 +71,16 @@ final class SseCrossMatchService
      * @param array<string, mixed> $entry
      * @return array{entry: array<string, mixed>, score: int, reason: string}
      */
+    public function evaluateMatch(array $person, array $entry): array
+    {
+        return $this->score($person, $entry);
+    }
+
+    /**
+     * @param array<string, mixed> $person
+     * @param array<string, mixed> $entry
+     * @return array{entry: array<string, mixed>, score: int, reason: string}
+     */
     private function score(array $person, array $entry): array
     {
         $score = 0;

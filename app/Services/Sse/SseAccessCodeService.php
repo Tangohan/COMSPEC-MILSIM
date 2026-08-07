@@ -149,6 +149,8 @@ final class SseAccessCodeService
             self::SESSION_SCOPE,
             self::SESSION_CODE_ID,
             'sse_guest_label',
+            'sse_case_unlocks',
+            SseClearanceService::SESSION_LEVEL,
         ]);
     }
 

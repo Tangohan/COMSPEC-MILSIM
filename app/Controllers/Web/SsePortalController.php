@@ -319,6 +319,9 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers'));
         }
+        if ($this->caseNeedsUnlock($case)) {
+            return Response::redirect(url('atak/sse/dossiers/' . $id . '/deverrouiller'));
+        }
 
         $links = $this->cases->listLinkedPersonIds($id, $this->tenantId());
         $people = [];
@@ -359,6 +362,58 @@ final class SsePortalController
             'canExport' => $this->canExport(),
             'activeNav' => 'dossiers',
         ]);
+    }
+
+    public function caseUnlockForm(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $case = $this->requireCase($id);
+        if ($case === null) {
+            Session::flash('error', 'Dossier introuvable ou hors de votre périmètre.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+        if (!$this->caseNeedsUnlock($case)) {
+            return Response::redirect(url('atak/sse/dossiers/' . $id));
+        }
+
+        return $this->portalView('atak.sse.case_unlock', [
+            'title' => 'Déverrouiller — ' . ($case['reference_code'] ?? ''),
+            'case' => $case,
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'dossiers',
+        ]);
+    }
+
+    public function caseUnlock(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id . '/deverrouiller'));
+        }
+        $case = $this->requireCase($id);
+        if ($case === null) {
+            Session::flash('error', 'Dossier introuvable ou hors de votre périmètre.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+        if (!$this->caseNeedsUnlock($case)) {
+            return Response::redirect(url('atak/sse/dossiers/' . $id));
+        }
+        $plain = trim((string) $request->input('unlock_code', ''));
+        if (!$this->cases->verifyUnlockCode($id, $this->tenantId(), $plain)) {
+            Session::flash('error', 'Code du dossier incorrect.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id . '/deverrouiller'));
+        }
+        $this->markCaseUnlocked($id);
+        Session::flash('success', 'Dossier déverrouillé pour cette session.');
+
+        return Response::redirect(url('atak/sse/dossiers/' . $id));
     }
 
     public function caseUpdate(Request $request, array $params = []): Response
@@ -485,6 +540,9 @@ final class SsePortalController
         if ($case === null) {
             return Response::redirect(url('atak/sse/dossiers'));
         }
+        if ($locked = $this->redirectIfCaseLocked($case)) {
+            return $locked;
+        }
 
         $tenantId = $this->tenantId();
         $level = $this->clearance->maxLevel();
@@ -557,6 +615,9 @@ final class SsePortalController
             Session::flash('error', 'Dossier introuvable ou hors de votre périmètre.');
 
             return Response::redirect(url('atak/sse/dossiers'));
+        }
+        if ($locked = $this->redirectIfCaseLocked($case)) {
+            return $locked;
         }
 
         $tenantId = $this->tenantId();
@@ -656,6 +717,9 @@ final class SsePortalController
             Session::flash('error', 'Dossier introuvable ou hors de votre périmètre.');
 
             return Response::redirect(url('atak/sse/dossiers'));
+        }
+        if ($locked = $this->redirectIfCaseLocked($case)) {
+            return $locked;
         }
 
         $tenantId = $this->tenantId();
@@ -777,6 +841,9 @@ final class SsePortalController
             Session::flash('error', 'Dossier introuvable ou hors de votre périmètre.');
 
             return Response::redirect(url('atak/sse/dossiers'));
+        }
+        if ($locked = $this->redirectIfCaseLocked($case)) {
+            return $locked;
         }
 
         $graph = $this->correlation->graphForCase($id, $this->tenantId());
@@ -996,6 +1063,24 @@ final class SsePortalController
         return Response::redirect(url('atak/sse/croisements'));
     }
 
+    public function watchlistDeactivate(Request $request, array $params = []): Response
+    {
+        $entryId = (int) ($params['id'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/croisements'));
+        }
+        if ($entryId < 1 || !$this->watchlist->deactivate($entryId, $this->tenantId())) {
+            Session::flash('error', 'Entrée introuvable ou déjà retirée.');
+
+            return Response::redirect(url('atak/sse/croisements'));
+        }
+        Session::flash('success', 'Entrée retirée de la liste de surveillance.');
+
+        return Response::redirect(url('atak/sse/croisements'));
+    }
+
     public function accessAdmin(Request $request, array $params = []): Response
     {
         if (!$this->canGrant()) {
@@ -1137,5 +1222,48 @@ final class SsePortalController
         }
 
         return function_exists('can') && (can('atak.sse.export') || can('admin.access'));
+    }
+
+    /**
+     * @param array<string, mixed> $case
+     */
+    private function caseNeedsUnlock(array $case): bool
+    {
+        if (empty($case['has_unlock_code'])) {
+            return false;
+        }
+        // Le commandement habilité à délivrer les accès peut ouvrir sans le code dossier.
+        if ($this->canGrant()) {
+            return false;
+        }
+        $id = (int) ($case['id'] ?? 0);
+        $unlocked = Session::get('sse_case_unlocks', []);
+        if (!is_array($unlocked)) {
+            return true;
+        }
+
+        return !in_array($id, array_map('intval', $unlocked), true);
+    }
+
+    private function markCaseUnlocked(int $caseId): void
+    {
+        $unlocked = Session::get('sse_case_unlocks', []);
+        if (!is_array($unlocked)) {
+            $unlocked = [];
+        }
+        $unlocked[] = $caseId;
+        Session::set('sse_case_unlocks', array_values(array_unique(array_map('intval', $unlocked))));
+    }
+
+    /**
+     * Redirige vers le sas de code dossier si nécessaire.
+     */
+    private function redirectIfCaseLocked(array $case): ?Response
+    {
+        if (!$this->caseNeedsUnlock($case)) {
+            return null;
+        }
+
+        return Response::redirect(url('atak/sse/dossiers/' . (int) $case['id'] . '/deverrouiller'));
     }
 }

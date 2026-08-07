@@ -200,6 +200,30 @@ final class SseCaseRepository
     }
 
     /**
+     * Vérifie le code secret optionnel d’ouverture du dossier (distinct du code d’accès portail).
+     */
+    public function verifyUnlockCode(int $id, int $tenantId, string $plain): bool
+    {
+        $row = $this->db->fetchOne(
+            'SELECT unlock_code_hash FROM sse_cases WHERE id = :id AND tenant_id = :t LIMIT 1',
+            ['id' => $id, 't' => $tenantId]
+        );
+        if ($row === null) {
+            return false;
+        }
+        $hash = (string) ($row['unlock_code_hash'] ?? '');
+        if ($hash === '') {
+            return true;
+        }
+        $plain = strtoupper(trim($plain));
+        if ($plain === '') {
+            return false;
+        }
+
+        return hash_equals($hash, hash('sha256', $plain));
+    }
+
+    /**
      * @param list<int>|null $scopeIds null = tous
      * @return list<array<string, mixed>>
      */

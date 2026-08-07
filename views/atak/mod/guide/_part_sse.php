@@ -44,8 +44,9 @@
         dans la configuration ATAK (modules ATAK Enhanced / cTab).
     </div>
 
-    <h3>À venir</h3>
+    <h3>Exploitation de sites</h3>
     <p>
-        Exploitation de sites, saisies et chaîne de possession détaillée suivront dans les versions suivantes.
+        Les sites exploités depuis le terrain (checklist de fouille, saisies, clôture) apparaissent dans le portail
+        sous <strong>Sites</strong> et peuvent être rattachés au dossier actif.
     </p>
 </section>
