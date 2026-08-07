@@ -147,7 +147,7 @@ foreach ($sites as $s) {
                         </td>
                         <td class="record-id"><?= (int) $cnt['seizures'] ?></td>
                         <td>
-                            <a class="link" href="<?= $h(url('atak/sse/sites/' . (int) ($s['id'] ?? 0))) ?>">Ouvrir →</a>
+                            <a class="btn-open" href="<?= $h(url('atak/sse/sites/' . (int) ($s['id'] ?? 0))) ?>">Ouvrir</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

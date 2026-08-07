@@ -46,6 +46,12 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 </div>
 <?php endif; ?>
 
+<?php
+$caseDocuments = is_array($caseDocuments ?? null) ? $caseDocuments : [];
+$canManage = (bool) ($canManage ?? false);
+$caseId = (int) ($case['id'] ?? 0);
+?>
+
 <div class="security-notice">
     <div class="security-notice-code">SEC-07</div>
     <div>
@@ -53,6 +59,8 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
         <span>
             Ce compte rendu porte des éléments de scénario non vérifiés. Un score de
             similarité ou un verdict de terminal n’est pas une identification établie.
+            Les textes ci-dessous sont générés à la lecture — pour diffuser, ouvrez
+            un brouillon dans l’atelier de rédaction.
         </span>
     </div>
 </div>
@@ -67,7 +75,16 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
     </div>
     <div class="panel-body">
         <pre class="sse-report" id="sse-flash"><?= $h($flash) ?></pre>
-        <button class="btn btn--ghost btn--sm" type="button" data-copy="#sse-flash">Copier</button>
+        <div class="toolbar-actions" style="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.5rem">
+            <button class="btn btn--ghost btn--sm" type="button" data-copy="#sse-flash">Copier</button>
+            <?php if ($canManage): ?>
+                <form method="post" action="<?= $h(url('atak/sse/dossiers/' . $caseId . '/compte-rendu/brouillon')) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="kind" value="flash">
+                    <button class="btn btn--sm" type="submit">Ouvrir un brouillon flash</button>
+                </form>
+            <?php endif; ?>
+        </div>
     </div>
 </section>
 
@@ -81,14 +98,65 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
     </div>
     <div class="panel-body">
         <pre class="sse-report" id="sse-initial"><?= $h($initial) ?></pre>
-        <button class="btn btn--ghost btn--sm" type="button" data-copy="#sse-initial">Copier</button>
+        <div class="toolbar-actions" style="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.5rem">
+            <button class="btn btn--ghost btn--sm" type="button" data-copy="#sse-initial">Copier</button>
+            <?php if ($canManage): ?>
+                <form method="post" action="<?= $h(url('atak/sse/dossiers/' . $caseId . '/compte-rendu/brouillon')) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="kind" value="compte_rendu">
+                    <button class="btn btn--sm" type="submit">Ouvrir un brouillon de compte rendu</button>
+                </form>
+            <?php endif; ?>
+            <a class="btn btn--ghost btn--sm" href="<?= $h(url('atak/sse/dossiers/' . $caseId . '/declassification')) ?>">
+                Version de diffusion (caviardage)
+            </a>
+        </div>
         <p class="sse-note">
             Ce document est servi au niveau de votre habilitation. Pour produire une
             version destinée à un cercle plus large, passez par la
-            <a class="link" href="<?= $h(url('atak/sse/dossiers/' . (int) ($case['id'] ?? 0) . '/declassification')) ?>">déclassification</a> :
+            <a class="link" href="<?= $h(url('atak/sse/dossiers/' . $caseId . '/declassification')) ?>">déclassification</a> :
             elle caviarde automatiquement tout ce qui dépasse le niveau visé.
         </p>
     </div>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <span class="panel-index">01.05</span>
+            Documents rédigés sur ce dossier
+        </div>
+        <div class="panel-meta"><?= count($caseDocuments) ?></div>
+    </div>
+    <?php if ($caseDocuments === []): ?>
+        <div class="empty-state">
+            <div class="empty-state-inner">
+                <div class="empty-symbol">DOC</div>
+                <strong>Aucun brouillon encore</strong>
+                <p>Ouvrez un brouillon depuis le flash ou le compte rendu, puis validez-le dans l’atelier.</p>
+                <a class="btn btn--ghost" href="<?= $h(url('atak/sse/documents')) ?>">Aller à l’atelier de rédaction</a>
+            </div>
+        </div>
+    <?php else: ?>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr><th>Référence</th><th>Intitulé</th><th>Type</th><th>État</th><th></th></tr>
+                </thead>
+                <tbody>
+                <?php foreach ($caseDocuments as $doc): ?>
+                    <tr>
+                        <td class="record-id"><?= $h($doc['reference_code'] ?? '') ?></td>
+                        <td><?= $h($doc['title'] ?? '') ?></td>
+                        <td><?= $h($doc['document_type_label'] ?? '') ?></td>
+                        <td><span class="badge"><?= $h($doc['status_label'] ?? '') ?></span></td>
+                        <td><a class="btn-open" href="<?= $h(url('atak/sse/documents/' . (int) ($doc['id'] ?? 0))) ?>">Ouvrir</a></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
 </section>
 
 <script>

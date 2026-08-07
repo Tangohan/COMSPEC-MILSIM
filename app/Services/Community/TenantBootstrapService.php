@@ -224,6 +224,8 @@ final class TenantBootstrapService
                 $configSvc->markSatisfiedForNewTenant($tenantId, $newUserId);
                 // Portail SSE : rôles seedés + module prêt — pas d’action humaine obligatoire à la création.
                 $configSvc->markCompleted($tenantId, 'SSE_PORTAL_V1', $newUserId);
+                // Laboratoire numérique : schéma/UI prêts dès la création (pas de réglage humain requis).
+                $configSvc->markCompleted($tenantId, 'SSE_DIGITAL_LAB_V1', $newUserId);
             } catch (\Throwable $e) {
                 // Tables absentes ou moteur non déployé : non bloquant
             }

@@ -1302,20 +1302,16 @@ if (!function_exists('format_arma_playtime_french')) {
 
 if (!function_exists('sse_ui_theme_options')) {
     /**
-     * Thèmes d’interface du portail SSE (choix au sas).
+     * Apparence unique du portail SSE (bureau type LMS Effectifs / tableau de bord).
      *
      * @return array<string, array{label:string,hint:string}>
      */
     function sse_ui_theme_options(): array
     {
         return [
-            'archive' => [
-                'label' => 'Registre classifié',
-                'hint' => 'Barres de classification, sceau SSE, lecture dense type dossier.',
-            ],
-            'console' => [
-                'label' => 'Console Athena',
-                'hint' => 'Control Tower sombre, accent cyan, mission et diffusion en barre.',
+            'bureau' => [
+                'label' => 'Bureau SSE',
+                'hint' => 'Espace de travail dense, typographie Inter, accents slate et émeraude.',
             ],
         ];
     }
@@ -1325,13 +1321,17 @@ if (!function_exists('sse_ui_theme_normalize')) {
     function sse_ui_theme_normalize(?string $theme): string
     {
         $theme = strtolower(trim((string) $theme));
+        // Anciens cookies (console / confidentiel / archive) → apparence unique.
+        if (in_array($theme, ['console', 'confidentiel', 'archive', 'control', 'athena'], true)) {
+            return 'bureau';
+        }
 
-        return array_key_exists($theme, sse_ui_theme_options()) ? $theme : 'console';
+        return array_key_exists($theme, sse_ui_theme_options()) ? $theme : 'bureau';
     }
 }
 
 if (!function_exists('sse_ui_theme')) {
-    /** Thème SSE courant (cookie, défaut : console Athena). */
+    /** Apparence SSE courante (cookie, défaut : Bureau SSE). */
     function sse_ui_theme(): string
     {
         return sse_ui_theme_normalize($_COOKIE['sse_ui_theme'] ?? null);

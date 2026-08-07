@@ -84,26 +84,82 @@ final class SseCaseRepository
             $ref = $this->nextReference($tenantId);
         }
 
+        $parentId = isset($data['parent_id']) ? (int) $data['parent_id'] : 0;
+        $isFolder = !empty($data['is_folder']) ? 1 : 0;
+
         return (int) $this->db->insert(
             'INSERT INTO sse_cases (
                 tenant_id, context_id, reference_code, title, summary, classification, status,
-                unlock_code_hash, created_by
+                is_folder, parent_id, unlock_code_hash, created_by
             ) VALUES (
                 :tenant_id, :context_id, :reference_code, :title, :summary, :classification, :status,
-                :unlock_code_hash, :created_by
+                :is_folder, :parent_id, :unlock_code_hash, :created_by
             )',
             [
                 'tenant_id' => $tenantId,
                 'context_id' => (int) ($data['context_id'] ?? 1),
                 'reference_code' => $ref,
-                'title' => trim((string) ($data['title'] ?? 'Dossier sans titre')),
+                'title' => trim((string) ($data['title'] ?? ($isFolder ? 'Nouveau dossier' : 'Dossier sans titre'))),
                 'summary' => $this->nullIfEmpty($data['summary'] ?? null),
                 'classification' => self::normalizeClassification((string) ($data['classification'] ?? self::CLASS_COMMAND)),
                 'status' => $this->normalizeStatus((string) ($data['status'] ?? 'ouvert')),
+                'is_folder' => $isFolder,
+                'parent_id' => $parentId > 0 ? $parentId : null,
                 'unlock_code_hash' => $data['unlock_code_hash'] ?? null,
                 'created_by' => isset($data['created_by']) ? (int) $data['created_by'] : null,
             ]
         );
+    }
+
+    public function verifyUnlockCode(int $id, int $tenantId, string $plain): bool
+    {
+        $row = $this->db->fetchOne(
+            'SELECT unlock_code_hash FROM sse_cases WHERE id = :id AND tenant_id = :t LIMIT 1',
+            ['id' => $id, 't' => $tenantId]
+        );
+        if (!$row || empty($row['unlock_code_hash'])) {
+            return true;
+        }
+        $plain = strtoupper(trim($plain));
+        if ($plain === '') {
+            return false;
+        }
+
+        return hash_equals((string) $row['unlock_code_hash'], hash('sha256', $plain));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listChildren(int $parentId, int $tenantId, ?array $scopeIds = null): array
+    {
+        return $this->listForTenant($tenantId, $scopeIds, ['parent_id' => $parentId]);
+    }
+
+    /**
+     * Arbre pour le rail : dossiers racines + enfants (profondeur 2).
+     *
+     * @param list<array<string, mixed>> $cases
+     * @return list<array{node: array<string,mixed>, children: list<array<string,mixed>>}>
+     */
+    public function buildTree(array $cases): array
+    {
+        $byParent = [];
+        foreach ($cases as $case) {
+            $pid = (int) ($case['parent_id'] ?? 0);
+            $byParent[$pid][] = $case;
+        }
+        $roots = $byParent[0] ?? [];
+        $tree = [];
+        foreach ($roots as $root) {
+            $id = (int) ($root['id'] ?? 0);
+            $tree[] = [
+                'node' => $root,
+                'children' => $byParent[$id] ?? [],
+            ];
+        }
+
+        return $tree;
     }
 
     /**
@@ -225,13 +281,31 @@ final class SseCaseRepository
             $where[] = 'classification = :class';
             $params['class'] = self::normalizeClassification((string) $filters['classification']);
         }
+        if (array_key_exists('parent_id', $filters)) {
+            $pid = (int) $filters['parent_id'];
+            if ($pid > 0) {
+                $where[] = 'parent_id = :parent_id';
+                $params['parent_id'] = $pid;
+            } else {
+                $where[] = 'parent_id IS NULL';
+            }
+        }
+        if (isset($filters['is_folder'])) {
+            $where[] = 'is_folder = :is_folder';
+            $params['is_folder'] = !empty($filters['is_folder']) ? 1 : 0;
+        }
         $search = trim((string) ($filters['q'] ?? ''));
         if ($search !== '') {
-            $where[] = '(reference_code LIKE :search OR title LIKE :search OR summary LIKE :search)';
-            $params['search'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
+            $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
+            // PDO : un nom de paramètre ne peut apparaître qu’une fois.
+            $where[] = '(reference_code LIKE :search_ref OR title LIKE :search_title OR summary LIKE :search_summary)';
+            $params['search_ref'] = $like;
+            $params['search_title'] = $like;
+            $params['search_summary'] = $like;
         }
         $rows = $this->db->fetchAll(
-            'SELECT * FROM sse_cases WHERE ' . implode(' AND ', $where) . ' ORDER BY id DESC LIMIT 200',
+            'SELECT * FROM sse_cases WHERE ' . implode(' AND ', $where)
+            . ' ORDER BY is_folder DESC, id DESC LIMIT 200',
             $params
         );
         $out = [];
@@ -273,6 +347,15 @@ final class SseCaseRepository
         if (array_key_exists('unlock_code_hash', $data)) {
             $fields[] = 'unlock_code_hash = :unlock_code_hash';
             $params['unlock_code_hash'] = $data['unlock_code_hash'];
+        }
+        if (array_key_exists('parent_id', $data)) {
+            $pid = (int) $data['parent_id'];
+            $fields[] = 'parent_id = :parent_id';
+            $params['parent_id'] = $pid > 0 ? $pid : null;
+        }
+        if (array_key_exists('is_folder', $data)) {
+            $fields[] = 'is_folder = :is_folder';
+            $params['is_folder'] = !empty($data['is_folder']) ? 1 : 0;
         }
         if ($fields === []) {
             return false;
@@ -411,6 +494,8 @@ final class SseCaseRepository
         return [
             'id' => (int) ($row['id'] ?? 0),
             'tenant_id' => (int) ($row['tenant_id'] ?? 0),
+            'parent_id' => isset($row['parent_id']) && $row['parent_id'] !== null ? (int) $row['parent_id'] : null,
+            'is_folder' => !empty($row['is_folder']),
             'reference_code' => (string) ($row['reference_code'] ?? ''),
             'title' => (string) ($row['title'] ?? ''),
             'summary' => $row['summary'] ?? null,

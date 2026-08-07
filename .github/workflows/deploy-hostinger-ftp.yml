@@ -1,0 +1,58 @@
+name: Deploy Athena (Hostinger FTP)
+
+# Déploie le site sur Hostinger après un push sur main.
+# Secrets GitHub requis (Settings → Secrets and variables → Actions) :
+#   FTP_SERVER   ex. 92.113.24.96  ou  ftp.athena.ttrd.fr
+#   FTP_USERNAME ex. u416380327
+#   FTP_PASSWORD mot de passe FTP / SSH Hostinger
+# Optionnel :
+#   FTP_SERVER_DIR  (défaut : ./  = racine public_html du compte FTP)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-athena-prod
+  cancel-in-progress: true
+
+jobs:
+  ftp-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: 21
+          server-dir: ${{ secrets.FTP_SERVER_DIR || './' }}
+          # Ne pas écraser secrets / vendor / uploads locaux prod
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.env
+            **/.env.*
+            **/.deploy.env
+            **/node_modules/**
+            **/vendor/**
+            **/storage/cache/**
+            **/storage/logs/**
+            **/storage/sessions/**
+            **/public/uploads/**
+            **/mod/**
+            **/-o/**
+            **/.cursor/**
+            **/docs/**
+            **/*.md
+            **/tests/**
+            **/.github/**

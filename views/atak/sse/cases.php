@@ -74,28 +74,21 @@ $statusBadge = static function (string $key): string {
 </div>
 
 <div class="case-workspace">
-<aside class="case-aside" aria-label="Outils du registre">
-    <div class="case-aside-head"><span>Poste analyste</span><strong>OUTILS</strong></div>
+<aside class="case-aside case-aside--compact" aria-label="Filtres rapides">
+    <div class="case-aside-head"><span>Filtres</span><strong>VUES</strong></div>
     <form class="case-search" method="get" action="<?= $h(url('atak/sse/dossiers')) ?>" role="search">
-        <label for="case-q">Recherche globale</label>
+        <label for="case-q">Recherche</label>
         <div class="case-search-control">
-            <input id="case-q" name="q" type="search" value="<?= $h($filters['q'] ?? '') ?>" placeholder="Réf., titre, résumé…">
+            <input id="case-q" name="q" type="search" value="<?= $h($filters['q'] ?? '') ?>" placeholder="Réf., titre…">
             <button type="submit" aria-label="Lancer la recherche">→</button>
         </div>
     </form>
     <nav class="case-aside-nav" aria-label="Vues du registre">
-        <a class="<?= ($filters['status'] ?? '') === '' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers')) ?>"><span>Registre complet</span><b><?= (int) $indexCounts['total'] ?></b></a>
+        <a class="<?= ($filters['status'] ?? '') === '' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers')) ?>"><span>Complet</span><b><?= (int) $indexCounts['total'] ?></b></a>
         <a class="<?= ($filters['status'] ?? '') === 'en_cours' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers?status=en_cours')) ?>"><span>En exploitation</span><b><?= (int) $indexCounts['active'] ?></b></a>
         <a class="<?= ($filters['status'] ?? '') === 'archive' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers?status=archive')) ?>"><span>Archives</span><b><?= (int) $indexCounts['archive'] ?></b></a>
     </nav>
-    <div class="case-aside-section">
-        <span>Accès rapides</span>
-        <a href="#registre">↳ Registre des dossiers</a>
-        <a href="#securite">↳ Paramètres de sécurité</a>
-        <a href="<?= $h(url('atak/sse/personnes')) ?>">↳ Index des personnes</a>
-        <a href="<?= $h(url('atak/sse/croisements')) ?>">↳ Outil de croisement</a>
-    </div>
-    <?php if ($canManage): ?><a class="btn case-aside-create" href="<?= $h(url('atak/sse/dossiers/nouveau')) ?>">+ Ouvrir un dossier</a><?php endif; ?>
+    <?php if ($canManage): ?><a class="btn case-aside-create" href="<?= $h(url('atak/sse/dossiers/nouveau')) ?>">+ Ouvrir une affaire</a><?php endif; ?>
 </aside>
 <div class="case-workspace-main">
 <div class="metrics-grid">
@@ -275,7 +268,33 @@ $statusBadge = static function (string $key): string {
         <div class="panel-meta">Périmètre d’accès // session courante</div>
     </div>
 
-    <?php if ($cases === []): ?>
+    <?php
+    $folders = array_values(array_filter($cases, static fn (array $c): bool => !empty($c['is_folder'])));
+    $affairs = array_values(array_filter($cases, static fn (array $c): bool => empty($c['is_folder'])));
+    ?>
+
+    <?php if ($folders !== []): ?>
+        <div class="panel-body">
+            <div class="sse-block-title">Dossiers</div>
+            <div class="sse-folder-grid">
+                <?php foreach ($folders as $c): ?>
+                    <a class="sse-folder-card is-folder" href="<?= $h(url('atak/sse/dossiers/' . (int) $c['id'])) ?>">
+                        <div class="sse-folder-card-top">
+                            <span class="sse-folder-kind">Dossier</span>
+                            <?php if (!empty($c['has_unlock_code'])): ?><span class="badge badge--gray">Protégé</span><?php endif; ?>
+                        </div>
+                        <strong><?= $h($c['title'] ?? '') ?></strong>
+                        <span class="record-id"><?= $h($c['reference_code'] ?? '') ?></span>
+                        <div class="sse-folder-card-meta">
+                            <span class="<?= $h($classBadge((string) ($c['classification'] ?? ''))) ?>"><?= $h($c['classification_label'] ?? '') ?></span>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($affairs === [] && $folders === []): ?>
         <div class="empty-state">
             <div class="empty-state-inner">
                 <div class="empty-symbol">SSE-DI</div>
@@ -287,7 +306,7 @@ $statusBadge = static function (string $key): string {
                 <?php if ($canManage): ?><a class="btn" href="<?= $h(url('atak/sse/interet/nouveau')) ?>">Ouvrir un dossier d’intérêt</a><?php endif; ?>
             </div>
         </div>
-    <?php else: ?>
+    <?php elseif ($affairs !== []): ?>
         <div class="table-wrap">
             <table>
                 <thead>
@@ -303,7 +322,7 @@ $statusBadge = static function (string $key): string {
                 </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($cases as $c):
+                <?php foreach ($affairs as $c):
                     $cnt = $caseCounts[(int) ($c['id'] ?? 0)] ?? ['persons' => 0, 'notes' => 0, 'evidence' => 0];
                     $stamp = (string) ($c['updated_at'] ?? $c['created_at'] ?? '');
                 ?>
@@ -311,7 +330,10 @@ $statusBadge = static function (string $key): string {
                         <td><span class="record-id"><?= $h($c['reference_code']) ?></span></td>
                         <td>
                             <span class="record-name"><?= $h($c['title']) ?></span>
-                            <span class="record-sub">Dossier d’affaire</span>
+                            <span class="record-sub">
+                                Affaire
+                                <?php if (!empty($c['has_unlock_code'])): ?> · Protégé<?php endif; ?>
+                            </span>
                         </td>
                         <td>
                             <span class="<?= $h($classBadge((string) ($c['classification'] ?? ''))) ?>">
@@ -341,7 +363,7 @@ $statusBadge = static function (string $key): string {
                         </td>
                         <td class="record-id"><?= $h($stamp !== '' ? substr($stamp, 0, 16) : '—') ?></td>
                         <td>
-                            <a class="link" href="<?= $h(url('atak/sse/dossiers/' . $c['id'])) ?>">Ouvrir →</a>
+                            <a class="btn-open" href="<?= $h(url('atak/sse/dossiers/' . $c['id'])) ?>">Ouvrir</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

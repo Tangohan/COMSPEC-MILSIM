@@ -169,4 +169,49 @@ final class SseAccessCodeRepository
         } catch (\Throwable) {
         }
     }
+
+    /**
+     * Journal des événements liés aux codes d’accès SSE.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listLogForTenant(int $tenantId, int $limit = 80): array
+    {
+        $limit = max(1, min(200, $limit));
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT id, access_code_id, case_id, actor_user_id, actor_label, event_type, detail, created_at
+                 FROM sse_access_grants_log
+                 WHERE tenant_id = :t
+                 ORDER BY id DESC
+                 LIMIT ' . $limit,
+                ['t' => $tenantId]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $labels = [
+            'issue' => 'Code délivré',
+            'redeem' => 'Code utilisé',
+            'revoke' => 'Code révoqué',
+            'confidentiality_ack' => 'Engagement de confidentialité',
+        ];
+
+        $out = [];
+        foreach ($rows as $row) {
+            $type = (string) ($row['event_type'] ?? '');
+            $out[] = [
+                'source' => 'access',
+                'event_type' => $type,
+                'event_label' => $labels[$type] ?? 'Action d’accès',
+                'detail' => trim((string) ($row['detail'] ?? '')),
+                'actor' => trim((string) ($row['actor_label'] ?? '')) ?: null,
+                'created_at' => (string) ($row['created_at'] ?? ''),
+                'ts' => strtotime((string) ($row['created_at'] ?? '')) ?: 0,
+            ];
+        }
+
+        return $out;
+    }
 }

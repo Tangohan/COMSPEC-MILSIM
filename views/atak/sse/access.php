@@ -4,13 +4,30 @@ ob_start();
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 /** @var list<array<string,mixed>> $codes */
 /** @var list<array<string,mixed>> $cases */
+/** @var list<array<string,mixed>> $actionLog */
 /** @var string|null $issuedPlain */
+$codes = is_array($codes ?? null) ? $codes : [];
+$cases = is_array($cases ?? null) ? $cases : [];
+$actionLog = is_array($actionLog ?? null) ? $actionLog : [];
 $activeCodes = 0;
+$totalUses = 0;
 foreach ($codes as $c) {
     if (!empty($c['active'])) {
         $activeCodes++;
     }
+    $totalUses += (int) ($c['uses_count'] ?? 0);
 }
+$fmtLogTime = static function (array $row): string {
+    $raw = (string) ($row['created_at'] ?? '');
+    if ($raw === '') {
+        $ts = (int) ($row['ts'] ?? 0);
+
+        return $ts > 0 ? date('d/m H:i', $ts) : '—';
+    }
+    $ts = strtotime($raw);
+
+    return $ts ? date('d/m H:i', $ts) : $raw;
+};
 ?>
 <div class="breadcrumb">
     Athena / SSE / Renseignement /
@@ -55,9 +72,9 @@ foreach ($codes as $c) {
         <div class="metric-detail">Encore valides</div>
     </div>
     <div class="metric">
-        <div class="metric-label">Dossiers</div>
-        <div class="metric-value"><?= $h(str_pad((string) count($cases), 3, '0', STR_PAD_LEFT)) ?></div>
-        <div class="metric-detail">Cibles possibles</div>
+        <div class="metric-label">Usages</div>
+        <div class="metric-value"><?= $h(str_pad((string) $totalUses, 3, '0', STR_PAD_LEFT)) ?></div>
+        <div class="metric-detail">Saisies enregistrées</div>
     </div>
     <div class="metric">
         <div class="metric-label">Horodatage</div>
@@ -72,69 +89,106 @@ foreach ($codes as $c) {
             <span class="panel-index">04.01</span>
             Délivrer un code
         </div>
+        <div class="panel-meta">Journal // <?= count($actionLog) ?> entrée<?= count($actionLog) > 1 ? 's' : '' ?></div>
     </div>
-    <div class="panel-body">
-        <form method="post" action="<?= $h(url('atak/sse/acces')) ?>">
-            <?= \App\Core\Csrf::field() ?>
-            <label for="label">Libellé</label>
-            <input id="label" name="label" type="text" required value="Accès temporaire" maxlength="120">
+    <div class="access-admin-split">
+        <div class="access-admin-split__form panel-body">
+            <form method="post" action="<?= $h(url('atak/sse/acces')) ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <label for="label">Libellé</label>
+                <input id="label" name="label" type="text" required value="Accès temporaire" maxlength="120">
 
-            <label for="grant_type">Type d’accès</label>
-            <select id="grant_type" name="grant_type">
-                <option value="member">Membre habilité (compte + rôle)</option>
-                <option value="guest">Invité (code seul)</option>
-            </select>
+                <label for="grant_type">Type d’accès</label>
+                <select id="grant_type" name="grant_type">
+                    <option value="member">Membre habilité (compte + rôle)</option>
+                    <option value="guest">Invité (code seul)</option>
+                </select>
 
-            <label for="clearance_level">Habilitation de lecture accordée</label>
-            <select id="clearance_level" name="clearance_level">
-                <?php foreach (\App\Repositories\SseCaseRepository::CLASSIFICATION_LABELS as $ck => $clabel): ?>
-                    <option value="<?= $h($ck) ?>" <?= $ck === 'interne' ? 'selected' : '' ?>><?= $h($clabel) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <p class="sse-note">
-                Jusqu’où le porteur du code lit en clair sur les écrans expurgés. Au plus
-                bas, il ne voit ni identité, ni lieu, ni source. N’accordez que ce que la
-                personne doit voir : c’est un plafond, il ne se lève pas en cours de session.
-            </p>
+                <label for="clearance_level">Habilitation de lecture accordée</label>
+                <select id="clearance_level" name="clearance_level">
+                    <?php foreach (\App\Repositories\SseCaseRepository::CLASSIFICATION_LABELS as $ck => $clabel): ?>
+                        <option value="<?= $h($ck) ?>" <?= $ck === 'interne' ? 'selected' : '' ?>><?= $h($clabel) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="sse-note">
+                    Jusqu’où le porteur du code lit en clair sur les écrans expurgés. Au plus
+                    bas, il ne voit ni identité, ni lieu, ni source. N’accordez que ce que la
+                    personne doit voir : c’est un plafond, il ne se lève pas en cours de session.
+                </p>
 
-            <div class="grid-2">
-                <div>
-                    <label for="ttl_hours">Validité du code</label>
-                    <select id="ttl_hours" name="ttl_hours">
-                        <?php foreach ([1, 2, 4, 8, 12, 24, 48, 72] as $hval): ?>
-                            <option value="<?= $hval ?>" <?= $hval === 4 ? 'selected' : '' ?>><?= $hval ?> h</option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="grid-2">
+                    <div>
+                        <label for="ttl_hours">Validité du code</label>
+                        <select id="ttl_hours" name="ttl_hours">
+                            <?php foreach ([1, 2, 4, 8, 12, 24, 48, 72] as $hval): ?>
+                                <option value="<?= $hval ?>" <?= $hval === 4 ? 'selected' : '' ?>><?= $hval ?> h</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="session_ttl_minutes">Durée de session après saisie</label>
+                        <select id="session_ttl_minutes" name="session_ttl_minutes">
+                            <option value="60">1 heure</option>
+                            <option value="120">2 heures</option>
+                            <option value="240" selected>4 heures</option>
+                            <option value="480">8 heures</option>
+                            <option value="1440">24 heures</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label for="session_ttl_minutes">Durée de session après saisie</label>
-                    <select id="session_ttl_minutes" name="session_ttl_minutes">
-                        <option value="60">1 heure</option>
-                        <option value="120">2 heures</option>
-                        <option value="240" selected>4 heures</option>
-                        <option value="480">8 heures</option>
-                        <option value="1440">24 heures</option>
-                    </select>
-                </div>
+
+                <label for="max_uses">Nombre d’utilisations</label>
+                <select id="max_uses" name="max_uses">
+                    <?php for ($i = 1; $i <= 10; $i++): ?>
+                        <option value="<?= $i ?>"><?= $i ?></option>
+                    <?php endfor; ?>
+                </select>
+
+                <label for="case_id">Limiter à un dossier (optionnel)</label>
+                <select id="case_id" name="case_id">
+                    <option value="">Tous les dossiers</option>
+                    <?php foreach ($cases as $c): ?>
+                        <option value="<?= (int) $c['id'] ?>"><?= $h($c['reference_code'] . ' — ' . $c['title']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+
+                <button class="btn" type="submit">Générer le code</button>
+            </form>
+        </div>
+
+        <aside class="access-admin-split__log" aria-label="Journal des actions SSE">
+            <div class="sse-action-log__head">
+                <strong>Journal des actions SSE</strong>
+                <span>Codes, terrain, habilitations, documents — du plus récent</span>
             </div>
-
-            <label for="max_uses">Nombre d’utilisations</label>
-            <select id="max_uses" name="max_uses">
-                <?php for ($i = 1; $i <= 10; $i++): ?>
-                    <option value="<?= $i ?>"><?= $i ?></option>
-                <?php endfor; ?>
-            </select>
-
-            <label for="case_id">Limiter à un dossier (optionnel)</label>
-            <select id="case_id" name="case_id">
-                <option value="">Tous les dossiers</option>
-                <?php foreach ($cases as $c): ?>
-                    <option value="<?= (int) $c['id'] ?>"><?= $h($c['reference_code'] . ' — ' . $c['title']) ?></option>
-                <?php endforeach; ?>
-            </select>
-
-            <button class="btn" type="submit">Générer le code</button>
-        </form>
+            <?php if ($actionLog === []): ?>
+                <div class="sse-action-log__empty">
+                    <strong>Aucune action enregistrée</strong>
+                    <p>Les délivrances de codes, saisies terrain et validations apparaîtront ici.</p>
+                </div>
+            <?php else: ?>
+                <ul class="sse-action-log">
+                    <?php foreach ($actionLog as $row): ?>
+                        <?php
+                        $source = (string) ($row['source'] ?? 'activity');
+                        $sourceClass = $source === 'access' ? 'is-access' : 'is-activity';
+                        ?>
+                        <li class="sse-action-log__item <?= $h($sourceClass) ?>">
+                            <div class="sse-action-log__meta">
+                                <time><?= $h($fmtLogTime($row)) ?></time>
+                                <span class="sse-action-log__badge"><?= $h($row['event_label'] ?? 'Action') ?></span>
+                            </div>
+                            <p class="sse-action-log__detail">
+                                <?= $h(($row['detail'] ?? '') !== '' ? $row['detail'] : ($row['event_label'] ?? 'Action enregistrée')) ?>
+                            </p>
+                            <?php if (!empty($row['actor'])): ?>
+                                <span class="sse-action-log__actor"><?= $h($row['actor']) ?></span>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </aside>
     </div>
 </section>
 

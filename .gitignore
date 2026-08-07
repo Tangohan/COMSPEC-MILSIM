@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+.deploy.env
 app/Config/database.local.php
 config/cdn_libraries.local.php
 /storage/logs/*

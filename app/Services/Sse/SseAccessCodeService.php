@@ -15,6 +15,13 @@ final class SseAccessCodeService
     public const SESSION_TENANT = 'sse_tenant_id';
     public const SESSION_SCOPE = 'sse_case_scope';
     public const SESSION_CODE_ID = 'sse_access_code_id';
+    public const SESSION_ACK_VERSION = 'sse_confidentiality_version';
+    public const SESSION_ACK_AT = 'sse_confidentiality_accepted_at';
+    public const SESSION_ACK_TENANT = 'sse_confidentiality_tenant_id';
+    public const SESSION_ACK_CODE_ID = 'sse_confidentiality_code_id';
+
+    /** Version du texte d’engagement — à incrémenter si le texte change. */
+    public const CONFIDENTIALITY_VERSION = '2026-08-06';
 
     public function __construct(private ?SseAccessCodeRepository $repo = null)
     {
@@ -105,6 +112,7 @@ final class SseAccessCodeService
         Session::set(self::SESSION_TENANT, $tenantId);
         Session::set(self::SESSION_CODE_ID, (int) $row['id']);
         Session::set(self::SESSION_SCOPE, $caseId !== null ? [$caseId] : 'all');
+        $this->clearConfidentialityAck();
 
         // Habilitation de lecture portée par le code. Absente ou inconnue : plancher.
         $carried = (string) ($row['clearance_level'] ?? '');
@@ -149,6 +157,11 @@ final class SseAccessCodeService
             self::SESSION_SCOPE,
             self::SESSION_CODE_ID,
             'sse_guest_label',
+            self::SESSION_ACK_VERSION,
+            self::SESSION_ACK_AT,
+            self::SESSION_ACK_TENANT,
+            self::SESSION_ACK_CODE_ID,
+            SseClearanceService::SESSION_LEVEL,
         ]);
     }
 
@@ -163,9 +176,61 @@ final class SseAccessCodeService
         Session::set(self::SESSION_TENANT, $tenantId);
         Session::set(self::SESSION_SCOPE, 'all');
         Session::set(self::SESSION_CODE_ID, 0);
+        $this->clearConfidentialityAck();
         // Le personnel n'est pas plafonné par un code : son habilitation vient de
         // ses permissions, calculées à la lecture.
         Session::set(SseClearanceService::SESSION_LEVEL, null);
+    }
+
+    public function hasAcceptedConfidentiality(): bool
+    {
+        if (!$this->hasActiveClearance()) {
+            return false;
+        }
+        $version = (string) Session::get(self::SESSION_ACK_VERSION, '');
+        if ($version !== self::CONFIDENTIALITY_VERSION) {
+            return false;
+        }
+        $ackTenant = (int) Session::get(self::SESSION_ACK_TENANT, 0);
+        $sessionTenant = $this->tenantId();
+        if ($ackTenant < 1 || $sessionTenant < 1 || $ackTenant !== $sessionTenant) {
+            return false;
+        }
+        $ackCode = (int) Session::get(self::SESSION_ACK_CODE_ID, -1);
+        $sessionCode = (int) Session::get(self::SESSION_CODE_ID, 0);
+
+        return $ackCode === $sessionCode;
+    }
+
+    public function acceptConfidentiality(?int $userId = null, ?string $actorLabel = null): void
+    {
+        $tenantId = $this->tenantId();
+        $codeId = (int) Session::get(self::SESSION_CODE_ID, 0);
+        Session::set(self::SESSION_ACK_VERSION, self::CONFIDENTIALITY_VERSION);
+        Session::set(self::SESSION_ACK_AT, time());
+        Session::set(self::SESSION_ACK_TENANT, $tenantId);
+        Session::set(self::SESSION_ACK_CODE_ID, $codeId);
+        if ($tenantId > 0) {
+            $this->repo->logEvent(
+                $tenantId,
+                'confidentiality_ack',
+                $codeId > 0 ? $codeId : null,
+                null,
+                $userId,
+                $actorLabel,
+                'version:' . self::CONFIDENTIALITY_VERSION
+            );
+        }
+    }
+
+    private function clearConfidentialityAck(): void
+    {
+        Session::forgetMany([
+            self::SESSION_ACK_VERSION,
+            self::SESSION_ACK_AT,
+            self::SESSION_ACK_TENANT,
+            self::SESSION_ACK_CODE_ID,
+        ]);
     }
 
     /**

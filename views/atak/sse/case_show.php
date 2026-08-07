@@ -101,6 +101,32 @@ $classBadge = match ($classKey) {
 </section>
 <?php endif; ?>
 
+<section id="tacmap" class="panel sse-tacmap-panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <span class="panel-index">01.14</span>
+            Carte tactique — capture
+        </div>
+        <div class="panel-meta">Versée comme preuve</div>
+    </div>
+    <div class="panel-body">
+        <p class="sse-note">
+            Positionnez la vue, puis capturez-la pour l’ajouter aux preuves du dossier.
+            La carte utilise le fond cartographique standard Athena.
+        </p>
+        <div id="sse-tacmap" class="sse-tacmap" role="img" aria-label="Carte tactique du dossier"></div>
+        <?php if ($canManage): ?>
+            <form id="sse-tacmap-form" method="post" action="<?= $h(url('atak/sse/dossiers/' . (int) $case['id'] . '/tacmap-capture')) ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="image_data" id="sse-tacmap-data" value="">
+                <label for="sse-tacmap-caption">Légende de la capture</label>
+                <input id="sse-tacmap-caption" name="caption" type="text" maxlength="200" placeholder="Ex. Approche nord du site">
+                <button class="btn" type="button" id="sse-tacmap-capture-btn">Capturer la vue</button>
+            </form>
+        <?php endif; ?>
+    </div>
+</section>
+
 <div class="grid-2">
     <section class="panel">
         <div class="panel-header">
@@ -260,7 +286,7 @@ $classBadge = match ($classKey) {
                         </td>
                         <td class="record-id"><?= (int) $cnt['seizures'] ?></td>
                         <td>
-                            <a class="link" href="<?= $h(url('atak/sse/sites/' . (int) ($s['id'] ?? 0))) ?>">Ouvrir &rarr;</a>
+                            <a class="btn-open" href="<?= $h(url('atak/sse/sites/' . (int) ($s['id'] ?? 0))) ?>">Ouvrir</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -288,6 +314,14 @@ $classBadge = match ($classKey) {
         <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/correlations')) ?>">
             Voir les corrélations
         </a>
+        <?php if ($canManage): ?>
+            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/toiles/nouveau?case=' . (int) $case['id'])) ?>">
+                Créer une toile depuis ce dossier
+            </a>
+        <?php endif; ?>
+        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/toiles')) ?>">
+            Toiles de données
+        </a>
         <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/declassification')) ?>">
             Version expurgée
         </a>
@@ -295,5 +329,74 @@ $classBadge = match ($classKey) {
 </section>
 
 <?php
+$sseNeedLeaflet = true;
+$sseExtraScripts = <<<'JS'
+<script>
+(function () {
+  var el = document.getElementById('sse-tacmap');
+  if (!el || typeof L === 'undefined') return;
+  var map = L.map(el, { zoomControl: true, attributionControl: true }).setView([48.8566, 2.3522], 6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    crossOrigin: true,
+    attribution: '&copy; OpenStreetMap &copy; CARTO'
+  }).addTo(map);
+  setTimeout(function () { map.invalidateSize(); }, 120);
+
+  var btn = document.getElementById('sse-tacmap-capture-btn');
+  var form = document.getElementById('sse-tacmap-form');
+  var dataInput = document.getElementById('sse-tacmap-data');
+  if (!btn || !form || !dataInput) return;
+
+  btn.addEventListener('click', function () {
+    btn.disabled = true;
+    btn.textContent = 'Capture…';
+    var size = map.getSize();
+    var bounds = map.getBounds();
+    var nw = map.project(bounds.getNorthWest(), map.getZoom());
+    var canvas = document.createElement('canvas');
+    canvas.width = size.x;
+    canvas.height = size.y;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0b0f18';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    var tiles = [];
+    el.querySelectorAll('.leaflet-tile-pane img').forEach(function (img) {
+      if (!img.complete || !img.naturalWidth) return;
+      var t = img.getBoundingClientRect();
+      var p = el.getBoundingClientRect();
+      tiles.push({ img: img, x: t.left - p.left, y: t.top - p.top, w: t.width, h: t.height });
+    });
+    tiles.forEach(function (t) {
+      try { ctx.drawImage(t.img, t.x, t.y, t.w, t.h); } catch (e) {}
+    });
+
+    // Légende classification
+    ctx.fillStyle = 'rgba(194,48,48,.92)';
+    ctx.fillRect(0, 0, canvas.width, 22);
+    ctx.fillStyle = '#fff';
+    ctx.font = '700 11px monospace';
+    ctx.fillText('ATHENA // SSE // CAPTURE TACMAP', 10, 15);
+    ctx.fillStyle = 'rgba(0,0,0,.55)';
+    ctx.fillRect(0, canvas.height - 24, canvas.width, 24);
+    ctx.fillStyle = '#c8d4e4';
+    ctx.font = '500 11px monospace';
+    var c = map.getCenter();
+    ctx.fillText('Z' + map.getZoom() + '  ' + c.lat.toFixed(5) + ', ' + c.lng.toFixed(5) + '  ' + new Date().toISOString().slice(0, 16).replace('T', ' '), 10, canvas.height - 8);
+
+    try {
+      dataInput.value = canvas.toDataURL('image/png');
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Capturer la vue';
+      alert('Impossible de capturer la carte (restriction navigateur). Réessayez après un instant.');
+      return;
+    }
+    form.submit();
+  });
+})();
+</script>
+JS;
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

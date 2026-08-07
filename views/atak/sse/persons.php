@@ -12,11 +12,11 @@ $total = count($persons);
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Fiches terrain // Identités</div>
-        <h1>Personnes identifiées</h1>
+        <div class="page-heading-overline">Objets // Identités</div>
+        <h1>Identités</h1>
         <p>
-            Fiches terrain issues du scénario. Lecture et rattachement aux dossiers —
-            distinctes des dossiers membres de la communauté.
+            Chaque fiche est un objet réutilisable : dossiers, toiles, chronologie et carte
+            s’appuient sur le même registre — pas un formulaire isolé.
         </p>
     </div>
     <div class="page-reference">
@@ -81,6 +81,9 @@ $total = count($persons);
             ?>
                 <article class="sse-record" data-status="<?= $h($statusSlug) ?>">
                     <header class="sse-record-head">
+                        <a class="link" href="<?= $h(url('atak/sse/identites/' . (int) ($p['id'] ?? 0))) ?>">
+                            IDN-<?= $h(str_pad((string) ((int) ($p['id'] ?? 0)), 5, '0', STR_PAD_LEFT)) ?>
+                        </a>
                         <?php if ($photoUrl !== ''): ?>
                             <a class="sse-mugshot sse-scan" href="<?= $h($photoUrl) ?>" target="_blank" rel="noopener"
                                title="<?= $h($photo['angle_label'] ?? 'Photographie') ?>">
@@ -92,9 +95,9 @@ $total = count($persons);
                             <span class="sse-mugshot is-empty" aria-hidden="true">—</span>
                         <?php endif; ?>
                         <div class="sse-record-ident">
-                            <span class="record-name"><?= $h($p['display_name'] ?? '') ?></span>
+                            <a class="record-name link" href="<?= $h(url('atak/sse/identites/' . (int) ($p['id'] ?? 0))) ?>"><?= $h($p['display_name'] ?? '') ?></a>
                             <span class="record-sub">
-                                Fiche n° <?= $h(str_pad((string) ($p['id'] ?? 0), 4, '0', STR_PAD_LEFT)) ?>
+                                IDN-<?= $h(str_pad((string) ((int) ($p['id'] ?? 0)), 5, '0', STR_PAD_LEFT)) ?>
                                 <?php if (!empty($p['alias'])): ?>
                                     · alias « <?= $h($p['alias']) ?> »
                                 <?php endif; ?>
@@ -229,6 +232,7 @@ $total = count($persons);
                     <?php endif; ?>
 
                     <footer class="sse-record-foot">
+                        <a class="iw-btn" href="<?= $h(url('atak/sse/identites/' . (int) ($p['id'] ?? 0))) ?>">Ouvrir la fiche objet</a>
                         <?php if ($sig !== null): ?>
                             <span class="sse-sig is-signed">
                                 Signé ATAK · <?= $h($sig['callsign'] ?? '—') ?>

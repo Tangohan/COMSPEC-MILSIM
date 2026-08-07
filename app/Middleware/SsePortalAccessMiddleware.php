@@ -21,8 +21,8 @@ final class SsePortalAccessMiddleware
             if ($svc->canEnterAsStaff()) {
                 $svc->establishStaffClearance((int) Session::get('tenant_id'));
             } else {
-                Session::flash('error', 'Saisissez un code d’accès valide pour entrer dans le portail de renseignement.');
-
+                // Pas de flash « erreur » : le sas explique déjà qu’un code est requis.
+                // Un message d’échec ne s’affiche qu’après une tentative (redeem / CSRF).
                 return Response::redirect(url('atak/sse'));
             }
         }

@@ -4,10 +4,39 @@ Checklist de déploiement pour **athena.ttrd.fr** : coque ATHENA (sidebar, topba
 
 ---
 
+## Déploiement production (Git → Hostinger)
+
+Plus d’upload SCP fichier par fichier. Flux :
+
+1. **Commit** local des changements web.
+2. **`git push origin main`**
+3. **GitHub Actions** (`deploy-hostinger-ftp.yml`) pousse via FTP sur Hostinger.
+
+### Secrets GitHub (une seule fois)
+
+Dans le dépôt → *Settings → Secrets and variables → Actions* :
+
+| Secret | Valeur typique |
+|---|---|
+| `FTP_SERVER` | `92.113.24.96` ou hôte FTP hPanel |
+| `FTP_USERNAME` | `u416380327` |
+| `FTP_PASSWORD` | mot de passe FTP Hostinger |
+| `FTP_SERVER_DIR` | optionnel — souvent `./` si le compte FTP ouvre déjà `public_html` |
+
+Puis *Actions → Deploy Athena (Hostinger FTP) → Run workflow* pour un premier test.
+
+### Config locale
+
+`.deploy.env` (gitignoré) en `DEPLOY_MODE=git` — le hook Cursor rappelle seulement de committer / pousser.
+
+Ancien mode SCP toujours dispo avec `DEPLOY_MODE=scp` + clé SSH (port Hostinger **65002**).
+
+---
+
 ## Action utilisateur
 
 1. Sauvegarder BDD + fichiers sur le serveur.
-2. Uploader les fichiers listés ci-dessous (chemins relatifs à la racine du dépôt).
+2. Pousser via Git (`git push origin main`) — ou laisser l’Action FTP déployer.
 3. Exécuter `php run-migrations.php` (SSH) ou `/run-migrations.php` (UI sécurisée).
 4. Vider le cache opcode PHP si activé.
 5. Tester les URLs de la section 8.

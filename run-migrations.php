@@ -3377,6 +3377,24 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakSseMeshesMigrate = require $root . '/bootstrap/atak_sse_meshes_migration.php';
+try {
+    echo "Migration atak_sse_meshes (SSE — toiles de données)…\n";
+    $atakSseMeshesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_meshes : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakSseDigitalLabMigrate = require $root . '/bootstrap/atak_sse_digital_lab_migration.php';
+try {
+    echo "Migration atak_sse_digital_lab (SSE — laboratoire numérique)…\n";
+    $atakSseDigitalLabMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_digital_lab : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakDonationsMigrate = require $root . '/bootstrap/atak_donations_migration.php';
 try {
     echo "Migration atak_donations (financement ATAK)...\n";

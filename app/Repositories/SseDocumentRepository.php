@@ -1,0 +1,305 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Repositories;
+
+use App\Core\Database;
+
+/**
+ * Documents rédigés dans le bureau SSE (flash, comptes rendus, notes, synthèses).
+ */
+final class SseDocumentRepository
+{
+    /** @var array<string, string> */
+    public const TYPE_LABELS = [
+        'flash' => 'Flash renseignement',
+        'compte_rendu' => 'Compte rendu d’exploitation',
+        'note_analyse' => 'Note d’analyse',
+        'synthese' => 'Synthèse de situation',
+        'diffusion' => 'Version de diffusion',
+    ];
+
+    /** @var array<string, string> */
+    public const STATUS_LABELS = [
+        'brouillon' => 'Brouillon',
+        'en_relecture' => 'En relecture',
+        'valide' => 'Validé',
+        'archive' => 'Archivé',
+    ];
+
+    private Database $db;
+
+    public function __construct(?Database $db = null)
+    {
+        $this->db = $db ?? Database::getInstance();
+        $this->ensureSchema();
+    }
+
+    private function ensureSchema(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $path = base_path('bootstrap/atak_sse_portal_migration.php');
+        if (is_file($path)) {
+            $migrate = require $path;
+            if (is_callable($migrate)) {
+                try {
+                    $migrate(Database::getPdo());
+                } catch (\Throwable) {
+                }
+            }
+        }
+        $done = true;
+    }
+
+    public static function typeLabel(string $type): string
+    {
+        return self::TYPE_LABELS[$type] ?? 'Document';
+    }
+
+    public static function statusLabel(string $status): string
+    {
+        return self::STATUS_LABELS[$status] ?? $status;
+    }
+
+    public static function normalizeType(string $raw): string
+    {
+        $s = strtolower(trim($raw));
+
+        return isset(self::TYPE_LABELS[$s]) ? $s : 'note_analyse';
+    }
+
+    public static function normalizeStatus(string $raw): string
+    {
+        $s = strtolower(trim($raw));
+
+        return isset(self::STATUS_LABELS[$s]) ? $s : 'brouillon';
+    }
+
+    /**
+     * @param array{status?:string,q?:string,case_id?:int,document_type?:string} $filters
+     * @return list<array<string, mixed>>
+     */
+    public function listForTenant(int $tenantId, array $filters = []): array
+    {
+        $where = ['d.tenant_id = :t'];
+        $params = ['t' => $tenantId];
+        if (!empty($filters['status'])) {
+            $where[] = 'd.status = :status';
+            $params['status'] = self::normalizeStatus((string) $filters['status']);
+        }
+        if (!empty($filters['document_type'])) {
+            $where[] = 'd.document_type = :dtype';
+            $params['dtype'] = self::normalizeType((string) $filters['document_type']);
+        }
+        if (!empty($filters['case_id'])) {
+            $where[] = 'd.case_id = :case_id';
+            $params['case_id'] = (int) $filters['case_id'];
+        }
+        $q = trim((string) ($filters['q'] ?? ''));
+        if ($q !== '') {
+            $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%';
+            $where[] = '(d.reference_code LIKE :q_ref OR d.title LIKE :q_title)';
+            $params['q_ref'] = $like;
+            $params['q_title'] = $like;
+        }
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT d.*, c.reference_code AS case_reference, c.title AS case_title
+                 FROM sse_documents d
+                 LEFT JOIN sse_cases c ON c.id = d.case_id AND c.tenant_id = d.tenant_id
+                 WHERE ' . implode(' AND ', $where) . '
+                 ORDER BY d.updated_at DESC
+                 LIMIT 200',
+                $params
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = $this->hydrate($row);
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findById(int $id, int $tenantId): ?array
+    {
+        try {
+            $row = $this->db->fetchOne(
+                'SELECT d.*, c.reference_code AS case_reference, c.title AS case_title
+                 FROM sse_documents d
+                 LEFT JOIN sse_cases c ON c.id = d.case_id AND c.tenant_id = d.tenant_id
+                 WHERE d.id = :id AND d.tenant_id = :t
+                 LIMIT 1',
+                ['id' => $id, 't' => $tenantId]
+            );
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $row ? $this->hydrate($row) : null;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function create(array $data): int
+    {
+        $tenantId = (int) ($data['tenant_id'] ?? 0);
+        $ref = trim((string) ($data['reference_code'] ?? ''));
+        if ($ref === '') {
+            $ref = $this->nextReference($tenantId);
+        }
+
+        return (int) $this->db->insert(
+            'INSERT INTO sse_documents (
+                tenant_id, reference_code, case_id, document_type, title, body,
+                classification, status, created_by, updated_by, author_label
+            ) VALUES (
+                :tenant_id, :reference_code, :case_id, :document_type, :title, :body,
+                :classification, :status, :created_by, :updated_by, :author_label
+            )',
+            [
+                'tenant_id' => $tenantId,
+                'reference_code' => $ref,
+                'case_id' => !empty($data['case_id']) ? (int) $data['case_id'] : null,
+                'document_type' => self::normalizeType((string) ($data['document_type'] ?? 'note_analyse')),
+                'title' => trim((string) ($data['title'] ?? 'Sans titre')),
+                'body' => (string) ($data['body'] ?? ''),
+                'classification' => SseCaseRepository::normalizeClassification((string) ($data['classification'] ?? 'confidentiel')),
+                'status' => self::normalizeStatus((string) ($data['status'] ?? 'brouillon')),
+                'created_by' => !empty($data['created_by']) ? (int) $data['created_by'] : null,
+                'updated_by' => !empty($data['updated_by']) ? (int) $data['updated_by'] : null,
+                'author_label' => $this->nullIfEmpty($data['author_label'] ?? null),
+            ]
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function update(int $id, int $tenantId, array $data): bool
+    {
+        $fields = [];
+        $params = ['id' => $id, 't' => $tenantId];
+        foreach (['title', 'body', 'classification', 'status', 'document_type', 'case_id', 'author_label', 'updated_by', 'validated_by', 'validated_at'] as $k) {
+            if (!array_key_exists($k, $data)) {
+                continue;
+            }
+            if ($k === 'classification') {
+                $fields[] = 'classification = :classification';
+                $params['classification'] = SseCaseRepository::normalizeClassification((string) $data['classification']);
+            } elseif ($k === 'status') {
+                $fields[] = 'status = :status';
+                $params['status'] = self::normalizeStatus((string) $data['status']);
+            } elseif ($k === 'document_type') {
+                $fields[] = 'document_type = :document_type';
+                $params['document_type'] = self::normalizeType((string) $data['document_type']);
+            } elseif ($k === 'case_id') {
+                $fields[] = 'case_id = :case_id';
+                $params['case_id'] = !empty($data['case_id']) ? (int) $data['case_id'] : null;
+            } elseif ($k === 'title') {
+                $fields[] = 'title = :title';
+                $params['title'] = trim((string) $data['title']);
+            } elseif ($k === 'body') {
+                $fields[] = 'body = :body';
+                $params['body'] = (string) $data['body'];
+            } elseif ($k === 'author_label') {
+                $fields[] = 'author_label = :author_label';
+                $params['author_label'] = $this->nullIfEmpty($data['author_label']);
+            } elseif ($k === 'updated_by') {
+                $fields[] = 'updated_by = :updated_by';
+                $params['updated_by'] = !empty($data['updated_by']) ? (int) $data['updated_by'] : null;
+            } elseif ($k === 'validated_by') {
+                $fields[] = 'validated_by = :validated_by';
+                $params['validated_by'] = !empty($data['validated_by']) ? (int) $data['validated_by'] : null;
+            } elseif ($k === 'validated_at') {
+                $fields[] = 'validated_at = :validated_at';
+                $params['validated_at'] = $this->nullIfEmpty($data['validated_at']);
+            }
+        }
+        if ($fields === []) {
+            return false;
+        }
+
+        return $this->db->execute(
+            'UPDATE sse_documents SET ' . implode(', ', $fields) . ' WHERE id = :id AND tenant_id = :t',
+            $params
+        ) > 0;
+    }
+
+    private function nextReference(int $tenantId): string
+    {
+        $year = date('Y');
+        $prefix = 'DOC-' . $year . '-';
+        try {
+            $row = $this->db->fetchOne(
+                'SELECT reference_code FROM sse_documents
+                 WHERE tenant_id = :t AND reference_code LIKE :p
+                 ORDER BY id DESC LIMIT 1',
+                ['t' => $tenantId, 'p' => $prefix . '%']
+            );
+        } catch (\Throwable) {
+            $row = null;
+        }
+        $n = 1;
+        if ($row && preg_match('/(\d+)$/', (string) $row['reference_code'], $m)) {
+            $n = (int) $m[1] + 1;
+        }
+
+        return $prefix . str_pad((string) $n, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function hydrate(array $row): array
+    {
+        $type = self::normalizeType((string) ($row['document_type'] ?? 'note_analyse'));
+        $status = self::normalizeStatus((string) ($row['status'] ?? 'brouillon'));
+        $class = SseCaseRepository::normalizeClassification((string) ($row['classification'] ?? 'confidentiel'));
+
+        return [
+            'id' => (int) ($row['id'] ?? 0),
+            'tenant_id' => (int) ($row['tenant_id'] ?? 0),
+            'reference_code' => (string) ($row['reference_code'] ?? ''),
+            'case_id' => isset($row['case_id']) && $row['case_id'] !== null ? (int) $row['case_id'] : null,
+            'case_reference' => (string) ($row['case_reference'] ?? ''),
+            'case_title' => (string) ($row['case_title'] ?? ''),
+            'document_type' => $type,
+            'document_type_label' => self::typeLabel($type),
+            'title' => (string) ($row['title'] ?? ''),
+            'body' => (string) ($row['body'] ?? ''),
+            'classification' => $class,
+            'classification_label' => SseCaseRepository::classificationLabel($class),
+            'status' => $status,
+            'status_label' => self::statusLabel($status),
+            'author_label' => $row['author_label'] ?? null,
+            'created_by' => isset($row['created_by']) ? (int) $row['created_by'] : null,
+            'updated_by' => isset($row['updated_by']) ? (int) $row['updated_by'] : null,
+            'validated_by' => isset($row['validated_by']) ? (int) $row['validated_by'] : null,
+            'created_at' => $row['created_at'] ?? null,
+            'updated_at' => $row['updated_at'] ?? null,
+            'validated_at' => $row['validated_at'] ?? null,
+        ];
+    }
+
+    private function nullIfEmpty(mixed $v): ?string
+    {
+        if ($v === null) {
+            return null;
+        }
+        $s = trim((string) $v);
+
+        return $s === '' ? null : $s;
+    }
+}

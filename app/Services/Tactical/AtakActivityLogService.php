@@ -1153,6 +1153,65 @@ final class AtakActivityLogService
     }
 
     /**
+     * Événements SSE du journal d’activité (tous théâtres de la communauté).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listSseActionsForTenant(int $tenantId, int $limit = 120): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $limit = max(1, min(300, $limit));
+        $typeLabels = [
+            'SSE_PERSON' => 'Personne',
+            'SSE_PHOTO' => 'Photo',
+            'SSE_SITE' => 'Site',
+            'SSE_SEIZURE' => 'Saisie',
+            'SSE_WATCHLIST' => 'Surveillance',
+            'SSE_AUTO' => 'Automatisme',
+            'SSE_CLEARANCE' => 'Habilitation',
+            'SSE_DOCUMENT' => 'Document',
+        ];
+
+        $collected = [];
+        foreach ($this->filesForTenant($tenantId) as $mapId => $path) {
+            $data = $this->readFile($path);
+            $events = $data['events'] ?? [];
+            if (!is_array($events)) {
+                continue;
+            }
+            foreach ($events as $e) {
+                if (!is_array($e)) {
+                    continue;
+                }
+                $type = strtoupper(trim((string) ($e['type'] ?? '')));
+                if ($type === '' || !str_starts_with($type, 'SSE_')) {
+                    continue;
+                }
+                $at = (string) ($e['at'] ?? '');
+                $collected[] = [
+                    'source' => 'activity',
+                    'event_type' => $type,
+                    'event_label' => $typeLabels[$type] ?? 'Action SSE',
+                    'detail' => trim((string) ($e['label'] ?? '')),
+                    'actor' => trim((string) ($e['actor'] ?? '')) ?: null,
+                    'created_at' => $at,
+                    'ts' => $at !== '' ? (strtotime($at) ?: 0) : (int) ($e['ts'] ?? 0),
+                    'map_id' => (int) $mapId,
+                ];
+            }
+        }
+
+        usort(
+            $collected,
+            static fn (array $a, array $b): int => ((int) ($b['ts'] ?? 0)) <=> ((int) ($a['ts'] ?? 0))
+        );
+
+        return array_slice($collected, 0, $limit);
+    }
+
+    /**
      * @return array<int, string> mapId => path
      */
     private function filesForTenant(int $tenantId): array

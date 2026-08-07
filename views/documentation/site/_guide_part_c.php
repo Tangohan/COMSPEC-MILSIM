@@ -324,7 +324,9 @@
         <li><strong>Suivre l’état des personnels</strong> — Surveillez les éléments signalés en difficulté via le suivi santé pour orienter le soutien
             au bon moment.</li>
         <li><strong>Croiser avec les autres modules</strong> — Rapprochez la situation cartographique des fiches du mur opérationnel et des briefings
-            pour décider en connaissant l’ensemble du contexte.</li>
+            pour décider en connaissant l’ensemble du contexte. Si votre communauté active le renseignement interpersonnel (SSE), les fiches personnes
+            et dossiers se traitent dans le <a href="<?= htmlspecialchars(url('atak/sse'), ENT_QUOTES, 'UTF-8') ?>">bureau SSE</a>
+            (accès par habilitation) ; le manuel opérateur y est sous <em>Aide → Documentation</em>.</li>
         <li><strong>Débriefer à partir de la situation</strong> — Réutilisez la carte comme support de retour d’expérience une fois l’activité
             terminée, pour analyser les mouvements avec un support commun.</li>
     </ol>

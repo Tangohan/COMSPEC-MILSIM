@@ -41,6 +41,22 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
                 <?php endforeach; ?>
             </select>
 
+            <?php
+            $folderParents = is_array($folderParents ?? null) ? $folderParents : [];
+            $parentId = (int) ($parentId ?? 0);
+            ?>
+            <?php if ($folderParents !== []): ?>
+                <label for="parent_id">Placer dans un dossier</label>
+                <select id="parent_id" name="parent_id">
+                    <option value="">Racine</option>
+                    <?php foreach ($folderParents as $fp): ?>
+                        <option value="<?= (int) $fp['id'] ?>" <?= $parentId === (int) $fp['id'] ? 'selected' : '' ?>><?= $h($fp['title'] ?? '') ?></option>
+                    <?php endforeach; ?>
+                </select>
+            <?php elseif ($parentId > 0): ?>
+                <input type="hidden" name="parent_id" value="<?= $parentId ?>">
+            <?php endif; ?>
+
             <label for="summary">Synthèse initiale</label>
             <textarea id="summary" name="summary" maxlength="5000"></textarea>
 

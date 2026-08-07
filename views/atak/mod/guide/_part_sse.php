@@ -38,14 +38,14 @@
         L’accès exige un code temporaire délivré par le commandement (membres habilités ou invités).
         Bandeau permanent « Diffusion restreinte » — consultation tracée.
     </p>
+    <p>
+        Une fois dans le bureau, le <strong>manuel opérateur complet</strong> est disponible sous
+        <em>Aide → Documentation</em> (ou directement après habilitation).
+        Il couvre dossiers d’intérêt, dossiers validés, exploitation numérique, rédaction et diffusion.
+    </p>
 
     <div class="site-docs__callout site-docs__callout--info">
         <strong>Module communauté.</strong> L’administrateur peut activer ou désactiver le renseignement interpersonnel
         dans la configuration ATAK (modules ATAK Enhanced / cTab).
     </div>
-
-    <h3>À venir</h3>
-    <p>
-        Exploitation de sites, saisies et chaîne de possession détaillée suivront dans les versions suivantes.
-    </p>
 </section>

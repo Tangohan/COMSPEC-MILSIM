@@ -159,7 +159,7 @@ arsort($degree);
                     <?php endif; ?>
                     <div class="sse-node-degree"><?= (int) ($degree[$key] ?? 0) ?> lien<?= ($degree[$key] ?? 0) > 1 ? 's' : '' ?></div>
                     <?php if (($n['url'] ?? '') !== ''): ?>
-                        <a class="link" href="<?= $h($n['url']) ?>">Ouvrir</a>
+                        <a class="btn-open" href="<?= $h($n['url']) ?>">Ouvrir</a>
                     <?php endif; ?>
                 </article>
             <?php endforeach; ?>
