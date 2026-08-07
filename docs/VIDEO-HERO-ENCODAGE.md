@@ -7,7 +7,7 @@ directement `https://athena.ttrd.fr/public/assets/video/hero-athena.mp4`, le nav
 affichait un lecteur **audio seul** : la durée et le son étaient corrects, l'image restait
 noire.
 
-Diagnostic sur les fichiers du dépôt :
+Diagnostic sur les **fichiers d’origine** (avant réencodage) :
 
 | Fichier | Conteneur (`ftyp`) | Codec vidéo | Lisible Chrome / Edge / Firefox |
 |---|---|---|---|
@@ -15,12 +15,16 @@ Diagnostic sur les fichiers du dépôt :
 | `hero-athena-2.mp4` | `qt  ` (QuickTime) | `hvc1` (HEVC / H.265) | **Non** |
 | `hero-athena-3.mp4` | `qt  ` (QuickTime) | `hvc1` (HEVC / H.265) | **Non** |
 
-Les trois fichiers portent l'extension `.mp4` mais sont des **QuickTime encodés en HEVC**.
+Les trois fichiers portaient l'extension `.mp4` mais étaient des **QuickTime encodés en HEVC**.
 C'est la sortie par défaut de plusieurs outils Apple (Final Cut, QuickTime, export iPhone).
 
 Chrome, Edge et Firefox ne décodent pas HEVC. Le navigateur accepte pourtant la source
 — on lui annonce `video/mp4` — décode la piste audio AAC, et n'affiche rien. D'où le
 lecteur noir, alors qu'un repli sur l'affiche aurait été préférable.
+
+**État attendu après réencodage** : ISO BMFF (`isom`) + `avc1` (H.264) + AAC, CFR 30 fps.
+Un premier passage avait utiliséé `-an` : image OK, **son mort** — voir
+`docs/bugs/2026-08-07-hero-videos-hevc-rejetes.md`.
 
 ## Ce qui a été corrigé côté code
 
@@ -40,20 +44,24 @@ réencoder les fichiers.
 À faire en local (installer ffmpeg si besoin, ex. `winget install Gyan.FFmpeg`), puis
 committer / transférer les fichiers **en mode binaire**.
 
-### Depuis les MP4 HEVC déjà en dépôt (cas actuel)
+### Depuis des MP4 HEVC / QuickTime (cas historique)
+
+Si les fichiers du dépôt sont encore en HEVC, ou pour repartir d’une sauvegarde :
 
 ```bash
 cd public/assets/video
 
 for stem in hero-athena hero-athena-2 hero-athena-3; do
   ffmpeg -y -i "${stem}.mp4" \
+    -vf fps=30 \
     -c:v libx264 -profile:v high -level 4.1 -pix_fmt yuv420p \
-    -crf 23 -preset slow \
+    -crf 23 -preset medium \
     -movflags +faststart \
-    -an \
+    -c:a aac -b:a 128k -ac 2 \
     "${stem}.h264.mp4"
-  ffprobe -v error -select_streams v:0 \
-    -show_entries stream=codec_name,profile,pix_fmt -of default=nw=1 "${stem}.h264.mp4"
+  ffprobe -v error -show_entries stream=codec_type,codec_name,profile,pix_fmt,r_frame_rate,channels \
+    -of default=nw=1 "${stem}.h264.mp4"
+  # attendu : h264 High yuv420p 30/1 + aac stereo
   mv "${stem}.h264.mp4" "${stem}.mp4"
 done
 ```
@@ -66,14 +74,16 @@ Sous Windows : `pwsh -File scripts/reencode-hero-videos.ps1`
 ```bash
 # MP4 / H.264 — source universelle
 ffmpeg -i hero-athena-source.mov \
+  -vf fps=30 \
   -c:v libx264 -profile:v high -level 4.1 -pix_fmt yuv420p \
-  -crf 23 -preset slow \
+  -crf 23 -preset medium \
   -movflags +faststart \
-  -c:a aac -b:a 128k \
+  -c:a aac -b:a 128k -ac 2 \
   hero-athena.mp4
 
 # WebM / VP9 — servi en premier aux navigateurs qui le supportent
 ffmpeg -i hero-athena-source.mov \
+  -vf fps=30 \
   -c:v libvpx-vp9 -crf 33 -b:v 0 -row-mt 1 \
   -c:a libopus -b:a 96k \
   hero-athena.webm
@@ -85,15 +95,17 @@ Points qui comptent :
 - `-movflags +faststart` — place l'index en tête, la lecture démarre sans télécharger tout
   le fichier.
 - `-profile:v high -level 4.1` — compatible partout, y compris mobile.
-- Le hero est **muet à l'affichage** : la piste audio peut être supprimée (`-an`) pour
-  alléger les fichiers.
+- `-vf fps=30` — certains exports QT / Dreamina ont un timebase 120 tbr : sans CFR,
+  ffmpeg duplique des centaines de frames et dépasse le level 4.1 (lecture buggy).
+- **Garder l’AAC** (`-c:a aac`) : le hero démarre muet pour l’autoplay, mais le bouton
+  son / consentement immersif ont besoin d’une piste audio. Ne pas utiliser `-an`.
 
 ## Vérification avant transfert
 
 ```bash
-ffprobe -v error -select_streams v:0 \
-  -show_entries stream=codec_name,profile,pix_fmt -of default=nw=1 hero-athena.mp4
-# attendu : codec_name=h264, profile=High, pix_fmt=yuv420p
+ffprobe -v error -show_entries stream=codec_type,codec_name,profile,pix_fmt,r_frame_rate,channels \
+  -of default=nw=1 hero-athena.mp4
+# attendu : h264 High yuv420p 30/1 + aac (channels=2)
 ```
 
 Côté serveur, la sonde retient la source dès que le codec est `avc1` : aucun changement de

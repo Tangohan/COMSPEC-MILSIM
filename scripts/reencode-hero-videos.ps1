@@ -1,12 +1,12 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Réencode les vidéos hero Athena en H.264 (navigateur) à partir des MP4 existants.
+  Réencode les vidéos hero Athena en H.264 + AAC (navigateur) à partir des MP4 existants.
 
 .DESCRIPTION
-  Les fichiers public/assets/video/hero-athena*.mp4 sont actuellement des QuickTime HEVC
-  (hvc1), illisibles dans Chrome / Edge / Firefox. Ce script produit des MP4 H.264 +
-  yuv420p + faststart, sans piste audio (le hero est muet à l'affichage).
+  Les exports Apple (QuickTime HEVC / hvc1) sont illisibles dans Chrome / Edge / Firefox.
+  Ce script produit des MP4 H.264 + yuv420p + faststart, avec piste audio AAC (le hero
+  peut être démuté après geste utilisateur).
 
   Prérequis : ffmpeg et ffprobe dans le PATH.
   Voir docs/VIDEO-HERO-ENCODAGE.md et docs/bugs/2026-08-07-hero-videos-hevc-rejetes.md.
@@ -52,7 +52,7 @@ foreach ($stem in $stems) {
 
     Write-Host "==> $stem"
     if ($WhatIf) {
-        Write-Host "  [WhatIf] ffmpeg -i $src -> $tmp"
+        Write-Host "  [WhatIf] ffmpeg -i $src -> $tmp (H.264 + AAC)"
         continue
     }
 
@@ -60,36 +60,50 @@ foreach ($stem in $stems) {
         Remove-Item -LiteralPath $tmp -Force
     }
 
+    # fps=30 : certains exports Dreamina / QT ont un timebase 120 tbr qui
+    # produit des centaines de frames dupliquées et dépasse le level 4.1.
     & ffmpeg -y -hide_banner -loglevel error -i $src `
+        -vf 'fps=30' `
         -c:v libx264 -profile:v high -level 4.1 -pix_fmt yuv420p `
-        -crf 23 -preset slow `
+        -crf 23 -preset medium `
         -movflags +faststart `
-        -an `
+        -c:a aac -b:a 128k -ac 2 `
         $tmp
     if ($LASTEXITCODE -ne 0) {
         throw "ffmpeg a échoué pour $src (code $LASTEXITCODE)"
     }
 
     $probe = & ffprobe -v error -select_streams v:0 `
-        -show_entries stream=codec_name,profile,pix_fmt `
+        -show_entries stream=codec_name,profile,pix_fmt,r_frame_rate `
         -of default=nw=1 $tmp
     if ($LASTEXITCODE -ne 0) {
         throw "ffprobe a échoué pour $tmp"
     }
 
-    $joined = ($probe | Out-String)
+    $audioProbe = & ffprobe -v error -select_streams a:0 `
+        -show_entries stream=codec_name,channels `
+        -of default=nw=1 $tmp
+    if ($LASTEXITCODE -ne 0) {
+        throw "Aucune piste audio dans $tmp — le bouton son du hero serait mort."
+    }
+
+    $joined = (($probe + $audioProbe) | Out-String)
     if ($joined -notmatch 'codec_name=h264' -or $joined -notmatch 'pix_fmt=yuv420p') {
-        throw "Sortie inattendue pour ${stem}:`n$joined"
+        throw "Sortie vidéo inattendue pour ${stem}:`n$joined"
+    }
+    if ($joined -notmatch 'codec_name=aac') {
+        throw "Sortie audio inattendue pour ${stem}:`n$joined"
     }
 
     Move-Item -LiteralPath $tmp -Destination $src -Force
-    Write-Host "  OK H.264 -> $src"
-    Write-Host "  $(($probe -join ', '))"
+    Write-Host "  OK H.264 + AAC -> $src"
+    Write-Host "  $(($probe + $audioProbe) -join ', ')"
 
     if ($KeepWebm) {
         & ffmpeg -y -hide_banner -loglevel error -i $src `
+            -vf 'fps=30' `
             -c:v libvpx-vp9 -crf 33 -b:v 0 -row-mt 1 `
-            -an `
+            -c:a libopus -b:a 96k `
             $webm
         if ($LASTEXITCODE -ne 0) {
             throw "ffmpeg WebM a échoué pour $src"
@@ -99,4 +113,4 @@ foreach ($stem in $stems) {
 }
 
 Write-Host ''
-Write-Host 'Terminé. Vérifier l''accueil : data-hero-videos-ready="1", puis déployer les MP4 en binaire.'
+Write-Host 'Terminé. Vérifier l''accueil : data-hero-videos-ready="1", son démutable, puis déployer les MP4 en binaire.'
