@@ -27,6 +27,23 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Vérifier les secrets FTP
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          missing=0
+          for name in FTP_SERVER FTP_USERNAME FTP_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret manquant : $name (Settings → Secrets and variables → Actions). Noms exacts requis."
+              missing=1
+            else
+              echo "OK $name (présent)"
+            fi
+          done
+          exit $missing
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:

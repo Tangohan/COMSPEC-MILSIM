@@ -79,9 +79,9 @@ final class AccountPurgeServiceTest extends TestCase
         self::assertSame([29, 30], $report['purged_user_ids']);
         self::assertSame([], $report['errors']);
 
-        self::assertSame(0, $this->count($pdo, 'SELECT COUNT(*) FROM users WHERE id IN (29, 30)'));
-        self::assertSame(0, $this->count($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id IN (29, 30)'));
-        self::assertSame(0, $this->count($pdo, 'SELECT COUNT(*) FROM forum_posts WHERE author_user_id = 29'));
+        self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM users WHERE id IN (29, 30)'));
+        self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id IN (29, 30)'));
+        self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM forum_posts WHERE author_user_id = 29'));
     }
 
     public function testPurgeLeavesThirdPartyRecordsIntact(): void
@@ -89,9 +89,9 @@ final class AccountPurgeServiceTest extends TestCase
         $pdo = $this->schema();
         (new AccountPurgeService($pdo))->purge(29, [30]);
 
-        self::assertSame(1, $this->count($pdo, 'SELECT COUNT(*) FROM users WHERE id = 40'));
-        self::assertSame(1, $this->count($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id = 40'));
-        self::assertSame(1, $this->count($pdo, 'SELECT COUNT(*) FROM forum_posts WHERE author_user_id = 40'));
+        self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM users WHERE id = 40'));
+        self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id = 40'));
+        self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM forum_posts WHERE author_user_id = 40'));
         self::assertSame(40, (int) $pdo->query('SELECT created_by_user_id FROM documents WHERE id = 2')->fetchColumn());
     }
 
@@ -104,8 +104,8 @@ final class AccountPurgeServiceTest extends TestCase
         $pdo = $this->schema();
         (new AccountPurgeService($pdo))->purge(29, [30]);
 
-        self::assertSame(0, $this->count($pdo, 'SELECT COUNT(*) FROM member_sanctions WHERE id = 1'));
-        self::assertSame(1, $this->count($pdo, 'SELECT COUNT(*) FROM member_sanctions WHERE id = 2'));
+        self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM member_sanctions WHERE id = 1'));
+        self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM member_sanctions WHERE id = 2'));
         self::assertNull($pdo->query('SELECT issued_by_user_id FROM member_sanctions WHERE id = 2')->fetchColumn());
     }
 
@@ -117,8 +117,8 @@ final class AccountPurgeServiceTest extends TestCase
         $preview = $service->preview(29, [30]);
 
         self::assertSame(2, $preview['rows']['user_profiles'] ?? 0);
-        self::assertSame(3, $this->count($pdo, 'SELECT COUNT(*) FROM user_profiles'));
-        self::assertSame(3, $this->count($pdo, 'SELECT COUNT(*) FROM users'));
+        self::assertSame(3, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles'));
+        self::assertSame(3, $this->countRows($pdo, 'SELECT COUNT(*) FROM users'));
     }
 
     public function testPurgeAnonymizedAccountsClearsTheBacklog(): void
@@ -139,9 +139,9 @@ final class AccountPurgeServiceTest extends TestCase
         self::assertTrue($result['ok'], implode(' | ', $result['errors']));
         self::assertSame(2, $result['purged']);
         self::assertSame(0, $result['failed']);
-        self::assertSame(0, $this->count($pdo, "SELECT COUNT(*) FROM users WHERE email LIKE '%@deleted.invalid'"));
-        self::assertSame(1, $this->count($pdo, 'SELECT COUNT(*) FROM users WHERE id = 3'));
-        self::assertSame(1, $this->count($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id = 3'));
+        self::assertSame(0, $this->countRows($pdo, "SELECT COUNT(*) FROM users WHERE email LIKE '%@deleted.invalid'"));
+        self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM users WHERE id = 3'));
+        self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id = 3'));
     }
 
     public function testInvalidOrUnknownAccountIsReportedAsFailure(): void
@@ -152,10 +152,10 @@ final class AccountPurgeServiceTest extends TestCase
         self::assertFalse($service->purge(0)['ok']);
         self::assertSame([], $service->purge(0)['purged_user_ids']);
         self::assertFalse($service->purge(99999)['ok']);
-        self::assertSame(3, $this->count($pdo, 'SELECT COUNT(*) FROM users'));
+        self::assertSame(3, $this->countRows($pdo, 'SELECT COUNT(*) FROM users'));
     }
 
-    private function count(PDO $pdo, string $sql): int
+    private function countRows(PDO $pdo, string $sql): int
     {
         return (int) $pdo->query($sql)->fetchColumn();
     }
