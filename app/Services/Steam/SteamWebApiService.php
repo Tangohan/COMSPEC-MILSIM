@@ -175,7 +175,7 @@ final class SteamWebApiService
             return null;
         }
 
-        $dir = base_path('public/uploads/avatars/steam');
+        $dir = public_uploads_path('avatars/steam');
         if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
             return null;
         }

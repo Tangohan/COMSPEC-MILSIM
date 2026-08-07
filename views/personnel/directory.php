@@ -25,10 +25,10 @@ $canAccessEffectifsLms = !empty($canAccessEffectifsLms);
 $canSeeInactiveDirectory = !empty($canSeeInactiveDirectory);
 
 $heroImageRel = 'assets/images/fog-team.jpg';
-if (!is_file(base_path('public/' . $heroImageRel))) {
+if (!is_file(public_file_path($heroImageRel))) {
     $heroImageRel = 'assets/images/night-team.jpg';
 }
-$heroHasImage = is_file(base_path('public/' . $heroImageRel));
+$heroHasImage = is_file(public_file_path($heroImageRel));
 $heroImageUrl = $heroHasImage ? asset_url($heroImageRel) : '';
 $effectifsUrl = function_exists('effectifs_workspace_url')
     ? effectifs_workspace_url()

@@ -336,7 +336,7 @@ final class AdminBriefingSlidesController
         }
 
         $dirRel = 'uploads/briefing-slides/' . $tenantId;
-        $dirAbs = base_path('public/' . $dirRel);
+        $dirAbs = public_file_path($dirRel);
         if (!is_dir($dirAbs) && !@mkdir($dirAbs, 0755, true) && !is_dir($dirAbs)) {
             return ['path' => null, 'error' => 'Le stockage des images n’est pas disponible pour le moment.'];
         }
@@ -402,7 +402,7 @@ final class AdminBriefingSlidesController
         if (!str_starts_with(str_replace('\\', '/', $relativePath), 'uploads/briefing-slides/')) {
             return;
         }
-        $abs = base_path('public/' . ltrim(str_replace('\\', '/', $relativePath), '/'));
+        $abs = public_file_path(ltrim(str_replace('\\', '/', $relativePath), '/'));
         if (is_file($abs)) {
             @unlink($abs);
         }

@@ -432,7 +432,7 @@ function navigation_image_file_exists(string $relativePath): bool
 {
     $relativePath = ltrim($relativePath, '/');
 
-    return is_file(base_path('public/' . $relativePath));
+    return is_file(public_file_path($relativePath));
 }
 
 /**

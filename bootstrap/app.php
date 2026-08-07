@@ -17,6 +17,11 @@ foreach (['app', 'database', 'auth', 'maintenance', 'units', 'forum'] as $name) 
 // Store in global for helpers (used by config())
 $GLOBALS['__app_config'] = $config;
 
+// Uploads publics : répertoire persistant hors sync FTP (PUBLIC_UPLOADS_PATH).
+if (class_exists(\App\Support\PublicUploads::class)) {
+    \App\Support\PublicUploads::bootstrap();
+}
+
 App\Core\ExceptionHandler::register();
 
 return $config;

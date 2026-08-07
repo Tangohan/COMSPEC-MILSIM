@@ -85,16 +85,39 @@ $requestPath = \App\Core\Request::normalizePathFromServer();
 
 // Filet : si un asset tombe malgré tout sur le front controller, le servir en statique
 // (évite une page HTML 404/login avec MIME text/html sur un <link rel="stylesheet">).
+// Les uploads peuvent vivre hors de public/ (PUBLIC_UPLOADS_PATH sur ttrd.fr / Hostinger).
 $publicDir = __DIR__;
 $isPublicAsset = $requestPath === '/sw.js'
     || $requestPath === '/manifest.webmanifest'
     || str_starts_with($requestPath, '/assets/')
     || str_starts_with($requestPath, '/uploads/');
 if ($isPublicAsset && !str_contains($requestPath, '..')) {
-    $candidate = $publicDir . str_replace('/', DIRECTORY_SEPARATOR, $requestPath);
+    $realFile = false;
     $realBase = realpath($publicDir);
-    $realFile = is_file($candidate) ? realpath($candidate) : false;
-    if ($realBase !== false && $realFile !== false && str_starts_with($realFile, $realBase . DIRECTORY_SEPARATOR)) {
+
+    if (str_starts_with($requestPath, '/uploads/') && class_exists(\App\Support\PublicUploads::class)) {
+        $fromPersistent = \App\Support\PublicUploads::absoluteFileForRequest($requestPath);
+        if ($fromPersistent !== null) {
+            $realFile = $fromPersistent;
+        }
+    }
+
+    if ($realFile === false) {
+        $candidate = $publicDir . str_replace('/', DIRECTORY_SEPARATOR, $requestPath);
+        $realFile = is_file($candidate) ? realpath($candidate) : false;
+    }
+
+    $allowed = false;
+    if (is_string($realFile) && $realFile !== '') {
+        if (str_starts_with($requestPath, '/uploads/') && class_exists(\App\Support\PublicUploads::class)) {
+            $verified = \App\Support\PublicUploads::absoluteFileForRequest($requestPath);
+            $allowed = $verified !== null && $verified === $realFile;
+        } elseif ($realBase !== false && str_starts_with($realFile, $realBase . DIRECTORY_SEPARATOR)) {
+            $allowed = true;
+        }
+    }
+
+    if ($allowed) {
         $ext = strtolower(pathinfo($realFile, PATHINFO_EXTENSION));
         $mimes = [
             'css' => 'text/css; charset=utf-8',

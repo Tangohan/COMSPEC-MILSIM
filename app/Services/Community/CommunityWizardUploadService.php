@@ -80,7 +80,7 @@ final class CommunityWizardUploadService
             'image/gif' => 'gif',
             default => 'bin',
         };
-        $dirFs = base_path('public/uploads/community-wizard/' . $userId);
+        $dirFs = public_uploads_path('community-wizard/' . $userId);
         if (!is_dir($dirFs) && !@mkdir($dirFs, 0755, true)) {
             $warnings[] = 'L’image « ' . $label . ' » n’a pas pu être enregistrée. Réessayez plus tard.';
 

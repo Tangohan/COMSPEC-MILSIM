@@ -406,7 +406,7 @@ final class ContentModerationController
             throw new \RuntimeException('Chemin artefact forum invalide.');
         }
         $src = base_path('storage/' . $rel);
-        $destDir = base_path('public/uploads/forum');
+        $destDir = public_uploads_path('forum');
         if (!is_dir($destDir)) {
             mkdir($destDir, 0755, true);
         }

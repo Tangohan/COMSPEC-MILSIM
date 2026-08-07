@@ -18,7 +18,7 @@ $alertsManageUrl = isset($alerts_manage_url) && is_string($alerts_manage_url) &&
 
 $heroImageRel = null;
 foreach (['assets/images/fog-team.jpg', 'assets/images/night-team.jpg', 'assets/images/hero-explosion.jpg', 'assets/images/fog-banner.jpg'] as $candidate) {
-    if (is_file(base_path('public/' . $candidate))) {
+    if (is_file(public_file_path($candidate))) {
         $heroImageRel = $candidate;
         break;
     }

@@ -33,7 +33,7 @@ ksort($filterLocales);
 /** Couverture optionnelle : public/assets/img/communities/{slug}-cover.jpg */
 $registryCoverUrl = static function (string $slug): ?string {
     $rel = 'assets/img/communities/' . $slug . '-cover.jpg';
-    $path = base_path('public/' . $rel);
+    $path = public_file_path($rel);
     return is_file($path) ? url($rel) : null;
 };
 

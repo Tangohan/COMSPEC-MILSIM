@@ -522,7 +522,7 @@ final class OrganizationSettingsController
         $dir = base_path('public/assets/img/communities');
         $ext = $spec['keepAlpha'] ? 'png' : 'jpg';
         $relPath = 'assets/img/communities/' . ($slug !== '' ? $slug : 'tenant') . '-' . $spec['slot'] . '.' . $ext;
-        $destFs = base_path('public/' . $relPath);
+        $destFs = public_file_path($relPath);
 
         $file = $_FILES[$spec['field']] ?? null;
         if (is_array($file)) {

@@ -193,11 +193,11 @@ $avatarSrc = function_exists('user_media_public_url')
     ? user_media_public_url(is_array($cu) ? ($cu['avatar_url'] ?? null) : null)
     : null;
 $heroImageRel = 'assets/images/hero-explosion.jpg';
-if (!is_file(base_path('public/' . $heroImageRel))) {
+if (!is_file(public_file_path($heroImageRel))) {
     $heroImageRel = 'assets/images/fog-team.jpg';
 }
 $heroImageUrl = asset_url($heroImageRel);
-$heroHasImage = is_file(base_path('public/' . $heroImageRel));
+$heroHasImage = is_file(public_file_path($heroImageRel));
 
 $showFounderTrialBanner = $show_founder_trial_banner ?? false;
 $founderTrialEndsAt = $founder_trial_ends_at ?? null;

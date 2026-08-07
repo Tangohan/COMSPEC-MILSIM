@@ -1101,7 +1101,7 @@ class AccountController
                 if (!in_array($mime, $allowed, true) || $file['size'] > 2 * 1024 * 1024) {
                     $errors['avatar'] = ['Format non autorisé ou fichier trop volumineux (max 2 Mo).'];
                 } else {
-                    $dir = base_path('public/uploads/avatars');
+                    $dir = public_uploads_path('avatars');
                     if (!is_dir($dir)) {
                         mkdir($dir, 0755, true);
                     }
@@ -1160,7 +1160,7 @@ class AccountController
                 if (!in_array($mime, $allowed, true) || $file['size'] > 2 * 1024 * 1024) {
                     $errors['portrait'] = ['Format non autorisé ou fichier trop volumineux (max 2 Mo).'];
                 } else {
-                    $dir = base_path('public/uploads/portraits');
+                    $dir = public_uploads_path('portraits');
                     if (!is_dir($dir)) {
                         mkdir($dir, 0755, true);
                     }
@@ -1234,7 +1234,7 @@ class AccountController
                 if (!in_array($mime, $allowed, true) || $file['size'] > 2 * 1024 * 1024) {
                     $errors['banner'] = ['Format non autorisé ou fichier trop volumineux (max 2 Mo).'];
                 } else {
-                    $dir = base_path('public/uploads/banners');
+                    $dir = public_uploads_path('banners');
                     if (!is_dir($dir)) {
                         mkdir($dir, 0755, true);
                     }

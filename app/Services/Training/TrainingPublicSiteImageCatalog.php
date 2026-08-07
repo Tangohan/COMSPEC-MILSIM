@@ -39,7 +39,7 @@ final class TrainingPublicSiteImageCatalog
      */
     public function listImages(): array
     {
-        $dir = base_path('public/' . self::REL_DIR);
+        $dir = public_file_path(self::REL_DIR);
         if (!is_dir($dir)) {
             return [];
         }
@@ -107,7 +107,7 @@ final class TrainingPublicSiteImageCatalog
         if (!in_array($ext, self::EXTENSIONS, true)) {
             return null;
         }
-        $abs = base_path('public/' . self::REL_DIR . '/' . $base);
+        $abs = public_file_path(self::REL_DIR . '/' . $base);
         if (!is_file($abs)) {
             return null;
         }

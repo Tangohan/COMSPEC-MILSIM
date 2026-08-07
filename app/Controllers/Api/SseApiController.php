@@ -344,7 +344,7 @@ final class SseApiController
             ], 400);
         }
 
-        $dir = base_path('public/uploads/sse');
+        $dir = public_uploads_path('sse');
         if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
             return Response::json(['error' => 'storage', 'message' => 'Impossible d’enregistrer la photo.'], 500);
         }

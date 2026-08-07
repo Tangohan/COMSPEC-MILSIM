@@ -39,6 +39,26 @@ SESSION_SAVE_PATH=/home/u416380327/tmp/athena_sessions
 Créez le dossier une fois (SSH ou gestionnaire de fichiers), hors `public_html`.
 Les connexions survivent alors même si un sync FTP touche l’arbre applicatif.
 
+### Images uploadées : ne plus les perdre à chaque push
+
+Même logique pour les médias (avatars, logos, photos recon/SSE, forum, cartes…).
+
+1. Créer un dossier **hors** de `public_html`, sur le compte Hostinger / ttrd.fr :
+   ```bash
+   mkdir -p /home/u416380327/domains/athena.ttrd.fr/persistent-uploads
+   ```
+2. Dans le `.env` production :
+   ```bash
+   PUBLIC_UPLOADS_PATH=/home/u416380327/domains/athena.ttrd.fr/persistent-uploads
+   ```
+3. (Optionnel) migrer une fois l’ancien contenu :
+   ```bash
+   cp -a public_html/public/uploads/. /home/u416380327/domains/athena.ttrd.fr/persistent-uploads/
+   ```
+
+Les URLs restent `/uploads/…` : le front controller sert depuis ce dossier.
+Le workflow FTP exclut `public/uploads` (dossier + contenu).
+
 ### Config locale
 
 `.deploy.env` (gitignoré) en `DEPLOY_MODE=git` — le hook Cursor rappelle seulement de committer / pousser.

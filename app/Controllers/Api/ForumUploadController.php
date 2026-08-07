@@ -67,7 +67,7 @@ class ForumUploadController
             return Response::json(['success' => false, 'error' => 'Maximum ' . self::MAX_FILES . ' fichiers'], 400);
         }
 
-        $webDir = base_path('public/uploads/forum');
+        $webDir = public_uploads_path('forum');
         if (!is_dir($webDir)) {
             @mkdir($webDir, 0755, true);
         }

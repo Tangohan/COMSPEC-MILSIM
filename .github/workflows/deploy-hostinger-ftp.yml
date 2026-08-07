@@ -8,8 +8,8 @@ name: Deploy Athena (Hostinger FTP)
 # Optionnel :
 #   FTP_SERVER_DIR  (défaut : ./  = racine public_html du compte FTP)
 #
-# Sessions : ne jamais synchroniser storage/sessions (ni cache/logs/uploads runtime).
-# Sur Hostinger, préférer SESSION_SAVE_PATH hors public_html (voir .env.example).
+# Ne jamais synchroniser sessions / cache / logs / uploads runtime.
+# Images uploadées : PUBLIC_UPLOADS_PATH hors public_html (voir .env.example / DEPLOY.md).
 
 on:
   push:
@@ -85,7 +85,22 @@ jobs:
             storage/uploads/**
             **/storage/uploads
             **/storage/uploads/**
+            storage/documents
+            storage/documents/**
+            **/storage/documents
+            **/storage/documents/**
+            storage/intel
+            storage/intel/**
+            **/storage/intel
+            **/storage/intel/**
+            public/uploads
+            public/uploads/**
+            **/public/uploads
             **/public/uploads/**
+            uploads
+            uploads/**
+            **/uploads
+            **/uploads/**
             **/mod/**
             **/-o/**
             **/.cursor/**

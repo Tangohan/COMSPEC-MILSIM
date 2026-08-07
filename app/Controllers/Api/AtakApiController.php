@@ -7798,7 +7798,7 @@ class AtakApiController
 
             return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
         }
-        $dir = dirname(__DIR__, 2) . '/../public/uploads/intel';
+        $dir = public_uploads_path('intel');
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
@@ -8108,7 +8108,7 @@ class AtakApiController
 
             return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
         }
-        $dir = dirname(__DIR__, 2) . '/../public/uploads/recon';
+        $dir = public_uploads_path('recon');
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
@@ -8273,11 +8273,11 @@ class AtakApiController
                 return Response::json(['error' => 'case_not_found', 'message' => 'Dossier SSE introuvable.'], 404);
             }
             $srcRel = trim((string) ($row['image_path'] ?? ''));
-            $srcAbs = base_path('public/uploads/recon/' . basename($srcRel));
+            $srcAbs = public_uploads_path('recon/' . basename($srcRel));
             if (!is_file($srcAbs)) {
                 return Response::json(['error' => 'missing_file', 'message' => 'Le fichier source est introuvable sur le serveur.'], 404);
             }
-            $destDir = base_path('public/uploads/sse/evidence');
+            $destDir = public_uploads_path('sse/evidence');
             if (!is_dir($destDir) && !@mkdir($destDir, 0755, true) && !is_dir($destDir)) {
                 return Response::json(['error' => 'storage', 'message' => 'Impossible de préparer l’archive SSE.'], 500);
             }

@@ -603,7 +603,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id));
         }
-        $dir = base_path('public/uploads/sse/evidence');
+        $dir = public_uploads_path('sse/evidence');
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
@@ -796,7 +796,7 @@ final class SsePortalController
         $caption = trim((string) $request->input('caption', ''));
         $imagePath = null;
         if (!empty($_FILES['image']['tmp_name']) && is_uploaded_file($_FILES['image']['tmp_name'])) {
-            $dir = base_path('public/uploads/sse/evidence');
+            $dir = public_uploads_path('sse/evidence');
             if (!is_dir($dir)) {
                 @mkdir($dir, 0755, true);
             }

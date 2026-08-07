@@ -129,7 +129,7 @@ class TrainingCourseMediaUploadService
         }
 
         $relDir = $this->relativeDirForTenant($tenantId);
-        $dirFs = base_path('public/' . $relDir);
+        $dirFs = public_file_path($relDir);
         if (!is_dir($dirFs) && !@mkdir($dirFs, 0775, true) && !is_dir($dirFs)) {
             throw new \RuntimeException($errMkdir);
         }
@@ -157,7 +157,7 @@ class TrainingCourseMediaUploadService
         if (!str_starts_with($rel, 'uploads/training-course-media/')) {
             return;
         }
-        $abs = base_path('public/' . $rel);
+        $abs = public_file_path($rel);
         if (is_file($abs)) {
             @unlink($abs);
         }

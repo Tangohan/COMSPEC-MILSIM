@@ -95,7 +95,7 @@ final class ForumPostAttachmentService
             }
 
             $publicRel = 'public/uploads/forum/' . $key;
-            $full = base_path(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $publicRel));
+            $full = public_uploads_path('forum/' . $key);
             if (!is_file($full)) {
                 continue;
             }

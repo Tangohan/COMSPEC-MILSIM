@@ -130,7 +130,7 @@ final class AtakTenantDataService
     private function purgeIntelPhotoFiles(int $tenantId): int
     {
         $removed = 0;
-        $uploadRoot = base_path('public/uploads');
+        $uploadRoot = public_uploads_path();
 
         if ($this->isTenantScopedTable('atak_intel_photos')) {
             $stmt = $this->pdo->prepare('SELECT path, filename FROM atak_intel_photos WHERE tenant_id = ?');

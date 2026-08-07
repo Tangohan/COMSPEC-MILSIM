@@ -129,7 +129,7 @@ final class CommunityMediaUploadService
         if (!str_starts_with($norm, 'uploads/community-media/')) {
             return;
         }
-        $abs = base_path('public/' . ltrim($norm, '/'));
+        $abs = public_file_path(ltrim($norm, '/'));
         if (is_file($abs)) {
             @unlink($abs);
         }
@@ -163,7 +163,7 @@ final class CommunityMediaUploadService
     private function moveToTenantDir(string $tmp, int $tenantId, string $prefix, string $ext): array
     {
         $dirRel = 'uploads/community-media/' . $tenantId;
-        $dirAbs = base_path('public/' . $dirRel);
+        $dirAbs = public_file_path($dirRel);
         if (!is_dir($dirAbs) && !@mkdir($dirAbs, 0755, true) && !is_dir($dirAbs)) {
             return ['rel' => null, 'abs' => null, 'error' => 'Stockage des médias indisponible pour le moment.'];
         }

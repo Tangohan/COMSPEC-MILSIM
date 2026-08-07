@@ -228,7 +228,7 @@ final class OrbatApiController
             return Response::json(['success' => false, 'message' => 'Le contenu du fichier ne correspond pas à une image attendue.'], 400);
         }
 
-        $baseDir = base_path('public/uploads/orbat/' . $tenantId);
+        $baseDir = public_uploads_path('orbat/' . $tenantId);
         if (!is_dir($baseDir) && !@mkdir($baseDir, 0755, true) && !is_dir($baseDir)) {
             return Response::json(['success' => false, 'message' => 'Stockage fichier indisponible.'], 500);
         }

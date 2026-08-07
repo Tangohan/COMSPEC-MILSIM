@@ -59,14 +59,14 @@ final class TenantCustomMapStorage
         };
 
         $relDir = 'uploads/tenant-maps/' . $tenantId;
-        $absDir = base_path('public/' . $relDir);
+        $absDir = public_file_path($relDir);
         if (!is_dir($absDir) && !@mkdir($absDir, 0755, true) && !is_dir($absDir)) {
             return ['ok' => false, 'error' => 'Impossible de préparer le stockage.'];
         }
 
         $name = bin2hex(random_bytes(16)) . '.' . $ext;
         $relPath = $relDir . '/' . $name;
-        $absPath = base_path('public/' . $relPath);
+        $absPath = public_file_path($relPath);
         if (!@move_uploaded_file($tmp, $absPath)) {
             return ['ok' => false, 'error' => 'Échec de l’enregistrement de l’image.'];
         }
@@ -88,7 +88,7 @@ final class TenantCustomMapStorage
         if (!str_starts_with($norm, 'uploads/tenant-maps/')) {
             return;
         }
-        $abs = base_path('public/' . $norm);
+        $abs = public_file_path($norm);
         if (is_file($abs)) {
             @unlink($abs);
         }

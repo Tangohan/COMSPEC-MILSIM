@@ -226,7 +226,7 @@ final class TenantInitialSetupController
         $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
         $dir = base_path('public/assets/img/communities');
         $relPath = 'assets/img/communities/' . ($slug !== '' ? $slug : 'tenant') . '-logo.png';
-        $destFs = base_path('public/' . $relPath);
+        $destFs = public_file_path($relPath);
 
         if ((string) $request->input('remove_org_logo', '0') === '1') {
             if ($slug !== '' && is_file($destFs)) {

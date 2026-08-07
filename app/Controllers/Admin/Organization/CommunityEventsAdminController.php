@@ -500,7 +500,7 @@ final class CommunityEventsAdminController
             return ['path' => null, 'error' => 'Formats acceptés : JPG, PNG ou WebP.'];
         }
         $dirRel = 'uploads/community-events/' . $tenantId;
-        $dirAbs = base_path('public/' . $dirRel);
+        $dirAbs = public_file_path($dirRel);
         if (!is_dir($dirAbs) && !@mkdir($dirAbs, 0755, true) && !is_dir($dirAbs)) {
             return ['path' => null, 'error' => 'Stockage des images indisponible pour le moment.'];
         }
@@ -529,7 +529,7 @@ final class CommunityEventsAdminController
         if (!str_starts_with($norm, 'uploads/community-events/')) {
             return;
         }
-        $abs = base_path('public/' . ltrim($norm, '/'));
+        $abs = public_file_path(ltrim($norm, '/'));
         if (is_file($abs)) {
             @unlink($abs);
         }

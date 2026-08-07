@@ -336,7 +336,7 @@ final class TransmissionController
         }
 
         $dirRel = 'uploads/transmission/' . $tenantId;
-        $dirAbs = base_path('public/' . $dirRel);
+        $dirAbs = public_file_path($dirRel);
         if (!is_dir($dirAbs) && !@mkdir($dirAbs, 0755, true) && !is_dir($dirAbs)) {
             return ['paths' => [], 'error' => 'Le stockage des captures n’est pas disponible pour le moment.'];
         }

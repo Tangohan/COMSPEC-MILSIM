@@ -73,6 +73,36 @@ if (!function_exists('user_media_public_url')) {
     }
 }
 
+if (!function_exists('public_uploads_root')) {
+    /**
+     * Racine FS des uploads publics (PUBLIC_UPLOADS_PATH ou public/uploads).
+     */
+    function public_uploads_root(): string
+    {
+        return \App\Support\PublicUploads::root();
+    }
+}
+
+if (!function_exists('public_uploads_path')) {
+    /**
+     * Chemin absolu sous le stockage uploads (hors FTP si PUBLIC_UPLOADS_PATH est défini).
+     */
+    function public_uploads_path(string $relative = ''): string
+    {
+        return \App\Support\PublicUploads::path($relative);
+    }
+}
+
+if (!function_exists('public_file_path')) {
+    /**
+     * Résout un chemin relatif à public/ ; les uploads utilisent le stockage persistant.
+     */
+    function public_file_path(string $relativeUnderPublic): string
+    {
+        return \App\Support\PublicUploads::resolvePublicRelative($relativeUnderPublic);
+    }
+}
+
 if (!function_exists('user_display_initials')) {
     /**
      * Initiale(s) de repli pour l’avatar (1 caractère par défaut).

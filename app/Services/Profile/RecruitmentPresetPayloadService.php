@@ -636,7 +636,7 @@ final class RecruitmentPresetPayloadService
         if (!is_string($mime) || !in_array($mime, self::ALLOWED_IMAGE_MIMES, true) || ($file['size'] ?? 0) > self::MAX_IMAGE_BYTES) {
             return ['ok' => false, 'error' => 'Image JPG, PNG ou WebP, max 2 Mo.'];
         }
-        $dir = base_path('public/uploads/recruitment-presets/' . $userId);
+        $dir = public_uploads_path('recruitment-presets/' . $userId);
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
@@ -664,7 +664,7 @@ final class RecruitmentPresetPayloadService
         if (!str_starts_with($relativePath, 'uploads/recruitment-presets/')) {
             return;
         }
-        $full = base_path('public/' . $relativePath);
+        $full = public_file_path($relativePath);
         if (is_file($full)) {
             @unlink($full);
         }

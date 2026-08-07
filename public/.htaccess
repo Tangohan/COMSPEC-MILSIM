@@ -31,9 +31,15 @@
     RewriteRule ^compte\.html$ /account [R=301,L]
     RewriteRule ^mot-de-passe-oublie\.html$ /forgot-password [R=301,L]
 
-    # Assets / uploads : jamais via index.php (sinon MIME text/html au lieu de text/css, etc.).
-    RewriteRule ^(assets|uploads)/ - [L]
+    # Assets : jamais via index.php (sinon MIME text/html au lieu de text/css, etc.).
+    RewriteRule ^assets/ - [L]
     RewriteRule ^(sw\.js|manifest\.webmanifest|favicon\.ico)$ - [L]
+
+    # Uploads : fichier réel sous public/uploads si présent ; sinon front controller
+    # (PUBLIC_UPLOADS_PATH hors arbre FTP sur Hostinger / ttrd.fr).
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^uploads/ - [L]
+    RewriteRule ^uploads/ index.php [QSA,L]
 
     # Fichiers réels uniquement (CSS, JS, images, etc.). Ne pas exclure les répertoires :
     # sinon un dossier physique du même nom qu’un segment d’URL (ex. …/certificates/)
