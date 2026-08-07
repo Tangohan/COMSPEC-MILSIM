@@ -50,6 +50,7 @@ final class ModuleReleaseAccessResolverTest extends TestCase
 
         self::assertTrue($result['allowed']);
         self::assertSame('3.0.0-beta', $result['release']['version']);
+        self::assertSame('module_allowed_community', $result['reason']);
     }
 
     public function testFeatureFlagCanBeLimitedToCommunities(): void

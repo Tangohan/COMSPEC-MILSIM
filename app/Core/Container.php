@@ -914,6 +914,10 @@ class Container
                 self::get(\App\Services\Audit\AuditService::class)
             ),
             \App\Services\Security\AccessControlService::class => new \App\Services\Security\AccessControlService(),
+            \App\Controllers\Api\AccessControlApiController::class => new \App\Controllers\Api\AccessControlApiController(
+                self::get(\App\Services\Security\AccessControlService::class),
+                self::get(UserRepository::class)
+            ),
             \App\Controllers\Admin\Organization\AccessManagementController::class => new \App\Controllers\Admin\Organization\AccessManagementController(
                 self::get(\App\Services\Security\AccessControlService::class),
                 self::get(UserRepository::class)
