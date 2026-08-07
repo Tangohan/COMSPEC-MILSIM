@@ -24,7 +24,7 @@ final class StripeWebhookSignatureTest extends TestCase
         $payload = '{"id":"evt_test"}';
         $t = time();
         $signedPayload = $t . '.' . $payload;
-        $keyMaterial = base64_decode(substr($secret, 5), true);
+        $keyMaterial = base64_decode(substr($secret, strlen('whsec_')), true);
         $this->assertNotFalse($keyMaterial);
         $v1 = hash_hmac('sha256', $signedPayload, $keyMaterial, false);
         StripeWebhookSignature::verify($payload, 't=' . $t . ',v1=' . $v1, $secret, 600);

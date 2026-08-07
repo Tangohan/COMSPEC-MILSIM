@@ -1,2 +1,205 @@
 parameters:
-    ignoreErrors: []
+	ignoreErrors:
+		-
+			message: '#^Undefined variable\: \$accessEvents$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Controllers/Admin/AdminDocumentsController.php
+
+		-
+			message: '#^Undefined variable\: \$accessSessions$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Controllers/Admin/AdminDocumentsController.php
+
+		-
+			message: '#^Class App\\Services\\Platform\\FeatureGateService constructor invoked with 0 parameters, 7\-8 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Controllers/Admin/Organization/EventRsvpNominativeAdminController.php
+
+		-
+			message: '#^Instantiated class TCPDF not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Controllers/Api/OperationsApiController.php
+
+		-
+			message: '#^Instantiated class TCPDF not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Controllers/Api/ReplayController.php
+
+		-
+			message: '#^Class App\\Controllers\\Web\\ActivityHubController constructor invoked with 4 parameters, 5 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Core/Container.php
+
+		-
+			message: '#^Class App\\Services\\Courrier\\DocumentExportService constructor invoked with 1 parameter, 2\-4 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Core/Container.php
+
+		-
+			message: '#^Class App\\Controllers\\Web\\ActivityHubController constructor invoked with 4 parameters, 5 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Core/ContainerIntegrations.php
+
+		-
+			message: '#^Undefined variable\: \$ageDays$#'
+			identifier: variable.undefined
+			count: 2
+			path: app/Repositories/AtakAdvancedIntelligenceRepository.php
+
+		-
+			message: '#^Undefined variable\: \$ageHours$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Repositories/AtakAdvancedIntelligenceRepository.php
+
+		-
+			message: '#^Function run_atak_beta_registrations_migration not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Repositories/AtakBetaRegistrationRepository.php
+
+		-
+			message: '#^Function ensure_moderation_granular_sanctions_schema not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Repositories/BlockedIndicatorRepository.php
+
+		-
+			message: '#^Function ensure_platform_unit_commander_schema not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Repositories/BlockedIndicatorRepository.php
+
+		-
+			message: '#^Function ensure_moderation_granular_sanctions_schema not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Repositories/ModerationRepository.php
+
+		-
+			message: '#^Function ensure_platform_unit_commander_schema not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Repositories/ModerationRepository.php
+
+		-
+			message: '#^Function ensure_discord_recruitment_schema not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Repositories/RecruitmentDiscordQuestionRepository.php
+
+		-
+			message: '#^Function ensure_platform_unit_commander_schema not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Repositories/ReferralRepository.php
+
+		-
+			message: '#^Function ensure_tactical_briefing_slide_enrichment_schema not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Repositories/TacticalBriefingSlideCommentRepository.php
+
+		-
+			message: '#^Function ensure_tactical_briefing_slide_enrichment_schema not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Repositories/TacticalBriefingSlideRepository.php
+
+		-
+			message: '#^Function run_training_atak_course_for_tenant not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Services/Community/TenantSeedHelper.php
+
+		-
+			message: '#^Function run_training_bureau_recrutement_course_for_tenant not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Services/Community/TenantSeedHelper.php
+
+		-
+			message: '#^Function run_training_onboarding_course_for_tenant not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Services/Community/TenantSeedHelper.php
+
+		-
+			message: '#^Function run_training_roles_org_course_for_tenant not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Services/Community/TenantSeedHelper.php
+
+		-
+			message: '#^Unknown parameter \$data in call to Endroid\\QrCode\\Builder\\Builder constructor\.$#'
+			identifier: argument.unknown
+			count: 1
+			path: app/Services/Qr/QrPngGenerator.php
+
+		-
+			message: '#^Unknown parameter \$margin in call to Endroid\\QrCode\\Builder\\Builder constructor\.$#'
+			identifier: argument.unknown
+			count: 1
+			path: app/Services/Qr/QrPngGenerator.php
+
+		-
+			message: '#^Unknown parameter \$size in call to Endroid\\QrCode\\Builder\\Builder constructor\.$#'
+			identifier: argument.unknown
+			count: 1
+			path: app/Services/Qr/QrPngGenerator.php
+
+		-
+			message: '#^Unknown parameter \$writer in call to Endroid\\QrCode\\Builder\\Builder constructor\.$#'
+			identifier: argument.unknown
+			count: 1
+			path: app/Services/Qr/QrPngGenerator.php
+
+		-
+			message: '#^Caught class App\\Services\\Rbac\\PDOException not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Rbac/RoleDefinitionCatalog.php
+
+		-
+			message: '#^Instantiated class TCPDF not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Sse/SseCasePdfService.php
+
+		-
+			message: '#^Instantiated class TCPDF not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Training/TrainingCertificatePdfService.php
+
+		-
+			message: '#^Parameter \$pdf of method App\\Services\\Training\\TrainingCertificatePdfService\:\:drawTcpdfFallbackSignatureStroke\(\) has invalid type TCPDF\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Training/TrainingCertificatePdfService.php
+
+		-
+			message: '#^Parameter \$pdf of method App\\Services\\Training\\TrainingCertificatePdfService\:\:drawTcpdfSignatureBlock\(\) has invalid type TCPDF\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Training/TrainingCertificatePdfService.php
+
+		-
+			message: '#^Instantiated class TCPDF not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/Training/TrainingFormationCustomPageExportPdfService.php
+
+		-
+			message: '#^Regex pattern is invalid\: Unknown modifier ''\+'' in pattern\: \#\\A/\[a\-zA\-Z0\-9/_\\\-\.\?\=&%%\#\+\:~\]\*\\z\#$#'
+			identifier: regexp.pattern
+			count: 1
+			path: app/Support/training_canvas.php

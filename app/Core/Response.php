@@ -43,6 +43,11 @@ class Response
         return $this->statusCode;
     }
 
+    public function body(): string
+    {
+        return $this->body;
+    }
+
     public function headerValue(string $name): ?string
     {
         return $this->headers[$name] ?? null;

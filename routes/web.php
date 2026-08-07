@@ -106,6 +106,7 @@ use App\Controllers\Admin\System\SystemSubscriptionPlansController;
 use App\Controllers\Admin\Organization\TenantAlertsController;
 use App\Controllers\Api\AlertDismissController;
 use App\Controllers\Api\MePreferencesApiController;
+use App\Controllers\Api\AccessControlApiController;
 use App\Controllers\Api\TenantAccessRequestApiController;
 use App\Controllers\Admin\System\SystemAuditController;
 use App\Controllers\Admin\System\SystemSiteRoleAssignmentController;
@@ -1477,6 +1478,18 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->patch('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/tenant/access-request', [TenantAccessRequestApiController::class, 'store'], [AuthMiddleware::class]);
+
+    $router->get('/api/access-control/roles', [AccessControlApiController::class, 'roles'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/roles', [AccessControlApiController::class, 'roles'], [AuthMiddleware::class]);
+    $router->get('/api/access-control/permissions', [AccessControlApiController::class, 'permissions'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/permissions', [AccessControlApiController::class, 'permissions'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/role-permissions', [AccessControlApiController::class, 'rolePermissions'], [AuthMiddleware::class]);
+    $router->get('/api/access-control/rules', [AccessControlApiController::class, 'rules'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/rules', [AccessControlApiController::class, 'rules'], [AuthMiddleware::class]);
+    $router->get('/api/access-control/scopes', [AccessControlApiController::class, 'scopes'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/scopes', [AccessControlApiController::class, 'scopes'], [AuthMiddleware::class]);
+    $router->get('/api/access-control/simulation', [AccessControlApiController::class, 'simulation'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/simulation', [AccessControlApiController::class, 'simulation'], [AuthMiddleware::class]);
 
     $router->get('/api/custom-maps', [\App\Controllers\Api\CustomMapsApiController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/api/custom-maps', [\App\Controllers\Api\CustomMapsApiController::class, 'store'], [AuthMiddleware::class]);

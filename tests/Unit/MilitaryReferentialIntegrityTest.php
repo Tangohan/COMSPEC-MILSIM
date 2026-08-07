@@ -20,7 +20,11 @@ final class MilitaryReferentialIntegrityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repo = new MilitaryUnitRepository();
+        try {
+            $this->repo = new MilitaryUnitRepository();
+        } catch (\Throwable $e) {
+            $this->markTestSkipped('Base de données indisponible pour le référentiel militaire : ' . $e->getMessage());
+        }
         if (!$this->repo->tablesReady()) {
             $this->markTestSkipped('Tables military_* absentes — exécuter les migrations.');
         }
