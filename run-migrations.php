@@ -2363,6 +2363,13 @@ try {
     echo '  [ATTENTION] user_email_login_otp : ' . $e->getMessage() . "\n";
 }
 
+$userTotpMigrate = require $root . '/bootstrap/user_totp_migration.php';
+try {
+    $userTotpMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] user_totp : ' . $e->getMessage() . "\n";
+}
+
 $userLegalIdentitiesMigrate = require $root . '/bootstrap/user_legal_identities_migration.php';
 try {
     $userLegalIdentitiesMigrate($pdo);

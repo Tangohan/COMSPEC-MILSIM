@@ -703,17 +703,32 @@ function demo_disable_login_otp_for_user(PDO $pdo, UserRepository $users, int $t
         return;
     }
     static $hasCol = null;
+    static $hasTotp = null;
     if ($hasCol === null) {
         $st = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'email_login_otp_enabled' LIMIT 1");
         $hasCol = $st && (bool) $st->fetchColumn();
     }
-    if (!$hasCol) {
-        return;
+    if ($hasTotp === null) {
+        $st = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'totp_enabled' LIMIT 1");
+        $hasTotp = $st && (bool) $st->fetchColumn();
     }
-    try {
-        $users->update($userId, $tenantId, ['email_login_otp_enabled' => 0]);
-    } catch (Throwable) {
-        $pdo->prepare('UPDATE users SET email_login_otp_enabled = 0 WHERE id = ? AND tenant_id = ?')->execute([$userId, $tenantId]);
+    if ($hasCol) {
+        try {
+            $users->update($userId, $tenantId, ['email_login_otp_enabled' => 0]);
+        } catch (Throwable) {
+            $pdo->prepare('UPDATE users SET email_login_otp_enabled = 0 WHERE id = ? AND tenant_id = ?')->execute([$userId, $tenantId]);
+        }
+    }
+    if ($hasTotp) {
+        try {
+            $users->update($userId, $tenantId, [
+                'totp_enabled' => 0,
+                'totp_secret' => null,
+                'totp_confirmed_at' => null,
+            ]);
+        } catch (Throwable) {
+            $pdo->prepare('UPDATE users SET totp_enabled = 0, totp_secret = NULL, totp_confirmed_at = NULL WHERE id = ? AND tenant_id = ?')->execute([$userId, $tenantId]);
+        }
     }
 }
 
@@ -723,19 +738,26 @@ function demo_disable_login_otp_for_user(PDO $pdo, UserRepository $users, int $t
 function demo_disable_login_otp_for_all_demo_accounts(PDO $pdo, UserRepository $users, int $tenantId): void
 {
     $st = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'email_login_otp_enabled' LIMIT 1");
-    if (!$st || !$st->fetchColumn()) {
-        return;
-    }
-    $emails = DemoPortalAccounts::allDemoEmails();
-    $ph = implode(',', array_fill(0, count($emails), '?'));
-    $pdo->prepare(
-        "UPDATE users SET email_login_otp_enabled = 0 WHERE tenant_id = ? AND LOWER(email) IN ({$ph})"
-    )->execute(array_merge([$tenantId], array_map('strtolower', $emails)));
+    if ($st && $st->fetchColumn()) {
+        $emails = DemoPortalAccounts::allDemoEmails();
+        $ph = implode(',', array_fill(0, count($emails), '?'));
+        $pdo->prepare(
+            "UPDATE users SET email_login_otp_enabled = 0 WHERE tenant_id = ? AND LOWER(email) IN ({$ph})"
+        )->execute(array_merge([$tenantId], array_map('strtolower', $emails)));
 
-    // Sécurité : tout @demo.local du tenant
-    $pdo->prepare(
-        "UPDATE users SET email_login_otp_enabled = 0 WHERE tenant_id = ? AND LOWER(email) LIKE '%@demo.local'"
-    )->execute([$tenantId]);
+        // Sécurité : tout @demo.local du tenant
+        $pdo->prepare(
+            "UPDATE users SET email_login_otp_enabled = 0 WHERE tenant_id = ? AND LOWER(email) LIKE '%@demo.local'"
+        )->execute([$tenantId]);
+    }
+
+    $stTotp = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'totp_enabled' LIMIT 1");
+    if ($stTotp && $stTotp->fetchColumn()) {
+        $pdo->prepare(
+            "UPDATE users SET totp_enabled = 0, totp_secret = NULL, totp_confirmed_at = NULL
+             WHERE tenant_id = ? AND LOWER(email) LIKE '%@demo.local'"
+        )->execute([$tenantId]);
+    }
 }
 
 /**

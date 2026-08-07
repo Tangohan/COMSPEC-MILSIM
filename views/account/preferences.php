@@ -15,6 +15,7 @@ $steamWebConfigured = !empty($steamWebConfigured ?? false);
 $steamSyncReport = is_array($steamSyncReport ?? null) ? $steamSyncReport : null;
 $loginOtpMandatory = !empty($loginOtpMandatory ?? false);
 $loginOtpVoluntaryActive = !empty($loginOtpVoluntaryActive ?? false);
+$totpEnabled = !empty($totpEnabled ?? false);
 $loginOtpTtlMinutes = isset($loginOtpTtlMinutes) ? (int) $loginOtpTtlMinutes : 10;
 
 $notifByGroup = [];
@@ -34,7 +35,7 @@ require base_path('views/partials/account/shell_open.php');
     <a href="#section-profil">Profil portail</a>
     <a href="#section-locale">Fuseau &amp; langue</a>
     <a href="#section-interface">Interface</a>
-    <a href="#connexion-verification">Code de sécurité</a>
+    <a href="#connexion-verification">Double vérification</a>
     <a href="#notifications-email">Notifications</a>
 </nav>
 
@@ -127,30 +128,38 @@ require base_path('views/partials/account/shell_open.php');
 <section id="connexion-verification" class="account-hub__panel account-hub__section-anchor" style="margin-bottom:1.25rem" aria-labelledby="login-otp-title">
     <div class="account-hub__panel-head">
         <p class="account-hub__panel-kicker">Connexion</p>
-        <h2 id="login-otp-title" class="account-hub__panel-title">Code de sécurité par e-mail</h2>
-        <p class="account-hub__panel-desc">Après le mot de passe, un code à six chiffres peut être demandé sur votre adresse de connexion.</p>
+        <h2 id="login-otp-title" class="account-hub__panel-title">Double vérification</h2>
+        <p class="account-hub__panel-desc">Après le mot de passe, un second code peut être demandé (e-mail ou application d’authentification).</p>
         <p style="margin:.85rem 0 0">
+            <?php if (!empty($totpEnabled)): ?>
+            <span class="account-hub__badge account-hub__badge--ok">Application activée</span>
+            <?php endif; ?>
             <?php if ($loginOtpMandatory): ?>
             <span class="account-hub__badge account-hub__badge--ok">Imposée pour votre rôle</span>
             <?php elseif ($loginOtpVoluntaryActive): ?>
-            <span class="account-hub__badge account-hub__badge--ok">Activée par vous</span>
-            <?php else: ?>
+            <span class="account-hub__badge account-hub__badge--ok">Code e-mail activé</span>
+            <?php elseif (empty($totpEnabled)): ?>
             <span class="account-hub__badge account-hub__badge--off">Non activée (mot de passe seul)</span>
             <?php endif; ?>
         </p>
     </div>
     <div class="account-hub__panel-body">
-        <?php if ($loginOtpMandatory): ?>
+        <?php if (!empty($totpEnabled)): ?>
         <p style="margin:0;font-size:.875rem;line-height:1.55;color:#334155">
-            Compte tenu de vos responsabilités, le portail envoie un code après le mot de passe. Validité d’environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>. Pensez aux courriers indésirables si rien n’arrive.
+            L’application d’authentification est active : un code de l’application sera demandé en priorité à la connexion.
+            Gérez les méthodes sur <a href="<?= htmlspecialchars(url('account/security'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Double vérification</a>.
+        </p>
+        <?php elseif ($loginOtpMandatory): ?>
+        <p style="margin:0;font-size:.875rem;line-height:1.55;color:#334155">
+            Compte tenu de vos responsabilités, le portail envoie un code après le mot de passe. Validité d’environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>. Pensez aux courriers indésirables si rien n’arrive. Vous pouvez aussi activer une application sur <a href="<?= htmlspecialchars(url('account/security'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Double vérification</a>.
         </p>
         <?php elseif ($loginOtpVoluntaryActive): ?>
         <p style="margin:0;font-size:.875rem;line-height:1.55;color:#334155">
-            Vous avez ajouté cette étape. Vous pouvez la modifier sur <a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Adresse e-mail</a>. Validité d’environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>.
+            Vous avez ajouté le code par e-mail. Modifiez les méthodes sur <a href="<?= htmlspecialchars(url('account/security'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Double vérification</a>. Validité d’environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>.
         </p>
         <?php else: ?>
         <p style="margin:0;font-size:.875rem;line-height:1.55;color:#334155">
-            Activez la double vérification sur <a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Adresse e-mail</a>, ou demandez un envoi d’essai ci-dessous pour vérifier votre boîte de réception.
+            Activez la double vérification sur <a href="<?= htmlspecialchars(url('account/security'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Double vérification</a>, ou demandez un envoi d’essai ci-dessous pour vérifier votre boîte de réception.
         </p>
         <?php endif; ?>
         <form method="post" action="<?= htmlspecialchars(url('account/preferences/login-otp-mailbox-test'), ENT_QUOTES, 'UTF-8') ?>" style="margin-top:1.15rem;display:flex;flex-wrap:wrap;align-items:center;gap:.85rem">

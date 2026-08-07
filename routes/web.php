@@ -307,6 +307,7 @@ return function (Router $router) {
     $router->get('/login/otp', [AuthController::class, 'showLoginOtp'], [GuestMiddleware::class]);
     $router->post('/login/otp', [AuthController::class, 'verifyLoginOtp'], [GuestMiddleware::class]);
     $router->post('/login/otp/resend', [AuthController::class, 'resendLoginOtp'], [GuestMiddleware::class]);
+    $router->post('/login/otp/switch', [AuthController::class, 'switchLoginOtpChannel'], [GuestMiddleware::class]);
     $router->get('/login/select-community', [AuthController::class, 'showSelectCommunity'], [GuestMiddleware::class]);
     $router->post('/login/select-community', [AuthController::class, 'selectCommunity'], [GuestMiddleware::class]);
     $router->post('/logout', [AuthController::class, 'logout']);
@@ -424,6 +425,8 @@ return function (Router $router) {
     $router->post('/account/steam-sync', [AccountController::class, 'syncSteamProfile'], [AuthMiddleware::class]);
     $router->get('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);
     $router->post('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);
+    $router->get('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
+    $router->post('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->get('/account/banner', [AccountController::class, 'banner'], [AuthMiddleware::class]);
