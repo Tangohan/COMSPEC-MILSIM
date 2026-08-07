@@ -57,7 +57,7 @@ final class StripeWebhookSignature
     private static function decodeSigningSecret(string $secret): string
     {
         if (str_starts_with($secret, 'whsec_')) {
-            $decoded = base64_decode(substr($secret, 5), true);
+            $decoded = base64_decode(substr($secret, strlen('whsec_')), true);
             if ($decoded === false || $decoded === '') {
                 throw new WebhookSignatureException('Secret webhook whsec_ invalide');
             }

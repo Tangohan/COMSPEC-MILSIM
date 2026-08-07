@@ -73,7 +73,7 @@ final class ModuleReleaseAccessResolver
 
         return [
             'allowed' => true,
-            'reason' => 'granted',
+            'reason' => (string) ($moduleDecision['reason'] ?: 'granted'),
             'channel' => $targetChannel,
             'release' => $release,
             'feature_flags' => $flags,
@@ -219,15 +219,19 @@ final class ModuleReleaseAccessResolver
     /** @param array<string, mixed> $rule */
     private function ruleMatchesScope(array $rule, string $targetChannel, int $releaseId): bool
     {
-        $ruleChannel = $this->normalizeChannel((string) ($rule['environment_channel_code'] ?? $rule['environment_channel'] ?? ''));
-        if ($ruleChannel !== '' && $ruleChannel !== $targetChannel) {
-            return false;
+        // Ne pas normaliser une chaîne vide en PROD : une règle sans canal s’applique à tous les canaux.
+        $rawRuleChannel = trim((string) ($rule['environment_channel_code'] ?? $rule['environment_channel'] ?? ''));
+        if ($rawRuleChannel !== '') {
+            $ruleChannel = $this->normalizeChannel($rawRuleChannel);
+            if ($ruleChannel !== $targetChannel) {
+                return false;
+            }
         }
 
         if (!empty($rule['environment_channel_id']) && !empty($rule['channel_map']) && is_array($rule['channel_map'])) {
             $channelMap = $rule['channel_map'];
             $ruleChannelId = (int) $rule['environment_channel_id'];
-            $expectedChannel = strtoupper(trim((string) ($channelMap[$ruleChannelId] ?? '')));
+            $expectedChannel = strtoupper(trim((string) ($channelMap[$ruleChannelId] ?? $channelMap[(string) $ruleChannelId] ?? '')));
             if ($expectedChannel !== '' && $expectedChannel !== $targetChannel) {
                 return false;
             }

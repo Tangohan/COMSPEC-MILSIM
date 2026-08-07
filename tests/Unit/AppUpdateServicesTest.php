@@ -30,7 +30,9 @@ final class AppUpdateServicesTest extends TestCase
         self::assertFalse(VersionCompatibility::satisfiesMinimum('1.2.0', '1.3.0'));
         self::assertTrue(VersionCompatibility::isNewerThan('1.4.0', '1.3.9'));
         self::assertFalse(VersionCompatibility::isNewerThan('1.3.0', '1.3.0'));
-        self::assertTrue(VersionCompatibility::phpCompatible('8.4.0'));
+        $currentMinor = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . '.0';
+        self::assertTrue(VersionCompatibility::phpCompatible($currentMinor));
+        self::assertFalse(VersionCompatibility::phpCompatible((string) (PHP_MAJOR_VERSION + 1) . '.0.0'));
         self::assertFalse(VersionCompatibility::phpCompatible('99.0.0'));
     }
 

@@ -95,10 +95,14 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
         $users->method('findById')->willReturn(['created_at' => '2021-01-01 00:00:00']);
 
         $quals = $this->createMock(PersonnelQualificationRepository::class);
-        $quals->method('listForUser')->willReturn([]);
+        $quals->method('listForUser')->willReturn([
+            ['obtained_at' => '2020-06-15', 'status' => 'active'],
+        ]);
 
         $certs = $this->createMock(TrainingCertificateRepository::class);
-        $certs->method('listByUserId')->willReturn([]);
+        $certs->method('listByUserId')->willReturn([
+            ['issued_at' => '2020-08-01'],
+        ]);
 
         $svc = new SeniorityDossierInferenceSyncService(
             $seniority,
