@@ -48,6 +48,13 @@ final class AlertPresentationService
         $platformRows = $this->platformAlerts->listActiveForDisplay();
         $platformRows = array_values(array_filter($platformRows, fn (array $r) => $this->matchesAudience($r, $userId > 0, $tenantId, $hasPaid)));
 
+        // Annonces ops (ex. images à recharger) — authentifié uniquement.
+        if ($userId > 0) {
+            foreach (\App\Support\OpsDashboardNotices::platformRowsForAuthenticatedUser() as $opsRow) {
+                $platformRows[] = $opsRow;
+            }
+        }
+
         $tenantRows = [];
         if ($userId > 0 && $tenantId > 0) {
             $tenantRows = $this->tenantAlerts->listActiveForTenantDisplay($tenantId);

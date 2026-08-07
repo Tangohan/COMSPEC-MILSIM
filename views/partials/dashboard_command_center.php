@@ -263,6 +263,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 
     <div class="dash-cc__main" x-data="{ tacticalOpen: false, calendarOpen: false }">
         <?php require base_path('views/partials/header_dashboard.php'); ?>
+        <?php require base_path('views/partials/media_reupload_notice.php'); ?>
 
         <!-- Hero sombre (réf. Caverne) — catalogue immédiatement après -->
         <section class="dash-hero" aria-labelledby="dash-hero-title">

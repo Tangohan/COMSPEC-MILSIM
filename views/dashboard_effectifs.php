@@ -55,6 +55,7 @@ require base_path('views/partials/alert_banners.php');
 <main class="min-h-screen bg-[#f8fafc] text-slate-900">
     <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
     <?php require base_path('views/partials/header_dashboard.php'); ?>
+    <?php require base_path('views/partials/media_reupload_notice.php'); ?>
 
     <section class="relative overflow-hidden border-b border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-slate-100">
         <div class="relative mx-auto max-w-6xl px-6 py-12 md:px-10 md:py-14">

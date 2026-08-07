@@ -41,6 +41,11 @@ final class AlertDismissController
         }
 
         if ($scope === 'platform') {
+            if (\App\Support\OpsDashboardNotices::isSyntheticPlatformId($alertId)) {
+                $this->dismissals->dismiss($uid, $scope, $alertId);
+
+                return Response::json(['success' => true]);
+            }
             $row = $this->platformAlerts->findById($alertId);
             if ($row === null) {
                 return Response::json(['success' => false, 'message' => 'Annonce introuvable'], 404);

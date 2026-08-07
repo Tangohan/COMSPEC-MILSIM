@@ -109,6 +109,7 @@ require base_path('views/partials/alert_banners.php');
 
         <?php if ($dashboard_is_default_tenant): ?>
         <?php require base_path('views/partials/header_dashboard.php'); ?>
+        <?php require base_path('views/partials/media_reupload_notice.php'); ?>
         <section class="relative overflow-hidden border-b border-emerald-900/20 bg-gradient-to-br from-[#022c22] via-[#064e3b] to-[#0f172a] text-white">
             <div class="relative mx-auto max-w-6xl px-6 py-12 md:px-10 md:py-16">
                 <div class="max-w-3xl">
