@@ -3395,6 +3395,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakSseArmaModelsMigrate = require $root . '/bootstrap/atak_sse_arma_models_migration.php';
+try {
+    echo "Migration atak_sse_arma_models (SSE — modèles mission Arma)…\n";
+    $atakSseArmaModelsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_arma_models : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakDonationsMigrate = require $root . '/bootstrap/atak_donations_migration.php';
 try {
     echo "Migration atak_donations (financement ATAK)...\n";
