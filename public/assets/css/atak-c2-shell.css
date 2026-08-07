@@ -1,0 +1,800 @@
+/**
+ * ATAK — chrome C2 inspiré de la démo Athena.
+ * Ne redéfinit PAS .atak-header* (header produit inchangé).
+ */
+body.atak-page {
+  --atak-c2-bg: #070a0e;
+  --atak-c2-panel: #0b1016;
+  --atak-c2-panel2: #0f151c;
+  --atak-c2-panel3: #121a22;
+  --atak-c2-line: rgba(151, 177, 195, 0.13);
+  --atak-c2-line2: rgba(151, 177, 195, 0.22);
+  --atak-c2-text: #dce6eb;
+  --atak-c2-muted: #71808c;
+  --atak-c2-muted2: #52616c;
+  --atak-c2-green: #35d6a1;
+  --atak-c2-green-soft: rgba(53, 214, 161, 0.09);
+  --atak-c2-amber: #d3a33c;
+  --atak-c2-red: #dc5d5d;
+  --atak-c2-blue: #68a5d8;
+  --atak-c2-rail: 68px;
+  --atak-c2-tool: 46px;
+  --atak-c2-drawer: 38px;
+  --atak-left-w: 360px;
+  --atak-right-w: 286px;
+  background: var(--atak-c2-bg);
+  color: var(--atak-c2-text);
+}
+
+body.atak-page.atak-density-compact {
+  --atak-left-w: 320px;
+  --atak-right-w: 260px;
+}
+body.atak-page.atak-density-comfortable {
+  --atak-left-w: 380px;
+  --atak-right-w: 300px;
+}
+
+/* —— Main shell —— */
+.atak-main {
+  background: var(--atak-c2-bg);
+}
+
+.atak-panel-left,
+.atak-panel-right {
+  background: linear-gradient(180deg, #0c1218, #090e13);
+  border-color: var(--atak-c2-line);
+  box-shadow: none;
+}
+.atak-panel-left::before,
+.atak-panel-right::before {
+  display: none;
+}
+
+/* —— Section rail (icônes) —— */
+.atak-left-rail {
+  width: var(--atak-c2-rail);
+  background: linear-gradient(180deg, #080c11, #070a0e);
+  border-right: 1px solid var(--atak-c2-line);
+  overflow: hidden;
+}
+
+.atak-section-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 5px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(53, 214, 161, 0.35) transparent;
+}
+
+.atak-section-btn {
+  position: relative;
+  width: 100%;
+  height: 57px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #64737e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font: 700 7.5px var(--atak-font-tactical);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+}
+.atak-section-btn:hover {
+  background: rgba(255, 255, 255, 0.026);
+  color: #a7b3bb;
+}
+.atak-section-btn.active {
+  background: var(--atak-c2-green-soft);
+  color: var(--atak-c2-green);
+}
+.atak-section-btn.active::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: var(--atak-c2-green);
+  box-shadow: 0 0 7px rgba(53, 214, 161, 0.35);
+}
+.atak-section-btn__icon {
+  font: 800 17px/1 var(--atak-font-tactical);
+  line-height: 1;
+}
+.atak-section-btn__label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 2px;
+}
+.atak-section-btn__badge {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  background: #151e26;
+  color: #94a3ad;
+  font: 800 7px var(--atak-font-tactical);
+}
+.atak-section-btn__badge[hidden] {
+  display: none !important;
+}
+.atak-section-btn__badge.is-alert {
+  color: #1a1205;
+  background: var(--atak-c2-amber);
+}
+.atak-section-btn__badge.is-live {
+  background: var(--atak-c2-green);
+  color: #05100c;
+}
+
+.atak-rail-bottom {
+  margin-top: auto;
+  padding: 6px 5px;
+  border-top: 1px solid var(--atak-c2-line);
+  flex-shrink: 0;
+}
+
+/* —— Sidebar body —— */
+.atak-left-body {
+  background: linear-gradient(180deg, #0c1218, #090e13);
+}
+
+.atak-side-head {
+  height: 64px;
+  padding: 0 12px 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--atak-c2-line);
+  flex-shrink: 0;
+}
+.atak-side-eyebrow {
+  font: 700 9px/1 var(--atak-font-tactical);
+  color: var(--atak-c2-muted);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.atak-side-title {
+  margin: 5px 0 0;
+  font: 800 13px/1.1 var(--atak-font-tactical);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--atak-c2-text);
+}
+.atak-icon-btn {
+  width: 29px;
+  height: 29px;
+  border: 1px solid var(--atak-c2-line);
+  background: #090e13;
+  color: #72828d;
+  border-radius: 3px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font: 700 14px/1 var(--atak-font-tactical);
+  flex-shrink: 0;
+}
+.atak-icon-btn:hover {
+  border-color: var(--atak-c2-line2);
+  color: var(--atak-c2-text);
+}
+
+.atak-side-status {
+  height: 37px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--atak-c2-line);
+  color: #71818d;
+  font: 700 8px var(--atak-font-tactical);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.atak-side-status strong {
+  color: var(--atak-c2-green);
+  font-weight: 700;
+}
+
+/* Modules = onglets existants restylés */
+.atak-left-aside.atak-module-list {
+  flex: 0 0 auto;
+  max-height: min(42vh, 280px);
+  padding: 8px;
+  gap: 2px;
+  border-bottom: 1px solid var(--atak-c2-line);
+  background: transparent;
+}
+
+.atak-left-aside .atak-tab {
+  position: relative;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  padding: 11px 38px 11px 12px;
+  margin: 0;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  color: #a7b4bc;
+  text-align: left;
+  font: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: normal;
+  line-height: 1.25;
+}
+.atak-left-aside .atak-tab:hover {
+  background: rgba(255, 255, 255, 0.025);
+  color: #c8d5dc;
+}
+.atak-left-aside .atak-tab.active {
+  border-left-color: var(--atak-c2-green);
+  background: rgba(53, 214, 161, 0.06);
+  color: #edf7f3;
+}
+.atak-left-aside .atak-tab-label {
+  display: block;
+  width: 100%;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--atak-font-ui);
+  letter-spacing: 0.01em;
+  text-transform: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atak-tab-desc {
+  display: block;
+  margin-top: 4px;
+  color: #5f6e78;
+  font: 700 8px var(--atak-font-tactical);
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+.atak-left-aside .atak-tab.active .atak-tab-desc {
+  color: #6a7d86;
+}
+.atak-left-aside .atak-tab-badge,
+.atak-left-aside .atak-medical-tab-badge {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 21px;
+  height: auto;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: #151d24;
+  color: #91a1ab;
+  font: 800 8px var(--atak-font-tactical);
+  border: 0;
+}
+.atak-left-aside .atak-tab-badge.is-warn,
+.atak-left-aside .atak-medical-tab-badge:not([hidden]) {
+  background: rgba(211, 163, 60, 0.13);
+  color: var(--atak-c2-amber);
+}
+
+.atak-tab[data-atak-section]:not(.is-section-visible) {
+  display: none !important;
+}
+
+/* Hide modules of inactive domains before JS hydrates (intel is default) */
+.atak-module-list .atak-tab[data-atak-section]:not([data-atak-section="intel"]):not(.is-section-visible) {
+  display: none !important;
+}
+
+/* Audio rail → bas de sidebar */
+.atak-left-body > .atak-rail-audio {
+  margin-top: 0;
+  padding: 0.45rem 0.75rem;
+  border-top: 0;
+  border-bottom: 1px solid var(--atak-c2-line);
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.85rem;
+}
+.atak-left-body > .atak-rail-audio .atak-rail-audio-title {
+  text-align: left;
+  width: 100%;
+}
+.atak-left-body > .atak-rail-audio .atak-rail-audio-vol {
+  flex: 1 1 7rem;
+  min-width: 6rem;
+}
+.atak-left-body > .atak-rail-audio .atak-rail-audio-vol-label {
+  text-align: left;
+}
+.atak-left-body > .atak-rail-audio .atak-rail-audio-opt {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: left;
+  font-size: 0.58rem;
+  padding: 0.2rem 0.35rem;
+}
+
+.atak-panel-chrome {
+  background: linear-gradient(180deg, #0d1319, #0a1016);
+  border-bottom-color: var(--atak-c2-line);
+  padding: 0.35rem 0.65rem;
+}
+.atak-panel-chrome-label {
+  font-family: var(--atak-font-tactical);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: #8797a1;
+}
+.atak-panel-chrome-btn {
+  border-radius: 3px;
+  border-color: var(--atak-c2-line);
+  background: #0b1117;
+  color: #a6b4bc;
+  font-family: var(--atak-font-tactical);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.atak-panel-chrome-btn:hover {
+  border-color: var(--atak-c2-line2);
+  color: var(--atak-c2-text);
+  background: #0d141a;
+}
+
+/* Collapsed left = rail only */
+.atak-panel-left.collapsed {
+  width: var(--atak-c2-rail) !important;
+  min-width: var(--atak-c2-rail) !important;
+}
+.atak-panel-left.collapsed .atak-left-rail {
+  width: var(--atak-c2-rail);
+}
+.atak-panel-left.collapsed .atak-left-body {
+  display: none;
+}
+.atak-panel-left.is-popped-out {
+  width: var(--atak-c2-rail) !important;
+  min-width: var(--atak-c2-rail) !important;
+}
+
+/* —— Map column: toolbar in flow —— */
+.atak-map-wrap {
+  background: var(--atak-c2-bg);
+}
+
+.atak-map-tools {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  transform: none;
+  z-index: 5;
+  width: 100%;
+  max-width: none;
+  height: var(--atak-c2-tool);
+  min-height: var(--atak-c2-tool);
+  margin: 0;
+  padding: 0 9px;
+  border: 0;
+  border-bottom: 1px solid var(--atak-c2-line);
+  border-radius: 0;
+  background: rgba(10, 15, 20, 0.97);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  flex: 0 0 auto;
+  justify-content: center;
+}
+.atak-map-tools.is-collapsed {
+  display: none !important;
+}
+.atak-map-tools__row {
+  height: 100%;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 4px;
+  scrollbar-width: thin;
+}
+.atak-map-tools__btn {
+  height: 29px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #778793;
+  font-size: 8px;
+  letter-spacing: 0.05em;
+}
+.atak-map-tools__btn:hover,
+.atak-map-tools__btn:focus-visible {
+  border-color: var(--atak-c2-line);
+  background: #0d141a;
+  color: #bcc8cf;
+}
+.atak-map-tools__btn.is-active {
+  color: var(--atak-c2-green);
+  border-color: rgba(53, 214, 161, 0.22);
+  background: var(--atak-c2-green-soft);
+  box-shadow: none;
+}
+.atak-map-tools__btn--chrome {
+  margin-left: 0;
+}
+.atak-map-tools__sep[data-tool-sep="chrome"] {
+  margin-left: auto;
+}
+.atak-map-tools__sep {
+  height: 22px;
+  min-height: 22px;
+  align-self: center;
+  background: var(--atak-c2-line);
+  margin: 0 4px;
+}
+.atak-map-tools__btn--icon {
+  width: 29px;
+  min-width: 29px;
+  padding: 0;
+  border: 1px solid var(--atak-c2-line);
+  background: #0b1117;
+  color: #85959f;
+  font-size: 13px;
+}
+.atak-map-tools-fab {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  align-self: stretch;
+  width: 100%;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid var(--atak-c2-line);
+  background: rgba(10, 15, 20, 0.97);
+  box-shadow: none;
+  height: var(--atak-c2-tool);
+}
+.atak-map-tools__prefs {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  border-radius: 0;
+  border: 1px solid var(--atak-c2-line);
+  border-top: 0;
+  background: #0b1117;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+.atak-map-stage {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.atak-map-stage #atak-map {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* HUD / coord overlay — look démo */
+.atak-map-hud {
+  background: rgba(7, 11, 15, 0.91) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 3px !important;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+  font-family: var(--atak-font-tactical);
+  font-size: 8px;
+}
+.atak-map-hud__k {
+  color: #7f909b;
+  letter-spacing: 0.06em;
+}
+.atak-map-hud__v {
+  color: #dbe5ea;
+}
+.atak-map-wrap .leaflet-control-scale-line {
+  background: transparent !important;
+  border-color: #152028 !important;
+  color: #162028 !important;
+  font: 800 8px var(--atak-font-tactical) !important;
+  box-shadow: none !important;
+}
+
+/* —— Drawer effectifs —— */
+.atak-drawer {
+  flex: 0 0 250px;
+  height: 250px;
+  max-height: none;
+  min-height: 38px;
+  background: #090e13;
+  border-top: 1px solid var(--atak-c2-line);
+  box-shadow: none;
+  transition: flex-basis 0.2s ease, height 0.2s ease;
+  overflow: hidden;
+}
+body.atak-page.atak-drawer-collapsed .atak-drawer {
+  flex-basis: 38px;
+  height: 38px;
+}
+.atak-drawer__head {
+  height: 38px;
+  padding: 0 9px;
+  background: #090e13;
+  border-bottom: 0;
+  color: #6f7f8a;
+  letter-spacing: 0.06em;
+}
+.atak-drawer__title {
+  height: 27px;
+  padding: 0 10px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--atak-c2-green-soft);
+  color: var(--atak-c2-green);
+  font: 800 8px var(--atak-font-tactical);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.atak-drawer__count {
+  font: 800 8px var(--atak-font-tactical);
+  color: #91a1ab;
+  background: #151d24;
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+.atak-drawer__toggle {
+  width: 29px;
+  height: 27px;
+  margin-left: auto;
+  border: 1px solid var(--atak-c2-line);
+  background: #0d1319;
+  color: #81919c;
+  border-radius: 3px;
+  cursor: pointer;
+  font: 700 12px var(--atak-font-tactical);
+  line-height: 1;
+}
+.atak-drawer__toggle:hover {
+  color: var(--atak-c2-text);
+  border-color: var(--atak-c2-line2);
+}
+.atak-drawer__body {
+  height: 212px;
+  border-top: 1px solid var(--atak-c2-line);
+  background: #080c11;
+  display: block;
+}
+body.atak-page.atak-drawer-collapsed .atak-drawer__body {
+  display: none;
+}
+.atak-drawer th {
+  background: #0d1319;
+  color: #6f7e88;
+  font: 700 8px var(--atak-font-tactical);
+  letter-spacing: 0.09em;
+  padding: 9px 10px;
+  border-bottom-color: var(--atak-c2-line);
+}
+.atak-drawer td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(151, 177, 195, 0.075);
+  color: #a9b6be;
+  font: 700 8px var(--atak-font-tactical);
+}
+.atak-drawer tbody tr.atak-drawer-row:hover {
+  background: #0d1319;
+}
+
+/* —— Right panel —— */
+.atak-panel-right {
+  background: linear-gradient(180deg, #0b1016, #080c11);
+}
+.atak-panel-right.collapsed {
+  width: var(--atak-c2-rail) !important;
+  min-width: var(--atak-c2-rail) !important;
+}
+.atak-units-header {
+  padding: 0.65rem 0.75rem;
+  border-bottom-color: var(--atak-c2-line);
+}
+.atak-units-title {
+  font-family: var(--atak-font-tactical);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #c8d5dc;
+}
+.atak-filter input,
+.atak-ft-filter-label select {
+  background: #080d12;
+  border-color: var(--atak-c2-line);
+  border-radius: 3px;
+  color: #c8d3d9;
+  font-family: var(--atak-font-tactical);
+  font-size: 9px;
+}
+.atak-filter .btn-live,
+.atak-filter .btn-all {
+  border-radius: 3px;
+  font-family: var(--atak-font-tactical);
+  font-size: 8px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.atak-filter .btn-live.active,
+.atak-filter .btn-all.active {
+  background: var(--atak-c2-green);
+  border-color: var(--atak-c2-green);
+  color: #08110e;
+}
+
+.atak-air-assets,
+.atak-ft-composition,
+.atak-effectifs-notepad {
+  margin: 8px 9px;
+  border: 1px solid var(--atak-c2-line);
+  border-radius: 4px;
+  background: #0a1016;
+  overflow: hidden;
+}
+.atak-air-assets-header,
+.atak-ft-composition > .atak-collapse-sum,
+.atak-effectifs-notepad > .atak-collapse-sum {
+  min-height: 34px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--atak-c2-line);
+  background: transparent;
+  font: 800 8px var(--atak-font-tactical);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #8797a1;
+}
+.atak-air-assets-list,
+.atak-ft-composition .atak-collapse-body,
+.atak-effectifs-notepad .atak-collapse-body {
+  background: #0a1016;
+  border-bottom: 0;
+}
+
+.atak-ops-btn,
+.atak-ops-btn--sm {
+  border-radius: 3px;
+  font-family: var(--atak-font-tactical);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.atak-ops-btn--primary {
+  background: var(--atak-c2-green);
+  border-color: var(--atak-c2-green);
+  color: #08110e;
+}
+.atak-ops-btn--primary:hover {
+  background: #2fc492;
+  border-color: #2fc492;
+}
+
+.atak-empty-state {
+  border: 1px solid var(--atak-c2-line);
+  border-radius: 4px;
+  background: #0a1016;
+}
+.atak-empty-state-title {
+  font-family: var(--atak-font-tactical);
+  letter-spacing: 0.06em;
+}
+.atak-empty-state-text {
+  color: #81909a;
+}
+
+.atak-collapse-sum {
+  font-family: var(--atak-font-tactical);
+  letter-spacing: 0.08em;
+}
+
+/* Info cards in left content */
+.atak-tabs-content {
+  background: #080c11;
+}
+.atak-panel-hint {
+  color: #81909a;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+/* Force toolbar/drawer layout over legacy absolute positioning */
+.atak-map-wrap > .atak-map-tools,
+.atak-map-wrap > .atak-map-tools-fab,
+.atak-map-wrap > .atak-map-stage,
+.atak-map-wrap > .atak-drawer {
+  position: relative;
+}
+.atak-map-wrap > .atak-map-tools {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+}
+.atak-map-wrap > .atak-map-fab {
+  position: absolute;
+}
+
+@media (max-width: 980px) {
+  .atak-side-head {
+    height: 54px;
+  }
+  .atak-left-aside.atak-module-list {
+    max-height: min(34vh, 220px);
+  }
+  .atak-map-tools {
+    height: auto;
+    min-height: var(--atak-c2-tool);
+    padding: 4px 8px;
+  }
+  .atak-map-tools__row {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 720px) {
+  .atak-map-tools {
+    left: auto;
+    right: auto;
+    width: 100%;
+  }
+  .atak-section-btn {
+    height: 48px;
+  }
+  .atak-section-btn__label {
+    display: none;
+  }
+}
+
+/* Light theme: keep readable without rewriting header */
+body.atak-theme-light .atak-section-btn.active,
+body.atak-theme-light .atak-left-aside .atak-tab.active,
+body.atak-theme-light .atak-drawer__title,
+body.atak-theme-light .atak-map-tools__btn.is-active {
+  color: #0f766e;
+}
+body.atak-theme-light .atak-map-tools,
+body.atak-theme-light .atak-map-tools-fab,
+body.atak-theme-light .atak-drawer,
+body.atak-theme-light .atak-left-rail,
+body.atak-theme-light .atak-left-body {
+  background: #ffffff;
+  border-color: #d0d7de;
+}

@@ -27,6 +27,9 @@ use App\Services\Steam\SteamWebApiService;
 use App\Services\Community\MemberOnboardingService;
 use App\Services\Community\LeaveCommunityService;
 use App\Services\Auth\LoginSecurityOtpService;
+use App\Services\Audit\AuditAction;
+use App\Services\Audit\AuditService;
+use App\Services\Qr\QrPngGenerator;
 use PDO;
 
 class AccountController
@@ -45,6 +48,8 @@ class AccountController
         private SteamWebApiService $steamWebApiService,
         private LoginSecurityOtpService $loginSecurityOtpService,
         private LeaveCommunityService $leaveCommunityService,
+        private AuditService $auditService,
+        private QrPngGenerator $qrPngGenerator,
     ) {}
 
     /**
@@ -415,6 +420,8 @@ class AccountController
         $loginOtpVoluntaryActive = $this->userRepository->hasEmailLoginOtpEnabledColumn()
             && $freshForOtp !== null
             && (int) ($freshForOtp['email_login_otp_enabled'] ?? 0) === 1;
+        $totpEnabled = $freshForOtp !== null
+            && $this->loginSecurityOtpService->isTotpEnabled($freshForOtp);
 
         return $this->accountView('account.preferences', 'Préférences', [
             'user' => $user,
@@ -431,6 +438,7 @@ class AccountController
             'steamSyncReport' => is_array($steamSyncReport) ? $steamSyncReport : null,
             'loginOtpMandatory' => $this->loginSecurityOtpService->isMandatoryForUserId($uid),
             'loginOtpVoluntaryActive' => $loginOtpVoluntaryActive,
+            'totpEnabled' => $totpEnabled,
             'loginOtpTtlMinutes' => LoginSecurityOtpService::TTL_MINUTES,
         ]);
     }
@@ -996,12 +1004,13 @@ class AccountController
         $user = $fresh !== null ? array_merge($user, $fresh) : $user;
 
         $errors = [];
-        $otpErrors = [];
         $success = Session::getFlash('success');
         $error = Session::getFlash('error');
         $hasOtpColumn = $this->userRepository->hasEmailLoginOtpEnabledColumn();
+        $hasTotpColumns = $this->userRepository->hasTotpColumns();
         $loginOtpForcedByRole = $this->loginSecurityOtpService->isMandatoryForUserId($uid);
         $emailLoginOtpEnabled = $hasOtpColumn && (int) ($user['email_login_otp_enabled'] ?? 0) === 1;
+        $totpEnabled = $hasTotpColumns && $this->loginSecurityOtpService->isTotpEnabled($user);
 
         if ($request->isPost()) {
             if (!Csrf::validate($request->input('_csrf_token'))) {
@@ -1010,68 +1019,53 @@ class AccountController
                 return Response::redirect(url('account/mail'));
             }
 
-            if ($hasOtpColumn && (string) $request->input('account_mail_section') === 'email_login_otp') {
-                $otpPassword = (string) $request->input('otp_toggle_password');
-                if ($otpPassword === '' || !password_verify($otpPassword, (string) ($user['password_hash'] ?? ''))) {
-                    $otpErrors['otp_toggle_password'] = ['Mot de passe actuel incorrect.'];
-                } else {
-                    $want = $request->input('email_login_otp_enabled') !== null
-                        && (string) $request->input('email_login_otp_enabled') === '1';
-                    if ($loginOtpForcedByRole && !$want) {
-                        $otpErrors['email_login_otp_enabled'] = ['Votre rôle impose déjà cette protection : elle ne peut pas être désactivée.'];
-                    } else {
-                        $this->userRepository->update($uid, $tenantId, ['email_login_otp_enabled' => $want ? 1 : 0]);
-                        Session::flash(
-                            'success',
-                            $want
-                                ? 'Double vérification par e-mail activée. Un code vous sera demandé à chaque connexion.'
-                                : 'Double vérification par e-mail désactivée.'
-                        );
+            // Ancien formulaire OTP : rediriger vers la page dédiée.
+            if ((string) $request->input('account_mail_section') === 'email_login_otp') {
+                Session::flash('success', 'La double vérification se gère désormais sur la page dédiée.');
 
-                        return Response::redirect(url('account/mail'));
-                    }
-                }
+                return Response::redirect(url('account/security'));
+            }
+
+            $email = trim((string) $request->input('email'));
+            $email_confirmation = trim((string) $request->input('email_confirmation'));
+            $password = $request->input('password');
+
+            $v = new Validator([
+                'email' => $email,
+                'email_confirmation' => $email_confirmation,
+                'password' => $password,
+            ], [
+                'email' => 'required|email',
+                'email_confirmation' => 'required',
+                'password' => 'required',
+            ]);
+            if (!$v->validate()) {
+                $errors = $v->errors();
+            } elseif ($email !== $email_confirmation) {
+                $errors['email_confirmation'] = ['Les deux adresses doivent être identiques.'];
+            } elseif (!password_verify((string) $password, (string) ($user['password_hash'] ?? ''))) {
+                $errors['password'] = ['Mot de passe actuel incorrect.'];
+            } elseif ($this->userRepository->emailExistsInTenant($tenantId, $email, $uid)) {
+                $errors['email'] = ['Cette adresse est déjà utilisée par un autre compte.'];
             } else {
-                $email = trim((string) $request->input('email'));
-                $email_confirmation = trim((string) $request->input('email_confirmation'));
-                $password = $request->input('password');
+                $this->userRepository->update($uid, $tenantId, ['email' => $email]);
+                Session::set('email', $email);
+                Session::flash('success', 'Adresse e-mail mise à jour.');
 
-                $v = new Validator([
-                    'email' => $email,
-                    'email_confirmation' => $email_confirmation,
-                    'password' => $password,
-                ], [
-                    'email' => 'required|email',
-                    'email_confirmation' => 'required',
-                    'password' => 'required',
-                ]);
-                if (!$v->validate()) {
-                    $errors = $v->errors();
-                } elseif ($email !== $email_confirmation) {
-                    $errors['email_confirmation'] = ['Les deux adresses doivent être identiques.'];
-                } elseif (!password_verify((string) $password, (string) ($user['password_hash'] ?? ''))) {
-                    $errors['password'] = ['Mot de passe actuel incorrect.'];
-                } elseif ($this->userRepository->emailExistsInTenant($tenantId, $email, $uid)) {
-                    $errors['email'] = ['Cette adresse est déjà utilisée par un autre compte.'];
-                } else {
-                    $this->userRepository->update($uid, $tenantId, ['email' => $email]);
-                    Session::set('email', $email);
-                    Session::flash('success', 'Adresse e-mail mise à jour.');
-
-                    return Response::redirect(url('account/mail'));
-                }
+                return Response::redirect(url('account/mail'));
             }
         }
 
         return $this->accountView('account.mail', 'Adresse e-mail', [
             'user' => $user,
             'errors' => $errors,
-            'otpErrors' => $otpErrors,
             'success' => $success,
             'error' => $error,
             'hasOtpColumn' => $hasOtpColumn,
+            'hasTotpColumns' => $hasTotpColumns,
             'loginOtpForcedByRole' => $loginOtpForcedByRole,
             'emailLoginOtpEnabled' => $emailLoginOtpEnabled,
+            'totpEnabled' => $totpEnabled,
         ]);
     }
 
@@ -1262,6 +1256,222 @@ class AccountController
             'errors' => $errors,
             'success' => $success,
             'error' => $error,
+        ]);
+    }
+
+    public function security(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $uid = (int) ($user['id'] ?? 0);
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        $fresh = $this->userRepository->findById($uid, $tenantId);
+        $user = $fresh !== null ? array_merge($user, $fresh) : $user;
+
+        $errors = [];
+        $success = Session::getFlash('success');
+        $error = Session::getFlash('error');
+        $hasOtpColumn = $this->userRepository->hasEmailLoginOtpEnabledColumn();
+        $hasTotpColumns = $this->userRepository->hasTotpColumns();
+        $loginOtpForcedByRole = $this->loginSecurityOtpService->isMandatoryForUserId($uid);
+        $emailLoginOtpEnabled = $hasOtpColumn && (int) ($user['email_login_otp_enabled'] ?? 0) === 1;
+        $totpEnabled = $hasTotpColumns && $this->loginSecurityOtpService->isTotpEnabled($user);
+
+        $pendingSetup = Session::get('pending_totp_setup');
+        if (!is_array($pendingSetup) || (int) ($pendingSetup['user_id'] ?? 0) !== $uid) {
+            $pendingSetup = null;
+        }
+
+        $totpQrDataUri = null;
+        $totpSecretDisplay = null;
+        if (is_array($pendingSetup)) {
+            $secret = (string) ($pendingSetup['secret'] ?? '');
+            $totpSecretDisplay = $this->loginSecurityOtpService->totpService()->formatSecretForDisplay($secret);
+            $issuer = function_exists('email_brand_name') ? (string) email_brand_name() : 'Athena';
+            $accountLabel = trim((string) ($user['email'] ?? '')) ?: ('user-' . $uid);
+            $uri = $this->loginSecurityOtpService->totpService()->provisioningUri($secret, $accountLabel, $issuer);
+            $qr = $this->qrPngGenerator->png($uri, 280, 12, false);
+            if (is_array($qr) && ($qr['body'] ?? '') !== '') {
+                $mime = (string) ($qr['mime'] ?? 'image/png');
+                $totpQrDataUri = 'data:' . $mime . ';base64,' . base64_encode((string) $qr['body']);
+            }
+        }
+
+        if ($request->isPost()) {
+            if (!Csrf::validate($request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+
+                return Response::redirect(url('account/security'));
+            }
+            $section = (string) $request->input('security_section', '');
+            $password = (string) $request->input('confirm_password', '');
+
+            if ($section === 'email_login_otp') {
+                if (!$hasOtpColumn) {
+                    Session::flash('error', 'La double vérification par e-mail n’est pas encore disponible sur ce serveur.');
+
+                    return Response::redirect(url('account/security'));
+                }
+                if ($password === '' || !password_verify($password, (string) ($user['password_hash'] ?? ''))) {
+                    $errors['confirm_password'] = ['Mot de passe actuel incorrect.'];
+                } else {
+                    $want = $request->input('email_login_otp_enabled') !== null
+                        && (string) $request->input('email_login_otp_enabled') === '1';
+                    if ($loginOtpForcedByRole && !$want && !$totpEnabled) {
+                        $errors['email_login_otp_enabled'] = ['Votre rôle impose une double vérification : activez d’abord l’application d’authentification, ou laissez le code par e-mail.'];
+                    } else {
+                        $this->userRepository->update($uid, $tenantId, ['email_login_otp_enabled' => $want ? 1 : 0]);
+                        $this->auditService->log(
+                            AuditAction::AUTH_EMAIL_LOGIN_OTP_TOGGLED,
+                            $tenantId,
+                            $uid,
+                            'user',
+                            $uid,
+                            null,
+                            $want ? 'enabled' : 'disabled'
+                        );
+                        Session::flash(
+                            'success',
+                            $want
+                                ? 'Code par e-mail activé. Il pourra être demandé à la connexion.'
+                                : 'Code par e-mail désactivé.'
+                        );
+
+                        return Response::redirect(url('account/security'));
+                    }
+                }
+            } elseif ($section === 'totp_start') {
+                if (!$hasTotpColumns) {
+                    Session::flash('error', 'L’application d’authentification n’est pas encore disponible sur ce serveur.');
+
+                    return Response::redirect(url('account/security'));
+                }
+                if ($totpEnabled) {
+                    Session::flash('info', 'L’application d’authentification est déjà active.');
+
+                    return Response::redirect(url('account/security'));
+                }
+                if ($password === '' || !password_verify($password, (string) ($user['password_hash'] ?? ''))) {
+                    $errors['confirm_password'] = ['Mot de passe actuel incorrect.'];
+                } else {
+                    $secret = $this->loginSecurityOtpService->totpService()->generateSecret();
+                    Session::set('pending_totp_setup', [
+                        'user_id' => $uid,
+                        'secret' => $secret,
+                        'started_at' => time(),
+                    ]);
+                    Session::flash('success', 'Scannez le code avec votre application, puis saisissez le code à six chiffres pour confirmer.');
+
+                    return Response::redirect(url('account/security') . '#authenticator');
+                }
+            } elseif ($section === 'totp_confirm') {
+                if (!is_array($pendingSetup)) {
+                    Session::flash('error', 'Aucune configuration en cours. Recommencez l’activation.');
+
+                    return Response::redirect(url('account/security') . '#authenticator');
+                }
+                $code = preg_replace('/\D/', '', (string) $request->input('totp_code', '')) ?? '';
+                $secret = (string) ($pendingSetup['secret'] ?? '');
+                if ($password === '' || !password_verify($password, (string) ($user['password_hash'] ?? ''))) {
+                    $errors['confirm_password'] = ['Mot de passe actuel incorrect.'];
+                } elseif (!$this->loginSecurityOtpService->totpService()->verify($secret, $code)) {
+                    $errors['totp_code'] = ['Code incorrect. Vérifiez l’heure de votre appareil et réessayez.'];
+                } else {
+                    $enc = $this->loginSecurityOtpService->encryptTotpSecret($secret);
+                    $this->userRepository->update($uid, $tenantId, [
+                        'totp_secret' => $enc,
+                        'totp_enabled' => 1,
+                        'totp_confirmed_at' => date('Y-m-d H:i:s'),
+                    ]);
+                    Session::forget('pending_totp_setup');
+                    $this->auditService->log(
+                        AuditAction::AUTH_TOTP_ENABLED,
+                        $tenantId,
+                        $uid,
+                        'user',
+                        $uid
+                    );
+                    Session::flash('success', 'Application d’authentification activée. Un code de l’application sera demandé à chaque connexion.');
+
+                    return Response::redirect(url('account/security'));
+                }
+            } elseif ($section === 'totp_cancel') {
+                Session::forget('pending_totp_setup');
+                Session::flash('success', 'Configuration annulée.');
+
+                return Response::redirect(url('account/security'));
+            } elseif ($section === 'totp_disable') {
+                if (!$totpEnabled) {
+                    return Response::redirect(url('account/security'));
+                }
+                $code = preg_replace('/\D/', '', (string) $request->input('totp_code', '')) ?? '';
+                if ($password === '' || !password_verify($password, (string) ($user['password_hash'] ?? ''))) {
+                    $errors['confirm_password'] = ['Mot de passe actuel incorrect.'];
+                } else {
+                    $secret = $this->loginSecurityOtpService->decryptUserTotpSecret($user);
+                    if ($secret === null || !$this->loginSecurityOtpService->totpService()->verify($secret, $code)) {
+                        $errors['totp_code'] = ['Code de l’application incorrect.'];
+                    } elseif ($loginOtpForcedByRole && !$emailLoginOtpEnabled) {
+                        $errors['totp_enabled'] = ['Votre rôle impose une double vérification. Activez d’abord le code par e-mail avant de retirer l’application.'];
+                    } else {
+                        $this->userRepository->update($uid, $tenantId, [
+                            'totp_enabled' => 0,
+                            'totp_secret' => null,
+                            'totp_confirmed_at' => null,
+                        ]);
+                        Session::forget('pending_totp_setup');
+                        $this->auditService->log(
+                            AuditAction::AUTH_TOTP_DISABLED,
+                            $tenantId,
+                            $uid,
+                            'user',
+                            $uid
+                        );
+                        Session::flash('success', 'Application d’authentification désactivée.');
+
+                        return Response::redirect(url('account/security'));
+                    }
+                }
+            }
+        }
+
+        // Recharger le QR si erreurs pendant confirm
+        if ($pendingSetup === null) {
+            $pendingSetup = Session::get('pending_totp_setup');
+            if (!is_array($pendingSetup) || (int) ($pendingSetup['user_id'] ?? 0) !== $uid) {
+                $pendingSetup = null;
+                $totpQrDataUri = null;
+                $totpSecretDisplay = null;
+            } elseif ($totpQrDataUri === null) {
+                $secret = (string) ($pendingSetup['secret'] ?? '');
+                $totpSecretDisplay = $this->loginSecurityOtpService->totpService()->formatSecretForDisplay($secret);
+                $issuer = function_exists('email_brand_name') ? (string) email_brand_name() : 'Athena';
+                $accountLabel = trim((string) ($user['email'] ?? '')) ?: ('user-' . $uid);
+                $uri = $this->loginSecurityOtpService->totpService()->provisioningUri($secret, $accountLabel, $issuer);
+                $qr = $this->qrPngGenerator->png($uri, 280, 12, false);
+                if (is_array($qr) && ($qr['body'] ?? '') !== '') {
+                    $mime = (string) ($qr['mime'] ?? 'image/png');
+                    $totpQrDataUri = 'data:' . $mime . ';base64,' . base64_encode((string) $qr['body']);
+                }
+            }
+        }
+
+        return $this->accountView('account.security', 'Double vérification', [
+            'user' => $user,
+            'errors' => $errors,
+            'success' => $success,
+            'error' => $error,
+            'hasOtpColumn' => $hasOtpColumn,
+            'hasTotpColumns' => $hasTotpColumns,
+            'loginOtpForcedByRole' => $loginOtpForcedByRole,
+            'emailLoginOtpEnabled' => $emailLoginOtpEnabled,
+            'totpEnabled' => $totpEnabled,
+            'pendingTotpSetup' => is_array($pendingSetup),
+            'totpQrDataUri' => $totpQrDataUri,
+            'totpSecretDisplay' => $totpSecretDisplay,
+            'loginOtpTtlMinutes' => LoginSecurityOtpService::TTL_MINUTES,
         ]);
     }
 

@@ -4,7 +4,15 @@ ob_start();
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 /** @var array<string,mixed> $document */
 $canManage = (bool) ($canManage ?? false);
-$editable = in_array((string) ($document['status'] ?? ''), ['brouillon', 'en_relecture'], true);
+$status = (string) ($document['status'] ?? '');
+$editable = in_array($status, ['brouillon', 'en_relecture'], true);
+$statusClass = match ($status) {
+    'brouillon' => 'badge--gray',
+    'en_relecture' => 'badge--amber',
+    'valide' => '',
+    'archive' => 'badge--gray',
+    default => 'badge--gray',
+};
 ?>
 <div class="breadcrumb">
     Athena / SSE /
@@ -12,28 +20,72 @@ $editable = in_array((string) ($document['status'] ?? ''), ['brouillon', 'en_rel
     <strong><?= $h($document['reference_code'] ?? '') ?></strong>
 </div>
 
-<div class="page-heading">
-    <div>
-        <div class="page-heading-overline">Produit de renseignement // Document</div>
-        <h1><?= $h($document['title'] ?? 'Document') ?></h1>
-        <p>
+<section class="sse-desk-hero" aria-labelledby="sse-doc-show-title">
+    <div class="sse-desk-hero__main">
+        <div class="sse-desk-hero__kicker">
+            <span class="interest-hero__ref"><?= $h($document['reference_code'] ?? 'DOC') ?></span>
+            <span class="badge <?= $h($statusClass) ?>"><?= $h($document['status_label'] ?? '') ?></span>
+            <span class="badge badge--red"><?= $h($document['classification_label'] ?? '') ?></span>
+        </div>
+        <h1 id="sse-doc-show-title"><?= $h($document['title'] ?? 'Document') ?></h1>
+        <p class="sse-desk-hero__lead">
             <?= $h($document['document_type_label'] ?? 'Document') ?>
-            · <?= $h($document['classification_label'] ?? '') ?>
-            · <?= $h($document['status_label'] ?? '') ?>
             <?php if (!empty($document['author_label'])): ?>
                 · Rédigé par <?= $h($document['author_label']) ?>
             <?php endif; ?>
+            <?php if (!empty($document['updated_at'])): ?>
+                · Mis à jour <?= $h($document['updated_at']) ?>
+            <?php endif; ?>
         </p>
-    </div>
-    <div class="page-reference">
-        <strong><?= $h($document['reference_code'] ?? '') ?></strong>
         <?php if (!empty($document['case_reference'])): ?>
-            <a class="link" href="<?= $h(url('atak/sse/dossiers/' . (int) ($document['case_id'] ?? 0))) ?>">
-                <?= $h($document['case_reference']) ?>
-            </a>
+            <p class="sse-desk-card__meta" style="margin:0">
+                Dossier lié —
+                <a class="link" href="<?= $h(url('atak/sse/dossiers/' . (int) ($document['case_id'] ?? 0))) ?>">
+                    <?= $h($document['case_reference']) ?>
+                </a>
+            </p>
         <?php endif; ?>
     </div>
-</div>
+    <aside class="sse-desk-hero__side">
+        <p class="interest-hero__side-label">Actions</p>
+        <div class="interest-hero__actions">
+            <?php if ($canManage && $editable): ?>
+                <a class="btn" href="<?= $h(url('atak/sse/documents/' . (int) $document['id'] . '/modifier')) ?>">Modifier</a>
+            <?php endif; ?>
+            <?php if ($canManage && $status === 'brouillon'): ?>
+                <form method="post" action="<?= $h(url('atak/sse/documents/' . (int) $document['id'] . '/statut')) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="status" value="en_relecture">
+                    <button class="btn btn--ghost" type="submit" style="width:100%">Soumettre en relecture</button>
+                </form>
+            <?php endif; ?>
+            <?php if ($canManage && in_array($status, ['brouillon', 'en_relecture'], true)): ?>
+                <form method="post" action="<?= $h(url('atak/sse/documents/' . (int) $document['id'] . '/statut')) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="status" value="valide">
+                    <button class="btn" type="submit" style="width:100%">Valider le document</button>
+                </form>
+            <?php endif; ?>
+            <?php if ($canManage && $status === 'valide'): ?>
+                <form method="post" action="<?= $h(url('atak/sse/documents/' . (int) $document['id'] . '/statut')) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="status" value="archive">
+                    <button class="btn btn--ghost" type="submit" style="width:100%">Archiver</button>
+                </form>
+            <?php endif; ?>
+            <?php if (!empty($document['case_id'])): ?>
+                <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers/' . (int) $document['case_id'] . '/declassification')) ?>">
+                    Version de diffusion
+                </a>
+            <?php endif; ?>
+            <button class="btn btn--ghost" type="button" data-copy-body style="width:100%">Copier le corps</button>
+        </div>
+        <div class="interest-hero__source">
+            <strong>Référence</strong>
+            <span><?= $h($document['reference_code'] ?? '—') ?></span>
+        </div>
+    </aside>
+</section>
 
 <div class="security-notice">
     <div class="security-notice-code">SEC-DOC</div>
@@ -46,58 +98,25 @@ $editable = in_array((string) ($document['status'] ?? ''), ['brouillon', 'en_rel
     </div>
 </div>
 
-<section class="sse-doc-read">
-    <div class="sse-doc-read__toolbar panel">
-        <div class="panel-header">
-            <div class="panel-title">
-                <span class="panel-index">19.12</span>
-                Lecture officielle
-            </div>
-            <div class="panel-meta">
-                <?php if (!empty($document['updated_at'])): ?>
-                    Mis à jour <?= $h($document['updated_at']) ?>
-                <?php endif; ?>
-            </div>
+<section class="sse-doc-read panel sse-desk-panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <span class="panel-index">19.12</span>
+            Lecture officielle
         </div>
-        <div class="panel-body toolbar-actions" style="gap:.5rem;display:flex;flex-wrap:wrap">
-            <button class="btn btn--ghost btn--sm" type="button" data-copy-body>Copier le corps</button>
-            <?php if ($canManage && $editable): ?>
-                <a class="btn btn--ghost btn--sm" href="<?= $h(url('atak/sse/documents/' . (int) $document['id'] . '/modifier')) ?>">Modifier</a>
-            <?php endif; ?>
-            <?php if ($canManage && ($document['status'] ?? '') === 'brouillon'): ?>
-                <form method="post" action="<?= $h(url('atak/sse/documents/' . (int) $document['id'] . '/statut')) ?>" style="display:inline">
-                    <?= \App\Core\Csrf::field() ?>
-                    <input type="hidden" name="status" value="en_relecture">
-                    <button class="btn btn--ghost btn--sm" type="submit">Soumettre en relecture</button>
-                </form>
-            <?php endif; ?>
-            <?php if ($canManage && in_array(($document['status'] ?? ''), ['brouillon', 'en_relecture'], true)): ?>
-                <form method="post" action="<?= $h(url('atak/sse/documents/' . (int) $document['id'] . '/statut')) ?>" style="display:inline">
-                    <?= \App\Core\Csrf::field() ?>
-                    <input type="hidden" name="status" value="valide">
-                    <button class="btn btn--sm" type="submit">Valider le document</button>
-                </form>
-            <?php endif; ?>
-            <?php if ($canManage && ($document['status'] ?? '') === 'valide'): ?>
-                <form method="post" action="<?= $h(url('atak/sse/documents/' . (int) $document['id'] . '/statut')) ?>" style="display:inline">
-                    <?= \App\Core\Csrf::field() ?>
-                    <input type="hidden" name="status" value="archive">
-                    <button class="btn btn--ghost btn--sm" type="submit">Archiver</button>
-                </form>
-            <?php endif; ?>
-            <?php if (!empty($document['case_id'])): ?>
-                <a class="btn btn--ghost btn--sm" href="<?= $h(url('atak/sse/dossiers/' . (int) $document['case_id'] . '/declassification')) ?>">
-                    Version de diffusion
-                </a>
+        <div class="panel-meta">
+            <?php if (!empty($document['updated_at'])): ?>
+                Mis à jour <?= $h($document['updated_at']) ?>
             <?php endif; ?>
         </div>
     </div>
-
-    <?php
-    $livePreview = false;
-    require __DIR__ . '/partials/document_paper.php';
-    ?>
-    <pre id="sse-doc-body-raw" class="sr-only" aria-hidden="true"><?= $h($document['body'] ?? '') ?></pre>
+    <div class="panel-body">
+        <?php
+        $livePreview = false;
+        require __DIR__ . '/partials/document_paper.php';
+        ?>
+        <pre id="sse-doc-body-raw" class="sr-only" aria-hidden="true"><?= $h($document['body'] ?? '') ?></pre>
+    </div>
 </section>
 
 <script>

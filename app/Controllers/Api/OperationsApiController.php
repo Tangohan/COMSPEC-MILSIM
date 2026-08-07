@@ -26,7 +26,11 @@ class OperationsApiController
         private AssetLogisticsEvaluator $assetLogisticsEvaluator,
         private ?AtakDataRepository $atakDataRepository = null,
     ) {
-        $this->atakDataRepository ??= new AtakDataRepository();
+    }
+
+    private function atakData(): AtakDataRepository
+    {
+        return $this->atakDataRepository ??= new AtakDataRepository();
     }
 
     public function missionsTimeline(Request $request, array $params = []): Response
@@ -293,8 +297,8 @@ class OperationsApiController
         $liveAlerts = [];
         $criticalUnits = [];
         if ($tenantId > 0) {
-            $liveAlerts = $this->atakDataRepository->getMedicalAlertsFromChat($tenantId, $mapId, 40);
-            $criticalUnits = $this->atakDataRepository->getUnitsWithCriticalHealth($tenantId, $mapId);
+            $liveAlerts = $this->atakData()->getMedicalAlertsFromChat($tenantId, $mapId, 40);
+            $criticalUnits = $this->atakData()->getUnitsWithCriticalHealth($tenantId, $mapId);
         }
 
         $medicalSignals = [];

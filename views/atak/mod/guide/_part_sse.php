@@ -48,4 +48,10 @@
         <strong>Module communauté.</strong> L’administrateur peut activer ou désactiver le renseignement interpersonnel
         dans la configuration ATAK (modules ATAK Enhanced / cTab).
     </div>
+
+    <h3>Exploitation de sites</h3>
+    <p>
+        Les sites exploités depuis le terrain (checklist de fouille, saisies, clôture) apparaissent dans le portail
+        sous <strong>Sites</strong> et peuvent être rattachés au dossier actif.
+    </p>
 </section>

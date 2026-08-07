@@ -25,6 +25,20 @@ Dans le dépôt → *Settings → Secrets and variables → Actions* :
 
 Puis *Actions → Deploy Athena (Hostinger FTP) → Run workflow* pour un premier test.
 
+### Sessions : ne pas se faire déconnecter à chaque push
+
+Le workflow FTP **exclut** `storage/sessions` (dossier + contenu), ainsi que cache / logs / uploads.
+Les fichiers de session runtime ne doivent jamais être synchronisés.
+
+Sur Hostinger, pour être encore plus sûr, ajoutez dans le `.env` **production** (hors Git) :
+
+```bash
+SESSION_SAVE_PATH=/home/u416380327/tmp/athena_sessions
+```
+
+Créez le dossier une fois (SSH ou gestionnaire de fichiers), hors `public_html`.
+Les connexions survivent alors même si un sync FTP touche l’arbre applicatif.
+
 ### Config locale
 
 `.deploy.env` (gitignoré) en `DEPLOY_MODE=git` — le hook Cursor rappelle seulement de committer / pousser.

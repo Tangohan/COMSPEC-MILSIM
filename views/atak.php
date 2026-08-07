@@ -63,6 +63,7 @@ if ($atakMapConfig) {
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.css" />
   <link href="<?= $base ?>/assets/css/atak.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-c2-shell.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
@@ -902,23 +903,129 @@ if ($atakMapConfig) {
         <button type="button" class="atak-panel-chrome-btn atak-panel-chrome-btn--ghost" data-atak-popout-restore="left">Réintégrer ici</button>
       </div>
       <div class="atak-left-rail">
-      <nav class="atak-left-aside" role="tablist" aria-label="Panneaux latéraux">
-        <button type="button" class="atak-tab active" role="tab" aria-selected="true" data-tab="cams" title="Cams"><span class="atak-tab-label">Cams</span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="photos" title="Photos terrain"><span class="atak-tab-label">Photos</span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="personnes" title="Personnes identifiées (renseignement interpersonnel)"><span class="atak-tab-label">Personnes</span> <span class="atak-tab-badge" id="atak-sse-tab-badge" hidden></span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="markers" title="Marqueurs"><span class="atak-tab-label">Marqueurs</span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="chat" title="Tchat"><span class="atak-tab-label">Tchat</span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="orders" title="Ordres"><span class="atak-tab-label">Ordres</span> <span class="atak-tab-badge" id="atak-orders-tab-badge" hidden></span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="medical" title="Médical — alertes, triage et MEDEVAC"><span class="atak-tab-label">Médical</span> <span class="atak-tab-badge atak-medical-tab-badge" id="atak-medical-tab-badge" hidden></span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="identification" title="Identification ami / ennemi (IFF)"><span class="atak-tab-label">Identification</span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="situation" title="Tableau de situation"><span class="atak-tab-label">Situation</span> <span class="atak-tab-badge" id="atak-sitrep-count" hidden></span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="radio" title="Radio proximité"><span class="atak-tab-label">Radio</span> <span class="atak-tab-badge" id="atak-radio-tab-badge" hidden></span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="notes" title="Notes de session et tableurs temporaires"><span class="atak-tab-label">Notes</span> <span class="atak-tab-badge" id="atak-notes-dirty" hidden>·</span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="pings" title="Pings"><span class="atak-tab-label">Pings</span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="jtac" title="JTAC"><span class="atak-tab-label">JTAC</span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="etat" title="État du personnel et logistique"><span class="atak-tab-label">État</span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="replay" title="Relecture mission et bilan après-action"><span class="atak-tab-label">Relecture</span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="liaison" title="Liaison"><span class="atak-tab-label">Liaison</span> <span class="atak-tab-badge" id="atak-liaison-tab-badge" hidden></span></button>
+      <nav class="atak-section-rail" role="tablist" aria-label="Domaines opérationnels">
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="sitac" title="Situation tactique">
+          <span class="atak-section-btn__icon" aria-hidden="true">⌖</span>
+          <span class="atak-section-btn__label">Sitac</span>
+          <span class="atak-section-btn__badge" hidden></span>
+        </button>
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="forces" title="Forces et personnel">
+          <span class="atak-section-btn__icon" aria-hidden="true">♙</span>
+          <span class="atak-section-btn__label">Forces</span>
+          <span class="atak-section-btn__badge" hidden></span>
+        </button>
+        <button type="button" class="atak-section-btn active" role="tab" aria-selected="true" data-section="intel" title="Renseignement">
+          <span class="atak-section-btn__icon" aria-hidden="true">◇</span>
+          <span class="atak-section-btn__label">Intel</span>
+          <span class="atak-section-btn__badge" hidden></span>
+        </button>
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="c2" title="Commandement">
+          <span class="atak-section-btn__icon" aria-hidden="true">▣</span>
+          <span class="atak-section-btn__label">C2</span>
+          <span class="atak-section-btn__badge" hidden></span>
+        </button>
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="comms" title="Communications">
+          <span class="atak-section-btn__icon" aria-hidden="true">≋</span>
+          <span class="atak-section-btn__label">Comms</span>
+          <span class="atak-section-btn__badge" hidden></span>
+        </button>
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="support" title="Appuis">
+          <span class="atak-section-btn__icon" aria-hidden="true">△</span>
+          <span class="atak-section-btn__label">Appuis</span>
+          <span class="atak-section-btn__badge" hidden></span>
+        </button>
+      </nav>
+      <div class="atak-rail-bottom">
+        <button type="button" class="atak-section-btn" id="atak-section-collapse" aria-expanded="true" title="Réduire ou agrandir le panneau latéral">
+          <span class="atak-section-btn__icon" aria-hidden="true">‹</span>
+          <span class="atak-section-btn__label">Panneau</span>
+        </button>
+      </div>
+      </div>
+      <div class="atak-left-body">
+      <div class="atak-side-head">
+        <div>
+          <div class="atak-side-eyebrow" id="atak-side-eyebrow">ATHENA / INTEL</div>
+          <h2 class="atak-side-title" id="atak-side-title">Renseignement</h2>
+        </div>
+        <button type="button" class="atak-icon-btn" id="atak-side-collapse" aria-expanded="true" title="Réduire le panneau">‹</button>
+      </div>
+      <div class="atak-side-status">
+        <span><strong>●</strong>&nbsp; Liaison active</span>
+        <span id="atak-side-meta">3 modules</span>
+      </div>
+      <nav class="atak-left-aside atak-module-list" role="tablist" aria-label="Modules du domaine">
+        <button type="button" class="atak-tab active is-section-visible" role="tab" aria-selected="true" data-tab="cams" data-atak-section="intel" title="Cams">
+          <span class="atak-tab-label">Cams</span>
+          <small class="atak-tab-desc">Aperçus photo des capteurs</small>
+        </button>
+        <button type="button" class="atak-tab is-section-visible" role="tab" aria-selected="false" data-tab="photos" data-atak-section="intel" title="Photos terrain">
+          <span class="atak-tab-label">Photos</span>
+          <small class="atak-tab-desc">Captures et pièces image</small>
+        </button>
+        <button type="button" class="atak-tab is-section-visible" role="tab" aria-selected="false" data-tab="personnes" data-atak-section="intel" title="Personnes identifiées (renseignement interpersonnel)">
+          <span class="atak-tab-label">Personnes</span>
+          <small class="atak-tab-desc">Identités et fiches terrain</small>
+          <span class="atak-tab-badge" id="atak-sse-tab-badge" hidden></span>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="markers" data-atak-section="sitac" title="Marqueurs">
+          <span class="atak-tab-label">Marqueurs</span>
+          <small class="atak-tab-desc">Objets tactiques sur la carte</small>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="chat" data-atak-section="comms" title="Tchat">
+          <span class="atak-tab-label">Tchat</span>
+          <small class="atak-tab-desc">Messagerie terrain ↔ TOC</small>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="orders" data-atak-section="c2" title="Ordres">
+          <span class="atak-tab-label">Ordres</span>
+          <small class="atak-tab-desc">Directives et FRAGO</small>
+          <span class="atak-tab-badge" id="atak-orders-tab-badge" hidden></span>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="medical" data-atak-section="forces" title="Médical — alertes, triage et MEDEVAC">
+          <span class="atak-tab-label">Médical</span>
+          <small class="atak-tab-desc">Alertes, triage et MEDEVAC</small>
+          <span class="atak-tab-badge atak-medical-tab-badge" id="atak-medical-tab-badge" hidden></span>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="identification" data-atak-section="sitac" title="Identification ami / ennemi (IFF)">
+          <span class="atak-tab-label">Identification</span>
+          <small class="atak-tab-desc">Ami / ennemi (IFF)</small>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="situation" data-atak-section="sitac" title="Tableau de situation">
+          <span class="atak-tab-label">Situation</span>
+          <small class="atak-tab-desc">Tableau de situation</small>
+          <span class="atak-tab-badge" id="atak-sitrep-count" hidden></span>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="radio" data-atak-section="comms" title="Radio proximité">
+          <span class="atak-tab-label">Radio</span>
+          <small class="atak-tab-desc">Fréquences et proximité</small>
+          <span class="atak-tab-badge" id="atak-radio-tab-badge" hidden></span>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="notes" data-atak-section="c2" title="Notes de session et tableurs temporaires">
+          <span class="atak-tab-label">Notes</span>
+          <small class="atak-tab-desc">Bloc-notes de mission</small>
+          <span class="atak-tab-badge" id="atak-notes-dirty" hidden>·</span>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="pings" data-atak-section="sitac" title="Pings">
+          <span class="atak-tab-label">Pings</span>
+          <small class="atak-tab-desc">Contacts à traiter</small>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="jtac" data-atak-section="support" title="JTAC">
+          <span class="atak-tab-label">JTAC</span>
+          <small class="atak-tab-desc">9-Line, CAS et laser</small>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="etat" data-atak-section="forces" title="État du personnel et logistique">
+          <span class="atak-tab-label">État</span>
+          <small class="atak-tab-desc">Personnel et logistique</small>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="replay" data-atak-section="c2" title="Relecture mission et bilan après-action">
+          <span class="atak-tab-label">Relecture</span>
+          <small class="atak-tab-desc">Bilan après-action</small>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="liaison" data-atak-section="comms" title="Liaison">
+          <span class="atak-tab-label">Liaison</span>
+          <small class="atak-tab-desc">État C2 / Arma</small>
+          <span class="atak-tab-badge" id="atak-liaison-tab-badge" hidden></span>
+        </button>
       </nav>
       <section class="atak-rail-audio" id="atak-rail-audio" aria-label="Réglages des alertes">
         <h3 class="atak-rail-audio-title">Alertes</h3>
@@ -936,8 +1043,6 @@ if ($atakMapConfig) {
         </label>
         <p class="atak-rail-audio-hint" id="atak-alert-mute-hint" hidden role="status"></p>
       </section>
-      </div>
-      <div class="atak-left-body">
       <div class="atak-panel-chrome" id="atak-panel-left-chrome" role="toolbar" aria-label="Contrôles du panneau">
         <span class="atak-panel-chrome-label">Panneau</span>
         <button type="button" class="atak-panel-chrome-btn" id="atak-panel-left-popout" data-atak-popout="left" title="Ouvrir dans une autre fenêtre">Ouvrir dans une autre fenêtre</button>
@@ -1649,16 +1754,19 @@ if ($atakMapConfig) {
           </div>
         </div>
       </div>
+      <div class="atak-map-stage">
       <div id="atak-map"></div>
       <div class="atak-replay-banner" id="atak-replay-banner" hidden role="status">
         <span class="atak-replay-banner-text">Relecture en cours — les positions live sont en pause</span>
         <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="atak-replay-exit">Revenir au direct</button>
+      </div>
       </div>
 
       <div class="atak-drawer atak-drawer--fixed" id="atak-effectifs-drawer">
         <div class="atak-drawer__head">
           <span class="atak-drawer__title">Tableau des effectifs</span>
           <span class="atak-drawer__count" id="atak-effectifs-count" hidden></span>
+          <button type="button" class="atak-drawer__toggle" id="atak-drawer-toggle" aria-expanded="true" title="Réduire le tableau des effectifs">⌄</button>
         </div>
         <div class="atak-drawer__body" id="atak-effectifs-drawer-body">
           <table class="atak-effectifs-table">
@@ -1813,6 +1921,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-sounds.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-panel-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-shell-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-section-nav.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-ctab.js"></script>
   <script src="<?= $base ?>/assets/js/atak-intel-view.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>

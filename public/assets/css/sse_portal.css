@@ -3856,6 +3856,238 @@ body.sse-theme-bureau .interest-facts>div { background:#0f1419; }
 @media(max-width:1100px){.sse-ops-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.sse-ops-grid{grid-template-columns:1fr}}
 
+/* --- Atelier de rédaction SSE --- */
+.sse-desk-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(13.5rem, 17rem);
+    gap: 1rem 1.25rem;
+    margin: 0 0 1rem;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid var(--line, var(--border));
+    border-radius: var(--radius, .75rem);
+    background:
+        linear-gradient(135deg, rgba(5, 150, 105, 0.07), transparent 42%),
+        rgba(20, 26, 33, 0.94);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+}
+.sse-desk-hero--compact {
+    grid-template-columns: 1fr;
+}
+.sse-desk-hero__kicker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.5rem;
+}
+.sse-desk-hero h1 {
+    margin: 0 0 0.4rem;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    color: var(--text-strong, #f2f4f3);
+}
+.sse-desk-hero__lead {
+    margin: 0 0 0.95rem;
+    max-width: 44rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+.sse-desk-hero .interest-facts {
+    margin: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.sse-desk-hero .interest-facts > div {
+    padding: 0.7rem 0.8rem;
+}
+.sse-desk-hero__side {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.9rem;
+    border-radius: 0.55rem;
+    border: 1px solid rgba(242, 244, 243, 0.08);
+    background: rgba(7, 9, 11, 0.42);
+}
+.sse-desk-hero__side .interest-hero__actions form {
+    margin: 0;
+}
+.sse-desk-types {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.7rem;
+    margin: 0 0 1rem;
+}
+.sse-desk-type {
+    display: grid;
+    gap: 0.35rem;
+    min-height: 6.5rem;
+    padding: 0.95rem 1rem;
+    border: 1px solid var(--line, var(--border));
+    border-radius: 0.7rem;
+    background: rgba(15, 20, 25, 0.88);
+    text-decoration: none;
+    transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+.sse-desk-type:hover {
+    border-color: rgba(52, 211, 153, 0.45);
+    background: rgba(5, 150, 105, 0.1);
+    transform: translateY(-1px);
+}
+.sse-desk-type__code {
+    font: 800 0.62rem/1 var(--mono, ui-monospace, monospace);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--green-bright, #34d399);
+}
+.sse-desk-type strong {
+    color: var(--text-strong);
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+}
+.sse-desk-type span:last-child {
+    color: var(--muted);
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+.sse-desk-panel {
+    margin-top: 0;
+}
+.sse-desk-filters {
+    margin: 0;
+}
+.sse-desk-list {
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--line, var(--border));
+}
+.sse-desk-card {
+    display: grid;
+    grid-template-columns: 3.4rem minmax(0, 1fr) auto;
+    gap: 0.85rem;
+    align-items: center;
+    padding: 0.95rem 1rem;
+    border-bottom: 1px solid rgba(242, 244, 243, 0.07);
+    background: rgba(7, 9, 11, 0.18);
+    transition: background .15s ease;
+}
+.sse-desk-card:hover {
+    background: rgba(5, 150, 105, 0.06);
+}
+.sse-desk-card__mark {
+    display: grid;
+    place-items: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 0.55rem;
+    border: 1px solid rgba(52, 211, 153, 0.28);
+    background: rgba(5, 150, 105, 0.1);
+    color: var(--green-bright, #34d399);
+    font: 800 0.68rem/1 var(--mono, ui-monospace, monospace);
+    letter-spacing: 0.08em;
+}
+.sse-desk-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+}
+.sse-desk-card__title {
+    margin: 0 0 0.25rem;
+    font-size: 0.98rem;
+    font-weight: 750;
+    line-height: 1.3;
+}
+.sse-desk-card__title .link {
+    color: var(--text-strong, #f2f4f3);
+    text-decoration: none;
+}
+.sse-desk-card__title .link:hover {
+    color: var(--green-bright, #34d399);
+}
+.sse-desk-card__meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.76rem;
+    line-height: 1.4;
+}
+.sse-desk-card__action {
+    padding-left: 0.25rem;
+}
+.sse-desk-hint {
+    margin: 0.4rem 0 0;
+    color: var(--muted);
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+.sse-desk-paper {
+    margin-top: 0.35rem;
+    padding: 0.15rem;
+    border-radius: 0.65rem;
+    border: 1px solid rgba(242, 244, 243, 0.1);
+    background:
+        linear-gradient(180deg, rgba(26, 34, 44, 0.55), rgba(12, 16, 21, 0.92));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.sse-desk-paper textarea,
+.sse-desk-paper .sse-report {
+    margin: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+.sse-desk-paper textarea {
+    width: 100%;
+    min-height: 24rem;
+    padding: 1rem 1.1rem;
+    color: var(--text-strong);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    resize: vertical;
+}
+.sse-desk-paper--read .sse-report {
+    padding: 1.15rem 1.25rem;
+    border-left: 0;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: rgba(242, 244, 243, 0.88);
+}
+.sse-desk-footnote {
+    margin-top: 0.75rem;
+}
+.sse-desk-actions {
+    margin-top: 1.15rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+}
+@media (max-width: 980px) {
+    .sse-desk-hero {
+        grid-template-columns: 1fr;
+    }
+    .sse-desk-types {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 640px) {
+    .sse-desk-types {
+        grid-template-columns: 1fr;
+    }
+    .sse-desk-card {
+        grid-template-columns: 2.8rem minmax(0, 1fr);
+    }
+    .sse-desk-card__action {
+        grid-column: 2;
+        padding-left: 0;
+    }
+    .sse-desk-hero .interest-facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
 
 /* --- Shell + rail LMS (Bureau SSE) --- */
 .sse-shell {

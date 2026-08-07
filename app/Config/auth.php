@@ -20,6 +20,9 @@ return [
     'session_secure_cookie' => $secureCookieRaw === null || $secureCookieRaw === ''
         ? $secureCookieDefault
         : filter_var($secureCookieRaw, FILTER_VALIDATE_BOOL),
+    // Chemin absolu hors arbre FTP recommandé (ex. /home/uXXXX/tmp/athena_sessions).
+    // Vide = storage/sessions dans l'application (exclu du sync FTP).
+    'session_save_path' => trim((string) env('SESSION_SAVE_PATH', '')),
     'password_algo' => PASSWORD_ARGON2ID,
     'login_max_attempts' => 5,
     'login_lockout_minutes' => 15,

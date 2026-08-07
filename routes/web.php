@@ -107,6 +107,7 @@ use App\Controllers\Admin\System\SystemSubscriptionPlansController;
 use App\Controllers\Admin\Organization\TenantAlertsController;
 use App\Controllers\Api\AlertDismissController;
 use App\Controllers\Api\MePreferencesApiController;
+use App\Controllers\Api\AccessControlApiController;
 use App\Controllers\Api\TenantAccessRequestApiController;
 use App\Controllers\Admin\System\SystemAuditController;
 use App\Controllers\Admin\System\SystemSiteRoleAssignmentController;
@@ -310,6 +311,7 @@ return function (Router $router) {
     $router->get('/login/otp', [AuthController::class, 'showLoginOtp'], [GuestMiddleware::class]);
     $router->post('/login/otp', [AuthController::class, 'verifyLoginOtp'], [GuestMiddleware::class]);
     $router->post('/login/otp/resend', [AuthController::class, 'resendLoginOtp'], [GuestMiddleware::class]);
+    $router->post('/login/otp/switch', [AuthController::class, 'switchLoginOtpChannel'], [GuestMiddleware::class]);
     $router->get('/login/select-community', [AuthController::class, 'showSelectCommunity'], [GuestMiddleware::class]);
     $router->post('/login/select-community', [AuthController::class, 'selectCommunity'], [GuestMiddleware::class]);
     $router->post('/logout', [AuthController::class, 'logout']);
@@ -427,6 +429,8 @@ return function (Router $router) {
     $router->post('/account/steam-sync', [AccountController::class, 'syncSteamProfile'], [AuthMiddleware::class]);
     $router->get('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);
     $router->post('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);
+    $router->get('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
+    $router->post('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->get('/account/banner', [AccountController::class, 'banner'], [AuthMiddleware::class]);
@@ -585,8 +589,9 @@ return function (Router $router) {
     $router->post('/atak/sse/dossiers/dossier', [SsePortalController::class, 'folderStore'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/verrou-classification', [SsePortalController::class, 'caseLockToggle'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}', [SsePortalController::class, 'caseShow'], $mwSsePortal);
-    $router->post('/atak/sse/dossiers/{id}', [SsePortalController::class, 'caseUpdate'], $mwSsePortal);
+    $router->get('/atak/sse/dossiers/{id}/deverrouiller', [SsePortalController::class, 'caseUnlockForm'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/deverrouiller', [SsePortalController::class, 'caseUnlock'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}', [SsePortalController::class, 'caseUpdate'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/tacmap-capture', [SsePortalController::class, 'caseTacmapCapture'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/personnes', [SsePortalController::class, 'caseLinkPerson'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/notes', [SsePortalController::class, 'caseAddNote'], $mwSsePortal);
@@ -611,6 +616,7 @@ return function (Router $router) {
     $router->post('/atak/sse/sites/{id}/cloture', [SsePortalController::class, 'siteCloseAction'], $mwSsePortal);
     $router->get('/atak/sse/croisements', [SsePortalController::class, 'crossIndex'], $mwSsePortal);
     $router->post('/atak/sse/croisements/watchlist', [SsePortalController::class, 'watchlistStore'], $mwSsePortal);
+    $router->post('/atak/sse/croisements/watchlist/{id}/retirer', [SsePortalController::class, 'watchlistDeactivate'], $mwSsePortal);
     $router->get('/atak/sse/toiles', [SsePortalController::class, 'meshesIndex'], $mwSsePortal);
     $router->get('/atak/sse/toiles/nouveau', [SsePortalController::class, 'meshCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/toiles', [SsePortalController::class, 'meshStore'], $mwSsePortal);
@@ -1486,6 +1492,18 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->patch('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/tenant/access-request', [TenantAccessRequestApiController::class, 'store'], [AuthMiddleware::class]);
+
+    $router->get('/api/access-control/roles', [AccessControlApiController::class, 'roles'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/roles', [AccessControlApiController::class, 'roles'], [AuthMiddleware::class]);
+    $router->get('/api/access-control/permissions', [AccessControlApiController::class, 'permissions'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/permissions', [AccessControlApiController::class, 'permissions'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/role-permissions', [AccessControlApiController::class, 'rolePermissions'], [AuthMiddleware::class]);
+    $router->get('/api/access-control/rules', [AccessControlApiController::class, 'rules'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/rules', [AccessControlApiController::class, 'rules'], [AuthMiddleware::class]);
+    $router->get('/api/access-control/scopes', [AccessControlApiController::class, 'scopes'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/scopes', [AccessControlApiController::class, 'scopes'], [AuthMiddleware::class]);
+    $router->get('/api/access-control/simulation', [AccessControlApiController::class, 'simulation'], [AuthMiddleware::class]);
+    $router->post('/api/access-control/simulation', [AccessControlApiController::class, 'simulation'], [AuthMiddleware::class]);
 
     $router->get('/api/custom-maps', [\App\Controllers\Api\CustomMapsApiController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/api/custom-maps', [\App\Controllers\Api\CustomMapsApiController::class, 'store'], [AuthMiddleware::class]);
