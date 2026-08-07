@@ -179,7 +179,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
     <link href="<?= htmlspecialchars($base) ?>/assets/css/design-system.css" rel="stylesheet">
     <?php endif; ?>
     <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
-    <link href="<?= $base ?>/assets/css/home-impact.css?v=hero-av-6" rel="stylesheet">
+    <link href="<?= $base ?>/assets/css/home-impact.css?v=hero-av-7" rel="stylesheet">
 </head>
 <body class="home-impact layout-light bg-[var(--hi-void)] text-[var(--hi-ink)] antialiased selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
 
@@ -1288,6 +1288,8 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 function afterPlayStarted() {
                     if (token !== playToken || mode !== 'videos') return;
                     armFrameReveal(nextVideo, token);
+                    // La lecture démarre toujours muted ; restaurer le son dès qu’une frame est prête.
+                    applyAudioToActive();
                     scheduleVideoAdvance(token, nextVideo);
                     syncAvUi();
                 }
@@ -1420,12 +1422,14 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 if (video.paused) {
                     rotationPaused = false;
                     var token = playToken;
+                    // Autoplay policy : démarrer muet, puis réappliquer le son immersif.
                     video.muted = true;
                     var playPromise = video.play();
                     if (playPromise && playPromise.then) {
                         playPromise.then(function () {
                             if (token !== playToken) return;
                             armFrameReveal(video, token);
+                            applyAudioToActive();
                             scheduleVideoAdvance(token, video);
                             syncAvUi();
                         }).catch(function () {
@@ -1433,6 +1437,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                         });
                     } else {
                         armFrameReveal(video, token);
+                        applyAudioToActive();
                         scheduleVideoAdvance(token, video);
                         syncAvUi();
                     }
