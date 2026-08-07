@@ -179,7 +179,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
     <link href="<?= htmlspecialchars($base) ?>/assets/css/design-system.css" rel="stylesheet">
     <?php endif; ?>
     <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
-    <link href="<?= $base ?>/assets/css/home-impact.css?v=hero-av-7" rel="stylesheet">
+    <link href="<?= $base ?>/assets/css/home-impact.css?v=hero-av-8" rel="stylesheet">
 </head>
 <body class="home-impact layout-light bg-[var(--hi-void)] text-[var(--hi-ink)] antialiased selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
 
@@ -324,9 +324,9 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                                 <svg class="hi-av__icon hi-av__icon--stop" viewBox="0 0 24 24" aria-hidden="true" hidden><path fill="currentColor" d="M7 6h3.2v12H7V6zm6.8 0H17v12h-3.2V6z"/></svg>
                             </button>
                             <div class="hi-av__audio">
-                                <button type="button" id="hero-av-mute" class="hi-av__btn hi-av__btn--mute" aria-label="<?= htmlspecialchars(__('home.mute'), ENT_QUOTES, 'UTF-8') ?>" aria-pressed="true">
-                                    <svg class="hi-av__icon hi-av__icon--speaker" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1-3.29-2.5-4.03v8.05c1.5-.74 2.5-2.26 2.5-4.02z"/></svg>
-                                    <svg class="hi-av__icon hi-av__icon--muted" viewBox="0 0 24 24" aria-hidden="true" hidden><path fill="currentColor" d="M16.5 12c0-1.77-1-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                                <button type="button" id="hero-av-mute" class="hi-av__btn hi-av__btn--mute" aria-label="<?= htmlspecialchars(__('home.unmute'), ENT_QUOTES, 'UTF-8') ?>" aria-pressed="true">
+                                    <svg class="hi-av__icon hi-av__icon--speaker" viewBox="0 0 24 24" aria-hidden="true" hidden><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1-3.29-2.5-4.03v8.05c1.5-.74 2.5-2.26 2.5-4.02z"/></svg>
+                                    <svg class="hi-av__icon hi-av__icon--muted" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.5 12c0-1.77-1-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
                                 </button>
                                 <label class="hi-av__vol-wrap" for="hero-av-volume">
                                     <span class="sr-only"><?= htmlspecialchars(__('home.volume'), ENT_QUOTES, 'UTF-8') ?></span>
@@ -1082,8 +1082,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     var v = slide.querySelector('[data-hero-video]');
                     if (!v || v === keep) return;
                     try { v.pause(); } catch (e) {}
-                    v.muted = true;
-                    v.volume = 0;
+                    setClipAudible(v, false);
                     try { v.currentTime = 0; } catch (e2) {}
                 });
             }
@@ -1138,20 +1137,66 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 return true;
             }
 
+            function desiredVolume() {
+                return lastVol > 0 ? lastVol : 0.55;
+            }
+
+            /** Mute / unmute + attribut HTML (certains navigateurs restent muets si l’attribut `muted` reste). */
+            function setClipAudible(video, audible) {
+                if (!video) return;
+                if (audible) {
+                    video.muted = false;
+                    video.removeAttribute('muted');
+                    try { video.volume = desiredVolume(); } catch (e) {}
+                } else {
+                    video.muted = true;
+                    video.setAttribute('muted', '');
+                    try { video.volume = 0; } catch (e2) {}
+                }
+            }
+
             function applyAudioToActive() {
-                var layerReady = !!(imageRoot && imageRoot.classList.contains('hi-hero-images--standby'));
                 videoSlides.forEach(function (slide, i) {
                     var v = slide.querySelector('[data-hero-video]');
                     if (!v) return;
-                    var isActive = i === current;
-                    if (isActive && withSound && layerReady) {
-                        v.muted = false;
-                        v.volume = lastVol > 0 ? lastVol : 0.55;
-                    } else {
-                        v.muted = true;
-                        v.volume = 0;
-                    }
+                    setClipAudible(v, i === current && withSound);
                 });
+            }
+
+            /**
+             * Débloque le son pendant un geste utilisateur.
+             * Obligatoire : 3 balises <video> distinctes — chaque clip doit être
+             * « unlock » ici, sinon le carrousel redevient muet au slide suivant
+             * (autoplay policy navigateur).
+             */
+            function unlockSoundFromUserGesture(vol) {
+                if (typeof vol === 'number' && isFinite(vol) && vol > 0) {
+                    lastVol = Math.min(1, Math.max(0, vol));
+                } else if (!(lastVol > 0)) {
+                    lastVol = 0.55;
+                }
+                withSound = true;
+                persistVol(lastVol);
+                try { localStorage.setItem(KEY, 'full'); } catch (e) {}
+
+                videoSlides.forEach(function (slide) {
+                    var v = slide.querySelector('[data-hero-video]');
+                    if (!v) return;
+                    v.muted = false;
+                    v.removeAttribute('muted');
+                    try { v.volume = lastVol; } catch (e2) {}
+                });
+                applyAudioToActive();
+
+                var active = activeVideo();
+                if (active && mode === 'videos') {
+                    var playPromise = active.play();
+                    if (playPromise && playPromise.catch) {
+                        playPromise.catch(function () {});
+                    }
+                }
+                if (btnLater) btnLater.classList.add('hidden');
+                syncAvUi();
             }
 
             function armFrameReveal(video, token) {
@@ -1222,12 +1267,13 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
 
             function applyVolume(vol, unmute) {
                 vol = Math.min(1, Math.max(0, vol));
-                if (vol > 0) lastVol = vol;
-                withSound = unmute ? vol > 0 : vol > 0;
-                persistVol(vol > 0 ? vol : lastVol);
-                try {
-                    localStorage.setItem(KEY, withSound ? 'full' : 'silent');
-                } catch (e) {}
+                if (vol > 0) {
+                    unlockSoundFromUserGesture(vol);
+                    return;
+                }
+                withSound = false;
+                persistVol(lastVol > 0 ? lastVol : 0.55);
+                try { localStorage.setItem(KEY, 'silent'); } catch (e) {}
                 applyAudioToActive();
                 syncAvUi();
             }
@@ -1269,8 +1315,8 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     return;
                 }
 
-                nextVideo.muted = true;
-                nextVideo.volume = 0;
+                // Autoplay policy : démarrer muet, puis restaurer si déjà unlock.
+                setClipAudible(nextVideo, false);
 
                 if (rotationPaused) {
                     syncAvUi();
@@ -1288,8 +1334,8 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 function afterPlayStarted() {
                     if (token !== playToken || mode !== 'videos') return;
                     armFrameReveal(nextVideo, token);
-                    // La lecture démarre toujours muted ; restaurer le son dès qu’une frame est prête.
-                    applyAudioToActive();
+                    if (withSound) setClipAudible(nextVideo, true);
+                    else applyAudioToActive();
                     scheduleVideoAdvance(token, nextVideo);
                     syncAvUi();
                 }
@@ -1307,9 +1353,8 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                         afterPlayStarted();
                     }).catch(function () {
                         if (token !== playToken) return;
-                        nextVideo.muted = true;
-                        nextVideo.volume = 0;
-                        withSound = false;
+                        // Échec autoplay : rester muet pour rejouer, sans effacer le choix son.
+                        setClipAudible(nextVideo, false);
                         nextVideo.play().then(function () {
                             if (token !== playToken) return;
                             afterPlayStarted();
@@ -1340,8 +1385,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 var doomed = slide.querySelector('[data-hero-video]');
                 if (doomed) {
                     try { doomed.pause(); } catch (e) {}
-                    doomed.muted = true;
-                    doomed.volume = 0;
+                    setClipAudible(doomed, false);
                 }
                 videoSlides.splice(idx, 1);
                 slide.hidden = true;
@@ -1359,8 +1403,13 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     enableImageMode();
                     return;
                 }
-                withSound = !!soundOn;
-                try { localStorage.setItem(KEY, withSound ? 'full' : 'silent'); } catch (e) {}
+                if (soundOn) {
+                    withSound = true;
+                    try { localStorage.setItem(KEY, 'full'); } catch (e) {}
+                } else {
+                    withSound = false;
+                    try { localStorage.setItem(KEY, 'silent'); } catch (e) {}
+                }
                 mode = 'videos';
                 stopImageSlider();
                 if (videoRoot) {
@@ -1422,14 +1471,15 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 if (video.paused) {
                     rotationPaused = false;
                     var token = playToken;
-                    // Autoplay policy : démarrer muet, puis réappliquer le son immersif.
-                    video.muted = true;
+                    // Autoplay policy : démarrer muet, puis réappliquer le son déjà unlock.
+                    setClipAudible(video, false);
                     var playPromise = video.play();
                     if (playPromise && playPromise.then) {
                         playPromise.then(function () {
                             if (token !== playToken) return;
                             armFrameReveal(video, token);
-                            applyAudioToActive();
+                            if (withSound) setClipAudible(video, true);
+                            else applyAudioToActive();
                             scheduleVideoAdvance(token, video);
                             syncAvUi();
                         }).catch(function () {
@@ -1437,7 +1487,8 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                         });
                     } else {
                         armFrameReveal(video, token);
-                        applyAudioToActive();
+                        if (withSound) setClipAudible(video, true);
+                        else applyAudioToActive();
                         scheduleVideoAdvance(token, video);
                         syncAvUi();
                     }
@@ -1515,7 +1566,8 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                         if (mode === 'videos' && v === activeVideo()) {
                             revealVideoFrame(v);
                             pauseAllVideosExcept(v);
-                            applyAudioToActive();
+                            if (withSound) setClipAudible(v, true);
+                            else applyAudioToActive();
                         }
                     });
                     v.addEventListener('error', function () {
@@ -1530,9 +1582,12 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     if (btnLater && videoSlides.length) btnLater.classList.remove('hidden');
                     return;
                 }
-                enableVideoMode(saved === 'full');
-                // Dialogue = opt-in son uniquement (vidéos muted déjà actives).
-                if (saved !== 'silent' && saved !== 'full' && dlg && typeof dlg.showModal === 'function') {
+                // Toujours démarrer muet (autoplay). Le son exige un geste :
+                // consentement, bouton muet, curseur volume, ou lien « activer le son ».
+                enableVideoMode(false);
+                if (saved === 'full') {
+                    if (btnLater) btnLater.classList.remove('hidden');
+                } else if (saved !== 'silent' && dlg && typeof dlg.showModal === 'function') {
                     window.setTimeout(function () { dlg.showModal(); }, 900);
                 }
             }
@@ -1540,30 +1595,66 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             if (toggleBtn) toggleBtn.addEventListener('click', togglePlayback);
             if (muteBtn) muteBtn.addEventListener('click', function () {
                 if (mode !== 'videos') {
+                    unlockSoundFromUserGesture(desiredVolume());
                     enableVideoMode(true);
                     return;
                 }
                 var video = activeVideo();
-                if (!video) return;
-                if (video.muted || video.volume === 0) applyVolume(lastVol > 0 ? lastVol : 0.55, true);
-                else applyVolume(0, true);
+                if (!video) {
+                    unlockSoundFromUserGesture(desiredVolume());
+                    return;
+                }
+                if (!withSound || video.muted || video.volume === 0) {
+                    unlockSoundFromUserGesture(desiredVolume());
+                } else {
+                    withSound = false;
+                    try { localStorage.setItem(KEY, 'silent'); } catch (e) {}
+                    applyAudioToActive();
+                    if (btnLater) btnLater.classList.remove('hidden');
+                    syncAvUi();
+                }
             });
             if (volInput) {
                 volInput.addEventListener('input', function () {
                     var v = parseFloat(volInput.value) || 0;
-                    if (mode !== 'videos' && v > 0) enableVideoMode(true);
-                    applyVolume(v, true);
+                    if (v > 0) {
+                        if (mode !== 'videos') {
+                            unlockSoundFromUserGesture(v);
+                            enableVideoMode(true);
+                            return;
+                        }
+                        unlockSoundFromUserGesture(v);
+                        return;
+                    }
+                    applyVolume(0, true);
                 });
             }
 
             var yes = document.getElementById('immersive-yes');
             var no = document.getElementById('immersive-no');
-            if (yes) yes.addEventListener('click', function () { enableVideoMode(true); if (dlg) dlg.close(); });
-            if (no) no.addEventListener('click', function () {
-                enableVideoMode(false);
+            if (yes) yes.addEventListener('click', function () {
+                // Unlock synchrone dans le geste — avant tout play() async.
+                unlockSoundFromUserGesture(desiredVolume());
+                if (mode !== 'videos') enableVideoMode(true);
+                else applyAudioToActive();
                 if (dlg) dlg.close();
             });
-            if (btnLater) btnLater.addEventListener('click', function () { enableVideoMode(true); });
+            if (no) no.addEventListener('click', function () {
+                withSound = false;
+                try { localStorage.setItem(KEY, 'silent'); } catch (e) {}
+                if (mode !== 'videos') enableVideoMode(false);
+                else {
+                    applyAudioToActive();
+                    if (btnLater) btnLater.classList.remove('hidden');
+                    syncAvUi();
+                }
+                if (dlg) dlg.close();
+            });
+            if (btnLater) btnLater.addEventListener('click', function () {
+                unlockSoundFromUserGesture(desiredVolume());
+                if (mode !== 'videos') enableVideoMode(true);
+                else applyAudioToActive();
+            });
 
             if (!reducedMotion && candidateSlides.length) {
                 setImageStandby(false);
@@ -1595,7 +1686,8 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     if (event.matches) {
                         enableImageMode();
                     } else if (videoSlides.length) {
-                        enableVideoMode(saved === 'full');
+                        enableVideoMode(false);
+                        if (saved === 'full' && btnLater) btnLater.classList.remove('hidden');
                     }
                 };
                 if (motionQuery.addEventListener) motionQuery.addEventListener('change', onMotionChange);
