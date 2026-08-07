@@ -71,14 +71,12 @@ private _ensureBdaReportApp = {
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installHqContact; }, [], 5] call CBA_fnc_waitAndExecute;
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installHqContact; }, [], 15] call CBA_fnc_waitAndExecute;
 
-// Photos BCE / Photo Library → upload auto vers ATAK web (sans clic joueur)
-// Les clichés ATAK passent par Arma_ScreenShot_Extension puis
-// Documents\Arma 3[- Other Profiles\<profil>]\Screenshots\ (souvent .png alors que BCE annonce .jpg).
+// Photos BCE / Photo Library → signal unique vers la DLL (queue + watcher Screenshots).
+// Plus de retries SQF agressifs : resolve/upload et FileSystemWatcher sont côté extension.
 ["bce_took_screenshot", {
     [] call comspec_overwatch_connect_fnc_markBcePhotoCapture;
     _this spawn {
-        // Laisser l’extension finir d’écrire ; ResolveLocalImagePath attend au plus ~640 ms côté COMSPECExtension.
-        uiSleep 0.5;
+        uiSleep 0.35;
         private _path = "";
         private _name = "";
         if (_this isEqualType []) then {
@@ -87,16 +85,10 @@ private _ensureBdaReportApp = {
         } else {
             if (_this isEqualType "") then { _path = _this; };
         };
-        if (!(_path isEqualType "") || {_path isEqualTo ""}) exitWith {
-            [] call comspec_overwatch_atak_athena_fnc_athena_pollIcemanPhotos;
-        };
-        private _ok = [_path, _name, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
-        if (!(_ok isEqualType true) || {!_ok}) then {
-            uiSleep 0.8;
-            _ok = [_path, _name, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
-        };
-        if (!(_ok isEqualType true) || {!_ok}) then {
-            uiSleep 1.0;
+        if (_path isEqualType "" && {_path isNotEqualTo ""}) then {
+            [_path, _name, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
+        } else {
+            // Sans chemin : un seul balayage Photo Library (marquage vu, pas de spam).
             [] call comspec_overwatch_atak_athena_fnc_athena_pollIcemanPhotos;
         };
     };
@@ -107,24 +99,19 @@ private _ensureBdaReportApp = {
     [_x, {
         [] call comspec_overwatch_connect_fnc_markBcePhotoCapture;
         _this spawn {
-            uiSleep 0.85;
+            uiSleep 0.35;
             private _path = "";
             private _name = "";
             if (_this isEqualType []) then {
                 if ((count _this) > 0) then { _path = _this select 0; };
                 if ((count _this) > 1) then { _name = _this select 1; };
-                // Certains EH passent [recordArray]
                 if ((_path isEqualType []) && {(count _path) > 3}) then {
                     _name = _path select 3;
                     _path = _path select 2;
                 };
             };
             if (_path isEqualType "" && {_path isNotEqualTo ""}) then {
-                private _ok = [_path, _name, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
-                if (!(_ok isEqualType true) || {!_ok}) then {
-                    uiSleep 0.6;
-                    [] call comspec_overwatch_atak_athena_fnc_athena_pollIcemanPhotos;
-                };
+                [_path, _name, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
             } else {
                 [] call comspec_overwatch_atak_athena_fnc_athena_pollIcemanPhotos;
             };
@@ -137,18 +124,19 @@ private _ensureBdaReportApp = {
     "BCE_photoTaken"
 ];
 
-// Repli : surveillance périodique Photo Library (Quick Pictures sans EH)
+// Repli lent : uniquement pour records sans EH (le watcher DLL couvre Screenshots).
 [{
     private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
     private _link = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
     if (!_ready && {_link isNotEqualTo "linked"}) exitWith {};
     [] call comspec_overwatch_atak_athena_fnc_athena_pollIcemanPhotos;
-}, 2.5, []] call CBA_fnc_addPerFrameHandler;
+}, 30, []] call CBA_fnc_addPerFrameHandler;
 
-// Dès que la liaison Athena s’établit : remonter les photos en attente
+// Liaison Athena établie : démarrer le watcher DLL + un balayage unique
 ["COMSPEC_AthenaLinkChanged", {
     [] spawn {
         uiSleep 0.5;
+        ["COMSPECExtension" callExtension ["StartPhotoWatcher", []]] call comspec_overwatch_connect_fnc_extResult;
         [] call comspec_overwatch_atak_athena_fnc_athena_pollIcemanPhotos;
     };
 }] call CBA_fnc_addEventHandler;

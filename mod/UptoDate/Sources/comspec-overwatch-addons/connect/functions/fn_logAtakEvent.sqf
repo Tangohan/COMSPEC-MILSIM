@@ -19,7 +19,12 @@ params [
 
 if (_message isEqualTo "") exitWith {};
 
-[_level, _channel, _message, _detail] call comspec_overwatch_connect_fnc_log;
+// Ne jamais passer _detail nil dans une expression (Variable indéfinie).
+if (isNil "_detail") then {
+    [_level, _channel, _message] call comspec_overwatch_connect_fnc_log;
+} else {
+    [_level, _channel, _message, _detail] call comspec_overwatch_connect_fnc_log;
+};
 
 private _line = format ["[%1] %2", _channel, _message];
 if (!isNil "_detail" && {_detail isNotEqualTo ""}) then {

@@ -332,18 +332,36 @@ if (!(_localPhotos isEqualType [])) then { _localPhotos = []; };
     private _photoKey = toLower _filePath;
     private _alreadyUp = missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []];
     if (!(_alreadyUp isEqualType [])) then { _alreadyUp = []; };
+    private _pendingUp = missionNamespace getVariable ["COMSPEC_Athena_PhotoPending", []];
+    if (!(_pendingUp isEqualType [])) then { _pendingUp = []; };
+    private _failedUp = missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []];
+    if (!(_failedUp isEqualType [])) then { _failedUp = []; };
     private _short = if (_fileName isEqualTo "") then { "Capture" } else { _fileName };
-    private _title = format ["Photo · %1 · %2", _short, _grid];
+    private _title = format ["Photo - %1 - %2", _short, _grid];
     private _detail = if (_photoKey in _alreadyUp) then {
         format [
-            "<t size='0.85' color='#7dffb0'>Photo remontée automatiquement</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>Visible sur ATAK web (onglet Photos). Utilisez « Renvoyer » seulement en cas de besoin.</t>",
+            "<t size='0.85' color='#7dffb0'>Photo recue sur ATAK web</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>Visible dans l'onglet Photos du poste de commandement. Utilisez Renvoyer seulement en cas de besoin.</t>",
             _author, _grid, _short
         ]
     } else {
-        format [
-            "<t size='0.85' color='#c8e8ff'>Remontée en cours</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>La photo part seule vers ATAK web. Aucune action n’est nécessaire.</t>",
-            _author, _grid, _short
-        ]
+        if (_photoKey in _failedUp) then {
+            format [
+                "<t size='0.85' color='#ff8a80'>Echec d'envoi vers ATAK web</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>La photo n'est pas arrivee au poste de commandement. Utilisez Renvoyer.</t>",
+                _author, _grid, _short
+            ]
+        } else {
+            if (_photoKey in _pendingUp) then {
+                format [
+                    "<t size='0.85' color='#ffe082'>Envoi vers ATAK web...</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>Transmission en cours. Elle n'apparaitra sur le web qu'apres confirmation.</t>",
+                    _author, _grid, _short
+                ]
+            } else {
+                format [
+                    "<t size='0.85' color='#c8e8ff'>En attente de remontee</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>La photo partira seule vers ATAK web des qu'elle sera prise en charge.</t>",
+                    _author, _grid, _short
+                ]
+            }
+        }
     };
     _entries pushBack ["photo", _title, _detail, _short, [_filePath, _short]];
 } forEach _localPhotos;

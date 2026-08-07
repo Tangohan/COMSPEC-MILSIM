@@ -6,11 +6,8 @@
     - Ne PAS hériter de AttributesBase si Module_F n’est que forward-déclaré
       (Undefined base class AttributesBase).
     → Attributes et ModuleDescription sont définis à plat (pattern sûr).
+    Inclus dans un seul class CfgVehicles (config.cpp) — ne pas rouvrir CfgVehicles ici.
 */
-
-class CfgVehicles
-{
-    class Module_F;
 
     class COMSPEC_Module_RoleplayZone_Base: Module_F
     {
@@ -272,4 +269,3 @@ class CfgVehicles
             synced[] = {"AnyPerson", "AnyVehicle"};
         };
     };
-};
