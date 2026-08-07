@@ -27,4 +27,4 @@ Remplacer les appels par l’API Database du projet.
 
 ## Statut
 
-corrigé (à déployer)
+corrigé — mergé dans `main` (PR #172), à redéployer en production
