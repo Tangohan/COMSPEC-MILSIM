@@ -164,6 +164,7 @@ $navActive = static function (string $id) use ($activeNav): string {
 
             <p class="iw-nav-section">Exploitation</p>
             <a href="<?= $h(url('atak/sse/exploitation-numerique')) ?>" class="<?= $activeNav === 'labnum' ? 'is-active' : '' ?>"><b>16</b><span>Exploitation numérique</span></a>
+            <a href="<?= $h(url('atak/sse/dev')) ?>" class="<?= $activeNav === 'dev' ? 'is-active' : '' ?>"><b>23</b><span>Atelier de préparation</span></a>
             <a href="<?= $h(url('atak/sse/collecte')) ?>" class="<?= $activeNav === 'collecte' ? 'is-active' : '' ?>"><b>17</b><span>Collecte terrain</span></a>
             <a href="<?= $h(url('atak/sse/validation')) ?>" class="<?= $activeNav === 'validation' ? 'is-active' : '' ?>"><b>18</b><span>Files de validation</span></a>
             <a href="<?= $h(url('atak/sse/rapports')) ?>" class="<?= $activeNav === 'rapports' ? 'is-active' : '' ?>"><b>19</b><span>Rapports</span></a>

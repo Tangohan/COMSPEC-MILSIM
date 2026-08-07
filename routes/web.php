@@ -17,6 +17,7 @@ use App\Controllers\Web\AtakMapGatewayController;
 use App\Controllers\Web\AtakSupportController;
 use App\Controllers\Web\SsePortalController;
 use App\Controllers\Web\SseDigitalLabController;
+use App\Controllers\Web\SseArmaModelsController;
 use App\Controllers\Web\AccountController;
 use App\Controllers\Web\AccountPrivacyController;
 use App\Controllers\Web\HrCharterController;
@@ -643,6 +644,17 @@ return function (Router $router) {
     $router->get('/atak/sse/exploitation-numerique/chronologies', [SseDigitalLabController::class, 'timeline'], $mwSsePortal);
     $router->get('/atak/sse/exploitation-numerique/communications', [SseDigitalLabController::class, 'communications'], $mwSsePortal);
     $router->get('/atak/sse/exploitation-numerique/rapports', [SseDigitalLabController::class, 'reports'], $mwSsePortal);
+
+    // Atelier de préparation — modèles SSE pour missions Arma
+    $router->get('/atak/sse/dev', [SseArmaModelsController::class, 'hub'], $mwSsePortal);
+    $router->get('/atak/sse/dev/modeles', [SseArmaModelsController::class, 'modelsIndex'], $mwSsePortal);
+    $router->get('/atak/sse/dev/modeles/nouveau', [SseArmaModelsController::class, 'modelCreateForm'], $mwSsePortal);
+    $router->post('/atak/sse/dev/modeles', [SseArmaModelsController::class, 'modelStore'], $mwSsePortal);
+    $router->get('/atak/sse/dev/modeles/{id}', [SseArmaModelsController::class, 'modelShow'], $mwSsePortal);
+    $router->get('/atak/sse/dev/modeles/{id}/modifier', [SseArmaModelsController::class, 'modelEditForm'], $mwSsePortal);
+    $router->post('/atak/sse/dev/modeles/{id}', [SseArmaModelsController::class, 'modelUpdate'], $mwSsePortal);
+    $router->post('/atak/sse/dev/modeles/{id}/supprimer', [SseArmaModelsController::class, 'modelDelete'], $mwSsePortal);
+    $router->get('/atak/sse/dev/modeles/{id}/export', [SseArmaModelsController::class, 'modelExport'], $mwSsePortal);
     $router->get('/atak/sse/acces', [SsePortalController::class, 'accessAdmin'], $mwSsePortal);
     $router->post('/atak/sse/acces', [SsePortalController::class, 'accessIssue'], $mwSsePortal);
     $router->post('/atak/sse/acces/{id}/revoquer', [SsePortalController::class, 'accessRevoke'], $mwSsePortal);
