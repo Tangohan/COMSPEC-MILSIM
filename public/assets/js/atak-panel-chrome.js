@@ -9,7 +9,7 @@
   var MAX_LEFT_RATIO = 0.72;
   var MIN_RIGHT = 200;
   var MAX_RIGHT_RATIO = 0.55;
-  var COLLAPSED_W = 88;
+  var COLLAPSED_W = 68;
 
   var channel = null;
   var popoutWindows = { left: null, right: null };
