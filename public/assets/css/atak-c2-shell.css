@@ -743,6 +743,181 @@ body.atak-page.atak-drawer-collapsed .atak-drawer__body {
   line-height: 1.45;
 }
 
+/* —— Étiquettes carte (style démo C2) —— */
+.nato-sidc-label,
+.atak-unit-dot-label,
+.atak-unit-avatar-marker__label {
+  margin-top: 2px;
+  padding: 2px 5px;
+  background: rgba(238, 240, 234, 0.92);
+  border: 1px solid rgba(23, 50, 48, 0.22);
+  border-radius: 2px;
+  color: #163b34;
+  font: 800 var(--atak-unit-label-size, 8px) / 1.2 var(--atak-font-tactical);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  text-shadow: none;
+  white-space: nowrap;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+.nato-sidc-wrap.nato-sidc--hostile + .nato-sidc-label,
+.nato-sidc-stack.nato-sidc--hostile .nato-sidc-label,
+.nato-sidc-wrap.nato-sidc--enemy + .nato-sidc-label,
+.atak-unit-dot-marker.is-hostile .atak-unit-dot-label {
+  color: #733838;
+  border-color: rgba(125, 48, 48, 0.28);
+  background: rgba(246, 232, 232, 0.92);
+}
+.nato-sidc-stack.nato-sidc--wounded .nato-sidc-label {
+  color: #7a3410;
+  border-color: rgba(180, 83, 9, 0.35);
+  background: rgba(255, 247, 237, 0.94);
+}
+.nato-sidc-stack.nato-sidc--critical .nato-sidc-label {
+  color: #7f1d1d;
+  border-color: rgba(185, 28, 28, 0.4);
+  background: rgba(254, 226, 226, 0.95);
+  font-weight: 800;
+}
+
+.atak-map-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(7, 11, 15, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a5af;
+  border-radius: 3px;
+  padding: 6px 8px;
+  font: 700 8px var(--atak-font-tactical);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+}
+.atak-map-tag strong {
+  color: #e0e9ee;
+  font-weight: 800;
+}
+
+/* —— Nom de groupe / équipe de feu —— */
+.atak-force-head {
+  display: grid;
+  grid-template-columns: 7px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 0.45rem;
+}
+.atak-force-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ft-color, var(--atak-c2-green));
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.atak-force-meta {
+  min-width: 0;
+}
+.atak-force-name {
+  font: 800 11px / 1.1 var(--atak-font-tactical);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #edf7f3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atak-force-sub {
+  margin-top: 3px;
+  font: 700 7px / 1.2 var(--atak-font-tactical);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #657580;
+}
+.atak-force-grid {
+  font: 700 9px / 1 var(--atak-font-tactical);
+  letter-spacing: 0.04em;
+  color: #8da0aa;
+  white-space: nowrap;
+}
+
+.atak-ft-compose-card {
+  border: 1px solid var(--atak-c2-line);
+  border-left: 3px solid var(--ft-color, var(--atak-c2-green));
+  background: #0a1016;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.atak-ft-compose-list {
+  border-top: 1px solid var(--atak-c2-line);
+  padding-top: 6px;
+  margin-top: 2px;
+}
+.atak-ft-compose-cs {
+  font: 800 9px / 1.2 var(--atak-font-tactical);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #c8d5dc;
+}
+.atak-ft-compose-role,
+.atak-ft-compose-live {
+  font: 700 7px var(--atak-font-tactical);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #657580;
+}
+
+.atak-ft-chip {
+  border-radius: 2px;
+  background: rgba(238, 240, 234, 0.08);
+  border: 1px solid color-mix(in srgb, var(--ft-color, #94a3b8) 55%, transparent);
+  color: var(--ft-color, #c8d5dc);
+  font: 800 8px / 1.2 var(--atak-font-tactical);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+}
+.atak-ft-chip--sm {
+  font-size: 7px;
+  padding: 1px 5px;
+}
+
+.atak-unit-callsign {
+  font: 800 11px / 1.15 var(--atak-font-tactical);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #edf7f3;
+}
+.atak-unit-role {
+  font: 700 8px / 1.3 var(--atak-font-tactical);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #81909a;
+}
+.atak-unit-card {
+  border: 1px solid var(--atak-c2-line);
+  border-radius: 4px;
+  background: #0a1016;
+  padding: 9px 10px;
+}
+.atak-unit-card.linked {
+  border-left: 3px solid var(--atak-c2-green);
+}
+.atak-unit-status {
+  border-radius: 2px;
+  font: 800 7px / 1 var(--atak-font-tactical);
+  letter-spacing: 0.06em;
+}
+.atak-drawer-cs-text {
+  font: 800 9px / 1.2 var(--atak-font-tactical);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 /* Force toolbar/drawer layout over legacy absolute positioning */
 .atak-map-wrap > .atak-map-tools,
 .atak-map-wrap > .atak-map-tools-fab,

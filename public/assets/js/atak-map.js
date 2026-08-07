@@ -235,8 +235,8 @@ window.ATAKMap = (function () {
   function buildIntelDotIcon(callSign, size, labelPx) {
     var d = Math.max(8, Math.round(size * 0.5));
     var label = String(callSign || '').slice(0, 12).replace(/</g, '&lt;').replace(/"/g, '&quot;');
-    var w = Math.max(d + 4, 48);
-    var h = d + 4 + Math.round(labelPx) + 4;
+    var w = Math.max(d + 4, 56);
+    var h = d + 6 + Math.round(labelPx) + 12;
     return L.divIcon({
       className: 'atak-unit-intel-dot-marker',
       html: '<div class="atak-unit-dot-wrap">' +
@@ -252,8 +252,8 @@ window.ATAKMap = (function () {
     var d = Math.max(6, Math.round(size * 0.7));
     var safeColor = color && /^#[0-9A-Fa-f]{6}$/.test(color) ? color : '#22c55e';
     var label = String(callSign || '').slice(0, 12).replace(/</g, '&lt;').replace(/"/g, '&quot;');
-    var w = Math.max(d + 4, 48);
-    var h = d + 4 + Math.round(labelPx) + 4;
+    var w = Math.max(d + 4, 56);
+    var h = d + 6 + Math.round(labelPx) + 12;
     return L.divIcon({
       className: 'atak-unit-dot-marker',
       html: '<div class="atak-unit-dot-wrap">' +

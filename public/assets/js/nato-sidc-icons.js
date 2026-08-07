@@ -225,8 +225,8 @@ window.NatoSidcIcons = (function () {
         anchorY = mil.anchor.y != null ? mil.anchor.y : iconH / 2;
       }
     }
-    var w = Math.max(iconW, showLabel ? Math.max(48, size * 3) : iconW);
-    var h = showLabel ? iconH + 12 : iconH;
+    var w = Math.max(iconW, showLabel ? Math.max(56, size * 3) : iconW);
+    var h = showLabel ? iconH + 18 : iconH;
     return L.divIcon({
       className: 'nato-sidc-icon',
       html: svgMarkup(opts),

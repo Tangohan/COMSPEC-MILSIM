@@ -116,6 +116,7 @@ window.ATAKFireTeams = (function () {
           fire_team_color: color
         };
       });
+      var pct = roster.length ? Math.round((linked.length / roster.length) * 100) : 0;
       var rows = roster.map(function (u) {
         var cs = u.call_sign || u.callsign || '—';
         var role = u.role || '';
@@ -129,11 +130,14 @@ window.ATAKFireTeams = (function () {
       }).join('');
       return '<article class="atak-ft-compose-card"' +
         (color ? ' style="--ft-color:' + esc(color) + '"' : '') + '>' +
-        '<header class="atak-ft-compose-head">' +
-        '<span class="atak-ft-chip"' + (color ? ' style="--ft-color:' + esc(color) + ';border-color:' + esc(color) + ';color:' + esc(color) + '"' : '') + '>' +
-        (color ? '<span class="atak-ft-chip-dot" aria-hidden="true"></span>' : '') +
-        esc(t.label || 'Équipe') + '</span>' +
-        '<span class="atak-ft-compose-count">' + linked.length + ' / ' + roster.length + ' en liaison</span>' +
+        '<header class="atak-ft-compose-head atak-force-head">' +
+        '<span class="atak-force-dot" aria-hidden="true"' + (color ? ' style="background:' + esc(color) + '"' : '') + '></span>' +
+        '<div class="atak-force-meta">' +
+        '<div class="atak-force-name">' + esc(t.label || 'Équipe') + '</div>' +
+        '<div class="atak-force-sub">' + roster.length + ' membre' + (roster.length > 1 ? 's' : '') +
+        (linked.length ? ' · ' + linked.length + ' en liaison' : '') + '</div>' +
+        '</div>' +
+        '<div class="atak-force-grid" title="Part des effectifs en liaison">' + pct + '%</div>' +
         '</header>' +
         (rows
           ? '<ul class="atak-ft-compose-list">' + rows + '</ul>'
