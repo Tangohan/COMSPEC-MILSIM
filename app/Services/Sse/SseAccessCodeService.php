@@ -157,6 +157,8 @@ final class SseAccessCodeService
             self::SESSION_SCOPE,
             self::SESSION_CODE_ID,
             'sse_guest_label',
+            'sse_unlocked_cases',
+            'sse_case_unlocks',
             self::SESSION_ACK_VERSION,
             self::SESSION_ACK_AT,
             self::SESSION_ACK_TENANT,

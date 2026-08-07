@@ -169,6 +169,7 @@ foreach ($matches as $row) {
                     <th>Identité</th>
                     <th>Niveau</th>
                     <th>Notes</th>
+                    <?php if ($canManage): ?><th></th><?php endif; ?>
                 </tr>
                 </thead>
                 <tbody>
@@ -182,6 +183,15 @@ foreach ($matches as $row) {
                         </td>
                         <td><span class="badge"><?= $h($e['threat_level_label']) ?></span></td>
                         <td class="muted"><?= $h($e['notes'] ?? '—') ?></td>
+                        <?php if ($canManage): ?>
+                            <td>
+                                <form method="post" action="<?= $h(url('atak/sse/croisements/watchlist/' . (int) ($e['id'] ?? 0) . '/retirer')) ?>"
+                                      onsubmit="return confirm('Retirer cette entrée de la liste de surveillance ?');">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <button type="submit" class="btn btn--ghost">Retirer</button>
+                                </form>
+                            </td>
+                        <?php endif; ?>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

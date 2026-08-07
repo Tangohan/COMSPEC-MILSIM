@@ -39,7 +39,8 @@ Les droits visibles à l’écran peuvent varier : un même écran peut être **
 16. [Mur & tableau opérationnel](tableau-operationnel.md) — consultation du mur, pilotage, posture, fiches, FRAGO, modèles.
 17. [Recherche et raccourcis](recherche-et-raccourcis.md) — recherche portail, efficacité.
 18. [FAQ](faq.md) — questions courantes.
-19. [Journal des révisions du guide intégré](JOURNAL-GUIDE.md) — jalons du guide affiché sur le portail (équipe & traçabilité).
+19. [Portail de renseignement interpersonnel (SSE)](portail-sse-renseignement.md) — dossiers classifiés, codes, croisements, PDF.
+20. [Journal des révisions du guide intégré](JOURNAL-GUIDE.md) — jalons du guide affiché sur le portail (équipe & traçabilité).
 
 ## Convention de lecture
 
