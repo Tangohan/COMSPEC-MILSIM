@@ -597,6 +597,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                             ['n' => '04', 'label' => __('home.mod_04'), 'desc' => __('home.mod_04_d'), 'href' => url('enlistment')],
                             ['n' => '05', 'label' => __('home.mod_05'), 'desc' => __('home.mod_05_d'), 'href' => url('c2')],
                             ['n' => '06', 'label' => __('home.mod_06'), 'desc' => __('home.mod_06_d'), 'href' => url('boite-reception')],
+                            ['n' => '07', 'label' => __('home.mod_07'), 'desc' => __('home.mod_07_d'), 'href' => url('sse')],
                         ];
                         foreach ($modules as $m):
                         ?>
@@ -606,6 +607,42 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                             <span class="hi-body-sm flex-1 text-slate-500"><?= htmlspecialchars($m['desc']) ?></span>
                         </a>
                         <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SSE — présentation -->
+        <section class="bg-[var(--hi-field-deep)] text-white">
+            <div class="hi-section mx-auto max-w-[100rem]">
+                <div class="grid gap-10 lg:grid-cols-12 lg:gap-16 lg:items-end">
+                    <div class="lg:col-span-6">
+                        <p class="hi-kicker text-emerald-300/80"><?= htmlspecialchars(__('home.sse_kicker'), ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php $sseTitleLines = explode("\n", __('home.sse_title'), 2); ?>
+                        <h2 class="hi-display hi-display-md mt-4"><?= htmlspecialchars($sseTitleLines[0], ENT_QUOTES, 'UTF-8') ?><?php if (($sseTitleLines[1] ?? '') !== ''): ?><br><?= htmlspecialchars($sseTitleLines[1], ENT_QUOTES, 'UTF-8') ?><?php endif; ?></h2>
+                        <p class="hi-body mt-6 max-w-xl text-white/60"><?= htmlspecialchars(__('home.sse_body'), ENT_QUOTES, 'UTF-8') ?></p>
+                        <div class="mt-8 flex flex-wrap gap-3">
+                            <a href="<?= htmlspecialchars(url('sse'), ENT_QUOTES, 'UTF-8') ?>" class="hi-cta hi-cta-solid"><?= htmlspecialchars(__('home.sse_cta'), ENT_QUOTES, 'UTF-8') ?></a>
+                            <a href="<?= htmlspecialchars(url('atak/sse'), ENT_QUOTES, 'UTF-8') ?>" class="hi-cta hi-cta-ghost"><?= htmlspecialchars(__('home.sse_cta_desk'), ENT_QUOTES, 'UTF-8') ?></a>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-6">
+                        <ul class="grid gap-4 sm:grid-cols-2">
+                            <?php
+                            $ssePoints = [
+                                ['t' => __('home.sse_p1_t'), 'b' => __('home.sse_p1_b')],
+                                ['t' => __('home.sse_p2_t'), 'b' => __('home.sse_p2_b')],
+                                ['t' => __('home.sse_p3_t'), 'b' => __('home.sse_p3_b')],
+                                ['t' => __('home.sse_p4_t'), 'b' => __('home.sse_p4_b')],
+                            ];
+                            foreach ($ssePoints as $point):
+                            ?>
+                            <li class="rounded-2xl border border-white/10 bg-black/25 p-5">
+                                <p class="text-sm font-black uppercase tracking-wide text-emerald-300/90"><?= htmlspecialchars($point['t'], ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="mt-2 text-sm leading-relaxed text-white/55"><?= htmlspecialchars($point['b'], ENT_QUOTES, 'UTF-8') ?></p>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -835,6 +872,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             </div>
             <nav class="flex max-w-xl flex-wrap gap-x-5 gap-y-2 text-xs" aria-label="<?= htmlspecialchars(__('home.footer_legal_aria'), ENT_QUOTES, 'UTF-8') ?>">
                 <a href="<?= htmlspecialchars(url('a-propos'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.about'), ENT_QUOTES, 'UTF-8') ?></a>
+                <a href="<?= htmlspecialchars(url('sse'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.sse'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('contact'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.contact'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('nouveautes'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.changelog'), ENT_QUOTES, 'UTF-8') ?></a>
                 <?php

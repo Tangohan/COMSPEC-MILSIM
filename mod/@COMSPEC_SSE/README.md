@@ -2,7 +2,7 @@
 
 Addon Arma 3 autonome — **Sensitive Site Exploitation** (CBA + ACE3).
 
-Version actuelle : **V0.7.0**
+Version actuelle : **V0.7.1**
 
 ## Contenu
 
@@ -16,6 +16,7 @@ Version actuelle : **V0.7.0**
 | V0.5 | Véhicules, radios, armes, bâtiments + kit SSE |
 | V0.6 | Moteur intel : niveaux, triage, pivot, fusion, Zeus Site Manager |
 | V0.7 | UI multi-écrans liés au même SSE Record |
+| V0.7.1 | Catalogues d’ères Irak 2010–2020 et Russie 2020–2024 |
 
 ## Prérequis
 

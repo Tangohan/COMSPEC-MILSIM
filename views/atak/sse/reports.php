@@ -109,6 +109,7 @@ $draftDocs = array_slice($draftDocs, 0, 8);
                         <td><span class="badge"><?= $h($c['status_label'] ?? '') ?></span></td>
                         <td>
                             <a class="btn-open" href="<?= $h(url('atak/sse/dossiers/' . (int) ($c['id'] ?? 0) . '/compte-rendu')) ?>">Compte rendu</a>
+                            <a class="btn-open" href="<?= $h(url('atak/sse/dossiers/' . (int) ($c['id'] ?? 0) . '/pdf')) ?>">PDF complet</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

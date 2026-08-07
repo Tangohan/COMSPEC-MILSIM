@@ -13,7 +13,7 @@ use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 
 /**
- * Pages marketing publiques : à propos, contact, journal des nouveautés.
+ * Pages marketing publiques : à propos, contact, journal des nouveautés, présentation SSE.
  */
 final class SitePagesController
 {
@@ -131,6 +131,16 @@ final class SitePagesController
             'meta_description' => __('site.changelog_meta_description'),
             'marketingActive' => 'changelog',
             'changelogEntries' => $this->changelogEntries(),
+        ]);
+    }
+
+    public function sse(Request $request, array $params = []): Response
+    {
+        return Response::view('layout.marketing', [
+            'content' => 'site.sse',
+            'title' => __('site.sse_meta_title'),
+            'meta_description' => __('site.sse_meta_description'),
+            'marketingActive' => 'sse',
         ]);
     }
 

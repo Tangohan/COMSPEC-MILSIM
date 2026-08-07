@@ -73,13 +73,27 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
             <?php foreach ($meshes as $m):
                 $cnt = $meshCounts[(int) $m['id']] ?? ['nodes' => 0, 'edges' => 0];
                 ?>
-                <a class="sse-folder-card sse-mesh-card" href="<?= $h(url('atak/sse/toiles/' . (int) $m['id'])) ?>">
+                <?php
+                $meshUrl = url('atak/sse/toiles/' . (int) $m['id']);
+                $meshRef = (string) ($m['reference_code'] ?? '');
+                $meshTitle = (string) ($m['title'] ?? '');
+                $meshCtx = [
+                    ['label' => 'Ouvrir l’investigation', 'href' => $meshUrl],
+                    ['label' => 'Ouvrir dans un nouvel onglet', 'href' => $meshUrl, 'target' => '_blank'],
+                    ['separator' => true],
+                    ['label' => 'Copier la référence', 'copy' => $meshRef],
+                ];
+                ?>
+                <a class="sse-folder-card sse-mesh-card"
+                   href="<?= $h($meshUrl) ?>"
+                   data-sse-ctx-title="<?= $h($meshTitle) ?>"
+                   data-sse-ctx-actions="<?= $h(json_encode($meshCtx, JSON_UNESCAPED_UNICODE)) ?>">
                     <div class="sse-folder-card-top">
                         <span class="sse-folder-kind">Toile</span>
                         <span class="badge"><?= $h($m['status_label'] ?? '') ?></span>
                     </div>
-                    <strong><?= $h($m['title'] ?? '') ?></strong>
-                    <span class="record-id"><?= $h($m['reference_code'] ?? '') ?></span>
+                    <strong><?= $h($meshTitle) ?></strong>
+                    <span class="record-id"><?= $h($meshRef) ?></span>
                     <div class="sse-folder-card-meta">
                         <span class="badge badge--amber"><?= $h($m['classification_label'] ?? '') ?></span>
                         <span class="sse-count-set">

@@ -43,12 +43,9 @@ class TemplateVariableService
             'current_date_fr' => date('d/m/Y'),
             'current_datetime_fr' => date('d/m/Y H:i'),
             'current_year' => date('Y'),
+            'document.uuid' => $this->displayOrDash($document['uuid'] ?? null),
+            'document.reference_number' => $this->displayOrDash($document['reference_number'] ?? null),
         ];
-
-        if (!empty($document)) {
-            $resolved['document.uuid'] = $document['uuid'] ?? '';
-            $resolved['document.reference_number'] = $document['reference_number'] ?? '';
-        }
 
         $profile = null;
         $personnelProfile = null;
@@ -100,11 +97,11 @@ class TemplateVariableService
         if ($unitId && $tenantId) {
             $unit = $this->unitRepository->findById((int) $unitId, $tenantId);
             if ($unit) {
-                $resolved['unit.name'] = $unit['name'] ?? '';
-                $resolved['unit.company'] = $unit['name'] ?? '';
-                $resolved['unit.section'] = $unit['type'] ?? '';
-                $resolved['unit.address'] = '';
-                $resolved['unit.city'] = '';
+                $resolved['unit.name'] = $this->displayOrDash($unit['name'] ?? null);
+                $resolved['unit.company'] = $this->displayOrDash($unit['name'] ?? null);
+                $resolved['unit.section'] = $this->displayOrDash($unit['type'] ?? null);
+                $resolved['unit.address'] = $this->displayOrDash($unit['address'] ?? $unit['public_address'] ?? null);
+                $resolved['unit.city'] = $this->displayOrDash($unit['city'] ?? $unit['public_city'] ?? null);
                 if ($unit['commander_user_id'] ?? null) {
                     $sup = $this->userRepository->findById((int) $unit['commander_user_id'], $tenantId);
                     $supPersonnel = $this->personnelProfileRepository->getByUserId((int) $unit['commander_user_id']);
@@ -125,21 +122,31 @@ class TemplateVariableService
         }
 
         if (!isset($resolved['unit.name'])) {
-            $resolved['unit.name'] = '';
-            $resolved['unit.company'] = '';
-            $resolved['unit.section'] = '';
-            $resolved['unit.address'] = '';
-            $resolved['unit.city'] = '';
+            $resolved['unit.name'] = '—';
+            $resolved['unit.company'] = '—';
+            $resolved['unit.section'] = '—';
+            $resolved['unit.address'] = '—';
+            $resolved['unit.city'] = '—';
         }
         if (!isset($resolved['superior.rank_label'])) {
-            $resolved['superior.rank_label'] = '';
-            $resolved['superior.grade_text'] = $resolved['superior.grade_text'] ?? '';
-            $resolved['superior.grade_otan'] = $resolved['superior.grade_otan'] ?? '';
-            $resolved['superior.full_name'] = '';
-            $resolved['superior.position_label'] = '';
+            $resolved['superior.rank_label'] = '—';
+            $resolved['superior.grade_text'] = $resolved['superior.grade_text'] ?? '—';
+            $resolved['superior.grade_otan'] = $resolved['superior.grade_otan'] ?? '—';
+            $resolved['superior.full_name'] = '—';
+            $resolved['superior.position_label'] = '—';
         }
 
         return $resolved;
+    }
+
+    /**
+     * Valeur affichable dans un courrier : tiret cadratin si absente.
+     */
+    private function displayOrDash(mixed $value): string
+    {
+        $s = trim((string) ($value ?? ''));
+
+        return $s !== '' ? $s : '—';
     }
 
     /**

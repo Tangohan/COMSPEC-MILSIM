@@ -124,6 +124,202 @@ private _mk = {
     ]
 ] call _mk;
 
+// —— Catalogue ère Irak 2010–2020 ——
+[
+    "builtin_iq_2010_2020_cache_armes",
+    "Irak 2010-2020 — Cache d'armes",
+    createHashMapFromArray [
+        ["profile", "INSURGENT"], ["complexity", "DETAILED"], ["region", "IRAQ"],
+        ["theme", "weapons_cache"], ["includeComputer", false], ["networkSize", 9],
+        ["noiseProbability", 0.18], ["falseLeadProbability", 0.22],
+        ["tags", ["irak", "2010-2020", "cache", "armes"]],
+        ["aliasPool", ["ABU YASSIN", "ABU HAMZA", "AL SAQR", "LE MAGASINIER", "BROTHER 7"]],
+        ["contactPool", ["THE DRIVER", "WAREHOUSE", "ABU MARIAM", "RELAY-ANBAR", "SHADOW"]],
+        ["smsTemplates", [
+            "Les caisses sont au hangar OUEST.",
+            "Ne déplacez rien avant la prière du soir.",
+            "Checkpoint renforcé — passez par le canal.",
+            "Confirmez le comptage des chargeurs."
+        ]],
+        ["documentTemplates", [
+            "Inventaire armes — secteur Nord (brouillon)",
+            "Plan manuscrit dépôt + grille",
+            "Liste de contacts (prénoms seulement)",
+            "Reçu carburant pickup blanc"
+        ]],
+        ["codewords", ["SABLE", "ORAGE", "LUNE", "PUITS"]],
+        ["notes", "Modèle type Irak 2010–2020 : cellule armement, papier + SMS."]
+    ]
+] call _mk;
+
+[
+    "builtin_iq_2010_2020_ied",
+    "Irak 2010-2020 — Cellule IED",
+    createHashMapFromArray [
+        ["profile", "TECHNICIAN"], ["complexity", "HIGH_VALUE"], ["region", "IRAQ"],
+        ["theme", "ied_cell"], ["includeComputer", true], ["networkSize", 7],
+        ["tags", ["irak", "2010-2020", "ied"]],
+        ["aliasPool", ["L INGENIEUR", "ABU FIL", "ECLAIR", "LE CHIMISTE"]],
+        ["codewords", ["ECLAIR", "FIL", "CHARGE", "WADI"]],
+        ["notes", "Atelier IED type période 2010–2020."]
+    ]
+] call _mk;
+
+[
+    "builtin_iq_2010_2020_hvt",
+    "Irak 2010-2020 — Chef de secteur",
+    createHashMapFromArray [
+        ["profile", "COMMANDER"], ["complexity", "HIGH_VALUE"], ["region", "IRAQ"],
+        ["theme", "meeting_alpha"], ["includeBiometrics", true], ["includeComputer", true],
+        ["networkSize", 14],
+        ["tags", ["irak", "2010-2020", "hvt"]],
+        ["aliasPool", ["ABU KARIM", "AL RASHID", "LE CONTREMAITRE", "EMIR NORD"]],
+        ["codewords", ["ALPHA", "ORAGE", "CROISSANT", "NID"]],
+        ["notes", "HVT commandement — réunion, réseau, biométrie."]
+    ]
+] call _mk;
+
+[
+    "builtin_iq_2010_2020_courrier",
+    "Irak 2010-2020 — Courrier frontière",
+    createHashMapFromArray [
+        ["profile", "COURIER"], ["complexity", "STANDARD"], ["region", "IRAQ"],
+        ["theme", "courier_run"], ["networkSize", 5],
+        ["noiseProbability", 0.25], ["falseLeadProbability", 0.35],
+        ["tags", ["irak", "2010-2020", "courrier"]],
+        ["aliasPool", ["LE CHAUFFEUR", "COLIS", "RELAIS-2", "SANDMAN"]]
+    ]
+] call _mk;
+
+[
+    "builtin_iq_2010_2020_financier",
+    "Irak 2010-2020 — Relais financier",
+    createHashMapFromArray [
+        ["profile", "FINANCIER"], ["complexity", "DETAILED"], ["region", "IRAQ"],
+        ["theme", "finance_drop"], ["includeComputer", true], ["networkSize", 8],
+        ["tags", ["irak", "2010-2020", "finance"]],
+        ["aliasPool", ["LE CHANGEUR", "ABU CAISSE", "THE ACCOUNTANT"]]
+    ]
+] call _mk;
+
+[
+    "builtin_iq_2010_2020_safehouse",
+    "Irak 2010-2020 — Planque urbaine",
+    createHashMapFromArray [
+        ["profile", "INSURGENT"], ["complexity", "DETAILED"], ["region", "IRAQ"],
+        ["theme", "safehouse"], ["includeDocuments", true], ["networkSize", 6],
+        ["tags", ["irak", "2010-2020", "planque"]],
+        ["aliasPool", ["NID", "MAISON BLEUE", "LE LOCATAIRE"]]
+    ]
+] call _mk;
+
+// —— Catalogue ère Russie / Est 2020–2024 ——
+[
+    "builtin_ru_2020_2024_recon",
+    "Russie 2020-2024 — Reconnaissance",
+    createHashMapFromArray [
+        ["profile", "INTELLIGENCE"], ["complexity", "DETAILED"], ["region", "RUSSIA"],
+        ["theme", "meeting_alpha"], ["includeComputer", true], ["networkSize", 8],
+        ["tags", ["russie", "2020-2024", "recon"]],
+        ["aliasPool", ["SOKOL", "BERKUT", "NAVIGATOR", "TIGR-2", "VOLGA"]],
+        ["contactPool", ["BASE-NORTH", "RELAY-K", "DRIVER-7", "ANALYST-M", "LOG-12"]],
+        ["smsTemplates", [
+            "Point d'observation tenu jusqu'à 04h.",
+            "Changement de grille — utiliser la carte B.",
+            "Ne répondez pas aux numéros inconnus.",
+            "Photo du carrefour envoyée sur le canal secondaire."
+        ]],
+        ["codewords", ["SOKOL", "ZARYA", "MOST", "TUMAN"]],
+        ["notes", "Cellule ISR / observation théâtre Est 2020–2024."]
+    ]
+] call _mk;
+
+[
+    "builtin_ru_2020_2024_logistics",
+    "Russie 2020-2024 — Logistique",
+    createHashMapFromArray [
+        ["profile", "LOGISTICS"], ["complexity", "DETAILED"], ["region", "RUSSIA"],
+        ["theme", "fuel_delivery"], ["includeDocuments", true], ["networkSize", 10],
+        ["tags", ["russie", "2020-2024", "logistique"]],
+        ["aliasPool", ["SKLAD", "CITERNE", "KONVOI", "MEKHANIK"]],
+        ["codewords", ["SKLAD", "CITERNE", "DETROUR", "NUIT"]]
+    ]
+] call _mk;
+
+[
+    "builtin_ru_2020_2024_command",
+    "Russie 2020-2024 — Poste de commandement",
+    createHashMapFromArray [
+        ["profile", "COMMANDER"], ["complexity", "HIGH_VALUE"], ["region", "RUSSIA"],
+        ["theme", "meeting_alpha"], ["includeBiometrics", true], ["includeComputer", true],
+        ["networkSize", 12],
+        ["tags", ["russie", "2020-2024", "commandement", "hvt"]],
+        ["aliasPool", ["KOMANDIR", "SEVER", "ORYOL", "SHTAB"]],
+        ["codewords", ["ZARYA", "ORYOL", "SHTAB", "BAGAZH"]]
+    ]
+] call _mk;
+
+[
+    "builtin_ru_2020_2024_drone",
+    "Russie 2020-2024 — Cellule drone",
+    createHashMapFromArray [
+        ["profile", "TECHNICIAN"], ["complexity", "HIGH_VALUE"], ["region", "RUSSIA"],
+        ["theme", "drone_ops"], ["includeComputer", true], ["networkSize", 6],
+        ["tags", ["russie", "2020-2024", "drone", "isr"]],
+        ["aliasPool", ["PILOT", "KAMERA", "BPLA", "INZHENER"]],
+        ["codewords", ["BPLA", "OKNO", "KARTA", "SVYAZ"]]
+    ]
+] call _mk;
+
+[
+    "builtin_ru_2020_2024_ew",
+    "Russie 2020-2024 — Radio / EW",
+    createHashMapFromArray [
+        ["profile", "TECHNICIAN"], ["complexity", "DETAILED"], ["region", "RUSSIA"],
+        ["theme", "courier_run"], ["includeComputer", true], ["networkSize", 5],
+        ["tags", ["russie", "2020-2024", "radio", "ew"]],
+        ["aliasPool", ["RADIST", "SHUM", "VOLNA", "ANTENA"]],
+        ["codewords", ["SHUM", "VOLNA", "TISHINA", "MOST"]]
+    ]
+] call _mk;
+
+[
+    "builtin_ru_2020_2024_infoops",
+    "Russie 2020-2024 — Info ops",
+    createHashMapFromArray [
+        ["profile", "INTELLIGENCE"], ["complexity", "DETAILED"], ["region", "RUSSIA"],
+        ["theme", "propaganda"], ["includeComputer", true], ["includePhone", true],
+        ["networkSize", 9],
+        ["tags", ["russie", "2020-2024", "propagande"]],
+        ["aliasPool", ["REDAKTOR", "KANAL", "GOLOS", "MIRROR"]],
+        ["codewords", ["KANAL", "ZERKALO", "GOLOS", "EFIR"]]
+    ]
+] call _mk;
+
+[
+    "builtin_ru_2020_2024_courier",
+    "Russie 2020-2024 — Courrier civil",
+    createHashMapFromArray [
+        ["profile", "COURIER"], ["complexity", "STANDARD"], ["region", "RUSSIA"],
+        ["theme", "courier_run"], ["networkSize", 4],
+        ["noiseProbability", 0.3], ["falseLeadProbability", 0.3],
+        ["tags", ["russie", "2020-2024", "courrier"]],
+        ["aliasPool", ["KURIER", "SUMKA", "TAKTSI"]]
+    ]
+] call _mk;
+
+[
+    "builtin_ru_2020_2024_civil",
+    "Russie 2020-2024 — Civil couverture",
+    createHashMapFromArray [
+        ["profile", "CIVILIAN"], ["complexity", "LIGHT"], ["region", "RUSSIA"],
+        ["theme", "RANDOM"], ["noiseProbability", 0.6], ["falseLeadProbability", 0.12],
+        ["includeBiometrics", false], ["includeComputer", false], ["networkSize", 7],
+        ["tags", ["russie", "2020-2024", "bruit", "civil"]],
+        ["notes", "Bruit de fond théâtre Est."]
+    ]
+] call _mk;
+
 comspec_sse_models_builtin = _builtins;
 if (isServer) then { publicVariable "comspec_sse_models_builtin"; };
 

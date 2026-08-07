@@ -46,22 +46,21 @@ $editable = in_array((string) ($document['status'] ?? ''), ['brouillon', 'en_rel
     </div>
 </div>
 
-<section class="panel">
-    <div class="panel-header">
-        <div class="panel-title">
-            <span class="panel-index">19.12</span>
-            Corps du document
+<section class="sse-doc-read">
+    <div class="sse-doc-read__toolbar panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <span class="panel-index">19.12</span>
+                Lecture officielle
+            </div>
+            <div class="panel-meta">
+                <?php if (!empty($document['updated_at'])): ?>
+                    Mis à jour <?= $h($document['updated_at']) ?>
+                <?php endif; ?>
+            </div>
         </div>
-        <div class="panel-meta">
-            <?php if (!empty($document['updated_at'])): ?>
-                Mis à jour <?= $h($document['updated_at']) ?>
-            <?php endif; ?>
-        </div>
-    </div>
-    <div class="panel-body">
-        <pre class="sse-report" id="sse-doc-body"><?= $h($document['body'] ?? '') ?></pre>
-        <div class="toolbar-actions" style="margin-top:1rem;gap:.5rem;display:flex;flex-wrap:wrap">
-            <button class="btn btn--ghost btn--sm" type="button" data-copy="#sse-doc-body">Copier</button>
+        <div class="panel-body toolbar-actions" style="gap:.5rem;display:flex;flex-wrap:wrap">
+            <button class="btn btn--ghost btn--sm" type="button" data-copy-body>Copier le corps</button>
             <?php if ($canManage && $editable): ?>
                 <a class="btn btn--ghost btn--sm" href="<?= $h(url('atak/sse/documents/' . (int) $document['id'] . '/modifier')) ?>">Modifier</a>
             <?php endif; ?>
@@ -93,12 +92,18 @@ $editable = in_array((string) ($document['status'] ?? ''), ['brouillon', 'en_rel
             <?php endif; ?>
         </div>
     </div>
+
+    <?php
+    $livePreview = false;
+    require __DIR__ . '/partials/document_paper.php';
+    ?>
+    <pre id="sse-doc-body-raw" class="sr-only" aria-hidden="true"><?= $h($document['body'] ?? '') ?></pre>
 </section>
 
 <script>
-document.querySelectorAll('[data-copy]').forEach(function (btn) {
+document.querySelectorAll('[data-copy-body]').forEach(function (btn) {
     btn.addEventListener('click', function () {
-        var el = document.querySelector(btn.getAttribute('data-copy'));
+        var el = document.getElementById('sse-doc-body-raw');
         if (!el) { return; }
         var done = function () {
             var old = btn.textContent;

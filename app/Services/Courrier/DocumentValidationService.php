@@ -57,6 +57,11 @@ class DocumentValidationService
         }
 
         $body = (string) ($document['body_rendered'] ?? '');
+        if ($body !== '' && $context !== []) {
+            $body = $this->renderService->renderBody($body, array_merge($context, [
+                'document' => array_merge(is_array($context['document'] ?? null) ? $context['document'] : [], $document),
+            ]));
+        }
         $unresolved = $this->renderService->findUnresolvedPlaceholders($body);
         if (!empty($unresolved)) {
             $alerts[] = [

@@ -16,6 +16,8 @@
       kind_label: n.kind_label || (cfg.kindLabels && cfg.kindLabels[n.kind]) || n.kind,
       label: n.label || '',
       detail: n.detail || '',
+      image_url: n.image_url || '',
+      meta_lines: Array.isArray(n.meta_lines) ? n.meta_lines : [],
       x: +n.pos_x || 200,
       y: +n.pos_y || 200,
       vx: 0,
@@ -262,16 +264,42 @@
     var l = document.getElementById('sse-mesh-sel-label');
     var d = document.getElementById('sse-mesh-sel-detail');
     var links = document.getElementById('sse-mesh-sel-links');
+    var edgeList = document.getElementById('sse-mesh-sel-edge-list');
     if (k) k.textContent = n.kind_label || n.kind;
     if (l) l.textContent = n.label;
-    if (d) d.textContent = n.detail || '';
+    if (d) {
+      var lines = (n.meta_lines && n.meta_lines.length) ? n.meta_lines.join('\n') : '';
+      d.textContent = lines || n.detail || 'Aucune précision renseignée.';
+      d.style.whiteSpace = lines ? 'pre-line' : '';
+    }
+    var imgWrap = document.getElementById('sse-mesh-sel-image');
+    var imgEl = document.getElementById('sse-mesh-sel-image-img');
+    if (imgWrap && imgEl) {
+      if (n.image_url) {
+        imgEl.src = n.image_url;
+        imgWrap.hidden = false;
+      } else {
+        imgEl.removeAttribute('src');
+        imgWrap.hidden = true;
+      }
+    }
+    var related = edges.filter(function (e) { return e.from === id || e.to === id; });
     if (links) {
-      var related = edges.filter(function (e) { return e.from === id || e.to === id; });
       links.textContent = related.length
         ? related.length + ' lien' + (related.length > 1 ? 's' : '') + ' sur la toile'
         : 'Aucun lien pour cette entité';
     }
-    // Préremplir les selects de lien
+    if (edgeList) {
+      edgeList.innerHTML = '';
+      related.slice(0, 8).forEach(function (e) {
+        var otherId = e.from === id ? e.to : e.from;
+        var other = byId[otherId];
+        var li = document.createElement('li');
+        var dir = e.from === id ? '→' : '←';
+        li.textContent = dir + ' ' + (e.relation || 'lié') + ' ' + ((other && other.label) || ('#' + otherId));
+        edgeList.appendChild(li);
+      });
+    }
     var from = document.getElementById('from_node_id');
     if (from) from.value = String(id);
     render();
@@ -300,12 +328,104 @@
   }
 
   svg.addEventListener('mousedown', function (ev) {
+    if (ev.button === 2) {
+      return;
+    }
     var pt = clientToWorld(ev);
     var n = nearest(pt);
     if (n) {
       drag = n;
       selectNode(n.id);
       ev.preventDefault();
+    }
+  });
+
+  svg.addEventListener('contextmenu', function (ev) {
+    ev.preventDefault();
+    var pt = clientToWorld(ev);
+    var n = nearest(pt);
+    var actions = [];
+    var title = '';
+
+    if (n) {
+      selectNode(n.id);
+      title = n.label || (n.kind_label || 'Entité');
+      actions.push({
+        label: 'Afficher la fiche',
+        run: function () {
+          selectNode(n.id);
+          var explore = document.querySelector('[data-mesh-tab="explore"]');
+          if (explore) explore.click();
+        }
+      });
+      if (cfg.canManage) {
+        actions.push({
+          label: 'Créer un lien depuis cette entité',
+          run: function () {
+            selectNode(n.id);
+            var build = document.querySelector('[data-mesh-tab="build"]');
+            if (build) build.click();
+            var from = document.getElementById('from_node_id');
+            if (from) from.value = String(n.id);
+          }
+        });
+      }
+      actions.push({ separator: true });
+      actions.push({ label: 'Copier le libellé', copy: n.label || '' });
+      if (cfg.canManage && cfg.deleteNodeUrlTpl) {
+        actions.push({ separator: true });
+        actions.push({
+          label: 'Retirer de l’investigation',
+          danger: true,
+          post: String(cfg.deleteNodeUrlTpl).replace('__ID__', String(n.id)),
+          csrf: cfg.csrf,
+          confirm: 'Retirer « ' + (n.label || 'cette entité') + ' » de l’investigation ?'
+        });
+      }
+    } else {
+      title = 'Canevas';
+      actions.push({
+        label: 'Réorganiser',
+        run: function () {
+          simFrames = 80;
+        }
+      });
+      actions.push({
+        label: 'Recadrer la vue',
+        run: function () {
+          var fit = document.getElementById('sse-mesh-fit');
+          if (fit) fit.click();
+        }
+      });
+      if (cfg.canManage) {
+        actions.push({ separator: true });
+        actions.push({
+          label: 'Ajouter une entité ici',
+          run: function () {
+            var nx = document.getElementById('sse-mesh-new-x');
+            var ny = document.getElementById('sse-mesh-new-y');
+            if (nx) nx.value = String(Math.round(pt.x));
+            if (ny) ny.value = String(Math.round(pt.y));
+            var build = document.querySelector('[data-mesh-tab="build"]');
+            if (build) build.click();
+            var label = document.getElementById('label');
+            if (label) label.focus();
+          }
+        });
+        if (document.getElementById('sse-mesh-save-layout')) {
+          actions.push({
+            label: 'Enregistrer la disposition',
+            run: function () {
+              var save = document.getElementById('sse-mesh-save-layout');
+              if (save) save.click();
+            }
+          });
+        }
+      }
+    }
+
+    if (window.SseContextMenu && typeof window.SseContextMenu.open === 'function') {
+      window.SseContextMenu.open(ev.clientX, ev.clientY, actions, title);
     }
   });
   window.addEventListener('mousemove', function (ev) {
@@ -407,4 +527,51 @@
       render();
     });
   });
+
+  // Onglets du panneau latéral
+  document.querySelectorAll('[data-mesh-tab]').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var name = tab.getAttribute('data-mesh-tab');
+      document.querySelectorAll('[data-mesh-tab]').forEach(function (t) {
+        var on = t === tab;
+        t.classList.toggle('is-active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-mesh-panel]').forEach(function (panel) {
+        var on = panel.getAttribute('data-mesh-panel') === name;
+        panel.classList.toggle('is-active', on);
+        panel.hidden = !on;
+      });
+    });
+  });
+
+  // Recadrage simple : recentre et remet le zoom
+  var fitBtn = document.getElementById('sse-mesh-fit');
+  if (fitBtn) {
+    fitBtn.addEventListener('click', function () {
+      scale = 1;
+      panX = 0;
+      panY = 0;
+      if (nodes.length === 0) {
+        render();
+        return;
+      }
+      var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      nodes.forEach(function (n) {
+        minX = Math.min(minX, n.x);
+        maxX = Math.max(maxX, n.x);
+        minY = Math.min(minY, n.y);
+        maxY = Math.max(maxY, n.y);
+      });
+      var cx = (minX + maxX) / 2;
+      var cy = (minY + maxY) / 2;
+      nodes.forEach(function (n) {
+        n.x += (W / 2 - cx);
+        n.y += (H / 2 - cy);
+        n.vx = 0;
+        n.vy = 0;
+      });
+      render();
+    });
+  }
 })();
