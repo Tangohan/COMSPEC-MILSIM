@@ -7,6 +7,9 @@ name: Deploy Athena (Hostinger FTP)
 #   FTP_PASSWORD mot de passe FTP / SSH Hostinger
 # Optionnel :
 #   FTP_SERVER_DIR  (défaut : ./  = racine public_html du compte FTP)
+#
+# Sessions : ne jamais synchroniser storage/sessions (ni cache/logs/uploads runtime).
+# Sur Hostinger, préférer SESSION_SAVE_PATH hors public_html (voir .env.example).
 
 on:
   push:
@@ -56,7 +59,8 @@ jobs:
           server-dir: ${{ secrets.FTP_SERVER_DIR || './' }}
           dangerous-clean-slate: false
           log-level: standard
-          # Ne pas écraser secrets / vendor / uploads locaux prod
+          # Ne pas écraser secrets / vendor / uploads / sessions locaux prod.
+          # Exclure dossier + contenu (sinon le sync peut recréer / toucher le dossier).
           exclude: |
             **/.git*
             **/.git*/**
@@ -65,9 +69,22 @@ jobs:
             **/.deploy.env
             **/node_modules/**
             **/vendor/**
+            storage/cache
+            storage/cache/**
+            **/storage/cache
             **/storage/cache/**
+            storage/logs
+            storage/logs/**
+            **/storage/logs
             **/storage/logs/**
+            storage/sessions
+            storage/sessions/**
+            **/storage/sessions
             **/storage/sessions/**
+            storage/uploads
+            storage/uploads/**
+            **/storage/uploads
+            **/storage/uploads/**
             **/public/uploads/**
             **/mod/**
             **/-o/**
@@ -76,3 +93,4 @@ jobs:
             **/*.md
             **/tests/**
             **/.github/**
+            **/.ftp-deploy-sync-state.json

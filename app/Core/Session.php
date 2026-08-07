@@ -28,10 +28,13 @@ class Session
 
         // En hébergement mutualisé, les sessions atterrissent dans un répertoire commun
         // que le ramasse-miettes des autres sites peut purger selon *leur* durée de vie.
-        // Un répertoire dédié à l'application rend la durée réellement tenue. Repli
-        // silencieux sur le comportement par défaut si le répertoire n'est pas utilisable :
+        // Un répertoire dédié à l'application rend la durée réellement tenue.
+        // Préférer SESSION_SAVE_PATH hors de l'arbre déployé par FTP (ex. ~/tmp/athena_sessions)
+        // pour qu'un sync Git→FTP ne puisse pas toucher aux fichiers de session.
+        // Repli silencieux sur le comportement par défaut si le répertoire n'est pas utilisable :
         // mieux vaut une session courte qu'une connexion impossible.
-        $sessionPath = self::applicationSessionPath();
+        $configuredPath = trim((string) ($config['session_save_path'] ?? ''));
+        $sessionPath = self::applicationSessionPath($configuredPath !== '' ? $configuredPath : null);
         if ($sessionPath !== null && self::iniIsWritable('session.save_path')) {
             ini_set('session.save_path', $sessionPath);
         }
@@ -50,16 +53,40 @@ class Session
 
     /**
      * Répertoire de sessions propre à l'application, ou `null` s'il n'est pas exploitable.
+     *
+     * Ordre de résolution :
+     * 1. chemin configuré (`SESSION_SAVE_PATH` / auth.session_save_path) — hors FTP recommandé
+     * 2. `storage/sessions` dans l'application
      */
-    private static function applicationSessionPath(): ?string
+    private static function applicationSessionPath(?string $configured = null): ?string
     {
+        $configured = trim((string) $configured);
+        if ($configured !== '') {
+            $resolved = self::ensureWritableSessionDirectory($configured);
+            if ($resolved !== null) {
+                return $resolved;
+            }
+        }
+
         if (!function_exists('base_path')) {
             return null;
         }
-        $path = base_path('storage/sessions');
+
+        return self::ensureWritableSessionDirectory(base_path('storage/sessions'));
+    }
+
+    /**
+     * Crée au besoin un répertoire de sessions et vérifie qu'il est utilisable.
+     */
+    private static function ensureWritableSessionDirectory(string $path): ?string
+    {
+        $path = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR);
+        if ($path === '') {
+            return null;
+        }
         if (!is_dir($path)) {
-            // Le répertoire est versionné via un .gitkeep, mais un déploiement partiel
-            // peut l'avoir omis : on tente de le créer sans jamais échouer bruyamment.
+            // Création silencieuse : un déploiement partiel ou un chemin externe neuf
+            // ne doit jamais faire échouer le démarrage de session.
             if (!@mkdir($path, 0770, true) && !is_dir($path)) {
                 return null;
             }
