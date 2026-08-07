@@ -37,8 +37,31 @@ réencoder les fichiers.
 
 ## Encodage attendu
 
-À faire en local (ffmpeg n'est pas disponible dans l'environnement de développement
-distant), puis transférer les fichiers **en mode binaire**.
+À faire en local (installer ffmpeg si besoin, ex. `winget install Gyan.FFmpeg`), puis
+committer / transférer les fichiers **en mode binaire**.
+
+### Depuis les MP4 HEVC déjà en dépôt (cas actuel)
+
+```bash
+cd public/assets/video
+
+for stem in hero-athena hero-athena-2 hero-athena-3; do
+  ffmpeg -y -i "${stem}.mp4" \
+    -c:v libx264 -profile:v high -level 4.1 -pix_fmt yuv420p \
+    -crf 23 -preset slow \
+    -movflags +faststart \
+    -an \
+    "${stem}.h264.mp4"
+  ffprobe -v error -select_streams v:0 \
+    -show_entries stream=codec_name,profile,pix_fmt -of default=nw=1 "${stem}.h264.mp4"
+  mv "${stem}.h264.mp4" "${stem}.mp4"
+done
+```
+
+Sous Windows : `pwsh -File scripts/reencode-hero-videos.ps1`  
+(option `-KeepWebm` pour générer aussi les `.webm`).
+
+### Depuis une source .mov
 
 ```bash
 # MP4 / H.264 — source universelle

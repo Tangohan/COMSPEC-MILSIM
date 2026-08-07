@@ -231,6 +231,9 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 <?php /* Aucune source décodable : on ne rend aucun emplacement vidéo, le
                          carrousel d'images porte alors le hero. Rendre des balises <video>
                          sans <source> laisserait un fond noir. */ ?>
+                <?php if ($heroPresentClipCount === 0 && $heroVideoRejected !== []): ?>
+                <!-- hero-video: sources écartées (codec non lisible navigateur) — <?= htmlspecialchars(implode(', ', array_map(static fn (array $r): string => (string) ($r['stem'] ?? '') . ':' . (string) ($r['codec'] ?? '?'), $heroVideoRejected)), ENT_QUOTES, 'UTF-8') ?> — voir docs/VIDEO-HERO-ENCODAGE.md -->
+                <?php endif; ?>
                 <?php if ($heroPresentClipCount > 0): ?>
                 <div id="heroVideoSlides" class="hi-hero-videos absolute inset-0 hi-hero-videos--idle" data-hero-video-count="<?= count($heroVideoClips) ?>" aria-hidden="true">
                     <?php foreach ($heroVideoClips as $clipIndex => $clip): ?>
