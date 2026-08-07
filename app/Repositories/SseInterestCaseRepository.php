@@ -22,8 +22,14 @@ final class SseInterestCaseRepository
     public function __construct(private ?Database $db = null)
     {
         $this->db ??= Database::getInstance();
-        $migration = require base_path('bootstrap/atak_sse_interest_cases_migration.php');
-        $migration(Database::getPdo());
+        try {
+            $migration = require base_path('bootstrap/atak_sse_interest_cases_migration.php');
+            if (is_callable($migration)) {
+                $migration(Database::getPdo());
+            }
+        } catch (\Throwable) {
+            // Schéma via run-migrations ; ne pas casser le portail.
+        }
     }
 
     /** @return list<array<string,mixed>> */
@@ -36,8 +42,11 @@ final class SseInterestCaseRepository
         }
         $q = trim((string) ($filters['q'] ?? ''));
         if ($q !== '') {
-            $where[] = '(reference_code LIKE :q OR temporary_designation LIKE :q OR suspected_alias LIKE :q)';
-            $params['q'] = '%' . $q . '%';
+            $like = '%' . $q . '%';
+            $where[] = '(reference_code LIKE :q_ref OR temporary_designation LIKE :q_desig OR suspected_alias LIKE :q_alias)';
+            $params['q_ref'] = $like;
+            $params['q_desig'] = $like;
+            $params['q_alias'] = $like;
         }
         $rows = $this->db->fetchAll('SELECT * FROM sse_interest_cases WHERE ' . implode(' AND ', $where) . ' ORDER BY updated_at DESC LIMIT 200', $params);
         return array_map(fn (array $r): array => $this->hydrate($r), $rows);

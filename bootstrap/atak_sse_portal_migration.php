@@ -49,6 +49,7 @@ return static function (PDO $pdo): void {
         $pdo->exec(
             "CREATE TABLE sse_cases (
                 id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                parent_id INT UNSIGNED DEFAULT NULL,
                 tenant_id INT UNSIGNED NOT NULL,
                 context_id INT UNSIGNED NOT NULL DEFAULT 1,
                 reference_code VARCHAR(32) NOT NULL,
@@ -56,6 +57,7 @@ return static function (PDO $pdo): void {
                 summary TEXT NULL,
                 classification VARCHAR(32) NOT NULL DEFAULT 'encadrement',
                 status VARCHAR(32) NOT NULL DEFAULT 'ouvert',
+                is_folder TINYINT(1) NOT NULL DEFAULT 0,
                 unlock_code_hash VARCHAR(64) DEFAULT NULL,
                 created_by INT UNSIGNED DEFAULT NULL,
                 closed_at DATETIME DEFAULT NULL,
@@ -65,12 +67,24 @@ return static function (PDO $pdo): void {
                 UNIQUE KEY uniq_sse_case_ref (tenant_id, reference_code),
                 KEY idx_sse_cases_tenant_status (tenant_id, status),
                 KEY idx_sse_cases_class (tenant_id, classification),
+                KEY idx_sse_cases_parent (tenant_id, parent_id),
                 CONSTRAINT fk_sse_cases_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
         $log("  [OK] sse_cases\n");
     } else {
         $log("  [OK] sse_cases (déjà présente)\n");
+    }
+
+    // Hiérarchie dossiers / sous-dossiers (rail latéral SSE).
+    if ($tableExists($pdo, 'sse_cases') && !$columnExists($pdo, 'sse_cases', 'parent_id')) {
+        $pdo->exec('ALTER TABLE sse_cases ADD COLUMN parent_id INT UNSIGNED DEFAULT NULL AFTER id');
+        $pdo->exec('ALTER TABLE sse_cases ADD KEY idx_sse_cases_parent (tenant_id, parent_id)');
+        $log("  [OK] sse_cases.parent_id\n");
+    }
+    if ($tableExists($pdo, 'sse_cases') && !$columnExists($pdo, 'sse_cases', 'is_folder')) {
+        $pdo->exec('ALTER TABLE sse_cases ADD COLUMN is_folder TINYINT(1) NOT NULL DEFAULT 0 AFTER status');
+        $log("  [OK] sse_cases.is_folder\n");
     }
 
     if (!$tableExists($pdo, 'sse_case_persons') && $tableExists($pdo, 'sse_persons')) {
@@ -217,5 +231,37 @@ return static function (PDO $pdo): void {
         $log("  [OK] sse_access_grants_log\n");
     } else {
         $log("  [OK] sse_access_grants_log (déjà présente)\n");
+    }
+
+    if (!$tableExists($pdo, 'sse_documents')) {
+        $pdo->exec(
+            "CREATE TABLE sse_documents (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                tenant_id INT UNSIGNED NOT NULL,
+                reference_code VARCHAR(40) NOT NULL,
+                case_id INT UNSIGNED DEFAULT NULL,
+                document_type VARCHAR(32) NOT NULL DEFAULT 'note_analyse',
+                title VARCHAR(240) NOT NULL,
+                body MEDIUMTEXT NOT NULL,
+                classification VARCHAR(32) NOT NULL DEFAULT 'confidentiel',
+                status VARCHAR(24) NOT NULL DEFAULT 'brouillon',
+                author_label VARCHAR(120) DEFAULT NULL,
+                created_by INT UNSIGNED DEFAULT NULL,
+                updated_by INT UNSIGNED DEFAULT NULL,
+                validated_by INT UNSIGNED DEFAULT NULL,
+                validated_at DATETIME DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_sse_doc_ref (tenant_id, reference_code),
+                KEY idx_sse_doc_tenant_status (tenant_id, status, updated_at),
+                KEY idx_sse_doc_case (tenant_id, case_id),
+                CONSTRAINT fk_sse_documents_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT fk_sse_documents_case FOREIGN KEY (case_id) REFERENCES sse_cases (id) ON DELETE SET NULL ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+        $log("  [OK] sse_documents\n");
+    } else {
+        $log("  [OK] sse_documents (déjà présente)\n");
     }
 };

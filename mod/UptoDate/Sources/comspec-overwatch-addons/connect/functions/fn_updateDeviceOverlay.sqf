@@ -1,6 +1,9 @@
 /*
     Overlay terminal (écran cassé, éteint, gel, brouillage) sur cTab / Hub Overwatch.
     Indépendant du roleplay admin — inclut les effets Zeus.
+
+    Texture fissurée : img/overlays/comspec_overlay_screen_cracked_ca.png
+    (macros display_device_macros.hpp — chemins .png tant que les .paa ne sont pas générés).
 */
 if (!hasInterface) exitWith {};
 
@@ -25,34 +28,52 @@ if (isNull _display) then {
     _display = uiNamespace getVariable ["COMSPEC_Hub_Display", displayNull];
 };
 
+private _fx = uiNamespace getVariable ["COMSPEC_DeviceOverlay_Fx", controlNull];
 private _overlay = uiNamespace getVariable ["COMSPEC_DeviceOverlay_Ctrl", controlNull];
 
 if (isNull _display) exitWith {
+    if (!isNull _fx) then { _fx ctrlShow false; };
     if (!isNull _overlay) then { _overlay ctrlShow false; };
 };
 
 if (!_needOverlay) exitWith {
+    if (!isNull _fx) then { _fx ctrlShow false; };
     if (!isNull _overlay) then { _overlay ctrlShow false; };
+};
+
+// Zone écran cTab Android (approx. contenu utile sous la barre d’état)
+private _pos = [0.04, 0.18, 0.92, 0.58];
+
+if (isNull _fx || {ctrlParent _fx != _display}) then {
+    _fx = _display ctrlCreate ["RscPicture", 99887700];
+    uiNamespace setVariable ["COMSPEC_DeviceOverlay_Fx", _fx];
+    _fx ctrlSetPosition _pos;
+    _fx ctrlCommit 0;
 };
 
 if (isNull _overlay || {ctrlParent _overlay != _display}) then {
     _overlay = _display ctrlCreate ["RscStructuredText", 99887701];
     uiNamespace setVariable ["COMSPEC_DeviceOverlay_Ctrl", _overlay];
-    _overlay ctrlSetPosition [0.04, 0.18, 0.92, 0.58];
-    _overlay ctrlSetBackgroundColor [0.02, 0.05, 0.08, 0.94];
+    _overlay ctrlSetPosition _pos;
     _overlay ctrlCommit 0;
 };
 
 private _title = "TERMINAL INDISPONIBLE";
 private _detail = "";
+private _tex = "";
+private _bgAlpha = 0.72;
 
 if (_crashed) then {
     _title = "TERMINAL BLOQUÉ";
     _detail = "Redémarrage automatique en cours…";
+    _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.png";
+    _bgAlpha = 0.55;
 } else {
     if (!_connectionOk) then {
         _title = "APPAREIL HORS SERVICE";
         _detail = "Liaison Athena coupée — réparation requise.";
+        _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.png";
+        _bgAlpha = 0.5;
     } else {
         if (_isCompromised) then {
             _title = if (_compromise isEqualTo "compromised") then {
@@ -61,6 +82,8 @@ if (_crashed) then {
                 "APPAREIL CAPTURÉ"
             };
             _detail = "Données illisibles — clé ou contrôle incorrect.";
+            _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.png";
+            _bgAlpha = 0.6;
         } else {
             if (_isDisconnected) then {
                 _title = "LIAISON ATAK PERDUE";
@@ -69,14 +92,20 @@ if (_crashed) then {
                 } else {
                     "Aucune donnée transmise"
                 };
+                _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.png";
+                _bgAlpha = 0.45;
             } else {
                 if (!_powered) then {
                     _title = "ATAK ÉTEINT";
                     _detail = "Rallumez l’appareil (ACE · interaction personnelle).";
+                    _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.png";
+                    _bgAlpha = 0.75;
                 } else {
                     if (!_screenOk) then {
                         _title = "ÉCRAN ENDOMMAGÉ";
                         _detail = "Position seule possible — toolkit ACE pour réparer.";
+                        _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_cracked_ca.png";
+                        _bgAlpha = 0.35; // laisser voir les fissures
                     };
                 };
             };
@@ -84,12 +113,23 @@ if (_crashed) then {
     };
 };
 
+if (_tex isNotEqualTo "") then {
+    _fx ctrlSetText _tex;
+    _fx ctrlSetPosition _pos;
+    _fx ctrlShow true;
+    _fx ctrlEnable false;
+} else {
+    _fx ctrlShow false;
+};
+
 private _body = format [
-    "<t align='center' size='1.35' color='#ff8a7a'>%1</t><br/><t align='center' size='0.95' color='#c8d4dc'>%2</t>",
+    "<br/><br/><t align='center' size='1.35' color='#ff8a7a'>%1</t><br/><t align='center' size='0.95' color='#c8d4dc'>%2</t>",
     _title,
     _detail
 ];
 
+_overlay ctrlSetPosition _pos;
+_overlay ctrlSetBackgroundColor [0.02, 0.05, 0.08, _bgAlpha];
 _overlay ctrlSetStructuredText parseText _body;
 _overlay ctrlShow true;
 _overlay ctrlEnable false;

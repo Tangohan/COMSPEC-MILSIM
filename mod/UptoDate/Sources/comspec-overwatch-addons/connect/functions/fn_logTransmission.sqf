@@ -30,34 +30,43 @@ private _label = if (_detail isEqualTo "") then { _cmd } else { format ["%1 — 
 
 private _level = "INFO";
 private _prefix = "[Tx]";
+private _techLabel = _label;
 switch (_phaseKey) do {
     case "ok";
     case "success": {
         _level = "INFO";
         _prefix = "[Tx OK]";
+        _techLabel = format ["OK · %1", _label];
     };
     case "fail";
     case "failed";
     case "error": {
         _level = "ERROR";
         _prefix = "[Tx ÉCHEC]";
+        _techLabel = format ["ÉCHEC · %1", _label];
     };
     case "warn";
     case "warning": {
         _level = "WARN";
         _prefix = "[Tx]";
+        _techLabel = format ["WARN · %1", _label];
     };
     default {
         _level = "INFO";
         _prefix = "[Tx →]";
+        _techLabel = format ["→ %1", _label];
         // Anti-spam tentatives répétitives (position / marqueurs) : DEBUG si canal TxAttempt soft
         if ((toLower _cmd) in ["updateposition", "sendmarker", "updatevehicletracking"]) then {
+            _level = "DEBUG";
+        };
+        // Tentative photo : DEBUG — l’OK/ÉCHEC reste en INFO (évite le doublement identique).
+        if ((toLower _cmd) in ["notifynewphoto", "uploadreconimage", "enqueuereconimage", "uploadimage", "uploadssephoto"]) then {
             _level = "DEBUG";
         };
     };
 };
 
-[_level, "Tx", _label, if (isNil "_raw") then { nil } else { _raw }] call comspec_overwatch_connect_fnc_log;
+[_level, "Tx", _techLabel, if (isNil "_raw") then { nil } else { _raw }] call comspec_overwatch_connect_fnc_log;
 
 private _line = format ["%1 %2", _prefix, _label];
 [_line, _linkCat] call comspec_overwatch_connect_fnc_appendLinkLog;

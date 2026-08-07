@@ -226,6 +226,31 @@ final class ConfigurationUpdateProbes
         return false;
     }
 
+    /** Laboratoire numérique : même périmètre que le portail SSE. */
+    public function sseDigitalLabApplicable(int $tenantId): bool
+    {
+        return $this->ssePortalApplicable($tenantId);
+    }
+
+    /**
+     * Satisfait si un support a déjà été enregistré (prise en main du module)
+     * ou si le tenant neuf a été marqué via markSatisfiedForNewTenant.
+     */
+    public function hasSseDigitalLabConfig(int $tenantId): bool
+    {
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM sse_digital_devices WHERE tenant_id = ? AND deleted_at IS NULL LIMIT 1'
+            );
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            // Table absente avant migration : ne pas bloquer / ne pas afficher en erreur.
+            return true;
+        }
+    }
+
     /**
      * Décision humaine prise : roleplay sauvegardé (reviewed), scramble activé, ou domaine seedé (tenant neuf).
      */

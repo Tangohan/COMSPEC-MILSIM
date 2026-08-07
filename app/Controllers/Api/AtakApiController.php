@@ -5005,38 +5005,47 @@ class AtakApiController
         $svc = new \App\Services\Tactical\AtakVideoFeedsService();
         $method = strtoupper((string) ($request->method() ?? 'GET'));
 
-        if ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
-            if (!$this->authArma()) {
-                return Response::json(['error' => 'Unauthorized'], 401);
-            }
-            $actor = $this->guardArmaWrite($request, $tenantId, false);
-            if ($actor instanceof Response) {
-                return $actor;
-            }
-            $body = $this->jsonBody($request);
-            $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request, true));
-            if ($mapId < 1) {
-                $mapId = self::DEFAULT_MAP_ID;
-            }
-            $feeds = $body['feeds'] ?? [];
-            if (!is_array($feeds)) {
-                $feeds = [];
-            }
-            $reporter = trim((string) ($body['callsign'] ?? $body['call_sign'] ?? $body['reporter'] ?? ''));
-            if ($reporter === '' && is_array($actor)) {
-                $reporter = trim((string) ($actor['callsign'] ?? $actor['call_sign'] ?? ''));
-            }
-            $saved = $svc->put($tenantId, $mapId, $feeds, $reporter);
-            $saved = $this->attachFeedSnapshots($tenantId, $saved);
+        try {
+            if ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
+                if (!$this->authArma()) {
+                    return Response::json(['error' => 'Unauthorized'], 401);
+                }
+                $actor = $this->guardArmaWrite($request, $tenantId, false);
+                if ($actor instanceof Response) {
+                    return $actor;
+                }
+                $body = $this->jsonBody($request);
+                $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request, true));
+                if ($mapId < 1) {
+                    $mapId = self::DEFAULT_MAP_ID;
+                }
+                $feeds = $body['feeds'] ?? [];
+                if (!is_array($feeds)) {
+                    $feeds = [];
+                }
+                $reporter = trim((string) ($body['callsign'] ?? $body['call_sign'] ?? $body['reporter'] ?? ''));
+                if ($reporter === '' && is_array($actor)) {
+                    $reporter = trim((string) ($actor['callsign'] ?? $actor['call_sign'] ?? ''));
+                }
+                $saved = $svc->put($tenantId, $mapId, $feeds, $reporter);
+                $saved = $this->attachFeedSnapshots($tenantId, $saved);
 
-            return Response::json(['ok' => true] + $saved);
+                return Response::json(['ok' => true] + $saved);
+            }
+
+            $mapId = $this->mapId($request);
+            $payload = $svc->get($tenantId, $mapId);
+            $payload = $this->attachFeedSnapshots($tenantId, $payload);
+
+            return Response::json($payload);
+        } catch (\Throwable $e) {
+            error_log('[atak/video-feeds] ' . $e->getMessage());
+
+            return Response::json([
+                'error' => 'video_feeds_failed',
+                'message' => 'Impossible de mettre à jour les caméras pour le moment.',
+            ], 503);
         }
-
-        $mapId = $this->mapId($request);
-        $payload = $svc->get($tenantId, $mapId);
-        $payload = $this->attachFeedSnapshots($tenantId, $payload);
-
-        return Response::json($payload);
     }
 
     /**
@@ -5057,7 +5066,12 @@ class AtakApiController
                 $ids[] = (string) $f['id'];
             }
         }
-        $snap = $this->reconRepo->latestSnapshots($tenantId, $ids, 120);
+        try {
+            $snap = $this->reconRepo->latestSnapshots($tenantId, $ids, 120);
+        } catch (\Throwable $e) {
+            error_log('[atak/video-feeds] snapshots: ' . $e->getMessage());
+            $snap = ['by_feed' => [], 'by_author_device' => []];
+        }
         $byFeed = $snap['by_feed'] ?? [];
         $byAuthor = $snap['by_author_device'] ?? [];
         foreach ($feeds as &$feed) {
@@ -5093,6 +5107,14 @@ class AtakApiController
                 'vehicle' => 'Caméra véhicule',
                 default => 'Caméra casque',
             };
+            // Évite INF/NAN qui font échouer json_encode → réponse 500 opaque.
+            foreach (['pos_x', 'pos_y', 'pos_z'] as $coord) {
+                if (!array_key_exists($coord, $feed) || $feed[$coord] === null) {
+                    continue;
+                }
+                $n = (float) $feed[$coord];
+                $feed[$coord] = is_finite($n) ? $n : null;
+            }
         }
         unset($feed);
         $payload['feeds'] = $feeds;

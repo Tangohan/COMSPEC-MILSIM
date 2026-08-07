@@ -187,6 +187,101 @@ switch (_function) do {
         ["google_deck_error", _human, format ["%1|%2", _code, _message], "Athena", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
         ["COMSPEC_Warning", [_human]] call comspec_overwatch_connect_fnc_showNotification;
     };
+    case "PhotoUpload": {
+        // DLL worker → data = "OK|uploaded|file.jpg" | "OK|duplicate|…" | "ERR|reason|file|…"
+        private _parts = _data splitString "|";
+        private _status = if ((count _parts) > 0) then { _parts select 0 } else { "" };
+        private _detail = if ((count _parts) > 1) then { _parts select 1 } else { "" };
+        private _fileHint = if ((count _parts) > 2) then { _parts select 2 } else { _detail };
+        if (_fileHint isEqualTo "") then { _fileHint = _detail; };
+        private _hintLow = toLower _fileHint;
+
+        private _fnc_matchKeys = {
+            params ["_list", "_hint"];
+            if (!(_list isEqualType [])) exitWith { [] };
+            if (_hint isEqualTo "") exitWith { [] };
+            private _out = [];
+            {
+                private _segs = _x splitString "\/";
+                private _base = toLower (_segs select ((count _segs) - 1));
+                if (_base isEqualTo _hint || {(_x find _hint) >= 0}) then { _out pushBack _x; };
+            } forEach _list;
+            _out
+        };
+
+        private _pending = missionNamespace getVariable ["COMSPEC_Athena_PhotoPending", []];
+        if (!(_pending isEqualType [])) then { _pending = []; };
+        private _uploaded = missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []];
+        if (!(_uploaded isEqualType [])) then { _uploaded = []; };
+        private _failed = missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []];
+        if (!(_failed isEqualType [])) then { _failed = []; };
+        private _matched = [_pending, _hintLow] call _fnc_matchKeys;
+        if ((count _matched) < 1) then { _matched = [_uploaded, _hintLow] call _fnc_matchKeys; };
+        if ((count _matched) < 1 && {_hintLow isNotEqualTo ""}) then { _matched = [_hintLow]; };
+
+        if (_status isEqualTo "OK" && {_detail in ["uploaded", "duplicate"]}) then {
+            {
+                private _k = _x;
+                _pending = _pending - [_k];
+                _failed = _failed - [_k];
+                if !(_k in _uploaded) then { _uploaded pushBack _k; };
+            } forEach _matched;
+            while { (count _uploaded) > 100 } do { _uploaded deleteAt 0; };
+            missionNamespace setVariable ["COMSPEC_Athena_PhotoPending", _pending, false];
+            missionNamespace setVariable ["COMSPEC_Athena_PhotoFailed", _failed, false];
+            missionNamespace setVariable ["COMSPEC_Athena_PhotoUploaded", _uploaded, false];
+            ["PhotoUpload", "ok", format ["%1 · %2", _detail, _fileHint], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+            if (_detail isEqualTo "uploaded") then {
+                private _inbox = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
+                if (!(_inbox isEqualType [])) then { _inbox = []; };
+                private _cs = "";
+                if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
+                    _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+                };
+                if (_cs isEqualTo "") then { _cs = name player; };
+                private _summary = if (_fileHint isEqualTo "") then {
+                    "Photo reçue sur ATAK web"
+                } else {
+                    format ["Photo reçue sur ATAK web — %1", _fileHint]
+                };
+                _inbox pushBack ["PHOTO", "Photo remontée", _summary, "", [daytime, "HH:MM"] call BIS_fnc_timeToString, _cs];
+                while { (count _inbox) > 40 } do { _inbox deleteAt 0; };
+                missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", _inbox, false];
+                ["COMSPEC_AthenaInboxUpdated", []] call CBA_fnc_localEvent;
+            };
+            if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updatePanel") then {
+                [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
+            };
+        } else {
+            if (_status isEqualTo "ERR") then {
+                {
+                    private _k = _x;
+                    _pending = _pending - [_k];
+                    _uploaded = _uploaded - [_k];
+                    if !(_k in _failed) then { _failed pushBack _k; };
+                } forEach _matched;
+                while { (count _failed) > 100 } do { _failed deleteAt 0; };
+                missionNamespace setVariable ["COMSPEC_Athena_PhotoPending", _pending, false];
+                missionNamespace setVariable ["COMSPEC_Athena_PhotoUploaded", _uploaded, false];
+                missionNamespace setVariable ["COMSPEC_Athena_PhotoFailed", _failed, false];
+                ["PhotoUpload", "fail", format ["%1 · %2", _detail, _fileHint], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+                private _msg = switch (true) do {
+                    case ((_detail find "file_not_found") == 0): { "Photo introuvable sur le disque — capturez à nouveau." };
+                    case ((_detail find "not_connected") == 0): { "Pas de liaison Athena — reconnectez-vous puis renvoyez." };
+                    case ((_detail find "http_") == 0): { "Le poste de commandement a refusé la photo. Réessayez." };
+                    case ((_detail find "network") == 0): { "Liaison réseau instable pendant l’envoi de la photo." };
+                    default { "Échec d’envoi de la photo vers ATAK web." };
+                };
+                if (!isNil "comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback") then {
+                    [_msg, "error", 8] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
+                };
+                if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updatePanel") then {
+                    [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
+                };
+            };
+        };
+    };
+
     case "PostError": {
         // DLL → échec HTTP fire-and-forget (position, marqueurs, chat async…)
         // data = "code|path|ageSec"

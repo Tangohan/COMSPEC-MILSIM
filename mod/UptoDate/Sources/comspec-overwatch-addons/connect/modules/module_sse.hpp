@@ -9,11 +9,9 @@
       · Dossier SSE actif      → classe automatiquement tout ce qui suit
       · Profil d'identité SSE  → décide de ce que la requête va rendre
       · Doter en terminal SEEK → rend le module utilisable sans redéploiement
-*/
 
-class CfgVehicles
-{
-    class Module_F;
+    Inclus dans un seul class CfgVehicles (config.cpp) — ne pas rouvrir CfgVehicles ici.
+*/
 
     class COMSPEC_Module_SSE_Base: Module_F
     {
@@ -231,4 +229,3 @@ class CfgVehicles
             synced[] = {"AnyPerson"};
         };
     };
-};

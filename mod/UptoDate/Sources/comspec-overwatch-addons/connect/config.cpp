@@ -530,10 +530,18 @@ class CfgFactionClasses
 // Bouton menu Échap : injecté en SQF (DisplayLoad), pas via héritage RscDisplayInterrupt
 // — l’héritage config casse le démarrage Arma (Undefined base / Member already defined).
 
-// Modules Zeus/Eden roleplay (zones sans couverture, brouillage, etc.)
-#include "modules\module_roleplay_zone.hpp"
+// Modules Zeus/Eden — un seul CfgVehicles (deux class CfgVehicles = Member already defined)
+class CfgVehicles
+{
+    class Module_F;
 
-// Modules et attributs Eden — exploitation SSE
-#include "modules\module_sse.hpp"
+    // Zones roleplay (sans couverture, brouillage, etc.)
+    #include "modules\module_roleplay_zone.hpp"
+
+    // Exploitation SSE
+    #include "modules\module_sse.hpp"
+};
+
+// Attributs Eden SSE + EH
 #include "modules\eden_sse_attributes.hpp"
 #include "CfgEventHandlers.hpp"

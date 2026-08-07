@@ -8,6 +8,7 @@
 // Géométrie mesurée sur seek_chassis.paa (2048 × 2048) :
 //   appareil        x 0.117 – 0.883   y 0.031 – 0.969
 //   écran           x 0.297 – 0.703   y 0.065 – 0.330
+//   softkeys        x 0.305 – 0.695   y 0.342 – 0.372   (sous l’écran, hors clavier)
 //   platine verte   x 0.398 – 0.594   y 0.703 – 0.867
 //   clavier         x 0.211 – 0.781   y 0.516 – 0.609
 // Si la texture change, ce sont les seules valeurs à reprendre.
@@ -27,6 +28,7 @@
 //   9544 rendre le dossier actif
 //   9551-9556 libellés page sujet   9560-9565 libellés autres pages
 //   9566 platine   9567 cadre LCD
+//   9570-9573 softkeys A1 / A2 / QUERY / SIGN (sous l’écran)
 //   Tout libellé doit porter un IDC : sans cela il ne peut pas être masqué et se
 //   superpose d'une page à l'autre.
 
@@ -66,11 +68,18 @@
 
 #define QW          ((IN_W - 3 * SP) / 4)
 
+// Softkeys physiques sous l’écran (A1 / A2 / QUERY / SIGN) — hors clavier QWERTY.
+#define SOFT_Y      (SEEK_Y + 0.348 * SEEK_H)
+#define SOFT_H      (0.026 * SEEK_H)
+#define SOFT_W      (0.088 * SEEK_W)
+#define SOFT_GAP    (0.014 * SEEK_W)
+#define SOFT_X(i)   (SEEK_X + 0.305 * SEEK_W + (i) * (SOFT_W + SOFT_GAP))
+
 class COMSPEC_SsePerson_Dialog {
     idd = 9991;
     movingEnable = 1;
     onLoad = "uiNamespace setVariable ['COMSPEC_SsePerson_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_ssePersonDialogOnLoad;";
-    onUnload = "uiNamespace setVariable ['COMSPEC_SsePerson_Display', displayNull]; uiNamespace setVariable ['COMSPEC_SsePerson_Target', objNull]; uiNamespace setVariable ['COMSPEC_SsePerson_Samples', []]; uiNamespace setVariable ['COMSPEC_SsePerson_Signature', []]; uiNamespace setVariable ['COMSPEC_SsePerson_Query', []];";
+    onUnload = "uiNamespace setVariable ['COMSPEC_SsePerson_Display', displayNull]; uiNamespace setVariable ['COMSPEC_SsePerson_Target', objNull]; uiNamespace setVariable ['COMSPEC_SsePerson_Samples', []]; uiNamespace setVariable ['COMSPEC_SsePerson_Signature', []]; uiNamespace setVariable ['COMSPEC_SsePerson_Query', []]; uiNamespace setVariable ['COMSPEC_SsePerson_IdentityCache', []];";
 
     class Controls {
         // ================= APPAREIL =================
@@ -255,7 +264,7 @@ class COMSPEC_SsePerson_Dialog {
             x = IN_X; y = ROW(1); w = HALF_W; h = (0.020 * safezoneH);
             sizeEx = 0.020;
             tooltip = "Rend ce dossier actif pour l’élément — les fiches suivantes y seront classées.";
-            action = "private _d = uiNamespace getVariable ['COMSPEC_SsePerson_Display', displayNull]; [\'set\', ctrlText (_d displayCtrl 9518)] call comspec_overwatch_connect_fnc_sseActiveCase; [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;";
+            action = "private _d = uiNamespace getVariable ['COMSPEC_SsePerson_Display', displayNull]; ['set', ctrlText (_d displayCtrl 9518)] call comspec_overwatch_connect_fnc_sseActiveCase; [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;";
         };
         class BtnSign: COMSPEC_RscButton {
             idc = 9519;
@@ -267,71 +276,77 @@ class COMSPEC_SsePerson_Dialog {
         class TextSignature: RscStructuredText {
             idc = 9520;
             text = "<t size='0.38' color='#e0b07e'>NON SIGNE</t>";
-            x = IN_X; y = ROW(2); w = IN_W; h = (1.4 * ROW_H);
+            x = IN_X; y = ROW(2); w = IN_W; h = (1.2 * ROW_H);
         };
         class StatusText: RscStructuredText {
             idc = 9513;
             text = "";
-            x = IN_X; y = ROW(4); w = IN_W; h = (1.2 * ROW_H);
+            x = IN_X; y = ROW(3); w = IN_W; h = (0.9 * ROW_H);
         };
+        // Au-dessus de la barre de navigation : ne plus coller TRANSMETTRE sur ◄.
         class BtnSave: COMSPEC_RscButtonAccent {
             idc = 9516;
             text = "TRANSMETTRE";
-            x = IN_X; y = (NAV_Y - 0.023 * safezoneH); w = HALF_W; h = (0.021 * safezoneH);
+            x = IN_X; y = ROW(4); w = HALF_W; h = (0.020 * safezoneH);
             action = "[] call comspec_overwatch_connect_fnc_ssePersonDialogSubmit;";
         };
         class BtnClose: COMSPEC_RscButtonDanger {
             idc = 9517;
             text = "ANNULER";
-            x = IN_X2; y = (NAV_Y - 0.023 * safezoneH); w = HALF_W; h = (0.021 * safezoneH);
+            x = IN_X2; y = ROW(4); w = HALF_W; h = (0.020 * safezoneH);
             action = "private _d = uiNamespace getVariable ['COMSPEC_SsePerson_Display', displayNull]; if (!isNull _d) then { _d closeDisplay 2; } else { closeDialog 0; };";
         };
 
         // ================= NAVIGATION =================
         class BtnPrev: RscButton {
             idc = 9541;
-            text = "<";
+            text = "<<";
             x = IN_X; y = NAV_Y; w = (0.14 * SCR_W); h = BAR_H;
             colorBackground[] = {0.055, 0.118, 0.125, 0.9};
             colorBackgroundActive[] = {0.07, 0.82, 0.56, 0.35};
             colorText[] = {0.91, 0.97, 0.94, 1};
             colorFocused[] = {0.055, 0.118, 0.125, 0.9};
-            sizeEx = 0.022;
+            sizeEx = 0.020;
             action = "[-1, true] call comspec_overwatch_connect_fnc_sseTerminalPage;";
         };
         class BtnNext: BtnPrev {
             idc = 9542;
-            text = ">";
+            text = ">>";
             x = (SCR_X + SCR_W - SP - (0.14 * SCR_W));
             action = "[1, true] call comspec_overwatch_connect_fnc_sseTerminalPage;";
         };
 
-        // ================= TOUCHES PHYSIQUES (hors écran) =================
-        // Posées sur le clavier de l'illustration, mesuré à x 0.211–0.781 / y 0.516–0.609.
+        // ================= SOFTKEYS (sous l’écran, hors clavier) =================
+        // Alignées sous l’LCD — plus sur la rangée QWERTY (y 0.516–0.609).
         class KeyA1: COMSPEC_RscButton {
-            idc = -1;
+            idc = 9570;
             text = "A1";
-            x = (SEEK_X + 0.235 * SEEK_W); y = (SEEK_Y + 0.530 * SEEK_H);
-            w = (0.120 * SEEK_W); h = (0.060 * SEEK_H);
-            sizeEx = 0.024;
+            x = SOFT_X(0); y = SOFT_Y; w = SOFT_W; h = SOFT_H;
+            sizeEx = 0.018;
+            colorBackground[] = {0.04, 0.09, 0.12, 0.72};
+            colorBackgroundActive[] = {0.10, 0.28, 0.30, 0.95};
+            colorFocused[] = {0.10, 0.28, 0.30, 0.95};
             tooltip = "Relevé d’empreintes";
             action = "['empreintes'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
         };
         class KeyA2: KeyA1 {
+            idc = 9571;
             text = "A2";
-            x = (SEEK_X + 0.370 * SEEK_W);
+            x = SOFT_X(1);
             tooltip = "Relevé iris";
             action = "['iris'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
         };
         class KeyQuery: KeyA1 {
+            idc = 9572;
             text = "QUERY";
-            x = (SEEK_X + 0.505 * SEEK_W);
+            x = SOFT_X(2);
             tooltip = "Requête d’identité";
             action = "[] call comspec_overwatch_connect_fnc_sseIdentityQuery;";
         };
         class KeySign: KeyA1 {
+            idc = 9573;
             text = "SIGN";
-            x = (SEEK_X + 0.640 * SEEK_W);
+            x = SOFT_X(3);
             tooltip = "Signer par l’ATAK";
             action = "[] call comspec_overwatch_connect_fnc_sseSignAtak;";
         };

@@ -65,15 +65,26 @@ if (!(_atakStatus get "can_display")) then {
     };
     if (!isNull _ctrlScreenBroken) then {
         if (!(_atakStatus get "powered_on")) then {
-            // ATAK éteint
+            _ctrlScreenBroken ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.88];
             _ctrlScreenBroken ctrlSetStructuredText parseText format [
                 "<t align='center' size='2' color='#666666'>ATAK ÉTEINT</t><br/>" +
                 "<t align='center' size='1' color='#888888'>ACE Self Interact → Rallumer</t>"
             ];
         } else {
-            // Écran détruit
+            // Texture fissurée en fond (créée une fois)
+            private _fx = uiNamespace getVariable ["COMSPEC_Hub_ScreenBrokenFx", controlNull];
+            if (isNull _fx || {ctrlParent _fx != _display}) then {
+                _fx = _display ctrlCreate ["RscPicture", 9205];
+                uiNamespace setVariable ["COMSPEC_Hub_ScreenBrokenFx", _fx];
+                _fx ctrlSetPosition (ctrlPosition _ctrlScreenBroken);
+                _fx ctrlSetText "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_cracked_ca.png";
+                _fx ctrlCommit 0;
+            };
+            _fx ctrlShow true;
+            _fx ctrlEnable false;
+            _ctrlScreenBroken ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.4];
             _ctrlScreenBroken ctrlSetStructuredText parseText format [
-                "<t align='center' size='1.5' color='#ff4444'>ÉCRAN ENDOMMAGÉ</t><br/>" +
+                "<br/><br/><t align='center' size='1.5' color='#ff4444'>ÉCRAN ENDOMMAGÉ</t><br/>" +
                 "<t align='center' size='0.9' color='#ffffff'>Connexion maintenue</t><br/>" +
                 "<t align='center' size='0.8' color='#aaaaaa'>Toolkit ACE requis</t>"
             ];
@@ -95,6 +106,8 @@ if (!(_atakStatus get "can_display")) then {
     if (!isNull _ctrlScreenBroken) then {
         _ctrlScreenBroken ctrlShow false;
     };
+    private _fxHide = uiNamespace getVariable ["COMSPEC_Hub_ScreenBrokenFx", controlNull];
+    if (!isNull _fxHide) then { _fxHide ctrlShow false; };
     
     {
         private _ctrl = _display displayCtrl _x;

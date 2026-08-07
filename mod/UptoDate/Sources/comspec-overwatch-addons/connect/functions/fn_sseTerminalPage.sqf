@@ -36,6 +36,20 @@ private _count = count _pages;
 private _current = uiNamespace getVariable ["COMSPEC_SsePerson_Page", 0];
 if (!(_current isEqualType 0)) then { _current = 0; };
 
+// Avant de masquer la page Sujet : mémoriser les champs texte.
+// Sur certaines configs, ctrlText d’un RscEdit en ctrlShow false renvoie vide
+// à la transmission depuis la page Dossier.
+if (_current isEqualTo 1) then {
+    uiNamespace setVariable ["COMSPEC_SsePerson_IdentityCache", [
+        trim (ctrlText (_disp displayCtrl 9501)),
+        trim (ctrlText (_disp displayCtrl 9502)),
+        trim (ctrlText (_disp displayCtrl 9503)),
+        trim (ctrlText (_disp displayCtrl 9504)),
+        trim (ctrlText (_disp displayCtrl 9507)),
+        trim (ctrlText (_disp displayCtrl 9508))
+    ]];
+};
+
 private _target = if (_relative) then { _current + _page } else { _page };
 // Bornage plutôt que bouclage : revenir à l'accueil doit rester explicite.
 _target = (_target max 0) min (_count - 1);
@@ -49,6 +63,20 @@ uiNamespace setVariable ["COMSPEC_SsePerson_Page", _target];
         if (!isNull _ctrl) then { _ctrl ctrlShow _visible; };
     } forEach _idcs;
 } forEach _pages;
+
+// En revenant sur Sujet : réinjecter le cache si un champ éditable est vide.
+if (_target isEqualTo 1) then {
+    private _cache = uiNamespace getVariable ["COMSPEC_SsePerson_IdentityCache", []];
+    if ((_cache isEqualType []) && {(count _cache) >= 6}) then {
+        {
+            _x params ["_idc", "_idx"];
+            private _ctrl = _disp displayCtrl _idc;
+            if (!isNull _ctrl && { (trim (ctrlText _ctrl)) isEqualTo "" }) then {
+                _ctrl ctrlSetText (_cache select _idx);
+            };
+        } forEach [[9501, 0], [9502, 1], [9503, 2], [9504, 3], [9507, 4], [9508, 5]];
+    };
+};
 
 // Bandeau d'aide : seulement à l'accueil.
 private _hint = _disp displayCtrl 9500;

@@ -185,5 +185,15 @@ if (_active isEqualTo "") then {
 };
 (_disp displayCtrl 9518) ctrlSetText _active;
 
+// Snapshot identité dès le préremplissage (avant masquage par l’accueil).
+uiNamespace setVariable ["COMSPEC_SsePerson_IdentityCache", [
+    trim (ctrlText (_disp displayCtrl 9501)),
+    trim (ctrlText (_disp displayCtrl 9502)),
+    trim (ctrlText (_disp displayCtrl 9503)),
+    trim (ctrlText (_disp displayCtrl 9504)),
+    trim (ctrlText (_disp displayCtrl 9507)),
+    trim (ctrlText (_disp displayCtrl 9508))
+]];
+
 // Le terminal s'ouvre sur son accueil ; la page pose aussi la visibilité initiale.
 [0] call comspec_overwatch_connect_fnc_sseTerminalPage;

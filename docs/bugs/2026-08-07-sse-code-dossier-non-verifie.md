@@ -15,7 +15,7 @@ Le hash était stocké, jamais contrôlé dans `caseShow` / PDF / comptes rendus
 ## Correctif
 
 - `SseCaseRepository::verifyUnlockCode()`
-- Sas `/dossiers/{id}/deverrouiller` + session `sse_case_unlocks`
+- Sas `/dossiers/{id}/deverrouiller` + session `sse_unlocked_cases`
 - Bypass commandement (`atak.sse.grant`)
 - Nettoyage à la sortie de session SSE
 

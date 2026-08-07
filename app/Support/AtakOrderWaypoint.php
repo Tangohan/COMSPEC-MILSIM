@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace App\Support;
+
 /**
  * Métadonnées de point de mission encodées dans le payload d’un ordre MOVE.
  * Format : texte libre + suffixe @WP:pos_x|pos_y|GRID:…|ETA:…|DIST:…|SPD:…|LBL:…

@@ -1,0 +1,96 @@
+name: Deploy Athena (Hostinger FTP)
+
+# Déploie le site sur Hostinger après un push sur main.
+# Secrets GitHub requis (Settings → Secrets and variables → Actions) :
+#   FTP_SERVER   ex. 92.113.24.96  ou  ftp.athena.ttrd.fr
+#   FTP_USERNAME ex. u416380327
+#   FTP_PASSWORD mot de passe FTP / SSH Hostinger
+# Optionnel :
+#   FTP_SERVER_DIR  (défaut : ./  = racine public_html du compte FTP)
+#
+# Sessions : ne jamais synchroniser storage/sessions (ni cache/logs/uploads runtime).
+# Sur Hostinger, préférer SESSION_SAVE_PATH hors public_html (voir .env.example).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-athena-prod
+  cancel-in-progress: true
+
+jobs:
+  ftp-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Vérifier les secrets FTP
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          missing=0
+          for name in FTP_SERVER FTP_USERNAME FTP_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret manquant : $name (Settings → Secrets and variables → Actions). Noms exacts requis."
+              missing=1
+            else
+              echo "OK $name (présent)"
+            fi
+          done
+          exit $missing
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          # Hostinger accepte souvent ftp ; si 530 persiste, passer le secret FTP_PROTOCOL=ftps
+          protocol: ${{ secrets.FTP_PROTOCOL || 'ftp' }}
+          port: ${{ secrets.FTP_PORT || 21 }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR || './' }}
+          dangerous-clean-slate: false
+          log-level: standard
+          # Ne pas écraser secrets / vendor / uploads / sessions locaux prod.
+          # Exclure dossier + contenu (sinon le sync peut recréer / toucher le dossier).
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.env
+            **/.env.*
+            **/.deploy.env
+            **/node_modules/**
+            **/vendor/**
+            storage/cache
+            storage/cache/**
+            **/storage/cache
+            **/storage/cache/**
+            storage/logs
+            storage/logs/**
+            **/storage/logs
+            **/storage/logs/**
+            storage/sessions
+            storage/sessions/**
+            **/storage/sessions
+            **/storage/sessions/**
+            storage/uploads
+            storage/uploads/**
+            **/storage/uploads
+            **/storage/uploads/**
+            **/public/uploads/**
+            **/mod/**
+            **/-o/**
+            **/.cursor/**
+            **/docs/**
+            **/*.md
+            **/tests/**
+            **/.github/**
+            **/.ftp-deploy-sync-state.json

@@ -1,0 +1,171 @@
+/**
+ * Manuel opérateur SSE — compléments sur site-docs.css
+ * Palette Bureau SSE (slate / émeraude).
+ */
+.sse-docs {
+  --sse-docs-accent: #059669;
+  --sse-docs-accent-soft: #10b981;
+  --sse-docs-ink: #0f172a;
+  --sse-docs-muted: #475569;
+  --sse-docs-border: rgba(15, 23, 42, 0.1);
+  --sse-docs-surface: #f8fafc;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(16, 185, 129, 0.08), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(15, 23, 42, 0.04), transparent 50%),
+    #f1f5f9;
+  min-height: 100vh;
+  color: var(--sse-docs-ink);
+}
+
+.sse-docs .site-docs__shell {
+  max-width: 72rem;
+}
+
+.sse-docs__banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  padding: 0.65rem 1.25rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.8125rem;
+  border-bottom: 2px solid #059669;
+}
+
+.sse-docs__banner strong {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6ee7b7;
+  font-weight: 700;
+}
+
+.sse-docs__banner a {
+  color: #a7f3d0;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sse-docs__banner a:hover {
+  color: #ecfdf5;
+  text-decoration: underline;
+}
+
+.sse-docs__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sse-docs-accent);
+  margin: 0 0 0.5rem;
+}
+
+.sse-docs__hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.sse-docs__hero-links a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--sse-docs-accent);
+  background: rgba(5, 150, 105, 0.08);
+  border: 1px solid rgba(5, 150, 105, 0.22);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.sse-docs__hero-links a:hover {
+  background: rgba(5, 150, 105, 0.14);
+  border-color: rgba(5, 150, 105, 0.4);
+}
+
+.sse-docs .site-docs__hero h1 {
+  color: var(--sse-docs-ink);
+}
+
+.sse-docs .site-docs__sidebar a.is-active {
+  color: var(--sse-docs-accent);
+  border-left-color: var(--sse-docs-accent);
+}
+
+.sse-docs .site-docs__callout--warn {
+  border-left-color: #d97706;
+  background: rgba(217, 119, 6, 0.08);
+}
+
+.sse-docs .site-docs__callout--danger {
+  border-left-color: #dc2626;
+  background: rgba(220, 38, 38, 0.07);
+}
+
+.sse-docs .site-docs__callout--info,
+.sse-docs .site-docs__callout--tip {
+  border-left-color: #059669;
+  background: rgba(5, 150, 105, 0.08);
+}
+
+.sse-docs table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.sse-docs th,
+.sse-docs td {
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--sse-docs-border);
+  vertical-align: top;
+}
+
+.sse-docs th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sse-docs-muted);
+  background: var(--sse-docs-surface);
+}
+
+.sse-docs .site-docs__steps {
+  counter-reset: sse-step;
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 1.5rem;
+}
+
+.sse-docs .site-docs__steps > li {
+  counter-increment: sse-step;
+  position: relative;
+  padding: 0.85rem 0 0.85rem 3rem;
+  border-bottom: 1px solid var(--sse-docs-border);
+}
+
+.sse-docs .site-docs__steps > li::before {
+  content: counter(sse-step, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.85rem;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: var(--sse-docs-accent);
+  letter-spacing: 0.04em;
+}
+
+.sse-docs .site-docs__lexicon dt {
+  font-weight: 700;
+  margin-top: 0.75rem;
+}
+
+.sse-docs .site-docs__lexicon dd {
+  margin: 0.25rem 0 0;
+  color: var(--sse-docs-muted);
+}

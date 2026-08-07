@@ -112,9 +112,9 @@ final class AtakVideoFeedsService
                 'label' => $label,
                 'callsign' => trim((string) ($feed['callsign'] ?? $feed['call_sign'] ?? '')),
                 'steam_uid' => trim((string) ($feed['steam_uid'] ?? $feed['steamUid'] ?? '')),
-                'pos_x' => isset($feed['pos_x']) ? (float) $feed['pos_x'] : (isset($feed['x']) ? (float) $feed['x'] : null),
-                'pos_y' => isset($feed['pos_y']) ? (float) $feed['pos_y'] : (isset($feed['y']) ? (float) $feed['y'] : null),
-                'pos_z' => isset($feed['pos_z']) ? (float) $feed['pos_z'] : null,
+                'pos_x' => self::finiteOrNull($feed['pos_x'] ?? $feed['x'] ?? null),
+                'pos_y' => self::finiteOrNull($feed['pos_y'] ?? $feed['y'] ?? null),
+                'pos_z' => self::finiteOrNull($feed['pos_z'] ?? null),
                 'grid' => trim((string) ($feed['grid'] ?? $feed['grid_ref'] ?? '')),
                 'reporter' => $reporter !== '' ? $reporter : trim((string) ($feed['reporter'] ?? '')),
                 'streaming' => !empty($feed['streaming']) || !empty($feed['stream_active']),
@@ -144,5 +144,18 @@ final class AtakVideoFeedsService
     private function path(int $tenantId, int $mapId): string
     {
         return base_path('storage/cache/atak-video-feeds/t' . $tenantId . '_m' . $mapId . '.json');
+    }
+
+    private static function finiteOrNull(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (!is_numeric($value)) {
+            return null;
+        }
+        $n = (float) $value;
+
+        return is_finite($n) ? $n : null;
     }
 }

@@ -63,6 +63,39 @@ public static class Extension
 
     private static long _lastPostErrorCbTicks;
 
+    // --- Photo sidecar (queue + watcher) : callExtension ne fait que signaler ---
+    private sealed class ReconPhotoJob
+    {
+        public string RawPath = "";
+        public string Author = "Unknown";
+        public string?[] Meta = Array.Empty<string?>();
+        public string DedupKey = "";
+        public bool NewestFallback;
+        public DateTime EnqueuedUtc = DateTime.UtcNow;
+    }
+
+    private static readonly ConcurrentQueue<ReconPhotoJob> PhotoJobs = new();
+    private static readonly ConcurrentDictionary<string, long> PhotoDedupTicks = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly object ScreenshotWatcherLock = new();
+    private static int _photoWorkerRunning;
+    private static bool _screenshotWatchersStarted;
+    private static long _lastWatcherAttemptTicks;
+    private static readonly List<FileSystemWatcher> ScreenshotWatchers = new();
+    private static readonly ConcurrentDictionary<string, byte> WatcherDebounce = new(StringComparer.OrdinalIgnoreCase);
+    private const int PhotoDedupTtlSeconds = 300;
+    private const int PhotoQueueMax = 64;
+    private const int WatcherMinAgeSeconds = 2;   // ignorer fichiers déjà présents au démarrage (sauf très récents)
+    private const int WatcherMaxAgeSeconds = 120; // ne pas remonter des captures anciennes
+
+    /// <summary>Dernière pose connue (UpdatePosition) pour uploads déclenchés par le watcher.</summary>
+    private static string _lastPhotoAuthor = "";
+    private static string _lastPhotoPosX = "";
+    private static string _lastPhotoPosY = "";
+    private static string _lastPhotoPosZ = "";
+    private static string _lastPhotoHeading = "";
+    private static string _lastPhotoGrid = "";
+    private static long _screenshotWatchersStartedTicks;
+
     private static void NotePostError(int code, string url)
     {
         _lastPostErrorCode = code;
@@ -1188,7 +1221,10 @@ public static class Extension
 
             var verify = VerifyClientInitSync();
             if (verify.StartsWith("OK|", StringComparison.Ordinal))
+            {
+                EnsureScreenshotWatchers();
                 return verify;
+            }
 
             // Dernier filet : si la clé SQF vient de faire échouer client-init, restaurer Redeem.
             if (prevKey.Length > 0 && !string.Equals(prevKey, _apiKey, StringComparison.Ordinal))
@@ -1198,7 +1234,10 @@ public static class Extension
                     ApplyTenantId(prevTenant);
                 var restored = VerifyClientInitSync();
                 if (restored.StartsWith("OK|", StringComparison.Ordinal))
+                {
+                    EnsureScreenshotWatchers();
                     return restored;
+                }
             }
             return verify;
         }
@@ -2332,10 +2371,17 @@ public static class Extension
                 if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
                 return PostVehicleServiceSync(json, token);
             }
-            // Photos recon / intel : validation sync + envoi async (timeout upload dédié).
-            if (function == "UploadReconImage" && args.Length >= 2)
+            // Photos recon : signal rapide (queue + resolve/upload en arrière-plan).
+            // NotifyNewPhoto / EnqueueReconImage = API sidecar ; UploadReconImage reste un alias.
+            if ((function == "NotifyNewPhoto" || function == "EnqueueReconImage" || function == "UploadReconImage")
+                && args.Length >= 1)
             {
-                return BeginUploadReconImage(args);
+                return EnqueueReconImage(args);
+            }
+            if (function == "StartPhotoWatcher")
+            {
+                EnsureScreenshotWatchers();
+                return _screenshotWatchersStarted ? "OK|watching" : "ERR|watcher_failed";
             }
             if (function == "UploadLatestScreenshot" && args.Length >= 1)
             {
@@ -3467,6 +3513,18 @@ public static class Extension
                 // Position2D carte : X/Y hors origine (0,0) = menu / parse raté — ne pas poster
                 if (Math.Abs(posX) < 1.0 && Math.Abs(posY) < 1.0)
                     return;
+                // Mémo pose pour uploads photo déclenchés par FileSystemWatcher (sans SQF).
+                if (callSign.Length > 0)
+                {
+                    _lastPhotoAuthor = callSign;
+                    if (_callSign.Length == 0) _callSign = callSign;
+                }
+                _lastPhotoPosX = posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+                _lastPhotoPosY = posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+                if (aslZ.HasValue)
+                    _lastPhotoPosZ = aslZ.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+                if (heading.HasValue)
+                    _lastPhotoHeading = heading.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
                 var headingStr = heading.HasValue ? heading.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture) : "null";
                 var extra = new System.Text.StringBuilder();
                 extra.Append("\"role\":\"").Append(EscapeJson(role)).Append("\"");
@@ -3689,7 +3747,8 @@ public static class Extension
             {
                 var feedsJson = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(feedsJson)) return;
-                EnqueueOrSend(_baseUrl + "/api/atak/video-feeds", feedsJson);
+                // Même filet que les autres POST : guillemets doublés Arma → identity/payload cassé / 500.
+                EnqueueOrSend(_baseUrl + "/api/atak/video-feeds", EnrichAtakPayload(feedsJson));
                 return;
             }
 
@@ -3749,9 +3808,10 @@ public static class Extension
                 return;
             }
 
-            if (function == "UploadReconImage" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
+            if ((function == "UploadReconImage" || function == "NotifyNewPhoto" || function == "EnqueueReconImage")
+                && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
             {
-                // Géré en synchrone par TryGetSyncResponse (BeginUploadReconImage).
+                // Géré en sync court par TryGetSyncResponse (EnqueueReconImage → worker).
                 return;
             }
 
@@ -3805,25 +3865,221 @@ public static class Extension
     }
 
     /// <summary>
-    /// Valide + file un POST multipart recon. Retour SQF : OK|queued | ERR|…
+    /// Sidecar photo : accepte le signal SQF (chemin / nom) et file resolve+upload en arrière-plan.
+    /// Retour immédiat : OK|queued | OK|duplicate | ERR|…
+    /// Alias callExtension : NotifyNewPhoto, EnqueueReconImage, UploadReconImage.
     /// </summary>
-    private static string BeginUploadReconImage(string?[] args)
+    private static string EnqueueReconImage(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0)
+            return "ERR|not_connected";
+
         var rawPath = args.Length > 0 ? (args[0] ?? "") : "";
-        var author = args.Length > 1 ? (args[1] ?? "Unknown") : "Unknown";
-        var resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(180));
+        var author = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1])
+            ? args[1]!.Trim()
+            : (_lastPhotoAuthor.Length > 0 ? _lastPhotoAuthor : (_callSign.Length > 0 ? _callSign : "Unknown"));
+
+        var trimmedPath = rawPath.Trim().Trim('"').Trim('\'');
+        var newestFallback = string.IsNullOrWhiteSpace(trimmedPath)
+            || (!trimmedPath.Contains('\\') && !trimmedPath.Contains('/')
+                && !Path.HasExtension(trimmedPath));
+
+        var dedupKey = NormalizePhotoDedupKey(trimmedPath.Length > 0 ? trimmedPath : ("newest|" + author));
+        if (!TryClaimPhotoDedup(dedupKey))
+            return "OK|duplicate";
+
+        // File plafonnée : évite accumulation si Athena est down.
+        if (PhotoJobs.Count >= PhotoQueueMax)
+            return "ERR|queue_full";
+
+        var meta = new string?[Math.Max(args.Length, 17)];
+        for (var i = 0; i < args.Length; i++)
+            meta[i] = args[i];
+        meta[0] = trimmedPath;
+        meta[1] = author;
+        // Compléter pose absente avec dernière UpdatePosition (signal SQF minimal / watcher).
+        if (string.IsNullOrWhiteSpace(meta[2]) && _lastPhotoPosX.Length > 0) meta[2] = _lastPhotoPosX;
+        if (string.IsNullOrWhiteSpace(meta[3]) && _lastPhotoPosY.Length > 0) meta[3] = _lastPhotoPosY;
+        if (string.IsNullOrWhiteSpace(meta[4]) && _lastPhotoPosZ.Length > 0) meta[4] = _lastPhotoPosZ;
+        if (string.IsNullOrWhiteSpace(meta[5]) && _lastPhotoGrid.Length > 0) meta[5] = _lastPhotoGrid;
+        if (string.IsNullOrWhiteSpace(meta[6]) && _lastPhotoHeading.Length > 0) meta[6] = _lastPhotoHeading;
+
+        PhotoJobs.Enqueue(new ReconPhotoJob
+        {
+            RawPath = trimmedPath,
+            Author = author,
+            Meta = meta,
+            DedupKey = dedupKey,
+            NewestFallback = newestFallback,
+            EnqueuedUtc = DateTime.UtcNow
+        });
+        EnsureScreenshotWatchers();
+        EnsurePhotoWorker();
+        return "OK|queued";
+    }
+
+    private static string NormalizePhotoDedupKey(string raw)
+    {
+        var p = (raw ?? "").Trim().Trim('"').Trim('\'').Replace('/', '\\');
+        if (p.Length == 0) return "empty";
+        try { return Path.GetFullPath(p); }
+        catch { return p.ToLowerInvariant(); }
+    }
+
+    private static bool TryClaimPhotoDedup(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return false;
+        PrunePhotoDedup();
+        var now = DateTime.UtcNow.Ticks;
+        if (PhotoDedupTicks.TryGetValue(key, out var prev))
+        {
+            if (now - prev < TimeSpan.FromSeconds(PhotoDedupTtlSeconds).Ticks)
+                return false;
+        }
+        PhotoDedupTicks[key] = now;
+        return true;
+    }
+
+    /// <summary>
+    /// Libère le dédup après échec (fichier introuvable / HTTP) pour permettre un vrai retry.
+    /// </summary>
+    private static void ReleasePhotoDedup(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return;
+        PhotoDedupTicks.TryRemove(key, out _);
+    }
+
+    private static void PrunePhotoDedup()
+    {
+        if (PhotoDedupTicks.Count < 80) return;
+        var cutoff = DateTime.UtcNow.AddSeconds(-PhotoDedupTtlSeconds).Ticks;
+        foreach (var kv in PhotoDedupTicks)
+        {
+            if (kv.Value < cutoff)
+                PhotoDedupTicks.TryRemove(kv.Key, out _);
+        }
+    }
+
+    private static void EnsurePhotoWorker()
+    {
+        if (Interlocked.CompareExchange(ref _photoWorkerRunning, 1, 0) != 0)
+            return;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (PhotoJobs.TryDequeue(out var job))
+                {
+                    try { await ProcessReconPhotoJobAsync(job).ConfigureAwait(false); }
+                    catch { /* ne jamais tuer le worker */ }
+                }
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _photoWorkerRunning, 0);
+                // Course : job enfilé pendant le finally → relancer.
+                if (!PhotoJobs.IsEmpty)
+                    EnsurePhotoWorker();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Resolve + upload hors thread callExtension (autorise attentes fichier BCE).
+    /// </summary>
+    private static async Task ProcessReconPhotoJobAsync(ReconPhotoJob job)
+    {
+        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0)
+        {
+            ReleasePhotoDedup(job.DedupKey);
+            InvokeCallback("PhotoUpload", "ERR|not_connected|" + Path.GetFileName(job.RawPath));
+            return;
+        }
+
+        TimeSpan? newestFallback = job.NewestFallback ? TimeSpan.FromSeconds(90) : null;
+        string? resolved = null;
+        string? identityKey = null;
+
+        // Attente non bloquante du flush disque (BCE / Arma_ScreenShot) — max ~4 s.
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            resolved = ResolveLocalImagePath(job.RawPath, attempt >= 6 ? newestFallback : null);
+            if (resolved != null) break;
+            // Chemin absolu mort (Photo Library obsolète) : abandon rapide.
+            try
+            {
+                var p = job.RawPath.Replace('/', '\\');
+                if (Path.IsPathRooted(p)
+                    && !(p.StartsWith('\\') && !p.StartsWith("\\\\", StringComparison.Ordinal)))
+                {
+                    var parent = Path.GetDirectoryName(p);
+                    if (!string.IsNullOrWhiteSpace(parent) && !Directory.Exists(parent)
+                        && attempt >= 1)
+                    {
+                        // Un seul essai de repli par nom de fichier, puis abandon.
+                        var orphan = Path.GetFileName(p);
+                        if (!string.IsNullOrWhiteSpace(orphan))
+                            resolved = FindScreenshotByFileName(orphan);
+                        break;
+                    }
+                }
+            }
+            catch { /* ignore */ }
+            await Task.Delay(400).ConfigureAwait(false);
+        }
+
         if (resolved == null)
         {
-            var hint = string.IsNullOrWhiteSpace(rawPath) ? "empty_path" : Path.GetFileName(rawPath.Replace('/', '\\'));
-            return $"ERR|file_not_found|{hint}|{DescribeImageLookupFailure(rawPath)}";
+            ReleasePhotoDedup(job.DedupKey);
+            var hint = string.IsNullOrWhiteSpace(job.RawPath)
+                ? "empty_path"
+                : Path.GetFileName(job.RawPath.Replace('/', '\\'));
+            InvokeCallback("PhotoUpload",
+                $"ERR|file_not_found|{hint}|{DescribeImageLookupFailure(job.RawPath)}");
+            return;
         }
+
+        // Dédup secondaire après résolution (watcher + SQF → même fichier).
         try
         {
             var fi = new FileInfo(resolved);
-            if (!fi.Exists) return "ERR|file_not_found";
-            if (fi.Length < 32) return "ERR|file_empty";
-            var multipart = new MultipartFormDataContent();
+            if (!fi.Exists)
+            {
+                ReleasePhotoDedup(job.DedupKey);
+                InvokeCallback("PhotoUpload", "ERR|file_not_found|" + Path.GetFileName(resolved));
+                return;
+            }
+            if (fi.Length < 32)
+            {
+                ReleasePhotoDedup(job.DedupKey);
+                InvokeCallback("PhotoUpload", "ERR|file_empty|" + Path.GetFileName(resolved));
+                return;
+            }
+            identityKey = $"{fi.FullName.ToLowerInvariant()}|{fi.Length}|{fi.LastWriteTimeUtc.Ticks}";
+            if (!string.Equals(identityKey, job.DedupKey, StringComparison.OrdinalIgnoreCase)
+                && !TryClaimPhotoDedup(identityKey))
+            {
+                // Autre job déjà en cours / récemment traité pour le même fichier.
+                InvokeCallback("PhotoUpload", "OK|duplicate|" + Path.GetFileName(resolved));
+                return;
+            }
+            MirrorCapture(resolved);
+        }
+        catch
+        {
+            ReleasePhotoDedup(job.DedupKey);
+            ReleasePhotoDedup(identityKey);
+            InvokeCallback("PhotoUpload", "ERR|read_failed|" + Path.GetFileName(resolved));
+            return;
+        }
+
+        MultipartFormDataContent? multipart = null;
+        HttpRequestMessage? req = null;
+        try
+        {
+            var args = job.Meta ?? Array.Empty<string?>();
+            var author = !string.IsNullOrWhiteSpace(job.Author) ? job.Author : "Unknown";
+            multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent("1"), "mapId");
             multipart.Add(new StringContent(author), "author");
             AddOptionalForm(multipart, "pos_x", args, 2);
@@ -3848,12 +4104,189 @@ public static class Extension
             var fileContent = new StreamContent(fileStream);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
             multipart.Add(fileContent, "image", fileName);
-            return QueueMultipartUpload("/api/recon/images", multipart);
+
+            // Attendre le POST ici (worker déjà hors thread jeu) → ACK réel vers SQF.
+            if (!TryBuildRequestUri(_baseUrl, "/api/recon/images", out var uri, out var err) || uri is null)
+            {
+                ReleasePhotoDedup(job.DedupKey);
+                ReleasePhotoDedup(identityKey);
+                try { multipart.Dispose(); } catch { /* ignore */ }
+                InvokeCallback("PhotoUpload", "ERR|" + err + "|" + fileName);
+                return;
+            }
+
+            req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = multipart };
+            multipart = null; // ownership transferred to request
+            AttachApiKeyHeader(req);
+            using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
+            var code = (int)resp.StatusCode;
+            if (resp.IsSuccessStatusCode)
+            {
+                NoteRateLimitCleared();
+                InvokeCallback("PhotoUpload", "OK|uploaded|" + fileName);
+                return;
+            }
+
+            ReleasePhotoDedup(job.DedupKey);
+            ReleasePhotoDedup(identityKey);
+            NotePostError(code, uri.AbsoluteUri);
+            if (code == 401 && _sessionToken.Length > 0)
+                _sessionToken = "";
+            InvokeCallback("PhotoUpload", $"ERR|http_{code}|{fileName}");
         }
         catch
         {
-            return "ERR|read_failed";
+            ReleasePhotoDedup(job.DedupKey);
+            ReleasePhotoDedup(identityKey);
+            InvokeCallback("PhotoUpload", "ERR|network|" + Path.GetFileName(resolved));
         }
+        finally
+        {
+            try { req?.Dispose(); } catch { /* ignore */ }
+            try { multipart?.Dispose(); } catch { /* ignore */ }
+        }
+    }
+
+    /// <summary>
+    /// Surveille Screenshots/Screenshot (profil + Workshop) et file les nouveaux fichiers.
+    /// </summary>
+    private static void EnsureScreenshotWatchers()
+    {
+        if (_screenshotWatchersStarted) return;
+        lock (ScreenshotWatcherLock)
+        {
+            if (_screenshotWatchersStarted) return;
+            var nowTicks = DateTime.UtcNow.Ticks;
+            // Throttle si aucun dossier encore visible (cwd Arma / profils pas prêts).
+            if (_lastWatcherAttemptTicks > 0
+                && nowTicks - _lastWatcherAttemptTicks < TimeSpan.FromSeconds(20).Ticks
+                && ScreenshotWatchers.Count == 0)
+                return;
+            _lastWatcherAttemptTicks = nowTicks;
+            _screenshotWatchersStartedTicks = nowTicks;
+            var started = 0;
+            foreach (var dir in EnumerateScreenshotDirs())
+            {
+                try
+                {
+                    if (!Directory.Exists(dir)) continue;
+                    var w = new FileSystemWatcher(dir)
+                    {
+                        Filter = "*.*",
+                        IncludeSubdirectories = true,
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime,
+                        InternalBufferSize = 64 * 1024,
+                        EnableRaisingEvents = true
+                    };
+                    w.Created += OnScreenshotFsEvent;
+                    w.Changed += OnScreenshotFsEvent;
+                    w.Renamed += OnScreenshotFsRenamed;
+                    ScreenshotWatchers.Add(w);
+                    started++;
+                }
+                catch { /* dossier inaccessible */ }
+            }
+            if (started > 0)
+            {
+                _screenshotWatchersStarted = true;
+                InvokeCallback("PhotoWatcher", "OK|watching|" + started.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+        }
+    }
+
+    private static void OnScreenshotFsRenamed(object sender, RenamedEventArgs e)
+    {
+        try { OnScreenshotPathCandidate(e.FullPath); } catch { /* ignore */ }
+    }
+
+    private static void OnScreenshotFsEvent(object sender, FileSystemEventArgs e)
+    {
+        try { OnScreenshotPathCandidate(e.FullPath); } catch { /* ignore */ }
+    }
+
+    private static void OnScreenshotPathCandidate(string? fullPath)
+    {
+        if (string.IsNullOrWhiteSpace(fullPath)) return;
+        if (!IsImageExtension(Path.GetExtension(fullPath))) return;
+        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0) return;
+
+        // Debounce Created+Changed pendant l'écriture.
+        if (!WatcherDebounce.TryAdd(fullPath, 0)) return;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(500).ConfigureAwait(false);
+                if (!await WaitFileStableAsync(fullPath, TimeSpan.FromSeconds(4)).ConfigureAwait(false))
+                    return;
+
+                FileInfo fi;
+                try { fi = new FileInfo(fullPath); }
+                catch { return; }
+                if (!fi.Exists || fi.Length < 32) return;
+
+                var age = DateTime.UtcNow - fi.LastWriteTimeUtc;
+                if (age > TimeSpan.FromSeconds(WatcherMaxAgeSeconds)) return;
+                // Fichiers déjà présents avant le démarrage du watcher : ignorer sauf très récents.
+                var startedUtc = new DateTime(_screenshotWatchersStartedTicks, DateTimeKind.Utc);
+                if (fi.CreationTimeUtc < startedUtc.AddSeconds(-WatcherMinAgeSeconds)
+                    && fi.LastWriteTimeUtc < startedUtc.AddSeconds(-WatcherMinAgeSeconds))
+                    return;
+
+                var author = _lastPhotoAuthor.Length > 0
+                    ? _lastPhotoAuthor
+                    : (_callSign.Length > 0 ? _callSign : "Unknown");
+                var caption = "Photo ATAK (sidecar) — " + (Path.GetFileName(fullPath) ?? "capture");
+                var args = new string?[]
+                {
+                    fullPath,
+                    author,
+                    _lastPhotoPosX,
+                    _lastPhotoPosY,
+                    _lastPhotoPosZ,
+                    _lastPhotoGrid,
+                    _lastPhotoHeading,
+                    _lastPhotoPosZ,
+                    caption,
+                    "",
+                    "WEST",
+                    "",
+                    "CTAB",
+                    DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    "",
+                    "",
+                    ""
+                };
+                EnqueueReconImage(args);
+            }
+            finally
+            {
+                WatcherDebounce.TryRemove(fullPath, out _);
+            }
+        });
+    }
+
+    private static async Task<bool> WaitFileStableAsync(string path, TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        long lastSize = -1;
+        var stableHits = 0;
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                var fi = new FileInfo(path);
+                if (!fi.Exists) { await Task.Delay(150).ConfigureAwait(false); continue; }
+                if (fi.Length < 32) { await Task.Delay(150).ConfigureAwait(false); continue; }
+                if (fi.Length == lastSize) { stableHits++; if (stableHits >= 2) return true; }
+                else { lastSize = fi.Length; stableHits = 0; }
+            }
+            catch { /* locked */ }
+            await Task.Delay(200).ConfigureAwait(false);
+        }
+        try { return File.Exists(path) && new FileInfo(path).Length >= 32; }
+        catch { return false; }
     }
 
     /// <summary>
@@ -4120,6 +4553,26 @@ public static class Extension
 
         path = path.Replace('/', '\\');
 
+        // Chemin absolu Windows dont le dossier parent n'existe pas → échec immédiat
+        // (Photo Library obsolète). Évite 8× Sleep + scan Screenshots qui gèle le jeu.
+        try
+        {
+            if (Path.IsPathRooted(path)
+                && !(path.StartsWith('\\') && !path.StartsWith("\\\\", StringComparison.Ordinal)))
+            {
+                var parent = Path.GetDirectoryName(path);
+                if (!string.IsNullOrWhiteSpace(parent) && !Directory.Exists(parent))
+                {
+                    // Dernier espoir : même nom de fichier ailleurs (mod Workshop renommé).
+                    var orphanName = Path.GetFileName(path);
+                    if (!string.IsNullOrWhiteSpace(orphanName))
+                        return FindScreenshotByFileName(orphanName);
+                    return null;
+                }
+            }
+        }
+        catch { /* ignore */ }
+
         foreach (var candidate in ExpandLocalImageCandidates(path))
         {
             var found = TryReadableImageFile(candidate);
@@ -4142,8 +4595,20 @@ public static class Extension
                 return immediate;
         }
 
-        // Attente courte : l’extension BCE flush souvent en < 500 ms (éviter 28×250 ms qui gèle le jeu).
-        const int maxAttempts = 8;
+        // Attente courte uniquement si le dossier source existe (écriture BCE en cours).
+        var parentExists = false;
+        try
+        {
+            var parent = Path.GetDirectoryName(path);
+            parentExists = !string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent);
+        }
+        catch { /* ignore */ }
+
+        if (!parentExists && Path.IsPathRooted(path)
+            && !(path.StartsWith('\\') && !path.StartsWith("\\\\", StringComparison.Ordinal)))
+            return null;
+
+        const int maxAttempts = 6;
         for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             foreach (var candidate in ExpandLocalImageCandidates(path))
@@ -4168,7 +4633,7 @@ public static class Extension
             }
 
             if (attempt < maxAttempts - 1)
-                System.Threading.Thread.Sleep(80);
+                System.Threading.Thread.Sleep(50);
         }
 
         return null;
@@ -4608,12 +5073,14 @@ public static class Extension
 
     /// <summary>
     /// Complète le JSON SQF avec mapId, steam_uid et session_token si absents.
+    /// Normalise d’abord les guillemets doublés Arma — sinon Parse échoue, le corps
+    /// part cassé, PHP json_decode renvoie [] et SSE répond identity_required.
     /// </summary>
     private static string EnrichAtakPayload(string? jsonBody)
     {
         if (string.IsNullOrWhiteSpace(jsonBody)) return "{\"mapId\":1}";
-        var trimmed = jsonBody.Trim();
-        if (!trimmed.StartsWith('{')) return "{\"mapId\":1}";
+        var trimmed = NormalizeArmaJson(jsonBody).Trim();
+        if (string.IsNullOrWhiteSpace(trimmed) || !trimmed.StartsWith('{')) return "{\"mapId\":1}";
         try
         {
             using var doc = JsonDocument.Parse(trimmed);
