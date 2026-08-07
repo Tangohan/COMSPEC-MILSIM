@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
-use PDO;
 
 final class SseArmaModelRepository
 {
@@ -123,29 +122,25 @@ final class SseArmaModelRepository
             $sql .= ' LIMIT ' . min(500, max(1, $limit));
         }
 
-        $st = $this->db->query($sql, $args);
-
-        return array_map([$this, 'hydrate'], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        return array_map([$this, 'hydrate'], $this->db->fetchAll($sql, $args));
     }
 
     public function findForTenant(int $id, int $tenantId): ?array
     {
-        $st = $this->db->query(
+        $row = $this->db->fetchOne(
             'SELECT * FROM sse_arma_models WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL LIMIT 1',
             [$id, $tenantId]
         );
-        $row = $st->fetch(PDO::FETCH_ASSOC);
 
         return $row ? $this->hydrate($row) : null;
     }
 
     public function findByPublicId(string $publicId, int $tenantId): ?array
     {
-        $st = $this->db->query(
+        $row = $this->db->fetchOne(
             'SELECT * FROM sse_arma_models WHERE public_id = ? AND tenant_id = ? AND deleted_at IS NULL LIMIT 1',
             [$publicId, $tenantId]
         );
-        $row = $st->fetch(PDO::FETCH_ASSOC);
 
         return $row ? $this->hydrate($row) : null;
     }
@@ -155,7 +150,7 @@ final class SseArmaModelRepository
      */
     public function create(int $tenantId, array $data): int
     {
-        $this->db->query(
+        return $this->db->insert(
             'INSERT INTO sse_arma_models (
                 tenant_id, public_id, name, author_label, source, status,
                 profile_code, complexity_code, region_code, theme_code,
@@ -189,8 +184,6 @@ final class SseArmaModelRepository
                 $data['updated_by'] ?? null,
             ]
         );
-
-        return (int) $this->db->lastInsertId();
     }
 
     /**
@@ -198,7 +191,7 @@ final class SseArmaModelRepository
      */
     public function update(int $id, int $tenantId, array $data): bool
     {
-        $this->db->query(
+        $this->db->execute(
             'UPDATE sse_arma_models SET
                 name = ?, author_label = ?, status = ?,
                 profile_code = ?, complexity_code = ?, region_code = ?, theme_code = ?,
@@ -235,7 +228,7 @@ final class SseArmaModelRepository
 
     public function softDelete(int $id, int $tenantId): bool
     {
-        $this->db->query(
+        $this->db->execute(
             'UPDATE sse_arma_models SET deleted_at = NOW() WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL',
             [$id, $tenantId]
         );
