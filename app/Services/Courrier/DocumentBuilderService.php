@@ -27,7 +27,12 @@ class DocumentBuilderService
      */
     public function buildPreviewHtml(array $document, array $context = []): string
     {
-        $body = $document['body_rendered'] ?? '';
+        $body = (string) ($document['body_rendered'] ?? '');
+        // Résolution tardive : le corps édité peut encore contenir {{variables}}.
+        $body = $this->renderService->renderBody($body, array_merge($context, [
+            'document' => array_merge(is_array($context['document'] ?? null) ? $context['document'] : [], $document),
+        ]));
+        $document['body_rendered'] = $body;
         $body = $this->redactionService->applyVisualMarkers($body);
         $body = $this->injectSignatureBlock($body, $document, $context);
         if (trim(strip_tags($body)) === '') {
@@ -235,6 +240,25 @@ class DocumentBuilderService
             return '';
         }
         return $this->renderService->renderBody($template['body_template'], $context, $variablesOverrides);
+    }
+
+    /**
+     * Résout les {{variables}} encore présentes dans un corps de document.
+     *
+     * @param array{user_id?: int, tenant_id?: int, unit_id?: int, document?: array} $context
+     * @param array<string, string> $overrides
+     */
+    public function resolveBodyPlaceholders(string $body, array $context, array $overrides = []): string
+    {
+        return $this->renderService->renderBody($body, $context, $overrides);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function findUnresolvedPlaceholders(string $text): array
+    {
+        return $this->renderService->findUnresolvedPlaceholders($text);
     }
 
     /**

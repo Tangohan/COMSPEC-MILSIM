@@ -48,23 +48,36 @@ require __DIR__ . '/_subnav.php';
 <section class="panel lab-flow">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">01</span> Démarrer rapidement</div>
-        <div class="panel-meta">Modèles types</div>
+        <div class="panel-meta">Modèles types par ère</div>
     </div>
     <div class="panel-body">
-        <p class="lab-form-lead">Choisissez un point de départ, puis adaptez les listes (alias, messages, mots de code) à votre scénario.</p>
-        <div class="lab-form-grid" style="margin-top:12px">
-            <?php foreach ($templates as $tpl): ?>
-                <div class="lab-form-field lab-form-field--span2" style="border:1px solid var(--border, #333);padding:12px;border-radius:4px">
-                    <strong><?= $h($tpl['label']) ?></strong>
-                    <p style="margin:6px 0 10px;opacity:.85"><?= $h($tpl['description']) ?></p>
-                    <?php if ($canManage): ?>
-                        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dev/modeles/nouveau') . '?modele=' . rawurlencode((string) $tpl['key'])) ?>">
-                            Partir de ce modèle
-                        </a>
-                    <?php endif; ?>
-                </div>
-            <?php endforeach; ?>
-        </div>
+        <p class="lab-form-lead">Choisissez un point de départ (Irak 2010–2020 ou Russie / Est 2020–2024), puis adaptez les listes à votre scénario.</p>
+        <?php
+        $grouped = [];
+        foreach ($templates as $tpl) {
+            $g = trim((string) ($tpl['group'] ?? 'Générique'));
+            if ($g === '') {
+                $g = 'Générique';
+            }
+            $grouped[$g][] = $tpl;
+        }
+        foreach ($grouped as $groupLabel => $items):
+        ?>
+            <h3 style="margin:18px 0 8px;font-size:1rem"><?= $h($groupLabel) ?></h3>
+            <div class="lab-form-grid">
+                <?php foreach ($items as $tpl): ?>
+                    <div class="lab-form-field lab-form-field--span2" style="border:1px solid var(--border, #333);padding:12px;border-radius:4px">
+                        <strong><?= $h($tpl['label']) ?></strong>
+                        <p style="margin:6px 0 10px;opacity:.85"><?= $h($tpl['description']) ?></p>
+                        <?php if ($canManage): ?>
+                            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dev/modeles/nouveau') . '?modele=' . rawurlencode((string) $tpl['key'])) ?>">
+                                Partir de ce modèle
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endforeach; ?>
     </div>
 </section>
 

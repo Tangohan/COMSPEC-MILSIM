@@ -43,8 +43,8 @@ $classBadge = match ($classKey) {
         <strong>Vue // Fiche dossier</strong>
         <?= $h($case['reference_code']) ?>
         <?php if ($canExport): ?>
-            <div style="margin-top:.5rem">
-                <a class="btn" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/pdf')) ?>">Exporter PDF</a>
+            <div style="margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.4rem">
+                <a class="btn" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/pdf')) ?>">Exporter le dossier complet (PDF)</a>
             </div>
         <?php endif; ?>
     </div>

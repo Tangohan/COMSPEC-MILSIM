@@ -290,7 +290,9 @@ La migration est idempotente et se rejoue seule au premier appel du dépôt. Si 
 
 Les fichiers `public/assets/video/hero-athena*.mp4` sont en HEVC / QuickTime et
 **illisibles en navigateur** : les réencoder en H.264 avant transfert, voir
-`docs/VIDEO-HERO-ENCODAGE.md`. Transférer les vidéos **en mode binaire**.
+`docs/VIDEO-HERO-ENCODAGE.md` (script `scripts/reencode-hero-videos.ps1`).
+Transférer les vidéos **en mode binaire**. Sans cela, l’accueil reste en photos
+(`data-hero-videos-ready="0"`).
 
 ### Portail SSE 1.4.13 — charte et requête d'identité
 

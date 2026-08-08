@@ -13,7 +13,7 @@ class DocumentExportService
 {
     public function __construct(
         private DocumentBuilderService $builderService,
-        private DocumentPresetRepository $presetRepository,
+        private DocumentPresetRepository $presetRepository = new DocumentPresetRepository(),
         private DocumentRedactionService $redactionService = new DocumentRedactionService(),
         private CourrierQrService $qrService = new CourrierQrService()
     ) {

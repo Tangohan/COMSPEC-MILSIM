@@ -26,6 +26,7 @@ use App\Services\Sse\SseCrossMatchService;
 use App\Services\Sse\SseMeshService;
 use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseReportService;
+use App\Services\Media\ImageCompressionService;
 use App\Services\Sse\SseWorkspaceService;
 use App\Services\Tactical\AtakActivityLogService;
 
@@ -810,16 +811,22 @@ final class SsePortalController
         $label = trim((string) $request->input('label', 'Preuve'));
         $caption = trim((string) $request->input('caption', ''));
         $imagePath = null;
-        if (!empty($_FILES['image']['tmp_name']) && is_uploaded_file($_FILES['image']['tmp_name'])) {
-            $dir = base_path('public/uploads/sse/evidence');
-            if (!is_dir($dir)) {
-                @mkdir($dir, 0755, true);
+        $imageNote = '';
+        if (!empty($_FILES['image']['tmp_name'])) {
+            $stored = (new ImageCompressionService())->storeUpload(
+                $_FILES['image'],
+                base_path('public/uploads/sse/evidence'),
+                'uploads/sse/evidence',
+                'ev_' . $id
+            );
+            if (!$stored['ok']) {
+                Session::flash('error', $stored['error'] ?? 'L’image de preuve n’a pas pu être enregistrée.');
+
+                return Response::redirect(url('atak/sse/dossiers/' . $id));
             }
-            $ext = pathinfo((string) ($_FILES['image']['name'] ?? 'img.jpg'), PATHINFO_EXTENSION) ?: 'jpg';
-            $ext = preg_replace('/[^a-z0-9]/i', '', $ext) ?: 'jpg';
-            $name = 'ev_' . $id . '_' . time() . '.' . strtolower($ext);
-            if (@move_uploaded_file($_FILES['image']['tmp_name'], $dir . DIRECTORY_SEPARATOR . $name)) {
-                $imagePath = 'uploads/sse/evidence/' . $name;
+            $imagePath = $stored['relative'];
+            if (!empty($stored['compressed'])) {
+                $imageNote = ' Image compressée automatiquement pour respecter la taille limite.';
             }
         }
         $this->cases->addEvidence($id, $this->tenantId(), [
@@ -828,7 +835,7 @@ final class SsePortalController
             'image_path' => $imagePath,
             'author_label' => (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur'),
         ]);
-        Session::flash('success', 'Preuve enregistrée.');
+        Session::flash('success', 'Preuve enregistrée.' . $imageNote);
 
         return Response::redirect(url('atak/sse/dossiers/' . $id));
     }
@@ -860,7 +867,7 @@ final class SsePortalController
             1,
             'SSE_CLEARANCE',
             sprintf(
-                'Export PDF du dossier %s en « %s ».',
+                'Export PDF complet du dossier %s en « %s ».',
                 (string) ($case['reference_code'] ?? $id),
                 SseRedactionService::levelLabel($level)
             ),
@@ -2009,11 +2016,31 @@ final class SsePortalController
                 $meta[(string) $k] = trim((string) $v);
             }
         }
-        $metaLines = SseMeshRepository::formatMetaLines($kind, $meta);
         $freeDetail = trim((string) $request->input('detail', ''));
+        if ($freeDetail !== '') {
+            $meta['precision'] = mb_substr($freeDetail, 0, 2000);
+        }
+
+        $imageUpload = $this->storeObjectImageUpload();
+        if ($imageUpload['path'] === false) {
+            Session::flash(
+                'error',
+                $imageUpload['error']
+                    ?? 'L’image jointe n’a pas pu être enregistrée. Utilisez un JPEG, PNG, WebP ou GIF (compressé automatiquement si besoin).'
+            );
+
+            return Response::redirect(url('atak/sse/objets/nouveau?type=' . urlencode($kind)));
+        }
+        if (is_string($imageUpload['path']) && $imageUpload['path'] !== '') {
+            $meta['image_path'] = $imageUpload['path'];
+        }
+
+        $metaLines = SseMeshRepository::formatMetaLines($kind, $meta);
         $detailParts = $metaLines;
         if ($freeDetail !== '') {
-            $detailParts[] = $freeDetail;
+            $detailParts[] = mb_strlen($freeDetail) > 100
+                ? mb_substr($freeDetail, 0, 97) . '…'
+                : $freeDetail;
         }
         $detail = implode(' · ', $detailParts);
         if (mb_strlen($detail) > 250) {
@@ -2035,9 +2062,44 @@ final class SsePortalController
             'pos_x' => 420,
             'pos_y' => 260,
         ]);
-        Session::flash('success', 'Objet créé avec ses caractéristiques, placé dans une nouvelle investigation.');
+        $okMsg = 'Objet créé avec ses caractéristiques, placé dans une nouvelle investigation.';
+        if (!empty($imageUpload['compressed'])) {
+            $okMsg .= ' L’image a été compressée automatiquement pour rester sous 5 Mo.';
+        }
+        Session::flash('success', $okMsg);
 
         return Response::redirect(url('atak/sse/toiles/' . $meshId));
+    }
+
+    /**
+     * Enregistre une image jointe pour un objet SSE (compression si > 5 Mo ou trop grande).
+     *
+     * @return array{path: string|null|false, compressed: bool, error: ?string}
+     */
+    private function storeObjectImageUpload(): array
+    {
+        if (empty($_FILES['image']['tmp_name'])) {
+            return ['path' => null, 'compressed' => false, 'error' => null];
+        }
+        $stored = (new ImageCompressionService())->storeUpload(
+            $_FILES['image'],
+            base_path('public/uploads/sse/objects'),
+            'uploads/sse/objects',
+            'obj'
+        );
+        if (!$stored['ok']) {
+            return [
+                'path' => false,
+                'compressed' => false,
+                'error' => $stored['error'],
+            ];
+        }
+
+        return [
+            'path' => $stored['relative'],
+            'compressed' => (bool) $stored['compressed'],
+            'error' => null,
+        ];
     }
 
     public function timeline(Request $request, array $params = []): Response
@@ -2167,7 +2229,7 @@ final class SsePortalController
 
         $type = SseDocumentRepository::normalizeType((string) $request->query('type', 'note_analyse'));
         $caseId = (int) $request->query('case_id', 0);
-        $body = $this->documentTemplate($type);
+        $body = SseDocumentRepository::bodyTemplate($type);
 
         return $this->portalView('atak.sse.document_form', [
             'title' => 'Nouveau document SSE',
@@ -2176,6 +2238,7 @@ final class SsePortalController
             'statusLabels' => SseDocumentRepository::STATUS_LABELS,
             'classifications' => SseCaseRepository::CLASSIFICATION_LABELS,
             'cases' => $this->cases->listForTenant($this->tenantId(), $this->access->caseScope()),
+            'bodyTemplates' => SseDocumentRepository::bodyTemplatesByType(),
             'prefillType' => $type,
             'prefillCaseId' => $caseId,
             'prefillTitle' => '',
@@ -2281,6 +2344,7 @@ final class SsePortalController
             'statusLabels' => SseDocumentRepository::STATUS_LABELS,
             'classifications' => SseCaseRepository::CLASSIFICATION_LABELS,
             'cases' => $this->cases->listForTenant($this->tenantId(), $this->access->caseScope()),
+            'bodyTemplates' => SseDocumentRepository::bodyTemplatesByType(),
             'canManage' => true,
             'activeNav' => 'documents',
         ]);
@@ -2636,50 +2700,7 @@ final class SsePortalController
 
     private function documentTemplate(string $type): string
     {
-        $zulu = gmdate('d/m/Y H:i') . ' Z';
-
-        return match ($type) {
-            'flash' => "FLASH RENSEIGNEMENT\n"
-                . "Date / heure : {$zulu}\n"
-                . "Secteur / site :\n"
-                . "Faits essentiels :\n"
-                . "—\n"
-                . "Impact immédiat :\n"
-                . "—\n"
-                . "Action demandée :\n"
-                . "—\n"
-                . "Source / fiabilité :\n"
-                . "—\n",
-            'compte_rendu' => "COMPTE RENDU D’EXPLOITATION\n"
-                . "Date / heure : {$zulu}\n\n"
-                . "1. Situation\n—\n\n"
-                . "2. Site / environnement\n—\n\n"
-                . "3. Personnel / identités\n—\n\n"
-                . "4. Matériel / saisies\n—\n\n"
-                . "5. Faits marquants\n—\n\n"
-                . "6. Analyse et incertitudes\n—\n\n"
-                . "7. Recommandations\n—\n",
-            'synthese' => "SYNTHÈSE DE SITUATION\n"
-                . "Date / heure : {$zulu}\n\n"
-                . "Contexte\n—\n\n"
-                . "Éléments consolidés\n—\n\n"
-                . "Points encore non confirmés\n—\n\n"
-                . "Appréciation\n—\n\n"
-                . "Suite proposée\n—\n",
-            'diffusion' => "VERSION DE DIFFUSION\n"
-                . "Date / heure : {$zulu}\n"
-                . "Niveau de diffusion visé :\n\n"
-                . "Contenu expurgé\n—\n\n"
-                . "Éléments volontairement omis (ne pas réintroduire)\n—\n",
-            default => "NOTE D’ANALYSE\n"
-                . "Date / heure : {$zulu}\n\n"
-                . "Objet\n—\n\n"
-                . "Éléments observés\n—\n\n"
-                . "Croisements\n—\n\n"
-                . "Hypothèses\n—\n\n"
-                . "Limites / ce qui n’est pas établi\n—\n\n"
-                . "Conclusion provisoire\n—\n",
-        };
+        return SseDocumentRepository::bodyTemplate($type);
     }
 
     /**

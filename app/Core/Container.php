@@ -2251,7 +2251,8 @@ class Container
                 self::get(\App\Services\Courrier\DocumentNumberingService::class)
             ),
             \App\Services\Courrier\DocumentExportService::class => new \App\Services\Courrier\DocumentExportService(
-                self::get(\App\Services\Courrier\DocumentBuilderService::class)
+                self::get(\App\Services\Courrier\DocumentBuilderService::class),
+                self::get(\App\Repositories\Courrier\DocumentPresetRepository::class)
             ),
             \App\Services\Courrier\CourrierSnippetService::class => new \App\Services\Courrier\CourrierSnippetService(),
             \App\Controllers\Courrier\CourrierSnippetController::class => new \App\Controllers\Courrier\CourrierSnippetController(

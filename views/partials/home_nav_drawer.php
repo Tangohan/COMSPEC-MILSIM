@@ -26,6 +26,7 @@ $createCommunityHref = $loggedIn ? url('communities/create') : url('register');
         <p class="px-3 pt-2 pb-1 hi-kicker text-white/30"><?= htmlspecialchars(__('site.nav_discover'), ENT_QUOTES, 'UTF-8') ?></p>
         <a href="<?= htmlspecialchars($createCommunityHref, ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavAccent ?>"><?= htmlspecialchars(__('site.create_community'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url('a-propos'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('site.about'), ENT_QUOTES, 'UTF-8') ?></a>
+        <a href="<?= htmlspecialchars(url('sse'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('site.sse'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url('contact'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('site.contact'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url('nouveautes'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('site.changelog'), ENT_QUOTES, 'UTF-8') ?></a>
         <?php foreach ($scopeGroups as $groupName => $links): ?>
@@ -46,6 +47,7 @@ $createCommunityHref = $loggedIn ? url('communities/create') : url('register');
         <a href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.home'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars($createCommunityHref, ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavAccent ?>"><?= htmlspecialchars(__('site.create_community'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url('a-propos'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('site.about'), ENT_QUOTES, 'UTF-8') ?></a>
+        <a href="<?= htmlspecialchars(url('sse'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('site.sse'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url('contact'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('site.contact'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url('nouveautes'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('site.changelog'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url('communities'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.communities'), ENT_QUOTES, 'UTF-8') ?></a>

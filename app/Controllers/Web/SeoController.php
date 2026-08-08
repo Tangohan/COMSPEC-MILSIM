@@ -51,6 +51,7 @@ final class SeoController
         $paths = [
             ['/', 'daily', '1.0'],
             ['/a-propos', 'monthly', '0.8'],
+            ['/sse', 'monthly', '0.85'],
             ['/contact', 'monthly', '0.7'],
             ['/nouveautes', 'weekly', '0.8'],
             ['/register', 'monthly', '0.6'],

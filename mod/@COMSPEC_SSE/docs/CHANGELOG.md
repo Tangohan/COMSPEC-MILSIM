@@ -1,5 +1,11 @@
 # Changelog COMSPEC SSE
 
+## 0.7.1 — Catalogues d’ères (Irak / Russie)
+
+- Région `RUSSIA` dans les pools narratifs
+- Builtins Irak 2010–2020 et Russie / Est 2020–2024
+- Correctif normalisation des clés HashMap dans `createModel`
+
 ## 0.7.0 — UI multi-écrans (SSE Record unique)
 
 - Terminal SSE terrain (hub) + navigation Digital / SEEK / Site / Graph / Preuves / Mission / Zeus

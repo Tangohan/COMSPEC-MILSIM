@@ -23,12 +23,16 @@ class TemplateRenderService
     {
         $resolved = $this->variableService->buildContext($context);
         foreach ($variablesOverrides as $k => $v) {
-            $resolved[$k] = $v;
+            $resolved[(string) $k] = (string) $v;
         }
         $out = $bodyTemplate;
-        foreach ($resolved as $code => $value) {
-            $out = str_replace('{{' . $code . '}}', (string) $value, $out);
+        // Remplacer d'abord les clés les plus longues pour éviter les collisions partielles.
+        $keys = array_keys($resolved);
+        usort($keys, static fn (string $a, string $b): int => mb_strlen($b) <=> mb_strlen($a));
+        foreach ($keys as $code) {
+            $out = str_replace('{{' . $code . '}}', (string) $resolved[$code], $out);
         }
+
         return $out;
     }
 
@@ -38,9 +42,10 @@ class TemplateRenderService
      */
     public function findUnresolvedPlaceholders(string $text): array
     {
-        if (preg_match_all('/\{\{([a-zA-Z0-9_.]+)\}\}/', $text, $m)) {
-            return array_unique($m[1]);
+        if (preg_match_all('/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/', $text, $m)) {
+            return array_values(array_unique($m[1]));
         }
+
         return [];
     }
 }

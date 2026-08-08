@@ -16,7 +16,11 @@ params [
     ["_author", "USER", [""]]
 ];
 
-private _ov = if (_overrides isEqualType createHashMap) then { _overrides } else {
+private _ov = if (_overrides isEqualType createHashMap) then {
+    private _norm = createHashMap;
+    { _norm set [toLower _x, _overrides get _x]; } forEach (keys _overrides);
+    _norm
+} else {
     private _h = createHashMap;
     { _x params ["_k", "_v"]; _h set [toLower _k, _v]; } forEach _overrides;
     _h

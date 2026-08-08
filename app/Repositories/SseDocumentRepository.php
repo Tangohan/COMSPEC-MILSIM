@@ -293,6 +293,369 @@ final class SseDocumentRepository
         ];
     }
 
+    /**
+     * Corps type pour un nouveau document (rédaction guidée).
+     */
+    public static function bodyTemplate(string $type): string
+    {
+        $type = self::normalizeType($type);
+        $zulu = gmdate('d/m/Y H:i') . ' Z';
+        $local = date('d/m/Y H:i');
+
+        return match ($type) {
+            'flash' => <<<TXT
+FLASH RENSEIGNEMENT
+════════════════════════════════════════
+Référence : (attribuée à l’enregistrement)
+Date / heure (Zulu) : {$zulu}
+Date / heure locale : {$local}
+Classification : (celle du formulaire)
+Priorité : IMMÉDIAT / PRIORITAIRE / ROUTINE
+
+────────────────────────────────────────
+1. SITUATION EN UNE PHRASE
+────────────────────────────────────────
+—
+
+────────────────────────────────────────
+2. SECTEUR / SITE / ZONE
+────────────────────────────────────────
+—
+Repère / grille :
+—
+
+────────────────────────────────────────
+3. FAITS ESSENTIELS
+────────────────────────────────────────
+• —
+• —
+• —
+
+────────────────────────────────────────
+4. SOURCE ET FIABILITÉ
+────────────────────────────────────────
+Nature de la source : observation / saisie / témoignage / autre
+Fiabilité estimée : A / B / C / D / E — (justifier en une ligne)
+—
+
+────────────────────────────────────────
+5. IMPACT IMMÉDIAT
+────────────────────────────────────────
+—
+
+────────────────────────────────────────
+6. ACTION DEMANDÉE
+────────────────────────────────────────
+• —
+Délai souhaité :
+Destinataire opérationnel :
+
+────────────────────────────────────────
+7. RÉSERVES
+────────────────────────────────────────
+Ce qui n’est pas établi :
+—
+TXT,
+            'compte_rendu' => <<<TXT
+COMPTE RENDU D’EXPLOITATION
+════════════════════════════════════════
+Référence : (attribuée à l’enregistrement)
+Date / heure (Zulu) : {$zulu}
+Date / heure locale : {$local}
+Périmètre : site / identité / support numérique / mixte
+Rédacteur : —
+
+────────────────────────────────────────
+1. OBJET ET CONTEXTE
+────────────────────────────────────────
+Objet de l’exploitation :
+—
+Autorité / ordre d’exécution :
+—
+Heure d’entrée / de sortie :
+
+────────────────────────────────────────
+2. SITUATION GÉNÉRALE
+────────────────────────────────────────
+—
+
+────────────────────────────────────────
+3. SITE / ENVIRONNEMENT
+────────────────────────────────────────
+Description du lieu :
+—
+Accès, obstacles, présence hostile / civile :
+—
+État d’exploitation (% ou pièces traitées) :
+
+────────────────────────────────────────
+4. PERSONNEL / IDENTITÉS
+────────────────────────────────────────
+Personnes présentes ou liées :
+—
+Signalements, aliases, documents d’identité :
+—
+Biométrie / photos : oui / non — détail :
+
+────────────────────────────────────────
+5. MATÉRIEL / SAISIES
+────────────────────────────────────────
+Armes / munitions :
+—
+Supports numériques (téléphones, PC, supports) :
+—
+Documents papier / plans :
+—
+Autres saisies :
+
+────────────────────────────────────────
+6. FAITS MARQUANTS
+────────────────────────────────────────
+• —
+• —
+
+────────────────────────────────────────
+7. ANALYSE ET INCERTITUDES
+────────────────────────────────────────
+Faits consolidés :
+—
+Hypothèses (non confirmées) :
+—
+Contradictions / zones d’ombre :
+
+────────────────────────────────────────
+8. RECOMMANDATIONS
+────────────────────────────────────────
+• Collecte complémentaire :
+• Mesures de protection / conservation des preuves :
+• Suites pour le bureau SSE :
+
+────────────────────────────────────────
+9. ANNEXES (références)
+────────────────────────────────────────
+Preuves / photos / toiles liées :
+—
+TXT,
+            'synthese' => <<<TXT
+SYNTHÈSE DE SITUATION
+════════════════════════════════════════
+Référence : (attribuée à l’enregistrement)
+Date / heure (Zulu) : {$zulu}
+Périmètre temporel :
+Périmètre géographique / thématique :
+Rédacteur : —
+
+────────────────────────────────────────
+1. RÉSUMÉ EXÉCUTIF (5 lignes max)
+────────────────────────────────────────
+—
+
+────────────────────────────────────────
+2. CONTEXTE
+────────────────────────────────────────
+—
+
+────────────────────────────────────────
+3. ÉLÉMENTS CONSOLIDÉS
+────────────────────────────────────────
+• —
+• —
+• —
+
+────────────────────────────────────────
+4. POINTS ENCORE NON CONFIRMÉS
+────────────────────────────────────────
+• —
+• —
+
+────────────────────────────────────────
+5. APPRECIATION
+────────────────────────────────────────
+Tendance : stable / dégradée / améliorée / indéterminée
+Niveau de confiance de la synthèse : faible / moyen / élevé
+—
+
+────────────────────────────────────────
+6. SUITE PROPOSÉE
+────────────────────────────────────────
+• —
+Priorité :
+Échéance :
+TXT,
+            'diffusion' => <<<TXT
+VERSION DE DIFFUSION
+════════════════════════════════════════
+Référence source (document ou dossier) :
+Date / heure (Zulu) : {$zulu}
+Niveau de diffusion visé : Diffusion interne / Encadrement / Confidentiel / Très restreinte
+Validé pour sortie de compartiment : oui / non — par :
+
+────────────────────────────────────────
+AVERTISSEMENT
+────────────────────────────────────────
+Ce texte est une version volontairement allégée.
+Les éléments sensibles ont été omis ou généralisés.
+Ne pas réintroduire de noms, grilles ou détails techniques non validés.
+
+────────────────────────────────────────
+1. OBJET (formulation large)
+────────────────────────────────────────
+—
+
+────────────────────────────────────────
+2. CONTENU EXPURGÉ
+────────────────────────────────────────
+—
+
+────────────────────────────────────────
+3. ÉLÉMENTS VOLONTAIREMENT OMIS
+────────────────────────────────────────
+(Ne pas recopier ici le détail classifié — lister seulement la nature)
+• Identités nominatives
+• —
+• —
+
+────────────────────────────────────────
+4. CADRE D’EMPLOI
+────────────────────────────────────────
+Public autorisé :
+Canal de diffusion :
+Durée de validité / rappel de classification :
+TXT,
+            default => <<<TXT
+NOTE D’ANALYSE
+════════════════════════════════════════
+Référence : (attribuée à l’enregistrement)
+Date / heure (Zulu) : {$zulu}
+Date / heure locale : {$local}
+Analyste : —
+Dossier / toile lié(e) : —
+
+────────────────────────────────────────
+1. OBJET
+────────────────────────────────────────
+—
+
+────────────────────────────────────────
+2. QUESTION POSÉE À L’ANALYSE
+────────────────────────────────────────
+—
+
+────────────────────────────────────────
+3. ÉLÉMENTS OBSERVÉS
+────────────────────────────────────────
+• —
+• —
+• —
+
+────────────────────────────────────────
+4. CROISEMENTS
+────────────────────────────────────────
+Sources mises en relation :
+—
+Concordances :
+—
+Discordances :
+
+────────────────────────────────────────
+5. HYPOTHÈSES
+────────────────────────────────────────
+H1 —
+H2 —
+H3 —
+
+────────────────────────────────────────
+6. LIMITES / CE QUI N’EST PAS ÉTABLI
+────────────────────────────────────────
+—
+Ce que la note ne permet pas de conclure :
+
+────────────────────────────────────────
+7. CONCLUSION PROVISOIRE
+────────────────────────────────────────
+—
+
+────────────────────────────────────────
+8. BESOINS DE COLLECTE
+────────────────────────────────────────
+• —
+Priorité :
+TXT,
+        };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function bodyTemplatesByType(): array
+    {
+        $out = [];
+        foreach (array_keys(self::TYPE_LABELS) as $type) {
+            $out[$type] = self::bodyTemplate($type);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Corps texte → HTML pour rendu papier (aperçu / lecture).
+     */
+    public static function bodyToHtml(string $body): string
+    {
+        $body = str_replace(["\r\n", "\r"], "\n", $body);
+        $lines = explode("\n", $body);
+        $html = [];
+        foreach ($lines as $raw) {
+            $line = rtrim($raw);
+            $trim = trim($line);
+            if ($trim === '') {
+                $html[] = '<p class="sse-doc-paper__spacer">&nbsp;</p>';
+                continue;
+            }
+            if (preg_match('/^[═─\-_=]{6,}$/u', $trim) === 1) {
+                $html[] = '<hr class="sse-doc-paper__rule">';
+                continue;
+            }
+            if ($trim === '—' || $trim === '--' || $trim === '-' || $trim === '• —') {
+                $html[] = '<p class="sse-doc-paper__fill">………………………………………………………………</p>';
+                continue;
+            }
+            $upper = mb_strtoupper($trim, 'UTF-8');
+            $isTitle = in_array($upper, [
+                'FLASH RENSEIGNEMENT',
+                'COMPTE RENDU D’EXPLOITATION',
+                "COMPTE RENDU D'EXPLOITATION",
+                'NOTE D’ANALYSE',
+                "NOTE D'ANALYSE",
+                'SYNTHÈSE DE SITUATION',
+                'SYNTHESE DE SITUATION',
+                'VERSION DE DIFFUSION',
+            ], true);
+            if ($isTitle) {
+                $html[] = '<h1 class="sse-doc-paper__doc-title">' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</h1>';
+                continue;
+            }
+            if (preg_match('/^\d+\.\s+.+/u', $trim) === 1
+                || preg_match('/^AVERTISSEMENT$/ui', $trim) === 1
+                || (str_starts_with($trim, '─') === false && preg_match('/^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜŸÇ0-9].{0,70}$/u', $trim) === 1
+                    && $upper === $trim && !str_contains($trim, ':'))) {
+                $html[] = '<h2 class="sse-doc-paper__section">' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</h2>';
+                continue;
+            }
+            if (preg_match('/^.+:\s*$/u', $trim) === 1 && mb_strlen($trim) < 90) {
+                $html[] = '<p class="sse-doc-paper__label">' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</p>';
+                continue;
+            }
+            if (str_starts_with($trim, '• ') || str_starts_with($trim, '- ') || preg_match('/^H\d+\s/u', $trim) === 1) {
+                $html[] = '<p class="sse-doc-paper__bullet">' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</p>';
+                continue;
+            }
+            $html[] = '<p class="sse-doc-paper__p">' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</p>';
+        }
+
+        return implode("\n", $html);
+    }
+
     private function nullIfEmpty(mixed $v): ?string
     {
         if ($v === null) {

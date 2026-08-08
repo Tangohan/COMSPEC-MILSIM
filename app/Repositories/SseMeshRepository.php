@@ -161,6 +161,10 @@ final class SseMeshRepository
             'permis' => 'Permis / titre',
             'note' => 'Note manuscrite',
             'plan' => 'Plan / schéma',
+            'liste' => 'Liste / inventaire',
+            'ordre' => 'Ordre / consigne',
+            'compte_rendu' => 'Compte rendu',
+            'flash' => 'Flash',
             'autre' => 'Autre document',
         ];
         $eventType = [
@@ -168,6 +172,7 @@ final class SseMeshRepository
             'mouvement' => 'Mouvement',
             'contact' => 'Contact',
             'saisie' => 'Saisie',
+            'reunion' => 'Réunion / rendez-vous',
             'autre' => 'Autre',
         ];
         $biometry = [
@@ -189,6 +194,8 @@ final class SseMeshRepository
                     ['name' => 'nationality', 'label' => 'Nationalité', 'type' => 'text'],
                     ['name' => 'affiliation', 'label' => 'Affiliation', 'type' => 'text'],
                     ['name' => 'confidence', 'label' => 'Confiance', 'type' => 'select', 'options' => $confidence],
+                    ['name' => 'description', 'label' => 'Signalement / description', 'type' => 'textarea', 'placeholder' => 'Traits distinctifs, tenue, contexte d’observation…', 'rows' => 4],
+                    ['name' => 'notes', 'label' => 'Notes d’exploitation', 'type' => 'textarea', 'placeholder' => 'Éléments utiles pour la suite de l’enquête', 'rows' => 3],
                 ],
             ],
             'alias' => [
@@ -203,6 +210,7 @@ final class SseMeshRepository
                     ]],
                     ['name' => 'language', 'label' => 'Langue / alphabet', 'type' => 'text'],
                     ['name' => 'confidence', 'label' => 'Confiance', 'type' => 'select', 'options' => $confidence],
+                    ['name' => 'context', 'label' => 'Contexte d’emploi', 'type' => 'textarea', 'placeholder' => 'Où / comment cet alias a été entendu ou lu', 'rows' => 3],
                 ],
             ],
             'organization' => [
@@ -217,6 +225,7 @@ final class SseMeshRepository
                     ]],
                     ['name' => 'zone', 'label' => 'Zone d’influence', 'type' => 'text'],
                     ['name' => 'confidence', 'label' => 'Confiance', 'type' => 'select', 'options' => $confidence],
+                    ['name' => 'description', 'label' => 'Description', 'type' => 'textarea', 'placeholder' => 'Rôle, effectifs estimés, modus operandi…', 'rows' => 4],
                 ],
             ],
             'site' => [
@@ -226,6 +235,8 @@ final class SseMeshRepository
                     ['name' => 'status', 'label' => 'État d’exploitation', 'type' => 'select', 'options' => SseSiteRepository::STATUS_LABELS],
                     ['name' => 'grid', 'label' => 'Repère / grille', 'type' => 'text', 'placeholder' => 'Coordonnées ou toponyme'],
                     ['name' => 'confidence', 'label' => 'Confiance', 'type' => 'select', 'options' => $confidence],
+                    ['name' => 'access', 'label' => 'Accès / approche', 'type' => 'textarea', 'placeholder' => 'Chemins, obstacles, points d’entrée', 'rows' => 3],
+                    ['name' => 'description', 'label' => 'Description du site', 'type' => 'textarea', 'placeholder' => 'Disposition, pièces, activité observée…', 'rows' => 4],
                 ],
             ],
             'vehicle' => [
@@ -236,6 +247,7 @@ final class SseMeshRepository
                     ['name' => 'color', 'label' => 'Couleur', 'type' => 'text'],
                     ['name' => 'model', 'label' => 'Marque / modèle', 'type' => 'text'],
                     ['name' => 'confidence', 'label' => 'Confiance', 'type' => 'select', 'options' => $confidence],
+                    ['name' => 'notes', 'label' => 'Observations', 'type' => 'textarea', 'placeholder' => 'Dommages, chargement, passagers…', 'rows' => 3],
                 ],
             ],
             'weapon' => [
@@ -250,6 +262,7 @@ final class SseMeshRepository
                         'neutralise' => 'Neutralisé',
                     ]],
                     ['name' => 'confidence', 'label' => 'Confiance', 'type' => 'select', 'options' => $confidence],
+                    ['name' => 'notes', 'label' => 'Notes', 'type' => 'textarea', 'placeholder' => 'Accessoires, munitions associées, contexte de découverte', 'rows' => 3],
                 ],
             ],
             'phone' => [
@@ -264,6 +277,7 @@ final class SseMeshRepository
                         'verrouille' => 'Verrouillé',
                         'inconnu' => 'Inconnu',
                     ]],
+                    ['name' => 'notes', 'label' => 'Notes d’exploitation', 'type' => 'textarea', 'placeholder' => 'Applications vues, contacts saillants, état de charge…', 'rows' => 3],
                 ],
             ],
             'terminal' => [
@@ -278,15 +292,19 @@ final class SseMeshRepository
                     ]],
                     ['name' => 'os', 'label' => 'Système', 'type' => 'text', 'placeholder' => 'Ex. Windows, Linux'],
                     ['name' => 'serial', 'label' => 'N° de série', 'type' => 'text'],
+                    ['name' => 'notes', 'label' => 'Contenu / observations', 'type' => 'textarea', 'placeholder' => 'Fichiers remarqués, comptes, chiffrement…', 'rows' => 4],
                 ],
             ],
             'document' => [
-                'hint' => 'Pièce documentaire versée au registre.',
+                'hint' => 'Pièce documentaire versée au registre — joignez une image si disponible.',
                 'fields' => [
                     ['name' => 'doc_type', 'label' => 'Type de document', 'type' => 'select', 'options' => $docType],
                     ['name' => 'language', 'label' => 'Langue', 'type' => 'text'],
                     ['name' => 'reliability', 'label' => 'Fiabilité source', 'type' => 'select', 'options' => $reliability],
                     ['name' => 'date_doc', 'label' => 'Date du document', 'type' => 'text', 'placeholder' => 'Si connue'],
+                    ['name' => 'origin', 'label' => 'Provenance', 'type' => 'text', 'placeholder' => 'Où / sur qui a-t-il été trouvé'],
+                    ['name' => 'summary', 'label' => 'Résumé du contenu', 'type' => 'textarea', 'placeholder' => 'Ce que dit le document, sans recopier tout le texte', 'rows' => 4],
+                    ['name' => 'transcription', 'label' => 'Transcription / extrait', 'type' => 'textarea', 'placeholder' => 'Passages utiles, traduction, citations', 'rows' => 6],
                 ],
             ],
             'event' => [
@@ -296,23 +314,31 @@ final class SseMeshRepository
                     ['name' => 'when_label', 'label' => 'Quand', 'type' => 'text', 'placeholder' => 'Date / heure approximative'],
                     ['name' => 'where_label', 'label' => 'Où', 'type' => 'text'],
                     ['name' => 'confidence', 'label' => 'Confiance', 'type' => 'select', 'options' => $confidence],
+                    ['name' => 'narrative', 'label' => 'Récit des faits', 'type' => 'textarea', 'placeholder' => 'Décrivez ce qui s’est passé, dans l’ordre', 'rows' => 5],
+                    ['name' => 'actors', 'label' => 'Acteurs / témoins', 'type' => 'textarea', 'placeholder' => 'Qui était présent, rôles observés', 'rows' => 3],
                 ],
             ],
             'report' => [
-                'hint' => 'Compte rendu ou note déjà rédigée — pour un brouillon guidé, préférez l’atelier de rédaction.',
+                'hint' => 'Compte rendu, flash ou note d’analyse — rédigez le corps du document ici.',
                 'fields' => [
                     ['name' => 'report_kind', 'label' => 'Type', 'type' => 'select', 'options' => [
                         'flash' => 'Flash',
                         'compte_rendu' => 'Compte rendu',
                         'note' => 'Note d’analyse',
                         'synthese' => 'Synthèse',
+                        'sitrep' => 'Situation (SITREP)',
                     ]],
                     ['name' => 'author', 'label' => 'Rédacteur', 'type' => 'text'],
+                    ['name' => 'dtg', 'label' => 'Date / heure du produit', 'type' => 'text', 'placeholder' => 'Ex. 07 août 2026 — 19h20'],
                     ['name' => 'classification_note', 'label' => 'Niveau de diffusion', 'type' => 'select', 'options' => SseCaseRepository::CLASSIFICATION_LABELS],
+                    ['name' => 'subject', 'label' => 'Objet', 'type' => 'text', 'placeholder' => 'Ce que le produit couvre'],
+                    ['name' => 'situation', 'label' => 'Situation', 'type' => 'textarea', 'placeholder' => 'Contexte et état des lieux', 'rows' => 4],
+                    ['name' => 'body', 'label' => 'Corps du compte rendu', 'type' => 'textarea', 'placeholder' => 'Faits, exploitation, appréciation…', 'rows' => 10],
+                    ['name' => 'follow_on', 'label' => 'Suites à donner', 'type' => 'textarea', 'placeholder' => 'Actions recommandées, priorités', 'rows' => 4],
                 ],
             ],
             'photo' => [
-                'hint' => 'Photographie ou capture terrain.',
+                'hint' => 'Photographie ou capture terrain — téléversez l’image ci-dessous.',
                 'fields' => [
                     ['name' => 'angle', 'label' => 'Angle / sujet', 'type' => 'select', 'options' => [
                         'visage' => 'Visage',
@@ -323,6 +349,7 @@ final class SseMeshRepository
                     ]],
                     ['name' => 'taken_at', 'label' => 'Prise de vue', 'type' => 'text', 'placeholder' => 'Date / heure si connue'],
                     ['name' => 'place', 'label' => 'Lieu', 'type' => 'text'],
+                    ['name' => 'caption', 'label' => 'Légende', 'type' => 'textarea', 'placeholder' => 'Ce que montre la photo, éléments utiles', 'rows' => 3],
                 ],
             ],
             'biometric' => [
@@ -336,6 +363,7 @@ final class SseMeshRepository
                         'excellente' => 'Excellente',
                     ]],
                     ['name' => 'confidence', 'label' => 'Confiance', 'type' => 'select', 'options' => $confidence],
+                    ['name' => 'notes', 'label' => 'Conditions de prélèvement', 'type' => 'textarea', 'placeholder' => 'Contexte, matériel utilisé, réserves', 'rows' => 3],
                 ],
             ],
             'seizure' => [
@@ -345,6 +373,7 @@ final class SseMeshRepository
                     ['name' => 'quantity', 'label' => 'Quantité', 'type' => 'text'],
                     ['name' => 'place', 'label' => 'Lieu de saisie', 'type' => 'text'],
                     ['name' => 'condition', 'label' => 'État', 'type' => 'text'],
+                    ['name' => 'notes', 'label' => 'Notes de saisie', 'type' => 'textarea', 'placeholder' => 'Chaîne de possession, emballage, remarques', 'rows' => 3],
                 ],
             ],
             'custom' => [
@@ -352,7 +381,7 @@ final class SseMeshRepository
                 'fields' => [
                     ['name' => 'nature', 'label' => 'Nature', 'type' => 'text', 'placeholder' => 'Ex. cache, signalement anonyme…'],
                     ['name' => 'confidence', 'label' => 'Confiance', 'type' => 'select', 'options' => $confidence],
-                    ['name' => 'note', 'label' => 'Note courte', 'type' => 'text'],
+                    ['name' => 'note', 'label' => 'Description', 'type' => 'textarea', 'placeholder' => 'Ce que représente cet élément', 'rows' => 4],
                 ],
             ],
         ];
@@ -374,6 +403,9 @@ final class SseMeshRepository
             if ($name === '' || !array_key_exists($name, $meta)) {
                 continue;
             }
+            if (in_array($name, ['image_path', 'image_url'], true)) {
+                continue;
+            }
             $raw = trim((string) $meta[$name]);
             if ($raw === '') {
                 continue;
@@ -381,7 +413,13 @@ final class SseMeshRepository
             if (($field['type'] ?? '') === 'select' && is_array($field['options'] ?? null) && isset($field['options'][$raw])) {
                 $raw = (string) $field['options'][$raw];
             }
+            if (($field['type'] ?? '') === 'textarea' && mb_strlen($raw) > 140) {
+                $raw = mb_substr($raw, 0, 137) . '…';
+            }
             $lines[] = (string) ($field['label'] ?? $name) . ' : ' . $raw;
+        }
+        if (!empty($meta['image_path'])) {
+            $lines[] = 'Image jointe';
         }
 
         return $lines;
@@ -399,7 +437,8 @@ final class SseMeshRepository
             if ($key === '' || $val === '') {
                 continue;
             }
-            $clean[$key] = mb_substr($val, 0, 200);
+            $max = str_ends_with($key, '_path') || $key === 'image_url' ? 512 : 12000;
+            $clean[$key] = mb_substr($val, 0, $max);
         }
         if ($clean === []) {
             return null;
@@ -705,6 +744,11 @@ final class SseMeshRepository
     {
         $kind = self::normalizeKind((string) ($row['kind'] ?? 'custom'));
         $meta = self::decodeMetaJson($row['meta_json'] ?? null);
+        $imagePath = trim((string) ($meta['image_path'] ?? ''));
+        $imageUrl = null;
+        if ($imagePath !== '' && function_exists('user_media_public_url')) {
+            $imageUrl = user_media_public_url($imagePath);
+        }
 
         return [
             'id' => (int) ($row['id'] ?? 0),
@@ -715,6 +759,8 @@ final class SseMeshRepository
             'detail' => $row['detail'] ?? null,
             'meta' => $meta,
             'meta_lines' => self::formatMetaLines($kind, $meta),
+            'image_path' => $imagePath !== '' ? $imagePath : null,
+            'image_url' => $imageUrl,
             'ref_type' => $row['ref_type'] ?? null,
             'ref_id' => isset($row['ref_id']) ? (int) $row['ref_id'] : null,
             'pos_x' => (float) ($row['pos_x'] ?? 0),
@@ -771,6 +817,10 @@ final class SseMeshRepository
         $out = [];
         foreach ($rows as $row) {
             $rel = self::normalizeRelation((string) ($row['relation'] ?? 'associe'));
+            $reliability = (string) ($row['reliability'] ?? 'unverified');
+            if (!isset(self::EDGE_STATUS_LABELS[$reliability])) {
+                $reliability = 'unverified';
+            }
             $out[] = [
                 'id' => (int) $row['id'],
                 'from_node_id' => (int) $row['from_node_id'],
@@ -778,7 +828,8 @@ final class SseMeshRepository
                 'relation' => $rel,
                 'relation_label' => self::relationLabel($rel),
                 'note' => $row['note'] ?? null,
-                'reliability' => (string) ($row['reliability'] ?? 'unverified'),
+                'reliability' => $reliability,
+                'reliability_label' => self::EDGE_STATUS_LABELS[$reliability] ?? $reliability,
                 'author_label' => $row['author_label'] ?? null,
                 'created_at' => $row['created_at'] ?? null,
             ];

@@ -36,6 +36,7 @@ final class SseArmaModelRepository
         'SYRIA' => 'Syrie',
         'LEVANT' => 'Levant',
         'AFRICA_SAHEL' => 'Sahel',
+        'RUSSIA' => 'Russie / théâtre Est (2020+)',
         'GENERIC' => 'Générique',
     ];
 

@@ -29,6 +29,11 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
     <div class="page-reference">
         <strong><?= $h($case['reference_code'] ?? '') ?></strong>
         <?= $h($case['title'] ?? '') ?>
+        <?php if (!empty($canExport)): ?>
+            <div style="margin-top:.5rem">
+                <a class="btn" href="<?= $h(url('atak/sse/dossiers/' . (int) ($case['id'] ?? 0) . '/pdf')) ?>">Exporter le dossier complet (PDF)</a>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 

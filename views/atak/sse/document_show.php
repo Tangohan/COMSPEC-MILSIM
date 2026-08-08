@@ -78,6 +78,7 @@ $statusClass = match ($status) {
                     Version de diffusion
                 </a>
             <?php endif; ?>
+            <button class="btn btn--ghost" type="button" data-copy-body style="width:100%">Copier le corps</button>
         </div>
         <div class="interest-hero__source">
             <strong>Référence</strong>
@@ -97,27 +98,31 @@ $statusClass = match ($status) {
     </div>
 </div>
 
-<section class="panel sse-desk-panel">
+<section class="sse-doc-read panel sse-desk-panel">
     <div class="panel-header">
         <div class="panel-title">
             <span class="panel-index">19.12</span>
-            Corps du document
+            Lecture officielle
         </div>
         <div class="panel-meta">
-            <button class="btn btn--ghost btn--sm" type="button" data-copy="#sse-doc-body">Copier le texte</button>
+            <?php if (!empty($document['updated_at'])): ?>
+                Mis à jour <?= $h($document['updated_at']) ?>
+            <?php endif; ?>
         </div>
     </div>
     <div class="panel-body">
-        <div class="sse-desk-paper sse-desk-paper--read">
-            <pre class="sse-report" id="sse-doc-body"><?= $h($document['body'] ?? '') ?></pre>
-        </div>
+        <?php
+        $livePreview = false;
+        require __DIR__ . '/partials/document_paper.php';
+        ?>
+        <pre id="sse-doc-body-raw" class="sr-only" aria-hidden="true"><?= $h($document['body'] ?? '') ?></pre>
     </div>
 </section>
 
 <script>
-document.querySelectorAll('[data-copy]').forEach(function (btn) {
+document.querySelectorAll('[data-copy-body]').forEach(function (btn) {
     btn.addEventListener('click', function () {
-        var el = document.querySelector(btn.getAttribute('data-copy'));
+        var el = document.getElementById('sse-doc-body-raw');
         if (!el) { return; }
         var done = function () {
             var old = btn.textContent;

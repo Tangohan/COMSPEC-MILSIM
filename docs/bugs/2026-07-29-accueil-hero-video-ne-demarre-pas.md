@@ -32,4 +32,6 @@ Le hero reste sur les images statiques ; les MP4 ne s’affichent pas alors que 
 
 ## Statut
 
-Corrigé (timeout / preload) — vérifier encodage si problème persiste sur mobile
+Corrigé (timeout / preload). **Suite 2026-08-07** : les MP4 restent en HEVC / QuickTime ;
+la sonde les écarte et le hero reste en photos — voir
+`docs/bugs/2026-08-07-hero-videos-hevc-rejetes.md` et `docs/VIDEO-HERO-ENCODAGE.md`.

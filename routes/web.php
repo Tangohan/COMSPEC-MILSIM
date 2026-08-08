@@ -254,6 +254,8 @@ return function (Router $router) {
     $router->get('/contact', [SitePagesController::class, 'contact']);
     $router->post('/contact', [SitePagesController::class, 'contactSubmit']);
     $router->get('/nouveautes', [SitePagesController::class, 'changelog']);
+    $router->get('/sse', [SitePagesController::class, 'sse']);
+    $router->get('/renseignement-sse', fn () => \App\Core\Response::redirect(url('sse')));
 
     $router->get('/acces-demonstration', [DemoNdaController::class, 'show']);
     $router->post('/acces-demonstration', [DemoNdaController::class, 'submit']);

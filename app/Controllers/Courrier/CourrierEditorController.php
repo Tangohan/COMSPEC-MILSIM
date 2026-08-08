@@ -130,6 +130,18 @@ class CourrierEditorController
         $presets = $this->presetRepository->listForTenant($tenantId);
         $variablesByCategory = $this->variableService->getAvailableVariables($tenantId);
         $context = ['user_id' => $userId, 'tenant_id' => $tenantId, 'document' => $document];
+
+        // Auto-guérison : résoudre les {{variables}} encore présentes dans le corps.
+        $rawBody = (string) ($document['body_rendered'] ?? '');
+        if ($this->builderService->findUnresolvedPlaceholders($rawBody) !== []) {
+            $resolvedBody = $this->builderService->resolveBodyPlaceholders($rawBody, $context);
+            if ($resolvedBody !== $rawBody) {
+                $this->documentRepository->update($id, ['body_rendered' => $resolvedBody]);
+                $document['body_rendered'] = $resolvedBody;
+                $context['document'] = $document;
+            }
+        }
+
         $previewHtml = $this->builderService->buildPreviewHtml($document, $context);
         $alerts = $this->validationService->validate($document, $context, []);
         $completenessScore = $this->validationService->completenessScore($document, $alerts);
@@ -175,11 +187,30 @@ class CourrierEditorController
         $referenceNumber = $request->input('reference_number') ? trim((string) $request->input('reference_number')) : null;
         $destinationLabel = $request->input('destination_label') ? trim((string) $request->input('destination_label')) : null;
         $issuerLabel = $request->input('issuer_label') ? trim((string) $request->input('issuer_label')) : null;
-        $bodyRendered = $request->input('body_rendered') ?? '';
+        $bodyRendered = (string) ($request->input('body_rendered') ?? '');
         $classificationRaw = trim((string) ($request->input('classification_level') ?? ''));
         $classificationLevel = in_array($classificationRaw, CourrierClassification::codes(), true)
             ? $classificationRaw
             : 'interne';
+
+        // Résoudre {{variables}} avant enregistrement / modération.
+        $resolveContext = [
+            'user_id' => $userId,
+            'tenant_id' => $tenantId,
+            'document' => [
+                'uuid' => null,
+                'reference_number' => $referenceNumber,
+            ],
+        ];
+        if ($id > 0) {
+            $existingForResolve = $this->documentRepository->findById($id, $tenantId);
+            if ($existingForResolve) {
+                $resolveContext['document'] = array_merge($existingForResolve, [
+                    'reference_number' => $referenceNumber ?? ($existingForResolve['reference_number'] ?? null),
+                ]);
+            }
+        }
+        $bodyRendered = $this->builderService->resolveBodyPlaceholders($bodyRendered, $resolveContext);
 
         $scan = $this->moderationOrchestrator->scanTextContent((string) $bodyRendered, array_values(array_filter([
             (string) ($title ?? ''),
@@ -250,6 +281,16 @@ class CourrierEditorController
             $issuerLabel = $defaults['issuer_label'] ?? null;
         }
 
+        // Re-résoudre avec la référence définitive (nouvelle création).
+        $bodyRendered = $this->builderService->resolveBodyPlaceholders($bodyRendered, [
+            'user_id' => $userId,
+            'tenant_id' => $tenantId,
+            'document' => [
+                'uuid' => null,
+                'reference_number' => $referenceNumber,
+            ],
+        ]);
+
         $metadataMerged = $this->mergeMetadataFromRequest($request, null);
         $newId = $this->documentRepository->create([
             'tenant_id' => $tenantId,
@@ -268,6 +309,19 @@ class CourrierEditorController
             'metadata_json' => $metadataMerged,
             'moderation_state' => $moderationState,
         ]);
+        // Second passage après création (uuid réel disponible).
+        $created = $this->documentRepository->findById($newId, $tenantId);
+        if ($created) {
+            $finalBody = $this->builderService->resolveBodyPlaceholders((string) ($created['body_rendered'] ?? ''), [
+                'user_id' => $userId,
+                'tenant_id' => $tenantId,
+                'document' => $created,
+            ]);
+            if ($finalBody !== (string) ($created['body_rendered'] ?? '')) {
+                $this->documentRepository->update($newId, ['body_rendered' => $finalBody]);
+                $bodyRendered = $finalBody;
+            }
+        }
         $this->syncCourrierModerationArtifact($tenantId, $newId, $userId, $scan, (string) $bodyRendered);
         Session::flash('success', 'Brouillon créé.');
         if ($moderationState === 'pending_review') {
