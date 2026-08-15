@@ -131,6 +131,7 @@ if (!$headerAllowsPath('evenements') && !$headerAllowsPath('atak')) {
 }
 
 $espaceLinks = [
+    ['abbr' => 'JNT', 'label' => 'JNET Extranet', 'desc' => 'Bureau numérique d’unité', 'href' => url('jnet'), 'path' => 'jnet'],
     ['abbr' => 'DOC', 'label' => 'Documents', 'desc' => 'Ordres et références', 'href' => url('documents'), 'path' => 'documents'],
     ['abbr' => 'OPS', 'label' => 'Manœuvres', 'desc' => 'Calendrier opérationnel', 'href' => url('evenements'), 'path' => 'evenements'],
     ['abbr' => 'ORB', 'label' => 'ORBAT', 'desc' => 'Structure et effectifs', 'href' => url('orbat'), 'path' => 'orbat'],
@@ -162,6 +163,7 @@ $espaceLinks = array_values(array_filter(
 
 $quickLinks = [
     ['label' => 'Tableau de bord', 'href' => url('dashboard'), 'path' => 'dashboard'],
+    ['label' => 'JNET Extranet', 'href' => url('jnet'), 'path' => 'jnet'],
     ['label' => 'Hub', 'href' => url('hub'), 'path' => 'hub'],
     ['label' => 'Forum', 'href' => url('forum'), 'path' => 'forum'],
     ['label' => 'Formations', 'href' => url('formations'), 'path' => 'formations'],
@@ -343,6 +345,7 @@ if ($affectationLabel !== null && strcasecmp($affectationLabel, $unitLabel) !== 
  * @var list<array{label:string,desc:string,href:string}>
  */
 $profileMenuItems = [
+    ['label' => 'JNET Extranet', 'desc' => 'Bureau numérique d’unité', 'href' => url('jnet'), 'path' => 'jnet'],
     ['label' => 'Ma fiche', 'desc' => 'Identité, grade et fonction', 'href' => url('personnel/me'), 'path' => 'personnel/me'],
     ['label' => 'Mes formations', 'desc' => 'Parcours et compétences', 'href' => url('formations/mes-formations'), 'path' => 'formations/mes-formations'],
     ['label' => 'Manœuvres', 'desc' => 'Calendrier opérationnel', 'href' => url('evenements'), 'path' => 'evenements'],

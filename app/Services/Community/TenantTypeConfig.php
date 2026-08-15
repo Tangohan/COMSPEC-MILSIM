@@ -235,6 +235,7 @@ final class TenantTypeConfig
             'logout',
             'register',
             'dashboard',
+            'jnet',
             'communities',
             'community/switch',
             'join',
