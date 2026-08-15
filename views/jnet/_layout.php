@@ -23,20 +23,34 @@ $nodeId = (string) ($jnetNodeId ?? 'NODE');
 $unreadMail = (int) ($jnetUnreadMail ?? 0);
 $dtg = (string) ($jnetDtg ?? strtoupper(gmdate('dHi') . 'Z' . gmdate('M y')));
 $contentView = (string) ($jnetContentView ?? 'jnet.home');
+$canTba = !empty($jnetCanTba);
 $error = \App\Core\Session::getFlash('error');
 $success = \App\Core\Session::getFlash('success');
 $who = trim($callsign !== '' ? $callsign : $displayName);
+$unitLabel = $tenantName !== '' ? $tenantName : 'Unité';
+$zulu = gmdate('H:i:s') . 'Z';
 
-$nav = [
-    ['id' => 'home', 'label' => 'Accueil', 'path' => 'jnet'],
-    ['id' => 'unit', 'label' => 'Unité', 'path' => 'jnet/unite'],
-    ['id' => 'personnel', 'label' => 'Personnel', 'path' => 'jnet/personnel'],
-    ['id' => 'operations', 'label' => 'Opérations', 'path' => 'jnet/operations'],
-    ['id' => 'intelligence', 'label' => 'Renseignement', 'path' => 'jnet/renseignement'],
-    ['id' => 'targets', 'label' => 'Cibles', 'path' => 'jnet/cibles'],
-    ['id' => 'exploitation', 'label' => 'Exploitation', 'path' => 'jnet/exploitation'],
-    ['id' => 'library', 'label' => 'Bibliothèque', 'path' => 'jnet/bibliotheque'],
+$navGroups = [
+    ['label' => 'Situation', 'items' => [
+        ['id' => 'home', 'label' => 'Tableau d’unité', 'path' => 'jnet'],
+        ['id' => 'unit', 'label' => 'Fiche d’unité', 'path' => 'jnet/unite'],
+        ['id' => 'personnel', 'label' => 'Personnel', 'path' => 'jnet/personnel'],
+    ]],
+    ['label' => 'Conduite', 'items' => [
+        ['id' => 'operations', 'label' => 'Opérations', 'path' => 'jnet/operations'],
+    ]],
+    ['label' => 'Renseignement', 'items' => [
+        ['id' => 'intelligence', 'label' => 'Flux de renseignement', 'path' => 'jnet/renseignement'],
+        ['id' => 'targets', 'label' => 'Cibles prioritaires', 'path' => 'jnet/cibles'],
+        ['id' => 'exploitation', 'label' => 'Exploitation', 'path' => 'jnet/exploitation'],
+    ]],
+    ['label' => 'Ressources', 'items' => [
+        ['id' => 'library', 'label' => 'Bibliothèque', 'path' => 'jnet/bibliotheque'],
+        ['id' => 'inbox', 'label' => 'Messagerie', 'path' => 'jnet/courrier', 'count' => $unreadMail],
+        ['id' => 'system', 'label' => 'Système', 'path' => 'jnet/systeme'],
+    ]],
 ];
+$navIndex = 0;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -47,63 +61,88 @@ $nav = [
     <title><?= $h($pageTitle) ?> — JNET</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_portal.css')) ?>?v=202608152355">
-    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_home.css')) ?>?v=202608152355">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_portal.css')) ?>?v=202608160120">
 </head>
-<body class="jnet-shell">
-<div class="jnet-app jnet-app--topnav">
-    <header class="jnet-chrome">
-        <div class="jnet-chrome__classif">
-            <span>SECRET // REL COMSPEC</span>
+<body class="jnet-iw">
+
+<div class="jnet-app">
+    <header class="jnet-topbar" role="banner">
+        <div class="jnet-brand">
             <strong>JNET</strong>
+            <span>Extranet d’unité</span>
         </div>
-        <div class="jnet-chrome__brand">
-            <div>
-                <p class="jnet-chrome__network">JOINT INTELLIGENCE NETWORK</p>
-                <p class="jnet-chrome__unit"><?= $h($tenantName !== '' ? $tenantName : 'Unité') ?></p>
-            </div>
-            <div class="jnet-chrome__meta">
-                <span><?= $h($dtg) ?></span>
-                <span>Nœud <?= $h($nodeId) ?></span>
-                <?php if ($who !== ''): ?><span><?= $h($who) ?></span><?php endif; ?>
-            </div>
+
+        <form class="jnet-search" method="get" action="<?= $h(url('jnet/personnel')) ?>" role="search">
+            <label class="sr-only" for="jnet-q">Rechercher dans l’annuaire</label>
+            <input id="jnet-q" name="filtre" type="search" placeholder="Rechercher un membre, une fonction, une section…"
+                   value="<?= $h((string) ($_GET['filtre'] ?? '')) ?>" autocomplete="off">
+            <button type="submit" aria-label="Lancer la recherche">⌕</button>
+        </form>
+
+        <div class="jnet-status" aria-label="État des liaisons">
+            <span class="jnet-pill jnet-pill--ok" title="Liaison Athena">Athena</span>
+            <span class="jnet-pill jnet-pill--ok" title="Carte tactique">ATAK</span>
+            <span class="jnet-pill" title="Terminal d’unité">Terminal <?= $h($nodeId) ?></span>
+            <span class="jnet-zulu" title="Heure Zulu"><?= $h($zulu) ?></span>
+            <?php if ($who !== ''): ?>
+                <span class="jnet-session" title="Utilisateur connecté"><?= $h($who) ?></span>
+            <?php endif; ?>
         </div>
-        <nav class="jnet-chrome__nav" aria-label="Navigation JNET">
-            <?php foreach ($nav as $item): ?>
-                <a class="jnet-chrome__link<?= $activeNav === $item['id'] ? ' is-active' : '' ?>" href="<?= $h(url($item['path'])) ?>"><?= $h($item['label']) ?></a>
-            <?php endforeach; ?>
-        </nav>
-        <div class="jnet-chrome__tools">
-            <form class="jnet-search" method="get" action="<?= $h(url('jnet/personnel')) ?>" role="search">
-                <label class="sr-only" for="jnet-q">Recherche</label>
-                <input id="jnet-q" type="search" name="filtre" placeholder="Recherche JNET…" value="">
-            </form>
-            <a class="jnet-tool" href="<?= $h(url('dashboard')) ?>">Athena</a>
-            <a class="jnet-tool" href="<?= $h(url('atak')) ?>">ATAK</a>
-            <a class="jnet-tool" href="<?= $h(url('jnet/courrier')) ?>">Messagerie<?= $unreadMail > 0 ? ' (' . min(99, $unreadMail) . ')' : '' ?></a>
-            <a class="jnet-tool jnet-tool--ghost" href="<?= $h(url('jnet/systeme')) ?>">Système</a>
+
+        <div class="jnet-actions">
+            <a class="jnet-btn" href="<?= $h(url('jnet/courrier')) ?>">Messagerie<?= $unreadMail > 0 ? ' <b>' . min(99, $unreadMail) . '</b>' : '' ?></a>
+            <a class="jnet-btn jnet-btn--solid" href="<?= $h(url('jnet/operations')) ?>">Opérations</a>
+            <?php if ($canTba): ?>
+                <a class="jnet-btn jnet-btn--ghost" href="<?= $h(url('back-office')) ?>">Administration</a>
+            <?php endif; ?>
+            <a class="jnet-btn jnet-btn--ghost" href="<?= $h(url('dashboard')) ?>">Quitter</a>
         </div>
     </header>
 
-    <main class="jnet-main">
-        <?php if ($error || $success): ?>
-            <div class="jnet-flash<?= $error ? ' jnet-flash--err' : ' jnet-flash--ok' ?>">
-                <?= $h((string) ($error ?: $success)) ?>
+    <div class="jnet-classbar" role="status">
+        <strong>Diffusion restreinte</strong>
+        <span>Réservé au personnel de l’unité — consultations journalisées</span>
+        <em><?= $h($dtg) ?></em>
+    </div>
+
+    <div class="jnet-shell">
+        <aside class="jnet-nav" aria-label="Navigation JNET">
+            <p class="jnet-nav-kicker">Extranet <?= $h($unitLabel) ?></p>
+
+            <?php foreach ($navGroups as $group): ?>
+                <p class="jnet-nav-section"><?= $h((string) $group['label']) ?></p>
+                <?php foreach ($group['items'] as $item): ?>
+                    <?php $navIndex++; $count = (int) ($item['count'] ?? 0); ?>
+                    <a href="<?= $h(url((string) $item['path'])) ?>" class="<?= $activeNav === $item['id'] ? 'is-active' : '' ?>">
+                        <b><?= str_pad((string) $navIndex, 2, '0', STR_PAD_LEFT) ?></b>
+                        <span><?= $h((string) $item['label']) ?></span>
+                        <?php if ($count > 0): ?><i><?= min(99, $count) ?></i><?php endif; ?>
+                    </a>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
+
+            <div class="jnet-nav-foot">
+                <span>Unité rattachée</span>
+                <strong><?= $h($unitLabel) ?></strong>
             </div>
-        <?php endif; ?>
-        <div class="jnet-stage">
-            <?php
-            $viewFile = base_path('views/' . str_replace('.', '/', $contentView) . '.php');
-            if (is_file($viewFile)) {
-                require $viewFile;
-            } else {
-                echo '<p class="jnet-empty">Écran indisponible.</p>';
-            }
-            ?>
-        </div>
-    </main>
+        </aside>
+
+        <main class="jnet-main">
+            <?php if ($error): ?><div class="jnet-flash jnet-flash--err"><?= $h((string) $error) ?></div><?php endif; ?>
+            <?php if ($success): ?><div class="jnet-flash jnet-flash--ok"><?= $h((string) $success) ?></div><?php endif; ?>
+            <div class="jnet-stage">
+                <?php
+                $viewFile = base_path('views/' . str_replace('.', '/', $contentView) . '.php');
+                if (is_file($viewFile)) {
+                    require $viewFile;
+                } else {
+                    echo '<p class="jnet-empty">Écran indisponible.</p>';
+                }
+                ?>
+            </div>
+        </main>
+    </div>
 </div>
-<style>.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}</style>
 </body>
 </html>
