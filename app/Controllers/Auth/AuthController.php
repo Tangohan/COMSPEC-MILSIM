@@ -21,6 +21,7 @@ use App\Services\Auth\LoginSecurityNotificationService;
 use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Support\LoginIntendedDestination;
+use App\Support\PortalAccessChoice;
 use App\Services\Auth\LoginSecurityOtpService;
 
 class AuthController
@@ -94,13 +95,95 @@ class AuthController
             return Response::redirect($after);
         }
 
-        return Response::redirect(url('dashboard'));
+        $remembered = PortalAccessChoice::remembered();
+        if ($remembered !== null) {
+            if ($remembered === PortalAccessChoice::PORTAL_TBA && !PortalAccessChoice::canAccessTba()) {
+                return Response::redirect(url('jnet'));
+            }
+
+            return Response::redirect(PortalAccessChoice::redirectUrlFor($remembered));
+        }
+
+        return Response::redirect(url('login/choisir-espace'));
+    }
+
+    public function showSelectPortal(Request $request, array $params = []): Response
+    {
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        $user = $this->authService->user();
+        if ($user) {
+            $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
+        }
+        $canTba = PortalAccessChoice::canAccessTba();
+        $tenantId = (int) Session::get('tenant_id');
+        $tenant = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
+        $tenantName = is_array($tenant) ? community_display_name($tenant) : '';
+
+        return Response::view('auth.select-portal', [
+            'title' => 'Choisir un espace',
+            'canTba' => $canTba,
+            'tenantName' => $tenantName,
+            'displayName' => (string) (Session::get('display_name') ?? ($user['display_name'] ?? '')),
+            'callsign' => (string) (Session::get('callsign') ?? ($user['callsign'] ?? '')),
+        ]);
+    }
+
+    public function selectPortal(Request $request, array $params = []): Response
+    {
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        if (!$request->isPost()) {
+            return Response::redirect(url('login/choisir-espace'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', __('auth.flash_session_expired'));
+
+            return Response::redirect(url('login/choisir-espace'));
+        }
+        $user = $this->authService->user();
+        if ($user) {
+            $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
+        }
+        $portal = PortalAccessChoice::normalize((string) $request->input('portal', ''));
+        if ($portal === null) {
+            Session::flash('error', 'Choisissez un espace pour continuer.');
+
+            return Response::redirect(url('login/choisir-espace'));
+        }
+        if ($portal === PortalAccessChoice::PORTAL_TBA && !PortalAccessChoice::canAccessTba()) {
+            Session::flash('error', 'Vous n’avez pas accès au tableau de bord administratif.');
+
+            return Response::redirect(url('login/choisir-espace'));
+        }
+        $persist = (string) $request->input('remember', '') === '1';
+        PortalAccessChoice::remember($portal, $persist);
+        if (is_array($user)) {
+            $this->auditService->log(
+                AuditAction::AUTH_PORTAL_SELECTED,
+                (int) ($user['tenant_id'] ?? 0),
+                (int) ($user['id'] ?? 0),
+                'portal',
+                null,
+                null,
+                json_encode(['portal' => $portal, 'remember' => $persist], JSON_UNESCAPED_UNICODE)
+            );
+        }
+
+        return Response::redirect(PortalAccessChoice::redirectUrlFor($portal));
     }
 
     public function showLogin(Request $request, array $params = []): Response
     {
         if ($this->authService->check()) {
-            return Response::redirect(url('dashboard'));
+            $remembered = PortalAccessChoice::remembered();
+            if ($remembered !== null) {
+                return Response::redirect(PortalAccessChoice::redirectUrlFor($remembered));
+            }
+
+            return Response::redirect(url('login/choisir-espace'));
         }
         $pendingOtp = Session::get('pending_login_security_otp');
         if (is_array($pendingOtp) && (int) ($pendingOtp['expires_at'] ?? 0) >= time()) {
@@ -251,7 +334,7 @@ class AuthController
     public function showSelectCommunity(Request $request, array $params = []): Response
     {
         if ($this->authService->check()) {
-            return Response::redirect(url('dashboard'));
+            return Response::redirect(url('login/choisir-espace'));
         }
         $pending = Session::get('pending_community_selection');
         if (!is_array($pending) || empty($pending['candidates'])) {

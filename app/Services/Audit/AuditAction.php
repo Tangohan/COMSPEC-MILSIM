@@ -18,6 +18,7 @@ final class AuditAction
     public const AUTH_TOTP_ENABLED = 'auth.totp_enabled';
     public const AUTH_TOTP_DISABLED = 'auth.totp_disabled';
     public const AUTH_EMAIL_LOGIN_OTP_TOGGLED = 'auth.email_login_otp_toggled';
+    public const AUTH_PORTAL_SELECTED = 'auth.portal_selected';
 
     public const TENANT_CREATED = 'tenant.created';
     public const TENANT_SETUP_COMPLETED = 'tenant.setup_completed';
