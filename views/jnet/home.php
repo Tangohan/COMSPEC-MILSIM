@@ -35,10 +35,13 @@ $face = static function (array $p) use ($h): string {
 ?>
 <section class="jnet-hero-unit">
     <div class="jnet-hero-unit__row">
-        <div>
-            <p class="jnet-kicker"><?= $h($lensLabel) ?></p>
-            <h1 class="jnet-hero-unit__name"><?= $h($unitName) ?></h1>
-            <p class="jnet-hero-unit__motto"><?= $h((string) ($unitMotto ?? '')) ?></p>
+        <div class="jnet-hero-unit__id">
+            <div class="jnet-unit-badge" aria-hidden="true"><?= $h(strtoupper(substr(preg_replace('/\s+/', '', $unitName) ?: 'U', 0, 3))) ?></div>
+            <div>
+                <p class="jnet-kicker"><?= $h($lensLabel) ?></p>
+                <h1 class="jnet-hero-unit__name"><?= $h($unitName) ?></h1>
+                <p class="jnet-hero-unit__motto"><?= $h((string) ($unitMotto ?? '')) ?></p>
+            </div>
         </div>
         <div class="jnet-statstrip">
             <div>

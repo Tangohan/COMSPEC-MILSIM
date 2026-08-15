@@ -1,0 +1,6 @@
+EXPORTS
+   DotNetRuntimeDebugHeader DATA
+   RVExtensionRegisterCallback
+   RVExtensionVersion
+   RVExtension
+   RVExtensionArgs

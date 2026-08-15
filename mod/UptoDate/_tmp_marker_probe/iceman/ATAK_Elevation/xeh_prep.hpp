@@ -1,0 +1,17 @@
+PREP(elev_apply);
+PREP(elev_clear);
+PREP(elev_computeHeatmap);
+PREP(elev_computeViewshed);
+PREP(elev_draw);
+PREP(elev_getState);
+PREP(elev_initButtons);
+PREP(elev_installDrawHooks);
+PREP(elev_installMapHandlers);
+PREP(elev_installOpenMapHandlers);
+PREP(elev_onMapClick);
+PREP(elev_onOpened);
+PREP(elev_posToGrid);
+PREP(elev_selectPoint);
+PREP(elev_setMode);
+PREP(elev_setPoint);
+PREP(elev_updatePanel);
