@@ -1,0 +1,5 @@
+prefix=z\BCE\addons\cTab\
+hemtt=1.19.1
+version=1.0.6
+git=3b1a770c28eb6f1e74bccb7b81980898de97062e
+url=https://github.com/Aaren882/Better-CAS-Environment-

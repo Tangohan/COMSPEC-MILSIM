@@ -1,0 +1,1 @@
+[This documentation has been moved to the wiki](https://github.com/jetelain/cTab/wiki/Mission-Makers-Documentation)

@@ -1,0 +1,130 @@
+========== COMSPEC Overwatch Build ========== 
+Date: 26/07/2026 14:06:58,85 
+Repertoire: E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\ 
+ 
+[ATHENA] Initialisation de la sequence de build... 
+[DOTNET] Compilation de COMSPECExtension (Release x64)... 
+  Identification des projets Ã  restaurer...
+  Tous les projets sont Ã  jour pour la restauration.
+  COMSPECExtension -> E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\bin\Release\net8.0\win-x64\COMSPECExtension_x64.dll
+  Generating native code
+     CrÃ©ation de la bibliothÃ¨que bin\Release\net8.0\win-x64\native\COMSPECExtension_x64.lib et de l'objet bin\Release\net8.0\win-x64\native\COMSPECExtension_x64.exp
+  COMSPECExtension -> E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\bin\publish\
+[BUILD] Compilation de comspec_overwatch_main... 
+Setting breakpad minidump AppID = 233800
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
+[2026-07-26 14:07:07,900] [INFO ]: ==========================================================================
+[2026-07-26 14:07:07,901] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-07-26 14:07:07,904] [INFO ]: Version: 1.5.152926
+[2026-07-26 14:07:07,904] [INFO ]: ==========================================================================
+[2026-07-26 14:07:07,904] [INFO ]: 
+[2026-07-26 14:07:07,905] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-07-26 14:07:07,909] [INFO ]: --------------------
+[2026-07-26 14:07:07,909] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-07-26 14:07:07,909] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-07-26 14:07:07,909] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-07-26 14:07:07,910] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-07-26 14:07:07,910] [INFO ]: --------------------
+[2026-07-26 14:07:07,911] [INFO ]: Builder starting...
+[2026-07-26 14:07:07,915] [INFO ]: Copying to temp...
+[2026-07-26 14:07:07,920] [INFO ]: Copy done.
+[2026-07-26 14:07:07,920] [INFO ]: 
+[2026-07-26 14:07:07,941] [INFO ]: 
+[2026-07-26 14:07:07,942] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\main"
+[2026-07-26 14:07:07,942] [INFO ]: Done.
+[2026-07-26 14:07:07,942] [INFO ]: 
+[2026-07-26 14:07:07,942] [INFO ]: Binarizing texture headers...
+[2026-07-26 14:07:08,197] [INFO ]: Done.
+[2026-07-26 14:07:08,198] [INFO ]: 
+[2026-07-26 14:07:08,198] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\main"...
+[2026-07-26 14:07:08,320] [INFO ]: Done.
+[2026-07-26 14:07:08,320] [INFO ]: 
+[2026-07-26 14:07:08,320] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\main.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\main.pbo
+[2026-07-26 14:07:08,321] [INFO ]: Done.
+[2026-07-26 14:07:08,322] [INFO ]: 
+[2026-07-26 14:07:08,322] [INFO ]: Build Successful
+[BUILD] Compilation de comspec_overwatch_connect... 
+Setting breakpad minidump AppID = 233800
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
+[2026-07-26 14:07:08,515] [INFO ]: ==========================================================================
+[2026-07-26 14:07:08,516] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-07-26 14:07:08,519] [INFO ]: Version: 1.5.152926
+[2026-07-26 14:07:08,519] [INFO ]: ==========================================================================
+[2026-07-26 14:07:08,519] [INFO ]: 
+[2026-07-26 14:07:08,520] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-07-26 14:07:08,524] [INFO ]: --------------------
+[2026-07-26 14:07:08,525] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-07-26 14:07:08,525] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-07-26 14:07:08,525] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-07-26 14:07:08,525] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-07-26 14:07:08,525] [INFO ]: --------------------
+[2026-07-26 14:07:08,526] [INFO ]: Builder starting...
+[2026-07-26 14:07:08,529] [INFO ]: Copying to temp...
+[2026-07-26 14:07:08,686] [INFO ]: Copy done.
+[2026-07-26 14:07:08,687] [INFO ]: 
+[2026-07-26 14:07:08,718] [INFO ]: 
+[2026-07-26 14:07:08,719] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\connect"
+[2026-07-26 14:07:08,721] [INFO ]: Done.
+[2026-07-26 14:07:08,721] [INFO ]: 
+[2026-07-26 14:07:08,721] [INFO ]: Binarizing texture headers...
+[2026-07-26 14:07:09,009] [INFO ]: Done.
+[2026-07-26 14:07:09,009] [INFO ]: 
+[2026-07-26 14:07:09,009] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\connect"...
+[2026-07-26 14:07:09,632] [INFO ]: Done.
+[2026-07-26 14:07:09,632] [INFO ]: 
+[2026-07-26 14:07:09,632] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\connect.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect.pbo
+[2026-07-26 14:07:09,639] [INFO ]: Done.
+[2026-07-26 14:07:09,639] [INFO ]: 
+[2026-07-26 14:07:09,639] [INFO ]: Build Successful
+[BUILD] Compilation de comspec_overwatch_atak_athena... 
+Setting breakpad minidump AppID = 233800
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
+[2026-07-26 14:07:09,825] [INFO ]: ==========================================================================
+[2026-07-26 14:07:09,826] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-07-26 14:07:09,829] [INFO ]: Version: 1.5.152926
+[2026-07-26 14:07:09,829] [INFO ]: ==========================================================================
+[2026-07-26 14:07:09,829] [INFO ]: 
+[2026-07-26 14:07:09,829] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-07-26 14:07:09,834] [INFO ]: --------------------
+[2026-07-26 14:07:09,834] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-07-26 14:07:09,834] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-07-26 14:07:09,835] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-07-26 14:07:09,835] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-07-26 14:07:09,835] [INFO ]: --------------------
+[2026-07-26 14:07:09,836] [INFO ]: Builder starting...
+[2026-07-26 14:07:09,838] [INFO ]: Copying to temp...
+[2026-07-26 14:07:09,860] [INFO ]: Copy done.
+[2026-07-26 14:07:09,860] [INFO ]: 
+[2026-07-26 14:07:09,877] [INFO ]: 
+[2026-07-26 14:07:09,877] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\atak_athena"
+[2026-07-26 14:07:09,878] [INFO ]: Done.
+[2026-07-26 14:07:09,878] [INFO ]: 
+[2026-07-26 14:07:09,878] [INFO ]: Binarizing texture headers...
+[2026-07-26 14:07:09,983] [INFO ]: Done.
+[2026-07-26 14:07:09,984] [INFO ]: 
+[2026-07-26 14:07:09,984] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\atak_athena"...
+[2026-07-26 14:07:10,127] [INFO ]: Done.
+[2026-07-26 14:07:10,127] [INFO ]: 
+[2026-07-26 14:07:10,127] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\atak_athena.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\atak_athena.pbo
+[2026-07-26 14:07:10,128] [INFO ]: Done.
+[2026-07-26 14:07:10,128] [INFO ]: 
+[2026-07-26 14:07:10,128] [INFO ]: Build Successful
+[DEPLOY] Transfert de la DLL COMSPECExtension_x64... 
+        1 fichier(s) copi‚(s).
+        1 fichier(s) copi‚(s).
+[DEPLOY] Synchronisation avec le dossier Arma 3... 
+[DEPLOY] Cible: F:\SteamLibrary\steamapps\workshop\content\107410\3684656708 
+        1 fichier(s) copi‚(s).
+        1 fichier(s) copi‚(s).
+        1 fichier(s) copi‚(s).
+        1 fichier(s) copi‚(s).
+        1 fichier(s) copi‚(s).
+[DEPLOY] Cible: F:\SteamLibrary\steamapps\common\Arma 3\@COMSPECOverwatch 
+        1 fichier(s) copi‚(s).
+        1 fichier(s) copi‚(s).
+        1 fichier(s) copi‚(s).
+        1 fichier(s) copi‚(s).
+        1 fichier(s) copi‚(s).
+ 
+========== BUILD REUSSI ========== 
+Sortie: E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch 
