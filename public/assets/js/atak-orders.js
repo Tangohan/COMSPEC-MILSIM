@@ -279,18 +279,72 @@ window.ATAKOrders = (function () {
   function parseFragoPayload(payload) {
     var text = String(payload || '');
     var map = { sit: '', mis: '', exe: '', sup: '', cmd: '' };
-    var re = /(Situation|Mission|Exécution|Execution|Soutien|Commandement)\s*:\s*([^—\-]+)/gi;
+    var re = /(Situation|Mission|Exécution|Execution|Soutien|Support|Commandement|Command)\s*:\s*([^—\-|]+)/gi;
     var m;
     while ((m = re.exec(text)) !== null) {
       var key = String(m[1] || '').toLowerCase();
-      var val = String(m[2] || '').trim();
+      var val = String(m[2] || '').trim().replace(/\s+/g, ' ');
       if (key.indexOf('situ') === 0) map.sit = val;
       else if (key.indexOf('miss') === 0) map.mis = val;
       else if (key.indexOf('ex') === 0) map.exe = val;
-      else if (key.indexOf('sout') === 0) map.sup = val;
+      else if (key.indexOf('sout') === 0 || key.indexOf('supp') === 0) map.sup = val;
       else if (key.indexOf('comm') === 0) map.cmd = val;
     }
     return map;
+  }
+
+  function fragoPartsFilled(parts) {
+    parts = parts || {};
+    return !!(parts.sit || parts.mis || parts.exe || parts.sup || parts.cmd);
+  }
+
+  function isFragoOrder(o) {
+    return String((o && o.type) || '').toUpperCase() === 'FRAGO';
+  }
+
+  function orderTypeModifier(type) {
+    var t = String(type || '').toUpperCase();
+    if (t === 'FRAGO') return 'atak-order-item--frago';
+    if (t === 'MOVE' || t === 'HOLD' || t === 'RECON' || t === 'CAS' || t === 'QRF') {
+      return 'atak-order-item--c2 atak-order-item--' + t.toLowerCase();
+    }
+    return 'atak-order-item--c2';
+  }
+
+  function typeCodeLabel(type) {
+    var t = String(type || '').toUpperCase();
+    if (t === 'FRAGO') return 'FRAGO';
+    if (t === 'MOVE') return 'MOVE';
+    if (t === 'HOLD') return 'HOLD';
+    if (t === 'RECON') return 'RECON';
+    if (t === 'CAS') return 'CAS';
+    if (t === 'QRF') return 'QRF';
+    if (t.indexOf('TYP_') === 0 || t === 'CUSTOM' || t.indexOf('CUSTOM_') === 0) return 'C2';
+    return 'C2';
+  }
+
+  function renderFragoSectionsHtml(parts) {
+    var rows = [
+      { key: 'sit', label: 'Situation' },
+      { key: 'mis', label: 'Mission' },
+      { key: 'exe', label: 'Exécution' },
+      { key: 'sup', label: 'Soutien' },
+      { key: 'cmd', label: 'Commandement' }
+    ];
+    var html = '<ol class="atak-order-frago-sections">';
+    var any = false;
+    rows.forEach(function (row) {
+      var val = String((parts && parts[row.key]) || '').trim();
+      if (!val) return;
+      any = true;
+      html +=
+        '<li class="atak-order-frago-sec atak-order-frago-sec--' + row.key + '">' +
+          '<span class="atak-order-frago-sec__label">' + escapeHtml(row.label) + '</span>' +
+          '<p class="atak-order-frago-sec__text">' + escapeHtml(val) + '</p>' +
+        '</li>';
+    });
+    html += '</ol>';
+    return any ? html : '';
   }
 
   function fillFragoFields(prefix, parts) {
@@ -1046,6 +1100,9 @@ window.ATAKOrders = (function () {
       var isOverdue = !!o.is_overdue;
       var actions = '';
       var radioLine = '';
+      var frago = isFragoOrder(o);
+      var fragoParts = parseFragoPayload(o.payload_display || o.payload || '');
+      var fragoHtml = frago ? renderFragoSectionsHtml(fragoParts) : '';
 
       if (o.radio_sim && o.sim_state && o.sim_state !== 'delivered' && status === 'PENDING') {
         radioLine =
@@ -1059,6 +1116,9 @@ window.ATAKOrders = (function () {
       var payloadText = (window.ATAKWaypoints && window.ATAKWaypoints.displayPayload)
         ? window.ATAKWaypoints.displayPayload(o)
         : (o.payload_display || o.payload || '');
+      if (frago && fragoPartsFilled(fragoParts)) {
+        payloadText = '';
+      }
       var waypointMeta = (window.ATAKWaypoints && window.ATAKWaypoints.renderWaypointMetaHtml)
         ? window.ATAKWaypoints.renderWaypointMetaHtml(o)
         : '';
@@ -1069,7 +1129,7 @@ window.ATAKOrders = (function () {
       if (status !== 'CANCELLED' && status !== 'FAILED') {
         var btns = [];
         if (status === 'PENDING' || status === 'DELIVERED') {
-          btns.push('<button type="button" class="atak-order-btn" data-order-action="ACK" data-order-id="' + escapeHtml(id) + '">Confirmer réception</button>');
+          btns.push('<button type="button" class="atak-order-btn atak-order-btn--primary" data-order-action="ACK" data-order-id="' + escapeHtml(id) + '">Confirmer réception</button>');
           btns.push('<button type="button" class="atak-order-btn atak-order-btn--fail" data-order-action="FAILED" data-order-id="' + escapeHtml(id) + '">Refuser</button>');
         }
         if (status === 'ACK') {
@@ -1116,18 +1176,29 @@ window.ATAKOrders = (function () {
         sourceBadge = '<span class="atak-order-badge atak-order-badge--source-web">Poste de commandement</span>';
       }
 
+      var kindLabel = frago ? 'Ordre fragmentaire' : 'Ordre C2';
+      var bodyHtml = fragoHtml
+        || (payloadText ? '<p class="atak-order-payload">' + escapeHtml(payloadText) + '</p>' : '')
+        || '<p class="atak-order-payload atak-order-payload--empty">Aucun détail textuel.</p>';
+
       return (
-        '<article class="atak-order-item ' + statusClass(status, isOverdue) + '" data-order-id="' + escapeHtml(id) + '">' +
-          '<div class="atak-order-item-top">' +
-            '<span class="atak-order-type">' + escapeHtml(o.type_label || typeLabelFr(o.type)) + '</span>' +
-            '<span class="atak-order-badges">' +
-              '<span class="atak-order-badge ' + statusBadgeClass(status, isOverdue) + '">' +
-                escapeHtml(o.status_label || statusLabelFr(status, isOverdue)) +
+        '<article class="atak-order-item ' + statusClass(status, isOverdue) + ' ' + orderTypeModifier(o.type) + '" data-order-id="' + escapeHtml(id) + '" data-order-kind="' + (frago ? 'frago' : 'c2') + '">' +
+          '<header class="atak-order-card-head">' +
+            '<div class="atak-order-card-kicker">' +
+              '<span class="atak-order-code" aria-hidden="true">' + escapeHtml(typeCodeLabel(o.type)) + '</span>' +
+              '<span class="atak-order-kind">' + escapeHtml(kindLabel) + '</span>' +
+            '</div>' +
+            '<div class="atak-order-item-top">' +
+              '<span class="atak-order-type">' + escapeHtml(o.type_label || typeLabelFr(o.type)) + '</span>' +
+              '<span class="atak-order-badges">' +
+                '<span class="atak-order-badge ' + statusBadgeClass(status, isOverdue) + '">' +
+                  escapeHtml(o.status_label || statusLabelFr(status, isOverdue)) +
+                '</span>' +
+                ownBadge +
+                sourceBadge +
               '</span>' +
-              ownBadge +
-              sourceBadge +
-            '</span>' +
-          '</div>' +
+            '</div>' +
+          '</header>' +
           '<div class="atak-order-meta atak-order-meta--badges">' +
             '<span class="atak-order-badge ' + priorityBadgeClass(o.priority) + '">' +
               escapeHtml(o.priority_label || priorityLabelFr(o.priority)) +
@@ -1138,9 +1209,9 @@ window.ATAKOrders = (function () {
             '</span>' +
             '<span class="atak-order-badge atak-order-badge--time">' + escapeHtml(formatTime(o.updated_at || o.created_at)) + '</span>' +
           '</div>' +
-          '<div class="atak-order-issuer">De ' + escapeHtml(o.issuer || '—') + '</div>' +
+          '<div class="atak-order-issuer">De <strong>' + escapeHtml(o.issuer || '—') + '</strong></div>' +
           radioLine +
-          (payloadText ? '<p class="atak-order-payload">' + escapeHtml(payloadText) + '</p>' : '') +
+          '<div class="atak-order-body">' + bodyHtml + '</div>' +
           waypointMeta +
           ackLine +
           actions +

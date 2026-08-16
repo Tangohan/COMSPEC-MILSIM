@@ -28,6 +28,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\TheatreMissionCycleRepository;
 use App\Repositories\UserRepository;
 use App\Services\Sse\SseAnalyticalEngineService;
+use App\Services\Sse\SseAnalystDigestService;
 use App\Services\Sse\SseCompletenessService;
 use App\Services\Sse\SseContextualMentionService;
 use App\Services\Sse\SseAccessCodeService;
@@ -76,6 +77,7 @@ final class SsePortalController
         private ?SseContextualMentionService $contextualMentions = null,
         private ?SseSuggestionQueueRepository $suggestions = null,
         private ?SseAnalyticalEngineService $engine = null,
+        private ?SseAnalystDigestService $analystDigest = null,
         private ?SseCompletenessService $completeness = null,
         private ?SseCaseBundleService $caseBundles = null,
         private ?UserRepository $users = null,
@@ -120,6 +122,13 @@ final class SsePortalController
         $this->contextualMentions ??= new SseContextualMentionService();
         $this->suggestions ??= new SseSuggestionQueueRepository();
         $this->engine ??= new SseAnalyticalEngineService();
+        if ($this->analystDigest === null) {
+            try {
+                $this->analystDigest = \App\Core\Container::get(SseAnalystDigestService::class);
+            } catch (\Throwable) {
+                $this->analystDigest = null;
+            }
+        }
         $this->completeness ??= new SseCompletenessService();
         $this->caseBundles ??= new SseCaseBundleService($this->cases, $this->persons, $this->sites);
         $this->intelEvents ??= new SseIntelEventRepository();
@@ -473,24 +482,12 @@ final class SsePortalController
             $relatedLabel = 'Ouvrir le dossier d’intérêt';
         }
 
-        $payloadRows = [];
-        foreach ($payload as $key => $value) {
-            if (is_array($value) || is_object($value)) {
-                continue;
-            }
-            $label = match ((string) $key) {
-                'person_id' => 'Identité (réf. interne)',
-                'site_id' => 'Site (réf. interne)',
-                'source_system' => 'Canal d’origine',
-                default => (string) $key,
-            };
-            if ($key === 'source_system') {
-                $value = SseIntelEventRepository::labelForSourceSystem((string) $value);
-            }
-            if (in_array((string) $key, ['person_id', 'site_id'], true)) {
-                continue;
-            }
-            $payloadRows[] = ['label' => $label, 'value' => (string) $value];
+        $payloadRows = SseIntelEventRepository::flattenPayloadRows($payload);
+        $clientLabel = (string) ($event['client_label'] ?? SseIntelEventRepository::clientSoftwareLabel($payload));
+        $sections = [];
+        foreach ($payloadRows as $row) {
+            $sec = (string) ($row['section'] ?? 'Compléments');
+            $sections[$sec][] = $row;
         }
 
         return $this->portalView('atak.sse.transmission_show', [
@@ -500,6 +497,8 @@ final class SsePortalController
             'relatedHref' => $relatedHref,
             'relatedLabel' => $relatedLabel,
             'payloadRows' => $payloadRows,
+            'payloadSections' => $sections,
+            'clientLabel' => $clientLabel,
             'canManage' => $this->canManage(),
             'activeNav' => 'transmissions',
         ]);
@@ -1857,21 +1856,30 @@ final class SsePortalController
         $tenantId = $this->tenantId();
         $caseId = (int) $request->query('case_id', 0);
         $q = trim((string) $request->query('q', ''));
+        $caseFilter = $caseId > 0 ? $caseId : null;
 
         return $this->portalView('atak.sse.suggestions', [
             'title' => 'Rapprochements moteur',
             'suggestions' => $this->suggestions->listSuggestions($tenantId, [
-                'case_id' => $caseId > 0 ? $caseId : null,
+                'case_id' => $caseFilter,
                 'status' => 'pending',
                 'q' => $q,
                 'limit' => 100,
             ]),
+            'history' => $this->suggestions->listSuggestions($tenantId, [
+                'case_id' => $caseFilter,
+                'statuses' => ['accepted', 'rejected', 'deferred'],
+                'history' => true,
+                'q' => $q,
+                'limit' => 60,
+            ]),
             'signals' => $this->suggestions->listSignals($tenantId, [
-                'case_id' => $caseId > 0 ? $caseId : null,
+                'case_id' => $caseFilter,
                 'q' => $q,
                 'limit' => 40,
             ]),
-            'pendingCount' => $this->suggestions->countPending($tenantId),
+            'pendingCount' => $this->suggestions->countPending($tenantId, $caseFilter),
+            'historyCount' => $this->suggestions->countDecided($tenantId, $caseFilter),
             'filterCaseId' => $caseId,
             'searchQuery' => $q,
             'canManage' => $this->canManage(),
@@ -1937,8 +1945,34 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/rapprochements'));
         }
-        $result = $this->engine->runForTenant($this->tenantId());
-        Session::flash('success', 'Passage moteur terminé — ' . ($result['summary'] ?? ''));
+        $tenantId = $this->tenantId();
+        $result = $this->engine->runForTenant($tenantId);
+        $mailNote = '';
+        if ($this->analystDigest !== null) {
+            try {
+                $runId = (string) ($result['run_id'] ?? ('manual-' . time()));
+                $mail = $this->analystDigest->sendForTenant(
+                    $tenantId,
+                    [],
+                    null,
+                    true,
+                    $tenantId . ':engine:' . $runId
+                );
+                $sent = (int) ($mail['sent'] ?? 0);
+                if ($sent > 0) {
+                    $mailNote = sprintf(' · %d e-mail(s) analyste envoyé(s)', $sent);
+                } elseif (!empty($mail['skipped_empty'])) {
+                    $mailNote = ' · aucun e-mail (rien à signaler)';
+                } elseif (!empty($mail['skipped_dedup'])) {
+                    $mailNote = ' · e-mail déjà envoyé pour ce passage';
+                } elseif (!empty($mail['skipped_no_recipient'])) {
+                    $mailNote = ' · aucun destinataire e-mail (droits / préférences)';
+                }
+            } catch (\Throwable) {
+                $mailNote = ' · e-mail non envoyé (erreur temporaire)';
+            }
+        }
+        Session::flash('success', 'Passage moteur terminé — ' . ($result['summary'] ?? '') . $mailNote);
 
         return Response::redirect(url('atak/sse/rapprochements'));
     }
@@ -3488,19 +3522,32 @@ final class SsePortalController
     public function meshSaveLayout(Request $request, array $params = []): Response
     {
         $id = (int) ($params['id'] ?? 0);
-        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
-            return Response::json(['ok' => false, 'message' => 'Action non autorisée.'], 403);
+        $payload = [];
+        $raw = file_get_contents('php://input');
+        if (is_string($raw) && trim($raw) !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $payload = $decoded;
+            }
+        }
+        $csrf = (string) ($payload['_csrf_token'] ?? $request->input('_csrf_token', ''));
+        if (!$this->canManage() || !Csrf::validate($csrf)) {
+            return Response::json(['ok' => false, 'message' => 'Action non autorisée. Rechargez la page puis réessayez.'], 403);
         }
         if ($this->meshes->findById($id, $this->tenantId()) === null) {
-            return Response::json(['ok' => false, 'message' => 'Toile introuvable.'], 404);
+            return Response::json(['ok' => false, 'message' => 'Investigation introuvable.'], 404);
         }
-        $positions = $request->input('positions', []);
+        $positions = $payload['positions'] ?? $request->input('positions', []);
         if (!is_array($positions)) {
-            $raw = (string) $request->input('positions_json', '');
-            $decoded = json_decode($raw, true);
-            $positions = is_array($decoded) ? $decoded : [];
+            $rawPos = (string) ($payload['positions_json'] ?? $request->input('positions_json', ''));
+            $decodedPos = json_decode($rawPos, true);
+            $positions = is_array($decodedPos) ? $decodedPos : [];
+        }
+        if ($positions === []) {
+            return Response::json(['ok' => false, 'message' => 'Aucune position reçue.'], 422);
         }
         $saved = 0;
+        $failed = 0;
         foreach ($positions as $row) {
             if (!is_array($row)) {
                 continue;
@@ -3509,12 +3556,35 @@ final class SsePortalController
             if ($nid < 1) {
                 continue;
             }
-            if ($this->meshes->updateNodePosition($nid, $this->tenantId(), (float) ($row['x'] ?? 0), (float) ($row['y'] ?? 0))) {
+            if ($this->meshes->updateNodePosition(
+                $nid,
+                $this->tenantId(),
+                (float) ($row['x'] ?? 0),
+                (float) ($row['y'] ?? 0),
+                $id
+            )) {
                 $saved++;
+            } else {
+                $failed++;
             }
         }
+        if ($saved < 1) {
+            return Response::json([
+                'ok' => false,
+                'message' => 'Aucune position n’a pu être enregistrée.',
+                'saved' => 0,
+                'failed' => $failed,
+            ], 422);
+        }
 
-        return Response::json(['ok' => true, 'saved' => $saved]);
+        return Response::json([
+            'ok' => true,
+            'saved' => $saved,
+            'failed' => $failed,
+            'message' => $saved === 1
+                ? 'Disposition enregistrée (1 entité).'
+                : sprintf('Disposition enregistrée (%d entités).', $saved),
+        ]);
     }
 
     public function operations(Request $request, array $params = []): Response

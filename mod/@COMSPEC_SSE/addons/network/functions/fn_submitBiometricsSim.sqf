@@ -9,6 +9,14 @@ params [
 private _payload = [_entity, _bioBundle] call comspec_sse_fnc_buildAthenaBiometricsPayload;
 private _uid = _payload getOrDefault ["sse_uid", "?"];
 
+// Id Athena mémorisé après SubmitSsePerson (requis par /persons/{id}/biometrics-sim).
+private _athenaId = _entity getVariable ["comspec_sse_athenaPersonId", ""];
+if (!(_athenaId isEqualType "")) then { _athenaId = str _athenaId; };
+if (_athenaId isNotEqualTo "" && {_athenaId isNotEqualTo "0"}) then {
+    _payload set ["athena_person_id", _athenaId];
+    _payload set ["person_id", _athenaId];
+};
+
 private _envelope = createHashMapFromArray [
     ["kind", "BIOMETRICS"],
     ["command", "SubmitSseBiometricsSim"],

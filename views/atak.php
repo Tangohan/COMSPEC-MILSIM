@@ -31,6 +31,7 @@ $hasGameConfig = $atakConfig && ($atakConfig['arma_server_host'] ?? $atakConfig[
 $atakPopoutRaw = isset($_GET['popout']) ? strtolower(trim((string) $_GET['popout'])) : '';
 $atakPopout = ($atakPopoutRaw === 'left' || $atakPopoutRaw === 'right') ? $atakPopoutRaw : '';
 $atakPopoutTab = isset($_GET['tab']) ? preg_replace('/[^a-z0-9_-]/i', '', (string) $_GET['tab']) : '';
+$atakDeviceEmbed = isset($_GET['embed']) && strtolower(trim((string) $_GET['embed'])) === 'device';
 $atakMapConfigForJs = null;
 if ($atakMapConfig) {
   $c = $atakMapConfig['config'] ?? [];
@@ -86,6 +87,7 @@ if ($atakMapConfig) {
     window.ATAK_CALLSIGN_TO_USER = <?= json_encode($atakCallsignToUser) ?>;
     window.ATAK_POPOUT = <?= json_encode($atakPopout !== '' ? $atakPopout : null) ?>;
     window.ATAK_POPOUT_TAB = <?= json_encode($atakPopoutTab !== '' ? $atakPopoutTab : null) ?>;
+    window.ATAK_DEVICE_EMBED = <?= $atakDeviceEmbed ? 'true' : 'false' ?>;
     window.ATAK_CAPS = <?= json_encode($atakCaps ?? [
         'loggedIn' => false,
         'canViewPersonnel' => false,
@@ -106,7 +108,7 @@ if ($atakMapConfig) {
     window.ATAK_PHONE_SESSION = <?= json_encode($phoneOperatorSession ?: null) ?>;
   </script>
 </head>
-<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
+<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
   <?php
   $baseUrl = $base;
   $haloLoaderHint = 'Préparation de la carte tactique…';
@@ -1264,7 +1266,7 @@ if ($atakMapConfig) {
         </div>
       </div>
       <div class="atak-tabs-content" id="tab-orders" role="tabpanel">
-        <p class="atak-panel-hint">Ordres tactiques émis depuis la carte ou reçus du théâtre. Confirmez la réception, suivez l’exécution ou annulez si besoin. Un léger délai radio peut s’appliquer côté destinataire.</p>
+        <p class="atak-panel-hint">Ordres C2 et FRAGO reçus du poste de commandement ou du théâtre. Sur téléphone, ouvrez une carte pour lire le détail, confirmer la réception, puis suivre l’exécution.</p>
         <div class="atak-orders-issue" id="atak-orders-issue" hidden>
           <div class="atak-orders-issue-grid">
             <label class="atak-orders-field atak-orders-field--wide">
@@ -2277,6 +2279,25 @@ if ($atakMapConfig) {
       }
       if (!window.ATAK_POPOUT) {
         ATAKMap.init(mapId);
+      }
+      if (window.ATAK_DEVICE_EMBED) {
+        window.addEventListener('message', function (ev) {
+          if (ev.origin !== window.location.origin) return;
+          if (!ev.data || ev.data.type !== 'connect-device-resize') return;
+          try {
+            if (window.ATAKMap && typeof window.ATAKMap.invalidateSize === 'function') {
+              window.ATAKMap.invalidateSize();
+            } else if (window.ATAKMap && window.ATAKMap.getMap) {
+              var m = window.ATAKMap.getMap();
+              if (m && m.invalidateSize) m.invalidateSize({ animate: false });
+            }
+          } catch (err) {}
+        });
+        setTimeout(function () {
+          try {
+            window.dispatchEvent(new Event('resize'));
+          } catch (err2) {}
+        }, 400);
       }
       if (mapSelect && window.ATAK_MAPS_CONFIGS) {
         mapSelect.addEventListener('change', function () {

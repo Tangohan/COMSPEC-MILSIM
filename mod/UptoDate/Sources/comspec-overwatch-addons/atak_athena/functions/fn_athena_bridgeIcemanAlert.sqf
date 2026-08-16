@@ -28,8 +28,8 @@ private _from = if (isNull _sender) then { "—" } else { name _sender };
 private _grid = if ((count _pos) >= 2) then { mapGridPosition _pos } else { "" };
 private _timeStr = if (_time isEqualTo "") then { [daytime, "HH:MM"] call BIS_fnc_timeToString } else { _time };
 private _summary = _msgBody;
-_summary = [_summary, "<br/>", " | "] call BIS_fnc_replaceString;
-_summary = [_summary, "<br>", " | "] call BIS_fnc_replaceString;
+_summary = _summary replaceString ["<br/>", " | "];
+_summary = _summary replaceString ["<br>", " | "];
 
 private _isLocalSender = !isNull _sender && { _sender isEqualTo player };
 

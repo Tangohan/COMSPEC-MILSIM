@@ -1,7 +1,7 @@
 /*
-    Prépare le cache des actions ACE SSE + menus self uniquement.
-    Les menus terrain sont installés par entité via installEntityAceMenus
-    (évite addActionToClass CAManBase → STACK_OVERFLOW).
+    Cache ACE SSE + menus self.
+    Racines personne/objet avec insertChildren dynamiques (bio / digital / Athena)
+    pour éviter toute duplication addActionToObject.
 */
 if (!hasInterface) exitWith {};
 
@@ -36,12 +36,35 @@ private _aceParams = [false, false, false, false, true];
 private _icon = "\a3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa";
 private _cond = { [_this select 0] call comspec_sse_fnc_canInspect };
 
+// Enfants personne : liste fixe + bio/digital/Athena lus dans le cache à l’ouverture.
+private _insertPerson = {
+    private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
+    if (!(_cache isEqualType createHashMap)) exitWith { [] };
+    private _out = +(_cache getOrDefault ["personChildren", []]);
+    private _bio = _cache getOrDefault ["bioRoot", []];
+    if (_bio isNotEqualTo []) then { _out pushBack _bio; };
+    private _dig = _cache getOrDefault ["digitalRoot", []];
+    if (_dig isNotEqualTo []) then { _out pushBack _dig; };
+    private _ath = missionNamespace getVariable ["COMSPEC_OW_SSE_OpenAthenaAction", []];
+    if (_ath isNotEqualTo []) then { _out pushBack _ath; };
+    _out
+};
+
+private _insertObject = {
+    private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
+    if (!(_cache isEqualType createHashMap)) exitWith { [] };
+    private _out = +(_cache getOrDefault ["objectChildren", []]);
+    private _dig = _cache getOrDefault ["digitalRoot", []];
+    if (_dig isNotEqualTo []) then { _out pushBack _dig; };
+    _out
+};
+
 private _rootPerson = [
-    "COMSPEC_SSE", "SSE", _icon, {}, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams
+    "COMSPEC_SSE", "SSE", _icon, {}, _cond, _insertPerson, [], {[0,0,0]}, 4, _aceParams
 ] call ace_interact_menu_fnc_createAction;
 
 private _rootObj = [
-    "COMSPEC_SSE_OBJ", "SSE", _icon, {}, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams
+    "COMSPEC_SSE_OBJ", "SSE", _icon, {}, _cond, _insertObject, [], {[0,0,0]}, 3, _aceParams
 ] call ace_interact_menu_fnc_createAction;
 
 private _personChildren = [
@@ -93,16 +116,17 @@ _cache set ["personChildren", _personChildren];
 _cache set ["objectChildren", _objectChildren];
 missionNamespace setVariable ["comspec_sse_aceMenuCache", _cache];
 
-// Self interaction (joueur uniquement — pas de class inheritance)
-// ACE exige ≥4 booléens dans params (index 9) — [] provoque « 0 éléments fournis, 4 attendus » dans fnc_render.
+// Self interaction (joueur uniquement)
 private _selfRoot = ["COMSPEC_SSE_SELF", "COMSPEC SSE", _icon, {}, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions"], _selfRoot] call ace_interact_menu_fnc_addActionToObject;
-[player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], (["COMSPEC_SSE_Journal", "Journal SSE", _icon, { [] call comspec_sse_fnc_openJournal }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction)] call ace_interact_menu_fnc_addActionToObject;
-[player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], (["COMSPEC_SSE_TechLog", "Journal technique (erreurs)", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { [] call comspec_sse_fnc_showLog }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction)] call ace_interact_menu_fnc_addActionToObject;
-[player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], (["COMSPEC_SSE_TerminalSelf", "Ouvrir terminal SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [objNull] call comspec_sse_fnc_uiOpenTerminal }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction)] call ace_interact_menu_fnc_addActionToObject;
-[player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], (["COMSPEC_SSE_EquipKit", "Équiper le kit SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa", { [] call comspec_sse_fnc_equipSseKit }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction)] call ace_interact_menu_fnc_addActionToObject;
+if !(player getVariable ["comspec_sse_aceSelfInstalled", false]) then {
+    player setVariable ["comspec_sse_aceSelfInstalled", true];
+    [player, 1, ["ACE_SelfActions"], _selfRoot] call ace_interact_menu_fnc_addActionToObject;
+    [player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], (["COMSPEC_SSE_Journal", "Journal SSE", _icon, { [] call comspec_sse_fnc_openJournal }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction)] call ace_interact_menu_fnc_addActionToObject;
+    [player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], (["COMSPEC_SSE_TechLog", "Journal technique (erreurs)", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { [] call comspec_sse_fnc_showLog }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction)] call ace_interact_menu_fnc_addActionToObject;
+    [player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], (["COMSPEC_SSE_TerminalSelf", "Ouvrir terminal SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [objNull] call comspec_sse_fnc_uiOpenTerminal }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction)] call ace_interact_menu_fnc_addActionToObject;
+    [player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], (["COMSPEC_SSE_EquipKit", "Équiper le kit SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa", { [] call comspec_sse_fnc_equipSseKit }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction)] call ace_interact_menu_fnc_addActionToObject;
+};
 
-// EH : toute entité SSE activée reçoit ses menus (différé)
 if (!isNil "CBA_fnc_addEventHandler") then {
     ["comspec_sse_entityEnabled", {
         params ["_ent"];
@@ -116,5 +140,5 @@ if (!isNil "CBA_fnc_addEventHandler") then {
 };
 
 [_t0, "fn_initACE", 0.05] call comspec_debug_fnc_perfWarn;
-["INFO", "SSE", "INIT", "initACE cache prêt (menus per-entité)"] call comspec_debug_fnc_log;
+["INFO", "SSE", "INIT", "initACE cache prêt (insertChildren, anti-doublon)"] call comspec_debug_fnc_log;
 ["comspec_sse_fnc_initACE"] call comspec_debug_fnc_exit;

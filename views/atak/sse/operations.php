@@ -28,6 +28,35 @@ $levelLabel = static function (string $level): string {
     };
 };
 
+$levelBadgeClass = static function (string $level): string {
+    return match (strtolower(trim($level))) {
+        'critique' => 'badge badge--red',
+        'elevee', 'élevée' => 'badge badge--amber',
+        'faible' => 'badge badge--gray',
+        default => 'badge',
+    };
+};
+
+$kindLabel = static function (string $kind): string {
+    return match (strtolower(trim($kind))) {
+        'identity' => 'Identité',
+        'pressee' => 'Intérêt',
+        'case' => 'Dossier',
+        'site' => 'Site',
+        'digital' => 'Numérique',
+        default => 'Activité',
+    };
+};
+
+$objectTypeBadgeClass = static function (string $type): string {
+    return match (mb_strtolower(trim($type), 'UTF-8')) {
+        'identité', 'identite' => 'badge',
+        'site' => 'badge badge--amber',
+        'support numérique', 'support numerique' => 'badge badge--gray',
+        default => 'badge',
+    };
+};
+
 $kpis = [
     ['key' => 'active_cases', 'label' => 'Dossiers actifs', 'hint' => 'Exploitation en cours', 'tone' => 'ok'],
     ['key' => 'pressee_pending', 'label' => 'Dossiers d’intérêt', 'hint' => 'À instruire', 'tone' => 'warn'],
@@ -51,9 +80,10 @@ $kpis = [
             <span class="iw-tower-clock__label">Heure Zulu</span>
             <strong class="iw-tower-clock__time" id="iw-zulu-clock"><?= $h((string) ($clock['zulu'] ?? gmdate('H:i:s') . 'Z')) ?></strong>
             <em class="iw-tower-clock__date" id="iw-zulu-date"><?= $h((string) ($clock['zulu_date'] ?? gmdate('d/m/Y'))) ?></em>
-            <span class="iw-tower-clock__meta">
-                ATH-SSE-TOWER · Fraîcheur <?= $h((string) ($quality['freshness'] ?? '—')) ?>
-                · Généré <?= $h((string) ($clock['generated_at'] ?? '')) ?>
+            <span class="iw-tower-clock__meta iw-tower-clock__tags">
+                <span class="badge badge--gray">Tour opérationnelle</span>
+                <span class="badge">Fraîcheur <?= $h((string) ($quality['freshness'] ?? '—')) ?></span>
+                <span class="badge badge--amber">Généré <?= $h((string) ($clock['generated_at'] ?? '')) ?></span>
             </span>
         </aside>
     </header>
@@ -145,10 +175,12 @@ $kpis = [
                 <?php else: ?>
                     <ul class="iw-feed">
                         <?php foreach ($activity as $row): ?>
-                            <li class="iw-feed__item is-<?= $h((string) ($row['kind'] ?? 'case')) ?>">
+                            <?php $kind = (string) ($row['kind'] ?? 'case'); ?>
+                            <li class="iw-feed__item is-<?= $h($kind) ?>">
                                 <time datetime="<?= $h((string) ($row['at_full'] ?? $row['at'] ?? '')) ?>" title="<?= $h((string) ($row['at_full'] ?? '')) ?>">
                                     <?= $h((string) ($row['at'] ?? '')) ?>
                                 </time>
+                                <span class="badge <?= $kind === 'pressee' ? 'badge--amber' : ($kind === 'identity' ? '' : 'badge--gray') ?>"><?= $h($kindLabel($kind)) ?></span>
                                 <?php if (!empty($row['href'])): ?>
                                     <a href="<?= $h((string) $row['href']) ?>"><?= $h((string) ($row['text'] ?? '')) ?></a>
                                 <?php else: ?>
@@ -171,7 +203,7 @@ $kpis = [
                     <?php $lvl = (string) ($a['level'] ?? 'moderee'); ?>
                     <article class="iw-alert is-<?= $h($lvl) ?> <?= $lvl === 'critique' || $lvl === 'elevee' ? 'iw-alert--pulse' : '' ?>">
                         <header>
-                            <span class="iw-alert__badge"><?= $h($levelLabel($lvl)) ?></span>
+                            <span class="<?= $h($levelBadgeClass($lvl)) ?>"><?= $h($levelLabel($lvl)) ?></span>
                             <strong><?= $h((string) ($a['title'] ?? '')) ?></strong>
                         </header>
                         <p><?= $h((string) ($a['detail'] ?? '')) ?></p>
@@ -201,7 +233,7 @@ $kpis = [
                         ?>
                         <a class="iw-queue__row is-<?= $h($tone) ?>" href="<?= $h((string) ($q['href'] ?? '#')) ?>">
                             <span><?= $h((string) ($q['label'] ?? '')) ?></span>
-                            <b data-count="<?= $count ?>">0</b>
+                            <span class="badge <?= $tone === 'warn' ? 'badge--amber' : ($tone === 'danger' ? 'badge--red' : '') ?>" data-count="<?= $count ?>">0</span>
                             <i class="iw-queue__meter" aria-hidden="true"><i style="--w:<?= $pct ?>%" data-bar></i></i>
                         </a>
                     <?php endforeach; ?>
@@ -225,8 +257,9 @@ $kpis = [
                     </thead>
                     <tbody>
                     <?php foreach ($recent as $o): ?>
+                        <?php $objType = (string) ($o['type'] ?? ''); ?>
                         <tr>
-                            <td><?= $h((string) ($o['type'] ?? '')) ?></td>
+                            <td><span class="<?= $h($objectTypeBadgeClass($objType)) ?>"><?= $h($objType) ?></span></td>
                             <td class="record-id"><?= $h((string) ($o['ref'] ?? '')) ?></td>
                             <td><?= $h((string) ($o['label'] ?? '')) ?></td>
                             <td class="iw-zulu-cell"><?= $h((string) ($o['at'] ?? '—')) ?></td>

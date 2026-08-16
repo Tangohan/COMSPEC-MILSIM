@@ -29,7 +29,7 @@ private _theme = _cluster getOrDefault ["theme", "fuel_delivery"];
 private _pack = [_theme, _seed, _cluster, _pools] call comspec_sse_fnc_getThemePack;
 
 private _owner = _cluster getOrDefault ["primaryName", "UNKNOWN"];
-private _defaultPhone = format ["+964 750 %1", [_seed, "ph"] call comspec_sse_fnc_hash];
+private _defaultPhone = format ["+964 750 %1", [_seed, "ph", 7] call comspec_sse_fnc_idToken];
 private _phone = _cluster getOrDefault ["primaryPhone", _defaultPhone];
 private _contacts = _cluster getOrDefault ["networkContacts", ["ABU YASSIN", "FARID", "MUSTAFA"]];
 private _sms = _cluster getOrDefault ["sharedSms", []];
@@ -45,8 +45,8 @@ if (count _sms == 0) then {
     } forEach (_pool select [0, _nSms min (count _pool)]);
 };
 
-private _imei = format ["35%1%2", [_seed, "imei1"] call comspec_sse_fnc_hash, [_seed, "imei2"] call comspec_sse_fnc_hash];
-private _sim = format ["89964%1", [_seed, "sim"] call comspec_sse_fnc_hash];
+private _imei = format ["35%1%2", [_seed, "imei1", 7] call comspec_sse_fnc_idToken, [_seed, "imei2", 7] call comspec_sse_fnc_idToken];
+private _sim = format ["89964%1", [_seed, "sim", 10] call comspec_sse_fnc_idToken];
 private _model = [_seed, "model", _pools get "phoneModels"] call comspec_sse_fnc_pickFromSeed;
 
 private _locs = [];
@@ -109,7 +109,7 @@ if ((([_seed, "del"] call comspec_sse_fnc_hash) mod 100) < 40) then {
     ]);
 };
 
-private _uid = format ["SSE-DIG-%1", [_seed, "dig"] call comspec_sse_fnc_hash];
+private _uid = format ["SSE-DIG-%1", [_seed, "dig", 9] call comspec_sse_fnc_idToken];
 private _applications = _pools getOrDefault ["applications", []];
 
 createHashMapFromArray [

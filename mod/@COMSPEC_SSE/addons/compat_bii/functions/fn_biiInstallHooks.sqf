@@ -75,9 +75,21 @@ missionNamespace setVariable ["comspec_sse_fnc_biiPollOnce", {
     };
 }];
 
+// Couche COMSPEC dans le dialogue BII (ré-injectée si l’UI BII est reconstruite)
+missionNamespace setVariable ["comspec_sse_fnc_biiLayerWatch", {
+    if !(missionNamespace getVariable ["comspec_sse_biiBridgeEnabled", true]) exitWith {};
+    private _disp = uiNamespace getVariable ["BII_Identifi_Dialog", displayNull];
+    if (isNull _disp) exitWith {};
+    if (isNull (_disp displayCtrl 861091) && {!isNil "comspec_sse_fnc_biiInjectLayer"}) then {
+        _disp setVariable ["comspec_sse_biiLayerReady", false];
+        [] call comspec_sse_fnc_biiInjectLayer;
+    };
+}];
+
 missionNamespace setVariable ["comspec_sse_fnc_biiPollTick", {
     if !(missionNamespace getVariable ["comspec_sse_biiBridgeEnabled", true]) exitWith {};
     call (missionNamespace getVariable ["comspec_sse_fnc_biiPollOnce", {}]);
+    call (missionNamespace getVariable ["comspec_sse_fnc_biiLayerWatch", {}]);
     [
         { [] call (missionNamespace getVariable ["comspec_sse_fnc_biiPollTick", {}]); },
         [],
@@ -86,5 +98,5 @@ missionNamespace setVariable ["comspec_sse_fnc_biiPollTick", {
 }];
 
 [] call (missionNamespace getVariable ["comspec_sse_fnc_biiPollTick", {}]);
-["Passerelle BII: poll actif (pas d'override compileFinal)."] call comspec_sse_fnc_log;
+["Passerelle BII: poll actif + couche UI (pas d'override compileFinal)."] call comspec_sse_fnc_log;
 true

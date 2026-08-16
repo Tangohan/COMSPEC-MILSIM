@@ -22,6 +22,7 @@ class CfgFunctions {
             class getLog {};
             class showLog {};
             class hash {};
+            class idToken {};
             class generateUID {};
             class createDataModel {};
             class getData {};

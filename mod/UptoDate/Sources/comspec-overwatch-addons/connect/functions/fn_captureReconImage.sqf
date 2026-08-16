@@ -8,7 +8,8 @@ params [
     ["_path", ""],
     ["_caption", ""],
     ["_deviceType", "CTAB"],
-    ["_feedId", ""]
+    ["_feedId", ""],
+    ["_skipArmaShot", false]
 ];
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 
@@ -110,10 +111,36 @@ private _isQueuedOk = {
     params ["_text"];
     if (!(_text isEqualType "")) then { _text = str _text; };
     _text = trim _text;
+    // callExtension (Arma 2.18+) peut renvoyer un tableau puis un texte avec guillemets.
+    private _n = count _text;
+    if (_n >= 2) then {
+        private _a = _text select [0, 1];
+        private _b = _text select [_n - 1, 1];
+        private _dq = toString [34];
+        if ((_a isEqualTo _dq && {_b isEqualTo _dq}) || {_a isEqualTo "'" && {_b isEqualTo "'"}}) then {
+            _text = trim (_text select [1, _n - 2]);
+        };
+    };
     if (_text isEqualTo "") exitWith { false };
     private _u = toUpper _text;
     // Uniquement une vraie mise en file — pas OK|duplicate.
     ((_u find "OK|QUEUED") == 0) || {_u isEqualTo "OK"}
+};
+
+private _fnc_stripExtQuotes = {
+    params ["_text"];
+    if (!(_text isEqualType "")) then { _text = format ["%1", _text]; };
+    _text = trim _text;
+    private _n = count _text;
+    if (_n >= 2) then {
+        private _a = _text select [0, 1];
+        private _b = _text select [_n - 1, 1];
+        private _dq = toString [34];
+        if ((_a isEqualTo _dq && {_b isEqualTo _dq}) || {_a isEqualTo "'" && {_b isEqualTo "'"}}) then {
+            _text = trim (_text select [1, _n - 2]);
+        };
+    };
+    _text
 };
 
 private _fnc_notifyPath = {
@@ -148,23 +175,51 @@ private _fnc_notifyPath = {
     if (_ok) then {
         ["NotifyNewPhoto", "ok", [_uploadPath] call _fnc_basename, nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
     } else {
-        private _u = toUpper (str _raw);
+        private _txt = [_raw] call _fnc_stripExtQuotes;
+        private _u = toUpper _txt;
         if ((_u find "OK|DUPLICATE") == 0) then {
             ["NotifyNewPhoto", "ok", "duplicate (ignoré)", nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
         } else {
-            ["NotifyNewPhoto", "fail", str _raw, _raw, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+            ["NotifyNewPhoto", "fail", _txt, _raw, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
         };
     };
     _ok
 };
 
-// Chemin fourni : un seul signal. Resolve / jpg↔png / watcher = DLL.
+private _fnc_armaPngCapture = {
+    // screenshot Arma EXIGE .png — sinon échec silencieux (wiki BI).
+    private _stem = format ["COMSPEC_%1_%2", floor diag_tickTime, floor random 99999];
+    private _png = _stem + ".png";
+    screenshot _png;
+    missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
+    _png
+};
+
+// Chemin fourni (IceMan / BCE / Photo Library) : souvent un .jpg « annoncé » dont le
+// dossier n’existe plus (srcdir_missing). On capture TOUJOURS un .png Arma en parallèle
+// et on notifie ce fichier — sinon la DLL cherche un fantôme et échoue.
 if (_path isNotEqualTo "") exitWith {
-    private _ok = [_path] call _fnc_notifyPath;
+    private _png = _path;
+    if (!_skipArmaShot) then {
+        _png = [] call _fnc_armaPngCapture;
+    };
+    private _ok = [_png] call _fnc_notifyPath;
+    if (!_ok && {_path isNotEqualTo _png}) then {
+        // Repli : chemin annoncé (si la DLL le retrouve ailleurs).
+        _ok = [_path] call _fnc_notifyPath;
+    };
+    if (!_ok && {!_skipArmaShot}) then {
+        [_png, _caption, _device, _feedId] spawn {
+            params ["_png", "_caption", "_device", "_feedId"];
+            uiSleep 2.5;
+            // skipArmaShot=true : re-notif seulement (le .png a eu le temps d’être écrit).
+            [_png, _caption, _device, _feedId, true] call comspec_overwatch_connect_fnc_captureReconImage;
+        };
+    };
     if (_ok) then {
         ["COMSPEC_Info", ["Image de recon mise en file"]] call comspec_overwatch_connect_fnc_showNotification;
     } else {
-        private _detail = toLower (str (missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]));
+        private _detail = toLower ([missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]] call _fnc_stripExtQuotes);
         private _msg = "Échec d’envoi de la photo vers Athena";
         if ((_detail find "not_connected") >= 0 || {(_detail find "unauthorized") >= 0}) then {
             _msg = "Liaison Athena dégradée — reconnectez-vous puis réessayez";
@@ -173,7 +228,7 @@ if (_path isNotEqualTo "") exitWith {
             _msg = "File d’attente photo saturée — réessayez dans un instant";
         };
         if ((_detail find "file_not_found") >= 0) then {
-            _msg = "Fichier photo introuvable sur le disque — capturez à nouveau (app Photos ATAK / BCE)";
+            _msg = "Capture non écrite sur le disque — vérifiez la qualité d’affichage (HDR ≥ Moyen) puis reprenez une photo";
             missionNamespace setVariable ["COMSPEC_FeedSnapFailUntil", diag_tickTime + 300, false];
         };
         if ((_detail find "ok|duplicate") < 0) then {
@@ -215,23 +270,28 @@ if (_path isEqualTo "") exitWith {
         };
     };
 
-    if (_resolved isNotEqualTo "") exitWith {
-        missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _resolved, false];
-        [_resolved] call _fnc_notifyPath
+    // BCE ou pas : toujours un .png Arma (chemin BCE souvent mort / srcdir_missing).
+    private _png = if (_skipArmaShot) then {
+        private _last = missionNamespace getVariable ["COMSPEC_LastScreenshotPath", ""];
+        if (_last isEqualType "" && {_last isNotEqualTo ""}) then { _last } else { _stem + ".png" }
+    } else {
+        private _p = _stem + ".png";
+        screenshot _p;
+        missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _p, false];
+        _p
     };
-
-    // Repli moteur Arma — stem unique (l’ancien COMSPEC_AthenaFeed fixe spammait le dédup).
-    screenshot _stem;
-    [_stem, _caption, _device, _feedId] spawn {
-        params ["_stem", "_caption", "_device", "_feedId"];
-        uiSleep 2.2;
-        private _ok = [_stem, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
-        if (!_ok) then {
-            uiSleep 0.8;
-            [_stem + ".png", _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
+    private _ok = [_png] call _fnc_notifyPath;
+    if (!_ok && {_resolved isNotEqualTo ""}) then {
+        _ok = [_resolved] call _fnc_notifyPath;
+    };
+    if (!_ok && {!_skipArmaShot}) then {
+        [_png, _caption, _device, _feedId] spawn {
+            params ["_png", "_caption", "_device", "_feedId"];
+            uiSleep 2.4;
+            [_png, _caption, _device, _feedId, true] call comspec_overwatch_connect_fnc_captureReconImage;
         };
     };
-    true
+    _ok
 };
 
 false

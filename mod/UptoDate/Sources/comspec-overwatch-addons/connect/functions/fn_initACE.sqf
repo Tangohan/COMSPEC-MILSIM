@@ -237,8 +237,12 @@ private _callsignAction = [
 [_callsignAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _ordersAction = [
-    "COMSPEC_OrderInbox", "Ordres reçus", "", {
-        [] call comspec_overwatch_connect_fnc_orderInboxShow;
+    "COMSPEC_OrderInbox", "Ordres C2 (TASK)", "", {
+        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openTask") then {
+            [] call comspec_overwatch_atak_athena_fnc_athena_openTask;
+        } else {
+            [] call comspec_overwatch_connect_fnc_orderInboxShow;
+        };
     }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_ordersAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;

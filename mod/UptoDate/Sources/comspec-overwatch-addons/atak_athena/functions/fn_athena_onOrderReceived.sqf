@@ -60,8 +60,8 @@ if (
     private _time = if (!isNil "cTab_fnc_currentTime") then { call cTab_fnc_currentTime } else { _timeStr };
     private _pos = getPos player;
     private _grid = mapGridPosition _pos;
-    private _safePayload = [_payload, "<", "&lt;"] call BIS_fnc_replaceString;
-    _safePayload = [_safePayload, ">", "&gt;"] call BIS_fnc_replaceString;
+    private _safePayload = _payload replaceString ["<", "&lt;"];
+    _safePayload = _safePayload replaceString [">", "&gt;"];
     private _body = format [
         "<t color='#ffd36a'>ORDRE ATHENA</t><br/>From: %1<br/>Grid: %2<br/>Time: %3<br/>Type: %4<br/>Priority: %5<br/><br/>%6<br/><br/>ATHENA_ORDER_ID=%7",
         _issuer,
@@ -77,7 +77,15 @@ if (
     missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", false, false];
 };
 
+// Miroir chat de groupe IceMan — backfill + nouvel ordre.
+[] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
+
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
 if (!isNull _group && {ctrlShown _group}) then {
     [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
+};
+
+private _taskGroup = uiNamespace getVariable ["COMSPEC_ATAK_Task_group", controlNull];
+if (!isNull _taskGroup && {ctrlShown _taskGroup}) then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updateTask;
 };

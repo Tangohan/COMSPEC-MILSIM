@@ -617,12 +617,34 @@ final class SseMeshRepository
         );
     }
 
-    public function updateNodePosition(int $nodeId, int $tenantId, float $x, float $y): bool
+    public function updateNodePosition(int $nodeId, int $tenantId, float $x, float $y, ?int $meshId = null): bool
     {
-        return $this->db->execute(
-            'UPDATE sse_mesh_nodes SET pos_x = :x, pos_y = :y WHERE id = :id AND tenant_id = :t',
-            ['x' => $x, 'y' => $y, 'id' => $nodeId, 't' => $tenantId]
-        ) > 0;
+        $params = [
+            'x' => $x,
+            'y' => $y,
+            'id' => $nodeId,
+            't' => $tenantId,
+        ];
+        $sql = 'UPDATE sse_mesh_nodes SET pos_x = :x, pos_y = :y WHERE id = :id AND tenant_id = :t';
+        if ($meshId !== null && $meshId > 0) {
+            $sql .= ' AND mesh_id = :m';
+            $params['m'] = $meshId;
+        }
+        try {
+            $this->db->execute($sql, $params);
+            // rowCount peut être 0 si les coords sont déjà identiques : vérifier l’existence.
+            $checkSql = 'SELECT id FROM sse_mesh_nodes WHERE id = :id AND tenant_id = :t';
+            $checkParams = ['id' => $nodeId, 't' => $tenantId];
+            if ($meshId !== null && $meshId > 0) {
+                $checkSql .= ' AND mesh_id = :m';
+                $checkParams['m'] = $meshId;
+            }
+            $checkSql .= ' LIMIT 1';
+
+            return $this->db->fetchOne($checkSql, $checkParams) !== null;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function updateNode(int $nodeId, int $tenantId, array $data): bool
@@ -805,6 +827,9 @@ final class SseMeshRepository
             $nodes[$i]['image_url'] = function_exists('user_media_public_url')
                 ? user_media_public_url($path)
                 : null;
+            if (!empty($nodes[$i]['image_url']) && function_exists('normalize_public_uploads_url')) {
+                $nodes[$i]['image_url'] = normalize_public_uploads_url((string) $nodes[$i]['image_url']);
+            }
         }
 
         return $nodes;
@@ -818,11 +843,7 @@ final class SseMeshRepository
     {
         $kind = self::normalizeKind((string) ($row['kind'] ?? 'custom'));
         $meta = self::decodeMetaJson($row['meta_json'] ?? null);
-        $imagePath = trim((string) ($meta['image_path'] ?? ''));
-        $imageUrl = null;
-        if ($imagePath !== '' && function_exists('user_media_public_url')) {
-            $imageUrl = user_media_public_url($imagePath);
-        }
+        $resolved = self::resolveNodeImage($meta);
 
         return [
             'id' => (int) ($row['id'] ?? 0),
@@ -833,14 +854,50 @@ final class SseMeshRepository
             'detail' => $row['detail'] ?? null,
             'meta' => $meta,
             'meta_lines' => self::formatMetaLines($kind, $meta),
-            'image_path' => $imagePath !== '' ? $imagePath : null,
-            'image_url' => $imageUrl,
+            'image_path' => $resolved['path'],
+            'image_url' => $resolved['url'],
             'ref_type' => $row['ref_type'] ?? null,
             'ref_id' => isset($row['ref_id']) ? (int) $row['ref_id'] : null,
             'pos_x' => (float) ($row['pos_x'] ?? 0),
             'pos_y' => (float) ($row['pos_y'] ?? 0),
             'created_at' => $row['created_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $meta
+     * @return array{path:?string, url:?string}
+     */
+    public static function resolveNodeImage(array $meta): array
+    {
+        $path = trim((string) ($meta['image_path'] ?? ''));
+        $rawUrl = trim((string) ($meta['image_url'] ?? ''));
+        if ($path === '' && $rawUrl !== '') {
+            if (preg_match('#^https?://#i', $rawUrl) === 1 || str_starts_with($rawUrl, '/')) {
+                $url = function_exists('normalize_public_uploads_url')
+                    ? normalize_public_uploads_url($rawUrl)
+                    : $rawUrl;
+
+                return ['path' => null, 'url' => $url];
+            }
+            $path = $rawUrl;
+        }
+        if ($path === '') {
+            return ['path' => null, 'url' => null];
+        }
+        $path = str_replace('\\', '/', $path);
+        if (preg_match('#(?:^|/)(uploads/.+)$#i', $path, $m)) {
+            $path = $m[1];
+        }
+        $url = function_exists('user_media_public_url') ? user_media_public_url($path) : null;
+        if ($url !== null && function_exists('normalize_public_uploads_url')) {
+            $url = normalize_public_uploads_url($url);
+        }
+
+        return [
+            'path' => $path !== '' ? $path : null,
+            'url' => $url,
         ];
     }
 

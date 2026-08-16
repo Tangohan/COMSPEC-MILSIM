@@ -239,55 +239,30 @@ final class AtakPhoneConnectController
 
 
     /**
-
-     * Ouvre la vraie carte ATAK : session téléphone (communauté + jeton) puis redirection /atak.
-
-     * Si un membre est déjà connecté, on conserve sa session portail.
-
+     * Ouvre la carte ATAK dans la coque téléphone Android (bezel cTab / IceMan).
+     * Session téléphone (communauté + jeton) si aucun membre portail n’est connecté.
      */
-
     public function openCarte(Request $request, array $params = []): Response
-
     {
-
         $token = trim((string) ($params['token'] ?? ''));
-
         $pairing = $this->pairingRepository->findValidByToken($token);
-
         if ($pairing === null) {
-
             return $this->expiredView();
-
         }
-
         $this->pairingRepository->markPaired($token);
 
-
-
         $tenantId = (int) ($pairing['tenant_id'] ?? 0);
-
         if ($tenantId < 1) {
-
             Session::flash('error', 'Communauté introuvable pour cette liaison. Demandez un nouveau code.');
 
-
-
             return Response::redirect(url('connect'));
-
         }
 
-
-
         $memberUserId = (int) Session::get('user_id');
-
         if ($memberUserId < 1) {
-
             Session::set('tenant_id', $tenantId);
-
             Session::set('atak_phone_pairing_token', $token);
-
             Session::set('atak_phone_operator_label', 'Opérateur téléphone');
-
         }
 
         try {
@@ -299,8 +274,16 @@ final class AtakPhoneConnectController
             // Best-effort : ne bloque pas l’ouverture de la carte.
         }
 
-        return Response::redirect(url('atak'));
+        $tenantName = $this->tenantDisplayName($tenantId);
+        $atakEmbedUrl = url('atak') . '?embed=device';
 
+        return Response::view('atak.connect_device', [
+            'title' => 'ATAK — ' . $tenantName,
+            'atakTenantName' => $tenantName,
+            'atakEmbedUrl' => $atakEmbedUrl,
+            'slidesUrl' => url('connect/' . $token . '/slides'),
+            'chooseUrl' => url('connect/' . $token),
+        ]);
     }
 
 

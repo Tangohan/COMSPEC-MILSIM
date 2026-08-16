@@ -190,6 +190,7 @@ $kindColors = [
                             <p class="muted" id="sse-mesh-sel-detail"></p>
                             <div class="sse-mesh-sel-image" id="sse-mesh-sel-image" hidden>
                                 <img id="sse-mesh-sel-image-img" alt="Image jointe à l’objet">
+                                <p class="muted sse-mesh-sel-image-fallback" id="sse-mesh-sel-image-fallback" hidden></p>
                             </div>
                             <p class="sse-mesh-sel-links" id="sse-mesh-sel-links"></p>
                             <ul class="sse-mesh-sel-edge-list" id="sse-mesh-sel-edge-list"></ul>
@@ -406,6 +407,8 @@ window.SSE_MESH = {
   meshId: <?= (int) $meshId ?>,
   canManage: <?= $canManage ? 'true' : 'false' ?>,
   csrf: <?= $j($csrf) ?>,
+  mediaBase: <?= $j(rtrim(url(''), '/')) ?>,
+  basePath: <?= $j(rtrim((string) (env('APP_BASE_PATH', '') ?: '/public'), '/') ?: '/public') ?>,
   layoutUrl: <?= $j(url('atak/sse/toiles/' . $meshId . '/disposition')) ?>,
   deleteNodeUrlTpl: <?= $j(url('atak/sse/toiles/' . $meshId . '/entites/__ID__/supprimer')) ?>,
   nodes: <?= $j($nodes) ?>,
@@ -413,7 +416,7 @@ window.SSE_MESH = {
   kindLabels: <?= $j($kindLabels) ?>
 };
 </script>
-<script src="<?= $h(asset_url('assets/js/sse-mesh.js')) ?>?v=202608162250"></script>
+<script src="<?= $h(asset_url('assets/js/sse-mesh.js')) ?>?v=202608162330"></script>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

@@ -45,6 +45,8 @@ public static class Extension
     private static long _rateLimitUntilTicks;
     private static int _rateLimitBackoffSec = 2;
     private static long _lastRateLimitCbTicks;
+    private static long _lastAuth401ReauthTicks;
+
     /// <summary>
     /// Dernier échec d'envoi fire-and-forget (position, tchat, marqueurs...) : ces requêtes ne
     /// remontent jamais d'erreur à SQF (retry silencieux via PendingPosts), donc sans ce
@@ -402,6 +404,33 @@ public static class Extension
         url.Contains("/api/atak/position", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
+    /// Routes ATAK authentifiées où un 401 transitoire (clé / session) justifie un re-client-init.
+    /// </summary>
+    private static bool IsAuthSensitiveEndpoint(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return false;
+        return url.Contains("/api/atak/position", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/marker", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/markers", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/client-init", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void MaybeReauthAfter401(string url)
+    {
+        if (_apiKey.Length == 0 || string.IsNullOrEmpty(_baseUrl)) return;
+        if (!IsAuthSensitiveEndpoint(url)) return;
+        var now = DateTime.UtcNow.Ticks;
+        if (now - System.Threading.Interlocked.Read(ref _lastAuth401ReauthTicks) <= TimeSpan.FromSeconds(30).Ticks)
+            return;
+        System.Threading.Interlocked.Exchange(ref _lastAuth401ReauthTicks, now);
+        _ = Task.Run(() =>
+        {
+            try { VerifyClientInitSync(); } catch { /* ignore */ }
+        });
+    }
+
+    /// <summary>
     /// Retry après échec / backoff. Positions = slot unique (dernière gagne) ;
     /// autres posts = FIFO bornée.
     /// </summary>
@@ -491,6 +520,10 @@ public static class Extension
         }
         var code = (int)response.StatusCode;
         NotePostError(code, url);
+        // 401 : clé / session temporairement incohérente — retenter client-init
+        // (position, marqueur, recon… ; le chat synchrone peut encore passer).
+        if (code == 401)
+            MaybeReauthAfter401(url);
         if (ShouldRetryStatusCode(code))
             EnqueueForRetry(url, jsonBody);
     }
@@ -2330,13 +2363,31 @@ public static class Extension
                 if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
                 return PostSsePersonSync(json, token);
             }
-            if (function == "SubmitSseBiometricsSim" && args.Length >= 2)
+            // 2 args (Overwatch) : personId + json | 1 arg (COMSPEC_SSE) : json avec person_id / id
+            if (function == "SubmitSseBiometricsSim" && args.Length >= 1)
             {
-                var personId = (args[0] ?? "").Trim();
-                var json = args[1] ?? "{}";
+                string personId;
+                string json;
+                if (args.Length >= 2)
+                {
+                    personId = (args[0] ?? "").Trim();
+                    json = args[1] ?? "{}";
+                }
+                else
+                {
+                    json = args[0] ?? "{}";
+                    personId = TryExtractSsePersonId(json);
+                }
                 if (string.IsNullOrWhiteSpace(personId)) return FormatAtakExtArray("ERROR", "person_id empty");
                 if (string.IsNullOrWhiteSpace(json)) json = "{}";
                 return PostAtakJsonSync("/api/sse/persons/" + Uri.EscapeDataString(personId) + "/biometrics-sim", json, token);
+            }
+            // Canal générique SSE (numérique / lab / record) — évite le fallback sendIntel texte.
+            if (function == "SendSSE" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostSseGenericSync(json, token);
             }
             if (function == "CreatePOI" && args.Length >= 1)
             {
@@ -3880,9 +3931,28 @@ public static class Extension
             : (_lastPhotoAuthor.Length > 0 ? _lastPhotoAuthor : (_callSign.Length > 0 ? _callSign : "Unknown"));
 
         var trimmedPath = rawPath.Trim().Trim('"').Trim('\'');
+        // Nom seul (avec ou sans extension) : autoriser le repli « newest since enqueue »
+        // — Photo Library / BCE annoncent souvent « foo.jpg » sans jamais écrire le fichier
+        // au chemin annoncé ; le screenshot Arma ou le watcher peut arriver juste après.
+        var normalized = trimmedPath.Replace('/', '\\');
+        var isNameOnly = normalized.Length > 0
+            && !normalized.Contains('\\');
+        var parentMissing = false;
+        try
+        {
+            if (normalized.Length > 0
+                && Path.IsPathRooted(normalized)
+                && !(normalized.StartsWith('\\') && !normalized.StartsWith("\\\\", StringComparison.Ordinal)))
+            {
+                var parent = Path.GetDirectoryName(normalized);
+                parentMissing = !string.IsNullOrWhiteSpace(parent) && !Directory.Exists(parent);
+            }
+        }
+        catch { /* ignore */ }
+
         var newestFallback = string.IsNullOrWhiteSpace(trimmedPath)
-            || (!trimmedPath.Contains('\\') && !trimmedPath.Contains('/')
-                && !Path.HasExtension(trimmedPath));
+            || isNameOnly
+            || parentMissing;
 
         var dedupKey = NormalizePhotoDedupKey(trimmedPath.Length > 0 ? trimmedPath : ("newest|" + author));
         if (!TryClaimPhotoDedup(dedupKey))
@@ -4001,16 +4071,15 @@ public static class Extension
         string? identityKey = null;
 
         // Attente non bloquante du flush disque (BCE / Arma_ScreenShot) — max ~6 s.
-        // Abandon rapide si le dossier parent Windows est mort (Photo Library obsolète).
+        // Chemins Photo Library morts (srcdir_missing) : chercher par nom + captures
+        // écrites depuis l’enqueue (screenshot Arma / watcher), sans abandon immédiat.
         for (var attempt = 0; attempt < 15; attempt++)
         {
-            // Dès le 1er essai pour un stem sans chemin : accepter une capture
-            // écrite juste après l’enqueue (screenshot Arma asynchrone).
             var fb = newestFallback;
             if (job.NewestFallback && attempt >= 0)
                 fb = TimeSpan.FromSeconds(Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30));
             resolved = ResolveLocalImagePath(job.RawPath, attempt >= 2 ? fb : newestFallback);
-            if (resolved == null && job.NewestFallback && attempt >= 3)
+            if (resolved == null && attempt >= 2)
                 resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-5));
             if (resolved != null) break;
             try
@@ -4018,17 +4087,14 @@ public static class Extension
                 var p = job.RawPath.Replace('/', '\\');
                 var parent = Path.GetDirectoryName(p);
                 var parentMissing = !string.IsNullOrWhiteSpace(parent) && !Directory.Exists(parent);
-                // Chemin absolu Windows mort, ou parent manquant après 1er essai → stop.
-                if (parentMissing && attempt >= 1)
-                    break;
-                if (Path.IsPathRooted(p)
-                    && !(p.StartsWith('\\') && !p.StartsWith("\\\\", StringComparison.Ordinal))
-                    && parentMissing)
+                var orphan = Path.GetFileName(p);
+                if (parentMissing && !string.IsNullOrWhiteSpace(orphan))
                 {
-                    var orphan = Path.GetFileName(p);
-                    if (!string.IsNullOrWhiteSpace(orphan))
-                        resolved = FindScreenshotByFileName(orphan);
-                    break;
+                    resolved = FindScreenshotByFileName(orphan);
+                    if (resolved == null && attempt >= 2)
+                        resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-5));
+                    if (resolved != null || attempt >= 8)
+                        break;
                 }
             }
             catch { /* ignore */ }
@@ -4330,6 +4396,7 @@ public static class Extension
             AddOptionalForm(multipart, "pos_y", args, 5);
             AddOptionalForm(multipart, "pos_z", args, 6);
             AddOptionalForm(multipart, "caption", args, 7);
+            AddOptionalForm(multipart, "grid_reference", args, 8);
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "sse_face.png";
@@ -4678,7 +4745,37 @@ public static class Extension
                     srcDir = "name_only";
             }
 
-            return $"{srcDir}|dirs={dirCount}|{string.Join(" ; ", dirs)}";
+            // Indique si le dossier profil a encore des captures récentes (sinon screenshot Arma HS).
+            var newestHint = "no_recent";
+            try
+            {
+                FileInfo? newest = null;
+                foreach (var d in EnumerateScreenshotDirs())
+                {
+                    if (!IsScreenshotCaptureDir(d)) continue;
+                    foreach (var f in EnumerateRecentImagesInDir(d))
+                    {
+                        try
+                        {
+                            var fi = new FileInfo(f);
+                            if (!fi.Exists || fi.Length < 32) continue;
+                            if (newest == null || fi.LastWriteTimeUtc > newest.LastWriteTimeUtc)
+                                newest = fi;
+                        }
+                        catch { /* ignore */ }
+                    }
+                }
+                if (newest != null)
+                {
+                    var ageH = (int)Math.Max(0, (DateTime.UtcNow - newest.LastWriteTimeUtc).TotalHours);
+                    newestHint = ageH < 1
+                        ? "newest_<1h"
+                        : (ageH < 48 ? $"newest_{ageH}h" : $"newest_{ageH / 24}d");
+                }
+            }
+            catch { /* ignore */ }
+
+            return $"{srcDir}|dirs={dirCount}|{newestHint}|{string.Join(" ; ", dirs)}";
         }
         catch
         {
@@ -5287,6 +5384,59 @@ public static class Extension
         catch (HttpRequestException ex)
         {
             return FormatAtakExtArray("NETWORK_ERROR", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return FormatAtakExtArray("ERROR", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Extrait un id Athena depuis un JSON biométrie / envelope (person_id, id, athena_person_id).
+    /// </summary>
+    private static string TryExtractSsePersonId(string jsonBody)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(jsonBody) ? "{}" : jsonBody);
+            var root = doc.RootElement;
+            foreach (var key in new[] { "person_id", "athena_person_id", "id", "personId" })
+            {
+                if (!root.TryGetProperty(key, out var el)) continue;
+                var v = el.ValueKind == JsonValueKind.Number
+                    ? el.GetInt32().ToString()
+                    : (el.GetString() ?? "").Trim();
+                if (v.Length > 0 && v != "0" && !v.Equals("Success", StringComparison.OrdinalIgnoreCase))
+                    return v;
+            }
+        }
+        catch { /* ignore */ }
+        return "";
+    }
+
+    /// <summary>
+    /// Envoi générique SendSSE (numérique / record) vers le canal rapports ATAK.
+    /// </summary>
+    private static string PostSseGenericSync(string jsonBody, CancellationToken token)
+    {
+        try
+        {
+            var enriched = EnrichAtakPayload(jsonBody);
+            // Enveloppe rapport : conserve le JSON SSE brut dans le corps.
+            var wrapped = "{\"mapId\":1,\"kind\":\"SSE\",\"payload\":" + enriched + "}";
+            // Si le JSON d’origine est déjà un objet rapport utilisable, poster tel quel.
+            try
+            {
+                using var doc = JsonDocument.Parse(enriched);
+                if (doc.RootElement.TryGetProperty("kind", out _)
+                    || doc.RootElement.TryGetProperty("report_type", out _)
+                    || doc.RootElement.TryGetProperty("type", out _))
+                {
+                    return PostAtakJsonSync("/api/atak/reports", enriched, token);
+                }
+            }
+            catch { /* ignore → wrapped */ }
+            return PostAtakJsonSync("/api/atak/reports", wrapped, token);
         }
         catch (Exception ex)
         {

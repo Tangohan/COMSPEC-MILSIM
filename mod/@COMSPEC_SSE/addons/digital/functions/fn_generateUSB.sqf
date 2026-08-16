@@ -20,7 +20,7 @@ private _files = (_pack getOrDefault ["computerFiles", ["notes.txt"]]) apply {
 _files pushBack (createHashMapFromArray [["name", "musique.mp3"], ["relevant", false]]);
 
 createHashMapFromArray [
-    ["uid", format ["SSE-MED-%1", [_seed, "med"] call comspec_sse_fnc_hash]],
+    ["uid", format ["SSE-MED-%1", [_seed, "med", 9] call comspec_sse_fnc_idToken]],
     ["deviceType", toUpper _kind],
     ["label", format ["%1-%2", toUpper _kind, ([_seed, "lbl"] call comspec_sse_fnc_hash) mod 9999]],
     ["owner", _cluster getOrDefault ["primaryName", "UNKNOWN"]],

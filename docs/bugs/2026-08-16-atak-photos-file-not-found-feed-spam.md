@@ -1,42 +1,83 @@
-# Photos — file_not_found / spam COMSPEC_AthenaFeed
+# Photos ATAK — file_not_found / OK|duplicate en ERROR
 
 ## Contexte
 
-Journal Overwatch : `NotifyNewPhoto OK` puis `PhotoUpload file_not_found`
-pour `COMSPEC_AthenaFeed` et des JPG Iceman (`srcdir_missing`). Aucune
-capture du jour dans `Documents\Arma 3 - Other Profiles\NewPI\Screenshots`
-(dernier fichier : 29/07).
+Journal session `23:32–23:46` : `NotifyNewPhoto OK` puis `PhotoUpload file_not_found`
+(`srcdir_missing`). Aucune capture depuis le **29/07** dans
+`Documents\Arma 3 - Other Profiles\NewPI\Screenshots`. Aussi : `HTTP 401` ponctuel
+sur `/api/atak/position` (chat OK juste après).
+
+## Symptôme
+
+- Remontée photo Athena échoue systématiquement
+- Dossier Screenshots figé (pas de nouveau `.png`)
+- Spam `OK|duplicate` en ERROR ; `401` position en ERROR
 
 ## Cause
 
-1. Aperçus auto / capture vide utilisaient le stem fixe `COMSPEC_AthenaFeed`
-   via `screenshot` moteur — **aucun fichier écrit** sur ce profil.
-2. `OK|duplicate` était traité comme succès → spam log toutes les ~40 s.
-3. JPG Photo Library pointent vers un dossier SOAR Workshop absent.
+1. **`screenshot` Arma exige l’extension `.png`** (wiki BI) — sans elle, **échec silencieux**.
+   Les stems `COMSPEC_292_…` / `COMSPEC_AthenaHD` étaient passés **sans** `.png`.
+2. Chemins Photo Library / BCE morts (`srcdir_missing`) + `newestFallback` off pour `foo.jpg`
+3. `str "OK|duplicate"` en SQF ajoutait des guillemets → détection ratée
+4. `401` position : course clé/session (fire-and-forget) — non bloquant si chat passe
 
 ## Correctif
 
-- Capture : **BCE_fnc_screenShot** en priorité, sinon stem unique + attente 2,2 s.
-- Backoff 5 min après `file_not_found` (`COMSPEC_FeedSnapFailUntil`).
-- `OK|queued` seul = succès ; duplicate ignoré.
-- DLL : recherche « newest since enqueue » pour captures async.
+- Tous les `screenshot` → `…png` obligatoire (`captureReconImage`, face SEEK, casque HD)
+- DLL : `newestFallback` nom seul / parent manquant + attente « newest since enqueue »
+- Duplicate : détection sans `str` ; `401` position → WARN + re-`client-init` (30 s)
 
-## Fichiers
+## Fichiers touchés
 
 - `connect/functions/fn_captureReconImage.sqf`
+- `connect/functions/fn_sseCaptureFacePhoto.sqf`
+- `connect/functions/fn_ssePersonDialogSubmit.sqf`
 - `connect/functions/fn_extensionCallback.sqf`
-- `atak_athena/functions/fn_athena_snapshotVideoFeed.sqf`
+- `atak_athena/functions/fn_athena_onHelmetMediaRequest.sqf`
 - `COMSPECExtension/Extension.cs`
 
-## Vérification utilisateur
+## Vérification
 
-1. Rebuild PBO `connect` + `atak_athena` **et** DLL `COMSPECExtension`.
-2. CBA : désactiver « Aperçus caméra automatiques » si inutile.
-3. Vérifier réglage BCE **chemin des captures** (dossier existant).
-4. Prendre une photo via app Photos ATAK (BCE) — un `.jpg` doit apparaître
-   sur le disque, puis sur Athena web.
-5. Les anciens JPG (22/07, chemins SOAR morts) ne remonteront pas.
+1. Rebuild DLL + PBO `connect` (+ `atak_athena` si casque)
+2. **Relancer Arma** (DLL déjà chargée sinon)
+3. Prendre une photo → un `.png` **nouveau** doit apparaître sous
+   `Documents\Arma 3 - Other Profiles\NewPI\Screenshots`
+4. Journal : `PhotoUpload OK|uploaded`
+5. Si HDR &lt; medium en jeu, `screenshot` échoue encore (réglage vidéo Arma)
+
+## Relance (23:51)
+
+Journal encore `NotifyNewPhoto …jpg` + `file_not_found|srcdir_missing` puis `401` sur
+`/public/api/atak/marker`. Dossier `NewPI\Screenshots` **toujours figé au 29/07** —
+aucun `.png` écrit → `screenshot` n’a pas produit de fichier (session antérieure au
+correctif `.png`, et/ou HDR &lt; medium).
+
+Suite : re-`client-init` aussi sur 401 marqueur ; diagnostic `newest_Xd` dans
+`file_not_found` ; rebuild DLL + connect ; **quitter Arma complètement** puis vérifier
+qu’un nouveau `.png` apparaît dans Screenshots après une capture.
+
+## Incident déploiement DLL (00:15)
+
+`dotnet build` a produit le stub managé (~147 Ko) copié par erreur dans
+`@COMSPECOverwatch` à la place de la Native AOT (~8 Mo). Conséquence possible :
+extension HS / uploads silencieux. Correctif : `dotnet publish -c Release -r win-x64`
+puis copie de la DLL native (&gt; 1 Mo).
+
+## Relance (23:55–00:05) — jpg IceMan sans capture Arma
+
+Journal : `NotifyNewPhoto …jpg` OK puis `PhotoUpload file_not_found|srcdir_missing`.
+Dossier `NewPI\Screenshots` **toujours figé au 29/07** — aucun `2026_08_16*` ni
+`COMSPEC_*` sur le disque.
+
+Cause complémentaire : quand IceMan/BCE fournit un chemin `.jpg` mort,
+`captureReconImage` **notifiait seulement** sans `screenshot` Arma → rien à uploader.
+`OK|duplicate` loggé en ERROR à cause de guillemets autour du retour extension.
+
+Correctif :
+- chemin fourni → toujours `screenshot COMSPEC_….png` + notif du png
+- retry avec `skipArmaShot` (pas de double capture)
+- strip guillemets sur résultat extension (duplicate)
 
 ## Statut
 
-corrigé en sources — rebuild PBO + DLL requis
+corrigé — rebuild PBO `connect` + quitter Arma + HDR ≥ Moyen + vérif nouveau `.png`

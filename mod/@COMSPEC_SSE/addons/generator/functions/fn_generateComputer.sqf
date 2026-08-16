@@ -61,8 +61,8 @@ private _credEmail = createHashMapFromArray [["service", "email"], ["user", toLo
 private _credWifi = createHashMapFromArray [["service", "wifi-safehouse"], ["user", "admin"], ["hint", _codeword]];
 private _creds = [_credEmail, _credWifi];
 
-private _uid = format ["SSE-DIG-%1", [_seed, "pc"] call comspec_sse_fnc_hash];
-private _ssid = format ["HOME-%1", [_seed, "ssid"] call comspec_sse_fnc_hash];
+private _uid = format ["SSE-DIG-%1", [_seed, "pc", 9] call comspec_sse_fnc_idToken];
+private _ssid = format ["HOME-%1", [_seed, "ssid", 6] call comspec_sse_fnc_idToken];
 private _lastIP = format ["192.168.1.%1", 20 + (([_seed, "ip"] call comspec_sse_fnc_hash) mod 200)];
 private _network = createHashMapFromArray [
     ["ssid", _ssid],

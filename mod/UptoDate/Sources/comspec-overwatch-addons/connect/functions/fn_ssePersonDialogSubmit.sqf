@@ -84,14 +84,17 @@ if (_ageStr isNotEqualTo "") then {
     _age = floor (parseNumber _ageStr);
 };
 
-private _pos = getPosASL player;
-private _grid = mapGridPosition player;
 private _callsign = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_callsign isEqualTo "") then { _callsign = groupId (group player); };
 private _steam = getPlayerUID player;
 
 private _target = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull];
 private _netId = if (!isNull _target) then { netId _target } else { "" };
+
+// Coordonnées : préférer la cible SEEK, sinon l’opérateur (toujours une grille).
+private _pos = if (!isNull _target) then { getPosASL _target } else { getPosASL player };
+private _grid = mapGridPosition _pos;
+if (_grid isEqualTo "") then { _grid = mapGridPosition player; };
 
 private _weapons = uiNamespace getVariable ["COMSPEC_SsePerson_WeaponsCache", []];
 private _equipment = uiNamespace getVariable ["COMSPEC_SsePerson_EquipmentCache", []];
@@ -133,13 +136,27 @@ private _escape = {
 // Point décimal invariant (évite virgule locale FR → JSON invalide).
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };
 
+private _posX = [_pos select 0, 2] call _fnc_num;
+private _posY = [_pos select 1, 2] call _fnc_num;
+private _posZ = [_pos select 2, 2] call _fnc_num;
+private _locFrag = format [
+    '"grid_reference":"%1","pos_x":%2,"pos_y":%3,"pos_z":%4',
+    [_grid] call _escape, _posX, _posY, _posZ
+];
+
 private _wArr = [];
 {
-    _wArr pushBack format ["{""name"":""%1"",""type"":""weapon""}", [_x] call _escape];
+    _wArr pushBack format [
+        "{""name"":""%1"",""type"":""weapon"",%2}",
+        [_x] call _escape, _locFrag
+    ];
 } forEach _weapons;
 private _eArr = [];
 {
-    _eArr pushBack format ["{""name"":""%1"",""type"":""item""}", [_x] call _escape];
+    _eArr pushBack format [
+        "{""name"":""%1"",""type"":""item"",%2}",
+        [_x] call _escape, _locFrag
+    ];
 } forEach (_equipment select [0, (count _equipment) min 12]);
 
 // --- Classement, procès-verbal, constat, échantillons ---
@@ -159,11 +176,12 @@ if (!(_sig isEqualType [])) then { _sig = []; };
 private _sigJson = "null";
 if ((count _sig) >= 4) then {
     _sigJson = format [
-        '{"callsign":"%1","terminal_uid":"%2","atak_id":"%3","signed_at":"%4"}',
+        '{"callsign":"%1","terminal_uid":"%2","atak_id":"%3","signed_at":"%4",%5}',
         [_sig select 0] call _escape,
         [_sig select 1] call _escape,
         [_sig select 2] call _escape,
-        [_sig select 3] call _escape
+        [_sig select 3] call _escape,
+        _locFrag
     ];
 };
 
@@ -175,7 +193,7 @@ if ((_med isEqualType createHashMap) && {(count _med) > 0}) then {
     private _lesArr = [];
     { _lesArr pushBack format ['"%1"', [_x] call _escape]; } forEach _les;
     _medJson = format [
-        '{"etat":"%1","etat_label":"%2","sang":%3,"pouls":%4,"douleur":%5,"arret_cardiaque":%6,"lesions":[%7],"resume":"%8"}',
+        '{"etat":"%1","etat_label":"%2","sang":%3,"pouls":%4,"douleur":%5,"arret_cardiaque":%6,"lesions":[%7],"resume":"%8",%9}',
         [_med getOrDefault ["etat", "inconnu"]] call _escape,
         [_med getOrDefault ["etat_label", "Inconnu"]] call _escape,
         _med getOrDefault ["sang", -1],
@@ -183,7 +201,8 @@ if ((_med isEqualType createHashMap) && {(count _med) > 0}) then {
         if (_med getOrDefault ["douleur", false]) then { "true" } else { "false" },
         if (_med getOrDefault ["arret_cardiaque", false]) then { "true" } else { "false" },
         _lesArr joinString ",",
-        [_med getOrDefault ["resume", ""]] call _escape
+        [_med getOrDefault ["resume", ""]] call _escape,
+        _locFrag
     ];
 };
 
@@ -194,8 +213,8 @@ private _sampleArr = [];
     if ((_x isEqualType []) && {(count _x) >= 3}) then {
         _x params ["_k", "_q", "_r"];
         _sampleArr pushBack format [
-            '{"kind":"%1","quality":%2,"lab_reference":"%3"}',
-            [_k] call _escape, _q, [_r] call _escape
+            '{"kind":"%1","quality":%2,"lab_reference":"%3",%4}',
+            [_k] call _escape, _q, [_r] call _escape, _locFrag
         ];
     };
 } forEach _samples;
@@ -206,10 +225,11 @@ if (!(_q isEqualType [])) then { _q = []; };
 private _queryJson = "null";
 if ((count _q) >= 3) then {
     _queryJson = format [
-        '{"result":"%1","confidence":%2,"record_ref":"%3"}',
+        '{"result":"%1","confidence":%2,"record_ref":"%3",%4}',
         [_q select 0] call _escape,
         (_q select 1) toFixed 1,
-        [_q select 2] call _escape
+        [_q select 2] call _escape,
+        _locFrag
     ];
 };
 
@@ -217,9 +237,6 @@ private _bio = uiNamespace getVariable ["COMSPEC_SsePerson_BioPending", false];
 if ((count _samples) > 0) then { _bio = true; };
 private _photoPending = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoPending", false];
 private _ageJson = if (_age >= 0) then { str _age } else { "null" };
-private _posX = [_pos select 0, 2] call _fnc_num;
-private _posY = [_pos select 1, 2] call _fnc_num;
-private _posZ = [_pos select 2, 2] call _fnc_num;
 
 (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.55' color='#8aa0b4' align='center'>Transmission en cours…</t>";
 
@@ -249,6 +266,9 @@ private _parts = [
     format ['"pos_x":%1', _posX],
     format ['"pos_y":%1', _posY],
     format ['"pos_z":%1', _posZ],
+    format ['"capture_pos_x":%1', _posX],
+    format ['"capture_pos_y":%1', _posY],
+    format ['"capture_pos_z":%1', _posZ],
     format ['"grid_reference":"%1"', [_grid] call _escape],
     format ['"submitter_callsign":"%1"', [_callsign] call _escape],
     format ['"submitter_steam_id":"%1"', [_steam] call _escape],
@@ -259,6 +279,20 @@ private _parts = [
     format ['"biometric_samples":[%1]', _sampleArr joinString ","],
     format ['"identity_query":%1', _queryJson]
 ];
+
+private _modVersion = [] call comspec_overwatch_connect_fnc_getModVersion;
+private _sseVersion = getText (configFile >> "CfgPatches" >> "comspec_sse_main" >> "versionStr");
+if (_sseVersion isEqualTo "") then {
+    _sseVersion = str (getNumber (configFile >> "CfgPatches" >> "comspec_sse_main" >> "version"));
+};
+_parts append [
+    '"mod_name":"COMSPEC Overwatch"',
+    format ['"mod_version":"%1"', [_modVersion] call _escape],
+    '"mod_cfg":"comspec_overwatch_connect"',
+    format ['"sse_addon_version":"%1"', [_sseVersion] call _escape],
+    '"sse_addon_cfg":"comspec_sse_main"'
+];
+
 private _json = "{" + (_parts joinString ",") + "}";
 
 // Garde-fou : ne jamais poster un corps sans identité exploitable.
@@ -355,14 +389,14 @@ if (_photoPending && { _personId isNotEqualTo "" }) then {
     private _stem = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoStem", ""];
     if (!(_stem isEqualType "") || {_stem isEqualTo ""}) then {
         // Flag armé sans capture : prendre la photo maintenant avant la file.
-        _stem = format ["COMSPEC_SSE_Face_%1", floor (diag_tickTime * 1000)];
+        _stem = format ["COMSPEC_SSE_Face_%1.png", floor (diag_tickTime * 1000)];
         screenshot _stem;
         uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _stem];
     };
     ["UploadSsePhoto", "attempt", format ["personne %1 stem=%2", _personId, _stem], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
     // Différé : laisser Arma écrire le PNG, puis poster le fichier nommé (pas « la plus récente »).
-    [_personId, _stem, _callsign, _posX, _posY, _posZ] spawn {
-        params ["_pid", "_stem", "_cs", "_px", "_py", "_pz"];
+    [_personId, _stem, _callsign, _posX, _posY, _posZ, _grid] spawn {
+        params ["_pid", "_stem", "_cs", "_px", "_py", "_pz", "_gridRef"];
         uiSleep 1.25;
         private _shot = [
             "COMSPECExtension" callExtension ["UploadSsePhoto", [
@@ -373,7 +407,8 @@ if (_photoPending && { _personId isNotEqualTo "" }) then {
                 _px,
                 _py,
                 _pz,
-                "Photo du visage"
+                "Photo du visage",
+                _gridRef
             ]]
         ] call comspec_overwatch_connect_fnc_extResult;
         private _parsed = [_shot] call comspec_overwatch_connect_fnc_parseAtakExtResponse;

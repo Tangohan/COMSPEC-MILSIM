@@ -22,18 +22,21 @@ if (!isNil "BCE_fnc_getMarkerColor") then {
 
 // BCE stub BDA_Report (Opened vide) + ATAK_BDA Iceman qui retire BDA_Report du cache :
 // on ré-inscrit l’app et on force le refresh des props (PAGE_CTRL / Opened COMSPEC).
-private _ensureBdaReportApp = {
+// Idem pour BII_Identifi (couche SEEK II dans le tiroir ATAK).
+private _ensureAtakApps = {
     if (isNil "BCE_fnc_ATAK_setAPPs_props") exitWith {};
-    if (!isClass (configFile >> "ATAK_APPs" >> "BDA_Report")) exitWith {};
 
     private _apps = + (profileNamespace getVariable ["BCE_ATAK_APPs", []]);
     if !(_apps isEqualType []) then { _apps = []; };
 
     private _changed = false;
-    if !("BDA_Report" in _apps) then {
-        _apps pushBack "BDA_Report";
-        _changed = true;
-    };
+    {
+        private _app = _x;
+        if (isClass (configFile >> "ATAK_APPs" >> _app) && {!(_app in _apps)}) then {
+            _apps pushBack _app;
+            _changed = true;
+        };
+    } forEach ["AtakTask", "BDA_Report", "BII_Identifi"];
 
     if (_changed) then {
         profileNamespace setVariable ["BCE_ATAK_APPs", _apps];
@@ -44,7 +47,7 @@ private _ensureBdaReportApp = {
     [_apps] call BCE_fnc_ATAK_setAPPs_props;
 };
 {
-    [_ensureBdaReportApp, [], _x] call CBA_fnc_waitAndExecute;
+    [_ensureAtakApps, [], _x] call CBA_fnc_waitAndExecute;
 } forEach [2, 5, 10, 12];
 
 // Icônes Desktop ATAK Enhanced (Connexion Athena, messages d’urgence, tchat)
@@ -150,6 +153,18 @@ private _ensureBdaReportApp = {
 ["COMSPEC_OrderReceived", {
     _this call comspec_overwatch_atak_athena_fnc_athena_onOrderReceived;
 }] call CBA_fnc_addEventHandler;
+
+// Backfill chat groupe + app TASK pour les ordres déjà en mémoire (après liaison)
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (!isNil "comspec_overwatch_connect_fnc_pollOrders") then {
+        [] call comspec_overwatch_connect_fnc_pollOrders;
+    };
+    [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
+}, [], 12] call CBA_fnc_waitAndExecute;
+[{
+    [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
+}, [], 25] call CBA_fnc_waitAndExecute;
 
 // ACK IceMan Reports (message ouvert) → Athena
 {

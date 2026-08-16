@@ -272,8 +272,8 @@ if (!(_bdaReports isEqualType [])) then { _bdaReports = []; };
         ["_body", "", [""]]
     ];
     private _plain = _body;
-    _plain = [_plain, "<br/>", " | "] call BIS_fnc_replaceString;
-    _plain = [_plain, "<br>", " | "] call BIS_fnc_replaceString;
+    _plain = _plain replaceString ["<br/>", " | "];
+    _plain = _plain replaceString ["<br>", " | "];
     private _title = format ["BDA · %1 · %2", _senderName, _grid];
     private _detail = format [
         "<t color='#e0a060'>Bilan des dégâts</t><br/><t color='#8aa0b4'>De</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Heure</t>  %3<br/><br/>%4",

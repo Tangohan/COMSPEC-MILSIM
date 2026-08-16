@@ -1,5 +1,6 @@
 /*
-    Cache menus exploitation numérique — installation per-entité.
+    Cache exploitation numérique (insertChildren sous la racine SSE).
+    Pas de re-install per-entité — la racine lit le cache à l’ouverture.
 */
 if (!hasInterface) exitWith {};
 
@@ -62,11 +63,20 @@ private _actions = [
     ["COMSPEC_SSE_DIG_MEDIA", "Collecter support (USB/SD)", { [_this select 0, _this select 1] call comspec_sse_fnc_collectMedia }]
 ];
 
-private _digRoot = ["COMSPEC_SSE_DIGITAL", "Exploitation numérique", _icon, {}, _condDigital, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction;
 private _digChildren = _actions apply {
     _x params ["_aid", "_label", "_code"];
     [_aid, _label, _icon, _code, _condDigital, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction
 };
+
+private _insertDig = {
+    private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
+    if (!(_cache isEqualType createHashMap)) exitWith { [] };
+    _cache getOrDefault ["digitalChildren", []]
+};
+
+private _digRoot = [
+    "COMSPEC_SSE_DIGITAL", "Exploitation numérique", _icon, {}, _condDigital, _insertDig, [], {[0,0,0]}, 3, _aceParams
+] call ace_interact_menu_fnc_createAction;
 
 private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
 if (!(_cache isEqualType createHashMap)) then { _cache = createHashMap; };
@@ -74,25 +84,6 @@ _cache set ["digitalRoot", _digRoot];
 _cache set ["digitalChildren", _digChildren];
 missionNamespace setVariable ["comspec_sse_aceMenuCache", _cache];
 
-if (!isNil "CBA_fnc_waitAndExecute") then {
-    private _pending = (allUnits + vehicles + allDeadMen) select {
-        !isNull _x
-        && {_x getVariable ["comspec_sse_enabled", false]}
-        && {!(_x getVariable ["comspec_sse_aceDigInstalled", false])}
-        && {!(_x getVariable ["comspec_sse_aceDigQueued", false])}
-    };
-    _pending = _pending select [0, (count _pending) min 20];
-    {
-        [{
-            params ["_e"];
-            if (isNull _e) exitWith {};
-            if (!isNil "comspec_sse_fnc_installEntityAceMenus") then {
-                [_e] call comspec_sse_fnc_installEntityAceMenus;
-            };
-        }, [_x], 0.2 + (_forEachIndex * 0.06)] call CBA_fnc_waitAndExecute;
-    } forEach _pending;
-};
-
 [_t0, "fn_initDigitalACE", 0.05] call comspec_debug_fnc_perfWarn;
-["INFO", "DIGITAL", "INIT", "digital cache prêt (per-entité)"] call comspec_debug_fnc_log;
+["INFO", "DIGITAL", "INIT", "digital cache prêt (insertChildren)"] call comspec_debug_fnc_log;
 ["comspec_sse_fnc_initDigitalACE"] call comspec_debug_fnc_exit;

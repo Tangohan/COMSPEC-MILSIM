@@ -149,7 +149,7 @@ copyToClipboard _info;
 hint parseText format [
     "<t size='1.05' color='#e8f4f0'>ATAK — %1</t><br/><t align='left' size='0.85'>%2</t><br/><t size='0.75' color='#8aa0b4'>Identifiants copiés.</t>",
     _name,
-    [_info, toString [10], "<br/>"] call BIS_fnc_replaceString
+    _info replaceString [toString [10], "<br/>"]
 ];
 systemChat format ["[COMSPEC ATAK] %1 | Steam %2 | Terminal %3 | ATAK %4 | État %5", _name, _steam, _terminal, _atakId, _stateTxt];
 

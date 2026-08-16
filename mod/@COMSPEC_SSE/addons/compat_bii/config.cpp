@@ -33,6 +33,8 @@ class CfgFunctions {
             class biiImportObject {};
             class biiInstallHooks {};
             class biiThreatToProfile {};
+            class biiOpen {};
+            class biiInjectLayer {};
         };
     };
 };

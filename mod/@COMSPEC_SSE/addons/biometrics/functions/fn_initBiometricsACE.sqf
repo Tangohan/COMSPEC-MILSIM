@@ -1,5 +1,6 @@
 /*
-    Cache menus biométrie — installation per-entité via installEntityAceMenus.
+    Cache menus biométrie (insertChildren sous la racine SSE).
+    Ne réinstalle plus d’actions sur les entités — la racine lit le cache à l’ouverture.
 */
 if (!hasInterface) exitWith {};
 
@@ -30,7 +31,6 @@ private _aceParams = [false, false, false, false, true];
 private _icon = "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa";
 private _cond = { [_this select 0] call comspec_sse_fnc_canInspect };
 
-private _bioRoot = ["COMSPEC_SSE_Bio", "Biométrie", _icon, {}, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction;
 private _items = [
     ["COMSPEC_SSE_SeekOpen", "Ouvrir SEEK II", { [_this select 0] call comspec_sse_fnc_openSeek }],
     ["COMSPEC_SSE_FP", "Empreintes", { [_this select 0, _this select 1] call comspec_sse_fnc_captureFingerprint }],
@@ -45,32 +45,22 @@ private _bioChildren = _items apply {
     [_id, _label, _icon, _code, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction
 };
 
+private _insertBio = {
+    private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
+    if (!(_cache isEqualType createHashMap)) exitWith { [] };
+    _cache getOrDefault ["bioChildren", []]
+};
+
+private _bioRoot = [
+    "COMSPEC_SSE_Bio", "Biométrie", _icon, {}, _cond, _insertBio, [], {[0,0,0]}, 4, _aceParams
+] call ace_interact_menu_fnc_createAction;
+
 private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
 if (!(_cache isEqualType createHashMap)) then { _cache = createHashMap; };
 _cache set ["bioRoot", _bioRoot];
 _cache set ["bioChildren", _bioChildren];
 missionNamespace setVariable ["comspec_sse_aceMenuCache", _cache];
 
-// Compléter les entités déjà activées (étalé, max 20) — install direct, pas un nouvel event flood.
-if (!isNil "CBA_fnc_waitAndExecute") then {
-    private _pending = (allUnits + allDeadMen) select {
-        !isNull _x
-        && {_x getVariable ["comspec_sse_enabled", false]}
-        && {!(_x getVariable ["comspec_sse_aceBioInstalled", false])}
-        && {!(_x getVariable ["comspec_sse_aceBioQueued", false])}
-    };
-    _pending = _pending select [0, (count _pending) min 20];
-    {
-        [{
-            params ["_e"];
-            if (isNull _e) exitWith {};
-            if (!isNil "comspec_sse_fnc_installEntityAceMenus") then {
-                [_e] call comspec_sse_fnc_installEntityAceMenus;
-            };
-        }, [_x], 0.15 + (_forEachIndex * 0.06)] call CBA_fnc_waitAndExecute;
-    } forEach _pending;
-};
-
 [_t0, "fn_initBiometricsACE", 0.05] call comspec_debug_fnc_perfWarn;
-["INFO", "BIO", "INIT", "biometrics cache prêt (per-entité)"] call comspec_debug_fnc_log;
+["INFO", "BIO", "INIT", "biometrics cache prêt (insertChildren)"] call comspec_debug_fnc_log;
 ["comspec_sse_fnc_initBiometricsACE"] call comspec_debug_fnc_exit;

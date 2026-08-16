@@ -23,7 +23,7 @@ private _plA = [_seed, "plA", ["12", "22", "33", "41", "55", "67"]] call comspec
 private _plB = [_seed, "plB", ["A", "B", "D", "H", "K", "M", "R"]] call comspec_sse_fnc_pickFromSeed;
 private _plN = str (1000 + (([_seed, "plN"] call comspec_sse_fnc_hash) mod 9000));
 private _plate = format ["%1-%2%3", _plA, _plB, _plN];
-private _vin = format ["SSEVIN%1", [_seed, "vin"] call comspec_sse_fnc_hash];
+private _vin = format ["SSEVIN%1", [_seed, "vin", 10] call comspec_sse_fnc_idToken];
 
 private _deliveryNote = _pack getOrDefault ["deliveryNote", "RDV reporté"];
 private _cargoHints = [

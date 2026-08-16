@@ -9,10 +9,11 @@ private _disp = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNul
 if (isNull _disp) then { _disp = findDisplay 9991; };
 
 private _stem = format ["COMSPEC_SSE_Face_%1", floor (diag_tickTime * 1000)];
-screenshot _stem;
+private _png = _stem + ".png";
+screenshot _png;
 
 uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", true];
-uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _stem];
+uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _png];
 uiNamespace setVariable ["COMSPEC_SsePerson_PhotoTakenAt", diag_tickTime];
 
 if (!isNull _disp) then {
