@@ -251,6 +251,11 @@ if (isNil "_data" || {!(_data isEqualType [])}) exitWith {
 _entity setVariable ["comspec_sse_clusterId", _cluster getOrDefault ["clusterId", ""], false];
 _entity setVariable ["comspec_sse_theme", _cluster getOrDefault ["theme", ""], false];
 
+// Pont SEEK / Eden : nom + alias générés visibles hors section SSE.
+if (!isNil "comspec_sse_fnc_syncIdentityBridgeVars") then {
+    [_entity, false] call comspec_sse_fnc_syncIdentityBridgeVars;
+};
+
 // Libérer le verrou AVANT couches intel / publish / dogtag (ACE + réseau).
 _entity setVariable ["comspec_sse_generating", false];
 
@@ -296,6 +301,9 @@ if (!isNil "CBA_fnc_waitAndExecute") then {
         };
         _e setVariable ["comspec_sse_clusterId", _e getVariable ["comspec_sse_clusterId", ""], true];
         _e setVariable ["comspec_sse_theme", _e getVariable ["comspec_sse_theme", ""], true];
+        if (!isNil "comspec_sse_fnc_syncIdentityBridgeVars") then {
+            [_e, true] call comspec_sse_fnc_syncIdentityBridgeVars;
+        };
         if (!isNil "comspec_sse_fnc_aceDogtagSync") then {
             [_e] call comspec_sse_fnc_aceDogtagSync;
         };
@@ -308,6 +316,9 @@ if (!isNil "CBA_fnc_waitAndExecute") then {
     if (!isNil "_dPub") then { [_entity, _dPub, true] call comspec_sse_fnc_setData; };
     _entity setVariable ["comspec_sse_clusterId", _entity getVariable ["comspec_sse_clusterId", ""], true];
     _entity setVariable ["comspec_sse_theme", _entity getVariable ["comspec_sse_theme", ""], true];
+    if (!isNil "comspec_sse_fnc_syncIdentityBridgeVars") then {
+        [_entity, true] call comspec_sse_fnc_syncIdentityBridgeVars;
+    };
     if (!isNil "comspec_sse_fnc_aceDogtagSync") then {
         [_entity] call comspec_sse_fnc_aceDogtagSync;
     };

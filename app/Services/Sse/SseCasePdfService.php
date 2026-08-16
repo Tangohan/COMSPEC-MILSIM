@@ -16,6 +16,19 @@ use App\Support\TrainingCertificatePdfEngine;
  */
 final class SseCasePdfService
 {
+    /** @var array{accent:string,banner:string,seal:string,soft:string,ink:string,muted:string} */
+    private array $palette = [
+        'accent' => '#475569',
+        'banner' => '#f8fafc',
+        'seal' => '#334155',
+        'soft' => '#e2e8f0',
+        'ink' => '#0b1220',
+        'muted' => '#64748b',
+    ];
+
+    /** @var array<string,mixed> */
+    private array $caseMeta = [];
+
     public function __construct(
         private ?SseCaseRepository $cases = null,
         private ?SseReportService $reports = null,
@@ -81,57 +94,157 @@ final class SseCasePdfService
             $initial,
             $redactedLabel,
             $generatedAt,
-            $inline
+            $inline,
+            $releaseLevel
         ): Response {
             if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
                 return (new Response())->setStatusCode(503)->setBody('<p>Export PDF indisponible pour le moment.</p>');
             }
 
-            $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+            $classCode = SseCaseRepository::normalizeClassification((string) ($case['classification'] ?? 'encadrement'));
+            $this->palette = $this->classPalette($classCode);
+            $this->caseMeta = $case;
+
+            $footerRef = (string) ($case['reference_code'] ?? '');
+            $footerClass = mb_strtoupper((string) ($case['classification_label'] ?? 'Confidentiel'), 'UTF-8');
+            $footerAccent = $this->hexToRgb($this->palette['accent']);
+
+            $pdf = new class ('P', 'mm', 'A4', true, 'UTF-8', false) extends \TCPDF {
+                public string $sseFooterRef = '';
+                public string $sseFooterClass = '';
+                /** @var array{0:int,1:int,2:int} */
+                public array $sseFooterAccent = [71, 85, 105];
+
+                public function Footer(): void
+                {
+                    $this->SetY(-12);
+                    $this->SetDrawColor($this->sseFooterAccent[0], $this->sseFooterAccent[1], $this->sseFooterAccent[2]);
+                    $this->SetLineWidth(0.35);
+                    $this->Line(14, $this->GetY(), $this->getPageWidth() - 14, $this->GetY());
+                    $this->SetY(-10);
+                    $this->SetFont('helvetica', '', 7);
+                    $this->SetTextColor(100, 116, 139);
+                    $left = $this->sseFooterRef !== '' ? $this->sseFooterRef : 'Athena SSE';
+                    $center = $this->sseFooterClass;
+                    $right = 'Page ' . $this->getAliasNumPage() . ' / ' . $this->getAliasNbPages();
+                    $this->Cell(60, 5, $left, 0, 0, 'L');
+                    $this->SetTextColor($this->sseFooterAccent[0], $this->sseFooterAccent[1], $this->sseFooterAccent[2]);
+                    $this->SetFont('helvetica', 'B', 7);
+                    $this->Cell(0, 5, $center, 0, 0, 'C');
+                    $this->SetTextColor(100, 116, 139);
+                    $this->SetFont('helvetica', '', 7);
+                    $this->Cell(0, 5, $right, 0, 0, 'R');
+                }
+            };
+            $pdf->sseFooterRef = $footerRef;
+            $pdf->sseFooterClass = $footerClass;
+            $pdf->sseFooterAccent = $footerAccent;
+
             $pdf->SetCreator('Athena COMSPEC');
             $pdf->SetAuthor('Portail SSE Athena');
-            $pdf->SetTitle('Dossier complet ' . (string) ($case['reference_code'] ?? ''));
-            $pdf->SetMargins(14, 16, 14);
+            $pdf->SetTitle('Dossier complet ' . $footerRef);
+            $pdf->SetMargins(12, 14, 12);
             $pdf->SetAutoPageBreak(true, 18);
             $pdf->setPrintHeader(false);
             $pdf->setPrintFooter(true);
-            $pdf->setFooterMargin(10);
-            $refFooter = (string) ($case['reference_code'] ?? '');
-            $pdf->setFooterData([], [80, 80, 80]);
-            // Footer custom via callback-like override is heavy; stamp page meta in HTML instead.
+            $pdf->setFooterMargin(12);
+            $pdf->AliasNbPages();
 
             // —— Page de garde ——
             $pdf->AddPage();
-            $pdf->writeHTML($this->coverHtml($case, $redactedLabel, $generatedAt, $people, $sites, $notes, $evidence), true, false, true, false, '');
+            $pdf->writeHTML(
+                $this->coverHtml($case, $redactedLabel, $generatedAt, $people, $sites, $notes, $evidence),
+                true,
+                false,
+                true,
+                false,
+                ''
+            );
 
             // —— Flash ——
             $pdf->AddPage();
-            $pdf->writeHTML($this->sectionBanner($case, $redactedLabel) . $this->preBlock('Flash opérationnel', $flash), true, false, true, false, '');
+            $pdf->writeHTML(
+                $this->sectionBanner($redactedLabel, '01 · Flash opérationnel')
+                . $this->reportSheet('Flash opérationnel', $flash),
+                true,
+                false,
+                true,
+                false,
+                ''
+            );
 
             // —— Compte rendu initial ——
             $pdf->AddPage();
-            $pdf->writeHTML($this->sectionBanner($case, $redactedLabel) . $this->preBlock('Compte rendu initial', $initial), true, false, true, false, '');
+            $pdf->writeHTML(
+                $this->sectionBanner($redactedLabel, '02 · Compte rendu initial')
+                . $this->reportSheet('Compte rendu initial', $initial),
+                true,
+                false,
+                true,
+                false,
+                ''
+            );
 
             // —— Personnes ——
             $pdf->AddPage();
-            $pdf->writeHTML($this->sectionBanner($case, $redactedLabel) . $this->peopleHtml($people), true, false, true, false, '');
+            $pdf->writeHTML(
+                $this->sectionBanner($redactedLabel, '03 · Personnes rattachées')
+                . $this->peopleHtml($people),
+                true,
+                false,
+                true,
+                false,
+                ''
+            );
 
             // —— Sites ——
             $pdf->AddPage();
-            $pdf->writeHTML($this->sectionBanner($case, $redactedLabel) . $this->sitesHtml($sites), true, false, true, false, '');
+            $pdf->writeHTML(
+                $this->sectionBanner($redactedLabel, '04 · Sites exploités')
+                . $this->sitesHtml($sites),
+                true,
+                false,
+                true,
+                false,
+                ''
+            );
 
             // —— Corrélations ——
             $pdf->AddPage();
-            $pdf->writeHTML($this->sectionBanner($case, $redactedLabel) . $this->relationsHtml($relations, $people, $sites), true, false, true, false, '');
+            $pdf->writeHTML(
+                $this->sectionBanner($redactedLabel, '05 · Corrélations')
+                . $this->relationsHtml($relations, $people, $sites),
+                true,
+                false,
+                true,
+                false,
+                ''
+            );
 
             // —— Notes ——
             $pdf->AddPage();
-            $pdf->writeHTML($this->sectionBanner($case, $redactedLabel) . $this->notesHtml($notes), true, false, true, false, '');
+            $pdf->writeHTML(
+                $this->sectionBanner($redactedLabel, '06 · Notes classifiées')
+                . $this->notesHtml($notes),
+                true,
+                false,
+                true,
+                false,
+                ''
+            );
 
             // —— Preuves (+ images) ——
             $pdf->AddPage();
-            $pdf->writeHTML($this->sectionBanner($case, $redactedLabel) . $this->evidenceHtml($evidence), true, false, true, false, '');
-            $this->appendEvidenceImages($pdf, $evidence);
+            $pdf->writeHTML(
+                $this->sectionBanner($redactedLabel, '07 · Preuves recensées')
+                . $this->evidenceHtml($evidence),
+                true,
+                false,
+                true,
+                false,
+                ''
+            );
+            $this->appendEvidenceImages($pdf, $evidence, $redactedLabel);
 
             $binary = (string) $pdf->Output('', 'S');
             $refSlug = preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) ($case['reference_code'] ?? 'sse'));
@@ -170,11 +283,12 @@ final class SseCasePdfService
         $caseTitle = (string) ($case['title'] ?? 'Dossier sans intitulé');
         $classLabel = (string) ($case['classification_label'] ?? 'Confidentiel');
         $classUpper = mb_strtoupper($classLabel, 'UTF-8');
-        $classCode = SseCaseRepository::normalizeClassification((string) ($case['classification'] ?? 'encadrement'));
-        $palette = $this->classPalette($classCode);
-        $accent = $palette['accent'];
-        $bannerBg = $palette['banner'];
-        $sealColor = $palette['seal'];
+        $accent = $this->palette['accent'];
+        $bannerBg = $this->palette['banner'];
+        $sealColor = $this->palette['seal'];
+        $soft = $this->palette['soft'];
+        $ink = $this->palette['ink'];
+        $muted = $this->palette['muted'];
 
         $statusLabel = (string) ($case['status_label'] ?? 'En cours');
         $statusKey = (string) ($case['status'] ?? '');
@@ -210,70 +324,85 @@ final class SseCasePdfService
 
         $e = fn (string $v): string => $this->e($v);
 
-        $html = '';
+        // Cadre papier : filet gauche classification + bordure fine
+        $html = '<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
+            . '<td width="3" style="background-color:' . $accent . ';"></td>'
+            . '<td style="border:1px solid #cbd5e1;padding:0;">';
+
         if ($redactedLabel !== '') {
-            $html .= '<div style="background-color:#8f1d1d;color:#ffffff;padding:6px;text-align:center;font-size:9px;margin-bottom:6px;">'
+            $html .= '<table cellpadding="5" cellspacing="0" border="0" width="100%" style="background-color:'
+                . $accent . ';"><tr><td style="color:#ffffff;text-align:center;font-size:8.5px;font-weight:bold;letter-spacing:0.5px;">'
                 . $e($redactedLabel)
-                . '</div>';
+                . '</td></tr></table>';
         }
 
-        // Bandeau classification (haut)
-        $html .= '<table cellpadding="4" cellspacing="0" border="0" width="100%" style="background-color:'
-            . $bannerBg . ';border:1px solid ' . $accent . ';">'
+        // Bandeau classification
+        $html .= '<table cellpadding="5" cellspacing="0" border="0" width="100%" style="background-color:'
+            . $bannerBg . ';border-bottom:1px solid ' . $accent . ';">'
             . '<tr>'
-            . '<td width="28%" style="font-size:7px;color:#64748b;text-align:left;">(CLASSIFICATION DE SÉCURITÉ)</td>'
-            . '<td width="44%" style="font-size:14px;font-weight:bold;color:' . $accent . ';text-align:center;letter-spacing:2px;">'
+            . '<td width="26%" style="font-size:6.5px;color:' . $muted . ';text-align:left;letter-spacing:0.4px;">(CLASSIFICATION DE SÉCURITÉ)</td>'
+            . '<td width="48%" style="font-size:13px;font-weight:bold;color:' . $accent . ';text-align:center;letter-spacing:1.5px;">'
             . $e($classUpper) . '</td>'
-            . '<td width="28%" style="font-size:7px;color:#64748b;text-align:right;">EXEMPLAIRE '
+            . '<td width="26%" style="font-size:7px;color:' . $muted . ';text-align:right;">EXEMPLAIRE '
             . (int) ($marks['copy_index'] ?? 1) . '/' . (int) ($marks['copy_total'] ?? 1) . '</td>'
             . '</tr></table>';
 
+        $html .= '<table cellpadding="8" cellspacing="0" border="0" width="100%"><tr><td>';
+
         // Registre + boîte de contrôle
-        $html .= '<br/><table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>';
-        $html .= '<td width="68%" valign="top">';
-        $html .= '<table cellpadding="3" cellspacing="0" border="1" width="100%" style="border-color:#334155;font-size:8px;">'
-            . '<tr style="background-color:#334155;color:#ffffff;">'
-            . '<td colspan="4" style="font-size:8px;font-weight:bold;letter-spacing:1px;">REGISTRE DE CONSULTATION</td></tr>'
-            . '<tr style="background-color:#f1f5f9;font-weight:bold;">'
+        $html .= '<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>';
+        $html .= '<td width="67%" valign="top">';
+        $html .= '<table cellpadding="3" cellspacing="0" border="1" width="100%" style="border-color:#334155;font-size:7.5px;">'
+            . '<tr style="background-color:#1e293b;color:#ffffff;">'
+            . '<td colspan="4" style="font-size:7.5px;font-weight:bold;letter-spacing:1.2px;">REGISTRE DE CONSULTATION</td></tr>'
+            . '<tr style="background-color:' . $soft . ';font-weight:bold;color:' . $ink . ';">'
             . '<td width="10%">N°</td><td width="48%">CONSULTANT</td><td width="22%">DATE</td><td width="20%">VISA</td></tr>';
         $routing = is_array($marks['routing'] ?? null) ? $marks['routing'] : [];
         foreach ($routing as $row) {
             if (!is_array($row)) {
                 continue;
             }
-            $html .= '<tr>'
-                . '<td>' . (int) ($row['slot'] ?? 0) . '</td>'
-                . '<td>' . $e((string) ($row['holder'] ?? '')) . '</td>'
+            $holder = trim((string) ($row['holder'] ?? ''));
+            $rowBg = $holder === '' ? 'background-color:#fafafa;' : '';
+            $html .= '<tr style="' . $rowBg . '">'
+                . '<td style="color:' . $muted . ';">' . (int) ($row['slot'] ?? 0) . '</td>'
+                . '<td>' . $e($holder) . '</td>'
                 . '<td>' . $e((string) ($row['date'] ?? '')) . '</td>'
-                . '<td style="font-family:courier;letter-spacing:1px;">' . $e((string) ($row['initials'] ?? '')) . '</td>'
+                . '<td style="font-family:courier;letter-spacing:1px;font-weight:bold;">'
+                . $e((string) ($row['initials'] ?? '')) . '</td>'
                 . '</tr>';
         }
         $html .= '</table></td>';
-        $html .= '<td width="3%"></td>';
-        $html .= '<td width="29%" valign="top">';
-        $html .= '<table cellpadding="4" cellspacing="0" border="1" width="100%" style="border-color:#334155;font-size:7.5px;">'
-            . '<tr><td><span style="color:#64748b;">CONTRÔLE N°</span><br/><strong>' . $e((string) ($marks['control_number'] ?? '')) . '</strong></td></tr>'
-            . '<tr><td><span style="color:#64748b;">REGISTRE</span><br/><strong>' . $e((string) ($marks['registry_number'] ?? '')) . '</strong></td></tr>'
-            . '<tr><td><span style="color:#64748b;">OUVERT LE</span><br/><strong>' . $e($openedFr) . '</strong></td></tr>'
-            . '<tr><td><span style="color:#64748b;">MOUVEMENT</span><br/><strong>' . $e($updatedFr) . '</strong></td></tr>'
+        $html .= '<td width="2%"></td>';
+        $html .= '<td width="31%" valign="top">';
+        $html .= '<table cellpadding="4" cellspacing="0" border="1" width="100%" style="border-color:#334155;font-size:7px;">'
+            . '<tr style="background-color:' . $bannerBg . ';"><td>'
+            . '<span style="color:' . $muted . ';letter-spacing:0.6px;">CONTRÔLE N°</span><br/>'
+            . '<strong style="font-size:9px;color:' . $ink . ';">' . $e((string) ($marks['control_number'] ?? '')) . '</strong></td></tr>'
+            . '<tr><td><span style="color:' . $muted . ';letter-spacing:0.6px;">REGISTRE</span><br/>'
+            . '<strong style="font-size:8.5px;color:' . $ink . ';">' . $e((string) ($marks['registry_number'] ?? '')) . '</strong></td></tr>'
+            . '<tr style="background-color:' . $bannerBg . ';"><td><span style="color:' . $muted . ';letter-spacing:0.6px;">OUVERT LE</span><br/>'
+            . '<strong style="font-size:9px;color:' . $ink . ';">' . $e($openedFr) . '</strong></td></tr>'
+            . '<tr><td><span style="color:' . $muted . ';letter-spacing:0.6px;">MOUVEMENT</span><br/>'
+            . '<strong style="font-size:9px;color:' . $ink . ';">' . $e($updatedFr) . '</strong></td></tr>'
             . '</table></td>';
         $html .= '</tr></table>';
 
         // Canal protégé
         $caveats = is_array($marks['caveats'] ?? null) ? $marks['caveats'] : [];
-        $html .= '<br/><table cellpadding="6" cellspacing="0" border="1" width="100%" style="border-color:'
+        $html .= '<br/><table cellpadding="7" cellspacing="0" border="1" width="100%" style="border-color:'
             . $accent . ';background-color:' . $bannerBg . ';">'
             . '<tr><td>'
-            . '<div style="font-size:11px;font-weight:bold;color:' . $accent . ';letter-spacing:1px;">'
+            . '<div style="font-size:10px;font-weight:bold;color:' . $accent . ';letter-spacing:1px;">'
             . $e((string) ($marks['channel'] ?? 'CANAL PROTÉGÉ')) . '</div>'
-            . '<div style="font-size:8px;color:#334155;margin-top:3px;">'
+            . '<div style="font-size:7.5px;color:#334155;margin-top:3px;line-height:1.35;">'
             . 'Chemise à ne pas dissocier de ses pièces jointes. Toute sortie du local sécurisé est portée au registre de consultation.'
             . '</div>';
         if ($caveats !== []) {
-            $html .= '<div style="margin-top:5px;font-size:7.5px;">';
+            $html .= '<div style="margin-top:5px;font-size:7px;">';
             foreach ($caveats as $caveat) {
                 $html .= '<span style="border:1px solid ' . $accent . ';color:' . $accent
-                    . ';padding:2px 5px;margin-right:4px;font-weight:bold;">'
+                    . ';background-color:#ffffff;padding:2px 5px;margin-right:3px;font-weight:bold;letter-spacing:0.4px;">'
                     . $e((string) $caveat) . '</span> ';
             }
             $html .= '</div>';
@@ -282,24 +411,38 @@ final class SseCasePdfService
 
         // En-tête unité + sceau
         $html .= '<br/><table cellpadding="2" cellspacing="0" border="0" width="100%"><tr>';
-        $html .= '<td width="55%" valign="top" style="font-size:9px;color:#0b1220;line-height:1.45;">'
-            . '<div>ATHENA · COMPSEC</div>'
-            . '<div style="font-weight:bold;text-decoration:underline;margin-top:2px;">UNITÉ : ' . $e($coverUnit) . '</div>'
-            . '<div>SECTION : Bureau SSE — Renseignement</div>'
-            . '<div style="margin-top:4px;font-weight:bold;">DOSSIER N° ' . $e($caseRef) . '</div>'
+        $html .= '<td width="52%" valign="top" style="font-size:8.5px;color:' . $ink . ';line-height:1.5;">'
+            . '<div style="font-size:7px;letter-spacing:1.5px;color:' . $muted . ';">ATHENA · COMPSEC</div>'
+            . '<div style="font-weight:bold;text-decoration:underline;margin-top:3px;font-size:9.5px;">UNITÉ : '
+            . $e($coverUnit) . '</div>'
+            . '<div style="margin-top:2px;">SECTION : Bureau SSE — Renseignement</div>'
+            . '<div style="margin-top:5px;font-weight:bold;font-size:10px;color:' . $accent . ';">DOSSIER N° '
+            . $e($caseRef) . '</div>'
             . '</td>';
-        $html .= '<td width="20%" align="center" valign="middle">';
-        $html .= '<table cellpadding="6" cellspacing="0" border="2" width="100%" style="border-color:'
-            . $sealColor . ';color:' . $sealColor . ';">'
-            . '<tr><td align="center" style="font-size:6px;letter-spacing:1px;">BUREAU SSE</td></tr>'
-            . '<tr><td align="center" style="font-size:16px;font-weight:bold;">' . $e((string) ($marks['seal_initials'] ?? 'UA')) . '</td></tr>'
-            . '<tr><td align="center" style="font-size:6px;letter-spacing:1px;">DOSSIERS</td></tr>'
+        $html .= '<td width="22%" align="center" valign="middle">';
+        $html .= '<table cellpadding="5" cellspacing="0" border="2" width="100%" style="border-color:'
+            . $sealColor . ';color:' . $sealColor . ';background-color:#ffffff;">'
+            . '<tr><td align="center" style="font-size:5.5px;letter-spacing:1.2px;border-bottom:1px solid '
+            . $sealColor . ';">BUREAU SSE</td></tr>'
+            . '<tr><td align="center" style="font-size:18px;font-weight:bold;letter-spacing:1px;">'
+            . $e((string) ($marks['seal_initials'] ?? 'UA')) . '</td></tr>'
+            . '<tr><td align="center" style="font-size:5.5px;letter-spacing:1.2px;border-top:1px solid '
+            . $sealColor . ';">DOSSIERS</td></tr>'
             . '</table></td>';
-        $html .= '<td width="25%" align="right" valign="top" style="font-size:9px;color:#0b1220;">Le ' . $e($updatedFr) . '</td>';
+        $html .= '<td width="26%" align="right" valign="top" style="font-size:9px;color:' . $ink . ';">'
+            . '<span style="color:' . $muted . ';font-size:7px;">ÉMIS LE</span><br/>'
+            . '<strong>' . $e($updatedFr) . '</strong></td>';
         $html .= '</tr></table>';
 
-        $html .= '<hr style="border:0;border-top:2px solid ' . $accent . ';margin:8px 0 6px 0;"/>';
-        $html .= '<div style="text-align:center;font-size:13px;font-weight:bold;color:#0b1220;margin:4px 0 8px 0;">'
+        $html .= '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:6px;">'
+            . '<tr><td style="border-top:2px solid ' . $accent . ';font-size:1px;line-height:1px;">&nbsp;</td></tr>'
+            . '<tr><td style="border-top:1px solid ' . $accent . ';font-size:2px;line-height:2px;">&nbsp;</td></tr>'
+            . '</table>';
+
+        $html .= '<div style="text-align:center;font-size:7px;letter-spacing:2px;color:' . $muted
+            . ';font-weight:bold;margin:6px 0 2px 0;">CHEMISE DE DOSSIER</div>';
+        $html .= '<div style="text-align:center;font-size:14px;font-weight:bold;color:' . $ink
+            . ';margin:0 0 8px 0;line-height:1.25;">'
             . $e($caseTitle) . '</div>';
 
         // Grille faits
@@ -313,142 +456,237 @@ final class SseCasePdfService
             ['Preuves versées', (string) count($evidence)],
             ['Sites exploités', (string) count($sites)],
         ];
-        $html .= '<table cellpadding="4" cellspacing="0" border="1" width="100%" style="border-color:#0b1220;font-size:8px;">';
+        $html .= '<table cellpadding="5" cellspacing="0" border="1" width="100%" style="border-color:'
+            . $ink . ';font-size:8px;">';
         for ($i = 0; $i < 8; $i += 4) {
             $html .= '<tr>';
             for ($j = 0; $j < 4; $j++) {
                 [$lab, $val] = $facts[$i + $j];
-                $html .= '<td width="25%"><span style="font-size:6.5px;color:#64748b;letter-spacing:0.5px;text-transform:uppercase;">'
-                    . $e($lab) . '</span><br/><strong style="font-size:9px;color:#0b1220;">' . $e($val) . '</strong></td>';
+                $cellBg = (($i + $j) % 2 === 0) ? 'background-color:' . $bannerBg . ';' : '';
+                $html .= '<td width="25%" style="' . $cellBg . '"><span style="font-size:6px;color:'
+                    . $muted . ';letter-spacing:0.6px;text-transform:uppercase;">'
+                    . $e($lab) . '</span><br/><strong style="font-size:9px;color:' . $ink . ';">'
+                    . $e($val) . '</strong></td>';
             }
             $html .= '</tr>';
         }
         $html .= '</table>';
 
         // Objet
-        $html .= '<br/><table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
-            . '<td width="4" style="background-color:' . $accent . ';"></td>'
-            . '<td style="padding-left:6px;font-size:10px;font-weight:bold;color:#0b1220;letter-spacing:1px;">OBJET DU DOSSIER</td>'
-            . '</tr></table>';
+        $html .= $this->sectionTitle('Objet du dossier');
         if ($summary !== '') {
-            $html .= '<p style="font-size:9.5px;color:#1e293b;line-height:1.4;text-align:justify;">'
+            $html .= '<p style="font-size:9px;color:#1e293b;line-height:1.45;text-align:justify;margin:2px 0 6px 0;">'
                 . nl2br($e($summary)) . '</p>';
         } else {
-            $html .= '<p style="font-size:9px;color:#64748b;font-style:italic;">'
+            $html .= '<p style="font-size:8.5px;color:' . $muted . ';font-style:italic;margin:2px 0 6px 0;">'
                 . 'Aucune synthèse n’a encore été portée à la chemise.</p>';
         }
 
-        // Consignes (compactes pour tenir sur la page)
-        $html .= '<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
-            . '<td width="4" style="background-color:' . $accent . ';"></td>'
-            . '<td style="padding-left:6px;font-size:10px;font-weight:bold;color:#0b1220;letter-spacing:1px;">CONSIGNES DE MANIPULATION</td>'
-            . '</tr></table>';
-        $html .= '<p style="font-size:8px;color:#334155;line-height:1.35;">'
+        // Consignes
+        $html .= $this->sectionTitle('Consignes de manipulation');
+        $html .= '<p style="font-size:7.5px;color:#334155;line-height:1.4;margin:2px 0 4px 0;">'
             . 'Le dossier <strong>' . $e($caseRef) . '</strong> regroupe des pièces de niveaux de protection différents. '
             . 'Le niveau retenu pour l’ensemble est <strong>' . $e($classLabel) . '</strong>. '
             . 'Consultation au poste habilité, chemise complète ; restitution le jour même contre visa ; '
             . 'reproduction interdite sans accord écrit du chef de bureau.'
             . '</p>';
-        $html .= '<p style="font-size:8px;color:#334155;">'
+        $html .= '<p style="font-size:7.5px;color:#334155;margin:0 0 6px 0;">'
             . 'Révision de classification prévue le <strong>' . $e((string) ($marks['declassify_on'] ?? '—')) . '</strong>. '
             . 'Conservation <strong>' . $e((string) ($marks['destruction_delay'] ?? '—')) . '</strong> après clôture.'
             . '</p>';
 
         // Auth : QR + empreintes
-        $html .= '<br/><table cellpadding="4" cellspacing="0" border="0" width="100%"><tr>';
-        $html .= '<td width="28%" valign="top" align="center">';
+        $html .= '<table cellpadding="5" cellspacing="0" border="1" width="100%" style="border-color:#cbd5e1;background-color:#fafafa;">'
+            . '<tr>';
+        $html .= '<td width="26%" valign="middle" align="center" style="background-color:#ffffff;">';
         if ($wsQr !== '') {
-            // TCPDF : data-URI PNG, taille réduite pour la chemise
             $html .= preg_replace(
                 ['/\sclass="[^"]*"/', '/\swidth="\d+"/', '/\sheight="\d+"/'],
-                ['', ' width="70"', ' height="70"'],
+                ['', ' width="64"', ' height="64"'],
                 $wsQr
             ) ?? $wsQr;
         }
-        $html .= '<div style="font-size:7px;margin-top:3px;"><strong>' . $e($wsId) . '</strong><br/>'
-            . $e($wsHost) . ' · ' . $e($wsIp) . '</div></td>';
-        $html .= '<td width="72%" valign="top" style="font-size:7.5px;color:#0b1220;">'
-            . '<div style="font-weight:bold;font-size:8px;margin-bottom:3px;">EMPREINTES D’INTÉGRITÉ</div>'
-            . '<strong>Condensat</strong> : <span style="font-family:courier;">' . $e((string) ($marks['integrity_groups'] ?? '')) . '</span><br/>'
-            . '<strong>Enveloppe</strong> : <span style="font-family:courier;">' . $e((string) ($marks['envelope_hash'] ?? '')) . '</span><br/>'
-            . '<strong>Machine</strong> : <span style="font-family:courier;">' . $e($wsFp !== '' ? $wsFp : '—') . '</span><br/>'
-            . '<strong>Contrôle</strong> : <span style="font-family:courier;">' . $e((string) ($marks['checksum'] ?? '')) . '</span>'
+        $html .= '<div style="font-size:6.5px;margin-top:3px;color:' . $ink . ';"><strong>'
+            . $e($wsId) . '</strong><br/>' . $e($wsHost) . ' · ' . $e($wsIp) . '</div></td>';
+        $html .= '<td width="74%" valign="top" style="font-size:7px;color:' . $ink . ';line-height:1.45;">'
+            . '<div style="font-weight:bold;font-size:8px;letter-spacing:0.8px;color:' . $accent
+            . ';margin-bottom:4px;">EMPREINTES D’INTÉGRITÉ</div>'
+            . '<strong>Condensat</strong> : <span style="font-family:courier;font-size:6.5px;">'
+            . $e((string) ($marks['integrity_groups'] ?? '')) . '</span><br/>'
+            . '<strong>Enveloppe</strong> : <span style="font-family:courier;font-size:6.5px;">'
+            . $e((string) ($marks['envelope_hash'] ?? '')) . '</span><br/>'
+            . '<strong>Machine</strong> : <span style="font-family:courier;font-size:6.5px;">'
+            . $e($wsFp !== '' ? $wsFp : '—') . '</span><br/>'
+            . '<strong>Contrôle</strong> : <span style="font-family:courier;font-size:6.5px;">'
+            . $e((string) ($marks['checksum'] ?? '')) . '</span>'
             . ' · ' . $e((string) ($marks['algorithm'] ?? ''))
             . '</td></tr></table>';
 
         // Tampons
-        $html .= '<br/><table cellpadding="3" cellspacing="4" border="0"><tr>'
-            . '<td style="border:2px solid ' . $accent . ';color:' . $accent . ';font-size:8px;font-weight:bold;letter-spacing:1px;">'
+        $html .= '<br/><table cellpadding="4" cellspacing="5" border="0" width="100%"><tr>'
+            . '<td align="center" style="border:2px solid ' . $accent . ';color:' . $accent
+            . ';font-size:7.5px;font-weight:bold;letter-spacing:1px;">'
             . $e($classUpper) . '</td>'
-            . '<td style="border:2px solid #15803d;color:#15803d;font-size:8px;font-weight:bold;letter-spacing:1px;">'
+            . '<td align="center" style="border:2px solid #15803d;color:#15803d;font-size:7.5px;font-weight:bold;letter-spacing:1px;">'
             . ($isClosed ? 'DOSSIER CLOS' : 'DOSSIER OUVERT') . '</td>'
-            . '<td style="border:2px dashed #64748b;color:#64748b;font-size:8px;font-weight:bold;">'
+            . '<td align="center" style="border:2px dashed #64748b;color:#64748b;font-size:7.5px;font-weight:bold;letter-spacing:0.6px;">'
             . 'EXEMPLAIRE ' . (int) ($marks['copy_index'] ?? 1) . ' / ' . (int) ($marks['copy_total'] ?? 1) . '</td>'
             . '</tr></table>';
 
+        $html .= '</td></tr></table>'; // padding cell
+
         // Bandeau bas
-        $html .= '<br/><table cellpadding="4" cellspacing="0" border="0" width="100%" style="background-color:'
-            . $bannerBg . ';border:1px solid ' . $accent . ';">'
+        $html .= '<table cellpadding="4" cellspacing="0" border="0" width="100%" style="background-color:'
+            . $bannerBg . ';border-top:1px solid ' . $accent . ';">'
             . '<tr>'
-            . '<td width="33%" style="font-size:7px;color:#64748b;">Contrôle ' . $e((string) ($marks['control_number'] ?? '')) . '</td>'
-            . '<td width="34%" style="font-size:11px;font-weight:bold;color:' . $accent . ';text-align:center;">' . $e($classUpper) . '</td>'
-            . '<td width="33%" style="font-size:7px;color:#64748b;text-align:right;">Chemise — page de garde · ' . $e($generatedAt) . '</td>'
+            . '<td width="33%" style="font-size:6.5px;color:' . $muted . ';">Contrôle '
+            . $e((string) ($marks['control_number'] ?? '')) . '</td>'
+            . '<td width="34%" style="font-size:10px;font-weight:bold;color:' . $accent
+            . ';text-align:center;letter-spacing:1px;">' . $e($classUpper) . '</td>'
+            . '<td width="33%" style="font-size:6.5px;color:' . $muted . ';text-align:right;">Chemise — page de garde · '
+            . $e($generatedAt) . '</td>'
             . '</tr></table>';
+
+        $html .= '</td></tr></table>'; // frame
 
         return $html;
     }
 
     /**
-     * @return array{accent:string,banner:string,seal:string}
+     * @return array{accent:string,banner:string,seal:string,soft:string,ink:string,muted:string}
      */
     private function classPalette(string $classCode): array
     {
+        $base = ['ink' => '#0b1220', 'muted' => '#64748b'];
+
         return match ($classCode) {
-            'tres_restreint' => ['accent' => '#b91c1c', 'banner' => '#fef2f2', 'seal' => '#991b1b'],
-            'confidentiel' => ['accent' => '#b45309', 'banner' => '#fffbeb', 'seal' => '#92400e'],
-            'encadrement' => ['accent' => '#1d4ed8', 'banner' => '#eff6ff', 'seal' => '#1e3a8a'],
-            default => ['accent' => '#475569', 'banner' => '#f8fafc', 'seal' => '#334155'],
+            'tres_restreint' => $base + [
+                'accent' => '#b91c1c',
+                'banner' => '#fef2f2',
+                'seal' => '#991b1b',
+                'soft' => '#fecaca',
+            ],
+            'confidentiel' => $base + [
+                'accent' => '#b45309',
+                'banner' => '#fffbeb',
+                'seal' => '#92400e',
+                'soft' => '#fde68a',
+            ],
+            'encadrement' => $base + [
+                'accent' => '#1d4ed8',
+                'banner' => '#eff6ff',
+                'seal' => '#1e3a8a',
+                'soft' => '#bfdbfe',
+            ],
+            default => $base + [
+                'accent' => '#475569',
+                'banner' => '#f8fafc',
+                'seal' => '#334155',
+                'soft' => '#e2e8f0',
+            ],
         };
     }
 
-    /**
-     * @param array<string,mixed> $case
-     */
-    private function sectionBanner(array $case, string $redactedLabel): string
+    private function sectionBanner(string $redactedLabel, string $sectionLabel = ''): string
     {
+        $case = $this->caseMeta;
         $classLabel = (string) ($case['classification_label'] ?? '');
         $classUpper = mb_strtoupper($classLabel !== '' ? $classLabel : 'CONFIDENTIEL', 'UTF-8');
-        $classCode = SseCaseRepository::normalizeClassification((string) ($case['classification'] ?? 'encadrement'));
-        $palette = $this->classPalette($classCode);
-        $accent = $palette['accent'];
-        $bannerBg = $palette['banner'];
+        $accent = $this->palette['accent'];
+        $bannerBg = $this->palette['banner'];
+        $muted = $this->palette['muted'];
+        $ink = $this->palette['ink'];
 
-        $html = '<table cellpadding="3" cellspacing="0" border="0" width="100%" style="background-color:'
-            . $bannerBg . ';border:1px solid ' . $accent . ';margin-bottom:8px;">'
+        $html = '<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
+            . '<td width="3" style="background-color:' . $accent . ';"></td>'
+            . '<td style="border:1px solid ' . $accent . ';background-color:' . $bannerBg . ';">'
+            . '<table cellpadding="4" cellspacing="0" border="0" width="100%">'
             . '<tr>'
-            . '<td width="30%" style="font-size:7px;color:#64748b;">'
+            . '<td width="28%" style="font-size:7px;color:' . $muted . ';">'
             . $this->e((string) ($case['reference_code'] ?? '')) . '</td>'
-            . '<td width="40%" style="font-size:10px;font-weight:bold;color:' . $accent . ';text-align:center;letter-spacing:1px;">'
+            . '<td width="44%" style="font-size:10px;font-weight:bold;color:' . $accent
+            . ';text-align:center;letter-spacing:1px;">'
             . $this->e($classUpper) . '</td>'
-            . '<td width="30%" style="font-size:7px;color:#64748b;text-align:right;">'
+            . '<td width="28%" style="font-size:7px;color:' . $muted . ';text-align:right;">'
             . $this->e((string) ($case['title'] ?? '')) . '</td>'
-            . '</tr></table>';
+            . '</tr>';
+        if ($sectionLabel !== '') {
+            $html .= '<tr><td colspan="3" style="font-size:8px;font-weight:bold;color:' . $ink
+                . ';letter-spacing:0.8px;border-top:1px solid ' . $accent . ';background-color:#ffffff;">'
+                . $this->e(mb_strtoupper($sectionLabel, 'UTF-8')) . '</td></tr>';
+        }
+        $html .= '</table></td></tr></table><br/>';
+
         if ($redactedLabel !== '') {
-            $html .= '<div style="background-color:#8f1d1d;color:#ffffff;padding:4px;font-size:8px;text-align:center;margin-bottom:6px;">'
-                . $this->e($redactedLabel) . '</div>';
+            $html .= '<table cellpadding="4" cellspacing="0" border="0" width="100%" style="background-color:'
+                . $accent . ';margin-bottom:6px;"><tr><td style="color:#ffffff;font-size:7.5px;text-align:center;font-weight:bold;">'
+                . $this->e($redactedLabel) . '</td></tr></table>';
         }
 
         return $html;
     }
 
-    private function preBlock(string $title, string $body): string
+    private function sectionTitle(string $title): string
     {
+        $accent = $this->palette['accent'];
+        $ink = $this->palette['ink'];
+
+        return '<br/><table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
+            . '<td width="4" style="background-color:' . $accent . ';"></td>'
+            . '<td width="6"></td>'
+            . '<td style="font-size:9.5px;font-weight:bold;color:' . $ink
+            . ';letter-spacing:1px;">' . $this->e(mb_strtoupper($title, 'UTF-8')) . '</td>'
+            . '</tr></table><br/>';
+    }
+
+    private function reportSheet(string $title, string $body): string
+    {
+        $accent = $this->palette['accent'];
+        $bannerBg = $this->palette['banner'];
+        $ink = $this->palette['ink'];
+        $muted = $this->palette['muted'];
         $text = trim($body) !== '' ? $body : '(aucun contenu généré)';
 
-        return '<h2 style="font-size:14px;">' . $this->e($title) . '</h2>'
-            . '<pre style="font-size:9.5px;line-height:1.35;font-family:courier;white-space:pre-wrap;">'
+        return $this->sectionTitle($title)
+            . '<table cellpadding="0" cellspacing="0" border="1" width="100%" style="border-color:'
+            . $accent . ';">'
+            . '<tr style="background-color:' . $bannerBg . ';"><td style="padding:5px;font-size:7px;color:'
+            . $muted . ';letter-spacing:0.8px;">PIÈCE RÉDACTIONNELLE · DIFFUSION CONTRÔLÉE</td></tr>'
+            . '<tr><td style="padding:8px;background-color:#ffffff;">'
+            . '<pre style="font-size:9px;line-height:1.4;font-family:courier;color:' . $ink
+            . ';white-space:pre-wrap;margin:0;">'
             . $this->e($text)
-            . '</pre>';
+            . '</pre></td></tr></table>';
+    }
+
+    private function emptyState(string $message): string
+    {
+        $muted = $this->palette['muted'];
+        $soft = $this->palette['soft'];
+
+        return '<table cellpadding="10" cellspacing="0" border="1" width="100%" style="border-color:#cbd5e1;background-color:'
+            . $soft . ';"><tr><td style="text-align:center;font-size:9px;color:' . $muted
+            . ';font-style:italic;">' . $this->e($message) . '</td></tr></table>';
+    }
+
+    /**
+     * @param list<string> $headers
+     * @param list<string> $widths percent widths as strings e.g. "12%"
+     */
+    private function openDataTable(array $headers, array $widths): string
+    {
+        $accent = $this->palette['accent'];
+        $html = '<table cellpadding="4" cellspacing="0" border="1" width="100%" style="border-color:#334155;font-size:8.5px;border-collapse:collapse;">'
+            . '<tr style="background-color:' . $accent . ';color:#ffffff;">';
+        foreach ($headers as $i => $label) {
+            $w = $widths[$i] ?? '';
+            $html .= '<th' . ($w !== '' ? ' width="' . $w . '"' : '')
+                . ' style="font-size:7px;font-weight:bold;letter-spacing:0.5px;">'
+                . $this->e($label) . '</th>';
+        }
+        $html .= '</tr>';
+
+        return $html;
     }
 
     /**
@@ -456,14 +694,15 @@ final class SseCasePdfService
      */
     private function peopleHtml(array $people): string
     {
-        $html = '<h2 style="font-size:14px;">Personnes rattachées</h2>';
+        $html = $this->sectionTitle('Personnes rattachées');
         if ($people === []) {
-            return $html . '<p style="font-size:11px;">Aucune personne rattachée.</p>';
+            return $html . $this->emptyState('Aucune personne rattachée à ce dossier.');
         }
 
-        $html .= '<table cellpadding="4" border="1" style="font-size:9px;border-collapse:collapse;width:100%;">'
-            . '<tr style="background-color:#eee;"><th width="12%">Réf.</th><th width="28%">Identité</th>'
-            . '<th width="18%">Statut</th><th width="22%">Biométrie</th><th width="20%">Croisement</th></tr>';
+        $html .= $this->openDataTable(
+            ['Réf.', 'Identité', 'Statut', 'Biométrie', 'Croisement'],
+            ['10%', '28%', '16%', '22%', '24%']
+        );
 
         foreach ($people as $i => $p) {
             $ref = sprintf('P%02d', $i + 1);
@@ -489,11 +728,16 @@ final class SseCasePdfService
                 $wlLabel = (string) $wl['verdict_label'];
             }
 
-            $html .= '<tr>'
-                . '<td>' . $this->e($ref) . '</td>'
-                . '<td><strong>' . $this->e((string) ($p['display_name'] ?? '—')) . '</strong>'
-                . (!empty($p['alias']) ? '<br/><em>' . $this->e((string) $p['alias']) . '</em>' : '')
-                . '</td>'
+            $rowBg = ($i % 2 === 1) ? 'background-color:' . $this->palette['banner'] . ';' : '';
+            $alias = !empty($p['alias'])
+                ? '<br/><span style="font-size:7.5px;color:' . $this->palette['muted'] . ';">« '
+                    . $this->e((string) $p['alias']) . ' »</span>'
+                : '';
+
+            $html .= '<tr style="' . $rowBg . '">'
+                . '<td style="font-family:courier;font-weight:bold;color:' . $this->palette['accent'] . ';">'
+                . $this->e($ref) . '</td>'
+                . '<td><strong>' . $this->e((string) ($p['display_name'] ?? '—')) . '</strong>' . $alias . '</td>'
                 . '<td>' . $this->e((string) ($p['status_label'] ?? '')) . '</td>'
                 . '<td>' . $this->e($bio) . '</td>'
                 . '<td>' . $this->e($wlLabel) . '</td>'
@@ -509,39 +753,50 @@ final class SseCasePdfService
      */
     private function sitesHtml(array $sites): string
     {
-        $html = '<h2 style="font-size:14px;">Sites exploités</h2>';
+        $html = $this->sectionTitle('Sites exploités');
         if ($sites === []) {
-            return $html . '<p style="font-size:11px;">Aucun site rattaché.</p>';
+            return $html . $this->emptyState('Aucun site rattaché.');
         }
+
+        $accent = $this->palette['accent'];
+        $bannerBg = $this->palette['banner'];
+        $ink = $this->palette['ink'];
+        $muted = $this->palette['muted'];
 
         foreach ($sites as $site) {
             $rooms = is_array($site['rooms'] ?? null) ? $site['rooms'] : [];
             $seizures = is_array($site['seizures'] ?? null) ? $site['seizures'] : [];
             $done = count(array_filter($rooms, static fn (array $r): bool => !empty($r['checked'])));
 
-            $html .= '<h3 style="font-size:12px;margin-bottom:2px;">'
+            $html .= '<table cellpadding="0" cellspacing="0" border="1" width="100%" style="border-color:'
+                . $accent . ';margin-bottom:8px;">'
+                . '<tr style="background-color:' . $bannerBg . ';"><td style="padding:5px;">'
+                . '<span style="font-size:10px;font-weight:bold;color:' . $ink . ';">'
                 . $this->e((string) ($site['reference_code'] ?? ''))
                 . ' — ' . $this->e((string) ($site['name'] ?? ''))
-                . '</h3>';
-            $html .= '<p style="font-size:10px;">'
+                . '</span><br/>'
+                . '<span style="font-size:7.5px;color:' . $muted . ';">'
                 . $this->e((string) ($site['site_type_label'] ?? ''))
                 . ' · ' . $this->e((string) ($site['status_label'] ?? ''))
                 . ' · Fouille : ' . $done . '/' . count($rooms)
                 . ' · Saisies : ' . count($seizures)
-                . '</p>';
+                . '</span></td></tr><tr><td style="padding:6px;background-color:#ffffff;">';
 
             if ($rooms !== []) {
-                $html .= '<p style="font-size:9px;"><strong>Pièces :</strong> ';
+                $html .= '<div style="font-size:7.5px;font-weight:bold;color:' . $accent
+                    . ';letter-spacing:0.6px;margin-bottom:3px;">PIÈCES</div>'
+                    . '<p style="font-size:8.5px;color:' . $ink . ';margin:0 0 6px 0;">';
                 $bits = [];
                 foreach ($rooms as $r) {
-                    $mark = !empty($r['checked']) ? '✓' : '○';
+                    $mark = !empty($r['checked']) ? '■' : '□';
                     $bits[] = $mark . ' ' . $this->e((string) ($r['label'] ?? 'Pièce'));
                 }
                 $html .= implode(' · ', $bits) . '</p>';
             }
 
             if ($seizures !== []) {
-                $html .= '<ul style="font-size:9px;">';
+                $html .= '<div style="font-size:7.5px;font-weight:bold;color:' . $accent
+                    . ';letter-spacing:0.6px;margin-bottom:3px;">SAISIES</div><ul style="font-size:8.5px;margin:0;padding-left:14px;">';
                 foreach (array_slice($seizures, 0, 40) as $sz) {
                     $html .= '<li>' . $this->e((string) ($sz['label'] ?? $sz['item_label'] ?? 'Saisie'));
                     if (!empty($sz['quantity'])) {
@@ -554,6 +809,13 @@ final class SseCasePdfService
                 }
                 $html .= '</ul>';
             }
+
+            if ($rooms === [] && $seizures === []) {
+                $html .= '<p style="font-size:8px;color:' . $muted . ';font-style:italic;margin:0;">'
+                    . 'Aucun détail de fouille versé.</p>';
+            }
+
+            $html .= '</td></tr></table>';
         }
 
         return $html;
@@ -566,9 +828,9 @@ final class SseCasePdfService
      */
     private function relationsHtml(array $relations, array $people, array $sites): string
     {
-        $html = '<h2 style="font-size:14px;">Corrélations</h2>';
+        $html = $this->sectionTitle('Corrélations');
         if ($relations === []) {
-            return $html . '<p style="font-size:11px;">Aucune corrélation enregistrée sur ce dossier.</p>';
+            return $html . $this->emptyState('Aucune corrélation enregistrée sur ce dossier.');
         }
 
         $personNames = [];
@@ -580,17 +842,20 @@ final class SseCasePdfService
             $siteNames[(int) ($s['id'] ?? 0)] = (string) ($s['name'] ?? $s['reference_code'] ?? 'Site');
         }
 
-        $html .= '<table cellpadding="3" border="1" style="font-size:9px;border-collapse:collapse;width:100%;">'
-            . '<tr style="background-color:#eee;"><th>De</th><th>Lien</th><th>Vers</th><th>Fiabilité</th><th>Note</th></tr>';
+        $html .= $this->openDataTable(
+            ['De', 'Lien', 'Vers', 'Fiabilité', 'Note'],
+            ['22%', '16%', '22%', '14%', '26%']
+        );
 
-        foreach ($relations as $rel) {
+        foreach ($relations as $i => $rel) {
             $from = $this->entityLabel((string) ($rel['from_type'] ?? ''), (int) ($rel['from_id'] ?? 0), $personNames, $siteNames);
             $to = $this->entityLabel((string) ($rel['to_type'] ?? ''), (int) ($rel['to_id'] ?? 0), $personNames, $siteNames);
             $link = SseCorrelationService::relationLabel((string) ($rel['relation'] ?? ''));
             $relia = SseCorrelationService::reliabilityLabel((string) ($rel['reliability'] ?? ''));
-            $html .= '<tr>'
+            $rowBg = ($i % 2 === 1) ? 'background-color:' . $this->palette['banner'] . ';' : '';
+            $html .= '<tr style="' . $rowBg . '">'
                 . '<td>' . $this->e($from) . '</td>'
-                . '<td>' . $this->e($link) . '</td>'
+                . '<td><strong style="color:' . $this->palette['accent'] . ';">' . $this->e($link) . '</strong></td>'
                 . '<td>' . $this->e($to) . '</td>'
                 . '<td>' . $this->e($relia) . '</td>'
                 . '<td>' . $this->e((string) ($rel['note'] ?? '—')) . '</td>'
@@ -623,21 +888,31 @@ final class SseCasePdfService
      */
     private function notesHtml(array $notes): string
     {
-        $html = '<h2 style="font-size:14px;">Notes classifiées</h2>';
+        $html = $this->sectionTitle('Notes classifiées');
         if ($notes === []) {
-            return $html . '<p style="font-size:11px;">Aucune note.</p>';
+            return $html . $this->emptyState('Aucune note.');
         }
 
+        $accent = $this->palette['accent'];
+        $bannerBg = $this->palette['banner'];
+        $ink = $this->palette['ink'];
+        $muted = $this->palette['muted'];
+
         foreach ($notes as $n) {
-            $html .= '<div style="margin-bottom:8px;padding:6px;border:1px solid #ddd;">'
-                . '<div style="font-size:9px;color:#555;">'
+            $html .= '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:7px;">'
+                . '<tr>'
+                . '<td width="3" style="background-color:' . $accent . ';"></td>'
+                . '<td style="border:1px solid #cbd5e1;border-left:0;">'
+                . '<table cellpadding="5" cellspacing="0" border="0" width="100%">'
+                . '<tr style="background-color:' . $bannerBg . ';"><td style="font-size:7px;color:'
+                . $muted . ';">'
                 . $this->e((string) ($n['classification_label'] ?? ''))
                 . ' · ' . $this->e((string) ($n['author_label'] ?? 'Opérateur'))
                 . (!empty($n['created_at']) ? ' · ' . $this->e((string) $n['created_at']) : '')
-                . '</div>'
-                . '<p style="font-size:10px;margin:4px 0 0;">'
+                . '</td></tr>'
+                . '<tr><td style="font-size:9px;color:' . $ink . ';line-height:1.4;">'
                 . nl2br($this->e((string) ($n['body'] ?? '')))
-                . '</p></div>';
+                . '</td></tr></table></td></tr></table>';
         }
 
         return $html;
@@ -648,30 +923,35 @@ final class SseCasePdfService
      */
     private function evidenceHtml(array $evidence): string
     {
-        $html = '<h2 style="font-size:14px;">Preuves recensées</h2>';
+        $html = $this->sectionTitle('Preuves recensées');
         if ($evidence === []) {
-            return $html . '<p style="font-size:11px;">Aucune preuve jointe.</p>';
+            return $html . $this->emptyState('Aucune preuve jointe.');
         }
 
-        $html .= '<ol style="font-size:10px;">';
-        foreach ($evidence as $e) {
-            $html .= '<li><strong>' . $this->e((string) ($e['label'] ?? 'Preuve')) . '</strong>';
-            if (!empty($e['caption'])) {
-                $html .= ' — ' . $this->e((string) $e['caption']);
+        $html .= $this->openDataTable(
+            ['N°', 'Libellé', 'Légende', 'Versée par', 'Date'],
+            ['8%', '24%', '30%', '20%', '18%']
+        );
+
+        foreach ($evidence as $i => $ev) {
+            $rowBg = ($i % 2 === 1) ? 'background-color:' . $this->palette['banner'] . ';' : '';
+            $label = (string) ($ev['label'] ?? 'Preuve');
+            if (!empty($ev['image_path'])) {
+                $label .= ' ✦';
             }
-            if (!empty($e['author_label'])) {
-                $html .= ' <em>(' . $this->e((string) $e['author_label']) . ')</em>';
-            }
-            if (!empty($e['created_at'])) {
-                $html .= ' · ' . $this->e((string) $e['created_at']);
-            }
-            if (!empty($e['image_path'])) {
-                $html .= ' · image jointe';
-            }
-            $html .= '</li>';
+            $html .= '<tr style="' . $rowBg . '">'
+                . '<td style="font-family:courier;font-weight:bold;color:' . $this->palette['accent'] . ';">'
+                . sprintf('%02d', $i + 1) . '</td>'
+                . '<td><strong>' . $this->e($label) . '</strong></td>'
+                . '<td>' . $this->e((string) ($ev['caption'] ?? '—')) . '</td>'
+                . '<td>' . $this->e((string) ($ev['author_label'] ?? '—')) . '</td>'
+                . '<td>' . $this->e((string) ($ev['created_at'] ?? '—')) . '</td>'
+                . '</tr>';
         }
-        $html .= '</ol>';
-        $html .= '<p style="font-size:9px;color:#555;">Les images disponibles sont reproduites ci-après, dans la limite de l’espace du document.</p>';
+        $html .= '</table>';
+        $html .= '<p style="font-size:7.5px;color:' . $this->palette['muted'] . ';margin-top:6px;">'
+            . '✦ Image jointe reproduite dans les pages suivantes, dans la limite de l’espace du document.'
+            . '</p>';
 
         return $html;
     }
@@ -679,10 +959,10 @@ final class SseCasePdfService
     /**
      * @param list<array<string,mixed>> $evidence
      */
-    private function appendEvidenceImages(\TCPDF $pdf, array $evidence): void
+    private function appendEvidenceImages(\TCPDF $pdf, array $evidence, string $redactedLabel = ''): void
     {
         $shown = 0;
-        foreach ($evidence as $e) {
+        foreach ($evidence as $i => $e) {
             if ($shown >= 12) {
                 break;
             }
@@ -697,14 +977,29 @@ final class SseCasePdfService
 
             try {
                 $pdf->AddPage();
+                $pdf->writeHTML(
+                    $this->sectionBanner($redactedLabel, sprintf('07.%02d · Pièce visuelle', $i + 1)),
+                    true,
+                    false,
+                    true,
+                    false,
+                    ''
+                );
                 $pdf->SetFont('helvetica', 'B', 11);
+                $pdf->SetTextColor(11, 18, 32);
                 $pdf->Write(6, (string) ($e['label'] ?? 'Preuve'), '', false, 'L', true);
                 if (!empty($e['caption'])) {
                     $pdf->SetFont('helvetica', '', 9);
+                    $pdf->SetTextColor(100, 116, 139);
                     $pdf->Write(5, (string) $e['caption'], '', false, 'L', true);
                 }
+                $pdf->Ln(3);
+                $pdf->SetDrawColor(...$this->hexToRgb($this->palette['accent']));
+                $pdf->SetLineWidth(0.4);
+                $y = $pdf->GetY();
+                $pdf->Rect(12, $y, 186, 0.01);
                 $pdf->Ln(2);
-                $pdf->Image($abs, 14, $pdf->GetY(), 180, 0, '', '', '', false, 150, '', false, false, 0, false, false, false);
+                $pdf->Image($abs, 14, $pdf->GetY(), 176, 0, '', '', '', false, 150, '', false, false, 0, false, false, false);
                 $shown++;
             } catch (\Throwable) {
                 // Image illisible : on continue sans faire échouer tout l'export.
@@ -726,6 +1021,26 @@ final class SseCasePdfService
         }
 
         return null;
+    }
+
+    /**
+     * @return array{0:int,1:int,2:int}
+     */
+    private function hexToRgb(string $hex): array
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) === 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        if (strlen($hex) !== 6) {
+            return [71, 85, 105];
+        }
+
+        return [
+            (int) hexdec(substr($hex, 0, 2)),
+            (int) hexdec(substr($hex, 2, 2)),
+            (int) hexdec(substr($hex, 4, 2)),
+        ];
     }
 
     private function e(string $value): string

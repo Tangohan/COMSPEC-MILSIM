@@ -35,6 +35,7 @@ class CfgFunctions {
             class getState {};
             class setState {};
             class setIdentity {};
+            class syncIdentityBridgeVars {};
             class setDigitalData {};
             class linkEntities {};
             class getLinks {};

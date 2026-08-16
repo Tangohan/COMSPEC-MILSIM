@@ -9,6 +9,7 @@ $signals = is_array($signals ?? null) ? $signals : [];
 $pendingCount = (int) ($pendingCount ?? 0);
 $canManage = (bool) ($canManage ?? false);
 $filterCaseId = (int) ($filterCaseId ?? 0);
+$searchQuery = trim((string) ($searchQuery ?? ''));
 ?>
 <div class="page-heading">
     <div>
@@ -27,18 +28,40 @@ $filterCaseId = (int) ($filterCaseId ?? 0);
     <?php endif; ?>
 </div>
 
+<form class="sse-toolbar-search" method="get" action="<?= $h(url('atak/sse/rapprochements')) ?>" role="search">
+    <?php if ($filterCaseId > 0): ?>
+        <input type="hidden" name="case_id" value="<?= $filterCaseId ?>">
+    <?php endif; ?>
+    <label for="sugg-q">Rechercher</label>
+    <div class="case-search-control">
+        <input
+            id="sugg-q"
+            name="q"
+            type="search"
+            value="<?= $h($searchQuery) ?>"
+            placeholder="Titre, motif, type, détail de signal…"
+        >
+        <button type="submit" aria-label="Lancer la recherche">→</button>
+    </div>
+    <?php if ($searchQuery !== ''): ?>
+        <a class="link" href="<?= $h(url('atak/sse/rapprochements' . ($filterCaseId > 0 ? '?case_id=' . $filterCaseId : ''))) ?>">Effacer</a>
+    <?php endif; ?>
+</form>
+
 <section class="panel">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">25.01</span> File à traiter</div>
-        <div class="panel-meta"><?= $pendingCount ?> en attente</div>
+        <div class="panel-meta"><?= $pendingCount ?> en attente<?= $searchQuery !== '' ? ' · filtrée' : '' ?></div>
     </div>
     <div class="panel-body">
         <?php if ($suggestions === []): ?>
             <div class="empty-state">
                 <div class="empty-state-inner">
-                    <div class="empty-symbol">OK</div>
-                    <strong>Aucune proposition en attente</strong>
-                    <p>Le prochain passage nocturne ou un lancement manuel pourra en produire.</p>
+                    <div class="empty-symbol"><?= $searchQuery !== '' ? '—' : 'OK' ?></div>
+                    <strong><?= $searchQuery !== '' ? 'Aucun résultat' : 'Aucune proposition en attente' ?></strong>
+                    <p><?= $searchQuery !== ''
+                        ? 'Aucune proposition ne correspond à cette recherche.'
+                        : 'Le prochain passage nocturne ou un lancement manuel pourra en produire.' ?></p>
                 </div>
             </div>
         <?php else: ?>
@@ -79,11 +102,11 @@ $filterCaseId = (int) ($filterCaseId ?? 0);
 <section class="panel">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">25.02</span> Signaux analytiques</div>
-        <div class="panel-meta"><?= count($signals) ?></div>
+        <div class="panel-meta"><?= count($signals) ?><?= $searchQuery !== '' ? ' · filtrés' : '' ?></div>
     </div>
     <div class="panel-body">
         <?php if ($signals === []): ?>
-            <p class="muted">Aucun signal ouvert.</p>
+            <p class="muted"><?= $searchQuery !== '' ? 'Aucun signal pour cette recherche.' : 'Aucun signal ouvert.' ?></p>
         <?php else: ?>
             <ul class="sse-ana-suggest">
                 <?php foreach ($signals as $sig): ?>
@@ -98,5 +121,5 @@ $filterCaseId = (int) ($filterCaseId ?? 0);
     </div>
 </section>
 <?php
-$content = ob_get_clean();
+$sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

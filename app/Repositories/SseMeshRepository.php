@@ -673,7 +673,7 @@ final class SseMeshRepository
             $out[] = $this->hydrateNode($row);
         }
 
-        return $out;
+        return $this->attachLinkedPersonPhotos($out, $tenantId);
     }
 
     /**
@@ -725,7 +725,89 @@ final class SseMeshRepository
             $out[] = $node;
         }
 
-        return $out;
+        return $this->attachLinkedPersonPhotos($out, $tenantId);
+    }
+
+    /**
+     * Si un nœud identité pointe vers une fiche personne sans image locale,
+     * reprend la photo primaire (captures terrain / SEEK).
+     *
+     * @param list<array<string, mixed>> $nodes
+     * @return list<array<string, mixed>>
+     */
+    private function attachLinkedPersonPhotos(array $nodes, int $tenantId): array
+    {
+        $personIds = [];
+        foreach ($nodes as $n) {
+            if (!empty($n['image_url']) || !empty($n['image_path'])) {
+                continue;
+            }
+            $refType = strtolower((string) ($n['ref_type'] ?? ''));
+            $kind = (string) ($n['kind'] ?? '');
+            $refId = (int) ($n['ref_id'] ?? 0);
+            if ($refId > 0 && ($refType === 'person' || $kind === 'person')) {
+                $personIds[$refId] = true;
+            }
+        }
+        if ($personIds === []) {
+            return $nodes;
+        }
+
+        $ids = array_keys($personIds);
+        $placeholders = [];
+        $params = ['t' => $tenantId];
+        foreach ($ids as $i => $pid) {
+            $key = 'p' . $i;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $pid;
+        }
+
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT p.id AS person_id,
+                        COALESCE(ph.image_path, ph2.image_path) AS image_path
+                 FROM sse_persons p
+                 LEFT JOIN sse_person_photos ph ON ph.id = p.primary_photo_id AND ph.tenant_id = p.tenant_id
+                 LEFT JOIN sse_person_photos ph2 ON ph2.person_id = p.id AND ph2.tenant_id = p.tenant_id
+                    AND ph2.id = (
+                        SELECT MIN(ph3.id) FROM sse_person_photos ph3
+                        WHERE ph3.person_id = p.id AND ph3.tenant_id = p.tenant_id
+                    )
+                 WHERE p.tenant_id = :t AND p.id IN (' . implode(',', $placeholders) . ')',
+                $params
+            );
+        } catch (\Throwable) {
+            return $nodes;
+        }
+
+        $byPerson = [];
+        foreach ($rows as $row) {
+            $path = trim((string) ($row['image_path'] ?? ''));
+            if ($path === '') {
+                continue;
+            }
+            $byPerson[(int) ($row['person_id'] ?? 0)] = $path;
+        }
+        if ($byPerson === []) {
+            return $nodes;
+        }
+
+        foreach ($nodes as $i => $n) {
+            if (!empty($n['image_url']) || !empty($n['image_path'])) {
+                continue;
+            }
+            $refId = (int) ($n['ref_id'] ?? 0);
+            $path = $byPerson[$refId] ?? '';
+            if ($path === '') {
+                continue;
+            }
+            $nodes[$i]['image_path'] = $path;
+            $nodes[$i]['image_url'] = function_exists('user_media_public_url')
+                ? user_media_public_url($path)
+                : null;
+        }
+
+        return $nodes;
     }
 
     /**

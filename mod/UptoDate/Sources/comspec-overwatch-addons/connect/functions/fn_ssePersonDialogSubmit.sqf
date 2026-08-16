@@ -28,13 +28,37 @@ if ((_idCache isEqualType []) && {(count _idCache) >= 6}) then {
     if (_lang isEqualTo "") then { _lang = _idCache select 5; };
 };
 
-// Dernier filet : indicatif de la cible (souvent le seul identifiant terrain).
+// Dernier filet : nom unité découpé (évite de coller « Khalil Jawadi » en alias Athena).
 if (_last isEqualTo "" && {_first isEqualTo ""} && {_alias isEqualTo ""}) then {
     private _tgt = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull];
     if (!isNull _tgt) then {
-        private _nm = name _tgt;
-        if (_nm isNotEqualTo "" && { _nm isNotEqualTo "Error: No unit" }) then {
-            _alias = _nm;
+        if (!isNil "comspec_sse_fnc_getSection") then {
+            private _idSec = [_tgt, "identity"] call comspec_sse_fnc_getSection;
+            if (!isNil "_idSec" && {_idSec isEqualType createHashMap}) then {
+                private _full = _idSec getOrDefault ["name", ""];
+                _alias = _idSec getOrDefault ["alias", ""];
+                if (_full isNotEqualTo "") then {
+                    private _parts = _full splitString " ";
+                    if ((count _parts) > 1) then {
+                        _first = _parts select 0;
+                        _last = (_parts select [1, (count _parts) - 1]) joinString " ";
+                    } else {
+                        _first = _full;
+                    };
+                };
+            };
+        };
+        if (_last isEqualTo "" && {_first isEqualTo ""} && {_alias isEqualTo ""}) then {
+            private _nm = name _tgt;
+            if (_nm isNotEqualTo "" && { _nm isNotEqualTo "Error: No unit" }) then {
+                private _parts = _nm splitString " ";
+                if ((count _parts) > 1) then {
+                    _first = _parts select 0;
+                    _last = (_parts select [1, (count _parts) - 1]) joinString " ";
+                } else {
+                    _alias = _nm;
+                };
+            };
         };
     };
 };

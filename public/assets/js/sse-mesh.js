@@ -245,13 +245,39 @@
       circ.setAttribute('stroke-width', selected === n.id ? '3' : '2');
       g.appendChild(circ);
 
-      var glyph = document.createElementNS(ns, 'text');
-      glyph.setAttribute('text-anchor', 'middle');
-      glyph.setAttribute('dominant-baseline', 'central');
-      glyph.setAttribute('class', 'sse-mesh-glyph');
-      glyph.setAttribute('fill', kindColor(n.kind));
-      glyph.textContent = (n.kind_label || n.kind || '?').charAt(0).toUpperCase();
-      g.appendChild(glyph);
+      if (n.image_url) {
+        var clipId = 'sse-mesh-clip-' + n.id;
+        var defs = document.createElementNS(ns, 'defs');
+        var clip = document.createElementNS(ns, 'clipPath');
+        clip.setAttribute('id', clipId);
+        var clipCirc = document.createElementNS(ns, 'circle');
+        clipCirc.setAttribute('r', '20');
+        clipCirc.setAttribute('cx', '0');
+        clipCirc.setAttribute('cy', '0');
+        clip.appendChild(clipCirc);
+        defs.appendChild(clip);
+        g.appendChild(defs);
+
+        var img = document.createElementNS(ns, 'image');
+        img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', n.image_url);
+        img.setAttribute('href', n.image_url);
+        img.setAttribute('x', '-20');
+        img.setAttribute('y', '-20');
+        img.setAttribute('width', '40');
+        img.setAttribute('height', '40');
+        img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+        img.setAttribute('clip-path', 'url(#' + clipId + ')');
+        img.setAttribute('class', 'sse-mesh-node-photo');
+        g.appendChild(img);
+      } else {
+        var glyph = document.createElementNS(ns, 'text');
+        glyph.setAttribute('text-anchor', 'middle');
+        glyph.setAttribute('dominant-baseline', 'central');
+        glyph.setAttribute('class', 'sse-mesh-glyph');
+        glyph.setAttribute('fill', kindColor(n.kind));
+        glyph.textContent = (n.kind_label || n.kind || '?').charAt(0).toUpperCase();
+        g.appendChild(glyph);
+      }
 
       var lab = document.createElementNS(ns, 'text');
       lab.setAttribute('y', '38');

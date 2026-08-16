@@ -171,6 +171,16 @@ final class SseSuggestionQueueRepository
         } elseif (empty($filters['all'])) {
             $where[] = 'status = \'pending\'';
         }
+        $q = trim((string) ($filters['q'] ?? ''));
+        if ($q !== '') {
+            $where[] = '(title LIKE :q1 OR reason LIKE :q2 OR kind LIKE :q3 OR COALESCE(evidence_json, \'\') LIKE :q4 OR COALESCE(rule_key, \'\') LIKE :q5)';
+            $like = '%' . $q . '%';
+            $params['q1'] = $like;
+            $params['q2'] = $like;
+            $params['q3'] = $like;
+            $params['q4'] = $like;
+            $params['q5'] = $like;
+        }
         $limit = max(1, min(200, (int) ($filters['limit'] ?? 80)));
 
         try {
@@ -306,28 +316,44 @@ final class SseSuggestionQueueRepository
     }
 
     /**
+     * @param array{case_id?:int|null,q?:string}|int|null $caseIdOrFilters
      * @return list<array<string,mixed>>
      */
-    public function listSignals(int $tenantId, ?int $caseId = null, int $limit = 40): array
+    public function listSignals(int $tenantId, array|int|null $caseIdOrFilters = null, int $limit = 40): array
     {
-        try {
-            if ($caseId !== null && $caseId > 0) {
-                $rows = $this->db->fetchAll(
-                    'SELECT * FROM sse_engine_signals
-                      WHERE tenant_id = :t AND status = \'open\' AND (case_id = :c OR case_id IS NULL)
-                      ORDER BY FIELD(severity, \'critical\',\'high\',\'medium\',\'info\'), id DESC
-                      LIMIT ' . max(1, min(100, $limit)),
-                    ['t' => $tenantId, 'c' => $caseId]
-                );
-            } else {
-                $rows = $this->db->fetchAll(
-                    'SELECT * FROM sse_engine_signals
-                      WHERE tenant_id = :t AND status = \'open\'
-                      ORDER BY FIELD(severity, \'critical\',\'high\',\'medium\',\'info\'), id DESC
-                      LIMIT ' . max(1, min(100, $limit)),
-                    ['t' => $tenantId]
-                );
+        $caseId = null;
+        $q = '';
+        if (is_array($caseIdOrFilters)) {
+            $caseId = isset($caseIdOrFilters['case_id']) ? (int) $caseIdOrFilters['case_id'] : null;
+            $q = trim((string) ($caseIdOrFilters['q'] ?? ''));
+            if (isset($caseIdOrFilters['limit'])) {
+                $limit = (int) $caseIdOrFilters['limit'];
             }
+        } elseif ($caseIdOrFilters !== null) {
+            $caseId = (int) $caseIdOrFilters;
+        }
+
+        $where = ['tenant_id = :t', 'status = \'open\''];
+        $params = ['t' => $tenantId];
+        if ($caseId !== null && $caseId > 0) {
+            $where[] = '(case_id = :c OR case_id IS NULL)';
+            $params['c'] = $caseId;
+        }
+        if ($q !== '') {
+            $where[] = '(title LIKE :q1 OR COALESCE(detail, \'\') LIKE :q2 OR signal_type LIKE :q3)';
+            $like = '%' . $q . '%';
+            $params['q1'] = $like;
+            $params['q2'] = $like;
+            $params['q3'] = $like;
+        }
+
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT * FROM sse_engine_signals WHERE ' . implode(' AND ', $where)
+                . ' ORDER BY FIELD(severity, \'critical\',\'high\',\'medium\',\'info\'), id DESC'
+                . ' LIMIT ' . max(1, min(100, $limit)),
+                $params
+            );
         } catch (\Throwable) {
             return [];
         }

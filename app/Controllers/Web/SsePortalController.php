@@ -1856,17 +1856,24 @@ final class SsePortalController
     {
         $tenantId = $this->tenantId();
         $caseId = (int) $request->query('case_id', 0);
+        $q = trim((string) $request->query('q', ''));
 
         return $this->portalView('atak.sse.suggestions', [
             'title' => 'Rapprochements moteur',
             'suggestions' => $this->suggestions->listSuggestions($tenantId, [
                 'case_id' => $caseId > 0 ? $caseId : null,
                 'status' => 'pending',
+                'q' => $q,
                 'limit' => 100,
             ]),
-            'signals' => $this->suggestions->listSignals($tenantId, $caseId > 0 ? $caseId : null, 40),
+            'signals' => $this->suggestions->listSignals($tenantId, [
+                'case_id' => $caseId > 0 ? $caseId : null,
+                'q' => $q,
+                'limit' => 40,
+            ]),
             'pendingCount' => $this->suggestions->countPending($tenantId),
             'filterCaseId' => $caseId,
+            'searchQuery' => $q,
             'canManage' => $this->canManage(),
             'canGrant' => $this->canGrant(),
             'activeNav' => 'rapprochements',
@@ -2891,13 +2898,82 @@ final class SsePortalController
 
     public function crossIndex(Request $request, array $params = []): Response
     {
+        $q = trim((string) $request->query('q', ''));
         $matches = $this->cross->matchPersonsAgainstWatchlist($this->tenantId());
-        $entries = $this->watchlist->listActive($this->tenantId());
+        $entries = $this->watchlist->listActive($this->tenantId(), $q);
+
+        if ($q !== '') {
+            $needle = mb_strtolower($q, 'UTF-8');
+            $matches = array_values(array_filter($matches, static function (array $row) use ($needle): bool {
+                $person = is_array($row['person'] ?? null) ? $row['person'] : [];
+                $hayPerson = mb_strtolower(implode(' ', [
+                    (string) ($person['display_name'] ?? ''),
+                    (string) ($person['last_name'] ?? ''),
+                    (string) ($person['first_name'] ?? ''),
+                    (string) ($person['alias'] ?? ''),
+                ]), 'UTF-8');
+                if (str_contains($hayPerson, $needle)) {
+                    return true;
+                }
+                foreach ($row['matches'] ?? [] as $m) {
+                    if (!is_array($m)) {
+                        continue;
+                    }
+                    $entry = is_array($m['entry'] ?? null) ? $m['entry'] : [];
+                    $hay = mb_strtolower(implode(' ', [
+                        (string) ($entry['display_name'] ?? ''),
+                        (string) ($entry['last_name'] ?? ''),
+                        (string) ($entry['first_name'] ?? ''),
+                        (string) ($entry['alias'] ?? ''),
+                        (string) ($entry['notes'] ?? ''),
+                        (string) ($m['reason'] ?? ''),
+                    ]), 'UTF-8');
+                    if (str_contains($hay, $needle)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }));
+            foreach ($matches as $i => $row) {
+                $matches[$i]['matches'] = array_values(array_filter(
+                    is_array($row['matches'] ?? null) ? $row['matches'] : [],
+                    static function (array $m) use ($needle, $row): bool {
+                        $person = is_array($row['person'] ?? null) ? $row['person'] : [];
+                        $hayPerson = mb_strtolower(implode(' ', [
+                            (string) ($person['display_name'] ?? ''),
+                            (string) ($person['last_name'] ?? ''),
+                            (string) ($person['first_name'] ?? ''),
+                            (string) ($person['alias'] ?? ''),
+                        ]), 'UTF-8');
+                        if (str_contains($hayPerson, $needle)) {
+                            return true;
+                        }
+                        $entry = is_array($m['entry'] ?? null) ? $m['entry'] : [];
+                        $hay = mb_strtolower(implode(' ', [
+                            (string) ($entry['display_name'] ?? ''),
+                            (string) ($entry['last_name'] ?? ''),
+                            (string) ($entry['first_name'] ?? ''),
+                            (string) ($entry['alias'] ?? ''),
+                            (string) ($entry['notes'] ?? ''),
+                            (string) ($m['reason'] ?? ''),
+                        ]), 'UTF-8');
+
+                        return str_contains($hay, $needle);
+                    }
+                ));
+            }
+            $matches = array_values(array_filter(
+                $matches,
+                static fn (array $row): bool => ($row['matches'] ?? []) !== []
+            ));
+        }
 
         return $this->portalView('atak.sse.cross', [
             'title' => 'Croisements — listes de surveillance',
             'matches' => $matches,
             'entries' => $entries,
+            'searchQuery' => $q,
             'canManage' => $this->canManage(),
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),
@@ -3024,10 +3100,55 @@ final class SsePortalController
             $this->tenantId()
         );
 
+        $caseLabels = [];
+        foreach ($list as $mesh) {
+            $caseId = (int) ($mesh['case_id'] ?? 0);
+            if ($caseId < 1 || isset($caseLabels[$caseId])) {
+                continue;
+            }
+            $case = $this->cases->findById($caseId, $this->tenantId());
+            if ($case === null) {
+                continue;
+            }
+            $caseLabels[$caseId] = trim(
+                ((string) ($case['reference_code'] ?? '')) . ' — ' . ((string) ($case['title'] ?? ''))
+            );
+        }
+
+        $openCount = 0;
+        $analysisCount = 0;
+        $entityTotal = 0;
+        $linkTotal = 0;
+        foreach ($list as $mesh) {
+            $status = (string) ($mesh['status'] ?? '');
+            if ($status === 'ouvert') {
+                $openCount++;
+            } elseif ($status === 'en_cours') {
+                $analysisCount++;
+            }
+            $id = (int) ($mesh['id'] ?? 0);
+            $entityTotal += (int) (($counts[$id]['nodes'] ?? 0));
+            $linkTotal += (int) (($counts[$id]['edges'] ?? 0));
+        }
+
+        $mergeCandidates = array_values(array_filter(
+            $list,
+            static fn (array $m): bool => !in_array((string) ($m['status'] ?? ''), ['archive'], true)
+        ));
+
         return $this->portalView('atak.sse.meshes', [
             'title' => 'Investigations — graphe relationnel',
             'meshes' => $list,
             'meshCounts' => $counts,
+            'caseLabels' => $caseLabels,
+            'metrics' => [
+                'total' => count($list),
+                'open' => $openCount,
+                'analysis' => $analysisCount,
+                'entities' => $entityTotal,
+                'links' => $linkTotal,
+            ],
+            'mergeCandidates' => $mergeCandidates,
             'filters' => [
                 'status' => (string) $request->query('status', ''),
                 'q' => (string) $request->query('q', ''),
@@ -3036,6 +3157,113 @@ final class SsePortalController
             'canManage' => $this->canManage(),
             'activeNav' => 'toiles',
         ]);
+    }
+
+    public function meshMerge(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/toiles'));
+        }
+
+        $rawIds = $request->input('mesh_ids', []);
+        if (!is_array($rawIds)) {
+            $rawIds = [];
+        }
+        $selectedIds = array_values(array_unique(array_filter(
+            array_map('intval', $rawIds),
+            static fn (int $id): bool => $id > 0
+        )));
+
+        $mode = (string) $request->input('merge_mode', 'existing');
+        $tenantId = $this->tenantId();
+        $userId = (int) Session::get('user_id') ?: null;
+
+        try {
+            if ($mode === 'new') {
+                if (count($selectedIds) < 2) {
+                    Session::flash('error', 'Pour créer une investigation regroupée, sélectionnez au moins deux toiles.');
+
+                    return Response::redirect(url('atak/sse/toiles'));
+                }
+                $title = trim((string) $request->input('new_title', ''));
+                if ($title === '') {
+                    Session::flash('error', 'Indiquez un intitulé pour la nouvelle investigation.');
+
+                    return Response::redirect(url('atak/sse/toiles'));
+                }
+                $sharedCaseId = null;
+                $classification = 'encadrement';
+                $first = true;
+                foreach ($selectedIds as $sid) {
+                    $mesh = $this->meshes->findById($sid, $tenantId);
+                    if ($mesh === null) {
+                        continue;
+                    }
+                    if ($first) {
+                        $classification = (string) ($mesh['classification'] ?? 'encadrement');
+                        $sharedCaseId = !empty($mesh['case_id']) ? (int) $mesh['case_id'] : null;
+                        $first = false;
+                        continue;
+                    }
+                    $caseId = !empty($mesh['case_id']) ? (int) $mesh['case_id'] : null;
+                    if ($sharedCaseId !== $caseId) {
+                        $sharedCaseId = null;
+                    }
+                }
+                $targetId = $this->meshes->create([
+                    'tenant_id' => $tenantId,
+                    'title' => $title,
+                    'summary' => 'Investigation regroupée.',
+                    'case_id' => $sharedCaseId,
+                    'classification' => $classification,
+                    'status' => 'en_cours',
+                    'created_by' => $userId,
+                ]);
+                $stats = $this->meshService->mergeInto($targetId, $selectedIds, $tenantId, $userId);
+            } else {
+                $targetId = (int) $request->input('target_id', 0);
+                if ($targetId < 1) {
+                    Session::flash('error', 'Choisissez l’investigation qui conservera le graphe regroupé.');
+
+                    return Response::redirect(url('atak/sse/toiles'));
+                }
+                $sources = array_values(array_filter(
+                    $selectedIds,
+                    static fn (int $id): bool => $id !== $targetId
+                ));
+                if ($sources === []) {
+                    Session::flash('error', 'Cochez au moins une autre investigation à intégrer dans la cible.');
+
+                    return Response::redirect(url('atak/sse/toiles'));
+                }
+                $stats = $this->meshService->mergeInto($targetId, $sources, $tenantId, $userId);
+            }
+        } catch (\InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect(url('atak/sse/toiles'));
+        } catch (\Throwable) {
+            Session::flash('error', 'Le regroupement n’a pas pu être terminé. Réessayez ou ouvrez les investigations une par une.');
+
+            return Response::redirect(url('atak/sse/toiles'));
+        }
+
+        Session::flash(
+            'success',
+            sprintf(
+                'Investigations regroupées : %d entité(s) ajoutée(s), %d lien(s), %d toile(s) archivée(s)%s.',
+                (int) ($stats['nodes_added'] ?? 0),
+                (int) ($stats['edges_added'] ?? 0),
+                (int) ($stats['archived'] ?? 0),
+                ((int) ($stats['reused'] ?? 0)) > 0
+                    ? sprintf(', %d entité(s) déjà présentes réutilisée(s)', (int) $stats['reused'])
+                    : ''
+            )
+        );
+
+        return Response::redirect(url('atak/sse/toiles/' . (int) ($stats['target_id'] ?? $targetId)));
     }
 
     public function meshCreateForm(Request $request, array $params = []): Response

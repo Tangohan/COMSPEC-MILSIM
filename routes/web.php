@@ -697,6 +697,7 @@ return function (Router $router) {
     $router->post('/atak/sse/croisements/watchlist/{id}/retirer', [SsePortalController::class, 'watchlistDeactivate'], $mwSsePortal);
     $router->get('/atak/sse/toiles', [SsePortalController::class, 'meshesIndex'], $mwSsePortal);
     $router->get('/atak/sse/toiles/nouveau', [SsePortalController::class, 'meshCreateForm'], $mwSsePortal);
+    $router->post('/atak/sse/toiles/regrouper', [SsePortalController::class, 'meshMerge'], $mwSsePortal);
     $router->post('/atak/sse/toiles', [SsePortalController::class, 'meshStore'], $mwSsePortal);
     $router->get('/atak/sse/toiles/{id}', [SsePortalController::class, 'meshShow'], $mwSsePortal);
     $router->post('/atak/sse/toiles/{id}', [SsePortalController::class, 'meshUpdate'], $mwSsePortal);
