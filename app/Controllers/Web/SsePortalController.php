@@ -1845,7 +1845,7 @@ final class SsePortalController
         }
 
         $tenantId = $this->tenantId();
-        $level = $this->clearance->maxLevel();
+        [$level, $requested, $refused] = $this->resolveExportLevel($request);
 
         // Un PDF sort du portail et circule ensuite tout seul : c'est le support
         // sur lequel un caviardage manquant coûte le plus cher, puisqu'on ne peut
@@ -1855,9 +1855,12 @@ final class SsePortalController
             1,
             'SSE_CLEARANCE',
             sprintf(
-                'Export PDF complet du dossier %s en « %s ».',
+                'Export PDF complet du dossier %s en « %s »%s.',
                 (string) ($case['reference_code'] ?? $id),
-                SseRedactionService::levelLabel($level)
+                SseRedactionService::levelLabel($level),
+                $refused
+                    ? ' (demande « ' . SseRedactionService::levelLabel($requested) . ' » rabattue)'
+                    : ''
             ),
             (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
         );
@@ -2135,6 +2138,73 @@ final class SsePortalController
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),
             'activeNav' => 'dossiers',
+        ]);
+    }
+
+    /**
+     * Page d’ouverture du QR « sceau poste de travail » (chemise de dossier).
+     * Accessible sans session SSE : le jeton porte le tenant et le dossier.
+     */
+    public function sealShow(Request $request, array $params = []): Response
+    {
+        $token = rawurldecode((string) ($params['token'] ?? ''));
+        $parsed = \App\Services\Sse\SseSealTokenService::fromEnv()->parse($token);
+        if ($parsed === null) {
+            return Response::view('atak.sse.seal_show', [
+                'title' => 'Sceau poste de travail',
+                'valid' => false,
+                'message' => 'Ce sceau est inconnu ou a été altéré.',
+                'case' => null,
+                'workstation' => null,
+                'match' => false,
+                'canOpen' => false,
+                'caseUrl' => null,
+            ]);
+        }
+
+        $case = $this->cases->findById($parsed['case_id'], $parsed['tenant_id']);
+        if ($case === null) {
+            return Response::view('atak.sse.seal_show', [
+                'title' => 'Sceau poste de travail',
+                'valid' => false,
+                'message' => 'Le dossier lié à ce sceau est introuvable.',
+                'case' => null,
+                'workstation' => null,
+                'match' => false,
+                'canOpen' => false,
+                'caseUrl' => null,
+            ]);
+        }
+
+        $unit = (string) (Session::get('tenant_name') ?? Session::get('community_name') ?? 'Unité Athena');
+        $marks = \App\Support\SseDocumentMarkings::forDocument([
+            'id' => (int) ($case['id'] ?? 0),
+            'reference_code' => (string) ($case['reference_code'] ?? ''),
+            'title' => (string) ($case['title'] ?? ''),
+            'body' => (string) ($case['summary'] ?? ''),
+            'classification' => (string) ($case['classification'] ?? ''),
+            'created_at' => (string) ($case['created_at'] ?? ''),
+            'updated_at' => (string) ($case['updated_at'] ?? ''),
+        ], $unit);
+        $ws = is_array($marks['workstation'] ?? null) ? $marks['workstation'] : [];
+        $match = hash_equals((string) ($ws['fingerprint_raw'] ?? ''), $parsed['fingerprint'])
+            && hash_equals((string) ($ws['id'] ?? ''), $parsed['seal_id']);
+
+        $canOpen = $this->access->hasActiveClearance()
+            && $this->tenantId() === $parsed['tenant_id']
+            && $this->requireCase($parsed['case_id']) !== null;
+
+        return Response::view('atak.sse.seal_show', [
+            'title' => 'Sceau poste de travail — ' . ($case['reference_code'] ?? ''),
+            'valid' => true,
+            'message' => $match
+                ? 'Sceau reconnu : l’empreinte correspond à la chemise actuelle du dossier.'
+                : 'Sceau reconnu, mais l’empreinte ne correspond plus à la synthèse actuelle — le dossier a pu être modifié depuis l’impression.',
+            'case' => $case,
+            'workstation' => $ws,
+            'match' => $match,
+            'canOpen' => $canOpen,
+            'caseUrl' => $canOpen ? url('atak/sse/dossiers/' . $parsed['case_id']) : null,
         ]);
     }
 
@@ -3798,7 +3868,7 @@ final class SsePortalController
         }
 
         $tenantId = $this->tenantId();
-        $level = $this->clearance->maxLevel();
+        [$level, $requested, $refused] = $this->resolveExportLevel($request);
 
         // Lecture à l'écran : pas de fichier qui part circuler, mais la consultation
         // du dossier complet reste un acte à tracer.
@@ -3807,9 +3877,12 @@ final class SsePortalController
             1,
             'SSE_CLEARANCE',
             sprintf(
-                'Lecture à l’écran du dossier complet %s en « %s ».',
+                'Lecture à l’écran du dossier complet %s en « %s »%s.',
                 (string) ($case['reference_code'] ?? $id),
-                SseRedactionService::levelLabel($level)
+                SseRedactionService::levelLabel($level),
+                $refused
+                    ? ' (demande « ' . SseRedactionService::levelLabel($requested) . ' » rabattue)'
+                    : ''
             ),
             (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
         );
@@ -4184,5 +4257,23 @@ final class SsePortalController
         }
 
         return Response::redirect(url('atak/sse/dossiers/' . (int) $case['id'] . '/deverrouiller'));
+    }
+
+    /**
+     * Niveau d’export PDF : `?niveau=` comme sur la déclassification, sinon plafond session.
+     *
+     * @return array{0:string,1:string,2:bool} [servi, demandé, rabattu]
+     */
+    private function resolveExportLevel(Request $request): array
+    {
+        $requested = (string) ($request->query('niveau') ?? '');
+        if ($requested === '' || !isset(SseRedactionService::LEVELS[$requested])) {
+            $max = $this->clearance->maxLevel();
+
+            return [$max, $max, false];
+        }
+        $level = $this->clearance->clamp($requested);
+
+        return [$level, $requested, $requested !== $level];
     }
 }

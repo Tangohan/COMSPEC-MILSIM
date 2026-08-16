@@ -4106,11 +4106,158 @@ body.sse-theme-bureau .flash {
 
 .sse-level-lock {
     font-family: var(--mono);
-    font-size: .7rem;
+    font-size: .65rem;
     color: var(--amber);
+    letter-spacing: .04em;
 }
 
-/* Verrou de classification : son ?tat doit se lire d'un coup d'?il. */
+.sse-decl-hero {
+    display: grid;
+    gap: 1rem;
+    margin: 0 0 1rem;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.75));
+}
+@media (min-width: 960px) {
+    .sse-decl-hero {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+    }
+}
+.sse-decl-hero__kicker {
+    margin: 0 0 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(148, 163, 184, 0.9);
+}
+.sse-decl-hero h1 { margin: 0 0 0.4rem; font-size: 1.45rem; }
+.sse-decl-hero__lead { margin: 0 0 0.65rem; max-width: 46rem; color: rgba(226, 232, 240, 0.82); }
+.sse-decl-hero__meta { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; margin: 0; }
+.sse-decl-hero__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.sse-decl-clearance {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0 0 1rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    border-left: 3px solid var(--green);
+    background: rgba(20, 83, 45, 0.18);
+    font-size: 0.84rem;
+}
+.sse-decl-clearance.is-alert {
+    border-color: rgba(245, 158, 11, 0.45);
+    border-left-color: var(--amber);
+    background: rgba(120, 53, 15, 0.2);
+}
+.sse-decl-clearance__warn { color: var(--amber); }
+.sse-decl-clearance__note { color: rgba(148, 163, 184, 0.9); font-size: 0.78rem; }
+.sse-level-picker--scale { gap: 0.55rem; }
+.sse-level--interne.is-active { border-color: #94a3b8; background: rgba(71, 85, 105, 0.35); }
+.sse-level--encadrement.is-active { border-color: #60a5fa; background: rgba(29, 78, 216, 0.28); }
+.sse-level--confidentiel.is-active { border-color: #fbbf24; background: rgba(180, 83, 9, 0.28); }
+.sse-level--tres_restreint.is-active { border-color: #f87171; background: rgba(185, 28, 28, 0.28); }
+.sse-release-summary--cards { background: transparent; border: 0; padding: 0; }
+.sse-release-card {
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+}
+.sse-release-card--clear { border-left: 3px solid var(--green); }
+.sse-release-card--black { border-left: 3px solid var(--classified); }
+.sse-decl-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.45rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+.sse-decl-chips li {
+    padding: 0.15rem 0.45rem;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.sse-decl-chips--inline { margin: 0; }
+.sse-category-table tr.is-blacked td { opacity: 0.72; }
+.sse-decl-paper {
+    --sse-decl-accent: #b45309;
+    border: 1px solid #d0d7e2;
+    background: #fff;
+    color: #0b1220;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+}
+.sse-decl-paper--interne { --sse-decl-accent: #475569; }
+.sse-decl-paper--encadrement { --sse-decl-accent: #1d4ed8; }
+.sse-decl-paper--confidentiel { --sse-decl-accent: #b45309; }
+.sse-decl-paper--tres_restreint { --sse-decl-accent: #b91c1c; }
+.sse-decl-paper__banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.45rem 0.75rem;
+    border-bottom: 3px double #0b1220;
+    background: #fff7ed;
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #475569;
+}
+.sse-decl-paper--interne .sse-decl-paper__banner { background: #f8fafc; }
+.sse-decl-paper--encadrement .sse-decl-paper__banner { background: #eff6ff; }
+.sse-decl-paper--tres_restreint .sse-decl-paper__banner { background: #fef2f2; }
+.sse-decl-paper__banner strong {
+    color: var(--sse-decl-accent);
+    letter-spacing: 0.2em;
+    font-size: 0.72rem;
+}
+.sse-decl-paper__stamp {
+    color: var(--sse-decl-accent);
+    border: 1px solid var(--sse-decl-accent);
+    padding: 0.1rem 0.35rem;
+}
+.sse-decl-paper__body {
+    margin: 0;
+    padding: 1rem 1.1rem 1.2rem;
+    white-space: pre-wrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: #0b1220;
+    background: #fff;
+}
+.sse-decl-bar {
+    display: inline-block;
+    width: 7rem;
+    height: 0.85em;
+    vertical-align: -0.1em;
+    background: #0b1220;
+    border-radius: 1px;
+}
+.sse-decl-manual__grid {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+@media (min-width: 720px) {
+    .sse-decl-manual__grid { grid-template-columns: 1fr 1fr; }
+}
+@media print {
+    .sse-decl-hero__actions,
+    .sse-level-picker,
+    .sse-decl-manual,
+    .breadcrumb { display: none !important; }
+    .sse-decl-paper { box-shadow: none; }
+}
+
+/* Verrou de classification : son etat doit se lire d'un coup d'oeil. */
 .sse-lock-panel { border-left: 3px solid var(--muted); }
 .sse-lock-panel.is-armed { border-left-color: var(--red); }
 .sse-lock-panel.is-armed .panel-meta { color: var(--red); font-weight: 800; letter-spacing: .12em; }
@@ -7484,6 +7631,106 @@ body.sse-has-rail .case-aside--compact .case-aside-section { display: none; }
     .lab-form-actions .btn {
         flex: 1 1 auto;
     }
+}
+
+/* Atelier — démarrage rapide */
+.lab-hero {
+    display: grid;
+    gap: 1rem;
+    margin: 0 0 1rem;
+    padding: 1.15rem 1.25rem;
+    border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.72));
+}
+@media (min-width: 900px) {
+    .lab-hero {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+    }
+}
+.lab-hero__kicker {
+    margin: 0 0 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(148, 163, 184, 0.9);
+}
+.lab-hero h1 { margin: 0 0 0.4rem; font-size: 1.4rem; }
+.lab-hero__lead { margin: 0; max-width: 40rem; color: rgba(226, 232, 240, 0.82); }
+.lab-hero__side { display: grid; gap: 0.65rem; justify-items: stretch; }
+.lab-hero__metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+.lab-hero__metric {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    text-decoration: none;
+    color: inherit;
+}
+.lab-hero__metric span { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.lab-hero__metric strong { font-size: 1.2rem; }
+.lab-era-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0 0 1rem;
+}
+.lab-era-tab {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.82rem;
+}
+.lab-era-tab.is-active {
+    border-color: var(--green);
+    background: var(--green-dark);
+    color: var(--text-strong);
+}
+.lab-tpl-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 1fr;
+}
+@media (min-width: 900px) {
+    .lab-tpl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.lab-tpl-card {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    align-content: start;
+}
+.lab-tpl-card__era {
+    margin: 0;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.lab-tpl-card h3 { margin: 0; font-size: 0.95rem; }
+.lab-tpl-card p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: rgba(226, 232, 240, 0.78);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.lab-tpl-card .btn { justify-self: start; margin-top: 0.25rem; }
+.lab-tpl-card__locked { font-size: 0.75rem; }
+.lab-scenario-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
 }
 
 /* Menu contextuel SSE (clic droit) */

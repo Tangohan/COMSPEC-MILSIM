@@ -132,7 +132,13 @@ final class SseCasePdfService
             $this->appendEvidenceImages($pdf, $evidence);
 
             $binary = (string) $pdf->Output('', 'S');
-            $filename = 'dossier-complet-' . preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) ($case['reference_code'] ?? 'sse')) . '.pdf';
+            $refSlug = preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) ($case['reference_code'] ?? 'sse'));
+            $levelSlug = $releaseLevel !== null
+                ? preg_replace('/[^a-zA-Z0-9_-]+/', '-', $releaseLevel)
+                : 'integral';
+            $filename = $releaseLevel !== null
+                ? sprintf('SSE-%s-expurge-%s.pdf', $refSlug, $levelSlug)
+                : 'dossier-complet-' . $refSlug . '.pdf';
 
             return (new Response())
                 ->header('Content-Type', 'application/pdf')

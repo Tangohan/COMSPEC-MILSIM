@@ -43,10 +43,10 @@ Le même montage existait dans l’addon `ui` : `resultDialog.hpp` puis `screens
 ## Vérification
 
 - [x] Plus aucune déclaration `class Rsc…;` dans les fichiers de dialogue (recherche sur `mod/@COMSPEC_SSE`)
-- [ ] Rebuild des PBO `zeus`, `ui` et `biometrics`
+- [x] Rebuild des PBO `zeus`, `ui` et `biometrics` (`build_pbo.bat` 2026-08-16 — Build OK)
 - [ ] Relancer Arma avec `@COMSPEC_SSE` — plus d’erreur au chargement
 - [ ] Ouvrir les dialogues Modèles, Génération, Résultat et Seek en jeu
 
 ## Statut
 
-corrigé dans les sources — rebuild des PBO et confirmation in-game à faire
+corrigé dans les sources — rebuild PBO effectué ; confirmation in-game à faire

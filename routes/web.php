@@ -659,6 +659,7 @@ return function (Router $router) {
     $router->post('/atak/sse/dossiers/{id}/correlations', [SsePortalController::class, 'caseRelationStore'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/correlations/{relationId}/supprimer', [SsePortalController::class, 'caseRelationDelete'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}/declassification', [SsePortalController::class, 'caseDeclassify'], $mwSsePortal);
+    $router->get('/atak/sse/sceau/{token}', [SsePortalController::class, 'sealShow']);
     $router->post('/atak/sse/dossiers/{id}/caviardage', [SsePortalController::class, 'caseRedactionStore'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/caviardage/{redactionId}/supprimer', [SsePortalController::class, 'caseRedactionDelete'], $mwSsePortal);
     $router->get('/atak/sse/interet', [SsePortalController::class, 'interestCasesIndex'], $mwSsePortal);
