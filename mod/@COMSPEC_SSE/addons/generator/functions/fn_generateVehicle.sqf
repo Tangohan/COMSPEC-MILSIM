@@ -85,5 +85,15 @@ createHashMapFromArray [
     ["locations", [_locItem]],
     ["intel", [_intelItem]],
     ["cluster", _cluster],
-    ["summary", _summary]
+    ["summary", _summary],
+    ["exploitation", createHashMapFromArray [
+        ["pct", 0],
+        ["sections", createHashMapFromArray [
+            ["exterior", false],
+            ["cabin", false],
+            ["cargo", false],
+            ["documents", false],
+            ["digital", false]
+        ]]
+    ]]
 ]

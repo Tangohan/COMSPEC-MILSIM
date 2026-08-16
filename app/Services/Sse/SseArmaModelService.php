@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Sse;
 
 use App\Repositories\SseArmaModelRepository;
+use App\Support\SseMissionKitCatalog;
 
 /**
  * Atelier modèles SSE pour missions Arma (@COMSPEC_SSE).
@@ -314,6 +315,16 @@ final class SseArmaModelService
         }
 
         return array_map(fn ($v) => $this->valueToPairs($v), $value);
+    }
+
+    /**
+     * Kits mission (datasets Eden/Zeus) — miroir Athena du catalogue Arma.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function missionKits(): array
+    {
+        return SseMissionKitCatalog::kits();
     }
 
     /**

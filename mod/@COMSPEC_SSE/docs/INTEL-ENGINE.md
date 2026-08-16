@@ -38,13 +38,14 @@ Module Zeus **Site Manager** + fouille (si réglage auto).
 
 ## Zeus
 
+- **Scenario Director** (dataset / niveau) — LOT 8, ex. FALCON  
 - Site Manager SSE  
-- Générer depuis brief / scénario  
+- Générer depuis brief / scénario (`FALCON`, `INSURGENT_CELL`, …)  
 - Spoil Control  
 - After Action + export  
 - Sandbox site aléatoire  
 
 ## Scénarios
 
-`INSURGENT_CELL`, `SMUGGLING_NETWORK`, `WEAPONS_DEPOT`, `COMMAND_POST`,  
+`FALCON`, `INSURGENT_CELL`, `SMUGGLING_NETWORK`, `WEAPONS_DEPOT`, `COMMAND_POST`,  
 `SAFEHOUSE`, `IED_WORKSHOP`, `FINANCIAL_NODE`, `INTELLIGENCE_CELL`

@@ -64,6 +64,8 @@ class CfgFunctions {
             class importMissionGraph {};
             class loadScenarioPack {};
             class generateFromBrief {};
+            class setScenarioLevel {};
+            class getScenarioLevel {};
             class getPlayerKnownView {};
             class registerModClasses {};
             class bagEvidence {};

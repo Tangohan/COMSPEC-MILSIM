@@ -9,7 +9,34 @@ $rooms = is_array($site['rooms'] ?? null) ? $site['rooms'] : [];
 $seizures = is_array($site['seizures'] ?? null) ? $site['seizures'] : [];
 $closed = ($site['status'] ?? '') === 'cloture';
 $checked = count(array_filter($rooms, static fn (array $r): bool => !empty($r['checked'])));
-$pct = $rooms !== [] ? (int) round(($checked / count($rooms)) * 100) : 0;
+$pctRooms = $rooms !== [] ? (int) round(($checked / count($rooms)) * 100) : 0;
+$pct = isset($site['exploitation_pct']) ? (int) $site['exploitation_pct'] : $pctRooms;
+$zoneLabels = [
+    'ROOM' => 'Pièce',
+    'CACHE' => 'Cache',
+    'COLLECTION_POINT' => 'Point de collecte',
+    'ENTRY' => 'Accès',
+    'EXTERIOR' => 'Extérieur',
+    'VEHICLE' => 'Véhicule',
+];
+$custodyLabels = [
+    'OBSERVED' => 'Observé',
+    'MARKED' => 'Marqué',
+    'COLLECTED' => 'Collecté',
+    'PACKAGED' => 'Conditionné',
+    'SEALED' => 'Scellé',
+    'TRANSFERRED' => 'Transmis',
+    'EXPLOITED' => 'Exploité',
+];
+$custodyNext = [
+    'OBSERVED' => 'MARKED',
+    'MARKED' => 'COLLECTED',
+    'COLLECTED' => 'PACKAGED',
+    'PACKAGED' => 'SEALED',
+    'SEALED' => 'TRANSFERRED',
+    'TRANSFERRED' => 'EXPLOITED',
+    'EXPLOITED' => 'EXPLOITED',
+];
 
 $byCategory = [];
 foreach ($seizures as $s) {
@@ -57,7 +84,12 @@ foreach ($rooms as $r) {
     <div class="metric">
         <div class="metric-label">Pièces fouillées</div>
         <div class="metric-value"><?= (int) $checked ?>/<?= count($rooms) ?></div>
-        <div class="metric-detail"><?= (int) $pct ?> % de la checklist</div>
+        <div class="metric-detail"><?= (int) $pctRooms ?> % de la checklist</div>
+    </div>
+    <div class="metric">
+        <div class="metric-label">Exploitation</div>
+        <div class="metric-value"><?= (int) $pct ?> %</div>
+        <div class="metric-detail">Progression pondérée</div>
     </div>
     <div class="metric">
         <div class="metric-label">Saisies</div>
@@ -93,6 +125,14 @@ foreach ($rooms as $r) {
                 <li class="<?= !empty($r['checked']) ? 'is-checked' : '' ?>">
                     <span class="sse-room-mark" aria-hidden="true"><?= !empty($r['checked']) ? '✓' : '·' ?></span>
                     <span class="sse-room-label"><?= $h($r['label'] ?? '') ?></span>
+                    <?php
+                    $zt = strtoupper((string) ($r['zone_type'] ?? 'ROOM'));
+                    $zl = $zoneLabels[$zt] ?? 'Pièce';
+                    ?>
+                    <span class="badge badge--gray"><?= $h($zl) ?></span>
+                    <?php if (isset($r['exploitation_pct'])): ?>
+                        <span class="sse-muted"><?= (int) $r['exploitation_pct'] ?> %</span>
+                    <?php endif; ?>
                     <?php if (!empty($r['notes'])): ?>
                         <span class="sse-muted"><?= $h($r['notes']) ?></span>
                     <?php endif; ?>
@@ -137,11 +177,19 @@ foreach ($rooms as $r) {
                     <th>Désignation</th>
                     <th>Quantité</th>
                     <th>Pièce</th>
+                    <th>Possession</th>
                     <th>Versée le</th>
+                    <?php if (!empty($canManage) && !$closed): ?>
+                        <th></th>
+                    <?php endif; ?>
                 </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($seizures as $s): ?>
+                    <?php
+                    $cs = strtoupper((string) ($s['custody_state'] ?? 'OBSERVED'));
+                    $next = $custodyNext[$cs] ?? 'COLLECTED';
+                    ?>
                     <tr>
                         <td><span class="badge"><?= $h($s['category_label'] ?? '') ?></span></td>
                         <td>
@@ -149,10 +197,28 @@ foreach ($rooms as $r) {
                             <?php if (!empty($s['notes'])): ?>
                                 <span class="record-sub"><?= $h($s['notes']) ?></span>
                             <?php endif; ?>
+                            <?php if (!empty($s['seal_code'])): ?>
+                                <span class="record-sub">Scellé <?= $h($s['seal_code']) ?></span>
+                            <?php endif; ?>
                         </td>
                         <td class="record-id">×<?= (int) ($s['quantity'] ?? 1) ?></td>
                         <td><?= $h($roomLabels[(int) ($s['room_id'] ?? 0)] ?? '—') ?></td>
+                        <td><span class="badge"><?= $h($custodyLabels[$cs] ?? $cs) ?></span></td>
                         <td class="record-id"><?= $h(substr((string) ($s['created_at'] ?? ''), 0, 16)) ?></td>
+                        <?php if (!empty($canManage) && !$closed && $cs !== 'EXPLOITED'): ?>
+                            <td>
+                                <form method="post"
+                                      action="<?= $h(url('atak/sse/sites/' . (int) ($site['id'] ?? 0) . '/saisies/' . (int) ($s['id'] ?? 0) . '/possession')) ?>">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <input type="hidden" name="custody_state" value="<?= $h($next) ?>">
+                                    <button class="btn btn--ghost btn--sm" type="submit">
+                                        Passer à « <?= $h($custodyLabels[$next] ?? $next) ?> »
+                                    </button>
+                                </form>
+                            </td>
+                        <?php elseif (!empty($canManage) && !$closed): ?>
+                            <td></td>
+                        <?php endif; ?>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

@@ -28,6 +28,14 @@ private _time = if (_full) then {
         private _fog = [_target, "search", _quality] call comspec_sse_fnc_revealFog;
         private _lines = _fog getOrDefault ["lines", []];
 
+        if (_target isKindOf "LandVehicle" || {_target isKindOf "Air"} || {_target isKindOf "Ship"}) then {
+            private _vPct = [_target, if (_full) then {"cabin"} else {"exterior"}] call comspec_sse_fnc_markVehicleSection;
+            _lines pushBack format ["Exploitation véhicule : %1%%", _vPct];
+            if (_full) then {
+                [_target, "cargo"] call comspec_sse_fnc_markVehicleSection;
+            };
+        };
+
         // Niveaux successifs Tactical → …
         if (!isNil "comspec_sse_fnc_advanceExploitation") then {
             private _adv = [_target, _player] call comspec_sse_fnc_advanceExploitation;

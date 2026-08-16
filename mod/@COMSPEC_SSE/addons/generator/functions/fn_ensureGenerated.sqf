@@ -8,6 +8,10 @@ params [
 
 if (isNull _entity) exitWith { false };
 
+if (_entity getVariable ["comspec_sse_generating", false]) exitWith {
+    false
+};
+
 private _bridgeBii = {
     params ["_ent"];
     if (
@@ -28,6 +32,36 @@ private _bridgeBii = {
         [_ent] call comspec_sse_fnc_biiExportEntityVars;
     };
     missionNamespace setVariable ["comspec_sse_biiInEnsureBridge", false];
+};
+
+private _pendingDs = _entity getVariable ["comspec_sse_pendingDatasetId", ""];
+private _pendingRole = _entity getVariable ["comspec_sse_pendingDatasetRole", ""];
+if (
+    _pendingDs isNotEqualTo ""
+    && {_pendingRole isNotEqualTo ""}
+    && {!isNil "comspec_sse_fnc_loadDataset"}
+    && {!isNil "comspec_sse_fnc_applyDatasetRole"}
+) exitWith {
+    _entity setVariable ["comspec_sse_pendingDatasetId", "", true];
+    _entity setVariable ["comspec_sse_pendingDatasetRole", "", true];
+    private _ds = [_pendingDs] call comspec_sse_fnc_loadDataset;
+    if (!isNil "_ds" && {_ds isEqualType createHashMap} && {count _ds > 0}) then {
+        private _roles = _ds getOrDefault ["roles", []];
+        private _idx = _roles findIf { (_x getOrDefault ["roleId", ""]) == _pendingRole };
+        if (_idx >= 0) then {
+            [_entity, _roles select _idx, _ds, "LAZY"] call comspec_sse_fnc_applyDatasetRole;
+        };
+    };
+    [_entity] call _bridgeBii;
+    true
+};
+
+private _pendingModel = _entity getVariable ["comspec_sse_pendingModelId", ""];
+if (_pendingModel isNotEqualTo "" && {!isNil "comspec_sse_fnc_applyModel"}) exitWith {
+    _entity setVariable ["comspec_sse_pendingModelId", "", true];
+    [_entity, _pendingModel, "LAZY"] call comspec_sse_fnc_applyModel;
+    [_entity] call _bridgeBii;
+    true
 };
 
 private _data = [_entity] call comspec_sse_fnc_getData;

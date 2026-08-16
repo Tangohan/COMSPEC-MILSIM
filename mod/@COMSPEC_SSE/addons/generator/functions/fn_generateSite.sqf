@@ -2,9 +2,7 @@
     Génère un site SSE cohérent autour d'une position / bâtiment.
     [_center, _radius, _profile, _complexity, _options] call comspec_sse_fnc_generateSite
 
-    _center: Object | Array position
-    _options (optionnel HashMap ou pairs):
-      maxObjects, digital, documents, caches, network
+    File CBA étalée : une entité / ~0,12 s pour éviter pic generateData + ACE.
 */
 params [
     ["_center", objNull, [objNull, []]],
@@ -42,7 +40,6 @@ private _targets = [];
 { _targets pushBackUnique _x; } forEach _nearMen;
 { _targets pushBackUnique _x; } forEach _nearVehicles;
 
-// Limiter les objets
 private _objCount = 0;
 {
     if (_objCount >= _maxObjects) exitWith {};
@@ -52,23 +49,28 @@ private _objCount = 0;
     };
 } forEach _nearStuff;
 
-// Si peu de cibles, marquer le centre
 if (_center isEqualType objNull && {!isNull _center}) then {
     _targets pushBackUnique _center;
 };
 
-private _processed = [];
-private _phoneCreated = false;
+// État partagé entre les jobs CBA (référence HashMap).
+private _state = createHashMapFromArray [
+    ["processed", []],
+    ["phoneDone", false]
+];
 
-{
-    private _ent = _x;
-    if (!isNull _ent) then {
+private _processOne = {
+    params ["_ent", "_profile", "_complexity", "_cluster", "_wantDigital", "_wantDocs", "_wantNetwork", "_state"];
+    if (isNull _ent) exitWith {};
+    if (_ent getVariable ["comspec_sse_generating", false]) exitWith {};
+
+    private _processed = _state getOrDefault ["processed", []];
 
     if (_ent isKindOf "CAManBase") then {
         [_ent, _profile, _complexity, "SITE", _cluster] call comspec_sse_fnc_generateData;
         if (_wantNetwork && {count _processed > 0}) then {
             private _other = _processed select 0;
-            if (_other isKindOf "CAManBase") then {
+            if (!isNull _other && {_other isKindOf "CAManBase"}) then {
                 [_ent, _other, "CONTACT", 0.75, "SITE"] call comspec_sse_fnc_linkEntities;
             };
         };
@@ -76,17 +78,16 @@ private _phoneCreated = false;
         if (_ent isKindOf "LandVehicle") then {
             _ent setVariable ["comspec_sse_forcedType", "VEHICLE", true];
             [_ent, _profile, _complexity, "SITE", _cluster] call comspec_sse_fnc_generateData;
-            // Lier au premier personnage
-            private _men = _processed select { _x isKindOf "CAManBase" };
+            private _men = _processed select { !isNull _x && {_x isKindOf "CAManBase"} };
             if (count _men > 0) then {
                 [_ent, _men select 0, "REFERENCES", 0.7, "SITE"] call comspec_sse_fnc_linkEntities;
             };
         } else {
-            if (_wantDigital && {!_phoneCreated}) then {
+            if (_wantDigital && {!(_state getOrDefault ["phoneDone", false])}) then {
+                _state set ["phoneDone", true];
                 _ent setVariable ["comspec_sse_forcedType", "PHONE", true];
                 [_ent, _profile, _complexity, "SITE", _cluster] call comspec_sse_fnc_generateData;
-                _phoneCreated = true;
-                private _men = _processed select { _x isKindOf "CAManBase" };
+                private _men = _processed select { !isNull _x && {_x isKindOf "CAManBase"} };
                 if (count _men > 0) then {
                     [_ent, _men select 0, "OWNER", 0.9, "SITE"] call comspec_sse_fnc_linkEntities;
                 };
@@ -103,9 +104,21 @@ private _phoneCreated = false;
     };
 
     _processed pushBack _ent;
-    }; // !isNull
-} forEach _targets;
+    _state set ["processed", _processed];
+};
 
-[format ["generateSite pos=%1 radius=%2 entities=%3 cluster=%4", _pos, _radius, count _processed, _cluster getOrDefault ["clusterId", "?"]]] call comspec_sse_fnc_log;
+if (isNil "CBA_fnc_waitAndExecute") then {
+    { [_x, _profile, _complexity, _cluster, _wantDigital, _wantDocs, _wantNetwork, _state] call _processOne; } forEach _targets;
+} else {
+    {
+        private _delay = _forEachIndex * 0.12;
+        [{
+            params ["_ent", "_profile", "_complexity", "_cluster", "_wantDigital", "_wantDocs", "_wantNetwork", "_state", "_fn"];
+            [_ent, _profile, _complexity, _cluster, _wantDigital, _wantDocs, _wantNetwork, _state] call _fn;
+        }, [_x, _profile, _complexity, _cluster, _wantDigital, _wantDocs, _wantNetwork, _state, _processOne], _delay] call CBA_fnc_waitAndExecute;
+    } forEach _targets;
+};
 
-_processed
+[format ["generateSite pos=%1 radius=%2 entities=%3 cluster=%4 (queued)", _pos, _radius, count _targets, _cluster getOrDefault ["clusterId", "?"]]] call comspec_sse_fnc_log;
+
+_targets

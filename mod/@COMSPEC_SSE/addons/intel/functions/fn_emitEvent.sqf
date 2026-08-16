@@ -11,8 +11,14 @@ params [
 
 if (_eventName == "") exitWith { false };
 
+if (isNil "comspec_sse_emitEventDepth") then { comspec_sse_emitEventDepth = 0; };
+if (comspec_sse_emitEventDepth > 8) exitWith {
+    ["emitEvent: profondeur max — drop " + _eventName, "WARNING"] call comspec_sse_fnc_log;
+    false
+};
+comspec_sse_emitEventDepth = comspec_sse_emitEventDepth + 1;
+
 private _full = if ((_eventName find "SSE_") == 0) then { _eventName } else { format ["SSE_%1", _eventName] };
-private _cbaName = format ["comspec_sse_%1", toLower ((_full splitString "_") joinString "_")];
 
 // Noms stables documentés
 private _map = createHashMapFromArray [
@@ -32,5 +38,6 @@ if (isServer) then {
     [_evt, _args] call CBA_fnc_globalEvent;
 };
 
+comspec_sse_emitEventDepth = (comspec_sse_emitEventDepth - 1) max 0;
 [format ["event %1", _evt]] call comspec_sse_fnc_log;
 true

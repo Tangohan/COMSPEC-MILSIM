@@ -195,6 +195,7 @@ $navActive = static function (string $id) use ($activeNav): string {
             ?>
 
             <p class="iw-nav-section">Pilotage</p>
+            <?= $iwLink(url('atak/sse/workspace'), $activeNav === 'workspace' ? 'is-active' : '', '00', 'Intelligence Workspace', 'Inbox, chronologie et relations — surface d’exploitation unifiée.', 'ops') ?>
             <?= $iwLink(url('atak/sse/operations'), $navActive('operations'), '01', 'Vue opérationnelle', 'Tableau de bord du jour : priorités, file et activité récente.', 'ops') ?>
             <?= $iwLink(url('atak/sse/toiles'), $navActive('graphe'), '02', 'Investigations', 'Toiles relationnelles pour cartographier les liens entre éléments.', 'mesh') ?>
             <?= $iwLink(url('atak/sse/interet'), $navActive('pressee'), '03', 'Dossiers d’intérêt', 'Signalements à qualifier — hypothèses, pas encore d’identité certaine.', 'interest') ?>

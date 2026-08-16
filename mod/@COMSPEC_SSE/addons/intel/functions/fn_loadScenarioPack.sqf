@@ -19,6 +19,13 @@ private _packs = createHashMapFromArray [
     ["INTELLIGENCE_CELL", createHashMapFromArray [["profile", "INTELLIGENCE"], ["theme", "propaganda"], ["complexity", "HIGH_VALUE"], ["count", 3]]]
 ];
 
-private _pack = _packs getOrDefault [toUpper _packId, _packs get "INSURGENT_CELL"];
+private _id = toUpper _packId;
+// Dataset FALCON (LOT 8) — rôles + graine stables
+if (_id in ["FALCON", "FALCON_IRAQ", "FALCON_IQ_2012", "DATASET_FALCON"]) exitWith {
+    private _level = missionNamespace getVariable ["comspec_sse_scenarioLevel", 1];
+    [_packId, _center, _radius, _level] call comspec_sse_fnc_applyDataset
+};
+
+private _pack = _packs getOrDefault [_id, _packs get "INSURGENT_CELL"];
 private _brief = format ["Cellule %1 — %2 personnes", _packId, _pack get "count"];
 [_brief, _center, _radius, _pack] call comspec_sse_fnc_generateFromBrief

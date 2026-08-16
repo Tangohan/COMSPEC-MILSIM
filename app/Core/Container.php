@@ -509,6 +509,10 @@ class Container
             \App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob::class => new \App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob(
                 self::get(\App\Services\Sse\SseAnalyticalEngineService::class)
             ),
+            \App\Services\Sse\SseSyncService::class => new \App\Services\Sse\SseSyncService(),
+            \App\Services\Cron\Jobs\SseSyncMaintenanceCronJob::class => new \App\Services\Cron\Jobs\SseSyncMaintenanceCronJob(
+                self::get(\App\Services\Sse\SseSyncService::class)
+            ),
             \App\Services\Cron\CronRunner::class => new \App\Services\Cron\CronRunner(
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
@@ -522,6 +526,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\SseSyncMaintenanceCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),

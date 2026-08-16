@@ -43,6 +43,7 @@ final class SseArmaModelsController
             'modelsCount' => count($all),
             'publishedCount' => count($published),
             'templates' => $this->models->builtinTemplates(),
+            'missionKits' => $this->models->missionKits(),
             'activeNav' => 'dev',
             'devSubnav' => 'hub',
         ]);

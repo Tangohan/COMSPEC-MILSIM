@@ -37,7 +37,17 @@ window.ATAKMap = (function () {
     positionDelayEnabled: false,
     positionDelayMs: 2000,
     packetLossEnabled: false,
-    packetLossPercent: 25
+    packetLossPercent: 25,
+    showSseOverlay: true,
+    showSseLayer_cases: true,
+    showSseLayer_pir: true,
+    showSseLayer_taskings: true,
+    showSseLayer_photos: true,
+    showSseTracks: true,
+    showSseGhostTracks: false,
+    showSseHistory: false,
+    showUnitTrails: true,
+    showUnitGhostTrails: true
   };
   var displayPrefsCache = null;
   var lastUnitsListForMap = null;
@@ -94,7 +104,17 @@ window.ATAKMap = (function () {
       positionDelayEnabled: !!src.positionDelayEnabled,
       positionDelayMs: Math.round(clampNum(src.positionDelayMs, 500, 10000, DISPLAY_PREFS_DEFAULT.positionDelayMs)),
       packetLossEnabled: !!src.packetLossEnabled,
-      packetLossPercent: Math.round(clampNum(src.packetLossPercent, 5, 80, DISPLAY_PREFS_DEFAULT.packetLossPercent))
+      packetLossPercent: Math.round(clampNum(src.packetLossPercent, 5, 80, DISPLAY_PREFS_DEFAULT.packetLossPercent)),
+      showSseOverlay: src.showSseOverlay !== false,
+      showSseLayer_cases: src.showSseLayer_cases !== false,
+      showSseLayer_pir: src.showSseLayer_pir !== false,
+      showSseLayer_taskings: src.showSseLayer_taskings !== false,
+      showSseLayer_photos: src.showSseLayer_photos !== false,
+      showSseTracks: src.showSseTracks !== false,
+      showSseGhostTracks: !!src.showSseGhostTracks,
+      showSseHistory: !!src.showSseHistory,
+      showUnitTrails: src.showUnitTrails !== false,
+      showUnitGhostTrails: src.showUnitGhostTrails !== false
     };
   }
 
@@ -136,6 +156,9 @@ window.ATAKMap = (function () {
       }
     }
     refreshUnitMarkerIcons();
+    try {
+      window.dispatchEvent(new CustomEvent('atak:display-prefs-changed', { detail: next }));
+    } catch (e) { /* ignore */ }
     return next;
   }
 
@@ -302,6 +325,26 @@ window.ATAKMap = (function () {
     if (autoCenterSelf) autoCenterSelf.checked = !!p.autoCenterSelf;
     var showDelayedUnits = document.getElementById('atak-show-delayed-units');
     if (showDelayedUnits) showDelayedUnits.checked = !!p.showDelayedUnits;
+    var sseOverlay = document.getElementById('atak-show-sse-overlay');
+    if (sseOverlay) sseOverlay.checked = !!p.showSseOverlay;
+    var sseCases = document.getElementById('atak-sse-layer-cases');
+    if (sseCases) sseCases.checked = !!p.showSseLayer_cases;
+    var ssePir = document.getElementById('atak-sse-layer-pir');
+    if (ssePir) ssePir.checked = !!p.showSseLayer_pir;
+    var sseTask = document.getElementById('atak-sse-layer-taskings');
+    if (sseTask) sseTask.checked = !!p.showSseLayer_taskings;
+    var ssePhotos = document.getElementById('atak-sse-layer-photos');
+    if (ssePhotos) ssePhotos.checked = !!p.showSseLayer_photos;
+    var sseTracks = document.getElementById('atak-sse-layer-tracks');
+    if (sseTracks) sseTracks.checked = !!p.showSseTracks;
+    var sseGhost = document.getElementById('atak-sse-layer-ghost');
+    if (sseGhost) sseGhost.checked = !!p.showSseGhostTracks;
+    var sseHist = document.getElementById('atak-sse-layer-history');
+    if (sseHist) sseHist.checked = !!p.showSseHistory;
+    var unitTrails = document.getElementById('atak-show-unit-trails');
+    if (unitTrails) unitTrails.checked = !!p.showUnitTrails;
+    var unitGhost = document.getElementById('atak-show-unit-ghost-trails');
+    if (unitGhost) unitGhost.checked = !!p.showUnitGhostTrails;
     var delayEn = document.getElementById('atak-pos-delay-enabled');
     var delaySec = document.getElementById('atak-pos-delay-sec');
     var delayVal = document.getElementById('atak-pos-delay-sec-val');
@@ -393,6 +436,26 @@ window.ATAKMap = (function () {
         patchDisplayPrefs({ showIntelPhotoMarkers: !!intelPhotosEl.checked });
       });
     }
+
+    function bindSseToggle(id, key) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('change', function () {
+        var patch = {};
+        patch[key] = !!el.checked;
+        patchDisplayPrefs(patch);
+      });
+    }
+    bindSseToggle('atak-show-sse-overlay', 'showSseOverlay');
+    bindSseToggle('atak-sse-layer-cases', 'showSseLayer_cases');
+    bindSseToggle('atak-sse-layer-pir', 'showSseLayer_pir');
+    bindSseToggle('atak-sse-layer-taskings', 'showSseLayer_taskings');
+    bindSseToggle('atak-sse-layer-photos', 'showSseLayer_photos');
+    bindSseToggle('atak-sse-layer-tracks', 'showSseTracks');
+    bindSseToggle('atak-sse-layer-ghost', 'showSseGhostTracks');
+    bindSseToggle('atak-sse-layer-history', 'showSseHistory');
+    bindSseToggle('atak-show-unit-trails', 'showUnitTrails');
+    bindSseToggle('atak-show-unit-ghost-trails', 'showUnitGhostTrails');
 
     var autoCenterSelf = document.getElementById('atak-auto-center-self');
     if (autoCenterSelf) {

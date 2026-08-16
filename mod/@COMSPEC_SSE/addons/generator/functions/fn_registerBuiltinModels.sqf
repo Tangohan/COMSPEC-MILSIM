@@ -1,16 +1,30 @@
 /*
     Enregistre les modèles intégrés (builtins) avec IDs stables.
+    [_forceRebuild] call comspec_sse_fnc_registerBuiltinModels
+    - Par défaut : fusionne les IDs manquants (ne bloque plus sur un registre partiel).
+    - _forceRebuild true : reconstruit entièrement la liste.
 */
-if (!isNil "comspec_sse_models_builtin" && {count comspec_sse_models_builtin > 0}) exitWith { true };
+params [
+    ["_forceRebuild", false, [false]]
+];
 
 private _builtins = [];
+if (!_forceRebuild && {!isNil "comspec_sse_models_builtin"} && {comspec_sse_models_builtin isEqualType []} && {count comspec_sse_models_builtin > 0}) then {
+    _builtins = +comspec_sse_models_builtin;
+};
 
 private _mk = {
     params ["_id", "_name", "_ov"];
+    private _existingIdx = _builtins findIf { (_x getOrDefault ["id", ""]) == _id };
+    if (_existingIdx >= 0 && {!_forceRebuild}) exitWith {};
     private _m = [_name, _ov, "COMSPEC"] call comspec_sse_fnc_createModel;
     _m set ["source", "BUILTIN"];
     _m set ["id", _id];
-    _builtins pushBack _m;
+    if (_existingIdx >= 0) then {
+        _builtins set [_existingIdx, _m];
+    } else {
+        _builtins pushBack _m;
+    };
 };
 
 [
@@ -323,5 +337,6 @@ private _mk = {
 comspec_sse_models_builtin = _builtins;
 if (isServer) then { publicVariable "comspec_sse_models_builtin"; };
 
-[format ["registerBuiltinModels: %1 modèles", count _builtins]] call comspec_sse_fnc_log;
+// WARN → toujours visible RPT (INFO est filtré sans comspec_sse_debug)
+[format ["registerBuiltinModels: %1 modèles (force=%2)", count _builtins, _forceRebuild], "WARN"] call comspec_sse_fnc_log;
 true

@@ -191,18 +191,43 @@ final class SseSiteRepository
      */
     public function addRoom(int $siteId, int $tenantId, array $data): int
     {
-        return (int) $this->db->insert(
-            'INSERT INTO sse_site_rooms (site_id, tenant_id, label, checked, notes, sort_order)
-             VALUES (:s, :t, :l, :c, :n, :o)',
-            [
-                's' => $siteId,
-                't' => $tenantId,
-                'l' => trim((string) ($data['label'] ?? '')),
-                'c' => !empty($data['checked']) ? 1 : 0,
-                'n' => $this->nullIfEmpty($data['notes'] ?? null),
-                'o' => (int) ($data['sort_order'] ?? 0),
-            ]
-        );
+        $zone = strtoupper(trim((string) ($data['zone_type'] ?? 'ROOM')));
+        if ($zone === '') {
+            $zone = 'ROOM';
+        }
+        $pct = isset($data['exploitation_pct'])
+            ? max(0, min(100, (int) $data['exploitation_pct']))
+            : (!empty($data['checked']) ? 100 : 0);
+
+        try {
+            return (int) $this->db->insert(
+                'INSERT INTO sse_site_rooms (site_id, tenant_id, label, zone_type, checked, exploitation_pct, notes, sort_order)
+                 VALUES (:s, :t, :l, :z, :c, :p, :n, :o)',
+                [
+                    's' => $siteId,
+                    't' => $tenantId,
+                    'l' => trim((string) ($data['label'] ?? '')),
+                    'z' => $zone,
+                    'c' => !empty($data['checked']) ? 1 : 0,
+                    'p' => $pct,
+                    'n' => $this->nullIfEmpty($data['notes'] ?? null),
+                    'o' => (int) ($data['sort_order'] ?? 0),
+                ]
+            );
+        } catch (\Throwable) {
+            return (int) $this->db->insert(
+                'INSERT INTO sse_site_rooms (site_id, tenant_id, label, checked, notes, sort_order)
+                 VALUES (:s, :t, :l, :c, :n, :o)',
+                [
+                    's' => $siteId,
+                    't' => $tenantId,
+                    'l' => trim((string) ($data['label'] ?? '')),
+                    'c' => !empty($data['checked']) ? 1 : 0,
+                    'n' => $this->nullIfEmpty($data['notes'] ?? null),
+                    'o' => (int) ($data['sort_order'] ?? 0),
+                ]
+            );
+        }
     }
 
     /**
@@ -210,13 +235,72 @@ final class SseSiteRepository
      */
     public function setRoomChecked(int $roomId, int $tenantId, bool $checked, ?string $notes = null): bool
     {
-        $affected = $this->db->execute(
-            'UPDATE sse_site_rooms SET checked = :c, notes = COALESCE(:n, notes)
-             WHERE id = :id AND tenant_id = :t',
-            ['c' => $checked ? 1 : 0, 'n' => $this->nullIfEmpty($notes), 'id' => $roomId, 't' => $tenantId]
-        );
+        try {
+            $affected = $this->db->execute(
+                'UPDATE sse_site_rooms
+                 SET checked = :c,
+                     exploitation_pct = CASE WHEN :c2 = 1 THEN 100 ELSE 0 END,
+                     notes = COALESCE(:n, notes)
+                 WHERE id = :id AND tenant_id = :t',
+                [
+                    'c' => $checked ? 1 : 0,
+                    'c2' => $checked ? 1 : 0,
+                    'n' => $this->nullIfEmpty($notes),
+                    'id' => $roomId,
+                    't' => $tenantId,
+                ]
+            );
+        } catch (\Throwable) {
+            $affected = $this->db->execute(
+                'UPDATE sse_site_rooms SET checked = :c, notes = COALESCE(:n, notes)
+                 WHERE id = :id AND tenant_id = :t',
+                ['c' => $checked ? 1 : 0, 'n' => $this->nullIfEmpty($notes), 'id' => $roomId, 't' => $tenantId]
+            );
+        }
 
         return $affected > 0;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function updateRoomZone(int $roomId, int $tenantId, array $data): bool
+    {
+        $sets = [];
+        $params = ['id' => $roomId, 't' => $tenantId];
+        if (array_key_exists('zone_type', $data)) {
+            $sets[] = 'zone_type = :zone_type';
+            $params['zone_type'] = strtoupper(trim((string) $data['zone_type'])) ?: 'ROOM';
+        }
+        if (array_key_exists('exploitation_pct', $data)) {
+            $sets[] = 'exploitation_pct = :exploitation_pct';
+            $params['exploitation_pct'] = max(0, min(100, (int) $data['exploitation_pct']));
+            $sets[] = 'checked = :checked';
+            $params['checked'] = ((int) $params['exploitation_pct']) >= 100 ? 1 : 0;
+        }
+        if ($sets === []) {
+            return false;
+        }
+        try {
+            return $this->db->execute(
+                'UPDATE sse_site_rooms SET ' . implode(', ', $sets) . ' WHERE id = :id AND tenant_id = :t',
+                $params
+            ) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function setExploitationPct(int $siteId, int $tenantId, int $pct): bool
+    {
+        try {
+            return $this->db->execute(
+                'UPDATE sse_sites SET exploitation_pct = :p WHERE id = :id AND tenant_id = :t',
+                ['p' => max(0, min(100, $pct)), 'id' => $siteId, 't' => $tenantId]
+            ) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -225,20 +309,50 @@ final class SseSiteRepository
     public function addSeizure(int $tenantId, array $data): int
     {
         $siteId = isset($data['site_id']) ? (int) $data['site_id'] : 0;
-        $id = (int) $this->db->insert(
-            'INSERT INTO sse_seizures (tenant_id, site_id, person_id, room_id, category, label, quantity, notes)
-             VALUES (:t, :s, :p, :r, :c, :l, :q, :n)',
-            [
-                't' => $tenantId,
-                's' => $siteId > 0 ? $siteId : null,
-                'p' => !empty($data['person_id']) ? (int) $data['person_id'] : null,
-                'r' => !empty($data['room_id']) ? (int) $data['room_id'] : null,
-                'c' => self::normalizeSeizureCategory((string) ($data['category'] ?? 'autre')),
-                'l' => trim((string) ($data['label'] ?? '')) ?: 'Objet non désigné',
-                'q' => max(1, (int) ($data['quantity'] ?? 1)),
-                'n' => $this->nullIfEmpty($data['notes'] ?? null),
-            ]
-        );
+        $custody = strtoupper(trim((string) ($data['custody_state'] ?? 'OBSERVED')));
+        if ($custody === '') {
+            $custody = 'OBSERVED';
+        }
+        try {
+            $id = (int) $this->db->insert(
+                'INSERT INTO sse_seizures (
+                    tenant_id, site_id, person_id, room_id, category, label, quantity, notes,
+                    custody_state, packaging, seal_code, actor_callsign
+                ) VALUES (
+                    :t, :s, :p, :r, :c, :l, :q, :n,
+                    :cs, :pack, :seal, :actor
+                )',
+                [
+                    't' => $tenantId,
+                    's' => $siteId > 0 ? $siteId : null,
+                    'p' => !empty($data['person_id']) ? (int) $data['person_id'] : null,
+                    'r' => !empty($data['room_id']) ? (int) $data['room_id'] : null,
+                    'c' => self::normalizeSeizureCategory((string) ($data['category'] ?? 'autre')),
+                    'l' => trim((string) ($data['label'] ?? '')) ?: 'Objet non désigné',
+                    'q' => max(1, (int) ($data['quantity'] ?? 1)),
+                    'n' => $this->nullIfEmpty($data['notes'] ?? null),
+                    'cs' => $custody,
+                    'pack' => $this->nullIfEmpty($data['packaging'] ?? null),
+                    'seal' => $this->nullIfEmpty($data['seal_code'] ?? null),
+                    'actor' => $this->nullIfEmpty($data['actor_callsign'] ?? null),
+                ]
+            );
+        } catch (\Throwable) {
+            $id = (int) $this->db->insert(
+                'INSERT INTO sse_seizures (tenant_id, site_id, person_id, room_id, category, label, quantity, notes)
+                 VALUES (:t, :s, :p, :r, :c, :l, :q, :n)',
+                [
+                    't' => $tenantId,
+                    's' => $siteId > 0 ? $siteId : null,
+                    'p' => !empty($data['person_id']) ? (int) $data['person_id'] : null,
+                    'r' => !empty($data['room_id']) ? (int) $data['room_id'] : null,
+                    'c' => self::normalizeSeizureCategory((string) ($data['category'] ?? 'autre')),
+                    'l' => trim((string) ($data['label'] ?? '')) ?: 'Objet non désigné',
+                    'q' => max(1, (int) ($data['quantity'] ?? 1)),
+                    'n' => $this->nullIfEmpty($data['notes'] ?? null),
+                ]
+            );
+        }
 
         if ($siteId > 0) {
             $this->addCustodyEvent(
@@ -246,11 +360,54 @@ final class SseSiteRepository
                 $siteId,
                 'saisie',
                 sprintf('Saisie : %s', trim((string) ($data['label'] ?? 'objet'))),
-                (string) ($data['actor_callsign'] ?? '')
+                (string) ($data['actor_callsign'] ?? ''),
+                $id
             );
         }
 
         return $id;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function updateSeizureCustody(int $seizureId, int $tenantId, array $data): bool
+    {
+        try {
+            return $this->db->execute(
+                'UPDATE sse_seizures SET
+                    custody_state = :cs,
+                    packaging = COALESCE(:pack, packaging),
+                    seal_code = COALESCE(:seal, seal_code),
+                    sealed_at = COALESCE(:sealed_at, sealed_at),
+                    actor_callsign = COALESCE(:actor, actor_callsign),
+                    exploited_at = COALESCE(:exploited_at, exploited_at)
+                 WHERE id = :id AND tenant_id = :t',
+                [
+                    'cs' => strtoupper(trim((string) ($data['custody_state'] ?? 'OBSERVED'))),
+                    'pack' => $this->nullIfEmpty($data['packaging'] ?? null),
+                    'seal' => $this->nullIfEmpty($data['seal_code'] ?? null),
+                    'sealed_at' => $data['sealed_at'] ?? null,
+                    'actor' => $this->nullIfEmpty($data['actor_callsign'] ?? null),
+                    'exploited_at' => $data['exploited_at'] ?? null,
+                    'id' => $seizureId,
+                    't' => $tenantId,
+                ]
+            ) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function addCustodyEventPublic(
+        int $tenantId,
+        int $siteId,
+        string $type,
+        string $label,
+        string $actor,
+        ?int $seizureId = null
+    ): void {
+        $this->addCustodyEvent($tenantId, $siteId, $type, $label, $actor, $seizureId);
     }
 
     /**
@@ -271,6 +428,8 @@ final class SseSiteRepository
         $cat = self::normalizeSeizureCategory((string) ($row['category'] ?? 'autre'));
         $row['category'] = $cat;
         $row['category_label'] = self::SEIZURE_LABELS[$cat] ?? 'Autre';
+        $custody = strtoupper((string) ($row['custody_state'] ?? 'OBSERVED'));
+        $row['custody_state'] = $custody !== '' ? $custody : 'OBSERVED';
 
         return $row;
     }
@@ -504,10 +663,15 @@ final class SseSiteRepository
 
         $out = [];
         foreach ($rows as $row) {
+            $zone = strtoupper((string) ($row['zone_type'] ?? 'ROOM'));
             $out[] = [
                 'id' => (int) ($row['id'] ?? 0),
                 'label' => (string) ($row['label'] ?? ''),
+                'zone_type' => $zone !== '' ? $zone : 'ROOM',
                 'checked' => !empty($row['checked']),
+                'exploitation_pct' => isset($row['exploitation_pct'])
+                    ? (int) $row['exploitation_pct']
+                    : (!empty($row['checked']) ? 100 : 0),
                 'notes' => $row['notes'] ?? null,
                 'sort_order' => (int) ($row['sort_order'] ?? 0),
             ];
@@ -529,6 +693,7 @@ final class SseSiteRepository
         $out = [];
         foreach ($rows as $row) {
             $cat = (string) ($row['category'] ?? 'autre');
+            $custody = strtoupper((string) ($row['custody_state'] ?? 'OBSERVED'));
             $out[] = [
                 'id' => (int) ($row['id'] ?? 0),
                 'category' => $cat,
@@ -536,6 +701,12 @@ final class SseSiteRepository
                 'label' => (string) ($row['label'] ?? ''),
                 'quantity' => (int) ($row['quantity'] ?? 1),
                 'notes' => $row['notes'] ?? null,
+                'custody_state' => $custody !== '' ? $custody : 'OBSERVED',
+                'packaging' => $row['packaging'] ?? null,
+                'seal_code' => $row['seal_code'] ?? null,
+                'sealed_at' => $row['sealed_at'] ?? null,
+                'actor_callsign' => $row['actor_callsign'] ?? null,
+                'exploited_at' => $row['exploited_at'] ?? null,
                 'person_id' => isset($row['person_id']) ? (int) $row['person_id'] : null,
                 'room_id' => isset($row['room_id']) ? (int) $row['room_id'] : null,
                 'created_at' => $row['created_at'] ?? null,
@@ -596,6 +767,7 @@ final class SseSiteRepository
             'site_type_label' => self::TYPE_LABELS[$type] ?? 'Autre',
             'status' => $status,
             'status_label' => self::STATUS_LABELS[$status] ?? 'Ouvert',
+            'exploitation_pct' => isset($row['exploitation_pct']) ? (int) $row['exploitation_pct'] : 0,
             'team_label' => $row['team_label'] ?? null,
             'pos_x' => isset($row['pos_x']) ? (float) $row['pos_x'] : null,
             'pos_y' => isset($row['pos_y']) ? (float) $row['pos_y'] : null,
@@ -610,25 +782,46 @@ final class SseSiteRepository
         ];
     }
 
-    private function addCustodyEvent(int $tenantId, int $siteId, string $type, string $label, string $actor): void
-    {
+    private function addCustodyEvent(
+        int $tenantId,
+        int $siteId,
+        string $type,
+        string $label,
+        string $actor,
+        ?int $seizureId = null
+    ): void {
         if ($tenantId < 1) {
             return;
         }
         try {
             $this->db->execute(
-                'INSERT INTO sse_custody_events (tenant_id, site_id, event_type, label, actor_callsign)
-                 VALUES (:t, :s, :e, :l, :a)',
+                'INSERT INTO sse_custody_events (tenant_id, site_id, seizure_id, event_type, label, actor_callsign)
+                 VALUES (:t, :s, :sz, :e, :l, :a)',
                 [
                     't' => $tenantId,
                     's' => $siteId,
+                    'sz' => $seizureId,
                     'e' => $type,
                     'l' => mb_substr($label, 0, 255),
                     'a' => $this->nullIfEmpty($actor),
                 ]
             );
         } catch (\Throwable) {
-            // la traçabilité ne doit jamais faire échouer l'opération métier
+            try {
+                $this->db->execute(
+                    'INSERT INTO sse_custody_events (tenant_id, site_id, event_type, label, actor_callsign)
+                     VALUES (:t, :s, :e, :l, :a)',
+                    [
+                        't' => $tenantId,
+                        's' => $siteId,
+                        'e' => $type,
+                        'l' => mb_substr($label, 0, 255),
+                        'a' => $this->nullIfEmpty($actor),
+                    ]
+                );
+            } catch (\Throwable) {
+                // la traçabilité ne doit jamais faire échouer l'opération métier
+            }
         }
     }
 

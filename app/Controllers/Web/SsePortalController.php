@@ -37,6 +37,7 @@ use App\Services\Sse\SseCrossMatchService;
 use App\Services\Sse\SseMeshService;
 use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseReportService;
+use App\Services\Sse\SseTerrainService;
 use App\Services\Media\ImageCompressionService;
 use App\Services\Sse\SseWorkspaceService;
 use App\Services\Tactical\AtakActivityLogService;
@@ -76,6 +77,7 @@ final class SsePortalController
         private ?SseCompletenessService $completeness = null,
         private ?SseCaseBundleService $caseBundles = null,
         private ?UserRepository $users = null,
+        private ?SseTerrainService $terrain = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -85,6 +87,7 @@ final class SsePortalController
         $this->persons ??= new SsePersonRepository();
         $this->watchlist ??= new SseWatchlistRepository();
         $this->sites ??= new SseSiteRepository();
+        $this->terrain ??= new SseTerrainService();
         $this->cross ??= new SseCrossMatchService();
         $this->pdf ??= new SseCasePdfService();
         $this->reports ??= new SseReportService();
@@ -2666,6 +2669,12 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/sites'));
         }
 
+        try {
+            $pct = $this->terrain->refreshSiteExploitation($tenantId, (int) $site['id']);
+            $site['exploitation_pct'] = $pct;
+        } catch (\Throwable) {
+        }
+
         return $this->portalView('atak.sse.site_show', [
             'title' => 'Site — ' . ($site['reference_code'] ?? ''),
             'site' => $site,
@@ -2696,7 +2705,39 @@ final class SsePortalController
 
             return Response::redirect($back);
         }
+        try {
+            $this->terrain->refreshSiteExploitation($this->tenantId(), $siteId);
+        } catch (\Throwable) {
+        }
         Session::flash('success', $checked ? 'Pièce marquée fouillée.' : 'Pièce remise en attente.');
+
+        return Response::redirect($back);
+    }
+
+    public function siteSeizureCustodyAction(Request $request, array $params = []): Response
+    {
+        $siteId = (int) ($params['id'] ?? 0);
+        $seizureId = (int) ($params['seizureId'] ?? 0);
+        $back = url('atak/sse/sites/' . $siteId);
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $row = $this->terrain->advanceSeizureCustody($this->tenantId(), $seizureId, [
+            'custody_state' => (string) $request->input('custody_state', 'COLLECTED'),
+            'packaging' => (string) $request->input('packaging', ''),
+            'seal_code' => (string) $request->input('seal_code', ''),
+            'actor_callsign' => (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Cellule SSE'),
+        ]);
+        if ($row === null) {
+            Session::flash('error', 'Saisie introuvable.');
+
+            return Response::redirect($back);
+        }
+        Session::flash('success', 'Chaîne de possession mise à jour.');
 
         return Response::redirect($back);
     }
@@ -3210,6 +3251,15 @@ final class SsePortalController
 
         $tech = !empty($person['biometrics_simulated']) ? 72 : 48;
         $corro = !empty($person['primary_photo']) ? 55 : 25;
+        $terrain = [];
+        try {
+            $terrain = $this->terrain->personTerrainDossier($this->tenantId(), $person);
+            if (($terrain['acquisition_quality_avg'] ?? null) !== null) {
+                $tech = (int) $terrain['acquisition_quality_avg'];
+            }
+        } catch (\Throwable) {
+            $terrain = [];
+        }
         $global = (int) min(95, round(($tech + $corro + 40) / 2.2));
         $stamp = (string) ($person['created_at'] ?? '');
         $timeline = [
@@ -3229,16 +3279,41 @@ final class SsePortalController
             ];
         }
 
+        $samples = is_array($terrain['biometric_samples'] ?? null) ? $terrain['biometric_samples'] : [];
+        $bioPrints = 'Non relevées';
+        $bioIris = 'Non relevé';
+        foreach ($samples as $s) {
+            if (($s['kind'] ?? '') === 'empreintes') {
+                $q = $s['quality'] ?? null;
+                $bioPrints = $q !== null
+                    ? sprintf('Relevées — %s (%d %%)', $s['quality_label'] ?? '', (int) $q)
+                    : 'Relevées';
+            }
+            if (($s['kind'] ?? '') === 'iris') {
+                $q = $s['quality'] ?? null;
+                $bioIris = $q !== null
+                    ? sprintf('Relevé — %s (%d %%)', $s['quality_label'] ?? '', (int) $q)
+                    : 'Relevé';
+            }
+        }
+        if ($bioPrints === 'Non relevées' && !empty($person['biometrics_simulated'])) {
+            $bioPrints = 'Relevées (sim.)';
+        }
+        if ($bioIris === 'Non relevé' && !empty($person['biometrics_simulated'])) {
+            $bioIris = 'Relevé (sim.)';
+        }
+
         return $this->portalView('atak.sse.person_show', [
             'title' => 'IDN-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT) . ' — ' . (string) ($person['display_name'] ?? ''),
             'person' => $person,
+            'terrain' => $terrain,
             'objectMeta' => [
                 'ref' => 'IDN-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT),
                 'priority' => $global >= 70 ? 'élevée' : 'normale',
                 'classification' => 'Confidentiel',
                 'last_seen' => (string) ($person['updated_at'] ?? $person['created_at'] ?? '—'),
-                'bio_prints' => !empty($person['biometrics_simulated']) ? 'Relevées (sim.)' : 'Non relevées',
-                'bio_iris' => !empty($person['biometrics_simulated']) ? 'Relevé (sim.)' : 'Non relevé',
+                'bio_prints' => $bioPrints,
+                'bio_iris' => $bioIris,
                 'terminal' => 'SEEK / ATAK',
                 'collector' => (string) ($person['submitter_callsign'] ?? '—'),
                 'source' => 'Terminal terrain',
@@ -3265,24 +3340,20 @@ final class SsePortalController
                 'confidence_label' => $global >= 70 ? 'Élevée' : ($global >= 45 ? 'Moyenne' : 'Faible'),
                 'pros' => array_values(array_filter([
                     !empty($person['primary_photo']) ? 'Photographie faciale disponible' : null,
-                    !empty($person['biometrics_simulated']) ? 'Relevé biométrique présent' : null,
+                    !empty($person['biometrics_simulated']) || $samples !== [] ? 'Relevé biométrique présent' : null,
                     !empty($person['affiliation']) ? 'Affiliation déclarée' : null,
+                    !empty($terrain['subject_id']) ? 'Identifiant sujet attribué' : null,
                 ])),
                 'cons' => array_values(array_filter([
                     empty($person['nationality']) ? 'Nationalité non confirmée' : null,
                     empty($person['id_document_present']) ? 'Document d’identité absent' : null,
-                    'Biométrie incomplète ou simulée',
+                    (($terrain['identity_tier'] ?? '') !== 'CONFIRMED') ? 'Identité non confirmée par analyse' : null,
                 ])),
-                'revised_at' => gmdate('d/m/Y H:i') . 'Z',
+                'revised_at' => date('d/m/Y H:i') . 'Z',
                 'analyst' => 'Cellule SSE',
             ],
             'timeline' => $timeline,
-            'provenance' => [
-                [
-                    'at' => strlen($stamp) >= 16 ? substr($stamp, 11, 5) : date('H:i'),
-                    'text' => 'Donnée créée / importée depuis le terminal',
-                ],
-            ],
+            'provenance' => [],
             'canManage' => $this->canManage(),
             'activeNav' => 'identites',
         ]);

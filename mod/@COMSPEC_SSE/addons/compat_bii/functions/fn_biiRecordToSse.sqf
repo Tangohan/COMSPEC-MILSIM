@@ -95,7 +95,48 @@ if (_notes isNotEqualTo "") then {
 
 {
     [_entity, _x] call comspec_sse_fnc_biiImportEvidenceEntry;
+    private _evLabel = if (_x isEqualType createHashMap) then {
+        _x getOrDefault ["label", _x getOrDefault ["name", "élément"]]
+    } else {
+        if (_x isEqualType []) then { _x param [0, "élément"] } else { "élément" };
+    };
+    private _evEnv = createHashMapFromArray [
+        ["event_type", "EVIDENCE_LINKED"],
+        ["source_system", "BII_IDENTIFI"],
+        ["entity_type", "PERSON"],
+        ["raw_source_id", format ["%1:%2", _record param [0, ""], _forEachIndex]],
+        ["summary", format ["Élément BII rattaché — %1", _evLabel]],
+        ["identity_tier", "DOCUMENTARY"],
+        ["source_reliability", "B"],
+        ["info_credibility", 2],
+        ["payload", createHashMapFromArray [
+            ["bii_record_id", _record param [0, ""]],
+            ["evidence_index", _forEachIndex],
+            ["label", _evLabel]
+        ]]
+    ];
+    ["COMSPEC_SSE_EVIDENCE_LINKED", _evEnv, false] call comspec_sse_fnc_raiseSseEvent;
 } forEach _evidence;
 
 [_entity, _entity, "bii_import", _record param [0, ""]] call comspec_sse_fnc_registerActionHistory;
+
+private _biiEnv = createHashMapFromArray [
+    ["event_type", "BIOMETRIC_SCAN"],
+    ["source_system", "BII_IDENTIFI"],
+    ["entity_type", "PERSON"],
+    ["raw_source_id", str (_record param [0, ""])],
+    ["summary", format ["Scan BII — %1", _name]],
+    ["identity_tier", "DOCUMENTARY"],
+    ["source_reliability", "B"],
+    ["info_credibility", 2],
+    ["payload", createHashMapFromArray [
+        ["bii_record_id", _record param [0, ""]],
+        ["quality", _quality],
+        ["threat", _threat],
+        ["modes", _modes],
+        ["evidence_count", count _evidence]
+    ]]
+];
+["COMSPEC_SSE_BIOMETRIC_CAPTURED", _biiEnv, false] call comspec_sse_fnc_raiseSseEvent;
+
 true

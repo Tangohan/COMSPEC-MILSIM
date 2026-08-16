@@ -393,7 +393,17 @@
   function renderSseCaseOverlay(layerGroup, payload, isWorld) {
     if (!layerGroup) return;
     layerGroup.clearLayers();
-    var points = (payload && payload.points) ? payload.points : [];
+    var layers = (payload && payload.layers) ? payload.layers : null;
+    var points = [];
+    var polylines = [];
+    if (layers && layers.length) {
+      layers.forEach(function (layer) {
+        (layer.points || []).forEach(function (p) { points.push(p); });
+        (layer.polylines || []).forEach(function (line) { polylines.push(line); });
+      });
+    } else {
+      points = (payload && payload.points) ? payload.points : [];
+    }
     points.forEach(function (p) {
       var x = parseFloat(p.pos_x);
       var y = parseFloat(p.pos_y);
@@ -412,13 +422,32 @@
         iconSize: [88, 28],
         iconAnchor: [44, 8],
       });
-      var popup = '<div class="atak-marker-popup__kind">Dossier SSE</div>'
+      var kindLabel = p.layer === 'pir' ? 'Priorité de renseignement'
+        : (p.layer === 'taskings' ? 'Ordre de collecte'
+          : (p.layer === 'photos' ? 'Photo terrain'
+            : (p.layer === 'history' ? 'Historique' : 'Dossier SSE')));
+      var popup = '<div class="atak-marker-popup__kind">' + kindLabel + '</div>'
         + '<strong>' + String(p.case_ref || '').replace(/</g, '&lt;') + '</strong>'
         + (p.case_title ? '<br/>' + String(p.case_title).replace(/</g, '&lt;') : '')
         + '<br/><em>' + String(p.label || '').replace(/</g, '&lt;') + '</em>'
         + (p.note ? '<p style="margin:.4rem 0 0">' + String(p.note).replace(/</g, '&lt;') + '</p>' : '')
-        + '<p class="atak-marker-popup__hint">Calque dossier — distinct des pings mission.</p>';
+        + '<p class="atak-marker-popup__hint">Calque renseignement — distinct des pings mission.</p>';
       L.marker(latlng, { icon: icon }).bindPopup(popup).addTo(layerGroup);
+    });
+    polylines.forEach(function (line) {
+      var pts = (line.points || []).map(function (pt) {
+        var x = parseFloat(pt.pos_x);
+        var y = parseFloat(pt.pos_y);
+        if (isNaN(x) || isNaN(y)) return null;
+        return isWorld ? L.latLng(x / WORLD_SCALE, y / WORLD_SCALE) : L.latLng(y, x);
+      }).filter(Boolean);
+      if (pts.length < 2) return;
+      L.polyline(pts, {
+        color: line.color || '#67e8f9',
+        weight: 2,
+        opacity: line.dashed ? 0.55 : 0.8,
+        dashArray: line.dashed ? '6 8' : null
+      }).bindPopup(String(line.label || 'Tracé').replace(/</g, '&lt;')).addTo(layerGroup);
     });
   }
 

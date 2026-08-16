@@ -12,6 +12,13 @@ params [
 
 if (isNull _entity) exitWith { false };
 
+// Anti-réentrée (dogtag wrap / Eden / ensureGenerated pendant génération en cours).
+if (_entity getVariable ["comspec_sse_generating", false]) exitWith {
+    ["generateData: réentrée bloquée", "WARNING"] call comspec_sse_fnc_log;
+    false
+};
+_entity setVariable ["comspec_sse_generating", true];
+
 _profile = [_profile] call comspec_sse_fnc_resolveProfile;
 _complexity = toUpper _complexity;
 
@@ -37,6 +44,7 @@ if (isNil "_data" || {!(_data isEqualType [])}) then {
 };
 if (isNil "_data" || {!(_data isEqualType [])}) exitWith {
     ["generateData: abandon — _data invalide", "ERROR"] call comspec_sse_fnc_log;
+    _entity setVariable ["comspec_sse_generating", false];
     false
 };
 
@@ -235,19 +243,43 @@ switch (_type) do {
 _data = [_data, "sections", _sections] call comspec_sse_fnc_setPair;
 if (isNil "_data" || {!(_data isEqualType [])}) exitWith {
     ["generateData: setPair sections a renvoyé nil", "ERROR"] call comspec_sse_fnc_log;
+    _entity setVariable ["comspec_sse_generating", false];
     false
 };
-[_entity, _data, true] call comspec_sse_fnc_setData;
-_entity setVariable ["comspec_sse_clusterId", _cluster getOrDefault ["clusterId", ""], true];
-_entity setVariable ["comspec_sse_theme", _cluster getOrDefault ["theme", ""], true];
+[_entity, _data, false] call comspec_sse_fnc_setData;
+_entity setVariable ["comspec_sse_clusterId", _cluster getOrDefault ["clusterId", ""], false];
+_entity setVariable ["comspec_sse_theme", _cluster getOrDefault ["theme", ""], false];
 
 if (!isNil "comspec_sse_fnc_attachIntelLayers") then {
     [_entity] call comspec_sse_fnc_attachIntelLayers;
 };
 
-// Compat ACE Medical / dogtags : plaque = identité SSE
-if (!isNil "comspec_sse_fnc_aceDogtagSync") then {
-    [_entity] call comspec_sse_fnc_aceDogtagSync;
+// Libérer le verrou AVANT publish / dogtag (ACE + réseau).
+_entity setVariable ["comspec_sse_generating", false];
+
+// Publier les données hors de la pile de génération.
+if (!isNil "CBA_fnc_waitAndExecute") then {
+    [{
+        params ["_e"];
+        if (isNull _e) exitWith {};
+        private _d = [_e] call comspec_sse_fnc_getData;
+        if (!isNil "_d") then {
+            [_e, _d, true] call comspec_sse_fnc_setData;
+        };
+        _e setVariable ["comspec_sse_clusterId", _e getVariable ["comspec_sse_clusterId", ""], true];
+        _e setVariable ["comspec_sse_theme", _e getVariable ["comspec_sse_theme", ""], true];
+        if (!isNil "comspec_sse_fnc_aceDogtagSync") then {
+            [_e] call comspec_sse_fnc_aceDogtagSync;
+        };
+    }, [_entity], 0.2] call CBA_fnc_waitAndExecute;
+} else {
+    private _dPub = [_entity] call comspec_sse_fnc_getData;
+    if (!isNil "_dPub") then { [_entity, _dPub, true] call comspec_sse_fnc_setData; };
+    _entity setVariable ["comspec_sse_clusterId", _entity getVariable ["comspec_sse_clusterId", ""], true];
+    _entity setVariable ["comspec_sse_theme", _entity getVariable ["comspec_sse_theme", ""], true];
+    if (!isNil "comspec_sse_fnc_aceDogtagSync") then {
+        [_entity] call comspec_sse_fnc_aceDogtagSync;
+    };
 };
 
 [format ["generateData %1 type=%2 profile=%3 theme=%4", _entity, _type, _profile, _cluster getOrDefault ["theme", "?"]]] call comspec_sse_fnc_log;

@@ -114,6 +114,7 @@ final class RateLimitMiddleware
             '/api/me/' => [120, 300],
             '/api/admin/' => [200, 300],
             '/api/back-office/' => [200, 300],
+            '/api/sse/' => [180, 60],
         ];
         foreach ($prefixRules as $prefix => $rule) {
             if (str_starts_with($path, $prefix)) {
@@ -141,6 +142,9 @@ final class RateLimitMiddleware
             return true;
         }
         if (str_starts_with($path, '/api/stripe/')) {
+            return true;
+        }
+        if ($path === '/api/sse/v1/health') {
             return true;
         }
         // QR téléphone : téléchargement anonyme (token = secret) — ne pas compter comme scraping.

@@ -350,7 +350,7 @@ final class SseCaseRepository
     {
         $fields = [];
         $params = ['id' => $id, 't' => $tenantId];
-        foreach (['title', 'summary', 'classification', 'status'] as $k) {
+        foreach (['title', 'summary', 'classification', 'status', 'lifecycle_status', 'priority', 'producing_unit', 'confidence_note'] as $k) {
             if (!array_key_exists($k, $data)) {
                 continue;
             }
@@ -363,6 +363,18 @@ final class SseCaseRepository
                 if ($params['status'] === 'clos' || $params['status'] === 'archive') {
                     $fields[] = 'closed_at = COALESCE(closed_at, NOW())';
                 }
+            } elseif ($k === 'lifecycle_status') {
+                $fields[] = 'lifecycle_status = :lifecycle_status';
+                $params['lifecycle_status'] = strtoupper(trim((string) $data['lifecycle_status']));
+            } elseif ($k === 'priority') {
+                $fields[] = 'priority = :priority';
+                $params['priority'] = trim((string) $data['priority']) ?: 'normale';
+            } elseif ($k === 'producing_unit') {
+                $fields[] = 'producing_unit = :producing_unit';
+                $params['producing_unit'] = $this->nullIfEmpty($data['producing_unit']);
+            } elseif ($k === 'confidence_note') {
+                $fields[] = 'confidence_note = :confidence_note';
+                $params['confidence_note'] = $this->nullIfEmpty($data['confidence_note']);
             } elseif ($k === 'summary') {
                 $fields[] = 'summary = :summary';
                 $params['summary'] = $this->nullIfEmpty($data['summary']);
@@ -370,6 +382,15 @@ final class SseCaseRepository
                 $fields[] = 'title = :title';
                 $params['title'] = trim((string) $data['title']);
             }
+        }
+        if (array_key_exists('analyst_user_id', $data)) {
+            $fields[] = 'analyst_user_id = :analyst_user_id';
+            $aid = (int) ($data['analyst_user_id'] ?? 0);
+            $params['analyst_user_id'] = $aid > 0 ? $aid : null;
+        }
+        if (array_key_exists('last_activity_at', $data)) {
+            $fields[] = 'last_activity_at = :last_activity_at';
+            $params['last_activity_at'] = $data['last_activity_at'];
         }
         if (array_key_exists('unlock_code_hash', $data)) {
             $fields[] = 'unlock_code_hash = :unlock_code_hash';
@@ -500,7 +521,7 @@ final class SseCaseRepository
                 'label' => (string) ($row['label'] ?? ''),
                 'caption' => $row['caption'] ?? null,
                 'image_path' => $path !== '' ? $path : null,
-                'url' => $path !== '' ? '/' . ltrim($path, '/') : null,
+                'url' => $path !== '' ? user_media_public_url($path) : null,
                 'person_id' => isset($row['person_id']) ? (int) $row['person_id'] : null,
                 'author_label' => $row['author_label'] ?? null,
                 'created_at' => $row['created_at'] ?? null,

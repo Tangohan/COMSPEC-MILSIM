@@ -17,7 +17,16 @@ private _model = if (_modelOrId isEqualType createHashMap) then {
 };
 
 if (isNil "_model" || {!(_model isEqualType createHashMap)} || {count _model == 0}) exitWith {
-    [format ["applyModel: modèle introuvable (%1)", _modelOrId], "ERROR"] call comspec_sse_fnc_log;
+    private _idStr = if (_modelOrId isEqualType "") then { _modelOrId } else { str _modelOrId };
+    [format ["applyModel: modèle introuvable (%1) — fallback génération profil", _idStr], "ERROR"] call comspec_sse_fnc_log;
+    // Ne laisse pas l'entité sans données (et évite les boucles Eden / Zeus sur un échec sec)
+    private _profile = _entity getVariable ["comspec_sse_profile", "INSURGENT"];
+    private _complexity = _entity getVariable ["comspec_sse_complexity", "DETAILED"];
+    if (_profile isEqualTo "" || {toUpper _profile == "RANDOM"}) then { _profile = "INSURGENT"; };
+    if (_complexity isEqualTo "") then { _complexity = "DETAILED"; };
+    if !(_entity getVariable ["comspec_sse_generating", false]) then {
+        [_entity, _profile, _complexity, _createdBy + "_FALLBACK"] call comspec_sse_fnc_generateData;
+    };
     false
 };
 
@@ -84,7 +93,16 @@ if (count _locs > 0) then {
 _entity setVariable ["comspec_sse_modelId", _model getOrDefault ["id", ""], true];
 _entity setVariable ["comspec_sse_region", _region, true];
 
-[_entity, _profile, _complexity, _createdBy, _cluster] call comspec_sse_fnc_generateData;
+if (_entity getVariable ["comspec_sse_generating", false]) exitWith {
+    ["applyModel: génération déjà en cours — abandon", "WARNING"] call comspec_sse_fnc_log;
+    false
+};
+
+private _genOk = [_entity, _profile, _complexity, _createdBy, _cluster] call comspec_sse_fnc_generateData;
+if (!_genOk) exitWith {
+    ["applyModel: generateData a échoué", "WARNING"] call comspec_sse_fnc_log;
+    false
+};
 
 // Appliquer forced identity / phone après génération
 if (_forcedId isEqualType createHashMap && {count _forcedId > 0}) then {

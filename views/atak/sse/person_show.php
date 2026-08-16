@@ -10,6 +10,8 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,mixed>|null $reasoning */
 /** @var list<array<string,mixed>> $provenance */
 /** @var bool $canManage */
+/** @var array<string,mixed> $terrain */
+$terrain = is_array($terrain ?? null) ? $terrain : [];
 $idn = (string) ($objectMeta['ref'] ?? ('IDN-' . str_pad((string) ((int) ($person['id'] ?? 0)), 5, '0', STR_PAD_LEFT)));
 $photo = is_array($person['primary_photo'] ?? null) ? $person['primary_photo'] : null;
 $photoUrl = $photo ? (string) ($photo['url'] ?? '') : '';
@@ -38,10 +40,27 @@ $pid = (int) ($person['id'] ?? 0);
             <span class="badge badge--amber">Priorité <?= $h($objectMeta['priority'] ?? 'normale') ?></span>
             <span class="badge">Confiance <?= (int) ($confidence['global'] ?? 0) ?> %</span>
             <span class="badge badge--gray"><?= $h($objectMeta['classification'] ?? 'Confidentiel') ?></span>
+            <?php if (!empty($terrain['identity_tier_label'])): ?>
+                <span class="badge"><?= $h($terrain['identity_tier_label']) ?></span>
+            <?php endif; ?>
             <?php if (!empty($person['biometrics_simulated'])): ?>
                 <span class="badge">Biométrie simulée</span>
             <?php endif; ?>
         </div>
+        <?php if (!empty($terrain['subject_id']) || !empty($terrain['seek_stage_label'])): ?>
+            <p class="muted" style="margin-top:8px">
+                <?php if (!empty($terrain['subject_id'])): ?>
+                    Identifiant sujet : <strong><?= $h($terrain['subject_id']) ?></strong>
+                <?php endif; ?>
+                <?php if (!empty($terrain['seek_stage_label'])): ?>
+                    · Étape SEEK : <?= $h($terrain['seek_stage_label']) ?>
+                <?php endif; ?>
+                <?php if (($terrain['acquisition_quality_avg'] ?? null) !== null): ?>
+                    · Qualité acquisition : <?= (int) $terrain['acquisition_quality_avg'] ?> %
+                    (<?= $h($terrain['acquisition_quality_label'] ?? '') ?>)
+                <?php endif; ?>
+            </p>
+        <?php endif; ?>
     </div>
     <div class="iw-object-actions">
         <a class="iw-btn" href="<?= $h(url('atak/sse/toiles')) ?>">Ouvrir dans le graphe</a>
@@ -89,6 +108,25 @@ $pid = (int) ($person['id'] ?? 0);
                 <dt>Terminal</dt><dd><?= $h($objectMeta['terminal'] ?? 'SEEK / ATAK') ?></dd>
                 <dt>Opérateur</dt><dd><?= $h($person['submitter_callsign'] ?? $objectMeta['collector'] ?? '—') ?></dd>
             </dl>
+            <?php
+            $bioSamples = is_array($terrain['biometric_samples'] ?? null) ? $terrain['biometric_samples'] : [];
+            if ($bioSamples !== []):
+            ?>
+                <ul class="iw-feed" style="margin-top:12px">
+                    <?php foreach ($bioSamples as $sample): ?>
+                        <li>
+                            <span>
+                                <strong><?= $h($sample['kind_label'] ?? 'Relevé') ?></strong>
+                                — qualité <?= $h((string) ($sample['quality'] ?? '—')) ?> %
+                                (<?= $h($sample['quality_label'] ?? 'Non mesurée') ?>)
+                                <?php if (!empty($sample['laterality_label']) && ($sample['laterality_label'] ?? '—') !== '—'): ?>
+                                    · <?= $h($sample['laterality_label']) ?>
+                                <?php endif; ?>
+                            </span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
         </div>
     </section>
 

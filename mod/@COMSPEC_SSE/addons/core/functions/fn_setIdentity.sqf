@@ -28,8 +28,21 @@ if (!isNil "_status" && {_status isEqualType createHashMap}) then {
     [_entity, "sectionStatus", _status, _public] call comspec_sse_fnc_setSection;
 };
 
-if (!isNil "comspec_sse_fnc_aceDogtagSync") then {
-    [_entity] call comspec_sse_fnc_aceDogtagSync;
+// Ne pas sync dogtag pendant une génération en cours (réentrée ACE).
+if (
+    !isNil "comspec_sse_fnc_aceDogtagSync"
+    && {!(_entity getVariable ["comspec_sse_generating", false])}
+) then {
+    if (!isNil "CBA_fnc_waitAndExecute") then {
+        [{
+            params ["_e"];
+            if (isNull _e) exitWith {};
+            if (_e getVariable ["comspec_sse_generating", false]) exitWith {};
+            [_e] call comspec_sse_fnc_aceDogtagSync;
+        }, [_entity], 0.15] call CBA_fnc_waitAndExecute;
+    } else {
+        [_entity] call comspec_sse_fnc_aceDogtagSync;
+    };
 };
 
 true

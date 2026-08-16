@@ -14,6 +14,8 @@ use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Sse\SseAutomationService;
 use App\Services\Sse\SseCrossMatchService;
+use App\Services\Sse\SseIntelFoundationService;
+use App\Services\Sse\SseTerrainService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\AtakArmaWriteGuard;
 use App\Support\ComspecApiKeyAuth;
@@ -35,6 +37,8 @@ final class SseApiController
         private ?SseCrossMatchService $cross = null,
         private ?SseAutomationService $automation = null,
         private ?SseSiteRepository $sites = null,
+        private ?SseIntelFoundationService $intelFoundation = null,
+        private ?SseTerrainService $terrain = null,
         private ?AtakArmaWriteGuard $armaGuard = null,
         private ?AtakActivityLogService $activityLog = null,
         private ?TenantAtakConfigRepository $tenantAtakConfigRepository = null,
@@ -45,6 +49,8 @@ final class SseApiController
         $this->cross ??= new SseCrossMatchService();
         $this->automation ??= new SseAutomationService();
         $this->sites ??= new SseSiteRepository();
+        $this->intelFoundation ??= new SseIntelFoundationService();
+        $this->terrain ??= new SseTerrainService();
         $this->armaGuard ??= new AtakArmaWriteGuard();
         $this->activityLog ??= new AtakActivityLogService();
         $this->tenantAtakConfigRepository ??= new TenantAtakConfigRepository();
@@ -240,6 +246,31 @@ final class SseApiController
             } catch (\Throwable) {
                 // Silencieux côté terrain : la fiche est enregistrée, c'est l'essentiel.
             }
+        }
+
+        if (is_array($person)) {
+            try {
+                $this->terrain->applyPersonIngest($tenantId, $id, $body);
+                $person = $this->persons->findById($id, $tenantId) ?? $person;
+                $person['filing'] = $filing;
+                $person['biometric_samples'] = $this->persons->listBiometricSamples($id, $tenantId);
+                $person['terrain'] = $this->terrain->personTerrainDossier($tenantId, $person);
+            } catch (\Throwable) {
+                // LOT 3 optionnel si migration absente.
+            }
+
+            $this->intelFoundation->onPersonIngested($tenantId, $person, [
+                'source_system' => (string) ($body['source_system'] ?? 'ARMA_SSE'),
+                'raw_source_id' => $body['raw_source_id'] ?? $body['sse_uid'] ?? null,
+                'idempotency_key' => (string) ($body['idempotency_key'] ?? $body['event_uuid'] ?? ''),
+                'event_uuid' => $body['event_uuid'] ?? null,
+                'case_id' => $filedCaseId,
+                'author_label' => (string) ($data['submitter_callsign'] ?? 'Terrain'),
+                'lat' => $body['capture_pos_x'] ?? $body['lat'] ?? null,
+                'lng' => $body['capture_pos_y'] ?? $body['lng'] ?? null,
+                'source_reliability' => $body['source_reliability'] ?? 'C',
+                'info_credibility' => $body['info_credibility'] ?? 3,
+            ]);
         }
 
         return Response::json($person, 201);
@@ -510,6 +541,21 @@ final class SseApiController
             ),
             (string) ($data['submitter_callsign'] ?? 'Terrain')
         );
+
+        if (is_array($site)) {
+            try {
+                $pct = $this->terrain->refreshSiteExploitation($tenantId, $id);
+                $site['exploitation_pct'] = $pct;
+            } catch (\Throwable) {
+            }
+            $this->intelFoundation->onSiteIngested($tenantId, $site, [
+                'source_system' => (string) ($body['source_system'] ?? 'ARMA_SSE'),
+                'raw_source_id' => $body['raw_source_id'] ?? $site['reference_code'] ?? null,
+                'idempotency_key' => (string) ($body['idempotency_key'] ?? $body['event_uuid'] ?? ''),
+                'case_id' => $caseId,
+                'author_label' => (string) ($data['submitter_callsign'] ?? 'Terrain'),
+            ]);
+        }
 
         return Response::json($site, 201);
     }

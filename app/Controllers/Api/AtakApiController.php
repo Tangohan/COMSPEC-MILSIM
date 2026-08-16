@@ -5150,7 +5150,7 @@ class AtakApiController
                 $row = ($cs !== '' && isset($byAuthor[$key])) ? $byAuthor[$key] : null;
             }
             if (is_array($row)) {
-                $feed['snapshot_url'] = '/uploads/recon/' . basename((string) ($row['image_path'] ?? ''));
+                $feed['snapshot_url'] = user_media_public_url('uploads/recon/' . basename((string) ($row['image_path'] ?? '')));
                 $feed['snapshot_id'] = (int) ($row['id'] ?? 0);
                 $feed['snapshot_at'] = $row['created_at'] ?? $row['captured_at'] ?? null;
                 $feed['snapshot_caption'] = $row['caption'] ?? null;
@@ -7739,8 +7739,7 @@ class AtakApiController
     }
 
     /**
-     * Calque « Dossiers SSE » : pings/repères avec coordonnées terrain + sites rattachés.
-     * Activable depuis la Tacmap sans mélanger les pings mission live.
+     * Calque « Dossiers SSE » + LOT 5 (PIR, taskings, photos, tracks, historique).
      */
     public function sseCaseOverlay(Request $request, array $params = []): Response
     {
@@ -7752,50 +7751,46 @@ class AtakApiController
         $mapId = $this->mapId($request);
 
         try {
-            $maps = new \App\Repositories\SseCaseMapRepository();
-            $features = $maps->listAtakOverlay($tenantId, $mapId);
-            $sites = $maps->listAtakSites($tenantId, $mapId);
+            $service = new \App\Services\Sse\SseAtakLayersService();
+            $payload = $service->buildOverlay($tenantId, $mapId);
+
+            return Response::json($payload);
         } catch (\Throwable) {
-            return Response::json(['features' => [], 'sites' => [], 'mapId' => $mapId]);
+            return Response::json([
+                'mapId' => $mapId,
+                'count' => 0,
+                'points' => [],
+                'layers' => [],
+                'counts' => [],
+            ]);
+        }
+    }
+
+    /**
+     * Enregistre un tracé / tracé fantôme SSE sur la carte ATAK.
+     */
+    public function sseTrackStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $userId = (int) (Session::get('user_id') ?? 0) ?: null;
+        $author = trim((string) (Session::get('display_name') ?? Session::get('arma_callsign') ?? ''));
+        $body = $this->jsonBody($request);
+        if (!is_array($body)) {
+            $body = [];
+        }
+        $body['map_id'] = (int) ($body['map_id'] ?? $this->mapId($request));
+
+        $service = new \App\Services\Sse\SseAtakLayersService();
+        $result = $service->saveTrack($tenantId, $body, $author, $userId);
+        if (!($result['ok'] ?? false)) {
+            return Response::json(['error' => $result['error'] ?? 'Enregistrement impossible.'], 422);
         }
 
-        $points = [];
-        foreach ($features as $f) {
-            $points[] = [
-                'id' => 'feat-' . (int) ($f['id'] ?? 0),
-                'source' => 'feature',
-                'case_id' => (int) ($f['case_id'] ?? 0),
-                'case_ref' => (string) ($f['case_ref'] ?? ''),
-                'case_title' => (string) ($f['case_title'] ?? ''),
-                'kind' => (string) ($f['kind'] ?? 'ping'),
-                'label' => (string) ($f['label'] ?? ''),
-                'note' => (string) ($f['note'] ?? ''),
-                'color' => (string) ($f['color'] ?? '#34d399'),
-                'pos_x' => (float) ($f['arma_x'] ?? 0),
-                'pos_y' => (float) ($f['arma_y'] ?? 0),
-            ];
-        }
-        foreach ($sites as $s) {
-            $points[] = [
-                'id' => 'site-' . (int) ($s['site_id'] ?? 0),
-                'source' => 'site',
-                'case_id' => (int) ($s['case_id'] ?? 0),
-                'case_ref' => (string) ($s['case_ref'] ?? ''),
-                'case_title' => (string) ($s['case_title'] ?? ''),
-                'kind' => 'site',
-                'label' => (string) ($s['designation'] ?? 'Site'),
-                'note' => (string) ($s['grid_reference'] ?? ''),
-                'color' => '#f59e0b',
-                'pos_x' => (float) ($s['pos_x'] ?? 0),
-                'pos_y' => (float) ($s['pos_y'] ?? 0),
-            ];
-        }
-
-        return Response::json([
-            'mapId' => $mapId,
-            'count' => count($points),
-            'points' => $points,
-        ]);
+        return Response::json(['ok' => true, 'id' => $result['id'], 'message' => $result['message'] ?? 'OK']);
     }
 
     public function pingsIndex(Request $request, array $params = []): Response
@@ -8299,7 +8294,7 @@ class AtakApiController
                 }));
             }
             foreach ($rows as &$row) {
-                $row['url'] = '/uploads/recon/' . basename((string) ($row['image_path'] ?? ''));
+                $row['url'] = user_media_public_url('uploads/recon/' . basename((string) ($row['image_path'] ?? '')));
                 $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
             }
             unset($row);
@@ -8418,7 +8413,7 @@ class AtakApiController
                     'message' => 'La photo a été reçue mais n’a pas pu être indexée. Réessayez dans un instant.',
                 ], 503);
             }
-            $row['url'] = '/uploads/recon/' . $filename;
+            $row['url'] = user_media_public_url('uploads/recon/' . $filename);
             $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
             $mapId = (int) ($_POST['mapId'] ?? $_POST['map_id'] ?? self::DEFAULT_MAP_ID);
             $this->activityLog->record(
@@ -8452,7 +8447,7 @@ class AtakApiController
         if ($row === null) {
             return Response::json(['error' => 'Not found'], 404);
         }
-        $row['url'] = '/uploads/recon/' . basename($row['image_path']);
+        $row['url'] = user_media_public_url('uploads/recon/' . basename($row['image_path']));
         return Response::json($row);
     }
 
@@ -8591,7 +8586,7 @@ class AtakApiController
             return Response::json(['error' => 'update_failed', 'message' => 'Impossible de mettre à jour la photo.'], 500);
         }
 
-        $updated['url'] = '/uploads/recon/' . basename((string) ($updated['image_path'] ?? ''));
+        $updated['url'] = user_media_public_url('uploads/recon/' . basename((string) ($updated['image_path'] ?? '')));
         $updated['device_label'] = $this->reconDeviceLabel((string) ($updated['device_type'] ?? 'CTAB'));
 
         return Response::json(['ok' => true, 'message' => $message, 'photo' => $updated]);
