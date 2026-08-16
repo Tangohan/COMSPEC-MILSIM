@@ -33,6 +33,8 @@ Tableau d’unité embarqué dans le chrome back-office ATHENA (fond clair).
 
 Recharger `/jnet` : titres lisibles, commandement distinct (N-10 / N-01…), bandeau bêta lisible, panneaux clairs.
 
+Voir aussi `2026-08-16-jnet-onglets-couleurs-bo.md` pour les autres onglets.
+
 ## Statut
 
-corrigé
+corrigé (accueil) ; suite onglets dans la note liée

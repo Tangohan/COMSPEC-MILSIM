@@ -3391,6 +3391,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakSseInterestEnrichMigrate = require $root . '/bootstrap/atak_sse_interest_case_enrichment_migration.php';
+try {
+    echo "Migration atak_sse_interest_case_enrichment (SSE — DI description, ACL, journal, délais)…\n";
+    $atakSseInterestEnrichMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_interest_case_enrichment : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakSseCaseOriginMigrate = require $root . '/bootstrap/atak_sse_case_origin_migration.php';
 try {
     echo "Migration atak_sse_case_origin (SSE — origine des dossiers)…\n";

@@ -495,6 +495,36 @@ if ($atakMapConfig) {
         </label>
         <button type="button" class="atak-game-config-copy" id="atak-notif-sound-preview" title="Écouter le son choisi">Écouter</button>
       </section>
+      <section class="atak-account-section" id="atak-cache-reset">
+        <h3 class="atak-account-section-title">Carte &amp; cache</h3>
+        <p class="atak-game-link-hint">Réinitialisez la vue ou videz seulement ce dont vous avez besoin. Rien n’est effacé côté serveur.</p>
+        <div class="atak-cache-reset__grid" role="group" aria-label="Options de nettoyage">
+          <button type="button" class="atak-cache-reset__btn" data-atak-cache-reset="view" title="Recaler la carte et recentrer si possible">
+            <strong>Réinitialiser la vue</strong>
+            <span>Recaler l’affichage de la carte</span>
+          </button>
+          <button type="button" class="atak-cache-reset__btn" data-atak-cache-reset="drawings" title="Effacer les tracés et zones dessinés">
+            <strong>Tracés et zones</strong>
+            <span>Effacer les dessins locaux</span>
+          </button>
+          <button type="button" class="atak-cache-reset__btn" data-atak-cache-reset="medical" title="Réafficher les alertes santé masquées">
+            <strong>Alertes santé masquées</strong>
+            <span>Les faire réapparaître</span>
+          </button>
+          <button type="button" class="atak-cache-reset__btn" data-atak-cache-reset="photos" title="Réafficher les photos masquées sur cet appareil">
+            <strong>Photos masquées</strong>
+            <span>Réafficher les clichés cachés</span>
+          </button>
+          <button type="button" class="atak-cache-reset__btn" data-atak-cache-reset="layers" title="Recharger les couches et positions">
+            <strong>Couches carte</strong>
+            <span>Recharger positions et repères</span>
+          </button>
+          <button type="button" class="atak-cache-reset__btn atak-cache-reset__btn--danger" data-atak-cache-reset="all" title="Vider le cache local puis recharger">
+            <strong>Tout le cache local</strong>
+            <span>Vider puis recharger la page</span>
+          </button>
+        </div>
+      </section>
     </div>
   </aside>
 
@@ -1897,6 +1927,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-waypoints.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-collapse.js"></script>
   <script src="<?= $base ?>/assets/js/atak-medical-alerts.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-cache-reset.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-medevac.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-radio.js"></script>
   <script src="<?= $base ?>/assets/js/atak-soi.js"></script>

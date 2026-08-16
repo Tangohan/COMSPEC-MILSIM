@@ -16,9 +16,14 @@
     attributionControl: false,
   }).setView(regions[0].center, regions[0].zoom || 5);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 18,
-  }).addTo(map);
+  L.tileLayer(
+    document.body.classList.contains('ath-bo-shell')
+      ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {
+      maxZoom: 18,
+    }
+  ).addTo(map);
 
   var markers = [];
   regions.forEach(function (r) {

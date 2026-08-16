@@ -16,7 +16,7 @@ final class AtakActivityLogService
     /** Capacité totale (actifs + archivés) par fichier théâtre. */
     private const MAX_EVENTS = 5000;
     private const INIT_THROTTLE_SEC = 90;
-    private const SESSION_TTL_SEC = 7200;
+    private const SESSION_TTL_SEC = 86400;
     /** Présence des visiteurs web sur la Tacmap (TTL court). */
     private const WEB_PRESENCE_TTL_SEC = 90;
 

@@ -927,6 +927,47 @@ body.atak-theme-light .atak-chip--weather .atak-chip-value {
   background: #2dd4bf;
   color: #06201c;
 }
+
+.atak-cache-reset__grid {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+}
+.atak-cache-reset__btn {
+  display: grid;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--atak-border, rgba(148, 163, 184, 0.28));
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.22);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.atak-cache-reset__btn:hover {
+  border-color: rgba(61, 186, 140, 0.55);
+  background: rgba(61, 186, 140, 0.1);
+}
+.atak-cache-reset__btn strong {
+  font-size: 0.78rem;
+  font-weight: 750;
+  color: var(--atak-text-strong, #e2e8f0);
+}
+.atak-cache-reset__btn span {
+  font-size: 0.68rem;
+  color: var(--atak-muted, rgba(226, 232, 240, 0.62));
+  line-height: 1.35;
+}
+.atak-cache-reset__btn--danger {
+  border-color: rgba(251, 113, 133, 0.35);
+}
+.atak-cache-reset__btn--danger:hover {
+  border-color: rgba(251, 113, 133, 0.65);
+  background: rgba(251, 113, 133, 0.12);
+}
+
 .atak-game-link-result {
   margin-top: 0.75rem;
   padding: 0.75rem;

@@ -1560,7 +1560,7 @@ class AtakApiController
             'zones_enabled' => false,
             'zones_json' => '',
             'intel_scramble_enabled' => false,
-            'session_ttl_sec' => 600,
+            'session_ttl_sec' => 86400,
         ];
 
         try {
@@ -1596,7 +1596,7 @@ class AtakApiController
                 'zones_enabled' => (bool) ($roleplayCfg['zones_enabled'] ?? false),
                 'zones_json' => $zonesArray ?? $zonesJson,
                 'intel_scramble_enabled' => (bool) ($roleplayCfg['intel_scramble_enabled'] ?? false),
-                'session_ttl_sec' => 600,
+                'session_ttl_sec' => 86400,
             ]);
         } catch (\Throwable) {
             return Response::json($fallback);

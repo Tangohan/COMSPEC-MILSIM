@@ -15,20 +15,94 @@
   var pendingLatLng = null;
   var markersById = {};
   var saveTimer = null;
+  var currentBaseLayer = null;
+  var storageKey = 'sse-case-basemap:' + String(boot.caseId || 0);
+
+  var BASEMAPS = {
+    dark: {
+      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      opts: { maxZoom: 19, crossOrigin: true, attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd' }
+    },
+    light: {
+      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      opts: { maxZoom: 19, crossOrigin: true, attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd' }
+    },
+    street: {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      opts: { maxZoom: 19, crossOrigin: true, attribution: '&copy; OpenStreetMap' }
+    },
+    relief: {
+      url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      opts: { maxZoom: 17, crossOrigin: true, attribution: '&copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)' }
+    }
+  };
+
+  function normalizeBasemap(key) {
+    return BASEMAPS[key] ? key : 'dark';
+  }
+
+  function readStoredBasemap() {
+    try {
+      return normalizeBasemap(localStorage.getItem(storageKey) || '');
+    } catch (err) {
+      return 'dark';
+    }
+  }
+
+  function writeStoredBasemap(key) {
+    try { localStorage.setItem(storageKey, key); } catch (err) {}
+  }
+
+  var activeBasemap = normalizeBasemap(state.basemap || readStoredBasemap() || 'dark');
 
   var map = L.map(el, { zoomControl: true, attributionControl: true })
     .setView([Number(state.center_lat) || 48.8566, Number(state.center_lng) || 2.3522], Number(state.zoom) || 6);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19,
-    crossOrigin: true,
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
-  }).addTo(map);
+  function applyBasemap(key, persist) {
+    var next = normalizeBasemap(key);
+    var spec = BASEMAPS[next];
+    if (currentBaseLayer) {
+      try { map.removeLayer(currentBaseLayer); } catch (err) {}
+      currentBaseLayer = null;
+    }
+    currentBaseLayer = L.tileLayer(spec.url, spec.opts);
+    currentBaseLayer.addTo(map);
+    activeBasemap = next;
+    state.basemap = next;
+    var select = document.getElementById('sse-tacmap-basemap');
+    if (select && select.value !== next) select.value = next;
+    if (persist !== false) writeStoredBasemap(next);
+    return next;
+  }
+
+  applyBasemap(activeBasemap, false);
+  writeStoredBasemap(activeBasemap);
 
   var featureLayer = L.layerGroup().addTo(map);
   var draftMarker = null;
 
-  setTimeout(function () { map.invalidateSize(); }, 120);
+  function refreshMapSize() {
+    map.invalidateSize({ pan: false });
+  }
+
+  setTimeout(refreshMapSize, 80);
+  setTimeout(refreshMapSize, 320);
+  window.addEventListener('resize', refreshMapSize);
+  if (window.ResizeObserver) {
+    try {
+      var ro = new ResizeObserver(function () { refreshMapSize(); });
+      ro.observe(el);
+    } catch (err) {}
+  }
+
+  var basemapSelect = document.getElementById('sse-tacmap-basemap');
+  if (basemapSelect) {
+    basemapSelect.value = activeBasemap;
+    basemapSelect.addEventListener('change', function () {
+      applyBasemap(basemapSelect.value, true);
+      if (canManage) scheduleSave();
+    });
+  }
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -103,6 +177,7 @@
       center_lng: c.lng,
       zoom: map.getZoom(),
       map_id: Number(state.map_id) || 1,
+      basemap: normalizeBasemap(activeBasemap),
       atak_layer_enabled: atakEl ? !!atakEl.checked : !!state.atak_layer_enabled,
       _csrf_token: boot.csrf
     };
@@ -114,10 +189,12 @@
     var lng = document.getElementById('sse-tacmap-lng');
     var zoom = document.getElementById('sse-tacmap-zoom');
     var flag = document.getElementById('sse-tacmap-atakflag');
+    var basemapField = document.getElementById('sse-tacmap-basemap-field');
     if (lat) lat.value = String(v.center_lat);
     if (lng) lng.value = String(v.center_lng);
     if (zoom) zoom.value = String(v.zoom);
     if (flag) flag.value = v.atak_layer_enabled ? '1' : '0';
+    if (basemapField) basemapField.value = String(v.basemap || 'dark');
   }
 
   function saveView(silent) {

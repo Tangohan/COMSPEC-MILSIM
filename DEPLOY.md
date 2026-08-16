@@ -25,6 +25,18 @@ Dans le dépôt → *Settings → Secrets and variables → Actions* :
 
 Puis *Actions → Deploy Athena (Hostinger FTP) → Run workflow* pour un premier test.
 
+**Fichiers critiques** : `routes/web.php` doit exister à la racine applicative (`public_html/routes/web.php`). Le workflow le vérifie avant upload et **ne l’exclut pas**. Si un déploiement FTP est annulé en cours de route, le fichier peut manquer → toute l’app plante au boot. Relancer l’Action jusqu’à succès complet.
+
+### MySQL sur Hostinger
+
+Dans le `.env` **production** (hors Git) :
+
+```bash
+DB_HOST=127.0.0.1
+```
+
+Éviter `localhost` : sous PHP-FPM Hostinger, cela tente souvent un socket Unix et provoque `SQLSTATE[HY000] [2002] Operation not permitted`. L’app force aussi `localhost` → `127.0.0.1` au moment de la connexion.
+
 ### Sessions : ne pas se faire déconnecter à chaque push
 
 Le workflow FTP **exclut** `storage/sessions` (dossier + contenu), ainsi que cache / logs / uploads.

@@ -2,32 +2,37 @@
 
 ## Contexte
 
-GET `/api/atak/laser-codes` (et toute requête passant par `public/index.php`) en production Hostinger (`athena.ttrd.fr`).
+`POST /api/atak/client-init` (et toute requête passant par `public/index.php`) en production Hostinger (`athena.ttrd.fr`).
 
 ## Symptôme
 
-Erreur fatale :
+`RuntimeException` : « Fichier de routage manquant sur le serveur (routes/web.php). Redéployer… »
 
-`require(.../public_html/routes/web.php): Failed to open stream: No such file or directory`
-
-Pile : `public/index.php` ligne du `require` des routes. Le bootstrap a déjà tourné (compte connecté, communauté active) : seule la table de routage manque.
+Pile : `public/index.php` (~ligne 261). Tempête d’e-mails d’alerte possible si les clients ATAK / navigateurs pollent.
 
 ## Cause
 
-Le fichier **est présent et versionné** dans le dépôt (`routes/web.php`), mais **absent sur le disque Hostinger** sous `public_html/routes/web.php`.
+Le fichier **est présent et versionné** dans le dépôt, mais **absent sur le disque Hostinger** sous `public_html/routes/web.php`.
 
-Cause typique : déploiement FTP incomplet, sync interrompu, ou suppression manuelle du dossier `routes/` côté hébergeur — pas un bug de code applicatif sur l’endpoint laser.
+Causes typiques :
+
+- déploiement FTP **interrompu** (`cancel-in-progress: true` tuait un sync mid-upload) ;
+- sync incomplet / suppression manuelle du dossier `routes/` ;
+- pas une exclusion volontaire du workflow (le fichier n’est pas dans `exclude`).
 
 ## Correctif
 
-1. **Immédiat prod** : remonter `routes/web.php` (et le dossier `routes/`) à la racine applicative (`public_html/`, à côté de `app/` et `public/`), ou relancer l’Action **Deploy Athena (Hostinger FTP)** depuis `main`.
-2. **Détection** : `public/index.php` vérifie `is_file` avant le `require` et lève un message d’exploitation explicite.
-3. **CI** : étape « Vérifier fichiers critiques avant FTP » dans `.github/workflows/deploy-hostinger-ftp.yml`.
+1. **Immédiat prod** : remonter `routes/web.php` (dossier `routes/`) à la racine applicative, ou relancer **Deploy Athena (Hostinger FTP)** jusqu’à succès complet.
+2. **Code** : `is_file` avant `require` ; clients `/api/*` → JSON **503** `service_unavailable` + `Retry-After` ; humains → page HTML avec consigne de redéploiement ; alertes e-mail dédupliquées globalement (pas par IP).
+3. **CI** : pré-check fichiers critiques ; `cancel-in-progress: false` ; commentaire « ne jamais exclure `routes/` ».
 
 ## Fichiers touchés
 
 - `public/index.php`
 - `.github/workflows/deploy-hostinger-ftp.yml`
+- `bootstrap/error_hint.php`
+- `app/Services/Monitoring/ErrorReportMailer.php`
+- `DEPLOY.md`
 - `docs/bugs/2026-08-16-routes-web-php-manquant-prod.md`
 
 ## Vérification
@@ -35,7 +40,8 @@ Cause typique : déploiement FTP incomplet, sync interrompu, ou suppression manu
 Sur le serveur (FTP / File Manager) :
 
 - [ ] Existe : `/home/…/public_html/routes/web.php`
-- [ ] GET `/public/api/atak/laser-codes?mapId=1` ne renvoie plus l’erreur de require
+- [ ] `POST /api/atak/client-init` ne renvoie plus l’erreur de routage manquant
+- [ ] Si le fichier manque encore : réponse JSON 503 (pas un crash opaque)
 
 ## Statut
 

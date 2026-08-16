@@ -9,7 +9,7 @@ namespace App\Repositories;
  */
 final class AtakDisconnectRecoveryRepository
 {
-    private const TTL_SEC = 600;
+    private const TTL_SEC = 86400;
 
     private function path(int $tenantId, string $steamUid): string
     {

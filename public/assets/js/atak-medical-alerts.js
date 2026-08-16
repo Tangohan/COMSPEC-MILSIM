@@ -6,10 +6,11 @@ window.ATAKMedicalAlerts = (function () {
   var lastToastedAlertKey = '';
   var pollTimer = null;
   var lastData = null;
-  var LS_PREFIX = 'atak_medical_dismissed_v1_';
+  var LS_PREFIX = 'atak_medical_dismissed_v2_';
   var LS_FILTER = 'atak_medical_filter_v1';
   var boundUi = false;
-  var ACTIVE_WINDOW_MS = 30 * 60 * 1000;
+  /** Masquage local conservé 24 h (aligné sur la session ATAK). */
+  var ACTIVE_WINDOW_MS = 24 * 60 * 60 * 1000;
   // Toast/son : uniquement pour une alerte réellement fraîche (pas un vieux message de tchat
   // rejoué par un rechargement de page ou un resync après reconnexion).
   var TOAST_MAX_AGE_MS = 2 * 60 * 1000;
@@ -56,32 +57,37 @@ window.ATAKMedicalAlerts = (function () {
   function readDismissed() {
     try {
       var raw = localStorage.getItem(storageKey());
-      if (!raw) return { alerts: {}, units: {} };
+      if (!raw) return emptyDismissState();
       var parsed = JSON.parse(raw);
       var now = Date.now();
       var cleaned = {
         alerts: pruneDismissMap(parsed && parsed.alerts, now),
-        units: pruneDismissMap(parsed && parsed.units, now)
+        units: pruneDismissMap(parsed && parsed.units, now),
+        alerts_fp: pruneDismissMap(parsed && parsed.alerts_fp, now),
+        units_cs: pruneDismissMap(parsed && parsed.units_cs, now)
       };
-      // Réécrit si des entrées ont expiré (évite une croissance infinie).
       try {
-        var beforeA = parsed && parsed.alerts ? Object.keys(parsed.alerts).length : 0;
-        var beforeU = parsed && parsed.units ? Object.keys(parsed.units).length : 0;
-        if (beforeA !== Object.keys(cleaned.alerts).length || beforeU !== Object.keys(cleaned.units).length) {
-          writeDismissed(cleaned);
-        }
+        var before = JSON.stringify(parsed);
+        var after = JSON.stringify(cleaned);
+        if (before !== after) writeDismissed(cleaned);
       } catch (e2) { /* ignore */ }
       return cleaned;
     } catch (e) {
-      return { alerts: {}, units: {} };
+      return emptyDismissState();
     }
+  }
+
+  function emptyDismissState() {
+    return { alerts: {}, units: {}, alerts_fp: {}, units_cs: {} };
   }
 
   function writeDismissed(state) {
     try {
       localStorage.setItem(storageKey(), JSON.stringify({
         alerts: state.alerts || {},
-        units: state.units || {}
+        units: state.units || {},
+        alerts_fp: state.alerts_fp || {},
+        units_cs: state.units_cs || {}
       }));
     } catch (e) { /* quota / mode privé */ }
   }
@@ -92,6 +98,18 @@ window.ATAKMedicalAlerts = (function () {
     var body = a && (a.body || a.summary || a.label) ? String(a.body || a.summary || a.label) : '';
     var t = a && a.created_at ? String(a.created_at) : '';
     return 'a:' + body.substring(0, 120) + '|' + t;
+  }
+
+  /** Empreinte stable (indicatif + type) pour survivre aux resync tchat / API. */
+  function alertFingerprint(a) {
+    var cs = normalizeCallsign((a && (a.call_sign || a.author)) || '');
+    var kind = String((a && (a.kind || a.severity || a.label)) || 'medical').toLowerCase();
+    kind = kind.replace(/\s+/g, '_').substring(0, 40);
+    if (!cs) {
+      var body = String((a && (a.summary || a.body || a.label)) || '').substring(0, 80);
+      return body ? ('fp:body:' + body) : '';
+    }
+    return 'fp:' + cs + ':' + kind;
   }
 
   function unitKey(u) {
@@ -126,42 +144,71 @@ window.ATAKMedicalAlerts = (function () {
   }
 
   function isAlertDismissed(a, state) {
+    if (!state) return false;
     var key = alertKey(a);
-    var dismissedAt = state.alerts && state.alerts[key];
+    var fp = alertFingerprint(a);
+    var dismissedAt = (state.alerts && state.alerts[key])
+      || (fp && state.alerts_fp && state.alerts_fp[fp])
+      || null;
     if (!dismissedAt) return false;
-    // Nouvelle alerte (created_at plus récent que le masquage) → réafficher.
-    var created = parseCreatedAtMs(a && a.created_at);
-    if (!isNaN(created) && Number(dismissedAt) < created) return false;
+    // Nouvelle alerte API clairement postérieure au masquage → réafficher.
+    if (a && a.id != null && a.id !== '' && !isNaN(Number(a.id))) {
+      var created = parseCreatedAtMs(a && a.created_at);
+      if (!isNaN(created) && created > (Number(dismissedAt) + 5000)) return false;
+    }
     return true;
   }
 
   function isUnitDismissed(u, state) {
-    return !!(state.units && state.units[unitKey(u)]);
+    if (!state) return false;
+    if (state.units && state.units[unitKey(u)]) return true;
+    var cs = normalizeCallsign(u && u.call_sign);
+    if (cs && state.units_cs && state.units_cs[cs]) return true;
+    return false;
   }
 
   function dismissAlert(a) {
     if (!a) return;
     var state = readDismissed();
-    state.alerts[alertKey(a)] = Date.now();
+    var now = Date.now();
+    state.alerts[alertKey(a)] = now;
+    var fp = alertFingerprint(a);
+    if (fp) state.alerts_fp[fp] = now;
     writeDismissed(state);
   }
 
   function dismissUnit(u) {
     if (!u) return;
     var state = readDismissed();
-    state.units[unitKey(u)] = Date.now();
+    var now = Date.now();
+    state.units[unitKey(u)] = now;
+    var cs = normalizeCallsign(u.call_sign);
+    if (cs) state.units_cs[cs] = now;
     writeDismissed(state);
   }
 
   function dismissAllVisible(data) {
     var state = readDismissed();
+    var now = Date.now();
     ((data && data.alerts) || []).forEach(function (a) {
-      state.alerts[alertKey(a)] = Date.now();
+      state.alerts[alertKey(a)] = now;
+      var fp = alertFingerprint(a);
+      if (fp) state.alerts_fp[fp] = now;
     });
     ((data && data.criticalUnits) || []).forEach(function (u) {
-      state.units[unitKey(u)] = Date.now();
+      state.units[unitKey(u)] = now;
+      var cs = normalizeCallsign(u && u.call_sign);
+      if (cs) state.units_cs[cs] = now;
     });
     writeDismissed(state);
+  }
+
+  function clearDismissed() {
+    writeDismissed(emptyDismissState());
+    try {
+      // Ancienne clé v1 : nettoyer aussi pour éviter un état fantôme.
+      localStorage.removeItem('atak_medical_dismissed_v1_' + String(getMapId()));
+    } catch (e) { /* ignore */ }
   }
 
   function filterData(data) {
@@ -1575,6 +1622,7 @@ window.ATAKMedicalAlerts = (function () {
     dismissAlert: dismissAlert,
     dismissUnit: dismissUnit,
     dismissAllVisible: dismissAllVisible,
+    clearDismissed: clearDismissed,
     bindUi: bindUi,
     submitTriage: submitTriage,
     focusFromActivity: focusFromActivity,

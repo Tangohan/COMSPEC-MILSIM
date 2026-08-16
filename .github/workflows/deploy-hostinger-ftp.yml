@@ -18,7 +18,8 @@ on:
 
 concurrency:
   group: deploy-athena-prod
-  cancel-in-progress: true
+  # false : un cancel mid-FTP laisse public_html à moitié synchro (ex. routes/web.php manquant).
+  cancel-in-progress: false
 
 jobs:
   ftp-deploy:
@@ -81,6 +82,7 @@ jobs:
           log-level: standard
           # Ne pas écraser secrets / vendor / uploads / sessions locaux prod.
           # Exclure dossier + contenu (sinon le sync peut recréer / toucher le dossier).
+          # Ne JAMAIS exclure routes/ ni routes/web.php — critique au boot (public/index.php).
           exclude: |
             **/.git*
             **/.git*/**

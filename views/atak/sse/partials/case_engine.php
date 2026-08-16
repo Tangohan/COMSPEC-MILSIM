@@ -11,9 +11,12 @@ $caseId = (int) ($case['id'] ?? 0);
 <section id="moteur" class="panel sse-ana-panel">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">01.14</span> Moteur — propositions</div>
-        <div class="panel-meta">
-            <?= count($engineSuggestions) ?> rapprochement(s) · <?= count($engineSignals) ?> signal(aux)
-            · <a class="link" href="<?= $h(url('atak/sse/rapprochements') . '?case_id=' . $caseId) ?>">File complète</a>
+        <div class="panel-header__end">
+            <div class="panel-meta">
+                <?= count($engineSuggestions) ?> rapprochement(s) · <?= count($engineSignals) ?> signal(aux)
+                · <a class="link" href="<?= $h(url('atak/sse/rapprochements') . '?case_id=' . $caseId) ?>">File complète</a>
+            </div>
+            <?php $sectionKey = '01.14'; require __DIR__ . '/panel_section_info.php'; ?>
         </div>
     </div>
     <div class="panel-body">

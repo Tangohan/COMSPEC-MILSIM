@@ -24,6 +24,7 @@ use App\Repositories\SseTextTemplateRepository;
 use App\Repositories\SseWatchlistRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\TheatreMissionCycleRepository;
+use App\Repositories\UserRepository;
 use App\Services\Sse\SseAnalyticalEngineService;
 use App\Services\Sse\SseCompletenessService;
 use App\Services\Sse\SseContextualMentionService;
@@ -74,11 +75,13 @@ final class SsePortalController
         private ?SseAnalyticalEngineService $engine = null,
         private ?SseCompletenessService $completeness = null,
         private ?SseCaseBundleService $caseBundles = null,
+        private ?UserRepository $users = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
         $this->cases ??= new SseCaseRepository();
         $this->interestCases ??= new SseInterestCaseRepository();
+        $this->users ??= new UserRepository();
         $this->persons ??= new SsePersonRepository();
         $this->watchlist ??= new SseWatchlistRepository();
         $this->sites ??= new SseSiteRepository();
@@ -365,9 +368,16 @@ final class SsePortalController
     public function interestCasesIndex(Request $request, array $params = []): Response
     {
         $filters = ['status' => (string) $request->query('status', ''), 'q' => (string) $request->query('q', '')];
+        $userId = (int) Session::get('user_id') ?: null;
+
         return $this->portalView('atak.sse.interest_cases', [
             'title' => 'Pré-SSE — investigations préparatoires',
-            'interestCases' => $this->interestCases->listForTenant($this->tenantId(), $filters),
+            'interestCases' => $this->interestCases->listVisibleForUser(
+                $this->tenantId(),
+                $userId,
+                $this->canBypassInterestAcl(),
+                $filters
+            ),
             'filters' => $filters,
             'statuses' => SseInterestCaseRepository::STATUSES,
             'canManage' => $this->canManage(),
@@ -402,10 +412,13 @@ final class SsePortalController
             Session::flash('error', 'La désignation temporaire et le motif d’ouverture sont obligatoires.');
             return Response::redirect(url('atak/sse/interet/nouveau'));
         }
-        $fields = ['temporary_designation','suspected_alias','apparent_sex','estimated_age_range','suspected_nationality','suspected_affiliation','confidence_level','interest_level','opening_reason','origin_operator','observed_elements','analysis_facts','analysis_assumptions','analysis_contradictions','analysis_questions','collection_needs','operational_risk','recommendations','source_label','source_reliability','acquisition_at','mission_label'];
+        $fields = ['temporary_designation','suspected_alias','apparent_sex','estimated_age_range','suspected_nationality','suspected_affiliation','confidence_level','interest_level','opening_reason','description','origin_operator','observed_elements','analysis_facts','analysis_assumptions','analysis_contradictions','analysis_questions','collection_needs','operational_risk','recommendations','source_label','source_reliability','acquisition_at','mission_label'];
         $data = [];
-        foreach ($fields as $field) $data[$field] = trim((string) $request->input($field, '')) ?: null;
-        $data['temporary_designation'] = $designation; $data['opening_reason'] = $reason;
+        foreach ($fields as $field) {
+            $data[$field] = trim((string) $request->input($field, '')) ?: null;
+        }
+        $data['temporary_designation'] = $designation;
+        $data['opening_reason'] = $reason;
         $data['created_by'] = (int) Session::get('user_id') ?: null;
         $id = $this->interestCases->create($this->tenantId(), $data);
         Session::flash('success', 'Dossier d’intérêt ouvert. Aucune identité n’a été déduite automatiquement.');
@@ -417,6 +430,11 @@ final class SsePortalController
         $case = $this->interestCases->findForTenant((int) ($params['id'] ?? 0), $this->tenantId());
         if (!$case) {
             return Response::redirect(url('atak/sse/interet'));
+        }
+
+        $denied = $this->interestAccessDeniedResponse($case);
+        if ($denied !== null) {
+            return $denied;
         }
 
         $hypotheses = [];
@@ -452,17 +470,183 @@ final class SsePortalController
             ];
         }
 
+        $tenantId = $this->tenantId();
+        $caseId = (int) $case['id'];
+        $acl = $this->interestCases->listAcl($tenantId, $caseId);
+        $members = [];
+        try {
+            $members = $this->users->listForTenant($tenantId, null, 'active', null, 200, 0);
+        } catch (\Throwable) {
+            $members = [];
+        }
+
         return $this->portalView('atak.sse.interest_case_show', [
             'title' => (string) ($case['reference_code'] ?? 'Pré-SSE'),
             'interestCase' => $case,
             'hypotheses' => $hypotheses,
-            'proposals' => $this->crossProposals((int) $case['id']),
-            'constitutedCase' => $this->cases->findByInterestCase($this->tenantId(), (int) $case['id']),
+            'proposals' => $this->crossProposals($caseId),
+            'constitutedCase' => $this->cases->findByInterestCase($tenantId, $caseId),
+            'journalUpdates' => $this->interestCases->listUpdates($tenantId, $caseId),
+            'acl' => $acl,
+            'tenantMembers' => $members,
+            'statuses' => SseInterestCaseRepository::STATUSES,
+            'cooldowns' => $this->interestCases->allCooldownStates($tenantId, $caseId),
             'activeNav' => 'interet',
             'canManage' => $this->canManage(),
         ]);
     }
 
+    public function interestCaseDescription(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/interet/' . $id);
+        $case = $this->requireInterestCaseManageable($id, $back, $request);
+        if ($case instanceof Response) {
+            return $case;
+        }
+
+        $description = trim((string) $request->input('description', ''));
+        $this->interestCases->updateDescription($id, $this->tenantId(), $description !== '' ? $description : null);
+        Session::flash('success', 'Description du dossier enregistrée.');
+
+        return Response::redirect($back . '#description');
+    }
+
+    public function interestCaseJournal(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/interet/' . $id);
+        $case = $this->requireInterestCaseManageable($id, $back, $request);
+        if ($case instanceof Response) {
+            return $case;
+        }
+
+        $body = trim((string) $request->input('body', ''));
+        if ($body === '') {
+            Session::flash('error', 'Indiquez le contenu de la mise à jour.');
+
+            return Response::redirect($back . '#journal');
+        }
+
+        $author = (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Analyste');
+        $userId = (int) Session::get('user_id') ?: null;
+        $this->interestCases->addUpdate($this->tenantId(), $id, $body, $author, $userId);
+        Session::flash('success', 'Mise à jour consignée au dossier.');
+
+        return Response::redirect($back . '#journal');
+    }
+
+    public function interestCaseStatus(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/interet/' . $id);
+        $case = $this->requireInterestCaseManageable($id, $back, $request);
+        if ($case instanceof Response) {
+            return $case;
+        }
+
+        $status = (string) $request->input('status', '');
+        $isPublish = $status === 'en_validation';
+        $actionKey = $isPublish ? 'publish' : 'status';
+        $cooldown = $this->interestCooldownBlock($this->tenantId(), $id, $actionKey, $back);
+        if ($cooldown !== null) {
+            return $cooldown;
+        }
+
+        if (!isset(SseInterestCaseRepository::STATUSES[$status])) {
+            Session::flash('error', 'Choisissez un état valable pour ce dossier.');
+
+            return Response::redirect($back);
+        }
+
+        $prev = (string) ($case['status'] ?? '');
+        if ($prev === $status) {
+            Session::flash('success', 'L’état du dossier est déjà à jour.');
+
+            return Response::redirect($back);
+        }
+
+        $this->interestCases->updateStatus($id, $this->tenantId(), $status);
+        $userId = (int) Session::get('user_id') ?: null;
+        $this->interestCases->touchCooldown($this->tenantId(), $id, $actionKey, $userId);
+
+        $author = (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Analyste');
+        $this->interestCases->addUpdate(
+            $this->tenantId(),
+            $id,
+            'État passé de « ' . (SseInterestCaseRepository::STATUSES[$prev] ?? $prev) . ' » à « '
+            . (SseInterestCaseRepository::STATUSES[$status] ?? $status) . ' ».',
+            $author,
+            $userId
+        );
+
+        Session::flash(
+            'success',
+            $isPublish
+                ? 'Dossier soumis à validation humaine.'
+                : 'État du dossier mis à jour.'
+        );
+
+        return Response::redirect($back);
+    }
+
+    public function interestCaseAcl(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/interet/' . $id);
+        $case = $this->requireInterestCaseManageable($id, $back, $request);
+        if ($case instanceof Response) {
+            return $case;
+        }
+
+        $dest = $request->input('destinataires', []);
+        $deny = $request->input('interdits', []);
+        if (!is_array($dest)) {
+            $dest = [];
+        }
+        if (!is_array($deny)) {
+            $deny = [];
+        }
+
+        $userId = (int) Session::get('user_id') ?: null;
+        $ok = $this->interestCases->replaceAcl(
+            $this->tenantId(),
+            $id,
+            array_map('intval', $dest),
+            array_map('intval', $deny),
+            $userId
+        );
+
+        if (!$ok) {
+            Session::flash('error', 'La diffusion n’a pas pu être enregistrée. Réessayez.');
+
+            return Response::redirect($back . '#diffusion');
+        }
+
+        Session::flash('success', 'Destinataires et interdictions nominatives mis à jour.');
+
+        return Response::redirect($back . '#diffusion');
+    }
+
+    public function interestCaseOpenInvestigation(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/interet/' . $id);
+        $case = $this->requireInterestCaseManageable($id, $back, $request);
+        if ($case instanceof Response) {
+            return $case;
+        }
+
+        $cooldown = $this->interestCooldownBlock($this->tenantId(), $id, 'open_mesh', $back);
+        if ($cooldown !== null) {
+            return $cooldown;
+        }
+
+        $userId = (int) Session::get('user_id') ?: null;
+        $this->interestCases->touchCooldown($this->tenantId(), $id, 'open_mesh', $userId);
+
+        return Response::redirect(url('atak/sse/toiles/nouveau'));
+    }
     /**
      * Constitue un dossier à partir d'un dossier d'intérêt instruit.
      *
@@ -486,6 +670,16 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/interet'));
         }
 
+        $denied = $this->interestAccessDeniedResponse($interest);
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        $cooldown = $this->interestCooldownBlock($this->tenantId(), $id, 'constitute', $back);
+        if ($cooldown !== null) {
+            return $cooldown;
+        }
+
         $existing = $this->cases->findByInterestCase($this->tenantId(), $id);
         if ($existing !== null) {
             Session::flash('error', 'Un dossier a déjà été constitué à partir de ce dossier d’intérêt.');
@@ -495,6 +689,7 @@ final class SsePortalController
 
         $summary = array_values(array_filter([
             trim((string) ($interest['opening_reason'] ?? '')),
+            trim((string) ($interest['description'] ?? '')),
             trim((string) ($interest['observed_elements'] ?? '')),
             trim((string) ($interest['analysis_facts'] ?? '')),
         ], static fn (string $s): bool => $s !== ''));
@@ -514,6 +709,9 @@ final class SsePortalController
             'interest_case_id' => $id,
             'created_by' => (int) Session::get('user_id') ?: null,
         ]);
+
+        $userId = (int) Session::get('user_id') ?: null;
+        $this->interestCases->touchCooldown($this->tenantId(), $id, 'constitute', $userId);
 
         $this->activityLog->record(
             $this->tenantId(),
@@ -612,6 +810,16 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/interet'));
         }
 
+        $denied = $this->interestAccessDeniedResponse($case);
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        $cooldown = $this->interestCooldownBlock($this->tenantId(), $id, 'cross_decide', $back);
+        if ($cooldown !== null) {
+            return $cooldown;
+        }
+
         $personId = (int) $request->input('person_id', 0);
         $entryId = (int) $request->input('entry_id', 0);
         $decision = (string) $request->input('decision', '');
@@ -625,6 +833,7 @@ final class SsePortalController
 
         if ($decision === 'reouvrir') {
             $this->crossDecisions->clear($this->tenantId(), $id, $personId, $entryId);
+            $this->interestCases->touchCooldown($this->tenantId(), $id, 'cross_decide', (int) Session::get('user_id') ?: null);
             Session::flash('success', 'Décision retirée — le rapprochement redevient à traiter.');
 
             return Response::redirect($back);
@@ -642,7 +851,7 @@ final class SsePortalController
             'decision' => $decision,
             'score' => (int) $request->input('score', 0),
             'reason' => (string) $request->input('reason', ''),
-            'note' => trim((string) $request->input('note', '')),
+            'note' => trim((string) $request->input('note', '')) ?: null,
             'author_label' => $author,
             'decided_by' => (int) Session::get('user_id') ?: null,
         ]);
@@ -653,16 +862,16 @@ final class SsePortalController
             return Response::redirect($back);
         }
 
+        $this->interestCases->touchCooldown($this->tenantId(), $id, 'cross_decide', (int) Session::get('user_id') ?: null);
+
         $this->activityLog->record(
             $this->tenantId(),
             1,
             'SSE_CROSS',
             sprintf(
-                '%s sur le dossier %s (identité n° %d, entrée surveillée n° %d).',
+                '%s sur le dossier %s.',
                 SseCrossDecisionRepository::decisionLabel($decision),
-                (string) ($case['reference_code'] ?? $id),
-                $personId,
-                $entryId
+                (string) ($case['reference_code'] ?? $id)
             ),
             $author
         );
@@ -982,17 +1191,23 @@ final class SsePortalController
             'author_label' => (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur'),
         ]);
 
+        $existingMap = $this->caseMaps->getState($this->tenantId(), $id);
+        $captureMeta = is_array($existingMap['snapshot_meta'] ?? null) ? $existingMap['snapshot_meta'] : [];
+        $captureBasemap = strtolower(trim((string) $request->input('basemap', (string) ($captureMeta['basemap'] ?? ''))));
+        $captureMeta['captured_at'] = date('c');
+        $captureMeta['image'] = 'uploads/sse/evidence/' . $name;
+        $captureMeta['feature_count'] = count($this->caseMaps->listFeatures($this->tenantId(), $id));
+        if (in_array($captureBasemap, ['dark', 'light', 'street', 'relief'], true)) {
+            $captureMeta['basemap'] = $captureBasemap;
+        }
+
         $this->caseMaps->saveState($this->tenantId(), $id, [
             'center_lat' => $centerLat,
             'center_lng' => $centerLng,
             'zoom' => $zoom,
             'map_id' => (int) $request->input('map_id', 1),
             'atak_layer_enabled' => (bool) $request->input('atak_layer_enabled', true),
-            'snapshot_meta' => [
-                'captured_at' => date('c'),
-                'image' => 'uploads/sse/evidence/' . $name,
-                'feature_count' => count($this->caseMaps->listFeatures($this->tenantId(), $id)),
-            ],
+            'snapshot_meta' => $captureMeta,
         ], (int) Session::get('user_id') ?: null);
 
         Session::flash('success', 'Capture enregistrée : pièce versée et vue mémorisée pour ce dossier.');
@@ -1011,12 +1226,20 @@ final class SsePortalController
             return Response::json(['ok' => false, 'error' => 'Dossier inaccessible.'], 404);
         }
 
+        $existing = $this->caseMaps->getState($this->tenantId(), $id);
+        $meta = is_array($existing['snapshot_meta'] ?? null) ? $existing['snapshot_meta'] : [];
+        $basemap = strtolower(trim((string) $request->input('basemap', '')));
+        if (in_array($basemap, ['dark', 'light', 'street', 'relief'], true)) {
+            $meta['basemap'] = $basemap;
+        }
+
         $ok = $this->caseMaps->saveState($this->tenantId(), $id, [
             'center_lat' => (float) $request->input('center_lat', 48.8566),
             'center_lng' => (float) $request->input('center_lng', 2.3522),
             'zoom' => (int) $request->input('zoom', 6),
             'map_id' => (int) $request->input('map_id', 1),
             'atak_layer_enabled' => filter_var($request->input('atak_layer_enabled', true), FILTER_VALIDATE_BOOLEAN),
+            'snapshot_meta' => $meta !== [] ? $meta : null,
         ], (int) Session::get('user_id') ?: null);
 
         return Response::json([
@@ -4200,6 +4423,64 @@ final class SsePortalController
         }
 
         return function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+    }
+
+    private function canBypassInterestAcl(): bool
+    {
+        if ($this->access->isGuest()) {
+            return false;
+        }
+
+        return function_exists('can') && (can('atak.sse.grant') || can('admin.access'));
+    }
+
+    /** @param array<string, mixed> $case */
+    private function interestAccessDeniedResponse(array $case): ?Response
+    {
+        $userId = (int) Session::get('user_id') ?: null;
+        if ($this->interestCases->userCanAccessCase($case, $userId, $this->canBypassInterestAcl())) {
+            return null;
+        }
+
+        Session::flash('error', 'Vous n’êtes pas autorisé à consulter ce dossier d’intérêt.');
+
+        return Response::redirect(url('atak/sse/interet'));
+    }
+
+    /**
+     * @return array<string, mixed>|Response
+     */
+    private function requireInterestCaseManageable(int $id, string $back, Request $request): array|Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $case = $this->interestCases->findForTenant($id, $this->tenantId());
+        if ($case === null) {
+            return Response::redirect(url('atak/sse/interet'));
+        }
+
+        $denied = $this->interestAccessDeniedResponse($case);
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        return $case;
+    }
+
+    private function interestCooldownBlock(int $tenantId, int $caseId, string $actionKey, string $back): ?Response
+    {
+        $state = $this->interestCases->cooldownState($tenantId, $caseId, $actionKey);
+        if (empty($state['blocked'])) {
+            return null;
+        }
+
+        Session::flash('error', $this->interestCases->formatCooldownHuman($state));
+
+        return Response::redirect($back);
     }
 
     private function canGrant(): bool

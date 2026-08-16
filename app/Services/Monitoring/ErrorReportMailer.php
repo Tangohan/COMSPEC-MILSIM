@@ -71,7 +71,13 @@ final class ErrorReportMailer
 
         $ip = $this->clientIp();
         $fingerprint = $kind . '|' . $className . '|' . $file . '|' . $line . '|' . substr($message, 0, 200);
-        $dedupeKey = $fingerprint . '|' . $ip;
+        // Infra (routes manquantes, BDD down) : dédupliquer sans IP pour éviter une tempête
+        // d’e-mails quand chaque client ATAK / navigateur poll.
+        $infraStorm = str_contains($message, 'Fichier de routage manquant')
+            || str_contains($message, 'routes/web.php')
+            || str_contains($message, 'Database connection failed')
+            || str_contains($message, 'SQLSTATE[HY000] [2002]');
+        $dedupeKey = $infraStorm ? ('infra|' . $fingerprint) : ($fingerprint . '|' . $ip);
         $throttle = ErrorAlertThrottle::fromEnv();
         if ($throttle->isThrottled($dedupeKey)) {
             $this->auditSkip('throttled', $kind, $message, $file, $line, $to);

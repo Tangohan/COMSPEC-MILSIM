@@ -99,7 +99,10 @@ $frDate = static function (mixed $raw): string {
             <span class="panel-index">01.01</span>
             Chemise du dossier
         </div>
-        <div class="panel-meta">Pièce de garde — à joindre à toute transmission</div>
+        <div class="panel-header__end">
+            <div class="panel-meta">Pièce de garde — à joindre à toute transmission</div>
+            <?php $sectionKey = '01.01'; require __DIR__ . '/partials/panel_section_info.php'; ?>
+        </div>
     </div>
     <div class="panel-body">
         <?php
@@ -120,9 +123,12 @@ $frDate = static function (mixed $raw): string {
             <span class="panel-index">01.02</span>
             Synthèse du dossier
         </div>
-        <?php if (!empty($case['updated_at'])): ?>
-            <div class="panel-meta">Dernière modification le <?= $h($frDate($case['updated_at'])) ?></div>
-        <?php endif; ?>
+        <div class="panel-header__end">
+            <?php if (!empty($case['updated_at'])): ?>
+                <div class="panel-meta">Dernière modification le <?= $h($frDate($case['updated_at'])) ?></div>
+            <?php endif; ?>
+            <?php $sectionKey = '01.02'; require __DIR__ . '/partials/panel_section_info.php'; ?>
+        </div>
     </div>
     <div class="panel-body">
         <?php $summary = trim((string) ($case['summary'] ?? '')); ?>
@@ -147,7 +153,10 @@ $frDate = static function (mixed $raw): string {
                 <span class="panel-index">01.03</span>
                 Identités rattachées
             </div>
-            <div class="panel-meta"><?= count($people) ?></div>
+            <div class="panel-header__end">
+                <div class="panel-meta"><?= count($people) ?></div>
+                <?php $sectionKey = '01.03'; require __DIR__ . '/partials/panel_section_info.php'; ?>
+            </div>
         </div>
         <div class="panel-body">
             <?php if ($people === []): ?>
@@ -191,7 +200,10 @@ $frDate = static function (mixed $raw): string {
                 <span class="panel-index">01.04</span>
                 Pièces versées
             </div>
-            <div class="panel-meta"><?= count($evidence) ?></div>
+            <div class="panel-header__end">
+                <div class="panel-meta"><?= count($evidence) ?></div>
+                <?php $sectionKey = '01.04'; require __DIR__ . '/partials/panel_section_info.php'; ?>
+            </div>
         </div>
         <div class="panel-body">
             <?php if ($evidence === []): ?>
@@ -237,7 +249,10 @@ $frDate = static function (mixed $raw): string {
             <span class="panel-index">01.05</span>
             Sites exploités
         </div>
-        <div class="panel-meta">Rattachés à ce dossier</div>
+        <div class="panel-header__end">
+            <div class="panel-meta">Rattachés à ce dossier</div>
+            <?php $sectionKey = '01.05'; require __DIR__ . '/partials/panel_section_info.php'; ?>
+        </div>
     </div>
 
     <?php if (($caseSites ?? []) === []): ?>
@@ -299,7 +314,10 @@ $frDate = static function (mixed $raw): string {
             <span class="panel-index">01.06</span>
             Notes classifiées
         </div>
-        <div class="panel-meta"><?= count($notes) ?></div>
+        <div class="panel-header__end">
+            <div class="panel-meta"><?= count($notes) ?></div>
+            <?php $sectionKey = '01.06'; require __DIR__ . '/partials/panel_section_info.php'; ?>
+        </div>
     </div>
     <div class="panel-body">
         <?php if ($notes === []): ?>
@@ -346,11 +364,14 @@ $frDate = static function (mixed $raw): string {
             <span class="panel-index">01.07</span>
             Carte tactique
         </div>
-        <div class="panel-meta">
-            Snapshot permanent du dossier
-            <?php if (!empty($mapState['updated_at'])): ?>
-                · mémorisé le <?= $h(date('d/m/Y H:i', strtotime((string) $mapState['updated_at']) ?: time())) ?>
-            <?php endif; ?>
+        <div class="panel-header__end">
+            <div class="panel-meta">
+                Snapshot permanent du dossier
+                <?php if (!empty($mapState['updated_at'])): ?>
+                    · mémorisé le <?= $h(date('d/m/Y H:i', strtotime((string) $mapState['updated_at']) ?: time())) ?>
+                <?php endif; ?>
+            </div>
+            <?php $sectionKey = '01.07'; require __DIR__ . '/partials/panel_section_info.php'; ?>
         </div>
     </div>
     <div class="panel-body">
@@ -362,6 +383,15 @@ $frDate = static function (mixed $raw): string {
 
         <div class="sse-tacmap-layout">
             <div class="sse-tacmap-main">
+                <div class="sse-tacmap-toolbar">
+                    <label for="sse-tacmap-basemap">Fond de carte</label>
+                    <select id="sse-tacmap-basemap" class="sse-tacmap-basemap">
+                        <option value="dark">Sombre</option>
+                        <option value="light">Clair</option>
+                        <option value="street">Plan</option>
+                        <option value="relief">Relief</option>
+                    </select>
+                </div>
                 <div id="sse-tacmap" class="sse-tacmap" role="application" aria-label="Carte tactique du dossier"></div>
                 <?php if ($canManage): ?>
                     <p class="sse-tacmap-hint muted">Clic sur la carte pour placer un ping. Glissez pour déplacer la vue — elle est enregistrée automatiquement.</p>
@@ -431,6 +461,7 @@ $frDate = static function (mixed $raw): string {
                         <input type="hidden" name="center_lng" id="sse-tacmap-lng" value="">
                         <input type="hidden" name="zoom" id="sse-tacmap-zoom" value="">
                         <input type="hidden" name="map_id" id="sse-tacmap-mapid" value="<?= (int) ($mapState['map_id'] ?? 1) ?>">
+                        <input type="hidden" name="basemap" id="sse-tacmap-basemap-field" value="<?= $h((string) (($mapState['snapshot_meta']['basemap'] ?? null) ?: 'dark')) ?>">
                         <input type="hidden" name="atak_layer_enabled" id="sse-tacmap-atakflag" value="<?= !empty($mapState['atak_layer_enabled']) ? '1' : '0' ?>">
                         <label for="sse-tacmap-caption">Légende de la capture</label>
                         <input id="sse-tacmap-caption" name="caption" type="text" maxlength="200" placeholder="Ex. Approche nord du site">
@@ -468,6 +499,9 @@ $mapBoot = [
         'center_lng' => (float) ($mapState['center_lng'] ?? 2.3522),
         'zoom' => (int) ($mapState['zoom'] ?? 6),
         'map_id' => (int) ($mapState['map_id'] ?? 1),
+        'basemap' => (isset($mapState['snapshot_meta']) && is_array($mapState['snapshot_meta']) && !empty($mapState['snapshot_meta']['basemap']))
+            ? (string) $mapState['snapshot_meta']['basemap']
+            : null,
         'atak_layer_enabled' => !empty($mapState['atak_layer_enabled']),
     ],
     'features' => array_values(array_map(static function (array $f): array {
@@ -487,6 +521,6 @@ $mapBoot = [
 ];
 $sseExtraScripts = '<script src="' . htmlspecialchars(asset_url('assets/js/sse-case-modals.js'), ENT_QUOTES, 'UTF-8') . '?v=202608160430"></script>'
     . '<script>window.SSE_CASE_MAP = ' . json_encode($mapBoot, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) . ';</script>'
-    . '<script src="' . htmlspecialchars(asset_url('assets/js/sse-case-map.js'), ENT_QUOTES, 'UTF-8') . '?v=202608160800"></script>';
+    . '<script src="' . htmlspecialchars(asset_url('assets/js/sse-case-map.js'), ENT_QUOTES, 'UTF-8') . '?v=202608161630"></script>';
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';
