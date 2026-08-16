@@ -1,6 +1,7 @@
-// Signalement joueur d’un problème Overwatch (idd 9989)
+// Signalement joueur d’un problème Overwatch (idd 9992)
+// Ne pas réutiliser 9989 : réservé à COMSPEC_OrderCompose_Dialog (écrasement config Arma).
 class COMSPEC_BugReport_Dialog {
-    idd = 9989;
+    idd = 9992;
     movingEnable = 1;
     onLoad = "uiNamespace setVariable ['COMSPEC_BugReport_Display', _this select 0];";
     onUnload = "uiNamespace setVariable ['COMSPEC_BugReport_Display', displayNull];";

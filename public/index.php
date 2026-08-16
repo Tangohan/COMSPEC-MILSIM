@@ -256,7 +256,14 @@ try {
     $config = $GLOBALS['__app_config'];
 
     $app = new \App\Core\Application();
-    $routes = require $root . '/routes/web.php';
+    $routesFile = $root . '/routes/web.php';
+    if (!is_file($routesFile)) {
+        throw new RuntimeException(
+            'Fichier de routage manquant sur le serveur (routes/web.php). '
+            . 'Redéployer le dépôt (Action Deploy Athena / FTP) ou remonter ce fichier à la racine applicative.'
+        );
+    }
+    $routes = require $routesFile;
     $routes($app->router());
     $app->run();
 } catch (Throwable $e) {

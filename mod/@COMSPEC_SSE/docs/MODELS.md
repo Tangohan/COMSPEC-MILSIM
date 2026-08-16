@@ -43,7 +43,7 @@ Les **modèles** permettent de réutiliser des profils narratifs complets (profi
 - `builtin_ru_2020_2024_courier`
 - `builtin_ru_2020_2024_civil`
 
-Région `RUSSIA` disponible dans les pools narratifs (noms, préfixes +7, alias).
+Région `RUSSIA` disponible dans les pools narratifs (noms, préfixes +7, alias) **et** dans le combo Eden « Région narrative » (`Russie / théâtre Est`).
 
 ## API
 

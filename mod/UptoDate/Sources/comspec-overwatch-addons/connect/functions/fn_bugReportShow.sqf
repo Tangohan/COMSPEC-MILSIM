@@ -2,21 +2,28 @@
     Ouvre le formulaire de signalement joueur.
 */
 if (!hasInterface) exitWith {};
-if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {
+    ["Activez d’abord Overwatch pour signaler un problème.", "system", "warn"] call comspec_overwatch_connect_fnc_announce;
+};
 
 if (!isNull (uiNamespace getVariable ["COMSPEC_BugReport_Display", displayNull])) exitWith {};
 
-private _parent = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
-if (isNull _parent) then { _parent = findDisplay 46; };
+private _parent = uiNamespace getVariable ["COMSPEC_PauseManager_Display", displayNull];
+if (isNull _parent) then {
+    _parent = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
+};
 
 private _ok = false;
 private _disp = displayNull;
 if (!isNull _parent) then {
     _disp = _parent createDisplay "COMSPEC_BugReport_Dialog";
     _ok = !isNull _disp;
-} else {
+};
+
+if (!_ok || {isNull _disp}) then {
     _ok = createDialog "COMSPEC_BugReport_Dialog";
     _disp = uiNamespace getVariable ["COMSPEC_BugReport_Display", displayNull];
+    if (isNull _disp) then { _disp = findDisplay 9992; };
 };
 
 if (!_ok || {isNull _disp}) exitWith {

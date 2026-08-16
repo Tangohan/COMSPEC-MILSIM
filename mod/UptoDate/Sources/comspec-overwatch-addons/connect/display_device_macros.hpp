@@ -26,7 +26,7 @@
 #define COMSPEC_IMG_ICON_MAIL "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_mail_ca.paa"
 
 // Overlays roleplay (textures originales COMSPEC — PNG packés tant que TexView n’a pas produit les .paa)
-#define COMSPEC_IMG_OVERLAY_SCREEN_CRACKED "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_cracked_ca.png"
+#define COMSPEC_IMG_OVERLAY_SCREEN_CRACKED "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.png"
 #define COMSPEC_IMG_OVERLAY_SCREEN_OFF "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.png"
 #define COMSPEC_IMG_OVERLAY_STATIC "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.png"
 #define COMSPEC_IMG_OVERLAY_NO_SIGNAL "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.png"

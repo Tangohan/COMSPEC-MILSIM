@@ -1435,13 +1435,9 @@ class AtakApiController
                 ], 503);
             }
 
-            // Vérifier perte de paquet
-            if ($this->roleplaySim->shouldSimulatePacketLoss($tenantId)) {
-                return Response::json([
-                    'error' => 'packet_lost',
-                    'message' => 'Paquet perdu',
-                ], 503);
-            }
+            // Perte de paquet : ne bloque plus les lectures (journal radio / unités).
+            // Sinon un 503 ponctuel laisse le Journal Radio figé sur « Aucun message »
+            // alors que Liaison a bien reçu l’événement.
 
             // Appliquer latence
             $this->roleplaySim->applyNetworkLatency($tenantId);
@@ -4865,6 +4861,10 @@ class AtakApiController
         foreach ($rows as &$chatRow) {
             if (!is_array($chatRow)) {
                 continue;
+            }
+            $group = GroupMessageParser::enrichChatRow($chatRow);
+            if ($group !== null) {
+                $chatRow['group'] = $group;
             }
             $mp = MpMessageParser::enrichChatRow($chatRow);
             if ($mp !== null) {

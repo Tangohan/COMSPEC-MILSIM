@@ -132,6 +132,16 @@ if (_hasBio) then {
     ];
 };
 
+private _bloodTypes = ["O POS", "O NEG", "A POS", "A NEG", "B POS", "B NEG", "AB POS", "AB NEG"];
+private _blood = [_seed, "blood", _bloodTypes] call comspec_sse_fnc_pickFromSeed;
+private _idH = [_seed, "idcode"] call comspec_sse_fnc_hash;
+private _idCode = format [
+    "%1-%2-%3",
+    100 + (_idH mod 800),
+    10 + ((_idH / 10) mod 80),
+    1000 + ((_idH / 100) mod 8000)
+];
+
 private _identity = createHashMapFromArray [
     ["name", _name],
     ["alias", _alias],
@@ -141,6 +151,8 @@ private _identity = createHashMapFromArray [
     ["phone", _phone],
     ["language", _lang],
     ["region", _region],
+    ["bloodType", _blood],
+    ["idCode", _idCode],
     ["dobApprox", format ["19%1", 70 + (([_seed, "dob"] call comspec_sse_fnc_hash) mod 30)]]
 ];
 

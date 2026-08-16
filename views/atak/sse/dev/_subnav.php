@@ -22,6 +22,7 @@ $items = [
                 ?>
                 <a class="lab-subnav__link<?= $active ?>" href="<?= $h($href) ?>" role="listitem"><?= $h($label) ?></a>
             <?php endforeach; ?>
+            <a class="lab-subnav__link" href="<?= $h(url('atak/sse/dossiers/importer')) ?>" role="listitem">Importer un scénario</a>
         </div>
     </div>
 </nav>

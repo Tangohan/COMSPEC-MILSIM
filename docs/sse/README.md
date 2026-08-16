@@ -51,3 +51,10 @@ Une proposition produite par le système constitue une aide à l’analyse. Elle
 - Apparence unique : **Bureau SSE** (inspirée LMS Effectifs / tableau de bord)
 - **Toiles de données** (data mesh) : `/atak/sse/toiles` — graphes d’enquête créables, importables depuis un dossier
 - **Manuel opérateur HTML** (intégré au site) : `/atak/sse/guide` — accessible après habilitation SSE (navigation *Aide → Documentation*)
+
+## Préparation de scénarios (IA + emport)
+
+- [Prompts dossiers fictifs JSON (ChatGPT / Claude)](prompts-dossiers-fictifs-json.md) — pack affaire complet
+- [Prompts packs de modèles mission](prompts-packs-modeles-mission.md) — modèles narratifs Arma
+- Exemple : [`examples/case-bundle-exemple.json`](examples/case-bundle-exemple.json)
+- Import Athena : `/atak/sse/dossiers/importer` · Emport : `/atak/sse/dossiers/{id}/emport`

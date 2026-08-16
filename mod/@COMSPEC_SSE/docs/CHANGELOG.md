@@ -1,5 +1,23 @@
 # Changelog COMSPEC SSE
 
+## 0.7.5 — Compat plaque ACE Medical → SSE
+
+- Addon `compat_ace` : vérification dog tag ACE affiche l'identité SSE (nom, n° ID, groupe sanguin)
+- Action `dogtag` dans le brouillard SSE + sync à la génération / `setIdentity`
+- Doc `ACE-DOGTAGS.md`
+
+## 0.7.4 — Génération robuste + journal technique
+
+- Durcissement `generateData` / `setPair` (plus de `_data` indéfini après échec)
+- Journal technique SSE (tampon + ACE Self « Journal technique ») — WARN/ERROR toujours en RPT
+- Overlay debug Zeus : libellés clairs si non généré / données invalides
+
+## 0.7.3 — Région Russie + correctif setToPairs
+
+- Combo Eden **Région narrative** : entrée `Russie / théâtre Est` (`RUSSIA`) + `Aléatoire`
+- Pools russes enrichis (prénoms, noms, alias, rôles, apps, SMS)
+- Correctif `Inc_setToPairs` : plus d’appel `[_arr, [key,value]]` (STRING attendue en index 1)
+
 ## 0.7.2 — Passerelle BII Identifi
 
 - Addon `compat_bii` : import scans / preuves / modules BII → modèle SSE

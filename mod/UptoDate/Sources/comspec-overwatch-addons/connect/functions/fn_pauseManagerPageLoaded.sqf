@@ -25,9 +25,16 @@ private _bool = {
 // --- Statut liaison Athena ---
 private _linkState = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 private _linkDetail = missionNamespace getVariable ["COMSPEC_LinkDetail", ""];
-private _lastPosSync = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
+private _lastPosSyncAt = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
+private _lastPosSync = -1;
+if (_lastPosSyncAt isEqualType 0 && {_lastPosSyncAt >= 0}) then {
+    _lastPosSync = diag_tickTime - _lastPosSyncAt;
+};
 private _lastLatency = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
 if (!(_lastLatency isEqualType 0)) then { _lastLatency = -1; };
+if (_linkDetail isEqualTo "" && {_linkState isEqualTo "offline"}) then {
+    _linkDetail = "Pas de session Athena — reconnectez ou liez le compte.";
+};
 
 // --- Réglages rapides ---
 private _overwatchEnabled = missionNamespace getVariable ["comspec_overwatch_enabled", true];

@@ -1170,6 +1170,7 @@ class PersonnelController
             'nicknames' => $nicknames,
             'medalRackItems' => $medalRackItems,
             'clearanceLevelOptions' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
+            'backOfficePageCss' => ['personnel-dossier.css'],
         ]);
     }
 

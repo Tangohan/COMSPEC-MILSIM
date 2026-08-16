@@ -10,7 +10,7 @@ params [
 private _data = [_entity] call comspec_sse_fnc_getData;
 if (isNil "_data") exitWith { nil };
 
-private _sections = [_data, "sections", createHashMap] call BIS_fnc_getFromPairs;
+private _sections = [_data, "sections", createHashMap] call comspec_sse_fnc_getPair;
 if !(_sections isEqualType createHashMap) exitWith { nil };
 
 _sections getOrDefault [toLower _section, nil]

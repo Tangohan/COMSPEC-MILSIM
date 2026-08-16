@@ -903,8 +903,11 @@ final class JnetDashboardService
         $id = (int) ($row['id'] ?? 0);
         $display = trim((string) ($row['display_name'] ?? ''));
         $character = trim((string) ($row['character_name'] ?? ''));
-        $name = $character !== '' ? $character : ($display !== '' ? $display : 'Opérateur');
         $callsign = trim((string) ($row['callsign'] ?? ''));
+        // Priorité milsim : identité de personnage → indicatif → nom affiché (évite le pseudo compte en tête).
+        $name = $character !== ''
+            ? $character
+            : ($callsign !== '' ? $callsign : ($display !== '' ? $display : 'Opérateur'));
         $grade = trim((string) ($row['grade_short'] ?? $row['grade_long'] ?? ''));
         $unit = trim((string) ($row['unit_name'] ?? $row['unit_code'] ?? '—'));
         $function = trim((string) ($row['job_role_display'] ?? $row['role_name'] ?? '—'));
@@ -920,6 +923,12 @@ final class JnetDashboardService
         if ($deployable === 0 || $deployable === '0' || $deployable === false) {
             $duty = 'off';
         }
+
+        $metaBits = array_values(array_filter([
+            $grade !== '' ? $grade : null,
+            ($callsign !== '' && strcasecmp($callsign, $name) !== 0) ? $callsign : null,
+            ($display !== '' && strcasecmp($display, $name) !== 0 && strcasecmp($display, $callsign) !== 0) ? $display : null,
+        ]));
 
         return [
             'id' => $id,
@@ -941,6 +950,7 @@ final class JnetDashboardService
             'initials' => function_exists('user_display_initials') ? user_display_initials($name, 2) : strtoupper(substr($name, 0, 2)),
             'href' => url('jnet/personnel/' . $id),
             'current_op' => '—',
+            'meta_line' => $metaBits !== [] ? implode(' · ', $metaBits) : '—',
         ];
     }
 
@@ -980,6 +990,7 @@ final class JnetDashboardService
                 'initials' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', explode(',', $d['name'])[0] ?? 'X') ?: 'X', 0, 2)),
                 'href' => url('jnet/personnel/' . $id),
                 'current_op' => $d['duty'] === 'deployed' ? 'IRON VEIL' : '—',
+                'meta_line' => $d['grade'] . ' · ' . $d['callsign'],
                 'demo' => true,
             ];
         }

@@ -27,15 +27,26 @@ if (isNil "comspec_sse_debugEh") then {
         if (isNull _target) exitWith {};
 
         private _data = [_target] call comspec_sse_fnc_getData;
-        if (isNil "_data" || {!(_data isEqualType [])}) exitWith {};
-
-        private _uid = [_data, "uid", "?"] call comspec_sse_fnc_getPair;
-        private _profile = [_data, "profile", "?"] call comspec_sse_fnc_getPair;
-        private _state = [_data, "state", "?"] call comspec_sse_fnc_getPair;
-        private _txt = format ["SSE %1 | %2 | %3", _uid, _profile, _state];
+        private _txt = "SSE (non généré)";
+        if (!(isNil "_data") && {_data isEqualType []}) then {
+            private _uid = [_data, "uid", ""] call comspec_sse_fnc_getPair;
+            private _profile = [_data, "profile", ""] call comspec_sse_fnc_getPair;
+            private _state = [_data, "state", ""] call comspec_sse_fnc_getPair;
+            if (_uid isEqualTo "" && {_profile isEqualTo ""}) then {
+                _txt = "SSE (données invalides — régénérer)";
+            } else {
+                _txt = format [
+                    "SSE %1 | %2 | %3",
+                    if (_uid isEqualTo "") then {"?"} else {_uid},
+                    if (_profile isEqualTo "") then {"?"} else {_profile},
+                    if (_state isEqualTo "") then {"?"} else {_state}
+                ];
+            };
+        };
         drawIcon3D ["", [0.2, 1, 0.2, 1], ASLToAGL (getPosASL _target) vectorAdd [0,0,2], 0.5, 0.5, 0, _txt, 1, 0.035, "PuristaMedium"];
 
         if (missionNamespace getVariable ["comspec_sse_drawLinks", false]) then {
+            if (isNil "_data" || {!(_data isEqualType [])}) exitWith {};
             private _links = [_target] call comspec_sse_fnc_getLinks;
             {
                 private _tn = _x getOrDefault ["targetNetId", ""];

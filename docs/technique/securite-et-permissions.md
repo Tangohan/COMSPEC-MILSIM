@@ -28,7 +28,7 @@
 
 ## Alertes erreurs (exploitation)
 
-- Les exceptions non gérées et certaines erreurs fatales déclenchent un envoi optionnel via **`ErrorReportMailer`** (événement `error_alert`), si **`ERROR_ALERT_EMAIL`** est renseigné et **`ERROR_ALERT_ENABLED`** activé. Le corps du message contient la trace et le contexte (identifiants de session, `Request-ID`, etc.) ; les réponses **`/api/*`** restent génériques (JSON 500 sans stack).
+- Les exceptions non gérées et certaines erreurs fatales déclenchent un envoi optionnel via **`ErrorReportMailer`** (événement `error_alert`), si **`ERROR_ALERT_EMAIL`** (ou à défaut le premier **`SECURITY_ALERT_EMAILS`**) est renseigné et **`ERROR_ALERT_ENABLED`** activé. Ces alertes partent **immédiatement** (ignorent **`MAIL_QUEUE`**). Une copie est toujours écrite dans **`storage/logs/error-alerts.log`**. Le corps du message contient la trace et le contexte (identifiants de session, `Request-ID`, etc.) ; les réponses **`/api/*`** restent génériques (JSON 500 sans stack).
 - Anti-spam : **`ERROR_ALERT_COOLDOWN_SECONDS`** et **`ERROR_ALERT_MAX_PER_HOUR`** (fichiers sous `storage/cache/error-alerts/`).
 
 ## Courriel et sécurité compte

@@ -83,7 +83,26 @@ require __DIR__ . '/_subnav.php';
 
 <section class="panel" style="margin-top:10px">
     <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">02</span> Modèles récents</div>
+        <div class="panel-title"><span class="panel-index">02</span> Scénarios de dossier complets</div>
+        <div class="panel-meta">Athena + Arma</div>
+    </div>
+    <div class="panel-body">
+        <p class="lab-form-lead">
+            Générez un dossier fictif complet (identités, sites, pièces) avec ChatGPT ou Claude,
+            importez-le dans Athena, puis emportez le pack terrain pour Arma 3.
+        </p>
+        <?php if ($canManage): ?>
+            <a class="btn" href="<?= $h(url('atak/sse/dossiers/importer')) ?>">Importer un scénario</a>
+        <?php endif; ?>
+        <p style="margin-top:12px;opacity:.85;font-size:.9rem">
+            Prompts prêts à coller : documentation <strong>docs/sse/prompts-dossiers-fictifs-json.md</strong>.
+        </p>
+    </div>
+</section>
+
+<section class="panel" style="margin-top:10px">
+    <div class="panel-header">
+        <div class="panel-title"><span class="panel-index">03</span> Modèles récents</div>
         <a class="link" href="<?= $h(url('atak/sse/dev/modeles')) ?>">Voir tous</a>
     </div>
     <?php if ($recentModels === []): ?>

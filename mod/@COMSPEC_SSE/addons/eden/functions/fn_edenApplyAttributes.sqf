@@ -34,7 +34,7 @@ if (_generation == "AUTO") then {
 if (_networkId != "") then {
     private _data = [_entity] call comspec_sse_fnc_getData;
     if (!isNil "_data") then {
-        _data = [_data, ["networkId", _networkId]] call BIS_fnc_setToPairs;
+        _data = [_data, "networkId", _networkId] call comspec_sse_fnc_setPair;
         [_entity, _data, true] call comspec_sse_fnc_setData;
     };
 };

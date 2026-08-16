@@ -257,6 +257,7 @@ $timelineStatusFr = static function (?string $raw): string {
             </div>
             <div class="flex flex-wrap items-center gap-1.5">
                 <a href="<?= htmlspecialchars(url('back-office/roleplay/immersion'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Configurer le module</a>
+                <a href="<?= htmlspecialchars(url('back-office/roleplay-followup/echeances'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Échéances</a>
                 <a href="<?= htmlspecialchars(url('back-office/users'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Gérer les membres</a>
             </div>
         </div>

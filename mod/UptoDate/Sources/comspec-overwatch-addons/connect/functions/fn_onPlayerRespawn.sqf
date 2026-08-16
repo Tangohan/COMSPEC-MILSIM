@@ -16,6 +16,9 @@ missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", false, false];
 missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
 missionNamespace setVariable ["COMSPEC_lastMedicalAlertAt", -1e9, false];
 missionNamespace setVariable ["COMSPEC_MedicalAlertBusy", false, false];
+missionNamespace setVariable ["COMSPEC_MedicalCritStreak", 0, false];
+missionNamespace setVariable ["COMSPEC_MedicalAlertConfirm_unconscious", 0, false];
+missionNamespace setVariable ["COMSPEC_MedicalAlertConfirm_cardiac_arrest", 0, false];
 missionNamespace setVariable ["COMSPEC_DeathThenRespawn", true, false];
 
 // Éviter anomalie « saut » + flood UpdatePosition / véhicule juste après REAPP

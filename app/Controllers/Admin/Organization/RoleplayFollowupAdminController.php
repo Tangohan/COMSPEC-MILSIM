@@ -12,14 +12,41 @@ use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelRoleplayTimelineRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
+use App\Services\Personnel\RoleplayFollowupNotificationService;
 
 final class RoleplayFollowupAdminController
 {
+    /** @var array<string, array{field: string, type: string, label: string, plan_title: string, done_title: string}> */
+    private const DEADLINE_KINDS = [
+        'entretien' => [
+            'field' => 'rp_next_interview_date',
+            'type' => 'entretien',
+            'label' => 'Entretien',
+            'plan_title' => 'Planification entretien individuel',
+            'done_title' => 'Entretien individuel réalisé',
+        ],
+        'medical' => [
+            'field' => 'rp_medical_due_date',
+            'type' => 'medical',
+            'label' => 'Médical',
+            'plan_title' => 'Planification visite médicale',
+            'done_title' => 'Visite médicale réalisée',
+        ],
+        'rotation' => [
+            'field' => 'rp_service_rotation_date',
+            'type' => 'rotation',
+            'label' => 'Rotation',
+            'plan_title' => 'Planification rotation de service',
+            'done_title' => 'Rotation de service réalisée',
+        ],
+    ];
+
     public function __construct(
         private UserRepository $userRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
         private PersonnelRoleplayTimelineRepository $timelineRepository,
         private TenantRepository $tenantRepository,
+        private RoleplayFollowupNotificationService $roleplayFollowupNotificationService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -151,6 +178,260 @@ final class RoleplayFollowupAdminController
             'rpTutorChoices' => $tutorChoices,
             'rpCsrfToken' => Csrf::token(),
         ]);
+    }
+
+    public function deadlines(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+
+        $cfg = $this->roleplayFollowupConfig($tenantId);
+        $today = date('Y-m-d');
+        $rows = [];
+        $overdue = ['entretien' => 0, 'medical' => 0, 'rotation' => 0];
+        $planned = ['entretien' => 0, 'medical' => 0, 'rotation' => 0];
+
+        foreach ($this->userRepository->allForTenant($tenantId) as $u) {
+            if ((string) ($u['status'] ?? '') !== 'active') {
+                continue;
+            }
+            $uid = (int) ($u['id'] ?? 0);
+            if ($uid < 1) {
+                continue;
+            }
+            $p = $this->personnelProfileRepository->getByUserId($uid) ?? [];
+            $interview = trim((string) ($p['rp_next_interview_date'] ?? '')) ?: null;
+            $medical = trim((string) ($p['rp_medical_due_date'] ?? '')) ?: null;
+            $rotation = trim((string) ($p['rp_service_rotation_date'] ?? '')) ?: null;
+
+            foreach ([
+                'entretien' => $interview,
+                'medical' => $medical,
+                'rotation' => $rotation,
+            ] as $kind => $date) {
+                if ($date === null) {
+                    continue;
+                }
+                $planned[$kind]++;
+                if ($date < $today) {
+                    $overdue[$kind]++;
+                }
+            }
+
+            $nextDue = null;
+            foreach ([$interview, $medical, $rotation] as $d) {
+                if ($d === null) {
+                    continue;
+                }
+                if ($nextDue === null || $d < $nextDue) {
+                    $nextDue = $d;
+                }
+            }
+
+            $tutorLabel = null;
+            $tid = (int) ($p['rp_tutor_user_id'] ?? 0);
+            if ($tid > 0) {
+                $tu = $this->userRepository->findById($tid, $tenantId);
+                if ($tu) {
+                    $tutorLabel = trim((string) ($tu['display_name'] ?? '')) ?: trim((string) ($tu['callsign'] ?? ''));
+                }
+            }
+
+            $rows[] = [
+                'user_id' => $uid,
+                'display_name' => trim((string) ($u['display_name'] ?? '')),
+                'callsign' => trim((string) ($u['callsign'] ?? '')),
+                'stage' => trim((string) ($p['rp_followup_stage'] ?? '')),
+                'tutor_label' => $tutorLabel,
+                'next_interview_date' => $interview,
+                'medical_due_date' => $medical,
+                'service_rotation_date' => $rotation,
+                'next_due' => $nextDue,
+                'next_due_is_overdue' => $nextDue !== null && $nextDue < $today,
+                'notes' => trim((string) ($p['rp_followup_notes'] ?? '')),
+            ];
+        }
+
+        usort($rows, static function (array $a, array $b): int {
+            $ad = (string) ($a['next_due'] ?? '9999-12-31');
+            $bd = (string) ($b['next_due'] ?? '9999-12-31');
+            if ($ad !== $bd) {
+                return strcmp($ad, $bd);
+            }
+
+            return strcmp((string) ($a['display_name'] ?? ''), (string) ($b['display_name'] ?? ''));
+        });
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.roleplay_deadlines',
+            'title' => 'Échéances roleplay',
+            'rpFeatureEnabled' => !empty($cfg['enabled']),
+            'rpRows' => $rows,
+            'rpTotalActiveMembers' => count($rows),
+            'rpOverdueCounts' => $overdue,
+            'rpPlannedCounts' => $planned,
+            'rpTimelineTableReady' => $this->timelineRepository->tableExists(),
+            'rpCsrfToken' => Csrf::token(),
+            'rpDeadlineKinds' => self::DEADLINE_KINDS,
+        ]);
+    }
+
+    public function updateDeadline(Request $request, array $params = []): Response
+    {
+        $redirectTo = url('back-office/roleplay-followup/echeances');
+        $tenantId = (int) Session::get('tenant_id');
+        $uid = (int) ($params['id'] ?? 0);
+        if ($tenantId < 1 || $uid < 1) {
+            return Response::redirect($redirectTo);
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($redirectTo);
+        }
+        $target = $this->userRepository->findById($uid, $tenantId);
+        if (!$target) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect($redirectTo);
+        }
+
+        $kind = strtolower(trim((string) $request->input('deadline_kind', '')));
+        if (!isset(self::DEADLINE_KINDS[$kind])) {
+            Session::flash('error', 'Type d’échéance inconnu.');
+
+            return Response::redirect($redirectTo);
+        }
+        $meta = self::DEADLINE_KINDS[$kind];
+        $field = $meta['field'];
+        $action = strtolower(trim((string) $request->input('deadline_action', 'save')));
+        if (!in_array($action, ['save', 'complete', 'clear'], true)) {
+            Session::flash('error', 'Action non reconnue.');
+
+            return Response::redirect($redirectTo);
+        }
+
+        $existing = $this->personnelProfileRepository->getByUserId($uid) ?? [];
+        $oldDate = trim((string) ($existing[$field] ?? ''));
+        $note = trim((string) $request->input('deadline_note', ''));
+        if (function_exists('mb_strlen') && mb_strlen($note) > 500) {
+            $note = mb_substr($note, 0, 500);
+        } elseif (strlen($note) > 500) {
+            $note = substr($note, 0, 500);
+        }
+
+        $newDate = null;
+        if ($action === 'save') {
+            $rawDate = trim((string) $request->input('deadline_date', ''));
+            $newDate = $this->normalizeDeadlineDate($rawDate);
+            if ($rawDate === '') {
+                Session::flash('error', 'Indiquez une date, ou utilisez « Effacer » pour retirer l’échéance.');
+
+                return Response::redirect($redirectTo);
+            }
+            if ($newDate === null) {
+                Session::flash('error', 'La date indiquée n’est pas valide.');
+
+                return Response::redirect($redirectTo);
+            }
+        } elseif ($action === 'complete') {
+            $newDate = null;
+        } else {
+            $newDate = null;
+        }
+
+        $this->personnelProfileRepository->update($uid, [$field => $newDate]);
+
+        $actorId = (int) Session::get('user_id');
+        $actorOrNull = $actorId > 0 ? $actorId : null;
+        $description = $note !== '' ? $note : null;
+
+        if ($action === 'complete') {
+            $this->timelineRepository->addEvent(
+                $tenantId,
+                $uid,
+                $meta['type'],
+                $meta['done_title'],
+                $description ?? ($oldDate !== '' ? 'Échéance prévue le ' . $this->formatFrDate($oldDate) . '.' : null),
+                date('Y-m-d'),
+                $oldDate !== '' ? $oldDate : date('Y-m-d'),
+                'completed',
+                null,
+                $actorOrNull
+            );
+            Session::flash('success', $meta['label'] . ' marqué comme réalisé.');
+        } elseif ($action === 'clear') {
+            if ($oldDate !== '') {
+                $this->timelineRepository->addEvent(
+                    $tenantId,
+                    $uid,
+                    $meta['type'],
+                    'Échéance ' . strtolower($meta['label']) . ' annulée',
+                    $description,
+                    date('Y-m-d'),
+                    $oldDate,
+                    'cancelled',
+                    null,
+                    $actorOrNull
+                );
+            }
+            Session::flash('success', 'Échéance ' . strtolower($meta['label']) . ' effacée.');
+        } else {
+            $newStr = $newDate ?? '';
+            if ($newStr !== '' && $newStr !== $oldDate) {
+                $this->timelineRepository->addEvent(
+                    $tenantId,
+                    $uid,
+                    $meta['type'],
+                    $meta['plan_title'],
+                    $description,
+                    date('Y-m-d'),
+                    $newStr,
+                    'planned',
+                    null,
+                    $actorOrNull
+                );
+            }
+            Session::flash('success', 'Échéance ' . strtolower($meta['label']) . ' enregistrée.');
+        }
+
+        $after = $existing;
+        $after[$field] = $newDate;
+        $this->roleplayFollowupNotificationService->notifyAfterSave(
+            $tenantId,
+            $uid,
+            $actorId > 0 ? $actorId : 0,
+            $existing,
+            $after,
+            $target,
+            url('back-office/roleplay-followup/echeances'),
+            false
+        );
+
+        return Response::redirect($redirectTo);
+    }
+
+    private function normalizeDeadlineDate(string $raw): ?string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return null;
+        }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw)) {
+            return null;
+        }
+        $dt = \DateTimeImmutable::createFromFormat('Y-m-d', $raw);
+
+        return ($dt instanceof \DateTimeImmutable && $dt->format('Y-m-d') === $raw) ? $raw : null;
+    }
+
+    private function formatFrDate(string $ymd): string
+    {
+        $ts = strtotime($ymd);
+
+        return $ts ? date('d/m/Y', $ts) : $ymd;
     }
 
     public function updateStage(Request $request, array $params = []): Response

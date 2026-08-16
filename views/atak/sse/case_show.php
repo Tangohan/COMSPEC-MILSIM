@@ -5,8 +5,29 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,mixed> $case */
 /** @var list<array<string,mixed>> $people */
 /** @var list<array<string,mixed>> $availablePeople */
+/** @var list<array<string,mixed>> $armaInbox */
+/** @var list<array<string,mixed>> $armaSeizures */
+/** @var array<string,mixed> $casePresets */
 /** @var list<array<string,mixed>> $notes */
 /** @var list<array<string,mixed>> $evidence */
+$armaInbox = is_array($armaInbox ?? null) ? $armaInbox : [];
+$armaSeizures = is_array($armaSeizures ?? null) ? $armaSeizures : [];
+$casePresets = is_array($casePresets ?? null) ? $casePresets : [];
+$identityQuick = is_array($casePresets['identity_quick'] ?? null) ? $casePresets['identity_quick'] : [];
+$identityStatuses = is_array($casePresets['identity_status'] ?? null) ? $casePresets['identity_status'] : [
+    ['key' => 'civil', 'label' => 'Civil', 'hint' => ''],
+    ['key' => 'combattant', 'label' => 'Combattant', 'hint' => ''],
+    ['key' => 'detenu', 'label' => 'Détenu', 'hint' => ''],
+    ['key' => 'prioritaire', 'label' => 'Prioritaire', 'hint' => ''],
+];
+$evidencePresets = is_array($casePresets['evidence'] ?? null) ? $casePresets['evidence'] : [];
+if ($identityStatuses !== [] && !isset($identityStatuses[0]) && is_string(array_key_first($identityStatuses) ?: null)) {
+    $tmp = [];
+    foreach ($identityStatuses as $k => $lab) {
+        $tmp[] = ['key' => (string) $k, 'label' => (string) $lab, 'hint' => ''];
+    }
+    $identityStatuses = $tmp;
+}
 /** @var array<string,mixed> $mapState */
 $mapState = is_array($mapState ?? null) ? $mapState : [];
 /** @var list<array<string,mixed>> $mapFeatures */
@@ -58,8 +79,13 @@ $frDate = static function (mixed $raw): string {
             <?php if ($canManage): ?>
                 <a class="btn btn--ghost" href="<?= $h(url('atak/sse/toiles/nouveau?case=' . (int) $case['id'])) ?>">Ouvrir une investigation</a>
             <?php endif; ?>
-            <?php if ($canExport): ?>
+            <?php if ($canExport || $canManage): ?>
                 <a class="btn btn--ghost" href="<?= $h($caseUrl . '/pdf') ?>">Exporter en PDF</a>
+            <?php endif; ?>
+            <?php if ($canManage || $canExport): ?>
+                <a class="btn btn--ghost" href="<?= $h($caseUrl . '/emport?format=athena') ?>">Emporter le pack dossier</a>
+                <a class="btn btn--ghost" href="<?= $h($caseUrl . '/emport?format=arma') ?>">Pack terrain Arma</a>
+                <a class="btn btn--ghost" href="<?= $h($caseUrl . '/emport?format=sqf') ?>">Script Arma (.sqf)</a>
             <?php endif; ?>
         </div>
     </div>
@@ -107,35 +133,9 @@ $frDate = static function (mixed $raw): string {
         <?php endif; ?>
 
         <?php if ($canManage): ?>
-            <details class="sse-fold">
-                <summary>Modifier l’intitulé, la synthèse ou la classification</summary>
-                <form method="post" action="<?= $h($caseUrl) ?>">
-                    <?= \App\Core\Csrf::field() ?>
-                    <label for="title">Intitulé</label>
-                    <input id="title" name="title" type="text" required value="<?= $h($case['title']) ?>">
-                    <div class="grid-2">
-                        <div>
-                            <label for="classification">Qui a le droit de le lire</label>
-                            <select id="classification" name="classification">
-                                <?php foreach ($classifications as $k => $lab): ?>
-                                    <option value="<?= $h($k) ?>" <?= $case['classification'] === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="status">Où en est le dossier</label>
-                            <select id="status" name="status">
-                                <?php foreach ($statuses as $k => $lab): ?>
-                                    <option value="<?= $h($k) ?>" <?= $case['status'] === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <label for="summary">Synthèse</label>
-                    <textarea id="summary" name="summary"><?= $h($case['summary'] ?? '') ?></textarea>
-                    <button class="btn" type="submit">Enregistrer</button>
-                </form>
-            </details>
+            <button type="button" class="sse-inline-action" data-sse-modal-open="sse-modal-summary">
+                Modifier l’intitulé, la synthèse ou la classification
+            </button>
         <?php endif; ?>
     </div>
 </section>
@@ -160,7 +160,12 @@ $frDate = static function (mixed $raw): string {
                     <?php foreach ($people as $p): ?>
                         <li>
                             <a class="sse-case-person" href="<?= $h(url('atak/sse/identites/' . (int) ($p['id'] ?? 0))) ?>">
-                                <span class="record-name"><?= $h($p['display_name'] ?? '') ?></span>
+                                <span class="record-name">
+                                    <?= $h($p['display_name'] ?? '') ?>
+                                    <?php if (!empty($p['from_arma'])): ?>
+                                        <span class="sse-src-pill" title="Remontée terminal / Arma">Terrain</span>
+                                    <?php endif; ?>
+                                </span>
                                 <?php if (!empty($p['status_label'])): ?>
                                     <span class="record-sub"><?= $h($p['status_label']) ?></span>
                                 <?php endif; ?>
@@ -170,23 +175,12 @@ $frDate = static function (mixed $raw): string {
                 </ul>
             <?php endif; ?>
             <?php if ($canManage): ?>
-                <details class="sse-fold" <?= $people === [] ? 'open' : '' ?>>
-                    <summary>Rattacher une identité</summary>
-                    <form method="post" action="<?= $h($caseUrl . '/personnes') ?>">
-                        <?= \App\Core\Csrf::field() ?>
-                        <label for="person_id">Fiche à rattacher</label>
-                        <select id="person_id" name="person_id" required>
-                            <option value="">Choisir…</option>
-                            <?php foreach ($availablePeople as $p): ?>
-                                <?php if (in_array((int) $p['id'], $linkedIds, true)) {
-                                    continue;
-                                } ?>
-                                <option value="<?= (int) $p['id'] ?>"><?= $h($p['display_name'] ?? '') ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <button class="btn" type="submit">Rattacher</button>
-                    </form>
-                </details>
+                <button type="button" class="btn" data-sse-modal-open="sse-modal-identity">
+                    Ajouter une identité
+                </button>
+                <?php if ($armaInbox !== []): ?>
+                    <p class="sse-arma-hint"><?= count($armaInbox) ?> remontée(s) Arma disponibles à rattacher.</p>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </section>
@@ -225,24 +219,18 @@ $frDate = static function (mixed $raw): string {
                 </ul>
             <?php endif; ?>
             <?php if ($canManage): ?>
-                <details class="sse-fold">
-                    <summary>Verser une pièce</summary>
-                    <form method="post" action="<?= $h($caseUrl . '/preuves') ?>" enctype="multipart/form-data">
-                        <?= \App\Core\Csrf::field() ?>
-                        <label for="label">De quoi s’agit-il</label>
-                        <input id="label" name="label" type="text" required placeholder="Ex. Téléphone saisi au point nord">
-                        <label for="caption">Précision utile</label>
-                        <input id="caption" name="caption" type="text" placeholder="Où, quand, par qui">
-                        <label for="image">Photographie</label>
-                        <input id="image" name="image" type="file" accept="image/*">
-                        <button class="btn" type="submit">Verser au dossier</button>
-                    </form>
-                </details>
+                <button type="button" class="btn" data-sse-modal-open="sse-modal-evidence">
+                    Verser une pièce
+                </button>
+                <?php if ($armaSeizures !== []): ?>
+                    <p class="sse-arma-hint"><?= count($armaSeizures) ?> saisie(s) terrain des sites rattachés.</p>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </section>
 </div>
 
+<?php require __DIR__ . '/partials/case_modals.php'; ?>
 <section class="panel">
     <div class="panel-header">
         <div class="panel-title">
@@ -497,7 +485,8 @@ $mapBoot = [
         ];
     }, $mapFeatures)),
 ];
-$sseExtraScripts = '<script>window.SSE_CASE_MAP = ' . json_encode($mapBoot, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) . ';</script>'
+$sseExtraScripts = '<script src="' . htmlspecialchars(asset_url('assets/js/sse-case-modals.js'), ENT_QUOTES, 'UTF-8') . '?v=202608160430"></script>'
+    . '<script>window.SSE_CASE_MAP = ' . json_encode($mapBoot, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) . ';</script>'
     . '<script src="' . htmlspecialchars(asset_url('assets/js/sse-case-map.js'), ENT_QUOTES, 'UTF-8') . '?v=202608160800"></script>';
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

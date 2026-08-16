@@ -57,10 +57,15 @@ final class ErrorReportMailer
         ?string $requestId
     ): void {
         if (!filter_var((string) env('ERROR_ALERT_ENABLED', true), FILTER_VALIDATE_BOOLEAN)) {
+            $this->auditSkip('disabled', $kind, $message, $file, $line);
+
             return;
         }
-        $to = trim((string) env('ERROR_ALERT_EMAIL', ''));
-        if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+
+        $to = $this->resolveAlertRecipient();
+        if ($to === null) {
+            $this->auditSkip('no_recipient', $kind, $message, $file, $line);
+
             return;
         }
 
@@ -69,6 +74,8 @@ final class ErrorReportMailer
         $dedupeKey = $fingerprint . '|' . $ip;
         $throttle = ErrorAlertThrottle::fromEnv();
         if ($throttle->isThrottled($dedupeKey)) {
+            $this->auditSkip('throttled', $kind, $message, $file, $line, $to);
+
             return;
         }
 
@@ -131,9 +138,13 @@ final class ErrorReportMailer
         $brand = function_exists('email_brand_name') ? email_brand_name() : 'Application';
         $subject = '[' . $brand . '] Incident technique — ' . $pathShort;
 
+        // Toujours écrire une copie locale (indépendant du transport mail).
+        $this->persistIncidentCopy($subject, $text, $kind, $path);
+
         try {
             $mailer = \App\Core\Container::get(\App\Services\EmailService::class);
-            $mailer->send(
+            // forceImmediate : ne pas dépendre du worker MAIL_QUEUE (souvent absent sur mutualisé).
+            $ok = $mailer->send(
                 'error_alert',
                 $to,
                 $subject,
@@ -141,11 +152,101 @@ final class ErrorReportMailer
                 $text,
                 is_numeric($tenantId) ? (int) $tenantId : null,
                 null,
-                ['kind' => $kind, 'path' => $path]
+                ['kind' => $kind, 'path' => $path],
+                null,
+                true
             );
-        } catch (\Throwable) {
-            // ne pas masquer l’erreur d’origine
+            if (!$ok) {
+                $err = $mailer->getLastSendError() ?? 'échec transport';
+                $this->auditSkip('send_failed:' . $err, $kind, $message, $file, $line, $to);
+                $this->fallbackPhpMail($to, $subject, $text);
+            }
+        } catch (\Throwable $mailEx) {
+            $this->auditSkip('mailer_exception:' . $mailEx->getMessage(), $kind, $message, $file, $line, $to);
+            $this->fallbackPhpMail($to, $subject, $text);
         }
+    }
+
+    /**
+     * Destinataire : ERROR_ALERT_EMAIL, sinon premier SECURITY_ALERT_EMAILS.
+     */
+    private function resolveAlertRecipient(): ?string
+    {
+        $primary = trim((string) env('ERROR_ALERT_EMAIL', ''));
+        if ($primary !== '' && filter_var($primary, FILTER_VALIDATE_EMAIL)) {
+            return $primary;
+        }
+
+        $security = (string) env('SECURITY_ALERT_EMAILS', '');
+        foreach (preg_split('/[\s,;]+/', $security) ?: [] as $candidate) {
+            $candidate = trim($candidate);
+            if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private function persistIncidentCopy(string $subject, string $text, string $kind, string $path): void
+    {
+        $dir = base_path('storage/logs');
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+            return;
+        }
+        $line = sprintf(
+            "[%s] kind=%s path=%s subject=%s\n%s\n----\n",
+            date('c'),
+            $kind,
+            $path !== '' ? $path : '/',
+            $subject,
+            $text
+        );
+        @file_put_contents($dir . '/error-alerts.log', $line, FILE_APPEND | LOCK_EX);
+    }
+
+    private function auditSkip(
+        string $reason,
+        string $kind,
+        string $message,
+        string $file,
+        int $line,
+        ?string $to = null
+    ): void {
+        $dir = base_path('storage/logs');
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+            error_log('[error-alert] skip=' . $reason . ' ' . $kind . ' ' . $file . ':' . $line);
+
+            return;
+        }
+        $line = sprintf(
+            "[%s] skip=%s to=%s kind=%s file=%s:%d msg=%s\n",
+            date('c'),
+            $reason,
+            $to ?? '—',
+            $kind,
+            $file,
+            $line,
+            substr($message, 0, 240)
+        );
+        @file_put_contents($dir . '/error-alerts.log', $line, FILE_APPEND | LOCK_EX);
+        error_log('[error-alert] ' . trim($line));
+    }
+
+    private function fallbackPhpMail(string $to, string $subject, string $text): void
+    {
+        if (!function_exists('mail')) {
+            return;
+        }
+        $from = trim((string) (env('MAIL_FROM_ADDRESS', '') ?: env('MAIL_FROM', '')));
+        if ($from === '' || !filter_var($from, FILTER_VALIDATE_EMAIL)) {
+            $from = $to;
+        }
+        $headers = 'Content-Type: text/plain; charset=UTF-8' . "\r\n"
+            . 'From: ' . $from . "\r\n"
+            . 'X-Athena-Alert: error_alert';
+        $ok = @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $text, $headers);
+        $this->auditSkip($ok ? 'fallback_mail_ok' : 'fallback_mail_failed', 'exception', $subject, __FILE__, __LINE__, $to);
     }
 
     private function kindLabelFr(string $kind): string

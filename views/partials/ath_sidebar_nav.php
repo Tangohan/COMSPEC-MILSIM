@@ -47,6 +47,7 @@ $navMembersActive = $boNavUsers;
 $navRecruesActive = $boNavRec && !$boNavRecSettings && !$boNavRecMessages;
 $navSanctionsActive = $boNavMod;
 $navRoleplayActive = $boNavRoleplayFollowup;
+$navRoleplayDeadlinesActive = !empty($boNavRoleplayDeadlines);
 $navRoleplayImmersionActive = $boNavRoleplayImmersion;
 $navRoleplaySectionActive = $boNavRoleplaySection;
 $navOrbatActive = $boNavEff || $boNavEffWorkspace;
@@ -81,6 +82,7 @@ $membersChildren = array_values(array_filter([
 
 $roleplayChildren = array_values(array_filter([
     ['label' => 'Bureau de suivi', 'href' => url('back-office/roleplay-followup'), 'active' => $navRoleplayActive],
+    ['label' => 'Échéances', 'href' => url('back-office/roleplay-followup/echeances'), 'active' => $navRoleplayDeadlinesActive],
     ['label' => 'Réglages d’immersion', 'href' => url('back-office/roleplay/immersion'), 'active' => $navRoleplayImmersionActive],
 ], static fn (?array $row): bool => is_array($row)));
 

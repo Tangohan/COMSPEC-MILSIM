@@ -6,6 +6,14 @@
         des photos et, selon la version, des supports numériques. Les fiches remontent vers Athena.
     </p>
 
+    <h3>Préparer une mission depuis Athena</h3>
+    <ol>
+        <li>Importez un scénario fictif dans le bureau (si vous avez les droits de gestion).</li>
+        <li>Sur le dossier : téléchargez le <strong>pack terrain Arma</strong> ou le <strong>script</strong>.</li>
+        <li>Exécutez le script côté serveur / init mission, puis appliquez les identités sur les unités concernées.</li>
+        <li>Activez le code d’affaire indiqué pour que les remontées terrain rejoignent le bon dossier.</li>
+    </ol>
+
     <h3>Enregistrer une personne (Overwatch)</h3>
     <ol>
         <li>Approchez la personne (joueur, IA ou otage scénarisé).</li>

@@ -18,34 +18,43 @@ _complexity = toUpper _complexity;
 private _type = [_entity] call comspec_sse_fnc_resolveEntityType;
 
 private _existing = [_entity] call comspec_sse_fnc_getData;
-private _seed = if (isNil "_existing") then {
+private _seed = if (isNil "_existing" || {!(_existing isEqualType [])}) then {
     private _pos = getPosASL _entity;
     [floor random 999999, format ["%1_%2_%3_%4", typeOf _entity, round (_pos select 0), round (_pos select 1), netId _entity]] call comspec_sse_fnc_hash
 } else {
-    [_existing, "seed", floor random 999999] call BIS_fnc_getFromPairs
+    [_existing, "seed", floor random 999999] call comspec_sse_fnc_getPair
 };
 
-private _data = if (isNil "_existing") then {
+private _data = if (isNil "_existing" || {!(_existing isEqualType [])}) then {
     [_type, _createdBy, _profile, _complexity, _seed] call comspec_sse_fnc_createDataModel
 } else {
     _existing
 };
 
-_data = [_data, ["profile", _profile]] call BIS_fnc_setToPairs;
-_data = [_data, ["complexity", _complexity]] call BIS_fnc_setToPairs;
-_data = [_data, ["type", _type]] call BIS_fnc_setToPairs;
-_data = [_data, ["generated", true]] call BIS_fnc_setToPairs;
-_data = [_data, ["lazyReady", true]] call BIS_fnc_setToPairs;
-_data = [_data, ["createdBy", _createdBy]] call BIS_fnc_setToPairs;
+if (isNil "_data" || {!(_data isEqualType [])}) then {
+    ["generateData: createDataModel a échoué — modèle de secours", "ERROR"] call comspec_sse_fnc_log;
+    _data = [_type, _createdBy, _profile, _complexity, if (isNil "_seed") then { floor random 999999 } else { _seed }] call comspec_sse_fnc_createDataModel;
+};
+if (isNil "_data" || {!(_data isEqualType [])}) exitWith {
+    ["generateData: abandon — _data invalide", "ERROR"] call comspec_sse_fnc_log;
+    false
+};
+
+_data = [_data, "profile", _profile] call comspec_sse_fnc_setPair;
+_data = [_data, "complexity", _complexity] call comspec_sse_fnc_setPair;
+_data = [_data, "type", _type] call comspec_sse_fnc_setPair;
+_data = [_data, "generated", true] call comspec_sse_fnc_setPair;
+_data = [_data, "lazyReady", true] call comspec_sse_fnc_setPair;
+_data = [_data, "createdBy", _createdBy] call comspec_sse_fnc_setPair;
 
 if ((_cluster getOrDefault ["clusterId", ""]) isEqualTo "") then {
     private _region = _entity getVariable ["comspec_sse_region", "IRAQ"];
     _cluster = [_seed, _profile, _complexity, _region] call comspec_sse_fnc_generateCluster;
 };
-_data = [_data, ["clusterId", _cluster getOrDefault ["clusterId", ""]]] call BIS_fnc_setToPairs;
-_data = [_data, ["theme", _cluster getOrDefault ["theme", ""]]] call BIS_fnc_setToPairs;
+_data = [_data, "clusterId", _cluster getOrDefault ["clusterId", ""]] call comspec_sse_fnc_setPair;
+_data = [_data, "theme", _cluster getOrDefault ["theme", ""]] call comspec_sse_fnc_setPair;
 
-private _sections = [_data, "sections", createHashMap] call BIS_fnc_getFromPairs;
+private _sections = [_data, "sections", createHashMap] call comspec_sse_fnc_getPair;
 private _region = _cluster getOrDefault ["region", "IRAQ"];
 private _pools = [_region] call comspec_sse_fnc_getNarrativePools;
 
@@ -207,13 +216,22 @@ switch (_type) do {
     };
 };
 
-_data = [_data, ["sections", _sections]] call BIS_fnc_setToPairs;
+_data = [_data, "sections", _sections] call comspec_sse_fnc_setPair;
+if (isNil "_data" || {!(_data isEqualType [])}) exitWith {
+    ["generateData: setPair sections a renvoyé nil", "ERROR"] call comspec_sse_fnc_log;
+    false
+};
 [_entity, _data, true] call comspec_sse_fnc_setData;
 _entity setVariable ["comspec_sse_clusterId", _cluster getOrDefault ["clusterId", ""], true];
 _entity setVariable ["comspec_sse_theme", _cluster getOrDefault ["theme", ""], true];
 
 if (!isNil "comspec_sse_fnc_attachIntelLayers") then {
     [_entity] call comspec_sse_fnc_attachIntelLayers;
+};
+
+// Compat ACE Medical / dogtags : plaque = identité SSE
+if (!isNil "comspec_sse_fnc_aceDogtagSync") then {
+    [_entity] call comspec_sse_fnc_aceDogtagSync;
 };
 
 [format ["generateData %1 type=%2 profile=%3 theme=%4", _entity, _type, _profile, _cluster getOrDefault ["theme", "?"]]] call comspec_sse_fnc_log;

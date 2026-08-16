@@ -1,6 +1,7 @@
-// Compte rendu SALUTE structuré (idd 9988)
+// Compte rendu SALUTE structuré (idd 9993)
+// Ne pas réutiliser 9988 : réservé à COMSPEC_CasRequest_Dialog.
 class COMSPEC_Salute_Dialog {
-    idd = 9988;
+    idd = 9993;
     movingEnable = 1;
     onLoad = "uiNamespace setVariable ['COMSPEC_Salute_Display', _this select 0];";
     onUnload = "uiNamespace setVariable ['COMSPEC_Salute_Display', displayNull];";

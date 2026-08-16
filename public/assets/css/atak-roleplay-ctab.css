@@ -221,14 +221,15 @@
 
 .atak-broken-text {
   text-align: center;
-  color: #666;
+  color: #e8eef2;
   z-index: 2;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
 }
 
 .atak-broken-text h2 {
   font-size: 32px;
   margin: 0 0 20px 0;
-  color: #444;
+  color: #ff8a7a;
   text-transform: uppercase;
   letter-spacing: 3px;
 }
@@ -236,38 +237,38 @@
 .atak-broken-text p {
   font-size: 18px;
   margin: 10px 0;
-  color: #666;
+  color: #e8eef2;
 }
 
 .atak-broken-text small {
   font-size: 14px;
-  color: #555;
+  color: #c8d4dc;
 }
 
-/* Effet d'écran fissuré */
+/* Effet d'écran fissuré — texture réelle (même asset que les photos ATAK). */
 .atak-screen-cracks {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
-    linear-gradient(45deg, transparent 48%, rgba(255,255,255,0.3) 49%, rgba(255,255,255,0.3) 51%, transparent 52%),
-    linear-gradient(-45deg, transparent 48%, rgba(255,255,255,0.2) 49%, rgba(255,255,255,0.2) 51%, transparent 52%),
-    linear-gradient(30deg, transparent 48%, rgba(255,255,255,0.1) 49%, rgba(255,255,255,0.1) 51%, transparent 52%);
-  background-size: 100px 100px, 80px 80px, 120px 120px;
-  background-position: 0 0, 20px 20px, 40px 40px;
-  opacity: 0.5;
+  background-color: transparent;
+  background-image: url('/assets/img/atak-fx/broken-screen.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.92;
   pointer-events: none;
   z-index: 1;
+  mix-blend-mode: normal;
+}
+
+.atak-screen-destroyed {
+  background: rgba(8, 10, 12, 0.35);
 }
 
 .atak-screen-destroyed .atak-broken-text h2 {
   color: #ff4444;
-}
-
-.atak-screen-destroyed {
-  background: #111;
 }
 
 /* Animation de clignotement pour rallumage */

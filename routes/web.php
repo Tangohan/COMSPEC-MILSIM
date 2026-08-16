@@ -597,7 +597,10 @@ return function (Router $router) {
     $router->get('/atak/sse/identites', [SsePortalController::class, 'identitiesIndex'], $mwSsePortal);
     $router->get('/atak/sse/identites/{id}', [SsePortalController::class, 'identityShow'], $mwSsePortal);
     $router->get('/atak/sse/objets/nouveau', [SsePortalController::class, 'objectCreateForm'], $mwSsePortal);
-    $router->post('/atak/sse/objets', [SsePortalController::class, 'objectStore'], $mwSsePortal);
+    $router->post('/atak/sse/objets/nouveau', [SsePortalController::class, 'objectStore'], $mwSsePortal);
+    $router->post('/atak/sse/objets/creer', [SsePortalController::class, 'objectStore'], $mwSsePortal);
+    $router->post('/atak/sse/objets', [SsePortalController::class, 'objectStore'], $mwSsePortal); // alias legacy
+    $router->get('/atak/sse/objets', [SsePortalController::class, 'objectIndex'], $mwSsePortal);
     $router->get('/atak/sse/objets/{type}', [SsePortalController::class, 'objectRegistry'], $mwSsePortal);
     $router->get('/atak/sse/chronologie', [SsePortalController::class, 'timeline'], $mwSsePortal);
     $router->get('/atak/sse/anomalies', [SsePortalController::class, 'anomalies'], $mwSsePortal);
@@ -622,17 +625,22 @@ return function (Router $router) {
     $router->post('/atak/sse/bibliotheque/{id}/supprimer', [SsePortalController::class, 'textLibraryDelete'], $mwSsePortal);
     $router->get('/atak/sse/dossiers', [SsePortalController::class, 'casesIndex'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/nouveau', [SsePortalController::class, 'caseCreateForm'], $mwSsePortal);
+    $router->get('/atak/sse/dossiers/importer', [SsePortalController::class, 'caseImportForm'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/importer', [SsePortalController::class, 'caseImportStore'], $mwSsePortal);
     $router->post('/atak/sse/dossiers', [SsePortalController::class, 'caseStore'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/dossier', [SsePortalController::class, 'folderStore'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/verrou-classification', [SsePortalController::class, 'caseLockToggle'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}', [SsePortalController::class, 'caseShow'], $mwSsePortal);
+    $router->get('/atak/sse/dossiers/{id}/emport', [SsePortalController::class, 'caseExportBundle'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}/deverrouiller', [SsePortalController::class, 'caseUnlockForm'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/deverrouiller', [SsePortalController::class, 'caseUnlock'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}', [SsePortalController::class, 'caseUpdate'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/tacmap-capture', [SsePortalController::class, 'caseTacmapCapture'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/personnes', [SsePortalController::class, 'caseLinkPerson'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/personnes/creer', [SsePortalController::class, 'caseCreatePerson'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/notes', [SsePortalController::class, 'caseAddNote'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/preuves', [SsePortalController::class, 'caseAddEvidence'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/preuves/saisie', [SsePortalController::class, 'caseImportSeizure'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}/pdf', [SsePortalController::class, 'casePdf'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}/pdf/flux', [SsePortalController::class, 'casePdfStream'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}/lecture', [SsePortalController::class, 'caseReader'], $mwSsePortal);
@@ -1032,10 +1040,12 @@ return function (Router $router) {
     $router->post('/back-office/teams/{id}/delete', [TeamAdminController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/configuration', [AdminConfigurationController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roleplay-followup', [RoleplayFollowupAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/roleplay-followup/echeances', [RoleplayFollowupAdminController::class, 'deadlines'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/stage', [RoleplayFollowupAdminController::class, 'updateStage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/tutor', [RoleplayFollowupAdminController::class, 'updateTutor'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/validate', [RoleplayFollowupAdminController::class, 'validateStage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/bilan', [RoleplayFollowupAdminController::class, 'markBilanReviewed'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay-followup/{id}/deadline', [RoleplayFollowupAdminController::class, 'updateDeadline'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roleplay/immersion', [RoleplayFollowupAdminController::class, 'immersionSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/immersion', [RoleplayFollowupAdminController::class, 'immersionSettingsUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/member-role-display', [AdminConfigurationController::class, 'saveMemberRoleDisplay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

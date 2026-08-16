@@ -1,7 +1,12 @@
 /*
-    Installe le nœud « Renseignement SSE » sur les personnes (CAManBase).
-    Garde runtime ACE : sans ace_interact_menu, la couche se retire en silence plutôt
-    que d’imposer une dépendance dure qui ferait échouer le démarrage sans ACE.
+    Installe le nœud SSE sur les personnes (CAManBase).
+
+    - Avec @COMSPEC_SSE : on greffe seulement « Fiche Athena » sous le menu SSE
+      déjà fourni (Inspecter / Fouiller / biométrie…). Pas de second parent qui
+      pourrait masquer le menu terrain.
+    - Sans @COMSPEC_SSE : parent « Renseignement SSE » + ouverture fiche Athena,
+      visible sur toute personne (hors soi), le terminal refuse clairement si SEEK
+      / ATAK manquent.
 */
 if (!hasInterface) exitWith {};
 
@@ -15,8 +20,6 @@ if (isNil "comspec_overwatch_connect_fnc_ssePersonDialogShow") exitWith {
     ["initSseAce", "connect absent — terminal SSE introuvable", nil, "SSE", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
 };
 
-// uiNamespace : addActionToClass persiste pour la session Arma ; missionNamespace
-// se réinitialise à chaque mission et provoquait des doublons de nœuds.
 if (uiNamespace getVariable ["COMSPEC_SseAceMenuReady", false]) exitWith {};
 uiNamespace setVariable ["COMSPEC_SseAceMenuReady", true];
 
@@ -27,29 +30,14 @@ private _cond = {
     params ["_target"];
     [_target] call comspec_overwatch_sse_ace_fnc_sseCanExploit
 };
-// Corps / blessés au sol : ne pas exiger une LOS stricte (sinon le nœud disparaît
-// dès que l’opérateur regarde légèrement à côté du point d’ancrage).
+// Corps / blessés au sol : ne pas exiger une LOS stricte.
 private _aceParams = [false, false, false, false, true];
 
-// Nœud parent — porte la condition ; les entrées filles héritent de sa visibilité.
-private _root = [
-    "COMSPEC_SSE",
-    "Renseignement SSE",
-    "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
-    {},
-    _cond,
-    _noChildren,
-    [],
-    {[0, 0, 0]},
-    4,
-    _aceParams
-] call ace_interact_menu_fnc_createAction;
-["CAManBase", 0, ["ACE_MainActions"], _root, true] call ace_interact_menu_fnc_addActionToClass;
+private _hasSseTerrain = isClass (configFile >> "CfgPatches" >> "comspec_sse_interaction");
 
-// Ouverture de la fiche : sseOpenTerminal vérifie le SEEK et annonce s’il manque.
 private _open = [
-    "COMSPEC_SSE_Open",
-    "Ouvrir la fiche SSE",
+    "COMSPEC_SSE_OpenAthena",
+    "Ouvrir la fiche Athena",
     "\a3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa",
     {
         params ["_target"];
@@ -62,15 +50,56 @@ private _open = [
     4,
     _aceParams,
     {
-        // ACE passe [_target, _player, _actionParams, _actionData] (4 args).
         params ["_target", "", "", "_actionData"];
         if (isNil "_actionData" || {!(_actionData isEqualType [])} || {(count _actionData) < 2}) exitWith {};
         _actionData set [1, ([_target] call comspec_overwatch_sse_ace_fnc_sseExploitTargetLabel)];
     }
 ] call ace_interact_menu_fnc_createAction;
-["CAManBase", 0, ["ACE_MainActions", "COMSPEC_SSE"], _open, true] call ace_interact_menu_fnc_addActionToClass;
 
-// Pas de greffe dans l’écran médical ACE / KAT : ses identifiants de contrôle changent
-// d’une version à l’autre. Le nœud ci-dessus couvre le même geste sans rien y toucher.
+if (_hasSseTerrain) then {
+    // Attendre que @COMSPEC_SSE ait créé le parent COMSPEC_SSE (postInit client).
+    [{
+        params ["_open"];
+        if (!(uiNamespace getVariable ["comspec_sse_aceReady", false])) exitWith {
+            // Repli : parent Athena si le terrain n’a pas initialisé (ordre de chargement).
+            ["WARN", "SSE", "Menu terrain SSE non prêt — parent Athena autonome"] call comspec_overwatch_connect_fnc_log;
+            private _root = [
+                "COMSPEC_SSE_ATHENA",
+                "Renseignement SSE",
+                "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
+                {},
+                {
+                    params ["_target"];
+                    [_target] call comspec_overwatch_sse_ace_fnc_sseCanExploit
+                },
+                { [] },
+                [],
+                {[0, 0, 0]},
+                4,
+                [false, false, false, false, true]
+            ] call ace_interact_menu_fnc_createAction;
+            ["CAManBase", 0, ["ACE_MainActions"], _root, true] call ace_interact_menu_fnc_addActionToClass;
+            ["CAManBase", 0, ["ACE_MainActions", "COMSPEC_SSE_ATHENA"], _open, true] call ace_interact_menu_fnc_addActionToClass;
+        };
+        ["CAManBase", 0, ["ACE_MainActions", "COMSPEC_SSE"], _open, true] call ace_interact_menu_fnc_addActionToClass;
+        ["INFO", "SSE", "Fiche Athena greffée sous le menu SSE terrain"] call comspec_overwatch_connect_fnc_log;
+    }, [_open], 3] call CBA_fnc_waitAndExecute;
+} else {
+    private _root = [
+        "COMSPEC_SSE_ATHENA",
+        "Renseignement SSE",
+        "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
+        {},
+        _cond,
+        _noChildren,
+        [],
+        {[0, 0, 0]},
+        4,
+        _aceParams
+    ] call ace_interact_menu_fnc_createAction;
+    ["CAManBase", 0, ["ACE_MainActions"], _root, true] call ace_interact_menu_fnc_addActionToClass;
+    ["CAManBase", 0, ["ACE_MainActions", "COMSPEC_SSE_ATHENA"], _open, true] call ace_interact_menu_fnc_addActionToClass;
+    ["INFO", "SSE", "Menu Athena autonome (mod @COMSPEC_SSE absent)"] call comspec_overwatch_connect_fnc_log;
+};
 
 ["INFO", "SSE", "Menu SSE installé"] call comspec_overwatch_connect_fnc_log;

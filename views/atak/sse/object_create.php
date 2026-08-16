@@ -10,163 +10,243 @@ $classifications = is_array($classifications ?? null) ? $classifications : [];
 if ($type === '' || !isset($kinds[$type])) {
     $type = array_key_first($kinds) ?: 'person';
 }
+$typeIcons = [
+    'person' => 'ID',
+    'alias' => 'AL',
+    'organization' => 'OR',
+    'site' => 'SI',
+    'vehicle' => 'VE',
+    'weapon' => 'AR',
+    'phone' => 'TE',
+    'terminal' => 'TM',
+    'document' => 'DO',
+    'event' => 'EV',
+    'report' => 'CR',
+    'photo' => 'PH',
+    'biometric' => 'BIO',
+    'seizure' => 'SA',
+    'custom' => 'EL',
+];
 ?>
-<div class="page-heading">
-    <div>
-        <div class="page-heading-overline">Objets // Création</div>
-        <h1>Créer un objet</h1>
-        <p>
-            Choisissez le type, puis renseignez les champs propres à ce type.
-            L’objet sera réutilisable dans les dossiers, investigations, chronologie et carte.
-        </p>
-    </div>
+<div class="breadcrumb">
+    Athena / SSE /
+    <a class="link" href="<?= $h(url('atak/sse/operations')) ?>">Opérations</a> /
+    <strong>Nouvel objet</strong>
 </div>
 
-<section class="panel">
-    <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">O.01</span> Nouvel objet</div>
+<header class="sse-obj-create__hero">
+    <div>
+        <p class="sse-obj-create__kicker">Registre // Création</p>
+        <h1>Nouvel objet</h1>
+        <p class="sse-obj-create__lead">
+            Décrivez un élément réutilisable : identité, site, véhicule, pièce… Il pourra ensuite
+            être rattaché à un dossier, une investigation, la chronologie ou la carte.
+        </p>
     </div>
-    <div class="panel-body">
-        <form method="post" action="<?= $h(url('atak/sse/objets')) ?>" id="sse-object-create" enctype="multipart/form-data">
-            <?= \App\Core\Csrf::field() ?>
+    <aside class="sse-obj-create__aside" aria-label="Rappel">
+        <strong>Ce n’est pas une preuve</strong>
+        <span>La fiche sert à organiser l’exploitation. L’identification formelle reste une décision humaine.</span>
+    </aside>
+</header>
 
-            <div class="sse-form-grid">
-                <div>
-                    <label for="kind">Type d’objet</label>
-                    <select id="kind" name="kind" required>
-                        <?php foreach ($kinds as $k => $lab): ?>
-                            <option value="<?= $h($k) ?>" <?= $type === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label for="classification">Classification</label>
-                    <select id="classification" name="classification">
-                        <?php foreach ($classifications as $k => $lab): ?>
-                            <option value="<?= $h($k) ?>" <?= $k === 'confidentiel' ? 'selected' : '' ?>><?= $h($lab) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+<form method="post" action="<?= $h(url('atak/sse/objets/creer')) ?>" id="sse-object-create" class="sse-obj-create" enctype="multipart/form-data">
+    <?= \App\Core\Csrf::field() ?>
+
+    <section class="sse-obj-create__card" aria-labelledby="obj-step-1">
+        <header class="sse-obj-create__card-head">
+            <span class="sse-obj-create__step">01</span>
+            <div>
+                <h2 id="obj-step-1">Type et diffusion</h2>
+                <p>Choisissez la nature de l’objet et le niveau de diffusion de la fiche.</p>
             </div>
+        </header>
 
-            <label for="label">Libellé / désignation</label>
-            <input id="label" name="label" type="text" required maxlength="200" placeholder="Désignation opérationnelle">
-
-            <label for="detail">Précision libre (optionnel)</label>
-            <textarea id="detail" name="detail" rows="3" maxlength="2000" placeholder="Complément non couvert par les champs ci-dessous"></textarea>
-
-            <div class="object-meta-host" id="object-meta-host">
-                <?php foreach ($metaSchema as $kindKey => $schema): ?>
-                    <?php
-                    $fields = is_array($schema['fields'] ?? null) ? $schema['fields'] : [];
-                    $hint = (string) ($schema['hint'] ?? '');
-                    $active = $type === $kindKey;
-                    ?>
-                    <fieldset
-                        class="object-meta<?= $active ? ' is-active' : '' ?>"
-                        data-kind="<?= $h($kindKey) ?>"
-                        <?= $active ? '' : 'hidden' ?>
-                        <?= $active ? '' : 'disabled' ?>
-                    >
-                        <legend>Caractéristiques — <?= $h($kinds[$kindKey] ?? $kindKey) ?></legend>
-                        <?php if ($hint !== ''): ?>
-                            <p class="sse-note"><?= $h($hint) ?></p>
-                        <?php endif; ?>
-                        <div class="sse-form-grid">
-                            <?php foreach ($fields as $field): ?>
-                                <?php
-                                $fname = (string) ($field['name'] ?? '');
-                                if ($fname === '') {
-                                    continue;
-                                }
-                                $fid = 'meta_' . $kindKey . '_' . $fname;
-                                $flabel = (string) ($field['label'] ?? $fname);
-                                $ftype = (string) ($field['type'] ?? 'text');
-                                $placeholder = (string) ($field['placeholder'] ?? '');
-                                $options = is_array($field['options'] ?? null) ? $field['options'] : [];
-                                $rows = max(3, (int) ($field['rows'] ?? 4));
-                                $isWide = $ftype === 'textarea';
-                                ?>
-                                <div class="<?= $isWide ? 'object-meta-field--full' : '' ?>">
-                                    <label for="<?= $h($fid) ?>"><?= $h($flabel) ?></label>
-                                    <?php if ($ftype === 'select'): ?>
-                                        <select id="<?= $h($fid) ?>" name="meta[<?= $h($fname) ?>]">
-                                            <option value="">— Choisir —</option>
-                                            <?php foreach ($options as $ok => $olab): ?>
-                                                <option value="<?= $h($ok) ?>"><?= $h($olab) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    <?php elseif ($ftype === 'textarea'): ?>
-                                        <textarea
-                                            id="<?= $h($fid) ?>"
-                                            name="meta[<?= $h($fname) ?>]"
-                                            rows="<?= $rows ?>"
-                                            maxlength="12000"
-                                            placeholder="<?= $h($placeholder) ?>"
-                                        ></textarea>
-                                    <?php else: ?>
-                                        <input
-                                            id="<?= $h($fid) ?>"
-                                            name="meta[<?= $h($fname) ?>]"
-                                            type="text"
-                                            maxlength="200"
-                                            placeholder="<?= $h($placeholder) ?>"
-                                        >
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </fieldset>
+        <fieldset class="sse-obj-create__types">
+            <legend class="sse-obj-create__label">Type d’objet</legend>
+            <div class="sse-obj-create__type-grid" role="radiogroup" aria-label="Type d’objet">
+                <?php foreach ($kinds as $k => $lab): ?>
+                    <?php $checked = $type === $k; ?>
+                    <label class="sse-obj-create__type<?= $checked ? ' is-active' : '' ?>">
+                        <input
+                            type="radio"
+                            name="kind"
+                            value="<?= $h($k) ?>"
+                            <?= $checked ? 'checked' : '' ?>
+                            required
+                        >
+                        <span class="sse-obj-create__type-code" aria-hidden="true"><?= $h($typeIcons[$k] ?? 'OB') ?></span>
+                        <span class="sse-obj-create__type-lab"><?= $h($lab) ?></span>
+                    </label>
                 <?php endforeach; ?>
             </div>
+        </fieldset>
 
-            <div class="object-image-upload">
-                <label for="object_image">Image jointe (optionnel)</label>
-                <input
-                    id="object_image"
-                    name="image"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
-                    data-sse-image-target-bytes="5000000"
-                    data-sse-image-upload-max-bytes="25000000"
+        <div class="sse-obj-create__row">
+            <div class="sse-obj-create__field">
+                <label class="sse-obj-create__label" for="classification">Niveau de diffusion</label>
+                <select id="classification" name="classification">
+                    <?php foreach ($classifications as $k => $lab): ?>
+                        <option value="<?= $h($k) ?>" <?= $k === 'confidentiel' ? 'selected' : '' ?>><?= $h($lab) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="sse-obj-create__field sse-obj-create__field--grow">
+                <label class="sse-obj-create__label" for="label">Libellé / désignation</label>
+                <input id="label" name="label" type="text" required maxlength="200" placeholder="Ex. Identité 01 — convoyeur secteur Nord" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="sse-obj-create__field">
+            <label class="sse-obj-create__label" for="detail">Précision libre <span>(optionnel)</span></label>
+            <textarea id="detail" name="detail" rows="3" maxlength="2000" placeholder="Complément non couvert par les champs ci-dessous"></textarea>
+        </div>
+    </section>
+
+    <section class="sse-obj-create__card sse-obj-create__card--meta" aria-labelledby="obj-step-2">
+        <header class="sse-obj-create__card-head">
+            <span class="sse-obj-create__step">02</span>
+            <div>
+                <h2 id="obj-step-2">Caractéristiques</h2>
+                <p>Champs adaptés au type sélectionné — renseignez ce qui est connu, laissez le reste vide.</p>
+            </div>
+        </header>
+
+        <div class="object-meta-host" id="object-meta-host">
+            <?php foreach ($metaSchema as $kindKey => $schema): ?>
+                <?php
+                $fields = is_array($schema['fields'] ?? null) ? $schema['fields'] : [];
+                $hint = (string) ($schema['hint'] ?? '');
+                $active = $type === $kindKey;
+                ?>
+                <fieldset
+                    class="object-meta<?= $active ? ' is-active' : '' ?>"
+                    data-kind="<?= $h($kindKey) ?>"
+                    <?= $active ? '' : 'hidden' ?>
+                    <?= $active ? '' : 'disabled' ?>
                 >
-                <p class="sse-note" id="object-image-hint">
-                    Photo, scan ou capture (JPEG, PNG, WebP ou GIF).
-                    Au-delà de 5 Mo, l’image est compressée automatiquement (envoi accepté jusqu’à 25 Mo).
-                </p>
-                <p class="sse-note" id="object-image-status" hidden></p>
-                <div class="object-image-preview" id="object-image-preview" hidden>
-                    <img id="object-image-preview-img" alt="Aperçu de l’image sélectionnée">
-                </div>
-            </div>
+                    <legend>Caractéristiques — <?= $h($kinds[$kindKey] ?? $kindKey) ?></legend>
+                    <?php if ($hint !== ''): ?>
+                        <p class="sse-note"><?= $h($hint) ?></p>
+                    <?php endif; ?>
+                    <div class="sse-form-grid">
+                        <?php foreach ($fields as $field): ?>
+                            <?php
+                            $fname = (string) ($field['name'] ?? '');
+                            if ($fname === '') {
+                                continue;
+                            }
+                            $fid = 'meta_' . $kindKey . '_' . $fname;
+                            $flabel = (string) ($field['label'] ?? $fname);
+                            $ftype = (string) ($field['type'] ?? 'text');
+                            $placeholder = (string) ($field['placeholder'] ?? '');
+                            $options = is_array($field['options'] ?? null) ? $field['options'] : [];
+                            $rows = max(3, (int) ($field['rows'] ?? 4));
+                            $isWide = $ftype === 'textarea';
+                            ?>
+                            <div class="<?= $isWide ? 'object-meta-field--full' : '' ?>">
+                                <label for="<?= $h($fid) ?>"><?= $h($flabel) ?></label>
+                                <?php if ($ftype === 'select'): ?>
+                                    <select id="<?= $h($fid) ?>" name="meta[<?= $h($fname) ?>]">
+                                        <option value="">— Choisir —</option>
+                                        <?php foreach ($options as $ok => $olab): ?>
+                                            <option value="<?= $h($ok) ?>"><?= $h($olab) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                <?php elseif ($ftype === 'textarea'): ?>
+                                    <textarea
+                                        id="<?= $h($fid) ?>"
+                                        name="meta[<?= $h($fname) ?>]"
+                                        rows="<?= $rows ?>"
+                                        maxlength="12000"
+                                        placeholder="<?= $h($placeholder) ?>"
+                                    ></textarea>
+                                <?php else: ?>
+                                    <input
+                                        id="<?= $h($fid) ?>"
+                                        name="meta[<?= $h($fname) ?>]"
+                                        type="text"
+                                        maxlength="200"
+                                        placeholder="<?= $h($placeholder) ?>"
+                                    >
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </fieldset>
+            <?php endforeach; ?>
+        </div>
+    </section>
 
-            <div class="toolbar-actions" style="margin-top:1rem">
-                <button class="btn" type="submit">Créer et ouvrir dans une investigation</button>
-                <a class="btn btn--ghost" href="<?= $h(url('atak/sse/operations')) ?>">Annuler</a>
+    <section class="sse-obj-create__card" aria-labelledby="obj-step-3">
+        <header class="sse-obj-create__card-head">
+            <span class="sse-obj-create__step">03</span>
+            <div>
+                <h2 id="obj-step-3">Illustration</h2>
+                <p>Photo, scan ou capture — optionnel. Les fichiers lourds sont compressés automatiquement.</p>
             </div>
-        </form>
-    </div>
-</section>
+        </header>
+
+        <div class="object-image-upload sse-obj-create__upload">
+            <label class="sse-obj-create__drop" for="object_image">
+                <span class="sse-obj-create__drop-title">Joindre une image</span>
+                <span class="sse-obj-create__drop-hint">JPEG, PNG, WebP ou GIF · compression au-delà de 5 Mo</span>
+            </label>
+            <input
+                id="object_image"
+                name="image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                data-sse-image-target-bytes="5000000"
+                data-sse-image-upload-max-bytes="25000000"
+            >
+            <p class="sse-note" id="object-image-hint">Envoi accepté jusqu’à 25 Mo ; au-delà de 5 Mo, compression automatique.</p>
+            <p class="sse-note" id="object-image-status" hidden></p>
+            <div class="object-image-preview" id="object-image-preview" hidden>
+                <img id="object-image-preview-img" alt="Aperçu de l’image sélectionnée">
+            </div>
+        </div>
+    </section>
+
+    <footer class="sse-obj-create__actions">
+        <button class="btn" type="submit">Créer et ouvrir dans une investigation</button>
+        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/operations')) ?>">Annuler</a>
+    </footer>
+</form>
 
 <script>
 (function () {
-    var kindSelect = document.getElementById('kind');
     var host = document.getElementById('object-meta-host');
-    if (kindSelect && host) {
-        function sync() {
-            var kind = kindSelect.value;
-            host.querySelectorAll('.object-meta').forEach(function (fs) {
-                var on = fs.getAttribute('data-kind') === kind;
-                fs.classList.toggle('is-active', on);
-                fs.hidden = !on;
-                fs.disabled = !on;
-            });
-        }
-        kindSelect.addEventListener('change', sync);
-        sync();
+    var form = document.getElementById('sse-object-create');
+
+    function currentKind() {
+        var checked = form && form.querySelector('input[name="kind"]:checked');
+        return checked ? checked.value : '';
     }
 
-    var form = document.getElementById('sse-object-create');
+    function syncMeta() {
+        if (!host) return;
+        var kind = currentKind();
+        host.querySelectorAll('.object-meta').forEach(function (fs) {
+            var on = fs.getAttribute('data-kind') === kind;
+            fs.classList.toggle('is-active', on);
+            fs.hidden = !on;
+            fs.disabled = !on;
+        });
+        if (form) {
+            form.querySelectorAll('.sse-obj-create__type').forEach(function (lab) {
+                var input = lab.querySelector('input[type="radio"]');
+                lab.classList.toggle('is-active', !!(input && input.checked));
+            });
+        }
+    }
+
+    if (form) {
+        form.querySelectorAll('input[name="kind"]').forEach(function (radio) {
+            radio.addEventListener('change', syncMeta);
+        });
+    }
+    syncMeta();
+
     var fileInput = document.getElementById('object_image');
     var preview = document.getElementById('object-image-preview');
     var previewImg = document.getElementById('object-image-preview-img');
@@ -298,7 +378,6 @@ if ($type === '' || !isset($kinds[$type])) {
                 return;
             }
             if (!window.File || !window.FileReader || !document.createElement('canvas').toBlob) {
-                // Le serveur compressera si l’upload passe.
                 return;
             }
             ev.preventDefault();

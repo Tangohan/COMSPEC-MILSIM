@@ -1,9 +1,7 @@
 /*
     Overlay terminal (écran cassé, éteint, gel, brouillage) sur cTab / Hub Overwatch.
-    Indépendant du roleplay admin — inclut les effets Zeus.
 
-    Texture fissurée : img/overlays/comspec_overlay_screen_cracked_ca.png
-    (macros display_device_macros.hpp — chemins .png tant que les .paa ne sont pas générés).
+    Texture fissurée : img/atak-fx/broken-screen.png (cracks transparents — laisse la carte visible).
 */
 if (!hasInterface) exitWith {};
 
@@ -21,7 +19,7 @@ private _remaining = _disconnectInfo getOrDefault ["remaining_seconds", 0];
 private _compromise = toLower (missionNamespace getVariable ["COMSPEC_CompromiseState", "none"]);
 private _isCompromised = _compromise in ["captured", "compromised"];
 
-private _needOverlay = _crashed || {!_connectionOk} || {!_canDisplay} || _isDisconnected || _isCompromised;
+private _needOverlay = _crashed || {!_connectionOk} || {!_canDisplay} || {!_screenOk} || _isDisconnected || _isCompromised;
 
 private _display = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
 if (isNull _display) then {
@@ -41,7 +39,6 @@ if (!_needOverlay) exitWith {
     if (!isNull _overlay) then { _overlay ctrlShow false; };
 };
 
-// Zone écran cTab Android (approx. contenu utile sous la barre d’état)
 private _pos = [0.04, 0.18, 0.92, 0.58];
 
 if (isNull _fx || {ctrlParent _fx != _display}) then {
@@ -62,6 +59,7 @@ private _title = "TERMINAL INDISPONIBLE";
 private _detail = "";
 private _tex = "";
 private _bgAlpha = 0.72;
+private _brokenTex = "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.png";
 
 if (_crashed) then {
     _title = "TERMINAL BLOQUÉ";
@@ -69,43 +67,44 @@ if (_crashed) then {
     _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.png";
     _bgAlpha = 0.55;
 } else {
-    if (!_connectionOk) then {
-        _title = "APPAREIL HORS SERVICE";
-        _detail = "Liaison Athena coupée — réparation requise.";
-        _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.png";
-        _bgAlpha = 0.5;
+    // Écran cassé en priorité visuelle (position seule) — avant hors-service / brouillage.
+    if (!_screenOk && {_powered}) then {
+        _title = "ÉCRAN ENDOMMAGÉ";
+        _detail = "Position seule possible — toolkit ACE pour réparer.";
+        _tex = _brokenTex;
+        _bgAlpha = 0.18;
     } else {
-        if (_isCompromised) then {
-            _title = if (_compromise isEqualTo "compromised") then {
-                "APPAREIL COMPROMIS"
-            } else {
-                "APPAREIL CAPTURÉ"
-            };
-            _detail = "Données illisibles — clé ou contrôle incorrect.";
-            _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.png";
-            _bgAlpha = 0.6;
+        if (!_connectionOk) then {
+            _title = "APPAREIL HORS SERVICE";
+            _detail = "Liaison Athena coupée — réparation requise.";
+            _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.png";
+            _bgAlpha = 0.5;
         } else {
-            if (_isDisconnected) then {
-                _title = "LIAISON ATAK PERDUE";
-                _detail = if (_remaining > 0) then {
-                    format ["Reconnexion estimée dans %1 s", _remaining]
+            if (_isCompromised) then {
+                _title = if (_compromise isEqualTo "compromised") then {
+                    "APPAREIL COMPROMIS"
                 } else {
-                    "Aucune donnée transmise"
+                    "APPAREIL CAPTURÉ"
                 };
-                _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.png";
-                _bgAlpha = 0.45;
+                _detail = "Données illisibles — clé ou contrôle incorrect.";
+                _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.png";
+                _bgAlpha = 0.6;
             } else {
-                if (!_powered) then {
-                    _title = "ATAK ÉTEINT";
-                    _detail = "Rallumez l’appareil (ACE · interaction personnelle).";
-                    _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.png";
-                    _bgAlpha = 0.75;
+                if (_isDisconnected) then {
+                    _title = "LIAISON ATAK PERDUE";
+                    _detail = if (_remaining > 0) then {
+                        format ["Reconnexion estimée dans %1 s", _remaining]
+                    } else {
+                        "Aucune donnée transmise"
+                    };
+                    _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.png";
+                    _bgAlpha = 0.45;
                 } else {
-                    if (!_screenOk) then {
-                        _title = "ÉCRAN ENDOMMAGÉ";
-                        _detail = "Position seule possible — toolkit ACE pour réparer.";
-                        _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_cracked_ca.png";
-                        _bgAlpha = 0.35; // laisser voir les fissures
+                    if (!_powered) then {
+                        _title = "ATAK ÉTEINT";
+                        _detail = "Rallumez l’appareil (ACE · interaction personnelle).";
+                        _tex = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.png";
+                        _bgAlpha = 0.75;
                     };
                 };
             };
@@ -116,8 +115,10 @@ if (_crashed) then {
 if (_tex isNotEqualTo "") then {
     _fx ctrlSetText _tex;
     _fx ctrlSetPosition _pos;
+    _fx ctrlSetFade 0;
     _fx ctrlShow true;
     _fx ctrlEnable false;
+    _fx ctrlCommit 0;
 } else {
     _fx ctrlShow false;
 };
@@ -133,3 +134,4 @@ _overlay ctrlSetBackgroundColor [0.02, 0.05, 0.08, _bgAlpha];
 _overlay ctrlSetStructuredText parseText _body;
 _overlay ctrlShow true;
 _overlay ctrlEnable false;
+_overlay ctrlCommit 0;

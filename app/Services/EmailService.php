@@ -25,6 +25,7 @@ final class EmailService
 
     /**
      * @param array<string, mixed> $payloadSummary
+     * @param bool $forceImmediate Si true, ignore MAIL_QUEUE (alertes incident, etc.)
      */
     public function send(
         string $eventCode,
@@ -35,10 +36,11 @@ final class EmailService
         ?int $tenantId = null,
         ?string $replyTo = null,
         ?array $payloadSummary = null,
-        ?int $campaignId = null
+        ?int $campaignId = null,
+        bool $forceImmediate = false
     ): bool {
         $this->lastSendError = null;
-        if (filter_var((string) env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN)) {
+        if (!$forceImmediate && filter_var((string) env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN)) {
             try {
                 $repo = \App\Core\Container::get(\App\Repositories\AsyncJobRepository::class);
                 if ($repo->tableExists()) {

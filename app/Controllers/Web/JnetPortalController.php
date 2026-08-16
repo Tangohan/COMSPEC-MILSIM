@@ -44,7 +44,7 @@ final class JnetPortalController
         }
         $dash = $this->jnet->buildHome($ctx['tenant_id'], $ctx['user_id']);
 
-        return $this->render('home', 'Accueil', $dash, 'home');
+        return $this->render('home', 'Tableau d’unité', $dash, 'home');
     }
 
     public function unit(Request $request, array $params = []): Response
@@ -584,12 +584,8 @@ final class JnetPortalController
             'boPageGroup' => 'Unité',
             'boPageKicker' => 'UNITÉ · EXTRANET',
             'boPageTitle' => $title,
-            'boPageSubtitle' => 'Extranet d’unité — situation, personnel, opérations et renseignement dans le bureau ATHENA.',
-            'boPageQuick' => [
-                ['label' => 'Tableau d’unité', 'href' => url('jnet')],
-                ['label' => 'Opérations', 'href' => url('jnet/operations')],
-                ['label' => 'Messagerie', 'href' => url('jnet/courrier')],
-            ],
+            'boPageSubtitle' => 'Situation, personnel, opérations et renseignement de l’unité.',
+            'boPageQuick' => [],
             'backOfficePageCss' => [
                 'jnet_portal.css',
                 'jnet_bo_embed.css',

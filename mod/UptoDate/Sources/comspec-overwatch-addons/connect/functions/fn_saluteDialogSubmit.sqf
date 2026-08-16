@@ -4,7 +4,7 @@
 if (!hasInterface) exitWith {};
 
 private _disp = uiNamespace getVariable ["COMSPEC_Salute_Display", displayNull];
-if (isNull _disp) then { _disp = findDisplay 9988; };
+if (isNull _disp) then { _disp = findDisplay 9993; };
 if (isNull _disp) exitWith {};
 
 private _s = trim (ctrlText (_disp displayCtrl 9401));

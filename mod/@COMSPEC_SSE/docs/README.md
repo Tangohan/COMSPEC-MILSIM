@@ -9,6 +9,7 @@
 | [ZEUS.md](ZEUS.md) | Modules Zeus |
 | [EDEN.md](EDEN.md) | Attributs Eden |
 | [ACE.md](ACE.md) | Interactions ACE |
+| [ACE-DOGTAGS.md](ACE-DOGTAGS.md) | Plaque ACE Medical → identité SSE |
 | [MISSION-MAKER.md](MISSION-MAKER.md) | Guide scénariste |
 | [DIGITAL-EXPLOITATION.md](DIGITAL-EXPLOITATION.md) | Sous-système digital |
 | [NETWORK.md](NETWORK.md) | Couche réseau / offline |

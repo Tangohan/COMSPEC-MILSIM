@@ -12,6 +12,6 @@ if (isNil "_data") then {
     _data = ["PERSON", "SCRIPT", "RANDOM", "STANDARD", _seed] call comspec_sse_fnc_createDataModel;
 };
 
-_data = [_data, ["seed", round _seed]] call BIS_fnc_setToPairs;
+_data = [_data, "seed", round _seed] call comspec_sse_fnc_setPair;
 [_entity, _data, _public] call comspec_sse_fnc_setData;
 true

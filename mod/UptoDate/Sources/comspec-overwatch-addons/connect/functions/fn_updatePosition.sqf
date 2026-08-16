@@ -69,6 +69,30 @@ private _role = [_unit] call comspec_overwatch_connect_fnc_getUnitRole;
 private _medicalState = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
 private _medicalParts = _medicalState splitString "|";
 private _health = if (count _medicalParts >= 1) then { _medicalParts select 0 } else { "stable" };
+// Avant armement des alertes (fenêtre ACE / spawn) : ne jamais remonter KO vers Athena.
+if (!(missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false])) then {
+    if (_health in ["unconscious", "cardiac_arrest"]) then {
+        _health = "stable";
+        if (count _medicalParts >= 1) then { _medicalParts set [0, "stable"]; };
+        if (count _medicalParts >= 5) then { _medicalParts set [4, "0"]; };
+    };
+} else {
+    // Confirmation anti faux positifs ACE (INCAPACITATED / spike spawn).
+    private _streak = missionNamespace getVariable ["COMSPEC_MedicalCritStreak", 0];
+    if (_health in ["unconscious", "cardiac_arrest"]) then {
+        _streak = _streak + 1;
+    } else {
+        _streak = 0;
+    };
+    missionNamespace setVariable ["COMSPEC_MedicalCritStreak", _streak, false];
+    if (_streak < 3) then {
+        if (_health in ["unconscious", "cardiac_arrest"]) then {
+            _health = "stable";
+            if (count _medicalParts >= 1) then { _medicalParts set [0, "stable"]; };
+            if (count _medicalParts >= 5) then { _medicalParts set [4, "0"]; };
+        };
+    };
+};
 // Signature « grossière » : ignore le FC (fluctue chaque seconde sous ACE) pour ne pas spammer Athena.
 private _medicalSig = format [
     "%1|%2|%3|%4",

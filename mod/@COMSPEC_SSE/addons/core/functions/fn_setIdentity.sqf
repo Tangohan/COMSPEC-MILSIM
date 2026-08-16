@@ -28,4 +28,8 @@ if (!isNil "_status" && {_status isEqualType createHashMap}) then {
     [_entity, "sectionStatus", _status, _public] call comspec_sse_fnc_setSection;
 };
 
+if (!isNil "comspec_sse_fnc_aceDogtagSync") then {
+    [_entity] call comspec_sse_fnc_aceDogtagSync;
+};
+
 true

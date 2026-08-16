@@ -65,6 +65,27 @@ switch (_actionL) do {
             };
         };
     };
+    case "dogtag";
+    case "idplate": {
+        // Lecture plaque ACE Medical / dogtags — identité SSE déclarée sur le support
+        _level = "search";
+        if (!isNil "_identity" && {_identity isEqualType createHashMap}) then {
+            private _name = _identity getOrDefault ["name", ""];
+            if (_name != "") then { _lines pushBack format ["Identité sur plaque : %1", _name]; };
+            private _nat = _identity getOrDefault ["nationality", ""];
+            if (_nat != "") then { _lines pushBack format ["Nationalité (plaque) : %1", _nat]; };
+            private _blood = _identity getOrDefault ["bloodType", ""];
+            if (_blood != "") then { _lines pushBack format ["Groupe sanguin : %1", _blood]; };
+            private _code = _identity getOrDefault ["idCode", ""];
+            if (_code != "") then { _lines pushBack format ["N° d’identification : %1", _code]; };
+            private _role = _identity getOrDefault ["role", ""];
+            if (_role != "" && {_quality >= 60}) then {
+                _lines pushBack format ["Mention métier / unité : %1", _role];
+            };
+        } else {
+            _lines pushBack "Plaque lisible — aucune identité SSE associée.";
+        };
+    };
     case "search";
     case "examine": {
         _level = "search";
@@ -156,7 +177,7 @@ switch (_actionL) do {
 
         // Mémoriser ce qui a été révélé au joueur local
 private _advLines = [];
-if (!isNil "comspec_sse_fnc_advanceExploitation" && {_actionL in ["inspect", "search", "examine"]}) then {
+if (!isNil "comspec_sse_fnc_advanceExploitation" && {_actionL in ["inspect", "search", "examine", "dogtag", "idplate"]}) then {
     // Inspect démarre au moins Tactical
     if (([_entity] call comspec_sse_fnc_getExploitationLevel) == "NONE") then {
         private _adv = [_entity, player] call comspec_sse_fnc_advanceExploitation;
@@ -170,11 +191,11 @@ if (count _lines == 0) then {
 };
 
 // Mémoriser ce qui a été révélé au joueur local
-private _revealed = [_data, "revealed", createHashMap] call BIS_fnc_getFromPairs;
+private _revealed = [_data, "revealed", createHashMap] call comspec_sse_fnc_getPair;
 if !(_revealed isEqualType createHashMap) then { _revealed = createHashMap; };
 private _prev = _revealed getOrDefault [_actionL, []];
 _revealed set [_actionL, _lines];
-_data = [_data, ["revealed", _revealed]] call BIS_fnc_setToPairs;
+_data = [_data, "revealed", _revealed] call comspec_sse_fnc_setPair;
 [_entity, _data, false] call comspec_sse_fnc_setData;
 
 createHashMapFromArray [

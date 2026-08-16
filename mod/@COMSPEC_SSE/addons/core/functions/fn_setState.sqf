@@ -12,13 +12,13 @@ private _data = [_entity] call comspec_sse_fnc_getData;
 if (isNil "_data") exitWith { false };
 
 _state = toUpper _state;
-_data = [_data, ["state", _state]] call BIS_fnc_setToPairs;
+_data = [_data, "state", _state] call comspec_sse_fnc_setPair;
 
 if (_state in ["SEARCHED", "PARTIALLY_EXPLOITED", "EXPLOITED", "COLLECTED", "TRANSMITTED"]) then {
-    _data = [_data, ["searched", true]] call BIS_fnc_setToPairs;
+    _data = [_data, "searched", true] call comspec_sse_fnc_setPair;
 };
 if (_state in ["EXPLOITED", "COLLECTED", "TRANSMITTED"]) then {
-    _data = [_data, ["exploited", true]] call BIS_fnc_setToPairs;
+    _data = [_data, "exploited", true] call comspec_sse_fnc_setPair;
 };
 
 [_entity, _data, _public] call comspec_sse_fnc_setData;

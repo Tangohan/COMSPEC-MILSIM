@@ -71,22 +71,25 @@ if (!(_atakStatus get "can_display")) then {
                 "<t align='center' size='1' color='#888888'>ACE Self Interact → Rallumer</t>"
             ];
         } else {
-            // Texture fissurée en fond (créée une fois)
+            // Cracks transparents (atak-fx) — laisse la carte / position lisible.
             private _fx = uiNamespace getVariable ["COMSPEC_Hub_ScreenBrokenFx", controlNull];
+            private _brokenTex = "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.png";
             if (isNull _fx || {ctrlParent _fx != _display}) then {
                 _fx = _display ctrlCreate ["RscPicture", 9205];
                 uiNamespace setVariable ["COMSPEC_Hub_ScreenBrokenFx", _fx];
                 _fx ctrlSetPosition (ctrlPosition _ctrlScreenBroken);
-                _fx ctrlSetText "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_cracked_ca.png";
                 _fx ctrlCommit 0;
             };
+            _fx ctrlSetText _brokenTex;
+            _fx ctrlSetFade 0;
             _fx ctrlShow true;
             _fx ctrlEnable false;
-            _ctrlScreenBroken ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.4];
+            _fx ctrlCommit 0;
+            _ctrlScreenBroken ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.16];
             _ctrlScreenBroken ctrlSetStructuredText parseText format [
                 "<br/><br/><t align='center' size='1.5' color='#ff4444'>ÉCRAN ENDOMMAGÉ</t><br/>" +
-                "<t align='center' size='0.9' color='#ffffff'>Connexion maintenue</t><br/>" +
-                "<t align='center' size='0.8' color='#aaaaaa'>Toolkit ACE requis</t>"
+                "<t align='center' size='0.9' color='#ffffff'>Position seule — connexion maintenue</t><br/>" +
+                "<t align='center' size='0.8' color='#aaaaaa'>Toolkit ACE pour réparer</t>"
             ];
         };
         _ctrlScreenBroken ctrlShow true;

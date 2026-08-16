@@ -196,7 +196,9 @@ class Cfg3DEN {
                             class SYRIA { name = "Syrie"; value = "SYRIA"; };
                             class LEVANT { name = "Levant"; value = "LEVANT"; };
                             class AFRICA_SAHEL { name = "Sahel"; value = "AFRICA_SAHEL"; };
+                            class RUSSIA { name = "Russie / théâtre Est"; value = "RUSSIA"; };
                             class GENERIC { name = "Générique"; value = "GENERIC"; };
+                            class RANDOM { name = "Aléatoire"; value = "RANDOM"; };
                         };
                     };
                     class comspec_sse_advancedData {
