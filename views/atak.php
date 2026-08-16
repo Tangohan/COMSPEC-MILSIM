@@ -1036,6 +1036,15 @@ if ($atakMapConfig) {
           <span class="atak-section-btn__label">Appuis</span>
           <span class="atak-section-btn__badge" hidden></span>
         </button>
+        <span class="atak-section-rail__sep" aria-hidden="true"></span>
+        <a class="atak-section-btn atak-section-btn--link atak-section-btn--jnet" href="<?= htmlspecialchars(url('jnet'), ENT_QUOTES, 'UTF-8') ?>" title="Ouvrir le portail JNET">
+          <span class="atak-section-btn__icon" aria-hidden="true">⬡</span>
+          <span class="atak-section-btn__label">JNET</span>
+        </a>
+        <a class="atak-section-btn atak-section-btn--link atak-section-btn--sse" href="<?= htmlspecialchars(url('atak/sse'), ENT_QUOTES, 'UTF-8') ?>" title="Ouvrir le portail SSE">
+          <span class="atak-section-btn__icon" aria-hidden="true">◈</span>
+          <span class="atak-section-btn__label">SSE</span>
+        </a>
       </nav>
       <div class="atak-rail-bottom">
         <button type="button" class="atak-section-btn" id="atak-section-collapse" aria-expanded="true" title="Réduire ou agrandir le panneau latéral">

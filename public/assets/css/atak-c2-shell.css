@@ -146,6 +146,45 @@ body.atak-page.atak-density-comfortable {
   color: #05100c;
 }
 
+.atak-section-rail__sep {
+  display: block;
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--atak-c2-line, rgba(148, 163, 173, 0.22));
+  flex-shrink: 0;
+}
+
+a.atak-section-btn--link {
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* JNET — accent bleu réseau */
+.atak-section-btn--jnet {
+  color: #5b9fd4;
+}
+.atak-section-btn--jnet:hover {
+  background: rgba(64, 140, 200, 0.14);
+  color: #8ec5ef;
+}
+.atak-section-btn--jnet:focus-visible {
+  outline: 1px solid #5b9fd4;
+  outline-offset: -2px;
+}
+
+/* SSE — accent violet exploitation */
+.atak-section-btn--sse {
+  color: #a78bfa;
+}
+.atak-section-btn--sse:hover {
+  background: rgba(139, 92, 246, 0.16);
+  color: #c4b5fd;
+}
+.atak-section-btn--sse:focus-visible {
+  outline: 1px solid #a78bfa;
+  outline-offset: -2px;
+}
+
 .atak-rail-bottom {
   margin-top: auto;
   padding: 6px 5px;
@@ -784,6 +823,21 @@ body.atak-page.atak-drawer-collapsed .atak-drawer__body {
 }
 
 /* Light theme: keep readable without rewriting header */
+body.atak-theme-light .atak-section-btn--jnet {
+  color: #1d6fa5;
+}
+body.atak-theme-light .atak-section-btn--jnet:hover {
+  background: rgba(29, 111, 165, 0.12);
+  color: #155a86;
+}
+body.atak-theme-light .atak-section-btn--sse {
+  color: #7c3aed;
+}
+body.atak-theme-light .atak-section-btn--sse:hover {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6d28d9;
+}
+
 body.atak-theme-light .atak-section-btn.active,
 body.atak-theme-light .atak-left-aside .atak-tab.active,
 body.atak-theme-light .atak-drawer__title,
