@@ -19,6 +19,12 @@ $classBadge = match ($classKey) {
     'interne' => 'badge badge--gray',
     default => 'badge',
 };
+$caseUrl = url('atak/sse/dossiers/' . (int) $case['id']);
+$frDate = static function (mixed $raw): string {
+    $stamp = $raw !== null && (string) $raw !== '' ? strtotime((string) $raw) : false;
+
+    return $stamp ? date('d/m/Y \à H\hi', $stamp) : '';
+};
 ?>
 <div class="breadcrumb">
     Athena / SSE /
@@ -26,7 +32,7 @@ $classBadge = match ($classKey) {
     <strong><?= $h($case['reference_code']) ?></strong>
 </div>
 
-<div class="page-heading">
+<div class="page-heading sse-case-head">
     <div>
         <div class="page-heading-overline">Dossier // <?= $h($case['reference_code']) ?></div>
         <h1><?= $h($case['title']) ?></h1>
@@ -35,94 +41,97 @@ $classBadge = match ($classKey) {
             &nbsp;
             <span class="badge"><?= $h($case['status_label']) ?></span>
             <?php if (!empty($case['has_unlock_code'])): ?>
-                &nbsp;<span class="badge badge--gray">Code dossier défini</span>
+                &nbsp;<span class="badge badge--gray">Ouverture protégée par un mot de passe</span>
             <?php endif; ?>
         </p>
     </div>
-    <div class="page-reference">
-        <strong>Vue // Fiche dossier</strong>
-        <?= $h($case['reference_code']) ?>
-        <?php if ($canExport): ?>
-            <div style="margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.4rem">
-                <a class="btn" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/pdf')) ?>">Exporter le dossier complet (PDF)</a>
-            </div>
-        <?php endif; ?>
+    <div class="sse-case-actions">
+        <span class="sse-case-actions__label">Ce que l’on peut faire de ce dossier</span>
+        <div class="sse-case-actions__row">
+            <a class="btn" href="<?= $h($caseUrl . '/compte-rendu') ?>">Compte rendu</a>
+            <a class="btn btn--ghost" href="<?= $h($caseUrl . '/correlations') ?>">Liens entre les éléments</a>
+            <a class="btn btn--ghost" href="<?= $h($caseUrl . '/declassification') ?>">Version expurgée</a>
+            <?php if ($canManage): ?>
+                <a class="btn btn--ghost" href="<?= $h(url('atak/sse/toiles/nouveau?case=' . (int) $case['id'])) ?>">Ouvrir une investigation</a>
+            <?php endif; ?>
+            <?php if ($canExport): ?>
+                <a class="btn btn--ghost" href="<?= $h($caseUrl . '/pdf') ?>">Exporter en PDF</a>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
-<?php if ($canManage): ?>
-<section class="panel">
-    <div class="panel-header">
-        <div class="panel-title">
-            <span class="panel-index">01.10</span>
-            Mettre à jour
-        </div>
-    </div>
-    <div class="panel-body">
-        <form method="post" action="<?= $h(url('atak/sse/dossiers/' . $case['id'])) ?>">
-            <?= \App\Core\Csrf::field() ?>
-            <label for="title">Intitulé</label>
-            <input id="title" name="title" type="text" required value="<?= $h($case['title']) ?>">
-            <div class="grid-2">
-                <div>
-                    <label for="classification">Classification</label>
-                    <select id="classification" name="classification">
-                        <?php foreach ($classifications as $k => $lab): ?>
-                            <option value="<?= $h($k) ?>" <?= $case['classification'] === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label for="status">Statut</label>
-                    <select id="status" name="status">
-                        <?php foreach ($statuses as $k => $lab): ?>
-                            <option value="<?= $h($k) ?>" <?= $case['status'] === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            <label for="summary">Synthèse</label>
-            <textarea id="summary" name="summary"><?= $h($case['summary'] ?? '') ?></textarea>
-            <button class="btn" type="submit">Enregistrer</button>
-        </form>
-    </div>
-</section>
-<?php else: ?>
-<section class="panel">
-    <div class="panel-header">
-        <div class="panel-title">
-            <span class="panel-index">01.10</span>
-            Synthèse
-        </div>
-    </div>
-    <div class="panel-body">
-        <p><?= nl2br($h($case['summary'] ?? '—')) ?></p>
-    </div>
-</section>
-<?php endif; ?>
+<?php require __DIR__ . '/partials/case_progress.php'; ?>
 
-<section id="tacmap" class="panel sse-tacmap-panel">
+<section class="panel sse-desk-panel">
     <div class="panel-header">
         <div class="panel-title">
-            <span class="panel-index">01.14</span>
-            Carte tactique — capture
+            <span class="panel-index">01.01</span>
+            Chemise du dossier
         </div>
-        <div class="panel-meta">Versée comme preuve</div>
+        <div class="panel-meta">Pièce de garde — à joindre à toute transmission</div>
     </div>
     <div class="panel-body">
-        <p class="sse-note">
-            Positionnez la vue, puis capturez-la pour l’ajouter aux preuves du dossier.
-            La carte utilise le fond cartographique standard Athena.
-        </p>
-        <div id="sse-tacmap" class="sse-tacmap" role="img" aria-label="Carte tactique du dossier"></div>
+        <?php
+        $coverStats = [
+            'Personnes rattachées' => count($people ?? []),
+            'Notes classifiées' => count($notes ?? []),
+            'Preuves versées' => count($evidence ?? []),
+            'Sites exploités' => count($caseSites ?? []),
+        ];
+        require __DIR__ . '/partials/case_cover.php';
+        ?>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <span class="panel-index">01.02</span>
+            Synthèse du dossier
+        </div>
+        <?php if (!empty($case['updated_at'])): ?>
+            <div class="panel-meta">Dernière modification le <?= $h($frDate($case['updated_at'])) ?></div>
+        <?php endif; ?>
+    </div>
+    <div class="panel-body">
+        <?php $summary = trim((string) ($case['summary'] ?? '')); ?>
+        <?php if ($summary !== ''): ?>
+            <p class="sse-case-summary"><?= nl2br($h($summary)) ?></p>
+        <?php else: ?>
+            <p class="muted">Aucune synthèse rédigée. C’est le premier texte que lira quiconque ouvre ce dossier.</p>
+        <?php endif; ?>
+
         <?php if ($canManage): ?>
-            <form id="sse-tacmap-form" method="post" action="<?= $h(url('atak/sse/dossiers/' . (int) $case['id'] . '/tacmap-capture')) ?>">
-                <?= \App\Core\Csrf::field() ?>
-                <input type="hidden" name="image_data" id="sse-tacmap-data" value="">
-                <label for="sse-tacmap-caption">Légende de la capture</label>
-                <input id="sse-tacmap-caption" name="caption" type="text" maxlength="200" placeholder="Ex. Approche nord du site">
-                <button class="btn" type="button" id="sse-tacmap-capture-btn">Capturer la vue</button>
-            </form>
+            <details class="sse-fold">
+                <summary>Modifier l’intitulé, la synthèse ou la classification</summary>
+                <form method="post" action="<?= $h($caseUrl) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <label for="title">Intitulé</label>
+                    <input id="title" name="title" type="text" required value="<?= $h($case['title']) ?>">
+                    <div class="grid-2">
+                        <div>
+                            <label for="classification">Qui a le droit de le lire</label>
+                            <select id="classification" name="classification">
+                                <?php foreach ($classifications as $k => $lab): ?>
+                                    <option value="<?= $h($k) ?>" <?= $case['classification'] === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="status">Où en est le dossier</label>
+                            <select id="status" name="status">
+                                <?php foreach ($statuses as $k => $lab): ?>
+                                    <option value="<?= $h($k) ?>" <?= $case['status'] === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <label for="summary">Synthèse</label>
+                    <textarea id="summary" name="summary"><?= $h($case['summary'] ?? '') ?></textarea>
+                    <button class="btn" type="submit">Enregistrer</button>
+                </form>
+            </details>
         <?php endif; ?>
     </div>
 </section>
@@ -131,36 +140,49 @@ $classBadge = match ($classKey) {
     <section class="panel">
         <div class="panel-header">
             <div class="panel-title">
-                <span class="panel-index">01.11</span>
-                Personnes rattachées
+                <span class="panel-index">01.03</span>
+                Identités rattachées
             </div>
+            <div class="panel-meta"><?= count($people) ?></div>
         </div>
         <div class="panel-body">
             <?php if ($people === []): ?>
-                <p class="muted">Aucune personne liée.</p>
+                <p class="muted">
+                    Personne n’est rattaché à ce dossier. Tant qu’il en est ainsi, le dossier
+                    ne désigne personne.
+                </p>
             <?php else: ?>
-                <?php foreach ($people as $p): ?>
-                    <div class="note-item">
-                        <span class="record-name"><?= $h($p['display_name'] ?? '') ?></span>
-                        <span class="record-sub"><?= $h($p['status_label'] ?? '') ?></span>
-                    </div>
-                <?php endforeach; ?>
+                <ul class="sse-case-people">
+                    <?php foreach ($people as $p): ?>
+                        <li>
+                            <a class="sse-case-person" href="<?= $h(url('atak/sse/identites/' . (int) ($p['id'] ?? 0))) ?>">
+                                <span class="record-name"><?= $h($p['display_name'] ?? '') ?></span>
+                                <?php if (!empty($p['status_label'])): ?>
+                                    <span class="record-sub"><?= $h($p['status_label']) ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
             <?php endif; ?>
             <?php if ($canManage): ?>
-                <form method="post" action="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/personnes')) ?>">
-                    <?= \App\Core\Csrf::field() ?>
-                    <label for="person_id">Rattacher une fiche</label>
-                    <select id="person_id" name="person_id" required>
-                        <option value="">Choisir…</option>
-                        <?php foreach ($availablePeople as $p): ?>
-                            <?php if (in_array((int) $p['id'], $linkedIds, true)) {
-                                continue;
-                            } ?>
-                            <option value="<?= (int) $p['id'] ?>"><?= $h($p['display_name'] ?? '') ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <button class="btn" type="submit">Rattacher</button>
-                </form>
+                <details class="sse-fold" <?= $people === [] ? 'open' : '' ?>>
+                    <summary>Rattacher une identité</summary>
+                    <form method="post" action="<?= $h($caseUrl . '/personnes') ?>">
+                        <?= \App\Core\Csrf::field() ?>
+                        <label for="person_id">Fiche à rattacher</label>
+                        <select id="person_id" name="person_id" required>
+                            <option value="">Choisir…</option>
+                            <?php foreach ($availablePeople as $p): ?>
+                                <?php if (in_array((int) $p['id'], $linkedIds, true)) {
+                                    continue;
+                                } ?>
+                                <option value="<?= (int) $p['id'] ?>"><?= $h($p['display_name'] ?? '') ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button class="btn" type="submit">Rattacher</button>
+                    </form>
+                </details>
             <?php endif; ?>
         </div>
     </section>
@@ -168,72 +190,55 @@ $classBadge = match ($classKey) {
     <section class="panel">
         <div class="panel-header">
             <div class="panel-title">
-                <span class="panel-index">01.12</span>
-                Preuves
+                <span class="panel-index">01.04</span>
+                Pièces versées
             </div>
+            <div class="panel-meta"><?= count($evidence) ?></div>
         </div>
         <div class="panel-body">
-            <?php foreach ($evidence as $e): ?>
-                <div class="ev-item">
-                    <strong><?= $h($e['label']) ?></strong>
-                    <?php if (!empty($e['caption'])): ?><div class="muted"><?= $h($e['caption']) ?></div><?php endif; ?>
-                    <?php if (!empty($e['url'])): ?>
-                        <div><a class="link" href="<?= $h($e['url']) ?>" target="_blank" rel="noopener">Voir l’image</a></div>
-                    <?php endif; ?>
-                </div>
-            <?php endforeach; ?>
-            <?php if ($evidence === []): ?><p class="muted">Aucune preuve.</p><?php endif; ?>
+            <?php if ($evidence === []): ?>
+                <p class="muted">Aucune pièce versée : ni photographie, ni saisie, ni capture.</p>
+            <?php else: ?>
+                <ul class="sse-ev-grid">
+                    <?php foreach ($evidence as $e): ?>
+                        <li class="sse-ev-card">
+                            <?php if (!empty($e['url'])): ?>
+                                <a class="sse-ev-card__shot" href="<?= $h($e['url']) ?>" target="_blank" rel="noopener">
+                                    <img src="<?= $h($e['url']) ?>" alt="<?= $h($e['label'] ?? 'Pièce versée') ?>" loading="lazy">
+                                </a>
+                            <?php else: ?>
+                                <span class="sse-ev-card__shot is-empty">Sans image</span>
+                            <?php endif; ?>
+                            <strong><?= $h($e['label'] ?? '') ?></strong>
+                            <?php if (!empty($e['caption'])): ?>
+                                <span><?= $h($e['caption']) ?></span>
+                            <?php endif; ?>
+                            <?php if (!empty($e['created_at'])): ?>
+                                <em>Versée le <?= $h($frDate($e['created_at'])) ?></em>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
             <?php if ($canManage): ?>
-                <form method="post" action="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/preuves')) ?>" enctype="multipart/form-data">
-                    <?= \App\Core\Csrf::field() ?>
-                    <label for="label">Libellé</label>
-                    <input id="label" name="label" type="text" required value="Preuve">
-                    <label for="caption">Légende</label>
-                    <input id="caption" name="caption" type="text">
-                    <label for="image">Image (optionnel)</label>
-                    <input id="image" name="image" type="file" accept="image/*">
-                    <button class="btn" type="submit">Ajouter</button>
-                </form>
+                <details class="sse-fold">
+                    <summary>Verser une pièce</summary>
+                    <form method="post" action="<?= $h($caseUrl . '/preuves') ?>" enctype="multipart/form-data">
+                        <?= \App\Core\Csrf::field() ?>
+                        <label for="label">De quoi s’agit-il</label>
+                        <input id="label" name="label" type="text" required placeholder="Ex. Téléphone saisi au point nord">
+                        <label for="caption">Précision utile</label>
+                        <input id="caption" name="caption" type="text" placeholder="Où, quand, par qui">
+                        <label for="image">Photographie</label>
+                        <input id="image" name="image" type="file" accept="image/*">
+                        <button class="btn" type="submit">Verser au dossier</button>
+                    </form>
+                </details>
             <?php endif; ?>
         </div>
     </section>
 </div>
 
-<section class="panel">
-    <div class="panel-header">
-        <div class="panel-title">
-            <span class="panel-index">01.13</span>
-            Notes classifiées
-        </div>
-    </div>
-    <div class="panel-body">
-        <?php foreach ($notes as $n): ?>
-            <div class="note-item">
-                <span class="badge"><?= $h($n['classification_label']) ?></span>
-                <span class="muted"> · <?= $h($n['author_label'] ?? 'Opérateur') ?>
-                    <?php if (!empty($n['created_at'])): ?> · <?= $h($n['created_at']) ?><?php endif; ?></span>
-                <p><?= nl2br($h($n['body'])) ?></p>
-            </div>
-        <?php endforeach; ?>
-        <?php if ($notes === []): ?><p class="muted">Aucune note.</p><?php endif; ?>
-        <?php if ($canManage): ?>
-            <form method="post" action="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/notes')) ?>">
-                <?= \App\Core\Csrf::field() ?>
-                <label for="body">Nouvelle note</label>
-                <textarea id="body" name="body" required></textarea>
-                <label for="note_class">Classification de la note</label>
-                <select id="note_class" name="classification">
-                    <?php foreach ($classifications as $k => $lab): ?>
-                        <option value="<?= $h($k) ?>"><?= $h($lab) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <button class="btn" type="submit">Ajouter la note</button>
-            </form>
-        <?php endif; ?>
-    </div>
-</section>
-
-<p style="margin-top:1rem"><a class="link" href="<?= $h(url('atak/sse/dossiers')) ?>">← Retour aux dossiers</a></p>
 <section class="panel">
     <div class="panel-header">
         <div class="panel-title">
@@ -300,33 +305,75 @@ $classBadge = match ($classKey) {
     <div class="panel-header">
         <div class="panel-title">
             <span class="panel-index">01.06</span>
-            Produits de renseignement
+            Notes classifiées
         </div>
+        <div class="panel-meta"><?= count($notes) ?></div>
     </div>
     <div class="panel-body">
-        <p>
-            Flash et compte rendu initial, générés depuis les éléments déjà versés au
-            dossier — personnes, relevés, verdicts, sites et saisies.
-        </p>
-        <a class="btn" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/compte-rendu')) ?>">
-            Ouvrir le compte rendu
-        </a>
-        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/correlations')) ?>">
-            Voir les corrélations
-        </a>
-        <?php if ($canManage): ?>
-            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/toiles/nouveau?case=' . (int) $case['id'])) ?>">
-                Créer une toile depuis ce dossier
-            </a>
+        <?php if ($notes === []): ?>
+            <p class="muted">Aucune note. C’est ici que se consignent les observations qui n’ont pas leur place dans la synthèse.</p>
+        <?php else: ?>
+            <ul class="sse-case-notes">
+                <?php foreach ($notes as $n): ?>
+                    <li class="sse-case-note">
+                        <div class="sse-case-note__head">
+                            <span class="badge"><?= $h($n['classification_label']) ?></span>
+                            <span><?= $h($n['author_label'] ?? 'Opérateur') ?><?php
+                                $noteDate = $frDate($n['created_at'] ?? null);
+                                echo $noteDate !== '' ? ' — ' . $h($noteDate) : '';
+                            ?></span>
+                        </div>
+                        <p><?= nl2br($h($n['body'])) ?></p>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
         <?php endif; ?>
-        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/toiles')) ?>">
-            Toiles de données
-        </a>
-        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/declassification')) ?>">
-            Version expurgée
-        </a>
+        <?php if ($canManage): ?>
+            <details class="sse-fold">
+                <summary>Ajouter une note</summary>
+                <form method="post" action="<?= $h($caseUrl . '/notes') ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <label for="body">Ce que vous voulez consigner</label>
+                    <textarea id="body" name="body" required></textarea>
+                    <label for="note_class">Qui a le droit de lire cette note</label>
+                    <select id="note_class" name="classification">
+                        <?php foreach ($classifications as $k => $lab): ?>
+                            <option value="<?= $h($k) ?>"><?= $h($lab) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button class="btn" type="submit">Ajouter la note</button>
+                </form>
+            </details>
+        <?php endif; ?>
     </div>
 </section>
+
+<section id="tacmap" class="panel sse-tacmap-panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <span class="panel-index">01.07</span>
+            Carte tactique
+        </div>
+        <div class="panel-meta">La capture est versée aux pièces du dossier</div>
+    </div>
+    <div class="panel-body">
+        <p class="sse-note">
+            Positionnez la vue, puis capturez-la pour l’ajouter aux pièces du dossier.
+        </p>
+        <div id="sse-tacmap" class="sse-tacmap" role="img" aria-label="Carte tactique du dossier"></div>
+        <?php if ($canManage): ?>
+            <form id="sse-tacmap-form" class="sse-tacmap-form" method="post" action="<?= $h($caseUrl . '/tacmap-capture') ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="image_data" id="sse-tacmap-data" value="">
+                <label for="sse-tacmap-caption">Légende de la capture</label>
+                <input id="sse-tacmap-caption" name="caption" type="text" maxlength="200" placeholder="Ex. Approche nord du site">
+                <button class="btn" type="button" id="sse-tacmap-capture-btn">Capturer la vue</button>
+            </form>
+        <?php endif; ?>
+    </div>
+</section>
+
+<p class="sse-case-back"><a class="link" href="<?= $h(url('atak/sse/dossiers')) ?>">← Retour aux dossiers</a></p>
 
 <?php
 $sseNeedLeaflet = true;

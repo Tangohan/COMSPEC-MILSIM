@@ -8,6 +8,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 $c = $interestCase;
 $hypotheses = is_array($hypotheses ?? null) ? $hypotheses : [];
 $proposals = is_array($proposals ?? null) ? $proposals : [];
+$constitutedCase = is_array($constitutedCase ?? null) ? $constitutedCase : null;
 $canManage = (bool) ($canManage ?? false);
 $priority = (string) ($c['interest_level'] ?? '');
 $priorityBadge = $priority === 'critique' ? 'badge--red' : ($priority === 'prioritaire' ? 'badge--amber' : '');
@@ -51,12 +52,28 @@ $priorityBadge = $priority === 'critique' ? 'badge--red' : ($priority === 'prior
     </div>
     <aside class="interest-hero__side">
         <p class="interest-hero__side-label">Suite d’instruction</p>
+        <?php if ($constitutedCase !== null): ?>
+            <div class="interest-hero__next">
+                <strong>Dossier constitué</strong>
+                <a class="link" href="<?= $h(url('atak/sse/dossiers/' . (int) $constitutedCase['id'])) ?>">
+                    <?= $h($constitutedCase['reference_code'] ?? '') ?> — <?= $h($constitutedCase['title'] ?? '') ?>
+                </a>
+                <span>L’instruction se poursuit dans le dossier ; ce dossier d’intérêt en garde la genèse.</span>
+            </div>
+        <?php elseif ($canManage): ?>
+            <form class="interest-hero__next" method="post" action="<?= $h(url('atak/sse/interet/' . (int) ($c['id'] ?? 0) . '/constituer')) ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <strong>Passer au dossier</strong>
+                <span>Ouvre un dossier reprenant le motif, les observations et les faits déjà consignés ici.</span>
+                <button class="btn" type="submit">Constituer le dossier</button>
+            </form>
+        <?php endif; ?>
         <div class="interest-hero__actions">
             <a class="btn btn--ghost" href="<?= $h(url('atak/sse/toiles')) ?>">Graphe</a>
             <a class="btn btn--ghost" href="<?= $h(url('atak/sse/chronologie')) ?>">Chronologie</a>
             <a class="btn btn--ghost" href="<?= $h(url('atak/sse/croisements')) ?>">Croisements</a>
             <?php if ($canManage): ?>
-                <a class="btn" href="<?= $h(url('atak/sse/toiles/nouveau')) ?>">Ouvrir une investigation</a>
+                <a class="btn btn--ghost" href="<?= $h(url('atak/sse/toiles/nouveau')) ?>">Ouvrir une investigation</a>
             <?php endif; ?>
             <a class="btn btn--ghost" href="<?= $h(url('atak/sse/interet')) ?>">Retour à la file</a>
         </div>
@@ -148,21 +165,84 @@ $priorityBadge = $priority === 'critique' ? 'badge--red' : ($priority === 'prior
             <div class="panel-meta"><?= count($proposals) ?></div>
         </div>
         <div class="panel-body">
+            <?php if ($proposals === []): ?>
+                <p class="muted">
+                    Aucun rapprochement automatique sur ce dossier. Poursuivez la collecte,
+                    ou reliez les éléments à la main depuis les croisements.
+                </p>
+            <?php endif; ?>
+
             <?php foreach ($proposals as $p): ?>
-                <article class="interest-cross">
-                    <strong><?= $h($p['title'] ?? 'Corrélation proposée') ?></strong>
-                    <p><?= $h($p['detail'] ?? '') ?></p>
+                <?php
+                $decision = is_array($p['decision'] ?? null) ? $p['decision'] : null;
+                $decisionKey = (string) ($decision['decision'] ?? '');
+                $stateClass = match ($decisionKey) {
+                    'confirme' => ' is-confirmed',
+                    'separe' => ' is-separate',
+                    'complement' => ' is-further',
+                    default => '',
+                };
+                ?>
+                <article class="interest-cross<?= $stateClass ?>">
+                    <strong><?= $h($p['person_name'] ?? 'Identité') ?> ↔ <?= $h($p['entry_name'] ?? 'entrée surveillée') ?></strong>
+                    <p><?= $h($p['reason'] ?? '') ?></p>
                     <?php if ((int) ($p['score'] ?? 0) > 0): ?>
-                        <span class="muted">Score indicatif : <?= (int) $p['score'] ?> % — à confirmer</span>
+                        <span class="muted">
+                            Score indicatif : <?= (int) $p['score'] ?> %<?= $decision === null ? ' — à confirmer' : '' ?>
+                        </span>
                     <?php endif; ?>
-                    <div class="interest-cross__actions">
-                        <span class="btn btn--ghost btn--sm" title="Bientôt disponible">Confirmer</span>
-                        <span class="btn btn--ghost btn--sm" title="Bientôt disponible">Maintenir séparé</span>
-                        <span class="btn btn--ghost btn--sm" title="Bientôt disponible">Analyse complémentaire</span>
-                    </div>
+
+                    <?php if ($decision !== null): ?>
+                        <p class="interest-cross__verdict">
+                            <strong><?= $h($decision['decision_label'] ?? '') ?></strong>
+                            <span>
+                                par <?= $h($decision['author_label'] ?? 'un analyste') ?>
+                                <?php
+                                $when = (string) ($decision['updated_at'] ?? $decision['created_at'] ?? '');
+                                $stamp = $when !== '' ? strtotime($when) : false;
+                                ?>
+                                <?= $stamp ? 'le ' . $h(date('d/m/Y \à H\hi', $stamp)) : '' ?>
+                            </span>
+                            <?php if (!empty($decision['note'])): ?>
+                                <em><?= $h($decision['note']) ?></em>
+                            <?php endif; ?>
+                        </p>
+                        <?php if ($canManage): ?>
+                            <form method="post" action="<?= $h(url('atak/sse/interet/' . (int) ($c['id'] ?? 0) . '/croisements')) ?>" class="interest-cross__form">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="person_id" value="<?= (int) ($p['person_id'] ?? 0) ?>">
+                                <input type="hidden" name="entry_id" value="<?= (int) ($p['entry_id'] ?? 0) ?>">
+                                <input type="hidden" name="decision" value="reouvrir">
+                                <button class="btn btn--ghost btn--sm" type="submit">Revenir sur la décision</button>
+                            </form>
+                        <?php endif; ?>
+                    <?php elseif ($canManage): ?>
+                        <form method="post" action="<?= $h(url('atak/sse/interet/' . (int) ($c['id'] ?? 0) . '/croisements')) ?>" class="interest-cross__form">
+                            <?= \App\Core\Csrf::field() ?>
+                            <input type="hidden" name="person_id" value="<?= (int) ($p['person_id'] ?? 0) ?>">
+                            <input type="hidden" name="entry_id" value="<?= (int) ($p['entry_id'] ?? 0) ?>">
+                            <input type="hidden" name="score" value="<?= (int) ($p['score'] ?? 0) ?>">
+                            <input type="hidden" name="reason" value="<?= $h($p['reason'] ?? '') ?>">
+                            <label class="interest-cross__note-label" for="note-<?= (int) ($p['person_id'] ?? 0) ?>-<?= (int) ($p['entry_id'] ?? 0) ?>">
+                                Sur quoi repose votre décision
+                            </label>
+                            <input class="interest-cross__note" type="text" maxlength="255"
+                                   id="note-<?= (int) ($p['person_id'] ?? 0) ?>-<?= (int) ($p['entry_id'] ?? 0) ?>"
+                                   name="note" placeholder="Élément qui tranche : photo, déclaration, biométrie…">
+                            <div class="interest-cross__actions">
+                                <button class="btn btn--sm" type="submit" name="decision" value="confirme">Confirmer</button>
+                                <button class="btn btn--ghost btn--sm" type="submit" name="decision" value="separe">Maintenir séparé</button>
+                                <button class="btn btn--ghost btn--sm" type="submit" name="decision" value="complement">Analyse complémentaire</button>
+                            </div>
+                        </form>
+                    <?php else: ?>
+                        <p class="muted">Décision réservée aux opérateurs habilités.</p>
+                    <?php endif; ?>
                 </article>
             <?php endforeach; ?>
-            <p class="sse-note">Les décisions de rapprochement seront journalisées dès le branchement de la validation.</p>
+            <?php if ($proposals !== []): ?>
+                <p class="sse-note">Chaque décision est journalisée avec son auteur, son horodatage et sa justification.</p>
+            <?php endif; ?>
         </div>
     </section>
 

@@ -384,5 +384,13 @@ class CfgVehicles {
     };
 };
 
+// Classes de base déclarées une seule fois : chaque dialogue inclus ensuite les réutilise.
+class RscText;
+class RscButton;
+class RscCombo;
+class RscCheckbox;
+class RscSlider;
+class RscListbox;
+
 #include "dialogs\generateDialog.hpp"
 #include "dialogs\modelDialog.hpp"

@@ -6,6 +6,7 @@ namespace App\Services\Sse;
 
 use App\Core\Database;
 use App\Repositories\SseCaseRepository;
+use App\Repositories\SseDocumentRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\SseSiteRepository;
 
@@ -26,16 +27,34 @@ use App\Repositories\SseSiteRepository;
  */
 final class SseCorrelationService
 {
+    /**
+     * Éléments d'un dossier qui peuvent porter un lien. Tout ce qui apparaît ici
+     * est reliable à tout le reste : le graphe ne présume pas de la combinaison utile.
+     *
+     * @var array<string, string>
+     */
+    public const NODE_TYPE_LABELS = [
+        'person' => 'Personne',
+        'site' => 'Site',
+        'room' => 'Pièce',
+        'seizure' => 'Saisie',
+        'evidence' => 'Pièce à conviction',
+        'document' => 'Document',
+    ];
+
     /** @var array<string, string> */
     public const RELATION_LABELS = [
         'present'    => 'présent sur',
         'recovered'  => 'recueilli sur',
         'found_at'   => 'trouvé en',
+        'partie_de'  => 'partie de',
         'associe'    => 'associé à',
         'possede'    => 'possède',
         'contact'    => 'en contact avec',
         'membre'     => 'membre de',
         'mentionne'  => 'mentionné par',
+        'concerne'   => 'concerne',
+        'atteste'    => 'atteste',
         // Posées par les automatismes (voir SseAutomationService) mais tout aussi
         // valables sous la main d'un analyste.
         'co_presence'   => 'contrôlé en même temps que',
@@ -69,11 +88,18 @@ final class SseCorrelationService
         private ?SseCaseRepository $cases = null,
         private ?SsePersonRepository $persons = null,
         private ?SseSiteRepository $sites = null,
+        private ?SseDocumentRepository $documents = null,
     ) {
         $this->db = $db ?? Database::getInstance();
         $this->cases ??= new SseCaseRepository();
         $this->persons ??= new SsePersonRepository();
         $this->sites ??= new SseSiteRepository();
+        $this->documents ??= new SseDocumentRepository();
+    }
+
+    public static function nodeTypeLabel(string $type): string
+    {
+        return self::NODE_TYPE_LABELS[$type] ?? 'Élément';
     }
 
     public static function relationLabel(string $key): string
@@ -136,11 +162,65 @@ final class SseCorrelationService
                 'url' => url('atak/sse/sites/' . $sid),
             ];
             foreach ($this->sites->listRooms($sid, $tenantId) as $room) {
-                $roomLabels[(int) ($room['id'] ?? 0)] = [
+                $rid = (int) ($room['id'] ?? 0);
+                if ($rid < 1) {
+                    continue;
+                }
+                $roomLabels[$rid] = [
                     'label' => (string) ($room['label'] ?? ''),
                     'site' => $sid,
                 ];
+                // Les pièces sont des éléments du dossier à part entière : on les
+                // expose pour qu'un analyste puisse y raccrocher une personne ou
+                // un document, sans passer par la saisie qui s'y trouvait.
+                $nodes['room:' . $rid] = [
+                    'type' => 'room',
+                    'id' => $rid,
+                    'ref' => '',
+                    'label' => (string) ($room['label'] ?? 'Pièce'),
+                    'detail' => trim('Pièce de ' . (string) ($site['name'] ?? '')),
+                    'url' => url('atak/sse/sites/' . $sid),
+                ];
+                $edges[] = $this->edge('room', $rid, 'site', $sid, 'partie_de', self::SOURCE_DERIVED, 'confirmed', '');
             }
+        }
+
+        // Pièces à conviction versées au dossier : la colonne person_id porte déjà
+        // le rattachement quand il est connu, on le montre au lieu de le laisser dormir.
+        foreach ($this->cases->listEvidence($caseId, $tenantId) as $piece) {
+            $pieceId = (int) ($piece['id'] ?? 0);
+            if ($pieceId < 1) {
+                continue;
+            }
+            $nodes['evidence:' . $pieceId] = [
+                'type' => 'evidence',
+                'id' => $pieceId,
+                'ref' => '',
+                'label' => (string) ($piece['label'] ?? 'Pièce à conviction'),
+                'detail' => (string) ($piece['caption'] ?? ''),
+                'url' => url('atak/sse/dossiers/' . $caseId),
+            ];
+            $piecePerson = (int) ($piece['person_id'] ?? 0);
+            if ($piecePerson > 0 && isset($people[$piecePerson])) {
+                $edges[] = $this->edge('evidence', $pieceId, 'person', $piecePerson, 'recovered', self::SOURCE_DERIVED, 'confirmed', '');
+            }
+        }
+
+        // Documents rédigés sur le dossier : ils citent des personnes et des sites,
+        // le lien reste à poser à la main mais l'élément doit être disponible.
+        foreach ($this->documents->listForTenant($tenantId, ['case_id' => $caseId]) as $doc) {
+            $docId = (int) ($doc['id'] ?? 0);
+            if ($docId < 1) {
+                continue;
+            }
+            $nodes['document:' . $docId] = [
+                'type' => 'document',
+                'id' => $docId,
+                'ref' => (string) ($doc['reference_code'] ?? ''),
+                'label' => (string) ($doc['title'] ?? 'Document'),
+                'detail' => trim((string) ($doc['document_type_label'] ?? '') . ' · ' . (string) ($doc['status_label'] ?? ''), ' ·'),
+                'url' => url('atak/sse/documents/' . $docId),
+            ];
         }
 
         // --- Arêtes déduites ---

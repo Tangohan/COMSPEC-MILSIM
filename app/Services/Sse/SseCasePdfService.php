@@ -392,7 +392,7 @@ final class SseCasePdfService
             return $siteNames[$id] ?? ('Site #' . $id);
         }
 
-        return ucfirst($type) . ' #' . $id;
+        return SseCorrelationService::nodeTypeLabel($t) . ' n° ' . $id;
     }
 
     /**

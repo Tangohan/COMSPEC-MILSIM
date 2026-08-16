@@ -1,423 +1,423 @@
 ========== COMSPEC SSE Build ========== 
-Date: 07/08/2026 19:34:48,56 
+Date: 16/08/2026  2:49:20,55 
  
 [BUILD] comspec_sse_main ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:48,754] [INFO ]: ==========================================================================
-[2026-08-07 19:34:48,755] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:48,758] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:48,758] [INFO ]: ==========================================================================
-[2026-08-07 19:34:48,758] [INFO ]: 
-[2026-08-07 19:34:48,758] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:48,763] [INFO ]: --------------------
-[2026-08-07 19:34:48,763] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:48,763] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:48,763] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:48,763] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:48,763] [INFO ]: --------------------
-[2026-08-07 19:34:48,765] [INFO ]: Builder starting...
-[2026-08-07 19:34:48,767] [INFO ]: Copying to temp...
-[2026-08-07 19:34:48,774] [INFO ]: Copy done.
-[2026-08-07 19:34:48,774] [INFO ]: 
-[2026-08-07 19:34:48,792] [INFO ]: 
-[2026-08-07 19:34:48,792] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\main"
-[2026-08-07 19:34:48,793] [INFO ]: Done.
-[2026-08-07 19:34:48,793] [INFO ]: 
-[2026-08-07 19:34:48,793] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:49,090] [INFO ]: Done.
-[2026-08-07 19:34:49,091] [INFO ]: 
-[2026-08-07 19:34:49,091] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\main"...
-[2026-08-07 19:34:49,281] [INFO ]: Done.
-[2026-08-07 19:34:49,282] [INFO ]: 
-[2026-08-07 19:34:49,282] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\main.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\main.pbo
-[2026-08-07 19:34:49,283] [INFO ]: Done.
-[2026-08-07 19:34:49,284] [INFO ]: 
-[2026-08-07 19:34:49,284] [INFO ]: Build Successful
+[2026-08-16 02:49:23,201] [INFO ]: ==========================================================================
+[2026-08-16 02:49:23,204] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:23,207] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:23,207] [INFO ]: ==========================================================================
+[2026-08-16 02:49:23,207] [INFO ]: 
+[2026-08-16 02:49:23,207] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:23,213] [INFO ]: --------------------
+[2026-08-16 02:49:23,214] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:23,216] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:23,231] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:23,232] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:23,232] [INFO ]: --------------------
+[2026-08-16 02:49:23,237] [INFO ]: Builder starting...
+[2026-08-16 02:49:23,245] [INFO ]: Copying to temp...
+[2026-08-16 02:49:23,257] [INFO ]: Copy done.
+[2026-08-16 02:49:23,257] [INFO ]: 
+[2026-08-16 02:49:24,111] [INFO ]: 
+[2026-08-16 02:49:24,111] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\main"
+[2026-08-16 02:49:24,113] [INFO ]: Done.
+[2026-08-16 02:49:24,113] [INFO ]: 
+[2026-08-16 02:49:24,113] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:26,714] [INFO ]: Done.
+[2026-08-16 02:49:26,715] [INFO ]: 
+[2026-08-16 02:49:26,715] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\main"...
+[2026-08-16 02:49:26,930] [INFO ]: Done.
+[2026-08-16 02:49:26,930] [INFO ]: 
+[2026-08-16 02:49:26,930] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\main.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\main.pbo
+[2026-08-16 02:49:26,932] [INFO ]: Done.
+[2026-08-16 02:49:26,932] [INFO ]: 
+[2026-08-16 02:49:26,932] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_main.pbo 
 [BUILD] comspec_sse_core ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:49,543] [INFO ]: ==========================================================================
-[2026-08-07 19:34:49,544] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:49,548] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:49,548] [INFO ]: ==========================================================================
-[2026-08-07 19:34:49,548] [INFO ]: 
-[2026-08-07 19:34:49,548] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:49,555] [INFO ]: --------------------
-[2026-08-07 19:34:49,555] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:49,555] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:49,555] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:49,555] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:49,555] [INFO ]: --------------------
-[2026-08-07 19:34:49,559] [INFO ]: Builder starting...
-[2026-08-07 19:34:49,563] [INFO ]: Copying to temp...
-[2026-08-07 19:34:49,592] [INFO ]: Copy done.
-[2026-08-07 19:34:49,592] [INFO ]: 
-[2026-08-07 19:34:49,616] [INFO ]: 
-[2026-08-07 19:34:49,616] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\core"
-[2026-08-07 19:34:49,617] [INFO ]: Done.
-[2026-08-07 19:34:49,617] [INFO ]: 
-[2026-08-07 19:34:49,617] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:49,837] [INFO ]: Done.
-[2026-08-07 19:34:49,837] [INFO ]: 
-[2026-08-07 19:34:49,838] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\core"...
-[2026-08-07 19:34:50,000] [INFO ]: Done.
-[2026-08-07 19:34:50,000] [INFO ]: 
-[2026-08-07 19:34:50,000] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\core.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\core.pbo
-[2026-08-07 19:34:50,001] [INFO ]: Done.
-[2026-08-07 19:34:50,002] [INFO ]: 
-[2026-08-07 19:34:50,002] [INFO ]: Build Successful
+[2026-08-16 02:49:27,150] [INFO ]: ==========================================================================
+[2026-08-16 02:49:27,151] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:27,154] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:27,154] [INFO ]: ==========================================================================
+[2026-08-16 02:49:27,154] [INFO ]: 
+[2026-08-16 02:49:27,154] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:27,160] [INFO ]: --------------------
+[2026-08-16 02:49:27,160] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:27,160] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:27,160] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:27,160] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:27,160] [INFO ]: --------------------
+[2026-08-16 02:49:27,162] [INFO ]: Builder starting...
+[2026-08-16 02:49:27,165] [INFO ]: Copying to temp...
+[2026-08-16 02:49:27,187] [INFO ]: Copy done.
+[2026-08-16 02:49:27,187] [INFO ]: 
+[2026-08-16 02:49:27,210] [INFO ]: 
+[2026-08-16 02:49:27,210] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\core"
+[2026-08-16 02:49:27,211] [INFO ]: Done.
+[2026-08-16 02:49:27,211] [INFO ]: 
+[2026-08-16 02:49:27,211] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:27,378] [INFO ]: Done.
+[2026-08-16 02:49:27,378] [INFO ]: 
+[2026-08-16 02:49:27,379] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\core"...
+[2026-08-16 02:49:27,640] [INFO ]: Done.
+[2026-08-16 02:49:27,640] [INFO ]: 
+[2026-08-16 02:49:27,640] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\core.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\core.pbo
+[2026-08-16 02:49:27,641] [INFO ]: Done.
+[2026-08-16 02:49:27,641] [INFO ]: 
+[2026-08-16 02:49:27,641] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_core.pbo 
 [BUILD] comspec_sse_generator ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:50,253] [INFO ]: ==========================================================================
-[2026-08-07 19:34:50,254] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:50,257] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:50,257] [INFO ]: ==========================================================================
-[2026-08-07 19:34:50,257] [INFO ]: 
-[2026-08-07 19:34:50,258] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:50,262] [INFO ]: --------------------
-[2026-08-07 19:34:50,262] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:50,262] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:50,262] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:50,262] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:50,262] [INFO ]: --------------------
-[2026-08-07 19:34:50,264] [INFO ]: Builder starting...
-[2026-08-07 19:34:50,267] [INFO ]: Copying to temp...
-[2026-08-07 19:34:50,286] [INFO ]: Copy done.
-[2026-08-07 19:34:50,286] [INFO ]: 
-[2026-08-07 19:34:50,303] [INFO ]: 
-[2026-08-07 19:34:50,304] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\generator"
-[2026-08-07 19:34:50,304] [INFO ]: Done.
-[2026-08-07 19:34:50,304] [INFO ]: 
-[2026-08-07 19:34:50,304] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:50,496] [INFO ]: Done.
-[2026-08-07 19:34:50,496] [INFO ]: 
-[2026-08-07 19:34:50,497] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\generator"...
-[2026-08-07 19:34:50,723] [INFO ]: Done.
-[2026-08-07 19:34:50,723] [INFO ]: 
-[2026-08-07 19:34:50,723] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\generator.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\generator.pbo
-[2026-08-07 19:34:50,724] [INFO ]: Done.
-[2026-08-07 19:34:50,724] [INFO ]: 
-[2026-08-07 19:34:50,724] [INFO ]: Build Successful
+[2026-08-16 02:49:27,866] [INFO ]: ==========================================================================
+[2026-08-16 02:49:27,867] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:27,870] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:27,870] [INFO ]: ==========================================================================
+[2026-08-16 02:49:27,870] [INFO ]: 
+[2026-08-16 02:49:27,871] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:27,876] [INFO ]: --------------------
+[2026-08-16 02:49:27,876] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:27,876] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:27,876] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:27,876] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:27,876] [INFO ]: --------------------
+[2026-08-16 02:49:27,878] [INFO ]: Builder starting...
+[2026-08-16 02:49:27,881] [INFO ]: Copying to temp...
+[2026-08-16 02:49:27,903] [INFO ]: Copy done.
+[2026-08-16 02:49:27,903] [INFO ]: 
+[2026-08-16 02:49:27,927] [INFO ]: 
+[2026-08-16 02:49:27,927] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\generator"
+[2026-08-16 02:49:27,928] [INFO ]: Done.
+[2026-08-16 02:49:27,928] [INFO ]: 
+[2026-08-16 02:49:27,929] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:28,025] [INFO ]: Done.
+[2026-08-16 02:49:28,025] [INFO ]: 
+[2026-08-16 02:49:28,026] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\generator"...
+[2026-08-16 02:49:28,269] [INFO ]: Done.
+[2026-08-16 02:49:28,269] [INFO ]: 
+[2026-08-16 02:49:28,270] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\generator.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\generator.pbo
+[2026-08-16 02:49:28,271] [INFO ]: Done.
+[2026-08-16 02:49:28,271] [INFO ]: 
+[2026-08-16 02:49:28,271] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_generator.pbo 
 [BUILD] comspec_sse_evidence ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:50,941] [INFO ]: ==========================================================================
-[2026-08-07 19:34:50,942] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:50,945] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:50,945] [INFO ]: ==========================================================================
-[2026-08-07 19:34:50,945] [INFO ]: 
-[2026-08-07 19:34:50,946] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:50,951] [INFO ]: --------------------
-[2026-08-07 19:34:50,951] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:50,951] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:50,951] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:50,951] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:50,951] [INFO ]: --------------------
-[2026-08-07 19:34:50,953] [INFO ]: Builder starting...
-[2026-08-07 19:34:50,956] [INFO ]: Copying to temp...
-[2026-08-07 19:34:50,965] [INFO ]: Copy done.
-[2026-08-07 19:34:50,965] [INFO ]: 
-[2026-08-07 19:34:50,987] [INFO ]: 
-[2026-08-07 19:34:50,987] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\evidence"
-[2026-08-07 19:34:50,988] [INFO ]: Done.
-[2026-08-07 19:34:50,988] [INFO ]: 
-[2026-08-07 19:34:50,989] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:51,266] [INFO ]: Done.
-[2026-08-07 19:34:51,266] [INFO ]: 
-[2026-08-07 19:34:51,266] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\evidence"...
-[2026-08-07 19:34:51,369] [INFO ]: Done.
-[2026-08-07 19:34:51,369] [INFO ]: 
-[2026-08-07 19:34:51,369] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\evidence.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\evidence.pbo
-[2026-08-07 19:34:51,370] [INFO ]: Done.
-[2026-08-07 19:34:51,370] [INFO ]: 
-[2026-08-07 19:34:51,370] [INFO ]: Build Successful
+[2026-08-16 02:49:28,502] [INFO ]: ==========================================================================
+[2026-08-16 02:49:28,503] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:28,507] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:28,507] [INFO ]: ==========================================================================
+[2026-08-16 02:49:28,507] [INFO ]: 
+[2026-08-16 02:49:28,507] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:28,513] [INFO ]: --------------------
+[2026-08-16 02:49:28,513] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:28,513] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:28,513] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:28,513] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:28,513] [INFO ]: --------------------
+[2026-08-16 02:49:28,516] [INFO ]: Builder starting...
+[2026-08-16 02:49:28,519] [INFO ]: Copying to temp...
+[2026-08-16 02:49:28,526] [INFO ]: Copy done.
+[2026-08-16 02:49:28,526] [INFO ]: 
+[2026-08-16 02:49:28,546] [INFO ]: 
+[2026-08-16 02:49:28,546] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\evidence"
+[2026-08-16 02:49:28,547] [INFO ]: Done.
+[2026-08-16 02:49:28,547] [INFO ]: 
+[2026-08-16 02:49:28,547] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:28,658] [INFO ]: Done.
+[2026-08-16 02:49:28,658] [INFO ]: 
+[2026-08-16 02:49:28,659] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\evidence"...
+[2026-08-16 02:49:28,771] [INFO ]: Done.
+[2026-08-16 02:49:28,771] [INFO ]: 
+[2026-08-16 02:49:28,771] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\evidence.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\evidence.pbo
+[2026-08-16 02:49:28,772] [INFO ]: Done.
+[2026-08-16 02:49:28,772] [INFO ]: 
+[2026-08-16 02:49:28,772] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_evidence.pbo 
 [BUILD] comspec_sse_intel ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:51,609] [INFO ]: ==========================================================================
-[2026-08-07 19:34:51,610] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:51,612] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:51,612] [INFO ]: ==========================================================================
-[2026-08-07 19:34:51,612] [INFO ]: 
-[2026-08-07 19:34:51,613] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:51,617] [INFO ]: --------------------
-[2026-08-07 19:34:51,618] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:51,618] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:51,618] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:51,618] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:51,618] [INFO ]: --------------------
-[2026-08-07 19:34:51,620] [INFO ]: Builder starting...
-[2026-08-07 19:34:51,622] [INFO ]: Copying to temp...
-[2026-08-07 19:34:51,655] [INFO ]: Copy done.
-[2026-08-07 19:34:51,655] [INFO ]: 
-[2026-08-07 19:34:51,676] [INFO ]: 
-[2026-08-07 19:34:51,676] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\intel"
-[2026-08-07 19:34:51,676] [INFO ]: Done.
-[2026-08-07 19:34:51,677] [INFO ]: 
-[2026-08-07 19:34:51,677] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:51,796] [INFO ]: Done.
-[2026-08-07 19:34:51,796] [INFO ]: 
-[2026-08-07 19:34:51,797] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\intel"...
-[2026-08-07 19:34:51,998] [INFO ]: Done.
-[2026-08-07 19:34:51,998] [INFO ]: 
-[2026-08-07 19:34:51,998] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\intel.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\intel.pbo
-[2026-08-07 19:34:51,999] [INFO ]: Done.
-[2026-08-07 19:34:51,999] [INFO ]: 
-[2026-08-07 19:34:51,999] [INFO ]: Build Successful
+[2026-08-16 02:49:29,047] [INFO ]: ==========================================================================
+[2026-08-16 02:49:29,049] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:29,052] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:29,052] [INFO ]: ==========================================================================
+[2026-08-16 02:49:29,052] [INFO ]: 
+[2026-08-16 02:49:29,052] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:29,059] [INFO ]: --------------------
+[2026-08-16 02:49:29,059] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:29,059] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:29,059] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:29,059] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:29,059] [INFO ]: --------------------
+[2026-08-16 02:49:29,061] [INFO ]: Builder starting...
+[2026-08-16 02:49:29,064] [INFO ]: Copying to temp...
+[2026-08-16 02:49:29,097] [INFO ]: Copy done.
+[2026-08-16 02:49:29,097] [INFO ]: 
+[2026-08-16 02:49:29,122] [INFO ]: 
+[2026-08-16 02:49:29,122] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\intel"
+[2026-08-16 02:49:29,123] [INFO ]: Done.
+[2026-08-16 02:49:29,123] [INFO ]: 
+[2026-08-16 02:49:29,123] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:29,270] [INFO ]: Done.
+[2026-08-16 02:49:29,270] [INFO ]: 
+[2026-08-16 02:49:29,271] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\intel"...
+[2026-08-16 02:49:29,568] [INFO ]: Done.
+[2026-08-16 02:49:29,568] [INFO ]: 
+[2026-08-16 02:49:29,569] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\intel.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\intel.pbo
+[2026-08-16 02:49:29,570] [INFO ]: Done.
+[2026-08-16 02:49:29,570] [INFO ]: 
+[2026-08-16 02:49:29,570] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_intel.pbo 
 [BUILD] comspec_sse_interaction ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:52,218] [INFO ]: ==========================================================================
-[2026-08-07 19:34:52,219] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:52,221] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:52,221] [INFO ]: ==========================================================================
-[2026-08-07 19:34:52,221] [INFO ]: 
-[2026-08-07 19:34:52,222] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:52,227] [INFO ]: --------------------
-[2026-08-07 19:34:52,227] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:52,227] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:52,227] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:52,227] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:52,227] [INFO ]: --------------------
-[2026-08-07 19:34:52,229] [INFO ]: Builder starting...
-[2026-08-07 19:34:52,232] [INFO ]: Copying to temp...
-[2026-08-07 19:34:52,245] [INFO ]: Copy done.
-[2026-08-07 19:34:52,245] [INFO ]: 
-[2026-08-07 19:34:52,264] [INFO ]: 
-[2026-08-07 19:34:52,264] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\interaction"
-[2026-08-07 19:34:52,264] [INFO ]: Done.
-[2026-08-07 19:34:52,264] [INFO ]: 
-[2026-08-07 19:34:52,265] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:52,410] [INFO ]: Done.
-[2026-08-07 19:34:52,410] [INFO ]: 
-[2026-08-07 19:34:52,411] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\interaction"...
-[2026-08-07 19:34:52,545] [INFO ]: Done.
-[2026-08-07 19:34:52,545] [INFO ]: 
-[2026-08-07 19:34:52,545] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\interaction.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\interaction.pbo
-[2026-08-07 19:34:52,546] [INFO ]: Done.
-[2026-08-07 19:34:52,546] [INFO ]: 
-[2026-08-07 19:34:52,547] [INFO ]: Build Successful
+[2026-08-16 02:49:29,810] [INFO ]: ==========================================================================
+[2026-08-16 02:49:29,811] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:29,814] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:29,814] [INFO ]: ==========================================================================
+[2026-08-16 02:49:29,814] [INFO ]: 
+[2026-08-16 02:49:29,814] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:29,819] [INFO ]: --------------------
+[2026-08-16 02:49:29,819] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:29,819] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:29,819] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:29,819] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:29,820] [INFO ]: --------------------
+[2026-08-16 02:49:29,821] [INFO ]: Builder starting...
+[2026-08-16 02:49:29,824] [INFO ]: Copying to temp...
+[2026-08-16 02:49:29,838] [INFO ]: Copy done.
+[2026-08-16 02:49:29,838] [INFO ]: 
+[2026-08-16 02:49:29,856] [INFO ]: 
+[2026-08-16 02:49:29,856] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\interaction"
+[2026-08-16 02:49:29,857] [INFO ]: Done.
+[2026-08-16 02:49:29,857] [INFO ]: 
+[2026-08-16 02:49:29,857] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:29,964] [INFO ]: Done.
+[2026-08-16 02:49:29,964] [INFO ]: 
+[2026-08-16 02:49:29,964] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\interaction"...
+[2026-08-16 02:49:30,199] [INFO ]: Done.
+[2026-08-16 02:49:30,199] [INFO ]: 
+[2026-08-16 02:49:30,199] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\interaction.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\interaction.pbo
+[2026-08-16 02:49:30,200] [INFO ]: Done.
+[2026-08-16 02:49:30,200] [INFO ]: 
+[2026-08-16 02:49:30,200] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_interaction.pbo 
 [BUILD] comspec_sse_zeus ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:52,798] [INFO ]: ==========================================================================
-[2026-08-07 19:34:52,800] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:52,803] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:52,803] [INFO ]: ==========================================================================
-[2026-08-07 19:34:52,803] [INFO ]: 
-[2026-08-07 19:34:52,803] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:52,808] [INFO ]: --------------------
-[2026-08-07 19:34:52,808] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:52,808] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:52,808] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:52,808] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:52,808] [INFO ]: --------------------
-[2026-08-07 19:34:52,810] [INFO ]: Builder starting...
-[2026-08-07 19:34:52,813] [INFO ]: Copying to temp...
-[2026-08-07 19:34:52,835] [INFO ]: Copy done.
-[2026-08-07 19:34:52,835] [INFO ]: 
-[2026-08-07 19:34:52,863] [INFO ]: 
-[2026-08-07 19:34:52,863] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\zeus"
-[2026-08-07 19:34:52,863] [INFO ]: Done.
-[2026-08-07 19:34:52,863] [INFO ]: 
-[2026-08-07 19:34:52,864] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:53,098] [INFO ]: Done.
-[2026-08-07 19:34:53,098] [INFO ]: 
-[2026-08-07 19:34:53,098] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\zeus"...
-[2026-08-07 19:34:53,320] [INFO ]: Done.
-[2026-08-07 19:34:53,320] [INFO ]: 
-[2026-08-07 19:34:53,320] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\zeus.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\zeus.pbo
-[2026-08-07 19:34:53,321] [INFO ]: Done.
-[2026-08-07 19:34:53,321] [INFO ]: 
-[2026-08-07 19:34:53,321] [INFO ]: Build Successful
+[2026-08-16 02:49:30,445] [INFO ]: ==========================================================================
+[2026-08-16 02:49:30,446] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:30,449] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:30,449] [INFO ]: ==========================================================================
+[2026-08-16 02:49:30,449] [INFO ]: 
+[2026-08-16 02:49:30,450] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:30,455] [INFO ]: --------------------
+[2026-08-16 02:49:30,455] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:30,455] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:30,455] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:30,455] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:30,455] [INFO ]: --------------------
+[2026-08-16 02:49:30,457] [INFO ]: Builder starting...
+[2026-08-16 02:49:30,459] [INFO ]: Copying to temp...
+[2026-08-16 02:49:30,477] [INFO ]: Copy done.
+[2026-08-16 02:49:30,477] [INFO ]: 
+[2026-08-16 02:49:30,503] [INFO ]: 
+[2026-08-16 02:49:30,504] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\zeus"
+[2026-08-16 02:49:30,504] [INFO ]: Done.
+[2026-08-16 02:49:30,504] [INFO ]: 
+[2026-08-16 02:49:30,504] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:30,749] [INFO ]: Done.
+[2026-08-16 02:49:30,749] [INFO ]: 
+[2026-08-16 02:49:30,749] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\zeus"...
+[2026-08-16 02:49:30,970] [INFO ]: Done.
+[2026-08-16 02:49:30,970] [INFO ]: 
+[2026-08-16 02:49:30,970] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\zeus.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\zeus.pbo
+[2026-08-16 02:49:30,972] [INFO ]: Done.
+[2026-08-16 02:49:30,972] [INFO ]: 
+[2026-08-16 02:49:30,972] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_zeus.pbo 
 [BUILD] comspec_sse_eden ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:53,547] [INFO ]: ==========================================================================
-[2026-08-07 19:34:53,548] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:53,552] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:53,552] [INFO ]: ==========================================================================
-[2026-08-07 19:34:53,552] [INFO ]: 
-[2026-08-07 19:34:53,552] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:53,557] [INFO ]: --------------------
-[2026-08-07 19:34:53,557] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:53,557] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:53,557] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:53,557] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:53,557] [INFO ]: --------------------
-[2026-08-07 19:34:53,559] [INFO ]: Builder starting...
-[2026-08-07 19:34:53,561] [INFO ]: Copying to temp...
-[2026-08-07 19:34:53,569] [INFO ]: Copy done.
-[2026-08-07 19:34:53,569] [INFO ]: 
-[2026-08-07 19:34:53,591] [INFO ]: 
-[2026-08-07 19:34:53,592] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\eden"
-[2026-08-07 19:34:53,592] [INFO ]: Done.
-[2026-08-07 19:34:53,592] [INFO ]: 
-[2026-08-07 19:34:53,593] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:53,739] [INFO ]: Done.
-[2026-08-07 19:34:53,739] [INFO ]: 
-[2026-08-07 19:34:53,739] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\eden"...
-[2026-08-07 19:34:53,968] [INFO ]: Done.
-[2026-08-07 19:34:53,968] [INFO ]: 
-[2026-08-07 19:34:53,968] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\eden.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\eden.pbo
-[2026-08-07 19:34:53,969] [INFO ]: Done.
-[2026-08-07 19:34:53,969] [INFO ]: 
-[2026-08-07 19:34:53,969] [INFO ]: Build Successful
+[2026-08-16 02:49:31,177] [INFO ]: ==========================================================================
+[2026-08-16 02:49:31,179] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:31,181] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:31,181] [INFO ]: ==========================================================================
+[2026-08-16 02:49:31,182] [INFO ]: 
+[2026-08-16 02:49:31,182] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:31,187] [INFO ]: --------------------
+[2026-08-16 02:49:31,187] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:31,187] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:31,187] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:31,187] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:31,187] [INFO ]: --------------------
+[2026-08-16 02:49:31,189] [INFO ]: Builder starting...
+[2026-08-16 02:49:31,192] [INFO ]: Copying to temp...
+[2026-08-16 02:49:31,200] [INFO ]: Copy done.
+[2026-08-16 02:49:31,200] [INFO ]: 
+[2026-08-16 02:49:31,224] [INFO ]: 
+[2026-08-16 02:49:31,225] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\eden"
+[2026-08-16 02:49:31,225] [INFO ]: Done.
+[2026-08-16 02:49:31,225] [INFO ]: 
+[2026-08-16 02:49:31,225] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:31,335] [INFO ]: Done.
+[2026-08-16 02:49:31,336] [INFO ]: 
+[2026-08-16 02:49:31,336] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\eden"...
+[2026-08-16 02:49:31,426] [INFO ]: Done.
+[2026-08-16 02:49:31,426] [INFO ]: 
+[2026-08-16 02:49:31,426] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\eden.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\eden.pbo
+[2026-08-16 02:49:31,427] [INFO ]: Done.
+[2026-08-16 02:49:31,428] [INFO ]: 
+[2026-08-16 02:49:31,428] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_eden.pbo 
 [BUILD] comspec_sse_ui ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:54,246] [INFO ]: ==========================================================================
-[2026-08-07 19:34:54,247] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:54,249] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:54,249] [INFO ]: ==========================================================================
-[2026-08-07 19:34:54,249] [INFO ]: 
-[2026-08-07 19:34:54,250] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:54,254] [INFO ]: --------------------
-[2026-08-07 19:34:54,255] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:54,255] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:54,255] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:54,255] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:54,255] [INFO ]: --------------------
-[2026-08-07 19:34:54,257] [INFO ]: Builder starting...
-[2026-08-07 19:34:54,259] [INFO ]: Copying to temp...
-[2026-08-07 19:34:54,280] [INFO ]: Copy done.
-[2026-08-07 19:34:54,281] [INFO ]: 
-[2026-08-07 19:34:54,301] [INFO ]: 
-[2026-08-07 19:34:54,301] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\ui"
-[2026-08-07 19:34:54,302] [INFO ]: Done.
-[2026-08-07 19:34:54,302] [INFO ]: 
-[2026-08-07 19:34:54,302] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:54,402] [INFO ]: Done.
-[2026-08-07 19:34:54,403] [INFO ]: 
-[2026-08-07 19:34:54,403] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\ui"...
-[2026-08-07 19:34:54,509] [INFO ]: Done.
-[2026-08-07 19:34:54,509] [INFO ]: 
-[2026-08-07 19:34:54,510] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\ui.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\ui.pbo
-[2026-08-07 19:34:54,511] [INFO ]: Done.
-[2026-08-07 19:34:54,511] [INFO ]: 
-[2026-08-07 19:34:54,511] [INFO ]: Build Successful
+[2026-08-16 02:49:31,702] [INFO ]: ==========================================================================
+[2026-08-16 02:49:31,704] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:31,710] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:31,710] [INFO ]: ==========================================================================
+[2026-08-16 02:49:31,710] [INFO ]: 
+[2026-08-16 02:49:31,713] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:31,723] [INFO ]: --------------------
+[2026-08-16 02:49:31,724] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:31,724] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:31,724] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:31,724] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:31,724] [INFO ]: --------------------
+[2026-08-16 02:49:31,727] [INFO ]: Builder starting...
+[2026-08-16 02:49:31,731] [INFO ]: Copying to temp...
+[2026-08-16 02:49:31,758] [INFO ]: Copy done.
+[2026-08-16 02:49:31,759] [INFO ]: 
+[2026-08-16 02:49:31,793] [INFO ]: 
+[2026-08-16 02:49:31,810] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\ui"
+[2026-08-16 02:49:31,811] [INFO ]: Done.
+[2026-08-16 02:49:31,811] [INFO ]: 
+[2026-08-16 02:49:31,811] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:31,974] [INFO ]: Done.
+[2026-08-16 02:49:31,974] [INFO ]: 
+[2026-08-16 02:49:31,975] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\ui"...
+[2026-08-16 02:49:32,243] [INFO ]: Done.
+[2026-08-16 02:49:32,243] [INFO ]: 
+[2026-08-16 02:49:32,243] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\ui.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\ui.pbo
+[2026-08-16 02:49:32,245] [INFO ]: Done.
+[2026-08-16 02:49:32,245] [INFO ]: 
+[2026-08-16 02:49:32,245] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_ui.pbo 
 [BUILD] comspec_sse_network ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:54,780] [INFO ]: ==========================================================================
-[2026-08-07 19:34:54,781] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:54,784] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:54,784] [INFO ]: ==========================================================================
-[2026-08-07 19:34:54,784] [INFO ]: 
-[2026-08-07 19:34:54,785] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:54,789] [INFO ]: --------------------
-[2026-08-07 19:34:54,789] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:54,789] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:54,789] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:54,789] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:54,789] [INFO ]: --------------------
-[2026-08-07 19:34:54,791] [INFO ]: Builder starting...
-[2026-08-07 19:34:54,794] [INFO ]: Copying to temp...
-[2026-08-07 19:34:54,809] [INFO ]: Copy done.
-[2026-08-07 19:34:54,809] [INFO ]: 
-[2026-08-07 19:34:54,826] [INFO ]: 
-[2026-08-07 19:34:54,826] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\network"
-[2026-08-07 19:34:54,827] [INFO ]: Done.
-[2026-08-07 19:34:54,827] [INFO ]: 
-[2026-08-07 19:34:54,827] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:54,979] [INFO ]: Done.
-[2026-08-07 19:34:54,980] [INFO ]: 
-[2026-08-07 19:34:54,980] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\network"...
-[2026-08-07 19:34:55,184] [INFO ]: Done.
-[2026-08-07 19:34:55,184] [INFO ]: 
-[2026-08-07 19:34:55,185] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\network.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\network.pbo
-[2026-08-07 19:34:55,186] [INFO ]: Done.
-[2026-08-07 19:34:55,186] [INFO ]: 
-[2026-08-07 19:34:55,186] [INFO ]: Build Successful
+[2026-08-16 02:49:32,469] [INFO ]: ==========================================================================
+[2026-08-16 02:49:32,470] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:32,473] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:32,473] [INFO ]: ==========================================================================
+[2026-08-16 02:49:32,473] [INFO ]: 
+[2026-08-16 02:49:32,473] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:32,477] [INFO ]: --------------------
+[2026-08-16 02:49:32,477] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:32,477] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:32,478] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:32,478] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:32,478] [INFO ]: --------------------
+[2026-08-16 02:49:32,480] [INFO ]: Builder starting...
+[2026-08-16 02:49:32,483] [INFO ]: Copying to temp...
+[2026-08-16 02:49:32,499] [INFO ]: Copy done.
+[2026-08-16 02:49:32,499] [INFO ]: 
+[2026-08-16 02:49:32,524] [INFO ]: 
+[2026-08-16 02:49:32,524] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\network"
+[2026-08-16 02:49:32,524] [INFO ]: Done.
+[2026-08-16 02:49:32,524] [INFO ]: 
+[2026-08-16 02:49:32,525] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:32,678] [INFO ]: Done.
+[2026-08-16 02:49:32,678] [INFO ]: 
+[2026-08-16 02:49:32,679] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\network"...
+[2026-08-16 02:49:32,987] [INFO ]: Done.
+[2026-08-16 02:49:32,987] [INFO ]: 
+[2026-08-16 02:49:32,987] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\network.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\network.pbo
+[2026-08-16 02:49:32,988] [INFO ]: Done.
+[2026-08-16 02:49:32,989] [INFO ]: 
+[2026-08-16 02:49:32,989] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_network.pbo 
 [BUILD] comspec_sse_digital ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:55,416] [INFO ]: ==========================================================================
-[2026-08-07 19:34:55,417] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:55,420] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:55,420] [INFO ]: ==========================================================================
-[2026-08-07 19:34:55,420] [INFO ]: 
-[2026-08-07 19:34:55,420] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:55,424] [INFO ]: --------------------
-[2026-08-07 19:34:55,425] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:55,425] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:55,425] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:55,425] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:55,425] [INFO ]: --------------------
-[2026-08-07 19:34:55,427] [INFO ]: Builder starting...
-[2026-08-07 19:34:55,430] [INFO ]: Copying to temp...
-[2026-08-07 19:34:55,446] [INFO ]: Copy done.
-[2026-08-07 19:34:55,446] [INFO ]: 
-[2026-08-07 19:34:55,464] [INFO ]: 
-[2026-08-07 19:34:55,465] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\digital"
-[2026-08-07 19:34:55,465] [INFO ]: Done.
-[2026-08-07 19:34:55,466] [INFO ]: 
-[2026-08-07 19:34:55,466] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:55,649] [INFO ]: Done.
-[2026-08-07 19:34:55,650] [INFO ]: 
-[2026-08-07 19:34:55,650] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\digital"...
-[2026-08-07 19:34:55,867] [INFO ]: Done.
-[2026-08-07 19:34:55,868] [INFO ]: 
-[2026-08-07 19:34:55,868] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\digital.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\digital.pbo
-[2026-08-07 19:34:55,869] [INFO ]: Done.
-[2026-08-07 19:34:55,869] [INFO ]: 
-[2026-08-07 19:34:55,869] [INFO ]: Build Successful
+[2026-08-16 02:49:33,216] [INFO ]: ==========================================================================
+[2026-08-16 02:49:33,217] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:33,220] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:33,220] [INFO ]: ==========================================================================
+[2026-08-16 02:49:33,220] [INFO ]: 
+[2026-08-16 02:49:33,220] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:33,226] [INFO ]: --------------------
+[2026-08-16 02:49:33,226] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:33,226] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:33,226] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:33,226] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:33,226] [INFO ]: --------------------
+[2026-08-16 02:49:33,229] [INFO ]: Builder starting...
+[2026-08-16 02:49:33,232] [INFO ]: Copying to temp...
+[2026-08-16 02:49:33,250] [INFO ]: Copy done.
+[2026-08-16 02:49:33,250] [INFO ]: 
+[2026-08-16 02:49:33,275] [INFO ]: 
+[2026-08-16 02:49:33,275] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\digital"
+[2026-08-16 02:49:33,276] [INFO ]: Done.
+[2026-08-16 02:49:33,276] [INFO ]: 
+[2026-08-16 02:49:33,276] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:33,583] [INFO ]: Done.
+[2026-08-16 02:49:33,584] [INFO ]: 
+[2026-08-16 02:49:33,584] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\digital"...
+[2026-08-16 02:49:33,911] [INFO ]: Done.
+[2026-08-16 02:49:33,911] [INFO ]: 
+[2026-08-16 02:49:33,911] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\digital.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\digital.pbo
+[2026-08-16 02:49:33,912] [INFO ]: Done.
+[2026-08-16 02:49:33,912] [INFO ]: 
+[2026-08-16 02:49:33,912] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_digital.pbo 
 [BUILD] comspec_sse_biometrics ... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-08-07 19:34:56,134] [INFO ]: ==========================================================================
-[2026-08-07 19:34:56,134] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-08-07 19:34:56,138] [INFO ]: Version: 1.5.152926
-[2026-08-07 19:34:56,138] [INFO ]: ==========================================================================
-[2026-08-07 19:34:56,138] [INFO ]: 
-[2026-08-07 19:34:56,138] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-08-07 19:34:56,143] [INFO ]: --------------------
-[2026-08-07 19:34:56,143] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-08-07 19:34:56,143] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-08-07 19:34:56,143] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-08-07 19:34:56,143] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-08-07 19:34:56,143] [INFO ]: --------------------
-[2026-08-07 19:34:56,145] [INFO ]: Builder starting...
-[2026-08-07 19:34:56,148] [INFO ]: Copying to temp...
-[2026-08-07 19:34:56,161] [INFO ]: Copy done.
-[2026-08-07 19:34:56,161] [INFO ]: 
-[2026-08-07 19:34:56,179] [INFO ]: 
-[2026-08-07 19:34:56,179] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\biometrics"
-[2026-08-07 19:34:56,179] [INFO ]: Done.
-[2026-08-07 19:34:56,179] [INFO ]: 
-[2026-08-07 19:34:56,180] [INFO ]: Binarizing texture headers...
-[2026-08-07 19:34:56,364] [INFO ]: Done.
-[2026-08-07 19:34:56,365] [INFO ]: 
-[2026-08-07 19:34:56,365] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\biometrics"...
-[2026-08-07 19:34:56,574] [INFO ]: Done.
-[2026-08-07 19:34:56,574] [INFO ]: 
-[2026-08-07 19:34:56,574] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\biometrics.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\biometrics.pbo
-[2026-08-07 19:34:56,575] [INFO ]: Done.
-[2026-08-07 19:34:56,575] [INFO ]: 
-[2026-08-07 19:34:56,575] [INFO ]: Build Successful
+[2026-08-16 02:49:34,133] [INFO ]: ==========================================================================
+[2026-08-16 02:49:34,134] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-08-16 02:49:34,137] [INFO ]: Version: 1.5.152926
+[2026-08-16 02:49:34,137] [INFO ]: ==========================================================================
+[2026-08-16 02:49:34,137] [INFO ]: 
+[2026-08-16 02:49:34,138] [INFO ]: Arma 3 Tools path retrived from Steam client: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-08-16 02:49:34,143] [INFO ]: --------------------
+[2026-08-16 02:49:34,143] [INFO ]:        Binarize -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-08-16 02:49:34,143] [INFO ]:      CfgConvert -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-08-16 02:49:34,143] [INFO ]:      DsSignFile -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-08-16 02:49:34,143] [INFO ]:        FileBank -      found: 'F:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-08-16 02:49:34,143] [INFO ]: --------------------
+[2026-08-16 02:49:34,145] [INFO ]: Builder starting...
+[2026-08-16 02:49:34,148] [INFO ]: Copying to temp...
+[2026-08-16 02:49:34,163] [INFO ]: Copy done.
+[2026-08-16 02:49:34,163] [INFO ]: 
+[2026-08-16 02:49:34,187] [INFO ]: 
+[2026-08-16 02:49:34,188] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\biometrics"
+[2026-08-16 02:49:34,189] [INFO ]: Done.
+[2026-08-16 02:49:34,189] [INFO ]: 
+[2026-08-16 02:49:34,189] [INFO ]: Binarizing texture headers...
+[2026-08-16 02:49:34,565] [INFO ]: Done.
+[2026-08-16 02:49:34,565] [INFO ]: 
+[2026-08-16 02:49:34,565] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\biometrics"...
+[2026-08-16 02:49:34,966] [INFO ]: Done.
+[2026-08-16 02:49:34,967] [INFO ]: 
+[2026-08-16 02:49:34,967] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\biometrics.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPEC_SSE\_build_tmp\biometrics.pbo
+[2026-08-16 02:49:34,967] [INFO ]: Done.
+[2026-08-16 02:49:34,967] [INFO ]: 
+[2026-08-16 02:49:34,967] [INFO ]: Build Successful
         1 fichier(s) copi‚(s).
 [OK] addons\comspec_sse_biometrics.pbo 

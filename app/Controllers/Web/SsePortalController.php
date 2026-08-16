@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SseAccessCodeRepository;
 use App\Repositories\SseCaseRepository;
+use App\Repositories\SseCrossDecisionRepository;
 use App\Repositories\SseDocumentRepository;
 use App\Repositories\SseInterestCaseRepository;
 use App\Repositories\SseMeshRepository;
@@ -53,6 +54,7 @@ final class SsePortalController
         private ?SseMeshService $meshService = null,
         private ?SseWorkspaceService $workspace = null,
         private ?SseDocumentRepository $documents = null,
+        private ?SseCrossDecisionRepository $crossDecisions = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -82,6 +84,7 @@ final class SsePortalController
             $this->cross
         );
         $this->documents ??= new SseDocumentRepository();
+        $this->crossDecisions ??= new SseCrossDecisionRepository();
     }
 
     /** Sas d’entrée (public) */
@@ -422,44 +425,228 @@ final class SsePortalController
             ];
         }
 
+        return $this->portalView('atak.sse.interest_case_show', [
+            'title' => (string) ($case['reference_code'] ?? 'Pré-SSE'),
+            'interestCase' => $case,
+            'hypotheses' => $hypotheses,
+            'proposals' => $this->crossProposals((int) $case['id']),
+            'constitutedCase' => $this->cases->findByInterestCase($this->tenantId(), (int) $case['id']),
+            'activeNav' => 'interet',
+            'canManage' => $this->canManage(),
+        ]);
+    }
+
+    /**
+     * Constitue un dossier à partir d'un dossier d'intérêt instruit.
+     *
+     * C'est le passage qui manquait : le travail d'analyse reste au dossier
+     * d'intérêt, le dossier ouvert en reprend la substance et garde trace de son
+     * origine. Rien n'est déduit : seuls les éléments déjà écrits sont reportés.
+     */
+    public function interestCaseConstitute(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/interet/' . $id);
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $interest = $this->interestCases->findForTenant($id, $this->tenantId());
+        if ($interest === null) {
+            return Response::redirect(url('atak/sse/interet'));
+        }
+
+        $existing = $this->cases->findByInterestCase($this->tenantId(), $id);
+        if ($existing !== null) {
+            Session::flash('error', 'Un dossier a déjà été constitué à partir de ce dossier d’intérêt.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . (int) $existing['id']));
+        }
+
+        $summary = array_values(array_filter([
+            trim((string) ($interest['opening_reason'] ?? '')),
+            trim((string) ($interest['observed_elements'] ?? '')),
+            trim((string) ($interest['analysis_facts'] ?? '')),
+        ], static fn (string $s): bool => $s !== ''));
+
+        $origin = sprintf(
+            'Constitué à partir du dossier d’intérêt %s (%s).',
+            (string) ($interest['reference_code'] ?? ''),
+            (string) ($interest['temporary_designation'] ?? 'sujet non désigné')
+        );
+
+        $caseId = $this->cases->create([
+            'tenant_id' => $this->tenantId(),
+            'title' => (string) ($interest['temporary_designation'] ?? 'Dossier sans titre'),
+            'summary' => implode("\n\n", array_merge($summary, [$origin])),
+            'classification' => SseCaseRepository::CLASS_CONFIDENTIAL,
+            'status' => 'ouvert',
+            'interest_case_id' => $id,
+            'created_by' => (int) Session::get('user_id') ?: null,
+        ]);
+
+        $this->activityLog->record(
+            $this->tenantId(),
+            1,
+            'SSE_CASE',
+            sprintf(
+                'Dossier constitué à partir du dossier d’intérêt %s.',
+                (string) ($interest['reference_code'] ?? $id)
+            ),
+            (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Analyste')
+        );
+
+        Session::flash('success', 'Dossier ouvert à partir du dossier d’intérêt. Rattachez-y au moins une identité pour le rendre exploitable.');
+
+        return Response::redirect(url('atak/sse/dossiers/' . $caseId));
+    }
+
+    /**
+     * Rapprochements proposés pour un dossier d'intérêt, enrichis de la décision déjà
+     * prise. Les propositions sont recalculées à chaque ouverture ; seule la décision
+     * humaine est conservée.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function crossProposals(int $interestCaseId): array
+    {
+        $tenantId = $this->tenantId();
+        $decisions = $this->crossDecisions->mapForCase($tenantId, $interestCaseId);
         $proposals = [];
+
         try {
-            $matches = $this->cross->matchPersonsAgainstWatchlist($this->tenantId());
+            $matches = $this->cross->matchPersonsAgainstWatchlist($tenantId);
             foreach (array_slice(is_array($matches) ? $matches : [], 0, 5) as $row) {
                 if (!is_array($row)) {
                     continue;
                 }
                 $person = is_array($row['person'] ?? null) ? $row['person'] : [];
                 $top = is_array($row['matches'][0] ?? null) ? $row['matches'][0] : [];
+                $entry = is_array($top['entry'] ?? null) ? $top['entry'] : [];
+                $personId = (int) ($person['id'] ?? 0);
+                $entryId = (int) ($entry['id'] ?? 0);
+                if ($personId < 1 || $entryId < 1) {
+                    continue;
+                }
+
+                $entryName = trim(
+                    (string) ($entry['last_name'] ?? '') . ' ' . (string) ($entry['first_name'] ?? '')
+                );
+                if ($entryName === '') {
+                    $entryName = (string) ($entry['alias'] ?? 'entrée surveillée');
+                }
+
+                $decision = $decisions[$personId . ':' . $entryId] ?? null;
                 $proposals[] = [
-                    'title' => 'Corrélation proposée',
-                    'detail' => sprintf(
-                        '%s — %s',
-                        (string) ($person['display_name'] ?? 'Identité'),
-                        (string) ($top['reason'] ?? 'Rapprochement à confirmer')
-                    ),
+                    'person_id' => $personId,
+                    'entry_id' => $entryId,
+                    'person_name' => (string) ($person['display_name'] ?? 'Identité'),
+                    'entry_name' => $entryName,
+                    'reason' => (string) ($top['reason'] ?? 'Rapprochement à confirmer'),
                     'score' => (int) ($top['score'] ?? 0),
+                    'decision' => $decision,
                 ];
             }
         } catch (\Throwable) {
             $proposals = [];
         }
-        if ($proposals === []) {
-            $proposals[] = [
-                'title' => 'Corrélation proposée',
-                'detail' => 'Aucun rapprochement automatique fort — poursuivez la collecte et les croisements manuels.',
-                'score' => 0,
-            ];
+
+        // Les rapprochements déjà tranchés passent en fin de liste : le travail restant
+        // se lit en premier.
+        usort($proposals, static function (array $a, array $b): int {
+            $pending = (int) ($a['decision'] === null) <=> (int) ($b['decision'] === null);
+            if ($pending !== 0) {
+                return -$pending;
+            }
+
+            return (int) $b['score'] <=> (int) $a['score'];
+        });
+
+        return $proposals;
+    }
+
+    /** Tranche un rapprochement proposé : confirmé, maintenu séparé, ou à approfondir. */
+    public function interestCrossDecide(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/interet/' . $id);
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
         }
 
-        return $this->portalView('atak.sse.interest_case_show', [
-            'title' => (string) ($case['reference_code'] ?? 'Pré-SSE'),
-            'interestCase' => $case,
-            'hypotheses' => $hypotheses,
-            'proposals' => $proposals,
-            'activeNav' => 'interet',
-            'canManage' => $this->canManage(),
+        $case = $this->interestCases->findForTenant($id, $this->tenantId());
+        if ($case === null) {
+            return Response::redirect(url('atak/sse/interet'));
+        }
+
+        $personId = (int) $request->input('person_id', 0);
+        $entryId = (int) $request->input('entry_id', 0);
+        $decision = (string) $request->input('decision', '');
+        $author = (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Analyste');
+
+        if ($personId < 1 || $entryId < 1) {
+            Session::flash('error', 'Rapprochement introuvable — rechargez la page.');
+
+            return Response::redirect($back);
+        }
+
+        if ($decision === 'reouvrir') {
+            $this->crossDecisions->clear($this->tenantId(), $id, $personId, $entryId);
+            Session::flash('success', 'Décision retirée — le rapprochement redevient à traiter.');
+
+            return Response::redirect($back);
+        }
+
+        if (!SseCrossDecisionRepository::isDecision($decision)) {
+            Session::flash('error', 'Choisissez une décision valable pour ce rapprochement.');
+
+            return Response::redirect($back);
+        }
+
+        $ok = $this->crossDecisions->record($this->tenantId(), $id, [
+            'person_id' => $personId,
+            'entry_id' => $entryId,
+            'decision' => $decision,
+            'score' => (int) $request->input('score', 0),
+            'reason' => (string) $request->input('reason', ''),
+            'note' => trim((string) $request->input('note', '')),
+            'author_label' => $author,
+            'decided_by' => (int) Session::get('user_id') ?: null,
         ]);
+
+        if (!$ok) {
+            Session::flash('error', 'La décision n’a pas pu être enregistrée.');
+
+            return Response::redirect($back);
+        }
+
+        $this->activityLog->record(
+            $this->tenantId(),
+            1,
+            'SSE_CROSS',
+            sprintf(
+                '%s sur le dossier %s (identité n° %d, entrée surveillée n° %d).',
+                SseCrossDecisionRepository::decisionLabel($decision),
+                (string) ($case['reference_code'] ?? $id),
+                $personId,
+                $entryId
+            ),
+            $author
+        );
+
+        Session::flash('success', match ($decision) {
+            SseCrossDecisionRepository::CONFIRMED => 'Rapprochement confirmé et consigné au dossier.',
+            SseCrossDecisionRepository::SEPARATE => 'Rapprochement écarté : les deux identités restent distinctes.',
+            default => 'Analyse complémentaire demandée sur ce rapprochement.',
+        });
+
+        return Response::redirect($back);
     }
 
     public function caseCreateForm(Request $request, array $params = []): Response
@@ -680,6 +867,9 @@ final class SsePortalController
             $this->tenantId()
         );
 
+        $notes = $this->cases->listNotes($id, $this->tenantId());
+        $evidence = $this->cases->listEvidence($id, $this->tenantId());
+
         return $this->portalView('atak.sse.case_show', [
             'title' => $case['reference_code'] . ' — ' . $case['title'],
             'case' => $case,
@@ -687,8 +877,12 @@ final class SsePortalController
             'availablePeople' => $available,
             'caseSites' => $caseSites,
             'siteCounts' => $siteCounts,
-            'notes' => $this->cases->listNotes($id, $this->tenantId()),
-            'evidence' => $this->cases->listEvidence($id, $this->tenantId()),
+            'notes' => $notes,
+            'evidence' => $evidence,
+            'caseProgress' => $this->caseProgress($id, $case, $people, $caseSites, $evidence),
+            'originInterestCase' => !empty($case['interest_case_id'])
+                ? $this->interestCases->findForTenant((int) $case['interest_case_id'], $this->tenantId())
+                : null,
             'classifications' => SseCaseRepository::CLASSIFICATION_LABELS,
             'statuses' => SseCaseRepository::STATUS_LABELS,
             'canManage' => $this->canManage(),
@@ -697,6 +891,109 @@ final class SsePortalController
             'activeNav' => 'dossiers',
             'sseNeedLeaflet' => true,
         ]);
+    }
+
+    /**
+     * Où en est le dossier : ce qui est fait, ce qui manque, et l'écran où le faire.
+     *
+     * Un dossier n'est exploitable qu'à partir du moment où il désigne quelqu'un :
+     * l'identité rattachée est la seule étape qui décide de la complétude, les
+     * autres jalonnent le travail sans le bloquer.
+     *
+     * @param array<string, mixed> $case
+     * @param list<array<string, mixed>> $people
+     * @param list<array<string, mixed>> $sites
+     * @param list<array<string, mixed>> $evidence
+     * @return array{complete: bool, done: int, total: int, steps: list<array<string, mixed>>}
+     */
+    private function caseProgress(int $caseId, array $case, array $people, array $sites, array $evidence): array
+    {
+        $tenantId = $this->tenantId();
+        $base = url('atak/sse/dossiers/' . $caseId);
+
+        try {
+            $relations = $this->correlation->listStored($caseId, $tenantId);
+        } catch (\Throwable) {
+            $relations = [];
+        }
+
+        try {
+            $documents = $this->documents->listForTenant($tenantId, ['case_id' => $caseId]);
+        } catch (\Throwable) {
+            $documents = [];
+        }
+
+        $steps = [
+            [
+                'key' => 'identites',
+                'label' => 'Désigner qui est concerné',
+                'hint' => 'Rattachez au moins une identité au dossier : sans elle, le dossier ne désigne personne.',
+                'count' => count($people),
+                'unit' => 'identité',
+                'required' => true,
+                'href' => $base,
+                'action' => 'Rattacher une identité',
+            ],
+            [
+                'key' => 'sites',
+                'label' => 'Situer les faits',
+                'hint' => 'Les lieux exploités, fouillés ou observés.',
+                'count' => count($sites),
+                'unit' => 'site',
+                'required' => false,
+                'href' => url('atak/sse/sites'),
+                'action' => 'Ajouter un site',
+            ],
+            [
+                'key' => 'pieces',
+                'label' => 'Verser les pièces',
+                'hint' => 'Saisies, photographies, éléments matériels recueillis.',
+                'count' => count($evidence),
+                'unit' => 'pièce',
+                'required' => false,
+                'href' => $base,
+                'action' => 'Verser une pièce',
+            ],
+            [
+                'key' => 'liens',
+                'label' => 'Relier les éléments',
+                'hint' => 'Ce qui relie les identités, les lieux et les pièces entre eux.',
+                'count' => count($relations),
+                'unit' => 'lien',
+                'required' => false,
+                'href' => $base . '/correlations',
+                'action' => 'Poser un lien',
+            ],
+            [
+                'key' => 'redaction',
+                'label' => 'Rédiger et conclure',
+                'hint' => 'Le compte rendu qui sera transmis hors de la cellule.',
+                'count' => count($documents),
+                'unit' => 'document',
+                'required' => false,
+                'href' => url('atak/sse/documents'),
+                'action' => 'Ouvrir la rédaction',
+            ],
+        ];
+
+        $done = 0;
+        $complete = true;
+        foreach ($steps as $i => $step) {
+            $ok = (int) $step['count'] > 0;
+            $steps[$i]['done'] = $ok;
+            if ($ok) {
+                $done++;
+            } elseif (!empty($step['required'])) {
+                $complete = false;
+            }
+        }
+
+        return [
+            'complete' => $complete,
+            'done' => $done,
+            'total' => count($steps),
+            'steps' => $steps,
+        ];
     }
 
     public function caseUnlockForm(Request $request, array $params = []): Response
@@ -1238,6 +1535,7 @@ final class SsePortalController
             'stored' => $this->correlation->listStored($id, $this->tenantId()),
             'relationLabels' => SseCorrelationService::RELATION_LABELS,
             'reliabilityLabels' => SseCorrelationService::RELIABILITY_LABELS,
+            'nodeTypeLabels' => SseCorrelationService::NODE_TYPE_LABELS,
             'canManage' => $this->canManage(),
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),
@@ -1257,11 +1555,33 @@ final class SsePortalController
             return Response::redirect($back);
         }
 
+        // Les deux extrémités sont désignées par « type:identifiant » et doivent
+        // appartenir au graphe du dossier : on ne relie pas un élément d'un autre
+        // compartiment depuis ce formulaire.
+        $graph = $this->correlation->graphForCase($id, $this->tenantId());
+        $fromKey = (string) $request->input('from', '');
+        $toKey = (string) $request->input('to', '');
+        if ($fromKey === '' && $request->input('from_id') !== null) {
+            $fromKey = 'person:' . (int) $request->input('from_id', 0);
+        }
+        if ($toKey === '' && $request->input('to_id') !== null) {
+            $toKey = 'person:' . (int) $request->input('to_id', 0);
+        }
+
+        if (!isset($graph['nodes'][$fromKey], $graph['nodes'][$toKey]) || $fromKey === $toKey) {
+            Session::flash('error', 'Choisissez deux éléments différents du dossier.');
+
+            return Response::redirect($back);
+        }
+
+        [$fromType, $fromId] = explode(':', $fromKey, 2);
+        [$toType, $toId] = explode(':', $toKey, 2);
+
         $ok = $this->correlation->addRelation($this->tenantId(), $id, [
-            'from_type' => 'person',
-            'from_id' => (int) $request->input('from_id', 0),
-            'to_type' => 'person',
-            'to_id' => (int) $request->input('to_id', 0),
+            'from_type' => $fromType,
+            'from_id' => (int) $fromId,
+            'to_type' => $toType,
+            'to_id' => (int) $toId,
             'relation' => (string) $request->input('relation', 'associe'),
             'reliability' => (string) $request->input('reliability', 'unverified'),
             'note' => (string) $request->input('note', ''),
@@ -1269,8 +1589,8 @@ final class SsePortalController
         ]);
 
         Session::flash($ok ? 'success' : 'error', $ok
-            ? 'Relation enregistrée.'
-            : 'Relation refusée — vérifiez les deux personnes désignées.');
+            ? 'Lien enregistré.'
+            : 'Lien refusé — vérifiez les deux éléments désignés.');
 
         return Response::redirect($back);
     }
@@ -2206,9 +2526,13 @@ final class SsePortalController
             'q' => (string) $request->query('q', ''),
         ];
 
+        $counts = $this->documents->countsByStatus($this->tenantId());
+
         return $this->portalView('atak.sse.documents', [
             'title' => 'Atelier de rédaction',
             'documents' => $this->documents->listForTenant($this->tenantId(), $filters),
+            'statusCounts' => $counts,
+            'documentsTotal' => (int) ($counts['total'] ?? 0),
             'typeLabels' => SseDocumentRepository::TYPE_LABELS,
             'statusLabels' => SseDocumentRepository::STATUS_LABELS,
             'filterStatus' => $filters['status'],

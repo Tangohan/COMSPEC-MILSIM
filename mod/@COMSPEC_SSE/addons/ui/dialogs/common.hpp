@@ -1,12 +1,8 @@
 /*
     Styles / définitions communes UI SSE
 */
-class RscText;
-class RscButton;
-class RscStructuredText;
-class RscListBox;
-class RscEdit;
-class RscCombo;
+// Les classes de base (RscText, RscButton, RscStructuredText, RscListBox,
+// RscEdit, RscCombo) sont déclarées dans config.cpp avant l’inclusion.
 
 #define SSE_UI_BG {0.03,0.06,0.04,0.97}
 #define SSE_UI_HDR {0.07,0.18,0.08,1}

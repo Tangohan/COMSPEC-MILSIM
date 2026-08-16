@@ -92,6 +92,10 @@ $kindColors = [
         <div class="panel-header sse-mesh-stage-head">
             <div class="panel-title"><span class="panel-index">01</span> Canevas</div>
             <div class="panel-meta sse-mesh-toolbar">
+                <?php if ($canManage): ?>
+                    <button type="button" class="btn btn--ghost btn--sm" id="sse-mesh-link-mode"
+                            aria-pressed="false" title="Relier deux entités en cliquant l’une puis l’autre">Relier deux entités</button>
+                <?php endif; ?>
                 <button type="button" class="btn btn--ghost btn--sm" id="sse-mesh-relayout" title="Réorganiser automatiquement">Réorganiser</button>
                 <button type="button" class="btn btn--ghost btn--sm" id="sse-mesh-fit" title="Recadrer la vue">Recadrer</button>
                 <?php if ($canManage): ?>
@@ -123,7 +127,43 @@ $kindColors = [
                     </span>
                 <?php endforeach; ?>
             </div>
-            <div class="sse-mesh-hint">Glisser les nœuds · molette pour zoomer · clic pour sélectionner · clic droit pour les actions</div>
+            <div class="sse-mesh-hint" id="sse-mesh-hint">
+                Glisser les nœuds · molette pour zoomer · clic pour sélectionner · clic droit pour les actions<?= $canManage ? ' · Maj + glisser d’une entité vers une autre pour les relier' : '' ?>
+            </div>
+
+            <?php if ($canManage): ?>
+            <form class="sse-mesh-linkbox" id="sse-mesh-linkbox" method="post"
+                  action="<?= $h(url('atak/sse/toiles/' . $meshId . '/liens')) ?>" hidden>
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="from_node_id" id="sse-mesh-link-from">
+                <input type="hidden" name="to_node_id" id="sse-mesh-link-to">
+                <p class="sse-mesh-linkbox__title">Nouveau lien</p>
+                <p class="sse-mesh-linkbox__pair">
+                    <strong id="sse-mesh-link-from-label"></strong>
+                    <span>vers</span>
+                    <strong id="sse-mesh-link-to-label"></strong>
+                </p>
+                <label for="sse-mesh-link-relation">Nature du lien</label>
+                <select id="sse-mesh-link-relation" name="relation">
+                    <?php foreach ($relationLabels as $k => $lab): ?>
+                        <option value="<?= $h($k) ?>"><?= $h($lab) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <label for="sse-mesh-link-reliability">Fiabilité</label>
+                <select id="sse-mesh-link-reliability" name="reliability">
+                    <?php foreach ($reliabilityLabels as $k => $lab): ?>
+                        <option value="<?= $h($k) ?>"><?= $h($lab) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <label for="sse-mesh-link-note">Sur quoi repose le lien</label>
+                <input type="text" id="sse-mesh-link-note" name="note" maxlength="255"
+                       placeholder="Observation, document, témoignage…">
+                <div class="sse-mesh-linkbox__actions">
+                    <button type="button" class="btn btn--ghost btn--sm" id="sse-mesh-link-cancel">Annuler</button>
+                    <button type="submit" class="btn btn--sm">Enregistrer le lien</button>
+                </div>
+            </form>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -373,7 +413,7 @@ window.SSE_MESH = {
   kindLabels: <?= $j($kindLabels) ?>
 };
 </script>
-<script src="<?= $h(asset_url('assets/js/sse-mesh.js')) ?>?v=202608072010"></script>
+<script src="<?= $h(asset_url('assets/js/sse-mesh.js')) ?>?v=202608160400"></script>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

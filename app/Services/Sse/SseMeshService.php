@@ -39,6 +39,8 @@ final class SseMeshService
                 'person' => 'person',
                 'site' => 'site',
                 'seizure' => 'seizure',
+                'evidence' => 'seizure',
+                'document' => 'document',
                 'room' => 'site',
                 default => 'custom',
             };

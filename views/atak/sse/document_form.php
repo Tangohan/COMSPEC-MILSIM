@@ -140,6 +140,12 @@ foreach ($cases as $c) {
                    placeholder="Ex. Flash — découverte cache armes secteur Nord">
 
             <label for="body">Corps du document</label>
+            <div class="sse-desk-tools">
+                <button class="btn btn--ghost btn--sm" type="button" id="sse-mask-btn">
+                    Masquer le passage sélectionné
+                </button>
+                <span class="muted">Le passage devient une barre noire sur la feuille, sa longueur reste visible.</span>
+            </div>
             <div class="sse-desk-paper">
                 <textarea id="body" name="body" rows="26" required
                           placeholder="Structurez le produit : situation, faits, analyse, recommandations."><?= $h($prefillBody) ?></textarea>
@@ -193,6 +199,17 @@ foreach ($cases as $c) {
             .replace(/"/g, '&quot;');
     }
 
+    function escMasked(s) {
+        return esc(s).replace(/\[\[(.*?)\]\]/g, function (all, inner) {
+            var raw = String(inner).trim();
+            var sized = raw.match(/^#(\d{1,3})$/);
+            var width = sized ? parseInt(sized[1], 10) : raw.length;
+            width = Math.max(3, Math.min(90, width));
+            return '<span class="sse-doc-paper__redact" style="display:inline-block;width:'
+                + width + 'ch;height:0.95em;background:#0b1220"></span>';
+        });
+    }
+
     function bodyToHtml(raw) {
         var lines = String(raw || '').replace(/\r\n|\r/g, '\n').split('\n');
         var out = [];
@@ -217,23 +234,23 @@ foreach ($cases as $c) {
             }
             var up = t.toUpperCase();
             if (titles[up] || titles[t]) {
-                out.push('<h1 class="sse-doc-paper__doc-title">' + esc(t) + '</h1>');
+                out.push('<h1 class="sse-doc-paper__doc-title">' + escMasked(t) + '</h1>');
                 return;
             }
             if (/^\d+\.\s+.+/.test(t) || /^AVERTISSEMENT$/i.test(t)
                 || (t === up && t.length < 80 && t.indexOf(':') === -1 && t.charAt(0) !== '─')) {
-                out.push('<h2 class="sse-doc-paper__section">' + esc(t) + '</h2>');
+                out.push('<h2 class="sse-doc-paper__section">' + escMasked(t) + '</h2>');
                 return;
             }
             if (/^.+:\s*$/.test(t) && t.length < 90) {
-                out.push('<p class="sse-doc-paper__label">' + esc(t) + '</p>');
+                out.push('<p class="sse-doc-paper__label">' + escMasked(t) + '</p>');
                 return;
             }
             if (t.indexOf('• ') === 0 || t.indexOf('- ') === 0 || /^H\d+\s/.test(t)) {
-                out.push('<p class="sse-doc-paper__bullet">' + esc(t) + '</p>');
+                out.push('<p class="sse-doc-paper__bullet">' + escMasked(t) + '</p>');
                 return;
             }
-            out.push('<p class="sse-doc-paper__p">' + esc(t) + '</p>');
+            out.push('<p class="sse-doc-paper__p">' + escMasked(t) + '</p>');
         });
         return out.join('\n') || '<p class="sse-doc-paper__muted">Le corps du document apparaîtra ici.</p>';
     }
@@ -242,10 +259,16 @@ foreach ($cases as $c) {
         if (hintEl) {
             hintEl.textContent = hints[typeEl.value] || 'Choisissez le format adapté au destinataire.';
         }
-        var banner = paper.querySelector('.sse-doc-paper__banner');
         var wm = paper.querySelector('.sse-doc-paper__watermark');
         var classLab = classLabels[classEl.value] || classEl.options[classEl.selectedIndex].text;
-        if (banner) banner.textContent = 'Classification — ' + classLab;
+        Array.prototype.forEach.call(
+            paper.querySelectorAll('.sse-doc-paper__banner strong'),
+            function (el) { el.textContent = String(classLab).toUpperCase(); }
+        );
+        Array.prototype.forEach.call(
+            paper.querySelectorAll('.sse-doc-paper__stamp--class'),
+            function (el) { el.textContent = String(classLab).toUpperCase(); }
+        );
         if (wm) wm.textContent = String(classLab).toUpperCase();
 
         var typeLab = typeLabels[typeEl.value] || typeEl.options[typeEl.selectedIndex].text;
@@ -286,6 +309,23 @@ foreach ($cases as $c) {
         }
         syncMeta();
     });
+
+    var maskBtn = document.getElementById('sse-mask-btn');
+    if (maskBtn) {
+        maskBtn.addEventListener('click', function () {
+            var start = bodyEl.selectionStart;
+            var end = bodyEl.selectionEnd;
+            if (start === end) {
+                bodyEl.focus();
+                return;
+            }
+            var selected = bodyEl.value.slice(start, end);
+            bodyEl.value = bodyEl.value.slice(0, start) + '[[' + selected + ']]' + bodyEl.value.slice(end);
+            bodyEl.focus();
+            bodyEl.setSelectionRange(start, end + 4);
+            syncMeta();
+        });
+    }
 
     ['input', 'change'].forEach(function (ev) {
         titleEl.addEventListener(ev, syncMeta);

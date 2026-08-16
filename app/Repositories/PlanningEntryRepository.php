@@ -121,6 +121,19 @@ final class PlanningEntryRepository
             }
         }
 
+        // Restriction à plusieurs natures de fiche : un mur d'opérations ne doit
+        // pas afficher les formations ou les informations pratiques.
+        $types = $filters['entry_types'] ?? null;
+        if (is_array($types) && $types !== []) {
+            $placeholders = [];
+            foreach (array_values($types) as $i => $type) {
+                $key = 'entry_type_' . $i;
+                $placeholders[] = ':' . $key;
+                $params[$key] = (string) $type;
+            }
+            $where[] = 'e.entry_type IN (' . implode(', ', $placeholders) . ')';
+        }
+
         $tag = trim((string) ($filters['tag'] ?? ''));
         if ($tag !== '') {
             $where[] = 'EXISTS (SELECT 1 FROM planning_entry_tags t WHERE t.planning_entry_id = e.id AND t.tag = :tag)';

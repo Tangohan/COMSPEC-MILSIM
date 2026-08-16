@@ -111,11 +111,14 @@ $face = static function (array $p) use ($h): string {
         </div>
         <div class="jnet-panel__body">
             <?php foreach ($currentOps as $op): ?>
-                <a class="jnet-op-row" href="<?= $h((string) ($op['href'] ?? url('jnet/operations'))) ?>">
+                <a class="jnet-op-row" href="<?= $h(url('jnet/operations/' . (int) ($op['id'] ?? 0))) ?>">
                     <strong><?= $h((string) ($op['title'] ?? '')) ?></strong>
                     <span class="jnet-badge <?= ($op['state_key'] ?? '') === 'active' ? 'jnet-badge--ok' : 'jnet-badge--watch' ?>"><?= $h((string) ($op['state'] ?? '')) ?></span>
                 </a>
             <?php endforeach; ?>
+            <?php if ($currentOps === []): ?>
+                <p class="jnet-empty">Aucune opération engagée. Les missions ouvertes sur le tableau opérationnel apparaîtront ici.</p>
+            <?php endif; ?>
         </div>
     </section>
 

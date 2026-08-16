@@ -1,6 +1,4 @@
-class RscText;
-class RscButton;
-class RscListbox;
+// RscText / RscButton / RscListbox sont déclarés dans config.cpp avant l’inclusion.
 
 class COMSPEC_SSE_ModelDialog {
     idd = 93030;

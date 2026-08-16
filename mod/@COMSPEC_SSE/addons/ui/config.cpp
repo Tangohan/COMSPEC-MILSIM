@@ -47,5 +47,13 @@ class CfgFunctions {
     };
 };
 
+// Classes de base déclarées une seule fois : chaque dialogue inclus ensuite les réutilise.
+class RscText;
+class RscButton;
+class RscStructuredText;
+class RscListBox;
+class RscEdit;
+class RscCombo;
+
 #include "dialogs\resultDialog.hpp"
 #include "dialogs\screens.hpp"

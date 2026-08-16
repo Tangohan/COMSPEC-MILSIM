@@ -2474,6 +2474,13 @@ if (is_file($msgSql)) {
     }
 }
 
+$jnetMessagingMigrate = require $root . '/bootstrap/jnet_messaging_migration.php';
+try {
+    $jnetMessagingMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] jnet_messaging : ' . $e->getMessage() . "\n";
+}
+
 // Permission messagerie interne : comms.tenant_messages.receive (+ liaison rôles gouvernance)
 try {
     $permSlug = 'comms.tenant_messages.receive';
@@ -3381,6 +3388,24 @@ try {
     $atakSseInterestMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_interest_cases : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakSseCaseOriginMigrate = require $root . '/bootstrap/atak_sse_case_origin_migration.php';
+try {
+    echo "Migration atak_sse_case_origin (SSE — origine des dossiers)…\n";
+    $atakSseCaseOriginMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_case_origin : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakSseCrossDecisionsMigrate = require $root . '/bootstrap/atak_sse_cross_decisions_migration.php';
+try {
+    echo "Migration atak_sse_cross_decisions (SSE — décisions de rapprochement)…\n";
+    $atakSseCrossDecisionsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_cross_decisions : ' . $e->getMessage() . "\n";
 }
 $migrationEnsurePdo();
 

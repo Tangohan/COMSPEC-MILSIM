@@ -348,6 +348,10 @@ return function (Router $router) {
     $router->get('/jnet/exploitation', [JnetPortalController::class, 'exploitation'], [AuthMiddleware::class]);
     $router->get('/jnet/bibliotheque', [JnetPortalController::class, 'library'], [AuthMiddleware::class]);
     $router->get('/jnet/courrier', [JnetPortalController::class, 'mail'], [AuthMiddleware::class]);
+    $router->get('/jnet/courrier/nouveau', [JnetPortalController::class, 'mailCompose'], [AuthMiddleware::class]);
+    $router->post('/jnet/courrier/nouveau', [JnetPortalController::class, 'mailSend'], [AuthMiddleware::class]);
+    $router->post('/jnet/courrier/lu', [JnetPortalController::class, 'mailMarkAllRead'], [AuthMiddleware::class]);
+    $router->post('/jnet/courrier/{id}/reponse', [JnetPortalController::class, 'mailReply'], [AuthMiddleware::class]);
     $router->get('/jnet/systeme', [JnetPortalController::class, 'system'], [AuthMiddleware::class]);
     $router->post('/jnet/systeme/bascule', [JnetPortalController::class, 'switchPortal'], [AuthMiddleware::class]);
     // Anciennes routes JNET → nouvelles
@@ -633,6 +637,8 @@ return function (Router $router) {
     $router->get('/atak/sse/interet/nouveau', [SsePortalController::class, 'interestCaseCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/interet', [SsePortalController::class, 'interestCaseStore'], $mwSsePortal);
     $router->get('/atak/sse/interet/{id}', [SsePortalController::class, 'interestCaseShow'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/croisements', [SsePortalController::class, 'interestCrossDecide'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/constituer', [SsePortalController::class, 'interestCaseConstitute'], $mwSsePortal);
     $router->get('/atak/sse/personnes', [SsePortalController::class, 'personsIndex'], $mwSsePortal);
     $router->get('/atak/sse/sites', [SsePortalController::class, 'sitesIndex'], $mwSsePortal);
     $router->get('/atak/sse/sites/{id}', [SsePortalController::class, 'siteShow'], $mwSsePortal);

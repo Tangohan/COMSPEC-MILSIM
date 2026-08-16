@@ -354,4 +354,161 @@ class TenantMessageRepository
         );
         $stmt->execute([$threadId, $userId]);
     }
+
+    /** Colonnes de diffusion (précédence, destinataires) : absentes tant que la migration n’est pas passée. */
+    private function hasColumn(string $table, string $column): bool
+    {
+        static $cache = [];
+        $key = $table . '.' . $column;
+        if (!array_key_exists($key, $cache)) {
+            try {
+                $stmt = $this->pdo->prepare(
+                    'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+                );
+                $stmt->execute([$table, $column]);
+                $cache[$key] = (bool) $stmt->fetchColumn();
+            } catch (\PDOException) {
+                $cache[$key] = false;
+            }
+        }
+
+        return $cache[$key];
+    }
+
+    public function supportsDiffusionMetadata(): bool
+    {
+        return $this->hasColumn('tenant_message_threads', 'precedence')
+            && $this->hasColumn('tenant_message_thread_users', 'recipient_kind');
+    }
+
+    /**
+     * Fils d’un membre, filtrés par boîte : réception, non lus, envoyés.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listThreadsForUserByBox(int $tenantId, int $userId, string $box = 'inbox', int $limit = 120): array
+    {
+        $lim = max(1, min(200, $limit));
+        $meta = $this->supportsDiffusionMetadata();
+        $metaSelect = $meta ? 't.precedence, t.recipients_summary, t.origin,' : '';
+        $where = '';
+        if ($box === 'unread') {
+            $where = " AND t.updated_at > COALESCE(tu.last_read_at, '1970-01-01')";
+        } elseif ($box === 'sent') {
+            $where = ' AND EXISTS (SELECT 1 FROM tenant_messages ms WHERE ms.thread_id = t.id AND ms.sender_user_id = tu.user_id)';
+        }
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT t.id, t.subject, t.created_at, t.updated_at, {$metaSelect}
+                (SELECT body FROM tenant_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_preview,
+                (SELECT sender_user_id FROM tenant_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_sender_id,
+                (SELECT COUNT(*) FROM tenant_messages WHERE thread_id = t.id) AS message_count,
+                (SELECT COUNT(*) FROM tenant_message_thread_users WHERE thread_id = t.id) AS participant_count,
+                (t.updated_at > COALESCE(tu.last_read_at, '1970-01-01')) AS has_unread
+                FROM tenant_message_threads t
+                INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
+                WHERE t.tenant_id = ?{$where}
+                ORDER BY t.updated_at DESC, t.id DESC
+                LIMIT {$lim}"
+            );
+            $stmt->execute([$userId, $tenantId]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\PDOException $e) {
+            if ($e->getCode() === '42S02' || str_contains($e->getMessage(), "doesn't exist")) {
+                return [];
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Participants d’un fil avec leur qualité (expéditeur / destinataire) et le groupe de diffusion d’origine.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listThreadParticipants(int $threadId): array
+    {
+        $meta = $this->hasColumn('tenant_message_thread_users', 'recipient_kind');
+        $select = $meta ? 'tu.recipient_kind, tu.via_label,' : '';
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT tu.user_id, {$select} u.display_name, u.email
+                FROM tenant_message_thread_users tu
+                INNER JOIN users u ON u.id = tu.user_id
+                WHERE tu.thread_id = ?
+                ORDER BY u.display_name ASC"
+            );
+            $stmt->execute([$threadId]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\PDOException) {
+            return [];
+        }
+    }
+
+    /**
+     * Crée un fil de diffusion : expéditeur + destinataires résolus, avec la trace du groupe utilisé.
+     *
+     * @param array<int, string|null> $recipients identifiant destinataire => groupe d’origine (ou null si nominatif)
+     */
+    public function createDiffusionThread(
+        int $tenantId,
+        int $senderUserId,
+        string $subject,
+        array $recipients,
+        string $precedence = 'routine',
+        string $recipientsSummary = '',
+        string $origin = 'jnet'
+    ): int {
+        $subject = trim($subject) === '' ? 'Sans objet' : trim($subject);
+        $meta = $this->supportsDiffusionMetadata();
+
+        if ($meta) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO tenant_message_threads (tenant_id, subject, created_by_user_id, origin, precedence, recipients_summary, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())'
+            );
+            $stmt->execute([
+                $tenantId,
+                $subject,
+                $senderUserId,
+                $origin,
+                $precedence,
+                mb_substr($recipientsSummary, 0, 250),
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO tenant_message_threads (tenant_id, subject, created_by_user_id, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())'
+            );
+            $stmt->execute([$tenantId, $subject, $senderUserId]);
+        }
+        $threadId = (int) $this->pdo->lastInsertId();
+
+        if ($meta) {
+            $ins = $this->pdo->prepare(
+                'INSERT INTO tenant_message_thread_users (thread_id, user_id, recipient_kind, via_label, last_read_at) VALUES (?, ?, ?, ?, ?)'
+            );
+            $ins->execute([$threadId, $senderUserId, 'sender', null, date('Y-m-d H:i:s')]);
+            foreach ($recipients as $userId => $viaLabel) {
+                $userId = (int) $userId;
+                if ($userId < 1 || $userId === $senderUserId) {
+                    continue;
+                }
+                $ins->execute([$threadId, $userId, 'to', $viaLabel !== null ? mb_substr((string) $viaLabel, 0, 150) : null, null]);
+            }
+        } else {
+            $ins = $this->pdo->prepare('INSERT IGNORE INTO tenant_message_thread_users (thread_id, user_id) VALUES (?, ?)');
+            $ins->execute([$threadId, $senderUserId]);
+            foreach (array_keys($recipients) as $userId) {
+                $userId = (int) $userId;
+                if ($userId > 0 && $userId !== $senderUserId) {
+                    $ins->execute([$threadId, $userId]);
+                }
+            }
+        }
+
+        return $threadId;
+    }
 }

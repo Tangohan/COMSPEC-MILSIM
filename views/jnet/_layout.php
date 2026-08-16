@@ -62,14 +62,14 @@ $navIndex = 0;
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_portal.css')) ?>?v=202608160120">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_portal.css')) ?>?v=202608160530">
 </head>
 <body class="jnet-iw">
 
 <div class="jnet-app">
     <header class="jnet-topbar" role="banner">
         <div class="jnet-brand">
-            <strong>JNET</strong>
+            <strong>JNET <sup>Bêta</sup></strong>
             <span>Extranet d’unité</span>
         </div>
 
@@ -129,6 +129,15 @@ $navIndex = 0;
         </aside>
 
         <main class="jnet-main">
+            <aside class="jnet-beta">
+                <span class="jnet-beta__tag">Version bêta</span>
+                <p>
+                    Le portail est encore en construction : la structure est posée, mais une bonne partie
+                    des contenus affichés sont des exemples de démonstration. Ne vous en servez pas encore
+                    comme référence pour la conduite des opérations — passez par le tableau de bord, la carte
+                    ou la messagerie habituels. Les sections seront fiabilisées une par une.
+                </p>
+            </aside>
             <?php if ($error): ?><div class="jnet-flash jnet-flash--err"><?= $h((string) $error) ?></div><?php endif; ?>
             <?php if ($success): ?><div class="jnet-flash jnet-flash--ok"><?= $h((string) $success) ?></div><?php endif; ?>
             <div class="jnet-stage">
