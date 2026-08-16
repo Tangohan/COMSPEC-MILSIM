@@ -763,7 +763,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0");
+            Output(output, outputSize, "COMSPECExtension 2.0.1");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1071,13 +1071,13 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0";
+            return "OK|COMSPECExtension 2.0.1";
         }
 
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.1", "COMSPEC Extension ATAK");
         }
 
         // Alerte Windows : marche à suivre pour lier le compte Athena (bloquant, thread OK).
@@ -4001,27 +4001,27 @@ public static class Extension
         string? identityKey = null;
 
         // Attente non bloquante du flush disque (BCE / Arma_ScreenShot) — max ~4 s.
+        // Abandon rapide si le dossier parent Windows est mort (Photo Library obsolète).
         for (var attempt = 0; attempt < 10; attempt++)
         {
             resolved = ResolveLocalImagePath(job.RawPath, attempt >= 6 ? newestFallback : null);
             if (resolved != null) break;
-            // Chemin absolu mort (Photo Library obsolète) : abandon rapide.
             try
             {
                 var p = job.RawPath.Replace('/', '\\');
+                var parent = Path.GetDirectoryName(p);
+                var parentMissing = !string.IsNullOrWhiteSpace(parent) && !Directory.Exists(parent);
+                // Chemin absolu Windows mort, ou parent manquant après 1er essai → stop.
+                if (parentMissing && attempt >= 1)
+                    break;
                 if (Path.IsPathRooted(p)
-                    && !(p.StartsWith('\\') && !p.StartsWith("\\\\", StringComparison.Ordinal)))
+                    && !(p.StartsWith('\\') && !p.StartsWith("\\\\", StringComparison.Ordinal))
+                    && parentMissing)
                 {
-                    var parent = Path.GetDirectoryName(p);
-                    if (!string.IsNullOrWhiteSpace(parent) && !Directory.Exists(parent)
-                        && attempt >= 1)
-                    {
-                        // Un seul essai de repli par nom de fichier, puis abandon.
-                        var orphan = Path.GetFileName(p);
-                        if (!string.IsNullOrWhiteSpace(orphan))
-                            resolved = FindScreenshotByFileName(orphan);
-                        break;
-                    }
+                    var orphan = Path.GetFileName(p);
+                    if (!string.IsNullOrWhiteSpace(orphan))
+                        resolved = FindScreenshotByFileName(orphan);
+                    break;
                 }
             }
             catch { /* ignore */ }
@@ -4030,7 +4030,9 @@ public static class Extension
 
         if (resolved == null)
         {
-            ReleasePhotoDedup(job.DedupKey);
+            // Ne pas libérer le dédup : un fichier définitivement introuvable
+            // (Photo Library morte / srcdir_missing) ne doit pas être re-scanné
+            // en boucle (coût disque + risque STATUS_STACK_OVERFLOW).
             var hint = string.IsNullOrWhiteSpace(job.RawPath)
                 ? "empty_path"
                 : Path.GetFileName(job.RawPath.Replace('/', '\\'));
@@ -4170,10 +4172,13 @@ public static class Extension
                 try
                 {
                     if (!Directory.Exists(dir)) continue;
+                    // Jamais surveiller la racine Arma / un dossier « fourre-tout » :
+                    // IncludeSubdirectories dessus = tempête d’événements + scans fatals.
+                    if (!IsScreenshotCaptureDir(dir)) continue;
                     var w = new FileSystemWatcher(dir)
                     {
                         Filter = "*.*",
-                        IncludeSubdirectories = true,
+                        IncludeSubdirectories = false,
                         NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime,
                         InternalBufferSize = 64 * 1024,
                         EnableRaisingEvents = true
@@ -4581,11 +4586,12 @@ public static class Extension
         }
 
         var fileName = Path.GetFileName(path);
+        string? byNameOnce = null;
         if (!string.IsNullOrWhiteSpace(fileName))
         {
-            var byName = FindScreenshotByFileName(fileName);
-            if (byName != null)
-                return byName;
+            byNameOnce = FindScreenshotByFileName(fileName);
+            if (byNameOnce != null)
+                return byNameOnce;
         }
 
         if (newestFallback.HasValue)
@@ -4596,6 +4602,7 @@ public static class Extension
         }
 
         // Attente courte uniquement si le dossier source existe (écriture BCE en cours).
+        // Pas de re-scan global : FindScreenshotByFileName a déjà été tenté une fois.
         var parentExists = false;
         try
         {
@@ -4604,8 +4611,7 @@ public static class Extension
         }
         catch { /* ignore */ }
 
-        if (!parentExists && Path.IsPathRooted(path)
-            && !(path.StartsWith('\\') && !path.StartsWith("\\\\", StringComparison.Ordinal)))
+        if (!parentExists)
             return null;
 
         const int maxAttempts = 6;
@@ -4616,13 +4622,6 @@ public static class Extension
                 var found = TryReadableImageFile(candidate);
                 if (found != null)
                     return found;
-            }
-
-            if (!string.IsNullOrWhiteSpace(fileName) && attempt >= 1)
-            {
-                var byName = FindScreenshotByFileName(fileName);
-                if (byName != null)
-                    return byName;
             }
 
             if (newestFallback.HasValue && attempt >= 3)
@@ -4792,7 +4791,35 @@ public static class Extension
     }
 
     /// <summary>
-    /// Cherche un fichier image par nom (et stem .jpg↔.png) dans les dossiers Screenshots, y compris sous-dossiers.
+    /// True si le dossier est un vrai dossier de captures (Screenshots / Screenshot / Captures COMSPEC).
+    /// Évite de traiter la racine Arma 3 comme source de photos.
+    /// </summary>
+    private static bool IsScreenshotCaptureDir(string dir)
+    {
+        try
+        {
+            var name = Path.GetFileName(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            if (string.IsNullOrWhiteSpace(name)) return false;
+            if (name.Equals("Screenshots", StringComparison.OrdinalIgnoreCase)) return true;
+            if (name.Equals("Screenshot", StringComparison.OrdinalIgnoreCase)) return true;
+            if (name.Equals("Captures", StringComparison.OrdinalIgnoreCase))
+            {
+                var parent = Directory.GetParent(dir)?.Name;
+                return parent != null
+                    && parent.Equals("Arma 3 - COMSPEC", StringComparison.OrdinalIgnoreCase);
+            }
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Cherche un fichier image par nom (et stem .jpg↔.png) dans les dossiers Screenshots.
+    /// Scan peu profond uniquement (racine + 1 niveau) — jamais AllDirectories sur l’install Arma
+    /// (jonctions Workshop → STATUS_STACK_OVERFLOW / 0xC00000FD).
     /// </summary>
     private static string? FindScreenshotByFileName(string fileName)
     {
@@ -4803,6 +4830,8 @@ public static class Extension
         var stem = Path.GetFileNameWithoutExtension(fileName);
         foreach (var dir in EnumerateScreenshotDirs())
         {
+            if (!IsScreenshotCaptureDir(dir)) continue;
+
             foreach (var name in names)
             {
                 try
@@ -4817,18 +4846,7 @@ public static class Extension
             if (string.IsNullOrWhiteSpace(stem)) continue;
             try
             {
-                foreach (var f in Directory.EnumerateFiles(dir, stem + ".*", SearchOption.TopDirectoryOnly))
-                {
-                    try
-                    {
-                        if (!IsImageExtension(Path.GetExtension(f))) continue;
-                        if (!File.Exists(f)) continue;
-                        return Path.GetFullPath(f);
-                    }
-                    catch { /* ignore */ }
-                }
-                // Sous-dossiers ATAK / profils — une seule passe, pas à chaque retry ResolveLocalImagePath.
-                foreach (var f in Directory.EnumerateFiles(dir, stem + ".*", SearchOption.AllDirectories))
+                foreach (var f in EnumerateFilesShallow(dir, stem + ".*", maxDepth: 1))
                 {
                     try
                     {
@@ -4842,6 +4860,33 @@ public static class Extension
             catch { /* ignore */ }
         }
         return null;
+    }
+
+    /// <summary>
+    /// Énumère des fichiers jusqu’à maxDepth sous-dossiers (0 = racine seule).
+    /// Remplace SearchOption.AllDirectories pour éviter les boucles de jonctions.
+    /// </summary>
+    private static IEnumerable<string> EnumerateFilesShallow(string root, string pattern, int maxDepth)
+    {
+        if (string.IsNullOrWhiteSpace(root) || maxDepth < 0) yield break;
+        IEnumerable<string> top;
+        try { top = Directory.EnumerateFiles(root, pattern, SearchOption.TopDirectoryOnly); }
+        catch { yield break; }
+        foreach (var f in top)
+            yield return f;
+
+        if (maxDepth < 1) yield break;
+        IEnumerable<string> subs;
+        try { subs = Directory.EnumerateDirectories(root); }
+        catch { yield break; }
+        foreach (var sub in subs)
+        {
+            IEnumerable<string> nested;
+            try { nested = Directory.EnumerateFiles(sub, pattern, SearchOption.TopDirectoryOnly); }
+            catch { continue; }
+            foreach (var f in nested)
+                yield return f;
+        }
     }
 
     /// <summary>
@@ -4968,7 +5013,18 @@ public static class Extension
                 AddScreenshotsUnder(Path.Combine(local, "Arma 3"));
         }
         catch { /* ignore */ }
-        // Dossier courant / install Arma (BCE parfois écrit un nom seul relatif au cwd).
+        // Captures miroir COMSPEC (stable, hors Workshop).
+        try
+        {
+            var cap = ComspecCaptureDir();
+            if (!string.IsNullOrWhiteSpace(cap))
+                AddIfExists(cap);
+        }
+        catch { /* ignore */ }
+
+        // Dossier courant / install Arma : uniquement les feuilles Screenshots/Screenshot.
+        // Ne JAMAIS ajouter la racine Arma elle-même (scan AllDirectories / watcher
+        // dessus → jonctions Workshop → STATUS_STACK_OVERFLOW 0xC00000FD).
         try
         {
             var cwd = Directory.GetCurrentDirectory();
@@ -4976,8 +5032,7 @@ public static class Extension
             {
                 AddIfExists(Path.Combine(cwd, "Screenshots"));
                 AddIfExists(Path.Combine(cwd, "Screenshot"));
-                AddIfExists(cwd);
-                // Profils / dossiers déportés sous la racine Arma.
+                // Profils / dossiers déportés sous la racine Arma (un niveau).
                 AddScreenshotsUnder(cwd);
 
                 // Mods Workshop : BCE / ATAK Enhanced écrivent dans le dossier du mod,
@@ -5006,6 +5061,7 @@ public static class Extension
             var cutoff = DateTime.UtcNow - maxAge;
             foreach (var dir in EnumerateScreenshotDirs())
             {
+                if (!IsScreenshotCaptureDir(dir)) continue;
                 IEnumerable<string> files;
                 try
                 {

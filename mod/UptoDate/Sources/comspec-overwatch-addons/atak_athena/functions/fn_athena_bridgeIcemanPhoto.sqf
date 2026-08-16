@@ -14,6 +14,19 @@ if (!hasInterface) exitWith { false };
 if (!(["iceman_photo"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith { false };
 if (_filePath isEqualTo "") exitWith { false };
 
+// Photos déjà jugées introuvables (session + profil) : ne pas re-notifier la DLL.
+private _keyEarly = toLower _filePath;
+private _deadEarly = profileNamespace getVariable ["COMSPEC_Athena_PhotoDead", []];
+if (!(_deadEarly isEqualType [])) then { _deadEarly = []; };
+private _failedEarly = missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []];
+if (!(_failedEarly isEqualType [])) then { _failedEarly = []; };
+private _baseEarly = toLower _fileName;
+if (_baseEarly isEqualTo "") then {
+    private _segsE = _filePath splitString "\/";
+    _baseEarly = toLower (_segsE select ((count _segsE) - 1));
+};
+if (_keyEarly in _failedEarly || {_keyEarly in _deadEarly} || {_baseEarly isNotEqualTo "" && {_baseEarly in _deadEarly}}) exitWith { false };
+
 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto") then {
     [_filePath, _fileName] call comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto;
 };
