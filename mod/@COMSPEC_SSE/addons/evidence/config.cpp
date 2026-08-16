@@ -27,7 +27,7 @@ class CfgPatches {
             "comspec_sse_main",
             "A3_Weapons_F",
             "cba_main",
-            "cba_misc",
+            "cba_common",
             "ace_common"
         };
         author = "COMSPEC";

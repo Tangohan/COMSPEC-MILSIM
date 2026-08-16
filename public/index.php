@@ -277,34 +277,60 @@ try {
     $path = \App\Core\Request::normalizePathFromServer();
     $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
     $wantsJson = str_starts_with($path, '/api/') || str_contains($accept, 'application/json');
+    $rawMsg = $e->getMessage();
+    $isMissingRoutes = str_contains($rawMsg, 'Fichier de routage manquant')
+        || (str_contains($rawMsg, 'routes/web.php') && str_contains($rawMsg, 'No such file'));
+    $isDbDown = str_contains($rawMsg, 'Database connection failed')
+        || str_contains($rawMsg, 'SQLSTATE[HY000] [2002]')
+        || str_contains($rawMsg, 'SQLSTATE[HY000] [1045]');
+    $httpStatus = ($isMissingRoutes || $isDbDown) ? 503 : 500;
 
     if (!headers_sent()) {
         if ($wantsJson) {
             header('Content-Type: application/json; charset=utf-8');
+            if ($httpStatus === 503) {
+                header('Retry-After: 30');
+            }
         } else {
             header('Content-Type: text/html; charset=utf-8');
         }
     }
 
-    $hint = athena_error_hint($e->getMessage());
+    $hint = athena_error_hint($rawMsg);
+    $rid = $rid ?? (string) (getenv('REQUEST_ID') ?: ($_ENV['REQUEST_ID'] ?? ''));
 
     if ($wantsJson) {
-        http_response_code(500);
+        http_response_code($httpStatus);
+        $errorCode = 'server_error';
+        if ($isMissingRoutes) {
+            $errorCode = 'service_unavailable';
+        } elseif ($isDbDown) {
+            $errorCode = 'database_unavailable';
+        }
         echo json_encode([
-            'error' => 'server_error',
+            'error' => $errorCode,
             'message' => $hint !== '' ? $hint : 'Une erreur est survenue. Merci de réessayer plus tard.',
             'request_id' => $rid !== '' ? $rid : null,
         ], JSON_UNESCAPED_UNICODE);
     } elseif ($showErrors) {
         echo '<pre style="background:#fdd;padding:1em;white-space:pre-wrap;">';
-        echo 'ERREUR: ' . htmlspecialchars($e->getMessage()) . "\n\n";
+        echo 'ERREUR: ' . htmlspecialchars($rawMsg) . "\n\n";
         echo htmlspecialchars($e->getFile() . ':' . $e->getLine() . "\n\n" . $e->getTraceAsString());
         echo '</pre>';
+    } elseif ($isMissingRoutes) {
+        http_response_code(503);
+        echo '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Service indisponible</title></head><body style="font-family:system-ui,sans-serif;max-width:40rem;margin:2rem auto;padding:0 1rem;">';
+        echo '<h1>Mise à jour en cours</h1>';
+        echo '<p>Le fichier de routage est absent sur le serveur. Redéployez le dépôt (Action <strong>Deploy Athena</strong> / FTP) ou remontez <code>routes/web.php</code> à la racine applicative.</p>';
+        if ($rid !== '') {
+            echo '<p style="color:#666;font-size:0.9rem;">Réf. ' . htmlspecialchars($rid) . '</p>';
+        }
+        echo '</body></html>';
     } else {
-        http_response_code(500);
+        http_response_code($httpStatus);
         $view500 = $root . '/views/errors/500.php';
         if (is_file($view500)) {
-            $errorReference = $rid ?? (string) (getenv('REQUEST_ID') ?: ($_ENV['REQUEST_ID'] ?? ''));
+            $errorReference = $rid;
             $errorHint = $hint;
             require $view500;
 

@@ -24,7 +24,10 @@ $executiveBrief = (string) ($executiveBrief ?? '');
 <section id="synthese-exec" class="panel sse-ana-panel">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">01.08</span> Synthèse exécutive</div>
-        <div class="panel-meta">Générée depuis les données structurées</div>
+        <div class="panel-header__end">
+            <div class="panel-meta">Générée depuis les données structurées</div>
+            <?php $sectionKey = '01.08'; require __DIR__ . '/panel_section_info.php'; ?>
+        </div>
     </div>
     <div class="panel-body">
         <pre class="sse-ana-brief"><?= $h($executiveBrief) ?></pre>
@@ -34,7 +37,10 @@ $executiveBrief = (string) ($executiveBrief ?? '');
 <section id="suggestions" class="panel sse-ana-panel">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">01.09</span> Mentions proposées</div>
-        <div class="panel-meta">Générateur contextuel</div>
+        <div class="panel-header__end">
+            <div class="panel-meta">Générateur contextuel</div>
+            <?php $sectionKey = '01.09'; require __DIR__ . '/panel_section_info.php'; ?>
+        </div>
     </div>
     <div class="panel-body">
         <?php if ($contextualSuggestions === []): ?>
@@ -58,7 +64,10 @@ $executiveBrief = (string) ($executiveBrief ?? '');
 <section id="analyse" class="panel sse-ana-panel">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">01.10</span> Appréciation analytique</div>
-        <div class="panel-meta">FAIT → SOURCE → RECOUPEMENT → APPRÉCIATION → CONFIANCE → HYPOTHÈSE</div>
+        <div class="panel-header__end">
+            <div class="panel-meta">FAIT → SOURCE → RECOUPEMENT → APPRÉCIATION → CONFIANCE → HYPOTHÈSE</div>
+            <?php $sectionKey = '01.10'; require __DIR__ . '/panel_section_info.php'; ?>
+        </div>
     </div>
     <div class="panel-body">
         <?php if ($assessments === []): ?>
@@ -178,7 +187,10 @@ $executiveBrief = (string) ($executiveBrief ?? '');
 <section id="lacunes" class="panel sse-ana-panel">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">01.11</span> Lacunes et besoins</div>
-        <div class="panel-meta">Ce qui reste à déterminer</div>
+        <div class="panel-header__end">
+            <div class="panel-meta">Ce qui reste à déterminer</div>
+            <?php $sectionKey = '01.11'; require __DIR__ . '/panel_section_info.php'; ?>
+        </div>
     </div>
     <div class="panel-body">
         <?php if ($intelGaps === []): ?>
@@ -278,7 +290,10 @@ $executiveBrief = (string) ($executiveBrief ?? '');
 <section id="decisions" class="panel sse-ana-panel">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">01.12</span> Registre des décisions</div>
-        <div class="panel-meta">Les anciennes conclusions ne sont jamais écrasées</div>
+        <div class="panel-header__end">
+            <div class="panel-meta">Les anciennes conclusions ne sont jamais écrasées</div>
+            <?php $sectionKey = '01.12'; require __DIR__ . '/panel_section_info.php'; ?>
+        </div>
     </div>
     <div class="panel-body">
         <?php if ($analyticalDecisions === []): ?>
@@ -338,7 +353,10 @@ $executiveBrief = (string) ($executiveBrief ?? '');
 <section id="relations" class="panel sse-ana-panel">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">01.13</span> Relations entre dossiers</div>
-        <div class="panel-meta">Parent, dérivé, connexe, source, doublon — avec conservation des références</div>
+        <div class="panel-header__end">
+            <div class="panel-meta">Parent, dérivé, connexe, source, doublon — avec conservation des références</div>
+            <?php $sectionKey = '01.13'; require __DIR__ . '/panel_section_info.php'; ?>
+        </div>
     </div>
     <div class="panel-body">
         <?php if ($caseLinks === []): ?>

@@ -80,6 +80,9 @@ $interestLevels = is_array($interestLevels ?? null) ? $interestLevels : [];
             </div>
             <label for="opening_reason">Motif d’ouverture</label>
             <textarea id="opening_reason" name="opening_reason" required rows="4" placeholder="Pourquoi ce signalement mérite une instruction ?"></textarea>
+            <label for="description">Description du dossier</label>
+            <textarea id="description" name="description" rows="3" maxlength="8000"
+                      placeholder="Synthèse opérationnelle : enjeux, périmètre, points de vigilance…"></textarea>
             <label for="origin_operator">Unité ou opérateur à l’origine</label>
             <input id="origin_operator" name="origin_operator" maxlength="120">
         </div>

@@ -264,6 +264,23 @@ switch (_function) do {
                 missionNamespace setVariable ["COMSPEC_Athena_PhotoPending", _pending, false];
                 missionNamespace setVariable ["COMSPEC_Athena_PhotoUploaded", _uploaded, false];
                 missionNamespace setVariable ["COMSPEC_Athena_PhotoFailed", _failed, false];
+                // Persister les introuvables : après crash / PreInit, PhotoSeen est vide
+                // et les vieux clichés Photo Library ne doivent pas relancer un scan DLL.
+                if ((_detail find "file_not_found") == 0) then {
+                    private _dead = profileNamespace getVariable ["COMSPEC_Athena_PhotoDead", []];
+                    if (!(_dead isEqualType [])) then { _dead = []; };
+                    {
+                        private _k = toLower _x;
+                        if !(_k in _dead) then { _dead pushBack _k; };
+                        private _segs = _k splitString "\/";
+                        private _base = _segs select ((count _segs) - 1);
+                        if (_base isNotEqualTo "" && {!(_base in _dead)}) then { _dead pushBack _base; };
+                    } forEach _matched;
+                    if (_hintLow isNotEqualTo "" && {!(_hintLow in _dead)}) then { _dead pushBack _hintLow; };
+                    while { (count _dead) > 200 } do { _dead deleteAt 0; };
+                    profileNamespace setVariable ["COMSPEC_Athena_PhotoDead", _dead];
+                    saveProfileNamespace;
+                };
                 ["PhotoUpload", "fail", format ["%1 · %2", _detail, _fileHint], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
                 private _msg = switch (true) do {
                     case ((_detail find "file_not_found") == 0): { "Photo introuvable sur le disque — capturez à nouveau." };

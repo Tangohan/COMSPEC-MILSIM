@@ -35,11 +35,15 @@ if ([] call comspec_sse_fnc_isOnline) then {
 
 if (_ok) then {
     hint format ["Acquisition numérique transmise — %1", _uid];
-    [_uid, "digital", _payload getOrDefault ["source_type", "device"], "Athena digital", _payload getOrDefault ["quality", 0], "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
+    private _src = _payload getOrDefault ["source_type", "device"];
+    private _q = _payload getOrDefault ["quality", 0];
+    [_uid, "digital", _src, "Athena digital", _q, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
 } else {
     [_envelope] call comspec_sse_fnc_queueOffline;
     hint format ["Acquisition numérique QUEUED — %1", _uid];
-    [_uid, "digital", _payload getOrDefault ["source_type", "device"], "QUEUED", _payload getOrDefault ["quality", 0], "QUEUED"] call comspec_sse_fnc_addJournalEntry;
+    private _src = _payload getOrDefault ["source_type", "device"];
+    private _q = _payload getOrDefault ["quality", 0];
+    [_uid, "digital", _src, "QUEUED", _q, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };
 
 _ok

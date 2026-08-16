@@ -50,6 +50,20 @@ if (_hasPhone) then {
     _devices pushBack ([_seed + 11, _profile, _complexity, _cluster] call comspec_sse_fnc_generatePhone);
 };
 
+private _grid = _pack getOrDefault ["grid", ""];
+if (_grid isEqualTo "") then { _grid = _cluster getOrDefault ["depotGrid", ""]; };
+private _themeLabel = _pack getOrDefault ["themeLabel", _theme];
+private _primaryName = _cluster getOrDefault ["primaryName", "?"];
+private _locItem = createHashMapFromArray [
+    ["label", "Point d'intérêt lié"],
+    ["grid", _grid],
+    ["confidence", 0.55]
+];
+private _intelItem = createHashMapFromArray [
+    ["text", format ["Site cohérent avec %1 — %2", _primaryName, _themeLabel]],
+    ["confidence", 0.57]
+];
+
 createHashMapFromArray [
     ["uid", format ["SSE-%1-%2", _kind, _seed]],
     ["siteKind", _kind],
@@ -58,19 +72,8 @@ createHashMapFromArray [
     ["traces", _traces],
     ["documents", _docs],
     ["digitalDevices", _devices],
-    ["locations", [
-        createHashMapFromArray [
-            ["label", "Point d'intérêt lié"],
-            ["grid", _pack getOrDefault ["grid", _cluster getOrDefault ["depotGrid", ""]]],
-            ["confidence", 0.55]
-        ]
-    ]],
-    ["intel", [
-        createHashMapFromArray [
-            ["text", format ["Site cohérent avec %1 — %2", _cluster getOrDefault ["primaryName", "?"], _pack getOrDefault ["themeLabel", _theme]]],
-            ["confidence", 0.57]
-        ]
-    ]],
+    ["locations", [_locItem]],
+    ["intel", [_intelItem]],
     ["cluster", _cluster],
-    ["summary", format ["%1 — %2", _kind, _pack getOrDefault ["themeLabel", _theme]]]
+    ["summary", format ["%1 — %2", _kind, _themeLabel]]
 ]

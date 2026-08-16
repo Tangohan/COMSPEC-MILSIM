@@ -35,12 +35,16 @@ if (_preferExt) then {
 
 // 2) Overwatch sendIntel (toujours disponible si Overwatch chargé)
 if (!isNil "comspec_overwatch_connect_fnc_sendIntel") exitWith {
+    private _sseUid = _payload getOrDefault ["sse_uid", ""];
+    if (_sseUid isEqualTo "") then { _sseUid = _payload getOrDefault ["record_id", "?"]; };
+    private _quality = _payload getOrDefault ["quality", -1];
+    if (_quality < 0) then { _quality = _payload getOrDefault ["match_confidence", 0]; };
     private _text = format [
         "SSE|%1|%2|%3|%4",
         _kind,
-        _payload getOrDefault ["sse_uid", _payload getOrDefault ["record_id", "?"]],
+        _sseUid,
         _payload getOrDefault ["case_reference", [] call comspec_sse_fnc_getCaseReference],
-        _payload getOrDefault ["quality", _payload getOrDefault ["match_confidence", 0]]
+        _quality
     ];
     private _score = ((_payload getOrDefault ["quality", 70]) / 100) max 0.1 min 1;
     [player, "HUMINT", _text, _payload getOrDefault ["idempotency_key", ""], "INFANTRY", _score] call comspec_overwatch_connect_fnc_sendIntel;

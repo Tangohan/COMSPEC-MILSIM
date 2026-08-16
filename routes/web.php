@@ -666,6 +666,11 @@ return function (Router $router) {
     $router->get('/atak/sse/interet/nouveau', [SsePortalController::class, 'interestCaseCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/interet', [SsePortalController::class, 'interestCaseStore'], $mwSsePortal);
     $router->get('/atak/sse/interet/{id}', [SsePortalController::class, 'interestCaseShow'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/description', [SsePortalController::class, 'interestCaseDescription'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/mise-a-jour', [SsePortalController::class, 'interestCaseJournal'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/etat', [SsePortalController::class, 'interestCaseStatus'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/diffusion', [SsePortalController::class, 'interestCaseAcl'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/investigation', [SsePortalController::class, 'interestCaseOpenInvestigation'], $mwSsePortal);
     $router->post('/atak/sse/interet/{id}/croisements', [SsePortalController::class, 'interestCrossDecide'], $mwSsePortal);
     $router->post('/atak/sse/interet/{id}/constituer', [SsePortalController::class, 'interestCaseConstitute'], $mwSsePortal);
     $router->get('/atak/sse/personnes', [SsePortalController::class, 'personsIndex'], $mwSsePortal);

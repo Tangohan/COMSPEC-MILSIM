@@ -14,6 +14,13 @@ private _phones = _devices select {
 };
 private _d = if (count _phones > 0) then { _phones select 0 } else { _devices select 0 };
 
+private _contacts = _d getOrDefault ["contacts", []];
+private _sms = _d getOrDefault ["sms", []];
+private _calls = _d getOrDefault ["calls", []];
+private _photos = _d getOrDefault ["photos", []];
+private _locs = _d getOrDefault ["locations", []];
+private _deleted = _d getOrDefault ["deletedData", []];
+
 createHashMapFromArray [
     ["ok", true],
     ["uid", _d getOrDefault ["uid", "?"]],
@@ -22,10 +29,10 @@ createHashMapFromArray [
     ["owner", _d getOrDefault ["owner", ""]],
     ["imei", _d getOrDefault ["imei", ""]],
     ["sim", _d getOrDefault ["sim", ""]],
-    ["contacts", count (_d getOrDefault ["contacts", []])],
-    ["messages", count (_d getOrDefault ["sms", []])],
-    ["calls", count (_d getOrDefault ["calls", []])],
-    ["images", count (_d getOrDefault ["photos", []])],
-    ["locations", count (_d getOrDefault ["locations", []])],
-    ["deleted", count (_d getOrDefault ["deletedData", []])]
+    ["contacts", count _contacts],
+    ["messages", count _sms],
+    ["calls", count _calls],
+    ["images", count _photos],
+    ["locations", count _locs],
+    ["deleted", count _deleted]
 ]

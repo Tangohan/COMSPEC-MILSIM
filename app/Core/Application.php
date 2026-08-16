@@ -43,7 +43,21 @@ class Application
             new \App\Middleware\SecurityHeadersMiddleware(),
             new \App\Middleware\RateLimitMiddleware(),
             new \App\Middleware\CsrfPostMiddleware(),
-            \App\Core\Container::get(\App\Middleware\DemoNdaGateMiddleware::class),
+            // Lazy : ne pas Container::get(DemoNda…) au boot — sinon DemoNdaVisitRepository
+            // ouvre PDO sur *chaque* requête (y compris /api/atak/* exemptés), et une panne
+            // BDD se présente comme une erreur Demo NDA hors sujet.
+            static function (\App\Core\Request $req, callable $next): \App\Core\Response {
+                if (\App\Services\DemoNda\DemoNdaGateService::isDisabledByEnv()) {
+                    return $next($req);
+                }
+                if (\App\Services\DemoNda\DemoNdaGateService::pathBypassesGate($req->path())) {
+                    return $next($req);
+                }
+
+                $mw = \App\Core\Container::get(\App\Middleware\DemoNdaGateMiddleware::class);
+
+                return $mw($req, $next);
+            },
             new \App\Middleware\TenantTypeModuleAccessMiddleware(),
         ]);
         foreach (array_reverse($global) as $mw) {

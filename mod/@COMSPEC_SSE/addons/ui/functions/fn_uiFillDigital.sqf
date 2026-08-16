@@ -25,9 +25,11 @@ private _list = [];
 
 switch (_tab) do {
     case "overview": {
+        private _devType = _dev getOrDefault ["deviceType", ""];
+        if (_devType isEqualTo "") then { _devType = _dev getOrDefault ["model", "?"]; };
         _body = format [
             "<t color='#8f8'>APPAREIL</t><br/>Type: %1<br/>Numéro: %2<br/>Proprio: %3<br/>Accès: %4<br/>Batterie morte: %5<br/>Disque retiré: %6<br/><br/>Utilisez les onglets pour explorer.",
-            _dev getOrDefault ["deviceType", _dev getOrDefault ["model", "?")],
+            _devType,
             _dev getOrDefault ["phoneNumber", "—"],
             _dev getOrDefault ["owner", "—"],
             _access getOrDefault ["state", "OPEN"],
@@ -60,12 +62,18 @@ switch (_tab) do {
         } forEach _c;
     };
     case "files": {
-        private _f = _dev getOrDefault ["files", _dev getOrDefault ["documents", []]];
+        private _f = _dev getOrDefault ["files", []];
+        if (!(_f isEqualType []) || {_f isEqualTo []}) then {
+            private _docs = _dev getOrDefault ["documents", []];
+            if (_docs isEqualType [] && {_docs isNotEqualTo []}) then { _f = _docs; };
+        };
         if !(_f isEqualType []) then { _f = []; };
         _body = format ["<t color='#8f8'>FICHIERS</t><br/>%1", count _f];
         {
             if (_x isEqualType createHashMap) then {
-                _list pushBack (_x getOrDefault ["name", _x getOrDefault ["title", "file"]]);
+                private _fname = _x getOrDefault ["name", ""];
+                if (_fname isEqualTo "") then { _fname = _x getOrDefault ["title", "file"]; };
+                _list pushBack _fname;
             } else { _list pushBack str _x; };
         } forEach _f;
     };

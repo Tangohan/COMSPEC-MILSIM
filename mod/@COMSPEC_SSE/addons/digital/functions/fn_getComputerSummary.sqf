@@ -15,16 +15,24 @@ private _pcs = _devices select {
 if (count _pcs == 0) exitWith { createHashMapFromArray [["ok", false], ["reason", "Aucun ordinateur"]] };
 
 private _d = _pcs select 0;
+private _users = _d getOrDefault ["users", []];
+private _files = _d getOrDefault ["files", []];
+private _browser = _d getOrDefault ["browser", []];
+private _mail = _d getOrDefault ["mail", []];
+private _usb = _d getOrDefault ["usbHistory", []];
+private _creds = _d getOrDefault ["credentials", []];
+private _enc = _d getOrDefault ["encryptedFiles", []];
+
 createHashMapFromArray [
     ["ok", true],
     ["uid", _d getOrDefault ["uid", "?"]],
     ["hostname", _d getOrDefault ["hostname", "?"]],
     ["owner", _d getOrDefault ["owner", ""]],
-    ["users", count (_d getOrDefault ["users", []])],
-    ["files", count (_d getOrDefault ["files", []])],
-    ["browser", count (_d getOrDefault ["browser", []])],
-    ["mail", count (_d getOrDefault ["mail", []])],
-    ["usb", count (_d getOrDefault ["usbHistory", []])],
-    ["credentials", count (_d getOrDefault ["credentials", []])],
-    ["encrypted", count (_d getOrDefault ["encryptedFiles", []])]
+    ["users", count _users],
+    ["files", count _files],
+    ["browser", count _browser],
+    ["mail", count _mail],
+    ["usb", count _usb],
+    ["credentials", count _creds],
+    ["encrypted", count _enc]
 ]

@@ -64,15 +64,27 @@ class ExceptionHandler
         }
 
         $wantsJson = self::clientWantsJson();
+        $rawMsg = $e->getMessage();
+        $isDbDown = str_contains($rawMsg, 'Database connection failed')
+            || str_contains($rawMsg, 'SQLSTATE[HY000] [2002]')
+            || str_contains($rawMsg, 'SQLSTATE[HY000] [1045]');
+        $httpStatus = $isDbDown ? 503 : 500;
+        $hint = function_exists('athena_error_hint') ? athena_error_hint($rawMsg) : '';
 
         if ($wantsJson) {
             if (!headers_sent()) {
                 header('Content-Type: application/json; charset=utf-8');
+                if ($httpStatus === 503) {
+                    header('Retry-After: 30');
+                }
             }
-            http_response_code(500);
+            http_response_code($httpStatus);
+            $message = $hint !== ''
+                ? $hint
+                : (function_exists('__') ? __('errors.json_server_error') : 'Une erreur est survenue. Merci de réessayer plus tard.');
             echo json_encode([
-                'error' => 'server_error',
-                'message' => function_exists('__') ? __('errors.json_server_error') : 'Une erreur est survenue. Merci de réessayer plus tard.',
+                'error' => $isDbDown ? 'database_unavailable' : 'server_error',
+                'message' => $message,
             ], JSON_UNESCAPED_UNICODE);
 
             return;
@@ -86,14 +98,14 @@ class ExceptionHandler
 
         $path = base_path('views/errors/500.php');
         if (is_file($path)) {
-            http_response_code(500);
+            http_response_code($httpStatus);
             $errorReference = (string) (getenv('REQUEST_ID') ?: ($_ENV['REQUEST_ID'] ?? ''));
-            $errorHint = function_exists('athena_error_hint') ? athena_error_hint($e->getMessage()) : '';
+            $errorHint = $hint;
             require $path;
 
             return;
         }
-        http_response_code(500);
+        http_response_code($httpStatus);
         echo '<h1>500 Server Error</h1>';
     }
 

@@ -33,11 +33,21 @@ if (!function_exists('athena_error_hint')) {
         $dbUnreachable = str_contains($raw, 'SQLSTATE[HY000] [2002]')
             || str_contains($raw, 'SQLSTATE[HY000] [1045]')
             || str_contains($raw, 'Connection refused')
-            || str_contains($raw, 'server has gone away');
+            || str_contains($raw, 'server has gone away')
+            || str_contains($raw, 'Database connection failed')
+            || str_contains($raw, 'Operation not permitted');
         if ($dbUnreachable) {
             return $english
                 ? 'The database is temporarily unreachable. The technical team has been notified — please try again in a few minutes.'
                 : 'La base de données est momentanément injoignable. L’équipe technique a été prévenue — réessayez dans quelques minutes.';
+        }
+
+        $routesMissing = str_contains($raw, 'routes/web.php')
+            || str_contains($raw, 'Fichier de routage manquant');
+        if ($routesMissing) {
+            return $english
+                ? 'The site is being updated on the server. Please try again in a few minutes. If the problem continues, ask an administrator to redeploy the application.'
+                : 'Le site est en cours de mise à jour sur le serveur. Réessayez dans quelques minutes. Si le problème continue, demandez à un administrateur de redéployer l’application.';
         }
 
         return '';

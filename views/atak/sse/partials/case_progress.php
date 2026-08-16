@@ -22,11 +22,14 @@ $doneCount = (int) $caseProgress['done'];
             <span class="panel-index">01.00</span>
             Où en est ce dossier
         </div>
-        <div class="panel-meta">
-            <?= $doneCount ?> étape<?= $doneCount > 1 ? 's' : '' ?> sur <?= (int) $caseProgress['total'] ?> engagée<?= $doneCount > 1 ? 's' : '' ?>
-            <?php if (isset($caseProgress['score'])): ?>
-                · complétude <?= (int) $caseProgress['score'] ?>/100
-            <?php endif; ?>
+        <div class="panel-header__end">
+            <div class="panel-meta">
+                <?= $doneCount ?> étape<?= $doneCount > 1 ? 's' : '' ?> sur <?= (int) $caseProgress['total'] ?> engagée<?= $doneCount > 1 ? 's' : '' ?>
+                <?php if (isset($caseProgress['score'])): ?>
+                    · complétude <?= (int) $caseProgress['score'] ?>/100
+                <?php endif; ?>
+            </div>
+            <?php $sectionKey = '01.00'; require __DIR__ . '/panel_section_info.php'; ?>
         </div>
     </div>
     <div class="panel-body">

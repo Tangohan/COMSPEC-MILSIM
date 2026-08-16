@@ -6,6 +6,8 @@ declare(strict_types=1);
  * Configuration base de données (PHP).
  * Copier en database.local.php et renseigner les valeurs.
  * database.local.php est ignoré par Git (ne pas committer les identifiants).
+ *
+ * Hostinger : host = 127.0.0.1 (pas localhost) pour éviter l’erreur 2002 socket.
  */
 return [
     'host'     => '127.0.0.1',

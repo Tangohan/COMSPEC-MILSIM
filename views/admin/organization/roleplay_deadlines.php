@@ -11,6 +11,7 @@ $err = \App\Core\Session::getFlash('error');
 $ok = \App\Core\Session::getFlash('success');
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $todayStr = date('Y-m-d');
+$soonHorizon = (new DateTimeImmutable('today'))->modify('+14 days')->format('Y-m-d');
 
 $fmtDate = static function (?string $raw): string {
     $raw = trim((string) $raw);
@@ -23,10 +24,63 @@ $fmtDate = static function (?string $raw): string {
 };
 
 $kindUi = [
-    'entretien' => ['label' => 'Entretien', 'field' => 'next_interview_date'],
-    'medical' => ['label' => 'Médical', 'field' => 'medical_due_date'],
-    'rotation' => ['label' => 'Rotation', 'field' => 'service_rotation_date'],
+    'entretien' => [
+        'label' => 'Entretien',
+        'field' => 'next_interview_date',
+        'empty_label' => 'Non programmé',
+        'ok_label' => 'Programmé',
+        'soon_label' => 'Bientôt',
+        'late_label' => 'En retard',
+        'plan_action' => 'Programmer',
+        'reschedule_action' => 'Reporter',
+        'complete_action' => 'Entretien fait',
+        'dialog_sub' => 'Fixer la date de l’entretien individuel ou le marquer comme réalisé.',
+        'complete_confirm' => 'Confirmer que l’entretien a bien eu lieu.',
+        'date_label' => 'Date d’entretien',
+    ],
+    'medical' => [
+        'label' => 'Médical',
+        'field' => 'medical_due_date',
+        'empty_label' => 'Non planifié',
+        'ok_label' => 'Visite prévue',
+        'soon_label' => 'À planifier bientôt',
+        'late_label' => 'Visite en retard',
+        'plan_action' => 'Planifier la visite',
+        'reschedule_action' => 'Reporter la visite',
+        'complete_action' => 'Visite faite',
+        'dialog_sub' => 'Planifier la visite médicale ou enregistrer qu’elle a été réalisée.',
+        'complete_confirm' => 'Confirmer que la visite médicale a bien été réalisée.',
+        'date_label' => 'Date de visite médicale',
+    ],
+    'rotation' => [
+        'label' => 'Rotation',
+        'field' => 'service_rotation_date',
+        'empty_label' => 'Non planifiée',
+        'ok_label' => 'Rotation prévue',
+        'soon_label' => 'Rotation proche',
+        'late_label' => 'Rotation en retard',
+        'plan_action' => 'Planifier la rotation',
+        'reschedule_action' => 'Reporter la rotation',
+        'complete_action' => 'Rotation faite',
+        'dialog_sub' => 'Planifier la rotation de service ou la marquer comme effectuée.',
+        'complete_confirm' => 'Confirmer que la rotation de service a bien eu lieu.',
+        'date_label' => 'Date de rotation',
+    ],
 ];
+
+$resolveState = static function (?string $dateRaw, string $today, string $soon) use ($kindUi): array {
+    if ($dateRaw === null || $dateRaw === '') {
+        return ['key' => 'empty', 'class' => 'is-empty'];
+    }
+    if ($dateRaw < $today) {
+        return ['key' => 'late', 'class' => 'is-late'];
+    }
+    if ($dateRaw <= $soon) {
+        return ['key' => 'soon', 'class' => 'is-soon'];
+    }
+
+    return ['key' => 'ok', 'class' => 'is-ok'];
+};
 ?>
 <style>
     .rp-deadlines-kpi {
@@ -67,7 +121,7 @@ $kindUi = [
     }
     .rp-deadlines-sheets__table {
         width: 100%;
-        min-width: 58rem;
+        min-width: 64rem;
         border-collapse: separate;
         border-spacing: 0;
         font-size: 0.8125rem;
@@ -77,8 +131,8 @@ $kindUi = [
     .rp-deadlines-sheets__table td {
         border-right: 1px solid #e2e8f0;
         border-bottom: 1px solid #e2e8f0;
-        padding: 0.4rem 0.5rem;
-        vertical-align: middle;
+        padding: 0.45rem 0.55rem;
+        vertical-align: top;
     }
     .rp-deadlines-sheets__table th:last-child,
     .rp-deadlines-sheets__table td:last-child { border-right: 0; }
@@ -106,22 +160,61 @@ $kindUi = [
     }
     .rp-deadlines-cell {
         display: grid;
-        gap: 0.35rem;
-        min-width: 9rem;
+        gap: 0.4rem;
+        min-width: 11rem;
+    }
+    .rp-deadlines-cell__head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.35rem 0.45rem;
     }
     .rp-deadlines-cell__date {
         font-weight: 700;
         font-variant-numeric: tabular-nums;
         color: #0f172a;
     }
-    .rp-deadlines-cell__date.is-overdue { color: #9f1239; }
     .rp-deadlines-cell__date.is-empty { color: #94a3b8; font-weight: 600; }
-    .rp-deadlines-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.3rem;
+    .rp-deadlines-cell__date.is-soon { color: #b45309; }
+    .rp-deadlines-cell__date.is-late { color: #9f1239; }
+    .rp-deadlines-state {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.25rem;
+        padding: 0 0.4rem;
+        border: 1px solid transparent;
+        border-radius: 0.25rem;
+        font-size: 0.625rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
     }
-    .rp-deadlines-actions button {
+    .rp-deadlines-state.is-empty {
+        border-color: #e2e8f0;
+        background: #f8fafc;
+        color: #64748b;
+    }
+    .rp-deadlines-state.is-ok {
+        border-color: #a7f3d0;
+        background: #ecfdf5;
+        color: #047857;
+    }
+    .rp-deadlines-state.is-soon {
+        border-color: #fcd34d;
+        background: #fffbeb;
+        color: #b45309;
+    }
+    .rp-deadlines-state.is-late {
+        border-color: #fecdd3;
+        background: #fff1f2;
+        color: #9f1239;
+    }
+    .rp-deadlines-actions form.contents {
+        display: contents;
+    }
+    .rp-deadlines-actions button,
+    .rp-deadlines-actions .rp-deadlines-actions__link {
         display: inline-flex;
         align-items: center;
         height: 1.55rem;
@@ -135,15 +228,31 @@ $kindUi = [
         cursor: pointer;
         font-family: inherit;
         line-height: 1;
+        text-decoration: none;
     }
-    .rp-deadlines-actions button:hover {
+    .rp-deadlines-actions button:hover,
+    .rp-deadlines-actions .rp-deadlines-actions__link:hover {
         background: #f8fafc;
         border-color: #94a3b8;
+    }
+    .rp-deadlines-actions button.is-primary {
+        border-color: #0b8a5c;
+        background: #ecfdf5;
+        color: #047857;
+    }
+    .rp-deadlines-actions button.is-primary:hover {
+        background: #d1fae5;
+        border-color: #047857;
     }
     .rp-deadlines-actions button.is-late {
         border-color: #fecdd3;
         background: #fff1f2;
         color: #9f1239;
+    }
+    .rp-deadlines-actions button.is-complete {
+        border-color: #86efac;
+        background: #fff;
+        color: #166534;
     }
     .rp-deadlines-dialog .ath-field {
         display: grid;
@@ -174,6 +283,16 @@ $kindUi = [
         flex-wrap: wrap;
         gap: 0.4rem;
         justify-content: flex-end;
+    }
+    .rp-deadlines-dialog__hint {
+        margin: 0 0 0.75rem;
+        padding: 0.55rem 0.65rem;
+        border: 1px solid #e2e8f0;
+        border-left: 3px solid #0b8a5c;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 0.75rem;
+        line-height: 1.45;
     }
 </style>
 
@@ -243,7 +362,7 @@ $kindUi = [
                         <th>Entretien</th>
                         <th>Médical</th>
                         <th>Rotation</th>
-                        <th>Actions</th>
+                        <th>Dossier</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -258,6 +377,7 @@ $kindUi = [
                         }
                         $stageLabel = trim((string) ($row['stage'] ?? ''));
                         $tutorLabel = trim((string) ($row['tutor_label'] ?? ''));
+                        $actionUrl = url('back-office/roleplay-followup/' . $uid . '/deadline');
                     ?>
                     <tr>
                         <td>
@@ -269,33 +389,64 @@ $kindUi = [
                         </td>
                         <?php foreach ($kindUi as $kindKey => $kindMeta):
                             $dateRaw = trim((string) ($row[$kindMeta['field']] ?? '')) ?: null;
-                            $isOverdue = $dateRaw !== null && $dateRaw < $todayStr;
-                            $dateClass = $dateRaw === null ? 'is-empty' : ($isOverdue ? 'is-overdue' : '');
+                            $state = $resolveState($dateRaw, $todayStr, $soonHorizon);
+                            $stateKey = (string) $state['key'];
+                            $stateClass = (string) $state['class'];
+                            $stateLabel = match ($stateKey) {
+                                'late' => (string) $kindMeta['late_label'],
+                                'soon' => (string) $kindMeta['soon_label'],
+                                'ok' => (string) $kindMeta['ok_label'],
+                                default => (string) $kindMeta['empty_label'],
+                            };
+                            $openLabel = $stateKey === 'empty'
+                                ? (string) $kindMeta['plan_action']
+                                : (string) $kindMeta['reschedule_action'];
+                            $openClass = $stateKey === 'empty'
+                                ? 'is-primary'
+                                : ($stateKey === 'late' ? 'is-late' : '');
                         ?>
                         <td>
                             <div class="rp-deadlines-cell">
-                                <span class="rp-deadlines-cell__date <?= $dateClass ?>"><?= $h($fmtDate($dateRaw)) ?></span>
+                                <div class="rp-deadlines-cell__head">
+                                    <span class="rp-deadlines-state <?= $h($stateClass) ?>"><?= $h($stateLabel) ?></span>
+                                    <span class="rp-deadlines-cell__date <?= $h($stateClass) ?>"><?= $h($fmtDate($dateRaw)) ?></span>
+                                </div>
                                 <div class="rp-deadlines-actions">
                                     <button
                                         type="button"
-                                        class="<?= $isOverdue ? 'is-late' : '' ?>"
+                                        class="<?= $h($openClass) ?>"
                                         data-rp-deadline-open
                                         data-user-id="<?= $uid ?>"
                                         data-member-name="<?= $h($name) ?>"
                                         data-kind="<?= $h($kindKey) ?>"
                                         data-kind-label="<?= $h($kindMeta['label']) ?>"
                                         data-date="<?= $h((string) ($dateRaw ?? '')) ?>"
-                                        data-action-url="<?= $h(url('back-office/roleplay-followup/' . $uid . '/deadline')) ?>"
+                                        data-state="<?= $h($stateKey) ?>"
+                                        data-dialog-sub="<?= $h($kindMeta['dialog_sub']) ?>"
+                                        data-date-label="<?= $h($kindMeta['date_label']) ?>"
+                                        data-complete-label="<?= $h($kindMeta['complete_action']) ?>"
+                                        data-save-label="<?= $h($stateKey === 'empty' ? $kindMeta['plan_action'] : $kindMeta['reschedule_action']) ?>"
+                                        data-action-url="<?= $h($actionUrl) ?>"
                                     >
-                                        Gérer
+                                        <?= $h($openLabel) ?>
                                     </button>
+                                    <?php if ($stateKey !== 'empty'): ?>
+                                    <form method="post" action="<?= $h($actionUrl) ?>" class="contents">
+                                        <input type="hidden" name="_csrf_token" value="<?= $h($rpCsrfToken) ?>">
+                                        <input type="hidden" name="deadline_kind" value="<?= $h($kindKey) ?>">
+                                        <input type="hidden" name="deadline_action" value="complete">
+                                        <button type="submit" class="is-complete" title="<?= $h($kindMeta['complete_confirm']) ?>">
+                                            <?= $h($kindMeta['complete_action']) ?>
+                                        </button>
+                                    </form>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </td>
                         <?php endforeach; ?>
                         <td>
                             <div class="rp-deadlines-actions">
-                                <a href="<?= $h(url('personnel/' . $uid . '/edit')) ?>" class="inline-flex h-[1.55rem] items-center rounded border border-slate-300 bg-white px-2 text-[0.6875rem] font-bold text-slate-900 hover:bg-slate-50">Dossier</a>
+                                <a href="<?= $h(url('personnel/' . $uid . '/edit')) ?>" class="rp-deadlines-actions__link">Ouvrir le dossier</a>
                             </div>
                         </td>
                     </tr>
@@ -319,8 +470,9 @@ $kindUi = [
         <div class="ath-dialog__body">
             <input type="hidden" name="_csrf_token" value="<?= $h($rpCsrfToken) ?>">
             <input type="hidden" name="deadline_kind" id="rp-deadline-kind" value="">
+            <p class="rp-deadlines-dialog__hint" id="rp-deadline-hint" hidden></p>
             <label class="ath-field">
-                <span class="ath-field__label">Date prévue</span>
+                <span class="ath-field__label" id="rp-deadline-date-label">Date prévue</span>
                 <input type="date" name="deadline_date" id="rp-deadline-date" class="ath-field__input">
             </label>
             <label class="ath-field">
@@ -331,9 +483,9 @@ $kindUi = [
         <div class="ath-dialog__foot">
             <div class="rp-deadlines-dialog__actions">
                 <button type="button" class="ath-btn" data-rp-deadline-close>Annuler</button>
-                <button type="submit" class="ath-btn" name="deadline_action" value="clear">Effacer</button>
-                <button type="submit" class="ath-btn ath-btn--solid" name="deadline_action" value="complete">Marquer réalisé</button>
-                <button type="submit" class="ath-btn ath-btn--solid" name="deadline_action" value="save">Enregistrer</button>
+                <button type="submit" class="ath-btn" name="deadline_action" value="clear" id="rp-deadline-clear">Effacer</button>
+                <button type="submit" class="ath-btn ath-btn--solid" name="deadline_action" value="complete" id="rp-deadline-complete">Marquer réalisé</button>
+                <button type="submit" class="ath-btn ath-btn--solid" name="deadline_action" value="save" id="rp-deadline-save">Enregistrer</button>
             </div>
         </div>
     </form>
@@ -348,19 +500,46 @@ $kindUi = [
     }
     var titleEl = document.getElementById('rp-deadline-title');
     var subEl = document.getElementById('rp-deadline-sub');
+    var hintEl = document.getElementById('rp-deadline-hint');
     var kindEl = document.getElementById('rp-deadline-kind');
     var dateEl = document.getElementById('rp-deadline-date');
+    var dateLabelEl = document.getElementById('rp-deadline-date-label');
     var noteEl = document.getElementById('rp-deadline-note');
+    var clearBtn = document.getElementById('rp-deadline-clear');
+    var completeBtn = document.getElementById('rp-deadline-complete');
+    var saveBtn = document.getElementById('rp-deadline-save');
 
     function openFromButton(btn) {
         var kindLabel = btn.getAttribute('data-kind-label') || 'Échéance';
         var member = btn.getAttribute('data-member-name') || '';
+        var state = btn.getAttribute('data-state') || 'empty';
+        var dialogSub = btn.getAttribute('data-dialog-sub') || 'Mettre à jour la date ou marquer l’étape comme réalisée.';
+        var dateLabel = btn.getAttribute('data-date-label') || 'Date prévue';
+        var completeLabel = btn.getAttribute('data-complete-label') || 'Marquer réalisé';
+        var saveLabel = btn.getAttribute('data-save-label') || 'Enregistrer';
         form.action = btn.getAttribute('data-action-url') || '#';
         kindEl.value = btn.getAttribute('data-kind') || '';
         dateEl.value = btn.getAttribute('data-date') || '';
         noteEl.value = '';
-        titleEl.textContent = kindLabel;
-        subEl.textContent = member ? ('Membre : ' + member) : 'Mettre à jour la date ou marquer l’étape comme réalisée.';
+        titleEl.textContent = kindLabel + (member ? ' — ' + member : '');
+        subEl.textContent = dialogSub;
+        dateLabelEl.textContent = dateLabel;
+        completeBtn.textContent = completeLabel;
+        saveBtn.textContent = saveLabel;
+        clearBtn.hidden = state === 'empty';
+        completeBtn.hidden = state === 'empty';
+        if (hintEl) {
+            if (state === 'late') {
+                hintEl.hidden = false;
+                hintEl.textContent = 'Cette échéance est dépassée. Reportez-la ou confirmez qu’elle a été réalisée.';
+            } else if (state === 'soon') {
+                hintEl.hidden = false;
+                hintEl.textContent = 'Échéance dans les 14 prochains jours.';
+            } else {
+                hintEl.hidden = true;
+                hintEl.textContent = '';
+            }
+        }
         dialog.showModal();
     }
 

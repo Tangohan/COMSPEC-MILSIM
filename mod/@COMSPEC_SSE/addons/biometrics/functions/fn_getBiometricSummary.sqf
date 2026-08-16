@@ -12,12 +12,18 @@ private _fmt = {
     format ["%1 (Q%2%%)", _id, _q]
 };
 
-private _fp = [_bio getOrDefault ["fingerprintId", ""], _bio getOrDefault ["fingerprintQuality", 0]] call _fmt;
-private _ir = [_bio getOrDefault ["irisId", ""], _bio getOrDefault ["irisQuality", 0]] call _fmt;
+private _fpId = _bio getOrDefault ["fingerprintId", ""];
+private _fpQ = _bio getOrDefault ["fingerprintQuality", 0];
+private _irId = _bio getOrDefault ["irisId", ""];
+private _irQ = _bio getOrDefault ["irisQuality", 0];
+private _dnaId = _bio getOrDefault ["dnaId", ""];
+private _dnaQ = _bio getOrDefault ["dnaQuality", 0];
+private _fp = [_fpId, _fpQ] call _fmt;
+private _ir = [_irId, _irQ] call _fmt;
 private _face = if (_bio getOrDefault ["facePhoto", false]) then {
     format ["CAPTURED (Q%1%%)", _bio getOrDefault ["faceQuality", 0]]
 } else { "NONE" };
-private _dna = [_bio getOrDefault ["dnaId", ""], _bio getOrDefault ["dnaQuality", 0]] call _fmt;
+private _dna = [_dnaId, _dnaQ] call _fmt;
 
 private _complete = 0;
 if ((_bio getOrDefault ["fingerprintId", ""]) != "") then { _complete = _complete + 1; };

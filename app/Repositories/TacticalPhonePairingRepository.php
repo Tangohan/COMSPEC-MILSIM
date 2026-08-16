@@ -145,11 +145,11 @@ class TacticalPhonePairingRepository
         if (!$this->tableExists()) {
             return;
         }
-        // Prolonge la fenêtre de validité pour laisser le temps du briefing (navigation + commentaires).
+        // Prolonge la session téléphone à 24 h après liaison réussie.
         $stmt = $this->pdo->prepare(
             'UPDATE tactical_phone_pairings
              SET paired_at = COALESCE(paired_at, UTC_TIMESTAMP()),
-                 expires_at = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 120 MINUTE)
+                 expires_at = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1440 MINUTE)
              WHERE token = ?'
         );
         $stmt->execute([trim($token)]);

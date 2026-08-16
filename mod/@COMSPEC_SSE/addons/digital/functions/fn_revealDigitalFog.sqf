@@ -45,7 +45,9 @@ private _modeL = toLower _mode;
 switch (_modeL) do {
     case "identify": {
         _lines pushBack format ["TYPE : %1", _dtype];
-        _lines pushBack format ["MODÈLE : %1", _d getOrDefault ["model", _d getOrDefault ["hostname", "n/a"]]];
+        private _modelHint = _d getOrDefault ["model", ""];
+        if (_modelHint isEqualTo "") then { _modelHint = _d getOrDefault ["hostname", "n/a"]; };
+        _lines pushBack format ["MODÈLE : %1", _modelHint];
         if ((_d getOrDefault ["sim", ""]) != "") then { _lines pushBack "SIM présente."; };
         if ((_d getOrDefault ["imei", ""]) != "" && {_quality >= 40}) then {
             _lines pushBack format ["IMEI : %1", _d get "imei"];

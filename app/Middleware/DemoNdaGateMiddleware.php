@@ -19,18 +19,18 @@ final class DemoNdaGateMiddleware
 
     public function __invoke(Request $request, callable $next): Response
     {
+        $path = $request->path();
+        // Assets, cron, webhooks, APIs machine (mod Overwatch / ATAK) — avant unlock / BDD.
+        if ($this->gate->isExemptPath($path)) {
+            return $next($request);
+        }
+
         // Déblocage d’urgence : /?demo_nda_unlock=CLE (même clé dans le .env)
         if ($this->gate->tryUnlockFromRequest($request)) {
             return Response::redirect(url(''));
         }
 
         if (!$this->gate->isEnabled()) {
-            return $next($request);
-        }
-
-        $path = $request->path();
-        // Assets, cron, webhooks, APIs machine (mod Overwatch / ATAK) — avant tout enregistrement IP.
-        if ($this->gate->isExemptPath($path)) {
             return $next($request);
         }
 

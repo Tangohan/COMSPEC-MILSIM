@@ -107,6 +107,53 @@ final class DemoNdaGateService
 
     public function isPublicAssetPath(string $path): bool
     {
+        return self::pathIsPublicAsset($path);
+    }
+
+    public function isExemptPath(string $path): bool
+    {
+        return self::pathBypassesGate($path);
+    }
+
+    /**
+     * Chemins consommés hors navigateur (pack Overwatch, extensions, intégrations).
+     * Doivent rester joignables même si l’IP n’a pas validé le portail d’engagement démo.
+     */
+    public function isMachineApiPath(string $path): bool
+    {
+        return self::pathIsMachineApi($path);
+    }
+
+    /**
+     * Exempt sans instancier le gate (pas de PDO) — utilisé au câblage middleware global.
+     */
+    public static function pathBypassesGate(string $path): bool
+    {
+        if (self::pathIsPublicAsset($path) || $path === self::GATE_PATH || $path === self::FEEDBACK_PATH) {
+            return true;
+        }
+        $exact = [
+            '/api/stripe/webhook',
+            '/api/health',
+            '/cron/run',
+        ];
+        if (in_array($path, $exact, true)) {
+            return true;
+        }
+        if (str_starts_with($path, '/cron/')) {
+            return true;
+        }
+        // APIs machine (mod Arma, webhooks, etc.) : auth propre, pas de session portail démo.
+        // Sans cela, RegisterBeta / client-init reçoivent 302/403 HTML → admin « Accès anticipé » vide.
+        if (self::pathIsMachineApi($path)) {
+            return true;
+        }
+
+        return str_starts_with($path, '/calendrier/abonnement/');
+    }
+
+    public static function pathIsPublicAsset(string $path): bool
+    {
         if ($path === '/manifest.webmanifest' || $path === '/sw.js' || $path === '/favicon.ico') {
             return true;
         }
@@ -125,36 +172,7 @@ final class DemoNdaGateService
         return false;
     }
 
-    public function isExemptPath(string $path): bool
-    {
-        if ($this->isPublicAssetPath($path) || $path === self::GATE_PATH || $path === self::FEEDBACK_PATH) {
-            return true;
-        }
-        $exact = [
-            '/api/stripe/webhook',
-            '/api/health',
-            '/cron/run',
-        ];
-        if (in_array($path, $exact, true)) {
-            return true;
-        }
-        if (str_starts_with($path, '/cron/')) {
-            return true;
-        }
-        // APIs machine (mod Arma, webhooks, etc.) : auth propre, pas de session portail démo.
-        // Sans cela, RegisterBeta / client-init reçoivent 302/403 HTML → admin « Accès anticipé » vide.
-        if ($this->isMachineApiPath($path)) {
-            return true;
-        }
-
-        return str_starts_with($path, '/calendrier/abonnement/');
-    }
-
-    /**
-     * Chemins consommés hors navigateur (pack Overwatch, extensions, intégrations).
-     * Doivent rester joignables même si l’IP n’a pas validé le portail d’engagement démo.
-     */
-    public function isMachineApiPath(string $path): bool
+    public static function pathIsMachineApi(string $path): bool
     {
         if ($path === '/api/atak' || str_starts_with($path, '/api/atak/')) {
             return true;
@@ -185,6 +203,12 @@ final class DemoNdaGateService
         }
 
         return false;
+    }
+
+    /** Gate désactivé via env uniquement (aucune lecture BDD). */
+    public static function isDisabledByEnv(): bool
+    {
+        return !filter_var((string) env('DEMO_NDA_GATE_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
     }
 
     public function isGatePath(string $path): bool

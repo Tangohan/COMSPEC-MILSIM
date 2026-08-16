@@ -24,7 +24,10 @@ if (!isNil "_devices" && {_devices isEqualType []}) then {
             private _sms = _x getOrDefault ["sms", []];
             {
                 if (_x isEqualType createHashMap) then {
-                    [_x getOrDefault ["time", format ["T+%1", _forEachIndex]], _x getOrDefault ["text", "SMS"], "SMS", "phone"] call _push;
+                    private _when = _x getOrDefault ["time", ""];
+                    if (_when isEqualTo "") then { _when = format ["T+%1", _forEachIndex]; };
+                    private _txt = _x getOrDefault ["text", "SMS"];
+                    [_when, _txt, "SMS", "phone"] call _push;
                 } else {
                     if (_x isEqualType "") then {
                         [format ["SMS-%1", _forEachIndex], _x, "SMS", "phone"] call _push;
@@ -34,7 +37,9 @@ if (!isNil "_devices" && {_devices isEqualType []}) then {
             private _calls = _x getOrDefault ["calls", []];
             {
                 if (_x isEqualType createHashMap) then {
-                    [_x getOrDefault ["time", "?"], format ["Appel %1", _x getOrDefault ["number", ""]], "CALL", "phone"] call _push;
+                    private _when = _x getOrDefault ["time", "?"];
+                    private _num = _x getOrDefault ["number", ""];
+                    [_when, format ["Appel %1", _num], "CALL", "phone"] call _push;
                 };
             } forEach _calls;
         };
@@ -54,7 +59,9 @@ private _radio = [_entity, "radio"] call comspec_sse_fnc_getSection;
 if (!isNil "_radio" && {_radio isEqualType createHashMap}) then {
     {
         if (_x isEqualType createHashMap) then {
-            [_x getOrDefault ["when", "?"], _x getOrDefault ["text", ""], "RADIO", "radio"] call _push;
+            private _when = _x getOrDefault ["when", "?"];
+            private _txt = _x getOrDefault ["text", ""];
+            [_when, _txt, "RADIO", "radio"] call _push;
         };
     } forEach (_radio getOrDefault ["trafficLog", []]);
 };
@@ -62,7 +69,10 @@ if (!isNil "_radio" && {_radio isEqualType createHashMap}) then {
 private _hist = [_entity] call comspec_sse_fnc_getActionHistory;
 {
     if (_x isEqualType createHashMap) then {
-        [str (_x getOrDefault ["at", 0]), format ["%1 — %2", _x getOrDefault ["action", ""], _x getOrDefault ["detail", ""]], "OBS", "operator"] call _push;
+        private _at = str (_x getOrDefault ["at", 0]);
+        private _act = _x getOrDefault ["action", ""];
+        private _det = _x getOrDefault ["detail", ""];
+        [_at, format ["%1 — %2", _act, _det], "OBS", "operator"] call _push;
     };
 } forEach _hist;
 

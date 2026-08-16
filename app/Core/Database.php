@@ -24,7 +24,7 @@ final class Database
             $cfg = require $localPath;
             if (is_array($cfg) && isset($cfg['username'], $cfg['password'])) {
                 return [
-                    'host'     => $cfg['host'] ?? 'localhost',
+                    'host'     => $cfg['host'] ?? '127.0.0.1',
                     'port'     => (int) ($cfg['port'] ?? 3306),
                     'database' => $cfg['database'] ?? '',
                     'username' => $cfg['username'],
@@ -34,7 +34,7 @@ final class Database
             }
         }
 
-        $host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: 'localhost';
+        $host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: '127.0.0.1';
         $name = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: '';
         $user = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: '';
         $pass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: '';
@@ -42,7 +42,7 @@ final class Database
         $charset = $_ENV['DB_CHARSET'] ?? getenv('DB_CHARSET') ?: 'utf8mb4';
 
         return [
-            'host'     => $host ?: 'localhost',
+            'host'     => $host ?: '127.0.0.1',
             'port'     => $port,
             'database' => $name,
             'username' => $user,
@@ -70,9 +70,16 @@ final class Database
             );
         }
 
+        // Hostinger / PHP-FPM : « localhost » tente souvent un socket Unix inexistant
+        // → SQLSTATE[HY000] [2002] Operation not permitted. Préférer 127.0.0.1 (TCP).
+        $host = $cfg['host'];
+        if ($host === 'localhost') {
+            $host = '127.0.0.1';
+        }
+
         $dsn = sprintf(
             'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-            $cfg['host'],
+            $host,
             $cfg['port'],
             $cfg['database'],
             $cfg['charset']
@@ -87,7 +94,12 @@ final class Database
             // Horloge SQL stable (évite expires_at / NOW() incohérents selon le serveur hôte).
             self::$pdo->exec("SET time_zone = '+00:00'");
         } catch (PDOException $e) {
-            throw new RuntimeException('Database connection failed: ' . $e->getMessage(), 0, $e);
+            $detail = $e->getMessage();
+            $hint = '';
+            if (str_contains($detail, '2002') || str_contains($detail, 'Operation not permitted')) {
+                $hint = ' Vérifiez DB_HOST=127.0.0.1 (pas localhost socket) dans .env / database.local.php, et qu’un déploiement FTP n’est pas en cours.';
+            }
+            throw new RuntimeException('Database connection failed: ' . $detail . $hint, 0, $e);
         }
 
         return self::$pdo;

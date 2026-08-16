@@ -15,7 +15,8 @@ if (isNil "_identity" || {!(_identity isEqualType createHashMap)}) exitWith { fa
 private _name = _identity getOrDefault ["name", ""];
 private _alias = _identity getOrDefault ["alias", ""];
 private _nat = _identity getOrDefault ["nationality", ""];
-private _org = _identity getOrDefault ["organization", _identity getOrDefault ["role", ""]];
+private _org = _identity getOrDefault ["organization", ""];
+if (_org isEqualTo "") then { _org = _identity getOrDefault ["role", ""]; };
 
 if (_name isNotEqualTo "") then {
     _entity setVariable ["BII_Identifi_name", _name, true];
@@ -39,7 +40,8 @@ if (_intel isEqualType createHashMap) then {
 
 private _bio = [_entity, "biometrics"] call comspec_sse_fnc_getSection;
 if (_bio isEqualType createHashMap) then {
-    private _bk = _bio getOrDefault ["biiBioKey", _bio getOrDefault ["fingerprintId", ""]];
+    private _bk = _bio getOrDefault ["biiBioKey", ""];
+    if (_bk isEqualTo "") then { _bk = _bio getOrDefault ["fingerprintId", ""]; };
     if (_bk isNotEqualTo "") then { _entity setVariable ["BII_Identifi_bioKey", _bk, true]; };
 };
 

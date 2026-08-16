@@ -16,7 +16,8 @@ if (count _pools == 0) then {
 
 private _theme = _cluster getOrDefault ["theme", "fuel_delivery"];
 private _pack = [_theme, _seed, _cluster, _pools] call comspec_sse_fnc_getThemePack;
-private _grid = _pack getOrDefault ["grid", _cluster getOrDefault ["depotGrid", ""]];
+private _grid = _pack getOrDefault ["grid", ""];
+if (_grid isEqualTo "") then { _grid = _cluster getOrDefault ["depotGrid", ""]; };
 private _docs = [];
 
 for "_i" from 0 to (_count - 1) do {
