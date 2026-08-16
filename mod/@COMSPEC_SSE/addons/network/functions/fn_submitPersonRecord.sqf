@@ -30,6 +30,20 @@ if ([] call comspec_sse_fnc_isOnline) then {
 
 if (_ok) then {
     [_entity, "TRANSMITTED"] call comspec_sse_fnc_markTransmitted;
+    // Mémoriser l’id Athena (détail OK) pour biométrie / photo.
+    private _raw = missionNamespace getVariable ["comspec_sse_lastExtRaw", ""];
+    if (_raw isEqualType "" && {_raw isNotEqualTo ""}) then {
+        private _parsed = parseSimpleArray _raw;
+        if (_parsed isEqualType [] && {(count _parsed) >= 2}) then {
+            private _detail = _parsed select 1;
+            if (_detail isEqualType "" && {_detail isNotEqualTo ""} && {_detail isNotEqualTo "Success"}) then {
+                private _n = parseNumber _detail;
+                if (_n > 0) then {
+                    _entity setVariable ["comspec_sse_athenaPersonId", str (floor _n), true];
+                };
+            };
+        };
+    };
     hint format ["Fiche personne transmise — %1", _uid];
     [_uid, "person", "athena", "Fiche personne", 80, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
 } else {

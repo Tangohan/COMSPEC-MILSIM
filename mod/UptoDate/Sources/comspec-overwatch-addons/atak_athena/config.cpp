@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.18;
-        versionStr = "1.0.18";
-        versionAr[] = {1, 0, 18};
+        version = 1.0.26;
+        versionStr = "1.0.26";
+        versionAr[] = {1, 0, 26};
     };
 };
 
@@ -39,7 +39,8 @@ class CfgFunctions
             class athena_pushNotification {};
             class athena_selectTab {};
             class athena_sendPhoto {};
-        class athena_collectLocalPhotos {};
+            class athena_sendSeekData {};
+            class athena_collectLocalPhotos {};
         class athena_rememberLocalPhoto {};
             class athena_setPanelFeedback {};
             class athena_bridgeIcemanAlert {};
@@ -81,6 +82,14 @@ class CfgFunctions
             class athena_applyBriefingSlide {};
             class athena_openBriefing {};
             class athena_bdaOnOpened {};
+            class athena_biiOnOpened {};
+            class athena_openBiiTab {};
+            class athena_taskOnOpened {};
+            class athena_updateTask {};
+            class athena_taskSelect {};
+            class athena_taskRespond {};
+            class athena_syncOrdersToGroupChat {};
+            class athena_openTask {};
         };
     };
     // Workaround BCE: Check_Layout uses undefined _line (Compat updateInterface)
@@ -136,6 +145,8 @@ class RscControlsGroup;
 #include "ui\sound_page.hpp"
 #include "ui\briefing_page.hpp"
 #include "ui\bda_host_page.hpp"
+#include "ui\bii_page.hpp"
+#include "ui\task_page.hpp"
 
 class ATAK_APPs
 {
@@ -150,6 +161,18 @@ class ATAK_APPs
             ORDER = 3.5;
             PAGE_CTRL = "COMSPEC_ATAK_Athena";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_onOpened";
+        };
+    };
+    class AtakTask: message
+    {
+        text = "<t size='1'>TASK</t>";
+        textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 1.15;
+            PAGE_CTRL = "COMSPEC_ATAK_Task";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_taskOnOpened";
         };
     };
     class AtakStatus: message
@@ -188,6 +211,18 @@ class ATAK_APPs
             Opened = "comspec_overwatch_atak_athena_fnc_athena_briefingOnOpened";
         };
     };
+    class BII_Identifi: message
+    {
+        text = "<t size='1'>BII-10</t>";
+        textureNoShortcut = "a3\ui_f\data\igui\cfg\holdactions\holdaction_search_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 3.55;
+            PAGE_CTRL = "COMSPEC_ATAK_BII";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_biiOnOpened";
+        };
+    };
     // Stub BCE BDA_Report : PAGE_CTRL/Opened vides → erreur "Opened function...". On le répare.
     class BDA_Report: message
     {
@@ -218,6 +253,18 @@ class RscTitles
                 ORDER = 3.5;
                 PAGE_CTRL = "COMSPEC_ATAK_Athena";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_onOpened";
+            };
+        };
+        class AtakTask: message
+        {
+            text = "<t size='1'>TASK</t>";
+            textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 1.15;
+                PAGE_CTRL = "COMSPEC_ATAK_Task";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_taskOnOpened";
             };
         };
         class AtakStatus: message
@@ -254,6 +301,18 @@ class RscTitles
                 ORDER = 3.4;
                 PAGE_CTRL = "COMSPEC_ATAK_Briefing";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_briefingOnOpened";
+            };
+        };
+        class BII_Identifi: message
+        {
+            text = "<t size='1'>BII-10</t>";
+            textureNoShortcut = "a3\ui_f\data\igui\cfg\holdactions\holdaction_search_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 3.55;
+                PAGE_CTRL = "COMSPEC_ATAK_BII";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_biiOnOpened";
             };
         };
         class BDA_Report: message

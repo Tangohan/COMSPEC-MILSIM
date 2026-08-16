@@ -795,41 +795,47 @@ body.sse-theme-bureau table td:has(> .btn-open) {
 .badge {
     display: inline-flex;
     align-items: center;
-    gap: .3rem;
-    padding: .19rem .38rem;
-    border: 1px solid #465044;
-    background: #171e17;
-    color: #aebda8;
+    gap: .35rem;
+    padding: .2rem .42rem .2rem .36rem;
+    border: 1px solid rgba(118, 185, 158, 0.42);
+    border-radius: 0;
+    background: rgba(11, 23, 18, 0.92);
+    color: #76b99e;
     font-family: var(--mono);
-    font-size: .54rem;
+    font-size: .58rem;
     font-weight: 700;
-    letter-spacing: .06em;
+    letter-spacing: .07em;
+    line-height: 1.15;
     text-transform: uppercase;
+    white-space: nowrap;
+    vertical-align: middle;
 }
 
 .badge::before {
     content: "";
-    width: 5px;
-    height: 5px;
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
     background: currentColor;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
 }
 
 .badge--amber {
-    border-color: #5a4a2c;
-    background: #211b11;
+    border-color: rgba(182, 154, 93, 0.55);
+    background: rgba(23, 19, 12, 0.95);
     color: #c5a461;
 }
 
 .badge--red {
-    border-color: #593535;
-    background: #241616;
+    border-color: rgba(183, 93, 93, 0.55);
+    background: rgba(25, 13, 13, 0.95);
     color: #c57979;
 }
 
 .badge--gray {
-    border-color: #3b4248;
-    background: #171b1f;
-    color: #89939a;
+    border-color: rgba(148, 163, 184, 0.42);
+    background: rgba(16, 18, 16, 0.95);
+    color: #9aa3ab;
 }
 
 .empty-state {
@@ -3249,29 +3255,30 @@ body.sse-theme-bureau tbody tr:hover {
 }
 
 body.sse-theme-bureau .badge {
-    border-color: #304138;
+    border-color: rgba(118, 185, 158, 0.38);
     background: #0b1712;
     color: #76b99e;
     font-family: var(--mono);
     font-size: 8px;
+    letter-spacing: .08em;
 }
 
 body.sse-theme-bureau .badge--amber {
-    border-color: #4d4129;
+    border-color: rgba(182, 154, 93, 0.5);
     background: #17130c;
-    color: #b69a5d;
+    color: #c5a461;
 }
 
 body.sse-theme-bureau .badge--red {
-    border-color: #492626;
+    border-color: rgba(183, 93, 93, 0.5);
     background: #190d0d;
-    color: #b75d5d;
+    color: #c57979;
 }
 
 body.sse-theme-bureau .badge--gray {
-    border-color: #2d322f;
+    border-color: rgba(148, 163, 184, 0.36);
     background: #101210;
-    color: #777f7a;
+    color: #9aa3ab;
 }
 
 body.sse-theme-bureau .empty-state {
@@ -9094,5 +9101,22 @@ body.sse-lib-open { overflow: hidden; }
 .sse-sugg-item--probable { border-left-color: #f59e0b; }
 .sse-sugg-item--confirme_candidat { border-left-color: #34d399; }
 .sse-sugg-item--possible { border-left-color: #60a5fa; }
+.sse-sugg-item--accepted { border-left-color: #34d399; }
+.sse-sugg-item--rejected { border-left-color: #f87171; }
+.sse-sugg-item--deferred { border-left-color: #94a3b8; }
+.sse-sugg-item--history { opacity: .92; }
+.sse-sugg-meta { margin: .35rem 0 0; font-size: .78rem; }
 .sse-sugg-actions { display: flex; gap: .4rem; align-items: flex-start; }
 .sse-course__digest { margin: .75rem 0 0; font-size: .78rem; }
+
+.sse-panel-meta-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  flex-wrap: wrap;
+}
+.sse-col-actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}

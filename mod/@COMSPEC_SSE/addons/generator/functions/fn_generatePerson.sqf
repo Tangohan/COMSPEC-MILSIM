@@ -125,9 +125,9 @@ private _intelSlice = _intelPack select [0, _nIntel min 5];
 // Biométrie
 private _bio = createHashMap;
 if (_hasBio) then {
-    private _fpId = format ["FP-%1", [_seed, "fp"] call comspec_sse_fnc_hash];
-    private _irId = format ["IR-%1", [_seed, "ir"] call comspec_sse_fnc_hash];
-    private _dnaId = format ["DNA-%1", [_seed, "dna"] call comspec_sse_fnc_hash];
+    private _fpId = format ["FP-%1", [_seed, "fp", 8] call comspec_sse_fnc_idToken];
+    private _irId = format ["IR-%1", [_seed, "ir", 8] call comspec_sse_fnc_idToken];
+    private _dnaId = format ["DNA-%1", [_seed, "dna", 8] call comspec_sse_fnc_idToken];
     private _heightCm = 165 + (([_seed, "h"] call comspec_sse_fnc_hash) mod 30);
     private _builds = ["slim", "medium", "heavy"];
     private _build = _builds select (([_seed, "bd"] call comspec_sse_fnc_hash) mod 3);

@@ -78,6 +78,14 @@ Soft-load (BII optionnel) :
 [_object] call comspec_sse_fnc_biiImportObject;
 ```
 
+## Couche ATAK + raccourci
+
+Avec Overwatch `atak_athena` :
+
+- App tiroir ATAK **BII-10** (`ATAK_APPs` → `BII_Identifi`) → ouvre Identifi
+- Raccourci CBA **Ouvrir SEEK II** (`Ctrl+Shift+S`) → Identifi si BII présent
+- Barre COMSPEC injectée dans le dialogue BII (sans override `compileFinal`)
+
 ## Build
 
 Inclure `compat_bii` dans `build_pbo.bat` → `comspec_sse_compat_bii.pbo`.  

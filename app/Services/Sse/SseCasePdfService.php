@@ -148,7 +148,8 @@ final class SseCasePdfService
             $pdf->setPrintHeader(false);
             $pdf->setPrintFooter(true);
             $pdf->setFooterMargin(12);
-            $pdf->AliasNbPages();
+            // TCPDF moderne : pas d’AliasNbPages() (héritage FPDF). Les alias
+            // getAliasNumPage() / getAliasNbPages() dans Footer() suffisent.
 
             // —— Page de garde ——
             $pdf->AddPage();

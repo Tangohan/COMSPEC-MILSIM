@@ -93,7 +93,7 @@ private _caption = switch (_mode) do {
 if (_mode isEqualTo "stream") then {
     [] call comspec_overwatch_atak_athena_fnc_athena_snapshotVideoFeed;
 } else {
-    private _stem = if (_mode isEqualTo "hd") then { "COMSPEC_AthenaHD" } else { "COMSPEC_AthenaFeed" };
+    private _stem = if (_mode isEqualTo "hd") then { "COMSPEC_AthenaHD.png" } else { "COMSPEC_AthenaFeed.png" };
     if (_mode isEqualTo "hd") then {
         screenshot _stem;
         [_stem, _caption, "HELMET", _feedId] spawn {

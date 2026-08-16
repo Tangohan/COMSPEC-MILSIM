@@ -245,7 +245,9 @@ final class SseIntelEventRepository
             'event_type_label' => $this->eventTypeLabel((string) ($row['event_type'] ?? '')),
             'source_system' => (string) ($row['source_system'] ?? ''),
             'source_system_label' => $this->sourceSystemLabel((string) ($row['source_system'] ?? '')),
-            'raw_source_id' => $row['raw_source_id'] ?? null,
+            'raw_source_id' => ($row['raw_source_id'] ?? null) !== null && (string) $row['raw_source_id'] !== ''
+                ? sse_normalize_ref_display((string) $row['raw_source_id'])
+                : null,
             'identity_tier' => $row['identity_tier'] ?? null,
             'event_time' => (string) ($row['event_time'] ?? ''),
             'author_label' => $row['author_label'] ?? null,
@@ -257,11 +259,211 @@ final class SseIntelEventRepository
             'source_reliability' => $rel,
             'info_credibility' => $cred,
             'confidence_code' => $rel . (string) $cred,
-            'summary' => (string) ($row['summary'] ?? ''),
+            'summary' => sse_normalize_ref_display((string) ($row['summary'] ?? '')),
             'payload' => $payload,
+            'client_label' => self::clientSoftwareLabel($payload),
             'idempotency_key' => $row['idempotency_key'] ?? null,
             'created_at' => $row['created_at'] ?? null,
         ];
+    }
+
+    /**
+     * Libellé réaliste type atelier / CfgPatches (ex. « COMSPEC Overwatch v1.4.17 »).
+     *
+     * @param array<string, mixed>|null $payload
+     */
+    public static function clientSoftwareLabel(?array $payload): string
+    {
+        if (!is_array($payload)) {
+            return '';
+        }
+        $client = is_array($payload['client'] ?? null) ? $payload['client'] : $payload;
+        $name = trim((string) ($client['mod_name'] ?? ''));
+        $version = trim((string) ($client['mod_version'] ?? $payload['mod_version'] ?? ''));
+        $sseVer = trim((string) ($client['sse_addon_version'] ?? $payload['sse_addon_version'] ?? ''));
+        if ($name === '' && $version === '' && $sseVer === '') {
+            return '';
+        }
+        if ($name === '') {
+            $name = 'COMSPEC Overwatch';
+        }
+        $parts = [];
+        if ($version !== '') {
+            $parts[] = $name . ' v' . ltrim($version, 'vV');
+        } else {
+            $parts[] = $name;
+        }
+        if ($sseVer !== '') {
+            $parts[] = 'SSE ' . ltrim($sseVer, 'vV');
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    /**
+     * Aplatit le payload en lignes affichables (sans jargon technique).
+     *
+     * @param array<string, mixed>|null $payload
+     * @return list<array{section:string,label:string,value:string}>
+     */
+    public static function flattenPayloadRows(?array $payload): array
+    {
+        if (!is_array($payload) || $payload === []) {
+            return [];
+        }
+        $rows = [];
+        $client = is_array($payload['client'] ?? null) ? $payload['client'] : [];
+        if ($client === [] && (isset($payload['mod_version']) || isset($payload['mod_name']))) {
+            $client = [
+                'mod_name' => $payload['mod_name'] ?? null,
+                'mod_version' => $payload['mod_version'] ?? null,
+                'mod_cfg' => $payload['mod_cfg'] ?? null,
+                'sse_addon_version' => $payload['sse_addon_version'] ?? null,
+                'sse_addon_cfg' => $payload['sse_addon_cfg'] ?? null,
+                'arma_version' => $payload['arma_version'] ?? null,
+            ];
+        }
+        foreach ($client as $k => $v) {
+            if ($v === null || $v === '' || $v === []) {
+                continue;
+            }
+            $rows[] = [
+                'section' => 'Logiciel terrain',
+                'label' => self::payloadFieldLabel((string) $k),
+                'value' => self::stringifyPayloadValue($v),
+            ];
+        }
+        $fields = is_array($payload['fields'] ?? null) ? $payload['fields'] : [];
+        foreach ($fields as $k => $v) {
+            if ($v === null || $v === '' || $v === []) {
+                continue;
+            }
+            $rows[] = [
+                'section' => 'Données transmises',
+                'label' => self::payloadFieldLabel((string) $k),
+                'value' => self::stringifyPayloadValue($v),
+            ];
+        }
+        foreach ($payload as $k => $v) {
+            if (in_array((string) $k, ['client', 'fields', 'person_id', 'site_id'], true)) {
+                continue;
+            }
+            if ($v === null || $v === '' || $v === []) {
+                continue;
+            }
+            if (is_array($v) && in_array((string) $k, ['mod_name', 'mod_version'], true)) {
+                continue;
+            }
+            // Évite de redoubler les clés déjà prises dans client
+            if (isset($client[(string) $k])) {
+                continue;
+            }
+            $rows[] = [
+                'section' => 'Compléments',
+                'label' => self::payloadFieldLabel((string) $k),
+                'value' => self::stringifyPayloadValue($v),
+            ];
+        }
+
+        return $rows;
+    }
+
+    public static function payloadFieldLabel(string $key): string
+    {
+        return match ($key) {
+            'mod_name' => 'Logiciel',
+            'mod_version' => 'Version du pack',
+            'mod_cfg' => 'Module (CfgPatches)',
+            'sse_addon_version' => 'Version addon SSE',
+            'sse_addon_cfg' => 'Addon SSE (CfgPatches)',
+            'arma_version' => 'Version Arma 3',
+            'source_system' => 'Canal d’origine',
+            'display_name' => 'Identité affichée',
+            'last_name' => 'Nom',
+            'first_name' => 'Prénom',
+            'alias' => 'Alias',
+            'status' => 'Statut déclaré',
+            'age_estimated' => 'Âge estimé',
+            'nationality' => 'Nationalité',
+            'language_spoken' => 'Langue',
+            'distinguishing_marks' => 'Signes distinctifs',
+            'affiliation' => 'Affiliation',
+            'circumstances' => 'Circonstances',
+            'statements' => 'Déclarations',
+            'confidence_level' => 'Niveau de confiance',
+            'grid_reference' => 'Référence grille',
+            'location_summary' => 'Position relevée',
+            'submitter_callsign' => 'Indicatif opérateur',
+            'submitter_steam_id' => 'Identifiant Steam opérateur',
+            'target_unit_netid' => 'Cible (réseau jeu)',
+            'case_code' => 'Code dossier terrain',
+            'pos_x', 'capture_pos_x' => 'Position X',
+            'pos_y', 'capture_pos_y' => 'Position Y',
+            'pos_z', 'capture_pos_z' => 'Position Z',
+            'biometrics_simulated' => 'Biométrie relevée',
+            'consent_recorded' => 'Consentement consigné',
+            'weapons' => 'Armes relevées',
+            'equipment' => 'Équipement relevé',
+            'medical_context' => 'Contexte médical',
+            'identity_query' => 'Requête d’identité',
+            'signature' => 'Signature / sceau',
+            'biometric_samples' => 'Échantillons biométriques',
+            'name', 'title' => 'Intitulé',
+            'site_type' => 'Type de site',
+            'notes', 'description' => 'Notes',
+            'reference_code' => 'Référence',
+            default => str_replace('_', ' ', $key),
+        };
+    }
+
+    private static function stringifyPayloadValue(mixed $value): string
+    {
+        if (is_bool($value)) {
+            return $value ? 'Oui' : 'Non';
+        }
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+        if (is_string($value)) {
+            return function_exists('sse_normalize_ref_display')
+                ? sse_normalize_ref_display($value)
+                : $value;
+        }
+        if (is_array($value)) {
+            if ($value === []) {
+                return '—';
+            }
+            if (array_is_list($value)) {
+                $parts = [];
+                foreach ($value as $item) {
+                    if (is_scalar($item) || $item === null) {
+                        $parts[] = (string) ($item ?? '');
+                        continue;
+                    }
+                    if (is_array($item)) {
+                        $bits = [];
+                        foreach ($item as $ik => $iv) {
+                            if (is_scalar($iv) || $iv === null) {
+                                $bits[] = self::payloadFieldLabel((string) $ik) . ' : ' . (string) ($iv ?? '');
+                            }
+                        }
+                        $parts[] = implode(', ', $bits);
+                    }
+                }
+
+                return implode(' · ', array_filter($parts, static fn (string $s): bool => trim($s) !== ''));
+            }
+            $bits = [];
+            foreach ($value as $k => $v) {
+                if (is_scalar($v) || $v === null) {
+                    $bits[] = self::payloadFieldLabel((string) $k) . ' : ' . (string) ($v ?? '');
+                }
+            }
+
+            return implode(' · ', $bits);
+        }
+
+        return '';
     }
 
     /**

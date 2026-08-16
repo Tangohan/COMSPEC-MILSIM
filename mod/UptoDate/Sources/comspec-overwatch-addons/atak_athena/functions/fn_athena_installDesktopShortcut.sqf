@@ -80,9 +80,9 @@ private _shortcuts = [
 
         "\A3\ui_f\data\map\markers\military\pickup_CA.paa",
 
-        "Ordres reçus — commandement et appui",
+        "Ordres C2 — app TASK (liste et réponses)",
 
-        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Ordres<br/>reçus</t>",
+        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>TASK<br/>Ordres</t>",
 
         "order"
 
@@ -170,7 +170,7 @@ missionNamespace setVariable ["COMSPEC_Athena_desktopClick", {
         [] call comspec_overwatch_atak_athena_fnc_athena_showLinkDialog;
     } else {
         if (_tab isEqualTo "order") then {
-            [] call comspec_overwatch_connect_fnc_orderInboxShow;
+            [] call comspec_overwatch_atak_athena_fnc_athena_openTask;
         } else {
             if (_tab isEqualTo "briefing") then {
                 [] call comspec_overwatch_atak_athena_fnc_athena_openBriefing;

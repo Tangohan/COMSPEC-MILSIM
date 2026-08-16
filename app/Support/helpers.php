@@ -57,6 +57,7 @@ if (!function_exists('asset_url')) {
 if (!function_exists('user_media_public_url')) {
     /**
      * Résout une photo / bannière utilisateur (chemin relatif uploads/… ou URL absolue http(s)).
+     * Sur Athena (APP_BASE_PATH=/public), force le préfixe /public devant /uploads/.
      */
     function user_media_public_url(?string $path): ?string
     {
@@ -64,12 +65,57 @@ if (!function_exists('user_media_public_url')) {
         if ($path === '') {
             return null;
         }
+        $path = str_replace('\\', '/', $path);
+        // Chemin absolu serveur → segment uploads/…
+        if (preg_match('#(?:^|/)(uploads/.+)$#i', $path, $m)
+            && (preg_match('#^[a-z]:/#i', $path) === 1 || str_contains($path, '/public/') || str_starts_with($path, '/home/'))
+        ) {
+            $path = $m[1];
+        }
         if (preg_match('#^https?://#i', $path) === 1) {
-            return $path;
+            return normalize_public_uploads_url($path);
         }
         $base = function_exists('url') ? rtrim(url(''), '/') : '';
+        $rel = ltrim($path, '/');
+        // Évite /public/public/uploads
+        $prefix = rtrim((string) (function_exists('env') ? env('APP_BASE_PATH', '') : ''), '/');
+        if ($prefix !== '' && str_starts_with('/' . $rel, $prefix . '/')) {
+            $rel = ltrim(substr('/' . $rel, strlen($prefix)), '/');
+        }
 
-        return $base . '/' . ltrim(str_replace('\\', '/', $path), '/');
+        return normalize_public_uploads_url($base . '/' . $rel);
+    }
+}
+
+if (!function_exists('normalize_public_uploads_url')) {
+    /**
+     * Corrige les URLs du type https://host/uploads/… (404) → …/public/uploads/….
+     */
+    function normalize_public_uploads_url(?string $url): ?string
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            return null;
+        }
+        $prefix = rtrim((string) (function_exists('env') ? env('APP_BASE_PATH', '') : ''), '/');
+        if ($prefix === '' && isset($_SERVER['SCRIPT_NAME']) && str_contains((string) $_SERVER['SCRIPT_NAME'], '/public/')) {
+            $prefix = '/public';
+        }
+        if ($prefix === '') {
+            $prefix = '/public';
+        }
+        // Déjà préfixé
+        if (preg_match('#' . preg_quote($prefix, '#') . '/uploads/#i', $url) === 1) {
+            return $url;
+        }
+        if (preg_match('#^(https?://[^/]+)/uploads/#i', $url) === 1) {
+            return (string) preg_replace('#^(https?://[^/]+)/uploads#i', '$1' . $prefix . '/uploads', $url, 1);
+        }
+        if (str_starts_with($url, '/uploads/')) {
+            return $prefix . $url;
+        }
+
+        return $url;
     }
 }
 
@@ -1452,6 +1498,27 @@ if (!function_exists('sse_ui_classification_label')) {
         $opts = sse_ui_classification_options();
 
         return $opts[$code] ?? 'Confidentiel';
+    }
+}
+
+if (!function_exists('sse_normalize_ref_display')) {
+    /**
+     * Corrige les références terrain affichées en notation scientifique (ex. SSE-WL-1.11e+09).
+     */
+    function sse_normalize_ref_display(mixed $value): string
+    {
+        $s = (string) $value;
+        if ($s === '' || !preg_match('/\d+\.\d+[eE][+\-]?\d+/', $s)) {
+            return $s;
+        }
+
+        return (string) preg_replace_callback(
+            '/\d+\.\d+[eE][+\-]?\d+/',
+            static function (array $m): string {
+                return sprintf('%.0f', (float) $m[0]);
+            },
+            $s
+        );
     }
 }
 

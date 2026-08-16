@@ -7,7 +7,7 @@ params [
 ];
 
 if !([_player, "camera"] call comspec_sse_fnc_hasEquipment) exitWith {
-    hint "Appareil photo SSE (ou caméra / tablette cTab compatible) requis.";
+    hint "Appareil photo SSE, S7 Android (cTab) ou caméra / tablette compatible requis.";
 };
 
 private _time = missionNamespace getVariable ["comspec_sse_timePhoto", 3];

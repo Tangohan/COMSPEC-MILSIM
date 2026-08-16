@@ -165,7 +165,21 @@ final class SseSuggestionQueueRepository
             $params['c'] = (int) $filters['case_id'];
             $params['c2'] = (int) $filters['case_id'];
         }
-        if (!empty($filters['status'])) {
+        if (!empty($filters['statuses']) && is_array($filters['statuses'])) {
+            $statuses = array_values(array_filter(
+                array_map('strval', $filters['statuses']),
+                static fn (string $s): bool => isset(self::STATUSES[$s])
+            ));
+            if ($statuses !== []) {
+                $placeholders = [];
+                foreach ($statuses as $i => $st) {
+                    $key = 'st' . $i;
+                    $placeholders[] = ':' . $key;
+                    $params[$key] = $st;
+                }
+                $where[] = 'status IN (' . implode(',', $placeholders) . ')';
+            }
+        } elseif (!empty($filters['status'])) {
             $where[] = 'status = :st';
             $params['st'] = (string) $filters['status'];
         } elseif (empty($filters['all'])) {
@@ -182,11 +196,15 @@ final class SseSuggestionQueueRepository
             $params['q5'] = $like;
         }
         $limit = max(1, min(200, (int) ($filters['limit'] ?? 80)));
+        $history = !empty($filters['history']);
+        $order = $history
+            ? 'ORDER BY COALESCE(decided_at, updated_at) DESC, id DESC'
+            : 'ORDER BY FIELD(confidence, \'confirme_candidat\',\'probable\',\'possible\'), score DESC, id DESC';
 
         try {
             $rows = $this->db->fetchAll(
                 'SELECT * FROM sse_suggestion_queue WHERE ' . implode(' AND ', $where)
-                . ' ORDER BY FIELD(confidence, \'confirme_candidat\',\'probable\',\'possible\'), score DESC, id DESC'
+                . ' ' . $order
                 . ' LIMIT ' . $limit,
                 $params
             );
@@ -195,6 +213,31 @@ final class SseSuggestionQueueRepository
         }
 
         return array_map([$this, 'hydrateSuggestion'], $rows);
+    }
+
+    public function countDecided(int $tenantId, ?int $caseId = null): int
+    {
+        try {
+            if ($caseId !== null && $caseId > 0) {
+                $row = $this->db->fetchOne(
+                    'SELECT COUNT(*) AS n FROM sse_suggestion_queue
+                      WHERE tenant_id = :t
+                        AND status IN (\'accepted\', \'rejected\', \'deferred\')
+                        AND (case_id = :c OR related_case_id = :c2)',
+                    ['t' => $tenantId, 'c' => $caseId, 'c2' => $caseId]
+                );
+            } else {
+                $row = $this->db->fetchOne(
+                    'SELECT COUNT(*) AS n FROM sse_suggestion_queue
+                      WHERE tenant_id = :t AND status IN (\'accepted\', \'rejected\', \'deferred\')',
+                    ['t' => $tenantId]
+                );
+            }
+
+            return (int) ($row['n'] ?? 0);
+        } catch (\Throwable) {
+            return 0;
+        }
     }
 
     public function findSuggestion(int $tenantId, int $id): ?array

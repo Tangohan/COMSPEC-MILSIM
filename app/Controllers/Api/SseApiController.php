@@ -101,6 +101,7 @@ final class SseApiController
         }
 
         $body = $this->jsonBody($request);
+        $body = $this->enrichSeekCaptureLocation($body);
         $mapId = $this->mapId($request, true);
 
         $last = trim((string) ($body['last_name'] ?? ''));
@@ -140,6 +141,14 @@ final class SseApiController
                 }
                 $sample['operator_callsign'] = $sample['operator_callsign']
                     ?? ($data['submitter_callsign'] ?? null);
+                if (empty($sample['conditions']) && empty($sample['conditions_json'])) {
+                    $sample['conditions'] = array_filter([
+                        'grid_reference' => $sample['grid_reference'] ?? $body['grid_reference'] ?? null,
+                        'pos_x' => $sample['pos_x'] ?? $body['pos_x'] ?? null,
+                        'pos_y' => $sample['pos_y'] ?? $body['pos_y'] ?? null,
+                        'pos_z' => $sample['pos_z'] ?? $body['pos_z'] ?? null,
+                    ], static fn ($v) => $v !== null && $v !== '');
+                }
                 $this->persons->addBiometricSample($id, $tenantId, $sample);
             }
         }
@@ -266,10 +275,13 @@ final class SseApiController
                 'event_uuid' => $body['event_uuid'] ?? null,
                 'case_id' => $filedCaseId,
                 'author_label' => (string) ($data['submitter_callsign'] ?? 'Terrain'),
-                'lat' => $body['capture_pos_x'] ?? $body['lat'] ?? null,
-                'lng' => $body['capture_pos_y'] ?? $body['lng'] ?? null,
+                'unit_label' => $body['unit_label'] ?? $body['unit'] ?? null,
+                'lat' => $body['capture_pos_x'] ?? $body['pos_x'] ?? $body['lat'] ?? $person['capture_pos_x'] ?? $person['pos_x'] ?? null,
+                'lng' => $body['capture_pos_y'] ?? $body['pos_y'] ?? $body['lng'] ?? $person['capture_pos_y'] ?? $person['pos_y'] ?? null,
                 'source_reliability' => $body['source_reliability'] ?? 'C',
                 'info_credibility' => $body['info_credibility'] ?? 3,
+                'client' => $this->extractSseClientMeta($body),
+                'transmission_fields' => $this->extractSsePersonTransmissionFields($body, $person),
             ]);
         }
 
@@ -391,6 +403,16 @@ final class SseApiController
         }
 
         $relative = 'uploads/sse/' . $filename;
+        $gridRef = trim((string) ($_POST['grid_reference'] ?? $_POST['grid_ref'] ?? ''));
+        $meta = [];
+        if ($gridRef !== '') {
+            $meta['grid_reference'] = $gridRef;
+        }
+        foreach (['pos_x', 'pos_y', 'pos_z'] as $coordKey) {
+            if (isset($_POST[$coordKey]) && $_POST[$coordKey] !== '' && is_numeric($_POST[$coordKey])) {
+                $meta[$coordKey] = (float) $_POST[$coordKey];
+            }
+        }
         $photoId = $this->persons->addPhoto($personId, $tenantId, [
             'image_path' => $relative,
             'angle' => $_POST['angle'] ?? 'face',
@@ -399,6 +421,7 @@ final class SseApiController
             'pos_x' => $_POST['pos_x'] ?? null,
             'pos_y' => $_POST['pos_y'] ?? null,
             'pos_z' => $_POST['pos_z'] ?? null,
+            'metadata' => $meta !== [] ? $meta : null,
         ]);
 
         $photos = $this->persons->listPhotos($personId, $tenantId);
@@ -554,6 +577,8 @@ final class SseApiController
                 'idempotency_key' => (string) ($body['idempotency_key'] ?? $body['event_uuid'] ?? ''),
                 'case_id' => $caseId,
                 'author_label' => (string) ($data['submitter_callsign'] ?? 'Terrain'),
+                'client' => $this->extractSseClientMeta($body),
+                'transmission_fields' => $this->extractSseSiteTransmissionFields($body, $site),
             ]);
         }
 
@@ -825,5 +850,206 @@ final class SseApiController
         $this->jsonBodyCache = is_array($decoded) ? $decoded : [];
 
         return $this->jsonBodyCache;
+    }
+
+    /**
+     * Empreinte logiciel terrain (versions CfgPatches / Workshop).
+     *
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>
+     */
+    private function extractSseClientMeta(array $body): array
+    {
+        $modVersion = trim((string) ($body['mod_version'] ?? $body['overwatch_version'] ?? ''));
+        $modName = trim((string) ($body['mod_name'] ?? $body['client_name'] ?? ''));
+        $modCfg = trim((string) ($body['mod_cfg'] ?? $body['mod_patch'] ?? ''));
+        $sseVersion = trim((string) ($body['sse_addon_version'] ?? $body['sse_version'] ?? ''));
+        $sseCfg = trim((string) ($body['sse_addon_cfg'] ?? ''));
+        $armaVersion = trim((string) ($body['arma_version'] ?? $body['game_version'] ?? ''));
+
+        if ($modName === '' && ($modVersion !== '' || $modCfg !== '')) {
+            $modName = 'COMSPEC Overwatch';
+        }
+        if ($modCfg === '' && $modVersion !== '') {
+            $modCfg = 'comspec_overwatch_connect';
+        }
+        if ($sseCfg === '' && $sseVersion !== '') {
+            $sseCfg = 'comspec_sse_main';
+        }
+
+        $out = array_filter([
+            'mod_name' => $modName !== '' ? $modName : null,
+            'mod_version' => $modVersion !== '' ? $modVersion : null,
+            'mod_cfg' => $modCfg !== '' ? $modCfg : null,
+            'sse_addon_version' => $sseVersion !== '' ? $sseVersion : null,
+            'sse_addon_cfg' => $sseCfg !== '' ? $sseCfg : null,
+            'arma_version' => $armaVersion !== '' ? $armaVersion : null,
+        ], static fn ($v) => $v !== null);
+
+        return $out;
+    }
+
+    /**
+     * Normalise et propage les coordonnées SEEK sur la fiche et les sous-données.
+     *
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>
+     */
+    private function enrichSeekCaptureLocation(array $body): array
+    {
+        $posX = $body['pos_x'] ?? $body['capture_pos_x'] ?? null;
+        $posY = $body['pos_y'] ?? $body['capture_pos_y'] ?? null;
+        $posZ = $body['pos_z'] ?? $body['capture_pos_z'] ?? null;
+        $grid = trim((string) ($body['grid_reference'] ?? $body['grid'] ?? ''));
+
+        if ($posX !== null && $posX !== '' && is_numeric($posX)) {
+            $body['pos_x'] = (float) $posX;
+            $body['capture_pos_x'] = (float) $posX;
+        }
+        if ($posY !== null && $posY !== '' && is_numeric($posY)) {
+            $body['pos_y'] = (float) $posY;
+            $body['capture_pos_y'] = (float) $posY;
+        }
+        if ($posZ !== null && $posZ !== '' && is_numeric($posZ)) {
+            $body['pos_z'] = (float) $posZ;
+            $body['capture_pos_z'] = (float) $posZ;
+        }
+        if ($grid !== '') {
+            $body['grid_reference'] = $grid;
+        }
+
+        $stamp = static function (mixed $item) use ($body): mixed {
+            if (!is_array($item)) {
+                return $item;
+            }
+            if (!isset($item['grid_reference']) || $item['grid_reference'] === '' || $item['grid_reference'] === null) {
+                if (!empty($body['grid_reference'])) {
+                    $item['grid_reference'] = $body['grid_reference'];
+                }
+            }
+            foreach (['pos_x', 'pos_y', 'pos_z'] as $k) {
+                if (!isset($item[$k]) || $item[$k] === '' || $item[$k] === null) {
+                    if (isset($body[$k]) && $body[$k] !== null && $body[$k] !== '') {
+                        $item[$k] = $body[$k];
+                    }
+                }
+            }
+
+            return $item;
+        };
+
+        foreach (['weapons', 'equipment', 'biometric_samples'] as $listKey) {
+            if (!isset($body[$listKey]) || !is_array($body[$listKey])) {
+                continue;
+            }
+            $body[$listKey] = array_map($stamp, $body[$listKey]);
+        }
+        foreach (['medical_context', 'signature', 'identity_query'] as $objKey) {
+            if (isset($body[$objKey]) && is_array($body[$objKey])) {
+                $body[$objKey] = $stamp($body[$objKey]);
+            }
+        }
+
+        return $body;
+    }
+
+    /**
+     * Instantané des champs utiles transmis avec la fiche personne.
+     *
+     * @param array<string, mixed> $body
+     * @param array<string, mixed> $person
+     * @return array<string, mixed>
+     */
+    private function extractSsePersonTransmissionFields(array $body, array $person): array
+    {
+        $keys = [
+            'last_name', 'first_name', 'alias', 'status', 'age_estimated', 'nationality',
+            'language_spoken', 'distinguishing_marks', 'affiliation', 'circumstances',
+            'statements', 'confidence_level', 'grid_reference', 'submitter_callsign',
+            'submitter_steam_id', 'target_unit_netid', 'case_code', 'pos_x', 'pos_y', 'pos_z',
+            'capture_pos_x', 'capture_pos_y', 'capture_pos_z', 'biometrics_simulated',
+            'consent_recorded', 'weapons', 'equipment', 'medical_context', 'identity_query',
+            'signature', 'biometric_samples',
+        ];
+        $out = [];
+        foreach ($keys as $key) {
+            if (!array_key_exists($key, $body)) {
+                continue;
+            }
+            $val = $body[$key];
+            if ($val === null || $val === '' || $val === []) {
+                continue;
+            }
+            $out[$key] = $val;
+        }
+        if (!isset($out['last_name']) && !empty($person['last_name'])) {
+            $out['last_name'] = $person['last_name'];
+        }
+        if (!isset($out['first_name']) && !empty($person['first_name'])) {
+            $out['first_name'] = $person['first_name'];
+        }
+        if (!isset($out['alias']) && !empty($person['alias'])) {
+            $out['alias'] = $person['alias'];
+        }
+        if (!empty($person['display_name'])) {
+            $out['display_name'] = $person['display_name'];
+        }
+        if (!isset($out['grid_reference']) && !empty($person['grid_reference'])) {
+            $out['grid_reference'] = $person['grid_reference'];
+        }
+        foreach (['pos_x' => 'capture_pos_x', 'pos_y' => 'capture_pos_y', 'pos_z' => 'capture_pos_z'] as $posKey => $capKey) {
+            if (!isset($out[$posKey]) && isset($person[$posKey]) && $person[$posKey] !== null) {
+                $out[$posKey] = $person[$posKey];
+            }
+            if (!isset($out[$capKey]) && isset($out[$posKey])) {
+                $out[$capKey] = $out[$posKey];
+            }
+        }
+        $grid = (string) ($out['grid_reference'] ?? '');
+        $px = $out['pos_x'] ?? $out['capture_pos_x'] ?? null;
+        $py = $out['pos_y'] ?? $out['capture_pos_y'] ?? null;
+        if ($grid !== '' || ($px !== null && $py !== null)) {
+            $parts = [];
+            if ($grid !== '') {
+                $parts[] = 'Grille ' . $grid;
+            }
+            if ($px !== null && $py !== null) {
+                $parts[] = sprintf('Terrain %.1f / %.1f', (float) $px, (float) $py);
+            }
+            $out['location_summary'] = implode(' · ', $parts);
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @param array<string, mixed> $site
+     * @return array<string, mixed>
+     */
+    private function extractSseSiteTransmissionFields(array $body, array $site): array
+    {
+        $keys = [
+            'name', 'title', 'site_type', 'grid_reference', 'submitter_callsign',
+            'pos_x', 'pos_y', 'pos_z', 'notes', 'description',
+        ];
+        $out = [];
+        foreach ($keys as $key) {
+            if (!array_key_exists($key, $body)) {
+                continue;
+            }
+            $val = $body[$key];
+            if ($val === null || $val === '' || $val === []) {
+                continue;
+            }
+            $out[$key] = $val;
+        }
+        foreach (['name', 'title', 'reference_code', 'site_type'] as $key) {
+            if (!isset($out[$key]) && !empty($site[$key])) {
+                $out[$key] = $site[$key];
+            }
+        }
+
+        return $out;
     }
 }

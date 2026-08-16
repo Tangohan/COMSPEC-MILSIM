@@ -53,7 +53,7 @@ for "_i" from 0 to (_count - 1) do {
         private _sk = format ["sum%1", _i];
         [_seed, _sk, _alts] call comspec_sse_fnc_pickFromSeed
     };
-    private _docGrid = if (_i == 0) then { _grid } else { "" };
+    private _docGrid = _grid;
     private _codeword = if (_i == 0) then { _packCodeword } else { "" };
     private _dnKey = format ["dn%1", _i];
     private _noise = _i > 0 && {(([_seed, _dnKey] call comspec_sse_fnc_hash) mod 100) < 30};

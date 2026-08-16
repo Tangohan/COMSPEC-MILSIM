@@ -299,6 +299,8 @@ final class SseIntelFoundationService
                 'payload' => [
                     'person_id' => (int) ($person['id'] ?? 0),
                     'source_system' => $sourceSystem,
+                    'client' => is_array($meta['client'] ?? null) ? $meta['client'] : [],
+                    'fields' => is_array($meta['transmission_fields'] ?? null) ? $meta['transmission_fields'] : [],
                 ],
                 'idempotency_key' => $idem,
                 'event_uuid' => $meta['event_uuid'] ?? null,
@@ -346,7 +348,11 @@ final class SseIntelFoundationService
                 'source_reliability' => $meta['source_reliability'] ?? 'C',
                 'info_credibility' => $meta['info_credibility'] ?? 3,
                 'summary' => sprintf('Site transmis : %s', (string) ($site['name'] ?? $site['title'] ?? 'site')),
-                'payload' => ['site_id' => (int) ($site['id'] ?? 0)],
+                'payload' => [
+                    'site_id' => (int) ($site['id'] ?? 0),
+                    'client' => is_array($meta['client'] ?? null) ? $meta['client'] : [],
+                    'fields' => is_array($meta['transmission_fields'] ?? null) ? $meta['transmission_fields'] : [],
+                ],
                 'idempotency_key' => $idem,
             ]);
         } catch (\Throwable) {

@@ -7,6 +7,25 @@
   var cfg = window.SSE_MESH;
   if (!cfg || !document.getElementById('sse-mesh-canvas')) return;
 
+  var mediaBase = String(cfg.mediaBase || '').replace(/\/$/, '');
+  var basePath = String(cfg.basePath || '/public');
+
+  function resolveMediaUrl(raw) {
+    var u = String(raw || '').trim();
+    if (!u) return '';
+    // Corrige https://host/uploads/... → …/public/uploads/...
+    u = u.replace(/^(https?:\/\/[^/]+)\/uploads\//i, function (_, host) {
+      return host + basePath + '/uploads/';
+    });
+    if (u.charAt(0) === '/' && u.indexOf('/uploads/') === 0) {
+      u = basePath + u;
+    }
+    if (/^https?:\/\//i.test(u) || u.charAt(0) === '/') {
+      return u;
+    }
+    return mediaBase ? (mediaBase + '/' + u.replace(/^\//, '')) : u;
+  }
+
   var svg = document.getElementById('sse-mesh-canvas');
   var wrap = svg.parentElement;
   var nodes = (cfg.nodes || []).map(function (n) {
@@ -16,7 +35,7 @@
       kind_label: n.kind_label || (cfg.kindLabels && cfg.kindLabels[n.kind]) || n.kind,
       label: n.label || '',
       detail: n.detail || '',
-      image_url: n.image_url || '',
+      image_url: resolveMediaUrl(n.image_url || n.image_path || ''),
       meta_lines: Array.isArray(n.meta_lines) ? n.meta_lines : [],
       x: +n.pos_x || 200,
       y: +n.pos_y || 200,
@@ -268,6 +287,17 @@
         img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
         img.setAttribute('clip-path', 'url(#' + clipId + ')');
         img.setAttribute('class', 'sse-mesh-node-photo');
+        img.addEventListener('error', function () {
+          try { g.removeChild(img); } catch (e) {}
+          var glyph = document.createElementNS(ns, 'text');
+          glyph.setAttribute('text-anchor', 'middle');
+          glyph.setAttribute('dominant-baseline', 'central');
+          glyph.setAttribute('class', 'sse-mesh-glyph');
+          glyph.setAttribute('fill', kindColor(n.kind));
+          glyph.textContent = (n.kind_label || n.kind || '?').charAt(0).toUpperCase();
+          g.insertBefore(glyph, lab);
+          n.image_url = '';
+        });
         g.appendChild(img);
       } else {
         var glyph = document.createElementNS(ns, 'text');
@@ -317,12 +347,29 @@
     }
     var imgWrap = document.getElementById('sse-mesh-sel-image');
     var imgEl = document.getElementById('sse-mesh-sel-image-img');
+    var imgFallback = document.getElementById('sse-mesh-sel-image-fallback');
     if (imgWrap && imgEl) {
+      imgEl.onload = function () {
+        imgEl.hidden = false;
+        if (imgFallback) imgFallback.hidden = true;
+      };
+      imgEl.onerror = function () {
+        imgEl.removeAttribute('src');
+        imgEl.hidden = true;
+        if (imgFallback) {
+          imgFallback.hidden = false;
+          imgFallback.textContent = 'Image introuvable (fichier absent ou adresse incorrecte).';
+        }
+      };
       if (n.image_url) {
+        imgEl.hidden = false;
+        if (imgFallback) imgFallback.hidden = true;
         imgEl.src = n.image_url;
         imgWrap.hidden = false;
       } else {
         imgEl.removeAttribute('src');
+        imgEl.hidden = true;
+        if (imgFallback) imgFallback.hidden = true;
         imgWrap.hidden = true;
       }
     }
@@ -617,21 +664,47 @@
       var positions = nodes.map(function (n) {
         return { id: n.id, x: Math.round(n.x), y: Math.round(n.y) };
       });
-      var body = new FormData();
-      body.append('_csrf_token', cfg.csrf);
-      body.append('positions_json', JSON.stringify(positions));
-      fetch(cfg.layoutUrl, { method: 'POST', body: body, credentials: 'same-origin' })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = data && data.ok
-            ? 'Disposition enregistrée'
-            : 'Échec — réessayer';
-          setTimeout(function () { saveBtn.textContent = 'Enregistrer la disposition'; }, 1800);
+      var resetLabel = function (label) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = label || 'Enregistrer la disposition';
+        if (label && label !== 'Enregistrer la disposition') {
+          setTimeout(function () { saveBtn.textContent = 'Enregistrer la disposition'; }, 2200);
+        }
+      };
+      fetch(cfg.layoutUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          _csrf_token: cfg.csrf,
+          positions: positions
+        })
+      })
+        .then(function (r) {
+          return r.text().then(function (text) {
+            var data = null;
+            try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+            return { httpOk: r.ok, status: r.status, data: data, raw: text };
+          });
+        })
+        .then(function (res) {
+          if (res.data && res.data.ok) {
+            resetLabel(res.data.message || 'Disposition enregistrée');
+            return;
+          }
+          var msg = (res.data && res.data.message)
+            ? res.data.message
+            : (res.status === 403
+              ? 'Session expirée — rechargez la page'
+              : 'Échec — réessayer');
+          resetLabel(msg);
         })
         .catch(function () {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Enregistrer la disposition';
+          resetLabel('Échec réseau — réessayer');
         });
     });
   }

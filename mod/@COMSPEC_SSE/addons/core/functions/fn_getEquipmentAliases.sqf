@@ -62,13 +62,14 @@ private _list = +(_native getOrDefault [_role, [_roleOrClass]]);
 private _allowSubs = missionNamespace getVariable ["comspec_sse_allowModItemSubstitutes", true];
 if (_allowSubs && {_role != "custom"}) then {
     private _modSubs = createHashMapFromArray [
-        // Photo / caméra casque cTab, tablettes tactiques
+        // Photo / caméra casque cTab, tablettes tactiques (S7 Android = ItemAndroid / Misc)
         ["camera", [
             "ItemcTabHCam",
             "ItemAndroid",
             "ItemAndroidMisc",
             "ItemcTab",
-            "ItemcTabMisc"
+            "ItemcTabMisc",
+            "ACE_Cellphone"
         ]],
         // Conteneurs / kits médicaux ACE utilisables comme sachet d'urgence
         ["evidence_bag", [

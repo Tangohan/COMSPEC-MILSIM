@@ -99,12 +99,21 @@ final class SseAnalystDigestService
 
     /**
      * @param array<string,mixed> $tenant
+     * @param bool $forceIgnoreDailyDedup après un passage moteur manuel : ignore le « déjà envoyé aujourd’hui »
+     * @param string|null $dedupeKey clé de dédup (sinon tenant:jour) — ex. run_id moteur
      * @return array{sent:int,skipped_dedup?:bool,skipped_empty?:bool,skipped_no_recipient?:bool}
      */
-    public function sendForTenant(int $tenantId, array $tenant = [], ?string $dayKey = null): array
-    {
+    public function sendForTenant(
+        int $tenantId,
+        array $tenant = [],
+        ?string $dayKey = null,
+        bool $forceIgnoreDailyDedup = false,
+        ?string $dedupeKey = null,
+    ): array {
         $dayKey ??= date('Y-m-d');
-        $subjectId = $tenantId . ':' . $dayKey;
+        $subjectId = $dedupeKey !== null && trim($dedupeKey) !== ''
+            ? mb_substr(trim($dedupeKey), 0, 190)
+            : ($tenantId . ':' . $dayKey);
         if ($this->cronLog->wasNotified(self::JOB_KEY, 'tenant_digest', $subjectId, 'email')) {
             return ['sent' => 0, 'skipped_dedup' => true];
         }
@@ -115,7 +124,10 @@ final class SseAnalystDigestService
         $interestOpen = $this->countOpenInterestCases($tenantId);
 
         if ($pendingSuggestions + $openSignals + $newPersons + $interestOpen < 1) {
-            $this->cronLog->markNotified(self::JOB_KEY, 'tenant_digest', $subjectId, 'email', null);
+            // Ne pas « brûler » le digest quotidien si c’est un passage moteur forcé vide.
+            if (!$forceIgnoreDailyDedup) {
+                $this->cronLog->markNotified(self::JOB_KEY, 'tenant_digest', $subjectId, 'email', null);
+            }
 
             return ['sent' => 0, 'skipped_empty' => true];
         }

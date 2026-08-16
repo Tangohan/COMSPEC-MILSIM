@@ -28,13 +28,13 @@ if (!_hasSeek) then {
         if (isNil "_bio" || {!(_bio isEqualType createHashMap)}) then { _bio = createHashMap; };
         private _seed = [_target] call comspec_sse_fnc_getSeed;
 
-        _bio set ["fingerprintId", format ["FP-%1", [_seed, "fp"] call comspec_sse_fnc_hash]];
+        _bio set ["fingerprintId", format ["FP-%1", [_seed, "fp", 8] call comspec_sse_fnc_idToken]];
         _bio set ["fingerprintQuality", 85];
-        _bio set ["irisId", format ["IR-%1", [_seed, "ir"] call comspec_sse_fnc_hash]];
+        _bio set ["irisId", format ["IR-%1", [_seed, "ir", 8] call comspec_sse_fnc_idToken]];
         _bio set ["irisQuality", 82];
         _bio set ["facePhoto", true];
         _bio set ["faceQuality", 80];
-        _bio set ["dnaId", format ["DNA-%1", [_seed, "dna"] call comspec_sse_fnc_hash]];
+        _bio set ["dnaId", format ["DNA-%1", [_seed, "dna", 8] call comspec_sse_fnc_idToken]];
         _bio set ["dnaQuality", 70];
         [_target, "biometrics", _bio, true] call comspec_sse_fnc_setSection;
 

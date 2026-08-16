@@ -32,6 +32,7 @@ class CfgFunctions {
             class getBiometricSummary {};
             class identifySubject {};
             class openSeek {};
+            class openSeekKeybind {};
             class seekOnLoad {};
             class seekCapture {};
             class seekIdentify {};
@@ -39,6 +40,12 @@ class CfgFunctions {
             class seekClose {};
             class compareBiometrics {};
         };
+    };
+};
+
+class Extended_PreInit_EventHandlers {
+    class comspec_sse_biometrics {
+        init = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\biometrics\XEH_preInit.sqf'";
     };
 };
 

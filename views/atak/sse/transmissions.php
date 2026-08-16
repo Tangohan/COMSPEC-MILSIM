@@ -76,6 +76,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
                     <th>Nature</th>
                     <th>Origine</th>
                     <th>Résumé</th>
+                    <th>Logiciel</th>
                     <th>Opérateur</th>
                     <th>Cotation</th>
                     <th></th>
@@ -91,6 +92,13 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
                             <span class="record-name"><?= $h($event['summary'] ?? '') ?></span>
                             <?php if (!empty($event['unit_label'])): ?>
                                 <span class="record-sub"><?= $h($event['unit_label']) ?></span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if (!empty($event['client_label'])): ?>
+                                <span class="record-id"><?= $h($event['client_label']) ?></span>
+                            <?php else: ?>
+                                <span class="muted">—</span>
                             <?php endif; ?>
                         </td>
                         <td><?= $h(($event['author_label'] ?? '') !== '' ? $event['author_label'] : '—') ?></td>

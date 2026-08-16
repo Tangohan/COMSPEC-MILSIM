@@ -81,17 +81,17 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             x = 0;
             y = QUOTE(COMSPEC_ATHENA_H(0.68));
             w = QUOTE(COMSPEC_ATHENA_W(3));
-            h = QUOTE(COMSPEC_ATHENA_H(12.60));
+            h = QUOTE(COMSPEC_ATHENA_H(11.20));
             colorBackground[] = {0.02, 0.05, 0.07, 0.94};
         };
 
         class Status: RscStructuredText
         {
             idc = 9701;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(0.78));
-            w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(0.52));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(0.74));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(0.46));
             text = "";
             colorBackground[] = ATHENA_BG_STRIP;
             class Attributes
@@ -101,7 +101,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 align = "center";
                 valign = "middle";
                 shadow = 1;
-                size = "0.72";
+                size = "0.68";
             };
         };
 
@@ -109,11 +109,11 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class TabAll: BCE_RscButtonMenu
         {
             idc = 9740;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(1.42));
-            w = QUOTE(COMSPEC_ATHENA_W(0.68));
-            h = QUOTE(COMSPEC_ATHENA_H(0.50));
-            size = QUOTE(COMSPEC_ATHENA_H(0.28));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(1.28));
+            w = QUOTE(COMSPEC_ATHENA_W(0.70));
+            h = QUOTE(COMSPEC_ATHENA_H(0.44));
+            size = QUOTE(COMSPEC_ATHENA_H(0.26));
             text = "Tout";
             colorBackground[] = ATHENA_TAB_IDLE;
             colorBackground2[] = ATHENA_TAB_IDLE;
@@ -131,14 +131,14 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class TabOrder: TabAll
         {
             idc = 9743;
-            x = QUOTE(COMSPEC_ATHENA_W(1.52));
+            x = QUOTE(COMSPEC_ATHENA_W(1.54));
             text = "Ordres";
             onButtonClick = "['order'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
         };
         class TabMessages: TabAll
         {
             idc = 9741;
-            x = QUOTE(COMSPEC_ATHENA_W(2.24));
+            x = QUOTE(COMSPEC_ATHENA_W(2.28));
             text = "Messages";
             onButtonClick = "['messages'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
         };
@@ -147,7 +147,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class TabUrgences: TabAll
         {
             idc = 9745;
-            y = QUOTE(COMSPEC_ATHENA_H(2.00));
+            y = QUOTE(COMSPEC_ATHENA_H(1.76));
             text = "Urgences";
             onButtonClick = "['urgences'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
         };
@@ -155,23 +155,23 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9744;
             x = QUOTE(COMSPEC_ATHENA_W(0.80));
-            y = QUOTE(COMSPEC_ATHENA_H(2.00));
+            y = QUOTE(COMSPEC_ATHENA_H(1.76));
             text = "BDA";
             onButtonClick = "['bda'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
         };
         class TabLiaison: TabAll
         {
             idc = 9746;
-            x = QUOTE(COMSPEC_ATHENA_W(1.52));
-            y = QUOTE(COMSPEC_ATHENA_H(2.00));
+            x = QUOTE(COMSPEC_ATHENA_W(1.54));
+            y = QUOTE(COMSPEC_ATHENA_H(1.76));
             text = "Liaison";
             onButtonClick = "['liaison'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
         };
         class TabModules: TabAll
         {
             idc = 9747;
-            x = QUOTE(COMSPEC_ATHENA_W(2.24));
-            y = QUOTE(COMSPEC_ATHENA_H(2.00));
+            x = QUOTE(COMSPEC_ATHENA_W(2.28));
+            y = QUOTE(COMSPEC_ATHENA_H(1.76));
             text = "Modules";
             onButtonClick = "['modules'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
         };
@@ -179,11 +179,11 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class SecNotif: RscStructuredText
         {
             idc = -1;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(2.62));
-            w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(0.28));
-            text = "<t size='0.62' color='#5a9e88'>NOTIFICATIONS</t>";
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(2.28));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(0.24));
+            text = "<t size='0.58' color='#5a9e88'>NOTIFICATIONS</t>";
             colorBackground[] = {0, 0, 0, 0};
             class Attributes { font = "RobotoCondensed"; align = "left"; valign = "middle"; shadow = 0; };
         };
@@ -191,51 +191,51 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class NotifList: RscListBox
         {
             idc = 9715;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(2.94));
-            w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(0.72));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(2.52));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(0.52));
             colorBackground[] = {0.025, 0.06, 0.08, 0.9};
             colorSelect[] = {0.02, 0.04, 0.05, 1};
             colorSelect2[] = {0.02, 0.04, 0.05, 1};
             colorSelectBackground[] = {0.35, 0.55, 0.48, 0.88};
             colorSelectBackground2[] = {0.35, 0.55, 0.48, 0.88};
-            sizeEx = QUOTE(COMSPEC_ATHENA_H(0.38));
-            rowHeight = QUOTE(COMSPEC_ATHENA_H(0.56));
+            sizeEx = QUOTE(COMSPEC_ATHENA_H(0.34));
+            rowHeight = QUOTE(COMSPEC_ATHENA_H(0.48));
             onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_selectNotif";
         };
 
         class SecJournal: SecNotif
         {
-            y = QUOTE(COMSPEC_ATHENA_H(3.78));
-            text = "<t size='0.62' color='#5a9e88'>JOURNAL</t>";
+            y = QUOTE(COMSPEC_ATHENA_H(3.10));
+            text = "<t size='0.58' color='#5a9e88'>JOURNAL</t>";
         };
 
         class Inbox: RscListBox
         {
             idc = 9710;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(4.10));
-            w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(1.48));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(3.34));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(1.00));
             colorBackground[] = ATHENA_BG_LIST;
             colorSelect[] = {0.02, 0.04, 0.05, 1};
             colorSelect2[] = {0.02, 0.04, 0.05, 1};
             colorSelectBackground[] = {0.45, 0.72, 0.62, 0.92};
             colorSelectBackground2[] = {0.45, 0.72, 0.62, 0.92};
-            sizeEx = QUOTE(COMSPEC_ATHENA_H(0.44));
-            rowHeight = QUOTE(COMSPEC_ATHENA_H(0.64));
+            sizeEx = QUOTE(COMSPEC_ATHENA_H(0.36));
+            rowHeight = QUOTE(COMSPEC_ATHENA_H(0.50));
             onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_selectInbox";
         };
 
         class DetailLabel: RscStructuredText
         {
             idc = -1;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(5.70));
-            w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(0.28));
-            text = "<t size='0.62' color='#5a9e88'>DÉTAIL</t>";
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(4.40));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(0.24));
+            text = "<t size='0.58' color='#5a9e88'>DÉTAIL</t>";
             colorBackground[] = {0, 0, 0, 0};
             class Attributes
             {
@@ -246,33 +246,34 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             };
         };
 
+        // Zone lecture principale — hauteur généreuse (évite le texte coupé à 1 ligne).
         class Detail: RscStructuredText
         {
             idc = 9711;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(6.02));
-            w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(0.64));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(4.64));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(2.55));
             text = "";
             colorBackground[] = ATHENA_BG_DETAIL;
             class Attributes
             {
                 font = "RobotoCondensed";
-                color = "#DDE6EA";
+                color = "#E8F0F4";
                 align = "left";
                 valign = "top";
                 shadow = 1;
-                size = "0.70";
+                size = "0.72";
             };
         };
 
         class Feedback: RscStructuredText
         {
             idc = 9712;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(6.74));
-            w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(0.42));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(7.26));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(0.34));
             text = "";
             show = 0;
             colorBackground[] = {0.04, 0.12, 0.14, 0.96};
@@ -283,18 +284,18 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 align = "center";
                 valign = "middle";
                 shadow = 1;
-                size = "0.78";
+                size = "0.70";
             };
         };
 
         class SecAlertes: RscStructuredText
         {
             idc = -1;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(7.28));
-            w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(0.28));
-            text = "<t size='0.62' color='#5a9e88'>ALERTES RAPIDES</t>";
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(7.66));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(0.22));
+            text = "<t size='0.58' color='#5a9e88'>ALERTES RAPIDES</t>";
             colorBackground[] = {0, 0, 0, 0};
             class Attributes { font = "RobotoCondensed"; align = "left"; valign = "middle"; shadow = 0; };
         };
@@ -302,11 +303,11 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class BtnTic: BCE_RscButtonMenu
         {
             idc = 9720;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(7.64));
-            w = QUOTE(COMSPEC_ATHENA_W(0.90));
-            h = QUOTE(COMSPEC_ATHENA_H(0.52));
-            size = QUOTE(COMSPEC_ATHENA_H(0.28));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(7.90));
+            w = QUOTE(COMSPEC_ATHENA_W(0.92));
+            h = QUOTE(COMSPEC_ATHENA_H(0.42));
+            size = QUOTE(COMSPEC_ATHENA_H(0.24));
             text = "Contact";
             colorBackground[] = ATHENA_BTN_DANGER;
             colorBackground2[] = ATHENA_BTN_DANGER;
@@ -317,7 +318,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class BtnClear: BtnTic
         {
             idc = 9724;
-            x = QUOTE(COMSPEC_ATHENA_W(1.05));
+            x = QUOTE(COMSPEC_ATHENA_W(1.04));
             text = "Fin contact";
             colorBackground[] = ATHENA_BTN_OK;
             colorBackground2[] = ATHENA_BTN_OK;
@@ -337,18 +338,18 @@ class COMSPEC_ATAK_Athena: ATAK_Message
 
         class SecRapports: SecAlertes
         {
-            y = QUOTE(COMSPEC_ATHENA_H(8.30));
-            text = "<t size='0.62' color='#5a9e88'>COMPTES-RENDUS</t>";
+            y = QUOTE(COMSPEC_ATHENA_H(8.40));
+            text = "<t size='0.58' color='#5a9e88'>COMPTES-RENDUS</t>";
         };
 
         class BtnFrago: BCE_RscButtonMenu
         {
             idc = 9721;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(8.66));
-            w = QUOTE(COMSPEC_ATHENA_W(0.90));
-            h = QUOTE(COMSPEC_ATHENA_H(0.52));
-            size = QUOTE(COMSPEC_ATHENA_H(0.28));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(8.64));
+            w = QUOTE(COMSPEC_ATHENA_W(0.92));
+            h = QUOTE(COMSPEC_ATHENA_H(0.42));
+            size = QUOTE(COMSPEC_ATHENA_H(0.24));
             text = "FRAGO";
             colorBackground[] = ATHENA_BTN;
             colorBackground2[] = ATHENA_BTN;
@@ -359,7 +360,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class BtnBda: BtnFrago
         {
             idc = 9725;
-            x = QUOTE(COMSPEC_ATHENA_W(1.05));
+            x = QUOTE(COMSPEC_ATHENA_W(1.04));
             text = "BDA";
             onButtonClick = "['BDA'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
         };
@@ -373,19 +374,18 @@ class COMSPEC_ATAK_Athena: ATAK_Message
 
         class SecAir: SecAlertes
         {
-            y = QUOTE(COMSPEC_ATHENA_H(9.30));
-            text = "<t size='0.62' color='#5a9e88'>APPUI & BRIEFING</t>";
+            y = QUOTE(COMSPEC_ATHENA_H(9.14));
+            text = "<t size='0.58' color='#5a9e88'>APPUI & BRIEFING</t>";
         };
 
-        // idc 975x — ne pas réutiliser 9740-9742 (onglets Tout / Messages / Photos)
         class BtnCas: BCE_RscButtonMenu
         {
             idc = 9750;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(9.66));
-            w = QUOTE(COMSPEC_ATHENA_W(0.90));
-            h = QUOTE(COMSPEC_ATHENA_H(0.48));
-            size = QUOTE(COMSPEC_ATHENA_H(0.24));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(9.38));
+            w = QUOTE(COMSPEC_ATHENA_W(0.92));
+            h = QUOTE(COMSPEC_ATHENA_H(0.40));
+            size = QUOTE(COMSPEC_ATHENA_H(0.22));
             text = "Appui aérien";
             colorBackground[] = ATHENA_BTN_WARN;
             colorBackground2[] = ATHENA_BTN_WARN;
@@ -396,7 +396,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class BtnManifest: BtnCas
         {
             idc = 9751;
-            x = QUOTE(COMSPEC_ATHENA_W(1.05));
+            x = QUOTE(COMSPEC_ATHENA_W(1.04));
             text = "Manifeste";
             colorBackground[] = ATHENA_BTN;
             colorBackground2[] = ATHENA_BTN;
@@ -417,11 +417,11 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class BtnPhoto: BCE_RscButtonMenu
         {
             idc = 9732;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(10.26));
-            w = QUOTE(COMSPEC_ATHENA_W(1.38));
-            h = QUOTE(COMSPEC_ATHENA_H(0.46));
-            size = QUOTE(COMSPEC_ATHENA_H(0.26));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(9.86));
+            w = QUOTE(COMSPEC_ATHENA_W(0.92));
+            h = QUOTE(COMSPEC_ATHENA_H(0.40));
+            size = QUOTE(COMSPEC_ATHENA_H(0.22));
             text = "Renvoyer photo";
             colorBackground[] = ATHENA_BTN;
             colorBackground2[] = ATHENA_BTN;
@@ -432,28 +432,38 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class BtnWebMarker: BtnPhoto
         {
             idc = 9739;
-            x = QUOTE(COMSPEC_ATHENA_W(1.54));
+            x = QUOTE(COMSPEC_ATHENA_W(1.04));
             text = "Repère web";
             colorBackground[] = ATHENA_BTN_ACCENT;
             colorBackground2[] = ATHENA_BTN_ACCENT;
             colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_createWebMarker";
         };
+        class BtnSeekTx: BtnPhoto
+        {
+            idc = 9753;
+            x = QUOTE(COMSPEC_ATHENA_W(2.02));
+            text = "TX SEEK";
+            colorBackground[] = ATHENA_BTN_OK;
+            colorBackground2[] = ATHENA_BTN_OK;
+            colorBackgroundFocused[] = ATHENA_BTN_OK_F;
+            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_sendSeekData";
+        };
 
         class SecTriage: SecAlertes
         {
-            y = QUOTE(COMSPEC_ATHENA_H(10.84));
-            text = "<t size='0.62' color='#5a9e88'>TRIAGE MÉDICAL</t>";
+            y = QUOTE(COMSPEC_ATHENA_H(10.34));
+            text = "<t size='0.58' color='#5a9e88'>TRIAGE MÉDICAL</t>";
         };
 
         class BtnTriageEnCours: BCE_RscButtonMenu
         {
             idc = 9736;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(11.18));
-            w = QUOTE(COMSPEC_ATHENA_W(0.90));
-            h = QUOTE(COMSPEC_ATHENA_H(0.46));
-            size = QUOTE(COMSPEC_ATHENA_H(0.22));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(10.58));
+            w = QUOTE(COMSPEC_ATHENA_W(0.92));
+            h = QUOTE(COMSPEC_ATHENA_H(0.40));
+            size = QUOTE(COMSPEC_ATHENA_H(0.20));
             text = "Prise en charge";
             colorBackground[] = ATHENA_BTN_WARN;
             colorBackground2[] = ATHENA_BTN_WARN;
@@ -464,7 +474,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class BtnTriageTraite: BtnTriageEnCours
         {
             idc = 9737;
-            x = QUOTE(COMSPEC_ATHENA_W(1.05));
+            x = QUOTE(COMSPEC_ATHENA_W(1.04));
             text = "Traité";
             colorBackground[] = ATHENA_BTN_OK;
             colorBackground2[] = ATHENA_BTN_OK;
@@ -484,18 +494,18 @@ class COMSPEC_ATAK_Athena: ATAK_Message
 
         class SecOutils: SecAlertes
         {
-            y = QUOTE(COMSPEC_ATHENA_H(11.76));
-            text = "<t size='0.62' color='#5a9e88'>LIAISON & COMPTE</t>";
+            y = QUOTE(COMSPEC_ATHENA_H(11.06));
+            text = "<t size='0.58' color='#5a9e88'>LIAISON & COMPTE</t>";
         };
 
         class BtnLink: BCE_RscButtonMenu
         {
             idc = 9734;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(12.10));
-            w = QUOTE(COMSPEC_ATHENA_W(1.38));
-            h = QUOTE(COMSPEC_ATHENA_H(0.46));
-            size = QUOTE(COMSPEC_ATHENA_H(0.24));
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(11.30));
+            w = QUOTE(COMSPEC_ATHENA_W(0.92));
+            h = QUOTE(COMSPEC_ATHENA_H(0.40));
+            size = QUOTE(COMSPEC_ATHENA_H(0.20));
             text = "Compte Athena";
             colorBackground[] = ATHENA_BTN_ACCENT;
             colorBackground2[] = ATHENA_BTN_ACCENT;
@@ -506,25 +516,19 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class BtnPhoneQr: BtnLink
         {
             idc = 9735;
-            x = QUOTE(COMSPEC_ATHENA_W(1.54));
+            x = QUOTE(COMSPEC_ATHENA_W(1.04));
             text = "Adresse mobile";
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_showPhoneConnect";
         };
-
-        class BtnRefresh: BCE_RscButtonMenu
+        class BtnRefresh: BtnLink
         {
             idc = 9731;
-            x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(12.68));
-            w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(0.46));
-            size = QUOTE(COMSPEC_ATHENA_H(0.26));
+            x = QUOTE(COMSPEC_ATHENA_W(2.02));
             text = "Actualiser";
             colorBackground[] = ATHENA_BTN;
             colorBackground2[] = ATHENA_BTN;
             colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_refresh";
-            class Attributes { align = "center"; valign = "middle"; };
         };
 
         // Conservé pour compat idc (masqué) — plus d’ouverture tablette depuis le panneau

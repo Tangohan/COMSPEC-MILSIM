@@ -16,7 +16,7 @@ _profile = [_profile] call comspec_sse_fnc_resolveProfile;
 _complexity = toUpper _complexity;
 _region = toUpper _region;
 
-private _clusterId = format ["CLUS-%1", [_seed, "cluster"] call comspec_sse_fnc_hash];
+private _clusterId = format ["CLUS-%1", [_seed, "cluster", 9] call comspec_sse_fnc_idToken];
 private _pools = [_region] call comspec_sse_fnc_getNarrativePools;
 
 private _fn = [_seed, "fn", _pools getOrDefault ["firstNames", ["Ali"]]] call comspec_sse_fnc_pickFromSeed;

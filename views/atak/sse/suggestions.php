@@ -4,12 +4,25 @@ ob_start();
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 /** @var list<array<string,mixed>> $suggestions */
 $suggestions = is_array($suggestions ?? null) ? $suggestions : [];
+/** @var list<array<string,mixed>> $history */
+$history = is_array($history ?? null) ? $history : [];
 /** @var list<array<string,mixed>> $signals */
 $signals = is_array($signals ?? null) ? $signals : [];
 $pendingCount = (int) ($pendingCount ?? 0);
+$historyCount = (int) ($historyCount ?? count($history));
 $canManage = (bool) ($canManage ?? false);
 $filterCaseId = (int) ($filterCaseId ?? 0);
 $searchQuery = trim((string) ($searchQuery ?? ''));
+
+$fmtWhen = static function (mixed $raw): string {
+    $s = trim((string) ($raw ?? ''));
+    if ($s === '') {
+        return '—';
+    }
+    $ts = strtotime($s);
+
+    return $ts ? date('d/m/Y H:i', $ts) : $s;
+};
 ?>
 <div class="page-heading">
     <div>
@@ -18,6 +31,7 @@ $searchQuery = trim((string) ($searchQuery ?? ''));
         <p>
             Propositions seulement — possible, probable, candidat à confirmation.
             Aucune fusion ni relation « confirmée » sans validation humaine.
+            Un passage moteur (manuel ou nocturne) peut aussi envoyer le point e-mail aux analystes.
         </p>
     </div>
     <?php if ($canManage): ?>
@@ -101,7 +115,51 @@ $searchQuery = trim((string) ($searchQuery ?? ''));
 
 <section class="panel">
     <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">25.02</span> Signaux analytiques</div>
+        <div class="panel-title"><span class="panel-index">25.02</span> Historique des décisions</div>
+        <div class="panel-meta"><?= $historyCount ?> décision<?= $historyCount > 1 ? 's' : '' ?><?= $searchQuery !== '' ? ' · filtrée' : '' ?></div>
+    </div>
+    <div class="panel-body">
+        <?php if ($history === []): ?>
+            <p class="muted"><?= $searchQuery !== ''
+                ? 'Aucune décision ne correspond à cette recherche.'
+                : 'Aucune validation ni rejet enregistré pour l’instant.' ?></p>
+        <?php else: ?>
+            <ul class="sse-sugg-list">
+                <?php foreach ($history as $s):
+                    $status = (string) ($s['status'] ?? '');
+                    $statusClass = match ($status) {
+                        'accepted' => 'accepted',
+                        'rejected' => 'rejected',
+                        default => 'deferred',
+                    };
+                    ?>
+                    <li class="sse-sugg-item sse-sugg-item--history sse-sugg-item--<?= $h($statusClass) ?>">
+                        <div>
+                            <strong><?= $h($s['title'] ?? '') ?></strong>
+                            <span class="badge"><?= $h($s['status_label'] ?? $status) ?></span>
+                            <span class="sse-ana-tag"><?= $h($s['confidence_label'] ?? '') ?></span>
+                            <span class="sse-ana-tag"><?= $h($s['kind_label'] ?? '') ?></span>
+                            <p><?= $h($s['reason'] ?? '') ?></p>
+                            <p class="muted sse-sugg-meta">
+                                Décidé le <?= $h($fmtWhen($s['decided_at'] ?? $s['updated_at'] ?? null)) ?>
+                                <?php if (!empty($s['author_label'])): ?>
+                                    · par <?= $h($s['author_label']) ?>
+                                <?php endif; ?>
+                            </p>
+                            <?php if (!empty($s['case_id'])): ?>
+                                <a class="link" href="<?= $h(url('atak/sse/dossiers/' . (int) $s['case_id'])) ?>">Ouvrir le dossier</a>
+                            <?php endif; ?>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <div class="panel-title"><span class="panel-index">25.03</span> Signaux analytiques</div>
         <div class="panel-meta"><?= count($signals) ?><?= $searchQuery !== '' ? ' · filtrés' : '' ?></div>
     </div>
     <div class="panel-body">

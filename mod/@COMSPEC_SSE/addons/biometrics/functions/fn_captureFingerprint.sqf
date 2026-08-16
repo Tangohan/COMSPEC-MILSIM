@@ -19,7 +19,7 @@ private _time = missionNamespace getVariable ["comspec_sse_timeFingerprint", 8];
         private _bio = [_target, "biometrics"] call comspec_sse_fnc_getSection;
         if (isNil "_bio" || {!(_bio isEqualType createHashMap)}) then { _bio = createHashMap; };
         private _seed = [_target] call comspec_sse_fnc_getSeed;
-        _bio set ["fingerprintId", format ["FP-%1", [_seed, "fp"] call comspec_sse_fnc_hash]];
+        _bio set ["fingerprintId", format ["FP-%1", [_seed, "fp", 8] call comspec_sse_fnc_idToken]];
         _bio set ["fingerprintQuality", _quality];
         [_target, "biometrics", _bio, true] call comspec_sse_fnc_setSection;
         hint format ["Empreintes relevées — qualité %1%% (%2)", _quality, [_quality] call comspec_sse_fnc_qualityLabel];

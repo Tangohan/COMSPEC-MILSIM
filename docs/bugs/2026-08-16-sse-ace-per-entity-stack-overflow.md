@@ -81,6 +81,16 @@ Crash du **16/08/2026 21:11:57** (`Arma3_x64_2026-08-16_21-01-38.rpt`) pendant u
 
 **ACE 0/4** : toujours le fix self-params ; si l’erreur reste, le PBO Workshop n’est **pas** à jour (Arma verrouille les fichiers) — fermer Arma + recopier `interaction` + `core`.
 
-## Statut
+## Correctif (suite — duplication ACE menus encore)
 
-Correctif appliqué — rebuild PBO + Workshop requis.
+**Symptôme (16/08 soir)** : sous SSE → Biométrie ×2, Exploitation numérique ×2, SEEK / Empreintes / Photo faciale / Capture ×2–3.
+
+**Cause** : enfants encore posés par `addActionToObject` étalés ; courses setData / entityEnabled / pending bio-digital malgré les verrous `queued`.
+
+**Fix définitif** :
+- Racine SSE avec `insertChildren` : bio, digital et Athena lus dans le cache à chaque ouverture
+- `installEntityAceMenus` n’ajoute **qu’une** racine (verrou `aceInstalling`)
+- Bio / Digital : cache only, plus de re-install sur les unités
+- Overwatch : plus de greffe `addActionToObject` si SSE terrain présent (Athena via insertChildren)
+
+**Rebuild** : `interaction`, `biometrics`, `digital` (+ `sse_ace` Overwatch) → Workshop. Relancer mission / régénérer le profil sur l’unité déjà dupliquée.

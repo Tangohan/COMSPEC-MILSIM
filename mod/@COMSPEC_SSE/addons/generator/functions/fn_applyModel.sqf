@@ -52,7 +52,7 @@ if (_theme isEqualTo "" || {toUpper _theme == "RANDOM"}) then {
 };
 
 private _cluster = createHashMapFromArray [
-    ["clusterId", format ["CLUS-MDL-%1", [_seed, "c"] call comspec_sse_fnc_hash]],
+    ["clusterId", format ["CLUS-MDL-%1", [_seed, "c", 9] call comspec_sse_fnc_idToken]],
     ["profile", _profile],
     ["complexity", _complexity],
     ["region", _region],

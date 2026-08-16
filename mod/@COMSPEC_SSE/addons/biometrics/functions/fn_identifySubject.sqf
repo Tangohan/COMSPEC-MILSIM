@@ -29,7 +29,7 @@ params [
             }
         };
 
-        private _recordRef = format ["SSE-WL-%1", [_seed, "wl"] call comspec_sse_fnc_hash];
+        private _recordRef = format ["SSE-WL-%1", [_seed, "wl", 9] call comspec_sse_fnc_idToken];
         _bio set ["matchHint", _verdict];
         _bio set ["watchlistRef", _recordRef];
         _bio set ["matchConfidence", _roll];

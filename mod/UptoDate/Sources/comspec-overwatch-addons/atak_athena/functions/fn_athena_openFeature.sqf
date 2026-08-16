@@ -28,6 +28,11 @@ if (_tab isEqualTo "orders") then { _tab = "order"; };
 if (_tab isEqualTo "photos") then { _tab = "photo"; };
 if (_tab isEqualTo "apps" || {_tab isEqualTo "hub"} || {_tab isEqualTo "bft"} || {_tab isEqualTo "status"} || {_tab isEqualTo "help"} || {_tab isEqualTo "radio"}) then { _tab = "all"; };
 
+// Ordres C2 → app TASK (liste + réponses), pas seulement l’onglet Athena
+if (_tab isEqualTo "order" || {_tab isEqualTo "task"} || {_tab isEqualTo "tasks"}) exitWith {
+    [] call comspec_overwatch_atak_athena_fnc_athena_openTask;
+};
+
 missionNamespace setVariable ["COMSPEC_Athena_PendingTab", _tab, false];
 missionNamespace setVariable ["COMSPEC_Athena_PanelTab", _tab, false];
 
