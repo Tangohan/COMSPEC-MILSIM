@@ -1,5 +1,6 @@
 /*
     Nouvel ordre Athena → pastille notification cTab si disponible.
+    Miroir IceMan Reports = FRAGO destinataire (pas une tâche drone) + ATHENA_ORDER_ID pour ACK.
 */
 params [["_order", createHashMap]];
 
@@ -14,6 +15,7 @@ if (_typeLabel isEqualTo "") then {
         case "RECON": { "Reconnaissance" };
         case "CAS": { "Appui aérien" };
         case "QRF": { "Force de réaction" };
+        case "FRAGO": { "Ordre fragmentaire" };
         case "CUSTOM": { "Ordre personnalisé" };
         default { "Se déplacer" };
     };
@@ -48,20 +50,30 @@ if (!isNil "cTab_phoneVibrate") then {
     playSound "cTab_phoneVibrate";
 };
 
-// Miroir optionnel vers ATAK Enhanced (FRAGO) si le module alertes est présent
-if (!(missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false])
-    && {(!isNil "Iceman_fnc_alerts_receive") || (!isNil "Iceman_fnc_alerts_send")}
+// Miroir IceMan Reports (FRAGO destinataire) — hors signaux terminal / hors drone.
+// Appel direct à alerts_receive : le CBA localEvent + SuppressMirror annulait le miroir.
+if (
+    !(missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false])
+    && {!isNil "Iceman_fnc_alerts_receive"}
+    && {!(toUpper _type in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM"])}
 ) then {
-    private _payload = _order getOrDefault ["payload", ""];
-    private _time = if (!isNil "cTab_fnc_currentTime") then { call cTab_fnc_currentTime } else { [daytime, "HH:MM"] call BIS_fnc_timeToString };
+    private _time = if (!isNil "cTab_fnc_currentTime") then { call cTab_fnc_currentTime } else { _timeStr };
     private _pos = getPos player;
     private _grid = mapGridPosition _pos;
+    private _safePayload = [_payload, "<", "&lt;"] call BIS_fnc_replaceString;
+    _safePayload = [_safePayload, ">", "&gt;"] call BIS_fnc_replaceString;
     private _body = format [
-        "FRAGO<br/>From: %1<br/>Grid: %2<br/>Time: %3<br/><br/>Ordre Athena — %4<br/>%5",
-        _issuer, _grid, _time, _typeLabel, _payload
+        "<t color='#ffd36a'>ORDRE ATHENA</t><br/>From: %1<br/>Grid: %2<br/>Time: %3<br/>Type: %4<br/>Priority: %5<br/><br/>%6<br/><br/>ATHENA_ORDER_ID=%7",
+        _issuer,
+        _grid,
+        _time,
+        _typeLabel,
+        _prioLabel,
+        if (_safePayload isEqualTo "") then { "—" } else { _safePayload },
+        _orderId
     ];
     missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", true, false];
-    ["Iceman_ATAK_Alerts", ["FRAGO", player, _pos, _body, _time, "FRAGO"]] call CBA_fnc_localEvent;
+    ["FRAGO", objNull, _pos, _body, _time, "FRAGO"] call Iceman_fnc_alerts_receive;
     missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", false, false];
 };
 

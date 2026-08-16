@@ -88,7 +88,7 @@ $navActive = static function (string $id) use ($activeNav): string {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_portal.css')) ?>?v=202608160510">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_portal.css')) ?>?v=202608160810">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_workspace.css')) ?>?v=202608071940">
     <?php if (!empty($sseNeedLeaflet)): ?>
         <link rel="stylesheet" href="<?= $h(asset_url('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>">
@@ -160,6 +160,7 @@ $navActive = static function (string $id) use ($activeNav): string {
             <a href="<?= $h(url('atak/sse/chronologie')) ?>" class="<?= $activeNav === 'chronologie' ? 'is-active' : '' ?>"><b>12</b><span>Chronologie</span></a>
             <a href="<?= $h(url('atak')) ?>" class=""><b>13</b><span>Carte</span></a>
             <a href="<?= $h(url('atak/sse/croisements')) ?>" class="<?= $activeNav === 'croisements' ? 'is-active' : '' ?>"><b>14</b><span>Croisements</span></a>
+            <a href="<?= $h(url('atak/sse/rapprochements')) ?>" class="<?= $activeNav === 'rapprochements' ? 'is-active' : '' ?>"><b>25</b><span>Rapprochements moteur</span></a>
             <a href="<?= $h(url('atak/sse/anomalies')) ?>" class="<?= $activeNav === 'anomalies' ? 'is-active' : '' ?>"><b>15</b><span>Anomalies</span></a>
 
             <p class="iw-nav-section">Exploitation</p>
@@ -169,6 +170,7 @@ $navActive = static function (string $id) use ($activeNav): string {
             <a href="<?= $h(url('atak/sse/validation')) ?>" class="<?= $activeNav === 'validation' ? 'is-active' : '' ?>"><b>18</b><span>Files de validation</span></a>
             <a href="<?= $h(url('atak/sse/rapports')) ?>" class="<?= $activeNav === 'rapports' ? 'is-active' : '' ?>"><b>19</b><span>Rapports</span></a>
             <a href="<?= $h(url('atak/sse/documents')) ?>" class="<?= $activeNav === 'documents' ? 'is-active' : '' ?>"><b>20</b><span>Rédaction</span></a>
+            <a href="<?= $h(url('atak/sse/bibliotheque')) ?>" class="<?= $activeNav === 'bibliotheque' ? 'is-active' : '' ?>"><b>24</b><span>Mentions officielles</span></a>
             <?php if ($canGrant): ?>
                 <a href="<?= $h(url('atak/sse/acces')) ?>" class="<?= $activeNav === 'acces' ? 'is-active' : '' ?>"><b>21</b><span>Administration</span></a>
             <?php endif; ?>

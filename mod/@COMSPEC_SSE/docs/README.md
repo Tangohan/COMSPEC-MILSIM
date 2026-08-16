@@ -16,6 +16,7 @@
 | [SEEK-II.md](SEEK-II.md) | Terminal biométrique V0.3 |
 | [UI-SCREENS.md](UI-SCREENS.md) | Écrans UI multi-record V0.7 |
 | [EQUIPMENT.md](EQUIPMENT.md) | Matériel + substituts autres mods |
+| [BII-BRIDGE.md](BII-BRIDGE.md) | Passerelle BII Identifi (S.O.A.R) |
 | [ENTITIES.md](ENTITIES.md) | Types d’entités V0.5 |
 | [INTEL-ENGINE.md](INTEL-ENGINE.md) | Moteur intel V0.6 |
 | [DEBUG.md](DEBUG.md) | Debug Zeus + logs |

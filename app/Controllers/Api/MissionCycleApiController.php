@@ -29,12 +29,17 @@ final class MissionCycleApiController
         }
 
         $mapId = max(1, (int) ($request->query('mapId') ?? $request->query('map_id') ?? 1));
-        $row = $this->cycles->findCurrentForMap($tenantId, $mapId);
+        try {
+            $row = $this->cycles->findCurrentForMap($tenantId, $mapId);
+            $mission = $row ? $this->cycles->present($row) : null;
+        } catch (\Throwable) {
+            $mission = null;
+        }
 
         return Response::json([
             'ok' => true,
             'mapId' => $mapId,
-            'mission' => $row ? $this->cycles->present($row) : null,
+            'mission' => $mission,
         ]);
     }
 

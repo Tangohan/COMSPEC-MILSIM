@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.17;
-        versionStr = "1.0.17";
-        versionAr[] = {1, 0, 17};
+        version = 1.0.18;
+        versionStr = "1.0.18";
+        versionAr[] = {1, 0, 18};
     };
 };
 
@@ -48,8 +48,10 @@ class CfgFunctions
             class athena_bridgeIcemanGroup {};
             class athena_installHqContact {};
             class athena_sendHqMessage {};
+            class athena_archiveMpMessage {};
             class athena_bridgeComspecSent {};
             class athena_onOrderReceived {};
+            class athena_syncIcemanOrderAck {};
             class athena_refresh {};
             class athena_bridgeWeather {};
             class athena_bridgeDroneContacts {};

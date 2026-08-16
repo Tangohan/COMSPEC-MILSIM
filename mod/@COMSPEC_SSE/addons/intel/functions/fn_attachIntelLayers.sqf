@@ -3,16 +3,22 @@
     [_entity] call comspec_sse_fnc_attachIntelLayers
 */
 params [
-    ["_entity", objNull, [objNull]]
+    ["_entity", objNull, [objNull, []]]
 ];
 
-if (isNull _entity) exitWith { false };
-private _data = [_entity] call comspec_sse_fnc_getData;
-if (isNil "_data") exitWith { false };
+if (_entity isEqualType []) then {
+    _entity = _entity param [0, objNull, [objNull]];
+};
 
-private _seed = [_data, "seed", 0] call BIS_fnc_getFromPairs;
-private _type = [_data, "type", "OBJECT"] call BIS_fnc_getFromPairs;
-private _sections = [_data, "sections", createHashMap] call BIS_fnc_getFromPairs;
+if (isNull _entity) exitWith { false };
+
+private _data = [_entity] call comspec_sse_fnc_getData;
+if (isNil "_data" || {!(_data isEqualType [])}) exitWith { false };
+
+private _uid = [_data, "uid", ""] call comspec_sse_fnc_getPair;
+private _seed = [_data, "seed", 0] call comspec_sse_fnc_getPair;
+private _type = [_data, "type", "OBJECT"] call comspec_sse_fnc_getPair;
+private _sections = [_data, "sections", createHashMap] call comspec_sse_fnc_getPair;
 if !(_sections isEqualType createHashMap) then { _sections = createHashMap; };
 
 // États preuve / accès
@@ -151,7 +157,9 @@ if (_type == "PERSON" && {(([_seed, "unk"] call comspec_sse_fnc_hash) mod 100) <
 // Biométrie enrichie + index
 if (_type == "PERSON") then {
     private _bio = [_entity, _seed] call comspec_sse_fnc_enrichBiometrics;
-    _sections set ["biometrics", _bio];
+    if (!isNil "_bio") then {
+        _sections set ["biometrics", _bio];
+    };
 };
 
 // TECHINT si arme / équipement
@@ -164,8 +172,13 @@ if (_type in ["MEDIA", "OBJECT"] || {((toLower typeOf _entity) find "camera") >=
     _sections set ["optical", [_seed] call comspec_sse_fnc_generateOpticalMedia];
 };
 
-_data = [_data, ["sections", _sections]] call BIS_fnc_setToPairs;
+_data = [_data, "sections", _sections] call comspec_sse_fnc_setPair;
+if (isNil "_data" || {!(_data isEqualType [])}) exitWith { false };
+
 [_entity, _data, true] call comspec_sse_fnc_setData;
 
-["SSE_RecordCreated", [_entity, [_data, "uid", ""] call BIS_fnc_getFromPairs]] call comspec_sse_fnc_emitEvent;
+if (_uid isEqualTo "") then {
+    _uid = [_data, "uid", ""] call comspec_sse_fnc_getPair;
+};
+["SSE_RecordCreated", [_entity, _uid]] call comspec_sse_fnc_emitEvent;
 true

@@ -117,6 +117,19 @@ $rolesChildren = array_values(array_filter([
     ['label' => 'Profils de permissions', 'href' => url('back-office/roles/presets'), 'active' => $navProfilsActive],
 ], static fn (?array $row): bool => is_array($row)));
 
+$jnetChildren = [
+    ['label' => 'Tableau d’unité', 'href' => url('jnet'), 'active' => $boNavJnetHome],
+    ['label' => 'Fiche d’unité', 'href' => url('jnet/unite'), 'active' => $boNavJnetUnit],
+    ['label' => 'Personnel', 'href' => url('jnet/personnel'), 'active' => $boNavJnetPersonnel],
+    ['label' => 'Opérations', 'href' => url('jnet/operations'), 'active' => $boNavJnetOps],
+    ['label' => 'Renseignement', 'href' => url('jnet/renseignement'), 'active' => $boNavJnetIntel],
+    ['label' => 'Cibles', 'href' => url('jnet/cibles'), 'active' => $boNavJnetTargets],
+    ['label' => 'Exploitation', 'href' => url('jnet/exploitation'), 'active' => $boNavJnetExploit],
+    ['label' => 'Bibliothèque', 'href' => url('jnet/bibliotheque'), 'active' => $boNavJnetLibrary],
+    ['label' => 'Messagerie', 'href' => url('jnet/courrier'), 'active' => $boNavJnetMail],
+    ['label' => 'Système', 'href' => url('jnet/systeme'), 'active' => $boNavJnetSystem],
+];
+
 $athNavGroups = [
     [
         'key' => 'pilotage',
@@ -198,6 +211,13 @@ $athNavGroups = [
                 'children' => $rsvpChildren,
             ],
             ['label' => 'Comptes rendus', 'href' => url('back-office/atak/comptes-rendus'), 'icon' => 'aar', 'active' => $boNavAar, 'warn' => true],
+            [
+                'label' => 'Extranet d’unité',
+                'href' => url('jnet'),
+                'icon' => 'orbat',
+                'active' => $boNavJnet,
+                'children' => $jnetChildren,
+            ],
         ], static fn (?array $row): bool => is_array($row))),
     ],
     [

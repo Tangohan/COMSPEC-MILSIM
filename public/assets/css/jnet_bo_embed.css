@@ -1,0 +1,142 @@
+/**
+ * JNET embarqué dans le chrome back-office ATHENA.
+ * Neutralise le plein écran sombre et aligne les surfaces sur la charte BO.
+ */
+
+/* Contre les resets globaux de jnet_portal.css (html/body/a) hors du module. */
+html:has(body.ath-bo-shell) {
+  background: #f6f8f9 !important;
+}
+
+body.ath-bo-shell {
+  background: #f6f8f9 !important;
+  background-image: none !important;
+  color: inherit !important;
+  font-family: inherit !important;
+}
+
+body.ath-bo-shell a {
+  color: unset;
+}
+
+body.ath-bo-shell .jnet-embed a {
+  color: inherit;
+}
+
+.jnet-embed {
+  --jnet-root: #f6f8f9;
+  --jnet-soft: #ffffff;
+  --jnet-surface: #ffffff;
+  --jnet-panel: #ffffff;
+  --jnet-elevated: #f1f5f4;
+  --jnet-line: rgba(15, 23, 42, 0.1);
+  --jnet-line-soft: rgba(15, 23, 42, 0.06);
+  --jnet-line-active: rgba(11, 138, 92, 0.45);
+  --jnet-text-strong: #0f172a;
+  --jnet-text: rgba(15, 23, 42, 0.72);
+  --jnet-muted: rgba(15, 23, 42, 0.55);
+  --jnet-dim: rgba(15, 23, 42, 0.38);
+  --jnet-accent: #64748b;
+  --jnet-green: #0b8a5c;
+  --jnet-green-bright: #059669;
+  --jnet-green-soft: rgba(11, 138, 92, 0.1);
+  --jnet-sans: "Archivo", system-ui, "Segoe UI", sans-serif;
+  --jnet-radius: 0;
+  color: var(--jnet-text);
+  font-family: var(--jnet-sans);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.jnet-embed .jnet-beta--bo {
+  margin: 0 0 1rem;
+  border: 1px solid rgba(11, 138, 92, 0.25);
+  background: rgba(11, 138, 92, 0.06);
+}
+
+.jnet-bo-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 1.25rem;
+  padding: 0 0 0.85rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.jnet-bo-tabs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid transparent;
+  color: rgba(15, 23, 42, 0.62);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.jnet-bo-tabs__item:hover {
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #fff;
+}
+
+.jnet-bo-tabs__item.is-active {
+  color: #0b8a5c;
+  border-color: rgba(11, 138, 92, 0.35);
+  background: rgba(11, 138, 92, 0.08);
+}
+
+.jnet-bo-tabs__item i {
+  display: inline-flex;
+  min-width: 1.1rem;
+  justify-content: center;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid rgba(11, 138, 92, 0.35);
+  background: rgba(11, 138, 92, 0.12);
+  color: #0b8a5c;
+  font-style: normal;
+  font-size: 0.68rem;
+}
+
+.jnet-stage--bo {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.jnet-embed .jnet-panel,
+.jnet-embed .jnet-metric,
+.jnet-embed .jnet-hero-unit,
+.jnet-embed .jnet-unit-head {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: #fff;
+  box-shadow: none;
+}
+
+.jnet-embed a.jnet-btn,
+.jnet-embed .jnet-btn {
+  border-color: rgba(15, 23, 42, 0.14);
+  color: #0f172a;
+  background: #fff;
+}
+
+.jnet-embed a.jnet-btn:hover,
+.jnet-embed .jnet-btn:hover {
+  border-color: rgba(11, 138, 92, 0.4);
+  color: #0b8a5c;
+}
+
+.jnet-embed .jnet-btn--solid {
+  background: #0b8a5c;
+  border-color: #0b8a5c;
+  color: #fff;
+}
+
+.jnet-embed .jnet-face-row:hover,
+.jnet-embed a.jnet-face-row:hover {
+  background: rgba(11, 138, 92, 0.06);
+}

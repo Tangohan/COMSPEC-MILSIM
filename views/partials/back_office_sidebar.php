@@ -116,6 +116,17 @@ $boNavMod = str_starts_with($p, 'back-office/moderation');
 $boNavEventInsights = str_starts_with($p, 'back-office/events/insights');
 $boNavAar = str_starts_with($p, 'back-office/atak/comptes-rendus');
 $boNavEvents = str_starts_with($p, 'back-office/events') && !$boNavEventInsights;
+$boNavJnet = $p === 'jnet' || str_starts_with($p, 'jnet/');
+$boNavJnetHome = $p === 'jnet';
+$boNavJnetUnit = $p === 'jnet/unite' || str_starts_with($p, 'jnet/unite/');
+$boNavJnetPersonnel = $p === 'jnet/personnel' || str_starts_with($p, 'jnet/personnel/');
+$boNavJnetOps = $p === 'jnet/operations' || str_starts_with($p, 'jnet/operations/');
+$boNavJnetIntel = $p === 'jnet/renseignement' || str_starts_with($p, 'jnet/renseignement/');
+$boNavJnetTargets = $p === 'jnet/cibles' || str_starts_with($p, 'jnet/cibles/');
+$boNavJnetExploit = $p === 'jnet/exploitation' || str_starts_with($p, 'jnet/exploitation/');
+$boNavJnetLibrary = $p === 'jnet/bibliotheque' || str_starts_with($p, 'jnet/bibliotheque/');
+$boNavJnetMail = $p === 'jnet/courrier' || str_starts_with($p, 'jnet/courrier/');
+$boNavJnetSystem = $p === 'jnet/systeme' || str_starts_with($p, 'jnet/systeme/');
 $boNavPortalOpsBoard = $p === 'tableau-operationnel' || str_starts_with($p, 'tableau-operationnel/');
 $boNavOpsBoard = str_starts_with($p, 'back-office/tableau-operationnel');
 $boNavStudioActive = str_starts_with($p, $studioPath . '/') || $p === $studioPath

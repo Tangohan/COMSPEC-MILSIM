@@ -573,21 +573,38 @@ final class JnetPortalController
         $tenant = $this->tenantRepository->findById($ctx['tenant_id']);
         $tenantName = is_array($tenant) ? community_display_name($tenant) : 'Communauté';
         $nodeId = $this->nodeIdForTenant($ctx['tenant_id'], is_array($tenant) ? (string) ($tenant['slug'] ?? '') : '');
+        $nav = $activeNav ?? $view;
+        $unread = $this->unreadMailCount($ctx['tenant_id'], $ctx['user_id']);
 
         $payload = array_merge([
-            'title' => $title,
-            'activeNav' => $activeNav ?? $view,
+            'content' => 'jnet._bo_content',
+            'jnetInnerView' => 'jnet.' . $view,
+            'title' => $title . ' — Extranet d’unité',
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Unité',
+            'boPageKicker' => 'UNITÉ · EXTRANET',
+            'boPageTitle' => $title,
+            'boPageSubtitle' => 'Extranet d’unité — situation, personnel, opérations et renseignement dans le bureau ATHENA.',
+            'boPageQuick' => [
+                ['label' => 'Tableau d’unité', 'href' => url('jnet')],
+                ['label' => 'Opérations', 'href' => url('jnet/operations')],
+                ['label' => 'Messagerie', 'href' => url('jnet/courrier')],
+            ],
+            'backOfficePageCss' => [
+                'jnet_portal.css',
+                'jnet_bo_embed.css',
+            ],
+            'activeNav' => $nav,
             'jnetTenantName' => $tenantName,
             'jnetDisplayName' => (string) Session::get('display_name', ''),
             'jnetCallsign' => (string) Session::get('callsign', ''),
             'jnetNodeId' => $nodeId,
             'jnetCanTba' => PortalAccessChoice::canAccessTba(),
-            'jnetUnreadMail' => $this->unreadMailCount($ctx['tenant_id'], $ctx['user_id']),
+            'jnetUnreadMail' => $unread,
             'jnetDtg' => strtoupper(gmdate('dHi') . 'Z' . gmdate('M y')),
-            'jnetContentView' => 'jnet.' . $view,
         ], $extra);
 
-        return Response::view('jnet._layout', $payload);
+        return Response::view('layout.main', $payload);
     }
 
     private function ensureAuth(): array|Response

@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * Chemise (page de garde) d’un dossier SSE, rendue comme une pièce d’archive :
  * bandeaux de classification, bloc de contrôle, consignes, registre de
- * consultation, empreintes d’intégrité, empreinte d’archivage et tampons.
+ * consultation, empreintes d’intégrité, sceau machine (QR) et tampons.
  *
  * Attendu :
  * - $case (array) : reference_code, title, classification_label, status_label, summary…
@@ -168,14 +168,22 @@ $marks = \App\Support\SseDocumentMarkings::forDocument([
                 </section>
 
                 <section class="sse-doc-paper__auth" aria-label="Authentification du dossier">
-                    <figure class="sse-doc-paper__fp">
-                        <div class="sse-doc-paper__fp-plate">
-                            <?= $marks['fingerprint_svg'] ?>
+                    <?php
+                    $ws = is_array($marks['workstation'] ?? null) ? $marks['workstation'] : [];
+                    $wsId = (string) ($ws['id'] ?? '');
+                    $wsHost = (string) ($ws['host'] ?? '');
+                    $wsIp = (string) ($ws['ip'] ?? '');
+                    $wsFp = (string) ($ws['fingerprint'] ?? '');
+                    $wsQr = (string) ($ws['qr_html'] ?? '');
+                    ?>
+                    <figure class="sse-doc-paper__fp sse-doc-paper__fp--qr">
+                        <div class="sse-doc-paper__fp-plate sse-doc-paper__fp-plate--qr">
+                            <?= $wsQr !== '' ? $wsQr : '' ?>
                         </div>
                         <figcaption>
-                            <strong><?= $h($marks['fingerprint_id']) ?></strong>
-                            <span>Empreinte d’archivage</span>
-                            <span>Relevé à l’ouverture</span>
+                            <strong><?= $h($wsId !== '' ? $wsId : 'QR-······') ?></strong>
+                            <span>Sceau poste de travail</span>
+                            <span><?= $h($wsHost !== '' ? $wsHost : 'SSE-WS') ?> · <?= $h($wsIp !== '' ? $wsIp : '—') ?></span>
                         </figcaption>
                     </figure>
 
@@ -186,14 +194,18 @@ $marks = \App\Support\SseDocumentMarkings::forDocument([
                             <dd class="sse-doc-paper__hash"><?= $h($marks['integrity_groups']) ?></dd>
                             <dt>Sceau d’enveloppe</dt>
                             <dd class="sse-doc-paper__hash"><?= $h($marks['envelope_hash']) ?></dd>
+                            <dt>Empreinte machine</dt>
+                            <dd class="sse-doc-paper__hash"><?= $h($wsFp !== '' ? $wsFp : '—') ?></dd>
                             <dt>Somme de contrôle</dt>
                             <dd class="sse-doc-paper__hash"><?= $h($marks['checksum']) ?></dd>
                             <dt>Algorithme</dt>
                             <dd><?= $h($marks['algorithm']) ?></dd>
                         </dl>
                         <p class="sse-doc-paper__hash-note">
-                            Les empreintes changent à chaque modification de la synthèse : un écart signale
-                            une reprise non enregistrée.
+                            Le QR encode le poste, son adresse réseau et l’empreinte machine relevés à
+                            l’ouverture. Il ne remplace pas un relevé biométrique de personne.
+                            Les empreintes changent à chaque modification de la synthèse : un écart
+                            signale une reprise non enregistrée.
                         </p>
                     </div>
 

@@ -1,5 +1,3 @@
-#include "script_component.hpp"
-
 [
     "comspec_sse_debug",
     "CHECKBOX",

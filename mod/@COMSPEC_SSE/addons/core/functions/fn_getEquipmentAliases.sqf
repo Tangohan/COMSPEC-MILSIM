@@ -76,7 +76,7 @@ if (_allowSubs && {_role != "custom"}) then {
             "ACE_personalAidKit",
             "ACE_bodyBag"
         ]],
-        // Terminaux de terrain (cTab / ACE) comme kit empreintes de fortune
+        // Terminaux de terrain (cTab / ACE / BII-10) comme kit empreintes
         ["fingerprint", [
             "ItemAndroid",
             "ItemAndroidMisc",
@@ -84,16 +84,18 @@ if (_allowSubs && {_role != "custom"}) then {
             "ItemcTabMisc",
             "ACE_microDAGR",
             "ItemMicroDAGR",
-            "ItemMicroDAGRMisc"
+            "ItemMicroDAGRMisc",
+            "BII_Identifi_Device"
         ]],
-        // Kits médicaux ACE pour prélèvement ADN simulé
+        // Kits médicaux ACE / BII-10 pour prélèvement ADN simulé
         ["dna", [
             "ACE_surgicalKit",
             "ACE_personalAidKit",
             "ACE_plasmaIV_500",
-            "ACE_bloodIV_500"
+            "ACE_bloodIV_500",
+            "BII_Identifi_Device"
         ]],
-        // SEEK II ↔ tablettes ATAK / cTab / DAGR
+        // SEEK II ↔ tablettes ATAK / cTab / DAGR / BII-10
         ["seek", [
             "ItemAndroid",
             "ItemAndroidMisc",
@@ -102,9 +104,10 @@ if (_allowSubs && {_role != "custom"}) then {
             "ACE_microDAGR",
             "ItemMicroDAGR",
             "ItemMicroDAGRMisc",
-            "ACE_Cellphone"
+            "ACE_Cellphone",
+            "BII_Identifi_Device"
         ]],
-        // Terminal SSE terrain ↔ tablettes / SEEK
+        // Terminal SSE terrain ↔ tablettes / SEEK / BII-10
         ["terminal", [
             "ItemAndroid",
             "ItemAndroidMisc",
@@ -113,7 +116,8 @@ if (_allowSubs && {_role != "custom"}) then {
             "ACE_microDAGR",
             "ItemMicroDAGR",
             "ItemMicroDAGRMisc",
-            "ACE_Cellphone"
+            "ACE_Cellphone",
+            "BII_Identifi_Device"
         ]],
         ["gloves", [
             "ACE_surgicalKit"
@@ -124,7 +128,8 @@ if (_allowSubs && {_role != "custom"}) then {
             "ItemAndroidMisc",
             "ItemcTab",
             "ItemcTabMisc",
-            "ACE_Cellphone"
+            "ACE_Cellphone",
+            "BII_Identifi_Device"
         ]],
         // Radios TFAR / ACRE / ACE
         ["radio", [

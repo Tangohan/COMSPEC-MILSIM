@@ -286,6 +286,7 @@ try {
         echo json_encode([
             'error' => 'server_error',
             'message' => $hint !== '' ? $hint : 'Une erreur est survenue. Merci de réessayer plus tard.',
+            'request_id' => $rid !== '' ? $rid : null,
         ], JSON_UNESCAPED_UNICODE);
     } elseif ($showErrors) {
         echo '<pre style="background:#fdd;padding:1em;white-space:pre-wrap;">';

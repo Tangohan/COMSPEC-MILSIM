@@ -8,6 +8,16 @@ declare(strict_types=1);
  */
 return [
     'pages' => [
+        ['path' => 'jnet/personnel', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Personnel', 'subtitle' => 'Annuaire et fiches de l’unité.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet/operations', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Opérations', 'subtitle' => 'Engagements et missions de l’unité.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet/renseignement', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Renseignement', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet/cibles', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Cibles prioritaires', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet/exploitation', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Exploitation', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet/bibliotheque', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Bibliothèque', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet/courrier', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Messagerie d’unité', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet/systeme', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Système', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet/unite', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Fiche d’unité', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Tableau d’unité', 'subtitle' => 'Extranet d’unité — situation, personnel, opérations et renseignement.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
         ['path' => 'back-office', 'group' => 'Pilotage', 'kicker' => 'PILOTAGE', 'title' => 'Tableau de bord', 'subtitle' => 'Synthèse de la communauté, indicateurs et accès rapides.'],
         ['path' => 'back-office/centre-operations', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations'],
         ['path' => 'back-office/operations-admin', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations'],

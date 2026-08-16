@@ -3409,6 +3409,42 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakSseTextLibraryMigrate = require $root . '/bootstrap/atak_sse_text_library_migration.php';
+try {
+    echo "Migration atak_sse_text_library (SSE — bibliothèque rédactionnelle)…\n";
+    $atakSseTextLibraryMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_text_library : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakSseCaseMapMigrate = require $root . '/bootstrap/atak_sse_case_map_migration.php';
+try {
+    echo "Migration atak_sse_case_map (SSE — carte permanente des dossiers)…\n";
+    $atakSseCaseMapMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_case_map : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakSseAnalyticalMigrate = require $root . '/bootstrap/atak_sse_analytical_migration.php';
+try {
+    echo "Migration atak_sse_analytical (SSE — appréciation, lacunes, décisions)…\n";
+    $atakSseAnalyticalMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_analytical : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakSseEngineMigrate = require $root . '/bootstrap/atak_sse_engine_migration.php';
+try {
+    echo "Migration atak_sse_engine (SSE — file suggestions + signaux moteur)…\n";
+    $atakSseEngineMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_engine : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakSseMeshesMigrate = require $root . '/bootstrap/atak_sse_meshes_migration.php';
 try {
     echo "Migration atak_sse_meshes (SSE — toiles de données)…\n";

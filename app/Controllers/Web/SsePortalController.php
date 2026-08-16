@@ -8,8 +8,11 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\SseSuggestionQueueRepository;
+use App\Repositories\SseAnalyticalRepository;
 use App\Repositories\SseAccessCodeRepository;
 use App\Repositories\SseCaseRepository;
+use App\Repositories\SseCaseMapRepository;
 use App\Repositories\SseCrossDecisionRepository;
 use App\Repositories\SseDocumentRepository;
 use App\Repositories\SseInterestCaseRepository;
@@ -17,8 +20,13 @@ use App\Repositories\SseMeshRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\SsePortalSettingsRepository;
 use App\Repositories\SseSiteRepository;
+use App\Repositories\SseTextTemplateRepository;
 use App\Repositories\SseWatchlistRepository;
+use App\Repositories\TenantRepository;
 use App\Repositories\TheatreMissionCycleRepository;
+use App\Services\Sse\SseAnalyticalEngineService;
+use App\Services\Sse\SseCompletenessService;
+use App\Services\Sse\SseContextualMentionService;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseCasePdfService;
 use App\Services\Sse\SseClearanceService;
@@ -30,6 +38,8 @@ use App\Services\Sse\SseReportService;
 use App\Services\Media\ImageCompressionService;
 use App\Services\Sse\SseWorkspaceService;
 use App\Services\Tactical\AtakActivityLogService;
+use App\Support\SseAnalyticalCatalog;
+use App\Support\SseTextVariables;
 
 final class SsePortalController
 {
@@ -55,6 +65,13 @@ final class SsePortalController
         private ?SseWorkspaceService $workspace = null,
         private ?SseDocumentRepository $documents = null,
         private ?SseCrossDecisionRepository $crossDecisions = null,
+        private ?SseTextTemplateRepository $textLibrary = null,
+        private ?SseCaseMapRepository $caseMaps = null,
+        private ?SseAnalyticalRepository $analytical = null,
+        private ?SseContextualMentionService $contextualMentions = null,
+        private ?SseSuggestionQueueRepository $suggestions = null,
+        private ?SseAnalyticalEngineService $engine = null,
+        private ?SseCompletenessService $completeness = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -85,6 +102,13 @@ final class SsePortalController
         );
         $this->documents ??= new SseDocumentRepository();
         $this->crossDecisions ??= new SseCrossDecisionRepository();
+        $this->textLibrary ??= new SseTextTemplateRepository();
+        $this->caseMaps ??= new SseCaseMapRepository();
+        $this->analytical ??= new SseAnalyticalRepository();
+        $this->contextualMentions ??= new SseContextualMentionService();
+        $this->suggestions ??= new SseSuggestionQueueRepository();
+        $this->engine ??= new SseAnalyticalEngineService();
+        $this->completeness ??= new SseCompletenessService();
     }
 
     /** Sas d’entrée (public) */
@@ -767,7 +791,7 @@ final class SsePortalController
         return Response::redirect(url('atak/sse/dossiers/' . $id));
     }
 
-    /** Capture Tacmap (image PNG base64) versée comme preuve. */
+    /** Capture Tacmap (image PNG base64) versée comme preuve + mémorisation de la vue. */
     public function caseTacmapCapture(Request $request, array $params = []): Response
     {
         $id = (int) ($params['id'] ?? 0);
@@ -802,15 +826,326 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/dossiers/' . $id));
         }
         $caption = trim((string) $request->input('caption', ''));
+        $centerLat = (float) $request->input('center_lat', 48.8566);
+        $centerLng = (float) $request->input('center_lng', 2.3522);
+        $zoom = (int) $request->input('zoom', 6);
         $this->cases->addEvidence($id, $this->tenantId(), [
             'label' => 'Capture Tacmap',
-            'caption' => $caption !== '' ? $caption : 'Vue carte au ' . date('d/m/Y H:i'),
+            'caption' => $caption !== '' ? $caption : sprintf(
+                'Vue carte au %s — Z%d · %.5f, %.5f',
+                date('d/m/Y H:i'),
+                $zoom,
+                $centerLat,
+                $centerLng
+            ),
             'image_path' => 'uploads/sse/evidence/' . $name,
             'author_label' => (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur'),
         ]);
-        Session::flash('success', 'Capture de carte enregistrée dans les preuves.');
+
+        $this->caseMaps->saveState($this->tenantId(), $id, [
+            'center_lat' => $centerLat,
+            'center_lng' => $centerLng,
+            'zoom' => $zoom,
+            'map_id' => (int) $request->input('map_id', 1),
+            'atak_layer_enabled' => (bool) $request->input('atak_layer_enabled', true),
+            'snapshot_meta' => [
+                'captured_at' => date('c'),
+                'image' => 'uploads/sse/evidence/' . $name,
+                'feature_count' => count($this->caseMaps->listFeatures($this->tenantId(), $id)),
+            ],
+        ], (int) Session::get('user_id') ?: null);
+
+        Session::flash('success', 'Capture enregistrée : pièce versée et vue mémorisée pour ce dossier.');
 
         return Response::redirect(url('atak/sse/dossiers/' . $id . '#tacmap'));
+    }
+
+    /** Enregistre la vue permanente (centre, zoom, calque ATAK) sans capture image. */
+    public function caseMapSave(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+            return Response::json(['ok' => false, 'error' => 'Dossier inaccessible.'], 404);
+        }
+
+        $ok = $this->caseMaps->saveState($this->tenantId(), $id, [
+            'center_lat' => (float) $request->input('center_lat', 48.8566),
+            'center_lng' => (float) $request->input('center_lng', 2.3522),
+            'zoom' => (int) $request->input('zoom', 6),
+            'map_id' => (int) $request->input('map_id', 1),
+            'atak_layer_enabled' => filter_var($request->input('atak_layer_enabled', true), FILTER_VALIDATE_BOOLEAN),
+        ], (int) Session::get('user_id') ?: null);
+
+        return Response::json([
+            'ok' => $ok,
+            'state' => $this->caseMaps->getState($this->tenantId(), $id),
+        ], $ok ? 200 : 500);
+    }
+
+    public function caseMapFeatureAdd(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+            return Response::json(['ok' => false, 'error' => 'Dossier inaccessible.'], 404);
+        }
+
+        $feature = $this->caseMaps->addFeature($this->tenantId(), $id, [
+            'kind' => (string) $request->input('kind', 'ping'),
+            'label' => (string) $request->input('label', ''),
+            'note' => (string) $request->input('note', ''),
+            'color' => (string) $request->input('color', '#34d399'),
+            'lat' => $request->input('lat'),
+            'lng' => $request->input('lng'),
+            'arma_x' => $request->input('arma_x'),
+            'arma_y' => $request->input('arma_y'),
+            'site_id' => (int) $request->input('site_id', 0),
+            'created_by' => (int) Session::get('user_id') ?: null,
+            'author_label' => (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur'),
+        ]);
+
+        if ($feature === null) {
+            return Response::json(['ok' => false, 'error' => 'Indiquez une position (carte ou coordonnées terrain).'], 422);
+        }
+
+        // Mémorise aussi la vue courante si fournie.
+        if ($request->input('center_lat') !== null) {
+            $this->caseMaps->saveState($this->tenantId(), $id, [
+                'center_lat' => (float) $request->input('center_lat'),
+                'center_lng' => (float) $request->input('center_lng', 0),
+                'zoom' => (int) $request->input('zoom', 6),
+                'map_id' => (int) $request->input('map_id', 1),
+                'atak_layer_enabled' => filter_var($request->input('atak_layer_enabled', true), FILTER_VALIDATE_BOOLEAN),
+            ], (int) Session::get('user_id') ?: null);
+        }
+
+        return Response::json(['ok' => true, 'feature' => $feature], 201);
+    }
+
+    public function caseMapFeatureDelete(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $featureId = (int) ($params['featureId'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+            return Response::json(['ok' => false, 'error' => 'Dossier inaccessible.'], 404);
+        }
+
+        $ok = $this->caseMaps->deleteFeature($this->tenantId(), $id, $featureId);
+
+        return Response::json(['ok' => $ok], $ok ? 200 : 404);
+    }
+
+    public function caseAssessmentStore(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id) . '#analyse');
+        }
+        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+            Session::flash('error', 'Dossier inaccessible.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $payload = [
+            'subject_label' => (string) $request->input('subject_label', ''),
+            'fact_text' => (string) $request->input('fact_text', ''),
+            'source_origin' => (string) $request->input('source_origin', 'observation'),
+            'source_reliability' => (string) $request->input('source_reliability', 'F'),
+            'info_credibility' => (int) $request->input('info_credibility', 6),
+            'corroboration_text' => (string) $request->input('corroboration_text', ''),
+            'assessment_text' => (string) $request->input('assessment_text', ''),
+            'confidence' => (string) $request->input('confidence', 'modere'),
+            'confidence_justification' => (string) $request->input('confidence_justification', ''),
+            'hypothesis_code' => (string) $request->input('hypothesis_code', 'H1'),
+            'hypothesis_text' => (string) $request->input('hypothesis_text', ''),
+            'temporality' => (string) $request->input('temporality', 'valable_a_date'),
+            'temporality_date' => (string) $request->input('temporality_date', ''),
+            'urgency' => (string) $request->input('urgency', ''),
+            'divergence_code' => (string) $request->input('divergence_code', ''),
+            'author_label' => $this->sseAuthorLabel(),
+            'reviewer_label' => trim((string) $request->input('reviewer_label', '')) ?: null,
+            'validator_label' => trim((string) $request->input('validator_label', '')) ?: null,
+            'created_by' => (int) Session::get('user_id') ?: null,
+        ];
+
+        $result = $this->analytical->createAssessment($this->tenantId(), $id, $payload);
+        if (!$result['ok']) {
+            Session::flash('error', $result['error'] ?? 'Enregistrement impossible.');
+        } else {
+            $this->analytical->recordDecision($this->tenantId(), $id, [
+                'decision_domain' => 'hypothese',
+                'subject_label' => $payload['subject_label'] !== '' ? $payload['subject_label'] : 'Nouvelle appréciation',
+                'value_before' => null,
+                'value_after' => SseAnalyticalCatalog::label(SseAnalyticalCatalog::CONFIDENCE, $payload['confidence'])
+                    . ' / ' . strtoupper($payload['hypothesis_code']),
+                'reason' => $payload['confidence_justification'],
+                'assessment_id' => $result['id'] ?? null,
+                'author_label' => $payload['author_label'],
+                'decided_by' => $payload['created_by'],
+            ]);
+            Session::flash('success', 'Appréciation analytique consignée.');
+        }
+
+        return Response::redirect(url('atak/sse/dossiers/' . $id) . '#analyse');
+    }
+
+    public function caseGapStore(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id) . '#lacunes');
+        }
+        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+            Session::flash('error', 'Dossier inaccessible.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $result = $this->analytical->createGap($this->tenantId(), $id, [
+            'kind' => (string) $request->input('kind', 'lacune'),
+            'title' => (string) $request->input('title', ''),
+            'body' => (string) $request->input('body', ''),
+            'priority' => (string) $request->input('priority', 'normale'),
+            'status' => 'ouvert',
+            'linked_hypothesis' => (string) $request->input('linked_hypothesis', ''),
+            'confirmation_criterion' => (string) $request->input('confirmation_criterion', ''),
+            'assignee_label' => (string) $request->input('assignee_label', ''),
+            'due_at' => (string) $request->input('due_at', ''),
+            'author_label' => $this->sseAuthorLabel(),
+            'created_by' => (int) Session::get('user_id') ?: null,
+        ]);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['ok']
+            ? 'Lacune / besoin enregistré.'
+            : ($result['error'] ?? 'Enregistrement impossible.'));
+
+        return Response::redirect(url('atak/sse/dossiers/' . $id) . '#lacunes');
+    }
+
+    public function caseGapStatus(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $gapId = (int) ($params['gapId'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id) . '#lacunes');
+        }
+        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+            Session::flash('error', 'Dossier inaccessible.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $status = (string) $request->input('status', '');
+        $ok = $this->analytical->updateGapStatus($this->tenantId(), $id, $gapId, $status);
+        Session::flash($ok ? 'success' : 'error', $ok ? 'État mis à jour.' : 'Mise à jour impossible.');
+
+        return Response::redirect(url('atak/sse/dossiers/' . $id) . '#lacunes');
+    }
+
+    public function caseDecisionStore(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id) . '#decisions');
+        }
+        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+            Session::flash('error', 'Dossier inaccessible.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $ok = $this->analytical->recordDecision($this->tenantId(), $id, [
+            'decision_domain' => (string) $request->input('decision_domain', 'autre'),
+            'subject_label' => (string) $request->input('subject_label', ''),
+            'value_before' => (string) $request->input('value_before', ''),
+            'value_after' => (string) $request->input('value_after', ''),
+            'reason' => (string) $request->input('reason', ''),
+            'author_label' => $this->sseAuthorLabel(),
+            'decided_by' => (int) Session::get('user_id') ?: null,
+        ]);
+        Session::flash($ok ? 'success' : 'error', $ok
+            ? 'Décision consignée au registre.'
+            : 'Indiquez la valeur après décision et le motif.');
+
+        return Response::redirect(url('atak/sse/dossiers/' . $id) . '#decisions');
+    }
+
+    public function caseLinkStore(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id) . '#relations');
+        }
+        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+            Session::flash('error', 'Dossier inaccessible.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $relatedRef = trim((string) $request->input('related_reference', ''));
+        $relatedId = (int) $request->input('related_case_id', 0);
+        if ($relatedId < 1 && $relatedRef !== '') {
+            $found = $this->cases->findByReferenceCode($this->tenantId(), $relatedRef);
+            $relatedId = (int) ($found['id'] ?? 0);
+        }
+
+        $result = $this->analytical->createCaseLink($this->tenantId(), $id, [
+            'related_case_id' => $relatedId,
+            'relation_type' => (string) $request->input('relation_type', 'connexe'),
+            'note' => (string) $request->input('note', ''),
+            'former_reference' => (string) $request->input('former_reference', ''),
+            'author_label' => $this->sseAuthorLabel(),
+            'created_by' => (int) Session::get('user_id') ?: null,
+        ]);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['ok']
+            ? 'Relation entre dossiers enregistrée.'
+            : ($result['error'] ?? 'Enregistrement impossible.'));
+
+        return Response::redirect(url('atak/sse/dossiers/' . $id) . '#relations');
+    }
+
+    public function caseLinkDelete(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $linkId = (int) ($params['linkId'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id) . '#relations');
+        }
+        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+            Session::flash('error', 'Dossier inaccessible.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $ok = $this->analytical->deleteCaseLink($this->tenantId(), $id, $linkId);
+        Session::flash($ok ? 'success' : 'error', $ok ? 'Relation retirée.' : 'Suppression impossible.');
+
+        return Response::redirect(url('atak/sse/dossiers/' . $id) . '#relations');
+    }
+
+    private function sseAuthorLabel(): string
+    {
+        return (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Analyste');
     }
 
     public function caseShow(Request $request, array $params = []): Response
@@ -869,6 +1204,30 @@ final class SsePortalController
 
         $notes = $this->cases->listNotes($id, $this->tenantId());
         $evidence = $this->cases->listEvidence($id, $this->tenantId());
+        $mapState = $this->caseMaps->getState($this->tenantId(), $id);
+        $mapFeatures = $this->caseMaps->listFeatures($this->tenantId(), $id);
+        $assessments = $this->analytical->listAssessments($this->tenantId(), $id);
+        $intelGaps = $this->analytical->listGaps($this->tenantId(), $id);
+        $analyticalDecisions = $this->analytical->listDecisions($this->tenantId(), $id);
+        $caseLinks = $this->analytical->listCaseLinks($this->tenantId(), $id);
+        $libraryEntries = $this->libraryForEditor($case);
+        $contextualSuggestions = $this->contextualMentions->suggestForCase(
+            $case,
+            $people,
+            $assessments,
+            $intelGaps,
+            $caseLinks,
+            $libraryEntries
+        );
+        $executiveBrief = $this->analytical->buildExecutiveBrief(
+            $case,
+            $people,
+            $caseSites,
+            $assessments,
+            $intelGaps,
+            $analyticalDecisions,
+            $caseLinks
+        );
 
         return $this->portalView('atak.sse.case_show', [
             'title' => $case['reference_code'] . ' — ' . $case['title'],
@@ -879,7 +1238,37 @@ final class SsePortalController
             'siteCounts' => $siteCounts,
             'notes' => $notes,
             'evidence' => $evidence,
+            'mapState' => $mapState,
+            'mapFeatures' => $mapFeatures,
+            'assessments' => $assessments,
+            'intelGaps' => $intelGaps,
+            'analyticalDecisions' => $analyticalDecisions,
+            'caseLinks' => $caseLinks,
+            'contextualSuggestions' => $contextualSuggestions,
+            'executiveBrief' => $executiveBrief,
+            'gapPresets' => SseContextualMentionService::presetGapMentions(),
+            'analyticalCatalog' => [
+                'origins' => SseAnalyticalCatalog::SOURCE_ORIGINS,
+                'reliability' => SseAnalyticalCatalog::SOURCE_RELIABILITY,
+                'credibility' => SseAnalyticalCatalog::INFO_CREDIBILITY,
+                'confidence' => SseAnalyticalCatalog::CONFIDENCE,
+                'temporality' => SseAnalyticalCatalog::TEMPORALITY,
+                'urgency' => SseAnalyticalCatalog::URGENCY,
+                'divergences' => SseAnalyticalCatalog::DIVERGENCES,
+                'hypotheses' => SseAnalyticalCatalog::HYPOTHESIS_CODES,
+                'gapKinds' => SseAnalyticalCatalog::GAP_KINDS,
+                'gapPriorities' => SseAnalyticalCatalog::GAP_PRIORITIES,
+                'gapStatuses' => SseAnalyticalCatalog::GAP_STATUSES,
+                'decisionDomains' => SseAnalyticalCatalog::DECISION_DOMAINS,
+                'relationTypes' => SseAnalyticalCatalog::CASE_RELATION_TYPES,
+            ],
             'caseProgress' => $this->caseProgress($id, $case, $people, $caseSites, $evidence),
+            'engineSuggestions' => $this->suggestions->listSuggestions($this->tenantId(), [
+                'case_id' => $id,
+                'status' => 'pending',
+                'limit' => 20,
+            ]),
+            'engineSignals' => $this->suggestions->listSignals($this->tenantId(), $id, 15),
             'originInterestCase' => !empty($case['interest_case_id'])
                 ? $this->interestCases->findForTenant((int) $case['interest_case_id'], $this->tenantId())
                 : null,
@@ -908,92 +1297,101 @@ final class SsePortalController
      */
     private function caseProgress(int $caseId, array $case, array $people, array $sites, array $evidence): array
     {
-        $tenantId = $this->tenantId();
-        $base = url('atak/sse/dossiers/' . $caseId);
-
-        try {
-            $relations = $this->correlation->listStored($caseId, $tenantId);
-        } catch (\Throwable) {
-            $relations = [];
-        }
-
-        try {
-            $documents = $this->documents->listForTenant($tenantId, ['case_id' => $caseId]);
-        } catch (\Throwable) {
-            $documents = [];
-        }
-
-        $steps = [
-            [
-                'key' => 'identites',
-                'label' => 'Désigner qui est concerné',
-                'hint' => 'Rattachez au moins une identité au dossier : sans elle, le dossier ne désigne personne.',
-                'count' => count($people),
-                'unit' => 'identité',
-                'required' => true,
-                'href' => $base,
-                'action' => 'Rattacher une identité',
-            ],
-            [
-                'key' => 'sites',
-                'label' => 'Situer les faits',
-                'hint' => 'Les lieux exploités, fouillés ou observés.',
-                'count' => count($sites),
-                'unit' => 'site',
-                'required' => false,
-                'href' => url('atak/sse/sites'),
-                'action' => 'Ajouter un site',
-            ],
-            [
-                'key' => 'pieces',
-                'label' => 'Verser les pièces',
-                'hint' => 'Saisies, photographies, éléments matériels recueillis.',
-                'count' => count($evidence),
-                'unit' => 'pièce',
-                'required' => false,
-                'href' => $base,
-                'action' => 'Verser une pièce',
-            ],
-            [
-                'key' => 'liens',
-                'label' => 'Relier les éléments',
-                'hint' => 'Ce qui relie les identités, les lieux et les pièces entre eux.',
-                'count' => count($relations),
-                'unit' => 'lien',
-                'required' => false,
-                'href' => $base . '/correlations',
-                'action' => 'Poser un lien',
-            ],
-            [
-                'key' => 'redaction',
-                'label' => 'Rédiger et conclure',
-                'hint' => 'Le compte rendu qui sera transmis hors de la cellule.',
-                'count' => count($documents),
-                'unit' => 'document',
-                'required' => false,
-                'href' => url('atak/sse/documents'),
-                'action' => 'Ouvrir la rédaction',
-            ],
-        ];
-
-        $done = 0;
-        $complete = true;
-        foreach ($steps as $i => $step) {
-            $ok = (int) $step['count'] > 0;
-            $steps[$i]['done'] = $ok;
-            if ($ok) {
-                $done++;
-            } elseif (!empty($step['required'])) {
-                $complete = false;
-            }
-        }
+        $eval = $this->completeness->evaluate($this->tenantId(), $case, $people, $sites, $evidence);
 
         return [
-            'complete' => $complete,
-            'done' => $done,
-            'total' => count($steps),
-            'steps' => $steps,
+            'complete' => (bool) ($eval['complete'] ?? false),
+            'done' => (int) ($eval['done'] ?? 0),
+            'total' => (int) ($eval['total'] ?? 0),
+            'steps' => $eval['steps'] ?? [],
+            'score' => (int) ($eval['score'] ?? 0),
+            'digest' => $eval['digest'] ?? null,
+            'pending_suggestions' => (int) ($eval['pending_suggestions'] ?? 0),
         ];
+    }
+
+    public function suggestionsIndex(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $caseId = (int) $request->query('case_id', 0);
+
+        return $this->portalView('atak.sse.suggestions', [
+            'title' => 'Rapprochements moteur',
+            'suggestions' => $this->suggestions->listSuggestions($tenantId, [
+                'case_id' => $caseId > 0 ? $caseId : null,
+                'status' => 'pending',
+                'limit' => 100,
+            ]),
+            'signals' => $this->suggestions->listSignals($tenantId, $caseId > 0 ? $caseId : null, 40),
+            'pendingCount' => $this->suggestions->countPending($tenantId),
+            'filterCaseId' => $caseId,
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'activeNav' => 'rapprochements',
+        ]);
+    }
+
+    public function suggestionAccept(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/rapprochements'));
+        }
+        $result = $this->engine->acceptSuggestion(
+            $this->tenantId(),
+            $id,
+            $this->sseAuthorLabel(),
+            (int) Session::get('user_id') ?: null
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['ok']
+            ? 'Rapprochement validé — relation analytique créée le cas échéant. Aucune fusion automatique.'
+            : ($result['error'] ?? 'Validation impossible.'));
+
+        $back = (int) $request->input('case_id', 0);
+
+        return Response::redirect($back > 0
+            ? url('atak/sse/dossiers/' . $back) . '#moteur'
+            : url('atak/sse/rapprochements'));
+    }
+
+    public function suggestionReject(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/rapprochements'));
+        }
+        $result = $this->engine->rejectSuggestion(
+            $this->tenantId(),
+            $id,
+            $this->sseAuthorLabel(),
+            (int) Session::get('user_id') ?: null
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['ok']
+            ? 'Proposition rejetée et conservée au registre.'
+            : ($result['error'] ?? 'Rejet impossible.'));
+
+        $back = (int) $request->input('case_id', 0);
+
+        return Response::redirect($back > 0
+            ? url('atak/sse/dossiers/' . $back) . '#moteur'
+            : url('atak/sse/rapprochements'));
+    }
+
+    public function engineRunNow(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/rapprochements'));
+        }
+        $result = $this->engine->runForTenant($this->tenantId());
+        Session::flash('success', 'Passage moteur terminé — ' . ($result['summary'] ?? ''));
+
+        return Response::redirect(url('atak/sse/rapprochements'));
     }
 
     public function caseUnlockForm(Request $request, array $params = []): Response
@@ -2554,6 +2952,7 @@ final class SsePortalController
         $type = SseDocumentRepository::normalizeType((string) $request->query('type', 'note_analyse'));
         $caseId = (int) $request->query('case_id', 0);
         $body = SseDocumentRepository::bodyTemplate($type);
+        $case = $caseId > 0 ? $this->requireCase($caseId) : null;
 
         return $this->portalView('atak.sse.document_form', [
             'title' => 'Nouveau document SSE',
@@ -2563,6 +2962,9 @@ final class SsePortalController
             'classifications' => SseCaseRepository::CLASSIFICATION_LABELS,
             'cases' => $this->cases->listForTenant($this->tenantId(), $this->access->caseScope()),
             'bodyTemplates' => SseDocumentRepository::bodyTemplatesByType(),
+            'libraryEntries' => $this->libraryForEditor($case),
+            'libraryCategories' => SseTextTemplateRepository::categories(),
+            'contextualSuggestions' => $this->contextualSuggestionsForCase($case),
             'prefillType' => $type,
             'prefillCaseId' => $caseId,
             'prefillTitle' => '',
@@ -2612,7 +3014,9 @@ final class SsePortalController
             'author_label' => $author,
         ]);
 
-        Session::flash('success', 'Document créé et placé en atelier.');
+        $mentions = $this->recordLibraryUses($request, (int) $docId, $caseId, $author, $userId);
+
+        Session::flash('success', 'Document créé et placé en atelier.' . $mentions);
 
         return Response::redirect(url('atak/sse/documents/' . $docId));
     }
@@ -2661,6 +3065,8 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/documents/' . $id));
         }
 
+        $case = !empty($doc['case_id']) ? $this->requireCase((int) $doc['case_id']) : null;
+
         return $this->portalView('atak.sse.document_form', [
             'title' => 'Modifier — ' . ($doc['reference_code'] ?? ''),
             'document' => $doc,
@@ -2669,6 +3075,9 @@ final class SsePortalController
             'classifications' => SseCaseRepository::CLASSIFICATION_LABELS,
             'cases' => $this->cases->listForTenant($this->tenantId(), $this->access->caseScope()),
             'bodyTemplates' => SseDocumentRepository::bodyTemplatesByType(),
+            'libraryEntries' => $this->libraryForEditor($case),
+            'libraryCategories' => SseTextTemplateRepository::categories(),
+            'contextualSuggestions' => $this->contextualSuggestionsForCase($case),
             'canManage' => true,
             'activeNav' => 'documents',
         ]);
@@ -2726,9 +3135,122 @@ final class SsePortalController
         }
 
         $this->documents->update($id, $this->tenantId(), $payload);
-        Session::flash('success', 'Document enregistré.');
+        $author = (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur');
+        $mentions = $this->recordLibraryUses($request, $id, $caseId, $author, (int) Session::get('user_id') ?: null);
+        Session::flash('success', 'Document enregistré.' . $mentions);
 
         return Response::redirect(url('atak/sse/documents/' . $id));
+    }
+
+    /**
+     * Mentions proposées dans l'éditeur, variables déjà résolues avec ce que l'on connaît
+     * du dossier lié. Le texte inséré est ensuite indépendant du modèle.
+     *
+     * @param array<string,mixed>|null $case
+     * @return list<array<string,mixed>>
+     */
+    private function libraryForEditor(?array $case): array
+    {
+        $tenantId = $this->tenantId();
+        $tenant = null;
+        try {
+            $tenant = (new TenantRepository())->findById($tenantId);
+        } catch (\Throwable) {
+            $tenant = null;
+        }
+        $author = (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? '');
+        $context = SseTextVariables::context($tenant, $case, $author);
+
+        $out = [];
+        foreach ($this->textLibrary->listForTenant($tenantId, ['only_active' => true]) as $row) {
+            $out[] = [
+                'code' => (string) $row['code'],
+                'category' => (string) $row['category'],
+                'category_label' => (string) $row['category_label'],
+                'title' => (string) $row['title'],
+                'context' => (string) $row['context'],
+                'context_label' => (string) $row['context_label'],
+                'doctrine' => (string) ($row['doctrine'] ?? 'neutre'),
+                'doctrine_label' => (string) ($row['doctrine_label'] ?? ''),
+                'fragment_kind' => (string) ($row['fragment_kind'] ?? 'bloc'),
+                'version' => (int) $row['version'],
+                'is_default' => (bool) $row['is_default'],
+                'content' => SseTextTemplateRepository::render((string) $row['content'], $context),
+                'variables' => $row['variable_list'],
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string,mixed>|null $case
+     * @return list<array<string,mixed>>
+     */
+    private function contextualSuggestionsForCase(?array $case): array
+    {
+        if ($case === null || empty($case['id'])) {
+            return [];
+        }
+        $caseId = (int) $case['id'];
+        $tenantId = $this->tenantId();
+        $people = [];
+        try {
+            foreach ($this->cases->listLinkedPersonIds($caseId, $tenantId) as $link) {
+                $p = $this->persons->findById((int) $link['person_id'], $tenantId);
+                if ($p) {
+                    $people[] = $p;
+                }
+            }
+        } catch (\Throwable) {
+            $people = [];
+        }
+
+        return $this->contextualMentions->suggestForCase(
+            $case,
+            $people,
+            $this->analytical->listAssessments($tenantId, $caseId),
+            $this->analytical->listGaps($tenantId, $caseId),
+            $this->analytical->listCaseLinks($tenantId, $caseId),
+            $this->libraryForEditor($case)
+        );
+    }
+
+    /**
+     * Consigne quelles mentions ont été insérées, dans quelle version, et le texte
+     * effectivement porté au document. Retour : complément de message pour l'opérateur.
+     */
+    private function recordLibraryUses(Request $request, int $documentId, int $caseId, string $author, ?int $userId): string
+    {
+        $raw = trim((string) $request->input('inserted_mentions', ''));
+        if ($raw === '' || $documentId < 1) {
+            return '';
+        }
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded) || $decoded === []) {
+            return '';
+        }
+
+        $uses = [];
+        foreach ($decoded as $item) {
+            if (!is_array($item) || trim((string) ($item['code'] ?? '')) === '') {
+                continue;
+            }
+            $uses[] = [
+                'code' => (string) $item['code'],
+                'version' => (int) ($item['version'] ?? 1),
+                'text' => (string) ($item['text'] ?? ''),
+            ];
+        }
+        if ($uses === []) {
+            return '';
+        }
+
+        $saved = $this->textLibrary->recordUses($this->tenantId(), $documentId, $caseId, $uses, $author, $userId);
+
+        return $saved > 0
+            ? sprintf(' %d mention%s de la bibliothèque tracée%s.', $saved, $saved > 1 ? 's' : '', $saved > 1 ? 's' : '')
+            : '';
     }
 
     public function documentStatus(Request $request, array $params = []): Response
@@ -2767,6 +3289,201 @@ final class SsePortalController
         Session::flash('success', $messages[$status] ?? 'État mis à jour.');
 
         return Response::redirect(url('atak/sse/documents/' . $id));
+    }
+
+    // ─────────────────────────────────────────── Bibliothèque rédactionnelle
+
+    public function textLibraryIndex(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $filters = [
+            'category' => (string) $request->query('categorie', ''),
+            'context' => (string) $request->query('contexte', ''),
+            'q' => (string) $request->query('q', ''),
+        ];
+
+        $entries = $this->textLibrary->listForTenant($tenantId, $filters);
+        $grouped = [];
+        foreach ($entries as $entry) {
+            $grouped[(string) $entry['category']][] = $entry;
+        }
+
+        return $this->portalView('atak.sse.text_library', [
+            'title' => 'Bibliothèque rédactionnelle',
+            'entries' => $entries,
+            'groupedEntries' => $grouped,
+            'libraryCategories' => SseTextTemplateRepository::categories(),
+            'libraryContexts' => SseTextTemplateRepository::contexts(),
+            'libraryVariables' => SseTextTemplateRepository::variables(),
+            'libraryCounts' => $this->textLibrary->countsByCategory($tenantId),
+            'filters' => $filters,
+            'editEntry' => $this->textLibrary->findById($tenantId, (int) $request->query('modifier', 0)),
+            'canManage' => $this->canManage(),
+            'activeNav' => 'bibliotheque',
+        ]);
+    }
+
+    public function textLibraryStore(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/bibliotheque'));
+        }
+
+        $id = $this->textLibrary->create($this->tenantId(), [
+            'code' => (string) $request->input('code', ''),
+            'category' => (string) $request->input('category', ''),
+            'title' => (string) $request->input('title', ''),
+            'content' => (string) $request->input('content', ''),
+            'context' => (string) $request->input('context', ''),
+            'classification_min' => (string) $request->input('classification_min', ''),
+            'is_default' => (bool) $request->input('is_default', false),
+            'sort_order' => (int) $request->input('sort_order', 100),
+            'user_id' => (int) Session::get('user_id') ?: null,
+        ]);
+
+        if ($id === null) {
+            Session::flash('error', 'Mention non enregistrée : vérifiez le code (unique), le titre et le texte.');
+        } else {
+            Session::flash('success', 'Mention ajoutée à la bibliothèque.');
+        }
+
+        return Response::redirect(url('atak/sse/bibliotheque'));
+    }
+
+    public function textLibraryUpdate(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/bibliotheque'));
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $ok = $this->textLibrary->update($this->tenantId(), $id, [
+            'category' => (string) $request->input('category', ''),
+            'title' => (string) $request->input('title', ''),
+            'content' => (string) $request->input('content', ''),
+            'context' => (string) $request->input('context', ''),
+            'classification_min' => (string) $request->input('classification_min', ''),
+            'is_default' => (bool) $request->input('is_default', false),
+            'is_active' => (bool) $request->input('is_active', false),
+            'sort_order' => (int) $request->input('sort_order', 100),
+            'user_id' => (int) Session::get('user_id') ?: null,
+        ]);
+
+        Session::flash(
+            $ok ? 'success' : 'error',
+            $ok
+                ? 'Mention mise à jour. Les documents déjà rédigés conservent le texte qui y avait été porté.'
+                : 'Mention non modifiée : titre et texte sont obligatoires.'
+        );
+
+        return Response::redirect(url('atak/sse/bibliotheque'));
+    }
+
+    public function textLibraryToggle(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/bibliotheque'));
+        }
+
+        $active = $this->textLibrary->toggleActive($this->tenantId(), (int) ($params['id'] ?? 0));
+        if ($active === null) {
+            Session::flash('error', 'Mention introuvable.');
+        } else {
+            Session::flash('success', $active
+                ? 'Mention de nouveau proposée à la rédaction.'
+                : 'Mention retirée des propositions. Les textes déjà insérés restent en place.');
+        }
+
+        return Response::redirect(url('atak/sse/bibliotheque'));
+    }
+
+    public function textLibraryDelete(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/bibliotheque'));
+        }
+
+        $ok = $this->textLibrary->delete($this->tenantId(), (int) ($params['id'] ?? 0));
+        Session::flash(
+            $ok ? 'success' : 'error',
+            $ok
+                ? 'Mention supprimée.'
+                : 'Les mentions livrées d’origine ne se suppriment pas : retirez-les des propositions.'
+        );
+
+        return Response::redirect(url('atak/sse/bibliotheque'));
+    }
+
+    // ─────────────────────────────────────────── Lecture du dossier à l'écran
+
+    public function caseReader(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canExport()) {
+            Session::flash('error', 'Lecture du dossier complet non autorisée.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id));
+        }
+        $case = $this->requireCase($id);
+        if ($case === null) {
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+        if ($locked = $this->redirectIfCaseLocked($case)) {
+            return $locked;
+        }
+
+        return $this->portalView('atak.sse.case_reader', [
+            'title' => 'Lecture — ' . (string) ($case['reference_code'] ?? ''),
+            'case' => $case,
+            'levelLabel' => SseRedactionService::levelLabel($this->clearance->maxLevel()),
+            'streamUrl' => url('atak/sse/dossiers/' . $id . '/pdf/flux'),
+            'downloadUrl' => url('atak/sse/dossiers/' . $id . '/pdf'),
+            'canManage' => $this->canManage(),
+            'activeNav' => 'dossiers',
+        ]);
+    }
+
+    /** Même document que l'export, servi pour lecture à l'écran plutôt qu'en téléchargement. */
+    public function casePdfStream(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canExport()) {
+            return (new Response())->setStatusCode(403)->setBody('<p>Lecture non autorisée.</p>');
+        }
+        $case = $this->requireCase($id);
+        if ($case === null) {
+            return (new Response())->setStatusCode(404)->setBody('<p>Dossier introuvable.</p>');
+        }
+        if ($this->clearance->caseLockEnabled($this->tenantId()) && $this->clearance->caseAboveClearance($case)) {
+            return (new Response())->setStatusCode(403)->setBody('<p>Dossier verrouillé.</p>');
+        }
+
+        $tenantId = $this->tenantId();
+        $level = $this->clearance->maxLevel();
+
+        // Lecture à l'écran : pas de fichier qui part circuler, mais la consultation
+        // du dossier complet reste un acte à tracer.
+        $this->activityLog->record(
+            $tenantId,
+            1,
+            'SSE_CLEARANCE',
+            sprintf(
+                'Lecture à l’écran du dossier complet %s en « %s ».',
+                (string) ($case['reference_code'] ?? $id),
+                SseRedactionService::levelLabel($level)
+            ),
+            (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
+        );
+
+        return $this->pdf->export($tenantId, $id, $level, true);
     }
 
     public function collecteHub(Request $request, array $params = []): Response

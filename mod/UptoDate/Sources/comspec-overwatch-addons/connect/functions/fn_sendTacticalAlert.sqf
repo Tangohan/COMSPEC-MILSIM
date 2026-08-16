@@ -91,11 +91,31 @@ if (_callSign isEqualTo "") then { _callSign = name player; };
 
 
 // Corps = texte métier uniquement (type / indicatif / grille sont déjà dans les champs 1–5)
-// Jamais de « | » dans le corps : séparateur du canal ALERTE TACTIQUE.
-private _payloadTail = trim ((_body splitString "|") joinString " · ");
+// Jamais de « | » dans le corps métier — sauf préfixe ORDER_ID=… conservé comme champ dédié.
+private _orderIdField = "";
+private _bodyWork = trim _body;
+if (_bodyWork find "ORDER_ID=" == 0 || {_bodyWork find "ATHENA_ORDER_ID=" == 0}) then {
+    private _sep = _bodyWork find "|";
+    if (_sep >= 0) then {
+        _orderIdField = _bodyWork select [0, _sep];
+        _bodyWork = trim (_bodyWork select [_sep + 1]);
+    } else {
+        _orderIdField = _bodyWork;
+        _bodyWork = "";
+    };
+};
+
+private _payloadTail = trim ((_bodyWork splitString "|") joinString " · ");
 _payloadTail = (_payloadTail splitString toString [10]) joinString " · ";
 _payloadTail = (_payloadTail splitString toString [13]) joinString "";
 _payloadTail = trim _payloadTail;
+if (_orderIdField isNotEqualTo "") then {
+    _payloadTail = if (_payloadTail isEqualTo "") then {
+        _orderIdField
+    } else {
+        format ["%1|%2", _orderIdField, _payloadTail]
+    };
+};
 
 
 

@@ -1,9 +1,14 @@
 /*
     Init Eden/runtime d'une entité marquée SSE.
+    CBA Extended_InitPost passe [_unit] dans _this — ne pas rewraper.
 */
 params [
-    ["_entity", objNull, [objNull]]
+    ["_entity", objNull, [objNull, []]]
 ];
+
+if (_entity isEqualType []) then {
+    _entity = _entity param [0, objNull, [objNull]];
+};
 
 if (isNull _entity) exitWith {};
 if (!isServer) exitWith {};

@@ -24,6 +24,8 @@ class CfgFunctions {
             class createDataModel {};
             class getData {};
             class setData {};
+            class getPair {};
+            class setPair {};
             class getSection {};
             class setSection {};
             class getSeed {};

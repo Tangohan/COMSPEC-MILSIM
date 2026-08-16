@@ -578,6 +578,26 @@
   }
 
   /**
+   * Message privé cTab archivé : MP|from|to|texte
+   */
+  function parseMpBody(body) {
+    var raw = String(body || '').trim();
+    raw = raw.replace(
+      /^\[\d{1,2}:\d{2}:\d{2}\]\[[A-Za-z0-9_]+\]\[[A-Za-z0-9_]+\]\[[A-Za-z0-9_]+\]\s*/u,
+      ''
+    );
+    if (raw.toUpperCase().indexOf('MP|') !== 0 && raw.toUpperCase() !== 'MP') return null;
+    var parts = raw.split('|').map(function (p) { return String(p || '').trim(); });
+    return {
+      is_mp: true,
+      label: 'Message privé',
+      from: parts[1] || '',
+      to: parts[2] || '',
+      text: parts.slice(3).join('|') || 'Message privé',
+    };
+  }
+
+  /**
    * @param {string} body
    * @param {{ outgoing?: boolean }=} opts
    */
@@ -606,6 +626,34 @@
     );
   }
 
+  /**
+   * @param {string} body
+   * @param {{ outgoing?: boolean }=} opts
+   */
+  function formatMpChatBody(body, opts) {
+    var p = parseMpBody(body);
+    if (!p) return null;
+    opts = opts || {};
+    var outgoing = !!opts.outgoing;
+    var dirLabel = outgoing ? 'Envoyé' : 'Reçu';
+    var dirCls = outgoing ? 'atak-chat-group-dir--out' : 'atak-chat-group-dir--in';
+    var metaBits = [];
+    if (p.from) metaBits.push('<span class="atak-chat-group-meta-item"><em>De</em> ' + escapeHtml(p.from) + '</span>');
+    if (p.to) metaBits.push('<span class="atak-chat-group-meta-item"><em>À</em> ' + escapeHtml(p.to) + '</span>');
+    return (
+      '<div class="atak-chat-group-card atak-chat-mp-card' + (outgoing ? ' atak-chat-group-card--out' : '') + '">' +
+        '<div class="atak-chat-group-head">' +
+          '<span class="atak-chat-group-badge atak-chat-mp-badge">' + escapeHtml(p.label) + '</span>' +
+          '<span class="atak-chat-group-dir ' + dirCls + '">' + dirLabel + '</span>' +
+        '</div>' +
+        '<div class="atak-chat-group-text">' + escapeHtml(p.text) + '</div>' +
+        (metaBits.length
+          ? '<div class="atak-chat-group-meta">' + metaBits.join('') + '</div>'
+          : '') +
+      '</div>'
+    );
+  }
+
   global.TacmapTacticalAlerts = {
     renderList: renderList,
     poll: pollFlexible,
@@ -613,6 +661,8 @@
     formatChatBody: formatChatBody,
     parseGroupBody: parseGroupBody,
     formatGroupChatBody: formatGroupChatBody,
+    parseMpBody: parseMpBody,
+    formatMpChatBody: formatMpChatBody,
     hasMapPos: hasMapPos,
     openDetail: openDetail,
     cleanSummary: cleanSummary,

@@ -68,12 +68,27 @@ final class TacticalAlertParser
             ));
 
             $orderId = '';
-            if ($tailParts !== [] && preg_match('/^ORDER_ID=(.+)$/i', (string) $tailParts[0], $om) === 1) {
-                $orderId = trim((string) ($om[1] ?? ''));
+            if ($tailParts !== [] && preg_match('/^(?:ORDER_ID|ATHENA_ORDER_ID)=(.+)$/i', (string) $tailParts[0], $om) === 1) {
+                $rawOid = trim((string) ($om[1] ?? ''));
                 array_shift($tailParts);
+                // Ancien sendTacticalAlert collait le reste après « · » dans le même champ.
+                if (preg_match('/^([A-Za-z0-9_.:\-]+)\s*[·|]\s*(.+)$/u', $rawOid, $split) === 1) {
+                    $orderId = trim((string) $split[1]);
+                    array_unshift($tailParts, trim((string) $split[2]));
+                } elseif (preg_match('/^([A-Za-z0-9_.:\-]+)$/', $rawOid) === 1) {
+                    $orderId = $rawOid;
+                }
             }
 
             $summary = trim(implode(' — ', $tailParts));
+            if ($orderId === '' && preg_match('/(?:ORDER_ID|ATHENA_ORDER_ID)=([A-Za-z0-9_.:\-]+)/i', $summary, $om2) === 1) {
+                $orderId = trim((string) ($om2[1] ?? ''));
+                $summary = trim((string) (preg_replace(
+                    '/\s*(?:ORDER_ID|ATHENA_ORDER_ID)=[A-Za-z0-9_.:\-]+\s*/i',
+                    ' ',
+                    $summary
+                ) ?? $summary));
+            }
             $rawForBda = $summary;
             $summary = self::cleanSummary($summary, $kind, $callSign, $grid);
             if ($summary === '') {
@@ -94,6 +109,9 @@ final class TacticalAlertParser
             $frago = null;
             if ($kind === 'frago') {
                 $frago = self::parseFragoSections($summary);
+                if ($frago === []) {
+                    $frago = self::parseFragoSections($rawForBda);
+                }
             }
 
             $bda = null;
@@ -587,28 +605,68 @@ final class TacticalAlertParser
         if ($summary === '') {
             return [];
         }
+        // Corps IceMan HTML → texte plat.
+        $summary = html_entity_decode(strip_tags(str_ireplace(['<br/>', '<br>', '<br />'], "\n", $summary)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $summary = str_replace(["\r\n", "\r"], "\n", $summary);
+        $summary = preg_replace('/\s*[|·•]+\s*/u', "\n", $summary) ?? $summary;
+        $summary = preg_replace('/\s+[—–]\s+(?=(?:\d\.\s*)?(?:Situation|Mission|Exécution|Execution|Soutien|Support|Commandement|Command)\b)/iu', "\n", $summary) ?? $summary;
+
         $keys = [
+            'situation' => ['Situation', 'SITUATION'],
+            'mission' => ['Mission', 'MISSION'],
+            'execution' => ['Exécution', 'Execution', 'EXECUTION'],
+            'support' => ['Soutien', 'Support', 'SERVICE SUPPORT', 'Service Support'],
+            'command' => ['Commandement', 'Command', 'COMMAND AND SIGNAL', 'Command and Signal'],
+        ];
+        $out = [];
+        foreach ($keys as $id => $labels) {
+            foreach ($labels as $label) {
+                $quoted = preg_quote($label, '/');
+                if (preg_match(
+                    '/(?:^|\n)\s*(?:\d+\.\s*)?' . $quoted . '\s*:\s*(.+?)(?=\n\s*(?:\d+\.\s*)?(?:Situation|SITUATION|Mission|MISSION|Exécution|Execution|EXECUTION|Soutien|Support|SERVICE SUPPORT|Commandement|Command|COMMAND AND SIGNAL)\s*:|\z)/ius',
+                    $summary,
+                    $m
+                ) === 1) {
+                    $val = trim((string) ($m[1] ?? ''));
+                    $val = trim(preg_replace('/\s+/u', ' ', $val) ?? $val);
+                    if ($val !== '' && !preg_match('/^N\/?A$/i', $val)) {
+                        $out[$id] = $val;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Payload ordre C2 (SMEAC) à partir d’une alerte FRAGO parsée.
+     *
+     * @param array<string, mixed> $tactical
+     */
+    public static function formatFragoOrderPayload(array $tactical): string
+    {
+        $labels = [
             'situation' => 'Situation',
             'mission' => 'Mission',
             'execution' => 'Exécution',
             'support' => 'Soutien',
             'command' => 'Commandement',
         ];
-        $out = [];
-        foreach ($keys as $id => $label) {
-            if (preg_match(
-                '/' . preg_quote($label, '/') . '\s*:\s*(.+?)(?=\s*[—\-–]\s*(?:Situation|Mission|Exécution|Soutien|Commandement)\s*:|$)/iu',
-                $summary,
-                $m
-            ) === 1) {
-                $val = trim((string) ($m[1] ?? ''));
-                if ($val !== '') {
-                    $out[$id] = $val;
-                }
+        $parts = [];
+        $frago = isset($tactical['frago']) && is_array($tactical['frago']) ? $tactical['frago'] : [];
+        foreach ($labels as $id => $label) {
+            $v = trim((string) ($frago[$id] ?? ''));
+            if ($v !== '') {
+                $parts[] = $label . ': ' . $v;
             }
         }
+        if ($parts !== []) {
+            return implode(' — ', $parts);
+        }
 
-        return $out;
+        return trim((string) ($tactical['summary'] ?? ''));
     }
 
     private static function stripCommsPrefix(string $body): string

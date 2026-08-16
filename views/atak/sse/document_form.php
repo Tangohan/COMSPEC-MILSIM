@@ -15,6 +15,16 @@ $classifications = is_array($classifications ?? null) ? $classifications : [];
 $cases = is_array($cases ?? null) ? $cases : [];
 /** @var array<string,string> $bodyTemplates */
 $bodyTemplates = is_array($bodyTemplates ?? null) ? $bodyTemplates : [];
+/** @var list<array<string,mixed>> $libraryEntries */
+$libraryEntries = is_array($libraryEntries ?? null) ? $libraryEntries : [];
+/** @var list<array<string,mixed>> $contextualSuggestions */
+$contextualSuggestions = is_array($contextualSuggestions ?? null) ? $contextualSuggestions : [];
+/** @var array<string,string> $libraryCategories */
+$libraryCategories = is_array($libraryCategories ?? null) ? $libraryCategories : [];
+$libraryUsedCategories = [];
+foreach ($libraryEntries as $entry) {
+    $libraryUsedCategories[(string) ($entry['category'] ?? '')] = true;
+}
 $prefillType = (string) ($prefillType ?? ($document['document_type'] ?? 'note_analyse'));
 $prefillCaseId = (int) ($prefillCaseId ?? ($document['case_id'] ?? 0));
 $prefillTitle = (string) ($prefillTitle ?? ($document['title'] ?? ''));
@@ -144,12 +154,30 @@ foreach ($cases as $c) {
                 <button class="btn btn--ghost btn--sm" type="button" id="sse-mask-btn">
                     Masquer le passage sélectionné
                 </button>
-                <span class="muted">Le passage devient une barre noire sur la feuille, sa longueur reste visible.</span>
+                <?php if ($libraryEntries !== []): ?>
+                    <button class="btn btn--sm" type="button" id="sse-lib-btn" aria-haspopup="dialog">
+                        Insérer une mention
+                    </button>
+                <?php endif; ?>
+                <span class="muted">Le passage masqué devient une barre noire sur la feuille, sa longueur reste visible.</span>
             </div>
+            <?php if ($libraryEntries !== []): ?>
+                <div class="sse-lib-suggest" id="sse-lib-suggest" hidden>
+                    <span class="sse-lib-suggest__label">Proposé pour ce document</span>
+                    <div class="sse-lib-suggest__row" id="sse-lib-suggest-row"></div>
+                </div>
+            <?php endif; ?>
             <div class="sse-desk-paper">
                 <textarea id="body" name="body" rows="26" required
                           placeholder="Structurez le produit : situation, faits, analyse, recommandations."><?= $h($prefillBody) ?></textarea>
             </div>
+            <input type="hidden" name="inserted_mentions" id="sse-lib-trace" value="">
+            <?php if ($libraryEntries !== []): ?>
+                <p class="sse-lib-inserted" id="sse-lib-inserted" hidden>
+                    Mentions insérées : <span id="sse-lib-inserted-list"></span>.
+                    Le texte porté au document est conservé tel quel, même si la mention centrale est modifiée plus tard.
+                </p>
+            <?php endif; ?>
             <p class="muted sse-desk-footnote">
                 Changez de type pour recharger le modèle guidé (si le corps n’a pas encore été personnalisé).
                 Évitez les noms en clair si une diffusion large est prévue.
@@ -162,6 +190,44 @@ foreach ($cases as $c) {
             </div>
         </div>
     </section>
+
+    <?php if ($libraryEntries !== []): ?>
+    <div class="sse-lib" id="sse-lib" hidden>
+        <div class="sse-lib__backdrop" data-lib-close></div>
+        <section class="sse-lib__panel" role="dialog" aria-modal="true" aria-labelledby="sse-lib-title">
+            <header class="sse-lib__head">
+                <div>
+                    <p class="sse-lib__kicker">Bibliothèque rédactionnelle</p>
+                    <h2 id="sse-lib-title">Insérer une mention officielle</h2>
+                </div>
+                <button type="button" class="sse-lib__close" data-lib-close aria-label="Fermer la bibliothèque">×</button>
+            </header>
+            <div class="sse-lib__search">
+                <label class="sr-only" for="sse-lib-q">Rechercher une mention</label>
+                <input id="sse-lib-q" type="search" autocomplete="off"
+                       placeholder="Chercher un code (RENS-03) ou un mot : recoupé, source, identité incertaine, caviardage…">
+                <span class="sse-lib__count" id="sse-lib-count"></span>
+            </div>
+            <div class="sse-lib__body">
+                <nav class="sse-lib__rail" aria-label="Familles de mentions">
+                    <button type="button" class="is-active" data-lib-cat="">Toutes</button>
+                    <?php foreach ($libraryCategories as $key => $label): ?>
+                        <?php if (!isset($libraryUsedCategories[$key])) { continue; } ?>
+                        <button type="button" data-lib-cat="<?= $h($key) ?>"><?= $h($label) ?></button>
+                    <?php endforeach; ?>
+                </nav>
+                <div class="sse-lib__list" id="sse-lib-list" tabindex="0"></div>
+            </div>
+            <footer class="sse-lib__foot">
+                <span class="muted">
+                    Le texte inséré reste modifiable. Les variables sans valeur connue restent visibles entre accolades
+                    pour être complétées à la main.
+                </span>
+                <a class="link" href="<?= $h(url('atak/sse/bibliotheque')) ?>" target="_blank" rel="noopener">Administrer la bibliothèque</a>
+            </footer>
+        </section>
+    </div>
+    <?php endif; ?>
 
     <aside class="sse-doc-workspace__preview" aria-label="Aperçu papier">
         <div class="sse-doc-preview-label">Aperçu officiel</div>
@@ -334,6 +400,246 @@ foreach ($cases as $c) {
         statusEl.addEventListener(ev, syncMeta);
         caseEl.addEventListener(ev, syncMeta);
     });
+
+    // ── Bibliothèque rédactionnelle ─────────────────────────────────────────
+    var library = <?= json_encode($libraryEntries, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> || [];
+    var serverSuggestions = <?= json_encode($contextualSuggestions, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> || [];
+    var libRoot = document.getElementById('sse-lib');
+    var traceEl = document.getElementById('sse-lib-trace');
+
+    if (libRoot && library.length) {
+        var libBtn = document.getElementById('sse-lib-btn');
+        var listEl = document.getElementById('sse-lib-list');
+        var searchEl = document.getElementById('sse-lib-q');
+        var countEl = document.getElementById('sse-lib-count');
+        var railBtns = libRoot.querySelectorAll('[data-lib-cat]');
+        var suggestBox = document.getElementById('sse-lib-suggest');
+        var suggestRow = document.getElementById('sse-lib-suggest-row');
+        var insertedBox = document.getElementById('sse-lib-inserted');
+        var insertedList = document.getElementById('sse-lib-inserted-list');
+        var activeCat = '';
+        var inserted = [];
+        var lastFocus = null;
+
+        var byCode = {};
+        library.forEach(function (m) { byCode[m.code] = m; });
+
+        // Ce que le document raconte oriente la mention proposée : une identité non
+        // confirmée appelle PERS-01, une contradiction EXP-04, etc.
+        var rules = [
+            { test: /identit[ée]\s+(non\s+confirm|incertaine|suppos)/i, codes: ['PERS-01', 'ALERT-01', 'MENT-05'] },
+            { test: /homonym/i, codes: ['PERS-03'] },
+            { test: /contradict|diverg|incoh[ée]ren/i, codes: ['EXP-04', 'ALERT-04'] },
+            { test: /source\s+unique/i, codes: ['SRC-02', 'ALERT-02'] },
+            { test: /non\s+recoup|sans\s+recoupement/i, codes: ['RENS-01', 'EXP-03', 'ALERT-03'] },
+            { test: /recoup[ée]/i, codes: ['RENS-03', 'RENS-02'] },
+            { test: /hypoth[èe]se/i, codes: ['RENS-04', 'NOTE-01'] },
+            { test: /d[ée]riv[ée]|extrait\s+de/i, codes: ['PIECE-03'] },
+            { test: /empreinte|int[ée]grit[ée]|hash/i, codes: ['PIECE-04', 'ALERT-11'] },
+            { test: /caviard|expurg|masqu[ée]/i, codes: ['CAV-01', 'DIFF-02'] },
+            { test: /\[\[/, codes: ['CAV-01', 'CAV-02'] },
+            { test: /site|implantation|b[âa]timent/i, codes: ['SITE-02', 'SITE-03'] },
+            { test: /t[ée]l[ée]phone|imei|num[ée]ro\s+appel|trafic/i, codes: ['COM-01', 'COM-02'] },
+            { test: /empreintes?\s+digitales?|pr[ée]l[èe]vement|adn/i, codes: ['BIO-01', 'BIO-02'] },
+            { test: /arme|munition|explosif/i, codes: ['MAT-05'] },
+            { test: /v[ée]hicule|plaque/i, codes: ['MAT-06'] },
+            { test: /clos|cl[ôo]tur/i, codes: ['ARCH-03', 'ARCH-01'] },
+            { test: /diffus/i, codes: ['DIFF-01', 'DIFF-06'] }
+        ];
+        var typeCodes = {
+            flash: ['RENS-01', 'ALERT-03', 'EXP-01'],
+            compte_rendu: ['PIECE-01', 'EXP-01', 'CLASS-01'],
+            note_analyse: ['NOTE-02', 'RENS-04', 'METH-01'],
+            synthese: ['METH-01', 'NOTE-04', 'CLASS-01'],
+            diffusion: ['DIFF-02', 'CAV-01', 'DIFF-03']
+        };
+
+        function normalize(s) {
+            return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function matches(entry, needle) {
+            if (!needle) return true;
+            return normalize(entry.code + ' ' + entry.title + ' ' + entry.content + ' ' + entry.category_label)
+                .indexOf(needle) !== -1;
+        }
+
+        function preview(text) {
+            var flat = String(text).replace(/\s+/g, ' ').trim();
+            return flat.length > 220 ? flat.slice(0, 217) + '…' : flat;
+        }
+
+        function renderList() {
+            var needle = normalize(searchEl.value.trim());
+            var rows = library.filter(function (m) {
+                return (!activeCat || m.category === activeCat) && matches(m, needle);
+            });
+            countEl.textContent = rows.length + (rows.length > 1 ? ' mentions' : ' mention');
+            if (!rows.length) {
+                listEl.innerHTML = '<p class="sse-lib__empty">Aucune mention ne correspond. '
+                    + 'Essayez un code (RENS-03) ou un mot du texte recherché.</p>';
+                return;
+            }
+            var html = '';
+            var lastCat = null;
+            rows.forEach(function (m) {
+                if (m.category !== lastCat) {
+                    lastCat = m.category;
+                    html += '<p class="sse-lib__cat">' + esc(m.category_label) + '</p>';
+                }
+                html += '<article class="sse-lib__item">'
+                    + '<div class="sse-lib__item-head">'
+                    + '<span class="sse-lib__code">' + esc(m.code) + '</span>'
+                    + '<strong>' + esc(m.title) + '</strong>'
+                    + '<span class="sse-lib__ctx">' + esc(m.context_label) + '</span>'
+                    + '</div>'
+                    + '<p class="sse-lib__text">' + esc(preview(m.content)) + '</p>'
+                    + '<div class="sse-lib__item-foot">'
+                    + (m.variables && m.variables.length
+                        ? '<span class="muted">Variables : ' + esc(m.variables.join(', ')) + '</span>'
+                        : '<span class="muted">Texte fixe</span>')
+                    + '<button type="button" class="btn btn--sm" data-lib-insert="' + esc(m.code) + '">Insérer</button>'
+                    + '</div></article>';
+            });
+            listEl.innerHTML = html;
+        }
+
+        function renderSuggestions() {
+            if (!suggestBox || !suggestRow) return;
+            var text = bodyEl.value + ' ' + titleEl.value;
+            var codes = (typeCodes[typeEl.value] || []).slice();
+            (serverSuggestions || []).forEach(function (s) {
+                if (s && s.code) codes.unshift(s.code);
+            });
+            rules.forEach(function (rule) {
+                if (rule.test.test(text)) {
+                    rule.codes.forEach(function (c) { codes.push(c); });
+                }
+            });
+            var seen = {};
+            var picked = [];
+            codes.forEach(function (c) {
+                if (seen[c] || !byCode[c]) return;
+                if (inserted.some(function (i) { return i.code === c; })) return;
+                seen[c] = true;
+                picked.push(byCode[c]);
+            });
+            picked = picked.slice(0, 8);
+            if (!picked.length) {
+                suggestBox.hidden = true;
+                suggestRow.innerHTML = '';
+                return;
+            }
+            suggestBox.hidden = false;
+            suggestRow.innerHTML = picked.map(function (m) {
+                var reason = '';
+                (serverSuggestions || []).forEach(function (s) {
+                    if (s.code === m.code && s.reason) reason = s.reason;
+                });
+                return '<button type="button" class="sse-lib-chip" data-lib-insert="' + esc(m.code) + '" '
+                    + 'title="' + esc(reason || preview(m.content)) + '">'
+                    + '<span>' + esc(m.code) + '</span>' + esc(m.title)
+                    + (reason ? '<small>' + esc(reason) + '</small>' : '')
+                    + '</button>';
+            }).join('');
+        }
+
+        function renderInserted() {
+            traceEl.value = inserted.length ? JSON.stringify(inserted) : '';
+            if (!insertedBox || !insertedList) return;
+            if (!inserted.length) {
+                insertedBox.hidden = true;
+                insertedList.textContent = '';
+                return;
+            }
+            insertedBox.hidden = false;
+            insertedList.textContent = inserted.map(function (i) {
+                return i.code + ' (v' + i.version + ')';
+            }).join(', ');
+        }
+
+        function insertMention(code) {
+            var mention = byCode[code];
+            if (!mention) return;
+            var value = bodyEl.value;
+            var pos = typeof bodyEl.selectionStart === 'number' ? bodyEl.selectionStart : value.length;
+            var before = value.slice(0, pos);
+            var after = value.slice(pos);
+            var lead = (before === '' || /\n\s*\n$/.test(before)) ? '' : (/\n$/.test(before) ? '\n' : '\n\n');
+            var tail = (after === '' || /^\s*\n/.test(after)) ? '\n' : '\n\n';
+            var block = lead + mention.content + tail;
+
+            bodyEl.value = before + block + after;
+            var caret = pos + block.length;
+            bodyEl.focus();
+            bodyEl.setSelectionRange(caret, caret);
+
+            inserted.push({ code: mention.code, version: mention.version, text: mention.content });
+            renderInserted();
+            syncMeta();
+            renderSuggestions();
+        }
+
+        function openLibrary() {
+            lastFocus = document.activeElement;
+            libRoot.hidden = false;
+            document.body.classList.add('sse-lib-open');
+            renderList();
+            searchEl.value = '';
+            window.setTimeout(function () { searchEl.focus(); }, 20);
+        }
+
+        function closeLibrary() {
+            libRoot.hidden = true;
+            document.body.classList.remove('sse-lib-open');
+            if (lastFocus && lastFocus.focus) lastFocus.focus();
+        }
+
+        if (libBtn) libBtn.addEventListener('click', openLibrary);
+
+        libRoot.addEventListener('click', function (e) {
+            if (e.target.closest('[data-lib-close]')) {
+                closeLibrary();
+                return;
+            }
+            var insertBtn = e.target.closest('[data-lib-insert]');
+            if (insertBtn) {
+                insertMention(insertBtn.getAttribute('data-lib-insert'));
+                closeLibrary();
+                return;
+            }
+            var catBtn = e.target.closest('[data-lib-cat]');
+            if (catBtn) {
+                activeCat = catBtn.getAttribute('data-lib-cat') || '';
+                Array.prototype.forEach.call(railBtns, function (b) {
+                    b.classList.toggle('is-active', b === catBtn);
+                });
+                renderList();
+            }
+        });
+
+        if (suggestRow) {
+            suggestRow.addEventListener('click', function (e) {
+                var chip = e.target.closest('[data-lib-insert]');
+                if (chip) insertMention(chip.getAttribute('data-lib-insert'));
+            });
+        }
+
+        searchEl.addEventListener('input', renderList);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !libRoot.hidden) closeLibrary();
+        });
+
+        ['input', 'change'].forEach(function (ev) {
+            bodyEl.addEventListener(ev, renderSuggestions);
+            titleEl.addEventListener(ev, renderSuggestions);
+            typeEl.addEventListener(ev, renderSuggestions);
+        });
+
+        renderList();
+        renderSuggestions();
+        renderInserted();
+    }
 
     syncMeta();
 })();

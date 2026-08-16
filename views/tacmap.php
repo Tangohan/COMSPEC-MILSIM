@@ -143,6 +143,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             <label><input type="checkbox" id="tacmap-layer-drawings" checked /> Dessins</label>
             <label><input type="checkbox" id="tacmap-layer-sigint" /> Veille radio</label>
             <label><input type="checkbox" id="tacmap-layer-intel" /> Indices</label>
+            <label><input type="checkbox" id="tacmap-layer-sse" /> Dossiers SSE</label>
             <label><input type="checkbox" id="tacmap-layer-elevation" checked /> Terrain</label>
             <label><input type="checkbox" id="tacmap-layer-route" checked /> Itinéraire</label>
           </div>
@@ -326,6 +327,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             layerPings: 'tacmap-layer-pings',
             layerSigint: 'tacmap-layer-sigint',
             layerIntel: 'tacmap-layer-intel',
+            layerSse: 'tacmap-layer-sse',
             layerAir: 'tacmap-layer-air',
             layerTactical: 'tacmap-layer-tactical',
             layerRecon: 'tacmap-layer-recon',

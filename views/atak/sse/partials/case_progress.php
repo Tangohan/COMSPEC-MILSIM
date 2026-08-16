@@ -24,6 +24,9 @@ $doneCount = (int) $caseProgress['done'];
         </div>
         <div class="panel-meta">
             <?= $doneCount ?> étape<?= $doneCount > 1 ? 's' : '' ?> sur <?= (int) $caseProgress['total'] ?> engagée<?= $doneCount > 1 ? 's' : '' ?>
+            <?php if (isset($caseProgress['score'])): ?>
+                · complétude <?= (int) $caseProgress['score'] ?>/100
+            <?php endif; ?>
         </div>
     </div>
     <div class="panel-body">
@@ -57,7 +60,7 @@ $doneCount = (int) $caseProgress['done'];
                         <span><?= $h($step['hint'] ?? '') ?></span>
                         <em>
                             <?php if ($count > 0): ?>
-                                <?= $count ?> <?= $h($step['unit'] ?? '') ?><?= $count > 1 ? 's' : '' ?> au dossier
+                                <?= $count ?><?php if (trim((string) ($step['unit'] ?? '')) !== ''): ?> <?= $h($step['unit']) ?><?= $count > 1 ? 's' : '' ?><?php else: ?> élément<?= $count > 1 ? 's' : '' ?><?php endif; ?>
                             <?php elseif (!empty($step['required'])): ?>
                                 Indispensable — rien pour l’instant
                             <?php else: ?>
@@ -71,5 +74,15 @@ $doneCount = (int) $caseProgress['done'];
                 </li>
             <?php endforeach; ?>
         </ol>
+        <?php if (!empty($caseProgress['digest']['summary']) && ($caseProgress['digest']['changes'] ?? []) !== []): ?>
+            <p class="sse-course__digest muted">Depuis le dernier calcul : <?= $h($caseProgress['digest']['summary']) ?></p>
+        <?php endif; ?>
+        <?php if (!empty($caseProgress['pending_suggestions'])): ?>
+            <p class="sse-course__digest">
+                <a class="link" href="<?= $h(url('atak/sse/rapprochements') . '?case_id=' . (int) ($case['id'] ?? 0)) ?>">
+                    <?= (int) $caseProgress['pending_suggestions'] ?> rapprochement(s) moteur à valider
+                </a>
+            </p>
+        <?php endif; ?>
     </div>
 </section>

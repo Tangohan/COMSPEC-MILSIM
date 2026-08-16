@@ -2,8 +2,12 @@
     Applique les attributs Eden SSE.
 */
 params [
-    ["_entity", objNull, [objNull]]
+    ["_entity", objNull, [objNull, []]]
 ];
+
+if (_entity isEqualType []) then {
+    _entity = _entity param [0, objNull, [objNull]];
+};
 
 if (isNull _entity) exitWith { false };
 

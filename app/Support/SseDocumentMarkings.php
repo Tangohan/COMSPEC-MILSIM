@@ -6,8 +6,9 @@ namespace App\Support;
 
 /**
  * Marques officielles d’un document SSE : numéro de contrôle, exemplaire,
- * empreintes d’intégrité, empreinte digitale d’archivage, bordereau
- * d’acheminement et mentions de déclassification.
+ * empreintes d’intégrité, empreinte digitale d’archivage (pièces / personnes),
+ * sceau machine QR (chemise de dossier), bordereau d’acheminement et mentions
+ * de déclassification.
  *
  * Tout est dérivé de façon déterministe de la référence du document :
  * un même document affiche toujours les mêmes marques.
@@ -63,6 +64,7 @@ final class SseDocumentMarkings
                 1 + self::pick($bytes, 4, 98)
             ),
             'fingerprint_svg' => self::fingerprintSvg($seedSource),
+            'workstation' => self::workstationSeal($seedSource, $ref, $document),
             'routing' => self::routing($document, $bytes),
             'declassify_on' => self::declassifyOn($document),
             'destruction_delay' => [10, 15, 20, 25, 30][self::pick($bytes, 5, 5)] . ' ans',
@@ -216,6 +218,118 @@ final class SseDocumentMarkings
     private static function group(string $hash): string
     {
         return trim(implode(' ', str_split($hash, 4)));
+    }
+
+    /**
+     * Sceau machine de la chemise : empreinte poste, adresse réseau et métadonnées
+     * encodées dans un QR. Distinct de l’empreinte digitale biométrique (personnes).
+     *
+     * @param array<string,mixed> $document
+     * @return array{
+     *   id:string,
+     *   host:string,
+     *   fingerprint:string,
+     *   ip:string,
+     *   session:string,
+     *   captured_at:string,
+     *   payload:string,
+     *   qr_html:string
+     * }
+     */
+    public static function workstationSeal(string $seedSource, string $ref, array $document = []): array
+    {
+        $bytes = self::bytes('WS' . $seedSource);
+        $host = sprintf(
+            'SSE-WS-%04d',
+            1000 + self::pick($bytes, 0, 8999)
+        );
+        $fingerprint = strtoupper(substr(hash('sha256', 'HOST|' . $seedSource . '|' . $host), 0, 32));
+        $ip = sprintf(
+            '10.%d.%d.%d',
+            16 + self::pick($bytes, 1, 47),
+            1 + self::pick($bytes, 2, 254),
+            2 + self::pick($bytes, 3, 252)
+        );
+        $session = sprintf(
+            'SID-%s-%02d',
+            strtoupper(substr(hash('crc32b', 'SID' . $seedSource), 0, 6)),
+            1 + self::pick($bytes, 4, 98)
+        );
+        $src = (string) ($document['updated_at'] ?? $document['created_at'] ?? '');
+        $ts = $src !== '' ? strtotime($src) : false;
+        $capturedAt = date('Y-m-d\TH:i:s\Z', $ts !== false ? $ts : time());
+
+        $payload = implode("\n", [
+            'ATHENA-SSE-SEAL/1',
+            'REF:' . ($ref !== '' ? $ref : 'AFF-UNKNOWN'),
+            'HOST:' . $host,
+            'FP:' . $fingerprint,
+            'IP:' . $ip,
+            'SID:' . $session,
+            'TS:' . $capturedAt,
+        ]);
+
+        return [
+            'id' => sprintf(
+                'QR-%s-%02d',
+                strtoupper(substr(hash('crc32b', 'QR' . $seedSource), 0, 6)),
+                1 + self::pick($bytes, 5, 98)
+            ),
+            'host' => $host,
+            'fingerprint' => self::group($fingerprint),
+            'ip' => $ip,
+            'session' => $session,
+            'captured_at' => $capturedAt,
+            'payload' => $payload,
+            'qr_html' => self::workstationQrHtml($payload, $seedSource),
+        ];
+    }
+
+    private static function workstationQrHtml(string $payload, string $seed): string
+    {
+        try {
+            $png = (new \App\Services\Qr\QrPngGenerator())->png($payload, 180, 6);
+            if ($png !== null) {
+                $uri = 'data:' . $png['mime'] . ';base64,' . base64_encode($png['body']);
+
+                return '<img class="sse-doc-paper__qr-img" src="' . htmlspecialchars($uri, ENT_QUOTES, 'UTF-8')
+                    . '" alt="Sceau machine du poste" width="140" height="140" decoding="async">';
+            }
+        } catch (\Throwable) {
+            // Repli SVG minimal ci-dessous.
+        }
+
+        // Grille déterministe de secours si le générateur QR est indisponible.
+        $bytes = self::bytes('QRFALLBACK' . $seed);
+        $cells = '';
+        $isFinder = static function (int $x, int $y): bool {
+            $in = static function (int $ox, int $oy) use ($x, $y): bool {
+                $lx = $x - $ox;
+                $ly = $y - $oy;
+                if ($lx < 0 || $lx > 6 || $ly < 0 || $ly > 6) {
+                    return false;
+                }
+                if ($lx === 0 || $lx === 6 || $ly === 0 || $ly === 6) {
+                    return true;
+                }
+                return $lx >= 2 && $lx <= 4 && $ly >= 2 && $ly <= 4;
+            };
+
+            return $in(0, 0) || $in(14, 0) || $in(0, 14);
+        };
+        for ($y = 0; $y < 21; $y++) {
+            for ($x = 0; $x < 21; $x++) {
+                $on = $isFinder($x, $y)
+                    || ((($bytes[($x + $y * 3) % count($bytes)] ^ ($x * 17 + $y * 31)) & 1) === 1);
+                if ($on) {
+                    $cells .= sprintf('<rect x="%d" y="%d" width="1" height="1"/>', $x, $y);
+                }
+            }
+        }
+
+        return '<svg class="sse-doc-paper__qr-img" viewBox="0 0 21 21" role="img" aria-label="Sceau machine" focusable="false">'
+            . '<rect width="21" height="21" fill="#fff"/>'
+            . '<g fill="#0b1220">' . $cells . '</g></svg>';
     }
 
     /**
