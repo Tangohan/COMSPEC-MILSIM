@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 class MapShapeRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
 
-    public function __construct()
+
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     public function list(int $tenantId, int $mapId, ?string $missionId = null, ?string $since = null): array
@@ -30,7 +32,7 @@ class MapShapeRepository
             $params[] = $since;
         }
         $sql .= ' ORDER BY id';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return array_map([$this, 'normalizeShape'], $rows);
@@ -38,7 +40,7 @@ class MapShapeRepository
 
     public function get(int $tenantId, int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_map_shapes WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_map_shapes WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ? $this->normalizeShape($row) : null;
@@ -58,21 +60,21 @@ class MapShapeRepository
         $meta = isset($payload['meta']) ? (is_string($payload['meta']) ? $payload['meta'] : json_encode($payload['meta'])) : null;
         $missionId = $payload['mission_id'] ?? $payload['missionId'] ?? null;
 
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'INSERT INTO atak_map_shapes (tenant_id, map_id, mission_id, shape_uid, type, label, color, stroke, fill_opacity, created_by, visible_to, geometry, meta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $tenantId, $mapId, $missionId, $shapeUid, $type, $label, $color, $stroke, $fillOpacity,
             $createdBy, $visibleTo, $geometry, $meta,
         ]);
-        $id = (int) $this->pdo->lastInsertId();
+        $id = (int) $this->pdo()->lastInsertId();
         $row = $this->get($tenantId, $id);
         return $row ?? [];
     }
 
     public function update(int $tenantId, int $id, array $payload): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM atak_map_shapes WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT id FROM atak_map_shapes WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         if (!$stmt->fetch()) {
             return null;
@@ -99,13 +101,13 @@ class MapShapeRepository
         }
         $params[] = $tenantId;
         $params[] = $id;
-        $this->pdo->prepare('UPDATE atak_map_shapes SET ' . implode(', ', $updates) . ', updated_at = NOW() WHERE tenant_id = ? AND id = ?')->execute($params);
+        $this->pdo()->prepare('UPDATE atak_map_shapes SET ' . implode(', ', $updates) . ', updated_at = NOW() WHERE tenant_id = ? AND id = ?')->execute($params);
         return $this->get($tenantId, $id);
     }
 
     public function delete(int $tenantId, int $id): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM atak_map_shapes WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('DELETE FROM atak_map_shapes WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         return $stmt->rowCount() > 0;
     }

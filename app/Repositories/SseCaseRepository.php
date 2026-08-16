@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 
 final class SseCaseRepository
 {
@@ -43,22 +44,10 @@ final class SseCaseRepository
         if ($done) {
             return;
         }
-        $paths = [
+        SilentSchemaMigration::runMany([
             base_path('bootstrap/atak_sse_portal_migration.php'),
             base_path('bootstrap/atak_sse_case_origin_migration.php'),
-        ];
-        foreach ($paths as $path) {
-            if (!is_file($path)) {
-                continue;
-            }
-            $migrate = require $path;
-            if (is_callable($migrate)) {
-                try {
-                    $migrate(Database::getPdo());
-                } catch (\Throwable) {
-                }
-            }
-        }
+        ]);
         $done = true;
     }
 

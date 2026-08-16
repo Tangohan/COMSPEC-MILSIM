@@ -28,13 +28,37 @@ if ((_idCache isEqualType []) && {(count _idCache) >= 6}) then {
     if (_lang isEqualTo "") then { _lang = _idCache select 5; };
 };
 
-// Dernier filet : indicatif de la cible (souvent le seul identifiant terrain).
+// Dernier filet : nom unité découpé (évite de coller « Khalil Jawadi » en alias Athena).
 if (_last isEqualTo "" && {_first isEqualTo ""} && {_alias isEqualTo ""}) then {
     private _tgt = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull];
     if (!isNull _tgt) then {
-        private _nm = name _tgt;
-        if (_nm isNotEqualTo "" && { _nm isNotEqualTo "Error: No unit" }) then {
-            _alias = _nm;
+        if (!isNil "comspec_sse_fnc_getSection") then {
+            private _idSec = [_tgt, "identity"] call comspec_sse_fnc_getSection;
+            if (!isNil "_idSec" && {_idSec isEqualType createHashMap}) then {
+                private _full = _idSec getOrDefault ["name", ""];
+                _alias = _idSec getOrDefault ["alias", ""];
+                if (_full isNotEqualTo "") then {
+                    private _parts = _full splitString " ";
+                    if ((count _parts) > 1) then {
+                        _first = _parts select 0;
+                        _last = (_parts select [1, (count _parts) - 1]) joinString " ";
+                    } else {
+                        _first = _full;
+                    };
+                };
+            };
+        };
+        if (_last isEqualTo "" && {_first isEqualTo ""} && {_alias isEqualTo ""}) then {
+            private _nm = name _tgt;
+            if (_nm isNotEqualTo "" && { _nm isNotEqualTo "Error: No unit" }) then {
+                private _parts = _nm splitString " ";
+                if ((count _parts) > 1) then {
+                    _first = _parts select 0;
+                    _last = (_parts select [1, (count _parts) - 1]) joinString " ";
+                } else {
+                    _alias = _nm;
+                };
+            };
         };
     };
 };
@@ -328,24 +352,45 @@ if (_bio && { _personId isNotEqualTo "" } && { (count _samples) == 0 }) then {
 };
 
 if (_photoPending && { _personId isNotEqualTo "" }) then {
-    ["UploadSsePhoto", "attempt", format ["personne %1", _personId], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-    private _shot = [
-        "COMSPECExtension" callExtension ["UploadSsePhoto", [
-            _personId,
-            "",
-            _callsign,
-            "face",
-            _posX,
-            _posY,
-            _posZ,
-            "Photo du visage"
-        ]]
-    ] call comspec_overwatch_connect_fnc_extResult;
-    if (((toUpper _shot) find "OK") != 0) then {
-        ["UploadSsePhoto", "fail", _shot, _shot, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-        ["Fiche enregistrée. Aucune capture récente trouvée pour la photo du visage — refaites une capture d’écran face à la personne puis réessayez.", "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
-    } else {
-        ["UploadSsePhoto", "ok", format ["personne %1", _personId], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+    private _stem = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoStem", ""];
+    if (!(_stem isEqualType "") || {_stem isEqualTo ""}) then {
+        // Flag armé sans capture : prendre la photo maintenant avant la file.
+        _stem = format ["COMSPEC_SSE_Face_%1", floor (diag_tickTime * 1000)];
+        screenshot _stem;
+        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _stem];
+    };
+    ["UploadSsePhoto", "attempt", format ["personne %1 stem=%2", _personId, _stem], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+    // Différé : laisser Arma écrire le PNG, puis poster le fichier nommé (pas « la plus récente »).
+    [_personId, _stem, _callsign, _posX, _posY, _posZ] spawn {
+        params ["_pid", "_stem", "_cs", "_px", "_py", "_pz"];
+        uiSleep 1.25;
+        private _shot = [
+            "COMSPECExtension" callExtension ["UploadSsePhoto", [
+                _pid,
+                _stem,
+                _cs,
+                "face",
+                _px,
+                _py,
+                _pz,
+                "Photo du visage"
+            ]]
+        ] call comspec_overwatch_connect_fnc_extResult;
+        private _parsed = [_shot] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
+        _parsed params ["_ok"];
+        if (!_ok && { ((toUpper _shot) find "OK") == 0 }) then { _ok = true; };
+        if (!_ok) then {
+            ["UploadSsePhoto", "fail", _shot, _shot, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+            [
+                "Fiche enregistrée, mais la photo du visage n’a pas pu être jointe — refaites PHOTO DU VISAGE puis retransmettez si besoin.",
+                "tactical",
+                "warn"
+            ] call comspec_overwatch_connect_fnc_announce;
+        } else {
+            ["UploadSsePhoto", "ok", format ["personne %1", _pid], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+        };
+        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", false];
+        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", ""];
     };
 };
 

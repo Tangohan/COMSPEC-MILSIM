@@ -5,6 +5,19 @@ params ["_group", ["_interfaceInit", false], "_isDialog", "_settings"];
 if (isNull _group) exitWith {};
 uiNamespace setVariable ["Iceman_ATAK_Alerts_group", _group];
 
+// Masquer les pages sœurs (Tasks / Messagerie) encore présentes dans le conteneur ATAK.
+private _appsParent = ctrlParent _group;
+if (!isNull _appsParent) then {
+    {
+        if (_x isNotEqualTo _group) then {
+            _x ctrlShow false;
+            _x ctrlEnable false;
+        };
+    } forEach (allControls _appsParent);
+};
+_group ctrlShow true;
+_group ctrlEnable true;
+
 {
     if (_x getVariable ["IcemanReportsCtrl", false]) then {
         ctrlDelete _x;
@@ -13,6 +26,12 @@ uiNamespace setVariable ["Iceman_ATAK_Alerts_group", _group];
         _x ctrlEnable false;
     };
 } forEach allControls _group;
+
+// Toujours démarrer sur Inbox pour éviter Inbox+New empilés.
+Iceman_ATAK_Reports_tab = "inbox";
+if (isNil "Iceman_ATAK_Reports_form") then {
+    Iceman_ATAK_Reports_form = "TIC";
+};
 
 private _sender = missionNamespace getVariable ["cTab_player", player];
 if (isNull _sender) then {
@@ -148,6 +167,7 @@ _clear ctrlAddEventHandler ["ButtonClick", {call Iceman_fnc_alerts_clearReports}
 private _detailGroup = ["Iceman_ReportsScrollGroup", 9613, "inbox", [_gap, (_row * 7.8) + _gap, _fullW, _h - ((_row * 7.8) + (2 * _gap))]] call _makeCtrl;
 private _detail = (ctrlParent _group) ctrlCreate ["Iceman_ReportsDetailText", 9615, _detailGroup];
 _detail setVariable ["IcemanReportsCtrl", true];
+_detail setVariable ["IcemanReportsSection", "inbox"];
 _detail ctrlSetPosition [0, 0, _fullW * 0.96, _h];
 _detail ctrlCommit 0;
 _detail ctrlSetStructuredText parseText "";

@@ -507,11 +507,24 @@ class Container
             ),
             \App\Services\Sse\SseAnalyticalEngineService::class => new \App\Services\Sse\SseAnalyticalEngineService(),
             \App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob::class => new \App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob(
-                self::get(\App\Services\Sse\SseAnalyticalEngineService::class)
+                self::get(\App\Services\Sse\SseAnalyticalEngineService::class),
+                self::get(\App\Services\Sse\SseAnalystDigestService::class)
             ),
             \App\Services\Sse\SseSyncService::class => new \App\Services\Sse\SseSyncService(),
             \App\Services\Cron\Jobs\SseSyncMaintenanceCronJob::class => new \App\Services\Cron\Jobs\SseSyncMaintenanceCronJob(
                 self::get(\App\Services\Sse\SseSyncService::class)
+            ),
+            \App\Repositories\SseSuggestionQueueRepository::class => new \App\Repositories\SseSuggestionQueueRepository(),
+            \App\Services\Sse\SseAnalystDigestService::class => new \App\Services\Sse\SseAnalystDigestService(
+                self::get(TenantRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\SseSuggestionQueueRepository::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\CronJobRunRepository::class)
+            ),
+            \App\Services\Cron\Jobs\SseAnalystDigestCronJob::class => new \App\Services\Cron\Jobs\SseAnalystDigestCronJob(
+                self::get(\App\Services\Sse\SseAnalystDigestService::class)
             ),
             \App\Services\Cron\CronRunner::class => new \App\Services\Cron\CronRunner(
                 [
@@ -526,6 +539,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\SseAnalystDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SseSyncMaintenanceCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)

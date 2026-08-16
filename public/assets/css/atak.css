@@ -5025,6 +5025,98 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   border: none !important;
 }
 .nato-sidc-icon { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.75)); }
+
+/* Relief / volume des marqueurs + ambiance carte */
+#atak-map.atak-map--marker-depth .leaflet-tile-pane {
+  filter: contrast(1.08) saturate(1.12) brightness(0.96);
+}
+.atak-map-wrap.atak-map--nvg #atak-map.atak-map--marker-depth .leaflet-tile-pane {
+  filter: brightness(0.78) contrast(1.2) sepia(0.55) hue-rotate(68deg) saturate(1.55);
+}
+#atak-map.atak-map--marker-depth .nato-sidc-icon {
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.12))
+    drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 8px 12px rgba(0, 0, 0, 0.38));
+}
+#atak-map.atak-map--marker-depth .atak-unit-dot {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.42),
+    0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 2px 3px rgba(0, 0, 0, 0.5),
+    0 7px 14px rgba(0, 0, 0, 0.4);
+}
+#atak-map.atak-map--marker-depth .atak-unit-avatar-marker__inner img {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.2) inset,
+    0 2px 3px rgba(0, 0, 0, 0.55),
+    0 8px 16px rgba(0, 0, 0, 0.42);
+  transform: translateY(-1px);
+}
+#atak-map.atak-map--marker-depth .atak-unit-dot-label,
+#atak-map.atak-map--marker-depth .atak-unit-avatar-marker__label,
+#atak-map.atak-map--marker-depth .nato-sidc-label {
+  text-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.95),
+    0 3px 8px rgba(0, 0, 0, 0.55);
+}
+#atak-map.atak-map--marker-depth .atak-intel-marker-dot,
+#atak-map.atak-map--marker-depth .atak-sse-layer-marker__dot {
+  box-shadow:
+    0 0 0 1px rgba(17, 24, 39, 0.75),
+    0 2px 3px rgba(0, 0, 0, 0.55),
+    0 6px 12px rgba(0, 0, 0, 0.35);
+}
+#atak-map.atak-map--marker-depth .atak-ft-marker-wrap::after {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.45),
+    0 4px 10px rgba(0, 0, 0, 0.35);
+}
+#atak-map.atak-map--marker-depth .atak-micon {
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+}
+
+/* Animation douce des contacts */
+@keyframes atak-marker-breathe {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.06); filter: brightness(1.08); }
+}
+@keyframes atak-marker-halo {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.42),
+      0 1px 0 rgba(255, 255, 255, 0.25) inset,
+      0 2px 3px rgba(0, 0, 0, 0.5),
+      0 7px 14px rgba(0, 0, 0, 0.4),
+      0 0 0 0 rgba(52, 211, 153, 0);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.5),
+      0 1px 0 rgba(255, 255, 255, 0.25) inset,
+      0 2px 3px rgba(0, 0, 0, 0.5),
+      0 7px 14px rgba(0, 0, 0, 0.4),
+      0 0 0 6px rgba(52, 211, 153, 0.18);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #atak-map.atak-map--marker-motion .nato-sidc-icon .nato-sidc-stack,
+  #atak-map.atak-map--marker-motion .nato-sidc-icon > svg {
+    transform-origin: center center;
+    animation: atak-marker-breathe 3.2s ease-in-out infinite;
+  }
+  #atak-map.atak-map--marker-motion .atak-unit-dot {
+    animation: atak-marker-halo 2.8s ease-in-out infinite;
+  }
+  #atak-map.atak-map--marker-motion .atak-unit-avatar-marker__inner img {
+    animation: atak-marker-breathe 3.2s ease-in-out infinite;
+  }
+  #atak-map.atak-map--marker-motion .nato-sidc-stack.nato-sidc--emitting,
+  #atak-map.atak-map--marker-motion .atak-unit-avatar-marker--emit img {
+    animation-duration: 1.1s;
+  }
+}
+
 .nato-sidc-stack { pointer-events: none; }
 .nato-sidc-label { pointer-events: none; }
 .atak-unit-callsign { display: flex; align-items: center; gap: 0.35rem; }

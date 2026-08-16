@@ -3094,7 +3094,15 @@ class AtakApiController
         $tenantId = $r;
         $mapId = $this->mapId($request);
         $since = $request->query('since');
-        $rows = $this->atak->getMarkers($tenantId, $mapId, $since);
+        try {
+            $rows = $this->atak->getMarkers($tenantId, $mapId, $since);
+        } catch (\Throwable) {
+            return Response::json([
+                'ok' => false,
+                'error' => 'database_unavailable',
+                'message' => 'Impossible de charger les marqueurs pour le moment.',
+            ], 503);
+        }
         $out = array_map(fn ($r) => ['id' => $r['id'], 'layerId' => $r['layerId'], 'markerData' => $r['markerData'], 'updated_at' => $r['updated_at']], $rows);
         $out = $this->applyIntelScramble($request, $tenantId, $mapId, 'marker', $out);
 

@@ -137,6 +137,9 @@ final class EmailEvents
     /** Retour questionnaire après (ou pendant) une démonstration NDA. */
     public const DEMO_NDA_FEEDBACK = 'DEMO_NDA_FEEDBACK';
 
+    /** Digest quotidien SSE — rapprochements / signaux / fiches terrain à traiter (analystes). */
+    public const SSE_ANALYST_DIGEST = 'SSE_ANALYST_DIGEST';
+
     /** @var list<string> */
     public const EMAIL_EVENTS = [
         self::USER_REGISTER_CONFIRMATION,
@@ -204,5 +207,6 @@ final class EmailEvents
         self::ROLEPLAY_FOLLOWUP_UPDATED,
         self::ROLEPLAY_BILAN_DUE,
         self::DEMO_NDA_FEEDBACK,
+        self::SSE_ANALYST_DIGEST,
     ];
 }

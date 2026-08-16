@@ -4,21 +4,23 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 class TenantAtakConfigRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
 
-    public function __construct()
+
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     public function getByTenantId(int $tenantId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT * FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -96,7 +98,7 @@ class TenantAtakConfigRepository
             return;
         }
 
-        $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         $exists = (bool) $stmt->fetchColumn();
 
@@ -164,7 +166,7 @@ class TenantAtakConfigRepository
             }
             $sql .= ', updated_at = NOW() WHERE tenant_id = ?';
             $params[] = $tenantId;
-            $this->pdo->prepare($sql)->execute($params);
+            $this->pdo()->prepare($sql)->execute($params);
         } else {
             $cols = [
                 'tenant_id', 'roleplay_network_enabled', 'roleplay_network_mode',
@@ -207,7 +209,7 @@ class TenantAtakConfigRepository
             $cols[] = 'updated_at';
             $placeholders = implode(', ', array_fill(0, count($vals), '?')) . ', \'altis\', NOW(), NOW()';
             $sql = 'INSERT INTO tenant_atak_config (' . implode(', ', $cols) . ') VALUES (' . $placeholders . ')';
-            $this->pdo->prepare($sql)->execute($vals);
+            $this->pdo()->prepare($sql)->execute($vals);
         }
     }
 
@@ -222,7 +224,7 @@ class TenantAtakConfigRepository
             return $cache[$columnName];
         }
         try {
-            $st = $this->pdo->prepare(
+            $st = $this->pdo()->prepare(
                 'SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
                    AND COLUMN_NAME = ? LIMIT 1'
@@ -243,7 +245,7 @@ class TenantAtakConfigRepository
 
     public function createOrUpdate(int $tenantId, array $data): void
     {
-        $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         $exists = (bool) $stmt->fetchColumn();
 
@@ -258,7 +260,7 @@ class TenantAtakConfigRepository
         ];
 
         if ($exists) {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'UPDATE tenant_atak_config SET node_url = ?, jwt_secret = ?, arma_server_host = ?, arma_server_port = ?, arma_mod_credentials = ?, instructions = ?, default_map_slug = ?, updated_at = NOW() WHERE tenant_id = ?'
             );
             $stmt->execute([
@@ -272,7 +274,7 @@ class TenantAtakConfigRepository
                 $tenantId,
             ]);
         } else {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'INSERT INTO tenant_atak_config (tenant_id, node_url, jwt_secret, arma_server_host, arma_server_port, arma_mod_credentials, instructions, default_map_slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
             );
             $stmt->execute([
@@ -297,7 +299,7 @@ class TenantAtakConfigRepository
         if (!$this->hasMaintenanceColumns()) {
             return false;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT maintenance_enabled FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1'
         );
         $stmt->execute([$tenantId]);
@@ -315,7 +317,7 @@ class TenantAtakConfigRepository
         if (!$this->hasMaintenanceColumns()) {
             return '';
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT maintenance_message FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1'
         );
         $stmt->execute([$tenantId]);
@@ -343,19 +345,19 @@ class TenantAtakConfigRepository
         }
 
         try {
-            $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+            $stmt = $this->pdo()->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
             $stmt->execute([$tenantId]);
             $exists = (bool) $stmt->fetchColumn();
 
             if ($exists) {
-                $upd = $this->pdo->prepare(
+                $upd = $this->pdo()->prepare(
                     'UPDATE tenant_atak_config
                      SET maintenance_enabled = ?, maintenance_message = ?, updated_at = NOW()
                      WHERE tenant_id = ?'
                 );
                 $upd->execute([$enabled ? 1 : 0, $msg, $tenantId]);
             } else {
-                $ins = $this->pdo->prepare(
+                $ins = $this->pdo()->prepare(
                     'INSERT INTO tenant_atak_config
                         (tenant_id, maintenance_enabled, maintenance_message, default_map_slug, created_at, updated_at)
                      VALUES (?, ?, ?, \'altis\', NOW(), NOW())'
@@ -401,7 +403,7 @@ class TenantAtakConfigRepository
                 continue;
             }
             try {
-                $this->pdo->exec(
+                $this->pdo()->exec(
                     'ALTER TABLE tenant_atak_config ADD COLUMN ' . $column . ' ' . $ddl
                 );
             } catch (\Throwable) {
@@ -415,7 +417,7 @@ class TenantAtakConfigRepository
     private function columnExistsOnTenantAtakConfig(string $column): bool
     {
         try {
-            $st = $this->pdo->prepare(
+            $st = $this->pdo()->prepare(
                 "SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = ? LIMIT 1"
             );
@@ -428,7 +430,7 @@ class TenantAtakConfigRepository
         }
 
         try {
-            $st = $this->pdo->query('SHOW COLUMNS FROM tenant_atak_config LIKE ' . $this->pdo->quote($column));
+            $st = $this->pdo()->query('SHOW COLUMNS FROM tenant_atak_config LIKE ' . $this->pdo()->quote($column));
             if ($st && $st->fetch(\PDO::FETCH_ASSOC)) {
                 return true;
             }
@@ -455,7 +457,7 @@ class TenantAtakConfigRepository
             return $cached;
         }
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT COUNT(*) FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config'
                    AND COLUMN_NAME IN ('maintenance_enabled', 'maintenance_message')"
@@ -470,9 +472,9 @@ class TenantAtakConfigRepository
         }
 
         try {
-            $st = $this->pdo->query("SHOW COLUMNS FROM tenant_atak_config LIKE 'maintenance_enabled'");
+            $st = $this->pdo()->query("SHOW COLUMNS FROM tenant_atak_config LIKE 'maintenance_enabled'");
             $hasEnabled = $st && $st->fetch(PDO::FETCH_ASSOC);
-            $st2 = $this->pdo->query("SHOW COLUMNS FROM tenant_atak_config LIKE 'maintenance_message'");
+            $st2 = $this->pdo()->query("SHOW COLUMNS FROM tenant_atak_config LIKE 'maintenance_message'");
             $hasMessage = $st2 && $st2->fetch(PDO::FETCH_ASSOC);
             if ($hasEnabled && $hasMessage) {
                 $cached = true;
@@ -484,7 +486,7 @@ class TenantAtakConfigRepository
         }
 
         try {
-            $this->pdo->query('SELECT maintenance_enabled, maintenance_message FROM tenant_atak_config LIMIT 0');
+            $this->pdo()->query('SELECT maintenance_enabled, maintenance_message FROM tenant_atak_config LIMIT 0');
             $cached = true;
         } catch (\Throwable) {
             $cached = false;
@@ -507,19 +509,19 @@ class TenantAtakConfigRepository
         $plain = 'ow_' . bin2hex(random_bytes(24));
         $prefix = substr($plain, 0, 10);
 
-        $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         $exists = (bool) $stmt->fetchColumn();
 
         if ($exists) {
-            $upd = $this->pdo->prepare(
+            $upd = $this->pdo()->prepare(
                 'UPDATE tenant_atak_config
                  SET access_key = ?, access_key_prefix = ?, access_key_generated_at = NOW(), updated_at = NOW()
                  WHERE tenant_id = ?'
             );
             $upd->execute([$plain, $prefix, $tenantId]);
         } else {
-            $ins = $this->pdo->prepare(
+            $ins = $this->pdo()->prepare(
                 'INSERT INTO tenant_atak_config
                     (tenant_id, access_key, access_key_prefix, access_key_generated_at, default_map_slug, created_at, updated_at)
                  VALUES (?, ?, ?, NOW(), \'altis\', NOW(), NOW())'
@@ -536,7 +538,7 @@ class TenantAtakConfigRepository
         if ($tenantId < 1 || !$this->hasAccessKeyColumn()) {
             return '';
         }
-        $stmt = $this->pdo->prepare('SELECT access_key FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT access_key FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         $key = $stmt->fetchColumn();
 
@@ -554,7 +556,7 @@ class TenantAtakConfigRepository
             return null;
         }
         try {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'SELECT tenant_id, access_key FROM tenant_atak_config
                  WHERE access_key IS NOT NULL AND access_key != \'\' LIMIT 500'
             );
@@ -581,7 +583,7 @@ class TenantAtakConfigRepository
             return $cached;
         }
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = 'access_key' LIMIT 1"
             );
@@ -613,7 +615,7 @@ class TenantAtakConfigRepository
         if (!$this->hasExperienceColumn()) {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT experience_config FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1'
         );
         $stmt->execute([$tenantId]);
@@ -644,16 +646,16 @@ class TenantAtakConfigRepository
         }
 
         try {
-            $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+            $stmt = $this->pdo()->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
             $stmt->execute([$tenantId]);
             $exists = (bool) $stmt->fetchColumn();
             if ($exists) {
-                $upd = $this->pdo->prepare(
+                $upd = $this->pdo()->prepare(
                     'UPDATE tenant_atak_config SET experience_config = ?, updated_at = NOW() WHERE tenant_id = ?'
                 );
                 $upd->execute([$json, $tenantId]);
             } else {
-                $ins = $this->pdo->prepare(
+                $ins = $this->pdo()->prepare(
                     'INSERT INTO tenant_atak_config (tenant_id, experience_config, default_map_slug, created_at, updated_at)
                      VALUES (?, ?, \'altis\', NOW(), NOW())'
                 );
@@ -677,7 +679,7 @@ class TenantAtakConfigRepository
             return;
         }
         try {
-            $this->pdo->exec(
+            $this->pdo()->exec(
                 'ALTER TABLE tenant_atak_config ADD COLUMN experience_config JSON DEFAULT NULL'
             );
             $this->resetExperienceColumnCache();
@@ -701,7 +703,7 @@ class TenantAtakConfigRepository
             return $cached;
         }
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = 'experience_config' LIMIT 1"
             );
@@ -713,7 +715,7 @@ class TenantAtakConfigRepository
         } catch (\Throwable) {
         }
         try {
-            $st = $this->pdo->query("SHOW COLUMNS FROM tenant_atak_config LIKE 'experience_config'");
+            $st = $this->pdo()->query("SHOW COLUMNS FROM tenant_atak_config LIKE 'experience_config'");
             if ($st && $st->fetch(PDO::FETCH_ASSOC)) {
                 $cached = true;
 
@@ -722,7 +724,7 @@ class TenantAtakConfigRepository
         } catch (\Throwable) {
         }
         try {
-            $this->pdo->query('SELECT experience_config FROM tenant_atak_config LIMIT 0');
+            $this->pdo()->query('SELECT experience_config FROM tenant_atak_config LIMIT 0');
             $cached = true;
         } catch (\Throwable) {
             $cached = false;

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 class AtakDataRepository
 {
+    use LazyDatabaseConnection;
+
     /**
      * Délai sans position / heartbeat au-delà duquel une unité en liaison
      * est considérée hors liaison (effetifs, carte, journal).
@@ -19,16 +22,15 @@ class AtakDataRepository
     /** Origine (0,0) = position non reçue / parse raté — jamais une vraie case jouable. */
     private const POS_ORIGIN_EPS = 0.5;
 
-    private PDO $pdo;
 
     private ?bool $hasPosColumns = null;
 
     /** @var array<string, list<array{id: int, call_sign: string}>> */
     private array $pendingStaleDisconnects = [];
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     private function hasPosColumns(): bool
@@ -37,7 +39,7 @@ class AtakDataRepository
             return $this->hasPosColumns;
         }
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'pos_x' LIMIT 1"
             );
@@ -142,7 +144,7 @@ class AtakDataRepository
 
     public function getUnitByCallSign(int $tenantId, int $mapId, string $callSign): ?array
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ? LIMIT 1'
         );
         $stmt->execute([$tenantId, $mapId, $callSign]);
@@ -171,7 +173,7 @@ class AtakDataRepository
         if ($steamUid === '' || $tenantId < 1 || $mapId < 1) {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM atak_units WHERE tenant_id = ? AND map_id = ?'
         );
         $stmt->execute([$tenantId, $mapId]);
@@ -224,7 +226,7 @@ class AtakDataRepository
             return;
         }
         try {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 'UPDATE atak_units SET status = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?'
             )->execute(['offline', $tenantId, $unitId]);
         } catch (\Throwable) {
@@ -283,7 +285,7 @@ class AtakDataRepository
                 $params[] = $since;
             }
             $sql .= ' ORDER BY id';
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $out = [];
@@ -302,8 +304,10 @@ class AtakDataRepository
             }
 
             return $out;
-        } catch (\Throwable) {
-            return [];
+        } catch (\Throwable $e) {
+            // Ne jamais renvoyer [] ici : le client ATAK traite une liste vide comme
+            // « plus aucun marqueur » et efface la carte (faux négatif en micro-coupure BDD).
+            throw $e;
         }
     }
 
@@ -318,15 +322,15 @@ class AtakDataRepository
 
     public function addMarker(int $tenantId, int $mapId, int $layerId, string $markerData, ?string $armaName = null): array
     {
-        $stmt = $this->pdo->prepare('INSERT INTO atak_markers (tenant_id, map_id, layer_id, marker_data, arma_name) VALUES (?, ?, ?, ?, ?)');
+        $stmt = $this->pdo()->prepare('INSERT INTO atak_markers (tenant_id, map_id, layer_id, marker_data, arma_name) VALUES (?, ?, ?, ?, ?)');
         $stmt->execute([$tenantId, $mapId, $layerId, $markerData, $armaName]);
-        $id = (int) $this->pdo->lastInsertId();
+        $id = (int) $this->pdo()->lastInsertId();
         return $this->getMarkerById($tenantId, $id);
     }
 
     public function getMarkerById(int $tenantId, int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, layer_id, marker_data, updated_at FROM atak_markers WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT id, layer_id, marker_data, updated_at FROM atak_markers WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         $r = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$r) {
@@ -342,7 +346,7 @@ class AtakDataRepository
 
     public function upsertMarkerByArmaName(int $tenantId, int $mapId, int $layerId, string $armaName, string $markerData): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, marker_data FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ?');
+        $stmt = $this->pdo()->prepare('SELECT id, marker_data FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ?');
         $stmt->execute([$tenantId, $mapId, $armaName]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($existing) {
@@ -351,7 +355,7 @@ class AtakDataRepository
                 return $this->getMarkerById($tenantId, (int) $existing['id'])
                     ?? ['id' => (int) $existing['id'], 'layerId' => $layerId, 'markerData' => (string) $existing['marker_data'], 'updated_at' => null];
             }
-            $this->pdo->prepare('UPDATE atak_markers SET layer_id = ?, marker_data = ? WHERE id = ?')->execute([$layerId, $markerData, $existing['id']]);
+            $this->pdo()->prepare('UPDATE atak_markers SET layer_id = ?, marker_data = ? WHERE id = ?')->execute([$layerId, $markerData, $existing['id']]);
             return $this->getMarkerById($tenantId, (int) $existing['id']);
         }
         return $this->addMarker($tenantId, $mapId, $layerId, $markerData, $armaName);
@@ -362,7 +366,7 @@ class AtakDataRepository
      */
     public function findMarkerByArmaName(int $tenantId, int $mapId, string $armaName): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, marker_data FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT id, marker_data FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ? LIMIT 1');
         $stmt->execute([$tenantId, $mapId, $armaName]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
@@ -382,10 +386,10 @@ class AtakDataRepository
             return null;
         }
         if ($layerId !== null) {
-            $stmt = $this->pdo->prepare('UPDATE atak_markers SET marker_data = ?, layer_id = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
+            $stmt = $this->pdo()->prepare('UPDATE atak_markers SET marker_data = ?, layer_id = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
             $stmt->execute([$markerData, $layerId, $tenantId, $id]);
         } else {
-            $stmt = $this->pdo->prepare('UPDATE atak_markers SET marker_data = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
+            $stmt = $this->pdo()->prepare('UPDATE atak_markers SET marker_data = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
             $stmt->execute([$markerData, $tenantId, $id]);
         }
         return $this->getMarkerById($tenantId, $id);
@@ -393,7 +397,7 @@ class AtakDataRepository
 
     public function deleteMarkerByArmaName(int $tenantId, int $mapId, string $armaName): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ?');
+        $stmt = $this->pdo()->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ?');
         $stmt->execute([$tenantId, $mapId, $armaName]);
 
         return $stmt->rowCount() > 0;
@@ -401,7 +405,7 @@ class AtakDataRepository
 
     public function deleteMarker(int $tenantId, int $id): bool
     {
-        $stmt = $this->pdo->prepare('SELECT id, arma_name, marker_data FROM atak_markers WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT id, arma_name, marker_data FROM atak_markers WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
@@ -417,12 +421,12 @@ class AtakDataRepository
             $decoded['suppressed'] = true;
             $decoded['suppressed_at'] = gmdate('c');
             $encoded = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-            $upd = $this->pdo->prepare('UPDATE atak_markers SET marker_data = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
+            $upd = $this->pdo()->prepare('UPDATE atak_markers SET marker_data = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
             $upd->execute([is_string($encoded) ? $encoded : '{"suppressed":true}', $tenantId, $id]);
 
             return true;
         }
-        $del = $this->pdo->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND id = ?');
+        $del = $this->pdo()->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND id = ?');
         $del->execute([$tenantId, $id]);
 
         return $del->rowCount() > 0;
@@ -440,7 +444,7 @@ class AtakDataRepository
                 );
             }
             // age_seconds sur l’horloge MySQL (même référence que updated_at / markStale).
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'SELECT *, TIMESTAMPDIFF(SECOND, updated_at, NOW()) AS age_seconds
                  FROM atak_units WHERE tenant_id = ? AND map_id = ? ORDER BY call_sign'
             );
@@ -812,7 +816,7 @@ class AtakDataRepository
     public function markStaleUnitsOffline(int $tenantId, int $mapId): array
     {
         $ttl = self::UNIT_LIVE_TTL_SECONDS;
-        $select = $this->pdo->prepare(
+        $select = $this->pdo()->prepare(
             'SELECT id, call_sign FROM atak_units
              WHERE tenant_id = ? AND map_id = ?
                AND status IN (?, ?)
@@ -823,7 +827,7 @@ class AtakDataRepository
         if ($rows === []) {
             return [];
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE atak_units SET status = ?
              WHERE tenant_id = ? AND map_id = ?
                AND status IN (?, ?)
@@ -900,7 +904,7 @@ class AtakDataRepository
         // hasPos AVANT le SELECT : sans migration pos_x/pos_y, un SELECT pos_* plante
         // toute la méthode (pas d’INSERT, pas de setLastActivity) → /units vide.
         $hasPos = $this->hasPosColumns();
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             $hasPos
                 ? 'SELECT id, grid_ref, pos_x, pos_y, extra FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
                 : 'SELECT id, grid_ref, extra FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
@@ -940,17 +944,17 @@ class AtakDataRepository
                 }
             }
             if ($hasPos) {
-                $this->pdo->prepare(
+                $this->pdo()->prepare(
                     'UPDATE atak_units SET grid_ref = ?, heading = ?, role = ?, extra = ?, status = ?, pos_x = ?, pos_y = ?, updated_at = NOW() WHERE id = ?'
                 )->execute([$storeGrid, $heading, $role, $extraJson, 'linked', $storeX, $storeY, $unitId]);
             } else {
-                $this->pdo->prepare(
+                $this->pdo()->prepare(
                     'UPDATE atak_units SET grid_ref = ?, heading = ?, role = ?, extra = ?, status = ?, updated_at = NOW() WHERE id = ?'
                 )->execute([$storeGrid, $heading, $role, $extraJson, 'linked', $unitId]);
             }
         } else {
             if ($hasPos) {
-                $this->pdo->prepare(
+                $this->pdo()->prepare(
                     'INSERT INTO atak_units (tenant_id, map_id, call_sign, role, status, grid_ref, heading, pos_x, pos_y, extra, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
                 )->execute([
                     $tenantId,
@@ -965,12 +969,12 @@ class AtakDataRepository
                     $extraJson,
                 ]);
             } else {
-                $this->pdo->prepare(
+                $this->pdo()->prepare(
                     'INSERT INTO atak_units (tenant_id, map_id, call_sign, role, status, grid_ref, heading, extra, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())'
                 )->execute([$tenantId, $mapId, $callSign, $role, 'linked', $validPos ? $gridRef : '', $heading, $extraJson]);
             }
             $created = true;
-            $unitId = (int) $this->pdo->lastInsertId();
+            $unitId = (int) $this->pdo()->lastInsertId();
         }
         $this->setLastActivity($tenantId, $mapId);
 
@@ -1005,7 +1009,7 @@ class AtakDataRepository
                         $extraArr['atak_id'] = $mid;
                         $encoded = json_encode($extraArr, JSON_UNESCAPED_UNICODE);
                         if (is_string($encoded) && $encoded !== '') {
-                            $this->pdo->prepare(
+                            $this->pdo()->prepare(
                                 'UPDATE atak_units SET extra = ? WHERE id = ? AND tenant_id = ?'
                             )->execute([$encoded, $unitId, $tenantId]);
                         }
@@ -1041,7 +1045,7 @@ class AtakDataRepository
         if ($tenantId < 1 || $mapId < 1 || $steamUid === '' || $keepCallSign === '') {
             return 0;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT id, call_sign, extra, status FROM atak_units WHERE tenant_id = ? AND map_id = ?'
         );
         $stmt->execute([$tenantId, $mapId]);
@@ -1082,7 +1086,7 @@ class AtakDataRepository
 
     public function addUnit(int $tenantId, int $mapId, array $data): array
     {
-        $stmt = $this->pdo->prepare('INSERT INTO atak_units (tenant_id, map_id, call_sign, role, status, grid_ref, heading, extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $this->pdo()->prepare('INSERT INTO atak_units (tenant_id, map_id, call_sign, role, status, grid_ref, heading, extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
         $stmt->execute([
             $tenantId,
             $mapId,
@@ -1093,8 +1097,8 @@ class AtakDataRepository
             $data['heading'] ?? null,
             isset($data['extra']) ? (is_string($data['extra']) ? $data['extra'] : json_encode($data['extra'])) : null,
         ]);
-        $id = (int) $this->pdo->lastInsertId();
-        $row = $this->pdo->prepare('SELECT * FROM atak_units WHERE id = ?');
+        $id = (int) $this->pdo()->lastInsertId();
+        $row = $this->pdo()->prepare('SELECT * FROM atak_units WHERE id = ?');
         $row->execute([$id]);
         return $row->fetch(PDO::FETCH_ASSOC);
     }
@@ -1104,7 +1108,7 @@ class AtakDataRepository
         if ($tenantId < 1 || $id < 1) {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_units WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_units WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -1161,7 +1165,7 @@ class AtakDataRepository
             return $row;
         }
         $params[] = $id;
-        $this->pdo->prepare('UPDATE atak_units SET ' . implode(', ', $updates) . ' WHERE id = ?')->execute($params);
+        $this->pdo()->prepare('UPDATE atak_units SET ' . implode(', ', $updates) . ' WHERE id = ?')->execute($params);
 
         return $this->getUnitById($tenantId, $id);
     }
@@ -1171,7 +1175,7 @@ class AtakDataRepository
         if ($tenantId < 1 || $id < 1) {
             return false;
         }
-        $stmt = $this->pdo->prepare('DELETE FROM atak_units WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('DELETE FROM atak_units WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
 
         return $stmt->rowCount() > 0;
@@ -1182,7 +1186,7 @@ class AtakDataRepository
         if ($id < 1) {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_chat_messages WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_chat_messages WHERE id = ? AND tenant_id = ? LIMIT 1');
         $stmt->execute([$id, $tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -1191,7 +1195,7 @@ class AtakDataRepository
 
     public function getChatMessages(int $tenantId, int $mapId, int $limit = 100): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_chat_messages WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_chat_messages WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ?');
         $stmt->execute([$tenantId, $mapId, $limit]);
         return array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
@@ -1208,7 +1212,7 @@ class AtakDataRepository
         if ($afterId < 1) {
             return $this->getChatMessages($tenantId, $mapId, $limit);
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM atak_chat_messages
              WHERE tenant_id = ? AND map_id = ? AND id > ?
              ORDER BY id ASC
@@ -1221,9 +1225,9 @@ class AtakDataRepository
 
     public function addChatMessage(int $tenantId, int $mapId, string $author, string $body): array
     {
-        $this->pdo->prepare('INSERT INTO atak_chat_messages (tenant_id, map_id, author, body) VALUES (?, ?, ?, ?)')->execute([$tenantId, $mapId, $author, $body]);
-        $id = (int) $this->pdo->lastInsertId();
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_chat_messages WHERE id = ?');
+        $this->pdo()->prepare('INSERT INTO atak_chat_messages (tenant_id, map_id, author, body) VALUES (?, ?, ?, ?)')->execute([$tenantId, $mapId, $author, $body]);
+        $id = (int) $this->pdo()->lastInsertId();
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_chat_messages WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
@@ -1382,7 +1386,7 @@ class AtakDataRepository
     {
         $limit = max(1, min($limit, 500));
         $withinSeconds = max(60, min($withinSeconds, 48 * 3600));
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM atak_chat_messages
              WHERE tenant_id = ? AND map_id = ?
                AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)
@@ -1516,23 +1520,23 @@ class AtakDataRepository
 
     public function getPings(int $tenantId, int $mapId, int $limit = 50): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_pings WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_pings WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ?');
         $stmt->execute([$tenantId, $mapId, $limit]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function addPing(int $tenantId, int $mapId, string $author, float $posX, float $posY, string $message): array
     {
-        $this->pdo->prepare('INSERT INTO atak_pings (tenant_id, map_id, author, pos_x, pos_y, message) VALUES (?, ?, ?, ?, ?, ?)')->execute([$tenantId, $mapId, $author, $posX, $posY, $message]);
-        $id = (int) $this->pdo->lastInsertId();
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_pings WHERE id = ?');
+        $this->pdo()->prepare('INSERT INTO atak_pings (tenant_id, map_id, author, pos_x, pos_y, message) VALUES (?, ?, ?, ?, ?, ?)')->execute([$tenantId, $mapId, $author, $posX, $posY, $message]);
+        $id = (int) $this->pdo()->lastInsertId();
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_pings WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function deletePing(int $tenantId, int $id): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM atak_pings WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('DELETE FROM atak_pings WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
 
         return $stmt->rowCount() > 0;
@@ -1540,14 +1544,14 @@ class AtakDataRepository
 
     public function getNineLines(int $tenantId, int $mapId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_nine_line WHERE tenant_id = ? AND map_id = ? ORDER BY updated_at DESC');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_nine_line WHERE tenant_id = ? AND map_id = ? ORDER BY updated_at DESC');
         $stmt->execute([$tenantId, $mapId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function addNineLine(int $tenantId, int $mapId, string $author, array $lines): array
     {
-        $stmt = $this->pdo->prepare('INSERT INTO atak_nine_line (tenant_id, map_id, author, line1, line2, line3, line4, line5, line6, line7, line8, line9, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $this->pdo()->prepare('INSERT INTO atak_nine_line (tenant_id, map_id, author, line1, line2, line3, line4, line5, line6, line7, line8, line9, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $stmt->execute([
             $tenantId,
             $mapId,
@@ -1563,59 +1567,59 @@ class AtakDataRepository
             $lines['line9'] ?? '',
             'active',
         ]);
-        $id = (int) $this->pdo->lastInsertId();
-        $row = $this->pdo->prepare('SELECT * FROM atak_nine_line WHERE id = ?');
+        $id = (int) $this->pdo()->lastInsertId();
+        $row = $this->pdo()->prepare('SELECT * FROM atak_nine_line WHERE id = ?');
         $row->execute([$id]);
         return $row->fetch(PDO::FETCH_ASSOC);
     }
 
     public function updateNineLineStatus(int $tenantId, int $id, string $status): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         if (!$stmt->fetch()) {
             return null;
         }
-        $this->pdo->prepare('UPDATE atak_nine_line SET status = ? WHERE id = ?')->execute([$status, $id]);
-        $row = $this->pdo->prepare('SELECT * FROM atak_nine_line WHERE id = ?');
+        $this->pdo()->prepare('UPDATE atak_nine_line SET status = ? WHERE id = ?')->execute([$status, $id]);
+        $row = $this->pdo()->prepare('SELECT * FROM atak_nine_line WHERE id = ?');
         $row->execute([$id]);
         return $row->fetch(PDO::FETCH_ASSOC);
     }
 
     public function getDesignators(int $tenantId, int $mapId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_designator_targets WHERE tenant_id = ? AND map_id = ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_designator_targets WHERE tenant_id = ? AND map_id = ?');
         $stmt->execute([$tenantId, $mapId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function upsertDesignator(int $tenantId, int $mapId, string $callSign, float $posX, float $posY): array
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM atak_designator_targets WHERE tenant_id = ? AND map_id = ? AND call_sign = ?');
+        $stmt = $this->pdo()->prepare('SELECT id FROM atak_designator_targets WHERE tenant_id = ? AND map_id = ? AND call_sign = ?');
         $stmt->execute([$tenantId, $mapId, $callSign]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($existing) {
-            $this->pdo->prepare('UPDATE atak_designator_targets SET pos_x = ?, pos_y = ? WHERE id = ?')->execute([$posX, $posY, $existing['id']]);
+            $this->pdo()->prepare('UPDATE atak_designator_targets SET pos_x = ?, pos_y = ? WHERE id = ?')->execute([$posX, $posY, $existing['id']]);
         } else {
-            $this->pdo->prepare('INSERT INTO atak_designator_targets (tenant_id, map_id, call_sign, pos_x, pos_y) VALUES (?, ?, ?, ?, ?)')->execute([$tenantId, $mapId, $callSign, $posX, $posY]);
+            $this->pdo()->prepare('INSERT INTO atak_designator_targets (tenant_id, map_id, call_sign, pos_x, pos_y) VALUES (?, ?, ?, ?, ?)')->execute([$tenantId, $mapId, $callSign, $posX, $posY]);
         }
-        $row = $this->pdo->prepare('SELECT * FROM atak_designator_targets WHERE tenant_id = ? AND map_id = ? AND call_sign = ?');
+        $row = $this->pdo()->prepare('SELECT * FROM atak_designator_targets WHERE tenant_id = ? AND map_id = ? AND call_sign = ?');
         $row->execute([$tenantId, $mapId, $callSign]);
         return $row->fetch(PDO::FETCH_ASSOC);
     }
 
     public function addSigint(int $tenantId, int $mapId, string $callSign, float $posX, float $posY, ?float $bearing = null): array
     {
-        $this->pdo->prepare('INSERT INTO atak_sigint_reports (tenant_id, map_id, call_sign, pos_x, pos_y, bearing) VALUES (?, ?, ?, ?, ?, ?)')->execute([$tenantId, $mapId, $callSign, $posX, $posY, $bearing]);
-        $id = (int) $this->pdo->lastInsertId();
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_sigint_reports WHERE id = ?');
+        $this->pdo()->prepare('INSERT INTO atak_sigint_reports (tenant_id, map_id, call_sign, pos_x, pos_y, bearing) VALUES (?, ?, ?, ?, ?, ?)')->execute([$tenantId, $mapId, $callSign, $posX, $posY, $bearing]);
+        $id = (int) $this->pdo()->lastInsertId();
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_sigint_reports WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function getSigintZones(int $tenantId, int $mapId, int $limit = 50): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_sigint_reports WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_sigint_reports WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ?');
         $stmt->execute([$tenantId, $mapId, $limit]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $zones = [];
@@ -1634,29 +1638,29 @@ class AtakDataRepository
 
     public function getIntelPhotos(int $tenantId, int $mapId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_intel_photos WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_intel_photos WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC');
         $stmt->execute([$tenantId, $mapId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function addIntelPhoto(int $tenantId, int $mapId, string $filename, string $path, string $author, ?float $posX = null, ?float $posY = null): array
     {
-        $this->pdo->prepare('INSERT INTO atak_intel_photos (tenant_id, map_id, filename, path, author, pos_x, pos_y) VALUES (?, ?, ?, ?, ?, ?, ?)')->execute([$tenantId, $mapId, $filename, $path, $author, $posX, $posY]);
-        $id = (int) $this->pdo->lastInsertId();
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_intel_photos WHERE id = ?');
+        $this->pdo()->prepare('INSERT INTO atak_intel_photos (tenant_id, map_id, filename, path, author, pos_x, pos_y) VALUES (?, ?, ?, ?, ?, ?, ?)')->execute([$tenantId, $mapId, $filename, $path, $author, $posX, $posY]);
+        $id = (int) $this->pdo()->lastInsertId();
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_intel_photos WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function setLastActivity(int $tenantId, int $mapId): void
     {
-        $stmt = $this->pdo->prepare('INSERT INTO atak_last_activity (tenant_id, map_id, last_activity_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE last_activity_at = NOW()');
+        $stmt = $this->pdo()->prepare('INSERT INTO atak_last_activity (tenant_id, map_id, last_activity_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE last_activity_at = NOW()');
         $stmt->execute([$tenantId, $mapId]);
     }
 
     public function getLastActivity(int $tenantId, int $mapId): ?string
     {
-        $stmt = $this->pdo->prepare('SELECT last_activity_at FROM atak_last_activity WHERE tenant_id = ? AND map_id = ?');
+        $stmt = $this->pdo()->prepare('SELECT last_activity_at FROM atak_last_activity WHERE tenant_id = ? AND map_id = ?');
         $stmt->execute([$tenantId, $mapId]);
         $r = $stmt->fetch(PDO::FETCH_ASSOC);
         return $r ? $r['last_activity_at'] : null;
@@ -1665,7 +1669,7 @@ class AtakDataRepository
     /** @return list<array{call_sign: string, updated_at: string}> */
     public function getActiveUnitsSummary(int $tenantId, int $mapId, int $limit = 20): array
     {
-        $stmt = $this->pdo->prepare('SELECT call_sign, updated_at FROM atak_units WHERE tenant_id = ? AND map_id = ? AND status = ? ORDER BY updated_at DESC LIMIT ' . (int) $limit);
+        $stmt = $this->pdo()->prepare('SELECT call_sign, updated_at FROM atak_units WHERE tenant_id = ? AND map_id = ? AND status = ? ORDER BY updated_at DESC LIMIT ' . (int) $limit);
         $stmt->execute([$tenantId, $mapId, 'linked']);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return array_map(fn ($r) => ['call_sign' => $r['call_sign'] ?? '', 'updated_at' => $r['updated_at'] ?? ''], $rows);
@@ -1681,7 +1685,7 @@ class AtakDataRepository
         if ($callSign === '') {
             return false;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE atak_units SET status = ?, updated_at = NOW()
              WHERE tenant_id = ? AND map_id = ? AND LOWER(call_sign) = LOWER(?)'
         );
@@ -1698,7 +1702,7 @@ class AtakDataRepository
         string $callsign,
         array $data
     ): array {
-        $stmt = $this->pdo->prepare('SELECT id FROM atak_air_assets WHERE tenant_id = ? AND map_id = ? AND callsign = ?');
+        $stmt = $this->pdo()->prepare('SELECT id FROM atak_air_assets WHERE tenant_id = ? AND map_id = ? AND callsign = ?');
         $stmt->execute([$tenantId, $mapId, $callsign]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
         $now = date('Y-m-d H:i:s');
@@ -1736,17 +1740,17 @@ class AtakDataRepository
             $set = implode(', ', array_map(fn ($k) => "`$k` = ?", array_keys($fields)));
             $params = array_values($fields);
             $params[] = $existing['id'];
-            $this->pdo->prepare("UPDATE atak_air_assets SET $set WHERE id = ?")->execute($params);
+            $this->pdo()->prepare("UPDATE atak_air_assets SET $set WHERE id = ?")->execute($params);
             $id = (int) $existing['id'];
         } else {
             $cols = array_keys($fields);
             $placeholders = implode(', ', array_merge(['?', '?', '?'], array_fill(0, count($cols), '?')));
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 'INSERT INTO atak_air_assets (tenant_id, map_id, callsign, ' . implode(', ', $cols) . ') VALUES (' . $placeholders . ')'
             )->execute(array_merge([$tenantId, $mapId, $callsign], array_values($fields)));
-            $id = (int) $this->pdo->lastInsertId();
+            $id = (int) $this->pdo()->lastInsertId();
         }
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_air_assets WHERE id = ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_air_assets WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
@@ -1754,7 +1758,7 @@ class AtakDataRepository
     public function getActiveAirAssets(int $tenantId, int $mapId): array
     {
         $cutoff = date('Y-m-d H:i:s', time() - self::AIR_ASSET_TTL_SECONDS);
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_air_assets WHERE tenant_id = ? AND map_id = ? AND updated_at >= ? ORDER BY callsign');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_air_assets WHERE tenant_id = ? AND map_id = ? AND updated_at >= ? ORDER BY callsign');
         $stmt->execute([$tenantId, $mapId, $cutoff]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$r) {
@@ -1765,19 +1769,19 @@ class AtakDataRepository
 
     public function updateAirAssetPilotStatus(int $tenantId, int $mapId, string $callsign, string $pilotStatus): ?array
     {
-        $stmt = $this->pdo->prepare('UPDATE atak_air_assets SET pilot_status = ?, updated_at = NOW() WHERE tenant_id = ? AND map_id = ? AND callsign = ?');
+        $stmt = $this->pdo()->prepare('UPDATE atak_air_assets SET pilot_status = ?, updated_at = NOW() WHERE tenant_id = ? AND map_id = ? AND callsign = ?');
         $stmt->execute([$pilotStatus, $tenantId, $mapId, $callsign]);
         if ($stmt->rowCount() === 0) {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_air_assets WHERE tenant_id = ? AND map_id = ? AND callsign = ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_air_assets WHERE tenant_id = ? AND map_id = ? AND callsign = ?');
         $stmt->execute([$tenantId, $mapId, $callsign]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function getLayers(int $tenantId, int $mapId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_layers WHERE tenant_id = ? AND map_id = ? ORDER BY `order`');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_layers WHERE tenant_id = ? AND map_id = ? ORDER BY `order`');
         $stmt->execute([$tenantId, $mapId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

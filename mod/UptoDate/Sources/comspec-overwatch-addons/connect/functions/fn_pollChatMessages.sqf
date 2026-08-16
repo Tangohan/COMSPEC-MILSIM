@@ -1,7 +1,10 @@
 ﻿/*
     Interroge Athena (GetChatMessages) et pousse les messages web / TOC
-    vers l’inbox Athena (app Messages). Les GROUPE| pair-à-pair restent
-    gérés par Iceman (CBA) — on ne les rejoue pas ici pour éviter les doublons.
+    vers l’inbox Athena (app Messages) ET vers l’UI Iceman « Group Messages ».
+
+    Les envois locaux (empreinte COMSPEC_ChatSentFingerprints) sont ignorés
+    pour éviter les doublons jeu→web→jeu. On n’émet PAS d’événement CBA
+    Iceman_ATAK_GroupMessage (sinon re-bridge Athena en boucle).
 */
 if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
@@ -46,6 +49,7 @@ if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
 };
 if (_myCs isEqualTo "") then { _myCs = name player; };
 private _myCsU = toUpper _myCs;
+private _myGroupId = groupId group player;
 
 private _sentFp = missionNamespace getVariable ["COMSPEC_ChatSentFingerprints", []];
 if (!(_sentFp isEqualType [])) then { _sentFp = []; };
@@ -54,6 +58,26 @@ private _inbox = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
 if (!(_inbox isEqualType [])) then { _inbox = []; };
 
 private _added = 0;
+private _groupPanelDirty = false;
+
+// Injection locale dans l’historique Iceman (sans CBA global).
+private _fnPushIcemanGroup = {
+    params ["_senderName", "_groupId", "_grid", "_text", "_timeStr", ["_pos", []]];
+    if ((trim _text) isEqualTo "") exitWith { false };
+    if (_groupId isEqualTo "") then { _groupId = groupId group player; };
+    if (_grid isEqualTo "") then { _grid = mapGridPosition player; };
+    if (_timeStr isEqualTo "") then { _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString; };
+    if ((count _pos) < 2) then { _pos = getPosATL player; };
+
+    private _messages = +(missionNamespace getVariable ["Iceman_ATAK_Group_messages", []]);
+    if (!(_messages isEqualType [])) then { _messages = []; };
+    _messages pushBack [_timeStr, _senderName, _groupId, _grid, _text, _pos, false];
+    while { (count _messages) > 50 } do { _messages deleteAt 0; };
+    missionNamespace setVariable ["Iceman_ATAK_Group_messages", _messages, false];
+    Iceman_ATAK_Group_messages = _messages;
+    Iceman_ATAK_Group_selected = (count _messages) - 1;
+    true
+};
 
 // Premier passage : mémoriser l’historique sans rejouer (évite spam à la liaison).
 if (!_bootstrapped) exitWith {
@@ -111,13 +135,22 @@ if (!_bootstrapped) exitWith {
 
     private _plainU = toUpper _plain;
 
-    // GROUPE|groupId|cs|grid|texte : message de groupe.
-    // Jeu->web : l’empreinte est dans _sentFp, deja filtré plus haut.
-    // Web->jeu : pas d’empreinte -> relayer le texte en jeu via systemChat + inbox Athena.
+    private _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
+    if ((count _created) >= 16) then {
+        private _tPos = _created find "T";
+        if (_tPos < 0) then { _tPos = _created find " "; };
+        if (_tPos >= 0 && {(count _created) >= (_tPos + 6)}) then {
+            _timeStr = _created select [_tPos + 1, 5];
+        };
+    };
+
+    // GROUPE|groupId|cs|grid|texte : message de groupe (web→jeu ou rejeu filtré).
     if ((_plainU find "GROUPE|") == 0 || {_plainU isEqualTo "GROUPE"}) then {
         if ((_plainU find "GROUPE|") == 0) then {
             private _gParts = _plain splitString "|";
-            // Format : GROUPE|groupId|cs|grid|texte (champs 0..3 = prefixe, 4+ = texte)
+            private _gGroupId = if ((count _gParts) > 1) then { trim (_gParts select 1) } else { "" };
+            private _gCs = if ((count _gParts) > 2) then { trim (_gParts select 2) } else { _author };
+            private _gGrid = if ((count _gParts) > 3) then { trim (_gParts select 3) } else { mapGridPosition player };
             private _gText = if ((count _gParts) >= 5) then {
                 private _tail = +_gParts;
                 _tail deleteRange [0, 4];
@@ -126,10 +159,33 @@ if (!_bootstrapped) exitWith {
                 if ((count _gParts) >= 2) then { _gParts select ((count _gParts) - 1) } else { "" }
             };
             _gText = trim _gText;
-            if (_gText isNotEqualTo "") then {
-                systemChat format ["[%1] %2", _author, _gText];
-                _inbox pushBack ["GROUP", "Message de groupe", _gText, mapGridPosition player, _timeStr, _author];
+
+            // TOC web : groupId souvent = indicatif ; accepter si égal au groupe local OU à l’indicatif TOC.
+            private _groupOk = (
+                _gGroupId isEqualTo ""
+                || {_gGroupId isEqualTo _myGroupId}
+                || {(toUpper _gGroupId) isEqualTo _myCsU}
+                || {(toUpper _gGroupId) isEqualTo (toUpper _author)}
+                || {_gGroupId isEqualTo "TOC"}
+            );
+
+            if (_gText isNotEqualTo "" && {_groupOk}) then {
+                private _fromLabel = if (_gCs isNotEqualTo "") then { _gCs } else { _author };
+                if ((toUpper _fromLabel) isEqualTo _myCsU) then {
+                    _fromLabel = format ["%1 (TOC)", _fromLabel];
+                };
+                systemChat format ["[%1] %2", _fromLabel, _gText];
+                _inbox pushBack ["GROUP", "Message de groupe", _gText, _gGrid, _timeStr, _fromLabel];
+                if ([_fromLabel, _myGroupId, _gGrid, _gText, _timeStr] call _fnPushIcemanGroup) then {
+                    _groupPanelDirty = true;
+                };
                 _added = _added + 1;
+                if (!isNil "cTab_fnc_addNotification") then {
+                    ["GROUP", format ["Message de %1", _fromLabel], 6] call cTab_fnc_addNotification;
+                };
+                if (!isNil "comspec_overwatch_connect_fnc_playAtakNotification") then {
+                    ["chat"] call comspec_overwatch_connect_fnc_playAtakNotification;
+                };
             };
         };
         continue;
@@ -139,14 +195,6 @@ if (!_bootstrapped) exitWith {
     if ((_plainU find "ALERTE TACTIQUE") == 0) then { continue };
     if ((_plainU find "ALERTE MEDICALE") == 0 || {(_plainU find "ALERTE MÉDICALE") == 0}) then { continue };
     if ((_plainU find "ORDER|") == 0) then { continue };
-
-    private _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
-    if ((count _created) >= 16) then {
-        private _tPos = _created find "T";
-        if (_tPos >= 0 && {(count _created) >= (_tPos + 6)}) then {
-            _timeStr = _created select [_tPos + 1, 5];
-        };
-    };
 
     private _isHq = (
         (_plainU find "[HQ]") >= 0
@@ -182,6 +230,14 @@ if (!_bootstrapped) exitWith {
         _timeStr,
         _fromLabel
     ];
+
+    // Les messages radio / TOC du journal web doivent aussi apparaître dans Group Messages.
+    if (!_isHq) then {
+        if ([_fromLabel, _myGroupId, mapGridPosition player, _detail, _timeStr] call _fnPushIcemanGroup) then {
+            _groupPanelDirty = true;
+        };
+    };
+
     _added = _added + 1;
 
     if (!isNil "cTab_fnc_addNotification") then {
@@ -200,6 +256,10 @@ if (_added > 0) then {
     while { (count _inbox) > 40 } do { _inbox deleteAt 0; };
     missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", _inbox, false];
     ["COMSPEC_AthenaInboxUpdated", []] call CBA_fnc_localEvent;
+};
+
+if (_groupPanelDirty && {!isNil "Iceman_fnc_group_updatePanel"}) then {
+    call Iceman_fnc_group_updatePanel;
 };
 
 _added > 0

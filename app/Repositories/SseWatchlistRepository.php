@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 
 final class SseWatchlistRepository
 {
@@ -15,16 +16,7 @@ final class SseWatchlistRepository
         $this->db = $db ?? Database::getInstance();
         static $done = false;
         if (!$done) {
-            $path = base_path('bootstrap/atak_sse_persons_migration.php');
-            if (is_file($path)) {
-                $migrate = require $path;
-                if (is_callable($migrate)) {
-                    try {
-                        $migrate(Database::getPdo());
-                    } catch (\Throwable) {
-                    }
-                }
-            }
+            SilentSchemaMigration::run(base_path('bootstrap/atak_sse_persons_migration.php'));
             $done = true;
         }
     }
@@ -55,11 +47,23 @@ final class SseWatchlistRepository
     /**
      * @return list<array<string, mixed>>
      */
-    public function listActive(int $tenantId): array
+    public function listActive(int $tenantId, string $q = ''): array
     {
+        $where = ['tenant_id = :t', 'active = 1'];
+        $params = ['t' => $tenantId];
+        $q = trim($q);
+        if ($q !== '') {
+            $where[] = '(last_name LIKE :q1 OR first_name LIKE :q2 OR COALESCE(alias, \'\') LIKE :q3 OR COALESCE(notes, \'\') LIKE :q4)';
+            $like = '%' . $q . '%';
+            $params['q1'] = $like;
+            $params['q2'] = $like;
+            $params['q3'] = $like;
+            $params['q4'] = $like;
+        }
         $rows = $this->db->fetchAll(
-            'SELECT * FROM sse_watchlist_entries WHERE tenant_id = :t AND active = 1 ORDER BY id DESC LIMIT 500',
-            ['t' => $tenantId]
+            'SELECT * FROM sse_watchlist_entries WHERE ' . implode(' AND ', $where)
+            . ' ORDER BY id DESC LIMIT 500',
+            $params
         );
         $out = [];
         foreach ($rows as $row) {
@@ -90,7 +94,7 @@ final class SseWatchlistRepository
             'last_name' => (string) ($row['last_name'] ?? ''),
             'first_name' => (string) ($row['first_name'] ?? ''),
             'alias' => $row['alias'] ?? null,
-            'display_name' => trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''))
+            'display_name' => trim(($row['last_name'] ?? '') . ' ' . ($row['first_name'] ?? ''))
                 ?: (string) ($row['alias'] ?? 'Entrée sans nom'),
             'threat_level' => $level,
             'threat_level_label' => $level === 'prioritaire' ? 'Personne prioritaire' : 'Surveillance',

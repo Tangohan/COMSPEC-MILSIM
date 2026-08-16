@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 
 final class SseInterestCaseRepository
 {
@@ -34,22 +35,10 @@ final class SseInterestCaseRepository
     public function __construct(private ?Database $db = null)
     {
         $this->db ??= Database::getInstance();
-        try {
-            $migration = require base_path('bootstrap/atak_sse_interest_cases_migration.php');
-            if (is_callable($migration)) {
-                $migration(Database::getPdo());
-            }
-        } catch (\Throwable) {
-            // Schéma via run-migrations ; ne pas casser le portail.
-        }
-        try {
-            $enrich = require base_path('bootstrap/atak_sse_interest_case_enrichment_migration.php');
-            if (is_callable($enrich)) {
-                $enrich(Database::getPdo());
-            }
-        } catch (\Throwable) {
-            // Idem.
-        }
+        SilentSchemaMigration::runMany([
+            base_path('bootstrap/atak_sse_interest_cases_migration.php'),
+            base_path('bootstrap/atak_sse_interest_case_enrichment_migration.php'),
+        ]);
     }
 
     /** @return list<array<string,mixed>> */

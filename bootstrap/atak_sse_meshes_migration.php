@@ -6,11 +6,9 @@ declare(strict_types=1);
  * Toiles de données SSE (data mesh) — graphes d’enquête nommés.
  * Idempotent — appelée depuis run-migrations.php et ensureSchema().
  */
-return static function (PDO $pdo): void {
-    $log = static function (string $msg): void {
-        if (PHP_SAPI === 'cli') {
-            echo $msg;
-        }
+return static function (PDO $pdo, ?callable $log = null): void {
+    $log ??= static function (string $msg): void {
+        // Silence web.
     };
 
     $tableExists = static function (PDO $pdo, string $table): bool {

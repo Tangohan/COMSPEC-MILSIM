@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 class TenantRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
+
 
     /** @var bool|null cache information_schema pour tenants.tenant_type */
     private ?bool $hasTenantTypeColumn = null;
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     private function hasTenantTypeColumn(): bool
@@ -25,7 +27,7 @@ class TenantRepository
             return $this->hasTenantTypeColumn;
         }
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND COLUMN_NAME = 'tenant_type' LIMIT 1"
             );
@@ -39,7 +41,7 @@ class TenantRepository
 
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM tenants WHERE id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE id = ? LIMIT 1');
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -47,7 +49,7 @@ class TenantRepository
 
     public function findBySlug(string $slug): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM tenants WHERE slug = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE slug = ? LIMIT 1');
         $stmt->execute([$slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -61,7 +63,7 @@ class TenantRepository
      */
     public function listForRegistry(): array
     {
-        $stmt = $this->pdo->query(
+        $stmt = $this->pdo()->query(
             'SELECT id, name, slug, community_code, logo_url, settings FROM tenants WHERE id != 1 ORDER BY name ASC'
         );
         if ($stmt === false) {
@@ -128,7 +130,7 @@ class TenantRepository
         if ($norm === '' || strlen($norm) < 3) {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT * FROM tenants WHERE community_code = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE community_code = ? LIMIT 1');
         $stmt->execute([$norm]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -141,10 +143,10 @@ class TenantRepository
             return false;
         }
         if ($exceptTenantId !== null) {
-            $stmt = $this->pdo->prepare('SELECT 1 FROM tenants WHERE community_code = ? AND id != ? LIMIT 1');
+            $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE community_code = ? AND id != ? LIMIT 1');
             $stmt->execute([$normalizedCode, $exceptTenantId]);
         } else {
-            $stmt = $this->pdo->prepare('SELECT 1 FROM tenants WHERE community_code = ? LIMIT 1');
+            $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE community_code = ? LIMIT 1');
             $stmt->execute([$normalizedCode]);
         }
 
@@ -154,27 +156,27 @@ class TenantRepository
     /** @param string|null $normalized null pour retirer le code */
     public function updateCommunityCode(int $tenantId, ?string $normalized): void
     {
-        $stmt = $this->pdo->prepare('UPDATE tenants SET community_code = ?, updated_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET community_code = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$normalized === '' ? null : $normalized, $tenantId]);
     }
 
     public function getDefaultTenant(): ?array
     {
-        $stmt = $this->pdo->query('SELECT * FROM tenants ORDER BY id ASC LIMIT 1');
+        $stmt = $this->pdo()->query('SELECT * FROM tenants ORDER BY id ASC LIMIT 1');
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
     }
 
     public function slugExists(string $slug): bool
     {
-        $stmt = $this->pdo->prepare('SELECT 1 FROM tenants WHERE slug = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE slug = ? LIMIT 1');
         $stmt->execute([$slug]);
         return (bool) $stmt->fetchColumn();
     }
 
     public function isSlugTakenByOther(int $tenantId, string $slug): bool
     {
-        $stmt = $this->pdo->prepare('SELECT 1 FROM tenants WHERE slug = ? AND id != ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE slug = ? AND id != ? LIMIT 1');
         $stmt->execute([$slug, $tenantId]);
 
         return (bool) $stmt->fetchColumn();
@@ -182,13 +184,13 @@ class TenantRepository
 
     public function updateSlug(int $tenantId, string $slug): void
     {
-        $stmt = $this->pdo->prepare('UPDATE tenants SET slug = ?, updated_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET slug = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$slug, $tenantId]);
     }
 
     public function updateName(int $tenantId, string $name): void
     {
-        $stmt = $this->pdo->prepare('UPDATE tenants SET name = ?, updated_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET name = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$name, $tenantId]);
     }
 
@@ -208,7 +210,7 @@ class TenantRepository
             );
         }
         $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType($tenantType);
-        $stmt = $this->pdo->prepare('UPDATE tenants SET tenant_type = ?, updated_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET tenant_type = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$tenantType, $tenantId]);
     }
 
@@ -221,14 +223,14 @@ class TenantRepository
         if (strlen($url) > 500) {
             $url = substr($url, 0, 500);
         }
-        $stmt = $this->pdo->prepare('UPDATE tenants SET logo_url = ?, updated_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET logo_url = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$url, $tenantId]);
     }
 
     /** Retire explicitement le logo (contrairement à updateLogoUrl(), qui ignore les valeurs vides). */
     public function clearLogoUrl(int $tenantId): void
     {
-        $stmt = $this->pdo->prepare('UPDATE tenants SET logo_url = NULL, updated_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET logo_url = NULL, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$tenantId]);
     }
 
@@ -237,7 +239,7 @@ class TenantRepository
     {
         $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType($tenantType);
         if ($this->hasTenantTypeColumn()) {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'INSERT INTO tenants (name, slug, tenant_type, plan_slug, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())'
             );
             $stmt->execute([$name, $slug, $tenantType, $planSlug]);
@@ -249,18 +251,18 @@ class TenantRepository
                     'Le profil choisi ne peut pas être enregistré : lancez les migrations (colonne du profil de communauté), puis recréez la communauté.'
                 );
             }
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'INSERT INTO tenants (name, slug, plan_slug, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())'
             );
             $stmt->execute([$name, $slug, $planSlug]);
         }
 
-        return (int) $this->pdo->lastInsertId();
+        return (int) $this->pdo()->lastInsertId();
     }
 
     public function setOwner(int $tenantId, int $ownerUserId): void
     {
-        $stmt = $this->pdo->prepare('UPDATE tenants SET owner_user_id = ?, updated_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET owner_user_id = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$ownerUserId, $tenantId]);
     }
 
@@ -284,7 +286,7 @@ class TenantRepository
     {
         $current = $this->getSettings($tenantId);
         $merged = array_replace_recursive($current, $settings);
-        $stmt = $this->pdo->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([json_encode($merged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $tenantId]);
     }
 
@@ -304,7 +306,7 @@ class TenantRepository
         if (!$row) {
             return;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE tenants SET stripe_customer_id = ?, stripe_subscription_id = ?, subscription_status = ?, plan_slug = ?, subscription_current_period_end = ?, updated_at = NOW() WHERE id = ?'
         );
         $stmt->execute([
@@ -335,7 +337,7 @@ class TenantRepository
         }
         if (!$this->hasPayPalTenantColumns()) {
             // Repli : stocke le statut / plan sans colonnes PayPal dédiées
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'UPDATE tenants SET subscription_status = ?, plan_slug = ?, subscription_current_period_end = ?, updated_at = NOW() WHERE id = ?'
             );
             $stmt->execute([
@@ -347,7 +349,7 @@ class TenantRepository
 
             return;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE tenants SET paypal_payer_id = ?, paypal_subscription_id = ?, subscription_status = ?, plan_slug = ?, subscription_current_period_end = ?, updated_at = NOW() WHERE id = ?'
         );
         $stmt->execute([
@@ -367,7 +369,7 @@ class TenantRepository
         if ($subscriptionId === '' || !$this->hasPayPalTenantColumns()) {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT * FROM tenants WHERE paypal_subscription_id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE paypal_subscription_id = ? LIMIT 1');
         $stmt->execute([$subscriptionId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -377,7 +379,7 @@ class TenantRepository
     private function hasPayPalTenantColumns(): bool
     {
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND COLUMN_NAME = 'paypal_subscription_id' LIMIT 1"
             );
 
@@ -402,7 +404,7 @@ class TenantRepository
             }
         }
         $merged = array_merge($current, $patch);
-        $stmt = $this->pdo->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([json_encode($merged, JSON_THROW_ON_ERROR), $tenantId]);
     }
 
@@ -413,7 +415,7 @@ class TenantRepository
      */
     public function listBasicExcluding(int $excludeTenantId): array
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT id, name, slug FROM tenants WHERE id != ? AND id > 1 ORDER BY name ASC'
         );
         $stmt->execute([$excludeTenantId]);
@@ -429,7 +431,7 @@ class TenantRepository
      */
     public function listBasicAll(): array
     {
-        $stmt = $this->pdo->query('SELECT id, name, slug FROM tenants WHERE id > 1 ORDER BY name ASC');
+        $stmt = $this->pdo()->query('SELECT id, name, slug FROM tenants WHERE id > 1 ORDER BY name ASC');
         if ($stmt === false) {
             return [];
         }
@@ -473,7 +475,7 @@ FROM tenants t
 WHERE t.id > 1
 ORDER BY t.name ASC
 SQL;
-        $stmt = $this->pdo->query($sql);
+        $stmt = $this->pdo()->query($sql);
         if ($stmt === false) {
             return [];
         }
@@ -514,7 +516,7 @@ SQL;
         if ($tenantId < 2) {
             return false;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE tenants SET plan_slug = ?, subscription_status = ?, updated_at = NOW() WHERE id = ?'
         );
 

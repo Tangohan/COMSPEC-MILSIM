@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 
 /**
  * Exploitation de site sensible — dossiers site, checklist de pièces, saisies.
@@ -72,17 +73,7 @@ final class SseSiteRepository
         if ($done) {
             return;
         }
-        $path = base_path('bootstrap/atak_sse_persons_migration.php');
-        if (is_file($path)) {
-            $migrate = require $path;
-            if (is_callable($migrate)) {
-                try {
-                    $migrate(Database::getPdo());
-                } catch (\Throwable) {
-                    // run-migrations.php reste la source principale
-                }
-            }
-        }
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_persons_migration.php'));
         $done = true;
     }
 

@@ -54,7 +54,7 @@ for "_i" from 0 to (_n - 1) do {
         if (_ent getVariable ["comspec_sse_generating", false]) exitWith {};
         [_ent, _profile, _complexity, _by, _cluster] call comspec_sse_fnc_generateData;
     },
-    0.12
+    0.28
 ] call comspec_sse_fnc_queueEntityJobs;
 
 [_brief, "ORGANIZATION", createHashMapFromArray [

@@ -146,6 +146,45 @@ body.atak-page.atak-density-comfortable {
   color: #05100c;
 }
 
+.atak-section-rail__sep {
+  display: block;
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--atak-c2-line, rgba(148, 163, 173, 0.22));
+  flex-shrink: 0;
+}
+
+a.atak-section-btn--link {
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* JNET — accent bleu réseau */
+.atak-section-btn--jnet {
+  color: #5b9fd4;
+}
+.atak-section-btn--jnet:hover {
+  background: rgba(64, 140, 200, 0.14);
+  color: #8ec5ef;
+}
+.atak-section-btn--jnet:focus-visible {
+  outline: 1px solid #5b9fd4;
+  outline-offset: -2px;
+}
+
+/* SSE — accent violet exploitation */
+.atak-section-btn--sse {
+  color: #a78bfa;
+}
+.atak-section-btn--sse:hover {
+  background: rgba(139, 92, 246, 0.16);
+  color: #c4b5fd;
+}
+.atak-section-btn--sse:focus-visible {
+  outline: 1px solid #a78bfa;
+  outline-offset: -2px;
+}
+
 .atak-rail-bottom {
   margin-top: auto;
   padding: 6px 5px;
@@ -495,6 +534,54 @@ body.atak-page.atak-density-comfortable {
   background: #0b1117;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
 }
+.atak-map-tools__prefs--look {
+  left: auto;
+  right: 8px;
+  width: min(320px, calc(100% - 16px));
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--atak-c2-line);
+  border-radius: 0 0 4px 4px;
+}
+.atak-map-tools__prefs-hint {
+  margin: 0 0 10px;
+  font: 500 10px/1.35 var(--atak-font-tactical, ui-sans-serif, system-ui, sans-serif);
+  color: #7f909b;
+}
+.atak-map-look__row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  margin: 0 0 10px;
+  color: #bcc8cf;
+  font: 700 9px/1.2 var(--atak-font-tactical, ui-sans-serif, system-ui, sans-serif);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.atak-map-look__key {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.atak-map-look__select {
+  width: 100%;
+  min-height: 28px;
+  font-size: 11px !important;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.atak-map-look__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: #a7b4bd;
+  font: 600 11px/1.3 ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer;
+}
+.atak-map-look__check input {
+  margin: 0;
+}
 
 .atak-map-stage {
   position: relative;
@@ -784,6 +871,21 @@ body.atak-page.atak-drawer-collapsed .atak-drawer__body {
 }
 
 /* Light theme: keep readable without rewriting header */
+body.atak-theme-light .atak-section-btn--jnet {
+  color: #1d6fa5;
+}
+body.atak-theme-light .atak-section-btn--jnet:hover {
+  background: rgba(29, 111, 165, 0.12);
+  color: #155a86;
+}
+body.atak-theme-light .atak-section-btn--sse {
+  color: #7c3aed;
+}
+body.atak-theme-light .atak-section-btn--sse:hover {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6d28d9;
+}
+
 body.atak-theme-light .atak-section-btn.active,
 body.atak-theme-light .atak-left-aside .atak-tab.active,
 body.atak-theme-light .atak-drawer__title,

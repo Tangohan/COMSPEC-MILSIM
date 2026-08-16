@@ -9,7 +9,7 @@ $seedCaseId = (int) ($seedCaseId ?? 0);
 ?>
 <div class="breadcrumb">
     Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/toiles')) ?>">Toiles</a> /
+    <a class="link" href="<?= $h(url('atak/sse/toiles')) ?>">Investigations</a> /
     <strong>Nouvelle</strong>
 </div>
 

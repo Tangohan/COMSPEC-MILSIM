@@ -4,25 +4,27 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 class ArmaPlaytimeRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
+
 
     private static ?bool $tableReady = null;
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     public function schemaReady(): bool
     {
         if (self::$tableReady === null) {
             try {
-                $st = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_arma_playtime' LIMIT 1");
+                $st = $this->pdo()->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_arma_playtime' LIMIT 1");
                 self::$tableReady = $st && (bool) $st->fetchColumn();
             } catch (\Throwable) {
                 self::$tableReady = false;
@@ -37,7 +39,7 @@ class ArmaPlaytimeRepository
         if ($seconds <= 0 || !$this->schemaReady()) {
             return;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'INSERT INTO user_arma_playtime (tenant_id, user_id, total_seconds, last_report_at, created_at, updated_at)
              VALUES (?, ?, ?, NOW(), NOW(), NOW())
              ON DUPLICATE KEY UPDATE
@@ -56,7 +58,7 @@ class ArmaPlaytimeRepository
         if (!$this->schemaReady()) {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT total_seconds, last_report_at FROM user_arma_playtime WHERE tenant_id = ? AND user_id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT total_seconds, last_report_at FROM user_arma_playtime WHERE tenant_id = ? AND user_id = ? LIMIT 1');
         $stmt->execute([$tenantId, $userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -84,7 +86,7 @@ class ArmaPlaytimeRepository
         }
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $params = array_merge([$tenantId], array_values($ids));
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             "SELECT user_id, total_seconds, last_report_at
              FROM user_arma_playtime
              WHERE tenant_id = ? AND user_id IN ({$placeholders})"

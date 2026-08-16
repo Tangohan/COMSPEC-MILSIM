@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 
 /**
  * État cartographique permanent d’un dossier SSE (vue + pings/marqueurs).
@@ -22,13 +23,7 @@ final class SseCaseMapRepository
     public function __construct(private ?Database $db = null)
     {
         $this->db ??= Database::getInstance();
-        try {
-            $migration = require base_path('bootstrap/atak_sse_case_map_migration.php');
-            if (is_callable($migration)) {
-                $migration(Database::getPdo());
-            }
-        } catch (\Throwable) {
-        }
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_case_map_migration.php'));
     }
 
     /**

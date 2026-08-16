@@ -7,17 +7,19 @@ namespace App\Services\Cron\Jobs;
 use App\Core\Database;
 use App\Services\Cron\CronJobInterface;
 use App\Services\Sse\SseAnalyticalEngineService;
+use App\Services\Sse\SseAnalystDigestService;
 
 /**
  * Pipeline nocturne SSE : propose, ne décide jamais.
  *
  * INGESTION → NORMALISATION → DÉDOUBLONNAGE → CORRÉLATION → CONTRADICTIONS
- * → SCORING → ALERTES → SYNTHÈSE
+ * → SCORING → ALERTES → SYNTHÈSE → digest e-mail (si du nouveau)
  */
 final class SseAnalyticalNightlyCronJob implements CronJobInterface
 {
     public function __construct(
         private SseAnalyticalEngineService $engine,
+        private ?SseAnalystDigestService $digest = null,
         private ?Database $db = null,
     ) {
         $this->db ??= Database::getInstance();
@@ -35,7 +37,7 @@ final class SseAnalyticalNightlyCronJob implements CronJobInterface
 
     public function description(): string
     {
-        return 'Produit des rapprochements possibles/probables, signaux et scores de complétude. Aucune fusion automatique.';
+        return 'Produit des rapprochements possibles/probables, signaux et scores de complétude, puis envoie le digest e-mail du jour. Aucune fusion automatique.';
     }
 
     public function run(): array
@@ -82,13 +84,24 @@ final class SseAnalyticalNightlyCronJob implements CronJobInterface
             }
         }
 
+        $mailSummary = '';
+        if ($this->digest !== null) {
+            try {
+                $mail = $this->digest->runAllTenants();
+                $mailSummary = ' · mail ' . (string) ($mail['summary'] ?? '');
+            } catch (\Throwable $e) {
+                $mailSummary = ' · mail erreur ' . $e->getMessage();
+            }
+        }
+
         return [
             'ok' => $ok,
             'summary' => sprintf(
-                'Unités %d · suggestions cumulées %d · signaux %d',
+                'Unités %d · suggestions cumulées %d · signaux %d%s',
                 count($tenantIds),
                 $totalSuggestions,
-                $totalSignals
+                $totalSignals,
+                $mailSummary
             ),
             'details' => [
                 'tenants' => count($tenantIds),

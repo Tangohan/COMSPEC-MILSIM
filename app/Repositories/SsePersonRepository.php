@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 use PDO;
 
 /**
@@ -39,17 +40,7 @@ final class SsePersonRepository
         if ($done) {
             return;
         }
-        $path = base_path('bootstrap/atak_sse_persons_migration.php');
-        if (is_file($path)) {
-            $migrate = require $path;
-            if (is_callable($migrate)) {
-                try {
-                    $migrate(Database::getPdo());
-                } catch (\Throwable) {
-                    // ignore — run-migrations.php est la source principale
-                }
-            }
-        }
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_persons_migration.php'));
         $done = true;
     }
 

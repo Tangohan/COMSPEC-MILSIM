@@ -22,6 +22,10 @@ if (isNil "_identity" || {!(_identity isEqualType createHashMap)}) then {
 
 [_entity, "identity", _identity, _public] call comspec_sse_fnc_setSection;
 
+if (!isNil "comspec_sse_fnc_syncIdentityBridgeVars") then {
+    [_entity, _public] call comspec_sse_fnc_syncIdentityBridgeVars;
+};
+
 private _status = [_entity, "sectionStatus"] call comspec_sse_fnc_getSection;
 if (!isNil "_status" && {_status isEqualType createHashMap}) then {
     _status set ["identity", "complete"];

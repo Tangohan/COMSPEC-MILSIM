@@ -8,6 +8,8 @@ params [
     ["_args", nil]
 ];
 
+if !(missionNamespace getVariable ["COMSPEC_DEBUG_FORCE", false]) exitWith { -1 };
+
 if (_fn isEqualTo "") exitWith { -1 };
 
 private _depth = missionNamespace getVariable ["COMSPEC_DEBUG_CALL_DEPTH", 0];

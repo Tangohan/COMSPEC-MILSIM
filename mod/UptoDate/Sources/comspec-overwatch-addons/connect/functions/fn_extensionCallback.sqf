@@ -280,6 +280,8 @@ switch (_function) do {
                     while { (count _dead) > 200 } do { _dead deleteAt 0; };
                     profileNamespace setVariable ["COMSPEC_Athena_PhotoDead", _dead];
                     saveProfileNamespace;
+                    // Coupe le spam d’aperçus auto (COMSPEC_AthenaFeed / stems sans fichier).
+                    missionNamespace setVariable ["COMSPEC_FeedSnapFailUntil", diag_tickTime + 300, false];
                 };
                 ["PhotoUpload", "fail", format ["%1 · %2", _detail, _fileHint], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
                 private _msg = switch (true) do {

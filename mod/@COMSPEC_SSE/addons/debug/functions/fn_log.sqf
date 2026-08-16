@@ -32,12 +32,13 @@ private _line = if (_event isEqualTo "") then {
     format ["[COMSPEC][%1][%2][%3] %4", _level, _module, toUpper _event, _message]
 };
 
-// Toujours RPT pour WARN+ ; DEBUG/INFO si debug actif ou force
-private _force = missionNamespace getVariable ["COMSPEC_DEBUG_FORCE_RPT", true];
+// Instrumentation inactive sauf COMSPEC_DEBUG_FORCE=true
+private _force = missionNamespace getVariable ["COMSPEC_DEBUG_FORCE", false]
+    || {missionNamespace getVariable ["COMSPEC_DEBUG_FORCE_RPT", false]};
 private _debugOn = missionNamespace getVariable ["comspec_sse_debug", false]
-    || {missionNamespace getVariable ["COMSPEC_DEBUG_TRACE", true]};
+    || {missionNamespace getVariable ["COMSPEC_DEBUG_TRACE", false]};
 
-if (_force || {_level in ["WARN", "ERROR", "CRITICAL"]} || {_debugOn}) then {
+if (_force || {_level in ["ERROR", "CRITICAL"]} || {_debugOn && {_level in ["WARN", "INFO", "DEBUG"]}}) then {
     diag_log text _line;
 };
 

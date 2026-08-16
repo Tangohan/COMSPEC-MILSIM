@@ -28,7 +28,8 @@
                     <strong>Vue opérationnelle</strong> — tableau de bord du jour ;
                     <strong>Investigations</strong> — toiles relationnelles ;
                     <strong>Dossiers d’intérêt</strong> — signalements à qualifier ;
-                    <strong>Dossiers validés</strong> — affaires structurées
+                    <strong>Dossiers validés</strong> — affaires structurées ;
+                    <strong>Transmissions terrain</strong> — journal des envois depuis Arma
                 </td>
             </tr>
             <tr>
@@ -50,6 +51,14 @@
     <p>
         Point d’entrée du centre : indicateurs, file opérateur, alertes et activité récente.
         Servez-vous-en pour prioriser la journée, pas pour tout traiter d’un coup.
+    </p>
+
+    <h3>Transmissions terrain</h3>
+    <p>
+        Journal de tout ce qui a été envoyé depuis Arma 3 (terminal SSE, ACE, Zeus, etc.).
+        Filtrez par nature ou origine, puis ouvrez une fiche pour rejoindre l’identité, le site
+        ou le dossier lié. Ce journal n’est pas une chronologie d’analyse : il sert à suivre
+        la collecte brute.
     </p>
 
     <h3>Contexte mission et diffusion</h3>

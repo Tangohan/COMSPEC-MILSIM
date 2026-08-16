@@ -674,6 +674,8 @@ return function (Router $router) {
     $router->post('/atak/sse/dossiers/{id}/caviardage', [SsePortalController::class, 'caseRedactionStore'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/caviardage/{redactionId}/supprimer', [SsePortalController::class, 'caseRedactionDelete'], $mwSsePortal);
     $router->get('/atak/sse/interet', [SsePortalController::class, 'interestCasesIndex'], $mwSsePortal);
+    $router->get('/atak/sse/transmissions', [SsePortalController::class, 'transmissionsIndex'], $mwSsePortal);
+    $router->get('/atak/sse/transmissions/{id}', [SsePortalController::class, 'transmissionShow'], $mwSsePortal);
     $router->get('/atak/sse/interet/nouveau', [SsePortalController::class, 'interestCaseCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/interet', [SsePortalController::class, 'interestCaseStore'], $mwSsePortal);
     $router->get('/atak/sse/interet/{id}', [SsePortalController::class, 'interestCaseShow'], $mwSsePortal);
@@ -695,6 +697,7 @@ return function (Router $router) {
     $router->post('/atak/sse/croisements/watchlist/{id}/retirer', [SsePortalController::class, 'watchlistDeactivate'], $mwSsePortal);
     $router->get('/atak/sse/toiles', [SsePortalController::class, 'meshesIndex'], $mwSsePortal);
     $router->get('/atak/sse/toiles/nouveau', [SsePortalController::class, 'meshCreateForm'], $mwSsePortal);
+    $router->post('/atak/sse/toiles/regrouper', [SsePortalController::class, 'meshMerge'], $mwSsePortal);
     $router->post('/atak/sse/toiles', [SsePortalController::class, 'meshStore'], $mwSsePortal);
     $router->get('/atak/sse/toiles/{id}', [SsePortalController::class, 'meshShow'], $mwSsePortal);
     $router->post('/atak/sse/toiles/{id}', [SsePortalController::class, 'meshUpdate'], $mwSsePortal);

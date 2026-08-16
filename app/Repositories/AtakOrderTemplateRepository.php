@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 /**
@@ -12,13 +13,14 @@ use PDO;
  */
 class AtakOrderTemplateRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
+
 
     private ?bool $tablesReady = null;
 
     public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = $pdo ?? Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     public function tablesReady(): bool
@@ -27,7 +29,7 @@ class AtakOrderTemplateRepository
             return $this->tablesReady;
         }
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.TABLES
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_order_templates' LIMIT 1"
             );
@@ -47,7 +49,7 @@ class AtakOrderTemplateRepository
         if (!$this->tablesReady() || $tenantId < 1) {
             return [];
         }
-        $st = $this->pdo->prepare(
+        $st = $this->pdo()->prepare(
             'SELECT id, tenant_id, label, default_payload, created_by_user_id, sort_order, created_at, updated_at
              FROM atak_order_templates
              WHERE tenant_id = ?
@@ -68,7 +70,7 @@ class AtakOrderTemplateRepository
         if (!$this->tablesReady() || $tenantId < 1 || $id < 1) {
             return null;
         }
-        $st = $this->pdo->prepare(
+        $st = $this->pdo()->prepare(
             'SELECT id, tenant_id, label, default_payload, created_by_user_id, sort_order, created_at, updated_at
              FROM atak_order_templates
              WHERE tenant_id = ? AND id = ?
@@ -97,7 +99,7 @@ class AtakOrderTemplateRepository
             $createdByUserId = null;
         }
 
-        $st = $this->pdo->prepare(
+        $st = $this->pdo()->prepare(
             'INSERT INTO atak_order_templates (tenant_id, label, default_payload, created_by_user_id, sort_order)
              VALUES (?, ?, ?, ?, 0)'
         );
@@ -107,7 +109,7 @@ class AtakOrderTemplateRepository
             $defaultPayload !== '' ? $defaultPayload : null,
             $createdByUserId,
         ]);
-        $id = (int) $this->pdo->lastInsertId();
+        $id = (int) $this->pdo()->lastInsertId();
 
         return $this->findForTenant($tenantId, $id);
     }
@@ -117,7 +119,7 @@ class AtakOrderTemplateRepository
         if (!$this->tablesReady() || $tenantId < 1 || $id < 1) {
             return false;
         }
-        $st = $this->pdo->prepare('DELETE FROM atak_order_templates WHERE tenant_id = ? AND id = ? LIMIT 1');
+        $st = $this->pdo()->prepare('DELETE FROM atak_order_templates WHERE tenant_id = ? AND id = ? LIMIT 1');
         $st->execute([$tenantId, $id]);
 
         return $st->rowCount() > 0;

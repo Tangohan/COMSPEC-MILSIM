@@ -60,4 +60,6 @@ Sur `/api/atak/orders`, l’échec peut aussi survenir **dans** le contrôleur (
 
 ## Statut
 
-corrigé en code (+ retry 2002) — **à déployer** sur Hostinger
+corrigé en code (+ retry 2002 ×3, PDO lazy ATAK, cooldown alertes 15 min) — **à déployer** sur Hostinger
+
+Voir aussi : `2026-08-16-atak-perstat-pdo-2002.md` (récidive perstat).

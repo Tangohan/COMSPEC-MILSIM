@@ -1,5 +1,12 @@
 #include "script_component.hpp"
 
+// Instrumentation OFF par défaut (évite saturation RPT / pile ACE).
+// Activer : missionNamespace setVariable ["COMSPEC_DEBUG_FORCE", true]; avant postInit,
+// ou CBA setting — sinon le PBO peut rester présent sans rien faire.
+if !(missionNamespace getVariable ["COMSPEC_DEBUG_FORCE", false]) exitWith {
+    diag_log "[COMSPEC][DEBUG] Instrumentation inactive (COMSPEC_DEBUG_FORCE=false)";
+};
+
 if !(["COMSPEC_DEBUG_PREINIT_DONE", "XEH_preInit debug"] call comspec_debug_fnc_guardOnce) exitWith {};
 
 ["comspec_debug_XEH_preInit", []] call comspec_debug_fnc_enter;

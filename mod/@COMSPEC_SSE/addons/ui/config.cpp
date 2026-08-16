@@ -18,6 +18,7 @@ class CfgFunctions {
         class ui {
             file = "z\comspec_sse\addons\ui\functions";
             class showResult {};
+            class fillResultDialog {};
             class resultConsult {};
             class resultTransmit {};
             class uiSetRecord {};

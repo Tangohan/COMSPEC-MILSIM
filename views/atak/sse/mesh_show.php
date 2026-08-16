@@ -413,7 +413,7 @@ window.SSE_MESH = {
   kindLabels: <?= $j($kindLabels) ?>
 };
 </script>
-<script src="<?= $h(asset_url('assets/js/sse-mesh.js')) ?>?v=202608160400"></script>
+<script src="<?= $h(asset_url('assets/js/sse-mesh.js')) ?>?v=202608162250"></script>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

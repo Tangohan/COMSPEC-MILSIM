@@ -2,6 +2,9 @@
     Adapter Overwatch / extension — V0.4.
     Accepte soit un payload plat (legacy submitRecord), soit une envelope {kind,command,payload}.
     [_payloadOrEnvelope] call comspec_sse_fnc_sendViaOverwatch
+
+    Important : sendIntel (texte HUMINT) n’écrit PAS une fiche Identités Athena.
+    Pour PERSON / SubmitSsePerson / biométrie, seul un retour extension ["OK",…] compte.
 */
 params [
     ["_input", createHashMap, [createHashMap]]
@@ -21,20 +24,41 @@ if ((_input getOrDefault ["command", ""]) != "") then {
 private _json = [_payload] call comspec_sse_fnc_toJsonApprox;
 private _preferExt = missionNamespace getVariable ["comspec_sse_preferExtension", true];
 
+private _extOk = {
+    params ["_raw"];
+    if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
+    private _parsed = parseSimpleArray _raw;
+    if (_parsed isEqualType [] && {count _parsed >= 1}) exitWith {
+        toUpper (str (_parsed select 0)) isEqualTo "OK"
+    };
+    private _low = toLower _raw;
+    // Filet legacy si l’extension ne renvoie pas un tableau simple.
+    (_low find """ok""") >= 0
+        && {(_low find "error") < 0}
+        && {(_low find "fail") < 0}
+        && {(_low find "unknown") < 0}
+        && {(_low find "not implemented") < 0}
+};
+
+private _needsPersonApi = (
+    (toUpper _command) in ["SUBMITSSEPERSON", "SUBMITSSEBIOMETRICSSIM"]
+) || {(toUpper _kind) in ["PERSON", "BIOMETRICS"]};
+
 // 1) Extension typée
 if (_preferExt) then {
     private _raw = [_command, [_json]] call comspec_sse_fnc_extensionCall;
-    if (_raw isEqualType "" && {_raw != ""} ) then {
-        private _low = toLower _raw;
-        if ((_low find "error") < 0 && {(_low find "fail") < 0} && {(_low find "unknown") < 0} && {(_low find "not implemented") < 0}) exitWith {
-            [format ["sendViaOverwatch OK ext %1", _command]] call comspec_sse_fnc_log;
-            true
-        };
+    if ([_raw] call _extOk) exitWith {
+        [format ["sendViaOverwatch OK ext %1", _command]] call comspec_sse_fnc_log;
+        true
+    };
+    if (_needsPersonApi) exitWith {
+        [format ["sendViaOverwatch FAIL ext %1 raw=%2 (pas de fallback sendIntel pour fiche Athena)", _command, _raw], "WARN"] call comspec_sse_fnc_log;
+        false
     };
 };
 
-// 2) Overwatch sendIntel (toujours disponible si Overwatch chargé)
-if (!isNil "comspec_overwatch_connect_fnc_sendIntel") exitWith {
+// 2) Overwatch sendIntel — signal texte seulement (pas de registre Identités)
+if (!_needsPersonApi && {!isNil "comspec_overwatch_connect_fnc_sendIntel"}) exitWith {
     private _sseUid = _payload getOrDefault ["sse_uid", ""];
     if (_sseUid isEqualTo "") then { _sseUid = _payload getOrDefault ["record_id", "?"]; };
     private _quality = _payload getOrDefault ["quality", -1];
@@ -52,11 +76,13 @@ if (!isNil "comspec_overwatch_connect_fnc_sendIntel") exitWith {
     true
 };
 
-// 3) Extension générique SendSSE
-private _raw2 = ["SendSSE", [_json]] call comspec_sse_fnc_extensionCall;
-if (_raw2 isEqualType "" && {_raw2 != ""} && {((toLower _raw2) find "error") < 0} && {((toLower _raw2) find "unknown") < 0}) exitWith {
-    true
+// 3) Extension générique SendSSE (hors fiches personne)
+if (!_needsPersonApi) then {
+    private _raw2 = ["SendSSE", [_json]] call comspec_sse_fnc_extensionCall;
+    if ([_raw2] call _extOk) exitWith {
+        true
+    };
 };
 
-[format ["sendViaOverwatch unavailable kind=%1", _kind], "WARN"] call comspec_sse_fnc_log;
+[format ["sendViaOverwatch unavailable kind=%1 cmd=%2", _kind, _command], "WARN"] call comspec_sse_fnc_log;
 false

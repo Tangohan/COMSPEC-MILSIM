@@ -4390,6 +4390,34 @@ body.sse-theme-bureau .flash {
 .case-search-control { display:flex; gap: 0; }
 .case-search-control input { min-width:0; width:100%; min-height:40px!important; border-radius: .4rem 0 0 .4rem; }
 .case-search-control button { width:42px; border:1px solid #007b5c; background:#008e69; color:#fff; cursor:pointer; border-radius: 0 .4rem .4rem 0; font-weight: 800; }
+
+.sse-toolbar-search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem 1rem;
+    margin: 0 0 1.1rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+.sse-toolbar-search > label {
+    flex: 0 0 100%;
+    margin: 0;
+    color: var(--muted);
+    font: 800 9px var(--sans);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+.sse-toolbar-search .case-search-control {
+    flex: 1 1 16rem;
+    max-width: 32rem;
+}
+.sse-toolbar-search .link {
+    align-self: center;
+    margin-bottom: 0.35rem;
+}
 .case-aside-nav { padding:6px 0; border-bottom:1px solid var(--line, var(--border)); }
 .case-aside-nav a { min-height:42px; padding:0 14px; display:flex; align-items:center; justify-content:space-between; border-left:2px solid transparent; color:#929b96; text-decoration:none; font-size:.8rem; }
 .case-aside-nav a:hover,.case-aside-nav a.is-active { background:#0b1310; color:#eef3f0; border-left-color:var(--green); }
@@ -7317,6 +7345,67 @@ body.sse-has-rail .case-aside--compact .case-aside-section { display: none; }
 .sse-check input { margin-top: .15rem; }
 .sse-mesh-card {
     background: linear-gradient(160deg, rgba(59,183,255,.08), transparent 55%);
+    position: relative;
+    padding: 0;
+    min-height: 0;
+}
+.sse-mesh-card-link {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    min-height: 118px;
+    padding: .85rem .9rem;
+    text-decoration: none;
+    color: inherit;
+    flex: 1;
+}
+.sse-mesh-card-excerpt {
+    margin: 0;
+    font-size: .72rem;
+    line-height: 1.35;
+    color: var(--muted, #9aa4b2);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.sse-mesh-card-case {
+    font-size: .68rem;
+    color: var(--muted, #9aa4b2);
+    letter-spacing: .02em;
+}
+.sse-mesh-pick {
+    position: absolute;
+    top: .55rem;
+    right: .55rem;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: .3rem;
+    background: rgba(0, 0, 0, .45);
+    border: 1px solid rgba(255, 255, 255, .18);
+    cursor: pointer;
+}
+.sse-mesh-pick input {
+    margin: 0;
+    cursor: pointer;
+}
+.sse-mesh-merge-panel .sse-mesh-merge-form {
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+}
+.sse-mesh-merge-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem 1rem;
+}
+.sse-toolbar-search .toolbar-field select {
+    min-width: 10rem;
 }
 .sse-mesh-heading {
     align-items: flex-start;

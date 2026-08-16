@@ -30,6 +30,24 @@ foreach ($matches as $row) {
     </div>
 </div>
 
+<?php $searchQuery = trim((string) ($searchQuery ?? '')); ?>
+<form class="sse-toolbar-search" method="get" action="<?= $h(url('atak/sse/croisements')) ?>" role="search">
+    <label for="cross-q">Rechercher</label>
+    <div class="case-search-control">
+        <input
+            id="cross-q"
+            name="q"
+            type="search"
+            value="<?= $h($searchQuery) ?>"
+            placeholder="Nom, prénom, alias, notes, motif…"
+        >
+        <button type="submit" aria-label="Lancer la recherche">→</button>
+    </div>
+    <?php if ($searchQuery !== ''): ?>
+        <a class="link" href="<?= $h(url('atak/sse/croisements')) ?>">Effacer</a>
+    <?php endif; ?>
+</form>
+
 <div class="metrics-grid">
     <div class="metric">
         <div class="metric-label">Correspondances</div>
@@ -74,6 +92,11 @@ foreach ($matches as $row) {
                     <input id="first_name" name="first_name" type="text">
                 </div>
             </div>
+            <p class="muted" style="margin:0.35rem 0 0.75rem">
+                Le croisement compare aussi l’ordre inverse (nom ↔ prénom) et les alias
+                complets du type « Khalil Jawadi », même si la fiche terrain n’a pas
+                encore séparé nom et prénom.
+            </p>
             <label for="alias">Alias</label>
             <input id="alias" name="alias" type="text">
             <label for="threat_level">Niveau</label>
@@ -101,8 +124,10 @@ foreach ($matches as $row) {
         <div class="empty-state">
             <div class="empty-state-inner">
                 <div class="empty-symbol">—</div>
-                <strong>Aucune correspondance</strong>
-                <p>Aucune correspondance significative pour le moment.</p>
+                <strong><?= $searchQuery !== '' ? 'Aucun résultat' : 'Aucune correspondance' ?></strong>
+                <p><?= $searchQuery !== ''
+                    ? 'Aucune correspondance ne correspond à cette recherche.'
+                    : 'Aucune correspondance significative pour le moment.' ?></p>
             </div>
         </div>
     <?php else: ?>
@@ -160,7 +185,9 @@ foreach ($matches as $row) {
         </div>
     </div>
     <?php if ($entries === []): ?>
-        <div class="panel-body"><p class="muted">Aucune entrée.</p></div>
+        <div class="panel-body"><p class="muted"><?= $searchQuery !== ''
+            ? 'Aucune entrée surveillée pour cette recherche.'
+            : 'Aucune entrée.' ?></p></div>
     <?php else: ?>
         <div class="table-wrap">
             <table>

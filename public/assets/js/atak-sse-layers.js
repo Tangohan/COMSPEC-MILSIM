@@ -146,7 +146,7 @@
     }
     var base = apiBase();
     if (!base) return;
-    fetch(base + '/atak/sse-case-overlay?mapId=' + encodeURIComponent(mapId()), {
+    fetch(base + '/api/atak/sse-case-overlay?mapId=' + encodeURIComponent(mapId()), {
       credentials: 'include',
       headers: { Accept: 'application/json' }
     })

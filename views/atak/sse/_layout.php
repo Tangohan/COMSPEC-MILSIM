@@ -200,37 +200,38 @@ $navActive = static function (string $id) use ($activeNav): string {
             <?= $iwLink(url('atak/sse/toiles'), $navActive('graphe'), '02', 'Investigations', 'Toiles relationnelles pour cartographier les liens entre éléments.', 'mesh') ?>
             <?= $iwLink(url('atak/sse/interet'), $navActive('pressee'), '03', 'Dossiers d’intérêt', 'Signalements à qualifier — hypothèses, pas encore d’identité certaine.', 'interest') ?>
             <?= $iwLink(url('atak/sse/dossiers'), $navActive('validated'), '04', 'Dossiers validés', 'Affaires structurées : preuves, notes, personnel et comptes rendus.', 'folder') ?>
+            <?= $iwLink(url('atak/sse/transmissions'), $activeNav === 'transmissions' ? 'is-active' : '', '05', 'Transmissions terrain', 'Journal des envois Arma 3 : fiches, biométrie, sites et relevés.', 'collect') ?>
 
             <p class="iw-nav-section">Objets</p>
-            <?= $iwLink(url('atak/sse/identites'), $navActive('identites'), '05', 'Identités', 'Fiches personnes et indices biométriques.', 'id') ?>
-            <?= $iwLink(url('atak/sse/objets/organisations'), '', '06', 'Organisations', 'Groupes, cellules et structures affiliées.', 'org') ?>
-            <?= $iwLink(url('atak/sse/sites'), $activeNav === 'sites' ? 'is-active' : '', '07', 'Sites', 'Lieux d’intérêt et d’exploitation.', 'site') ?>
-            <?= $iwLink(url('atak/sse/objets/vehicules'), '', '08', 'Véhicules', 'Moyens mobiles rattachés aux dossiers.', 'vehicle') ?>
-            <?= $iwLink(url('atak/sse/objets/materiels'), '', '09', 'Matériels', 'Équipements et objets saisis.', 'gear') ?>
-            <?= $iwLink(url('atak/sse/objets/documents'), '', '10', 'Pièces documentaires', 'Documents physiques ou numérisés au dossier.', 'doc') ?>
+            <?= $iwLink(url('atak/sse/identites'), $navActive('identites'), '06', 'Identités', 'Fiches personnes et indices biométriques.', 'id') ?>
+            <?= $iwLink(url('atak/sse/objets/organisations'), '', '07', 'Organisations', 'Groupes, cellules et structures affiliées.', 'org') ?>
+            <?= $iwLink(url('atak/sse/sites'), $activeNav === 'sites' ? 'is-active' : '', '08', 'Sites', 'Lieux d’intérêt et d’exploitation.', 'site') ?>
+            <?= $iwLink(url('atak/sse/objets/vehicules'), '', '09', 'Véhicules', 'Moyens mobiles rattachés aux dossiers.', 'vehicle') ?>
+            <?= $iwLink(url('atak/sse/objets/materiels'), '', '10', 'Matériels', 'Équipements et objets saisis.', 'gear') ?>
+            <?= $iwLink(url('atak/sse/objets/documents'), '', '11', 'Pièces documentaires', 'Documents physiques ou numérisés au dossier.', 'doc') ?>
 
             <p class="iw-nav-section">Analyse</p>
-            <?= $iwLink(url('atak/sse/toiles'), $navActive('toiles'), '11', 'Graphe relationnel', 'Vue réseau des entités et de leurs liens.', 'graph') ?>
-            <?= $iwLink(url('atak/sse/chronologie'), $activeNav === 'chronologie' ? 'is-active' : '', '12', 'Chronologie', 'Séquence temporelle des faits et événements.', 'time') ?>
-            <?= $iwLink(url('atak'), '', '13', 'Carte', 'Projection géographique via ATAK.', 'map') ?>
-            <?= $iwLink(url('atak/sse/croisements'), $activeNav === 'croisements' ? 'is-active' : '', '14', 'Croisements', 'Rapprochements proposés à valider humainement.', 'cross') ?>
+            <?= $iwLink(url('atak/sse/toiles'), $navActive('toiles'), '12', 'Graphe relationnel', 'Vue réseau des entités et de leurs liens.', 'graph') ?>
+            <?= $iwLink(url('atak/sse/chronologie'), $activeNav === 'chronologie' ? 'is-active' : '', '13', 'Chronologie', 'Séquence temporelle des faits et événements.', 'time') ?>
+            <?= $iwLink(url('atak'), '', '14', 'Carte', 'Projection géographique via ATAK.', 'map') ?>
+            <?= $iwLink(url('atak/sse/croisements'), $activeNav === 'croisements' ? 'is-active' : '', '15', 'Croisements', 'Rapprochements proposés à valider humainement.', 'cross') ?>
             <?= $iwLink(url('atak/sse/rapprochements'), $activeNav === 'rapprochements' ? 'is-active' : '', '25', 'Rapprochements moteur', 'Suggestions automatiques à arbitrer.', 'engine') ?>
-            <?= $iwLink(url('atak/sse/anomalies'), $activeNav === 'anomalies' ? 'is-active' : '', '15', 'Anomalies', 'Écarts et alertes à examiner.', 'alert') ?>
+            <?= $iwLink(url('atak/sse/anomalies'), $activeNav === 'anomalies' ? 'is-active' : '', '16', 'Anomalies', 'Écarts et alertes à examiner.', 'alert') ?>
 
             <p class="iw-nav-section">Exploitation</p>
-            <?= $iwLink(url('atak/sse/exploitation-numerique'), $activeNav === 'labnum' ? 'is-active' : '', '16', 'Exploitation numérique', 'Supports saisis, acquisitions et analyses.', 'lab') ?>
+            <?= $iwLink(url('atak/sse/exploitation-numerique'), $activeNav === 'labnum' ? 'is-active' : '', '17', 'Exploitation numérique', 'Supports saisis, acquisitions et analyses.', 'lab') ?>
             <?= $iwLink(url('atak/sse/dev'), $activeNav === 'dev' ? 'is-active' : '', '23', 'Modèles de mission', 'Créer et emporter des modèles pour Arma.', 'prepare') ?>
-            <?= $iwLink(url('atak/sse/collecte'), $activeNav === 'collecte' ? 'is-active' : '', '17', 'Collecte terrain', 'Demandes et retours de collecte.', 'collect') ?>
-            <?= $iwLink(url('atak/sse/validation'), $activeNav === 'validation' ? 'is-active' : '', '18', 'Files de validation', 'Décisions en attente d’arbitrage.', 'queue') ?>
-            <?= $iwLink(url('atak/sse/rapports'), $activeNav === 'rapports' ? 'is-active' : '', '19', 'Rapports', 'Productions et bilans du bureau.', 'report') ?>
-            <?= $iwLink(url('atak/sse/documents'), $activeNav === 'documents' ? 'is-active' : '', '20', 'Rédaction', 'Notes, flash et documents officiels.', 'write') ?>
+            <?= $iwLink(url('atak/sse/collecte'), $activeNav === 'collecte' ? 'is-active' : '', '18', 'Collecte terrain', 'Demandes et retours de collecte.', 'collect') ?>
+            <?= $iwLink(url('atak/sse/validation'), $activeNav === 'validation' ? 'is-active' : '', '19', 'Files de validation', 'Décisions en attente d’arbitrage.', 'queue') ?>
+            <?= $iwLink(url('atak/sse/rapports'), $activeNav === 'rapports' ? 'is-active' : '', '20', 'Rapports', 'Productions et bilans du bureau.', 'report') ?>
+            <?= $iwLink(url('atak/sse/documents'), $activeNav === 'documents' ? 'is-active' : '', '21', 'Rédaction', 'Notes, flash et documents officiels.', 'write') ?>
             <?= $iwLink(url('atak/sse/bibliotheque'), $activeNav === 'bibliotheque' ? 'is-active' : '', '24', 'Mentions officielles', 'Bibliothèque de formulations validées.', 'library') ?>
             <?php if ($canGrant): ?>
-                <?= $iwLink(url('atak/sse/acces'), $activeNav === 'acces' ? 'is-active' : '', '21', 'Administration', 'Habilitations et codes d’accès temporaires.', 'admin') ?>
+                <?= $iwLink(url('atak/sse/acces'), $activeNav === 'acces' ? 'is-active' : '', '22', 'Administration', 'Habilitations et codes d’accès temporaires.', 'admin') ?>
             <?php endif; ?>
 
             <p class="iw-nav-section">Aide</p>
-            <?= $iwLink(url('atak/sse/guide'), $activeNav === 'guide' ? 'is-active' : '', '22', 'Documentation', 'Mode d’emploi du bureau SSE.', 'help') ?>
+            <?= $iwLink(url('atak/sse/guide'), $activeNav === 'guide' ? 'is-active' : '', '26', 'Documentation', 'Mode d’emploi du bureau SSE.', 'help') ?>
 
             <div class="iw-nav-foot">
                 <span>Apparence</span>
@@ -253,6 +254,7 @@ window.SSE_CTX = {
   pageTitle: 'Bureau SSE',
   pageActions: [
     { label: 'Vue opérationnelle', href: <?= json_encode(url('atak/sse/operations'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> },
+    { label: 'Transmissions terrain', href: <?= json_encode(url('atak/sse/transmissions'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> },
     { label: 'Investigations', href: <?= json_encode(url('atak/sse/toiles'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> },
     { label: 'Recherche', href: <?= json_encode(url('atak/sse/recherche'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> }
     <?php if ($canManage): ?>

@@ -17,8 +17,12 @@ private _region = _cluster getOrDefault ["region", "IRAQ"];
 private _pools = [_region] call comspec_sse_fnc_getNarrativePools;
 
 if ((_cluster getOrDefault ["primaryName", ""]) isEqualTo "") then {
-    private _person = [_seed, _profile, _complexity, _cluster] call comspec_sse_fnc_generatePerson;
-    _cluster = _person getOrDefault ["cluster", _cluster];
+    // Filet uniquement — generateCluster light pose déjà primaryName.
+    // Ne pas re-générer une PERSON complète (double pile).
+    private _pools = [_region] call comspec_sse_fnc_getNarrativePools;
+    private _fn = [_seed, "fn", _pools getOrDefault ["firstNames", ["Ali"]]] call comspec_sse_fnc_pickFromSeed;
+    private _ln = [_seed, "ln", _pools getOrDefault ["lastNames", ["Hassan"]]] call comspec_sse_fnc_pickFromSeed;
+    _cluster set ["primaryName", format ["%1 %2", _fn, _ln]];
 };
 
 private _theme = _cluster getOrDefault ["theme", "fuel_delivery"];

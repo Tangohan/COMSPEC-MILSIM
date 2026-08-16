@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 use App\Support\SseAtakLayersCatalog;
 
 /**
@@ -15,13 +16,7 @@ final class SseAtakLayersRepository
     public function __construct(private ?Database $db = null)
     {
         $this->db ??= Database::getInstance();
-        try {
-            $migration = require base_path('bootstrap/atak_sse_map_layers_lot5_migration.php');
-            if (is_callable($migration)) {
-                $migration(Database::getPdo(), static function (): void {});
-            }
-        } catch (\Throwable) {
-        }
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_map_layers_lot5_migration.php'));
     }
 
     /**

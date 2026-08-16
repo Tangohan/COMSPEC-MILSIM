@@ -46,18 +46,59 @@ if (!isNull _target) then {
     private _edenLast = _target getVariable ["COMSPEC_SSE_LastName", ""];
     private _edenFirst = _target getVariable ["COMSPEC_SSE_FirstName", ""];
     private _edenAlias = _target getVariable ["COMSPEC_SSE_Alias", ""];
-    if (_edenLast isEqualTo "" && _edenFirst isEqualTo "" && _edenAlias isEqualTo "") then {
+    private _nat = _target getVariable ["COMSPEC_SSE_Nationality", ""];
+    private _lang = _target getVariable ["COMSPEC_SSE_Language", ""];
+
+    // Repli : identité générée par @COMSPEC_SSE (section), si le pont Eden n’a pas encore tourné.
+    if (
+        _edenLast isEqualTo ""
+        && {_edenFirst isEqualTo ""}
+        && {_edenAlias isEqualTo ""}
+        && {!isNil "comspec_sse_fnc_getSection"}
+    ) then {
+        if (!isNil "comspec_sse_fnc_ensureGenerated") then {
+            [_target] call comspec_sse_fnc_ensureGenerated;
+        };
+        private _idSec = [_target, "identity"] call comspec_sse_fnc_getSection;
+        if (!isNil "_idSec" && {_idSec isEqualType createHashMap}) then {
+            private _full = _idSec getOrDefault ["name", ""];
+            _edenAlias = _idSec getOrDefault ["alias", ""];
+            _edenFirst = _idSec getOrDefault ["first_name", ""];
+            _edenLast = _idSec getOrDefault ["last_name", ""];
+            if (_edenFirst isEqualTo "" && {_edenLast isEqualTo ""} && {_full isNotEqualTo ""}) then {
+                private _parts = _full splitString " ";
+                if ((count _parts) > 1) then {
+                    _edenFirst = _parts select 0;
+                    _edenLast = (_parts select [1, (count _parts) - 1]) joinString " ";
+                } else {
+                    _edenFirst = _full;
+                };
+            };
+            if (_nat isEqualTo "") then { _nat = _idSec getOrDefault ["nationality", ""]; };
+            if (_lang isEqualTo "") then { _lang = _idSec getOrDefault ["language", ""]; };
+            if (!isNil "comspec_sse_fnc_syncIdentityBridgeVars") then {
+                [_target, true] call comspec_sse_fnc_syncIdentityBridgeVars;
+            };
+        };
+    };
+
+    // Dernier filet : découper name _unit en prénom/nom (plus en alias seul).
+    if (_edenLast isEqualTo "" && {_edenFirst isEqualTo ""} && {_edenAlias isEqualTo ""}) then {
         private _nm = name _target;
         if (_nm isNotEqualTo "" && { _nm isNotEqualTo "Error: No unit" }) then {
-            _edenAlias = _nm;
+            private _parts = _nm splitString " ";
+            if ((count _parts) > 1) then {
+                _edenFirst = _parts select 0;
+                _edenLast = (_parts select [1, (count _parts) - 1]) joinString " ";
+            } else {
+                _edenAlias = _nm;
+            };
         };
     };
     (_disp displayCtrl 9501) ctrlSetText _edenLast;
     (_disp displayCtrl 9502) ctrlSetText _edenFirst;
     (_disp displayCtrl 9503) ctrlSetText _edenAlias;
 
-    private _nat = _target getVariable ["COMSPEC_SSE_Nationality", ""];
-    private _lang = _target getVariable ["COMSPEC_SSE_Language", ""];
     (_disp displayCtrl 9507) ctrlSetText _nat;
     (_disp displayCtrl 9508) ctrlSetText _lang;
 
