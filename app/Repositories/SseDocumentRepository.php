@@ -662,6 +662,25 @@ TXT,
         $body = str_replace(["\r\n", "\r"], "\n", $body);
         $lines = explode("\n", $body);
         $html = [];
+        $inWarn = false;
+        $titles = [
+            'FLASH RENSEIGNEMENT',
+            'COMPTE RENDU D’EXPLOITATION',
+            "COMPTE RENDU D'EXPLOITATION",
+            'NOTE D’ANALYSE',
+            "NOTE D'ANALYSE",
+            'SYNTHÈSE DE SITUATION',
+            'SYNTHESE DE SITUATION',
+            'VERSION DE DIFFUSION',
+        ];
+
+        $closeWarn = static function () use (&$html, &$inWarn): void {
+            if ($inWarn) {
+                $html[] = '</aside>';
+                $inWarn = false;
+            }
+        };
+
         foreach ($lines as $raw) {
             $line = rtrim($raw);
             $trim = trim($line);
@@ -670,47 +689,85 @@ TXT,
                 continue;
             }
             if (preg_match('/^[═─\-_=]{6,}$/u', $trim) === 1) {
-                $html[] = '<hr class="sse-doc-paper__rule">';
+                if ($inWarn) {
+                    continue;
+                }
+                $isMajor = str_contains($trim, '═') || str_starts_with($trim, '===');
+                $html[] = $isMajor
+                    ? '<hr class="sse-doc-paper__rule sse-doc-paper__rule--major">'
+                    : '<hr class="sse-doc-paper__rule">';
                 continue;
             }
             if ($trim === '—' || $trim === '--' || $trim === '-' || $trim === '• —') {
-                $html[] = '<p class="sse-doc-paper__fill">………………………………………………………………</p>';
+                $html[] = '<p class="sse-doc-paper__fill" aria-hidden="true"><span></span></p>';
                 continue;
             }
             $upper = mb_strtoupper($trim, 'UTF-8');
-            $isTitle = in_array($upper, [
-                'FLASH RENSEIGNEMENT',
-                'COMPTE RENDU D’EXPLOITATION',
-                "COMPTE RENDU D'EXPLOITATION",
-                'NOTE D’ANALYSE',
-                "NOTE D'ANALYSE",
-                'SYNTHÈSE DE SITUATION',
-                'SYNTHESE DE SITUATION',
-                'VERSION DE DIFFUSION',
-            ], true);
-            if ($isTitle) {
+            if (in_array($upper, $titles, true)) {
+                $closeWarn();
                 $html[] = '<h1 class="sse-doc-paper__doc-title">' . self::inlineHtml($trim) . '</h1>';
                 continue;
             }
-            if (preg_match('/^\d+\.\s+.+/u', $trim) === 1
-                || preg_match('/^AVERTISSEMENT$/ui', $trim) === 1
-                || (str_starts_with($trim, '─') === false && preg_match('/^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜŸÇ0-9].{0,70}$/u', $trim) === 1
-                    && $upper === $trim && !str_contains($trim, ':'))) {
-                $html[] = '<h2 class="sse-doc-paper__section">' . self::inlineHtml($trim) . '</h2>';
+            if (preg_match('/^AVERTISSEMENT$/ui', $trim) === 1) {
+                $closeWarn();
+                $html[] = '<aside class="sse-doc-paper__warn" aria-label="Avertissement">';
+                $html[] = '<h2 class="sse-doc-paper__section sse-doc-paper__section--warn">' . self::inlineHtml($trim) . '</h2>';
+                $inWarn = true;
                 continue;
             }
-            if (preg_match('/^.+:\s*$/u', $trim) === 1 && mb_strlen($trim) < 90) {
-                $html[] = '<p class="sse-doc-paper__label">' . self::inlineHtml($trim) . '</p>';
+            if (preg_match('/^\d+\.\s+.+/u', $trim) === 1
+                || (str_starts_with($trim, '─') === false
+                    && preg_match('/^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜŸÇ0-9].{0,70}$/u', $trim) === 1
+                    && $upper === $trim
+                    && !str_contains($trim, ':'))) {
+                $closeWarn();
+                $sectionClass = 'sse-doc-paper__section';
+                if (preg_match('/^(\d+)\.\s+(.+)$/u', $trim, $m) === 1) {
+                    $html[] = '<h2 class="' . $sectionClass . '">'
+                        . '<span class="sse-doc-paper__section-num">' . htmlspecialchars($m[1], ENT_QUOTES, 'UTF-8') . '</span>'
+                        . '<span class="sse-doc-paper__section-lab">' . self::inlineHtml($m[2]) . '</span>'
+                        . '</h2>';
+                } else {
+                    $html[] = '<h2 class="' . $sectionClass . '">' . self::inlineHtml($trim) . '</h2>';
+                }
+                continue;
+            }
+            if (preg_match('/^\((.+)\)\s*$/u', $trim, $hint) === 1) {
+                $html[] = '<p class="sse-doc-paper__hint">' . self::inlineHtml($hint[1]) . '</p>';
+                continue;
+            }
+            if (preg_match('/^([^:]{2,80}):\s*(.*)$/u', $trim, $field) === 1 && mb_strlen($trim) < 120) {
+                $lab = rtrim($field[1]);
+                $val = trim($field[2]);
+                if ($val === '' || $val === '—' || $val === '-') {
+                    $html[] = '<p class="sse-doc-paper__field">'
+                        . '<span class="sse-doc-paper__field-lab">' . self::inlineHtml($lab) . '</span>'
+                        . '<span class="sse-doc-paper__field-val sse-doc-paper__field-val--empty"></span>'
+                        . '</p>';
+                } else {
+                    $html[] = '<p class="sse-doc-paper__field">'
+                        . '<span class="sse-doc-paper__field-lab">' . self::inlineHtml($lab) . '</span>'
+                        . '<span class="sse-doc-paper__field-val">' . self::inlineHtml($val) . '</span>'
+                        . '</p>';
+                }
                 continue;
             }
             if (str_starts_with($trim, '• ') || str_starts_with($trim, '- ') || preg_match('/^H\d+\s/u', $trim) === 1) {
-                $html[] = '<p class="sse-doc-paper__bullet">' . self::inlineHtml($trim) . '</p>';
+                $bullet = preg_replace('/^[•\-]\s+/u', '', $trim) ?? $trim;
+                $empty = $bullet === '—' || $bullet === '-' || $bullet === '';
+                $html[] = $empty
+                    ? '<p class="sse-doc-paper__bullet sse-doc-paper__bullet--empty"><span class="sse-doc-paper__bullet-mark">•</span><span class="sse-doc-paper__field-val--empty"></span></p>'
+                    : '<p class="sse-doc-paper__bullet"><span class="sse-doc-paper__bullet-mark">•</span><span>' . self::inlineHtml($bullet) . '</span></p>';
                 continue;
             }
             $html[] = '<p class="sse-doc-paper__p">' . self::inlineHtml($trim) . '</p>';
         }
+        $closeWarn();
+        $joined = implode("\n", $html);
 
-        return implode("\n", $html);
+        return $joined !== ''
+            ? $joined
+            : '<p class="sse-doc-paper__muted">Le corps du document apparaîtra ici.</p>';
     }
 
     private function nullIfEmpty(mixed $v): ?string

@@ -113,8 +113,14 @@ final class SseDocumentMarkings
         if (str_contains($class, 'secret') || str_contains($class, 'tres_restreint')) {
             return 'CANAL RÉSERVÉ — TRANSMISSION CHIFFRÉE UNIQUEMENT';
         }
-        if (str_contains($class, 'confid') || str_contains($class, 'restreint')) {
+        if (str_contains($class, 'confid')) {
             return 'CANAL PROTÉGÉ — REMISE EN MAIN PROPRE';
+        }
+        if (str_contains($class, 'encadrement') || str_contains($class, 'command')) {
+            return 'CANAL ENCADREMENT — CIRCULATION LIMITÉE';
+        }
+        if (str_contains($class, 'interne') || str_contains($class, 'internal')) {
+            return 'CANAL INTERNE SSE';
         }
 
         return ['CANAL INTERNE SSE', 'CANAL DE SERVICE', 'CANAL INTERNE SSE'][self::pick($bytes, 6, 3)];

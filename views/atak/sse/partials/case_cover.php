@@ -40,10 +40,11 @@ $marks = \App\Support\SseDocumentMarkings::forDocument([
     'created_at' => $openedSrc,
     'updated_at' => $updatedSrc,
 ], $coverUnit);
+$classCode = \App\Repositories\SseCaseRepository::normalizeClassification((string) ($case['classification'] ?? 'encadrement'));
 ?>
 <section class="sse-case-cover" aria-label="Chemise du dossier">
-    <div class="sse-doc-paper-chrome">
-        <article class="sse-doc-paper">
+    <div class="sse-doc-paper-chrome" data-classification="<?= $h($classCode) ?>">
+        <article class="sse-doc-paper sse-doc-paper--<?= $h($classCode) ?>" data-classification="<?= $h($classCode) ?>">
             <div class="sse-doc-paper__banner">
                 <span>(Classification de sécurité)</span>
                 <strong><?= $h($classUpper) ?></strong>
