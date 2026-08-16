@@ -49,10 +49,26 @@ for "_i" from 0 to (_nCargo - 1) do {
 
 private _docs = [_seed + 3, 1, _cluster, _pools] call comspec_sse_fnc_generateDocument;
 
+private _grid = _pack getOrDefault ["grid", ""];
+if (_grid isEqualTo "") then { _grid = _cluster getOrDefault ["depotGrid", ""]; };
+private _themeLabel = _pack getOrDefault ["themeLabel", _theme];
+private _primaryName = _cluster getOrDefault ["primaryName", "?"];
+private _make = [_seed, "make", _makes] call comspec_sse_fnc_pickFromSeed;
+private _color = [_seed, "color", _colors] call comspec_sse_fnc_pickFromSeed;
+private _locItem = createHashMapFromArray [
+    ["label", "Dernier point noté"],
+    ["grid", _grid],
+    ["confidence", 0.6]
+];
+private _intelItem = createHashMapFromArray [
+    ["text", format ["Véhicule potentiellement lié à %1 (%2)", _primaryName, _themeLabel]],
+    ["confidence", 0.58]
+];
+
 createHashMapFromArray [
     ["uid", format ["SSE-VEH-%1", _seed]],
-    ["make", [_seed, "make", _makes] call comspec_sse_fnc_pickFromSeed],
-    ["color", [_seed, "color", _colors] call comspec_sse_fnc_pickFromSeed],
+    ["make", _make],
+    ["color", _color],
     ["plate", _plate],
     ["vin", _vin],
     ["ownerHint", _cluster getOrDefault ["primaryName", "inconnu"]],
@@ -60,19 +76,8 @@ createHashMapFromArray [
     ["theme", _theme],
     ["cargoNotes", _cargo],
     ["documents", _docs],
-    ["locations", [
-        createHashMapFromArray [
-            ["label", "Dernier point noté"],
-            ["grid", _pack getOrDefault ["grid", _cluster getOrDefault ["depotGrid", ""]]],
-            ["confidence", 0.6]
-        ]
-    ]],
-    ["intel", [
-        createHashMapFromArray [
-            ["text", format ["Véhicule potentiellement lié à %1 (%2)", _cluster getOrDefault ["primaryName", "?"], _pack getOrDefault ["themeLabel", _theme]]],
-            ["confidence", 0.58]
-        ]
-    ]],
+    ["locations", [_locItem]],
+    ["intel", [_intelItem]],
     ["cluster", _cluster],
-    ["summary", format ["%1 %2 — plaque %3", [_seed, "make", _makes] call comspec_sse_fnc_pickFromSeed, [_seed, "color", _colors] call comspec_sse_fnc_pickFromSeed, _plate]]
+    ["summary", format ["%1 %2 — plaque %3", _make, _color, _plate]]
 ]

@@ -4,11 +4,13 @@
 */
 params ["_value"];
 
+// Échapper via toString [92] : les littéraux "\" / "\"" cassent le parseur SQF
 private _esc = {
     params ["_s"];
-    _s = [_s, "\", "\\"] call BIS_fnc_replaceString;
-    _s = [_s, """", "\""] call BIS_fnc_replaceString;
-    _s = [_s, endl, "\n"] call BIS_fnc_replaceString;
+    private _b = toString [92];
+    _s = [_s, _b, _b + _b] call BIS_fnc_replaceString;
+    _s = [_s, """", _b + """"] call BIS_fnc_replaceString;
+    _s = [_s, endl, _b + "n"] call BIS_fnc_replaceString;
     format ["""%1""", _s]
 };
 

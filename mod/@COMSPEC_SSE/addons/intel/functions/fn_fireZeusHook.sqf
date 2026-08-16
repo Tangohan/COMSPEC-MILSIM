@@ -6,7 +6,8 @@ params [
 if (_intelId == "" || {isNil "comspec_sse_zeusHooks"}) exitWith { false };
 private _hook = comspec_sse_zeusHooks getOrDefault [_intelId, nil];
 if (isNil "_hook") then {
-    _hook = comspec_sse_zeusHooks getOrDefault [_datum getOrDefault ["hookId", ""], nil];
+    private _hid = _datum getOrDefault ["hookId", ""];
+    _hook = comspec_sse_zeusHooks getOrDefault [_hid, nil];
 };
 if (isNil "_hook") exitWith { false };
 

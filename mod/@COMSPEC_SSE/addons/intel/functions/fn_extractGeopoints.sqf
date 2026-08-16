@@ -18,7 +18,10 @@ private _locs = [_entity, "locations"] call comspec_sse_fnc_getSection;
 if (!isNil "_locs" && {_locs isEqualType []}) then {
     {
         if (_x isEqualType createHashMap) then {
-            [_x getOrDefault ["label", "POI"], _x getOrDefault ["grid", ""], _x getOrDefault ["confidence", 0.5]] call _add;
+            private _label = _x getOrDefault ["label", "POI"];
+            private _grid = _x getOrDefault ["grid", ""];
+            private _conf = _x getOrDefault ["confidence", 0.5];
+            [_label, _grid, _conf] call _add;
         };
     } forEach _locs;
 };
@@ -27,7 +30,9 @@ private _docs = [_entity, "documents"] call comspec_sse_fnc_getSection;
 if (!isNil "_docs" && {_docs isEqualType []}) then {
     {
         if (_x isEqualType createHashMap) then {
-            [_x getOrDefault ["title", "Doc"], _x getOrDefault ["grid", ""], 0.55] call _add;
+            private _title = _x getOrDefault ["title", "Doc"];
+            private _grid = _x getOrDefault ["grid", ""];
+            [_title, _grid, 0.55] call _add;
         };
     } forEach _docs;
 };

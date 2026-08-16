@@ -8,6 +8,7 @@ class CfgPatches {
         requiredVersion = REQUIRED_VERSION;
         requiredAddons[] = {
             "cba_main",
+            "cba_common",
             "cba_xeh",
             "cba_settings",
             "ace_common",

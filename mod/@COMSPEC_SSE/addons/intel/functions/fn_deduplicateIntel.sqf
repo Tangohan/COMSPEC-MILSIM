@@ -11,7 +11,9 @@ private _out = [];
 {
     private _item = _x;
     private _key = if (_item isEqualType createHashMap) then {
-        toLower (_item getOrDefault ["text", _item getOrDefault ["id", str _item]])
+        private _t = _item getOrDefault ["text", ""];
+        if (_t isEqualTo "") then { _t = _item getOrDefault ["id", str _item]; };
+        toLower _t
     } else {
         toLower str _item
     };

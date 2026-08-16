@@ -77,9 +77,15 @@ private _intel = [_entity, "intel"] call comspec_sse_fnc_getSection;
 if (isNil "_intel" || {!(_intel isEqualType createHashMap)}) then { _intel = createHashMap; };
 _intel set ["source", "BII"];
 _intel set ["biiRecordId", _record param [0, ""]];
-_intel set ["family", _extra getOrDefault ["family", _intel getOrDefault ["family", ""]]];
-_intel set ["associates", _extra getOrDefault ["associates", _intel getOrDefault ["associates", ""]]];
-_intel set ["leads", _extra getOrDefault ["leads", _intel getOrDefault ["leads", ""]]];
+private _fam = _extra getOrDefault ["family", ""];
+if (_fam isEqualTo "") then { _fam = _intel getOrDefault ["family", ""]; };
+private _assoc = _extra getOrDefault ["associates", ""];
+if (_assoc isEqualTo "") then { _assoc = _intel getOrDefault ["associates", ""]; };
+private _leadsX = _extra getOrDefault ["leads", ""];
+if (_leadsX isEqualTo "") then { _leadsX = _intel getOrDefault ["leads", ""]; };
+_intel set ["family", _fam];
+_intel set ["associates", _assoc];
+_intel set ["leads", _leadsX];
 if (_notes isNotEqualTo "") then {
     private _plain = [_notes, "<br/>", " | "] call BIS_fnc_replaceString;
     _plain = [_plain, "<br>", " | "] call BIS_fnc_replaceString;

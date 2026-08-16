@@ -29,7 +29,8 @@ if (!isNull _rec) then {
     if (_devices isEqualType []) then {
         {
             if (_x isEqualType createHashMap) then {
-                private _dn = _x getOrDefault ["phoneNumber", _x getOrDefault ["uid", "DEV"]];
+                private _dn = _x getOrDefault ["phoneNumber", ""];
+                if (_dn isEqualTo "") then { _dn = _x getOrDefault ["uid", "DEV"]; };
                 _nodes pushBack format ["▣ DEVICE %1", _dn];
                 _edges pushBack format ["%1 —owns→ %2", _uid, _dn];
             };

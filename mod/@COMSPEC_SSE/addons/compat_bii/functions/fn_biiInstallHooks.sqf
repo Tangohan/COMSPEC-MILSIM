@@ -103,15 +103,25 @@ if (!isNil "comspec_sse_fnc_ensureGenerated") then {
     private _oldEns = comspec_sse_fnc_ensureGenerated;
     missionNamespace setVariable ["comspec_sse_bii_oldEnsureGenerated", _oldEns];
     comspec_sse_fnc_ensureGenerated = {
+        // Garde anti-réentrée (import/export ne doivent pas rappeler ensureGenerated)
+        if (missionNamespace getVariable ["comspec_sse_biiInEnsureWrap", false]) exitWith {
+            private _oldFast = missionNamespace getVariable ["comspec_sse_bii_oldEnsureGenerated", {}];
+            _this call _oldFast
+        };
         private _old = missionNamespace getVariable ["comspec_sse_bii_oldEnsureGenerated", {}];
         private _entity = _this param [0, objNull];
         private _r = _this call _old;
-        if (!isNull _entity && {missionNamespace getVariable ["comspec_sse_biiBridgeEnabled", true]}) then {
+        if (
+            !isNull _entity
+            && {missionNamespace getVariable ["comspec_sse_biiBridgeEnabled", true]}
+        ) then {
+            missionNamespace setVariable ["comspec_sse_biiInEnsureWrap", true];
             // BII authored gagne sur le narratif généré
             [_entity] call comspec_sse_fnc_biiImportEntityVars;
             if (missionNamespace getVariable ["comspec_sse_biiExportToBii", true]) then {
                 [_entity] call comspec_sse_fnc_biiExportEntityVars;
             };
+            missionNamespace setVariable ["comspec_sse_biiInEnsureWrap", false];
         };
         _r
     };

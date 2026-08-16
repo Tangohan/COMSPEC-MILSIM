@@ -192,7 +192,9 @@ switch (_type) do {
         };
         private _docs = [_seed, if (_complexity == "LIGHT") then {2} else {4}, _cluster, _pools] call comspec_sse_fnc_generateDocument;
         _sections set ["documents", _docs];
-        _sections set ["notes", [_cluster getOrDefault ["deliveryNote", ""], format ["Thème: %1", _cluster getOrDefault ["themeLabel", _cluster getOrDefault ["theme", ""]]]]];
+        private _themeNote = _cluster getOrDefault ["themeLabel", ""];
+        if (_themeNote isEqualTo "") then { _themeNote = _cluster getOrDefault ["theme", ""]; };
+        _sections set ["notes", [_cluster getOrDefault ["deliveryNote", ""], format ["Thème: %1", _themeNote]]];
         _sections set ["intel", [
             createHashMapFromArray [["text", format ["Documents liés à %1", _cluster getOrDefault ["primaryName", "?"]]], ["confidence", 0.6]]
         ]];
@@ -206,7 +208,9 @@ switch (_type) do {
         };
         private _docs = [_seed, 1, _cluster, _pools] call comspec_sse_fnc_generateDocument;
         _sections set ["documents", _docs];
-        _sections set ["notes", [_cluster getOrDefault ["deliveryNote", ""], format ["Thème: %1", _cluster getOrDefault ["themeLabel", _cluster getOrDefault ["theme", ""]]]]];
+        private _themeNote = _cluster getOrDefault ["themeLabel", ""];
+        if (_themeNote isEqualTo "") then { _themeNote = _cluster getOrDefault ["theme", ""]; };
+        _sections set ["notes", [_cluster getOrDefault ["deliveryNote", ""], format ["Thème: %1", _themeNote]]];
         _sections set ["intel", [
             createHashMapFromArray [["text", format ["Objet lié à %1", _cluster getOrDefault ["primaryName", "?"]]], ["confidence", 0.55]]
         ]];
