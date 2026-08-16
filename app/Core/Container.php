@@ -769,6 +769,7 @@ class Container
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(\App\Repositories\PersonnelRoleplayTimelineRepository::class),
                 self::get(TenantRepository::class),
+                self::get(\App\Services\Personnel\RoleplayFollowupNotificationService::class),
             ),
             \App\Controllers\Web\RoleplayPageController::class => new \App\Controllers\Web\RoleplayPageController(
                 self::get(UserRepository::class),

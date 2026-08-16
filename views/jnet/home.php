@@ -71,13 +71,16 @@ $face = static function (array $p) use ($h): string {
             <a class="jnet-btn" href="<?= $h(url('jnet/unite')) ?>">Fiche unité</a>
         </div>
         <div class="jnet-panel__body jnet-face-list">
+            <?php if ($commandStaff === []): ?>
+                <p class="jnet-empty">Aucun cadre renseigné pour le moment.</p>
+            <?php endif; ?>
             <?php foreach ($commandStaff as $p): ?>
                 <a class="jnet-face-row" href="<?= $h((string) ($p['href'] ?? '#')) ?>">
                     <div class="jnet-avatar jnet-avatar--lg"><?= $face($p) ?></div>
                     <div>
                         <strong><?= $h((string) ($p['name'] ?? '')) ?></strong>
                         <span><?= $h((string) ($p['function'] ?? '')) ?></span>
-                        <em><?= $h((string) ($p['grade'] ?? '')) ?> · <?= $h((string) ($p['callsign'] ?? '')) ?></em>
+                        <em><?= $h((string) ($p['meta_line'] ?? trim(($p['grade'] ?? '') . ' · ' . ($p['callsign'] ?? ''), ' ·'))) ?></em>
                     </div>
                 </a>
             <?php endforeach; ?>
@@ -90,6 +93,9 @@ $face = static function (array $p) use ($h): string {
             <a class="jnet-btn" href="<?= $h(url('jnet/cibles')) ?>">Voir tout (<?= $targetsTotal ?>)</a>
         </div>
         <div class="jnet-panel__body jnet-face-list">
+            <?php if ($priorityTargets === []): ?>
+                <p class="jnet-empty">Aucune cible prioritaire ouverte.</p>
+            <?php endif; ?>
             <?php foreach ($priorityTargets as $t): ?>
                 <a class="jnet-face-row jnet-face-row--target" href="<?= $h((string) ($t['href'] ?? '#')) ?>"
                    title="<?= $h(trim(($t['alias'] ?? '') . ' · ' . ($t['org'] ?? '') . ' · ' . ($t['lastKnown'] ?? ''))) ?>">
@@ -117,7 +123,10 @@ $face = static function (array $p) use ($h): string {
                 </a>
             <?php endforeach; ?>
             <?php if ($currentOps === []): ?>
-                <p class="jnet-empty">Aucune opération engagée. Les missions ouvertes sur le tableau opérationnel apparaîtront ici.</p>
+                <div class="jnet-empty">
+                    <p>Aucune opération engagée.</p>
+                    <p>Les missions ouvertes sur le tableau opérationnel apparaîtront ici.</p>
+                </div>
             <?php endif; ?>
         </div>
     </section>
@@ -128,6 +137,9 @@ $face = static function (array $p) use ($h): string {
             <a class="jnet-btn" href="<?= $h(url('jnet/renseignement')) ?>">Tableau intel</a>
         </div>
         <div class="jnet-panel__body jnet-feed">
+            <?php if ($intelFeed === []): ?>
+                <p class="jnet-empty">Aucun événement récent.</p>
+            <?php endif; ?>
             <?php foreach ($intelFeed as $ev): ?>
                 <a class="jnet-feed__item" href="<?= $h((string) ($ev['href'] ?? '#')) ?>">
                     <time><?= $h((string) ($ev['time'] ?? '')) ?></time>

@@ -31,7 +31,7 @@ $updatedSrc = (string) ($case['updated_at'] ?? '');
 $updatedFr = $updatedSrc !== '' ? date('d/m/Y', strtotime($updatedSrc) ?: time()) : $openedFr;
 $isClosed = in_array($statusKey, ['clos', 'archive', 'cloture'], true);
 
-$marks = \App\Support\SseDocumentMarkings::forDocument([
+$docPayload = [
     'id' => (int) ($case['id'] ?? 0),
     'reference_code' => $caseRef,
     'title' => $caseTitle,
@@ -39,11 +39,27 @@ $marks = \App\Support\SseDocumentMarkings::forDocument([
     'classification' => (string) ($case['classification'] ?? ''),
     'created_at' => $openedSrc,
     'updated_at' => $updatedSrc,
-], $coverUnit);
+];
+$marksPreview = \App\Support\SseDocumentMarkings::forDocument($docPayload, $coverUnit);
+$wsPreview = is_array($marksPreview['workstation'] ?? null) ? $marksPreview['workstation'] : [];
+$sealOpenUrl = null;
+$caseIdForSeal = (int) ($case['id'] ?? 0);
+$tenantIdForSeal = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+if ($caseIdForSeal > 0 && $tenantIdForSeal > 0 && ($wsPreview['fingerprint_raw'] ?? '') !== '') {
+    $token = \App\Services\Sse\SseSealTokenService::fromEnv()->mint(
+        $tenantIdForSeal,
+        $caseIdForSeal,
+        (string) ($wsPreview['id'] ?? 'QR'),
+        (string) $wsPreview['fingerprint_raw']
+    );
+    $sealOpenUrl = url('atak/sse/sceau/' . rawurlencode($token));
+}
+$marks = \App\Support\SseDocumentMarkings::forDocument($docPayload, $coverUnit, $sealOpenUrl);
+$classCode = \App\Repositories\SseCaseRepository::normalizeClassification((string) ($case['classification'] ?? 'encadrement'));
 ?>
 <section class="sse-case-cover" aria-label="Chemise du dossier">
-    <div class="sse-doc-paper-chrome">
-        <article class="sse-doc-paper">
+    <div class="sse-doc-paper-chrome" data-classification="<?= $h($classCode) ?>">
+        <article class="sse-doc-paper sse-doc-paper--<?= $h($classCode) ?>" data-classification="<?= $h($classCode) ?>">
             <div class="sse-doc-paper__banner">
                 <span>(Classification de sécurité)</span>
                 <strong><?= $h($classUpper) ?></strong>
@@ -202,8 +218,8 @@ $marks = \App\Support\SseDocumentMarkings::forDocument([
                             <dd><?= $h($marks['algorithm']) ?></dd>
                         </dl>
                         <p class="sse-doc-paper__hash-note">
-                            Le QR encode le poste, son adresse réseau et l’empreinte machine relevés à
-                            l’ouverture. Il ne remplace pas un relevé biométrique de personne.
+                            Le QR ouvre la fiche de vérification du sceau poste de travail.
+                            Il ne remplace pas un relevé biométrique de personne.
                             Les empreintes changent à chaque modification de la synthèse : un écart
                             signale une reprise non enregistrée.
                         </p>

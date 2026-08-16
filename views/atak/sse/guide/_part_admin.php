@@ -5,6 +5,17 @@
         Réservée aux cadres habilités à délivrer des codes. Cette rubrique n’apparaît que si vos droits le permettent.
     </p>
 
+    <h3>Importer un scénario préparé</h3>
+    <p>
+        En mode gestion, ouvrez <strong>Dossiers → Importer un scénario</strong>.
+        Chargez un pack produit par un assistant (ChatGPT / Claude) ou un emport précédent :
+        le bureau crée le dossier, les identités, les notes, les pièces et les sites d’un coup.
+    </p>
+    <p>
+        Sur un dossier, utilisez <strong>Emporter le pack dossier</strong> pour le sauvegarder,
+        ou <strong>Pack terrain Arma</strong> / <strong>Script Arma</strong> pour préparer la mission en jeu.
+    </p>
+
     <h3>Délivrer un code</h3>
     <ol>
         <li>Ouvrez <strong>Administration</strong> dans le bureau SSE.</li>

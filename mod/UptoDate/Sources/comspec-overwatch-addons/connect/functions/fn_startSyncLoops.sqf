@@ -19,6 +19,13 @@ missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 3];
 if (!(_interval isEqualType 0)) then { _interval = 2; };
 _interval = (_interval max 1) min 15;
+// Premier push immédiat (sinon attendre tout l’intervalle PFH → carte web vide au boot).
+0 spawn {
+    uiSleep 0.5;
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (isNull player || {!alive player}) exitWith {};
+    [player, true] call comspec_overwatch_connect_fnc_updatePosition;
+};
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     [{ [player] call comspec_overwatch_connect_fnc_updatePosition }, [], "updatePosition"] call comspec_overwatch_connect_fnc_profileWrap;

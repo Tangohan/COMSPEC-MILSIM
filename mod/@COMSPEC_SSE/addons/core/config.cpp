@@ -19,6 +19,8 @@ class CfgFunctions {
         class core {
             file = "z\comspec_sse\addons\core\functions";
             class log {};
+            class getLog {};
+            class showLog {};
             class hash {};
             class generateUID {};
             class createDataModel {};

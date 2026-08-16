@@ -17,7 +17,7 @@ return [
         ['path' => 'jnet/courrier', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Messagerie d’unité', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
         ['path' => 'jnet/systeme', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Système', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
         ['path' => 'jnet/unite', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Fiche d’unité', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
-        ['path' => 'jnet', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Tableau d’unité', 'subtitle' => 'Extranet d’unité — situation, personnel, opérations et renseignement.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Tableau d’unité', 'subtitle' => 'Situation, personnel, opérations et renseignement de l’unité.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
         ['path' => 'back-office', 'group' => 'Pilotage', 'kicker' => 'PILOTAGE', 'title' => 'Tableau de bord', 'subtitle' => 'Synthèse de la communauté, indicateurs et accès rapides.'],
         ['path' => 'back-office/centre-operations', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations'],
         ['path' => 'back-office/operations-admin', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations'],
@@ -118,10 +118,16 @@ return [
         ]],
         ['path' => 'back-office/roleplay/immersion', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · IMMERSION', 'title' => 'Réglages d’immersion', 'subtitle' => 'Activation du suivi, étapes d’avancement, filières et indicateur « dossier prêt ».', 'quick' => [
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
+            ['label' => 'Échéances', 'href' => 'back-office/roleplay-followup/echeances'],
             ['label' => 'Activation', 'href' => 'back-office/roleplay/immersion#activation-options'],
             ['label' => 'Listes', 'href' => 'back-office/roleplay/immersion#listes'],
         ]],
+        ['path' => 'back-office/roleplay-followup/echeances', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · ÉCHÉANCES', 'title' => 'Échéances', 'subtitle' => 'Entretiens, visites médicales et rotations de service pour tous les membres.', 'quick' => [
+            ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
+            ['label' => 'Réglages d’immersion', 'href' => 'back-office/roleplay/immersion'],
+        ]],
         ['path' => 'back-office/roleplay-followup', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SUIVI', 'title' => 'Bureau de suivi', 'subtitle' => 'Tutorat, étapes d’immersion, bilans et échéances des dossiers.', 'quick' => [
+            ['label' => 'Échéances', 'href' => 'back-office/roleplay-followup/echeances'],
             ['label' => 'Réglages d’immersion', 'href' => 'back-office/roleplay/immersion'],
         ]],
         ['path' => 'back-office/communications/history', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Historique des envois'],

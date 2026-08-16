@@ -279,6 +279,7 @@ foreach ($cases as $c) {
     function bodyToHtml(raw) {
         var lines = String(raw || '').replace(/\r\n|\r/g, '\n').split('\n');
         var out = [];
+        var inWarn = false;
         var titles = {
             'FLASH RENSEIGNEMENT': 1,
             'COMPTE RENDU D’EXPLOITATION': 1,
@@ -289,36 +290,118 @@ foreach ($cases as $c) {
             'SYNTHESE DE SITUATION': 1,
             'VERSION DE DIFFUSION': 1
         };
+        function closeWarn() {
+            if (inWarn) { out.push('</aside>'); inWarn = false; }
+        }
         lines.forEach(function (line) {
             var trim = line.replace(/\s+$/g, '');
             var t = trim.trim();
             if (!t) { out.push('<p class="sse-doc-paper__spacer">&nbsp;</p>'); return; }
-            if (/^[═─\-_=]{6,}$/.test(t)) { out.push('<hr class="sse-doc-paper__rule">'); return; }
+            if (/^[═─\-_=]{6,}$/.test(t)) {
+                if (inWarn) { return; }
+                var major = t.indexOf('═') !== -1 || t.indexOf('===') === 0;
+                out.push(major
+                    ? '<hr class="sse-doc-paper__rule sse-doc-paper__rule--major">'
+                    : '<hr class="sse-doc-paper__rule">');
+                return;
+            }
             if (t === '—' || t === '--' || t === '-' || t === '• —') {
-                out.push('<p class="sse-doc-paper__fill">………………………………………………………………</p>');
+                out.push('<p class="sse-doc-paper__fill" aria-hidden="true"><span></span></p>');
                 return;
             }
             var up = t.toUpperCase();
             if (titles[up] || titles[t]) {
+                closeWarn();
                 out.push('<h1 class="sse-doc-paper__doc-title">' + escMasked(t) + '</h1>');
                 return;
             }
-            if (/^\d+\.\s+.+/.test(t) || /^AVERTISSEMENT$/i.test(t)
-                || (t === up && t.length < 80 && t.indexOf(':') === -1 && t.charAt(0) !== '─')) {
-                out.push('<h2 class="sse-doc-paper__section">' + escMasked(t) + '</h2>');
+            if (/^AVERTISSEMENT$/i.test(t)) {
+                closeWarn();
+                out.push('<aside class="sse-doc-paper__warn" aria-label="Avertissement">');
+                out.push('<h2 class="sse-doc-paper__section sse-doc-paper__section--warn">' + escMasked(t) + '</h2>');
+                inWarn = true;
                 return;
             }
-            if (/^.+:\s*$/.test(t) && t.length < 90) {
-                out.push('<p class="sse-doc-paper__label">' + escMasked(t) + '</p>');
+            if (/^\d+\.\s+.+/.test(t)
+                || (t === up && t.length < 80 && t.indexOf(':') === -1 && t.charAt(0) !== '─')) {
+                closeWarn();
+                var numbered = t.match(/^(\d+)\.\s+(.+)$/);
+                if (numbered) {
+                    out.push('<h2 class="sse-doc-paper__section">'
+                        + '<span class="sse-doc-paper__section-num">' + esc(numbered[1]) + '</span>'
+                        + '<span class="sse-doc-paper__section-lab">' + escMasked(numbered[2]) + '</span>'
+                        + '</h2>');
+                } else {
+                    out.push('<h2 class="sse-doc-paper__section">' + escMasked(t) + '</h2>');
+                }
+                return;
+            }
+            var hint = t.match(/^\((.+)\)\s*$/);
+            if (hint) {
+                out.push('<p class="sse-doc-paper__hint">' + escMasked(hint[1]) + '</p>');
+                return;
+            }
+            var field = t.match(/^([^:]{2,80}):\s*(.*)$/);
+            if (field && t.length < 120) {
+                var lab = field[1].replace(/\s+$/g, '');
+                var val = (field[2] || '').trim();
+                if (!val || val === '—' || val === '-') {
+                    out.push('<p class="sse-doc-paper__field">'
+                        + '<span class="sse-doc-paper__field-lab">' + escMasked(lab) + '</span>'
+                        + '<span class="sse-doc-paper__field-val sse-doc-paper__field-val--empty"></span>'
+                        + '</p>');
+                } else {
+                    out.push('<p class="sse-doc-paper__field">'
+                        + '<span class="sse-doc-paper__field-lab">' + escMasked(lab) + '</span>'
+                        + '<span class="sse-doc-paper__field-val">' + escMasked(val) + '</span>'
+                        + '</p>');
+                }
                 return;
             }
             if (t.indexOf('• ') === 0 || t.indexOf('- ') === 0 || /^H\d+\s/.test(t)) {
-                out.push('<p class="sse-doc-paper__bullet">' + escMasked(t) + '</p>');
+                var bullet = t.replace(/^[•\-]\s+/, '');
+                if (bullet === '—' || bullet === '-' || !bullet) {
+                    out.push('<p class="sse-doc-paper__bullet sse-doc-paper__bullet--empty">'
+                        + '<span class="sse-doc-paper__bullet-mark">•</span>'
+                        + '<span class="sse-doc-paper__field-val--empty"></span></p>');
+                } else {
+                    out.push('<p class="sse-doc-paper__bullet">'
+                        + '<span class="sse-doc-paper__bullet-mark">•</span>'
+                        + '<span>' + escMasked(bullet) + '</span></p>');
+                }
                 return;
             }
             out.push('<p class="sse-doc-paper__p">' + escMasked(t) + '</p>');
         });
+        closeWarn();
         return out.join('\n') || '<p class="sse-doc-paper__muted">Le corps du document apparaîtra ici.</p>';
+    }
+
+    var classThemeKeys = ['interne', 'encadrement', 'confidentiel', 'tres_restreint'];
+    var channelByClass = {
+        interne: 'CANAL INTERNE SSE',
+        encadrement: 'CANAL ENCADREMENT — CIRCULATION LIMITÉE',
+        confidentiel: 'CANAL PROTÉGÉ — REMISE EN MAIN PROPRE',
+        tres_restreint: 'CANAL RÉSERVÉ — TRANSMISSION CHIFFRÉE UNIQUEMENT'
+    };
+
+    function applyClassificationTheme(code) {
+        var key = classThemeKeys.indexOf(code) >= 0 ? code : 'confidentiel';
+        paper.setAttribute('data-classification', key);
+        Array.prototype.forEach.call(
+            paper.querySelectorAll('.sse-doc-paper'),
+            function (article) {
+                classThemeKeys.forEach(function (k) {
+                    article.classList.remove('sse-doc-paper--' + k);
+                });
+                article.classList.add('sse-doc-paper--' + key);
+                article.setAttribute('data-classification', key);
+            }
+        );
+        var channelEl = paper.querySelector('.sse-doc-paper__caveat-main');
+        if (channelEl && channelByClass[key]) {
+            channelEl.textContent = channelByClass[key];
+        }
     }
 
     function syncMeta() {
@@ -326,7 +409,9 @@ foreach ($cases as $c) {
             hintEl.textContent = hints[typeEl.value] || 'Choisissez le format adapté au destinataire.';
         }
         var wm = paper.querySelector('.sse-doc-paper__watermark');
-        var classLab = classLabels[classEl.value] || classEl.options[classEl.selectedIndex].text;
+        var classCode = classEl.value || 'confidentiel';
+        var classLab = classLabels[classCode] || classEl.options[classEl.selectedIndex].text;
+        applyClassificationTheme(classCode);
         Array.prototype.forEach.call(
             paper.querySelectorAll('.sse-doc-paper__banner strong'),
             function (el) { el.textContent = String(classLab).toUpperCase(); }

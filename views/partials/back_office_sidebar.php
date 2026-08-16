@@ -96,9 +96,11 @@ $boNavRolesPermissions = str_starts_with($p, 'back-office/roles-permissions');
 $boNavRoles = ($p === 'back-office/roles' || str_starts_with($p, 'back-office/roles/')) && !$boNavRolesPresets && !$boNavRolesPermissions;
 $boNavRolesFx = $p === 'back-office/roles-functions' || str_starts_with($p, 'back-office/roles-functions/');
 $boNavPjr = str_starts_with($p, 'back-office/personnel-job-roles');
-$boNavRoleplayFollowup = str_starts_with($p, 'back-office/roleplay-followup');
+$boNavRoleplayDeadlines = $p === 'back-office/roleplay-followup/echeances'
+    || str_starts_with($p, 'back-office/roleplay-followup/echeances/');
+$boNavRoleplayFollowup = (str_starts_with($p, 'back-office/roleplay-followup') && !$boNavRoleplayDeadlines);
 $boNavRoleplayImmersion = str_starts_with($p, 'back-office/roleplay/immersion');
-$boNavRoleplaySection = $boNavRoleplayFollowup || $boNavRoleplayImmersion || str_starts_with($p, 'back-office/roleplay/');
+$boNavRoleplaySection = $boNavRoleplayFollowup || $boNavRoleplayDeadlines || $boNavRoleplayImmersion || str_starts_with($p, 'back-office/roleplay/');
 $boNavEff = str_starts_with($p, 'back-office/organisation-effectifs');
 $boNavEffWorkspace = $p === $ewPath || str_starts_with($p, $ewPath . '/');
 $boNavOrgSettings = str_starts_with($p, 'back-office/organisation/parametres') || $p === 'back-office/community';

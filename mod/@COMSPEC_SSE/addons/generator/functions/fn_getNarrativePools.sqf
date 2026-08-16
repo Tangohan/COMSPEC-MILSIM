@@ -22,7 +22,7 @@ private _firstNames = switch (_region) do {
         ["Amadou","Ibrahim","Moussa","Oumar","Abdoulaye","Boubacar","Seydou","Mamadu","Issa","Bakary","Cheick","Modibo","Youssouf","Souleymane","Hamza","Idrissa","Aboubacar","Mahamadou","Sidi","Lassana"]
     };
     case "RUSSIA": {
-        ["Ivan","Dmitri","Sergei","Andrei","Pavel","Alexei","Nikolai","Viktor","Mikhail","Yuri","Oleg","Roman","Anton","Kirill","Igor","Vladimir","Maxim","Denis","Artem","Boris","Gleb","Stepan","Timur","Ruslan","Fyodor"]
+        ["Ivan","Dmitri","Sergei","Andrei","Pavel","Alexei","Nikolai","Viktor","Mikhail","Yuri","Oleg","Roman","Anton","Kirill","Igor","Vladimir","Maxim","Denis","Artem","Boris","Gleb","Stepan","Timur","Ruslan","Fyodor","Anatoly","Vadim","Konstantin","Grigori","Leonid","Anna","Elena","Olga","Natalia","Irina","Maria","Tatiana","Svetlana","Ekaterina","Yulia"]
     };
     default {
         ["Karim","Omar","Hassan","Farid","Mustafa","Youssef","Ali","Samir","Rami","Nabil","John","Viktor","Sergei","Andrei","Pavel","Ivan","Dmitri","Alex","Mark","Daniel"]
@@ -39,7 +39,7 @@ private _lastNames = switch (_region) do {
         ["Traoré","Diallo","Keita","Touré","Cissé","Konaté","Sangaré","Coulibaly","Dembélé","Diop","Ba","Sow","Camara","Sy","Kane","Ndiaye","Fall","Gueye","Diarra","Fofana"]
     };
     case "RUSSIA": {
-        ["Ivanov","Petrov","Sidorov","Smirnov","Kuznetsov","Popov","Vasiliev","Sokolov","Mikhailov","Novikov","Fedorov","Morozov","Volkov","Alekseev","Lebedev","Semenov","Egorov","Pavlov","Kozlov","Stepanov","Nikolaev","Orlov","Andreev","Makarov","Nikitin"]
+        ["Ivanov","Petrov","Sidorov","Smirnov","Kuznetsov","Popov","Vasiliev","Sokolov","Mikhailov","Novikov","Fedorov","Morozov","Volkov","Alekseev","Lebedev","Semenov","Egorov","Pavlov","Kozlov","Stepanov","Nikolaev","Orlov","Andreev","Makarov","Nikitin","Volkova","Sokolova","Ivanova","Petrova","Kuznetsova","Morozova","Novikova","Lebedeva","Fedorova","Romanova"]
     };
     default {
         ["Haddad","Mansour","Petrov","Ivanov","Kowalski","Novak","Horvat","Popescu","Dimitrov","Rossi","Garcia","Silva","Smith","Brown","Miller"]
@@ -48,7 +48,7 @@ private _lastNames = switch (_region) do {
 
 private _aliases = switch (_region) do {
     case "RUSSIA": {
-        ["SOKOL","BERKUT","TIGR","VOLGA","ORYOL","NAVIGATOR","RADIST","SKLAD","KURIER","SHUM","ZARYA","MOST","TUMAN","BPLA","KANAL"]
+        ["SOKOL","BERKUT","TIGR","VOLGA","ORYOL","NAVIGATOR","RADIST","SKLAD","KURIER","SHUM","ZARYA","MOST","TUMAN","BPLA","KANAL","SEVER","KOMANDIR","SHTAB","MEKHANIK","PILOT","KAMERA","INZHENER","SVYAZ","BAGAZH","OKNO"]
     };
     default {
         ["ABU HAMZA","ABU YASSIN","ABU MARIAM","ABU ZAYD","ABU BAKR","AL FARIQ","AL SAQR","THE COURIER","SHADOW","RAVEN","HUNTER","GHOST","FALCON","THE DRIVER","WAREHOUSE","ENGINEER","THE ACCOUNTANT","NIGHT OWL","SANDMAN","BROTHER 7"]
@@ -60,7 +60,7 @@ private _nats = switch (_region) do {
     case "SYRIA": { ["Syrienne","Irakienne","Libanaise","Inconnue"] };
     case "LEVANT": { ["Libanaise","Syrienne","Jordanienne","Palestinienne","Inconnue"] };
     case "AFRICA_SAHEL": { ["Malienne","Nigérienne","Burkinabè","Mauritanienne","Inconnue"] };
-    case "RUSSIA": { ["Russe","Biélorusse","Inconnue","Locale"] };
+    case "RUSSIA": { ["Russe","Biélorusse","Ukrainienne","Kazakh","Inconnue","Locale"] };
     default { ["Irakienne","Syrienne","Libanaise","Jordanienne","Inconnue","Locale"] };
 };
 
@@ -79,17 +79,31 @@ private _phonePrefixes = switch (_region) do {
     default { ["+964 750", "+963 944", "+961 3"] };
 };
 
-private _roles = createHashMapFromArray [
-    ["CIVILIAN", ["Commerçant","Ouvrier","Chauffeur","Étudiant","Agriculteur","Mécanicien","Épicier","Taxi","Instituteur","Infirmier"]],
-    ["INSURGENT", ["Combattant","Recruteur","Observateur","Armurier","Guetteur","Poseur IED","Chef d'équipe","Propagandiste"]],
-    ["MILITARY", ["Soldat","Sergent","Officier","Tireur","Radiotélégraphiste","Conducteur","Médecin de combat"]],
-    ["COMMANDER", ["Chef de cellule","Commandant local","Coordinateur","Émir de secteur","Responsable opérationnel"]],
-    ["COURIER", ["Courrier","Passeur","Transporteur","Messager","Relais frontière"]],
-    ["FINANCIER", ["Collecteur de fonds","Comptable","Intermédiaire","Changeur","Responsable caisses"]],
-    ["TECHNICIAN", ["Technicien radio","Spécialiste IED","Informaticien","Réparateur téléphones","Opérateur drone"]],
-    ["INTELLIGENCE", ["Collecteur HUMINT","Analyste","Indicateur","Observateur d'objectifs","Contre-surveillance"]],
-    ["LOGISTICS", ["Logisticien","Magasinier","Conducteur logistique","Gestionnaire dépôt","Approvisionneur"]]
-];
+private _roles = if (_region == "RUSSIA") then {
+    createHashMapFromArray [
+        ["CIVILIAN", ["Commerçant","Ouvrier","Chauffeur","Étudiant","Mécanicien","Électricien","Infirmier","Enseignant","Magasinier","Technicien"]],
+        ["INSURGENT", ["Combattant","Observateur","Armurier","Guetteur","Chef d'équipe","Opérateur radio","Recruteur"]],
+        ["MILITARY", ["Soldat","Sergent","Officier","Tireur","Radiotélégraphiste","Conducteur","Médecin de combat","Sapeur","Artilleur","Opérateur drone"]],
+        ["COMMANDER", ["Chef de cellule","Commandant local","Coordinateur","Responsable opérationnel","Officier d'état-major"]],
+        ["COURIER", ["Courrier","Passeur","Transporteur","Messager","Relais logistique"]],
+        ["FINANCIER", ["Collecteur de fonds","Comptable","Intermédiaire","Changeur","Responsable caisses"]],
+        ["TECHNICIAN", ["Technicien radio","Spécialiste EW","Informaticien","Réparateur téléphones","Opérateur drone","Technicien BPLA"]],
+        ["INTELLIGENCE", ["Collecteur HUMINT","Analyste","Indicateur","Observateur d'objectifs","Contre-surveillance","Officier renseignement"]],
+        ["LOGISTICS", ["Logisticien","Magasinier","Conducteur logistique","Gestionnaire dépôt","Approvisionneur","Chef de convoi"]]
+    ]
+} else {
+    createHashMapFromArray [
+        ["CIVILIAN", ["Commerçant","Ouvrier","Chauffeur","Étudiant","Agriculteur","Mécanicien","Épicier","Taxi","Instituteur","Infirmier"]],
+        ["INSURGENT", ["Combattant","Recruteur","Observateur","Armurier","Guetteur","Poseur IED","Chef d'équipe","Propagandiste"]],
+        ["MILITARY", ["Soldat","Sergent","Officier","Tireur","Radiotélégraphiste","Conducteur","Médecin de combat"]],
+        ["COMMANDER", ["Chef de cellule","Commandant local","Coordinateur","Émir de secteur","Responsable opérationnel"]],
+        ["COURIER", ["Courrier","Passeur","Transporteur","Messager","Relais frontière"]],
+        ["FINANCIER", ["Collecteur de fonds","Comptable","Intermédiaire","Changeur","Responsable caisses"]],
+        ["TECHNICIAN", ["Technicien radio","Spécialiste IED","Informaticien","Réparateur téléphones","Opérateur drone"]],
+        ["INTELLIGENCE", ["Collecteur HUMINT","Analyste","Indicateur","Observateur d'objectifs","Contre-surveillance"]],
+        ["LOGISTICS", ["Logisticien","Magasinier","Conducteur logistique","Gestionnaire dépôt","Approvisionneur"]]
+    ]
+};
 
 private _noiseSms = switch (_region) do {
     case "RUSSIA": {
@@ -103,7 +117,10 @@ private _noiseSms = switch (_region) do {
             "OK.",
             "Bonne nuit.",
             "Le frigo est en panne.",
-            "Prix de l'essence encore monté."
+            "Prix de l'essence encore monté.",
+            "Le train pour Moscou est à l'heure.",
+            "Code d'entrée changé — vois le canal.",
+            "Livraison reportée à demain."
         ]
     };
     default {
@@ -150,9 +167,11 @@ private _phoneModels = [
     "Android cracké","iPhone d'occasion","Nokia basique","Téléphone dual-SIM"
 ];
 
-private _apps = [
-    "Messages","Contacts","Maps","Notes","WhatsApp","Telegram","Gallery","Calculator","Chrome","Files","Recorder","Clock"
-];
+private _apps = if (_region == "RUSSIA") then {
+    ["Messages","Contacts","Maps","Notes","Telegram","WhatsApp","VK","Gallery","Calculator","Chrome","Files","Recorder","Clock","Max"]
+} else {
+    ["Messages","Contacts","Maps","Notes","WhatsApp","Telegram","Gallery","Calculator","Chrome","Files","Recorder","Clock"]
+};
 
 private _vehicleTypes = switch (_region) do {
     case "RUSSIA": { ["camionnette","camion bâché","berline usée","camion citerne","utilitaire blanc","4x4 militaire usagé"] };

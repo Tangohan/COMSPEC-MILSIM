@@ -97,92 +97,58 @@ $editValidTabIds = implode(',', array_map(
     $editNavFlat
 ));
 ?>
-<div class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/80 pb-16">
-  <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8" x-data="{ tab: '<?= htmlspecialchars($editDefaultTab, ENT_QUOTES, 'UTF-8') ?>' }" x-init="const h = window.location.hash.slice(1); if ([<?= $editValidTabIds ?>].includes(h)) { tab = h }">
-    <header class="mb-8 flex flex-col gap-4 border-b border-slate-200/80 pb-8 lg:flex-row lg:items-end lg:justify-between">
+<div class="pd-page" x-data="{ tab: '<?= htmlspecialchars($editDefaultTab, ENT_QUOTES, 'UTF-8') ?>' }" x-init="const h = window.location.hash.slice(1); if ([<?= $editValidTabIds ?>].includes(h)) { tab = h }; $watch('tab', v => { if (v) history.replaceState(null, '', '#' + v) })">
+  <div class="pd-container">
+    <header class="pd-header">
       <div>
-        <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700">Dossier opérationnel</p>
-        <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900">Éditer le dossier</h1>
-        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Chaque bloc a un rôle distinct : préférences de compte, personnage (en mission), puis unité, habilitation et affichage sur le forum.</p>
+        <p class="pd-header__eyebrow">Dossier personnel</p>
+        <h1 class="pd-header__title">Éditer le dossier<?= trim((string) ($targetUser['display_name'] ?? '')) !== '' ? ' — ' . htmlspecialchars(trim((string) $targetUser['display_name']), ENT_QUOTES, 'UTF-8') : '' ?></h1>
+        <p class="pd-header__sub">Identité, affectation, immersion et affichage — un onglet à la fois, comme un tableau de bord administratif.</p>
       </div>
-      <div class="flex flex-wrap gap-3">
-        <a href="<?= $isMe ? url('personnel/me') : url('personnel/' . (int) $targetUser['id']) ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:border-slate-300">← Fiche</a>
-        <a href="<?= url('account/preferences') ?>" class="inline-flex items-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-900 hover:bg-indigo-100">Préférences compte</a>
-        <a href="<?= url('account/portrait') ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Portrait / médias</a>
-        <a href="<?= htmlspecialchars(url('personnel/tutorials')) ?>" class="inline-flex items-center rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-2.5 text-sm font-semibold text-emerald-900 hover:bg-emerald-100">Tutoriels &amp; presets</a>
+      <div class="pd-header__actions">
+        <a href="<?= $isMe ? url('personnel/me') : url('personnel/' . (int) $targetUser['id']) ?>" class="pd-btn">← Fiche</a>
+        <a href="<?= url('account/preferences') ?>" class="pd-btn">Préférences</a>
+        <a href="<?= url('account/portrait') ?>" class="pd-btn">Portrait</a>
+        <a href="<?= htmlspecialchars(url('personnel/tutorials')) ?>" class="pd-btn">Tutoriels</a>
       </div>
     </header>
 
     <?php $success = \App\Core\Session::getFlash('success'); if ($success): ?>
-    <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900"><?= htmlspecialchars($success) ?></div>
+    <div class="pd-alert pd-alert--ok" role="status"><?= htmlspecialchars($success) ?></div>
     <?php endif; ?>
     <?php $error = \App\Core\Session::getFlash('error'); if ($error): ?>
-    <div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900"><?= htmlspecialchars($error) ?></div>
+    <div class="pd-alert pd-alert--err" role="alert"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    <div class="mb-8 overflow-hidden rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-white p-5 shadow-sm">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p class="text-[10px] font-black uppercase tracking-widest text-amber-900/80">Complétude du dossier</p>
-          <p class="mt-1 text-2xl font-black text-slate-900"><?= $score ?>%</p>
-          <?php if (!empty($missingLabels)): ?>
-          <p class="mt-2 text-xs leading-relaxed text-amber-950/90"><span class="font-bold">À compléter :</span> <?= htmlspecialchars(implode(' · ', array_slice($missingLabels, 0, 8))) ?><?= count($missingLabels) > 8 ? '…' : '' ?></p>
-          <?php endif; ?>
-        </div>
-        <div class="h-2.5 w-full max-w-xs overflow-hidden rounded-full bg-amber-100 sm:mt-0">
-          <div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-emerald-600 transition-all" style="width: <?= min(100, max(0, $score)) ?>%"></div>
-        </div>
+    <div class="pd-progress" role="group" aria-label="Complétude du dossier">
+      <div class="pd-progress__meta">
+        <p class="pd-progress__label">Complétude</p>
+        <p class="pd-progress__value"><?= $score ?>%</p>
+        <?php if (!empty($missingLabels)): ?>
+        <p class="pd-progress__hint"><strong>À compléter :</strong> <?= htmlspecialchars(implode(' · ', array_slice($missingLabels, 0, 8))) ?><?= count($missingLabels) > 8 ? '…' : '' ?></p>
+        <?php endif; ?>
       </div>
+      <div class="pd-progress__bar" aria-hidden="true"><span style="width: <?= min(100, max(0, $score)) ?>%"></span></div>
     </div>
 
-    <?php
-    $navLinkClass = 'block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900';
-    $navLinkActiveClass = 'bg-emerald-50 text-emerald-900';
-    $navPillClass = 'shrink-0 snap-start rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50';
-    $navPillActiveClass = 'border-emerald-300 bg-emerald-600 text-white hover:border-emerald-300 hover:bg-emerald-600';
-    ?>
-    <nav class="mb-8 lg:hidden" aria-label="Sommaire du formulaire">
-      <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Onglets</p>
-      <div class="-mx-1 flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory px-1">
+    <div class="pd-card">
+      <nav class="pd-tabs" aria-label="Sections du dossier">
         <?php foreach ($editNavFlat as $ni): ?>
-          <button type="button" @click="tab = '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>'" :class="tab === '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>' ? '<?= $navPillActiveClass ?>' : ''" class="<?= $navPillClass ?>"><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?></button>
+        <button
+          type="button"
+          class="pd-tabs__btn"
+          :class="tab === '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>' ? 'is-active' : ''"
+          @click="tab = '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>'"
+        ><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?></button>
         <?php endforeach; ?>
-      </div>
-    </nav>
+      </nav>
 
-    <div class="lg:grid lg:grid-cols-[minmax(0,14.5rem)_1fr] lg:items-start lg:gap-10 xl:gap-12">
-      <aside class="hidden lg:block" aria-label="Navigation du formulaire">
-        <div class="sticky top-24 space-y-3">
-          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Onglets</p>
-          <nav class="space-y-4 rounded-2xl border border-slate-200/90 bg-white p-3 shadow-sm ring-1 ring-slate-900/[0.03]" aria-label="Sections">
-            <?php foreach ($editNavGroups as $grp): ?>
-              <?php
-              $visibleItems = array_values(array_filter($grp['items'], static fn ($ni) => !empty($ni['show'])));
-              if ($visibleItems === []) {
-                  continue;
-              }
-              ?>
-              <div>
-                <p class="mb-1 px-3 text-[9px] font-black uppercase tracking-[0.18em] text-slate-400"><?= htmlspecialchars($grp['title'], ENT_QUOTES, 'UTF-8') ?></p>
-                <?php foreach ($visibleItems as $ni): ?>
-                <button type="button" @click="tab = '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>'" :class="tab === '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>' ? '<?= $navLinkActiveClass ?>' : ''" class="<?= $navLinkClass ?>"><?= $ni['label'] ?></button>
-                <?php endforeach; ?>
-              </div>
-            <?php endforeach; ?>
-          </nav>
-        </div>
-      </aside>
-
-      <div class="min-w-0 space-y-10">
-    <form method="post" action="<?= htmlspecialchars($formAction) ?>" class="space-y-10">
+      <form method="post" action="<?= htmlspecialchars($formAction) ?>">
         <?= \App\Core\Csrf::field() ?>
+        <div class="pd-card__body">
 
         <?php if ($isMe): ?>
-        <div class="space-y-6" x-cloak x-show="tab === 'edit-compte'">
-          <div class="px-1">
-            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-indigo-700">1 · Compte</p>
-            <p class="mt-1 text-sm text-slate-600">Réglages du compte — distincts du personnage.</p>
-          </div>
+        <div x-cloak x-show="tab === 'edit-compte'">
         <section id="edit-compte" class="scroll-mt-24 overflow-hidden rounded-2xl border border-indigo-200/80 bg-white shadow-sm ring-1 ring-indigo-900/[0.06]">
           <div class="border-b border-indigo-100 bg-indigo-50/80 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-indigo-950">Compte &amp; interface</h2>
@@ -228,11 +194,7 @@ $editValidTabIds = implode(',', array_map(
         </div>
         <?php endif; ?>
 
-        <div class="space-y-6" x-cloak x-show="tab === 'edit-identite-rp'">
-          <div class="px-1">
-            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700"><?= $isMe ? '2' : '1' ?> · En mission</p>
-            <p class="mt-1 text-sm text-slate-600">Identité du personnage — ce que les autres voient en opération et sur la fiche.</p>
-          </div>
+        <div x-cloak x-show="tab === 'edit-identite-rp'">
         <section id="edit-identite-rp" class="scroll-mt-24 overflow-hidden rounded-2xl border border-emerald-200/80 bg-white shadow-sm ring-1 ring-emerald-900/[0.06]">
           <div class="border-b border-emerald-100 bg-emerald-50/70 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-emerald-950">Personnage (identité RP)</h2>
@@ -374,11 +336,7 @@ $editValidTabIds = implode(',', array_map(
         </section>
         </div>
 
-        <div class="space-y-6" x-cloak x-show="['edit-orbat','edit-habilitation','edit-suivi-immersion'].includes(tab)">
-          <div class="px-1">
-            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-700"><?= $isMe ? '3' : '2' ?> · Affectation</p>
-            <p class="mt-1 text-sm text-slate-600">Unité, rôle dans l’organigramme, habilitation et suivi.</p>
-          </div>
+        <div x-cloak x-show="['edit-orbat','edit-habilitation','edit-suivi-immersion'].includes(tab)">
         <section id="edit-orbat" x-show="tab === 'edit-orbat'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
           <div class="border-b border-cyan-100 bg-cyan-50/70 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-cyan-950">Unité &amp; rôle</h2>
@@ -726,11 +684,7 @@ $editValidTabIds = implode(',', array_map(
         <?php endif; ?>
         </div>
 
-        <div class="space-y-6" x-cloak x-show="['forum-community-settings','edit-equipement','edit-notes'].includes(tab)">
-          <div class="px-1">
-            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-violet-700"><?= $isMe ? '4' : '3' ?> · Affichage &amp; suite</p>
-            <p class="mt-1 text-sm text-slate-600">Ce que les autres voient sur le forum et la fiche, équipement et notes.</p>
-          </div>
+        <div x-cloak x-show="['forum-community-settings','edit-equipement','edit-notes'].includes(tab)">
         <section id="forum-community-settings" x-show="tab === 'forum-community-settings'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-violet-200/80 bg-white shadow-sm ring-1 ring-violet-900/[0.06]">
           <div class="border-b border-violet-100 bg-violet-50/60 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-violet-950">Forum &amp; fiche</h2>
@@ -897,25 +851,26 @@ $editValidTabIds = implode(',', array_map(
         </section>
         </div>
 
-        <div class="flex flex-wrap gap-4 pt-2">
-          <button type="submit" class="inline-flex min-w-[160px] items-center justify-center rounded-xl bg-slate-900 px-8 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-slate-900/15 transition hover:bg-emerald-600">Enregistrer</button>
-          <a href="<?= $isMe ? url('personnel/me') : url('personnel/' . (int) $targetUser['id']) ?>" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Annuler</a>
+        </div>
+
+        <div class="pd-card__foot">
+          <button type="submit" class="pd-btn pd-btn--primary">Enregistrer</button>
+          <a href="<?= $isMe ? url('personnel/me') : url('personnel/' . (int) $targetUser['id']) ?>" class="pd-btn">Annuler</a>
         </div>
     </form>
+    </div>
 
     <?php if (!$matriculeDisplay): ?>
-    <div class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-200/80 bg-emerald-50/50 px-5 py-4">
-      <p class="text-sm text-emerald-950"><strong>Matricule interne</strong> — attribue un identifiant unique au dossier (organigramme, courriers, forum).</p>
-      <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/generate-matricule')) ?>" class="flex shrink-0 items-center gap-2">
+    <div class="pd-matricule">
+      <p><strong>Matricule interne</strong> — attribue un identifiant unique au dossier (organigramme, courriers, forum).</p>
+      <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/generate-matricule')) ?>">
         <?= \App\Core\Csrf::field() ?>
         <input type="hidden" name="return_to" value="edit">
-        <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-800">Générer un matricule</button>
+        <button type="submit" class="pd-btn pd-btn--primary">Générer un matricule</button>
       </form>
     </div>
     <?php endif; ?>
 
-      </div>
-    </div>
   </div>
 </div>
 <?php if (!empty($dossierPresets)): ?>

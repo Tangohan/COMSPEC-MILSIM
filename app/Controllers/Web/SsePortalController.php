@@ -28,6 +28,7 @@ use App\Services\Sse\SseAnalyticalEngineService;
 use App\Services\Sse\SseCompletenessService;
 use App\Services\Sse\SseContextualMentionService;
 use App\Services\Sse\SseAccessCodeService;
+use App\Services\Sse\SseCaseBundleService;
 use App\Services\Sse\SseCasePdfService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseCorrelationService;
@@ -72,6 +73,7 @@ final class SsePortalController
         private ?SseSuggestionQueueRepository $suggestions = null,
         private ?SseAnalyticalEngineService $engine = null,
         private ?SseCompletenessService $completeness = null,
+        private ?SseCaseBundleService $caseBundles = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -109,6 +111,7 @@ final class SsePortalController
         $this->suggestions ??= new SseSuggestionQueueRepository();
         $this->engine ??= new SseAnalyticalEngineService();
         $this->completeness ??= new SseCompletenessService();
+        $this->caseBundles ??= new SseCaseBundleService($this->cases, $this->persons, $this->sites);
     }
 
     /** Sas d’entrée (public) */
@@ -722,6 +725,143 @@ final class SsePortalController
         return Response::redirect(url('atak/sse/dossiers/' . $id));
     }
 
+    /** Formulaire d’import d’un scénario / pack dossier (mode gestion). */
+    public function caseImportForm(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage()) {
+            Session::flash('error', 'Action réservée à la gestion des dossiers.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $example = $this->caseBundles->exampleSkeleton();
+        $exampleJson = json_encode($example, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '{}';
+
+        return $this->portalView('atak.sse.case_import', [
+            'title' => 'Importer un scénario',
+            'exampleJson' => $exampleJson,
+            'canManage' => true,
+            'activeNav' => 'dossiers',
+        ]);
+    }
+
+    /** Importe un pack (fichier ou texte collé) et crée le dossier + contenus. */
+    public function caseImportStore(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $raw = '';
+        $file = $_FILES['bundle_file'] ?? null;
+        if (is_array($file) && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+            $tmp = (string) ($file['tmp_name'] ?? '');
+            if ($tmp !== '' && is_uploaded_file($tmp)) {
+                $raw = (string) file_get_contents($tmp);
+            }
+        }
+        if ($raw === '') {
+            $raw = (string) $request->input('bundle_text', '');
+        }
+
+        $parsed = $this->caseBundles->parseJson($raw);
+        if (!$parsed['ok'] || !isset($parsed['bundle'])) {
+            Session::flash('error', implode(' ', $parsed['errors']));
+
+            return Response::redirect(url('atak/sse/dossiers/importer'));
+        }
+
+        $submitter = (string) (Session::get('callsign') ?? Session::get('display_name') ?? 'Bureau');
+        $result = $this->caseBundles->import(
+            $parsed['bundle'],
+            $this->tenantId(),
+            (int) Session::get('user_id') ?: null,
+            $submitter !== '' ? $submitter : 'Bureau'
+        );
+        if (!$result['ok'] || empty($result['case_id'])) {
+            Session::flash('error', implode(' ', $result['errors'] ?: ['Import impossible.']));
+
+            return Response::redirect(url('atak/sse/dossiers/importer'));
+        }
+
+        $counts = $result['counts'] ?? [];
+        $bits = [];
+        if (!empty($counts['persons'])) {
+            $bits[] = (int) $counts['persons'] . ' identité(s)';
+        }
+        if (!empty($counts['sites'])) {
+            $bits[] = (int) $counts['sites'] . ' site(s)';
+        }
+        if (!empty($counts['evidence'])) {
+            $bits[] = (int) $counts['evidence'] . ' pièce(s)';
+        }
+        $detail = $bits !== [] ? (' (' . implode(', ', $bits) . ')') : '';
+        Session::flash('success', 'Scénario importé : dossier créé' . $detail . '.');
+
+        return Response::redirect(url('atak/sse/dossiers/' . (int) $result['case_id']));
+    }
+
+    /**
+     * Emport administratif : pack Athena (json), pack Arma (json) ou script terrain (sqf).
+     */
+    public function caseExportBundle(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canExport() && !$this->canManage()) {
+            Session::flash('error', 'Export non autorisé pour cette session.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id));
+        }
+        $case = $this->requireCase($id);
+        if ($case === null || !empty($case['is_folder'])) {
+            Session::flash('error', 'Dossier introuvable.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+        if ($this->caseNeedsUnlock($case)) {
+            return Response::redirect(url('atak/sse/dossiers/' . $id . '/deverrouiller'));
+        }
+
+        $bundle = $this->caseBundles->exportCase($id, $this->tenantId());
+        if ($bundle === null) {
+            Session::flash('error', 'Impossible d’exporter ce dossier.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id));
+        }
+
+        $format = strtolower(trim((string) $request->query('format', 'athena')));
+        $slug = preg_replace('/[^a-z0-9_\-]+/i', '_', (string) ($case['reference_code'] ?? 'dossier')) ?: 'dossier';
+
+        if ($format === 'sqf' || $format === 'arma') {
+            $arma = $this->caseBundles->toArmaPack($bundle);
+            if ($format === 'sqf') {
+                $response = new Response();
+
+                return $response
+                    ->header('Content-Type', 'text/plain; charset=utf-8')
+                    ->header('Content-Disposition', 'attachment; filename="sse_pack_' . $slug . '.sqf"')
+                    ->setBody($arma['sqf']);
+            }
+            $json = json_encode($arma['json'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '{}';
+            $response = new Response();
+
+            return $response
+                ->header('Content-Type', 'application/json; charset=utf-8')
+                ->header('Content-Disposition', 'attachment; filename="sse_pack_arma_' . $slug . '.json"')
+                ->setBody($json);
+        }
+
+        $json = json_encode($bundle, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '{}';
+        $response = new Response();
+
+        return $response
+            ->header('Content-Type', 'application/json; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="sse_dossier_' . $slug . '.json"')
+            ->setBody($json);
+    }
+
     /** Crée un dossier / sous-dossier depuis le rail latéral. */
     public function folderStore(Request $request, array $params = []): Response
     {
@@ -1185,22 +1325,49 @@ final class SsePortalController
 
         $links = $this->cases->listLinkedPersonIds($id, $this->tenantId());
         $people = [];
+        $linkedIds = [];
         foreach ($links as $link) {
-            $p = $this->persons->findById((int) $link['person_id'], $this->tenantId());
+            $pid = (int) ($link['person_id'] ?? 0);
+            if ($pid > 0) {
+                $linkedIds[] = $pid;
+            }
+            $p = $this->persons->findById($pid, $this->tenantId());
             if ($p) {
                 $people[] = $p;
             }
         }
         $available = $this->persons->listForContext($this->tenantId(), 1, ['limit' => 100]);
+        $armaInbox = $this->persons->listArmaInbox($this->tenantId(), 0, $linkedIds, 40);
 
         $people = $this->clearance->redactPeopleForScreens($people, $this->tenantId(), $id);
         $available = $this->clearance->redactPeopleForScreens($available, $this->tenantId(), $id);
+        $armaInbox = $this->clearance->redactPeopleForScreens($armaInbox, $this->tenantId(), $id);
 
         $caseSites = $this->sites->listForCase($id, $this->tenantId());
         $siteCounts = $this->sites->countsForSites(
             array_map(static fn (array $s): int => (int) ($s['id'] ?? 0), $caseSites),
             $this->tenantId()
         );
+        $armaSeizures = [];
+        foreach ($caseSites as $site) {
+            $sid = (int) ($site['id'] ?? 0);
+            if ($sid < 1) {
+                continue;
+            }
+            foreach ($this->sites->listSeizures($sid, $this->tenantId()) as $sz) {
+                $armaSeizures[] = [
+                    'id' => (int) ($sz['id'] ?? 0),
+                    'site_id' => $sid,
+                    'site_name' => (string) ($site['name'] ?? $site['reference_code'] ?? 'Site'),
+                    'label' => (string) ($sz['label'] ?? 'Saisie'),
+                    'category' => (string) ($sz['category'] ?? ''),
+                    'quantity' => (int) ($sz['quantity'] ?? 1),
+                    'notes' => (string) ($sz['notes'] ?? ''),
+                ];
+            }
+        }
+
+        $casePresets = $this->loadCasePresets();
 
         $notes = $this->cases->listNotes($id, $this->tenantId());
         $evidence = $this->cases->listEvidence($id, $this->tenantId());
@@ -1234,6 +1401,9 @@ final class SsePortalController
             'case' => $case,
             'people' => $people,
             'availablePeople' => $available,
+            'armaInbox' => $armaInbox,
+            'armaSeizures' => $armaSeizures,
+            'casePresets' => $casePresets,
             'caseSites' => $caseSites,
             'siteCounts' => $siteCounts,
             'notes' => $notes,
@@ -1456,8 +1626,131 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id));
         }
-        $this->cases->linkPerson($id, $personId, $this->tenantId(), (int) Session::get('user_id') ?: null);
+        $note = trim((string) $request->input('link_note', ''));
+        $this->cases->linkPerson(
+            $id,
+            $personId,
+            $this->tenantId(),
+            (int) Session::get('user_id') ?: null,
+            $note !== '' ? $note : 'Rattachement depuis le dossier'
+        );
         Session::flash('success', 'Personne rattachée au dossier.');
+
+        return Response::redirect(url('atak/sse/dossiers/' . $id));
+    }
+
+    public function caseCreatePerson(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id));
+        }
+        if ($this->requireCase($id) === null) {
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $last = trim((string) $request->input('last_name', ''));
+        $first = trim((string) $request->input('first_name', ''));
+        $alias = trim((string) $request->input('alias', ''));
+        if ($last === '' && $first === '' && $alias === '') {
+            Session::flash('error', 'Indiquez au moins un nom, un prénom ou un alias.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id));
+        }
+
+        $personId = $this->persons->create([
+            'tenant_id' => $this->tenantId(),
+            'context_id' => 1,
+            'status' => (string) $request->input('status', 'civil'),
+            'last_name' => $last,
+            'first_name' => $first,
+            'alias' => $alias,
+            'nationality' => trim((string) $request->input('nationality', '')),
+            'circumstances' => trim((string) $request->input('circumstances', '')),
+            'affiliation' => trim((string) $request->input('affiliation', '')),
+            'submitter_callsign' => (string) (Session::get('callsign') ?? Session::get('display_name') ?? 'Bureau'),
+            'submitter_user_id' => (int) Session::get('user_id') ?: null,
+        ]);
+
+        $this->cases->linkPerson(
+            $id,
+            $personId,
+            $this->tenantId(),
+            (int) Session::get('user_id') ?: null,
+            'Création depuis le dossier'
+        );
+        Session::flash('success', 'Identité créée et rattachée au dossier.');
+
+        return Response::redirect(url('atak/sse/dossiers/' . $id));
+    }
+
+    public function caseImportSeizure(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id));
+        }
+        if ($this->requireCase($id) === null) {
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $seizureId = (int) $request->input('seizure_id', 0);
+        $siteId = (int) $request->input('site_id', 0);
+        if ($seizureId < 1 || $siteId < 1) {
+            Session::flash('error', 'Saisie terrain introuvable.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id));
+        }
+
+        $caseSites = $this->sites->listForCase($id, $this->tenantId());
+        $allowed = false;
+        $siteName = 'Site';
+        foreach ($caseSites as $s) {
+            if ((int) ($s['id'] ?? 0) === $siteId) {
+                $allowed = true;
+                $siteName = (string) ($s['name'] ?? $s['reference_code'] ?? 'Site');
+                break;
+            }
+        }
+        if (!$allowed) {
+            Session::flash('error', 'Cette saisie n’appartient pas à un site de ce dossier.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id));
+        }
+
+        $seizure = null;
+        foreach ($this->sites->listSeizures($siteId, $this->tenantId()) as $sz) {
+            if ((int) ($sz['id'] ?? 0) === $seizureId) {
+                $seizure = $sz;
+                break;
+            }
+        }
+        if ($seizure === null) {
+            Session::flash('error', 'Saisie introuvable.');
+
+            return Response::redirect(url('atak/sse/dossiers/' . $id));
+        }
+
+        $label = trim((string) ($seizure['label'] ?? 'Saisie terrain'));
+        $qty = (int) ($seizure['quantity'] ?? 1);
+        $notes = trim((string) ($seizure['notes'] ?? ''));
+        $caption = trim(implode(' · ', array_filter([
+            'Remontée Arma / site ' . $siteName,
+            $qty > 1 ? ('Quantité ' . $qty) : '',
+            $notes,
+        ])));
+
+        $this->cases->addEvidence($id, $this->tenantId(), [
+            'label' => $label !== '' ? $label : 'Saisie terrain',
+            'caption' => $caption,
+            'image_path' => null,
+            'author_label' => (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Terrain'),
+        ]);
+        Session::flash('success', 'Saisie terrain versée au dossier.');
 
         return Response::redirect(url('atak/sse/dossiers/' . $id));
     }
@@ -1552,7 +1845,7 @@ final class SsePortalController
         }
 
         $tenantId = $this->tenantId();
-        $level = $this->clearance->maxLevel();
+        [$level, $requested, $refused] = $this->resolveExportLevel($request);
 
         // Un PDF sort du portail et circule ensuite tout seul : c'est le support
         // sur lequel un caviardage manquant coûte le plus cher, puisqu'on ne peut
@@ -1562,9 +1855,12 @@ final class SsePortalController
             1,
             'SSE_CLEARANCE',
             sprintf(
-                'Export PDF complet du dossier %s en « %s ».',
+                'Export PDF complet du dossier %s en « %s »%s.',
                 (string) ($case['reference_code'] ?? $id),
-                SseRedactionService::levelLabel($level)
+                SseRedactionService::levelLabel($level),
+                $refused
+                    ? ' (demande « ' . SseRedactionService::levelLabel($requested) . ' » rabattue)'
+                    : ''
             ),
             (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
         );
@@ -1842,6 +2138,73 @@ final class SsePortalController
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),
             'activeNav' => 'dossiers',
+        ]);
+    }
+
+    /**
+     * Page d’ouverture du QR « sceau poste de travail » (chemise de dossier).
+     * Accessible sans session SSE : le jeton porte le tenant et le dossier.
+     */
+    public function sealShow(Request $request, array $params = []): Response
+    {
+        $token = rawurldecode((string) ($params['token'] ?? ''));
+        $parsed = \App\Services\Sse\SseSealTokenService::fromEnv()->parse($token);
+        if ($parsed === null) {
+            return Response::view('atak.sse.seal_show', [
+                'title' => 'Sceau poste de travail',
+                'valid' => false,
+                'message' => 'Ce sceau est inconnu ou a été altéré.',
+                'case' => null,
+                'workstation' => null,
+                'match' => false,
+                'canOpen' => false,
+                'caseUrl' => null,
+            ]);
+        }
+
+        $case = $this->cases->findById($parsed['case_id'], $parsed['tenant_id']);
+        if ($case === null) {
+            return Response::view('atak.sse.seal_show', [
+                'title' => 'Sceau poste de travail',
+                'valid' => false,
+                'message' => 'Le dossier lié à ce sceau est introuvable.',
+                'case' => null,
+                'workstation' => null,
+                'match' => false,
+                'canOpen' => false,
+                'caseUrl' => null,
+            ]);
+        }
+
+        $unit = (string) (Session::get('tenant_name') ?? Session::get('community_name') ?? 'Unité Athena');
+        $marks = \App\Support\SseDocumentMarkings::forDocument([
+            'id' => (int) ($case['id'] ?? 0),
+            'reference_code' => (string) ($case['reference_code'] ?? ''),
+            'title' => (string) ($case['title'] ?? ''),
+            'body' => (string) ($case['summary'] ?? ''),
+            'classification' => (string) ($case['classification'] ?? ''),
+            'created_at' => (string) ($case['created_at'] ?? ''),
+            'updated_at' => (string) ($case['updated_at'] ?? ''),
+        ], $unit);
+        $ws = is_array($marks['workstation'] ?? null) ? $marks['workstation'] : [];
+        $match = hash_equals((string) ($ws['fingerprint_raw'] ?? ''), $parsed['fingerprint'])
+            && hash_equals((string) ($ws['id'] ?? ''), $parsed['seal_id']);
+
+        $canOpen = $this->access->hasActiveClearance()
+            && $this->tenantId() === $parsed['tenant_id']
+            && $this->requireCase($parsed['case_id']) !== null;
+
+        return Response::view('atak.sse.seal_show', [
+            'title' => 'Sceau poste de travail — ' . ($case['reference_code'] ?? ''),
+            'valid' => true,
+            'message' => $match
+                ? 'Sceau reconnu : l’empreinte correspond à la chemise actuelle du dossier.'
+                : 'Sceau reconnu, mais l’empreinte ne correspond plus à la synthèse actuelle — le dossier a pu être modifié depuis l’impression.',
+            'case' => $case,
+            'workstation' => $ws,
+            'match' => $match,
+            'canOpen' => $canOpen,
+            'caseUrl' => $canOpen ? url('atak/sse/dossiers/' . $parsed['case_id']) : null,
         ]);
     }
 
@@ -2696,6 +3059,12 @@ final class SsePortalController
         ]);
     }
 
+    public function objectIndex(Request $request, array $params = []): Response
+    {
+        // Ancienne URL /objets sans type → hub plutôt qu’un 404.
+        return Response::redirect(url('atak/sse/operations'));
+    }
+
     public function objectCreateForm(Request $request, array $params = []): Response
     {
         if (!$this->canManage()) {
@@ -2715,18 +3084,20 @@ final class SsePortalController
 
     public function objectStore(Request $request, array $params = []): Response
     {
+        $back = url('atak/sse/objets/nouveau');
         if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
-            Session::flash('error', 'Action non autorisée.');
+            Session::flash('error', 'Action non autorisée. Rechargez la page puis réessayez.');
 
-            return Response::redirect(url('atak/sse/objets/nouveau'));
+            return Response::redirect($back);
         }
         $label = trim((string) $request->input('label', ''));
         if ($label === '') {
             Session::flash('error', 'Indiquez un libellé.');
 
-            return Response::redirect(url('atak/sse/objets/nouveau'));
+            return Response::redirect($back);
         }
         $kind = SseMeshRepository::normalizeKind((string) $request->input('kind', 'custom'));
+        $back .= '?type=' . rawurlencode($kind);
         $metaRaw = $request->input('meta', []);
         $meta = [];
         if (is_array($metaRaw)) {
@@ -2747,7 +3118,7 @@ final class SsePortalController
                     ?? 'L’image jointe n’a pas pu être enregistrée. Utilisez un JPEG, PNG, WebP ou GIF (compressé automatiquement si besoin).'
             );
 
-            return Response::redirect(url('atak/sse/objets/nouveau?type=' . urlencode($kind)));
+            return Response::redirect($back);
         }
         if (is_string($imageUpload['path']) && $imageUpload['path'] !== '') {
             $meta['image_path'] = $imageUpload['path'];
@@ -2765,21 +3136,29 @@ final class SsePortalController
             $detail = mb_substr($detail, 0, 247) . '…';
         }
 
-        $meshId = $this->meshes->create([
-            'tenant_id' => $this->tenantId(),
-            'title' => 'Investigation — ' . $label,
-            'summary' => 'Toile ouverte depuis la création d’objet « ' . $label . ' ».',
-            'classification' => (string) $request->input('classification', 'confidentiel'),
-            'created_by' => (int) Session::get('user_id') ?: null,
-        ]);
-        $this->meshes->addNode($meshId, $this->tenantId(), [
-            'kind' => $kind,
-            'label' => $label,
-            'detail' => $detail,
-            'meta_json' => SseMeshRepository::encodeMetaJson($meta),
-            'pos_x' => 420,
-            'pos_y' => 260,
-        ]);
+        try {
+            $meshId = $this->meshes->create([
+                'tenant_id' => $this->tenantId(),
+                'title' => 'Investigation — ' . $label,
+                'summary' => 'Toile ouverte depuis la création d’objet « ' . $label . ' ».',
+                'classification' => (string) $request->input('classification', 'confidentiel'),
+                'created_by' => (int) Session::get('user_id') ?: null,
+            ]);
+            $this->meshes->addNode($meshId, $this->tenantId(), [
+                'kind' => $kind,
+                'label' => $label,
+                'detail' => $detail,
+                'meta_json' => SseMeshRepository::encodeMetaJson($meta),
+                'pos_x' => 420,
+                'pos_y' => 260,
+            ]);
+        } catch (\Throwable $e) {
+            error_log('SSE objectStore: ' . $e->getMessage());
+            Session::flash('error', 'Impossible de créer l’objet pour le moment. Réessayez dans un instant.');
+
+            return Response::redirect($back);
+        }
+
         $okMsg = 'Objet créé avec ses caractéristiques, placé dans une nouvelle investigation.';
         if (!empty($imageUpload['compressed'])) {
             $okMsg .= ' L’image a été compressée automatiquement pour rester sous 5 Mo.';
@@ -3149,6 +3528,28 @@ final class SsePortalController
      * @param array<string,mixed>|null $case
      * @return list<array<string,mixed>>
      */
+    /**
+     * @return array{
+     *   identity_status: list<array<string,string>>,
+     *   identity_quick: list<array<string,mixed>>,
+     *   evidence: list<array<string,string>>
+     * }
+     */
+    private function loadCasePresets(): array
+    {
+        $path = base_path('config/sse_case_presets.php');
+        $raw = is_file($path) ? require $path : [];
+        if (!is_array($raw)) {
+            $raw = [];
+        }
+
+        return [
+            'identity_status' => is_array($raw['identity_status'] ?? null) ? $raw['identity_status'] : [],
+            'identity_quick' => is_array($raw['identity_quick'] ?? null) ? $raw['identity_quick'] : [],
+            'evidence' => is_array($raw['evidence'] ?? null) ? $raw['evidence'] : [],
+        ];
+    }
+
     private function libraryForEditor(?array $case): array
     {
         $tenantId = $this->tenantId();
@@ -3467,7 +3868,7 @@ final class SsePortalController
         }
 
         $tenantId = $this->tenantId();
-        $level = $this->clearance->maxLevel();
+        [$level, $requested, $refused] = $this->resolveExportLevel($request);
 
         // Lecture à l'écran : pas de fichier qui part circuler, mais la consultation
         // du dossier complet reste un acte à tracer.
@@ -3476,9 +3877,12 @@ final class SsePortalController
             1,
             'SSE_CLEARANCE',
             sprintf(
-                'Lecture à l’écran du dossier complet %s en « %s ».',
+                'Lecture à l’écran du dossier complet %s en « %s »%s.',
                 (string) ($case['reference_code'] ?? $id),
-                SseRedactionService::levelLabel($level)
+                SseRedactionService::levelLabel($level),
+                $refused
+                    ? ' (demande « ' . SseRedactionService::levelLabel($requested) . ' » rabattue)'
+                    : ''
             ),
             (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
         );
@@ -3853,5 +4257,23 @@ final class SsePortalController
         }
 
         return Response::redirect(url('atak/sse/dossiers/' . (int) $case['id'] . '/deverrouiller'));
+    }
+
+    /**
+     * Niveau d’export PDF : `?niveau=` comme sur la déclassification, sinon plafond session.
+     *
+     * @return array{0:string,1:string,2:bool} [servi, demandé, rabattu]
+     */
+    private function resolveExportLevel(Request $request): array
+    {
+        $requested = (string) ($request->query('niveau') ?? '');
+        if ($requested === '' || !isset(SseRedactionService::LEVELS[$requested])) {
+            $max = $this->clearance->maxLevel();
+
+            return [$max, $max, false];
+        }
+        $level = $this->clearance->clamp($requested);
+
+        return [$level, $requested, $requested !== $level];
     }
 }

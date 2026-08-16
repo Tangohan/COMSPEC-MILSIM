@@ -5,6 +5,9 @@ Deux prompts prêts à coller :
 1. **ChatGPT / Claude (contenu)** — produit un pack narratif (JSON + SQF + fiche mission).
 2. **Cursor / agent du dépôt (implémentation)** — intègre le pack dans Athena + `@COMSPEC_SSE`.
 
+Pour un **dossier d’affaire complet** (identités + sites + pièces, import Athena puis Arma), voir plutôt :
+[prompts-dossiers-fictifs-json.md](./prompts-dossiers-fictifs-json.md).
+
 Références code :
 - Schéma web : `app/Repositories/SseArmaModelRepository.php` (profils, régions, thèmes)
 - Catalogue d’ères : `app/Services/Sse/SseArmaModelService.php` → `builtinTemplates()`

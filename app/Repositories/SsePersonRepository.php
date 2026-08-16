@@ -456,6 +456,7 @@ final class SsePersonRepository
             'medical_context' => $this->decodeJsonMap($row['medical_context_json'] ?? null),
             'identity_query' => $this->decodeJsonMap($row['identity_query_json'] ?? null),
             'signature' => $this->hydrateSignature($row),
+            'from_arma' => $this->isArmaSourced($row),
             'created_at' => $row['created_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
         ];
@@ -490,6 +491,62 @@ final class SsePersonRepository
         $decoded = json_decode($raw, true);
 
         return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function isArmaSourced(array $row): bool
+    {
+        foreach (['signed_terminal_uid', 'signed_by_callsign', 'submitter_steam_id', 'target_unit_netid'] as $k) {
+            if (trim((string) ($row[$k] ?? '')) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Fiches remontées du terrain (Arma / terminal) non encore liées à un dossier donné.
+     *
+     * @param list<int> $excludePersonIds
+     * @return list<array<string, mixed>>
+     */
+    public function listArmaInbox(int $tenantId, int $mapId = 1, array $excludePersonIds = [], int $limit = 40): array
+    {
+        $limit = max(1, min(100, $limit));
+        $sql = 'SELECT * FROM sse_persons
+            WHERE tenant_id = :t
+              AND (
+                (signed_terminal_uid IS NOT NULL AND signed_terminal_uid <> \'\')
+                OR (signed_by_callsign IS NOT NULL AND signed_by_callsign <> \'\')
+                OR (submitter_steam_id IS NOT NULL AND submitter_steam_id <> \'\')
+                OR (target_unit_netid IS NOT NULL AND target_unit_netid <> \'\')
+              )';
+        $params = ['t' => $tenantId];
+        if ($mapId > 0) {
+            $sql .= ' AND context_id = :m';
+            $params['m'] = $mapId;
+        }
+        $exclude = array_values(array_filter(array_map('intval', $excludePersonIds), static fn (int $id): bool => $id > 0));
+        if ($exclude !== []) {
+            $placeholders = [];
+            foreach ($exclude as $i => $id) {
+                $key = 'ex' . $i;
+                $placeholders[] = ':' . $key;
+                $params[$key] = $id;
+            }
+            $sql .= ' AND id NOT IN (' . implode(',', $placeholders) . ')';
+        }
+        $sql .= ' ORDER BY id DESC LIMIT ' . $limit;
+        $rows = $this->db->fetchAll($sql, $params);
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = $this->hydrate($row, false);
+        }
+
+        return $out;
     }
 
     /**

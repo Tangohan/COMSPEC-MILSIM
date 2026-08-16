@@ -133,8 +133,8 @@ if (_model getOrDefault ["includeComputer", false]) then {
 
 private _data = [_entity] call comspec_sse_fnc_getData;
 if (!isNil "_data") then {
-    _data = [_data, ["modelId", _model getOrDefault ["id", ""]]] call BIS_fnc_setToPairs;
-    _data = [_data, ["modelName", _model getOrDefault ["name", ""]]] call BIS_fnc_setToPairs;
+    _data = [_data, "modelId", _model getOrDefault ["id", ""]] call comspec_sse_fnc_setPair;
+    _data = [_data, "modelName", _model getOrDefault ["name", ""]] call comspec_sse_fnc_setPair;
     [_entity, _data, true] call comspec_sse_fnc_setData;
 };
 

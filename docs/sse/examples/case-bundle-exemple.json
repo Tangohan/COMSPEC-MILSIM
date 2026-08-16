@@ -1,0 +1,86 @@
+{
+  "format": "comspec_sse_case_bundle",
+  "formatVersion": 1,
+  "meta": {
+    "theatre": "Irak / 2016",
+    "author": "Scénariste",
+    "fiction": true
+  },
+  "case": {
+    "reference_code": "",
+    "title": "Cache logistique — secteur Nord",
+    "summary": "Affaire fictive : réseau de ravitaillement soupçonné autour d’un dépôt rural.",
+    "classification": "confidentiel",
+    "status": "ouvert"
+  },
+  "persons": [
+    {
+      "key": "p1",
+      "status": "prioritaire",
+      "last_name": "AL-RASHID",
+      "first_name": "Karim",
+      "alias": "THE DRIVER",
+      "nationality": "Irakienne",
+      "affiliation": "Cellule logistique",
+      "circumstances": "Repéré près du dépôt ; rôle de convoyeur probable.",
+      "weapons": ["AK-74"],
+      "equipment": ["Radio portable"],
+      "arma_profile": "LOGISTICS",
+      "arma_complexity": "HIGH_VALUE"
+    },
+    {
+      "key": "p2",
+      "status": "civil",
+      "last_name": "HASSAN",
+      "first_name": "Omar",
+      "alias": "",
+      "nationality": "Irakienne",
+      "affiliation": "",
+      "circumstances": "Habitant voisin — possible fausse piste.",
+      "arma_profile": "CIVILIAN",
+      "arma_complexity": "LIGHT"
+    }
+  ],
+  "notes": [
+    {
+      "body": "Priorité : confirmer le lien entre le convoyeur et le dépôt avant toute action directe.",
+      "classification": "confidentiel",
+      "author_label": "Bureau renseignement"
+    }
+  ],
+  "evidence": [
+    {
+      "preset_key": "phone",
+      "label": "Téléphone saisi (convoyeur)",
+      "caption": "Appareil récupéré lors du contrôle",
+      "person_key": "p1"
+    },
+    {
+      "preset_key": "document",
+      "label": "Carnet de livraisons",
+      "caption": "Mentions de grilles et de surnoms"
+    }
+  ],
+  "sites": [
+    {
+      "name": "Dépôt rural Nord",
+      "site_type": "depot",
+      "summary": "Hangar agricole utilisé — accès latéral.",
+      "grid_reference": "AB123456",
+      "seizures": [
+        {
+          "category": "munition",
+          "label": "Caisses 7,62",
+          "quantity": 3,
+          "notes": "Stockage improvisé"
+        },
+        {
+          "category": "radio",
+          "label": "Poste VHF",
+          "quantity": 1,
+          "notes": ""
+        }
+      ]
+    }
+  ]
+}

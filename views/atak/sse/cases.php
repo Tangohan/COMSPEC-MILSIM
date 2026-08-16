@@ -7,6 +7,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,string> $classifications */
 /** @var array<string,string> $statuses */
 /** @var array{total:int,active:int,archive:int} $indexCounts */
+/** @var array<int, array{persons:int,notes:int,evidence:int}> $caseCounts */
 /** @var bool $canManage */
 /** @var bool $caseLockEnabled */
 /** @var bool $screensRedacted */
@@ -28,7 +29,6 @@ $classBadge = static function (string $key): string {
         default => 'badge',
     };
 };
-// Répartition par classification : c'est elle qu'on relit avant d'armer le verrou.
 $byClass = [];
 foreach ($cases as $c) {
     $k = (string) ($c['classification'] ?? 'encadrement');
@@ -41,41 +41,72 @@ $statusBadge = static function (string $key): string {
         default => 'badge',
     };
 };
+$frStamp = static function (string $raw): string {
+    if ($raw === '') {
+        return '—';
+    }
+    $ts = strtotime(substr($raw, 0, 19));
+    if ($ts === false) {
+        return substr($raw, 0, 16);
+    }
+
+    return date('d/m/Y · H:i', $ts);
+};
+$folders = array_values(array_filter($cases, static fn (array $c): bool => !empty($c['is_folder'])));
+$affairs = array_values(array_filter($cases, static fn (array $c): bool => empty($c['is_folder'])));
+$viewStatus = (string) ($filters['status'] ?? '');
 ?>
 <div class="breadcrumb">
-    Athena / SSE / Renseignement /
+    Athena / SSE /
+    <a class="link" href="<?= $h(url('atak/sse/operations')) ?>">Opérations</a> /
     <strong>Dossiers</strong>
 </div>
 
-<div class="page-heading">
+<header class="sse-cases-hero">
     <div>
-        <div class="page-heading-overline">Gestion des dossiers // Exploitation</div>
+        <p class="sse-cases-hero__kicker">Exploitation // Registre</p>
         <h1>Dossiers d’affaire</h1>
-        <p>
-            Consultation et exploitation des dossiers relevant du périmètre d’accès
-            de la session active. Toutes les consultations et modifications sont journalisées.
+        <p class="sse-cases-hero__lead">
+            Affaires du périmètre de votre session. Chaque consultation et chaque modification sont journalisées.
         </p>
     </div>
-    <div class="page-reference">
-        <strong>Vue // Index des dossiers</strong>
-        Réf. ATH-SSE-DOSSIERS
+    <div class="sse-cases-hero__actions">
+        <?php if ($canManage): ?>
+            <a class="btn" href="<?= $h(url('atak/sse/dossiers/nouveau')) ?>">Ouvrir une affaire</a>
+            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers/importer')) ?>">Importer un scénario</a>
+        <?php endif; ?>
+        <span class="sse-cases-hero__ref">ATH-SSE-DOSSIERS</span>
+    </div>
+</header>
+
+<div class="sse-cases-metrics" aria-label="Indicateurs du registre">
+    <div class="sse-cases-metric">
+        <span class="sse-cases-metric__label">Visibles</span>
+        <strong class="sse-cases-metric__value"><?= (int) $total ?></strong>
+        <span class="sse-cases-metric__hint">Dans cette vue</span>
+    </div>
+    <div class="sse-cases-metric">
+        <span class="sse-cases-metric__label">Actifs</span>
+        <strong class="sse-cases-metric__value"><?= (int) $activeCount ?></strong>
+        <span class="sse-cases-metric__hint">Ouverts / en cours</span>
+    </div>
+    <div class="sse-cases-metric">
+        <span class="sse-cases-metric__label">Accès</span>
+        <strong class="sse-cases-metric__value"><?= $canManage ? 'Gestion' : 'Lecture' ?></strong>
+        <span class="sse-cases-metric__hint">Session courante</span>
+    </div>
+    <div class="sse-cases-metric">
+        <span class="sse-cases-metric__label">Verrou classification</span>
+        <strong class="sse-cases-metric__value <?= !empty($caseLockEnabled) ? 'is-armed' : '' ?>">
+            <?= !empty($caseLockEnabled) ? 'Armé' : 'Désarmé' ?>
+        </strong>
+        <span class="sse-cases-metric__hint"><?= (int) $lockedForMe ?> fermé(s) pour vous</span>
     </div>
 </div>
 
-<div class="security-notice">
-    <div class="security-notice-code">SEC-04</div>
-    <div>
-        <strong>Information compartimentée</strong>
-        <span>
-            Les données affichées sont soumises au principe du besoin d’en connaître.
-            Toute extraction, reproduction ou diffusion non autorisée est journalisée.
-        </span>
-    </div>
-</div>
-
-<div class="case-workspace">
+<div class="case-workspace sse-cases-layout">
 <aside class="case-aside case-aside--compact" aria-label="Filtres rapides">
-    <div class="case-aside-head"><span>Filtres</span><strong>VUES</strong></div>
+    <div class="case-aside-head"><span>Filtres</span><strong>Vues</strong></div>
     <form class="case-search" method="get" action="<?= $h(url('atak/sse/dossiers')) ?>" role="search">
         <label for="case-q">Recherche</label>
         <div class="case-search-control">
@@ -84,73 +115,52 @@ $statusBadge = static function (string $key): string {
         </div>
     </form>
     <nav class="case-aside-nav" aria-label="Vues du registre">
-        <a class="<?= ($filters['status'] ?? '') === '' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers')) ?>"><span>Complet</span><b><?= (int) $indexCounts['total'] ?></b></a>
-        <a class="<?= ($filters['status'] ?? '') === 'en_cours' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers?status=en_cours')) ?>"><span>En exploitation</span><b><?= (int) $indexCounts['active'] ?></b></a>
-        <a class="<?= ($filters['status'] ?? '') === 'archive' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers?status=archive')) ?>"><span>Archives</span><b><?= (int) $indexCounts['archive'] ?></b></a>
+        <a class="<?= $viewStatus === '' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers')) ?>"><span>Complet</span><b><?= (int) $indexCounts['total'] ?></b></a>
+        <a class="<?= $viewStatus === 'en_cours' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers?status=en_cours')) ?>"><span>En exploitation</span><b><?= (int) $indexCounts['active'] ?></b></a>
+        <a class="<?= $viewStatus === 'archive' ? 'is-active' : '' ?>" href="<?= $h(url('atak/sse/dossiers?status=archive')) ?>"><span>Archives</span><b><?= (int) $indexCounts['archive'] ?></b></a>
     </nav>
-    <?php if ($canManage): ?><a class="btn case-aside-create" href="<?= $h(url('atak/sse/dossiers/nouveau')) ?>">+ Ouvrir une affaire</a><?php endif; ?>
 </aside>
-<div class="case-workspace-main">
-<div class="metrics-grid">
-    <div class="metric">
-        <div class="metric-label">Dossiers visibles</div>
-        <div class="metric-value"><?= $h(str_pad((string) $total, 3, '0', STR_PAD_LEFT)) ?></div>
-        <div class="metric-detail">Périmètre de session</div>
-    </div>
-    <div class="metric">
-        <div class="metric-label">Actifs</div>
-        <div class="metric-value"><?= $h(str_pad((string) $activeCount, 3, '0', STR_PAD_LEFT)) ?></div>
-        <div class="metric-detail">Ouverts / en cours</div>
-    </div>
-    <div class="metric">
-        <div class="metric-label">Accès</div>
-        <div class="metric-value"><?= $canManage ? 'Gest.' : 'Lect.' ?></div>
-        <div class="metric-detail">Niveau de session</div>
-    </div>
-    <div class="metric">
-        <div class="metric-label">Horodatage</div>
-        <div class="metric-value"><?= $h(date('H:i')) ?></div>
-        <div class="metric-detail">Heure locale</div>
-    </div>
-</div>
 
-<form class="toolbar" method="get" action="<?= $h(url('atak/sse/dossiers')) ?>">
+<div class="case-workspace-main">
+<form class="sse-cases-toolbar" method="get" action="<?= $h(url('atak/sse/dossiers')) ?>">
     <input type="hidden" name="q" value="<?= $h($filters['q'] ?? '') ?>">
-    <div class="toolbar-field">
-        <label for="status">Statut opérationnel</label>
-        <select id="status" name="status">
-            <option value="">Tous les statuts</option>
-            <?php foreach ($statuses as $k => $lab): ?>
-                <option value="<?= $h($k) ?>" <?= ($filters['status'] ?? '') === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
-            <?php endforeach; ?>
-        </select>
+    <div class="sse-cases-toolbar__fields">
+        <div class="sse-cases-field">
+            <label for="status">Statut opérationnel</label>
+            <select id="status" name="status">
+                <option value="">Tous les statuts</option>
+                <?php foreach ($statuses as $k => $lab): ?>
+                    <option value="<?= $h($k) ?>" <?= $viewStatus === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="sse-cases-field">
+            <label for="classification">Niveau de diffusion</label>
+            <select id="classification" name="classification">
+                <option value="">Toutes les classifications</option>
+                <?php foreach ($classifications as $k => $lab): ?>
+                    <option value="<?= $h($k) ?>" <?= ($filters['classification'] ?? '') === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
     </div>
-    <div class="toolbar-field">
-        <label for="classification">Niveau de diffusion</label>
-        <select id="classification" name="classification">
-            <option value="">Toutes les classifications</option>
-            <?php foreach ($classifications as $k => $lab): ?>
-                <option value="<?= $h($k) ?>" <?= ($filters['classification'] ?? '') === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-    <div class="toolbar-actions">
+    <div class="sse-cases-toolbar__actions">
         <button class="btn" type="submit">Appliquer</button>
-        <?php if ($canManage): ?>
-            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers/nouveau')) ?>">+ Nouveau dossier</a>
+        <?php if (($filters['q'] ?? '') !== '' || $viewStatus !== '' || ($filters['classification'] ?? '') !== ''): ?>
+            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers')) ?>">Réinitialiser</a>
         <?php endif; ?>
     </div>
 </form>
 
 <details id="securite" class="panel sse-lock-panel <?= !empty($caseLockEnabled) ? 'is-armed' : '' ?>">
     <summary>
-    <div class="panel-header">
-        <div class="panel-title">
-            <span class="panel-index">01.00</span>
-            Verrou d’ouverture par classification
+        <div class="panel-header">
+            <div class="panel-title">
+                <span class="panel-index">01</span>
+                Verrou d’ouverture par classification
+            </div>
+            <div class="panel-meta"><?= !empty($caseLockEnabled) ? 'Armé' : 'Désarmé' ?></div>
         </div>
-        <div class="panel-meta"><?= !empty($caseLockEnabled) ? 'ARMÉ' : 'DÉSARMÉ' ?></div>
-    </div>
     </summary>
     <div class="panel-body">
         <?php if (!empty($caseLockEnabled)): ?>
@@ -167,9 +177,6 @@ $statusBadge = static function (string $key): string {
             </p>
             <p class="sse-note">
                 Avant d’armer, relisez la colonne « Qui pourra encore l’ouvrir » ci-dessous.
-                La classification n’a jamais filtré depuis la création du portail : les
-                valeurs déjà posées ont été choisies sans conséquence, et les armer les
-                transforme rétroactivement en décisions d’exclusion que personne n’a prises.
             </p>
         <?php endif; ?>
 
@@ -198,10 +205,6 @@ $statusBadge = static function (string $key): string {
                         (habilitation : <?= $h(\App\Services\Sse\SseRedactionService::levelLabel($myClearance)) ?>).
                     <?php endif; ?>
                 </p>
-                <p class="sse-muted">
-                    Le portail ne peut mesurer l’effet que pour la session courante :
-                    il ne peut pas parler à la place des habilitations des autres.
-                </p>
             </div>
         </div>
 
@@ -216,8 +219,7 @@ $statusBadge = static function (string $key): string {
             </form>
         <?php else: ?>
             <p class="sse-muted">
-                Seuls les détenteurs du droit d’octroi peuvent armer ce verrou : il ferme
-                des dossiers à d’autres, ce n’est pas un réglage d’affichage.
+                Seuls les détenteurs du droit d’octroi peuvent armer ce verrou.
             </p>
         <?php endif; ?>
 
@@ -225,24 +227,17 @@ $statusBadge = static function (string $key): string {
 
         <div class="sse-block-title">
             Caviardage des écrans de travail —
-            <?= !empty($screensRedacted) ? 'ARMÉ' : 'DÉSARMÉ' ?>
+            <?= !empty($screensRedacted) ? 'Armé' : 'Désarmé' ?>
         </div>
         <?php if (!empty($screensRedacted)): ?>
             <p>
                 Le registre des personnes, la fiche dossier et les corrélations sont
-                rabattus sur l’habilitation du lecteur, comme les documents de diffusion.
+                rabattus sur l’habilitation du lecteur.
             </p>
         <?php else: ?>
             <p>
-                Les documents de diffusion — compte rendu, PDF, version expurgée — sont
-                <strong>toujours</strong> rabattus sur l’habilitation du lecteur : c’est
-                leur objet. Les écrans de travail, eux, restent intégraux.
-            </p>
-            <p class="sse-note">
-                Les armer retire des informations que la cellule utilise toute la séance.
-                Selon la doctrine retenue pour les catégories, cela peut retirer les noms
-                à ceux qui en ont besoin pour travailler. À armer une fois les
-                habilitations réellement réparties.
+                Les documents de diffusion restent toujours rabattus sur l’habilitation.
+                Les écrans de travail restent intégraux.
             </p>
         <?php endif; ?>
 
@@ -259,23 +254,18 @@ $statusBadge = static function (string $key): string {
     </div>
 </details>
 
-<section id="registre" class="panel">
+<section id="registre" class="panel sse-cases-register" aria-labelledby="registre-title">
     <div class="panel-header">
-        <div class="panel-title">
-            <span class="panel-index">01.01</span>
+        <div class="panel-title" id="registre-title">
+            <span class="panel-index">02</span>
             Registre des dossiers
         </div>
-        <div class="panel-meta">Périmètre d’accès // session courante</div>
+        <div class="panel-meta"><?= count($affairs) ?> affaire<?= count($affairs) !== 1 ? 's' : '' ?><?= $folders !== [] ? ' · ' . count($folders) . ' dossier(s)' : '' ?></div>
     </div>
-
-    <?php
-    $folders = array_values(array_filter($cases, static fn (array $c): bool => !empty($c['is_folder'])));
-    $affairs = array_values(array_filter($cases, static fn (array $c): bool => empty($c['is_folder'])));
-    ?>
 
     <?php if ($folders !== []): ?>
         <div class="panel-body">
-            <div class="sse-block-title">Dossiers</div>
+            <div class="sse-block-title">Dossiers (conteneurs)</div>
             <div class="sse-folder-grid">
                 <?php foreach ($folders as $c): ?>
                     <a class="sse-folder-card is-folder" href="<?= $h(url('atak/sse/dossiers/' . (int) $c['id'])) ?>">
@@ -297,88 +287,82 @@ $statusBadge = static function (string $key): string {
     <?php if ($affairs === [] && $folders === []): ?>
         <div class="empty-state">
             <div class="empty-state-inner">
-                <div class="empty-symbol">SSE-DI</div>
+                <div class="empty-symbol">SSE</div>
                 <strong>Aucun dossier d’affaire</strong>
                 <p>
-                    Commencez par qualifier un signalement dans un dossier d’intérêt ;
-                    aucune identité ne sera créée ou confirmée automatiquement.
+                    Ouvrez une affaire ou importez un scénario pour commencer l’exploitation.
                 </p>
-                <?php if ($canManage): ?><a class="btn" href="<?= $h(url('atak/sse/interet/nouveau')) ?>">Ouvrir un dossier d’intérêt</a><?php endif; ?>
+                <?php if ($canManage): ?>
+                    <div class="sse-cases-empty-actions">
+                        <a class="btn" href="<?= $h(url('atak/sse/dossiers/nouveau')) ?>">Ouvrir une affaire</a>
+                        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/interet/nouveau')) ?>">Dossier d’intérêt</a>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     <?php elseif ($affairs !== []): ?>
-        <div class="table-wrap">
-            <table>
-                <thead>
-                <tr>
-                    <th>Référence</th>
-                    <th>Dossier</th>
-                    <th>Classification</th>
-                    <th>Qui pourra encore l’ouvrir</th>
-                    <th>Statut</th>
-                    <th>Contenu</th>
-                    <th>Mise à jour</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($affairs as $c):
-                    $cnt = $caseCounts[(int) ($c['id'] ?? 0)] ?? ['persons' => 0, 'notes' => 0, 'evidence' => 0];
-                    $stamp = (string) ($c['updated_at'] ?? $c['created_at'] ?? '');
+        <div class="sse-cases-list" role="list">
+            <?php foreach ($affairs as $c):
+                $cid = (int) ($c['id'] ?? 0);
+                $cnt = $caseCounts[$cid] ?? ['persons' => 0, 'notes' => 0, 'evidence' => 0];
+                $stamp = (string) ($c['updated_at'] ?? $c['created_at'] ?? '');
+                $classKey = (string) ($c['classification'] ?? '');
+                $who = \App\Services\Sse\SseClearanceService::whoCanOpen($classKey);
                 ?>
-                    <tr>
-                        <td><span class="record-id"><?= $h($c['reference_code']) ?></span></td>
-                        <td>
-                            <span class="record-name"><?= $h($c['title']) ?></span>
-                            <span class="record-sub">
-                                Affaire
-                                <?php if (!empty($c['has_unlock_code'])): ?> · Protégé<?php endif; ?>
-                            </span>
-                        </td>
-                        <td>
-                            <span class="<?= $h($classBadge((string) ($c['classification'] ?? ''))) ?>">
-                                <?= $h($c['classification_label']) ?>
-                            </span>
-                        </td>
-                        <td class="sse-muted sse-who-opens">
-                            <?= $h(\App\Services\Sse\SseClearanceService::whoCanOpen((string) ($c['classification'] ?? ''))) ?>
-                        </td>
-                        <td>
-                            <span class="<?= $h($statusBadge((string) ($c['status'] ?? ''))) ?>">
-                                <?= $h($c['status_label']) ?>
-                            </span>
-                        </td>
-                        <td>
-                            <span class="sse-count-set">
-                                <span class="sse-count" title="Personnes rattachées">
-                                    <span class="sse-count-n"><?= (int) $cnt['persons'] ?></span> pers.
-                                </span>
-                                <span class="sse-count" title="Notes de dossier">
-                                    <span class="sse-count-n"><?= (int) $cnt['notes'] ?></span> notes
-                                </span>
-                                <span class="sse-count" title="Pièces versées">
-                                    <span class="sse-count-n"><?= (int) $cnt['evidence'] ?></span> pièces
-                                </span>
-                            </span>
-                        </td>
-                        <td class="record-id"><?= $h($stamp !== '' ? substr($stamp, 0, 16) : '—') ?></td>
-                        <td>
-                            <a class="btn-open" href="<?= $h(url('atak/sse/dossiers/' . $c['id'])) ?>">Ouvrir</a>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
+                <article class="sse-cases-card" role="listitem">
+                    <div class="sse-cases-card__main">
+                        <div class="sse-cases-card__id">
+                            <span class="record-id"><?= $h($c['reference_code'] ?? '') ?></span>
+                            <?php if (!empty($c['has_unlock_code'])): ?>
+                                <span class="badge badge--gray">Protégé</span>
+                            <?php endif; ?>
+                        </div>
+                        <h3 class="sse-cases-card__title">
+                            <a class="link" href="<?= $h(url('atak/sse/dossiers/' . $cid)) ?>"><?= $h($c['title'] ?? '') ?></a>
+                        </h3>
+                        <p class="sse-cases-card__who"><?= $h($who) ?></p>
+                        <div class="sse-cases-card__tags">
+                            <span class="<?= $h($classBadge($classKey)) ?>"><?= $h($c['classification_label'] ?? '') ?></span>
+                            <span class="<?= $h($statusBadge((string) ($c['status'] ?? ''))) ?>"><?= $h($c['status_label'] ?? '') ?></span>
+                        </div>
+                    </div>
+                    <div class="sse-cases-card__side">
+                        <div class="sse-cases-card__counts" aria-label="Contenu">
+                            <span><b><?= (int) $cnt['persons'] ?></b> pers.</span>
+                            <span><b><?= (int) $cnt['notes'] ?></b> notes</span>
+                            <span><b><?= (int) $cnt['evidence'] ?></b> pièces</span>
+                        </div>
+                        <time class="sse-cases-card__time" datetime="<?= $h(substr($stamp, 0, 19)) ?>"><?= $h($frStamp($stamp)) ?></time>
+                        <a class="btn btn--ghost sse-cases-card__open" href="<?= $h(url('atak/sse/dossiers/' . $cid)) ?>">Ouvrir</a>
+                    </div>
+                </article>
+            <?php endforeach; ?>
         </div>
     <?php endif; ?>
 </section>
-<div class="sse-ops-grid" aria-label="Situation opérationnelle SSE">
-    <a href="<?= $h(url('atak/sse/croisements')) ?>"><strong>Correspondances à valider</strong><span>File opérateur et facteurs de rapprochement</span></a>
-    <a href="<?= $h(url('atak/sse/interet')) ?>"><strong>Dernières acquisitions terrain</strong><span>Signalements reçus et sujets à qualifier</span></a>
-    <a href="<?= $h(url('atak/sse/personnes')) ?>"><strong>Contrôles récents</strong><span>Personnes et observations disponibles</span></a>
-    <a href="<?= $h(url('atak/sse/interet?status=en_analyse')) ?>"><strong>Dossiers prioritaires</strong><span>Analyse et levées de doute en cours</span></a>
-    <a href="<?= $h(url('atak/sse/interet?status=en_collecte')) ?>"><strong>Collectes en attente</strong><span>Besoins de renseignement à transmettre</span></a>
-</div>
+
+<nav class="sse-cases-ops" aria-label="Raccourcis d’exploitation">
+    <a href="<?= $h(url('atak/sse/croisements')) ?>">
+        <strong>Correspondances à valider</strong>
+        <span>File opérateur et facteurs de rapprochement</span>
+    </a>
+    <a href="<?= $h(url('atak/sse/interet')) ?>">
+        <strong>Acquisitions terrain</strong>
+        <span>Signalements reçus et sujets à qualifier</span>
+    </a>
+    <a href="<?= $h(url('atak/sse/personnes')) ?>">
+        <strong>Contrôles récents</strong>
+        <span>Personnes et observations disponibles</span>
+    </a>
+    <a href="<?= $h(url('atak/sse/interet?status=en_analyse')) ?>">
+        <strong>Dossiers prioritaires</strong>
+        <span>Analyse et levées de doute en cours</span>
+    </a>
+    <a href="<?= $h(url('atak/sse/interet?status=en_collecte')) ?>">
+        <strong>Collectes en attente</strong>
+        <span>Besoins de renseignement à transmettre</span>
+    </a>
+</nav>
 </div>
 </div>
 <?php

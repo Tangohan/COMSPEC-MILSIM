@@ -187,6 +187,16 @@ private _journal = [
 ] call ace_interact_menu_fnc_createAction;
 [player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], _journal] call ace_interact_menu_fnc_addActionToObject;
 
+private _techLog = [
+    "COMSPEC_SSE_TechLog",
+    "Journal technique (erreurs)",
+    "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa",
+    { [] call comspec_sse_fnc_showLog },
+    { true },
+    _noChildren, [], {[0,0,0]}, 1, []
+] call ace_interact_menu_fnc_createAction;
+[player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], _techLog] call ace_interact_menu_fnc_addActionToObject;
+
 private _terminalSelf = [
     "COMSPEC_SSE_TerminalSelf",
     "Ouvrir terminal SSE",

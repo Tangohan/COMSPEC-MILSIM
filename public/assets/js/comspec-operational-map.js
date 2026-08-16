@@ -1224,9 +1224,23 @@
         var x = u.pos_x != null && u.pos_x !== '' ? parseFloat(u.pos_x) : NaN;
         var y = u.pos_y != null && u.pos_y !== '' ? parseFloat(u.pos_y) : NaN;
         if (isNaN(x) || isNaN(y)) {
-          var gridRef = (u.grid_ref || '').trim().split(/\s+/);
-          x = parseFloat(gridRef[0]);
-          y = parseFloat(gridRef[1]);
+          var gridRaw = String(u.grid_ref || '').trim();
+          var gridParts = gridRaw.split(/\s+/).filter(Boolean);
+          if (gridParts.length >= 2) {
+            x = parseFloat(gridParts[0]);
+            y = parseFloat(gridParts[1]);
+          } else {
+            // Grille Arma compacte (ex. 099153) → approx. monde 100 m.
+            var digits = gridRaw.replace(/\D+/g, '');
+            if (digits.length >= 6 && (digits.length % 2) === 0) {
+              var half = digits.length / 2;
+              var east = parseInt(digits.slice(0, half), 10);
+              var north = parseInt(digits.slice(half), 10);
+              var cell = half === 4 ? 10 : (half === 5 ? 1 : 100);
+              x = (east * cell) + (cell / 2);
+              y = (north * cell) + (cell / 2);
+            }
+          }
         }
         if (isNaN(x) || isNaN(y) || (Math.abs(x) < 0.5 && Math.abs(y) < 0.5)) return;
         var latlng = L.latLng(y, x);

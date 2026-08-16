@@ -4,7 +4,7 @@
 if (!hasInterface) exitWith {};
 
 private _disp = uiNamespace getVariable ["COMSPEC_BugReport_Display", displayNull];
-if (isNull _disp) then { _disp = findDisplay 9989; };
+if (isNull _disp) then { _disp = findDisplay 9992; };
 if (isNull _disp) exitWith {};
 
 private _combo = _disp displayCtrl 9801;

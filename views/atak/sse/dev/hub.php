@@ -3,7 +3,7 @@ declare(strict_types=1);
 ob_start();
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 /** @var list<array<string,mixed>> $recentModels */
-/** @var list<array{key:string,label:string,description:string}> $templates */
+/** @var list<array{key:string,label:string,description:string,group?:string}> $templates */
 /** @var int $publishedCount */
 /** @var int $modelsCount */
 $recentModels = is_array($recentModels ?? null) ? $recentModels : [];
@@ -12,78 +12,113 @@ $publishedCount = (int) ($publishedCount ?? 0);
 $modelsCount = (int) ($modelsCount ?? count($recentModels));
 $canManage = (bool) ($canManage ?? false);
 require __DIR__ . '/_subnav.php';
+
+$grouped = [];
+foreach ($templates as $tpl) {
+    $g = trim((string) ($tpl['group'] ?? 'Générique'));
+    if ($g === '') {
+        $g = 'Générique';
+    }
+    $grouped[$g][] = $tpl;
+}
+$groupKeys = array_keys($grouped);
+$firstGroup = $groupKeys[0] ?? '';
 ?>
 <div class="breadcrumb">Athena / SSE / <strong>Atelier de préparation</strong></div>
 
-<div class="page-heading">
-    <div>
-        <div class="page-heading-overline">Préparation mission</div>
-        <h1>Atelier de préparation</h1>
-        <p>
-            Concevez ici les modèles destinés aux missions Arma : profils, thèmes narratifs,
-            listes de contacts et messages. Une fois prêts, téléchargez-les pour les appliquer
-            en jeu via le module COMSPEC SSE.
+<section class="lab-hero" aria-labelledby="lab-hero-title">
+    <div class="lab-hero__main">
+        <p class="lab-hero__kicker">Préparation mission</p>
+        <h1 id="lab-hero-title">Atelier de préparation</h1>
+        <p class="lab-hero__lead">
+            Concevez les modèles destinés aux missions Arma : profils, thèmes, contacts et messages.
+            Une fois prêts, emportez-les pour les appliquer en jeu via le module COMSPEC SSE.
         </p>
     </div>
-    <?php if ($canManage): ?>
-        <div class="page-reference">
+    <div class="lab-hero__side">
+        <?php if ($canManage): ?>
             <a class="btn" href="<?= $h(url('atak/sse/dev/modeles/nouveau')) ?>">Créer un modèle</a>
+        <?php endif; ?>
+        <div class="lab-hero__metrics">
+            <a class="lab-hero__metric" href="<?= $h(url('atak/sse/dev/modeles')) ?>">
+                <span>Modèles</span><strong><?= $modelsCount ?></strong>
+            </a>
+            <a class="lab-hero__metric" href="<?= $h(url('atak/sse/dev/modeles') . '?status=published') ?>">
+                <span>Publiés</span><strong><?= $publishedCount ?></strong>
+            </a>
         </div>
-    <?php endif; ?>
-</div>
+    </div>
+</section>
 
-<div class="metrics-grid lab-metrics">
-    <a class="metric lab-metric" href="<?= $h(url('atak/sse/dev/modeles')) ?>">
-        <div class="metric-label">Modèles</div>
-        <div class="metric-value"><?= $modelsCount ?></div>
-        <div class="metric-detail">Bibliothèque →</div>
-    </a>
-    <a class="metric lab-metric" href="<?= $h(url('atak/sse/dev/modeles') . '?status=published') ?>">
-        <div class="metric-label">Publiés</div>
-        <div class="metric-value"><?= $publishedCount ?></div>
-        <div class="metric-detail">Prêts pour la mission →</div>
-    </a>
-</div>
-
-<section class="panel lab-flow">
+<section class="panel lab-start" id="lab-start">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">01</span> Démarrer rapidement</div>
         <div class="panel-meta">Modèles types par ère</div>
     </div>
     <div class="panel-body">
-        <p class="lab-form-lead">Choisissez un point de départ (Irak 2010–2020 ou Russie / Est 2020–2024), puis adaptez les listes à votre scénario.</p>
-        <?php
-        $grouped = [];
-        foreach ($templates as $tpl) {
-            $g = trim((string) ($tpl['group'] ?? 'Générique'));
-            if ($g === '') {
-                $g = 'Générique';
-            }
-            $grouped[$g][] = $tpl;
-        }
-        foreach ($grouped as $groupLabel => $items):
-        ?>
-            <h3 style="margin:18px 0 8px;font-size:1rem"><?= $h($groupLabel) ?></h3>
-            <div class="lab-form-grid">
-                <?php foreach ($items as $tpl): ?>
-                    <div class="lab-form-field lab-form-field--span2" style="border:1px solid var(--border, #333);padding:12px;border-radius:4px">
-                        <strong><?= $h($tpl['label']) ?></strong>
-                        <p style="margin:6px 0 10px;opacity:.85"><?= $h($tpl['description']) ?></p>
-                        <?php if ($canManage): ?>
-                            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dev/modeles/nouveau') . '?modele=' . rawurlencode((string) $tpl['key'])) ?>">
-                                Partir de ce modèle
-                            </a>
-                        <?php endif; ?>
-                    </div>
+        <p class="lab-form-lead">Choisissez un point de départ, puis adaptez les listes à votre scénario.</p>
+        <?php if ($groupKeys !== []): ?>
+            <div class="lab-era-tabs" role="tablist" aria-label="Époque du modèle">
+                <?php foreach ($groupKeys as $i => $groupLabel): ?>
+                    <button type="button"
+                            class="lab-era-tab <?= $i === 0 ? 'is-active' : '' ?>"
+                            role="tab"
+                            aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"
+                            data-era="<?= $h($groupLabel) ?>">
+                        <?= $h($groupLabel) ?>
+                    </button>
                 <?php endforeach; ?>
             </div>
-        <?php endforeach; ?>
+            <?php foreach ($grouped as $groupLabel => $items): ?>
+                <div class="lab-era-panel <?= $groupLabel === $firstGroup ? 'is-active' : '' ?>"
+                     data-era-panel="<?= $h($groupLabel) ?>"
+                     <?= $groupLabel === $firstGroup ? '' : 'hidden' ?>>
+                    <div class="lab-tpl-grid">
+                        <?php foreach ($items as $tpl): ?>
+                            <article class="lab-tpl-card">
+                                <p class="lab-tpl-card__era"><?= $h($groupLabel) ?></p>
+                                <h3><?= $h($tpl['label'] ?? '') ?></h3>
+                                <p><?= $h($tpl['description'] ?? '') ?></p>
+                                <?php if ($canManage): ?>
+                                    <a class="btn btn--ghost btn--sm" href="<?= $h(url('atak/sse/dev/modeles/nouveau') . '?modele=' . rawurlencode((string) ($tpl['key'] ?? ''))) ?>">
+                                        Partir de ce modèle
+                                    </a>
+                                <?php else: ?>
+                                    <p class="muted lab-tpl-card__locked">Consultation seule</p>
+                                <?php endif; ?>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <p class="muted">Aucun modèle type n’est disponible pour le moment.</p>
+        <?php endif; ?>
     </div>
 </section>
 
 <section class="panel" style="margin-top:10px">
     <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">02</span> Modèles récents</div>
+        <div class="panel-title"><span class="panel-index">02</span> Scénarios de dossier complets</div>
+        <div class="panel-meta">Athena + Arma</div>
+    </div>
+    <div class="panel-body lab-scenario-card">
+        <p class="lab-form-lead">
+            Générez un dossier fictif complet (identités, sites, pièces), importez-le dans Athena,
+            puis emportez le pack terrain pour Arma 3.
+        </p>
+        <div class="lab-scenario-card__actions">
+            <?php if ($canManage): ?>
+                <a class="btn" href="<?= $h(url('atak/sse/dossiers/importer')) ?>">Importer un scénario</a>
+            <?php endif; ?>
+            <a class="link" href="<?= $h(url('atak/sse/guide')) ?>">Voir le guide des scénarios fictifs</a>
+        </div>
+    </div>
+</section>
+
+<section class="panel" style="margin-top:10px">
+    <div class="panel-header">
+        <div class="panel-title"><span class="panel-index">03</span> Modèles récents</div>
         <a class="link" href="<?= $h(url('atak/sse/dev/modeles')) ?>">Voir tous</a>
     </div>
     <?php if ($recentModels === []): ?>
@@ -106,7 +141,7 @@ require __DIR__ . '/_subnav.php';
                         <td><?= $h($m['name'] ?? '') ?></td>
                         <td><?= $h($m['profile_label'] ?? '') ?></td>
                         <td><?= $h($m['theme_label'] ?? '') ?></td>
-                        <td><?= $h($m['status_label'] ?? '') ?></td>
+                        <td><span class="badge"><?= $h($m['status_label'] ?? '') ?></span></td>
                         <td><a class="btn-open" href="<?= $h(url('atak/sse/dev/modeles/' . (int) ($m['id'] ?? 0))) ?>">Ouvrir</a></td>
                     </tr>
                 <?php endforeach; ?>
@@ -115,6 +150,29 @@ require __DIR__ . '/_subnav.php';
         </div>
     <?php endif; ?>
 </section>
+<script>
+(function () {
+    var root = document.getElementById('lab-start');
+    if (!root) return;
+    var tabs = root.querySelectorAll('[data-era]');
+    var panels = root.querySelectorAll('[data-era-panel]');
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            var key = tab.getAttribute('data-era');
+            tabs.forEach(function (t) {
+                var on = t === tab;
+                t.classList.toggle('is-active', on);
+                t.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            panels.forEach(function (p) {
+                var on = p.getAttribute('data-era-panel') === key;
+                p.classList.toggle('is-active', on);
+                p.hidden = !on;
+            });
+        });
+    });
+})();
+</script>
 <?php
 $sseContent = ob_get_clean();
 require dirname(__DIR__) . '/_layout.php';

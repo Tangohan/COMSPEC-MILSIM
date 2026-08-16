@@ -30,6 +30,26 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Vérifier fichiers critiques avant FTP
+        run: |
+          set -euo pipefail
+          missing=0
+          for f in \
+            public/index.php \
+            routes/web.php \
+            bootstrap/env.php \
+            app/Core/Application.php \
+            composer.json
+          do
+            if [ ! -f "$f" ]; then
+              echo "::error::Fichier critique absent du checkout : $f"
+              missing=1
+            else
+              echo "OK $f ($(wc -c < "$f") octets)"
+            fi
+          done
+          exit "$missing"
+
       - name: Vérifier les secrets FTP
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}

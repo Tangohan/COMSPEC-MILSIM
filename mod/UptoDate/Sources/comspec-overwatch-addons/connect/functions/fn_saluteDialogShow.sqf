@@ -1,5 +1,5 @@
 /*
-    Ouvre le mini-formulaire SALUTE (idd 9988).
+    Ouvre le mini-formulaire SALUTE (idd 9993).
     Sur le téléphone ATAK : createDisplay pour ne pas fermer cTab.
     Préremplit Emplacement (grille) et Heure (heure de jeu).
 */

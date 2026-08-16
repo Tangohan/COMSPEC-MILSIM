@@ -19,7 +19,7 @@ final class SseDocumentMarkings
      * @param array<string,mixed> $document
      * @return array<string,mixed>
      */
-    public static function forDocument(array $document, string $unitLabel = ''): array
+    public static function forDocument(array $document, string $unitLabel = '', ?string $sealOpenUrl = null): array
     {
         $ref = trim((string) ($document['reference_code'] ?? ''));
         $id = (int) ($document['id'] ?? 0);
@@ -64,7 +64,7 @@ final class SseDocumentMarkings
                 1 + self::pick($bytes, 4, 98)
             ),
             'fingerprint_svg' => self::fingerprintSvg($seedSource),
-            'workstation' => self::workstationSeal($seedSource, $ref, $document),
+            'workstation' => self::workstationSeal($seedSource, $ref, $document, $sealOpenUrl),
             'routing' => self::routing($document, $bytes),
             'declassify_on' => self::declassifyOn($document),
             'destruction_delay' => [10, 15, 20, 25, 30][self::pick($bytes, 5, 5)] . ' ans',
@@ -113,8 +113,14 @@ final class SseDocumentMarkings
         if (str_contains($class, 'secret') || str_contains($class, 'tres_restreint')) {
             return 'CANAL RÉSERVÉ — TRANSMISSION CHIFFRÉE UNIQUEMENT';
         }
-        if (str_contains($class, 'confid') || str_contains($class, 'restreint')) {
+        if (str_contains($class, 'confid')) {
             return 'CANAL PROTÉGÉ — REMISE EN MAIN PROPRE';
+        }
+        if (str_contains($class, 'encadrement') || str_contains($class, 'command')) {
+            return 'CANAL ENCADREMENT — CIRCULATION LIMITÉE';
+        }
+        if (str_contains($class, 'interne') || str_contains($class, 'internal')) {
+            return 'CANAL INTERNE SSE';
         }
 
         return ['CANAL INTERNE SSE', 'CANAL DE SERVICE', 'CANAL INTERNE SSE'][self::pick($bytes, 6, 3)];
@@ -236,7 +242,7 @@ final class SseDocumentMarkings
      *   qr_html:string
      * }
      */
-    public static function workstationSeal(string $seedSource, string $ref, array $document = []): array
+    public static function workstationSeal(string $seedSource, string $ref, array $document = [], ?string $openUrl = null): array
     {
         $bytes = self::bytes('WS' . $seedSource);
         $host = sprintf(
@@ -269,6 +275,8 @@ final class SseDocumentMarkings
             'TS:' . $capturedAt,
         ]);
 
+        $qrPayload = ($openUrl !== null && $openUrl !== '') ? $openUrl : $payload;
+
         return [
             'id' => sprintf(
                 'QR-%s-%02d',
@@ -277,11 +285,13 @@ final class SseDocumentMarkings
             ),
             'host' => $host,
             'fingerprint' => self::group($fingerprint),
+            'fingerprint_raw' => $fingerprint,
             'ip' => $ip,
             'session' => $session,
             'captured_at' => $capturedAt,
             'payload' => $payload,
-            'qr_html' => self::workstationQrHtml($payload, $seedSource),
+            'open_url' => $qrPayload,
+            'qr_html' => self::workstationQrHtml($qrPayload, $seedSource),
         ];
     }
 

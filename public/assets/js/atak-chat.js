@@ -70,7 +70,13 @@ window.ATAKChat = (function () {
   function getClearedBeforeId() {
     try {
       var v = parseInt(localStorage.getItem(clearStorageKey()) || '0', 10);
-      return isNaN(v) || v < 0 ? 0 : v;
+      if (isNaN(v) || v < 0) return 0;
+      // Ancien bug : timestamp Date.now() stocké → masquait tous les ids BDD.
+      if (v > 1000000000) {
+        try { localStorage.removeItem(clearStorageKey()); } catch (e2) { /* ignore */ }
+        return 0;
+      }
+      return v;
     } catch (e) {
       return 0;
     }
@@ -78,7 +84,9 @@ window.ATAKChat = (function () {
 
   function setClearedBeforeId(id) {
     try {
-      localStorage.setItem(clearStorageKey(), String(id > 0 ? id : 0));
+      var n = id > 0 ? id : 0;
+      if (n > 1000000000) n = 0;
+      localStorage.setItem(clearStorageKey(), String(n));
     } catch (e) { /* ignore */ }
   }
 
@@ -450,9 +458,15 @@ window.ATAKChat = (function () {
             ? 'Session expirée — reconnectez-vous pour accéder au tchat.'
             : r.status === 403
               ? 'Vous n’avez pas l’autorisation d’accéder au tchat.'
-              : 'Impossible de charger le tchat pour le moment.';
+              : r.status === 503
+                ? 'Liaison radio dégradée — nouvel essai…'
+                : 'Impossible de charger le tchat pour le moment.';
           if (window.ATAKShowError) window.ATAKShowError(msg);
           if (window.ATAKLastChatError) window.ATAKLastChatError(msg);
+          // Ne pas écraser un cache déjà peuplé (perte de paquet roleplay / 503).
+          if (cachedMessages.length) {
+            renderList(cachedMessages);
+          }
           throw new Error('Tchat:');
         }
         return r.json();
@@ -730,21 +744,31 @@ window.ATAKChat = (function () {
   function clearDisplay() {
     var el = document.getElementById('atak-chat-messages');
     var applyClear = function (list) {
-      var max = getClearedBeforeId();
+      var max = 0;
       (Array.isArray(list) ? list : []).forEach(function (m) {
         var id = messageId(m);
         if (id > max) max = id;
       });
-      if (max < 1) max = Date.now();
+      // Sans message connu : ne pas inventer un seuil (ex. Date.now) qui masquerait tout.
+      if (max < 1) {
+        lastMessagesFp = '';
+        if (el) el.innerHTML = emptyStateHtml();
+        return;
+      }
       setClearedBeforeId(max);
       lastMessagesFp = '';
       renderList(Array.isArray(list) ? list : []);
     };
 
     if (!isNodeConfigured()) {
-      setClearedBeforeId(Date.now());
       lastMessagesFp = '';
       if (el) el.innerHTML = emptyStateHtml();
+      return;
+    }
+
+    var source = cachedMessages.length ? cachedMessages : null;
+    if (source) {
+      applyClear(source);
       return;
     }
 
@@ -752,7 +776,6 @@ window.ATAKChat = (function () {
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (data) { applyClear(Array.isArray(data) ? data : []); })
       .catch(function () {
-        setClearedBeforeId(Date.now());
         lastMessagesFp = '';
         if (el) el.innerHTML = emptyStateHtml();
       });

@@ -44,6 +44,10 @@ COMSPEC SSE
 
 Sur cible SSE : **Ouvrir terminal SSE** (lie le record puis ouvre le hub).
 
+## Plaque ACE Medical (dog tags)
+
+Voir [ACE-DOGTAGS.md](ACE-DOGTAGS.md) : **Check Dog Tag** sur un sujet KO/mort SSE affiche l’identité générée et alimente le dossier.
+
 ## Réglages CBA
 
 - Exiger le matériel SSE
@@ -51,5 +55,6 @@ Sur cible SSE : **Ouvrir terminal SSE** (lie le record puis ouvre le hub).
 - Probabilités bruit / fausse piste
 - Mission ID / dossier SSE / mapId
 - Logs debug
+- Compatibilité : plaque ACE → identité SSE
 
 Les actions utilisent `ace_common_fnc_progressBar`.
