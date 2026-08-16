@@ -184,6 +184,33 @@ class Cfg3DEN {
                         defaultValue = "''";
                         typeName = "STRING";
                     };
+                    class comspec_sse_datasetId {
+                        displayName = "Dataset mission";
+                        tooltip = "Pack narratif (ex. falcon). Prioritaire sur le modèle seul si un rôle est aussi renseigné.";
+                        property = "comspec_sse_datasetId";
+                        control = "Edit";
+                        expression = "_this setVariable ['comspec_sse_datasetId', _value, true];";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
+                    class comspec_sse_datasetRole {
+                        displayName = "Rôle dans le dataset";
+                        tooltip = "Ex. falcon_hvt, falcon_courier, falcon_ied…";
+                        property = "comspec_sse_datasetRole";
+                        control = "Edit";
+                        expression = "_this setVariable ['comspec_sse_datasetRole', _value, true];";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
+                    class comspec_sse_missionSeed {
+                        displayName = "Graine mission (affichage)";
+                        tooltip = "Référence stable (ex. FALCON-IQ-2012-A). Renseignée auto par le dataset si vide.";
+                        property = "comspec_sse_missionSeed";
+                        control = "Edit";
+                        expression = "_this setVariable ['comspec_sse_missionSeed', _value, true];";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
                     class comspec_sse_region {
                         displayName = "Région narrative";
                         property = "comspec_sse_region";

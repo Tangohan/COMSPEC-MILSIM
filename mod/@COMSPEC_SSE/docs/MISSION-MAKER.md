@@ -1,5 +1,20 @@
 # Guide mission maker
 
+## Dataset FALCON (recommandé)
+
+```sqf
+// Pose le réseau FALCON (niveau tactique) sur les unités proches
+["falcon", player, 50, 1] call comspec_sse_fnc_applyDataset;
+
+// Ou via pack scénario
+["FALCON", player, 50] call comspec_sse_fnc_loadScenarioPack;
+
+// Changer le niveau de révélation (0–3)
+[2, true] call comspec_sse_fnc_setScenarioLevel;
+```
+
+Rôles Eden : `falcon_hvt`, `falcon_ied`, `falcon_courier`, `falcon_finance`, `falcon_safehouse`, `falcon_noise`.
+
 ## Personnage préparé
 
 ```sqf
@@ -33,3 +48,10 @@ Préférer :
 ```
 
 Le contenu détaillé n'apparaît qu'au premier examen.
+
+## Zeus
+
+- **Scenario Director** — dataset FALCON + niveau 0–3
+- **Générer depuis brief / scénario** — pack `FALCON` ou brief libre
+- **Appliquer modèle SSE** — builtins Irak / Russie
+- **Spoil Control** / **After Action** — vérité vs connu

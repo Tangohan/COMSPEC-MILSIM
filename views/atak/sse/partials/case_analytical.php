@@ -4,6 +4,7 @@
 /** @var list<array<string,mixed>> $intelGaps */
 /** @var list<array<string,mixed>> $analyticalDecisions */
 /** @var list<array<string,mixed>> $caseLinks */
+/** @var list<array{id:int,reference_code:string,title:string}> $linkableCases */
 /** @var list<array<string,mixed>> $contextualSuggestions */
 /** @var list<array<string,mixed>> $gapPresets */
 /** @var array<string,array<string|int,string>> $analyticalCatalog */
@@ -16,6 +17,7 @@ $assessments = is_array($assessments ?? null) ? $assessments : [];
 $intelGaps = is_array($intelGaps ?? null) ? $intelGaps : [];
 $analyticalDecisions = is_array($analyticalDecisions ?? null) ? $analyticalDecisions : [];
 $caseLinks = is_array($caseLinks ?? null) ? $caseLinks : [];
+$linkableCases = is_array($linkableCases ?? null) ? $linkableCases : [];
 $contextualSuggestions = is_array($contextualSuggestions ?? null) ? $contextualSuggestions : [];
 $gapPresets = is_array($gapPresets ?? null) ? $gapPresets : [];
 $executiveBrief = (string) ($executiveBrief ?? '');
@@ -389,7 +391,16 @@ $executiveBrief = (string) ($executiveBrief ?? '');
                 <summary>Lier un autre dossier</summary>
                 <form method="post" action="<?= $h($caseUrl . '/relations-dossiers') ?>" class="sse-ana-grid">
                     <?= \App\Core\Csrf::field() ?>
-                    <label>Référence du dossier lié <input name="related_reference" type="text" required placeholder="Ex. SSE-2026-014"></label>
+                    <label>Dossier lié
+                        <select name="related_case_id" required>
+                            <option value="">Choisir un dossier…</option>
+                            <?php foreach ($linkableCases as $lc): ?>
+                                <option value="<?= (int) ($lc['id'] ?? 0) ?>">
+                                    <?= $h(trim(($lc['reference_code'] ?? '') . ' — ' . ($lc['title'] ?? ''), ' —')) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
                     <label>Nature du lien
                         <select name="relation_type">
                             <?php foreach (($cat['relationTypes'] ?? []) as $k => $lab): ?>
@@ -399,7 +410,11 @@ $executiveBrief = (string) ($executiveBrief ?? '');
                     </label>
                     <label>Ancienne référence conservée <input name="former_reference" type="text" maxlength="64" placeholder="Après fusion / dissociation"></label>
                     <label class="sse-ana-span2">Note <input name="note" type="text" maxlength="500"></label>
-                    <div class="sse-ana-span2"><button class="btn" type="submit">Enregistrer la relation</button></div>
+                    <?php if ($linkableCases === []): ?>
+                        <p class="sse-ana-span2 muted">Aucun autre dossier disponible dans votre périmètre pour établir un lien.</p>
+                    <?php else: ?>
+                        <div class="sse-ana-span2"><button class="btn" type="submit">Enregistrer la relation</button></div>
+                    <?php endif; ?>
                 </form>
             </details>
         <?php endif; ?>

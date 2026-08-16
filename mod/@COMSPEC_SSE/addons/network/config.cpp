@@ -21,6 +21,8 @@ class CfgFunctions {
             class buildPayload {};
             class queueOffline {};
             class flushQueue {};
+            class persistQueue {};
+            class restoreQueue {};
             class isOnline {};
             class sendViaOverwatch {};
             class toJsonApprox {};

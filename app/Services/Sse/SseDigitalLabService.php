@@ -12,9 +12,12 @@ use App\Repositories\SseDigitalLabRepository;
  */
 final class SseDigitalLabService
 {
-    public function __construct(private ?SseDigitalLabRepository $repo = null)
-    {
+    public function __construct(
+        private ?SseDigitalLabRepository $repo = null,
+        private ?SseTerrainService $terrain = null,
+    ) {
         $this->repo ??= new SseDigitalLabRepository();
+        $this->terrain ??= new SseTerrainService();
     }
 
     public function repository(): SseDigitalLabRepository
@@ -594,6 +597,20 @@ final class SseDigitalLabService
                 'status' => 'to_review',
                 'factors' => ['SSID suggestif', 'Horodatage disponible'],
             ], $userId);
+        }
+
+        if (is_array($device)) {
+            try {
+                $findings = $this->repo->listFindings($tenantId, [
+                    'device_id' => $deviceId,
+                    'status' => 'to_review',
+                ]);
+                foreach ($findings as $finding) {
+                    $this->terrain->onDigitalFindingCreated($tenantId, $finding, $device);
+                }
+            } catch (\Throwable) {
+                // Pont intel optionnel (LOT 3).
+            }
         }
     }
 

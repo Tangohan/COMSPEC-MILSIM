@@ -19,21 +19,20 @@ private _pack = [_theme, _seed, _cluster, _pools] call comspec_sse_fnc_getThemeP
 
 private _colors = ["blanc", "beige", "vert olive", "noir", "gris", "marron"];
 private _makes = ["Toyota", "Nissan", "Kia", "Hyundai", "Mitsubishi", "UAZ", "camion local"];
-private _plate = format [
-    "%1-%2%3",
-    [_seed, "plA", ["12", "22", "33", "41", "55", "67"]] call comspec_sse_fnc_pickFromSeed,
-    [_seed, "plB", ["A", "B", "D", "H", "K", "M", "R"]] call comspec_sse_fnc_pickFromSeed,
-    str (1000 + (([_seed, "plN"] call comspec_sse_fnc_hash) mod 9000))
-];
+private _plA = [_seed, "plA", ["12", "22", "33", "41", "55", "67"]] call comspec_sse_fnc_pickFromSeed;
+private _plB = [_seed, "plB", ["A", "B", "D", "H", "K", "M", "R"]] call comspec_sse_fnc_pickFromSeed;
+private _plN = str (1000 + (([_seed, "plN"] call comspec_sse_fnc_hash) mod 9000));
+private _plate = format ["%1-%2%3", _plA, _plB, _plN];
 private _vin = format ["SSEVIN%1", [_seed, "vin"] call comspec_sse_fnc_hash];
 
+private _deliveryNote = _pack getOrDefault ["deliveryNote", "RDV reporté"];
 private _cargoHints = [
     "Traces de carburant au plancher",
-    "Caisse ouverte — reste de bandes",
+    "Caisse ouverte - reste de bandes",
     "Plan sous le siège conducteur",
     "Outils et gants usés",
     "Rien d’évident au premier regard",
-    format ["Note manuscrite : %1", _pack getOrDefault ["deliveryNote", "RDV reporté"]]
+    format ["Note manuscrite : %1", _deliveryNote]
 ];
 
 private _cargo = [];
@@ -44,7 +43,8 @@ private _nCargo = switch (_complexity) do {
     default { 2 };
 };
 for "_i" from 0 to (_nCargo - 1) do {
-    _cargo pushBack ([_seed, format ["cargo%1", _i], _cargoHints] call comspec_sse_fnc_pickFromSeed);
+    private _cargoKey = format ["cargo%1", _i];
+    _cargo pushBack ([_seed, _cargoKey, _cargoHints] call comspec_sse_fnc_pickFromSeed);
 };
 
 private _docs = [_seed + 3, 1, _cluster, _pools] call comspec_sse_fnc_generateDocument;
@@ -53,6 +53,8 @@ private _grid = _pack getOrDefault ["grid", ""];
 if (_grid isEqualTo "") then { _grid = _cluster getOrDefault ["depotGrid", ""]; };
 private _themeLabel = _pack getOrDefault ["themeLabel", _theme];
 private _primaryName = _cluster getOrDefault ["primaryName", "?"];
+private _ownerHint = _cluster getOrDefault ["primaryName", "inconnu"];
+private _linkedAlias = _cluster getOrDefault ["primaryAlias", ""];
 private _make = [_seed, "make", _makes] call comspec_sse_fnc_pickFromSeed;
 private _color = [_seed, "color", _colors] call comspec_sse_fnc_pickFromSeed;
 private _locItem = createHashMapFromArray [
@@ -60,24 +62,38 @@ private _locItem = createHashMapFromArray [
     ["grid", _grid],
     ["confidence", 0.6]
 ];
+private _intelText = format ["Véhicule potentiellement lié à %1 (%2)", _primaryName, _themeLabel];
 private _intelItem = createHashMapFromArray [
-    ["text", format ["Véhicule potentiellement lié à %1 (%2)", _primaryName, _themeLabel]],
+    ["text", _intelText],
     ["confidence", 0.58]
 ];
 
+private _uid = format ["SSE-VEH-%1", _seed];
+private _summary = format ["%1 %2 - plaque %3", _make, _color, _plate];
+
 createHashMapFromArray [
-    ["uid", format ["SSE-VEH-%1", _seed]],
+    ["uid", _uid],
     ["make", _make],
     ["color", _color],
     ["plate", _plate],
     ["vin", _vin],
-    ["ownerHint", _cluster getOrDefault ["primaryName", "inconnu"]],
-    ["linkedAlias", _cluster getOrDefault ["primaryAlias", ""]],
+    ["ownerHint", _ownerHint],
+    ["linkedAlias", _linkedAlias],
     ["theme", _theme],
     ["cargoNotes", _cargo],
     ["documents", _docs],
     ["locations", [_locItem]],
     ["intel", [_intelItem]],
     ["cluster", _cluster],
-    ["summary", format ["%1 %2 — plaque %3", _make, _color, _plate]]
+    ["summary", _summary],
+    ["exploitation", createHashMapFromArray [
+        ["pct", 0],
+        ["sections", createHashMapFromArray [
+            ["exterior", false],
+            ["cabin", false],
+            ["cargo", false],
+            ["documents", false],
+            ["digital", false]
+        ]]
+    ]]
 ]

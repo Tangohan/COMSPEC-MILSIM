@@ -91,4 +91,18 @@ return static function (PDO $pdo): void {
             CONSTRAINT fk_sse_interest_cd_case FOREIGN KEY (interest_case_id) REFERENCES sse_interest_cases (id) ON DELETE CASCADE ON UPDATE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
+
+    // Signature numérique du signalement (optionnelle sur historiques non signés).
+    if (!$columnExists($pdo, 'sse_interest_cases', 'signed_by_label')) {
+        $pdo->exec(
+            'ALTER TABLE sse_interest_cases
+             ADD COLUMN signed_by_label VARCHAR(160) NULL AFTER source_reliability'
+        );
+    }
+    if (!$columnExists($pdo, 'sse_interest_cases', 'signed_at')) {
+        $pdo->exec(
+            'ALTER TABLE sse_interest_cases
+             ADD COLUMN signed_at DATETIME NULL AFTER signed_by_label'
+        );
+    }
 };

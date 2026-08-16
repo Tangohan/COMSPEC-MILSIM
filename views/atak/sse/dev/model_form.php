@@ -127,12 +127,44 @@ require __DIR__ . '/_subnav.php';
                 <input id="network_size" name="network_size" type="number" min="0" max="40" value="<?= $h($val('network_size', '8')) ?>">
             </div>
             <div class="lab-form-field">
-                <label for="noise_probability">Bruit (0 à 1, optionnel)</label>
-                <input id="noise_probability" name="noise_probability" type="text" inputmode="decimal" value="<?= $h($val('noise_probability')) ?>" placeholder="ex. 0,15">
+                <label for="noise_probability">Niveau de bruit</label>
+                <select id="noise_probability" name="noise_probability">
+                    <?php
+                    $noiseOpts = [
+                        '' => 'Laisser le générateur décider',
+                        '0' => 'Aucun bruit',
+                        '0.1' => 'Faible',
+                        '0.2' => 'Modéré',
+                        '0.35' => 'Élevé',
+                        '0.5' => 'Très élevé',
+                    ];
+                    $noiseVal = \App\Services\Sse\SseArmaModelService::snapProbabilityChoice($val('noise_probability'));
+                    foreach ($noiseOpts as $k => $lab):
+                    ?>
+                        <option value="<?= $h($k) ?>" <?= $noiseVal === (string) $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="lab-form-help">Quantité d’informations parasites mélangées au vrai renseignement.</p>
             </div>
             <div class="lab-form-field">
-                <label for="false_lead_probability">Fausses pistes (0 à 1, optionnel)</label>
-                <input id="false_lead_probability" name="false_lead_probability" type="text" inputmode="decimal" value="<?= $h($val('false_lead_probability')) ?>" placeholder="ex. 0,20">
+                <label for="false_lead_probability">Fausses pistes</label>
+                <select id="false_lead_probability" name="false_lead_probability">
+                    <?php
+                    $leadOpts = [
+                        '' => 'Laisser le générateur décider',
+                        '0' => 'Aucune',
+                        '0.1' => 'Quelques-unes',
+                        '0.2' => 'Modérées',
+                        '0.35' => 'Nombreuses',
+                        '0.5' => 'Très nombreuses',
+                    ];
+                    $leadVal = \App\Services\Sse\SseArmaModelService::snapProbabilityChoice($val('false_lead_probability'));
+                    foreach ($leadOpts as $k => $lab):
+                    ?>
+                        <option value="<?= $h($k) ?>" <?= $leadVal === (string) $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="lab-form-help">Pistes trompeuses destinées à complexifier l’exploitation.</p>
             </div>
         </div>
 
@@ -185,7 +217,7 @@ require __DIR__ . '/_subnav.php';
             </div>
             <div class="lab-form-field lab-form-field--span2">
                 <label for="tags_text">Étiquettes (une par ligne)</label>
-                <textarea id="tags_text" name="tags_text" rows="2" placeholder="irak&#10;hvt"><?= $h($val('tags_text')) ?></textarea>
+                <textarea id="tags_text" name="tags_text" rows="2" placeholder="Irak&#10;Cible prioritaire"><?= $h($val('tags_text')) ?></textarea>
             </div>
         </div>
     </div>

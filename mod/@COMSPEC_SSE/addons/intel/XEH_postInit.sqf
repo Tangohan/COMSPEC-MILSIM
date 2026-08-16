@@ -1,5 +1,7 @@
 #include "script_component.hpp"
 
+diag_log "[SSE][POSTINIT][intel] BEGIN";
+
 if (hasInterface) then {
     // Mode entraînement : feedback après actions via event
     ["comspec_sse_recordExploited", {
@@ -17,3 +19,4 @@ if (hasInterface) then {
 }, 30] call CBA_fnc_addPerFrameHandler;
 
 ["intel postInit OK"] call comspec_sse_fnc_log;
+diag_log "[SSE][POSTINIT][intel] END";

@@ -521,6 +521,6 @@ $mapBoot = [
 ];
 $sseExtraScripts = '<script src="' . htmlspecialchars(asset_url('assets/js/sse-case-modals.js'), ENT_QUOTES, 'UTF-8') . '?v=202608160430"></script>'
     . '<script>window.SSE_CASE_MAP = ' . json_encode($mapBoot, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) . ';</script>'
-    . '<script src="' . htmlspecialchars(asset_url('assets/js/sse-case-map.js'), ENT_QUOTES, 'UTF-8') . '?v=202608161630"></script>';
+    . '<script src="' . htmlspecialchars(asset_url('assets/js/sse-case-map.js'), ENT_QUOTES, 'UTF-8') . '?v=202608161755"></script>';
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

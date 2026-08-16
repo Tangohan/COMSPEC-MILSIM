@@ -37,6 +37,7 @@ use App\Services\Sse\SseCrossMatchService;
 use App\Services\Sse\SseMeshService;
 use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseReportService;
+use App\Services\Sse\SseTerrainService;
 use App\Services\Media\ImageCompressionService;
 use App\Services\Sse\SseWorkspaceService;
 use App\Services\Tactical\AtakActivityLogService;
@@ -76,6 +77,7 @@ final class SsePortalController
         private ?SseCompletenessService $completeness = null,
         private ?SseCaseBundleService $caseBundles = null,
         private ?UserRepository $users = null,
+        private ?SseTerrainService $terrain = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -85,6 +87,7 @@ final class SsePortalController
         $this->persons ??= new SsePersonRepository();
         $this->watchlist ??= new SseWatchlistRepository();
         $this->sites ??= new SseSiteRepository();
+        $this->terrain ??= new SseTerrainService();
         $this->cross ??= new SseCrossMatchService();
         $this->pdf ??= new SseCasePdfService();
         $this->reports ??= new SseReportService();
@@ -391,12 +394,18 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/interet'));
         }
 
+        $signerLabel = trim((string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? ''));
+        if ($signerLabel === '') {
+            $signerLabel = 'Analyste';
+        }
+
         return $this->portalView('atak.sse.interest_case_form', [
             'title' => 'Ouvrir un dossier d’intérêt',
             'activeNav' => 'interet',
             'canManage' => true,
             'confidenceLevels' => SseInterestCaseRepository::CONFIDENCE,
             'interestLevels' => SseInterestCaseRepository::INTEREST,
+            'signerLabel' => $signerLabel,
         ]);
     }
 
@@ -412,6 +421,10 @@ final class SsePortalController
             Session::flash('error', 'La désignation temporaire et le motif d’ouverture sont obligatoires.');
             return Response::redirect(url('atak/sse/interet/nouveau'));
         }
+        if (!(bool) $request->input('digital_signature', false)) {
+            Session::flash('error', 'La signature numérique du signalement est obligatoire.');
+            return Response::redirect(url('atak/sse/interet/nouveau'));
+        }
         $fields = ['temporary_designation','suspected_alias','apparent_sex','estimated_age_range','suspected_nationality','suspected_affiliation','confidence_level','interest_level','opening_reason','description','origin_operator','observed_elements','analysis_facts','analysis_assumptions','analysis_contradictions','analysis_questions','collection_needs','operational_risk','recommendations','source_label','source_reliability','acquisition_at','mission_label'];
         $data = [];
         foreach ($fields as $field) {
@@ -420,8 +433,14 @@ final class SsePortalController
         $data['temporary_designation'] = $designation;
         $data['opening_reason'] = $reason;
         $data['created_by'] = (int) Session::get('user_id') ?: null;
+        $signer = trim((string) $request->input('signed_by_label', ''));
+        if ($signer === '') {
+            $signer = trim((string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Analyste'));
+        }
+        $data['signed_by_label'] = $signer !== '' ? $signer : 'Analyste';
+        $data['signed_at'] = date('Y-m-d H:i:s');
         $id = $this->interestCases->create($this->tenantId(), $data);
-        Session::flash('success', 'Dossier d’intérêt ouvert. Aucune identité n’a été déduite automatiquement.');
+        Session::flash('success', 'Dossier d’intérêt ouvert et signé numériquement. Aucune identité n’a été déduite automatiquement.');
         return Response::redirect(url('atak/sse/interet/' . $id));
     }
 
@@ -1149,7 +1168,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id));
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             return Response::redirect(url('atak/sse/dossiers/' . $id));
         }
         $dataUrl = (string) $request->input('image_data', '');
@@ -1222,7 +1241,7 @@ final class SsePortalController
         if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
             return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             return Response::json(['ok' => false, 'error' => 'Dossier inaccessible.'], 404);
         }
 
@@ -1254,7 +1273,7 @@ final class SsePortalController
         if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
             return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             return Response::json(['ok' => false, 'error' => 'Dossier inaccessible.'], 404);
         }
 
@@ -1297,7 +1316,7 @@ final class SsePortalController
         if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
             return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             return Response::json(['ok' => false, 'error' => 'Dossier inaccessible.'], 404);
         }
 
@@ -1314,7 +1333,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#analyse');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1371,7 +1390,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#lacunes');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1406,7 +1425,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#lacunes');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1427,7 +1446,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#decisions');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1457,7 +1476,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#relations');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1494,7 +1513,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#relations');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1600,6 +1619,18 @@ final class SsePortalController
         $intelGaps = $this->analytical->listGaps($this->tenantId(), $id);
         $analyticalDecisions = $this->analytical->listDecisions($this->tenantId(), $id);
         $caseLinks = $this->analytical->listCaseLinks($this->tenantId(), $id);
+        $linkableCases = [];
+        foreach ($this->cases->listForTenant($this->tenantId(), $this->access->caseScope(), ['is_folder' => 0]) as $candidate) {
+            $cid = (int) ($candidate['id'] ?? 0);
+            if ($cid < 1 || $cid === $id) {
+                continue;
+            }
+            $linkableCases[] = [
+                'id' => $cid,
+                'reference_code' => (string) ($candidate['reference_code'] ?? ''),
+                'title' => (string) ($candidate['title'] ?? ''),
+            ];
+        }
         $libraryEntries = $this->libraryForEditor($case);
         $contextualSuggestions = $this->contextualMentions->suggestForCase(
             $case,
@@ -1637,6 +1668,7 @@ final class SsePortalController
             'intelGaps' => $intelGaps,
             'analyticalDecisions' => $analyticalDecisions,
             'caseLinks' => $caseLinks,
+            'linkableCases' => $linkableCases,
             'contextualSuggestions' => $contextualSuggestions,
             'executiveBrief' => $executiveBrief,
             'gapPresets' => SseContextualMentionService::presetGapMentions(),
@@ -2637,6 +2669,12 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/sites'));
         }
 
+        try {
+            $pct = $this->terrain->refreshSiteExploitation($tenantId, (int) $site['id']);
+            $site['exploitation_pct'] = $pct;
+        } catch (\Throwable) {
+        }
+
         return $this->portalView('atak.sse.site_show', [
             'title' => 'Site — ' . ($site['reference_code'] ?? ''),
             'site' => $site,
@@ -2667,7 +2705,39 @@ final class SsePortalController
 
             return Response::redirect($back);
         }
+        try {
+            $this->terrain->refreshSiteExploitation($this->tenantId(), $siteId);
+        } catch (\Throwable) {
+        }
         Session::flash('success', $checked ? 'Pièce marquée fouillée.' : 'Pièce remise en attente.');
+
+        return Response::redirect($back);
+    }
+
+    public function siteSeizureCustodyAction(Request $request, array $params = []): Response
+    {
+        $siteId = (int) ($params['id'] ?? 0);
+        $seizureId = (int) ($params['seizureId'] ?? 0);
+        $back = url('atak/sse/sites/' . $siteId);
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $row = $this->terrain->advanceSeizureCustody($this->tenantId(), $seizureId, [
+            'custody_state' => (string) $request->input('custody_state', 'COLLECTED'),
+            'packaging' => (string) $request->input('packaging', ''),
+            'seal_code' => (string) $request->input('seal_code', ''),
+            'actor_callsign' => (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Cellule SSE'),
+        ]);
+        if ($row === null) {
+            Session::flash('error', 'Saisie introuvable.');
+
+            return Response::redirect($back);
+        }
+        Session::flash('success', 'Chaîne de possession mise à jour.');
 
         return Response::redirect($back);
     }
@@ -3135,6 +3205,33 @@ final class SsePortalController
         ]);
     }
 
+    public function searchSuggest(Request $request, array $params = []): Response
+    {
+        $q = trim((string) $request->query('q', ''));
+        $results = [];
+        if (mb_strlen($q) >= 2) {
+            try {
+                $results = $this->workspace->globalSearch($this->tenantId(), $q, $this->access->caseScope(), 12);
+            } catch (\Throwable $e) {
+                error_log('[sse.searchSuggest] ' . $e->getMessage());
+            }
+        }
+
+        return Response::json([
+            'ok' => true,
+            'q' => $q,
+            'results' => array_map(static function (array $r): array {
+                return [
+                    'type' => (string) ($r['type'] ?? ''),
+                    'ref' => (string) ($r['ref'] ?? ''),
+                    'label' => (string) ($r['label'] ?? ''),
+                    'hint' => (string) ($r['hint'] ?? ''),
+                    'href' => (string) ($r['href'] ?? ''),
+                ];
+            }, is_array($results) ? $results : []),
+        ]);
+    }
+
     public function identitiesIndex(Request $request, array $params = []): Response
     {
         return $this->personsIndex($request, array_merge($params, ['_nav' => 'identites']));
@@ -3154,6 +3251,15 @@ final class SsePortalController
 
         $tech = !empty($person['biometrics_simulated']) ? 72 : 48;
         $corro = !empty($person['primary_photo']) ? 55 : 25;
+        $terrain = [];
+        try {
+            $terrain = $this->terrain->personTerrainDossier($this->tenantId(), $person);
+            if (($terrain['acquisition_quality_avg'] ?? null) !== null) {
+                $tech = (int) $terrain['acquisition_quality_avg'];
+            }
+        } catch (\Throwable) {
+            $terrain = [];
+        }
         $global = (int) min(95, round(($tech + $corro + 40) / 2.2));
         $stamp = (string) ($person['created_at'] ?? '');
         $timeline = [
@@ -3173,16 +3279,41 @@ final class SsePortalController
             ];
         }
 
+        $samples = is_array($terrain['biometric_samples'] ?? null) ? $terrain['biometric_samples'] : [];
+        $bioPrints = 'Non relevées';
+        $bioIris = 'Non relevé';
+        foreach ($samples as $s) {
+            if (($s['kind'] ?? '') === 'empreintes') {
+                $q = $s['quality'] ?? null;
+                $bioPrints = $q !== null
+                    ? sprintf('Relevées — %s (%d %%)', $s['quality_label'] ?? '', (int) $q)
+                    : 'Relevées';
+            }
+            if (($s['kind'] ?? '') === 'iris') {
+                $q = $s['quality'] ?? null;
+                $bioIris = $q !== null
+                    ? sprintf('Relevé — %s (%d %%)', $s['quality_label'] ?? '', (int) $q)
+                    : 'Relevé';
+            }
+        }
+        if ($bioPrints === 'Non relevées' && !empty($person['biometrics_simulated'])) {
+            $bioPrints = 'Relevées (sim.)';
+        }
+        if ($bioIris === 'Non relevé' && !empty($person['biometrics_simulated'])) {
+            $bioIris = 'Relevé (sim.)';
+        }
+
         return $this->portalView('atak.sse.person_show', [
             'title' => 'IDN-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT) . ' — ' . (string) ($person['display_name'] ?? ''),
             'person' => $person,
+            'terrain' => $terrain,
             'objectMeta' => [
                 'ref' => 'IDN-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT),
                 'priority' => $global >= 70 ? 'élevée' : 'normale',
                 'classification' => 'Confidentiel',
                 'last_seen' => (string) ($person['updated_at'] ?? $person['created_at'] ?? '—'),
-                'bio_prints' => !empty($person['biometrics_simulated']) ? 'Relevées (sim.)' : 'Non relevées',
-                'bio_iris' => !empty($person['biometrics_simulated']) ? 'Relevé (sim.)' : 'Non relevé',
+                'bio_prints' => $bioPrints,
+                'bio_iris' => $bioIris,
                 'terminal' => 'SEEK / ATAK',
                 'collector' => (string) ($person['submitter_callsign'] ?? '—'),
                 'source' => 'Terminal terrain',
@@ -3209,24 +3340,20 @@ final class SsePortalController
                 'confidence_label' => $global >= 70 ? 'Élevée' : ($global >= 45 ? 'Moyenne' : 'Faible'),
                 'pros' => array_values(array_filter([
                     !empty($person['primary_photo']) ? 'Photographie faciale disponible' : null,
-                    !empty($person['biometrics_simulated']) ? 'Relevé biométrique présent' : null,
+                    !empty($person['biometrics_simulated']) || $samples !== [] ? 'Relevé biométrique présent' : null,
                     !empty($person['affiliation']) ? 'Affiliation déclarée' : null,
+                    !empty($terrain['subject_id']) ? 'Identifiant sujet attribué' : null,
                 ])),
                 'cons' => array_values(array_filter([
                     empty($person['nationality']) ? 'Nationalité non confirmée' : null,
                     empty($person['id_document_present']) ? 'Document d’identité absent' : null,
-                    'Biométrie incomplète ou simulée',
+                    (($terrain['identity_tier'] ?? '') !== 'CONFIRMED') ? 'Identité non confirmée par analyse' : null,
                 ])),
-                'revised_at' => gmdate('d/m/Y H:i') . 'Z',
+                'revised_at' => date('d/m/Y H:i') . 'Z',
                 'analyst' => 'Cellule SSE',
             ],
             'timeline' => $timeline,
-            'provenance' => [
-                [
-                    'at' => strlen($stamp) >= 16 ? substr($stamp, 11, 5) : date('H:i'),
-                    'text' => 'Donnée créée / importée depuis le terminal',
-                ],
-            ],
+            'provenance' => [],
             'canManage' => $this->canManage(),
             'activeNav' => 'identites',
         ]);
@@ -4293,6 +4420,23 @@ final class SsePortalController
         }
 
         return $back;
+    }
+
+    /**
+     * Dossier accessible en écriture : périmètre OK et sas code passé si le dossier en a un.
+     * Ne pas confondre avec caseUnlocked() seul — sans code dossier, unlocked reste vide
+     * alors que la consultation est déjà autorisée.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function requireWritableCase(int $id): ?array
+    {
+        $case = $this->requireCase($id);
+        if ($case === null || $this->caseNeedsUnlock($case)) {
+            return null;
+        }
+
+        return $case;
     }
 
     private function caseUnlocked(int $caseId): bool

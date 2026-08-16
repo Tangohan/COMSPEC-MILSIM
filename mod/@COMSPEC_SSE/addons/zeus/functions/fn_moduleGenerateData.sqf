@@ -36,9 +36,17 @@ if (hasInterface) then {
     missionNamespace setVariable ["comspec_sse_zeusPendingComplexity", _complexity];
     [_targets, _profile, _complexity] call comspec_sse_fnc_openGenerateDialog;
 } else {
-    {
-        [_x, _profile, _complexity, "ZEUS"] call comspec_sse_fnc_generateData;
-    } forEach _targets;
+    private _jobs = _targets apply { [_x, _profile, _complexity, "ZEUS"] };
+    [
+        _jobs,
+        {
+            params ["_ent", "_profile", "_complexity", "_by"];
+            if (isNull _ent) exitWith {};
+            if (_ent getVariable ["comspec_sse_generating", false]) exitWith {};
+            [_ent, _profile, _complexity, _by] call comspec_sse_fnc_generateData;
+        },
+        0.12
+    ] call comspec_sse_fnc_queueEntityJobs;
 };
 
 deleteVehicle _logic;

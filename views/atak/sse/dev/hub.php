@@ -24,14 +24,14 @@ foreach ($templates as $tpl) {
 $groupKeys = array_keys($grouped);
 $firstGroup = $groupKeys[0] ?? '';
 ?>
-<div class="breadcrumb">Athena / SSE / <strong>Atelier de préparation</strong></div>
+<div class="breadcrumb">Athena / SSE / <strong>Modèles de mission</strong></div>
 
 <section class="lab-hero" aria-labelledby="lab-hero-title">
     <div class="lab-hero__main">
-        <p class="lab-hero__kicker">Préparation mission</p>
-        <h1 id="lab-hero-title">Atelier de préparation</h1>
+        <p class="lab-hero__kicker">Atelier de préparation</p>
+        <h1 id="lab-hero-title">Créer des modèles de mission</h1>
         <p class="lab-hero__lead">
-            Concevez les modèles destinés aux missions Arma : profils, thèmes, contacts et messages.
+            Préparez les profils, thèmes et listes narratives destinés aux missions Arma.
             Une fois prêts, emportez-les pour les appliquer en jeu via le module COMSPEC SSE.
         </p>
     </div>
@@ -99,7 +99,57 @@ $firstGroup = $groupKeys[0] ?? '';
 
 <section class="panel" style="margin-top:10px">
     <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">02</span> Scénarios de dossier complets</div>
+        <div class="panel-title"><span class="panel-index">02</span> Kits mission (datasets)</div>
+        <div class="panel-meta">Eden · Zeus · générateur</div>
+    </div>
+    <div class="panel-body">
+        <p class="lab-form-lead">
+            Packs narratifs prêts à poser en mission (graine stable, rôles, niveaux de révélation).
+        </p>
+        <?php
+        $missionKits = is_array($missionKits ?? null) ? $missionKits : [];
+        if ($missionKits === []):
+        ?>
+            <p class="muted">Aucun kit mission n’est publié pour le moment.</p>
+        <?php else: ?>
+            <div class="lab-tpl-grid">
+                <?php foreach ($missionKits as $kit): ?>
+                    <?php if (!is_array($kit)) {
+                        continue;
+                    } ?>
+                    <article class="lab-tpl-card">
+                        <p class="lab-tpl-card__era"><?= $h((string) ($kit['era'] ?? '')) ?></p>
+                        <h3><?= $h((string) ($kit['label'] ?? '')) ?></h3>
+                        <p><?= $h((string) ($kit['summary'] ?? '')) ?></p>
+                        <p class="muted">Graine : <?= $h((string) ($kit['seed'] ?? '')) ?></p>
+                        <?php
+                        $roles = is_array($kit['roles'] ?? null) ? $kit['roles'] : [];
+                        if ($roles !== []):
+                        ?>
+                            <ul class="muted" style="margin:.5rem 0 0;padding-left:1.1rem;font-size:.85rem">
+                                <?php foreach ($roles as $role): ?>
+                                    <?php if (!is_array($role)) {
+                                        continue;
+                                    } ?>
+                                    <li><?= $h((string) ($role['label'] ?? '')) ?><?php
+                                        $alias = trim((string) ($role['alias'] ?? ''));
+                                        if ($alias !== '') {
+                                            echo ' — ' . $h($alias);
+                                        }
+                                    ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
+
+<section class="panel" style="margin-top:10px">
+    <div class="panel-header">
+        <div class="panel-title"><span class="panel-index">03</span> Scénarios de dossier complets</div>
         <div class="panel-meta">Athena + Arma</div>
     </div>
     <div class="panel-body lab-scenario-card">
@@ -118,7 +168,7 @@ $firstGroup = $groupKeys[0] ?? '';
 
 <section class="panel" style="margin-top:10px">
     <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">03</span> Modèles récents</div>
+        <div class="panel-title"><span class="panel-index">04</span> Modèles récents</div>
         <a class="link" href="<?= $h(url('atak/sse/dev/modeles')) ?>">Voir tous</a>
     </div>
     <?php if ($recentModels === []): ?>

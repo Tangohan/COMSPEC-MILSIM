@@ -175,10 +175,23 @@ if (_type in ["MEDIA", "OBJECT"] || {((toLower typeOf _entity) find "camera") >=
 _data = [_data, "sections", _sections] call comspec_sse_fnc_setPair;
 if (isNil "_data" || {!(_data isEqualType [])}) exitWith { false };
 
-[_entity, _data, true] call comspec_sse_fnc_setData;
+// Pendant generateData : écriture locale seulement (publish différé par generateData).
+private _pub = !(_entity getVariable ["comspec_sse_generating", false]);
+[_entity, _data, _pub] call comspec_sse_fnc_setData;
 
 if (_uid isEqualTo "") then {
     _uid = [_data, "uid", ""] call comspec_sse_fnc_getPair;
 };
-["SSE_RecordCreated", [_entity, _uid]] call comspec_sse_fnc_emitEvent;
+if (_pub) then {
+    ["SSE_RecordCreated", [_entity, _uid]] call comspec_sse_fnc_emitEvent;
+} else {
+    // Émettre après publish pour éviter listeners pendant la pile de génération
+    if (!isNil "CBA_fnc_waitAndExecute") then {
+        [{
+            params ["_e", "_u"];
+            if (isNull _e) exitWith {};
+            ["SSE_RecordCreated", [_e, _u]] call comspec_sse_fnc_emitEvent;
+        }, [_entity, _uid], 0.25] call CBA_fnc_waitAndExecute;
+    };
+};
 true

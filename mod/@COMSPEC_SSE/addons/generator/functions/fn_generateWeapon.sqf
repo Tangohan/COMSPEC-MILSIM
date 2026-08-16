@@ -19,7 +19,9 @@ private _pack = [_theme, _seed, _cluster, _pools] call comspec_sse_fnc_getThemeP
 
 private _types = ["fusil d'assaut", "mitrailleuse légère", "lance-roquettes", "pistolet", "fusil de précision"];
 private _marks = ["numéro gratté", "marque atelier local", "aucune", "cachet cellule", "peinture récente"];
-private _serial = format ["WPN-%1-%2", [_seed, "ws"] call comspec_sse_fnc_hash, 100 + (([_seed, "wn"] call comspec_sse_fnc_hash) mod 900)];
+private _hWs = [_seed, "ws"] call comspec_sse_fnc_hash;
+private _hWn = [_seed, "wn"] call comspec_sse_fnc_hash;
+private _serial = format ["WPN-%1-%2", _hWs, 100 + (_hWn mod 900)];
 
 private _grid = _pack getOrDefault ["grid", ""];
 if (_grid isEqualTo "") then { _grid = _cluster getOrDefault ["depotGrid", "?"]; };
@@ -42,13 +44,17 @@ if (_complexity in ["DETAILED", "HIGH_VALUE"]) then {
     _notes pushBack format ["Propriétaire présumé : %1", _ownerHint];
 };
 
+private _intelText = format ["Armement cohérent avec thème « %1 »", _themeLabel];
 private _intelItem = createHashMapFromArray [
-    ["text", format ["Armement cohérent avec thème « %1 »", _themeLabel]],
+    ["text", _intelText],
     ["confidence", 0.62]
 ];
 
+private _uid = format ["SSE-WPN-%1", _seed];
+private _summary = format ["%1 - %2", _kind, _serial];
+
 createHashMapFromArray [
-    ["uid", format ["SSE-WPN-%1", _seed]],
+    ["uid", _uid],
     ["weaponKind", _kind],
     ["serial", _serial],
     ["markings", _mark],
@@ -58,5 +64,5 @@ createHashMapFromArray [
     ["documents", _docs],
     ["intel", [_intelItem]],
     ["cluster", _cluster],
-    ["summary", format ["%1 — %2", _kind, _serial]]
+    ["summary", _summary]
 ]

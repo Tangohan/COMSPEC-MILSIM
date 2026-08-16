@@ -18,7 +18,8 @@ class CfgPatches {
             "COMSPEC_SSE_Module_SpoilView",
             "COMSPEC_SSE_Module_AfterAction",
             "COMSPEC_SSE_Module_SandboxSite",
-            "COMSPEC_SSE_Module_ZeusControl"
+            "COMSPEC_SSE_Module_ZeusControl",
+            "COMSPEC_SSE_Module_ScenarioDirector"
         };
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
@@ -49,6 +50,7 @@ class CfgFunctions {
             class moduleAfterAction {};
             class moduleSandboxSite {};
             class moduleZeusControl {};
+            class moduleScenarioDirector {};
             class openGenerateDialog {};
             class applyGenerateDialog {};
             class openModelDialog {};
@@ -326,7 +328,7 @@ class CfgVehicles {
             };
             class ScenarioPack {
                 displayName = "Pack scénario (optionnel)";
-                description = "INSURGENT_CELL, SAFEHOUSE, IED_WORKSHOP, WEAPONS_DEPOT, …";
+                description = "FALCON, INSURGENT_CELL, SAFEHOUSE, IED_WORKSHOP, WEAPONS_DEPOT, …";
                 typeName = "STRING";
                 defaultValue = "";
             };
@@ -380,6 +382,41 @@ class CfgVehicles {
         class ModuleDescription {
             description = "Ouvre le panneau Zeus SSE Control (vérité / connu joueurs, génération, liens, AAR).";
             sync[] = {"Anything"};
+        };
+    };
+
+    class COMSPEC_SSE_Module_ScenarioDirector: COMSPEC_SSE_Module_Base {
+        scope = 2;
+        scopeCurator = 2;
+        displayName = "Scenario Director (dataset / niveau)";
+        function = "comspec_sse_fnc_moduleScenarioDirector";
+        class Arguments {
+            class DatasetId {
+                displayName = "Dataset";
+                description = "falcon (recommandé) ou autre ID enregistré";
+                typeName = "STRING";
+                defaultValue = "falcon";
+            };
+            class ScenarioLevel {
+                displayName = "Niveau de révélation (0–3)";
+                description = "0 Surface · 1 Tactique · 2 Terrain · 3 Vérité complète";
+                typeName = "NUMBER";
+                defaultValue = 1;
+            };
+            class Radius {
+                displayName = "Rayon (m)";
+                typeName = "NUMBER";
+                defaultValue = 50;
+            };
+            class Action {
+                displayName = "Action";
+                description = "APPLY = poser le dataset · LEVEL_ONLY = changer le niveau · LIST = lister";
+                typeName = "STRING";
+                defaultValue = "APPLY";
+            };
+        };
+        class ModuleDescription {
+            description = "LOT 8 — Applique un dataset (ex. FALCON) et pilote le niveau de scénario.";
         };
     };
 };

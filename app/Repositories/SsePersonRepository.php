@@ -225,6 +225,48 @@ final class SsePersonRepository
         return $out;
     }
 
+    /**
+     * Recherche textuelle sur le tenant (tous contextes).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function searchForTenant(int $tenantId, string $q, int $limit = 20): array
+    {
+        $q = trim($q);
+        if ($q === '' || mb_strlen($q) < 2) {
+            return [];
+        }
+        $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%';
+        $limit = max(1, min(50, $limit));
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT p.* FROM sse_persons p
+                 WHERE p.tenant_id = :t
+                   AND (
+                     p.last_name LIKE :q1 OR p.first_name LIKE :q2 OR p.alias LIKE :q3
+                     OR CAST(p.id AS CHAR) LIKE :q4
+                   )
+                 ORDER BY p.id DESC
+                 LIMIT ' . $limit,
+                [
+                    't' => $tenantId,
+                    'q1' => $like,
+                    'q2' => $like,
+                    'q3' => $like,
+                    'q4' => $like,
+                ]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = $this->hydrate($row, false);
+        }
+
+        return $out;
+    }
+
     public function tenantHasAnyPerson(int $tenantId): bool
     {
         try {
@@ -240,26 +282,112 @@ final class SsePersonRepository
     /**
      * @param array<string, mixed> $data
      */
+    /**
+     * @param array<string, mixed> $fields
+     */
+    public function updateTerrainFields(int $personId, int $tenantId, array $fields): bool
+    {
+        $sets = [];
+        $params = ['id' => $personId, 't' => $tenantId];
+        foreach (['subject_id', 'seek_stage', 'identity_tier'] as $col) {
+            if (array_key_exists($col, $fields)) {
+                $sets[] = "{$col} = :{$col}";
+                $params[$col] = $fields[$col] !== null && $fields[$col] !== ''
+                    ? (string) $fields[$col] : null;
+            }
+        }
+        if (array_key_exists('acquisition_quality_avg', $fields)) {
+            $sets[] = 'acquisition_quality_avg = :acquisition_quality_avg';
+            $params['acquisition_quality_avg'] = $fields['acquisition_quality_avg'] !== null
+                ? max(0, min(100, (int) $fields['acquisition_quality_avg'])) : null;
+        }
+        if ($sets === []) {
+            return false;
+        }
+        try {
+            return $this->db->execute(
+                'UPDATE sse_persons SET ' . implode(', ', $sets)
+                . ' WHERE id = :id AND tenant_id = :t',
+                $params
+            ) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function addCustodyEventPublic(
+        int $tenantId,
+        ?int $personId,
+        ?int $photoId,
+        string $type,
+        string $label,
+        string $actor
+    ): void {
+        $this->addCustodyEvent($tenantId, $personId, $photoId, $type, $label, $actor);
+    }
+
     public function addPhoto(int $personId, int $tenantId, array $data): int
     {
-        $photoId = (int) $this->db->insert(
-            'INSERT INTO sse_person_photos (
-                person_id, tenant_id, image_path, angle, caption, author_callsign, pos_x, pos_y, pos_z
-            ) VALUES (
-                :person_id, :tenant_id, :image_path, :angle, :caption, :author_callsign, :pos_x, :pos_y, :pos_z
-            )',
-            [
-                'person_id' => $personId,
-                'tenant_id' => $tenantId,
-                'image_path' => (string) ($data['image_path'] ?? ''),
-                'angle' => $this->normalizeAngle((string) ($data['angle'] ?? 'face')),
-                'caption' => $this->nullIfEmpty($data['caption'] ?? null),
-                'author_callsign' => $this->nullIfEmpty($data['author_callsign'] ?? $data['author'] ?? null),
-                'pos_x' => $this->floatOrNull($data['pos_x'] ?? null),
-                'pos_y' => $this->floatOrNull($data['pos_y'] ?? null),
-                'pos_z' => $this->floatOrNull($data['pos_z'] ?? null),
-            ]
-        );
+        $meta = $data['metadata'] ?? $data['metadata_json'] ?? null;
+        $metaJson = null;
+        if (is_array($meta)) {
+            $metaJson = json_encode($meta, JSON_UNESCAPED_UNICODE);
+        } elseif (is_string($meta) && $meta !== '') {
+            $metaJson = $meta;
+        }
+        $quality = isset($data['quality']) ? max(0, min(100, (int) $data['quality'])) : null;
+        $photoType = strtoupper(trim((string) ($data['photo_type'] ?? 'FACE')));
+        if ($photoType === '') {
+            $photoType = 'FACE';
+        }
+
+        try {
+            $photoId = (int) $this->db->insert(
+                'INSERT INTO sse_person_photos (
+                    person_id, tenant_id, image_path, angle, photo_type, quality, heading,
+                    case_id, target_ref, metadata_json, caption, author_callsign, pos_x, pos_y, pos_z
+                ) VALUES (
+                    :person_id, :tenant_id, :image_path, :angle, :photo_type, :quality, :heading,
+                    :case_id, :target_ref, :metadata_json, :caption, :author_callsign, :pos_x, :pos_y, :pos_z
+                )',
+                [
+                    'person_id' => $personId,
+                    'tenant_id' => $tenantId,
+                    'image_path' => (string) ($data['image_path'] ?? ''),
+                    'angle' => $this->normalizeAngle((string) ($data['angle'] ?? 'face')),
+                    'photo_type' => $photoType,
+                    'quality' => $quality,
+                    'heading' => isset($data['heading']) ? (int) $data['heading'] : null,
+                    'case_id' => !empty($data['case_id']) ? (int) $data['case_id'] : null,
+                    'target_ref' => $this->nullIfEmpty($data['target_ref'] ?? null),
+                    'metadata_json' => $metaJson,
+                    'caption' => $this->nullIfEmpty($data['caption'] ?? null),
+                    'author_callsign' => $this->nullIfEmpty($data['author_callsign'] ?? $data['author'] ?? null),
+                    'pos_x' => $this->floatOrNull($data['pos_x'] ?? null),
+                    'pos_y' => $this->floatOrNull($data['pos_y'] ?? null),
+                    'pos_z' => $this->floatOrNull($data['pos_z'] ?? null),
+                ]
+            );
+        } catch (\Throwable) {
+            $photoId = (int) $this->db->insert(
+                'INSERT INTO sse_person_photos (
+                    person_id, tenant_id, image_path, angle, caption, author_callsign, pos_x, pos_y, pos_z
+                ) VALUES (
+                    :person_id, :tenant_id, :image_path, :angle, :caption, :author_callsign, :pos_x, :pos_y, :pos_z
+                )',
+                [
+                    'person_id' => $personId,
+                    'tenant_id' => $tenantId,
+                    'image_path' => (string) ($data['image_path'] ?? ''),
+                    'angle' => $this->normalizeAngle((string) ($data['angle'] ?? 'face')),
+                    'caption' => $this->nullIfEmpty($data['caption'] ?? null),
+                    'author_callsign' => $this->nullIfEmpty($data['author_callsign'] ?? $data['author'] ?? null),
+                    'pos_x' => $this->floatOrNull($data['pos_x'] ?? null),
+                    'pos_y' => $this->floatOrNull($data['pos_y'] ?? null),
+                    'pos_z' => $this->floatOrNull($data['pos_z'] ?? null),
+                ]
+            );
+        }
 
         $person = $this->db->fetchOne('SELECT primary_photo_id FROM sse_persons WHERE id = :id AND tenant_id = :t', [
             'id' => $personId,
@@ -453,6 +581,11 @@ final class SsePersonRepository
             'submitter_steam_id' => $row['submitter_steam_id'] ?? null,
             'primary_photo_id' => isset($row['primary_photo_id']) ? (int) $row['primary_photo_id'] : null,
             'target_unit_netid' => $row['target_unit_netid'] ?? null,
+            'subject_id' => $row['subject_id'] ?? null,
+            'seek_stage' => (string) ($row['seek_stage'] ?? 'capture'),
+            'identity_tier' => strtoupper((string) ($row['identity_tier'] ?? 'DECLARED')),
+            'acquisition_quality_avg' => isset($row['acquisition_quality_avg'])
+                ? (int) $row['acquisition_quality_avg'] : null,
             'medical_context' => $this->decodeJsonMap($row['medical_context_json'] ?? null),
             'identity_query' => $this->decodeJsonMap($row['identity_query_json'] ?? null),
             'signature' => $this->hydrateSignature($row),
@@ -602,27 +735,69 @@ final class SsePersonRepository
             $kind = 'empreintes';
         }
         $quality = isset($data['quality']) ? max(0, min(100, (int) $data['quality'])) : null;
+        $qualityLabel = $data['quality_label'] ?? null;
+        if ($qualityLabel === null || $qualityLabel === '') {
+            $qualityLabel = $quality === null ? null : (
+                $quality < 30 ? 'Insuffisante' : (
+                    $quality < 55 ? 'Partielle' : ($quality < 80 ? 'Bonne' : 'Excellente')
+                )
+            );
+        }
+        $laterality = $this->nullIfEmpty($data['laterality'] ?? null);
+        $conditions = $data['conditions'] ?? $data['conditions_json'] ?? null;
+        $conditionsJson = null;
+        if (is_array($conditions)) {
+            $conditionsJson = json_encode($conditions, JSON_UNESCAPED_UNICODE);
+        } elseif (is_string($conditions) && $conditions !== '') {
+            $conditionsJson = $conditions;
+        }
 
         try {
             $this->db->execute(
                 'INSERT INTO sse_biometric_samples
-                    (person_id, tenant_id, kind, quality, lab_reference, operator_callsign)
-                 VALUES (:p, :t, :k, :q, :r, :o)
+                    (person_id, tenant_id, kind, laterality, quality, quality_label, conditions_json, lab_reference, operator_callsign)
+                 VALUES (:p, :t, :k, :lat, :q, :ql, :cj, :r, :o)
                  ON DUPLICATE KEY UPDATE
+                    laterality = VALUES(laterality),
                     quality = VALUES(quality),
+                    quality_label = VALUES(quality_label),
+                    conditions_json = VALUES(conditions_json),
                     lab_reference = VALUES(lab_reference),
                     operator_callsign = VALUES(operator_callsign)',
                 [
                     'p' => $personId,
                     't' => $tenantId,
                     'k' => $kind,
+                    'lat' => $laterality,
                     'q' => $quality,
+                    'ql' => $this->nullIfEmpty($qualityLabel),
+                    'cj' => $conditionsJson,
                     'r' => $this->nullIfEmpty($data['lab_reference'] ?? null),
                     'o' => $this->nullIfEmpty($data['operator_callsign'] ?? null),
                 ]
             );
         } catch (\Throwable) {
-            // Table absente sur une base non migrée : la fiche reste valide sans échantillon.
+            try {
+                $this->db->execute(
+                    'INSERT INTO sse_biometric_samples
+                        (person_id, tenant_id, kind, quality, lab_reference, operator_callsign)
+                     VALUES (:p, :t, :k, :q, :r, :o)
+                     ON DUPLICATE KEY UPDATE
+                        quality = VALUES(quality),
+                        lab_reference = VALUES(lab_reference),
+                        operator_callsign = VALUES(operator_callsign)',
+                    [
+                        'p' => $personId,
+                        't' => $tenantId,
+                        'k' => $kind,
+                        'q' => $quality,
+                        'r' => $this->nullIfEmpty($data['lab_reference'] ?? null),
+                        'o' => $this->nullIfEmpty($data['operator_callsign'] ?? null),
+                    ]
+                );
+            } catch (\Throwable) {
+                // Table absente sur une base non migrée : la fiche reste valide sans échantillon.
+            }
         }
     }
 
@@ -649,7 +824,10 @@ final class SsePersonRepository
                 'id' => (int) ($row['id'] ?? 0),
                 'kind' => $kind,
                 'kind_label' => $labels[$kind] ?? 'Empreintes',
+                'laterality' => $row['laterality'] ?? null,
                 'quality' => isset($row['quality']) ? (int) $row['quality'] : null,
+                'quality_label' => $row['quality_label'] ?? null,
+                'conditions' => $this->decodeJsonMap($row['conditions_json'] ?? null),
                 'lab_reference' => $row['lab_reference'] ?? null,
                 'operator_callsign' => $row['operator_callsign'] ?? null,
                 'created_at' => $row['created_at'] ?? null,
@@ -667,9 +845,15 @@ final class SsePersonRepository
             'id' => (int) ($row['id'] ?? 0),
             'person_id' => (int) ($row['person_id'] ?? 0),
             'image_path' => $path,
-            'url' => $path !== '' ? '/' . ltrim($path, '/') : null,
+            'url' => $path !== '' ? user_media_public_url($path) : null,
             'angle' => (string) ($row['angle'] ?? 'face'),
             'angle_label' => $this->angleLabel((string) ($row['angle'] ?? 'face')),
+            'photo_type' => (string) ($row['photo_type'] ?? 'FACE'),
+            'quality' => isset($row['quality']) ? (int) $row['quality'] : null,
+            'heading' => isset($row['heading']) ? (int) $row['heading'] : null,
+            'case_id' => isset($row['case_id']) ? (int) $row['case_id'] : null,
+            'target_ref' => $row['target_ref'] ?? null,
+            'metadata' => $this->decodeJsonMap($row['metadata_json'] ?? null),
             'caption' => $row['caption'] ?? null,
             'author_callsign' => $row['author_callsign'] ?? null,
             'pos_x' => isset($row['pos_x']) ? (float) $row['pos_x'] : null,

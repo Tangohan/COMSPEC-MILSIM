@@ -18,7 +18,6 @@ private _profile = _ov getOrDefault ["profile", "INSURGENT"];
 private _complexity = _ov getOrDefault ["complexity", "DETAILED"];
 private _theme = _ov getOrDefault ["theme", "fuel_delivery"];
 
-// Parse basique du brief
 private _b = toLower _brief;
 if ((_b find "5") >= 0 || {(_b find "cinq") >= 0}) then { _count = 5; };
 if ((_b find "3") >= 0 || {(_b find "trois") >= 0}) then { _count = 3; };
@@ -32,30 +31,37 @@ private _cluster = [_seed, _profile, _complexity, "IRAQ"] call comspec_sse_fnc_g
 _cluster set ["theme", _theme];
 _cluster set ["brief", _brief];
 
-private _created = [];
 private _units = nearestObjects [_pos, ["CAManBase"], _radius];
 private _n = (_count min count _units) max 0;
+private _jobs = [];
 for "_i" from 0 to (_n - 1) do {
     private _u = _units select _i;
     _u setVariable ["comspec_sse_region", "IRAQ", true];
     _u setVariable ["comspec_sse_theme", _theme, true];
-    [_u, _profile, _complexity, "ZEUS_BRIEF", _cluster] call comspec_sse_fnc_generateData;
-    [_u] call comspec_sse_fnc_attachIntelLayers;
-    _created pushBack _u;
+    // generateData appelle déjà attachIntelLayers — ne pas doubler.
+    _jobs pushBack [_u, _profile, _complexity, "ZEUS_BRIEF", _cluster];
 };
 
-// Véhicules proches
 {
-    [_x, _profile, _complexity, "ZEUS_BRIEF", _cluster] call comspec_sse_fnc_generateData;
-    [_x] call comspec_sse_fnc_attachIntelLayers;
-    _created pushBack _x;
+    _jobs pushBack [_x, _profile, _complexity, "ZEUS_BRIEF", _cluster];
 } forEach ((nearestObjects [_pos, ["LandVehicle"], _radius]) select [0, 2]);
+
+[
+    _jobs,
+    {
+        params ["_ent", "_profile", "_complexity", "_by", "_cluster"];
+        if (isNull _ent) exitWith {};
+        if (_ent getVariable ["comspec_sse_generating", false]) exitWith {};
+        [_ent, _profile, _complexity, _by, _cluster] call comspec_sse_fnc_generateData;
+    },
+    0.12
+] call comspec_sse_fnc_queueEntityJobs;
 
 [_brief, "ORGANIZATION", createHashMapFromArray [
     ["label", _brief],
     ["tags", ["PERSON", "LOGISTICS"]],
-    ["members", count _created]
+    ["members", count _jobs]
 ]] call comspec_sse_fnc_addLogicalEntity;
 
-hint format ["Réseau généré depuis brief\n%1\n%2 entité(s)", _brief, count _created];
-_created
+hint format ["Réseau en file depuis brief\n%1\n%2 entité(s)", _brief, count _jobs];
+_jobs apply { _x select 0 }

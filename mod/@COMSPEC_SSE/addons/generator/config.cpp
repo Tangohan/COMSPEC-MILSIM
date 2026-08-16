@@ -31,6 +31,7 @@ class CfgFunctions {
             class generateCluster {};
             class pickFromSeed {};
             class ensureGenerated {};
+            class queueEntityJobs {};
             class resolveEntityType {};
             class resolveProfile {};
             class resolveComplexity {};
@@ -46,6 +47,12 @@ class CfgFunctions {
             class importModel {};
             class modelFromEntity {};
             class applyModel {};
+            class datasetFalcon {};
+            class registerDatasets {};
+            class listDatasets {};
+            class loadDataset {};
+            class applyDatasetRole {};
+            class applyDataset {};
         };
     };
 };

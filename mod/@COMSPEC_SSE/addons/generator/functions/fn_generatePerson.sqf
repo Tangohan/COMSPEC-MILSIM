@@ -115,20 +115,29 @@ private _packLocs = _pack getOrDefault ["locations", []];
 
 // Intel
 private _intel = [];
+private _intelPack = _pack getOrDefault ["intel", []];
+private _intelSlice = _intelPack select [0, _nIntel min 5];
 {
-    _intel pushBack (createHashMapFromArray [["text", _x], ["confidence", 0.6 + (([_seed, _x] call comspec_sse_fnc_hash) mod 40) / 100]]);
-} forEach ((_pack getOrDefault ["intel", []]) select [0, _nIntel min 5]);
+    private _conf = 0.6 + (([_seed, _x] call comspec_sse_fnc_hash) mod 40) / 100;
+    _intel pushBack (createHashMapFromArray [["text", _x], ["confidence", _conf]]);
+} forEach _intelSlice;
 
 // Biométrie
 private _bio = createHashMap;
 if (_hasBio) then {
+    private _fpId = format ["FP-%1", [_seed, "fp"] call comspec_sse_fnc_hash];
+    private _irId = format ["IR-%1", [_seed, "ir"] call comspec_sse_fnc_hash];
+    private _dnaId = format ["DNA-%1", [_seed, "dna"] call comspec_sse_fnc_hash];
+    private _heightCm = 165 + (([_seed, "h"] call comspec_sse_fnc_hash) mod 30);
+    private _builds = ["slim", "medium", "heavy"];
+    private _build = _builds select (([_seed, "bd"] call comspec_sse_fnc_hash) mod 3);
     _bio = createHashMapFromArray [
-        ["fingerprintId", format ["FP-%1", [_seed, "fp"] call comspec_sse_fnc_hash]],
-        ["irisId", format ["IR-%1", [_seed, "ir"] call comspec_sse_fnc_hash]],
-        ["dnaId", format ["DNA-%1", [_seed, "dna"] call comspec_sse_fnc_hash]],
+        ["fingerprintId", _fpId],
+        ["irisId", _irId],
+        ["dnaId", _dnaId],
         ["facePhoto", false],
-        ["heightCm", 165 + (([_seed, "h"] call comspec_sse_fnc_hash) mod 30)],
-        ["build", ["slim", "medium", "heavy"] select (([_seed, "bd"] call comspec_sse_fnc_hash) mod 3)]
+        ["heightCm", _heightCm],
+        ["build", _build]
     ];
 };
 
@@ -141,6 +150,7 @@ private _idCode = format [
     10 + ((_idH / 10) mod 80),
     1000 + ((_idH / 100) mod 8000)
 ];
+private _dobApprox = format ["19%1", 70 + (([_seed, "dob"] call comspec_sse_fnc_hash) mod 30)];
 
 private _identity = createHashMapFromArray [
     ["name", _name],
@@ -153,7 +163,7 @@ private _identity = createHashMapFromArray [
     ["region", _region],
     ["bloodType", _blood],
     ["idCode", _idCode],
-    ["dobApprox", format ["19%1", 70 + (([_seed, "dob"] call comspec_sse_fnc_hash) mod 30)]]
+    ["dobApprox", _dobApprox]
 ];
 
 createHashMapFromArray [

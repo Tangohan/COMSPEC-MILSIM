@@ -25,14 +25,16 @@ private _theme = _cluster getOrDefault ["theme", "fuel_delivery"];
 private _pack = [_theme, _seed, _cluster, _pools] call comspec_sse_fnc_getThemePack;
 
 private _owner = _cluster getOrDefault ["primaryName", "UNKNOWN"];
-private _phone = _cluster getOrDefault ["primaryPhone", format ["+964 750 %1", [_seed, "ph"] call comspec_sse_fnc_hash]];
+private _defaultPhone = format ["+964 750 %1", [_seed, "ph"] call comspec_sse_fnc_hash];
+private _phone = _cluster getOrDefault ["primaryPhone", _defaultPhone];
 private _contacts = _cluster getOrDefault ["networkContacts", ["ABU YASSIN", "FARID", "MUSTAFA"]];
 private _sms = _cluster getOrDefault ["sharedSms", []];
 if (count _sms == 0) then {
     private _pool = _pack getOrDefault ["sms", ["Confirmer demain."]];
     {
+        private _from = _contacts select (_forEachIndex mod (count _contacts max 1));
         _sms pushBack (createHashMapFromArray [
-            ["from", _contacts select (_forEachIndex mod (count _contacts max 1))],
+            ["from", _from],
             ["text", _x],
             ["noise", false]
         ]);
@@ -49,43 +51,65 @@ private _locs = [];
     _locs pushBack (createHashMapFromArray [["label", _label], ["grid", _g]]);
 } forEach ((_pack getOrDefault ["locations", []]) select [0, _nLocs min 5]);
 
+private _codeword = _pack getOrDefault ["codeword", ""];
 private _photos = [];
-private _captions = ["Véhicule utilitaire", "Entrée bâtiment", "Groupe d'hommes", "Document photographié", "Point de vue rue", "Plaque véhicule", format ["Code %1 scribbled", _pack getOrDefault ["codeword", ""]]];
+private _captions = [
+    "Véhicule utilitaire",
+    "Entrée bâtiment",
+    "Groupe d'hommes",
+    "Document photographié",
+    "Point de vue rue",
+    "Plaque véhicule",
+    format ["Code %1 scribbled", _codeword]
+];
 for "_i" from 0 to (((round (_nContacts / 2)) max 2) - 1) do {
+    private _picId = format ["PIC-%1-%2", _seed, _i];
+    private _caption = _captions select (_i mod (count _captions));
     _photos pushBack (createHashMapFromArray [
-        ["id", format ["PIC-%1-%2", _seed, _i]],
-        ["caption", _captions select (_i mod (count _captions))]
+        ["id", _picId],
+        ["caption", _caption]
     ]);
 };
 
 private _calls = [];
 for "_i" from 0 to (((_nContacts / 2) max 3) - 1) do {
     private _c = _contacts select (_i mod (count _contacts));
+    private _callKey = format ["call%1", _i];
+    private _duration = 20 + (([_seed, _callKey] call comspec_sse_fnc_hash) mod 400);
+    private _dir = if (_i mod 2 == 0) then {"IN"} else {"OUT"};
+    private _missed = (_i mod 5) == 0;
     _calls pushBack (createHashMapFromArray [
         ["with", _c],
-        ["duration", 20 + (([_seed, format ["call%1", _i]] call comspec_sse_fnc_hash) mod 400)],
-        ["dir", if (_i mod 2 == 0) then {"IN"} else {"OUT"}],
-        ["missed", (_i mod 5) == 0]
+        ["duration", _duration],
+        ["dir", _dir],
+        ["missed", _missed]
     ]);
 };
 
+private _packSummary = _pack getOrDefault ["summary", ""];
+private _packVehicle = _pack getOrDefault ["vehicle", ""];
+private _packPlate = _pack getOrDefault ["plate", ""];
 private _notes = [
-    _pack getOrDefault ["summary", ""],
-    format ["Codeword: %1", _pack getOrDefault ["codeword", ""]],
-    format ["Vehicle: %1 / %2", _pack getOrDefault ["vehicle", ""], _pack getOrDefault ["plate", ""]]
+    _packSummary,
+    format ["Codeword: %1", _codeword],
+    format ["Vehicle: %1 / %2", _packVehicle, _packPlate]
 ];
 
 private _deleted = [];
 if ((([_seed, "del"] call comspec_sse_fnc_hash) mod 100) < 40) then {
+    private _recoverable = (([_seed, "rec"] call comspec_sse_fnc_hash) mod 100) > 40;
     _deleted pushBack (createHashMapFromArray [
         ["type", "sms"],
-        ["text", "Message supprimé — référence dépôt"],
-        ["recoverable", (([_seed, "rec"] call comspec_sse_fnc_hash) mod 100) > 40]
+        ["text", "Message supprimé - référence dépôt"],
+        ["recoverable", _recoverable]
     ]);
 };
 
+private _uid = format ["SSE-DIG-%1", [_seed, "dig"] call comspec_sse_fnc_hash];
+private _applications = _pools getOrDefault ["applications", []];
+
 createHashMapFromArray [
-    ["uid", format ["SSE-DIG-%1", [_seed, "dig"] call comspec_sse_fnc_hash]],
+    ["uid", _uid],
     ["deviceType", "SMARTPHONE"],
     ["model", _model],
     ["owner", _owner],
@@ -97,10 +121,10 @@ createHashMapFromArray [
     ["calls", _calls],
     ["photos", _photos],
     ["locations", _locs],
-    ["applications", _pools getOrDefault ["applications", []]],
+    ["applications", _applications],
     ["notes", _notes],
     ["deletedData", _deleted],
     ["theme", _theme],
-    ["codeword", _pack getOrDefault ["codeword", ""]],
+    ["codeword", _codeword],
     ["cluster", _cluster]
 ]

@@ -43,10 +43,14 @@ Le même montage existait dans l’addon `ui` : `resultDialog.hpp` puis `screens
 ## Vérification
 
 - [x] Plus aucune déclaration `class Rsc…;` dans les fichiers de dialogue (recherche sur `mod/@COMSPEC_SSE`)
-- [x] Rebuild des PBO `zeus`, `ui` et `biometrics` (`build_pbo.bat` 2026-08-16 — Build OK)
-- [ ] Relancer Arma avec `@COMSPEC_SSE` — plus d’erreur au chargement
+- [x] Rebuild des PBO `zeus`, `ui` et `biometrics` (`build_pbo.bat` 2026-08-16 ~04:28 — Build OK)
+- [x] Rebuild complet `@COMSPEC_SSE` (`build_pbo.bat` **2026-08-16 18:00** — **Build OK**, 14 PBO, horodatés ~18:00:21–18:00:29)
+- [x] Rebuild `@COMSPECOverwatch` (`mod/UptoDate/build_mod.bat` **2026-08-16 18:00** — **BUILD REUSSI** : DLL NativeAOT + PBO `main` / `connect` / `atak_athena` / `mavik_compat` / `sse_ace`)
+- [ ] Relancer Arma avec `@COMSPEC_SSE` — plus d’erreur au chargement (hors scope build)
 - [ ] Ouvrir les dialogues Modèles, Génération, Résultat et Seek en jeu
+
+Note deploy Overwatch : copie vers `!Workshop\@COMSPECOverwatch` peut échouer si Arma verrouille les fichiers ; les cibles `@COMSPECOverwatch` local + workshop content ID ont bien reçu les artefacts.
 
 ## Statut
 
-corrigé dans les sources — rebuild PBO effectué ; confirmation in-game à faire
+corrigé dans les sources — **vérifié au build** (SSE + Overwatch 2026-08-16 18:00) ; confirmation in-game à faire

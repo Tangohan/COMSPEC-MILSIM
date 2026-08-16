@@ -4,7 +4,8 @@ if (isNil "comspec_sse_models_mission") then {
     comspec_sse_models_mission = createHashMap;
 };
 
-[] call comspec_sse_fnc_registerBuiltinModels;
+[true] call comspec_sse_fnc_registerBuiltinModels;
+[] call comspec_sse_fnc_registerDatasets;
 
 if (isServer) then {
     ["comspec_sse_saveModel", {
@@ -18,4 +19,4 @@ if (isServer) then {
     }] call CBA_fnc_addEventHandler;
 };
 
-["generator preInit — modèles prêts"] call comspec_sse_fnc_log;
+["generator preInit — modèles + datasets prêts", "WARN"] call comspec_sse_fnc_log;

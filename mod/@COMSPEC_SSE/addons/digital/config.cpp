@@ -8,6 +8,7 @@ class CfgPatches {
         requiredVersion = REQUIRED_VERSION;
         requiredAddons[] = {
             "comspec_sse_core",
+            "comspec_sse_debug",
             "comspec_sse_generator",
             "comspec_sse_interaction",
             "comspec_sse_evidence",

@@ -386,6 +386,78 @@ if ($atakMapConfig) {
             <span>Afficher les points violets des clichés remontés</span>
           </span>
         </label>
+        <h4 class="atak-account-section-subtitle">Calques renseignement</h4>
+        <p class="atak-game-link-hint">Dossiers, priorités, ordres, photos terrain, tracés et historique — indépendants des pings mission.</p>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-sse-overlay">
+          <span class="atak-sound-pref-key">Calques SSE</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-sse-overlay" checked />
+            <span>Activer les calques de renseignement</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-cases">
+          <span class="atak-sound-pref-key">Dossiers</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-sse-layer-cases" checked />
+            <span>Repères et sites de dossiers</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-pir">
+          <span class="atak-sound-pref-key">Priorités de renseignement</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-sse-layer-pir" checked />
+            <span>Exigences épinglées sur la carte</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-taskings">
+          <span class="atak-sound-pref-key">Ordres de collecte</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-sse-layer-taskings" checked />
+            <span>Ordres géolocalisés</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-photos">
+          <span class="atak-sound-pref-key">Photos terrain SSE</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-sse-layer-photos" checked />
+            <span>Clichés liés aux dossiers</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-tracks">
+          <span class="atak-sound-pref-key">Tracés enregistrés</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-sse-layer-tracks" checked />
+            <span>Parcours enregistrés</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-ghost">
+          <span class="atak-sound-pref-key">Tracés fantômes</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-sse-layer-ghost" />
+            <span>Parcours estimés ou dégradés</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-history">
+          <span class="atak-sound-pref-key">Historique</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-sse-layer-history" />
+            <span>Événements passés géolocalisés</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-unit-trails">
+          <span class="atak-sound-pref-key">Traces d’unités</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-unit-trails" checked />
+            <span>Fil de déplacement des contacts actifs</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-unit-ghost-trails">
+          <span class="atak-sound-pref-key">Traces retardées</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-unit-ghost-trails" checked />
+            <span>Fil en pointillés pour contacts en retard</span>
+          </span>
+        </label>
         <label class="atak-sound-pref-label" for="atak-unit-marker-priority">
           <span class="atak-sound-pref-key">Priorité symbole / photo</span>
           <select id="atak-unit-marker-priority" class="atak-header-select atak-sound-pref-select" title="Quand l’apparence est en symbole OTAN ou photo">
@@ -1914,6 +1986,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-symbol-picker.js"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-popup.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-sse-layers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-units.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>

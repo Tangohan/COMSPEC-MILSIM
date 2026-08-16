@@ -1,5 +1,9 @@
 /*
     Applique les attributs Eden SSE.
+
+    AUTO = skeleton + modèle en attente (lazy au premier examen).
+    Ne plus appeler generateData/applyModel dans InitPost : c’était la
+    régression crash (generateCluster + ACE dogtag/medical sur pose d’unités).
 */
 params [
     ["_entity", objNull, [objNull, []]]
@@ -16,19 +20,33 @@ private _complexity = _entity getVariable ["comspec_sse_complexity", "STANDARD"]
 private _generation = _entity getVariable ["comspec_sse_generation", "AUTO"];
 private _networkId = _entity getVariable ["comspec_sse_networkId", ""];
 private _modelId = _entity getVariable ["comspec_sse_modelId", ""];
+private _datasetId = _entity getVariable ["comspec_sse_datasetId", ""];
+private _datasetRole = _entity getVariable ["comspec_sse_datasetRole", ""];
+private _missionSeed = _entity getVariable ["comspec_sse_missionSeed", ""];
 private _region = _entity getVariable ["comspec_sse_region", "IRAQ"];
 private _advanced = _entity getVariable ["comspec_sse_advancedData", ""];
 
 _entity setVariable ["comspec_sse_region", _region, true];
 
+private _type = if (_entity isKindOf "CAManBase") then { "PERSON" } else {
+    if (!isNil "comspec_sse_fnc_resolveEntityType") then {
+        [_entity] call comspec_sse_fnc_resolveEntityType
+    } else {
+        "OBJECT"
+    }
+};
+
+// Toujours un skeleton léger (pas de generateData ici).
+[_entity, _type, _profile, _complexity] call comspec_sse_fnc_makeSearchable;
+
 if (_generation == "AUTO") then {
     if (_modelId != "") then {
-        [_entity, _modelId, "EDEN"] call comspec_sse_fnc_applyModel;
-    } else {
-        [_entity, _profile, _complexity, "EDEN"] call comspec_sse_fnc_generateData;
+        _entity setVariable ["comspec_sse_pendingModelId", _modelId, true];
     };
-} else {
-    [_entity, "PERSON", _profile, _complexity] call comspec_sse_fnc_makeSearchable;
+    if (_datasetId != "" && {_datasetRole != ""}) then {
+        _entity setVariable ["comspec_sse_pendingDatasetId", _datasetId, true];
+        _entity setVariable ["comspec_sse_pendingDatasetRole", _datasetRole, true];
+    };
 };
 
 if (_networkId != "") then {
@@ -39,6 +57,10 @@ if (_networkId != "") then {
     };
 };
 
+if (_missionSeed != "") then {
+    _entity setVariable ["comspec_sse_missionSeed", _missionSeed, true];
+};
+
 if (_advanced != "") then {
     private _parsed = call compile _advanced;
     if (_parsed isEqualType []) then {
@@ -46,5 +68,5 @@ if (_advanced != "") then {
     };
 };
 
-[format ["edenApply %1 model=%2 profile=%3", _entity, _modelId, _profile]] call comspec_sse_fnc_log;
+[format ["edenApply %1 lazy model=%2 dataset=%3/%4", _entity, _modelId, _datasetId, _datasetRole]] call comspec_sse_fnc_log;
 true

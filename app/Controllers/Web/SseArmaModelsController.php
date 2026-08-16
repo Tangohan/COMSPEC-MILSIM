@@ -38,11 +38,12 @@ final class SseArmaModelsController
         ));
 
         return $this->portalView('atak.sse.dev.hub', [
-            'title' => 'Atelier de préparation',
+            'title' => 'Créer des modèles de mission',
             'recentModels' => array_slice($all, 0, 8),
             'modelsCount' => count($all),
             'publishedCount' => count($published),
             'templates' => $this->models->builtinTemplates(),
+            'missionKits' => $this->models->missionKits(),
             'activeNav' => 'dev',
             'devSubnav' => 'hub',
         ]);

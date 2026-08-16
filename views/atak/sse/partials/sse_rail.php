@@ -75,7 +75,7 @@ $navClass = static function (string $id) use ($activeNav): string {
             <a href="<?= $h(url('atak/sse/interet')) ?>" class="<?= $h($navClass('interet')) ?>"><b>03</b><span>Dossiers d’intérêt<em>Signalements terrain</em></span></a>
             <a href="<?= $h(url('atak/sse/sites')) ?>" class="<?= $h($navClass('sites')) ?>"><b>04</b><span>Sites<em>Exploitation terrain</em></span></a>
             <a href="<?= $h(url('atak/sse/exploitation-numerique')) ?>" class="<?= $h($navClass('labnum')) ?>"><b>05</b><span>Exploitation numérique<em>Laboratoire / supports</em></span></a>
-            <a href="<?= $h(url('atak/sse/dev')) ?>" class="<?= $h($navClass('dev')) ?>"><b>09</b><span>Atelier de préparation<em>Modèles mission Arma</em></span></a>
+            <a href="<?= $h(url('atak/sse/dev')) ?>" class="<?= $h($navClass('dev')) ?>"><b>09</b><span>Modèles de mission<em>Créer et emporter pour Arma</em></span></a>
             <a href="<?= $h(url('atak/sse/croisements')) ?>" class="<?= $h($navClass('croisements')) ?>"><b>06</b><span>Croisements<em>Rapprochements</em></span></a>
             <a href="<?= $h(url('atak/sse/toiles')) ?>" class="<?= $h($navClass('toiles')) ?>"><b>07</b><span>Toiles de données<em>Data mesh / graphes</em></span></a>
             <?php if (!empty($canGrant)): ?>

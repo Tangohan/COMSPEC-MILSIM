@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Sse;
 
 use App\Core\Response;
+use App\Core\Session;
 use App\Repositories\SseCaseRepository;
+use App\Support\SseDocumentMarkings;
 use App\Support\TrainingCertificatePdfEngine;
 
 /**
@@ -164,50 +166,249 @@ final class SseCasePdfService
         array $notes,
         array $evidence
     ): string {
-        $classLabel = $this->e((string) ($case['classification_label'] ?? ''));
-        $ref = $this->e((string) ($case['reference_code'] ?? ''));
-        $title = $this->e((string) ($case['title'] ?? ''));
-        $summary = $this->e((string) ($case['summary'] ?? '—'));
-        $status = $this->e((string) ($case['status_label'] ?? ''));
-        $created = $this->e((string) ($case['created_at'] ?? '—'));
-        $updated = $this->e((string) ($case['updated_at'] ?? '—'));
+        $caseRef = (string) ($case['reference_code'] ?? '');
+        $caseTitle = (string) ($case['title'] ?? 'Dossier sans intitulé');
+        $classLabel = (string) ($case['classification_label'] ?? 'Confidentiel');
+        $classUpper = mb_strtoupper($classLabel, 'UTF-8');
+        $classCode = SseCaseRepository::normalizeClassification((string) ($case['classification'] ?? 'encadrement'));
+        $palette = $this->classPalette($classCode);
+        $accent = $palette['accent'];
+        $bannerBg = $palette['banner'];
+        $sealColor = $palette['seal'];
 
-        $html = '<div style="background-color:#1a1a1a;color:#f5f5f5;padding:10px;text-align:center;font-size:11px;">'
-            . '<strong>DIFFUSION RESTREINTE — DOSSIER SSE COMPLET</strong><br/>'
-            . 'Classification : ' . $classLabel . ' · Usage opérationnel uniquement · Ne pas redistribuer'
-            . '</div>';
+        $statusLabel = (string) ($case['status_label'] ?? 'En cours');
+        $statusKey = (string) ($case['status'] ?? '');
+        $isClosed = in_array($statusKey, ['clos', 'archive', 'cloture'], true);
+        $summary = trim((string) ($case['summary'] ?? ''));
 
+        $openedSrc = (string) ($case['created_at'] ?? '');
+        $openedFr = $openedSrc !== '' ? date('d/m/Y', strtotime($openedSrc) ?: time()) : '—';
+        $updatedSrc = (string) ($case['updated_at'] ?? '');
+        $updatedFr = $updatedSrc !== '' ? date('d/m/Y', strtotime($updatedSrc) ?: time()) : $openedFr;
+
+        $coverUnit = trim((string) (Session::get('tenant_name') ?? ''));
+        if ($coverUnit === '') {
+            $coverUnit = 'Unité Athena';
+        }
+
+        $marks = SseDocumentMarkings::forDocument([
+            'id' => (int) ($case['id'] ?? 0),
+            'reference_code' => $caseRef,
+            'title' => $caseTitle,
+            'body' => $summary,
+            'classification' => (string) ($case['classification'] ?? ''),
+            'created_at' => $openedSrc,
+            'updated_at' => $updatedSrc,
+        ], $coverUnit);
+
+        $ws = is_array($marks['workstation'] ?? null) ? $marks['workstation'] : [];
+        $wsId = (string) ($ws['id'] ?? 'QR');
+        $wsHost = (string) ($ws['host'] ?? 'SSE-WS');
+        $wsIp = (string) ($ws['ip'] ?? '—');
+        $wsFp = (string) ($ws['fingerprint'] ?? '—');
+        $wsQr = (string) ($ws['qr_html'] ?? '');
+
+        $e = fn (string $v): string => $this->e($v);
+
+        $html = '';
         if ($redactedLabel !== '') {
-            $html .= '<div style="background-color:#8f1d1d;color:#fff;padding:7px;text-align:center;font-size:10px;">'
-                . $this->e($redactedLabel)
+            $html .= '<div style="background-color:#8f1d1d;color:#ffffff;padding:6px;text-align:center;font-size:9px;margin-bottom:6px;">'
+                . $e($redactedLabel)
                 . '</div>';
         }
 
-        $html .= '<h1 style="font-size:18px;color:#111;margin-top:18px;">Dossier ' . $ref . '</h1>';
-        $html .= '<p style="font-size:12px;"><strong>Intitulé :</strong> ' . $title . '<br/>'
-            . '<strong>Statut :</strong> ' . $status . '<br/>'
-            . '<strong>Ouverture :</strong> ' . $created . '<br/>'
-            . '<strong>Dernière mise à jour :</strong> ' . $updated . '</p>';
+        // Bandeau classification (haut)
+        $html .= '<table cellpadding="4" cellspacing="0" border="0" width="100%" style="background-color:'
+            . $bannerBg . ';border:1px solid ' . $accent . ';">'
+            . '<tr>'
+            . '<td width="28%" style="font-size:7px;color:#64748b;text-align:left;">(CLASSIFICATION DE SÉCURITÉ)</td>'
+            . '<td width="44%" style="font-size:14px;font-weight:bold;color:' . $accent . ';text-align:center;letter-spacing:2px;">'
+            . $e($classUpper) . '</td>'
+            . '<td width="28%" style="font-size:7px;color:#64748b;text-align:right;">EXEMPLAIRE '
+            . (int) ($marks['copy_index'] ?? 1) . '/' . (int) ($marks['copy_total'] ?? 1) . '</td>'
+            . '</tr></table>';
 
-        $html .= '<h2 style="font-size:13px;border-bottom:1px solid #ccc;">Synthèse</h2>'
-            . '<p style="font-size:11px;">' . nl2br($summary) . '</p>';
+        // Registre + boîte de contrôle
+        $html .= '<br/><table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>';
+        $html .= '<td width="68%" valign="top">';
+        $html .= '<table cellpadding="3" cellspacing="0" border="1" width="100%" style="border-color:#334155;font-size:8px;">'
+            . '<tr style="background-color:#334155;color:#ffffff;">'
+            . '<td colspan="4" style="font-size:8px;font-weight:bold;letter-spacing:1px;">REGISTRE DE CONSULTATION</td></tr>'
+            . '<tr style="background-color:#f1f5f9;font-weight:bold;">'
+            . '<td width="10%">N°</td><td width="48%">CONSULTANT</td><td width="22%">DATE</td><td width="20%">VISA</td></tr>';
+        $routing = is_array($marks['routing'] ?? null) ? $marks['routing'] : [];
+        foreach ($routing as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $html .= '<tr>'
+                . '<td>' . (int) ($row['slot'] ?? 0) . '</td>'
+                . '<td>' . $e((string) ($row['holder'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($row['date'] ?? '')) . '</td>'
+                . '<td style="font-family:courier;letter-spacing:1px;">' . $e((string) ($row['initials'] ?? '')) . '</td>'
+                . '</tr>';
+        }
+        $html .= '</table></td>';
+        $html .= '<td width="3%"></td>';
+        $html .= '<td width="29%" valign="top">';
+        $html .= '<table cellpadding="4" cellspacing="0" border="1" width="100%" style="border-color:#334155;font-size:7.5px;">'
+            . '<tr><td><span style="color:#64748b;">CONTRÔLE N°</span><br/><strong>' . $e((string) ($marks['control_number'] ?? '')) . '</strong></td></tr>'
+            . '<tr><td><span style="color:#64748b;">REGISTRE</span><br/><strong>' . $e((string) ($marks['registry_number'] ?? '')) . '</strong></td></tr>'
+            . '<tr><td><span style="color:#64748b;">OUVERT LE</span><br/><strong>' . $e($openedFr) . '</strong></td></tr>'
+            . '<tr><td><span style="color:#64748b;">MOUVEMENT</span><br/><strong>' . $e($updatedFr) . '</strong></td></tr>'
+            . '</table></td>';
+        $html .= '</tr></table>';
 
-        $html .= '<h2 style="font-size:13px;border-bottom:1px solid #ccc;">Contenu de cet export</h2>'
-            . '<ul style="font-size:11px;">'
-            . '<li>Flash opérationnel</li>'
-            . '<li>Compte rendu initial</li>'
-            . '<li>Personnes rattachées (' . count($people) . ')</li>'
-            . '<li>Sites exploités (' . count($sites) . ')</li>'
-            . '<li>Corrélations enregistrées</li>'
-            . '<li>Notes classifiées (' . count($notes) . ')</li>'
-            . '<li>Preuves recensées (' . count($evidence) . ')</li>'
-            . '</ul>';
+        // Canal protégé
+        $caveats = is_array($marks['caveats'] ?? null) ? $marks['caveats'] : [];
+        $html .= '<br/><table cellpadding="6" cellspacing="0" border="1" width="100%" style="border-color:'
+            . $accent . ';background-color:' . $bannerBg . ';">'
+            . '<tr><td>'
+            . '<div style="font-size:11px;font-weight:bold;color:' . $accent . ';letter-spacing:1px;">'
+            . $e((string) ($marks['channel'] ?? 'CANAL PROTÉGÉ')) . '</div>'
+            . '<div style="font-size:8px;color:#334155;margin-top:3px;">'
+            . 'Chemise à ne pas dissocier de ses pièces jointes. Toute sortie du local sécurisé est portée au registre de consultation.'
+            . '</div>';
+        if ($caveats !== []) {
+            $html .= '<div style="margin-top:5px;font-size:7.5px;">';
+            foreach ($caveats as $caveat) {
+                $html .= '<span style="border:1px solid ' . $accent . ';color:' . $accent
+                    . ';padding:2px 5px;margin-right:4px;font-weight:bold;">'
+                    . $e((string) $caveat) . '</span> ';
+            }
+            $html .= '</div>';
+        }
+        $html .= '</td></tr></table>';
 
-        $html .= '<p style="font-size:9px;color:#555;margin-top:24px;">Document généré le '
-            . $this->e($generatedAt)
-            . ' par Athena · Chaîne de possession SSE · Ne pas photocopier hors circuit contrôlé</p>';
+        // En-tête unité + sceau
+        $html .= '<br/><table cellpadding="2" cellspacing="0" border="0" width="100%"><tr>';
+        $html .= '<td width="55%" valign="top" style="font-size:9px;color:#0b1220;line-height:1.45;">'
+            . '<div>ATHENA · COMPSEC</div>'
+            . '<div style="font-weight:bold;text-decoration:underline;margin-top:2px;">UNITÉ : ' . $e($coverUnit) . '</div>'
+            . '<div>SECTION : Bureau SSE — Renseignement</div>'
+            . '<div style="margin-top:4px;font-weight:bold;">DOSSIER N° ' . $e($caseRef) . '</div>'
+            . '</td>';
+        $html .= '<td width="20%" align="center" valign="middle">';
+        $html .= '<table cellpadding="6" cellspacing="0" border="2" width="100%" style="border-color:'
+            . $sealColor . ';color:' . $sealColor . ';">'
+            . '<tr><td align="center" style="font-size:6px;letter-spacing:1px;">BUREAU SSE</td></tr>'
+            . '<tr><td align="center" style="font-size:16px;font-weight:bold;">' . $e((string) ($marks['seal_initials'] ?? 'UA')) . '</td></tr>'
+            . '<tr><td align="center" style="font-size:6px;letter-spacing:1px;">DOSSIERS</td></tr>'
+            . '</table></td>';
+        $html .= '<td width="25%" align="right" valign="top" style="font-size:9px;color:#0b1220;">Le ' . $e($updatedFr) . '</td>';
+        $html .= '</tr></table>';
+
+        $html .= '<hr style="border:0;border-top:2px solid ' . $accent . ';margin:8px 0 6px 0;"/>';
+        $html .= '<div style="text-align:center;font-size:13px;font-weight:bold;color:#0b1220;margin:4px 0 8px 0;">'
+            . $e($caseTitle) . '</div>';
+
+        // Grille faits
+        $facts = [
+            ['Statut', $statusLabel],
+            ['Classification', $classLabel],
+            ['Habilitation', $isClosed ? 'Consultation sur demande' : 'Besoin d’en connaître'],
+            ['Code d’ouverture', !empty($case['has_unlock_code']) ? 'Exigé' : 'Non exigé'],
+            ['Personnes rattachées', (string) count($people)],
+            ['Notes classifiées', (string) count($notes)],
+            ['Preuves versées', (string) count($evidence)],
+            ['Sites exploités', (string) count($sites)],
+        ];
+        $html .= '<table cellpadding="4" cellspacing="0" border="1" width="100%" style="border-color:#0b1220;font-size:8px;">';
+        for ($i = 0; $i < 8; $i += 4) {
+            $html .= '<tr>';
+            for ($j = 0; $j < 4; $j++) {
+                [$lab, $val] = $facts[$i + $j];
+                $html .= '<td width="25%"><span style="font-size:6.5px;color:#64748b;letter-spacing:0.5px;text-transform:uppercase;">'
+                    . $e($lab) . '</span><br/><strong style="font-size:9px;color:#0b1220;">' . $e($val) . '</strong></td>';
+            }
+            $html .= '</tr>';
+        }
+        $html .= '</table>';
+
+        // Objet
+        $html .= '<br/><table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
+            . '<td width="4" style="background-color:' . $accent . ';"></td>'
+            . '<td style="padding-left:6px;font-size:10px;font-weight:bold;color:#0b1220;letter-spacing:1px;">OBJET DU DOSSIER</td>'
+            . '</tr></table>';
+        if ($summary !== '') {
+            $html .= '<p style="font-size:9.5px;color:#1e293b;line-height:1.4;text-align:justify;">'
+                . nl2br($e($summary)) . '</p>';
+        } else {
+            $html .= '<p style="font-size:9px;color:#64748b;font-style:italic;">'
+                . 'Aucune synthèse n’a encore été portée à la chemise.</p>';
+        }
+
+        // Consignes (compactes pour tenir sur la page)
+        $html .= '<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
+            . '<td width="4" style="background-color:' . $accent . ';"></td>'
+            . '<td style="padding-left:6px;font-size:10px;font-weight:bold;color:#0b1220;letter-spacing:1px;">CONSIGNES DE MANIPULATION</td>'
+            . '</tr></table>';
+        $html .= '<p style="font-size:8px;color:#334155;line-height:1.35;">'
+            . 'Le dossier <strong>' . $e($caseRef) . '</strong> regroupe des pièces de niveaux de protection différents. '
+            . 'Le niveau retenu pour l’ensemble est <strong>' . $e($classLabel) . '</strong>. '
+            . 'Consultation au poste habilité, chemise complète ; restitution le jour même contre visa ; '
+            . 'reproduction interdite sans accord écrit du chef de bureau.'
+            . '</p>';
+        $html .= '<p style="font-size:8px;color:#334155;">'
+            . 'Révision de classification prévue le <strong>' . $e((string) ($marks['declassify_on'] ?? '—')) . '</strong>. '
+            . 'Conservation <strong>' . $e((string) ($marks['destruction_delay'] ?? '—')) . '</strong> après clôture.'
+            . '</p>';
+
+        // Auth : QR + empreintes
+        $html .= '<br/><table cellpadding="4" cellspacing="0" border="0" width="100%"><tr>';
+        $html .= '<td width="28%" valign="top" align="center">';
+        if ($wsQr !== '') {
+            // TCPDF : data-URI PNG, taille réduite pour la chemise
+            $html .= preg_replace(
+                ['/\sclass="[^"]*"/', '/\swidth="\d+"/', '/\sheight="\d+"/'],
+                ['', ' width="70"', ' height="70"'],
+                $wsQr
+            ) ?? $wsQr;
+        }
+        $html .= '<div style="font-size:7px;margin-top:3px;"><strong>' . $e($wsId) . '</strong><br/>'
+            . $e($wsHost) . ' · ' . $e($wsIp) . '</div></td>';
+        $html .= '<td width="72%" valign="top" style="font-size:7.5px;color:#0b1220;">'
+            . '<div style="font-weight:bold;font-size:8px;margin-bottom:3px;">EMPREINTES D’INTÉGRITÉ</div>'
+            . '<strong>Condensat</strong> : <span style="font-family:courier;">' . $e((string) ($marks['integrity_groups'] ?? '')) . '</span><br/>'
+            . '<strong>Enveloppe</strong> : <span style="font-family:courier;">' . $e((string) ($marks['envelope_hash'] ?? '')) . '</span><br/>'
+            . '<strong>Machine</strong> : <span style="font-family:courier;">' . $e($wsFp !== '' ? $wsFp : '—') . '</span><br/>'
+            . '<strong>Contrôle</strong> : <span style="font-family:courier;">' . $e((string) ($marks['checksum'] ?? '')) . '</span>'
+            . ' · ' . $e((string) ($marks['algorithm'] ?? ''))
+            . '</td></tr></table>';
+
+        // Tampons
+        $html .= '<br/><table cellpadding="3" cellspacing="4" border="0"><tr>'
+            . '<td style="border:2px solid ' . $accent . ';color:' . $accent . ';font-size:8px;font-weight:bold;letter-spacing:1px;">'
+            . $e($classUpper) . '</td>'
+            . '<td style="border:2px solid #15803d;color:#15803d;font-size:8px;font-weight:bold;letter-spacing:1px;">'
+            . ($isClosed ? 'DOSSIER CLOS' : 'DOSSIER OUVERT') . '</td>'
+            . '<td style="border:2px dashed #64748b;color:#64748b;font-size:8px;font-weight:bold;">'
+            . 'EXEMPLAIRE ' . (int) ($marks['copy_index'] ?? 1) . ' / ' . (int) ($marks['copy_total'] ?? 1) . '</td>'
+            . '</tr></table>';
+
+        // Bandeau bas
+        $html .= '<br/><table cellpadding="4" cellspacing="0" border="0" width="100%" style="background-color:'
+            . $bannerBg . ';border:1px solid ' . $accent . ';">'
+            . '<tr>'
+            . '<td width="33%" style="font-size:7px;color:#64748b;">Contrôle ' . $e((string) ($marks['control_number'] ?? '')) . '</td>'
+            . '<td width="34%" style="font-size:11px;font-weight:bold;color:' . $accent . ';text-align:center;">' . $e($classUpper) . '</td>'
+            . '<td width="33%" style="font-size:7px;color:#64748b;text-align:right;">Chemise — page de garde · ' . $e($generatedAt) . '</td>'
+            . '</tr></table>';
 
         return $html;
+    }
+
+    /**
+     * @return array{accent:string,banner:string,seal:string}
+     */
+    private function classPalette(string $classCode): array
+    {
+        return match ($classCode) {
+            'tres_restreint' => ['accent' => '#b91c1c', 'banner' => '#fef2f2', 'seal' => '#991b1b'],
+            'confidentiel' => ['accent' => '#b45309', 'banner' => '#fffbeb', 'seal' => '#92400e'],
+            'encadrement' => ['accent' => '#1d4ed8', 'banner' => '#eff6ff', 'seal' => '#1e3a8a'],
+            default => ['accent' => '#475569', 'banner' => '#f8fafc', 'seal' => '#334155'],
+        };
     }
 
     /**
@@ -215,13 +416,25 @@ final class SseCasePdfService
      */
     private function sectionBanner(array $case, string $redactedLabel): string
     {
-        $html = '<div style="background-color:#222;color:#eee;padding:5px;font-size:9px;">'
-            . $this->e((string) ($case['reference_code'] ?? ''))
-            . ' — ' . $this->e((string) ($case['title'] ?? ''))
-            . ' — ' . $this->e((string) ($case['classification_label'] ?? ''))
-            . '</div>';
+        $classLabel = (string) ($case['classification_label'] ?? '');
+        $classUpper = mb_strtoupper($classLabel !== '' ? $classLabel : 'CONFIDENTIEL', 'UTF-8');
+        $classCode = SseCaseRepository::normalizeClassification((string) ($case['classification'] ?? 'encadrement'));
+        $palette = $this->classPalette($classCode);
+        $accent = $palette['accent'];
+        $bannerBg = $palette['banner'];
+
+        $html = '<table cellpadding="3" cellspacing="0" border="0" width="100%" style="background-color:'
+            . $bannerBg . ';border:1px solid ' . $accent . ';margin-bottom:8px;">'
+            . '<tr>'
+            . '<td width="30%" style="font-size:7px;color:#64748b;">'
+            . $this->e((string) ($case['reference_code'] ?? '')) . '</td>'
+            . '<td width="40%" style="font-size:10px;font-weight:bold;color:' . $accent . ';text-align:center;letter-spacing:1px;">'
+            . $this->e($classUpper) . '</td>'
+            . '<td width="30%" style="font-size:7px;color:#64748b;text-align:right;">'
+            . $this->e((string) ($case['title'] ?? '')) . '</td>'
+            . '</tr></table>';
         if ($redactedLabel !== '') {
-            $html .= '<div style="background-color:#8f1d1d;color:#fff;padding:4px;font-size:8px;text-align:center;">'
+            $html .= '<div style="background-color:#8f1d1d;color:#ffffff;padding:4px;font-size:8px;text-align:center;margin-bottom:6px;">'
                 . $this->e($redactedLabel) . '</div>';
         }
 
