@@ -11,13 +11,21 @@ private _mans = ["Local", "Import", "Inconnu", "Atelier cellule"];
 private _oris = ["cache", "contrebande", "prise de guerre", "inconnu"];
 private _tags = ["TECH", "WEAPONS"];
 
+private _uid = format ["SSE-TECH-%1", _seed];
+private _category = _cats select (_hCat mod 5);
+private _serial = format ["TN-%1", _hSer];
+private _lot = format ["LOT-%1", 100 + (_hLot mod 900)];
+private _manufacturer = _mans select (_hMan mod 4);
+private _origin = _oris select (_hOri mod 4);
+private _compatibility = "TECHINT - correlation serie / lot";
+
 createHashMapFromArray [
-    ["uid", format ["SSE-TECH-%1", _seed]],
-    ["category", _cats select (_hCat mod 5)],
-    ["serial", format ["TN-%1", _hSer]],
-    ["lot", format ["LOT-%1", 100 + (_hLot mod 900))],
-    ["manufacturer", _mans select (_hMan mod 4)],
-    ["origin", _oris select (_hOri mod 4)],
-    ["compatibility", "TECHINT — corrélation série / lot"],
+    ["uid", _uid],
+    ["category", _category],
+    ["serial", _serial],
+    ["lot", _lot],
+    ["manufacturer", _manufacturer],
+    ["origin", _origin],
+    ["compatibility", _compatibility],
     ["tags", _tags]
 ]

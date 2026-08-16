@@ -207,7 +207,14 @@
       body: Object.keys(body).map(function (k) {
         return encodeURIComponent(k) + '=' + encodeURIComponent(body[k] === true ? '1' : (body[k] === false ? '0' : body[k]));
       }).join('&')
-    }).then(function (r) { return r.json(); }).then(function (data) {
+    }).then(function (r) {
+      return r.json().then(function (data) {
+        if (!r.ok) {
+          throw new Error((data && data.error) || ('Erreur ' + r.status));
+        }
+        return data;
+      });
+    }).then(function (data) {
       if (!silent && data && data.ok) {
         var btn = document.getElementById('sse-tacmap-save-btn');
         if (btn) {
@@ -216,7 +223,11 @@
           setTimeout(function () { btn.textContent = prev; }, 1400);
         }
       }
-    }).catch(function () {});
+    }).catch(function (err) {
+      if (!silent && err && err.message) {
+        console.warn('[sse-case-map] sauvegarde vue:', err.message);
+      }
+    });
   }
 
   function scheduleSave() {
@@ -292,7 +303,14 @@
         body: Object.keys(payload).map(function (k) {
           return encodeURIComponent(k) + '=' + encodeURIComponent(payload[k]);
         }).join('&')
-      }).then(function (r) { return r.json(); }).then(function (data) {
+      }).then(function (r) {
+        return r.json().then(function (data) {
+          if (!r.ok) {
+            throw new Error((data && data.error) || ('Erreur ' + r.status));
+          }
+          return data;
+        });
+      }).then(function (data) {
         if (!data || !data.ok || !data.feature) {
           alert((data && data.error) || 'Impossible d’enregistrer le ping.');
           submitBtn.disabled = false;
@@ -308,8 +326,8 @@
         document.getElementById('sse-ping-ay').value = '';
         submitBtn.disabled = true;
         renderMarkers();
-      }).catch(function () {
-        alert('Erreur réseau lors de l’enregistrement du ping.');
+      }).catch(function (err) {
+        alert((err && err.message) || 'Erreur réseau lors de l’enregistrement du ping.');
         submitBtn.disabled = false;
       });
     });

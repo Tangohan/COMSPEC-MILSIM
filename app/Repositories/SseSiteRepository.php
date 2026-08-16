@@ -363,6 +363,39 @@ final class SseSiteRepository
     }
 
     /**
+     * Recherche textuelle sur le tenant (tous contextes).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function searchForTenant(int $tenantId, string $q, int $limit = 20): array
+    {
+        $q = trim($q);
+        if ($q === '' || mb_strlen($q) < 2) {
+            return [];
+        }
+        $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%';
+        $limit = max(1, min(50, $limit));
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT * FROM sse_sites
+                 WHERE tenant_id = :t
+                   AND (name LIKE :q1 OR reference_code LIKE :q2 OR CAST(id AS CHAR) LIKE :q3)
+                 ORDER BY id DESC
+                 LIMIT ' . $limit,
+                ['t' => $tenantId, 'q1' => $like, 'q2' => $like, 'q3' => $like]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = $this->hydrate($row);
+        }
+
+        return $out;
+    }
+
+    /**
      * Sites rattachés à un dossier.
      *
      * @return list<array<string, mixed>>

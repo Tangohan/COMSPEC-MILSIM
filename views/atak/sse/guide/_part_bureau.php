@@ -24,7 +24,12 @@
         <tbody>
             <tr>
                 <td>Pilotage</td>
-                <td>Vue opérationnelle, investigations, dossiers d’intérêt, dossiers validés</td>
+                <td>
+                    <strong>Vue opérationnelle</strong> — tableau de bord du jour ;
+                    <strong>Investigations</strong> — toiles relationnelles ;
+                    <strong>Dossiers d’intérêt</strong> — signalements à qualifier ;
+                    <strong>Dossiers validés</strong> — affaires structurées
+                </td>
             </tr>
             <tr>
                 <td>Objets</td>

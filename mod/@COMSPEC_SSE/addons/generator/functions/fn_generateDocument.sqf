@@ -19,26 +19,38 @@ private _pack = [_theme, _seed, _cluster, _pools] call comspec_sse_fnc_getThemeP
 private _grid = _pack getOrDefault ["grid", ""];
 if (_grid isEqualTo "") then { _grid = _cluster getOrDefault ["depotGrid", ""]; };
 private _docs = [];
+private _docTypes = _pools getOrDefault ["documentTypes", ["Document"]];
+private _packSummary = _pack getOrDefault ["summary", ""];
+private _packCodeword = _pack getOrDefault ["codeword", ""];
+private _packTitle = _pack getOrDefault ["documentTitle", "Document"];
 
 for "_i" from 0 to (_count - 1) do {
     private _title = if (_i == 0) then {
-        if (count _titlesOverride > 0) then { _titlesOverride select 0 } else { _pack getOrDefault ["documentTitle", "Document"] }
+        if (count _titlesOverride > 0) then { _titlesOverride select 0 } else { _packTitle }
     } else {
         if (_i < count _titlesOverride) then {
             _titlesOverride select _i
         } else {
-            [_seed, format ["doc%1", _i], _pools getOrDefault ["documentTypes", ["Document"]]] call comspec_sse_fnc_pickFromSeed
+            private _docKey = format ["doc%1", _i];
+            [_seed, _docKey, _docTypes] call comspec_sse_fnc_pickFromSeed
         }
     };
 
+    private _uid = format ["SSE-DOC-%1-%2", _seed, _i];
+    private _summary = if (_i == 0) then { _packSummary } else { "Document secondaire / contexte." };
+    private _docGrid = if (_i == 0) then { _grid } else { "" };
+    private _codeword = if (_i == 0) then { _packCodeword } else { "" };
+    private _dnKey = format ["dn%1", _i];
+    private _noise = _i > 0 && {(([_seed, _dnKey] call comspec_sse_fnc_hash) mod 100) < 30};
+
     _docs pushBack (createHashMapFromArray [
-        ["uid", format ["SSE-DOC-%1-%2", _seed, _i]],
+        ["uid", _uid],
         ["title", _title],
-        ["summary", if (_i == 0) then { _pack getOrDefault ["summary", ""] } else { "Document secondaire / contexte." }],
-        ["grid", if (_i == 0) then { _grid } else { "" }],
+        ["summary", _summary],
+        ["grid", _docGrid],
         ["theme", _theme],
-        ["codeword", if (_i == 0) then { _pack getOrDefault ["codeword", ""] } else { "" }],
-        ["noise", _i > 0 && {(([_seed, format ["dn%1", _i]] call comspec_sse_fnc_hash) mod 100) < 30}]
+        ["codeword", _codeword],
+        ["noise", _noise]
     ]);
 };
 

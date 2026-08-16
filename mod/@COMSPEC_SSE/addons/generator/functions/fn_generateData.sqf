@@ -194,10 +194,16 @@ switch (_type) do {
         _sections set ["documents", _docs];
         private _themeNote = _cluster getOrDefault ["themeLabel", ""];
         if (_themeNote isEqualTo "") then { _themeNote = _cluster getOrDefault ["theme", ""]; };
-        _sections set ["notes", [_cluster getOrDefault ["deliveryNote", ""], format ["Thème: %1", _themeNote]]];
-        _sections set ["intel", [
-            createHashMapFromArray [["text", format ["Documents liés à %1", _cluster getOrDefault ["primaryName", "?"]]], ["confidence", 0.6]]
-        ]];
+        private _deliveryNote = _cluster getOrDefault ["deliveryNote", ""];
+        private _themeLine = format ["Thème: %1", _themeNote];
+        private _primaryName = _cluster getOrDefault ["primaryName", "?"];
+        private _intelText = format ["Documents liés à %1", _primaryName];
+        private _intelItem = createHashMapFromArray [
+            ["text", _intelText],
+            ["confidence", 0.6]
+        ];
+        _sections set ["notes", [_deliveryNote, _themeLine]];
+        _sections set ["intel", [_intelItem]];
         private _status = _sections getOrDefault ["sectionStatus", createHashMap];
         _status set ["documents", "complete"];
         _sections set ["sectionStatus", _status];
@@ -210,10 +216,16 @@ switch (_type) do {
         _sections set ["documents", _docs];
         private _themeNote = _cluster getOrDefault ["themeLabel", ""];
         if (_themeNote isEqualTo "") then { _themeNote = _cluster getOrDefault ["theme", ""]; };
-        _sections set ["notes", [_cluster getOrDefault ["deliveryNote", ""], format ["Thème: %1", _themeNote]]];
-        _sections set ["intel", [
-            createHashMapFromArray [["text", format ["Objet lié à %1", _cluster getOrDefault ["primaryName", "?"]]], ["confidence", 0.55]]
-        ]];
+        private _deliveryNote = _cluster getOrDefault ["deliveryNote", ""];
+        private _themeLine = format ["Thème: %1", _themeNote];
+        private _primaryName = _cluster getOrDefault ["primaryName", "?"];
+        private _intelText = format ["Objet lié à %1", _primaryName];
+        private _intelItem = createHashMapFromArray [
+            ["text", _intelText],
+            ["confidence", 0.55]
+        ];
+        _sections set ["notes", [_deliveryNote, _themeLine]];
+        _sections set ["intel", [_intelItem]];
         private _status = _sections getOrDefault ["sectionStatus", createHashMap];
         _status set ["documents", "complete"];
         _sections set ["sectionStatus", _status];

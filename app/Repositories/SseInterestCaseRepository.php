@@ -101,7 +101,7 @@ final class SseInterestCaseRepository
         $year = date('Y');
         $last = $this->db->fetchOne('SELECT MAX(id) AS id FROM sse_interest_cases WHERE tenant_id = :tenant', ['tenant' => $tenantId]);
         $reference = sprintf('DI-%s-%06d', $year, ((int) ($last['id'] ?? 0)) + 1);
-        $fields = ['tenant_id','reference_code','temporary_designation','suspected_alias','apparent_sex','estimated_age_range','suspected_nationality','suspected_affiliation','status','confidence_level','interest_level','opening_reason','description','origin_operator','observed_elements','analysis_facts','analysis_assumptions','analysis_contradictions','analysis_questions','collection_needs','operational_risk','recommendations','source_label','source_reliability','acquisition_at','mission_label','created_by'];
+        $fields = ['tenant_id','reference_code','temporary_designation','suspected_alias','apparent_sex','estimated_age_range','suspected_nationality','suspected_affiliation','status','confidence_level','interest_level','opening_reason','description','origin_operator','observed_elements','analysis_facts','analysis_assumptions','analysis_contradictions','analysis_questions','collection_needs','operational_risk','recommendations','source_label','source_reliability','signed_by_label','signed_at','acquisition_at','mission_label','created_by'];
         $values = ['tenant_id' => $tenantId, 'reference_code' => $reference, 'status' => 'signalement_recu'];
         foreach ($fields as $field) {
             if (!array_key_exists($field, $values)) {
@@ -113,12 +113,17 @@ final class SseInterestCaseRepository
         if (!empty($values['acquisition_at'])) {
             $values['acquisition_at'] = str_replace('T', ' ', (string) $values['acquisition_at']);
         }
+        if (!empty($values['signed_at'])) {
+            $values['signed_at'] = str_replace('T', ' ', (string) $values['signed_at']);
+        }
         try {
             return (int) $this->db->insert('INSERT INTO sse_interest_cases (' . implode(',', $fields) . ') VALUES (:' . implode(',:', $fields) . ')', $values);
         } catch (\Throwable) {
             // Colonnes enrichies absentes sur un tenant pas encore migré.
-            unset($values['description']);
-            $fields = array_values(array_filter($fields, static fn (string $f): bool => $f !== 'description'));
+            foreach (['description', 'signed_by_label', 'signed_at'] as $optional) {
+                unset($values[$optional]);
+                $fields = array_values(array_filter($fields, static fn (string $f): bool => $f !== $optional));
+            }
             return (int) $this->db->insert('INSERT INTO sse_interest_cases (' . implode(',', $fields) . ') VALUES (:' . implode(',:', $fields) . ')', $values);
         }
     }

@@ -391,12 +391,18 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/interet'));
         }
 
+        $signerLabel = trim((string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? ''));
+        if ($signerLabel === '') {
+            $signerLabel = 'Analyste';
+        }
+
         return $this->portalView('atak.sse.interest_case_form', [
             'title' => 'Ouvrir un dossier d’intérêt',
             'activeNav' => 'interet',
             'canManage' => true,
             'confidenceLevels' => SseInterestCaseRepository::CONFIDENCE,
             'interestLevels' => SseInterestCaseRepository::INTEREST,
+            'signerLabel' => $signerLabel,
         ]);
     }
 
@@ -412,6 +418,10 @@ final class SsePortalController
             Session::flash('error', 'La désignation temporaire et le motif d’ouverture sont obligatoires.');
             return Response::redirect(url('atak/sse/interet/nouveau'));
         }
+        if (!(bool) $request->input('digital_signature', false)) {
+            Session::flash('error', 'La signature numérique du signalement est obligatoire.');
+            return Response::redirect(url('atak/sse/interet/nouveau'));
+        }
         $fields = ['temporary_designation','suspected_alias','apparent_sex','estimated_age_range','suspected_nationality','suspected_affiliation','confidence_level','interest_level','opening_reason','description','origin_operator','observed_elements','analysis_facts','analysis_assumptions','analysis_contradictions','analysis_questions','collection_needs','operational_risk','recommendations','source_label','source_reliability','acquisition_at','mission_label'];
         $data = [];
         foreach ($fields as $field) {
@@ -420,8 +430,14 @@ final class SsePortalController
         $data['temporary_designation'] = $designation;
         $data['opening_reason'] = $reason;
         $data['created_by'] = (int) Session::get('user_id') ?: null;
+        $signer = trim((string) $request->input('signed_by_label', ''));
+        if ($signer === '') {
+            $signer = trim((string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Analyste'));
+        }
+        $data['signed_by_label'] = $signer !== '' ? $signer : 'Analyste';
+        $data['signed_at'] = date('Y-m-d H:i:s');
         $id = $this->interestCases->create($this->tenantId(), $data);
-        Session::flash('success', 'Dossier d’intérêt ouvert. Aucune identité n’a été déduite automatiquement.');
+        Session::flash('success', 'Dossier d’intérêt ouvert et signé numériquement. Aucune identité n’a été déduite automatiquement.');
         return Response::redirect(url('atak/sse/interet/' . $id));
     }
 
@@ -1149,7 +1165,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id));
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             return Response::redirect(url('atak/sse/dossiers/' . $id));
         }
         $dataUrl = (string) $request->input('image_data', '');
@@ -1222,7 +1238,7 @@ final class SsePortalController
         if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
             return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             return Response::json(['ok' => false, 'error' => 'Dossier inaccessible.'], 404);
         }
 
@@ -1254,7 +1270,7 @@ final class SsePortalController
         if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
             return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             return Response::json(['ok' => false, 'error' => 'Dossier inaccessible.'], 404);
         }
 
@@ -1297,7 +1313,7 @@ final class SsePortalController
         if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
             return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             return Response::json(['ok' => false, 'error' => 'Dossier inaccessible.'], 404);
         }
 
@@ -1314,7 +1330,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#analyse');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1371,7 +1387,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#lacunes');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1406,7 +1422,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#lacunes');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1427,7 +1443,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#decisions');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1457,7 +1473,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#relations');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1494,7 +1510,7 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/dossiers/' . $id) . '#relations');
         }
-        if ($this->requireCase($id) === null || !$this->caseUnlocked($id)) {
+        if ($this->requireWritableCase($id) === null) {
             Session::flash('error', 'Dossier inaccessible.');
 
             return Response::redirect(url('atak/sse/dossiers'));
@@ -1600,6 +1616,18 @@ final class SsePortalController
         $intelGaps = $this->analytical->listGaps($this->tenantId(), $id);
         $analyticalDecisions = $this->analytical->listDecisions($this->tenantId(), $id);
         $caseLinks = $this->analytical->listCaseLinks($this->tenantId(), $id);
+        $linkableCases = [];
+        foreach ($this->cases->listForTenant($this->tenantId(), $this->access->caseScope(), ['is_folder' => 0]) as $candidate) {
+            $cid = (int) ($candidate['id'] ?? 0);
+            if ($cid < 1 || $cid === $id) {
+                continue;
+            }
+            $linkableCases[] = [
+                'id' => $cid,
+                'reference_code' => (string) ($candidate['reference_code'] ?? ''),
+                'title' => (string) ($candidate['title'] ?? ''),
+            ];
+        }
         $libraryEntries = $this->libraryForEditor($case);
         $contextualSuggestions = $this->contextualMentions->suggestForCase(
             $case,
@@ -1637,6 +1665,7 @@ final class SsePortalController
             'intelGaps' => $intelGaps,
             'analyticalDecisions' => $analyticalDecisions,
             'caseLinks' => $caseLinks,
+            'linkableCases' => $linkableCases,
             'contextualSuggestions' => $contextualSuggestions,
             'executiveBrief' => $executiveBrief,
             'gapPresets' => SseContextualMentionService::presetGapMentions(),
@@ -3135,6 +3164,33 @@ final class SsePortalController
         ]);
     }
 
+    public function searchSuggest(Request $request, array $params = []): Response
+    {
+        $q = trim((string) $request->query('q', ''));
+        $results = [];
+        if (mb_strlen($q) >= 2) {
+            try {
+                $results = $this->workspace->globalSearch($this->tenantId(), $q, $this->access->caseScope(), 12);
+            } catch (\Throwable $e) {
+                error_log('[sse.searchSuggest] ' . $e->getMessage());
+            }
+        }
+
+        return Response::json([
+            'ok' => true,
+            'q' => $q,
+            'results' => array_map(static function (array $r): array {
+                return [
+                    'type' => (string) ($r['type'] ?? ''),
+                    'ref' => (string) ($r['ref'] ?? ''),
+                    'label' => (string) ($r['label'] ?? ''),
+                    'hint' => (string) ($r['hint'] ?? ''),
+                    'href' => (string) ($r['href'] ?? ''),
+                ];
+            }, is_array($results) ? $results : []),
+        ]);
+    }
+
     public function identitiesIndex(Request $request, array $params = []): Response
     {
         return $this->personsIndex($request, array_merge($params, ['_nav' => 'identites']));
@@ -4293,6 +4349,23 @@ final class SsePortalController
         }
 
         return $back;
+    }
+
+    /**
+     * Dossier accessible en écriture : périmètre OK et sas code passé si le dossier en a un.
+     * Ne pas confondre avec caseUnlocked() seul — sans code dossier, unlocked reste vide
+     * alors que la consultation est déjà autorisée.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function requireWritableCase(int $id): ?array
+    {
+        $case = $this->requireCase($id);
+        if ($case === null || $this->caseNeedsUnlock($case)) {
+            return null;
+        }
+
+        return $case;
     }
 
     private function caseUnlocked(int $caseId): bool

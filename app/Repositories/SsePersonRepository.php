@@ -225,6 +225,48 @@ final class SsePersonRepository
         return $out;
     }
 
+    /**
+     * Recherche textuelle sur le tenant (tous contextes).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function searchForTenant(int $tenantId, string $q, int $limit = 20): array
+    {
+        $q = trim($q);
+        if ($q === '' || mb_strlen($q) < 2) {
+            return [];
+        }
+        $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%';
+        $limit = max(1, min(50, $limit));
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT p.* FROM sse_persons p
+                 WHERE p.tenant_id = :t
+                   AND (
+                     p.last_name LIKE :q1 OR p.first_name LIKE :q2 OR p.alias LIKE :q3
+                     OR CAST(p.id AS CHAR) LIKE :q4
+                   )
+                 ORDER BY p.id DESC
+                 LIMIT ' . $limit,
+                [
+                    't' => $tenantId,
+                    'q1' => $like,
+                    'q2' => $like,
+                    'q3' => $like,
+                    'q4' => $like,
+                ]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = $this->hydrate($row, false);
+        }
+
+        return $out;
+    }
+
     public function tenantHasAnyPerson(int $tenantId): bool
     {
         try {

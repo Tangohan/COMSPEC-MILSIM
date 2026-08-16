@@ -594,6 +594,7 @@ return function (Router $router) {
     $router->get('/back-office/renseignement', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('atak/sse/commandement')), [AuthMiddleware::class]);
     $router->get('/atak/sse/operations', [SsePortalController::class, 'operations'], $mwSsePortal);
     $router->get('/atak/sse/recherche', [SsePortalController::class, 'search'], $mwSsePortal);
+    $router->get('/atak/sse/recherche/suggestions', [SsePortalController::class, 'searchSuggest'], $mwSsePortal);
     $router->get('/atak/sse/identites', [SsePortalController::class, 'identitiesIndex'], $mwSsePortal);
     $router->get('/atak/sse/identites/{id}', [SsePortalController::class, 'identityShow'], $mwSsePortal);
     $router->get('/atak/sse/objets/nouveau', [SsePortalController::class, 'objectCreateForm'], $mwSsePortal);

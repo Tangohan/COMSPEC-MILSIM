@@ -6,6 +6,7 @@ namespace App\Services\Sse;
 
 use App\Repositories\SseCaseRepository;
 use App\Repositories\SseDigitalLabRepository;
+use App\Repositories\SseDocumentRepository;
 use App\Repositories\SseInterestCaseRepository;
 use App\Repositories\SseMeshRepository;
 use App\Repositories\SsePersonRepository;
@@ -26,6 +27,7 @@ final class SseWorkspaceService
         private ?SseWatchlistRepository $watchlist = null,
         private ?SseCrossMatchService $cross = null,
         private ?SseDigitalLabRepository $digitalLab = null,
+        private ?SseDocumentRepository $documents = null,
     ) {
         $this->cases ??= new SseCaseRepository();
         $this->interest ??= new SseInterestCaseRepository();
@@ -35,6 +37,7 @@ final class SseWorkspaceService
         $this->watchlist ??= new SseWatchlistRepository();
         $this->cross ??= new SseCrossMatchService();
         $this->digitalLab ??= new SseDigitalLabRepository();
+        $this->documents ??= new SseDocumentRepository();
     }
 
     /**
@@ -83,24 +86,51 @@ final class SseWorkspaceService
             $crossPending = 0;
         }
 
+        $toZulu = static function (?string $stamp, bool $withDate = false): string {
+            $ts = $stamp !== null && $stamp !== '' ? (strtotime($stamp) ?: time()) : time();
+            return $withDate
+                ? gmdate('d/m/Y H:i', $ts) . 'Z'
+                : gmdate('H:i', $ts) . 'Z';
+        };
+
         $activity = [];
         foreach (array_slice($people, 0, 6) as $p) {
             $stamp = (string) ($p['created_at'] ?? '');
             $activity[] = [
-                'at' => strlen($stamp) >= 16 ? substr($stamp, 11, 5) : date('H:i'),
+                'at' => $toZulu($stamp),
+                'at_full' => $toZulu($stamp, true),
+                'ts' => $stamp !== '' ? (strtotime($stamp) ?: 0) : time(),
                 'text' => 'Fiche identité reçue — ' . (string) ($p['display_name'] ?? 'identité'),
                 'kind' => 'identity',
+                'href' => url('atak/sse/identites/' . (int) ($p['id'] ?? 0)),
             ];
         }
         foreach (array_slice($interest, 0, 4) as $row) {
             $stamp = (string) ($row['updated_at'] ?? $row['created_at'] ?? '');
             $activity[] = [
-                'at' => strlen($stamp) >= 16 ? substr($stamp, 11, 5) : date('H:i'),
+                'at' => $toZulu($stamp),
+                'at_full' => $toZulu($stamp, true),
+                'ts' => $stamp !== '' ? (strtotime($stamp) ?: 0) : time(),
                 'text' => 'Dossier d’intérêt mis à jour — ' . (string) ($row['temporary_designation'] ?? $row['reference_code'] ?? 'signalement'),
                 'kind' => 'pressee',
+                'href' => url('atak/sse/interet/' . (int) ($row['id'] ?? 0)),
             ];
         }
-        usort($activity, static fn (array $a, array $b): int => strcmp((string) $b['at'], (string) $a['at']));
+        foreach (array_slice($cases, 0, 4) as $c) {
+            if (!empty($c['is_folder'])) {
+                continue;
+            }
+            $stamp = (string) ($c['updated_at'] ?? $c['created_at'] ?? '');
+            $activity[] = [
+                'at' => $toZulu($stamp),
+                'at_full' => $toZulu($stamp, true),
+                'ts' => $stamp !== '' ? (strtotime($stamp) ?: 0) : time(),
+                'text' => 'Dossier actualisé — ' . (string) ($c['reference_code'] ?? '') . ' ' . (string) ($c['title'] ?? ''),
+                'kind' => 'case',
+                'href' => url('atak/sse/dossiers/' . (int) ($c['id'] ?? 0)),
+            ];
+        }
+        usort($activity, static fn (array $a, array $b): int => ((int) ($b['ts'] ?? 0)) <=> ((int) ($a['ts'] ?? 0)));
         $activity = array_slice($activity, 0, 12);
 
         $alerts = [];
@@ -109,6 +139,8 @@ final class SseWorkspaceService
                 'level' => 'elevee',
                 'title' => 'Rapprochements à confirmer',
                 'detail' => $crossPending . ' proposition' . ($crossPending > 1 ? 's' : '') . ' en file opérateur.',
+                'href' => url('atak/sse/croisements'),
+                'action' => 'Ouvrir les croisements',
             ];
         }
         if ($stale > 0) {
@@ -116,6 +148,8 @@ final class SseWorkspaceService
                 'level' => 'moderee',
                 'title' => 'Dossiers sans activité récente',
                 'detail' => $stale . ' dossier' . ($stale > 1 ? 's' : '') . ' actifs sans mise à jour depuis 3 jours.',
+                'href' => url('atak/sse/dossiers?status=en_cours'),
+                'action' => 'Revoir les dossiers',
             ];
         }
         if ($interestPending > 5) {
@@ -123,6 +157,8 @@ final class SseWorkspaceService
                 'level' => 'critique',
                 'title' => 'File dossiers d’intérêt saturée',
                 'detail' => $interestPending . ' dossiers d’intérêt en attente d’instruction.',
+                'href' => url('atak/sse/interet'),
+                'action' => 'Instruire la file',
             ];
         }
 
@@ -142,16 +178,52 @@ final class SseWorkspaceService
                 'level' => 'moderee',
                 'title' => 'Signaux numériques à examiner',
                 'detail' => $digitalPending . ' proposition' . ($digitalPending > 1 ? 's' : '') . ' du laboratoire numérique.',
+                'href' => url('atak/sse/exploitation-numerique/analyses'),
+                'action' => 'Ouvrir le laboratoire',
             ];
         }
 
         if ($alerts === []) {
             $alerts[] = [
-                'level' => 'moderee',
+                'level' => 'faible',
                 'title' => 'Situation nominale',
                 'detail' => 'Aucune anomalie prioritaire détectée sur le périmètre de session.',
+                'href' => url('atak/sse/operations'),
+                'action' => 'Maintenir la veille',
             ];
         }
+
+        // Série 24 h (8 créneaux de 3 h) pour le graphique d’activité.
+        $buckets = array_fill(0, 8, 0);
+        $nowUtc = time();
+        foreach ($activity as $row) {
+            $ts = (int) ($row['ts'] ?? 0);
+            if ($ts <= 0) {
+                continue;
+            }
+            $ageH = (int) floor(max(0, $nowUtc - $ts) / 3600);
+            if ($ageH >= 24) {
+                continue;
+            }
+            $idx = 7 - (int) floor($ageH / 3);
+            if ($idx >= 0 && $idx < 8) {
+                $buckets[$idx]++;
+            }
+        }
+        $bucketLabels = [];
+        for ($i = 0; $i < 8; $i++) {
+            $bucketLabels[] = gmdate('H', $nowUtc - ((7 - $i) * 3 * 3600)) . 'Z';
+        }
+
+        $queueItems = [
+            ['label' => 'Rapprochements à confirmer', 'count' => $crossPending, 'href' => url('atak/sse/croisements'), 'tone' => 'warn'],
+            ['label' => 'Dossiers d’intérêt à instruire', 'count' => $interestPending, 'href' => url('atak/sse/interet'), 'tone' => 'accent'],
+            ['label' => 'Signaux numériques', 'count' => $digitalPending, 'href' => url('atak/sse/exploitation-numerique/analyses'), 'tone' => 'accent'],
+            ['label' => 'Dossiers sans activité', 'count' => $stale, 'href' => url('atak/sse/dossiers?status=en_cours'), 'tone' => 'warn'],
+            ['label' => 'Investigations ouvertes', 'count' => count($meshes), 'href' => url('atak/sse/toiles'), 'tone' => 'ok'],
+        ];
+        $queueCounts = array_map(static fn (array $q): int => (int) ($q['count'] ?? 0), $queueItems);
+        $queueMax = max(1, $queueCounts === [] ? 0 : max($queueCounts));
 
         $recentObjects = [];
         foreach (array_slice($people, 0, 5) as $p) {
@@ -160,6 +232,7 @@ final class SseWorkspaceService
                 'ref' => 'IDN-' . str_pad((string) ((int) ($p['id'] ?? 0)), 5, '0', STR_PAD_LEFT),
                 'label' => (string) ($p['display_name'] ?? ''),
                 'href' => url('atak/sse/identites/' . (int) ($p['id'] ?? 0)),
+                'at' => $toZulu((string) ($p['created_at'] ?? '')),
             ];
         }
         foreach (array_slice($sites, 0, 3) as $s) {
@@ -168,6 +241,7 @@ final class SseWorkspaceService
                 'ref' => (string) ($s['reference_code'] ?? ''),
                 'label' => (string) ($s['name'] ?? ''),
                 'href' => url('atak/sse/sites/' . (int) ($s['id'] ?? 0)),
+                'at' => $toZulu((string) ($s['created_at'] ?? $s['updated_at'] ?? '')),
             ];
         }
         try {
@@ -177,10 +251,13 @@ final class SseWorkspaceService
                     'ref' => (string) ($d['reference_code'] ?? ''),
                     'label' => (string) ($d['device_type_label'] ?? 'Support'),
                     'href' => url('atak/sse/exploitation-numerique/supports/' . (int) ($d['id'] ?? 0)),
+                    'at' => $toZulu((string) ($d['created_at'] ?? '')),
                 ];
             }
         } catch (\Throwable) {
         }
+
+        $totalCases = count(array_filter($cases, static fn (array $c): bool => empty($c['is_folder'])));
 
         return [
             'kpi' => [
@@ -193,17 +270,31 @@ final class SseWorkspaceService
                 'stale_cases' => $stale,
                 'digital_devices' => $digitalDevices,
                 'digital_findings' => $digitalPending,
-                'total_cases' => count(array_filter($cases, static fn (array $c): bool => empty($c['is_folder']))),
+                'total_cases' => $totalCases,
             ],
             'activity' => $activity,
             'alerts' => $alerts,
             'recent_objects' => $recentObjects,
-            'operator_queue' => [
-                ['label' => 'Rapprochements à confirmer', 'count' => $crossPending, 'href' => url('atak/sse/croisements')],
-                ['label' => 'Dossiers d’intérêt à instruire', 'count' => $interestPending, 'href' => url('atak/sse/interet')],
-                ['label' => 'Signaux numériques', 'count' => $digitalPending, 'href' => url('atak/sse/exploitation-numerique/analyses')],
-                ['label' => 'Dossiers sans activité', 'count' => $stale, 'href' => url('atak/sse/dossiers?status=en_cours')],
-                ['label' => 'Investigations ouvertes', 'count' => count($meshes), 'href' => url('atak/sse/toiles')],
+            'operator_queue' => $queueItems,
+            'charts' => [
+                'activity_24h' => [
+                    'labels' => $bucketLabels,
+                    'values' => $buckets,
+                    'max' => max(1, max($buckets)),
+                ],
+                'workload' => [
+                    ['label' => 'Dossiers actifs', 'value' => $active, 'color' => '#34d399'],
+                    ['label' => 'Dossiers d’intérêt', 'value' => $interestPending, 'color' => '#fbbf24'],
+                    ['label' => 'Rapprochements', 'value' => $crossPending, 'color' => '#f87171'],
+                    ['label' => 'Investigations', 'value' => count($meshes), 'color' => '#60a5fa'],
+                    ['label' => 'Numérique', 'value' => $digitalPending, 'color' => '#a78bfa'],
+                ],
+                'queue_max' => $queueMax,
+            ],
+            'clock' => [
+                'zulu' => gmdate('H:i:s') . 'Z',
+                'zulu_date' => gmdate('d/m/Y'),
+                'generated_at' => gmdate('d/m/Y H:i:s') . 'Z',
             ],
             'data_quality' => [
                 'freshness' => $stale === 0 ? 'Bonne' : ($stale < 3 ? 'Correcte' : 'Dégradée'),
@@ -215,51 +306,40 @@ final class SseWorkspaceService
     }
 
     /**
-     * Recherche globale légère (identités, sites, dossiers, toiles, Pré-SSE).
+     * Recherche globale (identités, sites, dossiers, d’intérêt, investigations, documents).
      *
-     * @return list<array{type:string,ref:string,label:string,href:string}>
+     * @return list<array{type:string,ref:string,label:string,href:string,hint?:string}>
      */
-    public function globalSearch(int $tenantId, string $q, ?array $caseScope = null): array
+    public function globalSearch(int $tenantId, string $q, ?array $caseScope = null, int $limit = 40): array
     {
         $q = trim($q);
         if ($q === '' || mb_strlen($q) < 2) {
             return [];
         }
         $out = [];
-        $ql = mb_strtolower($q);
+        $limit = max(5, min(60, $limit));
+        $perSource = max(5, (int) ceil($limit / 3));
 
         try {
-            foreach ($this->persons->listForContext($tenantId, 1, ['limit' => 100]) as $p) {
-                $hay = mb_strtolower(
-                    (string) ($p['display_name'] ?? '') . ' '
-                    . (string) ($p['alias'] ?? '') . ' '
-                    . (string) ($p['last_name'] ?? '') . ' '
-                    . (string) ($p['first_name'] ?? '')
-                );
-                if (!str_contains($hay, $ql)) {
-                    continue;
-                }
+            foreach ($this->persons->searchForTenant($tenantId, $q, $perSource) as $p) {
                 $out[] = [
                     'type' => 'Identité',
                     'ref' => 'IDN-' . str_pad((string) ((int) ($p['id'] ?? 0)), 5, '0', STR_PAD_LEFT),
                     'label' => (string) ($p['display_name'] ?? ''),
+                    'hint' => trim((string) (($p['affiliation'] ?? '') ?: ($p['nationality'] ?? ''))),
                     'href' => url('atak/sse/identites/' . (int) ($p['id'] ?? 0)),
                 ];
             }
         } catch (\Throwable) {
-            // Source indisponible : ne pas faire tomber toute la recherche.
         }
 
         try {
-            foreach ($this->sites->listForContext($tenantId, 1, ['limit' => 80]) as $s) {
-                $hay = mb_strtolower((string) ($s['name'] ?? '') . ' ' . (string) ($s['reference_code'] ?? ''));
-                if (!str_contains($hay, $ql)) {
-                    continue;
-                }
+            foreach ($this->sites->searchForTenant($tenantId, $q, $perSource) as $s) {
                 $out[] = [
                     'type' => 'Site',
-                    'ref' => (string) ($s['reference_code'] ?? ''),
+                    'ref' => (string) ($s['reference_code'] ?? ('SITE-' . (int) ($s['id'] ?? 0))),
                     'label' => (string) ($s['name'] ?? ''),
+                    'hint' => (string) ($s['site_type_label'] ?? $s['status_label'] ?? ''),
                     'href' => url('atak/sse/sites/' . (int) ($s['id'] ?? 0)),
                 ];
             }
@@ -275,9 +355,10 @@ final class SseWorkspaceService
                     'type' => 'Dossier',
                     'ref' => (string) ($c['reference_code'] ?? ''),
                     'label' => (string) ($c['title'] ?? ''),
+                    'hint' => (string) ($c['status_label'] ?? ''),
                     'href' => url('atak/sse/dossiers/' . (int) ($c['id'] ?? 0)),
                 ];
-                if (count($out) > 40) {
+                if (count($out) >= $limit) {
                     break;
                 }
             }
@@ -285,11 +366,25 @@ final class SseWorkspaceService
         }
 
         try {
+            foreach ($this->interest->listForTenant($tenantId, ['q' => $q]) as $row) {
+                $out[] = [
+                    'type' => 'Dossier d’intérêt',
+                    'ref' => (string) ($row['reference_code'] ?? ''),
+                    'label' => (string) ($row['temporary_designation'] ?? ''),
+                    'hint' => (string) ($row['suspected_alias'] ?? ''),
+                    'href' => url('atak/sse/interet/' . (int) ($row['id'] ?? 0)),
+                ];
+            }
+        } catch (\Throwable) {
+        }
+
+        try {
             foreach ($this->meshes->listForTenant($tenantId, ['q' => $q]) as $m) {
                 $out[] = [
-                    'type' => 'Toile',
+                    'type' => 'Investigation',
                     'ref' => (string) ($m['reference_code'] ?? ''),
                     'label' => (string) ($m['title'] ?? ''),
+                    'hint' => 'Toile relationnelle',
                     'href' => url('atak/sse/toiles/' . (int) ($m['id'] ?? 0)),
                 ];
             }
@@ -297,17 +392,21 @@ final class SseWorkspaceService
         }
 
         try {
-            foreach ($this->interest->listForTenant($tenantId, ['q' => $q]) as $row) {
+            foreach ($this->documents->listForTenant($tenantId, ['q' => $q]) as $d) {
                 $out[] = [
-                'type' => 'Dossier d’intérêt',
-                'ref' => (string) ($row['reference_code'] ?? ''),
-                'label' => (string) ($row['temporary_designation'] ?? ''),
-                'href' => url('atak/sse/interet/' . (int) ($row['id'] ?? 0)),
+                    'type' => 'Document',
+                    'ref' => (string) ($d['reference_code'] ?? ''),
+                    'label' => (string) ($d['title'] ?? ''),
+                    'hint' => (string) ($d['document_type_label'] ?? $d['status_label'] ?? ''),
+                    'href' => url('atak/sse/documents/' . (int) ($d['id'] ?? 0)),
                 ];
+                if (count($out) >= $limit) {
+                    break;
+                }
             }
         } catch (\Throwable) {
         }
 
-        return array_slice($out, 0, 40);
+        return array_slice($out, 0, $limit);
     }
 }

@@ -4781,70 +4781,77 @@ body.sse-theme-bureau .interest-facts>div { background:#0f1419; }
     max-width: 46rem;
 }
 .interest-stamps {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+    justify-items: stretch;
+}
+.interest-stamps__primary {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.55rem 0.7rem;
     justify-content: flex-end;
-    margin-bottom: 0.35rem;
-    min-height: 3.2rem;
+    padding: 0.15rem 0.35rem 0.25rem;
 }
 .interest-stamp {
     display: inline-block;
-    padding: 0.35rem 0.7rem;
+    padding: 0.4rem 0.85rem;
     border: 3px solid currentColor;
-    border-radius: 4px;
+    border-radius: 3px;
     font-family: var(--mono, ui-monospace, monospace);
-    font-size: 0.72rem;
+    font-size: 0.82rem;
     font-weight: 900;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    opacity: 0.88;
-    white-space: nowrap;
     line-height: 1.1;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+    white-space: nowrap;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 .interest-stamp--class {
     color: #fbbf24;
-    transform: rotate(-9deg);
-    font-size: 0.9rem;
-    border-width: 4px;
-}
-.interest-stamp--open {
-    color: #34d399;
-    transform: rotate(5deg);
-}
-.interest-stamp--draft {
-    color: #f59e0b;
     transform: rotate(-4deg);
-    border-style: dashed;
+    border-width: 3px;
 }
-.interest-stamp--validation {
-    color: #60a5fa;
-    transform: rotate(3deg);
+.interest-stamps__marks {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.4rem;
 }
-.interest-stamp--ok {
-    color: #4ade80;
-    transform: rotate(-6deg);
+.interest-mark {
+    display: grid;
+    grid-template-columns: 4.6rem minmax(0, 1fr);
+    gap: 0.55rem;
+    align-items: center;
+    padding: 0.45rem 0.6rem;
+    border-radius: 0.45rem;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-left-width: 3px;
+    background: rgba(7, 9, 11, 0.42);
 }
-.interest-stamp--deny {
-    color: #f87171;
-    transform: rotate(7deg);
+.interest-mark__k {
+    font: 700 0.62rem var(--mono, ui-monospace, monospace);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(148, 163, 184, 0.95);
 }
-.interest-stamp--archive {
-    color: #94a3b8;
-    transform: rotate(-2deg);
+.interest-mark strong {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #f2f4f3;
+    line-height: 1.25;
 }
-.interest-stamp--hitl {
-    color: #fda4af;
-    transform: rotate(4deg);
-    font-size: 0.62rem;
+.interest-mark--open { border-left-color: #34d399; }
+.interest-mark--draft { border-left-color: #f59e0b; }
+.interest-mark--validation { border-left-color: #60a5fa; }
+.interest-mark--ok { border-left-color: #4ade80; }
+.interest-mark--deny { border-left-color: #f87171; }
+.interest-mark--archive { border-left-color: #94a3b8; }
+.interest-mark--hitl { border-left-color: #fda4af; }
+.interest-mark--prio {
+    border-left-color: #fb7185;
+    background: rgba(251, 113, 133, 0.08);
 }
-.interest-stamp--prio {
-    color: #fb7185;
-    transform: rotate(-7deg);
-    border-width: 4px;
-    font-size: 0.8rem;
-}
+.interest-mark--prio strong { color: #fda4af; }
 .interest-cooldown {
     margin: 0.35rem 0;
     padding: 0.45rem 0.6rem;
@@ -4973,7 +4980,7 @@ body.sse-theme-bureau .interest-facts>div { background:#0f1419; }
     .interest-ops__grid,
     .interest-acl-grid,
     .interest-acl-readonly { grid-template-columns: 1fr; }
-    .interest-stamps { justify-content: flex-start; }
+    .interest-stamps__primary { justify-content: flex-start; }
 }
 
 .interest-grid {
@@ -5706,6 +5713,246 @@ body.sse-theme-bureau .interest-cross__note {
 }
 
 .interest-form .panel { margin-bottom: 12px; }
+.interest-form-panel .panel-meta {
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    opacity: 0.72;
+}
+.interest-form-lead {
+    margin: 0 0 1rem;
+    color: rgba(242, 244, 243, 0.62);
+    font-size: 0.86rem;
+    line-height: 1.45;
+}
+.interest-form-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.45rem;
+}
+.interest-form-steps li {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.78rem;
+    color: rgba(242, 244, 243, 0.72);
+}
+.interest-form-steps span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.7rem;
+    height: 1.35rem;
+    border-radius: 0.3rem;
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    color: #34d399;
+    font-family: var(--mono, ui-monospace, monospace);
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+.interest-ana-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+.interest-ana-card {
+    display: grid;
+    gap: 0.65rem;
+    padding: 0.9rem 0.95rem 1rem;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 0.75rem;
+    background:
+        linear-gradient(180deg, rgba(15, 23, 32, 0.92), rgba(8, 12, 16, 0.88));
+}
+.interest-ana-card--facts { border-color: rgba(52, 211, 153, 0.28); }
+.interest-ana-card--hyp { border-color: rgba(251, 191, 36, 0.28); }
+.interest-ana-card--risk { border-color: rgba(248, 113, 113, 0.28); }
+.interest-ana-card--reco {
+    border-color: rgba(96, 165, 250, 0.3);
+    background:
+        linear-gradient(180deg, rgba(15, 35, 55, 0.55), rgba(8, 12, 16, 0.88));
+}
+.interest-ana-card--wide { grid-column: 1 / -1; }
+.interest-ana-card header {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+}
+.interest-ana-card__step {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    border-radius: 0.35rem;
+    background: rgba(52, 211, 153, 0.12);
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    color: #34d399;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+.interest-ana-card--hyp .interest-ana-card__step {
+    background: rgba(251, 191, 36, 0.12);
+    border-color: rgba(251, 191, 36, 0.4);
+    color: #fbbf24;
+}
+.interest-ana-card--risk .interest-ana-card__step {
+    background: rgba(248, 113, 113, 0.12);
+    border-color: rgba(248, 113, 113, 0.4);
+    color: #f87171;
+}
+.interest-ana-card--reco .interest-ana-card__step {
+    background: rgba(96, 165, 250, 0.12);
+    border-color: rgba(96, 165, 250, 0.4);
+    color: #60a5fa;
+}
+.interest-ana-card h3 {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-strong, #f2f4f3);
+}
+.interest-ana-card h3 label {
+    margin: 0;
+    cursor: pointer;
+}
+.interest-ana-card header p {
+    margin: 0.15rem 0 0;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: rgba(242, 244, 243, 0.55);
+}
+.interest-ana-card textarea {
+    width: 100%;
+    min-height: 7rem;
+    resize: vertical;
+}
+.interest-trace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(14rem, 0.85fr);
+    gap: 1rem;
+    align-items: stretch;
+}
+.interest-trace__meta {
+    display: grid;
+    gap: 0.85rem;
+    padding: 1rem;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 0.75rem;
+    background: rgba(7, 9, 11, 0.35);
+}
+.interest-sign {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.35rem;
+    padding: 1.1rem 1rem 1.15rem;
+    border: 1px solid rgba(52, 211, 153, 0.28);
+    border-radius: 0.75rem;
+    background:
+        linear-gradient(180deg, rgba(5, 150, 105, 0.1), rgba(7, 9, 11, 0.45));
+}
+.interest-sign__title {
+    margin: 0 0 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    color: rgba(242, 244, 243, 0.88);
+}
+.interest-sign__box {
+    width: 100%;
+    max-width: 14rem;
+    min-height: 3rem;
+    margin: 0.15rem 0 0.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed rgba(148, 163, 184, 0.55);
+    border-radius: 4px;
+    color: rgba(148, 163, 184, 0.95);
+    font-size: 0.72rem;
+    background: linear-gradient(180deg, rgba(15, 23, 32, 0.9), rgba(8, 12, 16, 0.95));
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.interest-sign__box.is-signed {
+    border: 2px solid rgba(248, 113, 113, 0.75);
+    color: #fecaca;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, rgba(127, 29, 29, 0.35), rgba(69, 10, 10, 0.45));
+}
+.interest-sign__name {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.interest-sign__meta {
+    margin: 0;
+    font-size: 0.68rem;
+    color: rgba(242, 244, 243, 0.55);
+}
+.interest-sign__confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    margin-top: 0.75rem;
+    text-align: left;
+    font-size: 0.76rem;
+    line-height: 1.4;
+    color: rgba(242, 244, 243, 0.82);
+    cursor: pointer;
+}
+.interest-sign__confirm input {
+    margin-top: 0.15rem;
+    flex: 0 0 auto;
+}
+.interest-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1.1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+.interest-sign-show {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid rgba(52, 211, 153, 0.22);
+    border-radius: 0.75rem;
+    text-align: center;
+    background: rgba(5, 150, 105, 0.06);
+}
+.interest-sign-show .interest-sign__box {
+    margin-left: auto;
+    margin-right: auto;
+}
+.interest-ana-grid--readonly .interest-ana-card p {
+    margin: 0;
+    font-size: 0.84rem;
+    line-height: 1.45;
+    color: rgba(242, 244, 243, 0.82);
+    white-space: pre-wrap;
+}
+.interest-ana-grid--readonly .interest-ana-card .muted {
+    margin-top: 0.65rem;
+    font-size: 0.72rem;
+}
+@media (max-width: 900px) {
+    .interest-ana-grid,
+    .interest-trace {
+        grid-template-columns: 1fr;
+    }
+    .interest-ana-card--wide {
+        grid-column: auto;
+    }
+}
 
 /* —— Création d’objet : méta par type + page dédiée —— */
 .object-meta-host {

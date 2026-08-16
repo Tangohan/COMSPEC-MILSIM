@@ -97,13 +97,26 @@ $cdHuman = static fn (string $key): string => (string) ($cd($key)['human'] ?? ''
         </dl>
     </div>
     <aside class="interest-hero__side">
-        <div class="interest-stamps" aria-hidden="true">
-            <span class="interest-stamp interest-stamp--class">Pré-SSE</span>
-            <span class="interest-stamp interest-stamp--<?= $h($stampStatus) ?>"><?= $h($c['status_label'] ?? 'Ouvert') ?></span>
-            <span class="interest-stamp interest-stamp--hitl">Validation humaine</span>
-            <?php if ($priority === 'critique' || $priority === 'prioritaire'): ?>
-                <span class="interest-stamp interest-stamp--prio"><?= $h($c['interest_label'] ?? '') ?></span>
-            <?php endif; ?>
+        <div class="interest-stamps" aria-label="Marques du dossier">
+            <div class="interest-stamps__primary">
+                <span class="interest-stamp interest-stamp--class">Pré-SSE</span>
+            </div>
+            <ul class="interest-stamps__marks">
+                <li class="interest-mark interest-mark--<?= $h($stampStatus) ?>">
+                    <span class="interest-mark__k">État</span>
+                    <strong><?= $h($c['status_label'] ?? 'Ouvert') ?></strong>
+                </li>
+                <li class="interest-mark interest-mark--hitl">
+                    <span class="interest-mark__k">Contrôle</span>
+                    <strong>Validation humaine</strong>
+                </li>
+                <?php if ($priority === 'critique' || $priority === 'prioritaire'): ?>
+                    <li class="interest-mark interest-mark--prio">
+                        <span class="interest-mark__k">Priorité</span>
+                        <strong><?= $h($c['interest_label'] ?? '') ?></strong>
+                    </li>
+                <?php endif; ?>
+            </ul>
         </div>
         <p class="interest-hero__side-label">Suite d’instruction</p>
         <?php if ($constitutedCase !== null): ?>
@@ -149,6 +162,25 @@ $cdHuman = static fn (string $key): string => (string) ($cd($key)['human'] ?? ''
             <span><?= $h($c['source_label'] ?? 'Source terrain') ?></span>
             <?php if (!empty($c['source_reliability'])): ?>
                 <em><?= $h($c['source_reliability']) ?></em>
+            <?php endif; ?>
+        </div>
+        <?php
+        $signedAt = (string) ($c['signed_at'] ?? '');
+        $signedBy = trim((string) ($c['signed_by_label'] ?? ''));
+        $isSigned = $signedAt !== '' || $signedBy !== '';
+        ?>
+        <div class="interest-sign-show" aria-label="Signature du signalement">
+            <p class="interest-sign__title">Signature</p>
+            <?php if ($isSigned): ?>
+                <div class="interest-sign__box is-signed">Original signé</div>
+                <p class="interest-sign__name"><?= $h($signedBy !== '' ? $signedBy : ($c['origin_operator'] ?? 'Analyste')) ?></p>
+                <p class="interest-sign__meta">
+                    Signé le <?= $h($fmtWhen($signedAt) ?: $fmtWhen((string) ($c['created_at'] ?? '')) ?: '—') ?>
+                </p>
+            <?php else: ?>
+                <div class="interest-sign__box">Signature numérique</div>
+                <p class="interest-sign__name"><?= $h($c['origin_operator'] ?? 'Analyste') ?></p>
+                <p class="interest-sign__meta">Signalement antérieur — signature non consignée</p>
             <?php endif; ?>
         </div>
     </aside>
@@ -389,26 +421,60 @@ $cdHuman = static fn (string $key): string => (string) ($cd($key)['human'] ?? ''
     <section class="panel">
         <div class="panel-header">
             <div class="panel-title"><span class="panel-index">P.05</span> Raisonnement analytique</div>
+            <div class="panel-meta">Faits · hypothèses · risques · suite</div>
         </div>
         <div class="panel-body">
-            <div class="interest-reason">
-                <div>
-                    <h3>Éléments favorables</h3>
+            <div class="interest-ana-grid interest-ana-grid--readonly">
+                <article class="interest-ana-card interest-ana-card--facts">
+                    <header>
+                        <span class="interest-ana-card__step">A</span>
+                        <div><h3>Faits établis</h3></div>
+                    </header>
                     <p><?= nl2br($h((string) ($c['analysis_facts'] ?: ($c['observed_elements'] ?? 'Non renseigné')))) ?></p>
-                </div>
-                <div>
-                    <h3>Éléments défavorables / contradictions</h3>
+                </article>
+                <article class="interest-ana-card interest-ana-card--hyp">
+                    <header>
+                        <span class="interest-ana-card__step">B</span>
+                        <div><h3>Hypothèses</h3></div>
+                    </header>
+                    <p><?= nl2br($h((string) ($c['analysis_assumptions'] ?: 'Aucune hypothèse formelle'))) ?></p>
+                </article>
+                <article class="interest-ana-card">
+                    <header>
+                        <span class="interest-ana-card__step">C</span>
+                        <div><h3>Contradictions</h3></div>
+                    </header>
                     <p><?= nl2br($h((string) ($c['analysis_contradictions'] ?: 'Aucune contradiction formelle'))) ?></p>
-                </div>
-                <div>
-                    <h3>Questions restantes</h3>
+                </article>
+                <article class="interest-ana-card">
+                    <header>
+                        <span class="interest-ana-card__step">D</span>
+                        <div><h3>Questions restantes</h3></div>
+                    </header>
                     <p><?= nl2br($h((string) ($c['analysis_questions'] ?: '—'))) ?></p>
-                </div>
-                <div>
-                    <h3>Recommandation</h3>
+                </article>
+                <article class="interest-ana-card">
+                    <header>
+                        <span class="interest-ana-card__step">E</span>
+                        <div><h3>Besoins de collecte</h3></div>
+                    </header>
+                    <p><?= nl2br($h((string) ($c['collection_needs'] ?: '—'))) ?></p>
+                </article>
+                <article class="interest-ana-card interest-ana-card--risk">
+                    <header>
+                        <span class="interest-ana-card__step">F</span>
+                        <div><h3>Risque opérationnel</h3></div>
+                    </header>
+                    <p><?= nl2br($h((string) ($c['operational_risk'] ?: '—'))) ?></p>
+                </article>
+                <article class="interest-ana-card interest-ana-card--wide interest-ana-card--reco">
+                    <header>
+                        <span class="interest-ana-card__step">G</span>
+                        <div><h3>Recommandations de contrôle</h3></div>
+                    </header>
                     <p><?= nl2br($h((string) ($c['recommendations'] ?: 'Poursuivre la collecte et valider les rapprochements.'))) ?></p>
                     <p class="muted">Dernière révision : <?= $h($fmtWhen((string) ($c['updated_at'] ?? $c['created_at'] ?? '')) ?: '—') ?> — <?= $h($c['origin_operator'] ?? 'Analyste') ?></p>
-                </div>
+                </article>
             </div>
         </div>
     </section>

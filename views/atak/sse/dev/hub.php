@@ -24,14 +24,14 @@ foreach ($templates as $tpl) {
 $groupKeys = array_keys($grouped);
 $firstGroup = $groupKeys[0] ?? '';
 ?>
-<div class="breadcrumb">Athena / SSE / <strong>Atelier de préparation</strong></div>
+<div class="breadcrumb">Athena / SSE / <strong>Modèles de mission</strong></div>
 
 <section class="lab-hero" aria-labelledby="lab-hero-title">
     <div class="lab-hero__main">
-        <p class="lab-hero__kicker">Préparation mission</p>
-        <h1 id="lab-hero-title">Atelier de préparation</h1>
+        <p class="lab-hero__kicker">Atelier de préparation</p>
+        <h1 id="lab-hero-title">Créer des modèles de mission</h1>
         <p class="lab-hero__lead">
-            Concevez les modèles destinés aux missions Arma : profils, thèmes, contacts et messages.
+            Préparez les profils, thèmes et listes narratives destinés aux missions Arma.
             Une fois prêts, emportez-les pour les appliquer en jeu via le module COMSPEC SSE.
         </p>
     </div>

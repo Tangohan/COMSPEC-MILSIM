@@ -66,10 +66,10 @@ final class SseArmaModelService
         $noise = $this->parseOptionalFloat($input['noise_probability'] ?? null);
         $falseLead = $this->parseOptionalFloat($input['false_lead_probability'] ?? null);
         if ($noise !== null && ($noise < 0 || $noise > 1)) {
-            $errors[] = 'Le bruit doit être entre 0 et 1 (ex. 0,15).';
+            $errors[] = 'Choisissez un niveau de bruit dans la liste proposée.';
         }
         if ($falseLead !== null && ($falseLead < 0 || $falseLead > 1)) {
-            $errors[] = 'Les fausses pistes doivent être entre 0 et 1.';
+            $errors[] = 'Choisissez un niveau de fausses pistes dans la liste proposée.';
         }
 
         $aliasPool = $this->linesToList((string) ($input['alias_pool_text'] ?? ''));
@@ -859,6 +859,41 @@ final class SseArmaModelService
         ];
     }
 
+    /**
+     * Aligne une probabilité stockée (0–1 ou pourcentage) sur un choix de liste métier.
+     */
+    public static function snapProbabilityChoice(string $raw): string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return '';
+        }
+        $normalized = str_replace(',', '.', $raw);
+        if (!is_numeric($normalized)) {
+            return '';
+        }
+        $v = (float) $normalized;
+        if ($v > 1.0) {
+            $v = $v / 100.0;
+        }
+        $v = max(0.0, min(1.0, $v));
+        $buckets = [0.0, 0.1, 0.2, 0.35, 0.5];
+        $best = 0.0;
+        $bestDist = PHP_FLOAT_MAX;
+        foreach ($buckets as $b) {
+            $d = abs($v - $b);
+            if ($d < $bestDist) {
+                $bestDist = $d;
+                $best = $b;
+            }
+        }
+        if ($best === 0.0) {
+            return '0';
+        }
+
+        return rtrim(rtrim(sprintf('%.2f', $best), '0'), '.');
+    }
+
     private function parseOptionalFloat(mixed $value): ?float
     {
         if ($value === null || $value === '') {
@@ -870,8 +905,13 @@ final class SseArmaModelService
         if (!is_numeric($value)) {
             return null;
         }
+        $v = (float) $value;
+        // Accepte un pourcentage saisi (ex. 15) en plus de 0–1.
+        if ($v > 1.0 && $v <= 100.0) {
+            $v = $v / 100.0;
+        }
 
-        return (float) $value;
+        return $v;
     }
 
     /**
