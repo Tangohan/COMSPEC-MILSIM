@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use App\Support\MedicalAlertParser;
 use PDO;
 
@@ -13,13 +14,14 @@ use PDO;
  */
 class AtakMedicalTriageRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
+
 
     private ?bool $tablesReady = null;
 
     public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = $pdo ?? Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     public function tablesReady(): bool
@@ -28,7 +30,7 @@ class AtakMedicalTriageRepository
             return $this->tablesReady;
         }
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_medical_alert_triage' LIMIT 1"
             );
             $this->tablesReady = (bool) $st->fetchColumn();
@@ -54,7 +56,7 @@ class AtakMedicalTriageRepository
         }
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $params = array_merge([$tenantId], $ids);
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             "SELECT chat_message_id, status, status_by, status_note, updated_at
              FROM atak_medical_alert_triage
              WHERE tenant_id = ? AND chat_message_id IN ($placeholders)"
@@ -98,7 +100,7 @@ class AtakMedicalTriageRepository
         $by = mb_substr(trim($by), 0, 120);
         $note = mb_substr(trim($note), 0, 500);
 
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'INSERT INTO atak_medical_alert_triage
                 (tenant_id, map_id, chat_message_id, status, status_by, status_note)
              VALUES (?, ?, ?, ?, ?, ?)

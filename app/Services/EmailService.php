@@ -1360,6 +1360,42 @@ final class EmailService
         );
     }
 
+    /**
+     * Digest quotidien SSE aux analystes / gestionnaires du portail.
+     */
+    public function sendSseAnalystDigest(
+        string $to,
+        string $staffDisplayName,
+        string $tenantName,
+        int $pendingSuggestions,
+        int $openSignals,
+        int $newPersons,
+        int $interestOpen,
+        string $workspaceUrl,
+        string $suggestionsUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::SSE_ANALYST_DIGEST,
+            'sse_analyst_digest',
+            $to,
+            'Point renseignement SSE — ' . $tenantName,
+            [
+                'staffDisplayName' => $staffDisplayName,
+                'tenantName' => $tenantName,
+                'pendingSuggestions' => $pendingSuggestions,
+                'openSignals' => $openSignals,
+                'newPersons' => $newPersons,
+                'interestOpen' => $interestOpen,
+                'workspaceUrl' => $workspaceUrl,
+                'suggestionsUrl' => $suggestionsUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'sse_analyst_digest']
+        );
+    }
+
     public function sendTrainingCourseSessionScheduledLearner(
         string $to,
         string $displayName,

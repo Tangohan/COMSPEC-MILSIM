@@ -4,21 +4,23 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 class UnitRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
 
-    public function __construct()
+
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     public function allForTenant(int $tenantId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM units WHERE tenant_id = ? ORDER BY display_order ASC, name ASC');
+        $stmt = $this->pdo()->prepare('SELECT * FROM units WHERE tenant_id = ? ORDER BY display_order ASC, name ASC');
         $stmt->execute([$tenantId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -29,7 +31,7 @@ class UnitRepository
         if (!$this->columnExists('units', 'show_on_public_page')) {
             return $this->allForTenant($tenantId);
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM units WHERE tenant_id = ? AND show_on_public_page = 1 ORDER BY display_order ASC, name ASC'
         );
         $stmt->execute([$tenantId]);
@@ -40,12 +42,12 @@ class UnitRepository
     public function countPublicForTenant(int $tenantId): int
     {
         if (!$this->columnExists('units', 'show_on_public_page')) {
-            $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM units WHERE tenant_id = ?');
+            $stmt = $this->pdo()->prepare('SELECT COUNT(*) FROM units WHERE tenant_id = ?');
             $stmt->execute([$tenantId]);
 
             return (int) $stmt->fetchColumn();
         }
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM units WHERE tenant_id = ? AND show_on_public_page = 1');
+        $stmt = $this->pdo()->prepare('SELECT COUNT(*) FROM units WHERE tenant_id = ? AND show_on_public_page = 1');
         $stmt->execute([$tenantId]);
 
         return (int) $stmt->fetchColumn();
@@ -59,7 +61,7 @@ class UnitRepository
             INNER JOIN users u ON u.id = uu.user_id AND u.tenant_id = ?
             WHERE u.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
             GROUP BY uu.unit_id';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute([$tenantId]);
         $out = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -79,7 +81,7 @@ class UnitRepository
     {
         [$inner, $params] = $this->memberUnionSql($tenantId);
         $sql = 'SELECT unit_id, COUNT(DISTINCT user_id) AS c FROM (' . $inner . ') t WHERE unit_id IS NOT NULL GROUP BY unit_id';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
         $out = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -98,7 +100,7 @@ class UnitRepository
     {
         [$inner, $params] = $this->memberUnionSql($tenantId);
         $sql = 'SELECT DISTINCT unit_id, user_id FROM (' . $inner . ') t WHERE unit_id IS NOT NULL';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
         $byUnit = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -171,7 +173,7 @@ class UnitRepository
                     INNER JOIN users u ON u.id = uc.user_id AND u.tenant_id = ?
                     WHERE uc.user_id IN ({$placeholders})
                     GROUP BY uc.user_id";
-            $st = $this->pdo->prepare($sql);
+            $st = $this->pdo()->prepare($sql);
             $st->execute($paramsBase);
             while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                 $uid = (int) ($row['user_id'] ?? 0);
@@ -197,7 +199,7 @@ class UnitRepository
                       AND ce.cancelled_at IS NULL
                       AND ce.starts_at >= DATE_SUB(NOW(), INTERVAL 45 DAY)
                     GROUP BY r.user_id";
-            $st = $this->pdo->prepare($sql);
+            $st = $this->pdo()->prepare($sql);
             $st->execute(array_merge($paramsBase, [$tenantId]));
             while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                 $uid = (int) ($row['user_id'] ?? 0);
@@ -227,7 +229,7 @@ class UnitRepository
                     FROM personnel_profiles pp
                     INNER JOIN users u ON u.id = pp.user_id AND u.tenant_id = ?
                     WHERE pp.user_id IN ({$placeholders})";
-            $st = $this->pdo->prepare($sql);
+            $st = $this->pdo()->prepare($sql);
             $st->execute($paramsBase);
             while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                 $uid = (int) ($row['user_id'] ?? 0);
@@ -363,7 +365,7 @@ class UnitRepository
         [$unionSql, $params] = $this->memberUnionSql($tenantId);
         $ph = implode(',', array_fill(0, count($unitIds), '?'));
         $sql = 'SELECT DISTINCT t.user_id FROM (' . $unionSql . ') t WHERE t.unit_id IN (' . $ph . ')';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute(array_merge($params, $unitIds));
         $out = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -410,7 +412,7 @@ class UnitRepository
         $placeholders = implode(',', array_fill(0, count($userIds), '?'));
         $sql = 'SELECT id, display_name, callsign, email FROM users WHERE tenant_id = ? AND id IN (' . $placeholders . ')';
         $params = array_merge([$tenantId], $userIds);
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
         $out = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -430,7 +432,7 @@ class UnitRepository
         if (array_key_exists($table, $cache)) {
             return $cache[$table];
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
         );
         $stmt->execute([$table]);
@@ -446,7 +448,7 @@ class UnitRepository
 
     private function columnExists(string $table, string $column): bool
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
         );
         $stmt->execute([$table, $column]);
@@ -475,7 +477,7 @@ class UnitRepository
 
     public function getByType(int $tenantId, string $type): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM units WHERE tenant_id = ? AND type = ? ORDER BY display_order ASC, name ASC');
+        $stmt = $this->pdo()->prepare('SELECT * FROM units WHERE tenant_id = ? AND type = ? ORDER BY display_order ASC, name ASC');
         $stmt->execute([$tenantId, $type]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -498,7 +500,7 @@ class UnitRepository
             $sql .= ' AND tenant_id = ?';
             $params[] = $tenantId;
         }
-        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt = $this->pdo()->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -507,7 +509,7 @@ class UnitRepository
     /** @return list<array<string, mixed>> */
     public function childrenForTenant(int $tenantId, int $parentId): array
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM units WHERE tenant_id = ? AND parent_id = ? ORDER BY display_order ASC, name ASC'
         );
         $stmt->execute([$tenantId, $parentId]);
@@ -520,7 +522,7 @@ class UnitRepository
         if ($slug === '') {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT * FROM units WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT * FROM units WHERE tenant_id = ? AND slug = ? LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -545,7 +547,7 @@ class UnitRepository
      */
     public function listFlatForStructure(int $tenantId): array
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT id, name, parent_id FROM units WHERE tenant_id = ? ORDER BY display_order ASC, name ASC'
         );
         $stmt->execute([$tenantId]);
@@ -621,7 +623,7 @@ class UnitRepository
         if (!$this->hasTableColumn('units', 'orbat_display_type')) {
             return 0;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT COUNT(*) FROM units WHERE tenant_id = ? AND orbat_display_type = ?'
         );
         $stmt->execute([$tenantId, $displaySlug]);
@@ -631,7 +633,7 @@ class UnitRepository
 
     public function countChildren(int $unitId, int $tenantId): int
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT COUNT(*) FROM units WHERE tenant_id = ? AND parent_id = ?'
         );
         $stmt->execute([$tenantId, $unitId]);
@@ -653,7 +655,7 @@ class UnitRepository
         $sql = 'SELECT DISTINCT uu.unit_id FROM user_units uu
             INNER JOIN users u ON u.id = uu.user_id AND u.tenant_id = ?
             WHERE uu.user_id = ? AND u.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute([$tenantId, $userId]);
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $uid = (int) ($row['unit_id'] ?? 0);
@@ -665,7 +667,7 @@ class UnitRepository
             $sql = 'SELECT DISTINCT pa.unit_id FROM personnel_assignments pa
                 INNER JOIN users u ON u.id = pa.user_id AND u.tenant_id = ?
                 WHERE pa.user_id = ? AND pa.status = \'active\' AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())';
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute([$tenantId, $userId]);
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $uid = (int) ($row['unit_id'] ?? 0);
@@ -678,7 +680,7 @@ class UnitRepository
             $sql = 'SELECT pp.primary_unit_id AS unit_id FROM personnel_profiles pp
                 INNER JOIN users u ON u.id = pp.user_id AND u.tenant_id = ?
                 WHERE pp.user_id = ? AND pp.primary_unit_id IS NOT NULL AND u.status = \'active\'';
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute([$tenantId, $userId]);
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $uid = (int) ($row['unit_id'] ?? 0);
@@ -693,7 +695,7 @@ class UnitRepository
 
     private function isMedicalReadinessEnabled(int $tenantId): bool
     {
-        $stmt = $this->pdo->prepare('SELECT settings FROM tenants WHERE id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT settings FROM tenants WHERE id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         $raw = $stmt->fetchColumn();
         if (!is_string($raw) || trim($raw) === '') {
@@ -748,7 +750,7 @@ class UnitRepository
                 ? \App\Support\OrbatMaskMode::normalize($data['orbat_mask_mode'] ?? null)
                 : 'none';
             if ($this->columnExists('units', 'orbat_mask_mode')) {
-                $stmt = $this->pdo->prepare(
+                $stmt = $this->pdo()->prepare(
                     'INSERT INTO units (tenant_id, parent_id, name, slug, type, code, commander_user_id, display_order, public_blurb, public_tags, show_on_public_page, orbat_mask_mode, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
                 );
                 $stmt->execute([
@@ -766,7 +768,7 @@ class UnitRepository
                     $mask,
                 ]);
             } else {
-                $stmt = $this->pdo->prepare(
+                $stmt = $this->pdo()->prepare(
                     'INSERT INTO units (tenant_id, parent_id, name, slug, type, code, commander_user_id, display_order, public_blurb, public_tags, show_on_public_page, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
                 );
                 $stmt->execute([
@@ -784,7 +786,7 @@ class UnitRepository
                 ]);
             }
         } else {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'INSERT INTO units (tenant_id, parent_id, name, slug, type, code, commander_user_id, display_order, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())'
             );
             $stmt->execute([
@@ -798,7 +800,7 @@ class UnitRepository
                 (int) ($data['display_order'] ?? 0),
             ]);
         }
-        $id = (int) $this->pdo->lastInsertId();
+        $id = (int) $this->pdo()->lastInsertId();
         $extraPublic = [];
         foreach ([
             'public_capacity',
@@ -925,21 +927,21 @@ class UnitRepository
         $fields[] = 'updated_at = NOW()';
         $params[] = $id;
         $params[] = $tenantId;
-        $stmt = $this->pdo->prepare('UPDATE units SET ' . implode(', ', $fields) . ' WHERE id = ? AND tenant_id = ?');
+        $stmt = $this->pdo()->prepare('UPDATE units SET ' . implode(', ', $fields) . ' WHERE id = ? AND tenant_id = ?');
         $stmt->execute($params);
         return $stmt->rowCount() > 0;
     }
 
     public function delete(int $id, int $tenantId): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM units WHERE id = ? AND tenant_id = ?');
+        $stmt = $this->pdo()->prepare('DELETE FROM units WHERE id = ? AND tenant_id = ?');
         $stmt->execute([$id, $tenantId]);
         return $stmt->rowCount() > 0;
     }
 
     public function findIdByTenantAndSlug(int $tenantId, string $slug): ?int
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM units WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT id FROM units WHERE tenant_id = ? AND slug = ? LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $v = $stmt->fetchColumn();
 
@@ -954,7 +956,7 @@ class UnitRepository
             $sql .= ' AND id != ?';
             $params[] = $excludeId;
         }
-        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt = $this->pdo()->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
         return (bool) $stmt->fetch();
     }

@@ -37,7 +37,22 @@ for "_i" from 0 to (_count - 1) do {
     };
 
     private _uid = format ["SSE-DOC-%1-%2", _seed, _i];
-    private _summary = if (_i == 0) then { _packSummary } else { "Document secondaire / contexte." };
+    private _summary = if (_i == 0) then {
+        _packSummary
+    } else {
+        // Varier les résumés secondaires (évite « Document secondaire » × N identiques).
+        private _alts = [
+            "Annotation manuscrite — lieu et horaire partiels.",
+            "Photographie de contexte — arrière-plan exploitable.",
+            "Reçu / bordereau — montants partiellement lisibles.",
+            "Liste de contacts — plusieurs numéros barrés.",
+            "Carte annotée — itinéraire approximatif.",
+            "Note rapide — rappel d’un rendez-vous.",
+            "Document usé — en-tête illisible, corps partiel."
+        ];
+        private _sk = format ["sum%1", _i];
+        [_seed, _sk, _alts] call comspec_sse_fnc_pickFromSeed
+    };
     private _docGrid = if (_i == 0) then { _grid } else { "" };
     private _codeword = if (_i == 0) then { _packCodeword } else { "" };
     private _dnKey = format ["dn%1", _i];

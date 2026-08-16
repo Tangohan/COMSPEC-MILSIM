@@ -22,6 +22,7 @@ class CfgFunctions
             file = "\ATAK_Alerts\functions";
             class alerts_clearReports {};
             class alerts_clearForm {};
+            class alerts_initButtons {};
             class alerts_installAppFilter {};
             class alerts_locateSelected {};
             class alerts_onOpened {};
@@ -65,11 +66,13 @@ class Extended_PostInit_EventHandlers
     };
 };
 
+#include "ui\ReportsPage.hpp"
+
 class ATAK_Buttons
 {
     class Iceman_Reports_Menu
     {
-        onLoad = "Iceman_fnc_alerts_updatePanel";
+        onLoad = "Iceman_fnc_alerts_initButtons";
         clickEvents[] = {"Iceman_fnc_alerts_locateSelected", "Iceman_fnc_alerts_clearReports"};
     };
     class Iceman_Alert_Menu
@@ -125,7 +128,7 @@ class ATAK_APPs
         class Menu_Property
         {
             ORDER = 6.5;
-            PAGE_CTRL = "ATAK_Message";
+            PAGE_CTRL = "Iceman_ATAK_Reports";
             Opened = "Iceman_fnc_alerts_onOpened";
             ATAK_Buttons = "Iceman_Reports_Menu";
         };
@@ -174,7 +177,7 @@ class RscTitles
             class Menu_Property
             {
                 ORDER = 6.5;
-                PAGE_CTRL = "ATAK_Message";
+                PAGE_CTRL = "Iceman_ATAK_Reports";
                 Opened = "Iceman_fnc_alerts_onOpened";
                 ATAK_Buttons = "Iceman_Reports_Menu";
             };

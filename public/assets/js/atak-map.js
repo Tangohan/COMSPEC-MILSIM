@@ -31,6 +31,8 @@ window.ATAKMap = (function () {
     iconSize: 16,
     labelSize: 7,
     showFtFrame: true,
+    markerDepth: true,
+    markerMotion: true,
     showIntelPhotoMarkers: true,
     autoCenterSelf: false,
     showDelayedUnits: true,
@@ -98,6 +100,8 @@ window.ATAKMap = (function () {
       iconSize: clampNum(src.iconSize, 8, 48, DISPLAY_PREFS_DEFAULT.iconSize),
       labelSize: clampNum(src.labelSize, 6, 16, DISPLAY_PREFS_DEFAULT.labelSize),
       showFtFrame: src.showFtFrame !== false,
+      markerDepth: src.markerDepth !== false,
+      markerMotion: src.markerMotion !== false,
       showIntelPhotoMarkers: src.showIntelPhotoMarkers !== false,
       autoCenterSelf: !!src.autoCenterSelf,
       showDelayedUnits: src.showDelayedUnits !== false,
@@ -172,6 +176,8 @@ window.ATAKMap = (function () {
     mapEl.style.setProperty('--atak-ft-frame-size', frame + 'px');
     if (p.showFtFrame) mapEl.classList.remove('atak-map--hide-ft-frames');
     else mapEl.classList.add('atak-map--hide-ft-frames');
+    mapEl.classList.toggle('atak-map--marker-depth', !!p.markerDepth);
+    mapEl.classList.toggle('atak-map--marker-motion', !!p.markerMotion);
   }
 
   function clearPosSimState() {
@@ -299,26 +305,38 @@ window.ATAKMap = (function () {
     }
   }
 
+  function syncRangePair(inputId, valId, value) {
+    var el = document.getElementById(inputId);
+    var val = document.getElementById(valId);
+    if (el) {
+      el.value = String(value);
+      el.setAttribute('aria-valuenow', String(value));
+    }
+    if (val) val.textContent = String(value);
+  }
+
   function syncDisplayPrefsUi() {
     var p = getDisplayPrefs();
     var styleEl = document.getElementById('atak-unit-style-mode');
     if (styleEl) styleEl.value = p.styleMode;
-    var iconEl = document.getElementById('atak-unit-icon-size');
-    var iconVal = document.getElementById('atak-unit-icon-size-val');
-    if (iconEl) {
-      iconEl.value = String(p.iconSize);
-      iconEl.setAttribute('aria-valuenow', String(p.iconSize));
-    }
-    if (iconVal) iconVal.textContent = String(p.iconSize);
-    var labelEl = document.getElementById('atak-unit-label-size');
-    var labelVal = document.getElementById('atak-unit-label-size-val');
-    if (labelEl) {
-      labelEl.value = String(p.labelSize);
-      labelEl.setAttribute('aria-valuenow', String(p.labelSize));
-    }
-    if (labelVal) labelVal.textContent = String(p.labelSize);
+    var mapStyleEl = document.getElementById('atak-map-look-style');
+    if (mapStyleEl) mapStyleEl.value = p.styleMode;
+    syncRangePair('atak-unit-icon-size', 'atak-unit-icon-size-val', p.iconSize);
+    syncRangePair('atak-map-look-icon-size', 'atak-map-look-icon-size-val', p.iconSize);
+    syncRangePair('atak-unit-label-size', 'atak-unit-label-size-val', p.labelSize);
+    syncRangePair('atak-map-look-label-size', 'atak-map-look-label-size-val', p.labelSize);
     var ftEl = document.getElementById('atak-unit-ft-frame');
     if (ftEl) ftEl.checked = !!p.showFtFrame;
+    var mapFtEl = document.getElementById('atak-map-look-ft-frame');
+    if (mapFtEl) mapFtEl.checked = !!p.showFtFrame;
+    var depthEl = document.getElementById('atak-unit-marker-depth');
+    if (depthEl) depthEl.checked = !!p.markerDepth;
+    var mapDepthEl = document.getElementById('atak-map-look-depth');
+    if (mapDepthEl) mapDepthEl.checked = !!p.markerDepth;
+    var motionEl = document.getElementById('atak-unit-marker-motion');
+    if (motionEl) motionEl.checked = !!p.markerMotion;
+    var mapMotionEl = document.getElementById('atak-map-look-motion');
+    if (mapMotionEl) mapMotionEl.checked = !!p.markerMotion;
     var intelPhotosEl = document.getElementById('atak-show-intel-photo-markers');
     if (intelPhotosEl) intelPhotosEl.checked = !!p.showIntelPhotoMarkers;
     var autoCenterSelf = document.getElementById('atak-auto-center-self');
@@ -373,9 +391,8 @@ window.ATAKMap = (function () {
   }
 
   function bindDisplayPrefsUi() {
-    var root = document.getElementById('atak-display-prefs');
-    if (!root || root._atakDisplayBound) return;
-    root._atakDisplayBound = true;
+    if (bindDisplayPrefsUi._bound) return;
+    bindDisplayPrefsUi._bound = true;
     syncDisplayPrefsUi();
     applyDisplayPrefsToMapDom();
     ensurePosSimFlushTimer();
@@ -388,63 +405,67 @@ window.ATAKMap = (function () {
       });
     }
 
-    function onStyleChange() {
-      var el = document.getElementById('atak-unit-style-mode');
-      if (!el) return;
-      patchDisplayPrefs({ styleMode: el.value });
-      syncDisplayPrefsUi();
-    }
-    var styleEl = document.getElementById('atak-unit-style-mode');
-    if (styleEl) styleEl.addEventListener('change', onStyleChange);
-
-    function onIconSize() {
-      var el = document.getElementById('atak-unit-icon-size');
-      if (!el) return;
-      var n = parseInt(el.value, 10);
-      patchDisplayPrefs({ iconSize: n });
-      syncDisplayPrefsUi();
-    }
-    var iconEl = document.getElementById('atak-unit-icon-size');
-    if (iconEl) {
-      iconEl.addEventListener('input', onIconSize);
-      iconEl.addEventListener('change', onIconSize);
-    }
-
-    function onLabelSize() {
-      var el = document.getElementById('atak-unit-label-size');
-      if (!el) return;
-      var n = parseInt(el.value, 10);
-      patchDisplayPrefs({ labelSize: n });
-      syncDisplayPrefsUi();
-    }
-    var labelEl = document.getElementById('atak-unit-label-size');
-    if (labelEl) {
-      labelEl.addEventListener('input', onLabelSize);
-      labelEl.addEventListener('change', onLabelSize);
-    }
-
-    var ftEl = document.getElementById('atak-unit-ft-frame');
-    if (ftEl) {
-      ftEl.addEventListener('change', function () {
-        patchDisplayPrefs({ showFtFrame: !!ftEl.checked });
-      });
-    }
-
-    var intelPhotosEl = document.getElementById('atak-show-intel-photo-markers');
-    if (intelPhotosEl) {
-      intelPhotosEl.addEventListener('change', function () {
-        patchDisplayPrefs({ showIntelPhotoMarkers: !!intelPhotosEl.checked });
-      });
-    }
-
-    function bindSseToggle(id, key) {
+    function bindStyleSelect(id) {
       var el = document.getElementById(id);
-      if (!el) return;
+      if (!el || el._atakBound) return;
+      el._atakBound = true;
+      el.addEventListener('change', function () {
+        patchDisplayPrefs({ styleMode: el.value });
+        syncDisplayPrefsUi();
+      });
+    }
+    bindStyleSelect('atak-unit-style-mode');
+    bindStyleSelect('atak-map-look-style');
+
+    function bindIconSize(id) {
+      var el = document.getElementById(id);
+      if (!el || el._atakBound) return;
+      el._atakBound = true;
+      function onIconSize() {
+        patchDisplayPrefs({ iconSize: parseInt(el.value, 10) });
+        syncDisplayPrefsUi();
+      }
+      el.addEventListener('input', onIconSize);
+      el.addEventListener('change', onIconSize);
+    }
+    bindIconSize('atak-unit-icon-size');
+    bindIconSize('atak-map-look-icon-size');
+
+    function bindLabelSize(id) {
+      var el = document.getElementById(id);
+      if (!el || el._atakBound) return;
+      el._atakBound = true;
+      function onLabelSize() {
+        patchDisplayPrefs({ labelSize: parseInt(el.value, 10) });
+        syncDisplayPrefsUi();
+      }
+      el.addEventListener('input', onLabelSize);
+      el.addEventListener('change', onLabelSize);
+    }
+    bindLabelSize('atak-unit-label-size');
+    bindLabelSize('atak-map-look-label-size');
+
+    function bindCheck(id, key) {
+      var el = document.getElementById(id);
+      if (!el || el._atakBound) return;
+      el._atakBound = true;
       el.addEventListener('change', function () {
         var patch = {};
         patch[key] = !!el.checked;
         patchDisplayPrefs(patch);
+        syncDisplayPrefsUi();
       });
+    }
+    bindCheck('atak-unit-ft-frame', 'showFtFrame');
+    bindCheck('atak-map-look-ft-frame', 'showFtFrame');
+    bindCheck('atak-unit-marker-depth', 'markerDepth');
+    bindCheck('atak-map-look-depth', 'markerDepth');
+    bindCheck('atak-unit-marker-motion', 'markerMotion');
+    bindCheck('atak-map-look-motion', 'markerMotion');
+    bindCheck('atak-show-intel-photo-markers', 'showIntelPhotoMarkers');
+
+    function bindSseToggle(id, key) {
+      bindCheck(id, key);
     }
     bindSseToggle('atak-show-sse-overlay', 'showSseOverlay');
     bindSseToggle('atak-sse-layer-cases', 'showSseLayer_cases');
@@ -458,7 +479,8 @@ window.ATAKMap = (function () {
     bindSseToggle('atak-show-unit-ghost-trails', 'showUnitGhostTrails');
 
     var autoCenterSelf = document.getElementById('atak-auto-center-self');
-    if (autoCenterSelf) {
+    if (autoCenterSelf && !autoCenterSelf._atakBound) {
+      autoCenterSelf._atakBound = true;
       autoCenterSelf.addEventListener('change', function () {
         selfAutoCentered = false;
         patchDisplayPrefs({ autoCenterSelf: !!autoCenterSelf.checked });
@@ -466,7 +488,8 @@ window.ATAKMap = (function () {
     }
 
     var showDelayedUnits = document.getElementById('atak-show-delayed-units');
-    if (showDelayedUnits) {
+    if (showDelayedUnits && !showDelayedUnits._atakBound) {
+      showDelayedUnits._atakBound = true;
       showDelayedUnits.addEventListener('change', function () {
         patchDisplayPrefs({ showDelayedUnits: !!showDelayedUnits.checked });
         syncDisplayPrefsUi();
@@ -474,7 +497,8 @@ window.ATAKMap = (function () {
     }
 
     var delayEn = document.getElementById('atak-pos-delay-enabled');
-    if (delayEn) {
+    if (delayEn && !delayEn._atakBound) {
+      delayEn._atakBound = true;
       delayEn.addEventListener('change', function () {
         patchDisplayPrefs({ positionDelayEnabled: !!delayEn.checked });
         syncDisplayPrefsUi();
@@ -488,13 +512,15 @@ window.ATAKMap = (function () {
       syncDisplayPrefsUi();
     }
     var delaySec = document.getElementById('atak-pos-delay-sec');
-    if (delaySec) {
+    if (delaySec && !delaySec._atakBound) {
+      delaySec._atakBound = true;
       delaySec.addEventListener('input', onDelaySec);
       delaySec.addEventListener('change', onDelaySec);
     }
 
     var lossEn = document.getElementById('atak-pos-loss-enabled');
-    if (lossEn) {
+    if (lossEn && !lossEn._atakBound) {
+      lossEn._atakBound = true;
       lossEn.addEventListener('change', function () {
         patchDisplayPrefs({ packetLossEnabled: !!lossEn.checked });
         syncDisplayPrefsUi();
@@ -507,7 +533,8 @@ window.ATAKMap = (function () {
       syncDisplayPrefsUi();
     }
     var lossPct = document.getElementById('atak-pos-loss-pct');
-    if (lossPct) {
+    if (lossPct && !lossPct._atakBound) {
+      lossPct._atakBound = true;
       lossPct.addEventListener('input', onLossPct);
       lossPct.addEventListener('change', onLossPct);
     }
@@ -1355,8 +1382,15 @@ window.ATAKMap = (function () {
     var base = window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '';
     var mapId = window.ATAKSocket && window.ATAKSocket.getMapId ? window.ATAKSocket.getMapId() : 1;
     var url = (base || '') + '/api/atak/markers?mapId=' + mapId;
-    fetch(url, { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (list) {
-      if (!map || !Array.isArray(list)) return;
+    fetch(url, { credentials: 'include' }).then(function (r) {
+      if (!r.ok) {
+        throw new Error('markers_http_' + r.status);
+      }
+      return r.json();
+    }).then(function (list) {
+      if (!map) return;
+      // Réponse d’erreur JSON ou format inattendu : ne pas vider la carte.
+      if (!Array.isArray(list)) return;
       var seen = {};
       list.forEach(function (m) {
         var id = m.id;
@@ -1371,7 +1405,7 @@ window.ATAKMap = (function () {
       if (window.ATAKMarkers && window.ATAKMarkers.renderFromMap) {
         window.ATAKMarkers.renderFromMap();
       }
-    }).catch(function () {});
+    }).catch(function () { /* conserver les marqueurs déjà affichés */ });
   }
 
   function refreshSigintZones() {

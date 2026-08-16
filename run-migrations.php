@@ -3364,10 +3364,14 @@ try {
 }
 $migrationEnsurePdo();
 
+$sseCliLog = static function (string $m): void {
+    echo $m;
+};
+
 $atakSsePersonsMigrate = require $root . '/bootstrap/atak_sse_persons_migration.php';
 try {
     echo "Migration atak_sse_persons (SSE — personnes, photos, sites, watchlist)…\n";
-    $atakSsePersonsMigrate($pdo);
+    $atakSsePersonsMigrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_persons : ' . $e->getMessage() . "\n";
 }
@@ -3376,7 +3380,7 @@ $migrationEnsurePdo();
 $atakSsePortalMigrate = require $root . '/bootstrap/atak_sse_portal_migration.php';
 try {
     echo "Migration atak_sse_portal (dossiers, codes d’accès, notes, preuves)…\n";
-    $atakSsePortalMigrate($pdo);
+    $atakSsePortalMigrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_portal : ' . $e->getMessage() . "\n";
 }
@@ -3457,7 +3461,7 @@ $migrationEnsurePdo();
 $atakSseMeshesMigrate = require $root . '/bootstrap/atak_sse_meshes_migration.php';
 try {
     echo "Migration atak_sse_meshes (SSE — toiles de données)…\n";
-    $atakSseMeshesMigrate($pdo);
+    $atakSseMeshesMigrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_meshes : ' . $e->getMessage() . "\n";
 }
@@ -3484,7 +3488,7 @@ $migrationEnsurePdo();
 $atakSseIntelFoundationMigrate = require $root . '/bootstrap/atak_sse_intel_foundation_migration.php';
 try {
     echo "Migration atak_sse_intel_foundation (SSE — LOT 1 Intelligence Workspace)…\n";
-    $atakSseIntelFoundationMigrate($pdo);
+    $atakSseIntelFoundationMigrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_intel_foundation : ' . $e->getMessage() . "\n";
 }
@@ -3493,7 +3497,7 @@ $migrationEnsurePdo();
 $atakSseTerrainLot3Migrate = require $root . '/bootstrap/atak_sse_terrain_lot3_migration.php';
 try {
     echo "Migration atak_sse_terrain_lot3 (SSE — LOT 3 Terrain)…\n";
-    $atakSseTerrainLot3Migrate($pdo);
+    $atakSseTerrainLot3Migrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_terrain_lot3 : ' . $e->getMessage() . "\n";
 }
@@ -3502,7 +3506,7 @@ $migrationEnsurePdo();
 $atakSseIntelCycleLot4Migrate = require $root . '/bootstrap/atak_sse_intel_cycle_lot4_migration.php';
 try {
     echo "Migration atak_sse_intel_cycle_lot4 (SSE — LOT 4 Cycle renseignement)…\n";
-    $atakSseIntelCycleLot4Migrate($pdo);
+    $atakSseIntelCycleLot4Migrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_intel_cycle_lot4 : ' . $e->getMessage() . "\n";
 }
@@ -3511,7 +3515,7 @@ $migrationEnsurePdo();
 $atakSseMapLayersLot5Migrate = require $root . '/bootstrap/atak_sse_map_layers_lot5_migration.php';
 try {
     echo "Migration atak_sse_map_layers_lot5 (SSE — LOT 5 Calques ATAK)…\n";
-    $atakSseMapLayersLot5Migrate($pdo);
+    $atakSseMapLayersLot5Migrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_map_layers_lot5 : ' . $e->getMessage() . "\n";
 }
@@ -3520,7 +3524,7 @@ $migrationEnsurePdo();
 $atakSseAnalysisLot6Migrate = require $root . '/bootstrap/atak_sse_analysis_lot6_migration.php';
 try {
     echo "Migration atak_sse_analysis_lot6 (SSE — LOT 6 Analyse)…\n";
-    $atakSseAnalysisLot6Migrate($pdo);
+    $atakSseAnalysisLot6Migrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_analysis_lot6 : ' . $e->getMessage() . "\n";
 }
@@ -3529,7 +3533,7 @@ $migrationEnsurePdo();
 $atakSseRobustnessLot7Migrate = require $root . '/bootstrap/atak_sse_robustness_lot7_migration.php';
 try {
     echo "Migration atak_sse_robustness_lot7 (SSE — LOT 7 Robustesse)…\n";
-    $atakSseRobustnessLot7Migrate($pdo);
+    $atakSseRobustnessLot7Migrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_robustness_lot7 : ' . $e->getMessage() . "\n";
 }

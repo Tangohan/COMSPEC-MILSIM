@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 
 /**
  * Documents rédigés dans le bureau SSE (flash, comptes rendus, notes, synthèses).
@@ -42,16 +43,7 @@ final class SseDocumentRepository
         if ($done) {
             return;
         }
-        $path = base_path('bootstrap/atak_sse_portal_migration.php');
-        if (is_file($path)) {
-            $migrate = require $path;
-            if (is_callable($migrate)) {
-                try {
-                    $migrate(Database::getPdo());
-                } catch (\Throwable) {
-                }
-            }
-        }
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_portal_migration.php'));
         $done = true;
     }
 

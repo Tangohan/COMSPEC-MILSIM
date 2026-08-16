@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use App\Repositories\RoleAssignmentLogRepository;
 use App\Services\Rbac\RoleCoherenceValidator;
 use App\Services\User\UserProfileSlugService;
@@ -13,7 +14,8 @@ use PDO;
 
 class UserRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
+
 
     private static ?bool $hasProfileSlugColumn = null;
 
@@ -39,15 +41,15 @@ class UserRepository
     /** Email réservé au compte technique par tenant (modération auto, cron, futurs tickets / webhooks). */
     public const SYSTEM_MODERATOR_EMAIL = 'system.moderation@internal.local';
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     private function hasProfileSlugColumn(): bool
     {
         if (self::$hasProfileSlugColumn === null) {
-            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'profile_slug' LIMIT 1");
+            $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'profile_slug' LIMIT 1");
             self::$hasProfileSlugColumn = $stmt && (bool) $stmt->fetchColumn();
         }
 
@@ -57,7 +59,7 @@ class UserRepository
     private function hasServiceAccountColumn(): bool
     {
         if (self::$hasServiceAccountColumn === null) {
-            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_service_account' LIMIT 1");
+            $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_service_account' LIMIT 1");
             self::$hasServiceAccountColumn = $stmt && (bool) $stmt->fetchColumn();
         }
 
@@ -67,7 +69,7 @@ class UserRepository
     private function hasDeletedAtColumn(): bool
     {
         if (self::$hasDeletedAtColumn === null) {
-            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deleted_at' LIMIT 1");
+            $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deleted_at' LIMIT 1");
             self::$hasDeletedAtColumn = $stmt && (bool) $stmt->fetchColumn();
         }
 
@@ -77,7 +79,7 @@ class UserRepository
     private function hasDeletionRequestColumns(): bool
     {
         if (self::$hasDeletionRequestColumns === null) {
-            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deletion_requested_at' LIMIT 1");
+            $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deletion_requested_at' LIMIT 1");
             self::$hasDeletionRequestColumns = $stmt && (bool) $stmt->fetchColumn();
         }
 
@@ -87,7 +89,7 @@ class UserRepository
     private function hasAthenaIdentifierColumn(): bool
     {
         if (self::$hasAthenaIdentifierColumn === null) {
-            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'athena_identifier' LIMIT 1");
+            $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'athena_identifier' LIMIT 1");
             self::$hasAthenaIdentifierColumn = $stmt && (bool) $stmt->fetchColumn();
         }
 
@@ -97,7 +99,7 @@ class UserRepository
     public function hasEmailLoginOtpEnabledColumn(): bool
     {
         if (self::$hasEmailLoginOtpEnabledColumn === null) {
-            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'email_login_otp_enabled' LIMIT 1");
+            $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'email_login_otp_enabled' LIMIT 1");
             self::$hasEmailLoginOtpEnabledColumn = $stmt && (bool) $stmt->fetchColumn();
         }
 
@@ -107,7 +109,7 @@ class UserRepository
     public function hasTotpColumns(): bool
     {
         if (self::$hasTotpColumns === null) {
-            $stmt = $this->pdo->query(
+            $stmt = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE()
                    AND TABLE_NAME = 'users'
@@ -123,7 +125,7 @@ class UserRepository
     public function hasProfileBannerUrlColumn(): bool
     {
         if (self::$hasProfileBannerUrlColumn === null) {
-            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'profile_banner_url' LIMIT 1");
+            $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'profile_banner_url' LIMIT 1");
             self::$hasProfileBannerUrlColumn = $stmt && (bool) $stmt->fetchColumn();
         }
 
@@ -143,7 +145,7 @@ class UserRepository
             for ($i = 0; $i < 9; $i++) {
                 $candidate .= $alphabet[ord($buf[$i]) % ($max + 1)];
             }
-            $st = $this->pdo->prepare('SELECT 1 FROM users WHERE athena_identifier = ? LIMIT 1');
+            $st = $this->pdo()->prepare('SELECT 1 FROM users WHERE athena_identifier = ? LIMIT 1');
             $st->execute([$candidate]);
             $exists = (bool) $st->fetchColumn();
             if (!$exists) {
@@ -195,7 +197,7 @@ class UserRepository
             return self::$tableExistsCache[$table];
         }
         try {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
             );
             $stmt->execute([$table]);
@@ -217,7 +219,7 @@ class UserRepository
             return self::$columnExistsCache[$key];
         }
         try {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
             );
@@ -313,7 +315,7 @@ class UserRepository
     {
         if (self::$hasUserUnitsTable === null) {
             try {
-                $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_units' LIMIT 1");
+                $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_units' LIMIT 1");
                 self::$hasUserUnitsTable = $stmt && (bool) $stmt->fetchColumn();
             } catch (\Throwable) {
                 self::$hasUserUnitsTable = false;
@@ -327,7 +329,7 @@ class UserRepository
     {
         if (self::$hasUserRolesTable === null) {
             try {
-                $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_roles' LIMIT 1");
+                $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_roles' LIMIT 1");
                 self::$hasUserRolesTable = $stmt && (bool) $stmt->fetchColumn();
             } catch (\Throwable) {
                 self::$hasUserRolesTable = false;
@@ -343,7 +345,7 @@ class UserRepository
     {
         if (self::$hasTenantUserRolesTable === null) {
             try {
-                $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_user_roles' LIMIT 1");
+                $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_user_roles' LIMIT 1");
                 self::$hasTenantUserRolesTable = $stmt && (bool) $stmt->fetchColumn();
             } catch (\Throwable) {
                 self::$hasTenantUserRolesTable = false;
@@ -361,7 +363,7 @@ class UserRepository
     public function listOrganizationRoleIdsForUser(int $userId): array
     {
         if ($this->hasTenantUserRolesTable()) {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'SELECT DISTINCT tur.role_id FROM tenant_user_roles tur
                  INNER JOIN users u ON u.id = tur.user_id AND u.tenant_id = tur.tenant_id
                  WHERE tur.user_id = ? AND tur.org_unit_id IS NULL
@@ -378,7 +380,7 @@ class UserRepository
 
             return $u && !empty($u['role_id']) ? [(int) $u['role_id']] : [];
         }
-        $stmt = $this->pdo->prepare('SELECT role_id FROM user_roles WHERE user_id = ? ORDER BY role_id ASC');
+        $stmt = $this->pdo()->prepare('SELECT role_id FROM user_roles WHERE user_id = ? ORDER BY role_id ASC');
         $stmt->execute([$userId]);
         $ids = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
         if ($ids === []) {
@@ -412,7 +414,7 @@ class UserRepository
             return false;
         }
         if ($this->hasTenantUserRolesTable()) {
-            $st = $this->pdo->prepare(
+            $st = $this->pdo()->prepare(
                 'SELECT 1 FROM tenant_user_roles WHERE user_id = ? AND role_id = ? AND org_unit_id IS NULL LIMIT 1'
             );
             $st->execute([$userId, $roleId]);
@@ -421,7 +423,7 @@ class UserRepository
             }
         }
         if ($this->hasUserRolesTable()) {
-            $st = $this->pdo->prepare('SELECT 1 FROM user_roles WHERE user_id = ? AND role_id = ? LIMIT 1');
+            $st = $this->pdo()->prepare('SELECT 1 FROM user_roles WHERE user_id = ? AND role_id = ? LIMIT 1');
             $st->execute([$userId, $roleId]);
             if ($st->fetchColumn()) {
                 return true;
@@ -450,30 +452,30 @@ class UserRepository
         $beforeIds = $this->listOrganizationRoleIdsForUser($userId);
         if (!$this->hasUserRolesTable()) {
             $primary = $roleIds[0] ?? null;
-            $this->pdo->prepare('UPDATE users SET role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')->execute([$primary, $userId, $tenantId]);
+            $this->pdo()->prepare('UPDATE users SET role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')->execute([$primary, $userId, $tenantId]);
 
             return;
         }
-        $this->pdo->prepare('DELETE FROM user_roles WHERE user_id = ?')->execute([$userId]);
+        $this->pdo()->prepare('DELETE FROM user_roles WHERE user_id = ?')->execute([$userId]);
         $valid = [];
         if ($roleIds !== []) {
             $ph = implode(',', array_fill(0, count($roleIds), '?'));
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 "SELECT id FROM roles WHERE tenant_id = ? AND role_layer IN ('community','intra') AND id IN ({$ph})"
             );
             $stmt->execute(array_merge([$tenantId], $roleIds));
             $valid = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
-            $ins = $this->pdo->prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)');
+            $ins = $this->pdo()->prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)');
             foreach ($valid as $rid) {
                 $ins->execute([$userId, $rid]);
             }
         }
         if ($this->hasTenantUserRolesTable()) {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 'DELETE FROM tenant_user_roles WHERE user_id = ? AND tenant_id = ? AND org_unit_id IS NULL'
             )->execute([$userId, $tenantId]);
             if ($valid !== []) {
-                $insTur = $this->pdo->prepare(
+                $insTur = $this->pdo()->prepare(
                     'INSERT INTO tenant_user_roles (tenant_id, user_id, role_id, org_unit_id, co_unit_id, created_at) VALUES (?, ?, ?, NULL, 0, NOW())'
                 );
                 foreach ($valid as $rid) {
@@ -485,16 +487,16 @@ class UserRepository
             }
         }
         $primary = $this->computePrimaryRoleIdForTenant($tenantId, $valid);
-        $this->pdo->prepare('UPDATE users SET role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
+        $this->pdo()->prepare('UPDATE users SET role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
             ->execute([$primary, $userId, $tenantId]);
 
         if ($this->hasPreferredDisplayRoleColumn()) {
-            $prefSt = $this->pdo->prepare('SELECT preferred_display_role_id FROM users WHERE id = ? AND tenant_id = ? LIMIT 1');
+            $prefSt = $this->pdo()->prepare('SELECT preferred_display_role_id FROM users WHERE id = ? AND tenant_id = ? LIMIT 1');
             $prefSt->execute([$userId, $tenantId]);
             $prefRow = $prefSt->fetch(PDO::FETCH_ASSOC);
             $pref = isset($prefRow['preferred_display_role_id']) ? (int) $prefRow['preferred_display_role_id'] : 0;
             if ($pref > 0 && !in_array($pref, $valid, true)) {
-                $this->pdo->prepare('UPDATE users SET preferred_display_role_id = NULL, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
+                $this->pdo()->prepare('UPDATE users SET preferred_display_role_id = NULL, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
                     ->execute([$userId, $tenantId]);
             }
         }
@@ -543,7 +545,7 @@ class UserRepository
             return $v;
         }
         try {
-            $st = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'preferred_display_role_id' LIMIT 1");
+            $st = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'preferred_display_role_id' LIMIT 1");
             $v = (bool) $st->fetchColumn();
         } catch (\Throwable) {
             $v = false;
@@ -560,7 +562,7 @@ class UserRepository
         if ($roleId !== null && $roleId > 0 && !$this->userHasTenantRole($userId, $roleId)) {
             return;
         }
-        $this->pdo->prepare('UPDATE users SET preferred_display_role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
+        $this->pdo()->prepare('UPDATE users SET preferred_display_role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
             ->execute([$roleId, $userId, $tenantId]);
     }
 
@@ -576,7 +578,7 @@ class UserRepository
             return null;
         }
         $ph = implode(',', array_fill(0, count($roleIds), '?'));
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             "SELECT id FROM roles WHERE tenant_id = ? AND role_layer IN ('community','intra') AND id IN ({$ph})"
         );
         $stmt->execute(array_merge([$tenantId], $roleIds));
@@ -595,7 +597,7 @@ class UserRepository
         }
         $validRoleIds = array_values(array_unique($validRoleIds));
         $ph = implode(',', array_fill(0, count($validRoleIds), '?'));
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             "SELECT id, slug, role_layer, COALESCE(semantic_tier, 'function') AS semantic_tier, COALESCE(display_priority, 0) AS display_priority
              FROM roles WHERE tenant_id = ? AND id IN ({$ph})"
         );
@@ -666,7 +668,7 @@ class UserRepository
         $hash = password_hash(bin2hex(random_bytes(16)), PASSWORD_ARGON2ID);
         $sql = 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, status, is_service_account, created_at, updated_at) VALUES (?,?,?,?,?,?,1,NOW(),NOW())';
         try {
-            $this->pdo->prepare($sql)->execute([$tenantId, self::SYSTEM_MODERATOR_EMAIL, $hash, 'Modération automatique', 'SYSMOD', 'inactive']);
+            $this->pdo()->prepare($sql)->execute([$tenantId, self::SYSTEM_MODERATOR_EMAIL, $hash, 'Modération automatique', 'SYSMOD', 'inactive']);
         } catch (\PDOException $e) {
             $again = $this->findByEmail($tenantId, self::SYSTEM_MODERATOR_EMAIL);
             if ($again) {
@@ -675,7 +677,7 @@ class UserRepository
             throw $e;
         }
 
-        return (int) $this->pdo->lastInsertId();
+        return (int) $this->pdo()->lastInsertId();
     }
 
     public function isServiceAccount(int $userId): bool
@@ -696,7 +698,7 @@ class UserRepository
         if ($slug === '' || !UserProfileSlugService::isValidFormat($slug)) {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE tenant_id = ? AND LOWER(profile_slug) = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT * FROM users WHERE tenant_id = ? AND LOWER(profile_slug) = ? LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -715,7 +717,7 @@ class UserRepository
             $sql .= ' AND id != ?';
             $params[] = $exceptUserId;
         }
-        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt = $this->pdo()->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
 
         return (bool) $stmt->fetchColumn();
@@ -726,7 +728,7 @@ class UserRepository
         $email = strtolower(trim($email));
         $freed = $this->sqlEmailStillClaimedPredicate('users');
         $sql = 'SELECT * FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ? AND ' . $freed['sql'] . ' LIMIT 1';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute(array_merge([$tenantId, $email], $freed['params']));
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -745,7 +747,7 @@ class UserRepository
             return [];
         }
         $freed = $this->sqlEmailStillClaimedPredicate('users');
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT id FROM users WHERE LOWER(TRIM(email)) = ? AND ' . $freed['sql']
         );
         $stmt->execute(array_merge([$email], $freed['params']));
@@ -779,7 +781,7 @@ class UserRepository
             $conditions[] = 'deleted_at IS NOT NULL';
         }
         $sql = 'SELECT id FROM users WHERE LOWER(TRIM(email)) = ? AND (' . implode(' OR ', $conditions) . ')';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute([$email]);
         $ids = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -820,7 +822,7 @@ class UserRepository
         if ($this->hasServiceAccountColumn()) {
             $sql .= ' AND (is_service_account IS NULL OR is_service_account = 0)';
         }
-        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt = $this->pdo()->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
 
         return (bool) $stmt->fetchColumn();
@@ -847,7 +849,7 @@ class UserRepository
     /** RGPD : programme la suppression du compte (délai de rétractation). */
     public function requestDeletion(int $userId, int $tenantId, string $requestedAt, string $scheduledAt): bool
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE users SET deletion_requested_at = ?, deletion_scheduled_at = ?, updated_at = NOW()
              WHERE id = ? AND tenant_id = ?'
         );
@@ -858,7 +860,7 @@ class UserRepository
     /** RGPD : annule une suppression de compte programmée (reconnexion pendant le délai). */
     public function cancelDeletion(int $userId, int $tenantId): bool
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE users SET deletion_requested_at = NULL, deletion_scheduled_at = NULL, updated_at = NOW()
              WHERE id = ? AND tenant_id = ?'
         );
@@ -873,7 +875,7 @@ class UserRepository
         if ($this->hasDeletedAtColumn()) {
             $extra = ' AND deleted_at IS NULL';
         }
-        $stmt = $this->pdo->query(
+        $stmt = $this->pdo()->query(
             "SELECT id, tenant_id FROM users
              WHERE deletion_requested_at IS NOT NULL
                AND deletion_scheduled_at IS NOT NULL
@@ -908,7 +910,7 @@ class UserRepository
             $sql .= ' AND tenant_id = ?';
             $params[] = $tenantId;
         }
-        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt = $this->pdo()->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -925,7 +927,7 @@ class UserRepository
             return [];
         }
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM users WHERE tenant_id = ? AND id IN (' . $placeholders . ')'
         );
         $stmt->execute(array_merge([$tenantId], $ids));
@@ -947,7 +949,7 @@ class UserRepository
         if ($sid === null) {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE tenant_id = ? AND steam_id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT * FROM users WHERE tenant_id = ? AND steam_id = ? LIMIT 1');
         $stmt->execute([$tenantId, $sid]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -965,7 +967,7 @@ class UserRepository
         if ($sid === null) {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM users WHERE steam_id = ? ORDER BY id DESC LIMIT 1'
         );
         $stmt->execute([$sid]);
@@ -976,7 +978,7 @@ class UserRepository
 
         // Repli : anciennes saisies (espaces, STEAM_x:y:z, [U:1:n]) non encore normalisées en base.
         $digits = preg_replace('/\D/', '', $sid) ?? $sid;
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             "SELECT * FROM users
              WHERE steam_id IS NOT NULL AND TRIM(steam_id) <> ''
                AND (
@@ -1001,7 +1003,7 @@ class UserRepository
 
     public function create(int $tenantId, array $data): int
     {
-        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'preferred_grade_format' LIMIT 1");
+        $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'preferred_grade_format' LIMIT 1");
         $hasGradeColumns = $stmt && $stmt->fetch();
         $hasAthenaIdentifier = $this->hasAthenaIdentifierColumn();
         // 0 / '' ne sont pas des FK valides : MySQL refuse grade_id=0 (contrainte users_grade_id_fk).
@@ -1034,7 +1036,7 @@ class UserRepository
 
         if ($hasGradeColumns) {
             if ($this->hasProfileSlugColumn()) {
-                $stmt = $this->pdo->prepare(
+                $stmt = $this->pdo()->prepare(
                     $hasAthenaIdentifier
                         ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, athena_identifier, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
@@ -1062,7 +1064,7 @@ class UserRepository
                 ]);
                 $stmt->execute($params);
             } else {
-                $stmt = $this->pdo->prepare(
+                $stmt = $this->pdo()->prepare(
                     $hasAthenaIdentifier
                         ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, athena_identifier, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
@@ -1091,7 +1093,7 @@ class UserRepository
             }
         } else {
             if ($this->hasProfileSlugColumn()) {
-                $stmt = $this->pdo->prepare(
+                $stmt = $this->pdo()->prepare(
                     $hasAthenaIdentifier
                         ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, athena_identifier, role_id, grade_id, status, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
@@ -1116,7 +1118,7 @@ class UserRepository
                 ]);
                 $stmt->execute($params);
             } else {
-                $stmt = $this->pdo->prepare(
+                $stmt = $this->pdo()->prepare(
                     $hasAthenaIdentifier
                         ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, athena_identifier, role_id, grade_id, status, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
@@ -1141,7 +1143,7 @@ class UserRepository
                 $stmt->execute($params);
             }
         }
-        return (int) $this->pdo->lastInsertId();
+        return (int) $this->pdo()->lastInsertId();
     }
 
     /**
@@ -1153,7 +1155,7 @@ class UserRepository
         $hasAthenaIdentifier = $this->hasAthenaIdentifierColumn();
         $pack = $this->technicalAccountExclusionPredicate('u');
         $athenaSelect = $hasAthenaIdentifier ? 'u.athena_identifier' : "'' AS athena_identifier";
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', u.avatar_url,
                     p.character_name
              FROM users u
@@ -1180,7 +1182,7 @@ class UserRepository
         if (self::$gradesConfigDirectory !== null) {
             return self::$gradesConfigDirectory;
         }
-        $stmt = $this->pdo->query(
+        $stmt = $this->pdo()->query(
             "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME IN ('name', 'label_long', 'tenant_id')"
         );
         $columns = $stmt ? array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'COLUMN_NAME') : [];
@@ -1284,7 +1286,7 @@ class UserRepository
                 LIMIT ?';
         $params[] = $limit;
 
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
 
         return $this->dedupeRowsByUserId($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
@@ -1362,7 +1364,7 @@ class UserRepository
                 LEFT JOIN units un_pp ON un_pp.id = pp.primary_unit_id AND un_pp.tenant_id = u.tenant_id
                 ' . $extraJoins . '
                 WHERE u.tenant_id = ? AND u.id IN (' . $ph . ')';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute(array_merge([$tenantId], $userIds));
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         foreach ($rows as &$row) {
@@ -1401,7 +1403,7 @@ class UserRepository
         if (array_key_exists($column, $cache)) {
             return $cache[$column];
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = ? LIMIT 1"
         );
         $stmt->execute([$column]);
@@ -1412,14 +1414,14 @@ class UserRepository
 
     public function updateLastLogin(int $userId): void
     {
-        $stmt = $this->pdo->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo()->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?');
         $stmt->execute([$userId]);
     }
 
     public function allForTenant(int $tenantId): array
     {
         $pack = $this->technicalAccountExclusionPredicate('u');
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT u.*, r.name as role_name, up.first_name, up.last_name
              FROM users u
              LEFT JOIN roles r ON r.id = u.role_id
@@ -1447,7 +1449,7 @@ class UserRepository
         $parts[] = $pack['sql'];
         $params = array_merge($params, $pack['params']);
         $sql = 'SELECT u.id FROM users u WHERE ' . implode(' AND ', $parts) . ' ORDER BY u.id ASC';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
         $out = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -1468,7 +1470,7 @@ class UserRepository
         if ($limit !== null) {
             $sql .= ' LIMIT ' . max(1, min(200, (int) $limit)) . ' OFFSET ' . max(0, (int) ($offset ?? 0));
         }
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1478,7 +1480,7 @@ class UserRepository
     {
         [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId, $excludeServiceAccounts, $onlyWithoutUnit, $onlyWithoutRole);
         $sql = 'SELECT COUNT(*) FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE ' . $whereSql;
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
@@ -1602,7 +1604,7 @@ class UserRepository
         $params[] = $userId;
         $params[] = $tenantId;
         $sql = 'UPDATE users SET ' . implode(', ', $set) . ', updated_at = NOW() WHERE id = ? AND tenant_id = ?';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         return $stmt->execute($params);
     }
 
@@ -1700,7 +1702,7 @@ class UserRepository
         }
 
         $params[] = $userId;
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE users SET ' . implode(', ', $set) . ' WHERE id = ?'
         );
         if (!$stmt->execute($params)) {
@@ -1726,7 +1728,7 @@ class UserRepository
             $sql .= ' AND id != ?';
             $params[] = $excludeUserId;
         }
-        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt = $this->pdo()->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
         return (bool) $stmt->fetchColumn();
     }
@@ -1748,7 +1750,7 @@ class UserRepository
             $sql .= ' AND id != ?';
             $params[] = $excludeUserId;
         }
-        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt = $this->pdo()->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
 
         return (bool) $stmt->fetchColumn();
@@ -1767,7 +1769,7 @@ class UserRepository
             $sql .= ' AND id != ?';
             $params[] = $excludeUserId;
         }
-        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt = $this->pdo()->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
 
         return (bool) $stmt->fetchColumn();
@@ -1781,7 +1783,7 @@ class UserRepository
         if ($this->hasDeletedAtColumn()) {
             $extra .= ' AND deleted_at IS NULL';
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT id, display_name, callsign FROM users WHERE tenant_id = ? AND (display_name LIKE ? OR callsign LIKE ?)'
             . $extra . ' ORDER BY display_name ASC LIMIT ?'
         );
@@ -1804,7 +1806,7 @@ class UserRepository
         if ($this->hasDeletedAtColumn()) {
             $extra .= ' AND deleted_at IS NULL';
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT id, display_name, callsign FROM users WHERE tenant_id = ? AND (
                 LOWER(display_name) = LOWER(?)
                 OR (callsign IS NOT NULL AND TRIM(callsign) <> \'\' AND LOWER(TRIM(callsign)) = LOWER(?))
@@ -1834,7 +1836,7 @@ class UserRepository
         $athenaFilter = $hasAthenaIdentifier
             ? "OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)"
             : '';
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', u.avatar_url FROM users u
              WHERE u.tenant_id = ?
              AND ' . $pack['sql'] . '
@@ -1898,7 +1900,7 @@ class UserRepository
              ))
              ORDER BY t.name ASC, u.email ASC
              LIMIT {$limit}";
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute(array_merge([$term, $term, $term, $term], $pack['params']));
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         foreach ($rows as &$row) {
@@ -1942,7 +1944,7 @@ class UserRepository
              )
              ORDER BY u.display_name ASC
              LIMIT ' . $limit;
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute(array_merge([$tenantId], $pack['params'], [$term, $term, $term, $term]));
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2006,7 +2008,7 @@ class UserRepository
         }
 
         $where = implode(' AND ', $parts);
-        $countStmt = $this->pdo->prepare(
+        $countStmt = $this->pdo()->prepare(
             "SELECT COUNT(*) FROM users u INNER JOIN tenants t ON t.id = u.tenant_id WHERE {$where}"
         );
         $countStmt->execute($params);
@@ -2022,7 +2024,7 @@ class UserRepository
                 WHERE {$where}
                 ORDER BY u.updated_at DESC, u.id DESC
                 LIMIT {$perPage} OFFSET {$offset}";
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         foreach ($rows as &$row) {
@@ -2045,14 +2047,14 @@ class UserRepository
     public function getIdsByRole(int $tenantId, int $roleId): array
     {
         if ($this->hasUserRolesTable()) {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'SELECT DISTINCT u.id FROM users u
                  WHERE u.tenant_id = ?
                  AND (u.role_id = ? OR EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = ?))'
             );
             $stmt->execute([$tenantId, $roleId, $roleId]);
         } else {
-            $stmt = $this->pdo->prepare('SELECT id FROM users WHERE tenant_id = ? AND role_id = ?');
+            $stmt = $this->pdo()->prepare('SELECT id FROM users WHERE tenant_id = ? AND role_id = ?');
             $stmt->execute([$tenantId, $roleId]);
         }
 
@@ -2062,7 +2064,7 @@ class UserRepository
     /** @return list<int> User IDs appartenant à l'unité (user_units, affectation non terminée). */
     public function getIdsByUnit(int $unitId): array
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT user_id FROM user_units WHERE unit_id = ? AND (ended_at IS NULL OR ended_at > NOW())'
         );
         $stmt->execute([$unitId]);
@@ -2072,7 +2074,7 @@ class UserRepository
     /** @return list<int> Unit IDs auxquelles l'utilisateur est affecté (user_units, non terminée). */
     public function getUnitIdsForUser(int $userId): array
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT unit_id FROM user_units WHERE user_id = ? AND (ended_at IS NULL OR ended_at > NOW())'
         );
         $stmt->execute([$userId]);
@@ -2082,7 +2084,7 @@ class UserRepository
     /** @return string|null Role slug de l'utilisateur (via users.role_id -> roles.slug). */
     public function getRoleSlugForUser(int $userId): ?string
     {
-        $stmt = $this->pdo->prepare('SELECT r.slug FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT r.slug FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = ? LIMIT 1');
         $stmt->execute([$userId]);
         $row = $stmt->fetch(PDO::FETCH_COLUMN);
         return $row !== false ? (string) $row : null;
@@ -2092,13 +2094,13 @@ class UserRepository
     public function countUsersWithRole(int $roleId): int
     {
         if ($this->hasUserRolesTable()) {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'SELECT COUNT(DISTINCT u.id) FROM users u
                  WHERE (u.role_id = ? OR EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = ?))'
             );
             $stmt->execute([$roleId, $roleId]);
         } else {
-            $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM users WHERE role_id = ?');
+            $stmt = $this->pdo()->prepare('SELECT COUNT(*) FROM users WHERE role_id = ?');
             $stmt->execute([$roleId]);
         }
 
@@ -2108,7 +2110,7 @@ class UserRepository
     /** Utilisateurs actifs pour quotas d'abonnement (plan premium). */
     public function countActiveForTenant(int $tenantId): int
     {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'");
+        $stmt = $this->pdo()->prepare("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'");
         $stmt->execute([$tenantId]);
         return (int) $stmt->fetchColumn();
     }
@@ -2118,7 +2120,7 @@ class UserRepository
      */
     public function listTenantsForEmail(string $email): array
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT u.id, u.tenant_id, t.name, t.slug FROM users u INNER JOIN tenants t ON t.id = u.tenant_id WHERE u.email = ? AND u.status = ? ORDER BY t.name ASC'
         );
         $stmt->execute([$email, 'active']);
@@ -2191,7 +2193,7 @@ class UserRepository
     public function listActiveUsersWithTenantForEmail(string $email): array
     {
         $email = strtolower(trim($email));
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT u.*, t.name AS tenant_name, t.slug AS tenant_slug
              FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id
@@ -2211,7 +2213,7 @@ class UserRepository
     public function listUsersForLoginByEmail(string $email): array
     {
         $email = strtolower(trim($email));
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             "SELECT u.*, t.name AS tenant_name, t.slug AS tenant_slug
              FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id
@@ -2226,7 +2228,7 @@ class UserRepository
     public function findIdByTenantAndEmail(int $tenantId, string $email): ?int
     {
         $email = strtolower(trim($email));
-        $stmt = $this->pdo->prepare('SELECT id FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT id FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ? LIMIT 1');
         $stmt->execute([$tenantId, $email]);
         $id = $stmt->fetchColumn();
         return $id !== false ? (int) $id : null;
@@ -2244,7 +2246,7 @@ class UserRepository
             $sql .= ' AND (is_service_account IS NULL OR is_service_account = 0)';
         }
         $sql .= ' ORDER BY id ASC LIMIT 1';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute([$email]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -2286,9 +2288,9 @@ class UserRepository
         if ($this->hasEmailVerifiedColumn()) {
             $srcEv = $u['email_verified_at'] ?? null;
             if ($srcEv) {
-                $this->pdo->prepare('UPDATE users SET email_verified_at = ? WHERE id = ?')->execute([$srcEv, $newId]);
+                $this->pdo()->prepare('UPDATE users SET email_verified_at = ? WHERE id = ?')->execute([$srcEv, $newId]);
             } else {
-                $this->pdo->prepare('UPDATE users SET email_verified_at = NOW() WHERE id = ?')->execute([$newId]);
+                $this->pdo()->prepare('UPDATE users SET email_verified_at = NOW() WHERE id = ?')->execute([$newId]);
             }
         }
         if ($roleId > 0) {
@@ -2313,7 +2315,7 @@ class UserRepository
 
     public function countActiveMembers(int $tenantId): int
     {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'");
+        $stmt = $this->pdo()->prepare("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'");
         $stmt->execute([$tenantId]);
 
         return (int) $stmt->fetchColumn();
@@ -2324,7 +2326,7 @@ class UserRepository
      */
     public function activityRateLast30DaysPercent(int $tenantId): ?int
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             "SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'"
         );
         $stmt->execute([$tenantId]);
@@ -2332,7 +2334,7 @@ class UserRepository
         if ($total === 0) {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             "SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'
              AND last_login_at IS NOT NULL AND last_login_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)"
         );
@@ -2344,14 +2346,14 @@ class UserRepository
 
     public function countPublicRosterOptIn(int $tenantId): int
     {
-        $stmt = $this->pdo->query(
+        $stmt = $this->pdo()->query(
             "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
              AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'public_roster_opt_in' LIMIT 1"
         );
         if (!$stmt || !$stmt->fetchColumn()) {
             return 0;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT COUNT(*) FROM users u
              INNER JOIN user_profile_display_settings ups ON ups.user_id = u.id AND ups.public_roster_opt_in = 1
              WHERE u.tenant_id = ? AND u.status = \'active\''
@@ -2371,7 +2373,7 @@ class UserRepository
         if (self::$gradesConfigPublicRoster !== null) {
             return self::$gradesConfigPublicRoster;
         }
-        $stmt = $this->pdo->query(
+        $stmt = $this->pdo()->query(
             "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME IN ('name', 'label_long', 'tenant_id')"
         );
         $columns = $stmt ? array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'COLUMN_NAME') : [];
@@ -2403,7 +2405,7 @@ class UserRepository
      */
     public function listPublicRosterForTenant(int $tenantId, int $limit = 120): array
     {
-        $stmt = $this->pdo->query(
+        $stmt = $this->pdo()->query(
             "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
              AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'public_roster_opt_in' LIMIT 1"
         );
@@ -2431,7 +2433,7 @@ class UserRepository
                 WHERE u.tenant_id = ? AND u.status = 'active'
                 ORDER BY {$orderGrade}, u.display_name ASC, u.callsign ASC
                 LIMIT {$limit}";
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute([$tenantId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2442,7 +2444,7 @@ class UserRepository
     public function hasEmailVerifiedColumn(): bool
     {
         if (self::$hasEmailVerifiedColumn === null) {
-            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'email_verified_at' LIMIT 1");
+            $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'email_verified_at' LIMIT 1");
             self::$hasEmailVerifiedColumn = $stmt && (bool) $stmt->fetchColumn();
         }
 
@@ -2452,12 +2454,12 @@ class UserRepository
     public function markEmailVerified(int $userId, int $tenantId): void
     {
         if (!$this->hasEmailVerifiedColumn()) {
-            $this->pdo->prepare('UPDATE users SET status = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
+            $this->pdo()->prepare('UPDATE users SET status = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
                 ->execute(['active', $userId, $tenantId]);
 
             return;
         }
-        $this->pdo->prepare('UPDATE users SET email_verified_at = NOW(), status = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
+        $this->pdo()->prepare('UPDATE users SET email_verified_at = NOW(), status = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
             ->execute(['active', $userId, $tenantId]);
     }
 
@@ -2467,7 +2469,7 @@ class UserRepository
         if (!$this->hasEmailVerifiedColumn()) {
             return;
         }
-        $this->pdo->prepare('UPDATE users SET email_verified_at = COALESCE(email_verified_at, NOW()), updated_at = NOW() WHERE id = ? AND tenant_id = ?')
+        $this->pdo()->prepare('UPDATE users SET email_verified_at = COALESCE(email_verified_at, NOW()), updated_at = NOW() WHERE id = ? AND tenant_id = ?')
             ->execute([$userId, $tenantId]);
     }
 
@@ -2483,7 +2485,7 @@ class UserRepository
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ('tenant_admin', 'community_owner')";
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute(array_merge([$tenantId], $pack['params']));
         $emails = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -2499,7 +2501,7 @@ class UserRepository
                 WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ('tenant_admin', 'community_owner')";
             try {
-                $st = $this->pdo->prepare($sql2);
+                $st = $this->pdo()->prepare($sql2);
                 $st->execute(array_merge([$tenantId], $pack['params']));
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $e = strtolower(trim((string) ($row['email'] ?? '')));
@@ -2530,7 +2532,7 @@ class UserRepository
             WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
             AND p.slug IN ('admin.organization', 'admin.access')";
         try {
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute(array_merge([$tenantId], $pack['params']));
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $e = strtolower(trim((string) ($row['email'] ?? '')));
@@ -2549,7 +2551,7 @@ class UserRepository
                 WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
                 AND p.slug IN ('admin.organization', 'admin.access')";
             try {
-                $st = $this->pdo->prepare($sql2);
+                $st = $this->pdo()->prepare($sql2);
                 $st->execute(array_merge([$tenantId], $pack['params']));
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $e = strtolower(trim((string) ($row['email'] ?? '')));
@@ -2576,7 +2578,7 @@ class UserRepository
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ('recruiter', 'community_owner', 'hr')";
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute(array_merge([$tenantId], $pack['params']));
         $emails = [];
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
@@ -2592,7 +2594,7 @@ class UserRepository
                 WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ('recruiter', 'community_owner', 'hr')";
             try {
-                $st = $this->pdo->prepare($sql2);
+                $st = $this->pdo()->prepare($sql2);
                 $st->execute(array_merge([$tenantId], $pack['params']));
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $e = strtolower(trim((string) ($row['email'] ?? '')));
@@ -2619,7 +2621,7 @@ class UserRepository
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ('administrator')";
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute(array_merge([$tenantId], $pack['params']));
         $emails = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -2635,7 +2637,7 @@ class UserRepository
                 WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ('administrator')";
             try {
-                $st = $this->pdo->prepare($sql2);
+                $st = $this->pdo()->prepare($sql2);
                 $st->execute(array_merge([$tenantId], $pack['params']));
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $e = strtolower(trim((string) ($row['email'] ?? '')));
@@ -2665,7 +2667,7 @@ class UserRepository
             WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ({$slugs})";
         try {
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute(array_merge([$tenantId], $pack['params']));
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $ids[] = (int) ($row['id'] ?? 0);
@@ -2680,7 +2682,7 @@ class UserRepository
                 WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ({$slugs})";
             try {
-                $st = $this->pdo->prepare($sql2);
+                $st = $this->pdo()->prepare($sql2);
                 $st->execute(array_merge([$tenantId], $pack['params']));
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $ids[] = (int) ($row['id'] ?? 0);
@@ -2708,7 +2710,7 @@ class UserRepository
             AND u.email IS NOT NULL AND TRIM(u.email) <> ''
             AND u.email LIKE '%@%'";
         try {
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute(array_merge([$tenantId], $pack['params']));
             $ids = [];
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -2737,7 +2739,7 @@ class UserRepository
             GROUP BY LOWER(TRIM(u.email))
         ) t";
         try {
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($pack['params']);
 
             return (int) $stmt->fetchColumn();
@@ -2766,7 +2768,7 @@ class UserRepository
             ORDER BY email ASC
             LIMIT {$limit} OFFSET {$offset}";
         try {
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($pack['params']);
             $out = [];
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -2802,7 +2804,7 @@ class UserRepository
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
         try {
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $ids[] = (int) ($row['id'] ?? 0);
@@ -2816,7 +2818,7 @@ class UserRepository
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
                 WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
             try {
-                $st = $this->pdo->prepare($sql2);
+                $st = $this->pdo()->prepare($sql2);
                 $st->execute($params);
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $ids[] = (int) ($row['id'] ?? 0);
@@ -2862,7 +2864,7 @@ class UserRepository
             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
             WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
         try {
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $ids[] = (int) ($row['id'] ?? 0);
@@ -2880,7 +2882,7 @@ class UserRepository
                 INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
                 WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
             try {
-                $st = $this->pdo->prepare($sql2);
+                $st = $this->pdo()->prepare($sql2);
                 $st->execute($params2);
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $ids[] = (int) ($row['id'] ?? 0);
@@ -2918,7 +2920,7 @@ class UserRepository
             WHERE u.status = 'active' AND {$pack['sql']} AND p.slug = ?
             LIMIT {$lim}";
         try {
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $e = strtolower(trim((string) ($row['email'] ?? '')));
@@ -2937,7 +2939,7 @@ class UserRepository
                 WHERE u.status = 'active' AND {$pack['sql']} AND p.slug = ?
                 LIMIT {$lim}";
             try {
-                $st = $this->pdo->prepare($sql2);
+                $st = $this->pdo()->prepare($sql2);
                 $st->execute($params);
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $e = strtolower(trim((string) ($row['email'] ?? '')));
@@ -2955,9 +2957,9 @@ class UserRepository
     public function invalidateAllSessionsForUser(int $userId, ?int $tenantId = null): void
     {
         if ($tenantId !== null) {
-            $this->pdo->prepare('DELETE FROM sessions WHERE user_id = ? AND tenant_id = ?')->execute([$userId, $tenantId]);
+            $this->pdo()->prepare('DELETE FROM sessions WHERE user_id = ? AND tenant_id = ?')->execute([$userId, $tenantId]);
         } else {
-            $this->pdo->prepare('DELETE FROM sessions WHERE user_id = ?')->execute([$userId]);
+            $this->pdo()->prepare('DELETE FROM sessions WHERE user_id = ?')->execute([$userId]);
         }
     }
 }

@@ -9,13 +9,13 @@
 params [
     ["_jobs", [], [[]]],
     ["_code", {}, [{}]],
-    ["_interval", 0.12, [0]]
+    ["_interval", 0.28, [0]]
 ];
 
 if (_jobs isEqualTo []) exitWith { 0 };
 if !(_code isEqualType {}) exitWith { 0 };
 
-_interval = _interval max 0.02;
+_interval = _interval max 0.08;
 
 private _run = {
     params ["_job", "_fn"];

@@ -61,6 +61,10 @@ if (!isNull _drone && {alive _drone}) then {
 
 if (_device isEqualTo "" || {_feedId isEqualTo ""}) exitWith {};
 
+// Après file_not_found répétés : ne pas relancer de captures fantômes.
+private _failUntil = missionNamespace getVariable ["COMSPEC_FeedSnapFailUntil", 0];
+if (_failUntil isEqualType 0 && {diag_tickTime < _failUntil}) exitWith {};
+
 // Anti-spam
 private _streamUntil = missionNamespace getVariable ["COMSPEC_HelmetStreamUntil", 0];
 private _streamActive = (_streamUntil isEqualType 0) && {diag_tickTime < _streamUntil};

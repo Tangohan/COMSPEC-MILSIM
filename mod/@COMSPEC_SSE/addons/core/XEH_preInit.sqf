@@ -1,5 +1,7 @@
 #include "script_component.hpp"
 
+[] call comspec_sse_fnc_ensureDebugApi;
+
 if !(["COMSPEC_SSE_CORE_PREINIT_DONE", "XEH_preInit core"] call comspec_debug_fnc_guardOnce) exitWith {};
 
 ["comspec_sse_core_XEH_preInit", []] call comspec_debug_fnc_enter;

@@ -111,7 +111,7 @@ if (isNil "CBA_fnc_waitAndExecute") then {
     { [_x, _profile, _complexity, _cluster, _wantDigital, _wantDocs, _wantNetwork, _state] call _processOne; } forEach _targets;
 } else {
     {
-        private _delay = _forEachIndex * 0.12;
+        private _delay = _forEachIndex * 0.28;
         [{
             params ["_ent", "_profile", "_complexity", "_cluster", "_wantDigital", "_wantDocs", "_wantNetwork", "_state", "_fn"];
             [_ent, _profile, _complexity, _cluster, _wantDigital, _wantDocs, _wantNetwork, _state] call _fn;

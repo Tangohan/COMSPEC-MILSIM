@@ -8,7 +8,6 @@ class CfgPatches {
         requiredVersion = REQUIRED_VERSION;
         requiredAddons[] = {
             "comspec_sse_core",
-            "comspec_sse_debug",
             "comspec_sse_generator",
             "comspec_sse_evidence",
             "comspec_sse_ui",
@@ -29,6 +28,7 @@ class CfgFunctions {
         class interaction {
             file = "z\comspec_sse\addons\interaction\functions";
             class initACE {};
+            class installEntityAceMenus {};
             class canInspect {};
             class doInspect {};
             class doPhotograph {};

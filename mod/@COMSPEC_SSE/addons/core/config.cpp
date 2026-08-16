@@ -6,7 +6,7 @@ class CfgPatches {
         units[] = {};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_main", "comspec_sse_debug", "cba_main", "cba_xeh", "cba_settings"};
+        requiredAddons[] = {"comspec_sse_main", "cba_main", "cba_xeh", "cba_settings"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };
@@ -53,6 +53,7 @@ class CfgFunctions {
             class raiseSseEvent {};
             class onSseEvent {};
             class markVehicleSection {};
+            class ensureDebugApi {};
         };
     };
 };

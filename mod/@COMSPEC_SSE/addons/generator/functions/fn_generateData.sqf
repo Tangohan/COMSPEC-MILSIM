@@ -78,12 +78,13 @@ switch (_type) do {
 
         private _phoneData = [_seed + 7, _profile, _complexity, _cluster] call comspec_sse_fnc_generatePhone;
         private _devices = [_phoneData];
-
-        if (_complexity in ["DETAILED", "HIGH_VALUE"] && {(([_seed, "pc"] call comspec_sse_fnc_hash) mod 100) < (if (_complexity == "HIGH_VALUE") then {80} else {45})}) then {
-            private _comp = [_seed + 99, _profile, _complexity, _cluster, _pools] call comspec_sse_fnc_generateComputer;
-            _devices pushBack _comp;
-        };
         _sections set ["digitalDevices", _devices];
+
+        // PC différé hors de la frame generatePerson+phone (anti pic pile DETAILED).
+        if (_complexity in ["DETAILED", "HIGH_VALUE"] && {(([_seed, "pc"] call comspec_sse_fnc_hash) mod 100) < (if (_complexity == "HIGH_VALUE") then {80} else {45})}) then {
+            _entity setVariable ["comspec_sse_pendingComputer", true, false];
+            _entity setVariable ["comspec_sse_pendingComputerSeed", _seed + 99, false];
+        };
 
         private _status = _sections getOrDefault ["sectionStatus", createHashMap];
         _status set ["identity", "complete"];
@@ -250,18 +251,45 @@ if (isNil "_data" || {!(_data isEqualType [])}) exitWith {
 _entity setVariable ["comspec_sse_clusterId", _cluster getOrDefault ["clusterId", ""], false];
 _entity setVariable ["comspec_sse_theme", _cluster getOrDefault ["theme", ""], false];
 
-if (!isNil "comspec_sse_fnc_attachIntelLayers") then {
-    [_entity] call comspec_sse_fnc_attachIntelLayers;
-};
-
-// Libérer le verrou AVANT publish / dogtag (ACE + réseau).
+// Libérer le verrou AVANT couches intel / publish / dogtag (ACE + réseau).
 _entity setVariable ["comspec_sse_generating", false];
 
-// Publier les données hors de la pile de génération.
+// Couches intel + publish hors de la pile de génération (anti STACK_OVERFLOW).
 if (!isNil "CBA_fnc_waitAndExecute") then {
     [{
         params ["_e"];
         if (isNull _e) exitWith {};
+        if (!isNil "comspec_sse_fnc_attachIntelLayers") then {
+            [_e] call comspec_sse_fnc_attachIntelLayers;
+        };
+        // PC pending (DETAILED) — après intel, hors pile initiale
+        if (_e getVariable ["comspec_sse_pendingComputer", false]) then {
+            _e setVariable ["comspec_sse_pendingComputer", false, false];
+            private _seedPc = _e getVariable ["comspec_sse_pendingComputerSeed", 0];
+            private _d0 = [_e] call comspec_sse_fnc_getData;
+            if (!isNil "_d0" && {!isNil "comspec_sse_fnc_generateComputer"}) then {
+                private _prof = [_d0, "profile", "INSURGENT"] call comspec_sse_fnc_getPair;
+                private _cx = [_d0, "complexity", "DETAILED"] call comspec_sse_fnc_getPair;
+                private _reg = _e getVariable ["comspec_sse_region", "IRAQ"];
+                private _pools2 = [_reg] call comspec_sse_fnc_getNarrativePools;
+                private _cluster2 = createHashMapFromArray [
+                    ["clusterId", _e getVariable ["comspec_sse_clusterId", ""]],
+                    ["theme", _e getVariable ["comspec_sse_theme", ""]],
+                    ["primaryName", ""],
+                    ["region", _reg]
+                ];
+                private _idSec = [_e, "identity"] call comspec_sse_fnc_getSection;
+                if (!isNil "_idSec" && {_idSec isEqualType createHashMap}) then {
+                    _cluster2 set ["primaryName", _idSec getOrDefault ["name", ""]];
+                    _cluster2 set ["primaryPhone", _idSec getOrDefault ["phone", ""]];
+                };
+                private _comp = [_seedPc, _prof, _cx, _cluster2, _pools2] call comspec_sse_fnc_generateComputer;
+                private _devs = [_e, "digitalDevices"] call comspec_sse_fnc_getSection;
+                if (isNil "_devs" || {!(_devs isEqualType [])}) then { _devs = []; };
+                _devs pushBack _comp;
+                [_e, "digitalDevices", _devs, false] call comspec_sse_fnc_setSection;
+            };
+        };
         private _d = [_e] call comspec_sse_fnc_getData;
         if (!isNil "_d") then {
             [_e, _d, true] call comspec_sse_fnc_setData;
@@ -271,8 +299,11 @@ if (!isNil "CBA_fnc_waitAndExecute") then {
         if (!isNil "comspec_sse_fnc_aceDogtagSync") then {
             [_e] call comspec_sse_fnc_aceDogtagSync;
         };
-    }, [_entity], 0.2] call CBA_fnc_waitAndExecute;
+    }, [_entity], 0.25] call CBA_fnc_waitAndExecute;
 } else {
+    if (!isNil "comspec_sse_fnc_attachIntelLayers") then {
+        [_entity] call comspec_sse_fnc_attachIntelLayers;
+    };
     private _dPub = [_entity] call comspec_sse_fnc_getData;
     if (!isNil "_dPub") then { [_entity, _dPub, true] call comspec_sse_fnc_setData; };
     _entity setVariable ["comspec_sse_clusterId", _entity getVariable ["comspec_sse_clusterId", ""], true];

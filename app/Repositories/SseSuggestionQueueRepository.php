@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 
 /**
  * File de rapprochements / signaux produits par le moteur SSE.
@@ -58,13 +59,7 @@ final class SseSuggestionQueueRepository
     public function __construct(private ?Database $db = null)
     {
         $this->db ??= Database::getInstance();
-        try {
-            $migration = require base_path('bootstrap/atak_sse_engine_migration.php');
-            if (is_callable($migration)) {
-                $migration(Database::getPdo());
-            }
-        } catch (\Throwable) {
-        }
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_engine_migration.php'));
     }
 
     /**
@@ -243,6 +238,28 @@ final class SseSuggestionQueueRepository
             } else {
                 $row = $this->db->fetchOne(
                     'SELECT COUNT(*) AS n FROM sse_suggestion_queue WHERE tenant_id = :t AND status = \'pending\'',
+                    ['t' => $tenantId]
+                );
+            }
+
+            return (int) ($row['n'] ?? 0);
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    public function countOpenSignals(int $tenantId, ?int $caseId = null): int
+    {
+        try {
+            if ($caseId !== null && $caseId > 0) {
+                $row = $this->db->fetchOne(
+                    'SELECT COUNT(*) AS n FROM sse_engine_signals
+                      WHERE tenant_id = :t AND status = \'open\' AND case_id = :c',
+                    ['t' => $tenantId, 'c' => $caseId]
+                );
+            } else {
+                $row = $this->db->fetchOne(
+                    'SELECT COUNT(*) AS n FROM sse_engine_signals WHERE tenant_id = :t AND status = \'open\'',
                     ['t' => $tenantId]
                 );
             }

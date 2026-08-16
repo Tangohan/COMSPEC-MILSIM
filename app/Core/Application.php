@@ -58,13 +58,34 @@ class Application
 
                 return $mw($req, $next);
             },
-            new \App\Middleware\TenantTypeModuleAccessMiddleware(),
+            // Lazy : ne pas new TenantRepository / PDO au boot de *chaque* requête.
+            // Sans communauté en session, le contrôle de profil est inutile.
+            static function (\App\Core\Request $req, callable $next): \App\Core\Response {
+                $tenantId = (int) \App\Core\Session::get('tenant_id');
+                if ($tenantId < 1) {
+                    return $next($req);
+                }
+
+                $mw = new \App\Middleware\TenantTypeModuleAccessMiddleware();
+
+                return $mw($req, $next);
+            },
         ]);
         foreach (array_reverse($global) as $mw) {
             $next = $runner;
             $runner = fn (\App\Core\Request $req): \App\Core\Response => $mw($req, $next);
         }
-        $response = $runner($this->request);
+        // Filet : ensureSchema / migrations bootstrap ne doivent jamais polluer le HTML
+        // (logs `[OK] sse_…` avant le corps de Response).
+        $outputGuardLevel = ob_get_level();
+        ob_start();
+        try {
+            $response = $runner($this->request);
+        } finally {
+            while (ob_get_level() > $outputGuardLevel) {
+                ob_end_clean();
+            }
+        }
         $response->send();
     }
 }

@@ -6,12 +6,10 @@ declare(strict_types=1);
  * Portail SSE privé — dossiers d’affaire, codes d’accès, notes, preuves, audit.
  * Idempotent — appelée depuis run-migrations.php.
  */
-return static function (PDO $pdo): void {
-    // Silencieux hors CLI : ensureSchema() des repos ne doit pas polluer le HTML (Tacmap).
-    $log = static function (string $msg): void {
-        if (PHP_SAPI === 'cli') {
-            echo $msg;
-        }
+return static function (PDO $pdo, ?callable $log = null): void {
+    // Silencieux hors CLI : ensureSchema() des repos ne doit pas polluer le HTML.
+    $log ??= static function (string $msg): void {
+        // Silence web.
     };
 
     $tableExists = static function (PDO $pdo, string $table): bool {

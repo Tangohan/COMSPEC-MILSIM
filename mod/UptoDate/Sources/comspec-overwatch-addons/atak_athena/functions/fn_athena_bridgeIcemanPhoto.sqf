@@ -1,20 +1,21 @@
 /*
     Capture BCE / Photo Library → signal upload Athena (NotifyNewPhoto / queue DLL).
 
-    Params: [_filePath, _fileName, _silent]
+    Params: [_filePath, _fileName, _silent, _force]
+    _force : renvoi manuel — ignore / purge Dead+Failed pour retenter.
     Retour: true si l’extension a accepté le signal (OK|queued / OK|duplicate), false sinon.
 */
 params [
     ["_filePath", "", [""]],
     ["_fileName", "", [""]],
-    ["_silent", false, [false]]
+    ["_silent", false, [false]],
+    ["_force", false, [false]]
 ];
 
 if (!hasInterface) exitWith { false };
 if (!(["iceman_photo"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith { false };
 if (_filePath isEqualTo "") exitWith { false };
 
-// Photos déjà jugées introuvables (session + profil) : ne pas re-notifier la DLL.
 private _keyEarly = toLower _filePath;
 private _deadEarly = profileNamespace getVariable ["COMSPEC_Athena_PhotoDead", []];
 if (!(_deadEarly isEqualType [])) then { _deadEarly = []; };
@@ -25,7 +26,27 @@ if (_baseEarly isEqualTo "") then {
     private _segsE = _filePath splitString "\/";
     _baseEarly = toLower (_segsE select ((count _segsE) - 1));
 };
-if (_keyEarly in _failedEarly || {_keyEarly in _deadEarly} || {_baseEarly isNotEqualTo "" && {_baseEarly in _deadEarly}}) exitWith { false };
+
+if (_force) then {
+    private _scrubbed = false;
+    if (_keyEarly in _deadEarly || {_baseEarly isNotEqualTo "" && {_baseEarly in _deadEarly}}) then {
+        _deadEarly = _deadEarly - [_keyEarly, _baseEarly];
+        profileNamespace setVariable ["COMSPEC_Athena_PhotoDead", _deadEarly];
+        saveProfileNamespace;
+        _scrubbed = true;
+    };
+    if (_keyEarly in _failedEarly || {_baseEarly isNotEqualTo "" && {_baseEarly in _failedEarly}}) then {
+        _failedEarly = _failedEarly - [_keyEarly, _baseEarly];
+        missionNamespace setVariable ["COMSPEC_Athena_PhotoFailed", _failedEarly, false];
+        _scrubbed = true;
+    };
+    // Anti double-clic 3 s : lever aussi pour un renvoi forcé après scrub.
+    if (_scrubbed) then {
+        missionNamespace setVariable ["COMSPEC_Athena_LastPhotoUpload", ["", 0], false];
+    };
+} else {
+    if (_keyEarly in _failedEarly || {_keyEarly in _deadEarly} || {_baseEarly isNotEqualTo "" && {_baseEarly in _deadEarly}}) exitWith { false };
+};
 
 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto") then {
     [_filePath, _fileName] call comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto;

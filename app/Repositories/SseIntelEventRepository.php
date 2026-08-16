@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 
 /**
  * Timeline d’événements SSE normalisés (idempotente).
@@ -25,16 +26,7 @@ final class SseIntelEventRepository
         if ($done) {
             return;
         }
-        $path = base_path('bootstrap/atak_sse_intel_foundation_migration.php');
-        if (is_file($path)) {
-            $migrate = require $path;
-            if (is_callable($migrate)) {
-                try {
-                    $migrate(Database::getPdo());
-                } catch (\Throwable) {
-                }
-            }
-        }
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_intel_foundation_migration.php'));
         $done = true;
     }
 
@@ -190,6 +182,20 @@ final class SseIntelEventRepository
         if (!empty($filters['source_system'])) {
             $sql .= ' AND source_system = :src';
             $params['src'] = strtoupper((string) $filters['source_system']);
+        } elseif (!empty($filters['source_systems']) && is_array($filters['source_systems'])) {
+            $in = [];
+            foreach (array_values($filters['source_systems']) as $i => $src) {
+                $key = 'src' . $i;
+                $in[] = ':' . $key;
+                $params[$key] = strtoupper(trim((string) $src));
+            }
+            if ($in !== []) {
+                $sql .= ' AND source_system IN (' . implode(', ', $in) . ')';
+            }
+        }
+        if (!empty($filters['q'])) {
+            $sql .= ' AND (summary LIKE :q OR author_label LIKE :q OR unit_label LIKE :q OR raw_source_id LIKE :q)';
+            $params['q'] = '%' . trim((string) $filters['q']) . '%';
         }
         if (!empty($filters['since'])) {
             $sql .= ' AND event_time >= :since';
@@ -258,13 +264,37 @@ final class SseIntelEventRepository
         ];
     }
 
-    private function eventTypeLabel(string $type): string
+    /**
+     * Sources typiques d’une transmission depuis Arma 3 / mods terrain.
+     *
+     * @return list<string>
+     */
+    public static function armaTerrainSourceSystems(): array
     {
-        return match (strtoupper($type)) {
+        return [
+            'ARMA_SSE',
+            'ACE',
+            'ACE_DOGTAG',
+            'BII_IDENTIFI',
+            'ZEUS',
+            'EDEN',
+            'CTAB',
+            'TFAR',
+            'ACRE',
+            'UAV',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function eventTypeOptions(): array
+    {
+        return [
             'OBSERVED' => 'Observation',
             'IDENTIFIED' => 'Identification',
             'PHOTOGRAPHED' => 'Photographie',
-            'BIOMETRIC_CAPTURE', 'BIOMETRIC_SCAN' => 'Acquisition biométrique',
+            'BIOMETRIC_CAPTURE' => 'Acquisition biométrique',
             'DEVICE_SEIZED' => 'Appareil saisi',
             'DEVICE_EXPLOITED' => 'Appareil exploité',
             'SITE_SEARCHED' => 'Site fouillé',
@@ -274,17 +304,40 @@ final class SseIntelEventRepository
             'INTEL_VALIDATED' => 'Renseignement validé',
             'INTEL_DISSEMINATED' => 'Renseignement diffusé',
             'EXPLOSIVE_COMPONENT_FOUND' => 'Composant explosif trouvé',
-            default => $type !== '' ? $type : 'Événement',
-        };
+        ];
     }
 
-    private function sourceSystemLabel(string $src): string
+    /**
+     * @return array<string, string>
+     */
+    public static function sourceSystemOptions(): array
+    {
+        $out = [];
+        foreach (array_merge(self::armaTerrainSourceSystems(), ['MANUAL']) as $code) {
+            $out[$code] = self::labelForSourceSystem($code);
+        }
+
+        return $out;
+    }
+
+    public static function labelForEventType(string $type): string
+    {
+        $options = self::eventTypeOptions();
+        $key = strtoupper($type);
+        if ($key === 'BIOMETRIC_SCAN') {
+            return $options['BIOMETRIC_CAPTURE'];
+        }
+
+        return $options[$key] ?? ($type !== '' ? $type : 'Événement');
+    }
+
+    public static function labelForSourceSystem(string $src): string
     {
         return match (strtoupper($src)) {
             'ACE' => 'ACE',
             'ACE_DOGTAG' => 'Plaque d’identité ACE',
             'BII_IDENTIFI' => 'BII Identifi',
-            'ARMA_SSE' => 'Terminal SSE',
+            'ARMA_SSE' => 'Terminal SSE (Arma)',
             'ZEUS' => 'Zeus',
             'EDEN' => 'Éditeur de mission',
             'MANUAL' => 'Saisie analyste',
@@ -294,6 +347,16 @@ final class SseIntelEventRepository
             'UAV' => 'Drone / UAV',
             default => $src !== '' ? $src : 'Source inconnue',
         };
+    }
+
+    private function eventTypeLabel(string $type): string
+    {
+        return self::labelForEventType($type);
+    }
+
+    private function sourceSystemLabel(string $src): string
+    {
+        return self::labelForSourceSystem($src);
     }
 
     private function reliability(mixed $v): string

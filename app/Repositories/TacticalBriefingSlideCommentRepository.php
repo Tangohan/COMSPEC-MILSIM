@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Support\LazyDatabaseConnection;
+
 use App\Core\Database;
 use PDO;
 
@@ -12,7 +14,8 @@ use PDO;
  */
 class TacticalBriefingSlideCommentRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
+
 
     public function __construct()
     {
@@ -24,7 +27,7 @@ class TacticalBriefingSlideCommentRepository
     public function isReady(): bool
     {
         try {
-            $stmt = $this->pdo->query("SHOW TABLES LIKE 'tactical_briefing_slide_comments'");
+            $stmt = $this->pdo()->query("SHOW TABLES LIKE 'tactical_briefing_slide_comments'");
 
             return (bool) ($stmt && $stmt->fetchColumn());
         } catch (\Throwable) {
@@ -39,7 +42,7 @@ class TacticalBriefingSlideCommentRepository
             return [];
         }
         $limit = max(1, min(200, $limit));
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             "SELECT id, slide_id, author_label, body, source, created_at
              FROM tactical_briefing_slide_comments
              WHERE tenant_id = ? AND slide_id = ?
@@ -61,7 +64,7 @@ class TacticalBriefingSlideCommentRepository
         if (!$this->isReady() || $tenantId < 1) {
             return [];
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT slide_id, COUNT(*) AS c
              FROM tactical_briefing_slide_comments
              WHERE tenant_id = ?
@@ -93,12 +96,12 @@ class TacticalBriefingSlideCommentRepository
         if (mb_strlen($body) > 2000) {
             $body = mb_substr($body, 0, 2000);
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'INSERT INTO tactical_briefing_slide_comments (tenant_id, slide_id, author_label, body, source, created_at)
              VALUES (?, ?, ?, ?, ?, NOW())'
         );
         $stmt->execute([$tenantId, $slideId, $authorLabel, $body, $source]);
 
-        return (int) $this->pdo->lastInsertId();
+        return (int) $this->pdo()->lastInsertId();
     }
 }

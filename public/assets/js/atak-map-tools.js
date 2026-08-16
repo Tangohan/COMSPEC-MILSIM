@@ -934,6 +934,19 @@ window.ATAKMapTools = (function () {
     syncPresetButtons(loadPresetId());
   }
 
+  function setLookOpen(open) {
+    var panel = document.getElementById('atak-map-look-prefs');
+    var btn = document.querySelector('#atak-map-tools [data-tool-ui="look"]');
+    if (panel) panel.hidden = !open;
+    if (btn) {
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.classList.toggle('is-active', !!open);
+    }
+    if (open && window.ATAKMap && typeof window.ATAKMap.syncDisplayPrefsUi === 'function') {
+      try { window.ATAKMap.syncDisplayPrefsUi(); } catch (e) {}
+    }
+  }
+
   function setPrefsOpen(open) {
     var panel = document.getElementById('atak-map-tools-prefs');
     var btn = document.querySelector('#atak-map-tools [data-tool-ui="customize"]');
@@ -942,7 +955,10 @@ window.ATAKMapTools = (function () {
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       btn.classList.toggle('is-active', !!open);
     }
-    if (open) buildPrefsPanel();
+    if (open) {
+      setLookOpen(false);
+      buildPrefsPanel();
+    }
   }
 
   function setToolbarCollapsed(collapsed) {
@@ -953,7 +969,10 @@ window.ATAKMapTools = (function () {
       bar.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
     }
     if (fab) fab.hidden = !collapsed;
-    if (collapsed) setPrefsOpen(false);
+    if (collapsed) {
+      setPrefsOpen(false);
+      setLookOpen(false);
+    }
     try {
       localStorage.setItem(LS_COLLAPSED, collapsed ? '1' : '0');
     } catch (e) {}
@@ -977,7 +996,13 @@ window.ATAKMapTools = (function () {
     else if (action === 'customize') {
       var panel = document.getElementById('atak-map-tools-prefs');
       setPrefsOpen(!(panel && !panel.hidden));
-    } else if (action === 'prefs-close') setPrefsOpen(false);
+    } else if (action === 'look') {
+      var look = document.getElementById('atak-map-look-prefs');
+      var nextOpen = !(look && !look.hidden);
+      if (nextOpen) setPrefsOpen(false);
+      setLookOpen(nextOpen);
+    } else if (action === 'look-close') setLookOpen(false);
+    else if (action === 'prefs-close') setPrefsOpen(false);
     else if (action === 'preset') {
       var presetId = ui.getAttribute('data-preset');
       if (presetId) applyPreset(presetId);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 use App\Support\SseAnalysisCatalog;
 
 /**
@@ -24,16 +25,7 @@ final class SseAnalysisFindingRepository
         if ($done) {
             return;
         }
-        $path = base_path('bootstrap/atak_sse_analysis_lot6_migration.php');
-        if (is_file($path)) {
-            $migrate = require $path;
-            if (is_callable($migrate)) {
-                try {
-                    $migrate(Database::getPdo());
-                } catch (\Throwable) {
-                }
-            }
-        }
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_analysis_lot6_migration.php'));
         $done = true;
     }
 

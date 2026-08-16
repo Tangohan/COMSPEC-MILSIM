@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 /**
@@ -12,13 +13,14 @@ use PDO;
  */
 class TacticalGameLinkRepository
 {
+    use LazyDatabaseConnection;
+
     private const TTL_MINUTES = 30;
 
-    private PDO $pdo;
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     /**
@@ -34,7 +36,7 @@ class TacticalGameLinkRepository
         static $exists = null;
         if ($exists === null) {
             try {
-                $stmt = $this->pdo->query("SHOW TABLES LIKE 'tactical_game_link_codes'");
+                $stmt = $this->pdo()->query("SHOW TABLES LIKE 'tactical_game_link_codes'");
                 $exists = (bool) ($stmt && $stmt->fetchColumn());
             } catch (\Throwable) {
                 $exists = false;
@@ -53,7 +55,7 @@ class TacticalGameLinkRepository
             return null;
         }
         try {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 'DELETE FROM tactical_game_link_codes WHERE user_id = ? AND tenant_id = ? AND redeemed_at IS NULL'
             )->execute([$userId, $tenantId]);
 
@@ -61,13 +63,13 @@ class TacticalGameLinkRepository
             // Toujours UTC_TIMESTAMP() : sur l’hébergeur, NOW() peut être en Europe/Paris
             // alors que PHP écrit en UTC → expires_at / created_at paraissent déjà périmés.
             $ttl = (int) self::TTL_MINUTES;
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 "INSERT INTO tactical_game_link_codes (tenant_id, user_id, code, expires_at, created_at)
                  VALUES (?, ?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL {$ttl} MINUTE), UTC_TIMESTAMP())"
             );
             $stmt->execute([$tenantId, $userId, $code]);
 
-            $read = $this->pdo->prepare(
+            $read = $this->pdo()->prepare(
                 'SELECT code, expires_at FROM tactical_game_link_codes WHERE code = ? ORDER BY id DESC LIMIT 1'
             );
             $read->execute([$code]);
@@ -93,7 +95,7 @@ class TacticalGameLinkRepository
             for ($i = 0; $i < 6; $i++) {
                 $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
             }
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'SELECT 1 FROM tactical_game_link_codes
                  WHERE code = ? AND redeemed_at IS NULL
                    AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ' . (int) self::TTL_MINUTES . ' MINUTE)
@@ -114,7 +116,7 @@ class TacticalGameLinkRepository
             return null;
         }
         $ttl = (int) self::TTL_MINUTES;
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             "SELECT * FROM tactical_game_link_codes
              WHERE code = ?
                AND redeemed_at IS NULL
@@ -140,7 +142,7 @@ class TacticalGameLinkRepository
         if (!$this->tableExists() || trim($code) === '') {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM tactical_game_link_codes WHERE code = ? ORDER BY id DESC LIMIT 1'
         );
         $stmt->execute([strtoupper(trim($code))]);
@@ -169,7 +171,7 @@ class TacticalGameLinkRepository
         if (!$this->tableExists()) {
             return;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE tactical_game_link_codes
              SET redeemed_at = UTC_TIMESTAMP(), redeemed_steam_uid = ?
              WHERE id = ? AND redeemed_at IS NULL'

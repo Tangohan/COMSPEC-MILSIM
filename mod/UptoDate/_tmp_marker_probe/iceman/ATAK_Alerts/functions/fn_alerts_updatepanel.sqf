@@ -1,14 +1,33 @@
 #include "..\script_component.hpp"
 
 private _group = uiNamespace getVariable ["Iceman_ATAK_Alerts_group", controlNull];
-private _controls = [];
+if (isNull _group || {!ctrlShown _group}) then {
+    private _display = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
+    if (isNull _display) then {
+        _display = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
+    };
+    if (!isNull _display) then {
+        private _apps = _display displayCtrl (17000 + 4650);
+        if (!isNull _apps) then {
+            {
+                if ((ctrlClassName _x) isEqualTo "Iceman_ATAK_Reports") exitWith {
+                    _group = _x;
+                    uiNamespace setVariable ["Iceman_ATAK_Alerts_group", _group];
+                };
+            } forEach (allControls _apps);
+        };
+    };
+};
 
+private _controls = [];
 if (!isNull _group) then {
     _controls = allControls _group;
-} else {
-    private _display = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
-    if (isNull _display) exitWith {};
-    _controls = allControls _display;
+    // Inclure les enfants des groupes scroll (détail Inbox).
+    {
+        if (ctrlType _x == 15) then {
+            _controls append (allControls _x);
+        };
+    } forEach +_controls;
 };
 
 private _tab = missionNamespace getVariable ["Iceman_ATAK_Reports_tab", "inbox"];
@@ -21,6 +40,7 @@ if !(_form in ["TIC", "EAGLE_DOWN", "BDA", "FRAGO", "SALUTE"]) then {
     _form = "TIC";
     Iceman_ATAK_Reports_form = _form;
 };
+
 {
     private _section = _x getVariable ["IcemanReportsSection", ""];
     if (_section != "") then {
@@ -31,6 +51,36 @@ if !(_form in ["TIC", "EAGLE_DOWN", "BDA", "FRAGO", "SALUTE"]) then {
         };
         _x ctrlShow _show;
         _x ctrlEnable _show;
+    } else {
+        // Contrôles hérités (Title ATAK, etc.) : masquer hors coque Reports.
+        private _idc = ctrlIDC _x;
+        if (_idc in [5, 6, 10, 11]) then {
+            _x ctrlShow false;
+            _x ctrlEnable false;
+        };
+    };
+} forEach _controls;
+
+// Filet IDC : Inbox vs New ne doivent jamais cohabiter.
+private _showInbox = _tab isEqualTo "inbox";
+{
+    private _idc = ctrlIDC _x;
+    if (_idc in [9610, 9611, 9612, 9613, 9615]) then {
+        _x ctrlShow _showInbox;
+        _x ctrlEnable _showInbox;
+    };
+    if (_idc == 9614 || {_idc >= 9620 && {_idc <= 9729}} || {_idc >= 9540 && {_idc <= 9551}}) then {
+        private _formTag = _x getVariable ["IcemanReportsForm", ""];
+        private _showNew = !_showInbox;
+        if (_idc in [9614, 9620, 9621, 9622, 9623]) then {
+            _showNew = !_showInbox;
+        } else {
+            if (_showNew && {_formTag != ""} && {_formTag != "commonForm"}) then {
+                _showNew = _formTag isEqualTo _form;
+            };
+        };
+        _x ctrlShow _showNew;
+        _x ctrlEnable _showNew;
     };
 } forEach _controls;
 

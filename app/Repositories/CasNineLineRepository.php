@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 class CasNineLineRepository
 {
+    use LazyDatabaseConnection;
+
     private const VALID_STATUSES = [
         'DRAFT', 'SUBMITTED', 'ACKNOWLEDGED', 'CHECKING', 'TARGET_ACQUIRED',
         'INBOUND', 'CLEARED_HOT', 'ENGAGED', 'BDA_PENDING', 'COMPLETE', 'ABORTED',
@@ -19,12 +22,11 @@ class CasNineLineRepository
     public const KIND_CAS = 'cas';
     public const KIND_MEDEVAC = 'medevac';
 
-    private PDO $pdo;
     private ?bool $hasMissionKind = null;
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     private function hasMissionKindColumn(): bool
@@ -33,7 +35,7 @@ class CasNineLineRepository
             return $this->hasMissionKind;
         }
         try {
-            $st = $this->pdo->prepare(
+            $st = $this->pdo()->prepare(
                 'SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
             );
@@ -65,7 +67,7 @@ class CasNineLineRepository
             $params[] = $status;
         }
         $sql .= ' ORDER BY updated_at DESC';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return array_map([$this, 'normalizeCasRow'], $rows);
@@ -78,7 +80,7 @@ class CasNineLineRepository
 
     public function getCas(int $tenantId, int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ? $this->normalizeCasRow($row) : null;
@@ -148,7 +150,7 @@ class CasNineLineRepository
         $status = $kind === self::KIND_MEDEVAC ? 'REQUESTED' : 'SUBMITTED';
 
         if ($this->hasMissionKindColumn()) {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'INSERT INTO atak_nine_line (tenant_id, map_id, mission_kind, mission_id, author, assigned_aircraft, line1, line2, line3, line4, line5, line6, line7, line8, line9, lines_checked, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)'
             );
             $stmt->execute([
@@ -157,7 +159,7 @@ class CasNineLineRepository
                 $status,
             ]);
         } else {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'INSERT INTO atak_nine_line (tenant_id, map_id, mission_id, author, assigned_aircraft, line1, line2, line3, line4, line5, line6, line7, line8, line9, lines_checked, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)'
             );
             $stmt->execute([
@@ -166,7 +168,7 @@ class CasNineLineRepository
                 $status,
             ]);
         }
-        $id = (int) $this->pdo->lastInsertId();
+        $id = (int) $this->pdo()->lastInsertId();
         $row = $this->getCas($tenantId, $id);
         return $row ?? [];
     }
@@ -177,12 +179,12 @@ class CasNineLineRepository
         if (!in_array($status, self::VALID_STATUSES, true)) {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT id FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT id FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         if (!$stmt->fetch()) {
             return null;
         }
-        $this->pdo->prepare('UPDATE atak_nine_line SET status = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?')->execute([$status, $tenantId, $id]);
+        $this->pdo()->prepare('UPDATE atak_nine_line SET status = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?')->execute([$status, $tenantId, $id]);
         return $this->getCas($tenantId, $id);
     }
 
@@ -191,7 +193,7 @@ class CasNineLineRepository
      */
     public function deleteCas(int $tenantId, int $id): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('DELETE FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
 
         return $stmt->rowCount() > 0;
@@ -204,7 +206,7 @@ class CasNineLineRepository
 
     public function updateLineChecked(int $tenantId, int $id, string $lineKey, bool $checked, string $checkedBy): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, lines_checked FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT id, lines_checked FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
@@ -220,24 +222,24 @@ class CasNineLineRepository
             'checkedAt' => time(),
         ];
         $json = json_encode($linesChecked);
-        $this->pdo->prepare('UPDATE atak_nine_line SET lines_checked = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?')->execute([$json, $tenantId, $id]);
+        $this->pdo()->prepare('UPDATE atak_nine_line SET lines_checked = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?')->execute([$json, $tenantId, $id]);
         return $this->getCas($tenantId, $id);
     }
 
     public function assignAircraft(int $tenantId, int $id, string $callsign): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT id FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         if (!$stmt->fetch()) {
             return null;
         }
-        $this->pdo->prepare('UPDATE atak_nine_line SET assigned_aircraft = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?')->execute([$callsign, $tenantId, $id]);
+        $this->pdo()->prepare('UPDATE atak_nine_line SET assigned_aircraft = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?')->execute([$callsign, $tenantId, $id]);
         return $this->getCas($tenantId, $id);
     }
 
     public function patchCas(int $tenantId, int $id, array $payload): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
@@ -251,7 +253,7 @@ class CasNineLineRepository
         }
         if (isset($payload['lines_checked'])) {
             $json = is_string($payload['lines_checked']) ? $payload['lines_checked'] : json_encode($payload['lines_checked']);
-            $this->pdo->prepare('UPDATE atak_nine_line SET lines_checked = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?')->execute([$json, $tenantId, $id]);
+            $this->pdo()->prepare('UPDATE atak_nine_line SET lines_checked = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?')->execute([$json, $tenantId, $id]);
         }
         return $this->getCas($tenantId, $id);
     }

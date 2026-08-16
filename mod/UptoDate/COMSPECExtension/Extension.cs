@@ -3996,15 +3996,22 @@ public static class Extension
             return;
         }
 
-        TimeSpan? newestFallback = job.NewestFallback ? TimeSpan.FromSeconds(90) : null;
+        TimeSpan? newestFallback = job.NewestFallback ? TimeSpan.FromSeconds(180) : null;
         string? resolved = null;
         string? identityKey = null;
 
-        // Attente non bloquante du flush disque (BCE / Arma_ScreenShot) — max ~4 s.
+        // Attente non bloquante du flush disque (BCE / Arma_ScreenShot) — max ~6 s.
         // Abandon rapide si le dossier parent Windows est mort (Photo Library obsolète).
-        for (var attempt = 0; attempt < 10; attempt++)
+        for (var attempt = 0; attempt < 15; attempt++)
         {
-            resolved = ResolveLocalImagePath(job.RawPath, attempt >= 6 ? newestFallback : null);
+            // Dès le 1er essai pour un stem sans chemin : accepter une capture
+            // écrite juste après l’enqueue (screenshot Arma asynchrone).
+            var fb = newestFallback;
+            if (job.NewestFallback && attempt >= 0)
+                fb = TimeSpan.FromSeconds(Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30));
+            resolved = ResolveLocalImagePath(job.RawPath, attempt >= 2 ? fb : newestFallback);
+            if (resolved == null && job.NewestFallback && attempt >= 3)
+                resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-5));
             if (resolved != null) break;
             try
             {
@@ -5076,6 +5083,42 @@ public static class Extension
                         if (!fi.Exists) continue;
                         var writeUtc = fi.LastWriteTimeUtc;
                         if (writeUtc < cutoff) continue;
+                        if (best == null || writeUtc > best.LastWriteTimeUtc)
+                            best = fi;
+                    }
+                    catch { }
+                }
+            }
+            return best?.FullName;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Variante pour captures async : fichier écrit après (ou juste avant) l’enqueue.
+    /// </summary>
+    private static string? FindNewestScreenshotSince(DateTime utcMin)
+    {
+        try
+        {
+            FileInfo? best = null;
+            foreach (var dir in EnumerateScreenshotDirs())
+            {
+                if (!IsScreenshotCaptureDir(dir)) continue;
+                IEnumerable<string> files;
+                try { files = EnumerateRecentImagesInDir(dir); }
+                catch { continue; }
+                foreach (var f in files)
+                {
+                    try
+                    {
+                        var fi = new FileInfo(f);
+                        if (!fi.Exists || fi.Length < 32) continue;
+                        var writeUtc = fi.LastWriteTimeUtc;
+                        if (writeUtc < utcMin) continue;
                         if (best == null || writeUtc > best.LastWriteTimeUtc)
                             best = fi;
                     }

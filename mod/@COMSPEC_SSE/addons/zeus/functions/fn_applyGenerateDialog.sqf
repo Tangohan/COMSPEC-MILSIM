@@ -25,7 +25,7 @@ private _jobs = [];
         if (_ent getVariable ["comspec_sse_generating", false]) exitWith {};
         [_ent, _profile, _complexity, _by] call comspec_sse_fnc_generateData;
     },
-    0.12
+    0.28
 ] call comspec_sse_fnc_queueEntityJobs;
 
 closeDialog 0;

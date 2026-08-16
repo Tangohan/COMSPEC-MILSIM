@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 
 /**
  * Journal d’audit SSE (append-only).
@@ -25,16 +26,7 @@ final class SseAuditLogRepository
         if ($done) {
             return;
         }
-        $path = base_path('bootstrap/atak_sse_intel_foundation_migration.php');
-        if (is_file($path)) {
-            $migrate = require $path;
-            if (is_callable($migrate)) {
-                try {
-                    $migrate(Database::getPdo());
-                } catch (\Throwable) {
-                }
-            }
-        }
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_intel_foundation_migration.php'));
         $done = true;
     }
 

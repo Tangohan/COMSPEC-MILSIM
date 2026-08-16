@@ -85,28 +85,35 @@ final class Database
             $cfg['charset']
         );
 
-        try {
-            self::$pdo = self::connectPdo($dsn, $cfg['username'], $cfg['password']);
-        } catch (PDOException $e) {
-            $detail = $e->getMessage();
-            // Hostinger : micro-coupures / FTP mid-flight → 2002 « Operation not permitted ».
-            // Une seule nouvelle tentative évite de spammer ERROR_ALERT sur un poll ATAK.
+        // Hostinger : micro-coupures / FTP mid-flight → 2002 « Operation not permitted ».
+        // Plusieurs tentatives espacées absorbent la plupart des polls ATAK sans alerte.
+        $attempts = 3;
+        $delaysUs = [80_000, 200_000, 450_000];
+        $lastException = null;
+        for ($i = 0; $i < $attempts; $i++) {
+            try {
+                self::$pdo = self::connectPdo($dsn, $cfg['username'], $cfg['password']);
+                break;
+            } catch (PDOException $e) {
+                $lastException = $e;
+                $detail = $e->getMessage();
+                $transient = str_contains($detail, '2002')
+                    || str_contains($detail, 'Operation not permitted')
+                    || str_contains($detail, '2006')
+                    || str_contains($detail, 'server has gone away');
+                if (!$transient || $i >= $attempts - 1) {
+                    break;
+                }
+                usleep($delaysUs[$i] ?? 200_000);
+            }
+        }
+        if (!(self::$pdo instanceof PDO)) {
+            $detail = $lastException?->getMessage() ?? 'unknown';
+            $hint = '';
             if (str_contains($detail, '2002') || str_contains($detail, 'Operation not permitted')) {
-                usleep(80_000);
-                try {
-                    self::$pdo = self::connectPdo($dsn, $cfg['username'], $cfg['password']);
-                } catch (PDOException $retry) {
-                    $e = $retry;
-                    $detail = $retry->getMessage();
-                }
+                $hint = ' Vérifiez DB_HOST=127.0.0.1 (pas localhost socket) dans .env / database.local.php, et qu’un déploiement FTP n’est pas en cours.';
             }
-            if (!(self::$pdo instanceof PDO)) {
-                $hint = '';
-                if (str_contains($detail, '2002') || str_contains($detail, 'Operation not permitted')) {
-                    $hint = ' Vérifiez DB_HOST=127.0.0.1 (pas localhost socket) dans .env / database.local.php, et qu’un déploiement FTP n’est pas en cours.';
-                }
-                throw new RuntimeException('Database connection failed: ' . $detail . $hint, 0, $e);
-            }
+            throw new RuntimeException('Database connection failed: ' . $detail . $hint, 0, $lastException);
         }
 
         return self::$pdo;
@@ -114,11 +121,16 @@ final class Database
 
     private static function connectPdo(string $dsn, string $username, string $password): PDO
     {
-        $pdo = new PDO($dsn, $username, $password, [
+        $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
-        ]);
+        ];
+        // Timeout TCP court (évite de bloquer un worker FPM sur une MySQL morte).
+        if (defined('PDO::ATTR_TIMEOUT')) {
+            $options[PDO::ATTR_TIMEOUT] = 3;
+        }
+        $pdo = new PDO($dsn, $username, $password, $options);
         // Horloge SQL stable (évite expires_at / NOW() incohérents selon le serveur hôte).
         $pdo->exec("SET time_zone = '+00:00'");
 

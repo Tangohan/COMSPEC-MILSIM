@@ -473,6 +473,20 @@ if ($atakMapConfig) {
           <span class="atak-sound-pref-key">Taille des libellés <span class="atak-sound-pref-val" id="atak-unit-label-size-val">7</span></span>
           <input type="range" id="atak-unit-label-size" class="atak-sound-pref-slider" min="6" max="16" step="1" value="7" title="Taille des indicatifs sous les marqueurs" aria-valuemin="6" aria-valuemax="16" aria-valuenow="7" />
         </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-unit-marker-depth">
+          <span class="atak-sound-pref-key">Relief des marqueurs</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-unit-marker-depth" checked />
+            <span>Ombres et profondeur pour donner du volume à la carte</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-unit-marker-motion">
+          <span class="atak-sound-pref-key">Animation des contacts</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-unit-marker-motion" checked />
+            <span>Léger battement sur les positions actives</span>
+          </span>
+        </label>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-unit-ft-frame">
           <span class="atak-sound-pref-key">Cadre d’équipe</span>
           <span class="atak-sound-pref-check">
@@ -1846,9 +1860,46 @@ if ($atakMapConfig) {
           <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-in" data-tool-slot="zoom" title="Zoom avant">+</button>
           <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-out" data-tool-slot="zoom" title="Zoom arrière">−</button>
           <button type="button" class="atak-map-tools__btn" data-tool="nvg" data-tool-slot="nvg" title="Vision nocturne (N)" aria-pressed="false">NVG</button>
+          <button type="button" class="atak-map-tools__btn" data-tool-ui="look" title="Apparence de la carte (taille, relief, animation)" aria-expanded="false" aria-controls="atak-map-look-prefs">Affichage</button>
           <span class="atak-map-tools__sep" data-tool-sep="chrome" aria-hidden="true"></span>
           <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-tool-ui="customize" title="Choisir les outils affichés" aria-expanded="false" aria-controls="atak-map-tools-prefs">Personnaliser</button>
           <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-tool-ui="collapse" title="Masquer la barre d’outils">Masquer</button>
+        </div>
+        <div class="atak-map-tools__prefs atak-map-tools__prefs--look" id="atak-map-look-prefs" hidden role="dialog" aria-label="Apparence de la carte">
+          <p class="atak-map-tools__prefs-title">Apparence de la carte</p>
+          <p class="atak-map-tools__prefs-hint">Réglages instantanés, mémorisés sur cet appareil.</p>
+          <label class="atak-map-look__row" for="atak-map-look-style">
+            <span class="atak-map-look__key">Positions</span>
+            <select id="atak-map-look-style" class="atak-header-select atak-map-look__select" title="Style des marqueurs d’unités">
+              <option value="nato" selected>Symbole OTAN ou photo</option>
+              <option value="intel_dot">Point discret</option>
+              <option value="dot">Point simple</option>
+              <option value="team_dot">Point couleur d’équipe</option>
+            </select>
+          </label>
+          <label class="atak-map-look__row" for="atak-map-look-icon-size">
+            <span class="atak-map-look__key">Icônes <span class="atak-sound-pref-val" id="atak-map-look-icon-size-val">16</span></span>
+            <input type="range" id="atak-map-look-icon-size" class="atak-sound-pref-slider" min="8" max="48" step="1" value="16" aria-valuemin="8" aria-valuemax="48" aria-valuenow="16" />
+          </label>
+          <label class="atak-map-look__row" for="atak-map-look-label-size">
+            <span class="atak-map-look__key">Libellés <span class="atak-sound-pref-val" id="atak-map-look-label-size-val">7</span></span>
+            <input type="range" id="atak-map-look-label-size" class="atak-sound-pref-slider" min="6" max="16" step="1" value="7" aria-valuemin="6" aria-valuemax="16" aria-valuenow="7" />
+          </label>
+          <label class="atak-map-look__check" for="atak-map-look-depth">
+            <input type="checkbox" id="atak-map-look-depth" checked />
+            <span>Relief et profondeur</span>
+          </label>
+          <label class="atak-map-look__check" for="atak-map-look-motion">
+            <input type="checkbox" id="atak-map-look-motion" checked />
+            <span>Animation des contacts</span>
+          </label>
+          <label class="atak-map-look__check" for="atak-map-look-ft-frame">
+            <input type="checkbox" id="atak-map-look-ft-frame" checked />
+            <span>Cadre d’équipe</span>
+          </label>
+          <div class="atak-map-tools__prefs-actions">
+            <button type="button" class="atak-map-tools__btn" data-tool-ui="look-close">Fermer</button>
+          </div>
         </div>
         <div class="atak-map-tools__prefs" id="atak-map-tools-prefs" hidden role="dialog" aria-label="Personnaliser la barre d’outils">
           <p class="atak-map-tools__prefs-title">Profils d’outils</p>

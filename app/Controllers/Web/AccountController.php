@@ -823,6 +823,13 @@ class AccountController
             ];
         }
 
+        $items[] = [
+            'key' => EmailEvents::SSE_ANALYST_DIGEST,
+            'label' => 'Point quotidien renseignement SSE',
+            'hint' => 'Résumé des rapprochements à trancher, signaux ouverts et nouvelles fiches terrain pour votre communauté.',
+            'group' => 'Renseignement SSE',
+        ];
+
         $recrutementItems = [
             [
                 'key' => EmailEvents::RECRUITMENT_OPENING_PUBLISHED_STAFF,

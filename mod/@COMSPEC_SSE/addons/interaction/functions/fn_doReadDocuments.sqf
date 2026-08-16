@@ -19,31 +19,43 @@ params [
             hint "Aucun document exploitable.";
         };
 
-        private _lines = ["Documents SSE"];
+        // Lignes compactes (journal / fallback) — la visionneuse utilise surtout `docs`.
+        private _lines = [];
         {
             if (_x isEqualType createHashMap) then {
-                _lines pushBack format ["• %1", _x getOrDefault ["title", "Document"]];
+                private _t = _x getOrDefault ["title", "Document"];
                 private _sum = _x getOrDefault ["summary", ""];
-                if (_sum != "" && {_quality >= 55}) then { _lines pushBack format ["  %1", _sum]; };
-                private _grid = _x getOrDefault ["grid", ""];
-                if (_grid != "" && {_quality >= 70}) then { _lines pushBack format ["  Grid : %1", _grid]; };
-                private _cw = _x getOrDefault ["codeword", ""];
-                if (_cw != "" && {_quality >= 80}) then { _lines pushBack format ["  Mot de code : %1", _cw]; };
+                if (_sum != "" && {_quality >= 55}) then {
+                    _lines pushBack format ["%1 — %2", _t, _sum];
+                } else {
+                    _lines pushBack _t;
+                };
             };
         } forEach _docs;
 
+        private _data = [_target] call comspec_sse_fnc_getData;
+        private _uid = if (isNil "_data") then {"?"} else {
+            [_data, "uid", "?"] call BIS_fnc_getFromPairs
+        };
+
         private _fog = createHashMapFromArray [
-            ["title", "Documents"],
+            ["title", "Dossier documentaire"],
+            ["kind", "documents"],
+            ["level", "documents"],
+            ["docs", _docs],
             ["lines", _lines],
             ["quality", _quality],
-            ["uid", (if (isNil {[_target] call comspec_sse_fnc_getData}) then {"?"} else {
-                [[_target] call comspec_sse_fnc_getData, "uid", "?"] call BIS_fnc_getFromPairs
-            })],
-            ["level", "documents"]
+            ["qualityLabel", if (_quality >= 80) then {"Bonne"} else { if (_quality >= 55) then {"Correcte"} else {"Partielle"} }],
+            ["uid", _uid],
+            ["type", "DOCUMENTS"]
         ];
-        hint (_lines joinString endl);
-        [_fog get "uid", "documents", typeOf _target, format ["%1 doc(s)", count _docs], _quality, "LOCAL"] call comspec_sse_fnc_addJournalEntry;
-        if (!isNil "comspec_sse_fnc_showResult") then { [_fog] call comspec_sse_fnc_showResult; };
+
+        [_uid, "documents", typeOf _target, format ["%1 doc(s)", count _docs], _quality, "LOCAL"] call comspec_sse_fnc_addJournalEntry;
+        if (!isNil "comspec_sse_fnc_showResult") then {
+            [_fog] call comspec_sse_fnc_showResult;
+        } else {
+            hint (_lines joinString endl);
+        };
     },
     [_target, _player]
 ] call comspec_sse_fnc_progressAction;

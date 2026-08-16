@@ -14,6 +14,14 @@ if (isNull _entity) exitWith { false };
 private _existing = [_entity] call comspec_sse_fnc_getData;
 if (!isNil "_existing") exitWith {
     _entity setVariable ["comspec_sse_enabled", true, true];
+    // Déjà SSE : ne pas re-pousser entityEnabled (sinon menus ACE dupliqués).
+    if (
+        hasInterface
+        && {!isNil "CBA_fnc_localEvent"}
+        && {!(_entity getVariable ["comspec_sse_aceMenusInstalled", false])}
+    ) then {
+        ["comspec_sse_entityEnabled", [_entity]] call CBA_fnc_localEvent;
+    };
     true
 };
 

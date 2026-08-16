@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Support\LazyDatabaseConnection;
+
 use App\Core\Database;
 use PDO;
 
 class ReconImageRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
+
 
     /** @var array<string, bool> */
     private array $columnCache = [];
@@ -45,7 +48,7 @@ class ReconImageRepository
             return $this->columnCache[$column];
         }
         try {
-            $st = $this->pdo->prepare(
+            $st = $this->pdo()->prepare(
                 "SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'recon_images' AND COLUMN_NAME = ? LIMIT 1"
             );
@@ -61,7 +64,7 @@ class ReconImageRepository
     public function tablesReady(): bool
     {
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.TABLES
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'recon_images' LIMIT 1"
             );
@@ -102,7 +105,7 @@ class ReconImageRepository
                 $params[] = $dateTo;
             }
             $sql .= ' ORDER BY created_at DESC LIMIT ' . (int) $limit;
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -117,7 +120,7 @@ class ReconImageRepository
             return null;
         }
         try {
-            $stmt = $this->pdo->prepare('SELECT * FROM recon_images WHERE tenant_id = ? AND id = ?');
+            $stmt = $this->pdo()->prepare('SELECT * FROM recon_images WHERE tenant_id = ? AND id = ?');
             $stmt->execute([$tenantId, $id]);
 
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -162,9 +165,9 @@ class ReconImageRepository
         $placeholders = array_fill(0, count($names), '?');
         $sql = 'INSERT INTO recon_images (' . implode(', ', $names) . ') VALUES (' . implode(', ', $placeholders) . ')';
         try {
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute(array_values($cols));
-            $id = (int) $this->pdo->lastInsertId();
+            $id = (int) $this->pdo()->lastInsertId();
 
             return $this->get($tenantId, $id) ?? [];
         } catch (\Throwable) {
@@ -175,7 +178,7 @@ class ReconImageRepository
     public function linkToCas(int $tenantId, int $id, int $atakCasId): ?array
     {
         try {
-            $stmt = $this->pdo->prepare('UPDATE recon_images SET atak_cas_id = ? WHERE tenant_id = ? AND id = ?');
+            $stmt = $this->pdo()->prepare('UPDATE recon_images SET atak_cas_id = ? WHERE tenant_id = ? AND id = ?');
             $stmt->execute([$atakCasId, $tenantId, $id]);
             if ($stmt->rowCount() === 0) {
                 return null;
@@ -224,7 +227,7 @@ class ReconImageRepository
 
         try {
             $sql = 'UPDATE recon_images SET ' . implode(', ', $fields) . ' WHERE tenant_id = :tenant_id AND id = :id';
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
 
             return $this->get($tenantId, $id);
@@ -251,7 +254,7 @@ class ReconImageRepository
                 $sql .= ' AND deleted_at IS NULL';
             }
             $sql .= ' ORDER BY created_at DESC LIMIT ' . (int) $limit;
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->pdo()->prepare($sql);
             $stmt->execute([$tenantId]);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (\Throwable) {

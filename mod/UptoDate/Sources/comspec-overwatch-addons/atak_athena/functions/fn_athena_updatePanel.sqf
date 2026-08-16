@@ -330,27 +330,39 @@ if (!(_localPhotos isEqualType [])) then { _localPhotos = []; };
     private _author = if ((count _x) > 3) then { _x select 3 } else { name player };
     if (_filePath isEqualTo "") then { continue };
     private _photoKey = toLower _filePath;
+    private _photoBase = toLower _fileName;
+    if (_photoBase isEqualTo "") then {
+        private _segsP = _filePath splitString "\/";
+        _photoBase = toLower (_segsP select ((count _segsP) - 1));
+    };
+    private _fnc_inPhotoList = {
+        params ["_list"];
+        if (!(_list isEqualType [])) exitWith { false };
+        (_photoKey in _list) || {_photoBase isNotEqualTo "" && {_photoBase in _list}}
+    };
     private _alreadyUp = missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []];
     if (!(_alreadyUp isEqualType [])) then { _alreadyUp = []; };
     private _pendingUp = missionNamespace getVariable ["COMSPEC_Athena_PhotoPending", []];
     if (!(_pendingUp isEqualType [])) then { _pendingUp = []; };
     private _failedUp = missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []];
     if (!(_failedUp isEqualType [])) then { _failedUp = []; };
+    private _deadUp = profileNamespace getVariable ["COMSPEC_Athena_PhotoDead", []];
+    if (!(_deadUp isEqualType [])) then { _deadUp = []; };
     private _short = if (_fileName isEqualTo "") then { "Capture" } else { _fileName };
     private _title = format ["Photo - %1 - %2", _short, _grid];
-    private _detail = if (_photoKey in _alreadyUp) then {
+    private _detail = if ([_alreadyUp] call _fnc_inPhotoList) then {
         format [
             "<t size='0.85' color='#7dffb0'>Photo recue sur ATAK web</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>Visible dans l'onglet Photos du poste de commandement. Utilisez Renvoyer seulement en cas de besoin.</t>",
             _author, _grid, _short
         ]
     } else {
-        if (_photoKey in _failedUp) then {
+        if (([_failedUp] call _fnc_inPhotoList) || {[_deadUp] call _fnc_inPhotoList}) then {
             format [
-                "<t size='0.85' color='#ff8a80'>Echec d'envoi vers ATAK web</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>La photo n'est pas arrivee au poste de commandement. Utilisez Renvoyer.</t>",
+                "<t size='0.85' color='#ff8a80'>Echec d'envoi — fichier introuvable</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>Ce cliche n'existe plus sur le poste (Photo Library / capture ancienne). Reprenez une vue dans l'app Photos d'ATAK : elle remontera seule. Renvoyer ne peut pas ressusciter un fichier disparu.</t>",
                 _author, _grid, _short
             ]
         } else {
-            if (_photoKey in _pendingUp) then {
+            if ([_pendingUp] call _fnc_inPhotoList) then {
                 format [
                     "<t size='0.85' color='#ffe082'>Envoi vers ATAK web...</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>Transmission en cours. Elle n'apparaitra sur le web qu'apres confirmation.</t>",
                     _author, _grid, _short

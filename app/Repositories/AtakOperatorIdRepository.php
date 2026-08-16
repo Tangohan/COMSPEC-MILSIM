@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 /**
@@ -13,17 +14,18 @@ use PDO;
  */
 class AtakOperatorIdRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
 
-    public function __construct()
+
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     public function tablesReady(): bool
     {
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.TABLES
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_operator_ids' LIMIT 1"
             );
@@ -37,7 +39,7 @@ class AtakOperatorIdRepository
     public function unitsMilitaryIdColumnReady(): bool
     {
         try {
-            $st = $this->pdo->prepare(
+            $st = $this->pdo()->prepare(
                 "SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'military_id' LIMIT 1"
             );
@@ -57,7 +59,7 @@ class AtakOperatorIdRepository
         if (!$this->tablesReady() || $userId < 1) {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT military_id, user_id, call_sign FROM atak_operator_ids
              WHERE tenant_id = ? AND user_id = ? LIMIT 1'
         );
@@ -76,7 +78,7 @@ class AtakOperatorIdRepository
         if (!$this->tablesReady() || $callSign === '') {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT military_id, user_id, call_sign FROM atak_operator_ids
              WHERE tenant_id = ? AND UPPER(call_sign) = UPPER(?) LIMIT 1'
         );
@@ -100,7 +102,7 @@ class AtakOperatorIdRepository
             $mid = (string) $existing['military_id'];
             $cs = trim((string) ($callSign ?? ''));
             if ($cs !== '' && strcasecmp((string) ($existing['call_sign'] ?? ''), $cs) !== 0) {
-                $this->pdo->prepare(
+                $this->pdo()->prepare(
                     'UPDATE atak_operator_ids SET call_sign = ?, updated_at = NOW() WHERE tenant_id = ? AND user_id = ?'
                 )->execute([$cs, $tenantId, $userId]);
             }
@@ -112,7 +114,7 @@ class AtakOperatorIdRepository
         if ($cs !== '') {
             $byCs = $this->findByCallSign($tenantId, $cs);
             if ($byCs && empty($byCs['user_id'])) {
-                $this->pdo->prepare(
+                $this->pdo()->prepare(
                     'UPDATE atak_operator_ids SET user_id = ?, updated_at = NOW() WHERE tenant_id = ? AND military_id = ?'
                 )->execute([$userId, $tenantId, $byCs['military_id']]);
 
@@ -122,7 +124,7 @@ class AtakOperatorIdRepository
 
         $mid = $this->allocateUnique($tenantId);
         try {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 'INSERT INTO atak_operator_ids (tenant_id, user_id, call_sign, military_id)
                  VALUES (?, ?, ?, ?)'
             )->execute([$tenantId, $userId, $cs !== '' ? $cs : null, $mid]);
@@ -152,7 +154,7 @@ class AtakOperatorIdRepository
 
         $mid = $this->allocateUnique($tenantId);
         try {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 'INSERT INTO atak_operator_ids (tenant_id, user_id, call_sign, military_id)
                  VALUES (?, NULL, ?, ?)'
             )->execute([$tenantId, $callSign, $mid]);
@@ -176,7 +178,7 @@ class AtakOperatorIdRepository
 
         if ($this->unitsMilitaryIdColumnReady() && $unitRowId > 0) {
             try {
-                $this->pdo->prepare(
+                $this->pdo()->prepare(
                     'UPDATE atak_units SET military_id = ? WHERE id = ? AND tenant_id = ?'
                 )->execute([$mid, $unitRowId, $tenantId]);
             } catch (\Throwable) {
@@ -202,7 +204,7 @@ class AtakOperatorIdRepository
     {
         for ($attempt = 0; $attempt < 16; $attempt++) {
             $mid = $this->generateMilitaryId();
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'SELECT 1 FROM atak_operator_ids WHERE tenant_id = ? AND military_id = ? LIMIT 1'
             );
             $stmt->execute([$tenantId, $mid]);

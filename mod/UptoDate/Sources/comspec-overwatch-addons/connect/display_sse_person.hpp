@@ -7,7 +7,7 @@
 //
 // Géométrie mesurée sur seek_chassis.paa (2048 × 2048) :
 //   appareil        x 0.117 – 0.883   y 0.031 – 0.969
-//   écran           x 0.297 – 0.703   y 0.065 – 0.330
+//   écran (verre)   x 0.305 – 0.695   y 0.078 – 0.323   (rentré vs cadre plastique)
 //   softkeys        x 0.305 – 0.695   y 0.342 – 0.372   (sous l’écran, hors clavier)
 //   platine verte   x 0.398 – 0.594   y 0.703 – 0.867
 //   clavier         x 0.211 – 0.781   y 0.516 – 0.609
@@ -41,11 +41,11 @@
 // utilisable sans aucun asset.
 #define SEEK_CHASSIS_TEXTURE "\z\comspec_overwatch\addons\connect\img\device\seek_chassis.paa"
 
-// --- Écran, en fractions de l'illustration ---
-#define SCR_X       (SEEK_X + 0.297 * SEEK_W)
-#define SCR_Y       (SEEK_Y + 0.065 * SEEK_H)
-#define SCR_W       (0.406 * SEEK_W)
-#define SCR_H       (0.265 * SEEK_H)
+// --- Écran, en fractions de l'illustration (rentré dans le verre LCD) ---
+#define SCR_X       (SEEK_X + 0.305 * SEEK_W)
+#define SCR_Y       (SEEK_Y + 0.078 * SEEK_H)
+#define SCR_W       (0.390 * SEEK_W)
+#define SCR_H       (0.245 * SEEK_H)
 
 // Grille interne : barre d'état en haut, navigation en bas, lignes utiles entre.
 #define SP          (0.006 * SEEK_W)
@@ -83,19 +83,23 @@ class COMSPEC_SsePerson_Dialog {
 
     class Controls {
         // ================= APPAREIL =================
-        // Châssis dessiné : filet si la texture est absente.
+        // Pas de fond plein-cadre : la texture a des bords transparents — un RscText
+        // opaque dépassait l’appareil (bandeau noir hors châssis). Filet seulement
+        // si la PAA manque (alpha très basse).
         class Chassis: RscText {
             idc = -1;
             x = SEEK_X; y = SEEK_Y; w = SEEK_W; h = SEEK_H;
-            colorBackground[] = {0.043, 0.047, 0.051, 0.55};
+            colorBackground[] = {0.043, 0.047, 0.051, 0};
         };
         class ChassisTexture: RscPicture {
             idc = -1;
             text = SEEK_CHASSIS_TEXTURE;
             x = SEEK_X; y = SEEK_Y; w = SEEK_W; h = SEEK_H;
+            colorText[] = {1, 1, 1, 1};
         };
 
         // ================= ÉCRAN =================
+        // Légèrement rentré dans le cadre LCD pour ne plus déborder du verre.
         class Screen: RscText {
             idc = -1;
             x = SCR_X; y = SCR_Y; w = SCR_W; h = SCR_H;
@@ -237,7 +241,7 @@ class COMSPEC_SsePerson_Dialog {
             idc = 9515;
             text = "PHOTO DU VISAGE";
             x = IN_X; y = ROW(1); w = IN_W; h = (0.022 * safezoneH);
-            action = "uiNamespace setVariable ['COMSPEC_SsePerson_PhotoPending', true]; ['Photo du visage : une capture récente sera jointe à la fiche.', 'tactical', 'info'] call comspec_overwatch_connect_fnc_announce; [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;";
+            action = "[] call comspec_overwatch_connect_fnc_sseCaptureFacePhoto;";
         };
         class LcdFrame: RscText {
             idc = 9567;

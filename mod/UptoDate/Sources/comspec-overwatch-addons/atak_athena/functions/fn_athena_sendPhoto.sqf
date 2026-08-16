@@ -1,10 +1,12 @@
 /*
     Envoie vers Athena la photo sélectionnée dans le journal Athena (onglet Photos),
     ou la dernière capture locale disponible.
+
+    Réutilise le bridge (file Pending + ACK PhotoUpload) — pas un appel DLL orphelin.
 */
 if (!hasInterface) exitWith {};
 
-if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith {
+if (isNil "comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto") exitWith {
     [
         "Le module photo n’est pas disponible pour le moment.",
         "error",
@@ -14,7 +16,6 @@ if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith {
 
 private _path = "";
 private _fileName = "";
-private _caption = "";
 
 private _listCtrl = controlNull;
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
@@ -29,7 +30,6 @@ if (!isNull _listCtrl) then {
             _path = _meta select 0;
             if ((count _meta) >= 2) then {
                 _fileName = _meta select 1;
-                _caption = format ["Photo ATAK — %1", _fileName];
             };
         };
     };
@@ -43,13 +43,10 @@ if (_path isEqualTo "" && {!isNil "comspec_overwatch_atak_athena_fnc_athena_coll
         if ((_rec isEqualType []) && {(count _rec) > 0}) then {
             _path = _rec select 0;
             _fileName = if ((count _rec) > 1) then { _rec select 1 } else { "" };
-            private _g = if ((count _rec) > 2) then { _rec select 2 } else { mapGridPosition player };
-            _caption = format ["Photo ATAK Enhanced — grille %1 (%2)", _g, _fileName];
         };
     };
 };
 
-// Si le chemin stocké est vide / inutilisable, remonter via le nom de fichier (résolu côté extension).
 if (_path isEqualTo "" && {_fileName isNotEqualTo ""}) then {
     _path = _fileName;
 };
@@ -62,46 +59,70 @@ if (_path isEqualTo "") exitWith {
     ] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
 };
 
-if (_caption isEqualTo "") then {
-    _caption = format ["Photo ATAK Enhanced — grille %1", mapGridPosition player];
+if (_fileName isEqualTo "") then {
+    private _segs = _path splitString "\/";
+    _fileName = _segs select ((count _segs) - 1);
 };
 
-private _device = "CTAB";
-private _feedId = "";
-private _droneState = missionNamespace getVariable ["Iceman_ATAK_DroneOps_state", createHashMap];
-private _drone = objNull;
-if (_droneState isEqualType createHashMap) then {
-    _drone = _droneState getOrDefault ["drone", objNull];
-};
-if (isNull _drone) then {
-    private _uav = getConnectedUAV player;
-    if (!isNull _uav && {alive _uav}) then { _drone = _uav; };
-};
-if (!isNull _drone && {alive _drone}) then {
-    _device = "DRONE";
-    private _netId = netId _drone;
-    if (_netId isEqualTo "") then { _netId = str _drone; };
-    _feedId = format ["drone:%1", _netId];
+private _key = toLower _path;
+private _base = toLower _fileName;
+
+// Autoriser un nouvel essai : retirer des listes Dead / Failed / Seen.
+private _fnc_scrub = {
+    params ["_listName", "_ns"];
+    private _list = if (_ns isEqualTo "profile") then {
+        profileNamespace getVariable [_listName, []]
+    } else {
+        missionNamespace getVariable [_listName, []]
+    };
+    if (!(_list isEqualType [])) then { _list = []; };
+    private _before = count _list;
+    _list = _list - [_key, _base];
+    if ((count _list) isNotEqualTo _before) then {
+        if (_ns isEqualTo "profile") then {
+            profileNamespace setVariable [_listName, _list];
+            saveProfileNamespace;
+        } else {
+            missionNamespace setVariable [_listName, _list, false];
+        };
+    };
 };
 
-private _ok = [_path, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
+["COMSPEC_Athena_PhotoDead", "profile"] call _fnc_scrub;
+["COMSPEC_Athena_PhotoFailed", "mission"] call _fnc_scrub;
+["COMSPEC_Athena_PhotoSeen", "mission"] call _fnc_scrub;
+["COMSPEC_Athena_PhotoUploaded", "mission"] call _fnc_scrub;
+
+// Force = true : le bridge ignore le blocage Dead/Failed pour ce renvoi manuel.
+private _ok = [_path, _fileName, false, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
 if (!(_ok isEqualType true)) then { _ok = false; };
 
-// Second essai : nom de fichier seul (Iceman affiche souvent .jpg alors qu’Arma écrit .png).
 if (!_ok && {_fileName isNotEqualTo ""} && {(toLower _fileName) isNotEqualTo (toLower _path)}) then {
     private _detail = toLower (str (missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]));
-    if ((_detail find "file_not_found") >= 0) then {
-        _ok = [_fileName, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
+    if ((_detail find "file_not_found") >= 0 || {_detail isEqualTo ""}) then {
+        ["COMSPEC_Athena_PhotoDead", "profile"] call _fnc_scrub;
+        ["COMSPEC_Athena_PhotoFailed", "mission"] call _fnc_scrub;
+        ["COMSPEC_Athena_PhotoSeen", "mission"] call _fnc_scrub;
+        _ok = [_fileName, _fileName, false, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
         if (!(_ok isEqualType true)) then { _ok = false; };
     };
 };
 
 if (_ok) then {
-    [
-        "Photo envoyée vers Athena.",
-        "ok",
-        5
-    ] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
+    private _raw = toUpper (str (missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]));
+    if ((_raw find "OK|DUPLICATE") == 0) then {
+        [
+            "Cette photo a déjà été tentée récemment — attendez un instant ou capturez une nouvelle vue.",
+            "warn",
+            7
+        ] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
+    } else {
+        [
+            "Photo mise en file vers Athena — confirmation dès réception web.",
+            "ok",
+            5
+        ] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
+    };
 } else {
     private _detail = missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""];
     private _msg = "L’envoi de la photo a échoué.";

@@ -76,9 +76,19 @@ final class ErrorReportMailer
         $infraStorm = str_contains($message, 'Fichier de routage manquant')
             || str_contains($message, 'routes/web.php')
             || str_contains($message, 'Database connection failed')
-            || str_contains($message, 'SQLSTATE[HY000] [2002]');
+            || str_contains($message, 'SQLSTATE[HY000] [2002]')
+            || str_contains($message, 'Operation not permitted');
         $dedupeKey = $infraStorm ? ('infra|' . $fingerprint) : ($fingerprint . '|' . $ip);
-        $throttle = ErrorAlertThrottle::fromEnv();
+        // Micro-coupures MySQL Hostinger : 1 mail / 15 min max (les polls ATAK sinon saturent la boîte).
+        $dbTransient = str_contains($message, 'Database connection failed')
+            || str_contains($message, 'SQLSTATE[HY000] [2002]')
+            || str_contains($message, 'Operation not permitted');
+        $throttle = $dbTransient
+            ? new ErrorAlertThrottle(
+                max(600, (int) (env('ERROR_ALERT_DB_COOLDOWN_SECONDS', 900) ?: 900)),
+                max(1, (int) (env('ERROR_ALERT_DB_MAX_PER_HOUR', 4) ?: 4))
+            )
+            : ErrorAlertThrottle::fromEnv();
         if ($throttle->isThrottled($dedupeKey)) {
             $this->auditSkip('throttled', $kind, $message, $file, $line, $to);
 

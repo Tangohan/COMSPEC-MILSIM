@@ -20,7 +20,7 @@ if !(createDialog "COMSPEC_SSE_GenerateDialog") exitWith {
             if (_ent getVariable ["comspec_sse_generating", false]) exitWith {};
             [_ent, _profile, _complexity, _by] call comspec_sse_fnc_generateData;
         },
-        0.12
+        0.28
     ] call comspec_sse_fnc_queueEntityJobs;
     hint format ["Profil SSE en file sur %1 cible(s) [%2 / %3]", count _jobs, _profile, _complexity];
     true

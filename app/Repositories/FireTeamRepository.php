@@ -4,28 +4,30 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 class FireTeamRepository
 {
+    use LazyDatabaseConnection;
+
     public const KIND_EPHEMERAL = 'ephemeral';
     public const KIND_PERMANENT = 'permanent';
 
     public const ROLE_LEADER = 'leader';
     public const ROLE_MEMBER = 'member';
 
-    private PDO $pdo;
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     public function tablesReady(): bool
     {
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'fire_teams' LIMIT 1"
             );
 
@@ -88,7 +90,7 @@ class FireTeamRepository
         }
 
         $sql .= ' ORDER BY ft.kind ASC, ft.label ASC, ft.id ASC';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if ($rows === []) {
@@ -123,7 +125,7 @@ class FireTeamRepository
         if (!$includeDeleted) {
             $sql .= ' AND ft.deleted_at IS NULL';
         }
-        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt = $this->pdo()->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
@@ -181,7 +183,7 @@ class FireTeamRepository
             $missionKey = null;
         }
 
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'INSERT INTO fire_teams
                 (tenant_id, kind, label, color, map_id, mission_key, unit_id, notes, created_by_user_id)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -198,7 +200,7 @@ class FireTeamRepository
             $createdBy,
         ]);
 
-        $id = (int) $this->pdo->lastInsertId();
+        $id = (int) $this->pdo()->lastInsertId();
 
         return $this->findByIdForTenant($id, $tenantId);
     }
@@ -258,7 +260,7 @@ class FireTeamRepository
             $missionKey = null;
         }
 
-        $this->pdo->prepare(
+        $this->pdo()->prepare(
             'UPDATE fire_teams
              SET label = ?, color = ?, map_id = ?, mission_key = ?, unit_id = ?, notes = ?, updated_at = NOW()
              WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL'
@@ -281,7 +283,7 @@ class FireTeamRepository
         if ($id < 1 || $tenantId < 1 || !$this->tablesReady()) {
             return false;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE fire_teams
              SET dissolved_at = NOW(), updated_at = NOW()
              WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL AND dissolved_at IS NULL'
@@ -297,7 +299,7 @@ class FireTeamRepository
         if ($id < 1 || $tenantId < 1 || !$this->tablesReady()) {
             return false;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE fire_teams
              SET deleted_at = NOW(), dissolved_at = COALESCE(dissolved_at, NOW()), updated_at = NOW()
              WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL'
@@ -329,7 +331,7 @@ class FireTeamRepository
         }
 
         if ($userId !== null) {
-            $chk = $this->pdo->prepare('SELECT id, callsign FROM users WHERE id = ? AND tenant_id = ? LIMIT 1');
+            $chk = $this->pdo()->prepare('SELECT id, callsign FROM users WHERE id = ? AND tenant_id = ? LIMIT 1');
             $chk->execute([$userId, $tenantId]);
             $user = $chk->fetch(PDO::FETCH_ASSOC);
             if (!$user) {
@@ -342,23 +344,23 @@ class FireTeamRepository
         }
 
         if ($role === self::ROLE_LEADER) {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 "UPDATE fire_team_members SET role = 'member' WHERE fire_team_id = ? AND role = 'leader'"
             )->execute([$fireTeamId]);
         }
 
         // Remplace l’affectation existante du même user sur cette équipe.
         if ($userId !== null) {
-            $this->pdo->prepare('DELETE FROM fire_team_members WHERE fire_team_id = ? AND user_id = ?')
+            $this->pdo()->prepare('DELETE FROM fire_team_members WHERE fire_team_id = ? AND user_id = ?')
                 ->execute([$fireTeamId, $userId]);
         }
 
-        $this->pdo->prepare(
+        $this->pdo()->prepare(
             'INSERT INTO fire_team_members (fire_team_id, user_id, callsign, role, display_order)
              VALUES (?, ?, ?, ?, ?)'
         )->execute([$fireTeamId, $userId, $callsign, $role, $order]);
 
-        $memberId = (int) $this->pdo->lastInsertId();
+        $memberId = (int) $this->pdo()->lastInsertId();
         $members = $this->membersForTeams([$fireTeamId])[$fireTeamId] ?? [];
         foreach ($members as $m) {
             if ((int) ($m['id'] ?? 0) === $memberId) {
@@ -376,7 +378,7 @@ class FireTeamRepository
             return null;
         }
 
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM fire_team_members WHERE id = ? AND fire_team_id = ? LIMIT 1'
         );
         $stmt->execute([$memberId, $fireTeamId]);
@@ -399,12 +401,12 @@ class FireTeamRepository
             : (int) ($existing['display_order'] ?? 0);
 
         if ($role === self::ROLE_LEADER) {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 "UPDATE fire_team_members SET role = 'member' WHERE fire_team_id = ? AND role = 'leader' AND id <> ?"
             )->execute([$fireTeamId, $memberId]);
         }
 
-        $this->pdo->prepare(
+        $this->pdo()->prepare(
             'UPDATE fire_team_members SET callsign = ?, role = ?, display_order = ? WHERE id = ? AND fire_team_id = ?'
         )->execute([$callsign, $role, $order, $memberId, $fireTeamId]);
 
@@ -424,7 +426,7 @@ class FireTeamRepository
         if (!$team) {
             return false;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'DELETE FROM fire_team_members WHERE id = ? AND fire_team_id = ?'
         );
         $stmt->execute([$memberId, $fireTeamId]);
@@ -444,7 +446,7 @@ class FireTeamRepository
             return false;
         }
 
-        $this->pdo->prepare('DELETE FROM fire_team_members WHERE fire_team_id = ?')->execute([$fireTeamId]);
+        $this->pdo()->prepare('DELETE FROM fire_team_members WHERE fire_team_id = ?')->execute([$fireTeamId]);
 
         $order = 0;
         $leaderSet = false;
@@ -488,7 +490,7 @@ class FireTeamRepository
                 LEFT JOIN users u ON u.id = m.user_id
                 WHERE m.fire_team_id IN ($placeholders)
                 ORDER BY CASE WHEN m.role = 'leader' THEN 0 ELSE 1 END, m.display_order ASC, m.id ASC";
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($teamIds);
         $out = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {

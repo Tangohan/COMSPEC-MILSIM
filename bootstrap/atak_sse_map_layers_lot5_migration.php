@@ -8,7 +8,7 @@ declare(strict_types=1);
  */
 return static function (PDO $pdo, ?callable $log = null): void {
     $log ??= static function (string $m): void {
-        echo $m;
+        // Silence web : run-migrations.php passe un $log explicite.
     };
 
     $tableExists = static function (PDO $pdo, string $table): bool {

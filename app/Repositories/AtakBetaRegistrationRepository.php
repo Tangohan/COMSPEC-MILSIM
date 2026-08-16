@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Support\LazyDatabaseConnection;
+
 use App\Core\Database;
 use PDO;
 
@@ -12,7 +14,8 @@ use PDO;
  */
 final class AtakBetaRegistrationRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
+
 
     public function __construct()
     {
@@ -53,13 +56,13 @@ final class AtakBetaRegistrationRepository
 
         $existingId = null;
         if ($steam !== null) {
-            $st = $this->pdo->prepare('SELECT id FROM atak_beta_registrations WHERE steam_uid = ? LIMIT 1');
+            $st = $this->pdo()->prepare('SELECT id FROM atak_beta_registrations WHERE steam_uid = ? LIMIT 1');
             $st->execute([$steam]);
             $existingId = $st->fetchColumn();
         }
         if ($existingId === false || $existingId === null) {
             if ($playerUid !== null) {
-                $st = $this->pdo->prepare(
+                $st = $this->pdo()->prepare(
                     'SELECT id FROM atak_beta_registrations WHERE player_uid = ? AND (steam_uid IS NULL OR steam_uid = "") ORDER BY id DESC LIMIT 1'
                 );
                 $st->execute([$playerUid]);
@@ -90,12 +93,12 @@ final class AtakBetaRegistrationRepository
             }
             $sql .= ' WHERE id = ?';
             $params[] = $id;
-            $this->pdo->prepare($sql)->execute($params);
+            $this->pdo()->prepare($sql)->execute($params);
 
             return ['id' => $id, 'created' => false];
         }
 
-        $st = $this->pdo->prepare(
+        $st = $this->pdo()->prepare(
             'INSERT INTO atak_beta_registrations (
                 steam_uid, player_uid, player_name, client_ip,
                 arma_build, arma_branch, mod_version, extension_version,
@@ -116,7 +119,7 @@ final class AtakBetaRegistrationRepository
             $now,
         ]);
 
-        return ['id' => (int) $this->pdo->lastInsertId(), 'created' => true];
+        return ['id' => (int) $this->pdo()->lastInsertId(), 'created' => true];
     }
 
     /**
@@ -125,7 +128,7 @@ final class AtakBetaRegistrationRepository
     public function listRecent(int $limit = 200): array
     {
         $limit = max(1, min(500, $limit));
-        $st = $this->pdo->query(
+        $st = $this->pdo()->query(
             'SELECT id, steam_uid, player_uid, player_name, client_ip,
                     arma_build, arma_branch, mod_version, extension_version,
                     acknowledged_at, first_seen_at, last_seen_at, hit_count
@@ -141,7 +144,7 @@ final class AtakBetaRegistrationRepository
 
     public function countAll(): int
     {
-        $n = $this->pdo->query('SELECT COUNT(*) FROM atak_beta_registrations')?->fetchColumn();
+        $n = $this->pdo()->query('SELECT COUNT(*) FROM atak_beta_registrations')?->fetchColumn();
 
         return (int) ($n ?: 0);
     }
@@ -154,7 +157,7 @@ final class AtakBetaRegistrationRepository
         if ($id < 1) {
             return null;
         }
-        $st = $this->pdo->prepare(
+        $st = $this->pdo()->prepare(
             'SELECT id, steam_uid, player_uid, player_name, client_ip,
                     arma_build, arma_branch, mod_version, extension_version,
                     acknowledged_at, first_seen_at, last_seen_at, hit_count
@@ -177,7 +180,7 @@ final class AtakBetaRegistrationRepository
             return [];
         }
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $st = $this->pdo->prepare(
+        $st = $this->pdo()->prepare(
             "SELECT id, steam_uid, player_uid, player_name, client_ip,
                     arma_build, arma_branch, mod_version, extension_version,
                     acknowledged_at, first_seen_at, last_seen_at, hit_count
@@ -194,7 +197,7 @@ final class AtakBetaRegistrationRepository
         if ($id < 1) {
             return false;
         }
-        $st = $this->pdo->prepare(
+        $st = $this->pdo()->prepare(
             'UPDATE atak_beta_registrations SET acknowledged_at = NULL WHERE id = ? AND acknowledged_at IS NOT NULL'
         );
         $st->execute([$id]);
@@ -212,7 +215,7 @@ final class AtakBetaRegistrationRepository
             return 0;
         }
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $st = $this->pdo->prepare(
+        $st = $this->pdo()->prepare(
             "UPDATE atak_beta_registrations SET acknowledged_at = NULL
              WHERE id IN ({$placeholders}) AND acknowledged_at IS NOT NULL"
         );
@@ -226,7 +229,7 @@ final class AtakBetaRegistrationRepository
         if ($id < 1) {
             return false;
         }
-        $st = $this->pdo->prepare('DELETE FROM atak_beta_registrations WHERE id = ?');
+        $st = $this->pdo()->prepare('DELETE FROM atak_beta_registrations WHERE id = ?');
         $st->execute([$id]);
 
         return $st->rowCount() > 0;
@@ -242,7 +245,7 @@ final class AtakBetaRegistrationRepository
             return 0;
         }
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $st = $this->pdo->prepare("DELETE FROM atak_beta_registrations WHERE id IN ({$placeholders})");
+        $st = $this->pdo()->prepare("DELETE FROM atak_beta_registrations WHERE id IN ({$placeholders})");
         $st->execute($ids);
 
         return $st->rowCount();

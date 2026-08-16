@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 /**
@@ -22,6 +23,8 @@ use PDO;
  */
 class AtakOrderRepository
 {
+    use LazyDatabaseConnection;
+
     public const TYPES = ['MOVE', 'HOLD', 'RECON', 'CAS', 'QRF', 'FRAGO', 'CUSTOM', 'VIBRATE', 'NOTIFY', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM'];
 
     /** Signaux terminal (pas des ordres C2 à acquitter dans le panneau web). */
@@ -32,20 +35,19 @@ class AtakOrderRepository
     public const CHANNELS = ['GLOBAL', 'COMMAND', 'SQUAD', 'JTAC', 'AIR'];
     public const SIM_STATES = ['queued', 'transmitting', 'jammed', 'retransmit', 'delivered', 'lost'];
 
-    private PDO $pdo;
 
     /** @var array<string, bool> */
     private array $columnCache = [];
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     public function tablesReady(): bool
     {
         try {
-            $st = $this->pdo->query(
+            $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_orders' LIMIT 1"
             );
 
@@ -66,7 +68,7 @@ class AtakOrderRepository
             return $this->columnCache[$column];
         }
         try {
-            $st = $this->pdo->prepare(
+            $st = $this->pdo()->prepare(
                 "SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_orders' AND COLUMN_NAME = ? LIMIT 1"
             );
@@ -118,7 +120,7 @@ class AtakOrderRepository
         }
         $sql .= ' ORDER BY updated_at DESC, id DESC LIMIT ' . $limit;
 
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -155,7 +157,7 @@ class AtakOrderRepository
             : '0';
 
         try {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 "SELECT
                     COUNT(*) AS total,
                     SUM(CASE WHEN UPPER(status) IN ('PENDING','DELIVERED')
@@ -215,7 +217,7 @@ class AtakOrderRepository
         if (!$this->tablesReady() || $externalId === '') {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM atak_orders WHERE tenant_id = ? AND map_id = ? AND external_id = ? LIMIT 1'
         );
         $stmt->execute([$tenantId, $mapId, $externalId]);
@@ -232,7 +234,7 @@ class AtakOrderRepository
         if (!$this->tablesReady() || $id < 1) {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM atak_orders WHERE tenant_id = ? AND id = ? LIMIT 1'
         );
         $stmt->execute([$tenantId, $id]);
@@ -251,7 +253,7 @@ class AtakOrderRepository
         if (!$this->tablesReady() || $externalId === '') {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM atak_orders WHERE tenant_id = ? AND external_id = ?
              ORDER BY updated_at DESC, id DESC LIMIT 1'
         );
@@ -373,7 +375,7 @@ class AtakOrderRepository
             $noteParam = $note !== '' ? $note : null;
             $statusByParam = $statusBy !== '' ? $statusBy : null;
             if ($this->v2ColumnsReady()) {
-                $this->pdo->prepare(
+                $this->pdo()->prepare(
                     'UPDATE atak_orders SET
                         parent_external_id = ?, order_type = ?, target = ?, target_type = ?, target_ref = ?,
                         target_label = ?, payload = ?, priority = ?, issuer = ?,
@@ -399,7 +401,7 @@ class AtakOrderRepository
                     (int) $existing['id'],
                 ]);
             } else {
-                $this->pdo->prepare(
+                $this->pdo()->prepare(
                     'UPDATE atak_orders SET
                         parent_external_id = ?, order_type = ?, target = ?, payload = ?, priority = ?,
                         issuer = ?, status = ?, note = COALESCE(?, note),
@@ -425,7 +427,7 @@ class AtakOrderRepository
         }
 
         if ($this->v2ColumnsReady()) {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 'INSERT INTO atak_orders
                     (tenant_id, map_id, external_id, parent_external_id, order_type, target, target_type, target_ref,
                      target_label, payload, priority, issuer, issuer_user_id, status, note, status_by, source,
@@ -457,7 +459,7 @@ class AtakOrderRepository
                 $simEvent,
             ]);
         } else {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 'INSERT INTO atak_orders
                     (tenant_id, map_id, external_id, parent_external_id, order_type, target, payload, priority, issuer, status, note, status_by, source)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -502,7 +504,7 @@ class AtakOrderRepository
                 return;
             }
         }
-        $this->pdo->prepare(
+        $this->pdo()->prepare(
             'UPDATE atak_orders SET type_label = ? WHERE id = ?'
         )->execute([
             $value !== '' ? $value : null,
@@ -544,7 +546,7 @@ class AtakOrderRepository
         $noteParam = $note !== '' ? $note : null;
 
         if ($status === 'CANCELLED' && $this->hasColumn('cancelled_at')) {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 'UPDATE atak_orders SET status = ?, status_by = COALESCE(?, status_by),
                     note = COALESCE(?, note),
                     cancelled_at = COALESCE(cancelled_at, NOW()),
@@ -553,7 +555,7 @@ class AtakOrderRepository
                  WHERE id = ?'
             )->execute([$status, $byParam, $noteParam, $byParam, (int) $existing['id']]);
         } elseif ($status === 'ACK' && $this->hasColumn('ack_at')) {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 'UPDATE atak_orders SET status = ?, status_by = COALESCE(?, status_by),
                     note = COALESCE(?, note),
                     ack_at = COALESCE(ack_at, NOW()),
@@ -563,7 +565,7 @@ class AtakOrderRepository
                  WHERE id = ?'
             )->execute([$status, $byParam, $noteParam, $byParam, (int) $existing['id']]);
         } else {
-            $this->pdo->prepare(
+            $this->pdo()->prepare(
                 'UPDATE atak_orders SET status = ?, status_by = COALESCE(?, status_by),
                     note = COALESCE(?, note), updated_at = NOW()
                  WHERE id = ?'
@@ -619,7 +621,7 @@ class AtakOrderRepository
             }
             if ($simState !== (string) ($row['sim_state'] ?? '')) {
                 try {
-                    $this->pdo->prepare(
+                    $this->pdo()->prepare(
                         'UPDATE atak_orders SET sim_state = ?, updated_at = updated_at WHERE id = ?'
                     )->execute([$simState, (int) $row['id']]);
                 } catch (\Throwable) {
@@ -638,7 +640,7 @@ class AtakOrderRepository
         // Livré : passer PENDING → DELIVERED
         if ($status === 'PENDING' && $delivered) {
             try {
-                $this->pdo->prepare(
+                $this->pdo()->prepare(
                     "UPDATE atak_orders SET status = 'DELIVERED', sim_state = 'delivered', updated_at = NOW()
                      WHERE id = ? AND status = 'PENDING'"
                 )->execute([(int) $row['id']]);

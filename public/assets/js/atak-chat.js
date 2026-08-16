@@ -545,9 +545,24 @@ window.ATAKChat = (function () {
     }
   }
 
-  /** Formate un envoi web comme le journal radio du mod. */
+  /** Formate un envoi web comme un message de groupe (symétrique jeu→web). */
   function formatOutgoingBody(text) {
-    return '[' + formatSessionStamp() + '][SQUAD][ROUTINE][FREE] ' + text;
+    var author = String(getAuthor() || 'TOC').trim() || 'TOC';
+    var groupId = author;
+    try {
+      if (window.ATAK_CHAT_GROUP_ID) {
+        groupId = String(window.ATAK_CHAT_GROUP_ID).trim() || author;
+      }
+    } catch (e) { /* ignore */ }
+    var grid = '------';
+    try {
+      if (window.ATAKMap && typeof window.ATAKMap.getCursorGrid === 'function') {
+        var g = String(window.ATAKMap.getCursorGrid() || '').trim();
+        if (g) grid = g;
+      }
+    } catch (e2) { /* ignore */ }
+    // GROUPE|groupId|indicatif|grille|texte — même contrat que le bridge Iceman.
+    return 'GROUPE|' + groupId + '|' + author + '|' + grid + '|' + text;
   }
 
   /* ——— Autocomplete @ ——— */

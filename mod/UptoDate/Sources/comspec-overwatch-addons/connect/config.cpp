@@ -38,6 +38,7 @@ class CfgFunctions {
             class ssePersonDialogOnLoad {};
             class ssePersonDialogSubmit {};
             class ssePersonRefreshPanels {};
+            class sseCaptureFacePhoto {};
             class sseCollectMedical {};
             class sseBiometricSample {};
             class sseSignAtak {};

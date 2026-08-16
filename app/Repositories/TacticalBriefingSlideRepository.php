@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Support\LazyDatabaseConnection;
+
 use App\Core\Database;
 use PDO;
 
@@ -14,7 +16,8 @@ use PDO;
  */
 class TacticalBriefingSlideRepository
 {
-    private PDO $pdo;
+    use LazyDatabaseConnection;
+
 
     public function __construct()
     {
@@ -26,7 +29,7 @@ class TacticalBriefingSlideRepository
     /** @return list<array<string, mixed>> */
     public function allForTenant(int $tenantId): array
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM tactical_briefing_slides WHERE tenant_id = ? ORDER BY sort_order ASC, id ASC'
         );
         $stmt->execute([$tenantId]);
@@ -38,7 +41,7 @@ class TacticalBriefingSlideRepository
     public function listActiveForTenant(int $tenantId): array
     {
         try {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'SELECT * FROM tactical_briefing_slides WHERE tenant_id = ? AND is_active = 1 ORDER BY sort_order ASC, id ASC'
             );
             $stmt->execute([$tenantId]);
@@ -59,7 +62,7 @@ class TacticalBriefingSlideRepository
             return $ready;
         }
         try {
-            $stmt = $this->pdo->query(
+            $stmt = $this->pdo()->query(
                 "SHOW COLUMNS FROM tactical_briefing_slides LIKE 'detail_text'"
             );
             $ready = (bool) ($stmt && $stmt->fetchColumn());
@@ -72,7 +75,7 @@ class TacticalBriefingSlideRepository
 
     public function findByIdForTenant(int $id, int $tenantId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM tactical_briefing_slides WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT * FROM tactical_briefing_slides WHERE id = ? AND tenant_id = ? LIMIT 1');
         $stmt->execute([$id, $tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -84,7 +87,7 @@ class TacticalBriefingSlideRepository
     {
         $detail = $this->normalizeDetail($data['detail_text'] ?? null);
         if ($this->hasDetailTextColumn()) {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'INSERT INTO tactical_briefing_slides (tenant_id, title, detail_text, image_path, sort_order, is_active, created_at)
                  VALUES (?, ?, ?, ?, ?, ?, NOW())'
             );
@@ -97,7 +100,7 @@ class TacticalBriefingSlideRepository
                 !empty($data['is_active']) ? 1 : 0,
             ]);
         } else {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'INSERT INTO tactical_briefing_slides (tenant_id, title, image_path, sort_order, is_active, created_at)
                  VALUES (?, ?, ?, ?, ?, NOW())'
             );
@@ -110,7 +113,7 @@ class TacticalBriefingSlideRepository
             ]);
         }
 
-        return (int) $this->pdo->lastInsertId();
+        return (int) $this->pdo()->lastInsertId();
     }
 
     /** @param array<string, mixed> $data */
@@ -118,7 +121,7 @@ class TacticalBriefingSlideRepository
     {
         $detail = $this->normalizeDetail($data['detail_text'] ?? null);
         if ($this->hasDetailTextColumn()) {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'UPDATE tactical_briefing_slides
                  SET title = ?, detail_text = ?, image_path = ?, sort_order = ?, is_active = ?, updated_at = NOW()
                  WHERE id = ? AND tenant_id = ?'
@@ -133,7 +136,7 @@ class TacticalBriefingSlideRepository
                 $tenantId,
             ]);
         } else {
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'UPDATE tactical_briefing_slides
                  SET title = ?, image_path = ?, sort_order = ?, is_active = ?, updated_at = NOW()
                  WHERE id = ? AND tenant_id = ?'
@@ -166,7 +169,7 @@ class TacticalBriefingSlideRepository
 
     public function delete(int $id, int $tenantId): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM tactical_briefing_slides WHERE id = ? AND tenant_id = ?');
+        $stmt = $this->pdo()->prepare('DELETE FROM tactical_briefing_slides WHERE id = ? AND tenant_id = ?');
         $stmt->execute([$id, $tenantId]);
 
         return $stmt->rowCount() > 0;
@@ -211,7 +214,7 @@ class TacticalBriefingSlideRepository
             $newCurrent = $direction === 'up' ? $current - 1 : $current + 1;
             $newOther = $current;
         }
-        $st = $this->pdo->prepare(
+        $st = $this->pdo()->prepare(
             'UPDATE tactical_briefing_slides SET sort_order = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?'
         );
         $st->execute([$newCurrent, $id, $tenantId]);
@@ -222,7 +225,7 @@ class TacticalBriefingSlideRepository
 
     public function setActive(int $id, int $tenantId, bool $active): bool
     {
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE tactical_briefing_slides SET is_active = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?'
         );
         $stmt->execute([$active ? 1 : 0, $id, $tenantId]);

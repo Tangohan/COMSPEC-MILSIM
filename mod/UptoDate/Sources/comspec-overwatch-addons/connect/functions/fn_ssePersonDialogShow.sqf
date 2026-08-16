@@ -4,10 +4,21 @@
 */
 params [["_target", objNull, [objNull]]];
 
-if (!hasInterface) exitWith {};
-if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+if (!hasInterface) exitWith { false };
+if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 
-if (!isNull (uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull])) exitWith {};
+// Référence stale (fermeture brutale / createDisplay avorté) : ne pas bloquer l’ouverture.
+private _existing = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull];
+private _live = findDisplay 9991;
+if (!isNull _existing && {!isNull _live}) exitWith {
+    [
+        "Terminal SEEK déjà ouvert.",
+        "tactical",
+        "info"
+    ] call comspec_overwatch_connect_fnc_announce;
+    false
+};
+uiNamespace setVariable ["COMSPEC_SsePerson_Display", displayNull];
 
 if (isNull _target) then {
     // L’exploitation d’un corps est un cas SSE courant : pas de filtre « alive » ici.
@@ -20,6 +31,7 @@ if (isNull _target) then {
 uiNamespace setVariable ["COMSPEC_SsePerson_Target", _target];
 uiNamespace setVariable ["COMSPEC_SsePerson_BioPending", false];
 uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", false];
+uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", ""];
 
 private _parent = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
 if (isNull _parent) then {
@@ -28,16 +40,29 @@ if (isNull _parent) then {
 
 private _ok = false;
 private _disp = displayNull;
+
+// 1) Enfant du jeu / cTab — préféré (ne ferme pas le téléphone).
 if (!isNull _parent) then {
     _disp = _parent createDisplay "COMSPEC_SsePerson_Dialog";
     _ok = !isNull _disp;
-} else {
+};
+
+// 2) createDialog de secours (mission / menu quand createDisplay échoue).
+if (!_ok) then {
     _ok = createDialog "COMSPEC_SsePerson_Dialog";
     _disp = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull];
+    if (isNull _disp) then { _disp = findDisplay 9991; };
+    _ok = _ok && {!isNull _disp};
 };
 
 if (!_ok || {isNull _disp}) exitWith {
-    ["Impossible d’ouvrir le terminal de renseignement.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+    [
+        "Impossible d’ouvrir le terminal SEEK — refermez les autres interfaces puis réessayez.",
+        "tactical",
+        "warn"
+    ] call comspec_overwatch_connect_fnc_announce;
+    false
 };
 
 uiNamespace setVariable ["COMSPEC_SsePerson_Display", _disp];
+true

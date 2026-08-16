@@ -1,5 +1,6 @@
 /*
-    Installe le nœud SSE sur les personnes (CAManBase) — instrumenté.
+    Installe le nœud SSE Athena sur les personnes — greffe per-entité.
+    Plus d'addActionToClass CAManBase (anti STACK_OVERFLOW).
 */
 if (!hasInterface) exitWith {};
 
@@ -20,9 +21,6 @@ if (!isNil "comspec_debug_fnc_isModuleEnabled") then {
     _disabled = missionNamespace getVariable ["COMSPEC_DEBUG_DISABLE_OVERWATCH_SSE_ACE", false];
 };
 if (_disabled) exitWith {
-    if (!isNil "comspec_debug_fnc_log") then {
-        ["WARN", "Boot", "ISOLATION", "Overwatch SSE ACE disabled by debug isolation"] call comspec_debug_fnc_log;
-    };
     call _exitTrace;
 };
 
@@ -35,15 +33,12 @@ if (!_guardOk) exitWith {
 };
 
 if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith {
-    ["initSseAce", "ace_interact_menu absent — couche SSE non installée", nil, "SSE", "INFO"] call comspec_overwatch_connect_fnc_logFnError;
     call _exitTrace;
 };
-if (isNil "ace_interact_menu_fnc_createAction" || {isNil "ace_interact_menu_fnc_addActionToClass"}) exitWith {
-    ["initSseAce", "API ace_interact_menu indisponible — couche SSE non installée", nil, "SSE", "WARN"] call comspec_overwatch_connect_fnc_logFnError;
+if (isNil "ace_interact_menu_fnc_createAction" || {isNil "ace_interact_menu_fnc_addActionToObject"}) exitWith {
     call _exitTrace;
 };
 if (isNil "comspec_overwatch_connect_fnc_ssePersonDialogShow") exitWith {
-    ["initSseAce", "connect absent — terminal SSE introuvable", nil, "SSE", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
     call _exitTrace;
 };
 
@@ -52,30 +47,7 @@ if (uiNamespace getVariable ["COMSPEC_SseAceMenuReady", false]) exitWith {
 };
 uiNamespace setVariable ["COMSPEC_SseAceMenuReady", true];
 
-["INFO", "SSE", "Installation du menu SSE (interaction ACE)"] call comspec_overwatch_connect_fnc_log;
-if (!isNil "comspec_debug_fnc_breadcrumb") then {
-    ["OW.SSE.001", "initSseAce begin"] call comspec_debug_fnc_breadcrumb;
-};
-
-private _noChildren = { [] };
-private _cond = {
-    params ["_target"];
-    [_target] call comspec_overwatch_sse_ace_fnc_sseCanExploit
-};
-private _aceParams = [false, false, false, false, true];
-private _inherit = missionNamespace getVariable ["COMSPEC_DEBUG_ACE_INHERIT", true];
-private _src = "fn_initSseAce";
-
-private _reg = {
-    params ["_cls", "_type", "_path", "_act", "_inh", "_src"];
-    if (!isNil "comspec_debug_fnc_addACEActionToClass") then {
-        [_cls, _type, _path, _act, _inh, _src] call comspec_debug_fnc_addACEActionToClass;
-    } else {
-        [_cls, _type, _path, _act, _inh] call ace_interact_menu_fnc_addActionToClass;
-    };
-};
-
-private _hasSseTerrain = isClass (configFile >> "CfgPatches" >> "comspec_sse_interaction");
+["INFO", "SSE", "Installation du menu SSE Athena (per-entité)"] call comspec_overwatch_connect_fnc_log;
 
 private _open = [
     "COMSPEC_SSE_OpenAthena",
@@ -85,12 +57,15 @@ private _open = [
         params ["_target"];
         [_target] call comspec_overwatch_connect_fnc_sseOpenTerminal;
     },
-    _cond,
-    _noChildren,
+    {
+        params ["_target"];
+        [_target] call comspec_overwatch_sse_ace_fnc_sseCanExploit
+    },
+    { [] },
     [],
     {[0, 0, 0]},
     4,
-    _aceParams,
+    [false, false, false, false, true],
     {
         params ["_target", "", "", "_actionData"];
         if (isNil "_actionData" || {!(_actionData isEqualType [])} || {(count _actionData) < 2}) exitWith {};
@@ -98,48 +73,53 @@ private _open = [
     }
 ] call ace_interact_menu_fnc_createAction;
 
-if (_hasSseTerrain) then {
-    private _graft = {
-        params ["_open", "_inherit", "_left", "_src"];
-        if (uiNamespace getVariable ["comspec_sse_aceReady", false]) exitWith {
-            if (!isNil "comspec_debug_fnc_breadcrumb") then {
-                ["OW.SSE.002", "graft OpenAthena under COMSPEC_SSE"] call comspec_debug_fnc_breadcrumb;
-            };
-            if (!isNil "comspec_debug_fnc_addACEActionToClass") then {
-                ["CAManBase", 0, ["ACE_MainActions", "COMSPEC_SSE"], _open, _inherit, _src] call comspec_debug_fnc_addACEActionToClass;
-            } else {
-                ["CAManBase", 0, ["ACE_MainActions", "COMSPEC_SSE"], _open, _inherit] call ace_interact_menu_fnc_addActionToClass;
-            };
-            ["INFO", "SSE", "Fiche Athena greffée sous le menu SSE terrain"] call comspec_overwatch_connect_fnc_log;
+missionNamespace setVariable ["COMSPEC_OW_SSE_OpenAthenaAction", _open];
+
+private _graft = {
+    params ["_entity"];
+    if (isNull _entity) exitWith {};
+    if !(_entity isKindOf "CAManBase") exitWith {};
+    if (_entity getVariable ["comspec_ow_sse_athenaInstalled", false]) exitWith {};
+    private _act = missionNamespace getVariable ["COMSPEC_OW_SSE_OpenAthenaAction", []];
+    if (_act isEqualTo []) exitWith {};
+
+    private _hasSseTerrain = isClass (configFile >> "CfgPatches" >> "comspec_sse_interaction");
+    if (_hasSseTerrain && {_entity getVariable ["comspec_sse_aceMenusInstalled", false]}) then {
+        [_entity, 0, ["ACE_MainActions", "COMSPEC_SSE"], _act] call ace_interact_menu_fnc_addActionToObject;
+    } else {
+        if !(_entity getVariable ["comspec_ow_sse_rootInstalled", false]) then {
+            private _root = [
+                "COMSPEC_SSE_ATHENA",
+                "Renseignement SSE",
+                "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
+                {},
+                {
+                    params ["_target"];
+                    [_target] call comspec_overwatch_sse_ace_fnc_sseCanExploit
+                },
+                { [] },
+                [],
+                {[0, 0, 0]},
+                4,
+                [false, false, false, false, true]
+            ] call ace_interact_menu_fnc_createAction;
+            [_entity, 0, ["ACE_MainActions"], _root] call ace_interact_menu_fnc_addActionToObject;
+            _entity setVariable ["comspec_ow_sse_rootInstalled", true];
         };
-        if (_left <= 0) exitWith {
-            ["WARN", "SSE", "Menu terrain SSE non prêt — greffe Athena annulée (pas de second parent)"] call comspec_overwatch_connect_fnc_log;
-        };
-        private _fn = missionNamespace getVariable ["COMSPEC_OW_SSE_GraftAthena", {}];
-        [_fn, [_open, _inherit, _left - 1, _src], 1] call CBA_fnc_waitAndExecute;
+        [_entity, 0, ["ACE_MainActions", "COMSPEC_SSE_ATHENA"], _act] call ace_interact_menu_fnc_addActionToObject;
     };
-    missionNamespace setVariable ["COMSPEC_OW_SSE_GraftAthena", _graft];
-    [_graft, [_open, _inherit, 8, _src], 2] call CBA_fnc_waitAndExecute;
-} else {
-    private _root = [
-        "COMSPEC_SSE_ATHENA",
-        "Renseignement SSE",
-        "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
-        {},
-        _cond,
-        _noChildren,
-        [],
-        {[0, 0, 0]},
-        4,
-        _aceParams
-    ] call ace_interact_menu_fnc_createAction;
-    ["CAManBase", 0, ["ACE_MainActions"], _root, _inherit, _src] call _reg;
-    ["CAManBase", 0, ["ACE_MainActions", "COMSPEC_SSE_ATHENA"], _open, _inherit, _src] call _reg;
-    ["INFO", "SSE", "Menu Athena autonome (mod @COMSPEC_SSE absent)"] call comspec_overwatch_connect_fnc_log;
+    _entity setVariable ["comspec_ow_sse_athenaInstalled", true];
 };
 
-if (!isNil "comspec_debug_fnc_breadcrumb") then {
-    ["OW.SSE.999", "initSseAce complete"] call comspec_debug_fnc_breadcrumb;
+missionNamespace setVariable ["COMSPEC_OW_SSE_GraftAthenaOnEntity", _graft];
+
+if (!isNil "CBA_fnc_addEventHandler") then {
+    ["comspec_sse_entityAceReady", {
+        params ["_ent"];
+        private _fn = missionNamespace getVariable ["COMSPEC_OW_SSE_GraftAthenaOnEntity", {}];
+        [_ent] call _fn;
+    }] call CBA_fnc_addEventHandler;
 };
-["INFO", "SSE", "Menu SSE installé"] call comspec_overwatch_connect_fnc_log;
+
+["INFO", "SSE", "Menu SSE Athena prêt (écoute entityAceReady)"] call comspec_overwatch_connect_fnc_log;
 call _exitTrace;

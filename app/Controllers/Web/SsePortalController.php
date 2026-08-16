@@ -15,6 +15,8 @@ use App\Repositories\SseCaseRepository;
 use App\Repositories\SseCaseMapRepository;
 use App\Repositories\SseCrossDecisionRepository;
 use App\Repositories\SseDocumentRepository;
+use App\Repositories\SseEntityIndexRepository;
+use App\Repositories\SseIntelEventRepository;
 use App\Repositories\SseInterestCaseRepository;
 use App\Repositories\SseMeshRepository;
 use App\Repositories\SsePersonRepository;
@@ -78,6 +80,8 @@ final class SsePortalController
         private ?SseCaseBundleService $caseBundles = null,
         private ?UserRepository $users = null,
         private ?SseTerrainService $terrain = null,
+        private ?SseIntelEventRepository $intelEvents = null,
+        private ?SseEntityIndexRepository $entityIndex = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -118,6 +122,8 @@ final class SsePortalController
         $this->engine ??= new SseAnalyticalEngineService();
         $this->completeness ??= new SseCompletenessService();
         $this->caseBundles ??= new SseCaseBundleService($this->cases, $this->persons, $this->sites);
+        $this->intelEvents ??= new SseIntelEventRepository();
+        $this->entityIndex ??= new SseEntityIndexRepository();
     }
 
     /** Sas d’entrée (public) */
@@ -385,6 +391,117 @@ final class SsePortalController
             'statuses' => SseInterestCaseRepository::STATUSES,
             'canManage' => $this->canManage(),
             'activeNav' => 'interet',
+        ]);
+    }
+
+    /**
+     * Journal des transmissions terrain (Arma 3 / mods) — sse_intel_events.
+     */
+    public function transmissionsIndex(Request $request, array $params = []): Response
+    {
+        $filtersUi = [
+            'q' => trim((string) $request->query('q', '')),
+            'event_type' => strtoupper(trim((string) $request->query('event_type', ''))),
+            'source' => trim((string) $request->query('source', 'TERRAIN')),
+            'since' => trim((string) $request->query('since', '')),
+        ];
+
+        $listFilters = [
+            'limit' => 100,
+            'q' => $filtersUi['q'] !== '' ? $filtersUi['q'] : null,
+            'event_type' => $filtersUi['event_type'] !== '' ? $filtersUi['event_type'] : null,
+            'since' => $filtersUi['since'] !== '' ? $filtersUi['since'] . ' 00:00:00' : null,
+        ];
+
+        $source = strtoupper($filtersUi['source']);
+        if ($source === 'TERRAIN' || $source === '') {
+            $listFilters['source_systems'] = SseIntelEventRepository::armaTerrainSourceSystems();
+            $filtersUi['source'] = 'TERRAIN';
+        } elseif ($source !== 'ALL') {
+            $listFilters['source_system'] = $source;
+        }
+
+        $events = $this->intelEvents->listForTenant($this->tenantId(), array_filter(
+            $listFilters,
+            static fn (mixed $v): bool => $v !== null && $v !== ''
+        ));
+
+        return $this->portalView('atak.sse.transmissions', [
+            'title' => 'Transmissions terrain',
+            'events' => $events,
+            'filters' => $filtersUi,
+            'eventTypes' => SseIntelEventRepository::eventTypeOptions(),
+            'sourceOptions' => array_merge(
+                ['TERRAIN' => 'Toutes les sources terrain (Arma)', 'ALL' => 'Toutes les sources'],
+                SseIntelEventRepository::sourceSystemOptions()
+            ),
+            'canManage' => $this->canManage(),
+            'activeNav' => 'transmissions',
+        ]);
+    }
+
+    public function transmissionShow(Request $request, array $params = []): Response
+    {
+        $event = $this->intelEvents->findById($this->tenantId(), (int) ($params['id'] ?? 0));
+        if ($event === null) {
+            Session::flash('error', 'Transmission introuvable.');
+            return Response::redirect(url('atak/sse/transmissions'));
+        }
+
+        $entity = null;
+        $entityUuid = trim((string) ($event['entity_uuid'] ?? ''));
+        if ($entityUuid !== '') {
+            $entity = $this->entityIndex->findByUuid($this->tenantId(), $entityUuid);
+        }
+
+        $relatedHref = null;
+        $relatedLabel = null;
+        $payload = is_array($event['payload'] ?? null) ? $event['payload'] : [];
+        $personId = (int) ($payload['person_id'] ?? 0);
+        $siteId = (int) ($payload['site_id'] ?? 0);
+        if ($personId > 0) {
+            $relatedHref = url('atak/sse/identites/' . $personId);
+            $relatedLabel = 'Ouvrir l’identité liée';
+        } elseif ($siteId > 0) {
+            $relatedHref = url('atak/sse/sites/' . $siteId);
+            $relatedLabel = 'Ouvrir le site lié';
+        } elseif (!empty($event['case_id'])) {
+            $relatedHref = url('atak/sse/dossiers/' . (int) $event['case_id']);
+            $relatedLabel = 'Ouvrir le dossier validé';
+        } elseif (!empty($event['interest_case_id'])) {
+            $relatedHref = url('atak/sse/interet/' . (int) $event['interest_case_id']);
+            $relatedLabel = 'Ouvrir le dossier d’intérêt';
+        }
+
+        $payloadRows = [];
+        foreach ($payload as $key => $value) {
+            if (is_array($value) || is_object($value)) {
+                continue;
+            }
+            $label = match ((string) $key) {
+                'person_id' => 'Identité (réf. interne)',
+                'site_id' => 'Site (réf. interne)',
+                'source_system' => 'Canal d’origine',
+                default => (string) $key,
+            };
+            if ($key === 'source_system') {
+                $value = SseIntelEventRepository::labelForSourceSystem((string) $value);
+            }
+            if (in_array((string) $key, ['person_id', 'site_id'], true)) {
+                continue;
+            }
+            $payloadRows[] = ['label' => $label, 'value' => (string) $value];
+        }
+
+        return $this->portalView('atak.sse.transmission_show', [
+            'title' => 'Fiche de transmission',
+            'event' => $event,
+            'entity' => $entity,
+            'relatedHref' => $relatedHref,
+            'relatedLabel' => $relatedLabel,
+            'payloadRows' => $payloadRows,
+            'canManage' => $this->canManage(),
+            'activeNav' => 'transmissions',
         ]);
     }
 

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Core\Database;
+use App\Support\LazyDatabaseConnection;
+
 use PDO;
 
 /**
@@ -14,13 +15,14 @@ use PDO;
  */
 class TacticalPhonePairingRepository
 {
+    use LazyDatabaseConnection;
+
     private const TTL_MINUTES = 15;
 
-    private PDO $pdo;
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo;
     }
 
     /**
@@ -38,7 +40,7 @@ class TacticalPhonePairingRepository
             return true;
         }
         try {
-            $stmt = $this->pdo->query("SHOW TABLES LIKE 'tactical_phone_pairings'");
+            $stmt = $this->pdo()->query("SHOW TABLES LIKE 'tactical_phone_pairings'");
             $exists = (bool) ($stmt && $stmt->fetchColumn());
         } catch (\Throwable) {
             $exists = false;
@@ -62,13 +64,13 @@ class TacticalPhonePairingRepository
             $code = $this->generateUniqueCode($tenantId);
             $ttl = (int) self::TTL_MINUTES;
             // UTC_TIMESTAMP() : même piège que game_link (NOW() hébergeur ≠ PHP UTC).
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 "INSERT INTO tactical_phone_pairings (tenant_id, token, code, expires_at, created_at)
                  VALUES (?, ?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL {$ttl} MINUTE), UTC_TIMESTAMP())"
             );
             $stmt->execute([$tenantId, $token, $code]);
 
-            $read = $this->pdo->prepare(
+            $read = $this->pdo()->prepare(
                 'SELECT token, code, expires_at FROM tactical_phone_pairings WHERE token = ? LIMIT 1'
             );
             $read->execute([$token]);
@@ -95,7 +97,7 @@ class TacticalPhonePairingRepository
             for ($i = 0; $i < 6; $i++) {
                 $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
             }
-            $stmt = $this->pdo->prepare(
+            $stmt = $this->pdo()->prepare(
                 'SELECT 1 FROM tactical_phone_pairings WHERE tenant_id = ? AND code = ? AND expires_at > UTC_TIMESTAMP() LIMIT 1'
             );
             $stmt->execute([$tenantId, $code]);
@@ -112,7 +114,7 @@ class TacticalPhonePairingRepository
         if (!$this->tableExists() || trim($token) === '') {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM tactical_phone_pairings WHERE token = ? AND expires_at > UTC_TIMESTAMP() LIMIT 1'
         );
         $stmt->execute([trim($token)]);
@@ -131,7 +133,7 @@ class TacticalPhonePairingRepository
         if (!$this->tableExists() || trim($code) === '') {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM tactical_phone_pairings WHERE code = ? AND expires_at > UTC_TIMESTAMP() LIMIT 1'
         );
         $stmt->execute([strtoupper(trim($code))]);
@@ -146,7 +148,7 @@ class TacticalPhonePairingRepository
             return;
         }
         // Prolonge la session téléphone à 24 h après liaison réussie.
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'UPDATE tactical_phone_pairings
              SET paired_at = COALESCE(paired_at, UTC_TIMESTAMP()),
                  expires_at = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1440 MINUTE)
@@ -175,7 +177,7 @@ class TacticalPhonePairingRepository
         if (!$this->tableExists() || $tenantId < 1) {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT paired_at, code FROM tactical_phone_pairings
              WHERE tenant_id = ? AND paired_at IS NOT NULL
              ORDER BY paired_at DESC
@@ -203,7 +205,7 @@ class TacticalPhonePairingRepository
         if (!$this->tableExists() || trim($token) === '' || $tenantId < 1) {
             return null;
         }
-        $stmt = $this->pdo->prepare(
+        $stmt = $this->pdo()->prepare(
             'SELECT * FROM tactical_phone_pairings WHERE token = ? AND tenant_id = ? LIMIT 1'
         );
         $stmt->execute([trim($token), $tenantId]);

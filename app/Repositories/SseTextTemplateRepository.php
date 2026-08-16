@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 use App\Support\SseTextLibraryCatalog;
 
 /**
@@ -20,14 +21,7 @@ final class SseTextTemplateRepository
     public function __construct(private ?Database $db = null)
     {
         $this->db ??= Database::getInstance();
-        try {
-            $migration = require base_path('bootstrap/atak_sse_text_library_migration.php');
-            if (is_callable($migration)) {
-                $migration(Database::getPdo());
-            }
-        } catch (\Throwable) {
-            // Schéma appliqué par run-migrations ; ne pas casser le portail.
-        }
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_text_library_migration.php'));
     }
 
     /** @return array<string,string> */

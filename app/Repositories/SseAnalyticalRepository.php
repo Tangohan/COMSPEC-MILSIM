@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SilentSchemaMigration;
 use App\Support\SseAnalyticalCatalog;
 
 /**
@@ -16,14 +17,7 @@ final class SseAnalyticalRepository
     public function __construct(private ?Database $db = null)
     {
         $this->db ??= Database::getInstance();
-        try {
-            $migration = require base_path('bootstrap/atak_sse_analytical_migration.php');
-            if (is_callable($migration)) {
-                $migration(Database::getPdo());
-            }
-        } catch (\Throwable) {
-            // Schéma appliqué par run-migrations.
-        }
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_analytical_migration.php'));
     }
 
     // ── Appréciations ──────────────────────────────────────────────────────
