@@ -94,6 +94,12 @@ if (!isNil "cTab_msg_Send" && {!(missionNamespace getVariable ["COMSPEC_Athena_H
             _plrLBctrl lbSetCurSel -1;
             { _plrLBctrl lbSetSelected [_x, true] } forEach _playerIndices;
             _playerOk = call _oldSend;
+            // Lot 2 : archive TOC (fil ATAK web) — le jeu garde l’affichage cTab natif
+            if (_playerOk) then {
+                private _toLabels = [];
+                { _toLabels pushBack (_plrLBctrl lbText _x); } forEach _playerIndices;
+                [_msgBody, _toLabels] call comspec_overwatch_atak_athena_fnc_athena_archiveMpMessage;
+            };
         } else {
             if (_hqOk) then {
                 if (!isNull _msgBodyctrl) then { _msgBodyctrl ctrlSetText ""; };
@@ -155,7 +161,20 @@ if (!isNil "ctab_fnc_msg_Send" && {!(missionNamespace getVariable ["COMSPEC_Athe
             _hqOk = [_msgBody] call comspec_overwatch_atak_athena_fnc_athena_sendHqMessage;
         };
 
+        private _toLabels = [];
+        if (!isNull _plrLBctrl) then {
+            {
+                private _data = _plrLBctrl lbData _x;
+                if (_data isNotEqualTo "COMSPEC_HQ") then {
+                    _toLabels pushBack (_plrLBctrl lbText _x);
+                };
+            } forEach (lbSelection _plrLBctrl);
+        };
+
         private _r = call _oldModernSend;
+        if (_r && {(count _toLabels) > 0} && {_msgBody isNotEqualTo ""}) then {
+            [_msgBody, _toLabels] call comspec_overwatch_atak_athena_fnc_athena_archiveMpMessage;
+        };
         if (_hqOk && {!_r}) then {
             if (!isNull _msgBodyctrl) then { _msgBodyctrl ctrlSetText ""; };
             true

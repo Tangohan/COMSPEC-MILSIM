@@ -96,9 +96,10 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
                     <span class="record-id"><?= $h($meshRef) ?></span>
                     <div class="sse-folder-card-meta">
                         <span class="badge badge--amber"><?= $h($m['classification_label'] ?? '') ?></span>
+                        <?php $nodeCount = (int) $cnt['nodes']; $edgeCount = (int) $cnt['edges']; ?>
                         <span class="sse-count-set">
-                            <span class="sse-count"><span class="sse-count-n"><?= (int) $cnt['nodes'] ?></span> entités</span>
-                            <span class="sse-count"><span class="sse-count-n"><?= (int) $cnt['edges'] ?></span> liens</span>
+                            <span class="sse-count"><span class="sse-count-n"><?= $nodeCount ?></span> entité<?= $nodeCount > 1 ? 's' : '' ?></span>
+                            <span class="sse-count"><span class="sse-count-n"><?= $edgeCount ?></span> lien<?= $edgeCount > 1 ? 's' : '' ?></span>
                         </span>
                     </div>
                 </a>

@@ -151,6 +151,13 @@ private _ensureBdaReportApp = {
     _this call comspec_overwatch_atak_athena_fnc_athena_onOrderReceived;
 }] call CBA_fnc_addEventHandler;
 
+// ACK IceMan Reports (message ouvert) → Athena
+{
+    [_x, {
+        [] call comspec_overwatch_atak_athena_fnc_athena_syncIcemanOrderAck;
+    }] call CBA_fnc_addEventHandler;
+} forEach ["ctab_messagesUpdated", "ctab_core_messagesUpdated"];
+
 // Rafraîchir le panneau si ouvert
 ["COMSPEC_AthenaInboxUpdated", {
     private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];

@@ -48,4 +48,9 @@ class Extended_PostInit_EventHandlers {
     };
 };
 
+// Classes de base déclarées une seule fois : chaque dialogue inclus ensuite les réutilise.
+class RscText;
+class RscButton;
+class RscStructuredText;
+
 #include "dialogs\seekDialog.hpp"

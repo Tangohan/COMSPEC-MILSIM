@@ -6242,6 +6242,20 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   letter-spacing: 0.01em;
   font-weight: 600;
 }
+.atak-order-badge--source-game {
+  color: #86efac;
+  border-color: rgba(134, 239, 172, 0.4);
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+.atak-order-badge--source-web {
+  color: #93c5fd;
+  border-color: rgba(147, 197, 253, 0.4);
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
 .atak-order-meta {
   display: flex;
   flex-wrap: wrap;

@@ -1,8 +1,4 @@
-class RscText;
-class RscButton;
-class RscCombo;
-class RscCheckbox;
-class RscSlider;
+// RscText / RscButton / RscCombo / RscCheckbox / RscSlider sont déclarés dans config.cpp.
 
 class COMSPEC_SSE_GenerateDialog {
     idd = 93001;

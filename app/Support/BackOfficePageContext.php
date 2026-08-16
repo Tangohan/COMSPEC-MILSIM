@@ -27,6 +27,7 @@ final class BackOfficePageContext
             'admin/atak-mod',
             'admin/atak-beta',
             'tableau-operationnel',
+            'jnet',
         ];
     }
 
@@ -152,9 +153,12 @@ final class BackOfficePageContext
     {
         $group = 'Administration';
         $kicker = 'ADMINISTRATION';
-        if (str_starts_with($path, 'back-office/atak/') || str_contains($path, '/events')) {
+        if (str_starts_with($path, 'back-office/atak/') || str_contains($path, '/events') || str_starts_with($path, 'jnet')) {
             $group = 'Opérations';
-            $kicker = 'OPÉRATIONS';
+            $kicker = str_starts_with($path, 'jnet') ? 'UNITÉ · EXTRANET' : 'OPÉRATIONS';
+            if (str_starts_with($path, 'jnet')) {
+                $group = 'Unité';
+            }
         } elseif (str_starts_with($path, 'back-office/users') || str_starts_with($path, 'formation/')) {
             $group = 'Personnel';
             $kicker = 'PERSONNEL';

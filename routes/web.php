@@ -348,6 +348,10 @@ return function (Router $router) {
     $router->get('/jnet/exploitation', [JnetPortalController::class, 'exploitation'], [AuthMiddleware::class]);
     $router->get('/jnet/bibliotheque', [JnetPortalController::class, 'library'], [AuthMiddleware::class]);
     $router->get('/jnet/courrier', [JnetPortalController::class, 'mail'], [AuthMiddleware::class]);
+    $router->get('/jnet/courrier/nouveau', [JnetPortalController::class, 'mailCompose'], [AuthMiddleware::class]);
+    $router->post('/jnet/courrier/nouveau', [JnetPortalController::class, 'mailSend'], [AuthMiddleware::class]);
+    $router->post('/jnet/courrier/lu', [JnetPortalController::class, 'mailMarkAllRead'], [AuthMiddleware::class]);
+    $router->post('/jnet/courrier/{id}/reponse', [JnetPortalController::class, 'mailReply'], [AuthMiddleware::class]);
     $router->get('/jnet/systeme', [JnetPortalController::class, 'system'], [AuthMiddleware::class]);
     $router->post('/jnet/systeme/bascule', [JnetPortalController::class, 'switchPortal'], [AuthMiddleware::class]);
     // Anciennes routes JNET → nouvelles
@@ -597,6 +601,10 @@ return function (Router $router) {
     $router->get('/atak/sse/objets/{type}', [SsePortalController::class, 'objectRegistry'], $mwSsePortal);
     $router->get('/atak/sse/chronologie', [SsePortalController::class, 'timeline'], $mwSsePortal);
     $router->get('/atak/sse/anomalies', [SsePortalController::class, 'anomalies'], $mwSsePortal);
+    $router->get('/atak/sse/rapprochements', [SsePortalController::class, 'suggestionsIndex'], $mwSsePortal);
+    $router->post('/atak/sse/rapprochements/{id}/valider', [SsePortalController::class, 'suggestionAccept'], $mwSsePortal);
+    $router->post('/atak/sse/rapprochements/{id}/rejeter', [SsePortalController::class, 'suggestionReject'], $mwSsePortal);
+    $router->post('/atak/sse/moteur/executer', [SsePortalController::class, 'engineRunNow'], $mwSsePortal);
     $router->get('/atak/sse/collecte', [SsePortalController::class, 'collecteHub'], $mwSsePortal);
     $router->get('/atak/sse/validation', [SsePortalController::class, 'validationQueue'], $mwSsePortal);
     $router->get('/atak/sse/rapports', [SsePortalController::class, 'reportsHub'], $mwSsePortal);
@@ -607,6 +615,11 @@ return function (Router $router) {
     $router->get('/atak/sse/documents/{id}/modifier', [SsePortalController::class, 'documentEditForm'], $mwSsePortal);
     $router->post('/atak/sse/documents/{id}', [SsePortalController::class, 'documentUpdate'], $mwSsePortal);
     $router->post('/atak/sse/documents/{id}/statut', [SsePortalController::class, 'documentStatus'], $mwSsePortal);
+    $router->get('/atak/sse/bibliotheque', [SsePortalController::class, 'textLibraryIndex'], $mwSsePortal);
+    $router->post('/atak/sse/bibliotheque', [SsePortalController::class, 'textLibraryStore'], $mwSsePortal);
+    $router->post('/atak/sse/bibliotheque/{id}', [SsePortalController::class, 'textLibraryUpdate'], $mwSsePortal);
+    $router->post('/atak/sse/bibliotheque/{id}/etat', [SsePortalController::class, 'textLibraryToggle'], $mwSsePortal);
+    $router->post('/atak/sse/bibliotheque/{id}/supprimer', [SsePortalController::class, 'textLibraryDelete'], $mwSsePortal);
     $router->get('/atak/sse/dossiers', [SsePortalController::class, 'casesIndex'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/nouveau', [SsePortalController::class, 'caseCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/dossiers', [SsePortalController::class, 'caseStore'], $mwSsePortal);
@@ -621,6 +634,17 @@ return function (Router $router) {
     $router->post('/atak/sse/dossiers/{id}/notes', [SsePortalController::class, 'caseAddNote'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/preuves', [SsePortalController::class, 'caseAddEvidence'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}/pdf', [SsePortalController::class, 'casePdf'], $mwSsePortal);
+    $router->get('/atak/sse/dossiers/{id}/pdf/flux', [SsePortalController::class, 'casePdfStream'], $mwSsePortal);
+    $router->get('/atak/sse/dossiers/{id}/lecture', [SsePortalController::class, 'caseReader'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/carte', [SsePortalController::class, 'caseMapSave'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/carte/points', [SsePortalController::class, 'caseMapFeatureAdd'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/carte/points/{featureId}/supprimer', [SsePortalController::class, 'caseMapFeatureDelete'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/appreciations', [SsePortalController::class, 'caseAssessmentStore'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/lacunes', [SsePortalController::class, 'caseGapStore'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/lacunes/{gapId}/statut', [SsePortalController::class, 'caseGapStatus'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/decisions', [SsePortalController::class, 'caseDecisionStore'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/relations-dossiers', [SsePortalController::class, 'caseLinkStore'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/relations-dossiers/{linkId}/supprimer', [SsePortalController::class, 'caseLinkDelete'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}/compte-rendu', [SsePortalController::class, 'caseReport'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/compte-rendu/brouillon', [SsePortalController::class, 'caseReportDraft'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}/correlations', [SsePortalController::class, 'caseCorrelations'], $mwSsePortal);
@@ -633,6 +657,8 @@ return function (Router $router) {
     $router->get('/atak/sse/interet/nouveau', [SsePortalController::class, 'interestCaseCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/interet', [SsePortalController::class, 'interestCaseStore'], $mwSsePortal);
     $router->get('/atak/sse/interet/{id}', [SsePortalController::class, 'interestCaseShow'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/croisements', [SsePortalController::class, 'interestCrossDecide'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/constituer', [SsePortalController::class, 'interestCaseConstitute'], $mwSsePortal);
     $router->get('/atak/sse/personnes', [SsePortalController::class, 'personsIndex'], $mwSsePortal);
     $router->get('/atak/sse/sites', [SsePortalController::class, 'sitesIndex'], $mwSsePortal);
     $router->get('/atak/sse/sites/{id}', [SsePortalController::class, 'siteShow'], $mwSsePortal);
@@ -1669,6 +1695,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/pings', [AtakApiController::class, 'pingsIndex']);
     $router->post('/api/pings', [AtakApiController::class, 'pingsStore']);
     $router->delete('/api/pings/{id}', [AtakApiController::class, 'pingsDelete']);
+    $router->get('/api/atak/sse-case-overlay', [AtakApiController::class, 'sseCaseOverlay']);
     $router->get('/api/nine-line', [AtakApiController::class, 'nineLineIndex']);
     $router->post('/api/nine-line', [AtakApiController::class, 'nineLineStore']);
     $router->patch('/api/nine-line/{id}', [AtakApiController::class, 'nineLineUpdate']);

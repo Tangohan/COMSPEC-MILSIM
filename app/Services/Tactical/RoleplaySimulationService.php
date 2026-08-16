@@ -36,6 +36,10 @@ class RoleplaySimulationService
         $maxMs = max($minMs, $config['latency_max_ms']);
         
         if ($maxMs > 0) {
+            // Plafond dur : une mauvaise config (ms aberrants) ne doit pas faire
+            // timing-out / 500 toute l’API ATAK (ping inclus une fois le tenant résolu).
+            $maxMs = min($maxMs, 2000);
+            $minMs = min($minMs, $maxMs);
             $delayMs = $minMs === $maxMs ? $minMs : random_int($minMs, $maxMs);
             if ($delayMs > 0) {
                 usleep($delayMs * 1000);

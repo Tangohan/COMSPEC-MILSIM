@@ -1108,6 +1108,13 @@ window.ATAKOrders = (function () {
       var ownBadge = isOwnIssuedOrder(o)
         ? '<span class="atak-order-badge atak-order-badge--own">Émis par vous</span>'
         : '';
+      var sourceBadge = '';
+      var src = String(o.source || '').toLowerCase();
+      if (src === 'game') {
+        sourceBadge = '<span class="atak-order-badge atak-order-badge--source-game">Terrain</span>';
+      } else if (src === 'web') {
+        sourceBadge = '<span class="atak-order-badge atak-order-badge--source-web">Poste de commandement</span>';
+      }
 
       return (
         '<article class="atak-order-item ' + statusClass(status, isOverdue) + '" data-order-id="' + escapeHtml(id) + '">' +
@@ -1118,6 +1125,7 @@ window.ATAKOrders = (function () {
                 escapeHtml(o.status_label || statusLabelFr(status, isOverdue)) +
               '</span>' +
               ownBadge +
+              sourceBadge +
             '</span>' +
           '</div>' +
           '<div class="atak-order-meta atak-order-meta--badges">' +

@@ -26,7 +26,8 @@ class CfgFunctions {
 class Extended_InitPost_EventHandlers {
     class CAManBase {
         class comspec_sse_eden {
-            init = "[_this] call comspec_sse_fnc_edenInitEntity";
+            // CBA passe déjà [_unit] dans _this — pas de [_this] (sinon [[_unit]]).
+            init = "_this call comspec_sse_fnc_edenInitEntity";
         };
     };
 };

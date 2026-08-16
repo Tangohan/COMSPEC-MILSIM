@@ -89,9 +89,23 @@ class Response
     public static function json(array $data, int $statusCode = 200): self
     {
         $response = new self();
+        // JSON_INVALID_UTF8_SUBSTITUTE / PARTIAL_OUTPUT évitent un TypeError PHP 8
+        // (json_encode → false passé à setBody(string) = 500 opaque sur toute l’API).
+        $flags = JSON_UNESCAPED_UNICODE;
+        if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
+            $flags |= JSON_INVALID_UTF8_SUBSTITUTE;
+        }
+        if (defined('JSON_PARTIAL_OUTPUT_ON_ERROR')) {
+            $flags |= JSON_PARTIAL_OUTPUT_ON_ERROR;
+        }
+        $body = json_encode($data, $flags);
+        if ($body === false) {
+            $body = '{"error":"server_error","message":"Réponse impossible à sérialiser."}';
+            $statusCode = $statusCode >= 400 ? $statusCode : 500;
+        }
         $response->setStatusCode($statusCode)
             ->header('Content-Type', 'application/json; charset=utf-8')
-            ->setBody(json_encode($data, JSON_UNESCAPED_UNICODE));
+            ->setBody($body);
         return $response;
     }
 }

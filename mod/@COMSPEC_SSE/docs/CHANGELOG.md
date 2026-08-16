@@ -1,5 +1,12 @@
 # Changelog COMSPEC SSE
 
+## 0.7.2 — Passerelle BII Identifi
+
+- Addon `compat_bii` : import scans / preuves / modules BII → modèle SSE
+- Item `BII_Identifi_Device` accepté comme SEEK / empreintes / face / ADN / terminal
+- Export optionnel SSE → variables `BII_Identifi_*`
+- Doc `BII-BRIDGE.md`
+
 ## 0.7.1 — Catalogues d’ères (Irak / Russie)
 
 - Région `RUSSIA` dans les pools narratifs

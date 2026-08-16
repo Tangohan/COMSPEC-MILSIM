@@ -11,6 +11,9 @@ class ReconImageRepository
 {
     private PDO $pdo;
 
+    /** @var array<string, bool> */
+    private array $columnCache = [];
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -36,80 +39,152 @@ class ReconImageRepository
         $done = true;
     }
 
+    private function hasColumn(string $column): bool
+    {
+        if (array_key_exists($column, $this->columnCache)) {
+            return $this->columnCache[$column];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'recon_images' AND COLUMN_NAME = ? LIMIT 1"
+            );
+            $st->execute([$column]);
+            $this->columnCache[$column] = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $this->columnCache[$column] = false;
+        }
+
+        return $this->columnCache[$column];
+    }
+
+    public function tablesReady(): bool
+    {
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'recon_images' LIMIT 1"
+            );
+
+            return $st !== false && (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     public function list(int $tenantId, ?string $missionId = null, ?string $author = null, ?string $dateFrom = null, ?string $dateTo = null, ?int $limit = 100): array
     {
-        $sql = 'SELECT * FROM recon_images WHERE tenant_id = ? AND deleted_at IS NULL';
-        $params = [$tenantId];
-        if ($missionId !== null && $missionId !== '') {
-            $sql .= ' AND mission_id = ?';
-            $params[] = $missionId;
+        if (!$this->tablesReady() || $tenantId < 1) {
+            return [];
         }
-        if ($author !== null && $author !== '') {
-            $sql .= ' AND author_callsign = ?';
-            $params[] = $author;
+        try {
+            $sql = 'SELECT * FROM recon_images WHERE tenant_id = ?';
+            $params = [$tenantId];
+            if ($this->hasColumn('deleted_at')) {
+                $sql .= ' AND deleted_at IS NULL';
+            }
+            if ($missionId !== null && $missionId !== '') {
+                $sql .= ' AND mission_id = ?';
+                $params[] = $missionId;
+            }
+            if ($author !== null && $author !== '') {
+                $sql .= ' AND author_callsign = ?';
+                $params[] = $author;
+            }
+            if ($dateFrom !== null && $dateFrom !== '') {
+                $sql .= ' AND (captured_at >= ? OR created_at >= ?)';
+                $params[] = $dateFrom;
+                $params[] = $dateFrom;
+            }
+            if ($dateTo !== null && $dateTo !== '') {
+                $sql .= ' AND (captured_at <= ? OR created_at <= ?)';
+                $params[] = $dateTo;
+                $params[] = $dateTo;
+            }
+            $sql .= ' ORDER BY created_at DESC LIMIT ' . (int) $limit;
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return [];
         }
-        if ($dateFrom !== null && $dateFrom !== '') {
-            $sql .= ' AND (captured_at >= ? OR created_at >= ?)';
-            $params[] = $dateFrom;
-            $params[] = $dateFrom;
-        }
-        if ($dateTo !== null && $dateTo !== '') {
-            $sql .= ' AND (captured_at <= ? OR created_at <= ?)';
-            $params[] = $dateTo;
-            $params[] = $dateTo;
-        }
-        $sql .= ' ORDER BY created_at DESC LIMIT ' . (int) $limit;
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function get(int $tenantId, int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM recon_images WHERE tenant_id = ? AND id = ?');
-        $stmt->execute([$tenantId, $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        if (!$this->tablesReady() || $tenantId < 1 || $id < 1) {
+            return null;
+        }
+        try {
+            $stmt = $this->pdo->prepare('SELECT * FROM recon_images WHERE tenant_id = ? AND id = ?');
+            $stmt->execute([$tenantId, $id]);
+
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function create(int $tenantId, array $data): array
     {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO recon_images (tenant_id, mission_id, author_callsign, unit_name, side, image_path, thumb_path, caption, fx_profile, fx_intensity, pos_x, pos_y, pos_z, grid_ref, heading, altitude, device_type, captured_at, atak_cas_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        );
-        $stmt->execute([
-            $tenantId,
-            $data['mission_id'] ?? null,
-            $data['author_callsign'] ?? $data['author'] ?? 'Unknown',
-            $data['unit_name'] ?? null,
-            $data['side'] ?? 'WEST',
-            $data['image_path'],
-            $data['thumb_path'] ?? null,
-            $data['caption'] ?? null,
-            $data['fx_profile'] ?? null,
-            $data['fx_intensity'] ?? null,
-            $data['pos_x'] ?? null,
-            $data['pos_y'] ?? null,
-            $data['pos_z'] ?? null,
-            $data['grid_ref'] ?? null,
-            $data['heading'] ?? null,
-            $data['altitude'] ?? null,
-            $data['device_type'] ?? 'CTAB',
-            isset($data['captured_at']) ? date('Y-m-d H:i:s', (int) $data['captured_at']) : null,
-            $data['atak_cas_id'] ?? null,
-        ]);
-        $id = (int) $this->pdo->lastInsertId();
-        $row = $this->get($tenantId, $id);
-        return $row ?? [];
+        if (!$this->tablesReady() || $tenantId < 1) {
+            return [];
+        }
+
+        $cols = [
+            'tenant_id' => $tenantId,
+            'mission_id' => $data['mission_id'] ?? null,
+            'author_callsign' => $data['author_callsign'] ?? $data['author'] ?? 'Unknown',
+            'unit_name' => $data['unit_name'] ?? null,
+            'side' => $data['side'] ?? 'WEST',
+            'image_path' => $data['image_path'],
+            'thumb_path' => $data['thumb_path'] ?? null,
+            'caption' => $data['caption'] ?? null,
+            'pos_x' => $data['pos_x'] ?? null,
+            'pos_y' => $data['pos_y'] ?? null,
+            'pos_z' => $data['pos_z'] ?? null,
+            'grid_ref' => $data['grid_ref'] ?? null,
+            'heading' => $data['heading'] ?? null,
+            'altitude' => $data['altitude'] ?? null,
+            'device_type' => $data['device_type'] ?? 'CTAB',
+            'captured_at' => isset($data['captured_at']) ? date('Y-m-d H:i:s', (int) $data['captured_at']) : null,
+            'atak_cas_id' => $data['atak_cas_id'] ?? null,
+        ];
+        if ($this->hasColumn('fx_profile')) {
+            $cols['fx_profile'] = $data['fx_profile'] ?? null;
+        }
+        if ($this->hasColumn('fx_intensity')) {
+            $cols['fx_intensity'] = $data['fx_intensity'] ?? null;
+        }
+
+        $names = array_keys($cols);
+        $placeholders = array_fill(0, count($names), '?');
+        $sql = 'INSERT INTO recon_images (' . implode(', ', $names) . ') VALUES (' . implode(', ', $placeholders) . ')';
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(array_values($cols));
+            $id = (int) $this->pdo->lastInsertId();
+
+            return $this->get($tenantId, $id) ?? [];
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public function linkToCas(int $tenantId, int $id, int $atakCasId): ?array
     {
-        $stmt = $this->pdo->prepare('UPDATE recon_images SET atak_cas_id = ? WHERE tenant_id = ? AND id = ?');
-        $stmt->execute([$atakCasId, $tenantId, $id]);
-        if ($stmt->rowCount() === 0) {
+        try {
+            $stmt = $this->pdo->prepare('UPDATE recon_images SET atak_cas_id = ? WHERE tenant_id = ? AND id = ?');
+            $stmt->execute([$atakCasId, $tenantId, $id]);
+            if ($stmt->rowCount() === 0) {
+                return null;
+            }
+
+            return $this->get($tenantId, $id);
+        } catch (\Throwable) {
             return null;
         }
-        return $this->get($tenantId, $id);
     }
 
     public function updateOps(int $tenantId, int $id, array $data): ?array
@@ -117,28 +192,28 @@ class ReconImageRepository
         $fields = [];
         $params = ['tenant_id' => $tenantId, 'id' => $id];
 
-        if (array_key_exists('operator_comment', $data)) {
+        if (array_key_exists('operator_comment', $data) && $this->hasColumn('operator_comment')) {
             $fields[] = 'operator_comment = :operator_comment';
             $comment = trim((string) ($data['operator_comment'] ?? ''));
             $params['operator_comment'] = $comment !== '' ? $comment : null;
         }
-        if (array_key_exists('is_blurred', $data)) {
+        if (array_key_exists('is_blurred', $data) && $this->hasColumn('is_blurred')) {
             $fields[] = 'is_blurred = :is_blurred';
             $params['is_blurred'] = !empty($data['is_blurred']) ? 1 : 0;
         }
-        if (array_key_exists('deleted_at', $data)) {
+        if (array_key_exists('deleted_at', $data) && $this->hasColumn('deleted_at')) {
             $fields[] = 'deleted_at = :deleted_at';
             $params['deleted_at'] = $data['deleted_at'];
         }
-        if (array_key_exists('sse_case_id', $data)) {
+        if (array_key_exists('sse_case_id', $data) && $this->hasColumn('sse_case_id')) {
             $fields[] = 'sse_case_id = :sse_case_id';
             $params['sse_case_id'] = $data['sse_case_id'] !== null ? (int) $data['sse_case_id'] : null;
         }
-        if (array_key_exists('sse_evidence_id', $data)) {
+        if (array_key_exists('sse_evidence_id', $data) && $this->hasColumn('sse_evidence_id')) {
             $fields[] = 'sse_evidence_id = :sse_evidence_id';
             $params['sse_evidence_id'] = $data['sse_evidence_id'] !== null ? (int) $data['sse_evidence_id'] : null;
         }
-        if (array_key_exists('sse_transferred_at', $data)) {
+        if (array_key_exists('sse_transferred_at', $data) && $this->hasColumn('sse_transferred_at')) {
             $fields[] = 'sse_transferred_at = :sse_transferred_at';
             $params['sse_transferred_at'] = $data['sse_transferred_at'];
         }
@@ -147,25 +222,42 @@ class ReconImageRepository
             return $this->get($tenantId, $id);
         }
 
-        $sql = 'UPDATE recon_images SET ' . implode(', ', $fields) . ' WHERE tenant_id = :tenant_id AND id = :id';
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
+        try {
+            $sql = 'UPDATE recon_images SET ' . implode(', ', $fields) . ' WHERE tenant_id = :tenant_id AND id = :id';
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
 
-        return $this->get($tenantId, $id);
+            return $this->get($tenantId, $id);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
      * Dernière image par feed (unit_name = feed_id) ou par couple auteur + type d’appareil.
      *
      * @param list<string> $feedIds
-     * @return array<string, array<string, mixed>> keyed by feed_id or "device:AUTHOR:TYPE"
+     * @return array{by_feed: array<string, array<string, mixed>>, by_author_device: array<string, array<string, mixed>>}
      */
     public function latestSnapshots(int $tenantId, array $feedIds = [], int $limit = 80): array
     {
-        $sql = 'SELECT * FROM recon_images WHERE tenant_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT ' . (int) $limit;
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$tenantId]);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $empty = ['by_feed' => [], 'by_author_device' => [], 'recent' => []];
+        if (!$this->tablesReady() || $tenantId < 1) {
+            return $empty;
+        }
+        try {
+            $sql = 'SELECT * FROM recon_images WHERE tenant_id = ?';
+            if ($this->hasColumn('deleted_at')) {
+                $sql .= ' AND deleted_at IS NULL';
+            }
+            $sql .= ' ORDER BY created_at DESC LIMIT ' . (int) $limit;
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$tenantId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return $empty;
+        }
+
         $byFeed = [];
         $byAuthorDevice = [];
         $feedSet = [];

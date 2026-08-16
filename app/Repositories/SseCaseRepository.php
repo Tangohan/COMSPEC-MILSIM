@@ -43,8 +43,14 @@ final class SseCaseRepository
         if ($done) {
             return;
         }
-        $path = base_path('bootstrap/atak_sse_portal_migration.php');
-        if (is_file($path)) {
+        $paths = [
+            base_path('bootstrap/atak_sse_portal_migration.php'),
+            base_path('bootstrap/atak_sse_case_origin_migration.php'),
+        ];
+        foreach ($paths as $path) {
+            if (!is_file($path)) {
+                continue;
+            }
             $migrate = require $path;
             if (is_callable($migrate)) {
                 try {
@@ -87,13 +93,15 @@ final class SseCaseRepository
         $parentId = isset($data['parent_id']) ? (int) $data['parent_id'] : 0;
         $isFolder = !empty($data['is_folder']) ? 1 : 0;
 
+        $interestId = isset($data['interest_case_id']) ? (int) $data['interest_case_id'] : 0;
+
         return (int) $this->db->insert(
             'INSERT INTO sse_cases (
                 tenant_id, context_id, reference_code, title, summary, classification, status,
-                is_folder, parent_id, unlock_code_hash, created_by
+                is_folder, parent_id, interest_case_id, unlock_code_hash, created_by
             ) VALUES (
                 :tenant_id, :context_id, :reference_code, :title, :summary, :classification, :status,
-                :is_folder, :parent_id, :unlock_code_hash, :created_by
+                :is_folder, :parent_id, :interest_case_id, :unlock_code_hash, :created_by
             )',
             [
                 'tenant_id' => $tenantId,
@@ -105,10 +113,29 @@ final class SseCaseRepository
                 'status' => $this->normalizeStatus((string) ($data['status'] ?? 'ouvert')),
                 'is_folder' => $isFolder,
                 'parent_id' => $parentId > 0 ? $parentId : null,
+                'interest_case_id' => $interestId > 0 ? $interestId : null,
                 'unlock_code_hash' => $data['unlock_code_hash'] ?? null,
                 'created_by' => isset($data['created_by']) ? (int) $data['created_by'] : null,
             ]
         );
+    }
+
+    /** Le dossier issu d'un dossier d'intérêt donné, s'il a déjà été constitué. */
+    public function findByInterestCase(int $tenantId, int $interestCaseId): ?array
+    {
+        if ($interestCaseId < 1) {
+            return null;
+        }
+        try {
+            $row = $this->db->fetchOne(
+                'SELECT * FROM sse_cases WHERE tenant_id = :t AND interest_case_id = :i ORDER BY id ASC LIMIT 1',
+                ['t' => $tenantId, 'i' => $interestCaseId]
+            );
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $row ? $this->hydrate($row) : null;
     }
 
     public function verifyUnlockCode(int $id, int $tenantId, string $plain): bool
@@ -474,6 +501,7 @@ final class SseCaseRepository
                 'caption' => $row['caption'] ?? null,
                 'image_path' => $path !== '' ? $path : null,
                 'url' => $path !== '' ? '/' . ltrim($path, '/') : null,
+                'person_id' => isset($row['person_id']) ? (int) $row['person_id'] : null,
                 'author_label' => $row['author_label'] ?? null,
                 'created_at' => $row['created_at'] ?? null,
             ];
@@ -495,6 +523,7 @@ final class SseCaseRepository
             'id' => (int) ($row['id'] ?? 0),
             'tenant_id' => (int) ($row['tenant_id'] ?? 0),
             'parent_id' => isset($row['parent_id']) && $row['parent_id'] !== null ? (int) $row['parent_id'] : null,
+            'interest_case_id' => isset($row['interest_case_id']) && $row['interest_case_id'] !== null ? (int) $row['interest_case_id'] : null,
             'is_folder' => !empty($row['is_folder']),
             'reference_code' => (string) ($row['reference_code'] ?? ''),
             'title' => (string) ($row['title'] ?? ''),

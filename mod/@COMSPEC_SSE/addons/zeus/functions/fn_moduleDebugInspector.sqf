@@ -27,11 +27,11 @@ if (isNil "comspec_sse_debugEh") then {
         if (isNull _target) exitWith {};
 
         private _data = [_target] call comspec_sse_fnc_getData;
-        if (isNil "_data") exitWith {};
+        if (isNil "_data" || {!(_data isEqualType [])}) exitWith {};
 
-        private _uid = [_data, "uid", "?"] call BIS_fnc_getFromPairs;
-        private _profile = [_data, "profile", "?"] call BIS_fnc_getFromPairs;
-        private _state = [_data, "state", "?"] call BIS_fnc_getFromPairs;
+        private _uid = [_data, "uid", "?"] call comspec_sse_fnc_getPair;
+        private _profile = [_data, "profile", "?"] call comspec_sse_fnc_getPair;
+        private _state = [_data, "state", "?"] call comspec_sse_fnc_getPair;
         private _txt = format ["SSE %1 | %2 | %3", _uid, _profile, _state];
         drawIcon3D ["", [0.2, 1, 0.2, 1], ASLToAGL (getPosASL _target) vectorAdd [0,0,2], 0.5, 0.5, 0, _txt, 1, 0.035, "PuristaMedium"];
 

@@ -390,6 +390,38 @@
     });
   }
 
+  function renderSseCaseOverlay(layerGroup, payload, isWorld) {
+    if (!layerGroup) return;
+    layerGroup.clearLayers();
+    var points = (payload && payload.points) ? payload.points : [];
+    points.forEach(function (p) {
+      var x = parseFloat(p.pos_x);
+      var y = parseFloat(p.pos_y);
+      if (isNaN(x) || isNaN(y)) return;
+      var latlng = isWorld ? L.latLng(x / WORLD_SCALE, y / WORLD_SCALE) : L.latLng(y, x);
+      var color = p.color || (p.source === 'site' ? '#f59e0b' : '#34d399');
+      var label = String(p.label || 'SSE').slice(0, 18);
+      var icon = L.divIcon({
+        className: 'comspec-sse-case-marker',
+        html: '<div style="display:flex;flex-direction:column;align-items:center;">'
+          + '<span style="width:11px;height:11px;border-radius:2px;background:' + color
+          + ';border:1px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);transform:rotate(45deg);"></span>'
+          + '<span style="margin-top:3px;font:700 8px/1 ui-sans-serif,system-ui;color:' + color
+          + ';text-shadow:0 0 2px #000;white-space:nowrap;max-width:88px;overflow:hidden;text-overflow:ellipsis;">'
+          + String(label).replace(/</g, '&lt;') + '</span></div>',
+        iconSize: [88, 28],
+        iconAnchor: [44, 8],
+      });
+      var popup = '<div class="atak-marker-popup__kind">Dossier SSE</div>'
+        + '<strong>' + String(p.case_ref || '').replace(/</g, '&lt;') + '</strong>'
+        + (p.case_title ? '<br/>' + String(p.case_title).replace(/</g, '&lt;') : '')
+        + '<br/><em>' + String(p.label || '').replace(/</g, '&lt;') + '</em>'
+        + (p.note ? '<p style="margin:.4rem 0 0">' + String(p.note).replace(/</g, '&lt;') + '</p>' : '')
+        + '<p class="atak-marker-popup__hint">Calque dossier — distinct des pings mission.</p>';
+      L.marker(latlng, { icon: icon }).bindPopup(popup).addTo(layerGroup);
+    });
+  }
+
   function renderSigintLayer(layerGroup, zones, isWorld) {
     if (!layerGroup) return;
     layerGroup.clearLayers();
@@ -516,6 +548,7 @@
         sigint: false,
         intel: false,
         air: true,
+        sse: false,
         elevation: true,
         route: true,
         tactical: true,
@@ -561,7 +594,7 @@
       var Ls = state.layers;
       [['units', layerGroups.units], ['trails', layerGroups.trails], ['danger', layerGroups.dangerZones], ['drawings', layerGroups.drawings],
         ['markers', layerGroups.markers], ['pings', layerGroups.pings], ['sigint', layerGroups.sigint],
-        ['intel', layerGroups.intel], ['air', layerGroups.air],
+        ['intel', layerGroups.intel], ['air', layerGroups.air], ['sse', layerGroups.sse],
         ['elevation', layerGroups.elevation], ['route', layerGroups.route],
         ['tactical', layerGroups.tactical], ['recon', layerGroups.recon]].forEach(function (pair) {
         var key = pair[0];
@@ -765,6 +798,12 @@
         fetch(apiBase + '/intel/fused?missionId=' + encodeURIComponent(getMissionId()), { credentials: 'include' })
           .then(function (r) { return r.json(); })
           .then(function (reports) { renderIntelFusedMarkers(layerGroups.intel, reports, isWorld); })
+          .catch(function () {});
+      }
+      if (state.layers.sse) {
+        fetch(apiBase + '/atak/sse-case-overlay?mapId=' + encodeURIComponent(state.currentMapId), { credentials: 'include' })
+          .then(function (r) { return r.json(); })
+          .then(function (payload) { renderSseCaseOverlay(layerGroups.sse, payload, isWorld); })
           .catch(function () {});
       }
       if (state.layers.air) {
@@ -1324,6 +1363,7 @@
         layerGroups.sigint = L.layerGroup();
         layerGroups.intel = L.layerGroup();
         layerGroups.air = L.layerGroup();
+        layerGroups.sse = L.layerGroup();
         layerGroups.elevation = L.layerGroup();
         layerGroups.route = L.layerGroup();
         layerGroups.tactical = L.layerGroup();
@@ -1473,6 +1513,7 @@
     bindLayerCheckbox(els.layerPings, 'pings');
     bindLayerCheckbox(els.layerSigint, 'sigint');
     bindLayerCheckbox(els.layerIntel, 'intel');
+    bindLayerCheckbox(els.layerSse, 'sse');
     bindLayerCheckbox(els.layerAir, 'air');
     bindLayerCheckbox(els.layerElevation, 'elevation');
     bindLayerCheckbox(els.layerRoute, 'route');

@@ -505,6 +505,10 @@ class Container
                 self::get(\App\Repositories\AtakReportRoutingRepository::class),
                 self::get(\App\Services\Tactical\AtakBridgeModulesService::class)
             ),
+            \App\Services\Sse\SseAnalyticalEngineService::class => new \App\Services\Sse\SseAnalyticalEngineService(),
+            \App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob::class => new \App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob(
+                self::get(\App\Services\Sse\SseAnalyticalEngineService::class)
+            ),
             \App\Services\Cron\CronRunner::class => new \App\Services\Cron\CronRunner(
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
@@ -517,6 +521,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\AttendanceRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),

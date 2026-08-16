@@ -39,6 +39,7 @@ use App\Support\AtakOrderWaypoint;
 use App\Support\AtakGameSession;
 use App\Support\ChatMentionParser;
 use App\Support\GroupMessageParser;
+use App\Support\MpMessageParser;
 use App\Support\MedicalAlertParser;
 use App\Support\TacticalAlertParser;
 use App\Support\SteamId;
@@ -854,8 +855,17 @@ class AtakApiController
             ], 403);
         }
 
-        if ($this->tenantAtakConfigRepository->isMaintenanceEnabled($id) && !$this->canBypassAtakMaintenance()) {
-            $message = $this->tenantAtakConfigRepository->getMaintenanceMessage($id);
+        try {
+            $maintenanceOn = $this->tenantAtakConfigRepository->isMaintenanceEnabled($id);
+        } catch (\Throwable) {
+            $maintenanceOn = false;
+        }
+        if ($maintenanceOn && !$this->canBypassAtakMaintenance()) {
+            try {
+                $message = $this->tenantAtakConfigRepository->getMaintenanceMessage($id);
+            } catch (\Throwable) {
+                $message = '';
+            }
             if ($message === '') {
                 $message = 'L’accès à la carte est suspendu pour le moment. Réessayez plus tard.';
             }
@@ -1415,25 +1425,29 @@ class AtakApiController
      */
     private function applyRoleplayEffects(int $tenantId): ?Response
     {
-        // Vérifier déconnexion simulée
-        if ($this->roleplaySim->shouldSimulateDisconnection($tenantId)) {
-            $message = $this->roleplaySim->getDisconnectionMessage($tenantId);
-            return Response::json([
-                'error' => 'connection_lost',
-                'message' => $message,
-            ], 503);
-        }
+        try {
+            // Vérifier déconnexion simulée
+            if ($this->roleplaySim->shouldSimulateDisconnection($tenantId)) {
+                $message = $this->roleplaySim->getDisconnectionMessage($tenantId);
+                return Response::json([
+                    'error' => 'connection_lost',
+                    'message' => $message,
+                ], 503);
+            }
 
-        // Vérifier perte de paquet
-        if ($this->roleplaySim->shouldSimulatePacketLoss($tenantId)) {
-            return Response::json([
-                'error' => 'packet_lost',
-                'message' => 'Paquet perdu',
-            ], 503);
-        }
+            // Vérifier perte de paquet
+            if ($this->roleplaySim->shouldSimulatePacketLoss($tenantId)) {
+                return Response::json([
+                    'error' => 'packet_lost',
+                    'message' => 'Paquet perdu',
+                ], 503);
+            }
 
-        // Appliquer latence
-        $this->roleplaySim->applyNetworkLatency($tenantId);
+            // Appliquer latence
+            $this->roleplaySim->applyNetworkLatency($tenantId);
+        } catch (\Throwable) {
+            // Ne jamais faire tomber une route métier pour une panne du simulateur roleplay.
+        }
 
         return null;
     }
@@ -1521,11 +1535,15 @@ class AtakApiController
     public function ping(Request $request, array $params = []): Response
     {
         // Pour le ping, on applique la latence mais pas les autres effets
-        $tenantId = $this->resolveTenantId($request);
-        if ($tenantId !== null && $tenantId > 0) {
-            $this->roleplaySim->applyNetworkLatency($tenantId);
+        try {
+            $tenantId = $this->resolveTenantId($request);
+            if ($tenantId !== null && $tenantId > 0) {
+                $this->roleplaySim->applyNetworkLatency($tenantId);
+            }
+        } catch (\Throwable) {
+            // Ping doit rester vivant même si la config roleplay / tenant est cassée.
         }
-        
+
         return Response::json([
             'ok' => true,
             'service' => 'atak',
@@ -1539,47 +1557,54 @@ class AtakApiController
      */
     public function roleplayStats(Request $request, array $params = []): Response
     {
-        $tenantId = $this->resolveTenantId($request);
-        if ($tenantId === null || $tenantId < 1) {
+        $fallback = [
+            'network' => ['enabled' => false],
+            'sensor' => ['enabled' => false],
+            'measured_packet_loss' => null,
+            'zones_enabled' => false,
+            'zones_json' => '',
+            'intel_scramble_enabled' => false,
+            'session_ttl_sec' => 600,
+        ];
+
+        try {
+            $tenantId = $this->resolveTenantId($request);
+            if ($tenantId === null || $tenantId < 1) {
+                return Response::json($fallback);
+            }
+
+            $networkStats = $this->roleplaySim->getNetworkStats($tenantId);
+            $sensorStats = $this->roleplaySim->getSensorStats($tenantId);
+            $mapId = $this->mapId($request);
+            $measuredLoss = $this->getLatestLinkTelemetry($tenantId, $mapId);
+            $roleplayCfg = ($this->tenantAtakConfigRepository ?? new TenantAtakConfigRepository())->getRoleplayConfig($tenantId);
+
+            $zonesJson = '';
+            $zonesArray = null;
+            if (!empty($roleplayCfg['zones_config'])) {
+                $decoded = is_string($roleplayCfg['zones_config'])
+                    ? json_decode($roleplayCfg['zones_config'], true)
+                    : $roleplayCfg['zones_config'];
+                if (is_array($decoded)) {
+                    $zonesArray = $decoded;
+                    $zonesJson = json_encode($decoded, JSON_UNESCAPED_UNICODE) ?: '';
+                } elseif (is_string($roleplayCfg['zones_config'])) {
+                    $zonesJson = $roleplayCfg['zones_config'];
+                }
+            }
+
             return Response::json([
-                'network' => ['enabled' => false],
-                'sensor' => ['enabled' => false],
-                'measured_packet_loss' => null,
-                'zones_enabled' => false,
-                'zones_json' => '',
+                'network' => $networkStats,
+                'sensor' => $sensorStats,
+                'measured_packet_loss' => $measuredLoss,
+                'zones_enabled' => (bool) ($roleplayCfg['zones_enabled'] ?? false),
+                'zones_json' => $zonesArray ?? $zonesJson,
+                'intel_scramble_enabled' => (bool) ($roleplayCfg['intel_scramble_enabled'] ?? false),
                 'session_ttl_sec' => 600,
             ]);
+        } catch (\Throwable) {
+            return Response::json($fallback);
         }
-
-        $networkStats = $this->roleplaySim->getNetworkStats($tenantId);
-        $sensorStats = $this->roleplaySim->getSensorStats($tenantId);
-        $mapId = $this->mapId($request);
-        $measuredLoss = $this->getLatestLinkTelemetry($tenantId, $mapId);
-        $roleplayCfg = ($this->tenantAtakConfigRepository ?? new TenantAtakConfigRepository())->getRoleplayConfig($tenantId);
-
-        $zonesJson = '';
-        $zonesArray = null;
-        if (!empty($roleplayCfg['zones_config'])) {
-            $decoded = is_string($roleplayCfg['zones_config'])
-                ? json_decode($roleplayCfg['zones_config'], true)
-                : $roleplayCfg['zones_config'];
-            if (is_array($decoded)) {
-                $zonesArray = $decoded;
-                $zonesJson = json_encode($decoded, JSON_UNESCAPED_UNICODE) ?: '';
-            } elseif (is_string($roleplayCfg['zones_config'])) {
-                $zonesJson = $roleplayCfg['zones_config'];
-            }
-        }
-
-        return Response::json([
-            'network' => $networkStats,
-            'sensor' => $sensorStats,
-            'measured_packet_loss' => $measuredLoss,
-            'zones_enabled' => (bool) ($roleplayCfg['zones_enabled'] ?? false),
-            'zones_json' => $zonesArray ?? $zonesJson,
-            'intel_scramble_enabled' => (bool) ($roleplayCfg['intel_scramble_enabled'] ?? false),
-            'session_ttl_sec' => 600,
-        ]);
     }
 
     /**
@@ -4816,6 +4841,38 @@ class AtakApiController
                 return true;
             }
         ));
+
+        // Filtrage MP P2P : TOC voit tout ; ?callsign= ne remonte que les fils où l’indicatif est partie.
+        $mpCallsign = trim((string) ($request->query('callsign') ?? $request->query('for_callsign') ?? ''));
+        if ($mpCallsign !== '') {
+            $rows = array_values(array_filter(
+                $rows,
+                static function ($row) use ($mpCallsign): bool {
+                    if (!is_array($row)) {
+                        return false;
+                    }
+                    $mp = MpMessageParser::parse(isset($row['body']) ? (string) $row['body'] : null);
+                    if ($mp === null) {
+                        return true;
+                    }
+
+                    return MpMessageParser::concernsCallSign($mp, $mpCallsign);
+                }
+            ));
+        }
+
+        // Enrichissement léger pour l’UI (groupe / MP / tactique déjà parsé côté JS aussi).
+        foreach ($rows as &$chatRow) {
+            if (!is_array($chatRow)) {
+                continue;
+            }
+            $mp = MpMessageParser::enrichChatRow($chatRow);
+            if ($mp !== null) {
+                $chatRow['mp'] = $mp;
+            }
+        }
+        unset($chatRow);
+
         if (count($rows) > $limit) {
             $rows = array_slice($rows, -$limit);
         }
@@ -4997,15 +5054,16 @@ class AtakApiController
      */
     public function videoFeeds(Request $request, array $params = []): Response
     {
-        $r = $this->requireTenant($request);
-        if ($r instanceof Response) {
-            return $r;
-        }
-        $tenantId = $r;
         $svc = new \App\Services\Tactical\AtakVideoFeedsService();
         $method = strtoupper((string) ($request->method() ?? 'GET'));
 
         try {
+            $r = $this->requireTenant($request);
+            if ($r instanceof Response) {
+                return $r;
+            }
+            $tenantId = $r;
+
             if ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
                 if (!$this->authArma()) {
                     return Response::json(['error' => 'Unauthorized'], 401);
@@ -5794,6 +5852,29 @@ class AtakApiController
             );
         }
 
+        // Messages privés cTab (MP|from|to|…) — archive TOC, hors messagerie sociale
+        $mpMsg = MpMessageParser::enrichChatRow(is_array($row) ? $row : []);
+        if ($mpMsg !== null && is_array($row)) {
+            $row['mp'] = $mpMsg;
+            $mpFrom = trim((string) ($mpMsg['from'] ?? ''));
+            $mpTo = trim((string) ($mpMsg['to'] ?? ''));
+            $this->activityLog?->record(
+                $tenantId,
+                $mapId,
+                AtakActivityLogService::TYPE_CHAT,
+                'Message privé — ' . ($mpFrom !== '' ? $mpFrom : $author)
+                    . ($mpTo !== '' ? ' → ' . $mpTo : ''),
+                $mpFrom !== '' ? $mpFrom : (string) $author,
+                array_merge($chatActivityMeta, [
+                    'channel' => 'MP',
+                    'from' => $mpFrom,
+                    'to' => $mpTo,
+                    'summary' => (string) ($mpMsg['text'] ?? ''),
+                    'chat_id' => (int) ($row['id'] ?? 0),
+                ])
+            );
+        }
+
         // Alertes tactiques TIC / CLEAR / FRAGO / SALUTE / Eagle Down
         $tactical = TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
         if ($tactical !== null) {
@@ -5876,6 +5957,41 @@ class AtakApiController
             }
         }
 
+        // Lot 1A : FRAGO IceMan / alerte tactique → canon atak_orders (onglet Ordres)
+        if (
+            is_array($tactical)
+            && ($tactical['kind'] ?? '') === 'frago'
+            && !isset($row['order'])
+            && $this->orderRepository
+            && $this->orderRepository->tablesReady()
+        ) {
+            $linkedOid = trim((string) ($tactical['order_id'] ?? ''));
+            $alreadyLinked = $linkedOid !== ''
+                && $this->orderRepository->findByExternalId($tenantId, $mapId, $linkedOid) !== null;
+            $fragoOrder = $this->upsertFragoOrderFromTacticalAlert(
+                $tenantId,
+                $mapId,
+                $tactical,
+                (string) $author,
+                (int) ($row['id'] ?? 0)
+            );
+            if (is_array($fragoOrder)) {
+                $row['order'] = $this->serializeOrder($fragoOrder);
+                if (!$alreadyLinked) {
+                    $this->activityLog?->record(
+                        $tenantId,
+                        $mapId,
+                        AtakActivityLogService::TYPE_ORDER,
+                        'Ordre fragmentaire reçu du théâtre — ' . $this->orderTypeLabelFr(
+                            (string) ($fragoOrder['order_type'] ?? 'FRAGO'),
+                            (string) ($fragoOrder['type_label'] ?? '')
+                        ),
+                        (string) ($fragoOrder['issuer'] ?? $author)
+                    );
+                }
+            }
+        }
+
         $medical = MedicalAlertParser::enrichChatRow(is_array($row) ? $row : []);
         if ($medical !== null) {
             $row['medical'] = $medical;
@@ -5942,9 +6058,10 @@ class AtakApiController
             } catch (\Throwable) {
             }
         } elseif (
-            // Déjà journalisé métier (ordre / alerte tactique / groupe / réglages camps) : pas de doublon « Message envoyé ».
+            // Déjà journalisé métier (ordre / alerte tactique / groupe / MP / réglages camps) : pas de doublon « Message envoyé ».
             !isset($row['order'])
             && !isset($row['group'])
+            && !isset($row['mp'])
             && $tactical === null
         ) {
             $mentionSummary = $this->applyChatMentions(
@@ -6211,14 +6328,20 @@ class AtakApiController
                 'message' => 'Connectez-vous au portail pour gérer vos modèles d’ordres.',
             ], 403);
         }
-        $templates = $this->orderTemplateRepository && $this->orderTemplateRepository->tablesReady()
-            ? $this->orderTemplateRepository->listForTenant($r)
-            : [];
+        try {
+            $templates = $this->orderTemplateRepository && $this->orderTemplateRepository->tablesReady()
+                ? $this->orderTemplateRepository->listForTenant($r)
+                : [];
+            $persisted = $this->orderTemplateRepository?->tablesReady() ?? false;
+        } catch (\Throwable) {
+            $templates = [];
+            $persisted = false;
+        }
 
         return Response::json([
             'ok' => true,
             'templates' => $templates,
-            'persisted' => $this->orderTemplateRepository?->tablesReady() ?? false,
+            'persisted' => $persisted,
         ]);
     }
 
@@ -6327,14 +6450,20 @@ class AtakApiController
                 'message' => 'Connectez-vous au portail pour gérer les types d’ordre.',
             ], 403);
         }
-        $types = $this->orderTypeRepository && $this->orderTypeRepository->tablesReady()
-            ? $this->orderTypeRepository->listForTenant($r)
-            : [];
+        try {
+            $types = $this->orderTypeRepository && $this->orderTypeRepository->tablesReady()
+                ? $this->orderTypeRepository->listForTenant($r)
+                : [];
+            $persisted = $this->orderTypeRepository?->tablesReady() ?? false;
+        } catch (\Throwable) {
+            $types = [];
+            $persisted = false;
+        }
 
         return Response::json([
             'ok' => true,
             'types' => $types,
-            'persisted' => $this->orderTypeRepository?->tablesReady() ?? false,
+            'persisted' => $persisted,
         ]);
     }
 
@@ -7223,6 +7352,57 @@ class AtakApiController
         return $result;
     }
 
+    /**
+     * Canonise un FRAGO (alerte IceMan / Overwatch) dans atak_orders pour l’onglet Ordres.
+     *
+     * @param array<string, mixed> $tactical
+     * @return array<string, mixed>|null
+     */
+    private function upsertFragoOrderFromTacticalAlert(
+        int $tenantId,
+        int $mapId,
+        array $tactical,
+        string $author,
+        int $chatId
+    ): ?array {
+        if (!$this->orderRepository || !$this->orderRepository->tablesReady()) {
+            return null;
+        }
+        $externalId = trim((string) ($tactical['order_id'] ?? ''));
+        if ($externalId === '' || preg_match('/^[A-Za-z0-9_.:\-]+$/', $externalId) !== 1) {
+            $externalId = $chatId > 0
+                ? ('FRAGO-CHAT-' . $chatId)
+                : ('FRAGO-TAC-' . bin2hex(random_bytes(4)));
+        }
+
+        $issuer = trim((string) ($tactical['call_sign'] ?? ''));
+        if ($issuer === '') {
+            $issuer = trim($author) !== '' ? trim($author) : 'Terrain';
+        }
+        $payload = TacticalAlertParser::formatFragoOrderPayload($tactical);
+        if ($payload === '') {
+            $payload = trim((string) ($tactical['summary'] ?? 'Ordre fragmentaire'));
+        }
+        $grid = trim((string) ($tactical['grid'] ?? ''));
+        if ($grid !== '' && mb_stripos($payload, $grid) === false) {
+            $payload .= ' — Grille ' . $grid;
+        }
+
+        return $this->orderRepository->upsertByExternalId($tenantId, $mapId, [
+            'external_id' => $externalId,
+            'order_type' => 'FRAGO',
+            'type_label' => 'Ordre fragmentaire',
+            'target' => '',
+            'target_type' => 'all',
+            'payload' => $payload,
+            'priority' => 'IMPORTANT',
+            'issuer' => $issuer,
+            'status' => 'PENDING',
+            'source' => 'game',
+            'radio_sim' => false,
+        ]);
+    }
+
     private function orderTypeLabelFr(string $type, string $customLabel = ''): string
     {
         $customLabel = trim($customLabel);
@@ -7556,6 +7736,66 @@ class AtakApiController
             'callsign' => $callsign,
             'userId' => $userId,
         ];
+    }
+
+    /**
+     * Calque « Dossiers SSE » : pings/repères avec coordonnées terrain + sites rattachés.
+     * Activable depuis la Tacmap sans mélanger les pings mission live.
+     */
+    public function sseCaseOverlay(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        try {
+            $maps = new \App\Repositories\SseCaseMapRepository();
+            $features = $maps->listAtakOverlay($tenantId, $mapId);
+            $sites = $maps->listAtakSites($tenantId, $mapId);
+        } catch (\Throwable) {
+            return Response::json(['features' => [], 'sites' => [], 'mapId' => $mapId]);
+        }
+
+        $points = [];
+        foreach ($features as $f) {
+            $points[] = [
+                'id' => 'feat-' . (int) ($f['id'] ?? 0),
+                'source' => 'feature',
+                'case_id' => (int) ($f['case_id'] ?? 0),
+                'case_ref' => (string) ($f['case_ref'] ?? ''),
+                'case_title' => (string) ($f['case_title'] ?? ''),
+                'kind' => (string) ($f['kind'] ?? 'ping'),
+                'label' => (string) ($f['label'] ?? ''),
+                'note' => (string) ($f['note'] ?? ''),
+                'color' => (string) ($f['color'] ?? '#34d399'),
+                'pos_x' => (float) ($f['arma_x'] ?? 0),
+                'pos_y' => (float) ($f['arma_y'] ?? 0),
+            ];
+        }
+        foreach ($sites as $s) {
+            $points[] = [
+                'id' => 'site-' . (int) ($s['site_id'] ?? 0),
+                'source' => 'site',
+                'case_id' => (int) ($s['case_id'] ?? 0),
+                'case_ref' => (string) ($s['case_ref'] ?? ''),
+                'case_title' => (string) ($s['case_title'] ?? ''),
+                'kind' => 'site',
+                'label' => (string) ($s['designation'] ?? 'Site'),
+                'note' => (string) ($s['grid_reference'] ?? ''),
+                'color' => '#f59e0b',
+                'pos_x' => (float) ($s['pos_x'] ?? 0),
+                'pos_y' => (float) ($s['pos_y'] ?? 0),
+            ];
+        }
+
+        return Response::json([
+            'mapId' => $mapId,
+            'count' => count($points),
+            'points' => $points,
+        ]);
     }
 
     public function pingsIndex(Request $request, array $params = []): Response
@@ -8044,25 +8284,32 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
-        $missionId = $request->query('mission_id') ?? $request->query('missionId');
-        $author = $request->query('author');
-        $dateFrom = $request->query('date_from');
-        $dateTo = $request->query('date_to');
-        $deviceType = $request->query('device_type') ?? $request->query('device');
-        $limit = min((int) ($request->query('limit') ?: 100), 200);
-        $rows = $this->reconRepo->list($tenantId, $missionId, $author, $dateFrom, $dateTo, $limit);
-        if (is_string($deviceType) && $deviceType !== '') {
-            $want = strtoupper($deviceType);
-            $rows = array_values(array_filter($rows, static function (array $row) use ($want): bool {
-                return strtoupper((string) ($row['device_type'] ?? '')) === $want;
-            }));
+        try {
+            $missionId = $request->query('mission_id') ?? $request->query('missionId');
+            $author = $request->query('author');
+            $dateFrom = $request->query('date_from');
+            $dateTo = $request->query('date_to');
+            $deviceType = $request->query('device_type') ?? $request->query('device');
+            $limit = min((int) ($request->query('limit') ?: 100), 200);
+            $rows = $this->reconRepo->list($tenantId, $missionId, $author, $dateFrom, $dateTo, $limit);
+            if (is_string($deviceType) && $deviceType !== '') {
+                $want = strtoupper($deviceType);
+                $rows = array_values(array_filter($rows, static function (array $row) use ($want): bool {
+                    return strtoupper((string) ($row['device_type'] ?? '')) === $want;
+                }));
+            }
+            foreach ($rows as &$row) {
+                $row['url'] = '/uploads/recon/' . basename((string) ($row['image_path'] ?? ''));
+                $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
+            }
+            unset($row);
+
+            return Response::json($rows);
+        } catch (\Throwable $e) {
+            error_log('[atak/recon-images] index ' . $e->getMessage());
+
+            return Response::json([]);
         }
-        foreach ($rows as &$r) {
-            $r['url'] = '/uploads/recon/' . basename($r['image_path']);
-            $r['device_label'] = $this->reconDeviceLabel((string) ($r['device_type'] ?? 'CTAB'));
-        }
-        unset($r);
-        return Response::json($rows);
     }
 
     private function reconDeviceLabel(string $deviceType): string
@@ -8078,91 +8325,119 @@ class AtakApiController
 
     public function reconImagesStore(Request $request, array $params = []): Response
     {
-        if (!$this->authArma()) {
-            return Response::json(['error' => 'Unauthorized'], 401);
-        }
-        $r = $this->requireTenant($request);
-        if ($r instanceof Response) {
-            return $r;
-        }
-        $tenantId = $r;
-        $actor = $this->guardArmaWrite($request, $tenantId, false);
-        if ($actor instanceof Response) {
-            return $actor;
-        }
-        if (empty($_FILES['image']) && empty($_FILES['photo'])) {
-            return Response::json([
-                'error' => 'missing_image',
-                'message' => 'Aucune image reçue. Reprenez la capture depuis le terrain.',
-            ], 400);
-        }
-        $file = $_FILES['image'] ?? $_FILES['photo'];
-        $uploadErr = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
-        if ($uploadErr !== UPLOAD_ERR_OK) {
-            $msg = match ($uploadErr) {
-                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'La photo est trop lourde pour être transmise. Essayez une capture plus légère.',
-                UPLOAD_ERR_PARTIAL => 'Envoi interrompu — la liaison semble dégradée. Réessayez.',
-                UPLOAD_ERR_NO_FILE => 'Fichier photo introuvable. Reprenez la capture.',
-                default => 'Impossible de recevoir la photo. Vérifiez la liaison puis réessayez.',
-            };
+        try {
+            if (!$this->authArma()) {
+                return Response::json(['error' => 'Unauthorized'], 401);
+            }
+            $r = $this->requireTenant($request);
+            if ($r instanceof Response) {
+                return $r;
+            }
+            $tenantId = $r;
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+            if (empty($_FILES['image']) && empty($_FILES['photo'])) {
+                return Response::json([
+                    'error' => 'missing_image',
+                    'message' => 'Aucune image reçue. Reprenez la capture depuis le terrain.',
+                ], 400);
+            }
+            $file = $_FILES['image'] ?? $_FILES['photo'];
+            $uploadErr = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($uploadErr !== UPLOAD_ERR_OK) {
+                $msg = match ($uploadErr) {
+                    UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'La photo est trop lourde pour être transmise. Essayez une capture plus légère.',
+                    UPLOAD_ERR_PARTIAL => 'Envoi interrompu — la liaison semble dégradée. Réessayez.',
+                    UPLOAD_ERR_NO_FILE => 'Fichier photo introuvable. Reprenez la capture.',
+                    default => 'Impossible de recevoir la photo. Vérifiez la liaison puis réessayez.',
+                };
 
-            return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
-        }
-        $dir = dirname(__DIR__, 2) . '/../public/uploads/recon';
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0755, true);
-        }
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
-        $filename = 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '.' . $ext;
-        $path = $dir . '/' . $filename;
-        if (!move_uploaded_file($file['tmp_name'], $path)) {
+                return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
+            }
+
+            $dir = function_exists('base_path')
+                ? base_path('public/uploads/recon')
+                : (dirname(__DIR__, 2) . '/../public/uploads/recon');
+            if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                error_log('[atak/recon-images] mkdir failed: ' . $dir);
+
+                return Response::json([
+                    'error' => 'save_failed',
+                    'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
+                ], 503);
+            }
+            $ext = pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION) ?: 'jpg';
+            $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'jpg';
+            $filename = 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '.' . $ext;
+            $path = $dir . DIRECTORY_SEPARATOR . $filename;
+            if (!move_uploaded_file((string) $file['tmp_name'], $path)) {
+                return Response::json([
+                    'error' => 'save_failed',
+                    'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
+                ], 503);
+            }
+            $rawDevice = (string) ($_POST['device_type'] ?? $_POST['device'] ?? 'CTAB');
+            $deviceNorm = strtoupper(trim($rawDevice));
+            if (in_array($deviceNorm, ['HCAM', 'HELMET_CAM'], true)) {
+                $deviceNorm = 'HELMET';
+            } elseif ($deviceNorm === 'VEHICLE') {
+                $deviceNorm = 'UAV';
+            }
+            $feedId = trim((string) ($_POST['feed_id'] ?? $_POST['feedId'] ?? ''));
+            $unitName = $_POST['unit_name'] ?? $_POST['unitName'] ?? null;
+            if (($unitName === null || $unitName === '') && $feedId !== '') {
+                $unitName = $feedId;
+            }
+            $data = [
+                'image_path' => 'recon/' . $filename,
+                'author_callsign' => $_POST['author'] ?? $_POST['author_callsign'] ?? 'Unknown',
+                'unit_name' => $unitName,
+                'side' => $_POST['side'] ?? 'WEST',
+                'mission_id' => $_POST['mission_id'] ?? $_POST['missionId'] ?? null,
+                'caption' => $_POST['caption'] ?? null,
+                'fx_profile' => isset($_POST['fx_profile']) ? trim((string) $_POST['fx_profile']) : null,
+                'fx_intensity' => isset($_POST['fx_intensity']) && is_numeric($_POST['fx_intensity']) ? round((float) $_POST['fx_intensity'], 2) : null,
+                'pos_x' => isset($_POST['pos_x']) && is_numeric($_POST['pos_x']) ? (float) $_POST['pos_x'] : null,
+                'pos_y' => isset($_POST['pos_y']) && is_numeric($_POST['pos_y']) ? (float) $_POST['pos_y'] : null,
+                'pos_z' => isset($_POST['pos_z']) && is_numeric($_POST['pos_z']) ? (float) $_POST['pos_z'] : null,
+                'grid_ref' => $_POST['grid_ref'] ?? $_POST['grid'] ?? null,
+                'heading' => isset($_POST['heading']) && is_numeric($_POST['heading']) ? (float) $_POST['heading'] : null,
+                'altitude' => isset($_POST['altitude']) && is_numeric($_POST['altitude']) ? (float) $_POST['altitude'] : null,
+                'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
+                'captured_at' => isset($_POST['capturedAt']) ? (int) $_POST['capturedAt'] : time(),
+            ];
+            $row = $this->reconRepo->create($tenantId, $data);
+            if ($row === []) {
+                @unlink($path);
+                error_log('[atak/recon-images] create failed for ' . $filename);
+
+                return Response::json([
+                    'error' => 'store_failed',
+                    'message' => 'La photo a été reçue mais n’a pas pu être indexée. Réessayez dans un instant.',
+                ], 503);
+            }
+            $row['url'] = '/uploads/recon/' . $filename;
+            $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
+            $mapId = (int) ($_POST['mapId'] ?? $_POST['map_id'] ?? self::DEFAULT_MAP_ID);
+            $this->activityLog->record(
+                $tenantId,
+                $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
+                AtakActivityLogService::TYPE_INTEL,
+                $row['device_label'] . ' reçue — ' . ($data['author_callsign'] ?? 'Inconnu'),
+                (string) ($data['author_callsign'] ?? '')
+            );
+
+            return Response::json($row, 201);
+        } catch (\Throwable $e) {
+            error_log('[atak/recon-images] store ' . $e->getMessage());
+
             return Response::json([
-                'error' => 'save_failed',
-                'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
-            ], 500);
+                'error' => 'store_failed',
+                'message' => 'Impossible d’enregistrer la photo pour le moment. Réessayez.',
+            ], 503);
         }
-        $rawDevice = (string) ($_POST['device_type'] ?? $_POST['device'] ?? 'CTAB');
-        $deviceNorm = strtoupper(trim($rawDevice));
-        if (in_array($deviceNorm, ['HCAM', 'HELMET_CAM'], true)) {
-            $deviceNorm = 'HELMET';
-        } elseif ($deviceNorm === 'VEHICLE') {
-            $deviceNorm = 'UAV';
-        }
-        $feedId = trim((string) ($_POST['feed_id'] ?? $_POST['feedId'] ?? ''));
-        $unitName = $_POST['unit_name'] ?? $_POST['unitName'] ?? null;
-        if (($unitName === null || $unitName === '') && $feedId !== '') {
-            $unitName = $feedId;
-        }
-        $data = [
-            'image_path' => 'recon/' . $filename,
-            'author_callsign' => $_POST['author'] ?? $_POST['author_callsign'] ?? 'Unknown',
-            'unit_name' => $unitName,
-            'side' => $_POST['side'] ?? 'WEST',
-            'mission_id' => $_POST['mission_id'] ?? $_POST['missionId'] ?? null,
-            'caption' => $_POST['caption'] ?? null,
-            'fx_profile' => isset($_POST['fx_profile']) ? trim((string) $_POST['fx_profile']) : null,
-            'fx_intensity' => isset($_POST['fx_intensity']) && is_numeric($_POST['fx_intensity']) ? round((float) $_POST['fx_intensity'], 2) : null,
-            'pos_x' => isset($_POST['pos_x']) ? (float) $_POST['pos_x'] : null,
-            'pos_y' => isset($_POST['pos_y']) ? (float) $_POST['pos_y'] : null,
-            'pos_z' => isset($_POST['pos_z']) ? (float) $_POST['pos_z'] : null,
-            'grid_ref' => $_POST['grid_ref'] ?? $_POST['grid'] ?? null,
-            'heading' => isset($_POST['heading']) ? (float) $_POST['heading'] : null,
-            'altitude' => isset($_POST['altitude']) ? (float) $_POST['altitude'] : null,
-            'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
-            'captured_at' => isset($_POST['capturedAt']) ? (int) $_POST['capturedAt'] : time(),
-        ];
-        $row = $this->reconRepo->create($tenantId, $data);
-        $row['url'] = '/uploads/recon/' . $filename;
-        $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
-        $mapId = (int) ($_POST['mapId'] ?? $_POST['map_id'] ?? self::DEFAULT_MAP_ID);
-        $this->activityLog->record(
-            $tenantId,
-            $mapId,
-            AtakActivityLogService::TYPE_INTEL,
-            $row['device_label'] . ' reçue — ' . ($data['author_callsign'] ?? 'Inconnu'),
-            (string) ($data['author_callsign'] ?? '')
-        );
-        return Response::json($row, 201);
     }
 
     public function reconImagesShow(Request $request, array $params = []): Response

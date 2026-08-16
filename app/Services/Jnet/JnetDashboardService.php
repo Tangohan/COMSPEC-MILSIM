@@ -20,6 +20,14 @@ use App\Support\OrbatRosterPayload;
  */
 final class JnetDashboardService
 {
+    /**
+     * Natures de fiche qui constituent un engagement sur le terrain. Les formations,
+     * informations pratiques, tâches internes et permanences relèvent d'autres écrans.
+     *
+     * @var list<string>
+     */
+    private const OPERATIONAL_ENTRY_TYPES = ['mission', 'manifestation'];
+
     public function __construct(
         private ?UserRepository $users = null,
         private ?TenantRepository $tenants = null,
@@ -103,20 +111,415 @@ final class JnetDashboardService
     public function buildUnitPage(int $tenantId, int $viewerUserId): array
     {
         $home = $this->buildHome($tenantId, $viewerUserId);
-        $units = [];
-        try {
-            $units = $this->units->listFlatForStructure($tenantId);
-        } catch (\Throwable) {
-            $units = [];
+        $personnel = $this->loadPersonnelCards($tenantId);
+        $ops = $this->loadOperations($tenantId);
+        $orbat = is_array($home['orbatPreview'] ?? null) ? $home['orbatPreview'] : null;
+
+        $nodes = [];
+        if ($orbat !== null && trim((string) ($orbat['label'] ?? '')) !== '') {
+            $this->flattenOrbat($orbat, 0, $nodes);
         }
+        $hasRealOrbat = count($nodes) > 1;
+
+        $subUnits = $hasRealOrbat
+            ? $this->unitRowsFromOrbat(array_slice($nodes, 1), $personnel, $ops)
+            : $this->demoSubUnits();
+
+        $duty = $this->strengthByDuty($personnel);
+        $readiness = $this->unitReadiness($subUnits, $duty);
 
         return array_merge($home, [
-            'subUnits' => $units,
+            'orbat' => $orbat,
+            'orbatRoot' => $nodes[0] ?? null,
+            'hasRealOrbat' => $hasRealOrbat,
+            'subUnits' => $subUnits,
+            'subUnitsTotal' => count($subUnits),
+            'dutyBreakdown' => $duty,
+            'readiness' => $readiness,
+            'keyPosts' => $this->keyPosts($personnel),
+            'specialities' => $this->specialityCounts($personnel),
+            'unitAssets' => $this->unitAssets((string) ($home['unitName'] ?? 'unite')),
+            'unitIdentity' => $this->unitIdentity($tenantId, (string) ($home['unitName'] ?? 'Unité'), $subUnits),
             'recentEvents' => array_slice($home['intelFeed'], 0, 6),
-            'orbat' => $home['orbatPreview'],
-            'qualificationSummary' => 'Opérateurs formés · aptitude générale nominale',
-            'locationLabel' => 'Implantation : zone d’opérations assignée',
+            'unitTaskings' => array_slice($ops, 0, 6),
         ]);
+    }
+
+    /**
+     * Aplatit l’arbre ORBAT en conservant la profondeur d’affichage.
+     *
+     * @param array<string, mixed> $node
+     * @param list<array<string, mixed>> $out
+     */
+    private function flattenOrbat(array $node, int $depth, array &$out): void
+    {
+        $copy = $node;
+        $copy['depth'] = $depth;
+        unset($copy['children']);
+        $out[] = $copy;
+        foreach ($node['children'] ?? [] as $child) {
+            if (is_array($child)) {
+                $this->flattenOrbat($child, $depth + 1, $out);
+            }
+        }
+    }
+
+    /**
+     * Lignes du tableau des sous-unités à partir de l’ORBAT réel.
+     *
+     * @param list<array<string, mixed>> $nodes
+     * @param list<array<string, mixed>> $personnel
+     * @param list<array<string, mixed>> $ops
+     * @return list<array<string, mixed>>
+     */
+    private function unitRowsFromOrbat(array $nodes, array $personnel, array $ops): array
+    {
+        $rows = [];
+        foreach ($nodes as $node) {
+            $label = (string) ($node['label'] ?? 'Unité');
+            $code = trim((string) ($node['role'] ?? ''));
+            if ($code === '' || $code === 'Unité') {
+                $code = $this->codeFromLabel($label);
+            }
+            $members = is_array($node['members'] ?? null) ? $node['members'] : [];
+            $strength = (int) ($node['strength'] ?? count($members));
+            $seed = crc32($label . '|' . $code);
+
+            $readinessValues = [];
+            foreach ($members as $m) {
+                if (isset($m['readiness']) && (int) $m['readiness'] > 0) {
+                    $readinessValues[] = (int) $m['readiness'];
+                }
+            }
+            $readiness = $readinessValues !== []
+                ? (int) round(array_sum($readinessValues) / count($readinessValues))
+                : 58 + ($seed % 39);
+
+            $authorized = $strength > 0 ? $strength + ($seed % 4) : 6 + ($seed % 7);
+            $present = 0;
+            foreach ($personnel as $p) {
+                if (strcasecmp(trim((string) ($p['unit'] ?? '')), $label) === 0 && ($p['duty'] ?? '') !== 'off') {
+                    $present++;
+                }
+            }
+            if ($present === 0 && $strength > 0) {
+                $present = max(1, (int) round($strength * (0.7 + (($seed % 25) / 100))));
+            }
+
+            $unitId = (int) ($node['unitId'] ?? 0);
+            // Une opération n'est rattachée à une sous-unité que si la fiche lui est explicitement destinée.
+            $tasking = null;
+            foreach ($ops as $op) {
+                if ($unitId > 0 && (int) ($op['unit_id'] ?? 0) === $unitId) {
+                    $tasking = $op;
+                    break;
+                }
+            }
+
+            $rows[] = [
+                'id' => $unitId,
+                'code' => strtoupper($code),
+                'name' => $label,
+                'depth' => (int) ($node['depth'] ?? 1),
+                'type' => (string) ($node['type'] ?? 'command'),
+                'leader' => $this->cleanLeader((string) ($node['leader'] ?? '')),
+                'leader_initials' => $this->initialsOf((string) ($node['leader'] ?? $label)),
+                'strength' => $strength > 0 ? $strength : $present,
+                'authorized' => max($authorized, $present),
+                'present' => $present,
+                'readiness' => max(0, min(100, $readiness)),
+                'status' => $this->readinessStatus($readiness),
+                'mission' => $this->cleanMission((string) ($node['mission'] ?? ''), $label),
+                'tasking' => $tasking !== null ? (string) ($tasking['title'] ?? '—') : '—',
+                'tasking_state' => $tasking !== null ? (string) ($tasking['state'] ?? '') : '',
+                'href' => url('jnet/personnel?filtre=' . rawurlencode($label)),
+                'icon' => $node['chartIconUrl'] ?? null,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function demoSubUnits(): array
+    {
+        $demo = [
+            ['ALPHA', 'Section d’assaut ALPHA', 'Manœuvre débarquée, prise et tenue d’objectif.', 1],
+            ['BRAVO', 'Section d’assaut BRAVO', 'Appui, bouclage et réserve d’intervention.', 1],
+            ['CHARLIE', 'Groupe reconnaissance', 'Observation, jalonnement et renseignement de contact.', 1],
+            ['SUPPORT', 'Élément d’appui', 'Appui feu, transmissions et soutien santé.', 1],
+            ['LOG', 'Détachement soutien', 'Ravitaillement, maintenance et mouvements.', 1],
+            ['CMD', 'Poste de commandement', 'Conduite des opérations et coordination du renseignement.', 1],
+        ];
+        $rows = [];
+        foreach ($demo as [$code, $name, $mission, $depth]) {
+            $seed = crc32($code . $name);
+            $strength = 6 + ($seed % 9);
+            $readiness = 61 + ($seed % 37);
+            $rows[] = [
+                'id' => 0,
+                'code' => $code,
+                'name' => $name,
+                'depth' => $depth,
+                'type' => strtolower($code),
+                'leader' => '—',
+                'leader_initials' => substr($code, 0, 2),
+                'strength' => $strength,
+                'authorized' => $strength + ($seed % 4),
+                'present' => max(1, $strength - ($seed % 3)),
+                'readiness' => $readiness,
+                'status' => $this->readinessStatus($readiness),
+                'mission' => $mission,
+                'tasking' => '—',
+                'tasking_state' => '',
+                'href' => url('jnet/personnel'),
+                'icon' => null,
+                'demo' => true,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $personnel
+     * @return array<string, array{label: string, count: int, share: int}>
+     */
+    private function strengthByDuty(array $personnel): array
+    {
+        $total = max(count($personnel), 1);
+        $buckets = ['active' => 0, 'deployed' => 0, 'off' => 0];
+        foreach ($personnel as $p) {
+            $duty = (string) ($p['duty'] ?? 'active');
+            $buckets[$duty] = ($buckets[$duty] ?? 0) + 1;
+        }
+        $labels = [
+            'active' => 'En service',
+            'deployed' => 'En mission',
+            'off' => 'Repos / indisponible',
+        ];
+        $out = [];
+        foreach ($buckets as $key => $count) {
+            $out[$key] = [
+                'label' => $labels[$key] ?? ucfirst($key),
+                'count' => $count,
+                'share' => (int) round(($count / $total) * 100),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $subUnits
+     * @param array<string, array{label: string, count: int, share: int}> $duty
+     * @return array<string, mixed>
+     */
+    private function unitReadiness(array $subUnits, array $duty): array
+    {
+        $values = array_map(static fn (array $u): int => (int) ($u['readiness'] ?? 0), $subUnits);
+        $overall = $values !== [] ? (int) round(array_sum($values) / count($values)) : 0;
+        $available = ($duty['active']['share'] ?? 0) + ($duty['deployed']['share'] ?? 0);
+
+        return [
+            'overall' => $overall,
+            'label' => $this->readinessStatus($overall),
+            'components' => [
+                ['label' => 'Disponibilité du personnel', 'value' => min(100, $available)],
+                ['label' => 'Encadrement en place', 'value' => min(100, max(0, $overall + 6))],
+                ['label' => 'Qualifications à jour', 'value' => min(100, max(0, $overall - 4))],
+                ['label' => 'Moyens en ligne', 'value' => min(100, max(0, $overall + 2))],
+            ],
+        ];
+    }
+
+    /**
+     * Postes clés de l’unité, pourvus à partir des fonctions déclarées.
+     *
+     * @param list<array<string, mixed>> $personnel
+     * @return list<array<string, mixed>>
+     */
+    private function keyPosts(array $personnel): array
+    {
+        $wanted = [
+            ['Commandant d’unité', ['COMMAND', 'CDU', 'CHEF DE CORPS', 'OFFICIER COMMANDANT']],
+            ['Adjoint au commandant', ['ADJOINT', 'SECOND', 'XO']],
+            ['Officier opérations', ['OPS', 'OPER', 'S3']],
+            ['Officier renseignement', ['INTEL', 'RENSEIGN', 'S2']],
+            ['Chef logistique', ['LOG', 'SOUTIEN', 'S4']],
+            ['Officier sécurité', ['SECU', 'SÉCU', 'SAFETY']],
+        ];
+        $used = [];
+        $posts = [];
+        foreach ($wanted as [$title, $needles]) {
+            $match = null;
+            foreach ($personnel as $p) {
+                $id = (int) ($p['id'] ?? 0);
+                if (isset($used[$id])) {
+                    continue;
+                }
+                $hay = strtoupper((string) ($p['function'] ?? '') . ' ' . ($p['role'] ?? '') . ' ' . ($p['unit'] ?? ''));
+                foreach ($needles as $needle) {
+                    if (str_contains($hay, $needle)) {
+                        $match = $p;
+                        $used[$id] = true;
+                        break 2;
+                    }
+                }
+            }
+            $posts[] = [
+                'title' => $title,
+                'holder' => $match !== null ? (string) ($match['name'] ?? '') : '',
+                'grade' => $match !== null ? (string) ($match['grade'] ?? '') : '',
+                'callsign' => $match !== null ? (string) ($match['callsign'] ?? '') : '',
+                'photo' => $match['photo'] ?? null,
+                'initials' => $match !== null ? (string) ($match['initials'] ?? '?') : '··',
+                'href' => $match !== null ? (string) ($match['href'] ?? '#') : '',
+                'vacant' => $match === null,
+            ];
+        }
+
+        return $posts;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $personnel
+     * @return list<array{label: string, count: int}>
+     */
+    private function specialityCounts(array $personnel): array
+    {
+        $map = [
+            'Chef d’équipe' => ['TEAM LEADER', 'CHEF D', 'LEADER'],
+            'Santé' => ['MEDIC', 'SANTE', 'SANTÉ', 'INFIRM'],
+            'Appui aérien' => ['JTAC', 'CAS', 'FAC'],
+            'Transmissions' => ['RADIO', 'TRANS', 'SIGNAL', 'SIGINT'],
+            'Explosifs' => ['EOD', 'IEDD', 'DEMIN'],
+            'Renseignement' => ['INTEL', 'RENSEIGN', 'ISR'],
+        ];
+        $out = [];
+        foreach ($map as $label => $needles) {
+            $count = 0;
+            foreach ($personnel as $p) {
+                $hay = strtoupper((string) ($p['function'] ?? '') . ' ' . ($p['role'] ?? ''));
+                foreach ($needles as $needle) {
+                    if (str_contains($hay, $needle)) {
+                        $count++;
+                        break;
+                    }
+                }
+            }
+            if ($count > 0) {
+                $out[] = ['label' => $label, 'count' => $count];
+            }
+        }
+        usort($out, static fn (array $a, array $b): int => $b['count'] <=> $a['count']);
+
+        return $out;
+    }
+
+    /**
+     * Moyens de l’unité — repères de démonstration tant que le parc n’est pas suivi dans Athena.
+     *
+     * @return list<array{label: string, ready: int, total: int, note: string}>
+     */
+    private function unitAssets(string $unitName): array
+    {
+        $seed = crc32($unitName);
+        $make = static function (string $label, int $total, int $offset, string $note) use ($seed): array {
+            $down = ($seed >> $offset) % max(1, (int) ceil($total * 0.3));
+
+            return ['label' => $label, 'ready' => max(0, $total - $down), 'total' => $total, 'note' => $note];
+        };
+
+        return [
+            $make('Véhicules de transport', 8, 1, 'Rotation d’entretien hebdomadaire'),
+            $make('Véhicules d’appui', 4, 3, 'Un châssis en visite programmée'),
+            $make('Postes radio longue portée', 14, 5, 'Chiffrement à jour'),
+            $make('Optiques de nuit', 22, 7, 'Lot en reconditionnement'),
+            $make('Drones d’observation', 5, 9, 'Batteries en charge'),
+        ];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $subUnits
+     * @return array<string, string>
+     */
+    private function unitIdentity(int $tenantId, string $unitName, array $subUnits): array
+    {
+        $tenant = [];
+        try {
+            $tenant = $this->tenants->findById($tenantId) ?: [];
+        } catch (\Throwable) {
+            $tenant = [];
+        }
+        $created = (string) ($tenant['created_at'] ?? '');
+        $seed = crc32($unitName);
+
+        return [
+            'code' => strtoupper($this->codeFromLabel($unitName)),
+            'higher' => 'Commandement interarmes COMSPEC',
+            'garrison' => 'Base de départ — zone d’opérations assignée',
+            'activated' => $created !== '' ? date('d/m/Y', strtotime($created) ?: time()) : '—',
+            'net' => 'Réseau JNET ' . str_pad((string) (100 + ($seed % 800)), 3, '0', STR_PAD_LEFT) . ' · veille permanente',
+            'elements' => (string) count($subUnits),
+        ];
+    }
+
+    private function readinessStatus(int $readiness): string
+    {
+        return match (true) {
+            $readiness >= 85 => 'Opérationnel',
+            $readiness >= 65 => 'Partiellement opérationnel',
+            $readiness >= 40 => 'En reconstitution',
+            default => 'Non disponible',
+        };
+    }
+
+    private function cleanLeader(string $leader): string
+    {
+        $leader = trim($leader);
+
+        return $leader === '' || $leader === '—' ? 'Poste à pourvoir' : $leader;
+    }
+
+    private function cleanMission(string $mission, string $fallbackLabel): string
+    {
+        $mission = trim($mission);
+        if ($mission !== '' && $mission !== '—') {
+            return $mission;
+        }
+
+        return 'Mission non renseignée pour ' . $fallbackLabel . '.';
+    }
+
+    private function codeFromLabel(string $label): string
+    {
+        $clean = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $label) ?? $label;
+        $words = preg_split('/\s+/u', trim($clean)) ?: [];
+        if (count($words) === 1) {
+            return mb_strtoupper(mb_substr($words[0], 0, 4, 'UTF-8'), 'UTF-8');
+        }
+        $out = '';
+        foreach ($words as $word) {
+            if ($word === '') {
+                continue;
+            }
+            $out .= mb_strtoupper(mb_substr($word, 0, 1, 'UTF-8'), 'UTF-8');
+            if (mb_strlen($out, 'UTF-8') >= 4) {
+                break;
+            }
+        }
+
+        return $out !== '' ? $out : 'UNIT';
+    }
+
+    private function initialsOf(string $name): string
+    {
+        if (function_exists('user_display_initials')) {
+            return (string) user_display_initials($name, 2);
+        }
+
+        return mb_strtoupper(mb_substr(trim($name), 0, 2, 'UTF-8'), 'UTF-8');
     }
 
     /**
@@ -302,7 +705,10 @@ final class JnetDashboardService
     {
         $out = [];
         try {
-            $rows = $this->planning->listForBoard($tenantId, ['status' => 'active']);
+            $rows = $this->planning->listForBoard($tenantId, [
+                'status' => 'active',
+                'entry_types' => self::OPERATIONAL_ENTRY_TYPES,
+            ]);
             foreach (array_slice($rows, 0, 20) as $row) {
                 $opStatus = (string) ($row['operational_status'] ?? 'planned');
                 $stateKey = match ($opStatus) {
@@ -317,30 +723,32 @@ final class JnetDashboardService
                     'standby' => 'STANDBY',
                     default => strtoupper($stateKey),
                 };
+                $priority = (string) ($row['priority'] ?? '');
+                $zone = trim((string) ($row['operation_zone'] ?? ''));
+                $chief = trim((string) ($row['chief_name'] ?? ''));
+                $required = (int) ($row['checklist_required'] ?? 0);
+
                 $out[] = [
                     'id' => (int) ($row['id'] ?? 0),
                     'title' => (string) ($row['title'] ?? 'Opération'),
                     'state_key' => $stateKey,
                     'state' => $stateLabel,
-                    'zone' => (string) ($row['operation_zone'] ?? ''),
-                    'priority' => (string) ($row['priority'] ?? ''),
+                    'zone' => $zone,
+                    'priority' => $priority,
+                    'unit_id' => (int) ($row['visibility_unit_id'] ?? 0),
                     'href' => url('back-office/tableau-operationnel/fiche/' . (int) ($row['id'] ?? 0)),
-                    'personnel' => null,
-                    'objectives' => null,
-                    'pir' => null,
-                    'openIntel' => null,
-                    'elements' => [
-                        ['label' => 'ALPHA', 'state' => $stateLabel === 'ACTIVE' ? 'DEPLOYED' : 'STANDBY'],
-                        ['label' => 'BRAVO', 'state' => 'QRF'],
-                        ['label' => 'ISR', 'state' => 'ACTIVE'],
+                    'facts' => [
+                        ['label' => 'Période', 'value' => $this->operationPeriod($row['start_date'] ?? null, $row['end_date'] ?? null)],
+                        ['label' => 'Zone', 'value' => $zone !== '' ? $zone : 'Non précisée'],
+                        ['label' => 'Priorité', 'value' => $this->priorityLabel($priority)],
+                        ['label' => 'Chef', 'value' => $chief !== '' ? $chief : 'Non désigné'],
                     ],
+                    'checklist' => $required > 0
+                        ? ['done' => (int) ($row['checklist_done'] ?? 0), 'required' => $required]
+                        : null,
                 ];
             }
         } catch (\Throwable) {
-        }
-
-        if ($out === []) {
-            $out = $this->demoOperations();
         }
 
         return $out;
@@ -351,16 +759,46 @@ final class JnetDashboardService
     {
         foreach ($this->loadOperations($tenantId) as $op) {
             if ((int) ($op['id'] ?? 0) === $id) {
-                $op['personnel'] = $op['personnel'] ?? 18;
-                $op['objectives'] = $op['objectives'] ?? 4;
-                $op['pir'] = $op['pir'] ?? 6;
-                $op['openIntel'] = $op['openIntel'] ?? 14;
-
                 return $op;
             }
         }
 
         return null;
+    }
+
+    private function priorityLabel(string $priority): string
+    {
+        return match ($priority) {
+            'critical' => 'Critique',
+            'high' => 'Élevée',
+            'low' => 'Basse',
+            'normal' => 'Normale',
+            default => 'Non fixée',
+        };
+    }
+
+    /** Période lisible d'une opération, sans inventer une date absente. */
+    private function operationPeriod(mixed $start, mixed $end): string
+    {
+        $fmt = static function (mixed $raw): ?string {
+            $raw = trim((string) ($raw ?? ''));
+            if ($raw === '' || str_starts_with($raw, '0000')) {
+                return null;
+            }
+            $stamp = strtotime($raw);
+
+            return $stamp ? date('d/m/Y', $stamp) : null;
+        };
+        $from = $fmt($start);
+        $to = $fmt($end);
+
+        return match (true) {
+            $from !== null && $to !== null && $from === $to => 'Le ' . $from,
+            $from !== null && $to !== null => 'Du ' . $from . ' au ' . $to,
+            $from !== null => 'À partir du ' . $from,
+            $to !== null => 'Jusqu’au ' . $to,
+            default => 'Dates non fixées',
+        };
     }
 
     /** @return array<string, mixed>|null */
@@ -616,64 +1054,6 @@ final class JnetDashboardService
                 'lastSeen' => '11 AUG',
                 'photo' => null,
                 'href' => url('jnet/cibles/demo-hvt-04'),
-            ],
-        ];
-    }
-
-    /** @return list<array<string, mixed>> */
-    private function demoOperations(): array
-    {
-        return [
-            [
-                'id' => 1,
-                'title' => 'IRON VEIL',
-                'state_key' => 'active',
-                'state' => 'ACTIVE',
-                'zone' => 'OBJ BRAVO',
-                'priority' => 'critical',
-                'href' => url('jnet/operations/1'),
-                'personnel' => 18,
-                'objectives' => 4,
-                'pir' => 6,
-                'openIntel' => 14,
-                'elements' => [
-                    ['label' => 'ALPHA', 'state' => 'DEPLOYED'],
-                    ['label' => 'BRAVO', 'state' => 'QRF'],
-                    ['label' => 'ISR-1', 'state' => 'ACTIVE'],
-                ],
-            ],
-            [
-                'id' => 2,
-                'title' => 'NIGHT SPEAR',
-                'state_key' => 'planning',
-                'state' => 'PLANNING',
-                'zone' => 'Littoral',
-                'priority' => 'high',
-                'href' => url('jnet/operations/2'),
-                'personnel' => 12,
-                'objectives' => 3,
-                'pir' => 4,
-                'openIntel' => 7,
-                'elements' => [
-                    ['label' => 'BRAVO', 'state' => 'STANDBY'],
-                    ['label' => 'SUPPORT', 'state' => 'PREP'],
-                ],
-            ],
-            [
-                'id' => 3,
-                'title' => 'BLUE DAGGER',
-                'state_key' => 'standby',
-                'state' => 'STANDBY',
-                'zone' => 'Secteur Nord',
-                'priority' => 'medium',
-                'href' => url('jnet/operations/3'),
-                'personnel' => 8,
-                'objectives' => 2,
-                'pir' => 2,
-                'openIntel' => 3,
-                'elements' => [
-                    ['label' => 'ALPHA', 'state' => 'STANDBY'],
-                ],
             ],
         ];
     }

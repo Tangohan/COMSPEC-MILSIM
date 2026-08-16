@@ -31,8 +31,10 @@ final class SseCasePdfService
      *
      * `$releaseLevel` : niveau de diffusion. À `null`, version intégrale
      * (réservée aux appels déjà encadrés). Un PDF circule seul une fois transmis.
+     *
+     * `$inline` : lecture à l'écran plutôt que téléchargement.
      */
-    public function export(int $tenantId, int $caseId, ?string $releaseLevel = null): Response
+    public function export(int $tenantId, int $caseId, ?string $releaseLevel = null, bool $inline = false): Response
     {
         $data = $releaseLevel === null
             ? $this->reports->gather($caseId, $tenantId)
@@ -76,7 +78,8 @@ final class SseCasePdfService
             $flash,
             $initial,
             $redactedLabel,
-            $generatedAt
+            $generatedAt,
+            $inline
         ): Response {
             if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
                 return (new Response())->setStatusCode(503)->setBody('<p>Export PDF indisponible pour le moment.</p>');
@@ -133,7 +136,8 @@ final class SseCasePdfService
 
             return (new Response())
                 ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                ->header('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $filename . '"')
+                ->header('Cache-Control', 'private, no-store')
                 ->setBody($binary);
         });
     }
@@ -392,7 +396,7 @@ final class SseCasePdfService
             return $siteNames[$id] ?? ('Site #' . $id);
         }
 
-        return ucfirst($type) . ' #' . $id;
+        return SseCorrelationService::nodeTypeLabel($t) . ' n° ' . $id;
     }
 
     /**

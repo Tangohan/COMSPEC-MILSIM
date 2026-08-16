@@ -21,7 +21,7 @@ if not exist "%BUILDER_PATH%" (
 if exist "%TMP_DIR%" rd /s /q "%TMP_DIR%"
 mkdir "%TMP_DIR%"
 
-set "COMPONENTS=main core generator evidence intel interaction zeus eden ui network digital biometrics"
+set "COMPONENTS=main core generator evidence intel interaction zeus eden ui network digital biometrics compat_bii"
 set "FAILED=0"
 
 for %%C in (%COMPONENTS%) do (

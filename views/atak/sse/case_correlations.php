@@ -14,18 +14,40 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 
 $caseId = (int) ($case['id'] ?? 0);
 
-$typeLabels = [
-    'person' => 'Personne',
-    'site' => 'Site',
-    'room' => 'Pièce',
-    'seizure' => 'Saisie',
-];
+$typeLabels = is_array($nodeTypeLabels ?? null) && $nodeTypeLabels !== []
+    ? $nodeTypeLabels
+    : [
+        'person' => 'Personne',
+        'site' => 'Site',
+        'room' => 'Pièce',
+        'seizure' => 'Saisie',
+        'evidence' => 'Pièce à conviction',
+        'document' => 'Document',
+    ];
 
-// Les personnes servent aussi de choix dans le formulaire de pose de relation.
-$people = [];
+// Regroupement par nature pour les listes déroulantes : tout élément du dossier
+// peut être relié à tout autre, on ne préjuge pas de la combinaison utile.
+$groupTitles = [
+    'person' => 'Personnes',
+    'site' => 'Sites',
+    'room' => 'Pièces',
+    'seizure' => 'Saisies',
+    'evidence' => 'Pièces à conviction',
+    'document' => 'Documents',
+];
+$grouped = [];
 foreach ($nodes as $key => $n) {
-    if (($n['type'] ?? '') === 'person') {
-        $people[(int) $n['id']] = $n;
+    $grouped[(string) ($n['type'] ?? 'autre')][$key] = $n;
+}
+$orderedGroups = [];
+foreach (array_keys($groupTitles) as $type) {
+    if (!empty($grouped[$type])) {
+        $orderedGroups[$type] = $grouped[$type];
+    }
+}
+foreach ($grouped as $type => $list) {
+    if (!isset($orderedGroups[$type])) {
+        $orderedGroups[$type] = $list;
     }
 }
 
@@ -75,7 +97,8 @@ arsort($degree);
         <div class="page-heading-overline">Exploitation // Mise en relation</div>
         <h1>Corrélations du dossier</h1>
         <p>
-            Ce qui relie les personnes, les sites, les pièces et les saisies du dossier.
+            Ce qui relie les personnes, les sites, les pièces, les saisies, les pièces à
+            conviction et les documents du dossier.
             Les liens <strong>déduits</strong> sont recalculés à chaque ouverture depuis les
             saisies déjà enregistrées : corriger une fiche corrige le graphe. Les liens
             <strong>automatiques</strong> sont proposés par une règle et attendent votre
@@ -135,8 +158,8 @@ arsort($degree);
     <?php if ($nodes === []): ?>
         <div class="panel-body">
             <p class="muted">
-                Aucune entité rattachée. Rattachez des personnes ou un site exploité au
-                dossier : les liens apparaîtront d’eux-mêmes.
+                Aucun élément rattaché. Rattachez des personnes, un site exploité, des pièces
+                à conviction ou un document au dossier : les liens apparaîtront d’eux-mêmes.
             </p>
         </div>
     <?php else: ?>
@@ -215,24 +238,35 @@ arsort($degree);
     <div class="panel-header">
         <div class="panel-title">
             <span class="panel-index">01.09</span>
-            Poser une relation
+            Poser un lien
         </div>
-        <div class="panel-meta">Entre deux personnes du dossier</div>
+        <div class="panel-meta">Entre deux éléments du dossier</div>
     </div>
     <div class="panel-body">
-        <?php if (count($people) < 2): ?>
+        <?php if (count($nodes) < 2): ?>
             <p class="muted">
-                Il faut au moins deux personnes rattachées au dossier pour poser une relation.
+                Il faut au moins deux éléments dans le dossier — personnes, site, pièce,
+                saisie, pièce à conviction ou document — pour poser un lien.
             </p>
         <?php else: ?>
+            <p class="muted" style="margin:0 0 .9rem">
+                Personnes, sites, pièces, saisies, pièces à conviction et documents du dossier
+                peuvent tous être reliés entre eux, dans n’importe quelle combinaison.
+            </p>
             <form method="post" action="<?= $h(url('atak/sse/dossiers/' . $caseId . '/correlations')) ?>" class="sse-relation-form">
                 <?= \App\Core\Csrf::field() ?>
 
                 <div class="field">
-                    <label for="from_id">Sujet</label>
-                    <select id="from_id" name="from_id" required>
-                        <?php foreach ($people as $pid => $p): ?>
-                            <option value="<?= (int) $pid ?>"><?= $h($designation($p, 'person', (int) $pid)) ?></option>
+                    <label for="from">Premier élément</label>
+                    <select id="from" name="from" required>
+                        <?php foreach ($orderedGroups as $type => $list): ?>
+                            <optgroup label="<?= $h($groupTitles[$type] ?? ($typeLabels[$type] ?? 'Éléments')) ?>">
+                                <?php foreach ($list as $key => $n): ?>
+                                    <option value="<?= $h($key) ?>">
+                                        <?= $h($designation($n, (string) $type, (int) ($n['id'] ?? 0))) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </optgroup>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -247,10 +281,16 @@ arsort($degree);
                 </div>
 
                 <div class="field">
-                    <label for="to_id">Second sujet</label>
-                    <select id="to_id" name="to_id" required>
-                        <?php foreach ($people as $pid => $p): ?>
-                            <option value="<?= (int) $pid ?>"><?= $h($designation($p, 'person', (int) $pid)) ?></option>
+                    <label for="to">Second élément</label>
+                    <select id="to" name="to" required>
+                        <?php foreach ($orderedGroups as $type => $list): ?>
+                            <optgroup label="<?= $h($groupTitles[$type] ?? ($typeLabels[$type] ?? 'Éléments')) ?>">
+                                <?php foreach ($list as $key => $n): ?>
+                                    <option value="<?= $h($key) ?>">
+                                        <?= $h($designation($n, (string) $type, (int) ($n['id'] ?? 0))) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </optgroup>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -270,7 +310,7 @@ arsort($degree);
                            placeholder="Déclaration recueillie, objet commun, présence simultanée…">
                 </div>
 
-                <button class="btn" type="submit">Enregistrer la relation</button>
+                <button class="btn" type="submit">Enregistrer le lien</button>
             </form>
         <?php endif; ?>
     </div>
@@ -281,7 +321,7 @@ arsort($degree);
     <div class="panel-header">
         <div class="panel-title">
             <span class="panel-index">01.10</span>
-            Relations posées
+            Liens posés
         </div>
         <div class="panel-meta">Retirables</div>
     </div>
@@ -289,9 +329,9 @@ arsort($degree);
         <table>
             <thead>
             <tr>
-                <th>Sujet</th>
+                <th>Premier élément</th>
                 <th>Lien</th>
-                <th>Second sujet</th>
+                <th>Second élément</th>
                 <th>Fiabilité</th>
                 <th>Posée par</th>
                 <th></th>

@@ -45,6 +45,11 @@
   var selected = null;
   var drag = null;
   var simFrames = 0;
+  // Pose de lien directement sur le canevas : une entité de départ « armée »,
+  // puis un clic (ou un relâchement) sur la seconde entité ouvre la fiche du lien.
+  var linkMode = false;
+  var linkFrom = null;
+  var linkCursor = null;
 
   function size() {
     var r = wrap.getBoundingClientRect();
@@ -214,9 +219,21 @@
       gRoot.appendChild(t);
     });
 
+    if (linkFrom && linkCursor) {
+      var guide = document.createElementNS(ns, 'line');
+      guide.setAttribute('x1', linkFrom.x);
+      guide.setAttribute('y1', linkFrom.y);
+      guide.setAttribute('x2', linkCursor.x);
+      guide.setAttribute('y2', linkCursor.y);
+      guide.setAttribute('class', 'sse-mesh-link-draft');
+      gRoot.appendChild(guide);
+    }
+
     vis.nodes.forEach(function (n) {
       var g = document.createElementNS(ns, 'g');
-      g.setAttribute('class', 'sse-mesh-node' + (selected === n.id ? ' is-selected' : ''));
+      g.setAttribute('class', 'sse-mesh-node'
+        + (selected === n.id ? ' is-selected' : '')
+        + (linkFrom && linkFrom.id === n.id ? ' is-link-source' : ''));
       g.setAttribute('transform', 'translate(' + n.x + ',' + n.y + ')');
       g.setAttribute('data-id', String(n.id));
       g.style.cursor = 'grab';
@@ -327,16 +344,100 @@
     return best;
   }
 
+  var linkBox = document.getElementById('sse-mesh-linkbox');
+  var linkModeBtn = document.getElementById('sse-mesh-link-mode');
+  var hintEl = document.getElementById('sse-mesh-hint');
+  var canLink = !!(cfg.canManage && linkBox);
+  var defaultHint = hintEl ? hintEl.textContent : '';
+
+  function setHint(text) {
+    if (hintEl) hintEl.textContent = text || defaultHint;
+  }
+
+  function setLinkMode(on) {
+    linkMode = !!on && canLink;
+    if (linkModeBtn) {
+      linkModeBtn.classList.toggle('is-active', linkMode);
+      linkModeBtn.setAttribute('aria-pressed', linkMode ? 'true' : 'false');
+      linkModeBtn.textContent = linkMode ? 'Quitter le mode lien' : 'Relier deux entités';
+    }
+    svg.classList.toggle('is-linking', linkMode);
+    if (!linkMode) cancelLink();
+    else setHint('Cliquez l’entité de départ, puis l’entité d’arrivée. Échap pour annuler.');
+  }
+
+  function cancelLink() {
+    linkFrom = null;
+    linkCursor = null;
+    if (linkBox) linkBox.hidden = true;
+    setHint(linkMode ? 'Cliquez l’entité de départ, puis l’entité d’arrivée. Échap pour annuler.' : null);
+    render();
+  }
+
+  function armLink(node) {
+    if (!canLink || !node) return;
+    linkFrom = node;
+    linkCursor = { x: node.x, y: node.y };
+    if (linkBox) linkBox.hidden = true;
+    setHint('Départ : ' + (node.label || 'entité') + ' — cliquez maintenant l’entité d’arrivée.');
+    render();
+  }
+
+  function openLinkBox(from, to) {
+    if (!linkBox || !from || !to || from.id === to.id) return;
+    document.getElementById('sse-mesh-link-from').value = String(from.id);
+    document.getElementById('sse-mesh-link-to').value = String(to.id);
+    document.getElementById('sse-mesh-link-from-label').textContent = from.label || ('Entité ' + from.id);
+    document.getElementById('sse-mesh-link-to-label').textContent = to.label || ('Entité ' + to.id);
+    linkBox.hidden = false;
+    var note = document.getElementById('sse-mesh-link-note');
+    if (note) note.focus();
+    setHint('Complétez la fiche du lien, puis enregistrez.');
+  }
+
+  if (linkModeBtn) {
+    linkModeBtn.addEventListener('click', function () {
+      setLinkMode(!linkMode);
+    });
+  }
+  var linkCancelBtn = document.getElementById('sse-mesh-link-cancel');
+  if (linkCancelBtn) {
+    linkCancelBtn.addEventListener('click', function () {
+      cancelLink();
+    });
+  }
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && (linkFrom || linkMode)) {
+      setLinkMode(false);
+    }
+  });
+
   svg.addEventListener('mousedown', function (ev) {
     if (ev.button === 2) {
       return;
     }
     var pt = clientToWorld(ev);
     var n = nearest(pt);
+
+    if (canLink && n && (linkMode || ev.shiftKey)) {
+      ev.preventDefault();
+      if (linkFrom && linkFrom.id !== n.id) {
+        openLinkBox(linkFrom, n);
+        linkFrom = null;
+        linkCursor = null;
+        render();
+      } else {
+        armLink(n);
+      }
+      return;
+    }
+
     if (n) {
       drag = n;
       selectNode(n.id);
       ev.preventDefault();
+    } else if (linkFrom) {
+      cancelLink();
     }
   });
 
@@ -360,9 +461,14 @@
       });
       if (cfg.canManage) {
         actions.push({
-          label: 'Créer un lien depuis cette entité',
+          label: 'Relier cette entité à une autre',
           run: function () {
             selectNode(n.id);
+            if (canLink) {
+              setLinkMode(true);
+              armLink(n);
+              return;
+            }
             var build = document.querySelector('[data-mesh-tab="build"]');
             if (build) build.click();
             var from = document.getElementById('from_node_id');
@@ -429,6 +535,11 @@
     }
   });
   window.addEventListener('mousemove', function (ev) {
+    if (linkFrom) {
+      linkCursor = clientToWorld(ev);
+      render();
+      return;
+    }
     if (!drag) return;
     var pt = clientToWorld(ev);
     drag.x = pt.x;
@@ -437,7 +548,18 @@
     drag.vy = 0;
     render();
   });
-  window.addEventListener('mouseup', function () {
+  window.addEventListener('mouseup', function (ev) {
+    // Glisser d’une entité vers une autre : on ferme le lien au relâchement.
+    if (linkFrom) {
+      var over = nearest(clientToWorld(ev));
+      if (over && over.id !== linkFrom.id) {
+        openLinkBox(linkFrom, over);
+        linkFrom = null;
+        linkCursor = null;
+        render();
+      }
+      return;
+    }
     if (drag) {
       var nx = document.getElementById('sse-mesh-new-x');
       var ny = document.getElementById('sse-mesh-new-y');

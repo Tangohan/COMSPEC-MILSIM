@@ -1,6 +1,4 @@
-class RscText;
-class RscButton;
-class RscStructuredText;
+// RscText / RscButton / RscStructuredText sont déclarés dans config.cpp.
 
 class COMSPEC_SSE_SeekDialog {
     idd = 93100;

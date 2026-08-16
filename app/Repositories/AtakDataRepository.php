@@ -274,32 +274,37 @@ class AtakDataRepository
 
     public function getMarkers(int $tenantId, int $mapId, ?string $since = null): array
     {
-        $sql = 'SELECT id, layer_id, marker_data, updated_at FROM atak_markers WHERE tenant_id = ? AND map_id = ?';
-        $params = [$tenantId, $mapId];
-        if ($since !== null && $since !== '') {
-            $sql .= ' AND (updated_at >= ? OR created_at >= ?)';
-            $params[] = $since;
-            $params[] = $since;
-        }
-        $sql .= ' ORDER BY id';
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $out = [];
-        foreach ($rows as $r) {
-            $raw = (string) ($r['marker_data'] ?? '');
-            // Marqueurs retirés côté web : ne pas les renvoyer (évite le resync Arma).
-            if ($this->markerDataIsSuppressed($raw)) {
-                continue;
+        try {
+            $sql = 'SELECT id, layer_id, marker_data, updated_at FROM atak_markers WHERE tenant_id = ? AND map_id = ?';
+            $params = [$tenantId, $mapId];
+            if ($since !== null && $since !== '') {
+                $sql .= ' AND (updated_at >= ? OR created_at >= ?)';
+                $params[] = $since;
+                $params[] = $since;
             }
-            $out[] = [
-                'id' => (int) $r['id'],
-                'layerId' => (int) $r['layer_id'],
-                'markerData' => $r['marker_data'],
-                'updated_at' => $r['updated_at'],
-            ];
+            $sql .= ' ORDER BY id';
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $out = [];
+            foreach ($rows as $r) {
+                $raw = (string) ($r['marker_data'] ?? '');
+                // Marqueurs retirés côté web : ne pas les renvoyer (évite le resync Arma).
+                if ($this->markerDataIsSuppressed($raw)) {
+                    continue;
+                }
+                $out[] = [
+                    'id' => (int) $r['id'],
+                    'layerId' => (int) $r['layer_id'],
+                    'markerData' => $r['marker_data'],
+                    'updated_at' => $r['updated_at'],
+                ];
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
         }
-        return $out;
     }
 
     private function markerDataIsSuppressed(string $markerData): bool
@@ -425,28 +430,32 @@ class AtakDataRepository
 
     public function getUnits(int $tenantId, int $mapId): array
     {
-        $expired = $this->markStaleUnitsOffline($tenantId, $mapId);
-        if ($expired !== []) {
-            $key = $tenantId . ':' . $mapId;
-            $this->pendingStaleDisconnects[$key] = array_merge(
-                $this->pendingStaleDisconnects[$key] ?? [],
-                $expired
+        try {
+            $expired = $this->markStaleUnitsOffline($tenantId, $mapId);
+            if ($expired !== []) {
+                $key = $tenantId . ':' . $mapId;
+                $this->pendingStaleDisconnects[$key] = array_merge(
+                    $this->pendingStaleDisconnects[$key] ?? [],
+                    $expired
+                );
+            }
+            // age_seconds sur l’horloge MySQL (même référence que updated_at / markStale).
+            $stmt = $this->pdo->prepare(
+                'SELECT *, TIMESTAMPDIFF(SECOND, updated_at, NOW()) AS age_seconds
+                 FROM atak_units WHERE tenant_id = ? AND map_id = ? ORDER BY call_sign'
             );
-        }
-        // age_seconds sur l’horloge MySQL (même référence que updated_at / markStale).
-        $stmt = $this->pdo->prepare(
-            'SELECT *, TIMESTAMPDIFF(SECOND, updated_at, NOW()) AS age_seconds
-             FROM atak_units WHERE tenant_id = ? AND map_id = ? ORDER BY call_sign'
-        );
-        $stmt->execute([$tenantId, $mapId]);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $now = time();
-        $out = [];
-        foreach ($rows as $row) {
-            $out[] = $this->normalizeUnitRow($row, $now);
-        }
+            $stmt->execute([$tenantId, $mapId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $now = time();
+            $out = [];
+            foreach ($rows as $row) {
+                $out[] = $this->normalizeUnitRow($row, $now);
+            }
 
-        return $this->suppressAlertGhostUnits($out);
+            return $this->suppressAlertGhostUnits($out);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**

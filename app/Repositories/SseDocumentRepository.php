@@ -128,6 +128,33 @@ final class SseDocumentRepository
     }
 
     /**
+     * Répartition des documents du compartiment par état, tous filtres écartés.
+     *
+     * @return array<string, int>
+     */
+    public function countsByStatus(int $tenantId): array
+    {
+        $out = array_fill_keys(array_keys(self::STATUS_LABELS), 0);
+        $out['total'] = 0;
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT status, COUNT(*) AS n FROM sse_documents WHERE tenant_id = :t GROUP BY status',
+                ['t' => $tenantId]
+            );
+        } catch (\Throwable) {
+            return $out;
+        }
+        foreach ($rows as $row) {
+            $status = self::normalizeStatus((string) ($row['status'] ?? ''));
+            $n = (int) ($row['n'] ?? 0);
+            $out[$status] = ($out[$status] ?? 0) + $n;
+            $out['total'] += $n;
+        }
+
+        return $out;
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function findById(int $id, int $tenantId): ?array
@@ -600,6 +627,36 @@ TXT,
     /**
      * Corps texte → HTML pour rendu papier (aperçu / lecture).
      */
+    /**
+     * Échappe une ligne et convertit les marqueurs de caviardage [[texte]] ou [[#12]]
+     * en barres noires dont la largeur reprend celle du passage masqué.
+     */
+    private static function inlineHtml(string $text): string
+    {
+        $escaped = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+
+        $converted = preg_replace_callback(
+            '/\[\[(.*?)\]\]/u',
+            static function (array $m): string {
+                $raw = trim((string) $m[1]);
+                if (preg_match('/^#(\d{1,3})$/', $raw, $sized) === 1) {
+                    $width = (int) $sized[1];
+                } else {
+                    $width = mb_strlen(html_entity_decode($raw, ENT_QUOTES, 'UTF-8'), 'UTF-8');
+                }
+                $width = max(3, min(90, $width));
+
+                // Styles en ligne : la barre reste visible hors du portail (export PDF, impression).
+                return '<span class="sse-doc-paper__redact"'
+                    . ' style="display:inline-block;width:' . $width . 'ch;height:0.95em;background:#0b1220"'
+                    . ' role="img" aria-label="Passage caviardé" title="Passage caviardé"></span>';
+            },
+            $escaped
+        );
+
+        return is_string($converted) ? $converted : $escaped;
+    }
+
     public static function bodyToHtml(string $body): string
     {
         $body = str_replace(["\r\n", "\r"], "\n", $body);
@@ -632,25 +689,25 @@ TXT,
                 'VERSION DE DIFFUSION',
             ], true);
             if ($isTitle) {
-                $html[] = '<h1 class="sse-doc-paper__doc-title">' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</h1>';
+                $html[] = '<h1 class="sse-doc-paper__doc-title">' . self::inlineHtml($trim) . '</h1>';
                 continue;
             }
             if (preg_match('/^\d+\.\s+.+/u', $trim) === 1
                 || preg_match('/^AVERTISSEMENT$/ui', $trim) === 1
                 || (str_starts_with($trim, '─') === false && preg_match('/^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜŸÇ0-9].{0,70}$/u', $trim) === 1
                     && $upper === $trim && !str_contains($trim, ':'))) {
-                $html[] = '<h2 class="sse-doc-paper__section">' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</h2>';
+                $html[] = '<h2 class="sse-doc-paper__section">' . self::inlineHtml($trim) . '</h2>';
                 continue;
             }
             if (preg_match('/^.+:\s*$/u', $trim) === 1 && mb_strlen($trim) < 90) {
-                $html[] = '<p class="sse-doc-paper__label">' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</p>';
+                $html[] = '<p class="sse-doc-paper__label">' . self::inlineHtml($trim) . '</p>';
                 continue;
             }
             if (str_starts_with($trim, '• ') || str_starts_with($trim, '- ') || preg_match('/^H\d+\s/u', $trim) === 1) {
-                $html[] = '<p class="sse-doc-paper__bullet">' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</p>';
+                $html[] = '<p class="sse-doc-paper__bullet">' . self::inlineHtml($trim) . '</p>';
                 continue;
             }
-            $html[] = '<p class="sse-doc-paper__p">' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</p>';
+            $html[] = '<p class="sse-doc-paper__p">' . self::inlineHtml($trim) . '</p>';
         }
 
         return implode("\n", $html);

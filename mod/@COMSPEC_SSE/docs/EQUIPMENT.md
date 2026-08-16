@@ -21,9 +21,11 @@ Les actions SSE (photo, empreintes, SEEK, collecte…) exigent un **rôle** de m
 | `seek` | `COMSPEC_SSE_SEEKII` | `ItemAndroid`, `ItemcTab`, `ACE_microDAGR`, `ACE_Cellphone` |
 | `gloves` | `COMSPEC_SSE_Gloves` | `ACE_surgicalKit` |
 | `radio` | `COMSPEC_SSE_SatPhone` / Phone | TFAR `anprc*`, ACRE `PRC*`, `ACE_Cellphone` |
-| `face` | Camera + SEEK | caméra casque / tablettes |
+| `face` | Camera + SEEK | caméra casque / tablettes / **BII-10** |
 
 Les substituts absents du chargement (mod non présent) sont **ignorés automatiquement**.
+
+Passerelle BII Identifi : [BII-BRIDGE.md](BII-BRIDGE.md).
 
 ## API
 
