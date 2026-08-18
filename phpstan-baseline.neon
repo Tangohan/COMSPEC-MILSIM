@@ -19,25 +19,7 @@ parameters:
 			path: app/Controllers/Admin/Organization/EventRsvpNominativeAdminController.php
 
 		-
-			message: '#^Instantiated class TCPDF not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Controllers/Api/OperationsApiController.php
-
-		-
-			message: '#^Instantiated class TCPDF not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Controllers/Api/ReplayController.php
-
-		-
 			message: '#^Class App\\Controllers\\Web\\ActivityHubController constructor invoked with 4 parameters, 5 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Core/Container.php
-
-		-
-			message: '#^Class App\\Services\\Courrier\\DocumentExportService constructor invoked with 1 parameter, 2\-4 required\.$#'
 			identifier: arguments.count
 			count: 1
 			path: app/Core/Container.php
@@ -167,36 +149,6 @@ parameters:
 			identifier: class.notFound
 			count: 1
 			path: app/Services/Rbac/RoleDefinitionCatalog.php
-
-		-
-			message: '#^Instantiated class TCPDF not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Services/Sse/SseCasePdfService.php
-
-		-
-			message: '#^Instantiated class TCPDF not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Services/Training/TrainingCertificatePdfService.php
-
-		-
-			message: '#^Parameter \$pdf of method App\\Services\\Training\\TrainingCertificatePdfService\:\:drawTcpdfFallbackSignatureStroke\(\) has invalid type TCPDF\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Services/Training/TrainingCertificatePdfService.php
-
-		-
-			message: '#^Parameter \$pdf of method App\\Services\\Training\\TrainingCertificatePdfService\:\:drawTcpdfSignatureBlock\(\) has invalid type TCPDF\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Services/Training/TrainingCertificatePdfService.php
-
-		-
-			message: '#^Instantiated class TCPDF not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Services/Training/TrainingFormationCustomPageExportPdfService.php
 
 		-
 			message: '#^Regex pattern is invalid\: Unknown modifier ''\+'' in pattern\: \#\\A/\[a\-zA\-Z0\-9/_\\\-\.\?\=&%%\#\+\:~\]\*\\z\#$#'

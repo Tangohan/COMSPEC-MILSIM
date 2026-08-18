@@ -7,3 +7,15 @@ parameters:
         - app
     bootstrapFiles:
         - app/Support/helpers.php
+    # TCPDF et phpqrcode sont fournis dans l'arborescence, pas par Composer.
+    # Sans ce balayage, l'analyse ignore les deux classes : elle signalait chaque
+    # appel de la sous-classe anonyme du service PDF comme une méthode
+    # inexistante, ce que la liste d'exceptions ne couvrait plus depuis le
+    # passage à cette sous-classe.
+    scanDirectories:
+        - tcpdf
+    # phpqrcode définit QRcode trois fois ; seule celle chargée par qrlib.php
+    # porte png() et text(). Balayer le dossier entier retiendrait la variante
+    # du liant TCPDF, qui ne les a pas.
+    scanFiles:
+        - phpqrcode/qrencode.php

@@ -333,7 +333,7 @@ final class SseSuggestionQueueRepository
         if ($title === '') {
             return null;
         }
-        $severity = $data['payload'] ?? null;
+        $payload = $data['payload'] ?? null;
         try {
             $this->db->execute(
                 'INSERT INTO sse_engine_signals
