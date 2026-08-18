@@ -424,12 +424,14 @@
     padding-top: 10px;
 }
 
+/* Hauteur et amplitude vont de pair : sous ~30px, l'ondulation se lit comme un
+   trait droit et la barre paraît simplement décalée. */
 .fn-bottombar-wave {
     position: absolute;
-    top: -14px;
+    top: -33px;
     left: 0;
     width: 100%;
-    height: 22px;
+    height: 34px;
     display: block;
 }
 

@@ -161,8 +161,8 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
 
     <!-- Barre d'action basse : quitter, plein écran, valider. -->
     <footer class="fn-bottombar">
-        <svg class="fn-bottombar-wave" viewBox="0 0 1440 40" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M0 22c180-26 360 14 540 12s360-30 540-26 240 24 360 20V40H0z"/>
+        <svg class="fn-bottombar-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0 46C220 6 420 6 640 30c240 26 480 26 800-12V60H0z"/>
         </svg>
         <div class="fn-bottombar-inner">
             <a class="fn-bottom-btn" href="<?= $h((string) ($cancelUrl ?? url('atak/sse/fiches'))) ?>"
