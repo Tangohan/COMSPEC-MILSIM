@@ -1,0 +1,11 @@
+{
+  "name": "Athena — COMSPEC MILSIM",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "php-server",
+      "command": "php -d display_errors=1 -S 0.0.0.0:8000 -t public public/index.php"
+    }
+  ]
+}
