@@ -43,7 +43,7 @@ if (_placeText isEqualTo "") then {
 
 // --- Étiquettes : pastilles pleines, thèmes colorés puis sigle du type ---
 // Le texte structuré d'Arma ne peint pas de fond derrière un fragment : chaque
-// étiquette est donc un vrai contrôle, recréé à chaque rafraîchissement.
+// étiquette est donc un vrai contrôle, posé à la volée.
 private _kindCombo = _disp displayCtrl 9656;
 private _kindIdx = lbCurSel _kindCombo;
 private _kindCode = if (_kindIdx >= 0) then { _kindCombo lbData _kindIdx } else { "FRM" };
@@ -64,53 +64,56 @@ if (_chipLabels isEqualTo []) then {
 };
 _chipLabels pushBack [_kindCode, "#2a247f"];
 
-{
-    if (!isNull _x) then { ctrlDelete _x; };
-} forEach (_disp getVariable ["COMSPEC_IntelNote_Chips", []]);
+// Ce rafraîchissement suit chaque frappe : ne reconstruire les pastilles que
+// lorsqu'elles changent vraiment, sinon elles clignoteraient à chaque lettre.
+private _signature = (_chipLabels apply { (_x select 0) + (_x select 1) }) joinString "|";
+if (_signature isNotEqualTo (_disp getVariable ["COMSPEC_IntelNote_ChipsKey", ""])) then {
+    _disp setVariable ["COMSPEC_IntelNote_ChipsKey", _signature];
 
-private _fnc_hexToRgba = {
-    params ["_hex"];
-    private _digits = toArray (toLower _hex) select {_x != 35};
-    private _value = {
-        params ["_c"];
-        private _map = "0123456789abcdef";
-        ((toArray _map) find _c) max 0
+    {
+        if (!isNull _x) then { ctrlDelete _x; };
+    } forEach (_disp getVariable ["COMSPEC_IntelNote_Chips", []]);
+
+    private _fnc_hexToRgba = {
+        params ["_hex"];
+        private _map = toArray "0123456789abcdef";
+        private _digits = (toArray (toLower _hex)) select {_x != 35};
+        if ((count _digits) < 6) exitWith { [0.3, 0.3, 0.3, 1] };
+        private _byte = {
+            params ["_hi", "_lo"];
+            (16 * ((_map find _hi) max 0) + ((_map find _lo) max 0)) / 255
+        };
+        [
+            [_digits select 0, _digits select 1] call _byte,
+            [_digits select 2, _digits select 3] call _byte,
+            [_digits select 4, _digits select 5] call _byte,
+            1
+        ]
     };
-    private _byte = {
-        params ["_hi", "_lo"];
-        (16 * ([_hi] call _value) + ([_lo] call _value)) / 255
-    };
-    if ((count _digits) < 6) exitWith { [0.3, 0.3, 0.3, 1] };
-    [
-        [_digits select 0, _digits select 1] call _byte,
-        [_digits select 2, _digits select 3] call _byte,
-        [_digits select 4, _digits select 5] call _byte,
-        1
-    ]
+
+    private _chipH = 0.019 * safezoneH;
+    private _chipY = safezoneY + (0.030 * safezoneH) + (0.004 * safezoneH);
+    private _chipX = safezoneX + 0.008 * safezoneW;
+    private _chipGap = 0.005 * safezoneW;
+    private _chips = [];
+    {
+        _x params ["_label", "_hex"];
+        // Largeur estimée sur le nombre de caractères : Arma ne mesure un texte
+        // qu'une fois le contrôle posé, ce qui imposerait un second passage.
+        private _chipW = (0.0042 * safezoneW) * (count _label) + (0.010 * safezoneW);
+        private _ctrl = _disp ctrlCreate ["RscText", -1];
+        if (isNull _ctrl) then { continue };
+        _ctrl ctrlSetPosition [_chipX, _chipY, _chipW, _chipH];
+        _ctrl ctrlSetBackgroundColor ([_hex] call _fnc_hexToRgba);
+        _ctrl ctrlSetTextColor [1, 1, 1, 1];
+        _ctrl ctrlSetFontHeight (0.014 * safezoneH);
+        _ctrl ctrlSetText ("  " + _label);
+        _ctrl ctrlCommit 0;
+        _chips pushBack _ctrl;
+        _chipX = _chipX + _chipW + _chipGap;
+    } forEach _chipLabels;
+    _disp setVariable ["COMSPEC_IntelNote_Chips", _chips];
 };
-
-private _chipH = 0.019 * safezoneH;
-private _chipY = safezoneY + (0.030 * safezoneH) + (0.004 * safezoneH);
-private _chipX = safezoneX + 0.008 * safezoneW;
-private _chipGap = 0.005 * safezoneW;
-private _chips = [];
-{
-    _x params ["_label", "_hex"];
-    // Largeur estimée sur le nombre de caractères : Arma ne mesure un texte
-    // qu'une fois le contrôle posé, ce qui obligerait à un second passage.
-    private _chipW = (0.0042 * safezoneW) * (count _label) + (0.010 * safezoneW);
-    private _ctrl = _disp ctrlCreate ["RscText", -1];
-    if (isNull _ctrl) then { continue };
-    _ctrl ctrlSetPosition [_chipX, _chipY, _chipW, _chipH];
-    _ctrl ctrlSetBackgroundColor ([_hex] call _fnc_hexToRgba);
-    _ctrl ctrlSetTextColor [1, 1, 1, 1];
-    _ctrl ctrlSetFontHeight (0.014 * safezoneH);
-    _ctrl ctrlSetText ("  " + _label);
-    _ctrl ctrlCommit 0;
-    _chips pushBack _ctrl;
-    _chipX = _chipX + _chipW + _chipGap;
-} forEach _chipLabels;
-_disp setVariable ["COMSPEC_IntelNote_Chips", _chips];
 
 // --- Compteur ---
 private _body = ["value", "body"] call comspec_overwatch_connect_fnc_intelNoteCache;

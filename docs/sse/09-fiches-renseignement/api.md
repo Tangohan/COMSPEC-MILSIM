@@ -123,6 +123,7 @@ Addon `connect` — rédacteur :
 | Fonction | Rôle |
 |---|---|
 | `intelNoteCatalog` | Référentiel embarqué (copie du référentiel serveur) |
+| `intelNoteCache` | Mémoire des champs — voir ci-dessous |
 | `intelNoteShow` | Ouvre le rédacteur en enfant de `cTab_Android_dlg` |
 | `intelNoteOnLoad` / `intelNoteOnUnload` | Préparation et nettoyage |
 | `intelNotePane` | Bascule rédaction / pièces jointes / contexte |
@@ -144,3 +145,25 @@ Addon `atak_athena` — menu dédié :
 Le menu est déclaré **deux fois** dans `atak_athena/config.cpp` : sous
 `ATAK_APPs`, que lit BCE, et sous `RscTitles >> ATAK_APPs`. Une seule des deux
 déclarations et le menu n'apparaît pas dans le tiroir.
+
+## Pourquoi une mémoire des champs
+
+Les trois volets du rédacteur partagent un seul dialog : les champs du volet
+inactif sont masqués (`ctrlShow false`). Or un `RscEdit` masqué peut renvoyer une
+chaîne vide — le terminal SEEK a déjà rencontré ce piège. Une fiche validée
+depuis le cadre de rédaction serait donc partie sans son lieu, son repère ni son
+code dossier, tous logés dans le volet contexte.
+
+`intelNoteCache` recopie chaque valeur tant qu'elle est lisible et sert de repli
+à la lecture :
+
+- `["capture"]` — appelé avant chaque bascule de volet et à la fermeture ;
+- `["restore"]` — réinjecte la mémoire dans les champs redevenus visibles ;
+- `["value", clé]` — lecture ; un champ **visible fait foi même vidé**, sinon
+  effacer le cadre de rédaction laisserait le compteur figé sur l'ancienne
+  longueur ;
+- `["clear"]` — au chargement, pour qu'une fiche n'hérite pas de la précédente.
+
+Clés disponibles : `body`, `date`, `place`, `grid`, `case`. Les listes
+déroulantes ne passent pas par là : `lbCurSel` reste fiable sur un contrôle
+masqué.

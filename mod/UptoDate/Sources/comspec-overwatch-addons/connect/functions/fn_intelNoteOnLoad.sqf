@@ -102,11 +102,9 @@ if (_lastCase isEqualType "") then {
     (_disp displayCtrl 9655) ctrlSetText _lastCase;
 };
 
-// Compteur vivant : sans handler, l’opérateur écrit à l’aveugle.
+// Compteur vivant : sans handler, l’opérateur écrit à l’aveugle et découvre la
+// limite en perdant la fin de sa phrase.
 (_disp displayCtrl 9616) ctrlAddEventHandler ["KeyUp", {
-    [] call comspec_overwatch_connect_fnc_intelNoteRefresh;
-}];
-(_disp displayCtrl 9616) ctrlAddEventHandler ["ChangedText", {
     [] call comspec_overwatch_connect_fnc_intelNoteRefresh;
 }];
 
