@@ -5,7 +5,8 @@
   "terminals": [
     {
       "name": "php-server",
-      "command": "php -d display_errors=1 -S 0.0.0.0:8000 -t public public/index.php"
+      "description": "Serveur de développement Athena (http://localhost:8000). Garantit d'abord que MariaDB tourne.",
+      "command": "bash .cursor/start.sh && php -d display_errors=1 -S 0.0.0.0:8000 -t public public/index.php"
     }
   ]
 }
