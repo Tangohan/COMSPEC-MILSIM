@@ -5,12 +5,16 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
 
-# --- 1. Outils système (présents dans l'image de base ; filet si exécution à froid) ---
+# --- 1. Outils système (installés si absents de l'image de base) ---
 if ! command -v php >/dev/null 2>&1; then
   echo "[install] Installation de PHP 8.4 + MariaDB..."
+  export DEBIAN_FRONTEND=noninteractive
+  sudo apt-get update -qq
+  # Prérequis pour ajouter le PPA ondrej/php (PHP 8.4 n'est pas dans les dépôts Ubuntu 24.04).
+  sudo apt-get install -y --no-install-recommends software-properties-common ca-certificates curl gnupg
   sudo add-apt-repository -y ppa:ondrej/php
   sudo apt-get update -qq
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  sudo apt-get install -y \
     php8.4-cli php8.4-common php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl \
     php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl php8.4-gmp php8.4-sqlite3 \
     mariadb-server mariadb-client unzip
