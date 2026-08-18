@@ -2382,6 +2382,17 @@ public static class Extension
                 if (string.IsNullOrWhiteSpace(json)) json = "{}";
                 return PostAtakJsonSync("/api/sse/persons/" + Uri.EscapeDataString(personId) + "/biometrics-sim", json, token);
             }
+            // Fiche de renseignement simplifiée rédigée dans l'ATAK.
+            if (function == "SubmitSseFieldNote" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostSseFieldNoteSync(json, token);
+            }
+            if (function == "UploadSseNoteAttachment" && args.Length >= 2)
+            {
+                return BeginUploadSseNoteAttachment(args);
+            }
             // Canal générique SSE (numérique / lab / record) — évite le fallback sendIntel texte.
             if (function == "SendSSE" && args.Length >= 1)
             {
@@ -3872,6 +3883,12 @@ public static class Extension
                 return;
             }
 
+            if (function == "UploadSseNoteAttachment" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
+            {
+                // Géré en synchrone par TryGetSyncResponse (BeginUploadSseNoteAttachment).
+                return;
+            }
+
             if (function == "PilotResponse" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
                 var callsign = args[0] ?? "";
@@ -4405,6 +4422,55 @@ public static class Extension
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
             multipart.Add(fileContent, "image", fileName);
             var path = "/api/sse/persons/" + Uri.EscapeDataString(personId) + "/photos";
+            return QueueMultipartUpload(path, multipart);
+        }
+        catch
+        {
+            return "ERR|read_failed";
+        }
+    }
+
+    /// <summary>
+    /// Joint une capture ou un fichier local à une fiche de renseignement.
+    /// Args : [noteId, cheminOuMotif, auteur, nature, posX, posY, posZ, légende, repère]
+    /// </summary>
+    private static string BeginUploadSseNoteAttachment(string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+        var noteId = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+        if (string.IsNullOrEmpty(noteId)) return "ERR|note_id_empty";
+        var rawPath = args.Length > 1 ? (args[1] ?? "") : "";
+        var author = args.Length > 2 && !string.IsNullOrEmpty(args[2]) ? args[2]! : "Terrain";
+        var kind = args.Length > 3 && !string.IsNullOrEmpty(args[3]) ? args[3]! : "capture";
+
+        string? resolved = null;
+        if (!string.IsNullOrWhiteSpace(rawPath))
+            resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(120));
+        if (resolved == null)
+            resolved = FindNewestScreenshot(TimeSpan.FromSeconds(90));
+        if (resolved == null) return "ERR|file_not_found";
+
+        try
+        {
+            var fi = new FileInfo(resolved);
+            if (!fi.Exists) return "ERR|file_not_found";
+            if (fi.Length < 32) return "ERR|file_empty";
+            var multipart = new MultipartFormDataContent();
+            multipart.Add(new StringContent(author), "author");
+            multipart.Add(new StringContent(kind), "kind");
+            AddOptionalForm(multipart, "pos_x", args, 4);
+            AddOptionalForm(multipart, "pos_y", args, 5);
+            AddOptionalForm(multipart, "pos_z", args, 6);
+            AddOptionalForm(multipart, "caption", args, 7);
+            AddOptionalForm(multipart, "grid_reference", args, 8);
+            if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
+            if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
+            var fileName = Path.GetFileName(resolved) ?? "fiche_piece.png";
+            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
+            multipart.Add(fileContent, "piece", fileName);
+            var path = "/api/sse/notes/" + Uri.EscapeDataString(noteId) + "/pieces";
             return QueueMultipartUpload(path, multipart);
         }
         catch
@@ -5368,6 +5434,66 @@ public static class Extension
                     // ignore parse
                 }
                 return FormatAtakExtArray("OK", string.IsNullOrEmpty(id) ? "Success" : id);
+            }
+            var code = (int)resp.StatusCode;
+            var modBlock = MapModAccessBlockError(body);
+            if (modBlock != null)
+                return FormatAtakExtArray("ERROR", modBlock.Replace("ERR|", "", StringComparison.Ordinal));
+            if (code == 401 || code == 403) return FormatAtakExtArray("ERROR", "unauthorized");
+            var errMsg = body.Length > 240 ? $"HTTP {code}" : body;
+            return FormatAtakExtArray("ERROR", $"HTTP {code}: {errMsg}");
+        }
+        catch (OperationCanceledException)
+        {
+            return FormatAtakExtArray("TIMEOUT", "Request timeout");
+        }
+        catch (HttpRequestException ex)
+        {
+            return FormatAtakExtArray("NETWORK_ERROR", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return FormatAtakExtArray("ERROR", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Transmet une fiche de renseignement simplifiée et renvoie son identifiant
+    /// Athena, dont le rédacteur ATAK a besoin pour envoyer les pièces jointes.
+    /// </summary>
+    private static string PostSseFieldNoteSync(string jsonBody, CancellationToken token)
+    {
+        if (!TryBuildRequestUri(_baseUrl, "/api/sse/notes", out var uri, out var err) || uri is null)
+            return FormatAtakExtArray("ERROR", err);
+        try
+        {
+            var payload = EnrichAtakPayload(jsonBody);
+            var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
+            var body = ReadContentUtf8(resp, token);
+            if (resp.IsSuccessStatusCode)
+            {
+                var id = "";
+                var reference = "";
+                try
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    if (doc.RootElement.TryGetProperty("id", out var idEl))
+                        id = idEl.ValueKind == JsonValueKind.Number
+                            ? idEl.GetInt32().ToString()
+                            : (idEl.GetString() ?? "");
+                    if (doc.RootElement.TryGetProperty("reference_code", out var refEl))
+                        reference = refEl.GetString() ?? "";
+                }
+                catch
+                {
+                    // ignore parse
+                }
+                // « id|référence » : le SQF garde l'id pour les pièces jointes et
+                // affiche la référence à l'opérateur.
+                var detail = string.IsNullOrEmpty(id)
+                    ? "Success"
+                    : (string.IsNullOrEmpty(reference) ? id : id + "|" + reference);
+                return FormatAtakExtArray("OK", detail);
             }
             var code = (int)resp.StatusCode;
             var modBlock = MapModAccessBlockError(body);

@@ -90,6 +90,7 @@ $navActive = static function (string $id) use ($activeNav): string {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_portal.css')) ?>?v=202608162340">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_workspace.css')) ?>?v=202608162340">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_field_note.css')) ?>">
     <?php if (!empty($sseNeedLeaflet)): ?>
         <link rel="stylesheet" href="<?= $h(asset_url('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>">
     <?php endif; ?>
@@ -124,6 +125,9 @@ $navActive = static function (string $id) use ($activeNav): string {
         </div>
 
         <div class="iw-actions">
+            <?php if (!$isGuest): ?>
+                <a class="iw-btn" href="<?= $h(url('atak/sse/fiches/nouvelle')) ?>">Rédiger une fiche</a>
+            <?php endif; ?>
             <?php if ($canManage): ?>
                 <a class="iw-btn" href="<?= $h(url('atak/sse/objets/nouveau')) ?>">Créer un objet</a>
                 <a class="iw-btn iw-btn--solid" href="<?= $h(url('atak/sse/toiles/nouveau')) ?>">Ouvrir une investigation</a>
@@ -170,6 +174,7 @@ $navActive = static function (string $id) use ($activeNav): string {
                     'queue' => '<svg' . $common . '><path d="M5 7h14M5 12h14M5 17h9"/><path d="M17 15.5 19.5 18 22 14"/></svg>',
                     'report' => '<svg' . $common . '><path d="M5 4h10l4 4v12H5z"/><path d="M15 4v4h4M8 13h8M8 16.5h5"/></svg>',
                     'write' => '<svg' . $common . '><path d="M4 19.5 5.5 14 16 3.5 20 7.5 9.5 18z"/><path d="M13.5 6 17.5 10"/></svg>',
+                    'note' => '<svg' . $common . '><path d="M6 3.5h9l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19V5a1.5 1.5 0 0 1 1-1.5z"/><path d="M15 3.5V8h4"/><path d="M8.5 12h7M8.5 15.5h4.5"/></svg>',
                     'library' => '<svg' . $common . '><path d="M5 4h4v16H5zM10.5 4H15v16h-4.5zM16.5 6.5 21 5v14.5L16.5 21z"/></svg>',
                     'admin' => '<svg' . $common . '><path d="M12 3.5 19 7v5.2c0 4.2-2.8 7.4-7 8.8-4.2-1.4-7-4.6-7-8.8V7z"/><path d="M9.5 12.2 11.2 14l3.5-3.8"/></svg>',
                     'help' => '<svg' . $common . '><circle cx="12" cy="12" r="8.2"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2.9-1.2 1.7V14"/><path d="M12 17h.01"/></svg>',
@@ -201,6 +206,7 @@ $navActive = static function (string $id) use ($activeNav): string {
             <?= $iwLink(url('atak/sse/interet'), $navActive('pressee'), '03', 'Dossiers d’intérêt', 'Signalements à qualifier — hypothèses, pas encore d’identité certaine.', 'interest') ?>
             <?= $iwLink(url('atak/sse/dossiers'), $navActive('validated'), '04', 'Dossiers validés', 'Affaires structurées : preuves, notes, personnel et comptes rendus.', 'folder') ?>
             <?= $iwLink(url('atak/sse/transmissions'), $activeNav === 'transmissions' ? 'is-active' : '', '05', 'Transmissions terrain', 'Journal des envois Arma 3 : fiches, biométrie, sites et relevés.', 'collect') ?>
+            <?= $iwLink(url('atak/sse/fiches'), $activeNav === 'fiches' ? 'is-active' : '', '27', 'Fiches de renseignement', 'Notes libres remontées du terrain : texte, lieu, thèmes et pièces jointes.', 'note') ?>
 
             <p class="iw-nav-section">Objets</p>
             <?= $iwLink(url('atak/sse/identites'), $navActive('identites'), '06', 'Identités', 'Fiches personnes et indices biométriques.', 'id') ?>
@@ -253,6 +259,7 @@ window.SSE_CTX = {
   canManage: <?= $canManage ? 'true' : 'false' ?>,
   pageTitle: 'Bureau SSE',
   pageActions: [
+    { label: 'Rédiger une fiche de renseignement', href: <?= json_encode(url('atak/sse/fiches/nouvelle'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> },
     { label: 'Vue opérationnelle', href: <?= json_encode(url('atak/sse/operations'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> },
     { label: 'Transmissions terrain', href: <?= json_encode(url('atak/sse/transmissions'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> },
     { label: 'Investigations', href: <?= json_encode(url('atak/sse/toiles'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> },

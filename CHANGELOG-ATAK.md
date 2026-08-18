@@ -7,6 +7,32 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.19] - 2026-08-18
+
+### Ajouté — Fiches de renseignement simplifiées
+
+Entre « rien à signaler » et « j'ouvre un dossier d'intérêt », il manquait la marche la plus basse : noter tout de suite ce qu'on vient de voir, sans formulaire à remplir et sans rien conclure. Une plaque relevée, une attitude inhabituelle, un axe soudain désert, une conversation avec un habitant — autant d'éléments qui se perdaient parce que les consigner coûtait plus cher que de les oublier.
+
+- **Menu dédié RENS dans le tiroir ATAK.** Le rédacteur s'ouvre en plein cadre sur **toute la surface de l'ATAK**, pas dans un panneau de téléphone : on choisit ce menu pour écrire, pas pour lire. Également accessible par l'icône « Fiche RENS » de l'écran d'accueil ATAK et par l'action ACE « Rédiger une fiche de renseignement… ».
+- **Rédacteur identique dans le portail** (`Pilotage → Fiches de renseignement`) : même disposition, mêmes libellés, mêmes limites. Un opérateur qui passe du jeu au portail ne réapprend rien.
+- **Cinq informations, pas une de plus** : un texte libre de 1000 caractères avec compteur vivant, une date, un lieu, un à quatre thèmes, et jusqu'à quatre pièces jointes. Le reste — classement, qualification, rapprochements — se fait ensuite au bureau.
+- **Cinq types de fiche** (mission, observation, contact, ambiance, technique) et **douze thèmes** colorés par gravité, qui orientent la fiche vers le bon analyste.
+- **Pièces jointes depuis le terrain** : capture de la scène, photographie déjà prise dans la bibliothèque ATAK, ou relevé de position et d'instant. Depuis le portail : photo, capture, PDF ou texte.
+- **Suivi côté bureau** : prise en compte, exploitation ou classement sans suite, avec une phrase de justification, et rattachement facultatif à un dossier validé. Le rattachement fait apparaître la fiche dans le dossier sans rien conclure sur les personnes citées.
+- Chaque fiche alimente le **journal des transmissions terrain** et le journal d'activité, comme les fiches personnes et les sites.
+
+### Choix de conception
+
+- **Le brouillon survit à la fermeture du rédacteur.** Une fiche est presque toujours interrompue — contact, déplacement, ordre radio. Perdre la saisie à chaque fermeture aurait appris aux opérateurs à ne plus rien rédiger, ce qui est exactement l'inverse du but.
+- **Les captures d'écran sont prises après la fermeture du rédacteur.** Prises pendant, elles n'auraient montré que l'interface. Le rédacteur se referme, la scène redevient visible, la capture part.
+- **Une clé d'idempotence par fiche.** Une double validation, ou une retransmission après coupure de liaison, retombe sur la même fiche. Sans elle, le bureau recevrait deux fois le même constat — précisément ce que l'automatisme de détection de doublons signale ensuite comme suspect.
+- **Liaison coupée : la fiche est conservée, pas perdue**, et le message le dit ainsi. L'annoncer comme un échec pousserait à ressaisir, et deux fiches du même constat arriveraient au rétablissement.
+- **Le référentiel des libellés est dupliqué côté jeu**, pour rester lisible sans liaison. L'ordre des thèmes est contractuel — chaque bascule du rédacteur est câblée sur un rang, pas sur un code — et un test compare les deux référentiels pour empêcher la dérive.
+- **Une fiche n'identifie personne et ne vaut pas preuve.** Le rappel figure dans le rédacteur, dans la file et sur la fiche : c'est un constat daté et situé, rien de plus.
+- **Les pastilles de thème sont de vrais contrôles**, pas du texte structuré : Arma ne sait pas peindre un fond derrière un fragment de texte, et des étiquettes sans couleur auraient perdu la lecture d'un coup d'œil qui fait tout l'intérêt du bandeau.
+
+---
+
 ## [1.4.14] - 2026-07-30
 
 ### Ajouté — Corrélation d'exploitation

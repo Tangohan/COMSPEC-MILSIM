@@ -14,9 +14,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.418;
-        versionStr = "1.4.18";
-        versionAr[] = {1, 4, 18};
+        version = 1.419;
+        versionStr = "1.4.19";
+        versionAr[] = {1, 4, 19};
     };
 };
 
@@ -51,6 +51,20 @@ class CfgFunctions {
             class sseApplyProfile {};
             class sseProfilePreset {};
             class sseModuleTargets {};
+            // Fiches de renseignement simplifiées (rédacteur plein cadre ATAK)
+            class intelNoteCatalog {};
+            class intelNoteCache {};
+            class intelNoteShow {};
+            class intelNoteOnLoad {};
+            class intelNoteOnUnload {};
+            class intelNotePane {};
+            class intelNoteRefresh {};
+            class intelNoteToggleTheme {};
+            class intelNoteAddPiece {};
+            class intelNoteDropPiece {};
+            class intelNoteSaveDraft {};
+            class intelNoteSubmit {};
+            class intelNoteClose {};
             class moduleSseCase {};
             class moduleSseProfile {};
             class moduleSseEquip {};
@@ -519,6 +533,7 @@ class CfgFactionClasses
 #include "display_callsign.hpp"
 #include "display_salute.hpp"
 #include "display_sse_person.hpp"
+#include "display_intel_note.hpp"
 #include "display_medevac.hpp"
 #include "display_bug_report.hpp"
 #include "display_order_inbox.hpp"

@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.26;
-        versionStr = "1.0.26";
-        versionAr[] = {1, 0, 26};
+        version = 1.0.27;
+        versionStr = "1.0.27";
+        versionAr[] = {1, 0, 27};
     };
 };
 
@@ -90,6 +90,9 @@ class CfgFunctions
             class athena_taskRespond {};
             class athena_syncOrdersToGroupChat {};
             class athena_openTask {};
+            class athena_noteOnOpened {};
+            class athena_updateNote {};
+            class athena_openNote {};
         };
     };
     // Workaround BCE: Check_Layout uses undefined _line (Compat updateInterface)
@@ -147,6 +150,7 @@ class RscControlsGroup;
 #include "ui\bda_host_page.hpp"
 #include "ui\bii_page.hpp"
 #include "ui\task_page.hpp"
+#include "ui\note_page.hpp"
 
 class ATAK_APPs
 {
@@ -221,6 +225,19 @@ class ATAK_APPs
             ORDER = 3.55;
             PAGE_CTRL = "COMSPEC_ATAK_BII";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_biiOnOpened";
+        };
+    };
+    // Menu dédié des fiches de renseignement : ouvre un rédacteur plein cadre.
+    class AtakNote: message
+    {
+        text = "<t size='1'>RENS</t>";
+        textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 1.16;
+            PAGE_CTRL = "COMSPEC_ATAK_Note";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_noteOnOpened";
         };
     };
     // Stub BCE BDA_Report : PAGE_CTRL/Opened vides → erreur "Opened function...". On le répare.
@@ -313,6 +330,18 @@ class RscTitles
                 ORDER = 3.55;
                 PAGE_CTRL = "COMSPEC_ATAK_BII";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_biiOnOpened";
+            };
+        };
+        class AtakNote: message
+        {
+            text = "<t size='1'>RENS</t>";
+            textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 1.16;
+                PAGE_CTRL = "COMSPEC_ATAK_Note";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_noteOnOpened";
             };
         };
         class BDA_Report: message

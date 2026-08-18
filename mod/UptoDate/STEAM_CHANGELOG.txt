@@ -1,3 +1,16 @@
+COMSPEC Overwatch 1.4.19 — 18/08/2026
+
+Fiches de renseignement simplifiées — menu RENS
+
+• Nouveau menu RENS dans le tiroir ATAK : rédacteur plein cadre sur toute la surface de l'ATAK
+• Un texte libre de 1000 caractères, une date, un lieu, des thèmes, jusqu'à 4 pièces jointes
+• Cinq types de fiche : mission, observation, contact, ambiance, technique
+• Pièces jointes : capture de la scène, photo de la bibliothèque ATAK, relevé de position
+• Brouillon conservé si le rédacteur est fermé (contact, ordre radio…)
+• Liaison coupée : la fiche est conservée et partira au rétablissement — ne pas la ressaisir
+• Icône « Fiche RENS » sur l'écran d'accueil ATAK et action ACE dédiée
+• Côté portail : file des fiches, suivi analyste et rattachement à un dossier
+
 COMSPEC Overwatch 1.4.8 — 29/07/2026
 
 Médical ACE / KAT, carte web, photos recon

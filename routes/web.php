@@ -20,6 +20,7 @@ use App\Controllers\Web\SseIntelligenceWorkspaceController;
 use App\Controllers\Web\JnetPortalController;
 use App\Controllers\Web\SseDigitalLabController;
 use App\Controllers\Web\SseArmaModelsController;
+use App\Controllers\Web\SseFieldNoteController;
 use App\Controllers\Web\AccountController;
 use App\Controllers\Web\AccountPrivacyController;
 use App\Controllers\Web\HrCharterController;
@@ -49,6 +50,7 @@ use App\Controllers\Api\OrbatApiController;
 use App\Controllers\Api\AtakIntelController;
 use App\Controllers\Api\AtakApiController;
 use App\Controllers\Api\SseApiController;
+use App\Controllers\Api\SseFieldNoteApiController;
 use App\Controllers\Api\SseIntelApiController;
 use App\Controllers\Api\FireSupportController;
 use App\Controllers\Api\DangerZoneController;
@@ -619,6 +621,15 @@ return function (Router $router) {
     $router->post('/atak/sse/rapprochements/{id}/valider', [SsePortalController::class, 'suggestionAccept'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/rejeter', [SsePortalController::class, 'suggestionReject'], $mwSsePortal);
     $router->post('/atak/sse/moteur/executer', [SsePortalController::class, 'engineRunNow'], $mwSsePortal);
+    // Fiches de renseignement simplifiées — rédacteur plein écran (portail et ATAK)
+    $router->get('/atak/sse/fiches', [SseFieldNoteController::class, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/fiches/nouvelle', [SseFieldNoteController::class, 'composer'], $mwSsePortal);
+    $router->post('/atak/sse/fiches', [SseFieldNoteController::class, 'store'], $mwSsePortal);
+    $router->get('/atak/sse/fiches/{id}', [SseFieldNoteController::class, 'show'], $mwSsePortal);
+    $router->post('/atak/sse/fiches/{id}/pieces', [SseFieldNoteController::class, 'attachmentStore'], $mwSsePortal);
+    $router->post('/atak/sse/fiches/{id}/pieces/{attachmentId}/supprimer', [SseFieldNoteController::class, 'attachmentDelete'], $mwSsePortal);
+    $router->post('/atak/sse/fiches/{id}/suivi', [SseFieldNoteController::class, 'triage'], $mwSsePortal);
+    $router->post('/atak/sse/fiches/{id}/rattachement', [SseFieldNoteController::class, 'attachCase'], $mwSsePortal);
     $router->get('/atak/sse/collecte', [SsePortalController::class, 'collecteHub'], $mwSsePortal);
     $router->get('/atak/sse/validation', [SsePortalController::class, 'validationQueue'], $mwSsePortal);
     $router->get('/atak/sse/rapports', [SsePortalController::class, 'reportsHub'], $mwSsePortal);
@@ -1832,6 +1843,13 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/sse/v1/sync/ack', [SseIntelApiController::class, 'syncAck']);
     $router->get('/api/sse/v1/sync/conflicts', [SseIntelApiController::class, 'syncConflicts']);
     $router->post('/api/sse/v1/sync/conflicts/{id}/resoudre', [SseIntelApiController::class, 'syncConflictResolve']);
+    // Fiches de renseignement simplifiées (rédacteur ATAK)
+    // « catalogue » avant /{id} : le mot ne doit pas être lu comme un identifiant.
+    $router->get('/api/sse/notes/catalogue', [SseFieldNoteApiController::class, 'catalog']);
+    $router->get('/api/sse/notes', [SseFieldNoteApiController::class, 'index']);
+    $router->post('/api/sse/notes', [SseFieldNoteApiController::class, 'store']);
+    $router->get('/api/sse/notes/{id}', [SseFieldNoteApiController::class, 'show']);
+    $router->post('/api/sse/notes/{id}/pieces', [SseFieldNoteApiController::class, 'attachmentStore']);
     // Avant /{id} : « by-unit » ne doit pas être capté comme identifiant.
     $router->get('/api/sse/persons/by-unit', [SseApiController::class, 'personsByUnit']);
     $router->get('/api/sse/persons/{id}', [SseApiController::class, 'personsShow']);
