@@ -371,6 +371,18 @@ if (!is_file($tenantTypePath)) {
 }
 $migrationFlush();
 
+// Socle LMS moderne (training_courses, lessons, enrollments, quizzes…) : créé à partir de
+// migrations/lms_training.sql si absent. Sans cette étape, une installation neuve n'a pas de
+// table training_courses et le tableau de bord / la brique Formations plantent.
+echo "Socle LMS moderne (training_courses, lessons, enrollments…)...\n";
+$migrationFlush();
+$lmsTrainingBaseMigrate = require $root . '/bootstrap/lms_training_base_migration.php';
+try {
+    $lmsTrainingBaseMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] socle LMS moderne : ' . $e->getMessage() . "\n";
+}
+
 // LMS formations : colonnes training_courses + tables engagement — exécuté tôt (idempotent). Anciennement en fin de fichier :
 // si le script s’arrêtait avant (timeout, erreur), colonnes comme enrollment_policy_json manquaient en prod.
 echo "Migrations LMS formation (training_courses, politique d’inscription, vitrine)...\n";
@@ -3042,8 +3054,26 @@ if ($stmt && $stmt->fetch()) {
     $tenantAdminRoleId = (int) $pdo->lastInsertId();
     $roleId = $communityOwnerRoleId;
 
-    $pdo->exec("INSERT INTO grades (tenant_id, name, short_name, nato_code, rank_order, created_at) VALUES ($tenantId, 'Officer', 'OFR', 'OF-1', 10, NOW())");
-    $gradeId = (int) $pdo->lastInsertId();
+    // La table `grades` peut être l'ancien modèle tenant (tenant_id/name/short_name)
+    // ou le référentiel multi-doctrine après bascule (grade_system_id/label_short).
+    // Sur une installation neuve, la bascule référentielle a déjà eu lieu : on rattache
+    // alors l'admin à un grade officier existant du référentiel (ou NULL) plutôt que
+    // d'insérer des colonnes disparues.
+    $gradesHasTenantCol = $pdo->query(
+        "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() "
+        . "AND TABLE_NAME = 'grades' AND COLUMN_NAME = 'tenant_id' LIMIT 1"
+    );
+    if ($gradesHasTenantCol && $gradesHasTenantCol->fetchColumn()) {
+        $pdo->exec("INSERT INTO grades (tenant_id, name, short_name, rank_order, created_at) VALUES ($tenantId, 'Officer', 'OFR', 10, NOW())");
+        $gradeId = (int) $pdo->lastInsertId();
+    } else {
+        $refGrade = $pdo->query(
+            "SELECT id FROM grades WHERE is_active = 1 "
+            . "ORDER BY (is_commissioned = 1) DESC, sort_order ASC, id ASC LIMIT 1"
+        );
+        $refGradeId = $refGrade ? $refGrade->fetchColumn() : false;
+        $gradeId = $refGradeId !== false && $refGradeId !== null ? (int) $refGradeId : null;
+    }
 
     $hash = password_hash('admin', PASSWORD_ARGON2ID);
     $pdo->prepare("INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at) VALUES (?, 'admin@athena.local', ?, 'Admin', 'ADMIN', ?, ?, 'active', NOW(), NOW())")
