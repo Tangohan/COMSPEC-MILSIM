@@ -3539,6 +3539,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakSseFieldNotesMigrate = require $root . '/bootstrap/atak_sse_field_notes_migration.php';
+try {
+    echo "Migration atak_sse_field_notes (SSE — fiches de renseignement simplifiées)…\n";
+    $atakSseFieldNotesMigrate($pdo, $sseCliLog);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_field_notes : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakDonationsMigrate = require $root . '/bootstrap/atak_donations_migration.php';
 try {
     echo "Migration atak_donations (financement ATAK)...\n";
