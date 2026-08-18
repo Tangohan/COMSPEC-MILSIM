@@ -73,8 +73,9 @@ final class SseFieldNoteController
             return Response::redirect(url('atak/sse/fiches'));
         }
 
+        // getFlash consomme la valeur : la relire renverrait toujours vide.
         $draft = Session::getFlash('sse_field_note_draft');
-        $draft = is_array($draft) ? $draft : [];
+        $errors = Session::getFlash('sse_field_note_errors');
 
         return Response::view('atak.sse.field_note_composer', [
             'title' => 'Nouvelle fiche de renseignement',
@@ -87,10 +88,8 @@ final class SseFieldNoteController
             'defaultKind' => SseFieldNoteCatalog::DEFAULT_KIND,
             'authorLabel' => $this->authorLabel(),
             'observedInputValue' => date('Y-m-d\TH:i'),
-            'errors' => is_array(Session::getFlash('sse_field_note_errors'))
-                ? Session::getFlash('sse_field_note_errors')
-                : [],
-            'draft' => $draft,
+            'errors' => is_array($errors) ? $errors : [],
+            'draft' => is_array($draft) ? $draft : [],
             'cancelUrl' => url('atak/sse/fiches'),
             'submitUrl' => url('atak/sse/fiches'),
         ]);
