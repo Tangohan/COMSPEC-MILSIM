@@ -23,7 +23,9 @@ private _fnc_say = {
 };
 
 // --- Contrôles de saisie ---
-private _body = trim (ctrlText (_disp displayCtrl 9616));
+// Toutes les valeurs passent par la mémoire des champs : la validation se fait
+// depuis n'importe quel volet, et un champ masqué peut se lire vide.
+private _body = trim (["value", "body"] call comspec_overwatch_connect_fnc_intelNoteCache);
 if (count _body > _bodyMax) then { _body = _body select [0, _bodyMax]; };
 
 private _themes = uiNamespace getVariable ["COMSPEC_IntelNote_Themes", []];
@@ -52,16 +54,16 @@ private _urgencyIdx = lbCurSel _urgencyCombo;
 private _urgency = if (_urgencyIdx >= 0) then { _urgencyCombo lbData _urgencyIdx } else { "routine" };
 if (_urgency isEqualTo "") then { _urgency = "routine"; };
 
-private _place = trim (ctrlText (_disp displayCtrl 9653));
-private _grid = trim (ctrlText (_disp displayCtrl 9654));
+private _place = trim (["value", "place"] call comspec_overwatch_connect_fnc_intelNoteCache);
+private _grid = trim (["value", "grid"] call comspec_overwatch_connect_fnc_intelNoteCache);
 if (_grid isEqualTo "") then { _grid = mapGridPosition player; };
-private _caseCode = toUpper (trim (ctrlText (_disp displayCtrl 9655)));
+private _caseCode = toUpper (trim (["value", "case"] call comspec_overwatch_connect_fnc_intelNoteCache));
 if (_caseCode isEqualTo "") then {
     _caseCode = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
 };
 
 // Date saisie « JJ/MM/AAAA HH:MM » → format attendu par le serveur.
-private _observedRaw = trim (ctrlText (_disp displayCtrl 9652));
+private _observedRaw = trim (["value", "date"] call comspec_overwatch_connect_fnc_intelNoteCache);
 private _observed = "";
 private _dateParts = (_observedRaw splitString " ") select {_x isNotEqualTo ""};
 if ((count _dateParts) >= 1) then {

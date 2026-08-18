@@ -8,6 +8,9 @@ private _disp = uiNamespace getVariable ["COMSPEC_IntelNote_Display", displayNul
 if (isNull _disp) then { _disp = findDisplay 9982; };
 if (isNull _disp) exitWith {};
 
+// Mémoire des champs de la fiche précédente : elle ne doit pas déteindre.
+["clear"] call comspec_overwatch_connect_fnc_intelNoteCache;
+
 private _catalog = [] call comspec_overwatch_connect_fnc_intelNoteCatalog;
 private _kinds = _catalog getOrDefault ["kinds", []];
 private _urgencies = _catalog getOrDefault ["urgencies", []];
@@ -106,6 +109,10 @@ if (_lastCase isEqualType "") then {
 (_disp displayCtrl 9616) ctrlAddEventHandler ["ChangedText", {
     [] call comspec_overwatch_connect_fnc_intelNoteRefresh;
 }];
+
+// Tous les contrôles sont encore visibles à ce stade : c'est le bon moment pour
+// amorcer la mémoire, avant que le premier volet n'en masque une partie.
+["capture"] call comspec_overwatch_connect_fnc_intelNoteCache;
 
 ['redaction'] call comspec_overwatch_connect_fnc_intelNotePane;
 ctrlSetFocus (_disp displayCtrl 9616);

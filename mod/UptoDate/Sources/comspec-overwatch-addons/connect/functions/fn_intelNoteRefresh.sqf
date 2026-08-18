@@ -22,16 +22,18 @@ private _pieces = uiNamespace getVariable ["COMSPEC_IntelNote_Pieces", []];
 if (!(_pieces isEqualType [])) then { _pieces = []; };
 
 // --- Bandeau : date à gauche, lieu à droite ---
-private _dateText = trim (ctrlText (_disp displayCtrl 9652));
+// Lecture par la mémoire : ces champs vivent dans le volet contexte, et le
+// bandeau reste affiché quand ce volet est masqué.
+private _dateText = trim (["value", "date"] call comspec_overwatch_connect_fnc_intelNoteCache);
 if (_dateText isEqualTo "") then { _dateText = "DATE À PRÉCISER"; };
 (_disp displayCtrl 9611) ctrlSetStructuredText parseText format [
     "<t size='0.44' color='#f4f5f6'>%1</t>",
     _dateText
 ];
 
-private _placeText = toUpper (trim (ctrlText (_disp displayCtrl 9653)));
+private _placeText = toUpper (trim (["value", "place"] call comspec_overwatch_connect_fnc_intelNoteCache));
 if (_placeText isEqualTo "") then {
-    private _grid = trim (ctrlText (_disp displayCtrl 9654));
+    private _grid = trim (["value", "grid"] call comspec_overwatch_connect_fnc_intelNoteCache);
     _placeText = if (_grid isEqualTo "") then { "LIEU À PRÉCISER" } else { "REPÈRE " + _grid };
 };
 (_disp displayCtrl 9612) ctrlSetStructuredText parseText format [
@@ -111,7 +113,7 @@ private _chips = [];
 _disp setVariable ["COMSPEC_IntelNote_Chips", _chips];
 
 // --- Compteur ---
-private _body = ctrlText (_disp displayCtrl 9616);
+private _body = ["value", "body"] call comspec_overwatch_connect_fnc_intelNoteCache;
 private _length = count _body;
 private _counter = _disp displayCtrl 9617;
 _counter ctrlSetBackgroundColor (

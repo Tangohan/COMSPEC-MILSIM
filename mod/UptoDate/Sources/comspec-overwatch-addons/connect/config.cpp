@@ -53,6 +53,7 @@ class CfgFunctions {
             class sseModuleTargets {};
             // Fiches de renseignement simplifiées (rédacteur plein cadre ATAK)
             class intelNoteCatalog {};
+            class intelNoteCache {};
             class intelNoteShow {};
             class intelNoteOnLoad {};
             class intelNoteOnUnload {};

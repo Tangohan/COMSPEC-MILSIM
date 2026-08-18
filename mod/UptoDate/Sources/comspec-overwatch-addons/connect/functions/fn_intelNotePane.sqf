@@ -21,6 +21,9 @@ if (isNull _disp) exitWith {};
 if (!(_pane in ["redaction", "pieces", "contexte"])) then { _pane = "redaction"; };
 uiNamespace setVariable ["COMSPEC_IntelNote_Pane", _pane];
 
+// Avant de masquer quoi que ce soit : mémoriser ce qui est encore lisible.
+["capture"] call comspec_overwatch_connect_fnc_intelNoteCache;
+
 private _redaction = [9615, 9616, 9617, 9618, 9626];
 private _pieces = [9630, 9631, 9632, 9633, 9634, 9635, 9636, 9637, 9638, 9639, 9640, 9641, 9642, 9643];
 private _contexte = [
@@ -55,6 +58,10 @@ if (!isNull _edgeRight) then {
     _edgeRight ctrlShow true;
     _edgeRight ctrlEnable (_pane isNotEqualTo "pieces");
 };
+
+// Les champs redevenus visibles peuvent avoir été vidés pendant qu'ils étaient
+// masqués : leur remettre la valeur mémorisée.
+["restore"] call comspec_overwatch_connect_fnc_intelNoteCache;
 
 [] call comspec_overwatch_connect_fnc_intelNoteRefresh;
 

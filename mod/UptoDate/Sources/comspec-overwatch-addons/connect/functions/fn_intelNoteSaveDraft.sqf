@@ -30,9 +30,11 @@ private _urgency = if (_urgencyIdx >= 0) then { _urgencyCombo lbData _urgencyIdx
 private _themes = uiNamespace getVariable ["COMSPEC_IntelNote_Themes", []];
 if (!(_themes isEqualType [])) then { _themes = []; };
 
+// Par la mémoire des champs : le brouillon est enregistré à la fermeture, donc
+// souvent depuis un volet où le cadre de rédaction ou le lieu sont masqués.
 profileNamespace setVariable ["COMSPEC_IntelNote_Draft", [
-    ctrlText (_disp displayCtrl 9616),
-    trim (ctrlText (_disp displayCtrl 9653)),
+    ["value", "body"] call comspec_overwatch_connect_fnc_intelNoteCache,
+    trim (["value", "place"] call comspec_overwatch_connect_fnc_intelNoteCache),
     _kind,
     _urgency,
     _themes
