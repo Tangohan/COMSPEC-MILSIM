@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -142,6 +143,89 @@ final class SseFieldNoteApiController
             return Response::json([
                 'error' => 'body_required',
                 'message' => 'La fiche est vide. Écrivez le renseignement avant de valider.',
+            ], 422);
+        }
+        if (SseFieldNoteCatalog::normalizeThemes($input['themes']) === []) {
+            return Response::json([
+                'error' => 'theme_required',
+                'message' => 'Choisissez au moins un thème pour orienter la fiche.',
+            ], 422);
+        }
+
+        $result = $this->noteService->create($tenant, $input);
+        $note = $result['note'];
+
+        return Response::json([
+            'ok' => true,
+            'created' => $result['created'],
+            'id' => (int) ($note['id'] ?? 0),
+            'reference_code' => (string) ($note['reference_code'] ?? ''),
+            'note' => $note,
+            'message' => $result['created']
+                ? 'Fiche transmise au bureau SSE.'
+                : 'Fiche déjà transmise — aucun doublon créé.',
+        ], $result['created'] ? 201 : 200);
+    }
+
+    /**
+     * Soumission d'une fiche depuis la vue ATAK web (session navigateur + CSRF).
+     *
+     * Chemin distinct de store() qui exige une clé API terrain. Ici, l'utilisateur
+     * est connecté via son compte Athena : la session suffit à identifier le tenant
+     * et l'auteur.
+     */
+    public function storeWeb(Request $request, array $params = []): Response
+    {
+        $raw = file_get_contents('php://input');
+        $body = ($raw !== false && $raw !== '') ? (json_decode($raw, true) ?: []) : [];
+
+        $csrfToken = (string) ($body['_csrf_token'] ?? $request->input('_csrf_token', '') ?? '');
+        if (!Csrf::validate($csrfToken)) {
+            return Response::json([
+                'error' => 'csrf_invalid',
+                'message' => 'Session expirée ou requête invalide. Rechargez la page.',
+            ], 403);
+        }
+
+        $tenant = $this->requireTenant($request);
+        if ($tenant instanceof Response) {
+            return $tenant;
+        }
+
+        $userId = (int) (Session::get('user_id') ?? 0);
+        $callsign = trim((string) (Session::get('callsign') ?? Session::get('username') ?? ''));
+        if ($callsign === '') {
+            $callsign = 'Opérateur ATAK';
+        }
+
+        $input = [
+            'context_id' => $this->mapId($request, false),
+            'body' => (string) ($body['body'] ?? ''),
+            'note_kind' => $body['note_kind'] ?? SseFieldNoteCatalog::DEFAULT_KIND,
+            'themes' => $body['themes'] ?? [],
+            'observed_at' => $body['observed_at'] ?? null,
+            'place_label' => $body['place_label'] ?? null,
+            'grid_reference' => $body['grid_reference'] ?? null,
+            'lat' => $body['lat'] ?? null,
+            'lng' => $body['lng'] ?? null,
+            'urgency' => $body['urgency'] ?? SseFieldNoteCatalog::DEFAULT_URGENCY,
+            'classification' => 'interne',
+            'source_reliability' => 'C',
+            'info_credibility' => 3,
+            'origin' => 'atak',
+            'author_label' => $body['author_label'] ?? $callsign,
+            'author_user_id' => $userId > 0 ? $userId : null,
+            'author_steam_id' => null,
+            'author_unit' => $body['author_unit'] ?? null,
+            'case_code' => $body['case_code'] ?? null,
+            'idempotency_key' => $body['idempotency_key'] ?? null,
+            'status' => SseFieldNoteCatalog::DEFAULT_STATUS,
+        ];
+
+        if (SseFieldNoteCatalog::normalizeBody($input['body']) === '') {
+            return Response::json([
+                'error' => 'body_required',
+                'message' => 'La fiche est vide. Rédigez le renseignement avant de valider.',
             ], 422);
         }
         if (SseFieldNoteCatalog::normalizeThemes($input['themes']) === []) {
