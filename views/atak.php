@@ -106,6 +106,7 @@ if ($atakMapConfig) {
         'hasSuggestionBasis' => false,
     ]) ?>;
     window.ATAK_PHONE_SESSION = <?= json_encode($phoneOperatorSession ?: null) ?>;
+    window.ATAK_CSRF_TOKEN = <?= json_encode(\App\Core\Csrf::token()) ?>;
   </script>
 </head>
 <body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
@@ -1095,6 +1096,11 @@ if ($atakMapConfig) {
           <small class="atak-tab-desc">Identités et fiches terrain</small>
           <span class="atak-tab-badge" id="atak-sse-tab-badge" hidden></span>
         </button>
+        <button type="button" class="atak-tab is-section-visible" role="tab" aria-selected="false" data-tab="frs" data-atak-section="intel" title="Fiches de renseignement">
+          <span class="atak-tab-label">FRS</span>
+          <small class="atak-tab-desc">Fiches de renseignement</small>
+          <span class="atak-tab-badge" id="atak-frs-tab-badge" hidden></span>
+        </button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="markers" data-atak-section="sitac" title="Marqueurs">
           <span class="atak-tab-label">Marqueurs</span>
           <small class="atak-tab-desc">Objets tactiques sur la carte</small>
@@ -1225,6 +1231,96 @@ if ($atakMapConfig) {
             </div>
           </div>
         </div>
+      </div>
+      <div class="atak-tabs-content" id="tab-frs" role="tabpanel" aria-label="Fiches de renseignement simplifiées">
+
+        <!-- Vue liste -->
+        <div id="frs-list-view">
+          <div class="atak-cams-toolbar">
+            <p class="atak-panel-hint">Fiches de renseignement terrain (FRS) transmises au bureau SSE.</p>
+            <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="frs-btn-compose">Nouvelle fiche</button>
+          </div>
+          <div id="frs-notes-loading" class="atak-panel-hint" style="padding:.75rem 1rem;">Chargement…</div>
+          <div id="frs-notes-empty" class="atak-empty-state" hidden>
+            <div class="atak-empty-state-icon" aria-hidden="true">📋</div>
+            <p class="atak-empty-state-title">Aucune fiche transmise</p>
+            <p class="atak-empty-state-text">Rédigez votre première fiche en appuyant sur « Nouvelle fiche ».</p>
+          </div>
+          <div id="frs-notes-list" class="frs-notes-list"></div>
+        </div>
+
+        <!-- Vue rédaction -->
+        <div id="frs-compose" hidden>
+          <div class="frs-compose-header">
+            <button type="button" class="atak-ops-btn" id="frs-btn-back-list">← Retour</button>
+            <span class="frs-compose-title">Nouvelle fiche</span>
+          </div>
+
+          <div class="frs-compose-body">
+            <div class="frs-field">
+              <label class="frs-label" for="frs-body">Renseignement <span class="frs-required">*</span></label>
+              <textarea id="frs-body" class="frs-editor" maxlength="1000"
+                        placeholder="Décrivez les faits observés. Soyez factuel : qui, quoi, où, quand, comment."></textarea>
+              <div class="frs-counter" id="frs-body-counter">0/1000</div>
+            </div>
+
+            <div class="frs-field">
+              <label class="frs-label" for="frs-place">Lieu</label>
+              <input type="text" id="frs-place" class="frs-input" maxlength="180"
+                     placeholder="Secteur, axe, village ou point de repère">
+            </div>
+
+            <div class="frs-field">
+              <label class="frs-label" for="frs-grid">Grille / carroyage</label>
+              <input type="text" id="frs-grid" class="frs-input" maxlength="32"
+                     placeholder="Ex. 14500 16820">
+            </div>
+
+            <div class="frs-field">
+              <label class="frs-label" for="frs-observed">Date et heure de l'événement</label>
+              <input type="datetime-local" id="frs-observed" class="frs-input">
+            </div>
+
+            <fieldset class="frs-field">
+              <legend class="frs-label">Type de fiche <span class="frs-required">*</span></legend>
+              <div id="frs-kind-grid" class="frs-kind-grid"></div>
+            </fieldset>
+
+            <fieldset class="frs-field">
+              <legend class="frs-label">Thèmes <span class="frs-required">*</span> <small class="frs-label-hint">(4 max.)</small></legend>
+              <div id="frs-theme-grid" class="frs-theme-grid"></div>
+            </fieldset>
+
+            <fieldset class="frs-field">
+              <legend class="frs-label">Urgence</legend>
+              <div id="frs-urgency-grid" class="frs-urgency-grid"></div>
+            </fieldset>
+
+            <div class="frs-field">
+              <label class="frs-label" for="frs-case-code">Référence de dossier <small class="frs-label-hint">(facultatif)</small></label>
+              <input type="text" id="frs-case-code" class="frs-input" maxlength="32"
+                     placeholder="Laissez vide si inconnu">
+            </div>
+
+            <p class="frs-feedback" id="frs-feedback" hidden></p>
+
+            <button type="button" class="atak-ops-btn atak-ops-btn--primary frs-submit-btn" id="frs-submit">Transmettre la fiche</button>
+          </div>
+        </div>
+
+        <!-- Vue confirmation -->
+        <div id="frs-success" class="frs-success" hidden>
+          <div class="atak-empty-state">
+            <div class="atak-empty-state-icon" aria-hidden="true">✓</div>
+            <p class="atak-empty-state-title">Fiche transmise</p>
+            <p class="atak-empty-state-text">Référence : <strong id="frs-success-ref">—</strong></p>
+          </div>
+          <div class="frs-success-actions">
+            <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="frs-success-new">Nouvelle fiche</button>
+            <button type="button" class="atak-ops-btn" id="frs-success-list">Mes fiches</button>
+          </div>
+        </div>
+
       </div>
       <div class="atak-tabs-content" id="tab-markers">
         <div class="atak-markers-list" id="atak-markers-list">
@@ -2080,6 +2176,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-transmissions.js"></script>
   <script src="<?= $base ?>/assets/js/atak-cams.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sse-persons.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-frs.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-air-assets.js"></script>
   <script src="<?= $base ?>/assets/js/atak-laser-codes.js"></script>
   <script src="<?= $base ?>/assets/js/atak-activity.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2511,6 +2608,9 @@ if ($atakMapConfig) {
         }
         if (tab === 'situation' && window.ATAKSitrep && typeof window.ATAKSitrep.onTabActivated === 'function') {
           window.ATAKSitrep.onTabActivated();
+        }
+        if (tab === 'frs' && window.ATAKFRS && typeof window.ATAKFRS.onTabActivated === 'function') {
+          window.ATAKFRS.onTabActivated();
         }
       }
 

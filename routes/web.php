@@ -1848,6 +1848,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/sse/notes/catalogue', [SseFieldNoteApiController::class, 'catalog']);
     $router->get('/api/sse/notes', [SseFieldNoteApiController::class, 'index']);
     $router->post('/api/sse/notes', [SseFieldNoteApiController::class, 'store']);
+    // Soumission depuis la vue ATAK web (session navigateur, pas de clé terrain requise).
+    $router->post('/api/sse/notes/web', [SseFieldNoteApiController::class, 'storeWeb']);
     $router->get('/api/sse/notes/{id}', [SseFieldNoteApiController::class, 'show']);
     $router->post('/api/sse/notes/{id}/pieces', [SseFieldNoteApiController::class, 'attachmentStore']);
     // Avant /{id} : « by-unit » ne doit pas être capté comme identifiant.
