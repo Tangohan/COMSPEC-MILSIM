@@ -158,8 +158,16 @@
     updateSideMeta(sectionId);
     syncSectionBadges();
 
+    Object.keys(SECTIONS).forEach(function (id) {
+      document.body.classList.toggle('atak-section-' + id, id === sectionId);
+    });
+
     try {
       localStorage.setItem(STORAGE_SECTION, sectionId);
+    } catch (e) { /* ignore */ }
+
+    try {
+      document.dispatchEvent(new CustomEvent('atak:section-change', { detail: { section: sectionId } }));
     } catch (e) { /* ignore */ }
 
     if (opts.skipActivate) return;

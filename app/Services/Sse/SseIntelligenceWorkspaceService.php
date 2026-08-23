@@ -13,6 +13,7 @@ use App\Repositories\SseIntelEventRepository;
 use App\Repositories\SseInterestCaseRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\SseSuggestionQueueRepository;
+use App\Support\SseWorkspaceUi;
 
 /**
  * Intelligence Workspace LOT 2 — inbox, chemise, timeline, graph, recherche.
@@ -73,7 +74,7 @@ final class SseIntelligenceWorkspaceService
             ? $this->getAnalystCursor($tenantId, $userId)
             : null;
 
-        $inbox = $this->buildInbox($tenantId, $lastSeen);
+        $inbox = SseWorkspaceUi::collapseInbox($this->buildInbox($tenantId, $lastSeen));
         $timeline = $this->events->listForTenant($tenantId, [
             'limit' => 50,
             'case_id' => $caseId,
@@ -81,6 +82,7 @@ final class SseIntelligenceWorkspaceService
         if ($timeline === []) {
             $timeline = $this->fallbackTimeline($tenantId, $caseScope);
         }
+        $timeline = SseWorkspaceUi::collapseTimeline($timeline);
         $relations = $this->foundation->listRelations($tenantId, [
             'limit' => 40,
             'case_id' => $caseId,
@@ -95,7 +97,7 @@ final class SseIntelligenceWorkspaceService
             $folder = $this->caseFolder($tenantId, $caseId);
             if ($folder !== null) {
                 $context = $folder['header'] ?? $context;
-                $timeline = $folder['timeline'] ?? $timeline;
+                $timeline = SseWorkspaceUi::collapseTimeline($folder['timeline'] ?? $timeline);
                 $relations = $folder['relations'] ?? $relations;
             }
         }
@@ -202,7 +204,7 @@ final class SseIntelligenceWorkspaceService
             ? $this->getAnalystCursor($tenantId, $userId)
             : null;
 
-        return $this->buildInbox($tenantId, $lastSeen);
+        return SseWorkspaceUi::collapseInbox($this->buildInbox($tenantId, $lastSeen));
     }
 
     /**
@@ -648,6 +650,9 @@ final class SseIntelligenceWorkspaceService
             }
             $cases[] = [
                 'id' => (int) ($c['id'] ?? 0),
+                'entity_type' => 'CASE',
+                'entity_type_label' => 'Dossier',
+                'icon' => 'folder',
                 'reference_code' => (string) ($c['reference_code'] ?? ''),
                 'title' => (string) ($c['title'] ?? ''),
                 'lifecycle_status' => (string) ($c['lifecycle_status'] ?? ''),
@@ -684,6 +689,7 @@ final class SseIntelligenceWorkspaceService
             $items[] = [
                 'kind' => 'interest_case',
                 'kind_label' => 'Dossier d’intérêt',
+                'icon' => 'folder',
                 'id' => (int) ($row['id'] ?? 0),
                 'title' => trim((string) ($row['reference_code'] ?? '') . ' ' . (string) ($row['temporary_designation'] ?? ''))
                     ?: 'Piste sans désignation',
@@ -703,6 +709,7 @@ final class SseIntelligenceWorkspaceService
                 $items[] = [
                     'kind' => 'suggestion',
                     'kind_label' => 'Rapprochement proposé',
+                    'icon' => 'link',
                     'id' => (int) ($s['id'] ?? 0),
                     'title' => (string) ($s['title'] ?? 'Suggestion'),
                     'detail' => (string) ($s['reason'] ?? ''),
@@ -719,14 +726,13 @@ final class SseIntelligenceWorkspaceService
             $items[] = [
                 'kind' => 'relation',
                 'kind_label' => 'Relation proposée',
+                'icon' => 'graph',
                 'id' => (int) ($rel['id'] ?? 0),
                 'title' => sprintf(
-                    '%s #%d → %s → %s #%d',
-                    (string) ($rel['from_type'] ?? ''),
-                    (int) ($rel['from_id'] ?? 0),
-                    (string) ($rel['relation'] ?? ''),
-                    (string) ($rel['to_type'] ?? ''),
-                    (int) ($rel['to_id'] ?? 0)
+                    '%s → %s → %s',
+                    SseWorkspaceUi::entityTypeLabel((string) ($rel['from_type'] ?? '')),
+                    SseWorkspaceUi::relationLabel((string) ($rel['relation'] ?? '')),
+                    SseWorkspaceUi::entityTypeLabel((string) ($rel['to_type'] ?? ''))
                 ),
                 'detail' => (string) ($rel['justification'] ?? $rel['note'] ?? 'À confirmer par un analyste'),
                 'updated_at' => $rel['created_at'] ?? null,
@@ -745,6 +751,7 @@ final class SseIntelligenceWorkspaceService
                 $items[] = [
                     'kind' => 'acquisition',
                     'kind_label' => 'Acquisition numérique',
+                    'icon' => 'device',
                     'id' => (int) ($a['id'] ?? 0),
                     'title' => trim((string) ($a['device_reference'] ?? '') . ' — ' . (string) ($a['method_label'] ?? 'Acquisition'))
                         ?: ('Acquisition #' . (int) ($a['id'] ?? 0)),
@@ -763,6 +770,7 @@ final class SseIntelligenceWorkspaceService
                 $items[] = [
                     'kind' => 'contradiction',
                     'kind_label' => 'Contradiction',
+                    'icon' => 'alert',
                     'id' => (int) ($cx['id'] ?? 0),
                     'title' => (string) ($cx['title'] ?? 'Contradiction'),
                     'detail' => (string) ($cx['explanation'] ?? ''),
@@ -784,6 +792,11 @@ final class SseIntelligenceWorkspaceService
                 $items[] = [
                     'kind' => 'event',
                     'kind_label' => 'Nouveau depuis votre dernière visite',
+                    'icon' => SseWorkspaceUi::iconForInboxKind(
+                        'event',
+                        (string) ($ev['summary'] ?? ''),
+                        (string) ($ev['event_type'] ?? '')
+                    ),
                     'id' => (int) ($ev['id'] ?? 0),
                     'title' => (string) ($ev['summary'] ?? $ev['event_type_label'] ?? 'Événement'),
                     'detail' => (string) ($ev['source_system_label'] ?? ''),
@@ -893,10 +906,12 @@ final class SseIntelligenceWorkspaceService
                     'event_uuid' => '',
                     'event_type' => 'OBSERVED',
                     'event_type_label' => (string) ($row['label'] ?? $row['type'] ?? 'Activité'),
+                    'icon' => 'event',
                     'source_system' => 'MANUAL',
                     'source_system_label' => 'Portail',
                     'summary' => (string) ($row['detail'] ?? $row['text'] ?? $row['title'] ?? ''),
                     'event_time' => (string) ($row['at'] ?? $row['time'] ?? $row['created_at'] ?? ''),
+                    'event_time_label' => \App\Support\SseWorkspaceUi::formatEventTime((string) ($row['at'] ?? $row['time'] ?? $row['created_at'] ?? '')),
                     'confidence_code' => 'F6',
                     'author_label' => $row['author'] ?? null,
                 ];
@@ -920,7 +935,7 @@ final class SseIntelligenceWorkspaceService
             'DIFFUSE' => 'Diffusé',
             'CLOS' => 'Clos',
             'ARCHIVE' => 'Archivé',
-            default => $status !== '' ? $status : 'Non défini',
+            default => \App\Support\SseWorkspaceUi::humanizeCode($status, 'Non défini'),
         };
     }
 }

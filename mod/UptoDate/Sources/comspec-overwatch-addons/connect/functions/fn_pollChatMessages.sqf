@@ -1,4 +1,4 @@
-﻿/*
+/*
     Interroge Athena (GetChatMessages) et pousse les messages web / TOC
     vers l’inbox Athena (app Messages) ET vers l’UI Iceman « Group Messages ».
 

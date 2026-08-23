@@ -1,4 +1,5 @@
-private _disp = findDisplay 93400;
+private _ctx = ["evidence"] call comspec_sse_fnc_uiDisplayCtx;
+_ctx params ["_disp", "_idcDetail", "_idcList"];
 if (isNull _disp) exitWith { false };
 
 private _items = [];
@@ -35,7 +36,7 @@ private _hist = if (!isNil "comspec_sse_fnc_getActionHistory") then { [] call co
 } forEach _hist;
 
 missionNamespace setVariable ["comspec_sse_uiEvidenceStore", _store];
-private _lb = _disp displayCtrl 93410;
+private _lb = _disp displayCtrl _idcList;
 lbClear _lb;
 { _lb lbAdd _x; } forEach _items;
 if (_items isEqualTo []) then { _lb lbAdd "(aucune preuve)"; };
@@ -55,5 +56,5 @@ if (count _store > 0) then {
         _e getOrDefault ["bagged", false]
     ];
 };
-(_disp displayCtrl 93411) ctrlSetStructuredText parseText _detail;
+(_disp displayCtrl _idcDetail) ctrlSetStructuredText parseText _detail;
 true

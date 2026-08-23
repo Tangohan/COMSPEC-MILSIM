@@ -187,7 +187,7 @@ window.ATAKUnitMenu = (function () {
       disabled: !inLiaison,
       title: !inLiaison
         ? 'Hors liaison — demande impossible'
-        : 'Le terminal capture et envoie un cliché casque vers le poste de commandement'
+        : 'Le terminal capture et envoie un cliché vers le poste de commandement'
     });
     html += menuItem('helmet-snap-hd', 'Demander une photo casque HD', {
       disabled: !inLiaison,
@@ -195,11 +195,9 @@ window.ATAKUnitMenu = (function () {
         ? 'Hors liaison — demande impossible'
         : 'Capture haute définition — peut prendre quelques secondes de plus'
     });
-    html += menuItem('helmet-stream', 'Demander un flux casque', {
-      disabled: !inLiaison,
-      title: !inLiaison
-        ? 'Hors liaison — demande impossible'
-        : 'Aperçus rapides (~5 s) pendant ~3 min — ce n’est pas une vidéo RTMP'
+    html += menuItem('helmet-stream', 'Vue casque en temps réel', {
+      disabled: true,
+      title: 'Pas encore au point — utilisez une photo depuis le terminal ATAK, ou l’onglet Photos'
     });
     html += menuItem('chat', 'Ouvrir la messagerie', { muted: !inLiaison, disabled: !inLiaison, title: inLiaison ? '' : 'Disponible lorsque le contact est en liaison' });
 
@@ -843,6 +841,12 @@ window.ATAKUnitMenu = (function () {
     }
 
     if (action === 'helmet-snap' || action === 'helmet-snap-hd' || action === 'helmet-stream') {
+      if (action === 'helmet-stream') {
+        if (window.ATAKShowNotification) {
+          window.ATAKShowNotification('La vue casque en temps réel n’est pas encore au point. Demandez une photo, ou utilisez l’onglet Photos.');
+        }
+        return;
+      }
       if (!unit || !unit.id) {
         if (window.ATAKShowError) window.ATAKShowError('Contact non enregistré — demande impossible.');
         return;

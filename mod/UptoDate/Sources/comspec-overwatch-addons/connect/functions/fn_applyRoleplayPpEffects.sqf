@@ -38,17 +38,17 @@ private _cleanup = {
     };
     if (_aberId >= 0 && {_aberId isEqualType 0}) then {
         _aberId ppEffectEnable false;
-        _aberId ppEffectDestroy;
+        ppEffectDestroy _aberId;
         missionNamespace setVariable ["COMSPEC_RoleplayPpAber", -1, false];
     };
     if (_grainId >= 0 && {_grainId isEqualType 0}) then {
         _grainId ppEffectEnable false;
-        _grainId ppEffectDestroy;
+        ppEffectDestroy _grainId;
         missionNamespace setVariable ["COMSPEC_RoleplayPpGrain", -1, false];
     };
     if (_colorId >= 0 && {_colorId isEqualType 0}) then {
         _colorId ppEffectEnable false;
-        _colorId ppEffectDestroy;
+        ppEffectDestroy _colorId;
         missionNamespace setVariable ["COMSPEC_RoleplayPpColor", -1, false];
     };
 };
@@ -81,9 +81,9 @@ private _handle = [{
         _aberration ppEffectEnable false;
         _grain ppEffectEnable false;
         _color ppEffectEnable false;
-        _aberration ppEffectDestroy;
-        _grain ppEffectDestroy;
-        _color ppEffectDestroy;
+        ppEffectDestroy _aberration;
+        ppEffectDestroy _grain;
+        ppEffectDestroy _color;
         missionNamespace setVariable ["COMSPEC_RoleplayPpAber", -1, false];
         missionNamespace setVariable ["COMSPEC_RoleplayPpGrain", -1, false];
         missionNamespace setVariable ["COMSPEC_RoleplayPpColor", -1, false];

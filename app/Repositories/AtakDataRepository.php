@@ -1223,13 +1223,36 @@ class AtakDataRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function addChatMessage(int $tenantId, int $mapId, string $author, string $body): array
+    public function addChatMessage(int $tenantId, int $mapId, string $author, string $body, string $source = 'game'): array
     {
-        $this->pdo()->prepare('INSERT INTO atak_chat_messages (tenant_id, map_id, author, body) VALUES (?, ?, ?, ?)')->execute([$tenantId, $mapId, $author, $body]);
+        $source = self::normalizeChatSource($source);
+        try {
+            $this->pdo()->prepare(
+                'INSERT INTO atak_chat_messages (tenant_id, map_id, author, body, source) VALUES (?, ?, ?, ?, ?)'
+            )->execute([$tenantId, $mapId, $author, $body, $source]);
+        } catch (\PDOException $e) {
+            if (!str_contains($e->getMessage(), 'source')) {
+                throw $e;
+            }
+            $this->pdo()->prepare(
+                'INSERT INTO atak_chat_messages (tenant_id, map_id, author, body) VALUES (?, ?, ?, ?)'
+            )->execute([$tenantId, $mapId, $author, $body]);
+        }
         $id = (int) $this->pdo()->lastInsertId();
         $stmt = $this->pdo()->prepare('SELECT * FROM atak_chat_messages WHERE id = ?');
         $stmt->execute([$id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return [];
+        }
+        $row['source'] = self::normalizeChatSource(isset($row['source']) ? (string) $row['source'] : $source);
+
+        return $row;
+    }
+
+    public static function normalizeChatSource(?string $source): string
+    {
+        return strtolower(trim((string) $source)) === 'web' ? 'web' : 'game';
     }
 
     /**

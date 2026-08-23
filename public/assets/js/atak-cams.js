@@ -8,6 +8,9 @@ window.ATAKCams = (function () {
   var lightboxBound = false;
   var hiddenPhotoIds = loadHiddenPhotoIds();
   var streamRefreshTimer = null;
+  var selectedNight = loadSelectedNight();
+  var currentNightKey = '';
+  var nightsBound = false;
 
   function hiddenStoreKey() {
     var tenant = window.ATAK_TENANT_ID || 0;
@@ -28,6 +31,39 @@ window.ATAKCams = (function () {
     try {
       window.sessionStorage.setItem(hiddenStoreKey(), JSON.stringify(hiddenPhotoIds));
     } catch (e) {}
+  }
+
+  function nightStoreKey() {
+    return 'atak_photo_night_' + (window.ATAK_TENANT_ID || 0);
+  }
+
+  function loadSelectedNight() {
+    try {
+      var raw = window.localStorage.getItem(nightStoreKey());
+      return raw === 'all' || /^\d{4}-\d{2}-\d{2}$/.test(raw || '') ? raw : 'current';
+    } catch (e) {
+      return 'current';
+    }
+  }
+
+  function saveSelectedNight(value) {
+    selectedNight = value || 'current';
+    try {
+      window.localStorage.setItem(nightStoreKey(), selectedNight);
+    } catch (e) {}
+  }
+
+  function nightQueryValue() {
+    return selectedNight || 'current';
+  }
+
+  function shouldShowOnMap(photo) {
+    if (selectedNight && selectedNight !== 'current' && selectedNight !== 'all') {
+      return true;
+    }
+    var key = String((photo && photo.play_night) || '');
+    if (!key || !currentNightKey) return true;
+    return key === currentNightKey;
   }
 
   function isHiddenLocally(id) {
@@ -102,6 +138,7 @@ window.ATAKCams = (function () {
       if (prefs && prefs.showIntelPhotoMarkers === false) return;
     }
     if (isHiddenLocally(photo.id || photo.snapshot_id)) return;
+    if (!shouldShowOnMap(photo)) return;
     var px = photo.pos_x != null ? parseFloat(photo.pos_x) : null;
     var py = photo.pos_y != null ? parseFloat(photo.pos_y) : null;
     if (px == null || py == null || (Math.abs(px) < 0.5 && Math.abs(py) < 0.5)) return;
@@ -160,8 +197,8 @@ window.ATAKCams = (function () {
       return (
         '<div class="atak-empty-state">' +
           '<div class="atak-empty-state-icon" aria-hidden="true">◫</div>' +
-          '<p class="atak-empty-state-title">Aucune photo reçue</p>' +
-          '<p class="atak-empty-state-text">Les vues capturées depuis la tablette ou les caméras casque apparaîtront ici dès leur remontée.</p>' +
+          '<p class="atak-empty-state-title">Aucune photo pour cette soirée</p>' +
+          '<p class="atak-empty-state-text">Les vues de la soirée en cours apparaîtront ici. Pour revoir une autre soirée, changez le menu ci-dessus.</p>' +
         '</div>'
       );
     }
@@ -169,7 +206,7 @@ window.ATAKCams = (function () {
       '<div class="atak-empty-state">' +
         '<div class="atak-empty-state-icon" aria-hidden="true">▣</div>' +
         '<p class="atak-empty-state-title">Aucune caméra détectée</p>' +
-        '<p class="atak-empty-state-text">Les caméras casque et drones actifs en jeu apparaîtront ici. Seuls des aperçus photo sont transmis, pas de vidéo en direct.</p>' +
+        '<p class="atak-empty-state-text">La vue casque en temps réel n’est pas au point. Les photos prises depuis le terminal ATAK se retrouvent dans l’onglet Photos.</p>' +
       '</div>'
     );
   }
@@ -424,15 +461,137 @@ window.ATAKCams = (function () {
   }
 
   function fetchReconImages() {
-    return fetchWithMapFallback('/api/recon/images?limit=40', function (data) {
+    return fetchWithMapFallback('/api/recon/images?limit=200&night=' + encodeURIComponent(nightQueryValue()), function (data) {
       return Array.isArray(data) ? data : [];
     }).then(function (list) { return list || []; });
   }
 
   function fetchIntelPhotos() {
-    return fetchWithMapFallback('/api/intel/photos', function (data) {
+    return fetchWithMapFallback('/api/intel/photos?night=' + encodeURIComponent(nightQueryValue()), function (data) {
       return Array.isArray(data) ? data : [];
     }).then(function (list) { return list || []; });
+  }
+
+  function fillNightSelect(payload) {
+    var sel = document.getElementById('atak-photos-night');
+    if (!sel) return;
+    currentNightKey = String((payload && payload.current) || currentNightKey || '');
+    var nights = (payload && payload.nights) || [];
+    var currentLabel = (payload && payload.current_label) || 'Soirée en cours';
+    var html = '<option value="current">' + escapeHtml(currentLabel) + ' (en cours)</option>';
+    nights.forEach(function (n) {
+      if (!n || !n.key) return;
+      if (n.key === currentNightKey) return;
+      html += '<option value="' + escapeHtml(n.key) + '">' + escapeHtml(n.label || n.key) +
+        (n.count ? ' — ' + n.count + ' photo' + (n.count > 1 ? 's' : '') : '') + '</option>';
+    });
+    html += '<option value="all">Toutes les soirées</option>';
+    sel.innerHTML = html;
+    sel.value = selectedNight;
+    if (sel.value !== selectedNight) {
+      sel.value = 'current';
+      saveSelectedNight('current');
+    }
+    updateNightDeleteButton();
+    updateNightHint();
+  }
+
+  function updateNightHint() {
+    var hint = document.getElementById('atak-photos-night-hint');
+    if (!hint) return;
+    if (selectedNight === 'all') {
+      hint.textContent = 'Liste complète. Sur la carte, seule la soirée en cours est affichée pour éviter l’empilement.';
+      return;
+    }
+    if (selectedNight !== 'current') {
+      hint.textContent = 'Photos de cette soirée. Elles s’affichent aussi sur la carte le temps du rappel. Pour les retirer définitivement, utilisez le bouton ci-contre.';
+      return;
+    }
+    hint.textContent = 'Seule la soirée en cours apparaît sur la carte. Les soirées précédentes restent ici pour archivage ou suppression manuelle.';
+  }
+
+  function updateNightDeleteButton() {
+    var btn = document.getElementById('atak-photos-night-delete');
+    if (!btn) return;
+    var show = selectedNight && selectedNight !== 'all';
+    btn.hidden = !show;
+  }
+
+  function fetchPhotoNights() {
+    var mid = getMapId();
+    return fetchJsonForMap('/api/atak/photo-nights', mid).then(function (payload) {
+      fillNightSelect(payload && typeof payload === 'object' ? payload : {});
+      return payload || {};
+    });
+  }
+
+  function bindNightBar() {
+    if (nightsBound) return;
+    nightsBound = true;
+    var sel = document.getElementById('atak-photos-night');
+    if (sel) {
+      sel.addEventListener('change', function () {
+        saveSelectedNight(sel.value || 'current');
+        updateNightDeleteButton();
+        updateNightHint();
+        refresh();
+      });
+    }
+    var del = document.getElementById('atak-photos-night-delete');
+    if (del) {
+      del.addEventListener('click', function (e) {
+        e.preventDefault();
+        deleteSelectedNightPhotos();
+      });
+    }
+  }
+
+  function deleteSelectedNightPhotos() {
+    var night = selectedNight === 'current' ? (currentNightKey || 'current') : selectedNight;
+    if (!night || night === 'all') return;
+    var label = '';
+    var sel = document.getElementById('atak-photos-night');
+    if (sel && sel.selectedOptions && sel.selectedOptions[0]) {
+      label = sel.selectedOptions[0].textContent || '';
+    }
+    if (!window.confirm('Supprimer les photos de « ' + (label || 'cette soirée') + ' » ? Les clichés déjà classés en dossier SSE sont conservés.')) {
+      return;
+    }
+    var typed = window.prompt('Pour confirmer, saisissez SUPPRIMER LES PHOTOS');
+    if (String(typed || '').trim().toUpperCase() !== 'SUPPRIMER LES PHOTOS') {
+      return;
+    }
+    var base = getApiBase();
+    if (!base) return;
+    var delBtn = document.getElementById('atak-photos-night-delete');
+    if (delBtn) delBtn.disabled = true;
+    fetch(base + '/api/atak/photo-nights/purge', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        mapId: getMapId(),
+        night: night,
+        confirm: 'SUPPRIMER LES PHOTOS'
+      })
+    })
+      .then(parseJsonResponse)
+      .then(function (res) {
+        if (res && res.ok) {
+          if (window.ATAKShowNotification) {
+            window.ATAKShowNotification((res.body && res.body.message) || 'Photos retirées.');
+          }
+          saveSelectedNight('current');
+          return fetchPhotoNights().then(function () { return refresh(); });
+        }
+        if (window.ATAKShowError) {
+          window.ATAKShowError((res && res.body && res.body.message) || 'Impossible de retirer ces photos pour le moment.');
+        }
+      })
+      .finally(function () {
+        var b = document.getElementById('atak-photos-night-delete');
+        if (b) b.disabled = false;
+      });
   }
 
   function refresh() {
@@ -723,9 +882,15 @@ window.ATAKCams = (function () {
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bindRequestButton);
+    document.addEventListener('DOMContentLoaded', function () {
+      bindRequestButton();
+      bindNightBar();
+      fetchPhotoNights();
+    });
   } else {
     bindRequestButton();
+    bindNightBar();
+    fetchPhotoNights();
   }
 
   return {

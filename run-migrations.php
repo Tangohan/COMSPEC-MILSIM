@@ -844,6 +844,7 @@ $atakLiveTables = [
         map_id int unsigned NOT NULL DEFAULT 1,
         author varchar(255) NOT NULL,
         body text NOT NULL,
+        source varchar(16) NOT NULL DEFAULT 'game',
         created_at datetime DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id), KEY tenant_map (tenant_id, map_id),
         CONSTRAINT atak_chat_messages_tenant_fk FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
@@ -3410,6 +3411,15 @@ try {
     $atakMedicalTriageMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_medical_alert_triage : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakChatSourceMigrate = require $root . '/bootstrap/atak_chat_source_migration.php';
+try {
+    echo "Migration atak_chat_messages.source (origine terrain / poste de commandement)...\n";
+    $atakChatSourceMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_chat_messages.source : ' . $e->getMessage() . "\n";
 }
 $migrationEnsurePdo();
 

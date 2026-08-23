@@ -1,4 +1,5 @@
-private _disp = findDisplay 93300;
+private _ctx = ["site"] call comspec_sse_fnc_uiDisplayCtx;
+_ctx params ["_disp", "_idcSum", "_idcList", "_idcDetail"];
 if (isNull _disp) exitWith { false };
 
 private _center = [] call comspec_sse_fnc_uiGetRecord;
@@ -12,13 +13,13 @@ private _now = { (_x getOrDefault ["triage", ""]) == "EXPLOIT_NOW" } count _tri;
 private _low = { (_x getOrDefault ["triage", ""]) == "LOW_VALUE" } count _tri;
 private _untouched = { (_x getOrDefault ["level", "NONE"]) == "NONE" } count _list;
 
-(_disp displayCtrl 93310) ctrlSetStructuredText parseText format [
+(_disp displayCtrl _idcSum) ctrlSetStructuredText parseText format [
     "<t color='#8f8'>SITE EXPLOITATION</t><br/>Complétude: <t color='#ff8'>%1%%</t><br/>Éléments: %2<br/>À exploiter maintenant: %3<br/>Faible valeur: %4<br/>Non traités: %5<br/>Risque: %6",
     _pct, count _list, _now, _low, _untouched,
     if (_now > 2) then {"ÉLEVÉ — prioriser COMMS/HVT"} else {"MODÉRÉ"}
 ];
 
-private _lb = _disp displayCtrl 93311;
+private _lb = _disp displayCtrl _idcList;
 lbClear _lb;
 missionNamespace setVariable ["comspec_sse_uiSiteList", _tri];
 {
@@ -32,5 +33,5 @@ missionNamespace setVariable ["comspec_sse_uiSiteList", _tri];
 } forEach _tri;
 if (_tri isEqualTo []) then { _lb lbAdd "(aucun élément SSE dans le rayon)"; };
 
-(_disp displayCtrl 93312) ctrlSetStructuredText parseText "<t color='#8f8'>DÉTAIL</t><br/>Sélectionnez un élément à gauche.<br/>Priorités = triage automatique après fouille.";
+(_disp displayCtrl _idcDetail) ctrlSetStructuredText parseText "<t color='#8f8'>DÉTAIL</t><br/>Sélectionnez un élément à gauche.<br/>Priorités = triage automatique après fouille.";
 true

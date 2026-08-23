@@ -16,16 +16,6 @@ $alertsManageUrl = isset($alerts_manage_url) && is_string($alerts_manage_url) &&
     ? $alerts_manage_url
     : null;
 
-$heroImageRel = null;
-foreach (['assets/images/fog-team.jpg', 'assets/images/night-team.jpg', 'assets/images/hero-explosion.jpg', 'assets/images/fog-banner.jpg'] as $candidate) {
-    if (is_file(base_path('public/' . $candidate))) {
-        $heroImageRel = $candidate;
-        break;
-    }
-}
-$heroHasImage = $heroImageRel !== null;
-$heroImageUrl = $heroHasImage ? asset_url($heroImageRel) : '';
-
 $kindLabelFr = static function (string $kind): string {
     return match (strtolower(trim($kind))) {
         'urgent' => 'Urgent',
@@ -142,7 +132,6 @@ $renderCard = static function (array $item, string $mode = 'active') use ($kindL
         data-filter="<?= htmlspecialchars($filterKey, ENT_QUOTES, 'UTF-8') ?>"
         <?= $hrefAttr ?>
     >
-        <span class="alerts-page__card-rail" aria-hidden="true"></span>
         <div class="alerts-page__card-main">
             <div class="alerts-page__card-meta">
                 <p class="alerts-page__card-kind"><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></p>
@@ -188,7 +177,8 @@ $renderCard = static function (array $item, string $mode = 'active') use ($kindL
     <?php
 };
 ?>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="<?= htmlspecialchars(asset_url('assets/css/dsfr-service.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <link href="<?= htmlspecialchars(asset_url('assets/css/alerts-page.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
 <div
@@ -199,41 +189,28 @@ $renderCard = static function (array $item, string $mode = 'active') use ($kindL
 >
     <div class="alerts-page__frame">
         <header class="alerts-page__hero" aria-labelledby="alerts-page-title">
-            <?php if ($heroHasImage): ?>
-                <img
-                    class="alerts-page__hero-img"
-                    src="<?= htmlspecialchars($heroImageUrl, ENT_QUOTES, 'UTF-8') ?>"
-                    alt=""
-                    width="1600"
-                    height="720"
-                    decoding="async"
-                    fetchpriority="high"
-                >
-            <?php endif; ?>
-            <div class="alerts-page__hero-veil" aria-hidden="true"></div>
-            <div class="alerts-page__hero-dots" aria-hidden="true"></div>
             <div class="alerts-page__hero-inner">
-                <p class="alerts-page__brand">Athena · Transmission</p>
-                <h1 id="alerts-page-title" class="alerts-page__title">Alertes &amp; annonces</h1>
+                <p class="alerts-page__brand">Espace membre</p>
+                <h1 id="alerts-page-title" class="alerts-page__title">Alertes et annonces</h1>
                 <p class="alerts-page__lead">
-                    Retrouvez les messages officiels en cours pour votre communauté,
-                    ainsi que les annonces dont la diffusion est terminée.
+                    Consultez les messages officiels en cours pour votre communauté,
+                    ainsi que ceux dont la diffusion est terminée.
                     <?php if ($activeCount > 0): ?>
-                        <strong><?= (int) $activeCount ?> message<?= $activeCount > 1 ? 's' : '' ?> actif<?= $activeCount > 1 ? 's' : '' ?></strong> pour le moment.
+                        <strong><?= (int) $activeCount ?> message<?= $activeCount > 1 ? 's' : '' ?> en cours</strong>.
                     <?php else: ?>
-                        <strong>Aucune transmission active</strong> pour l’instant.
+                        <strong>Aucun message en cours</strong> pour le moment.
                     <?php endif; ?>
                 </p>
                 <div class="alerts-page__hero-actions">
-                    <a class="alerts-page__hero-link alerts-page__hero-link--muted" href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>">← Retour au tableau de bord</a>
+                    <a class="alerts-page__hero-link alerts-page__hero-link--muted" href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>">Retour au tableau de bord</a>
                     <?php if ($alertsManageUrl !== null): ?>
-                        <a class="alerts-page__hero-link" href="<?= htmlspecialchars($alertsManageUrl, ENT_QUOTES, 'UTF-8') ?>">Gérer les annonces →</a>
+                        <a class="alerts-page__hero-link" href="<?= htmlspecialchars($alertsManageUrl, ENT_QUOTES, 'UTF-8') ?>">Gérer les annonces</a>
                     <?php endif; ?>
                 </div>
             </div>
         </header>
 
-        <div class="alerts-page__metrics" aria-label="Résumé des transmissions">
+        <div class="alerts-page__metrics" aria-label="Résumé des messages">
             <div class="alerts-page__metric">
                 <span class="alerts-page__metric-label">En cours</span>
                 <span class="alerts-page__metric-value<?= $activeCount > 0 ? ' alerts-page__metric-value--accent' : '' ?>"><?= (int) $activeCount ?></span>
@@ -278,14 +255,14 @@ $renderCard = static function (array $item, string $mode = 'active') use ($kindL
         <div class="alerts-page__sections">
             <section class="alerts-page__section" aria-labelledby="alerts-active-heading" data-alerts-active-section>
                 <div class="alerts-page__section-head">
-                    <p class="alerts-page__section-kicker">Canal actif</p>
+                    <p class="alerts-page__section-kicker">En cours</p>
                     <h2 id="alerts-active-heading" class="alerts-page__section-title">Messages en cours</h2>
                     <p class="alerts-page__section-lead">
                         <?= $activeCount === 0
-                            ? 'Aucune transmission active pour le moment.'
+                            ? 'Aucun message en cours pour le moment.'
                             : ($activeCount === 1
-                                ? '1 message actif pour votre communauté.'
-                                : $activeCount . ' messages actifs pour votre communauté.') ?>
+                                ? '1 message en cours pour votre communauté.'
+                                : $activeCount . ' messages en cours pour votre communauté.') ?>
                     </p>
                 </div>
                 <div class="alerts-page__section-body">

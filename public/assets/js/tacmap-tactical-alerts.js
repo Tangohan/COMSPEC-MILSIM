@@ -669,23 +669,28 @@
 
   /**
    * @param {string} body
-   * @param {{ outgoing?: boolean }=} opts
+   * @param {{ outgoing?: boolean, fromCommandPost?: boolean }=} opts
    */
   function formatGroupChatBody(body, opts) {
     var p = parseGroupBody(body);
     if (!p) return null;
     opts = opts || {};
     var outgoing = !!opts.outgoing;
+    var fromPc = !!opts.fromCommandPost;
     var dirLabel = outgoing ? 'Transmis' : 'Reçu';
     var dirCls = outgoing ? 'atak-chat-group-dir--out' : 'atak-chat-group-dir--in';
     var metaBits = [];
     if (p.group_id) metaBits.push('<span class="atak-chat-group-meta-item"><em>Groupe</em> ' + escapeHtml(p.group_id) + '</span>');
     if (p.call_sign) metaBits.push('<span class="atak-chat-group-meta-item"><em>Indicatif</em> ' + escapeHtml(p.call_sign) + '</span>');
     if (p.grid) metaBits.push('<span class="atak-chat-group-meta-item"><em>Grille</em> ' + escapeHtml(p.grid) + '</span>');
+    var pcBadge = fromPc
+      ? '<span class="atak-chat-group-badge atak-chat-group-badge--pc">Poste de commandement</span>'
+      : '';
     return (
-      '<div class="atak-chat-group-card' + (outgoing ? ' atak-chat-group-card--out' : '') + '">' +
+      '<div class="atak-chat-group-card' + (outgoing ? ' atak-chat-group-card--out' : '') + (fromPc ? ' atak-chat-group-card--pc' : '') + '">' +
         '<div class="atak-chat-group-head">' +
           '<span class="atak-chat-group-badge">' + escapeHtml(p.label) + '</span>' +
+          pcBadge +
           '<span class="atak-chat-group-dir ' + dirCls + '">' + dirLabel + '</span>' +
         '</div>' +
         '<div class="atak-chat-group-text">' + escapeHtml(p.text) + '</div>' +
@@ -698,22 +703,27 @@
 
   /**
    * @param {string} body
-   * @param {{ outgoing?: boolean }=} opts
+   * @param {{ outgoing?: boolean, fromCommandPost?: boolean }=} opts
    */
   function formatMpChatBody(body, opts) {
     var p = parseMpBody(body);
     if (!p) return null;
     opts = opts || {};
     var outgoing = !!opts.outgoing;
+    var fromPc = !!opts.fromCommandPost;
     var dirLabel = outgoing ? 'Envoyé' : 'Reçu';
     var dirCls = outgoing ? 'atak-chat-group-dir--out' : 'atak-chat-group-dir--in';
     var metaBits = [];
     if (p.from) metaBits.push('<span class="atak-chat-group-meta-item"><em>De</em> ' + escapeHtml(p.from) + '</span>');
     if (p.to) metaBits.push('<span class="atak-chat-group-meta-item"><em>À</em> ' + escapeHtml(p.to) + '</span>');
+    var pcBadge = fromPc
+      ? '<span class="atak-chat-group-badge atak-chat-group-badge--pc">Poste de commandement</span>'
+      : '';
     return (
-      '<div class="atak-chat-group-card atak-chat-mp-card' + (outgoing ? ' atak-chat-group-card--out' : '') + '">' +
+      '<div class="atak-chat-group-card atak-chat-mp-card' + (outgoing ? ' atak-chat-group-card--out' : '') + (fromPc ? ' atak-chat-group-card--pc' : '') + '">' +
         '<div class="atak-chat-group-head">' +
           '<span class="atak-chat-group-badge atak-chat-mp-badge">' + escapeHtml(p.label) + '</span>' +
+          pcBadge +
           '<span class="atak-chat-group-dir ' + dirCls + '">' + dirLabel + '</span>' +
         '</div>' +
         '<div class="atak-chat-group-text">' + escapeHtml(p.text) + '</div>' +

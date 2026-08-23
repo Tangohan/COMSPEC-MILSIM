@@ -14,9 +14,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.431;
-        versionStr = "1.4.31";
-        versionAr[] = {1, 4, 31};
+        version = 1.443;
+        versionStr = "1.4.43";
+        versionAr[] = {1, 4, 43};
     };
 };
 
@@ -66,6 +66,7 @@ class CfgFunctions {
             class intelNoteSaveDraft {};
             class intelNoteSubmit {};
             class intelNoteClose {};
+            class intelNoteApplyGeometry {};
             class moduleSseCase {};
             class moduleSseProfile {};
             class moduleSseEquip {};
@@ -364,19 +365,6 @@ class CfgFunctions {
             class syncPlayerAtakPublicVars {};
             class zeusShowPlayerAtak {};
             class registerZenAtakPlayerActions {};
-            class intelNoteShow {};
-            class intelNoteOnLoad {};
-            class intelNoteOnUnload {};
-            class intelNotePane {};
-            class intelNoteRefresh {};
-            class intelNoteToggleTheme {};
-            class intelNoteAddPiece {};
-            class intelNoteDropPiece {};
-            class intelNoteSubmit {};
-            class intelNoteClose {};
-            class intelNoteCache {};
-            class intelNoteCatalog {};
-            class intelNoteSaveDraft {};
         };
     };
 };

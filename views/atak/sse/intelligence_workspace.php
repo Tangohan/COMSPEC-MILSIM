@@ -165,7 +165,7 @@ window.SSE_IW = {
 </script>
 <script src="<?= $h(asset_url('assets/js/sse-iw-graph.js')) ?>?v=202608161840" defer></script>
 <script src="<?= $h(asset_url('assets/js/sse-command-palette.js')) ?>?v=202608161840" defer></script>
-<script src="<?= $h(asset_url('assets/js/sse-intelligence-workspace.js')) ?>?v=202608161840" defer></script>
+<script src="<?= $h(asset_url('assets/js/sse-intelligence-workspace.js')) ?>?v=202608230521" defer></script>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

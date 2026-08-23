@@ -1080,7 +1080,10 @@ if ($atakMapConfig) {
           <div class="atak-side-eyebrow" id="atak-side-eyebrow">ATHENA / INTEL</div>
           <h2 class="atak-side-title" id="atak-side-title">Renseignement</h2>
         </div>
-        <button type="button" class="atak-icon-btn" id="atak-side-collapse" aria-expanded="true" title="Réduire le panneau">‹</button>
+        <div class="atak-side-head-actions">
+          <button type="button" class="atak-icon-btn" id="atak-settings-toggle" aria-expanded="false" aria-controls="atak-settings-aside" title="Réglages du poste">⚙</button>
+          <button type="button" class="atak-icon-btn" id="atak-side-collapse" aria-expanded="true" title="Réduire le panneau">‹</button>
+        </div>
       </div>
       <div class="atak-side-status">
         <span><strong>●</strong>&nbsp; Liaison active</span>
@@ -1173,22 +1176,36 @@ if ($atakMapConfig) {
           <span class="atak-tab-badge" id="atak-liaison-tab-badge" hidden></span>
         </button>
       </nav>
-      <section class="atak-rail-audio" id="atak-rail-audio" aria-label="Réglages des alertes">
-        <h3 class="atak-rail-audio-title">Alertes</h3>
-        <label class="atak-rail-audio-vol" for="atak-alert-volume">
-          <span class="atak-rail-audio-vol-label">Volume des alertes <span id="atak-alert-volume-value" aria-hidden="true">70</span>%</span>
-          <input type="range" id="atak-alert-volume" class="atak-rail-audio-slider" min="0" max="100" step="1" value="70" title="Volume des alertes" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" />
-        </label>
-        <label class="atak-rail-audio-opt" for="atak-alert-silence" title="Coupe les sons ; garde une vibration courte si l’appareil le permet. Les bandeaux d’alerte restent visibles.">
-          <input type="checkbox" id="atak-alert-silence" />
-          <span>Silencieux — vibration seule</span>
-        </label>
-        <label class="atak-rail-audio-opt" for="atak-alert-silence-novib" title="Coupe les sons et toute vibration. Les bandeaux d’alerte restent visibles.">
-          <input type="checkbox" id="atak-alert-silence-novib" />
-          <span>Silencieux — sans vibration</span>
-        </label>
-        <p class="atak-rail-audio-hint" id="atak-alert-mute-hint" hidden role="status"></p>
-      </section>
+      <aside class="atak-settings-aside" id="atak-settings-aside" hidden>
+        <div class="atak-settings-aside__head">
+          <h3 class="atak-settings-aside__title">Réglages du poste</h3>
+          <button type="button" class="atak-icon-btn" id="atak-settings-close" title="Fermer les réglages">×</button>
+        </div>
+        <section class="atak-rail-audio" id="atak-rail-audio" aria-label="Réglages des alertes">
+          <h3 class="atak-rail-audio-title">Alertes sonores</h3>
+          <label class="atak-rail-audio-vol" for="atak-alert-volume">
+            <span class="atak-rail-audio-vol-label">Volume des alertes <span id="atak-alert-volume-value" aria-hidden="true">70</span>%</span>
+            <input type="range" id="atak-alert-volume" class="atak-rail-audio-slider" min="0" max="100" step="1" value="70" title="Volume des alertes" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" />
+          </label>
+          <label class="atak-rail-audio-opt" for="atak-alert-silence" title="Coupe les sons ; garde une vibration courte si l’appareil le permet. Les bandeaux d’alerte restent visibles.">
+            <input type="checkbox" id="atak-alert-silence" />
+            <span>Silencieux — vibration seule</span>
+          </label>
+          <label class="atak-rail-audio-opt" for="atak-alert-silence-novib" title="Coupe les sons et toute vibration. Les bandeaux d’alerte restent visibles.">
+            <input type="checkbox" id="atak-alert-silence-novib" />
+            <span>Silencieux — sans vibration</span>
+          </label>
+          <p class="atak-rail-audio-hint" id="atak-alert-mute-hint" hidden role="status"></p>
+        </section>
+        <section class="atak-settings-block" id="atak-settings-theatre" aria-label="Carte et soirée">
+          <h3 class="atak-rail-audio-title">Carte et soirée</h3>
+          <p class="atak-settings-copy">Une soirée va de 10 h à 10 h le lendemain : le vendredi soir et le samedi 2 h du matin restent ensemble. Samedi soir, une nouvelle soirée commence.</p>
+          <p class="atak-settings-copy">Les photos des soirées précédentes restent dans l’onglet Photos ; elles ne s’empilent plus sur la carte.</p>
+          <button type="button" class="atak-order-tpl-btn atak-order-tpl-btn--danger" id="atak-theatre-reset-btn" data-atak-needs-command>Vider la carte (nouvelle soirée)</button>
+          <p class="atak-settings-copy atak-settings-copy--muted">Marqueurs, ordres, messages, positions et tracés sont retirés pour tout le monde. Les photos ne sont pas effacées — pour les retirer, ouvrez Photos puis choisissez une soirée.</p>
+          <p class="atak-rail-audio-hint" id="atak-theatre-reset-hint" hidden role="status"></p>
+        </section>
+      </aside>
       <div class="atak-panel-chrome" id="atak-panel-left-chrome" role="toolbar" aria-label="Contrôles du panneau">
         <span class="atak-panel-chrome-label">Panneau</span>
         <button type="button" class="atak-panel-chrome-btn" id="atak-panel-left-popout" data-atak-popout="left" title="Ouvrir dans une autre fenêtre">Ouvrir dans une autre fenêtre</button>
@@ -1196,26 +1213,37 @@ if ($atakMapConfig) {
       <div class="atak-tabs-content active" id="tab-cams">
         <div class="atak-cams-panel">
           <div class="atak-cams-toolbar">
-            <p class="atak-panel-hint atak-cams-toolbar-hint">Aperçus photo — pas de vidéo en direct. Clic droit sur un opérateur en liaison pour demander une vue casque.</p>
+            <p class="atak-panel-hint atak-cams-toolbar-hint">Les clichés pris depuis le terminal ATAK en jeu apparaissent dans l’onglet Photos. La vue casque en temps réel n’est pas au point.</p>
             <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="atak-cams-request-view" title="Demander une nouvelle capture photo aux opérateurs">Demander une nouvelle vue</button>
           </div>
+          <p class="atak-cams-link-alert" id="atak-cams-helmet-wip" role="status">Vue casque en temps réel : pas encore au point. Utilisez l’onglet Photos pour les clichés transmis depuis le terrain.</p>
           <p class="atak-cams-link-alert" id="atak-cams-link-alert" hidden role="status">Liaison coupée — les aperçus ne se mettent pas à jour. Demandez une nouvelle vue dès que la liaison revient.</p>
           <div class="atak-cams-list" id="atak-cams-list">
             <div class="atak-empty-state">
               <div class="atak-empty-state-icon" aria-hidden="true">▣</div>
               <p class="atak-empty-state-title">Aucun aperçu reçu</p>
-              <p class="atak-empty-state-text">Les caméras casque et drones actifs en jeu apparaîtront ici. Seuls des aperçus photo sont transmis, pas de vidéo en direct.</p>
+              <p class="atak-empty-state-text">La vue casque en temps réel n’est pas au point. Les photos prises depuis le terminal ATAK se retrouvent dans l’onglet Photos.</p>
             </div>
           </div>
         </div>
       </div>
       <div class="atak-tabs-content" id="tab-photos">
         <div class="atak-cams-panel">
+          <div class="atak-cams-toolbar" id="atak-photos-night-bar">
+            <label class="atak-photos-night-label" for="atak-photos-night">
+              <span>Soirée affichée</span>
+              <select id="atak-photos-night" title="Choisir la soirée des photos">
+                <option value="current">Soirée en cours</option>
+              </select>
+            </label>
+            <button type="button" class="atak-order-tpl-btn atak-order-tpl-btn--danger" id="atak-photos-night-delete" data-atak-needs-command hidden>Supprimer les photos de cette soirée</button>
+          </div>
+          <p class="atak-panel-hint" id="atak-photos-night-hint">Seule la soirée en cours apparaît sur la carte. Les soirées précédentes restent ici pour archivage ou suppression manuelle.</p>
           <div class="atak-cams-list" id="atak-photos-list">
             <div class="atak-empty-state">
               <div class="atak-empty-state-icon" aria-hidden="true">◫</div>
               <p class="atak-empty-state-title">Aucune photo reçue</p>
-              <p class="atak-empty-state-text">Les vues capturées depuis la tablette ou les caméras casque apparaîtront ici dès leur remontée.</p>
+              <p class="atak-empty-state-text">Les vues capturées depuis le terminal ATAK en jeu apparaîtront ici dès leur remontée.</p>
             </div>
           </div>
         </div>
@@ -1238,7 +1266,7 @@ if ($atakMapConfig) {
               </select>
             </label>
           </div>
-          <div class="atak-cams-list" id="atak-sse-persons-list">
+          <div class="atak-cams-list atak-sse-persons-list" id="atak-sse-persons-list">
             <div class="atak-empty-state">
               <div class="atak-empty-state-icon" aria-hidden="true">◎</div>
               <p class="atak-empty-state-title">Aucune personne identifiée</p>
@@ -1377,7 +1405,24 @@ if ($atakMapConfig) {
         </div>
       </div>
       <div class="atak-tabs-content" id="tab-orders" role="tabpanel">
-        <p class="atak-panel-hint">Ordres C2 et FRAGO reçus du poste de commandement ou du théâtre. Sur téléphone, ouvrez une carte pour lire le détail, confirmer la réception, puis suivre l’exécution.</p>
+        <nav class="atak-c2-worktabs" role="tablist" aria-label="Travail commandement">
+          <button type="button" class="atak-c2-worktab is-active" role="tab" aria-selected="true" data-c2-work="suivi">Suivi</button>
+          <button type="button" class="atak-c2-worktab" role="tab" aria-selected="false" data-c2-work="emettre" data-atak-needs-command>Émettre</button>
+        </nav>
+        <div class="atak-c2-workpane is-active" id="atak-c2-pane-suivi" data-c2-workpane="suivi" role="tabpanel">
+          <div class="atak-c2-suivi-bar">
+            <p class="atak-panel-hint atak-c2-suivi-hint">Ordres en cours et FRAGO. Cliquez une carte pour le détail.</p>
+            <button type="button" class="atak-order-tpl-btn atak-order-tpl-btn--primary" id="atak-c2-goto-emit" data-atak-needs-command>Nouvel ordre</button>
+          </div>
+          <div class="atak-orders-list" id="atak-orders-list"></div>
+          <div class="atak-empty-state" id="atak-orders-empty">
+            <div class="atak-empty-state-icon" aria-hidden="true">☰</div>
+            <p class="atak-empty-state-title">Aucun ordre</p>
+            <p class="atak-empty-state-text">Les ordres émis depuis la carte ou remontés depuis le théâtre s’afficheront ici.</p>
+          </div>
+        </div>
+        <div class="atak-c2-workpane" id="atak-c2-pane-emettre" data-c2-workpane="emettre" role="tabpanel" hidden>
+        <p class="atak-panel-hint">Rédigez une directive ou un FRAGO, puis émettez-la vers le théâtre.</p>
         <div class="atak-orders-issue" id="atak-orders-issue" hidden>
           <div class="atak-orders-issue-grid">
             <label class="atak-orders-field atak-orders-field--wide">
@@ -1504,11 +1549,6 @@ if ($atakMapConfig) {
           </div>
           <button type="button" class="atak-order-issue-submit" id="atak-order-issue-btn">Émettre l’ordre</button>
         </div>
-        <div class="atak-orders-list" id="atak-orders-list"></div>
-        <div class="atak-empty-state" id="atak-orders-empty">
-          <div class="atak-empty-state-icon" aria-hidden="true">☰</div>
-          <p class="atak-empty-state-title">Aucun ordre</p>
-          <p class="atak-empty-state-text">Les ordres émis depuis la carte ou remontés depuis le théâtre s’afficheront ici.</p>
         </div>
       </div>
       <div class="atak-tabs-content" id="tab-identification" role="tabpanel">
@@ -2213,6 +2253,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-panel-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-shell-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-section-nav.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-c2-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-ctab.js"></script>
   <script src="<?= $base ?>/assets/js/atak-intel-view.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>

@@ -29,4 +29,5 @@ return [
     'cgu_cgv' => 'CGU / CGV',
     'your_rights' => 'Vos droits',
     'account' => 'Compte',
+    'skip_to_content' => 'Aller au contenu',
 ];

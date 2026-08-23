@@ -29,26 +29,25 @@ if ((count _order) < 1) exitWith {
 };
 
 private _type = _order getOrDefault ["type", "MOVE"];
-private _typeLabel = [_order] call comspec_overwatch_connect_fnc_orderTypeLabel;
+private _kind = "Ordre";
+if (!isNil "comspec_overwatch_connect_fnc_orderTypeLabel") then {
+    private _lbl = [_order] call comspec_overwatch_connect_fnc_orderTypeLabel;
+    if (_lbl isEqualType "" && {_lbl isNotEqualTo ""}) then { _kind = _lbl; };
+};
 
 private _status = toUpper (_order getOrDefault ["status", "PENDING"]);
-private _statusLabel = switch (_status) do {
-    case "ACK": { "Accepté" };
-    case "EXEC": { "En cours d’exécution" };
-    case "DONE";
-    case "CLOSED": { "Terminé" };
-    case "FAILED": { "Refusé / échec" };
-    case "CANCELLED": { "Annulé" };
-    case "DELIVERED": { "Remis" };
-    default { "À traiter" };
-};
+private _stTxt = "À traiter";
+if (_status isEqualTo "ACK") then { _stTxt = "Accepté"; };
+if (_status isEqualTo "EXEC") then { _stTxt = "En cours d’exécution"; };
+if (_status in ["DONE", "CLOSED"]) then { _stTxt = "Terminé"; };
+if (_status isEqualTo "FAILED") then { _stTxt = "Refusé / échec"; };
+if (_status isEqualTo "CANCELLED") then { _stTxt = "Annulé"; };
+if (_status isEqualTo "DELIVERED") then { _stTxt = "Remis"; };
 
 private _prio = toUpper (_order getOrDefault ["priority", "IMPORTANT"]);
-private _prioLabel = switch (_prio) do {
-    case "URGENT": { "Urgent" };
-    case "ROUTINE": { "Routine" };
-    default { "Important" };
-};
+private _prioTxt = "Important";
+if (_prio isEqualTo "URGENT") then { _prioTxt = "Urgent"; };
+if (_prio isEqualTo "ROUTINE") then { _prioTxt = "Routine"; };
 
 private _payload = _order getOrDefault ["payload", ""];
 private _safePayload = if (_payload isEqualType "") then {
@@ -59,10 +58,10 @@ private _safePayload = if (_payload isEqualType "") then {
 
 _detail ctrlSetStructuredText parseText format [
     "<t color='#ffd27a' size='1.05'>%1</t><br/><br/><t color='#8aa0b4'>Émetteur</t>  %2<br/><t color='#8aa0b4'>Priorité</t>  %3<br/><t color='#8aa0b4'>État</t>  %4<br/><t color='#8aa0b4'>Cible</t>  %5<br/><br/>%6",
-    _typeLabel,
+    _kind,
     _order getOrDefault ["issuer", "C2"],
-    _prioLabel,
-    _statusLabel,
+    _prioTxt,
+    _stTxt,
     _order getOrDefault ["target", "—"],
     if (_safePayload isEqualTo "") then { "<t color='#8aa0b4'>Aucun détail supplémentaire.</t>" } else { _safePayload }
 ];

@@ -23,7 +23,7 @@ missionNamespace setVariable ["comspec_sse_missionRecords", _records, true];
 
 private _envelope = createHashMapFromArray [
     ["kind", "DIGITAL"],
-    ["command", "SendSSE"],
+    ["command", "SubmitSseDigital"],
     ["payload", _payload],
     ["record_id", _uid],
     ["txStatus", "PENDING"]

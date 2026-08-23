@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Tactical;
 
 use App\Core\Database;
+use App\Support\AtakPlayNight;
 use PDO;
 
 /**
@@ -17,7 +18,13 @@ final class AtakTenantDataService
      * Tables opérationnelles scopées par tenant_id.
      * Exclut atak_intel (journal legacy global, sans tenant_id) et atak_operator_ids (indicatifs liés).
      */
-    private const TENANT_TABLES = [
+    private const MEDIA_TABLES = [
+        'atak_intel_photos',
+        'recon_images',
+        'atak_poi_photos',
+    ];
+
+    private const OPERATIONAL_TABLES = [
         'atak_medical_alert_triage',
         'atak_orders',
         'atak_markers',
@@ -25,7 +32,6 @@ final class AtakTenantDataService
         'atak_chat_messages',
         'atak_pings',
         'atak_nine_line',
-        'atak_intel_photos',
         'atak_designator_targets',
         'atak_sigint_reports',
         'atak_last_activity',
@@ -33,7 +39,23 @@ final class AtakTenantDataService
         'atak_map_shapes',
         'atak_laser_codes',
         'atak_layers',
-        'recon_images',
+        'atak_explosive_timers',
+        'atak_waypoints',
+        'atak_waypoint_routes',
+        'atak_qrf_waypoints',
+        'atak_medevac_requests',
+        'atak_tactical_zones',
+        'atak_zone_alerts',
+        'atak_poi',
+        'atak_poi_observations',
+        'atak_vehicle_tracking',
+        'atak_tactical_reports',
+        'atak_qrf_requests',
+    ];
+
+    private const TENANT_TABLES = [
+        ...self::OPERATIONAL_TABLES,
+        ...self::MEDIA_TABLES,
     ];
 
     public function __construct(
@@ -104,6 +126,210 @@ final class AtakTenantDataService
             'tables' => $tables,
             'photos_removed' => $photosRemoved,
         ];
+    }
+
+    /**
+     * Vide la carte / l’historique visible, sans toucher aux photos.
+     * Les liaisons opérateurs et les modèles d’ordres sont conservés.
+     *
+     * @return array{activity_archived:int,tables:array<string,int>}
+     */
+    public function resetTheatreKeepPhotos(int $tenantId, int $mapId = 0): array
+    {
+        if ($tenantId < 1) {
+            return ['activity_archived' => 0, 'tables' => []];
+        }
+
+        $archived = 0;
+        if ($this->activityLog !== null) {
+            $useMap = $mapId > 0 ? $mapId : 1;
+            $archived += $this->activityLog->archiveAll($tenantId, $useMap);
+            if ($useMap !== AtakActivityLogService::AUTH_MAP_ID) {
+                $archived += $this->activityLog->archiveAll($tenantId, AtakActivityLogService::AUTH_MAP_ID);
+            }
+        }
+
+        $tables = [];
+        foreach (self::OPERATIONAL_TABLES as $table) {
+            if (!$this->isTenantScopedTable($table)) {
+                continue;
+            }
+            try {
+                $sql = 'DELETE FROM `' . $table . '` WHERE tenant_id = ?';
+                $params = [$tenantId];
+                if ($mapId > 0 && $this->columnExists($table, 'map_id')) {
+                    $sql .= ' AND map_id = ?';
+                    $params[] = $mapId;
+                }
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute($params);
+                $tables[$table] = $stmt->rowCount();
+            } catch (\Throwable) {
+                $tables[$table] = 0;
+            }
+        }
+
+        return [
+            'activity_archived' => $archived,
+            'tables' => $tables,
+        ];
+    }
+
+    /**
+     * Supprime uniquement les photos d’une soirée (action manuelle).
+     * Les photos déjà passées dans un dossier SSE sont conservées.
+     *
+     * @return array{recon_hidden:int,intel_removed:int}
+     */
+    public function purgePhotosForNight(int $tenantId, int $mapId, string $nightKey): array
+    {
+        if ($tenantId < 1) {
+            return ['recon_hidden' => 0, 'intel_removed' => 0];
+        }
+        $key = AtakPlayNight::normalizeKey($nightKey) ?? AtakPlayNight::currentKey();
+        $reconHidden = 0;
+        $intelRemoved = 0;
+
+        if ($this->isTenantScopedTable('recon_images')) {
+            $cols = 'id, captured_at, created_at';
+            $hasSse = $this->columnExists('recon_images', 'sse_case_id');
+            if ($hasSse) {
+                $cols .= ', sse_case_id';
+            }
+            $sql = 'SELECT ' . $cols . ' FROM recon_images WHERE tenant_id = ?';
+            if ($this->columnExists('recon_images', 'deleted_at')) {
+                $sql .= ' AND deleted_at IS NULL';
+            }
+            try {
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$tenantId]);
+                $now = date('Y-m-d H:i:s');
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    if ($hasSse && !empty($row['sse_case_id'])) {
+                        continue;
+                    }
+                    $stamp = (string) (($row['captured_at'] ?? '') ?: ($row['created_at'] ?? ''));
+                    if (AtakPlayNight::keyFromSql($stamp) !== $key) {
+                        continue;
+                    }
+                    if ($this->columnExists('recon_images', 'deleted_at')) {
+                        $upd = $this->pdo->prepare('UPDATE recon_images SET deleted_at = ? WHERE tenant_id = ? AND id = ?');
+                        $upd->execute([$now, $tenantId, (int) $row['id']]);
+                    } else {
+                        $upd = $this->pdo->prepare('DELETE FROM recon_images WHERE tenant_id = ? AND id = ?');
+                        $upd->execute([$tenantId, (int) $row['id']]);
+                    }
+                    $reconHidden += $upd->rowCount() > 0 ? 1 : 0;
+                }
+            } catch (\Throwable) {
+                // Schéma incomplet : on continue avec les photos intel.
+            }
+        }
+
+        if ($this->isTenantScopedTable('atak_intel_photos')) {
+            $sql = 'SELECT id, path, filename, created_at FROM atak_intel_photos WHERE tenant_id = ?';
+            $params = [$tenantId];
+            if ($mapId > 0 && $this->columnExists('atak_intel_photos', 'map_id')) {
+                $sql .= ' AND map_id = ?';
+                $params[] = $mapId;
+            }
+            try {
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute($params);
+                $uploadRoot = base_path('public/uploads');
+                $ids = [];
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    if (AtakPlayNight::keyFromSql((string) ($row['created_at'] ?? '')) !== $key) {
+                        continue;
+                    }
+                    $ids[] = (int) $row['id'];
+                    $rel = trim((string) ($row['path'] ?? ''));
+                    $candidates = [];
+                    if ($rel !== '') {
+                        $candidates[] = $uploadRoot . '/' . ltrim(str_replace('\\', '/', $rel), '/');
+                    }
+                    $fn = trim((string) ($row['filename'] ?? ''));
+                    if ($fn !== '') {
+                        $candidates[] = $uploadRoot . '/intel/' . basename($fn);
+                    }
+                    foreach ($candidates as $path) {
+                        if (is_file($path)) {
+                            @unlink($path);
+                            break;
+                        }
+                    }
+                }
+                if ($ids !== []) {
+                    $in = implode(',', array_fill(0, count($ids), '?'));
+                    $del = $this->pdo->prepare('DELETE FROM atak_intel_photos WHERE tenant_id = ? AND id IN (' . $in . ')');
+                    $del->execute(array_merge([$tenantId], $ids));
+                    $intelRemoved = $del->rowCount();
+                }
+            } catch (\Throwable) {
+                // ignore
+            }
+        }
+
+        return [
+            'recon_hidden' => $reconHidden,
+            'intel_removed' => $intelRemoved,
+        ];
+    }
+
+    /**
+     * @return list<array{key:string,label:string,count:int}>
+     */
+    public function listPhotoNights(int $tenantId, int $mapId = 0): array
+    {
+        $counts = [];
+        $collect = function (string $sql, array $params, array $fields) use (&$counts): void {
+            try {
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute($params);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $stamp = '';
+                    foreach ($fields as $field) {
+                        $stamp = trim((string) ($row[$field] ?? ''));
+                        if ($stamp !== '') {
+                            break;
+                        }
+                    }
+                    $key = AtakPlayNight::keyFromSql($stamp);
+                    $counts[$key] = ($counts[$key] ?? 0) + 1;
+                }
+            } catch (\Throwable) {
+                // table absente
+            }
+        };
+
+        if ($this->isTenantScopedTable('recon_images')) {
+            $sql = 'SELECT captured_at, created_at FROM recon_images WHERE tenant_id = ?';
+            if ($this->columnExists('recon_images', 'deleted_at')) {
+                $sql .= ' AND deleted_at IS NULL';
+            }
+            $collect($sql, [$tenantId], ['captured_at', 'created_at']);
+        }
+        if ($this->isTenantScopedTable('atak_intel_photos')) {
+            $sql = 'SELECT created_at FROM atak_intel_photos WHERE tenant_id = ?';
+            $params = [$tenantId];
+            if ($mapId > 0 && $this->columnExists('atak_intel_photos', 'map_id')) {
+                $sql .= ' AND map_id = ?';
+                $params[] = $mapId;
+            }
+            $collect($sql, $params, ['created_at']);
+        }
+
+        $nights = [];
+        foreach ($counts as $key => $count) {
+            $nights[] = [
+                'key' => $key,
+                'label' => AtakPlayNight::label($key),
+                'count' => $count,
+            ];
+        }
+        usort($nights, static fn (array $a, array $b): int => strcmp($b['key'], $a['key']));
+
+        return $nights;
     }
 
     /** @return array<string, int> compteurs par table / fichier */

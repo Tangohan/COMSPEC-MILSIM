@@ -2,6 +2,14 @@ if (!hasInterface) exitWith {};
 
 ["INFO", "Boot", "PostInit client — warmup extension"] call comspec_overwatch_connect_fnc_log;
 
+// Tampons SSE locaux (icône « ? » orange) : ils se superposent sur la carte ATAK.
+{
+    private _txt = markerText _x;
+    if ((_x find "_comspec_sse_") == 0 || {(_txt select [0, 4]) isEqualTo "SSE "}) then {
+        deleteMarkerLocal _x;
+    };
+} forEach allMapMarkers;
+
 // Warmup extension (charge la DLL)
 "COMSPECExtension" callExtension "Warmup";
 

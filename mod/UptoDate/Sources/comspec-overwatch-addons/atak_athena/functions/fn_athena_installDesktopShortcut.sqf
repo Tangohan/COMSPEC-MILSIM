@@ -48,21 +48,7 @@ private _shortcuts = [
 
     [
 
-        198714, 198715, 510,
-
-        "\cTab\img\icon_mail_ca.paa",
-
-        "Messages Athena — messagerie opérationnelle",
-
-        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Messages<br/>Athena</t>",
-
-        "messages"
-
-    ],
-
-    [
-
-        198716, 198717, 630,
+        198716, 198717, 510,
 
         "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa",
 
@@ -76,7 +62,7 @@ private _shortcuts = [
 
     [
 
-        198718, 198719, 750,
+        198718, 198719, 630,
 
         "\A3\ui_f\data\map\markers\military\pickup_CA.paa",
 
@@ -90,49 +76,7 @@ private _shortcuts = [
 
     [
 
-        198720, 198721, 870,
-
-        "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\binoculars_ca.paa",
-
-        "Photos Athena — les captures remontent seules vers le commandement",
-
-        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Photos<br/>Athena</t>",
-
-        "photo"
-
-    ],
-
-    [
-
-        198724, 198725, 1230,
-
-        "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa",
-
-        "Briefing — diaporama et slides de mission",
-
-        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Briefing</t>",
-
-        "briefing"
-
-    ],
-
-    [
-
-        198722, 198723, 1110,
-
-        "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa",
-
-        "État ATAK — liaison, latence, débit, stabilité, paquets perdus",
-
-        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>État<br/>ATAK</t>",
-
-        "atak_status"
-
-    ],
-
-    [
-
-        198726, 198727, 990,
+        198726, 198727, 750,
 
         "\A3\ui_f\data\gui\cfg\communicationmenu\call_ca.paa",
 
@@ -146,15 +90,29 @@ private _shortcuts = [
 
     [
 
-        198728, 198729, 1350,
+        198730, 198731, 870,
 
-        "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa",
+        "\a3\ui_f\data\gui\rsc\rscdisplaymain\menu_options_ca.paa",
 
-        "Fiche de renseignement — noter et remonter un constat avec pièces jointes",
+        "Paramètres — indicatif, rôle, équipe de feu, groupe",
 
-        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Fiche<br/>RENS</t>",
+        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Paramètres</t>",
 
-        "note"
+        "atak_settings"
+
+    ],
+
+    [
+
+        198728, 198729, 990,
+
+        "\A3\ui_f\data\igui\cfg\simpletasks\types\upload_ca.paa",
+
+        "Resynch — renvoyer toutes les données vers Athena",
+
+        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Resynch</t>",
+
+        "resynch"
 
     ]
 
@@ -180,18 +138,34 @@ missionNamespace setVariable ["COMSPEC_Athena_desktopClick", {
 
     };
 
-    switch (_tab) do {
-        case "intel_note";
-        case "note": { [""] call comspec_overwatch_atak_athena_fnc_athena_openNote; };
-        case "account": { [] call comspec_overwatch_atak_athena_fnc_athena_showLinkDialog; };
-        case "order": { [] call comspec_overwatch_atak_athena_fnc_athena_openTask; };
-        case "briefing": { [] call comspec_overwatch_atak_athena_fnc_athena_openBriefing; };
-        case "atak_status";
-        case "status": { [] call comspec_overwatch_atak_athena_fnc_athena_openStatus; };
-        case "atak_sound";
-        case "sound";
-        case "sons": { [] call comspec_overwatch_atak_athena_fnc_athena_openSound; };
-        default { [_tab] call comspec_overwatch_atak_athena_fnc_athena_openFeature; };
+    if (_tab isEqualTo "resynch") exitWith {
+        [] call comspec_overwatch_atak_athena_fnc_athena_openResynch;
+    };
+
+    if (_tab isEqualTo "atak_settings" || {_tab isEqualTo "settings"} || {_tab isEqualTo "parametres"}) exitWith {
+        [] call comspec_overwatch_atak_athena_fnc_athena_openSettings;
+    };
+
+    if (_tab isEqualTo "account") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_showLinkDialog;
+    } else {
+        if (_tab isEqualTo "order") then {
+            [] call comspec_overwatch_atak_athena_fnc_athena_openTask;
+        } else {
+            if (_tab isEqualTo "briefing") then {
+                [] call comspec_overwatch_atak_athena_fnc_athena_openBriefing;
+            } else {
+                if (_tab isEqualTo "atak_status" || {_tab isEqualTo "status"}) then {
+                    [] call comspec_overwatch_atak_athena_fnc_athena_openStatus;
+                } else {
+                    if (_tab isEqualTo "atak_sound" || {_tab isEqualTo "sound" || {_tab isEqualTo "sons"}}) then {
+                        [] call comspec_overwatch_atak_athena_fnc_athena_openSound;
+                    } else {
+                        [_tab] call comspec_overwatch_atak_athena_fnc_athena_openFeature;
+                    };
+                };
+            };
+        };
     };
 
 }, false];

@@ -14,8 +14,11 @@
 
     <h3>Photo du visage</h3>
     <p>
-        Avant d’enregistrer, faites une capture d’écran face à la personne (ou utilisez la Photothèque),
-        puis activez <strong>Photo du visage</strong> dans le terminal. La dernière capture récente est jointe à la fiche.
+        Placez-vous face à la personne, ouvrez le terminal SEEK, puis appuyez sur
+        <strong>Photo du visage</strong>. L’écran se masque un instant pour cadrer la tête.
+        La photo est jointe à la fiche au moment de la transmission.
+        Si la capture est refusée, passez la qualité HDR au moins sur <strong>Moyen</strong>
+        dans les options d’affichage, puis recommencez.
     </p>
 
     <h3>Empreintes (simulation)</h3>

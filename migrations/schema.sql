@@ -806,6 +806,7 @@ CREATE TABLE IF NOT EXISTS `atak_chat_messages` (
   `map_id` int unsigned NOT NULL DEFAULT 1,
   `author` varchar(255) NOT NULL,
   `body` text NOT NULL,
+  `source` varchar(16) NOT NULL DEFAULT 'game',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `tenant_map` (`tenant_id`,`map_id`),

@@ -968,6 +968,9 @@ window.ATAKOrders = (function () {
       loadOrderTypes(false);
       syncInlineFragoMode();
     }
+    if (window.ATAKC2Workspace && typeof window.ATAKC2Workspace.syncIssueAccess === 'function') {
+      window.ATAKC2Workspace.syncIssueAccess();
+    }
   }
 
   function targetTypeLabel(type) {
@@ -1413,6 +1416,9 @@ window.ATAKOrders = (function () {
         if (window.ATAKShowNotification) window.ATAKShowNotification(msgOk);
         resetOrdersCache();
         fetchOrders();
+        if (window.ATAKC2Workspace && typeof window.ATAKC2Workspace.setWork === 'function') {
+          window.ATAKC2Workspace.setWork('suivi');
+        }
       })
       .catch(function () {
         if (window.ATAKShowError) window.ATAKShowError('Impossible d’émettre l’ordre.');
@@ -1484,6 +1490,9 @@ window.ATAKOrders = (function () {
         }
         resetOrdersCache();
         fetchOrders();
+        if (window.ATAKC2Workspace && typeof window.ATAKC2Workspace.setWork === 'function') {
+          window.ATAKC2Workspace.setWork('suivi');
+        }
       })
       .catch(function () {
         if (window.ATAKShowError) window.ATAKShowError('Impossible d’émettre l’ordre.');
@@ -1704,13 +1713,15 @@ window.ATAKOrders = (function () {
     var oid = String(orderId || '').trim();
     if (!oid) return false;
 
-    var tab =
-      document.querySelector('[data-atak-tab="orders"]') ||
-      document.querySelector('#atak-tab-orders') ||
-      document.querySelector('[href*="ordres"]') ||
-      document.querySelector('[data-panel="orders"]');
+    if (window.ATAKSectionNav && typeof window.ATAKSectionNav.setSection === 'function') {
+      window.ATAKSectionNav.setSection('c2');
+    }
+    var tab = document.querySelector('#atak-panel-left .atak-tab[data-tab="orders"]');
     if (tab && typeof tab.click === 'function') {
       tab.click();
+    }
+    if (window.ATAKC2Workspace && typeof window.ATAKC2Workspace.setWork === 'function') {
+      window.ATAKC2Workspace.setWork('suivi');
     }
 
     var found = ordersById[oid] || null;

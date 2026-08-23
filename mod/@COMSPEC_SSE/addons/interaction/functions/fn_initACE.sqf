@@ -89,7 +89,7 @@ private _personChildren = [
     (["COMSPEC_SSE_Search", "Fouiller", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa", { [_this select 0, _this select 1, false] call comspec_sse_fnc_doSearch }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction),
     (["COMSPEC_SSE_Mark", "Marquer comme exploité", "\a3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doMarkExploited }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction),
     (["COMSPEC_SSE_DocsP", "Lire documents", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doReadDocuments }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_TerminalTarget", "Ouvrir terminal SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0] call comspec_sse_fnc_uiOpenTerminal }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction)
+    (["COMSPEC_SSE_TerminalTarget", "Ouvrir le terminal SEEK", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0] call comspec_sse_fnc_uiOpenTerminal }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction)
 ];
 
 if (!isNil "comspec_sse_fnc_aceDogtagIsPresent" && {[] call comspec_sse_fnc_aceDogtagIsPresent}) then {
@@ -116,7 +116,7 @@ private _objectChildren = [
     (["COMSPEC_SSE_Collect", "Collecter", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doCollect }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction),
     (["COMSPEC_SSE_Docs", "Lire documents", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doReadDocuments }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction),
     (["COMSPEC_SSE_Radio", "Exploiter radio", "\a3\ui_f\data\igui\cfg\simpleTasks\types\radio_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doExploitRadio }, { private _t = _this select 0; ([_t] call comspec_sse_fnc_canInspect) && { private _type = if (isNil {[_t] call comspec_sse_fnc_getData}) then { [_t] call comspec_sse_fnc_resolveEntityType } else { [[_t] call comspec_sse_fnc_getData, "type", ""] call BIS_fnc_getFromPairs }; _type == "RADIO" } }, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_TerminalTarget", "Ouvrir terminal SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0] call comspec_sse_fnc_uiOpenTerminal }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction)
+    (["COMSPEC_SSE_TerminalTarget", "Ouvrir le terminal SEEK", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0] call comspec_sse_fnc_uiOpenTerminal }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction)
 ];
 
 if (!isNil "comspec_sse_fnc_advanceExploitation") then {
@@ -146,7 +146,7 @@ if !(player getVariable ["comspec_sse_aceSelfInstalled", false]) then {
     } forEach [
         (["COMSPEC_SSE_Journal", "Journal SSE", _icon, { [] call comspec_sse_fnc_openJournal }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction),
         (["COMSPEC_SSE_TechLog", "Journal technique (erreurs)", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { [] call comspec_sse_fnc_showLog }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction),
-        (["COMSPEC_SSE_TerminalSelf", "Ouvrir terminal SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [objNull] call comspec_sse_fnc_uiOpenTerminal }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction),
+        (["COMSPEC_SSE_TerminalSelf", "Ouvrir le terminal SEEK", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [objNull] call comspec_sse_fnc_uiOpenTerminal }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction),
         (["COMSPEC_SSE_EquipKit", "Équiper le kit SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa", { [] call comspec_sse_fnc_equipSseKit }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction)
     ];
 };

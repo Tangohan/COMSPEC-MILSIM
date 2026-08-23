@@ -1649,6 +1649,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/activity', [AtakApiController::class, 'activityIndex']);
     $router->post('/api/atak/activity', [AtakApiController::class, 'activityStore']);
     $router->post('/api/atak/activity/clear', [AtakApiController::class, 'activityClear']);
+    $router->post('/api/atak/theatre/reset', [AtakApiController::class, 'theatreReset']);
+    $router->get('/api/atak/photo-nights', [AtakApiController::class, 'photoNightsIndex']);
+    $router->post('/api/atak/photo-nights/purge', [AtakApiController::class, 'photoNightsPurge']);
     $router->get('/api/atak/soi', [AtakApiController::class, 'soiPaceIndex']);
     $router->post('/api/atak/soi', [AtakApiController::class, 'soiPaceStore']);
     $router->get('/api/atak/session-workspace', [AtakApiController::class, 'sessionWorkspaceIndex']);
@@ -1864,6 +1867,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/sse/persons/{id}', [SseApiController::class, 'personsShow']);
     $router->post('/api/sse/persons/{id}/photos', [SseApiController::class, 'personsPhotoStore']);
     $router->post('/api/sse/persons/{id}/biometrics-sim', [SseApiController::class, 'personsBiometricsSim']);
+    $router->post('/api/sse/digital-acquisitions', [SseApiController::class, 'digitalAcquisitionStore']);
 
     // Exploitation de site sensible
     $router->get('/api/sse/sites', [SseApiController::class, 'sitesIndex']);

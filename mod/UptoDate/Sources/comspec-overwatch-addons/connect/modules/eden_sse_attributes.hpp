@@ -19,7 +19,7 @@ class Cfg3DEN
     {
         class AttributeCategories
         {
-            class COMSPEC_SSE
+            class COMSPEC_Overwatch_Seek
             {
                 displayName = "COMSPEC — Exploitation SSE";
                 collapsed = 1;

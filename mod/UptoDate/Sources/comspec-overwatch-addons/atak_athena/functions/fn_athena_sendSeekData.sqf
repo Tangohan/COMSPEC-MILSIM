@@ -2,7 +2,10 @@
     Transmet vers Athena toutes les données SEEK / SSE disponibles :
     - fiche(s) personne + biométrie (cible SEEK, record UI, alentours)
     - file d’attente SSE (flush)
+    Params : [_silent] — true = pas de bandeau panneau (Resynch global).
 */
+params [["_silent", false, [true]]];
+
 if (!hasInterface) exitWith {};
 
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {
@@ -104,7 +107,9 @@ private _msg = switch (true) do {
     };
 };
 
-[_msg, if (_txCount < 1 && {_flushed < 1}) then { "warn" } else { "ok" }, 8] call _setFb;
+if (!_silent) then {
+    [_msg, if (_txCount < 1 && {_flushed < 1}) then { "warn" } else { "ok" }, 8] call _setFb;
+};
 
 if (!isNil "comspec_overwatch_connect_fnc_appendModuleLog") then {
     [format ["[SEEK] Tx all — fiches=%1 flush=%2 pending=%3", _txCount, _flushed, _pending]] call comspec_overwatch_connect_fnc_appendModuleLog;

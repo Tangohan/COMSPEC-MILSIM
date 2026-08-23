@@ -91,22 +91,27 @@ if (_signature isNotEqualTo (_disp getVariable ["COMSPEC_IntelNote_ChipsKey", ""
         ]
     };
 
-    private _chipH = 0.019 * safezoneH;
-    private _chipY = safezoneY + (0.030 * safezoneH) + (0.004 * safezoneH);
-    private _chipX = safezoneX + 0.008 * safezoneW;
-    private _chipGap = 0.005 * safezoneW;
+    private _frame = uiNamespace getVariable ["COMSPEC_IntelNote_Frame", []];
+    if (!(_frame isEqualType []) || {(count _frame) < 4}) then {
+        _frame = [safezoneX, safezoneY, safezoneW, safezoneH, 1, 1];
+    };
+    _frame params ["_frameX", "_frameY", "_frameW", "_frameH", ["_size", 1], ["_ui", 1]];
+    private _chipH = 0.019 * _frameH;
+    private _chipY = _frameY + (0.030 * _frameH) + (0.004 * _frameH);
+    private _chipX = _frameX + 0.008 * _frameW;
+    private _chipGap = 0.005 * _frameW;
     private _chips = [];
     {
         _x params ["_label", "_hex"];
         // Largeur estimée sur le nombre de caractères : Arma ne mesure un texte
         // qu'une fois le contrôle posé, ce qui imposerait un second passage.
-        private _chipW = (0.0042 * safezoneW) * (count _label) + (0.010 * safezoneW);
+        private _chipW = (0.0042 * _frameW) * (count _label) + (0.010 * _frameW);
         private _ctrl = _disp ctrlCreate ["RscText", -1];
         if (isNull _ctrl) then { continue };
         _ctrl ctrlSetPosition [_chipX, _chipY, _chipW, _chipH];
         _ctrl ctrlSetBackgroundColor ([_hex] call _fnc_hexToRgba);
         _ctrl ctrlSetTextColor [1, 1, 1, 1];
-        _ctrl ctrlSetFontHeight (0.014 * safezoneH);
+        _ctrl ctrlSetFontHeight ((0.014 * _frameH) * _ui);
         _ctrl ctrlSetText ("  " + _label);
         _ctrl ctrlCommit 0;
         _chips pushBack _ctrl;

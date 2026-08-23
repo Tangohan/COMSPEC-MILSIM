@@ -10,6 +10,13 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 
 _tab = toLower (trim _tab);
 
+if (_tab isEqualTo "resynch" || {_tab isEqualTo "resync"} || {_tab isEqualTo "resyncall"}) exitWith {
+    [] call comspec_overwatch_atak_athena_fnc_athena_openResynch;
+};
+if (_tab isEqualTo "atak_settings" || {_tab isEqualTo "settings"} || {_tab isEqualTo "parametres"} || {_tab isEqualTo "paramètres"}) exitWith {
+    [] call comspec_overwatch_atak_athena_fnc_athena_openSettings;
+};
+
 // Formulaires dédiés (hors onglets panneau)
 if (_tab isEqualTo "briefing") exitWith {
     [] call comspec_overwatch_atak_athena_fnc_athena_openBriefing;

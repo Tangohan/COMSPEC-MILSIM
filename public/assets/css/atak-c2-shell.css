@@ -194,6 +194,7 @@ a.atak-section-btn--link {
 
 /* —— Sidebar body —— */
 .atak-left-body {
+  position: relative;
   background: linear-gradient(180deg, #0c1218, #090e13);
 }
 
@@ -233,9 +234,17 @@ a.atak-section-btn--link {
   font: 700 14px/1 var(--atak-font-tactical);
   flex-shrink: 0;
 }
-.atak-icon-btn:hover {
-  border-color: var(--atak-c2-line2);
-  color: var(--atak-c2-text);
+.atak-icon-btn.is-active {
+  border-color: var(--atak-c2-green);
+  color: var(--atak-c2-green);
+  background: rgba(53, 214, 161, 0.08);
+}
+.atak-side-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .atak-side-status {
@@ -260,13 +269,19 @@ a.atak-section-btn--link {
 /* Modules = onglets existants restylés */
 .atak-left-aside.atak-module-list {
   flex: 0 0 auto;
-  max-height: min(58vh, 440px);
+  max-height: min(32vh, 240px);
   overflow-x: hidden;
   overflow-y: auto;
   padding: 8px;
   gap: 2px;
   border-bottom: 1px solid var(--atak-c2-line);
   background: transparent;
+}
+body.atak-section-c2 .atak-left-aside.atak-module-list {
+  max-height: none;
+}
+body.atak-section-c2 .atak-left-aside .atak-tab {
+  padding: 8px 38px 8px 12px;
 }
 
 .atak-left-aside .atak-tab {
@@ -353,35 +368,155 @@ a.atak-section-btn--link {
   display: none !important;
 }
 
-/* Audio rail → bas de sidebar */
-.atak-left-body > .atak-rail-audio {
-  margin-top: 0;
-  padding: 0.45rem 0.75rem;
-  border-top: 0;
-  border-bottom: 1px solid var(--atak-c2-line);
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.55rem 0.85rem;
+/* Audio rail — désormais dans l’aside réglages */
+.atak-settings-aside {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 64px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.75rem 0.85rem 1rem;
+  overflow: auto;
+  background: linear-gradient(180deg, #0d141b, #090e13);
+  border-top: 1px solid var(--atak-c2-line);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.45);
 }
-.atak-left-body > .atak-rail-audio .atak-rail-audio-title {
+.atak-settings-aside[hidden] {
+  display: none !important;
+}
+.atak-settings-aside__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+.atak-settings-aside__title {
+  margin: 0;
+  font: 800 12px/1.2 var(--atak-font-tactical);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--atak-c2-text);
+}
+.atak-settings-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--atak-c2-line);
+  border-radius: 4px;
+  background: rgba(8, 14, 20, 0.7);
+}
+.atak-settings-copy {
+  margin: 0;
+  color: #c5d0d6;
+  font: 500 12px/1.45 var(--atak-font-secondary, var(--atak-font-ui));
+}
+.atak-settings-copy--muted {
+  color: #8a9aa3;
+  font-size: 11px;
+}
+.atak-settings-aside .atak-rail-audio {
+  margin: 0;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--atak-c2-line);
+  border-radius: 4px;
+  flex-direction: column;
+  align-items: stretch;
+}
+.atak-settings-aside .atak-rail-audio-title {
   text-align: left;
   width: 100%;
+  margin: 0 0 0.25rem;
 }
-.atak-left-body > .atak-rail-audio .atak-rail-audio-vol {
-  flex: 1 1 7rem;
-  min-width: 6rem;
+.atak-settings-aside .atak-rail-audio-vol {
+  width: 100%;
 }
-.atak-left-body > .atak-rail-audio .atak-rail-audio-vol-label {
+.atak-settings-aside .atak-rail-audio-vol-label {
   text-align: left;
 }
-.atak-left-body > .atak-rail-audio .atak-rail-audio-opt {
+.atak-settings-aside .atak-rail-audio-opt {
   flex-direction: row;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   text-align: left;
-  font-size: 0.58rem;
-  padding: 0.2rem 0.35rem;
+}
+
+/* Onglets de travail C2 (suivi / émettre) */
+#tab-orders.atak-tabs-content.active {
+  overflow: hidden;
+}
+.atak-c2-worktabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0;
+  margin: 0;
+  padding: 0 0.5rem;
+  border-bottom: 1px solid var(--atak-c2-line);
+  background: #0a1016;
+}
+.atak-c2-worktabs[hidden] {
+  display: none !important;
+}
+.atak-c2-worktab {
+  flex: 1;
+  margin: 0;
+  padding: 0.55rem 0.4rem 0.5rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #8a9aa3;
+  font: 700 11px/1.2 var(--atak-font-tactical);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.atak-c2-worktab:hover {
+  color: var(--atak-c2-text);
+  background: rgba(255, 255, 255, 0.03);
+}
+.atak-c2-worktab.is-active {
+  color: var(--atak-c2-green);
+  border-bottom-color: var(--atak-c2-green);
+}
+.atak-c2-worktab[hidden] {
+  display: none !important;
+}
+.atak-c2-workpane {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.atak-c2-workpane.is-active {
+  display: flex;
+}
+.atak-c2-workpane[hidden] {
+  display: none !important;
+}
+.atak-c2-suivi-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.55rem;
+  flex-shrink: 0;
+  padding: 0.5rem 0.55rem 0.2rem;
+}
+.atak-c2-suivi-hint {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+#atak-c2-pane-suivi .atak-orders-list {
+  flex: 1 1 auto;
+}
+#atak-c2-pane-emettre .atak-orders-issue {
+  margin: 0.35rem 0.5rem 0.75rem;
 }
 
 .atak-panel-chrome {
@@ -850,8 +985,11 @@ body.atak-page.atak-drawer-collapsed .atak-drawer__body {
   .atak-side-head {
     height: 54px;
   }
+  .atak-settings-aside {
+    top: 54px;
+  }
   .atak-left-aside.atak-module-list {
-    max-height: min(34vh, 220px);
+    max-height: min(28vh, 180px);
   }
   .atak-map-tools {
     height: auto;
@@ -904,6 +1042,20 @@ body.atak-theme-light .atak-map-tools-fab,
 body.atak-theme-light .atak-drawer,
 body.atak-theme-light .atak-left-rail,
 body.atak-theme-light .atak-left-body {
+  background: #ffffff;
+  border-color: #d0d7de;
+}
+body.atak-theme-light .atak-settings-aside,
+body.atak-theme-light .atak-c2-worktabs {
+  background: #f6f8fa;
+  border-color: #d0d7de;
+}
+body.atak-theme-light .atak-c2-worktab.is-active {
+  color: #0f766e;
+  border-bottom-color: #0f766e;
+}
+body.atak-theme-light .atak-settings-block,
+body.atak-theme-light .atak-settings-aside .atak-rail-audio {
   background: #ffffff;
   border-color: #d0d7de;
 }

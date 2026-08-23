@@ -31,9 +31,9 @@ if (_veh != player && {driver _veh == player}) then {
     _veh setVariable ["COMSPEC_Callsign", _callsign, true];
 };
 
-// Blue Force Tracking (cTab / iATAK) : aligner le nom de groupe sur l’indicatif
-// pour que marqueurs carte et effectifs Athena affichent la même identité.
-if (!isNull player && {local player}) then {
+// Blue Force Tracking : aligner le nom de groupe sur l’indicatif, sauf depuis
+// l’écran Paramètres (le joueur peut lier un autre groupe ATAK sans le renommer).
+if (_source isNotEqualTo "settings" && {!isNull player} && {local player}) then {
     private _grp = group player;
     if (!isNull _grp && {local _grp}) then {
         private _curGid = trim (groupId _grp);

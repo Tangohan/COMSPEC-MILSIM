@@ -2827,6 +2827,20 @@ body.atak-hints-hidden .atak-panel-hint {
   letter-spacing: 0.01em;
   font-size: 0.62rem;
 }
+.atak-chat-pc-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.2rem;
+  padding: 0.04rem 0.32rem;
+  border-radius: 0.2rem;
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
 .atak-chat-msg-body {
   color: var(--atak-text);
   font-size: 0.68rem;
@@ -3999,6 +4013,29 @@ body.atak-theme-light .atak-chat-messages {
 .atak-chat-group-badge {
   background: rgba(34, 197, 94, 0.22);
   color: #86efac;
+}
+.atak-chat-group-badge--pc {
+  background: rgba(245, 158, 11, 0.24);
+  color: #fcd34d;
+}
+.atak-chat-msg--pc,
+.atak-chat-msg-group.atak-chat-msg--pc,
+.atak-chat-msg-mp.atak-chat-msg--pc {
+  margin-left: 0.85rem;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.18), rgba(15, 23, 42, 0.16));
+  border-left: 3px solid #fbbf24;
+  border-right: 1px solid rgba(251, 191, 36, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.12);
+}
+.atak-chat-group-card--pc .atak-chat-group-text {
+  border-color: rgba(251, 191, 36, 0.38);
+  background: rgba(69, 26, 3, 0.42);
+  color: #fef3c7;
+}
+.atak-chat-group-card--pc .atak-chat-group-dir--out {
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(180, 83, 9, 0.28);
 }
 .atak-medical-chat-flag { color: #fecaca; font-weight: 600; }
 /* .atak-medical-tab-badge : styles unifi?s via .atak-tab-badge */

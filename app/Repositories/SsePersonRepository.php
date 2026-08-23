@@ -422,16 +422,27 @@ final class SsePersonRepository
 
     public function markBiometricsSimulated(int $personId, int $tenantId, string $kind, string $actorCallsign): bool
     {
-        $n = $this->db->execute(
+        if ($personId < 1) {
+            return false;
+        }
+        $person = $this->findById($personId, $tenantId);
+        if ($person === null) {
+            return false;
+        }
+        $already = !empty($person['biometrics_simulated']);
+        // PDO/MySQL : rowCount vaut 0 si la colonne est déjà à 1 — ce n’est pas « introuvable ».
+        $this->db->execute(
             'UPDATE sse_persons SET biometrics_simulated = 1 WHERE id = :id AND tenant_id = :t',
             ['id' => $personId, 't' => $tenantId]
         );
-        if ($n < 1) {
-            return false;
+        if ($already) {
+            return true;
         }
-        $label = $kind === 'iris'
-            ? 'Simulation biométrique (iris) effectuée'
-            : 'Simulation biométrique (empreintes) effectuée';
+        $label = match ($kind) {
+            'iris' => 'Simulation biométrique (iris) effectuée',
+            'adn' => 'Simulation biométrique (ADN) effectuée',
+            default => 'Simulation biométrique (empreintes) effectuée',
+        };
         $this->addCustodyEvent($tenantId, $personId, null, 'biometrie_sim', $label, $actorCallsign);
 
         return true;
@@ -587,6 +598,18 @@ final class SsePersonRepository
 
         if ($withPhotos) {
             $out['photos'] = $this->listPhotos((int) $out['id'], (int) $out['tenant_id']);
+            $primaryId = isset($row['primary_photo_id']) ? (int) $row['primary_photo_id'] : 0;
+            $primary = null;
+            foreach ($out['photos'] as $ph) {
+                if ($primaryId > 0 && (int) ($ph['id'] ?? 0) === $primaryId) {
+                    $primary = $ph;
+                    break;
+                }
+            }
+            if ($primary === null && $out['photos'] !== []) {
+                $primary = $out['photos'][0];
+            }
+            $out['primary_photo'] = $primary;
         } elseif (!empty($row['primary_photo_id'])) {
             $photo = $this->db->fetchOne(
                 'SELECT * FROM sse_person_photos WHERE id = :id LIMIT 1',
@@ -694,6 +717,105 @@ final class SsePersonRepository
     }
 
     /**
+     * Fiche déjà ouverte pour la même identité (unité Arma, sinon nom+prénom+alias).
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>|null
+     */
+    public function findLikelyDuplicate(int $tenantId, int $contextId, array $data): ?array
+    {
+        $netId = trim((string) ($data['target_unit_netid'] ?? ''));
+        if ($netId !== '') {
+            $this->ensureSchema();
+            $byNet = $this->db->fetchOne(
+                'SELECT * FROM sse_persons
+                 WHERE tenant_id = :t AND context_id = :c AND target_unit_netid = :n
+                 ORDER BY id ASC LIMIT 1',
+                ['t' => $tenantId, 'c' => $contextId, 'n' => $netId]
+            );
+            if ($byNet) {
+                return $this->hydrate($byNet, true);
+            }
+        }
+
+        $key = \App\Support\SsePersonDedupe::identityKey(
+            (string) ($data['last_name'] ?? ''),
+            (string) ($data['first_name'] ?? ''),
+            (string) ($data['alias'] ?? '')
+        );
+        if ($key === '') {
+            return null;
+        }
+
+        $this->ensureSchema();
+        $row = $this->db->fetchOne(
+            'SELECT * FROM sse_persons
+             WHERE tenant_id = :t AND context_id = :c
+               AND LOWER(TRIM(last_name)) = :last
+               AND LOWER(TRIM(first_name)) = :first
+               AND LOWER(TRIM(COALESCE(alias, \'\'))) = :alias
+             ORDER BY id ASC
+             LIMIT 1',
+            [
+                't' => $tenantId,
+                'c' => $contextId,
+                'last' => mb_strtolower(trim((string) ($data['last_name'] ?? ''))),
+                'first' => mb_strtolower(trim((string) ($data['first_name'] ?? ''))),
+                'alias' => mb_strtolower(trim((string) ($data['alias'] ?? ''))),
+            ]
+        );
+
+        return $row ? $this->hydrate($row, true) : null;
+    }
+
+    /**
+     * @param list<int> $personIds
+     * @return array<int, list<array{kind: string, kind_label: string}>>
+     */
+    public function biometricSummariesForPersons(int $tenantId, array $personIds): array
+    {
+        $personIds = array_values(array_unique(array_filter(array_map('intval', $personIds))));
+        if ($personIds === []) {
+            return [];
+        }
+        $placeholders = [];
+        $params = ['t' => $tenantId];
+        foreach ($personIds as $i => $id) {
+            $placeholders[] = ':p' . $i;
+            $params['p' . $i] = $id;
+        }
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT person_id, kind FROM sse_biometric_samples
+                 WHERE tenant_id = :t AND person_id IN (' . implode(',', $placeholders) . ')',
+                $params
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+        $labels = ['empreintes' => 'Empreintes', 'iris' => 'Iris', 'adn' => 'ADN'];
+        $out = [];
+        foreach ($rows as $row) {
+            $pid = (int) ($row['person_id'] ?? 0);
+            $kind = \App\Support\SsePersonDedupe::normalizeKind((string) ($row['kind'] ?? 'empreintes'));
+            if ($pid < 1) {
+                continue;
+            }
+            $out[$pid] ??= [];
+            $seen = array_column($out[$pid], 'kind');
+            if (in_array($kind, $seen, true)) {
+                continue;
+            }
+            $out[$pid][] = [
+                'kind' => $kind,
+                'kind_label' => $labels[$kind] ?? 'Empreintes',
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Fiche déjà ouverte pour une unité Arma donnée (panneau « fiche existante »).
      *
      * @return array<string, mixed>|null
@@ -721,10 +843,7 @@ final class SsePersonRepository
      */
     public function addBiometricSample(int $personId, int $tenantId, array $data): void
     {
-        $kind = strtolower(trim((string) ($data['kind'] ?? 'empreintes')));
-        if (!in_array($kind, ['empreintes', 'iris', 'adn'], true)) {
-            $kind = 'empreintes';
-        }
+        $kind = \App\Support\SsePersonDedupe::normalizeKind((string) ($data['kind'] ?? 'empreintes'));
         $quality = isset($data['quality']) ? max(0, min(100, (int) $data['quality'])) : null;
         $qualityLabel = $data['quality_label'] ?? null;
         if ($qualityLabel === null || $qualityLabel === '') {

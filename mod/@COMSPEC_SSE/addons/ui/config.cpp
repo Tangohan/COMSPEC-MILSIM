@@ -24,6 +24,8 @@ class CfgFunctions {
             class uiSetRecord {};
             class uiGetRecord {};
             class uiOpenTerminal {};
+            class uiOpenSeekHost {};
+            class uiDisplayCtx {};
             class uiOpenScreen {};
             class uiOnLoad {};
             class uiRefresh {};

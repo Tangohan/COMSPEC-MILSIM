@@ -187,12 +187,20 @@ private _fnc_notifyPath = {
     _ok
 };
 
+// format %1 sur un grand nombre → "1.1141e+06" (le PNG disque n’a jamais ce nom).
+private _fnc_shotStem = {
+    private _a = (floor diag_tickTime) toFixed 0;
+    private _b = (floor random 99999) toFixed 0;
+    format ["COMSPEC_%1_%2", _a, _b]
+};
+
 private _fnc_armaPngCapture = {
     // screenshot Arma EXIGE .png — sinon échec silencieux (wiki BI).
-    private _stem = format ["COMSPEC_%1_%2", floor diag_tickTime, floor random 99999];
-    private _png = _stem + ".png";
-    screenshot _png;
+    // Retour booléen false = HDR trop bas ou dossier Screenshots saturé (250 Mo).
+    private _png = ([] call _fnc_shotStem) + ".png";
+    private _ret = screenshot _png;
     missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
+    if (_ret isEqualType true && {!_ret}) exitWith { "" };
     _png
 };
 
@@ -237,8 +245,12 @@ if (
 
         uiSleep 0.16;
 
-        private _png = format ["COMSPEC_%1_%2.png", floor diag_tickTime, floor random 99999];
-        screenshot _png;
+        private _png = format [
+            "COMSPEC_%1_%2.png",
+            (floor diag_tickTime) toFixed 0,
+            (floor random 99999) toFixed 0
+        ];
+        private _shotOk = screenshot _png;
         missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
 
         showHUD true;
@@ -246,11 +258,17 @@ if (
             player switchCamera _prevView;
         };
 
-        // Laisser le PNG se flusher (évite file_empty juste après le hitch).
-        uiSleep 0.55;
-
-        [_png, _caption, _device, _feedId, true, false] call comspec_overwatch_connect_fnc_captureReconImage;
-        missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
+        if (_shotOk isEqualType true && {!_shotOk}) then {
+            missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
+            missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
+            ["COMSPEC_Error", ["Capture refusée par le jeu — passez la qualité HDR au moins sur Moyen, puis reprenez la photo."]] call comspec_overwatch_connect_fnc_showNotification;
+            missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
+        } else {
+            // Laisser le PNG se flusher (évite file_empty juste après le hitch).
+            uiSleep 0.85;
+            [_png, _caption, _device, _feedId, true, false] call comspec_overwatch_connect_fnc_captureReconImage;
+            missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
+        };
     };
     true
 };
@@ -262,6 +280,12 @@ if (_path isNotEqualTo "") exitWith {
     private _png = _path;
     if (!_skipArmaShot) then {
         _png = [] call _fnc_armaPngCapture;
+    };
+    if (!_skipArmaShot && {_png isEqualTo ""}) exitWith {
+        missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
+        missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
+        ["COMSPEC_Error", ["Capture refusée par le jeu — passez la qualité HDR au moins sur Moyen (options d’affichage), puis reprenez la photo."]] call comspec_overwatch_connect_fnc_showNotification;
+        false
     };
     private _ok = [_png] call _fnc_notifyPath;
     if (!_ok && {_path isNotEqualTo _png}) then {
@@ -287,8 +311,8 @@ if (_path isNotEqualTo "") exitWith {
         if ((_detail find "queue_full") >= 0) then {
             _msg = "File d’attente photo saturée — réessayez dans un instant";
         };
-        if ((_detail find "file_not_found") >= 0) then {
-            _msg = "Capture non écrite sur le disque — vérifiez la qualité d’affichage (HDR ≥ Moyen) puis reprenez une photo";
+        if ((_detail find "file_not_found") >= 0 || {(_detail find "screenshot_rejected") >= 0}) then {
+            _msg = "Capture non écrite sur le disque — passez la qualité HDR au moins sur Moyen, puis reprenez une photo";
             missionNamespace setVariable ["COMSPEC_FeedSnapFailUntil", diag_tickTime + 300, false];
         };
         if ((_detail find "ok|duplicate") < 0) then {
@@ -308,7 +332,7 @@ if (_path isEqualTo "") exitWith {
     };
 
     private _resolved = "";
-    private _stem = format ["COMSPEC_%1_%2", floor diag_tickTime, floor random 99999];
+    private _stem = [] call _fnc_shotStem;
 
     if (!isNil "BCE_fnc_screenShot") then {
         private _shot = [_stem] call BCE_fnc_screenShot;
@@ -335,10 +359,13 @@ if (_path isEqualTo "") exitWith {
         private _last = missionNamespace getVariable ["COMSPEC_LastScreenshotPath", ""];
         if (_last isEqualType "" && {_last isNotEqualTo ""}) then { _last } else { _stem + ".png" }
     } else {
-        private _p = _stem + ".png";
-        screenshot _p;
-        missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _p, false];
-        _p
+        [] call _fnc_armaPngCapture
+    };
+    if (_png isEqualTo "") exitWith {
+        missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
+        missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
+        ["COMSPEC_Error", ["Capture refusée par le jeu — passez la qualité HDR au moins sur Moyen, puis reprenez la photo."]] call comspec_overwatch_connect_fnc_showNotification;
+        false
     };
     private _ok = [_png] call _fnc_notifyPath;
     if (!_ok && {_resolved isNotEqualTo ""}) then {

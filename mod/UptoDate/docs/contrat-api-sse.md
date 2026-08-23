@@ -131,7 +131,7 @@ Fiche complète + photos.
 | Commande | Cible |
 |---|---|
 | `SubmitSsePerson` | `POST /api/sse/persons` (JSON sync) |
-| `UploadSsePhoto` | multipart `POST /api/sse/persons/{id}/photos` |
+| `UploadSsePhoto` | file async → multipart `POST /api/sse/persons/{id}/photos` (photo visage SEEK) |
 | `SubmitSseBiometricsSim` | `POST /api/sse/persons/{id}/biometrics-sim` |
 | `SubmitSseFieldNote` | `POST /api/sse/notes` (JSON sync) |
 | `UploadSseNoteAttachment` | multipart `POST /api/sse/notes/{id}/pieces` |

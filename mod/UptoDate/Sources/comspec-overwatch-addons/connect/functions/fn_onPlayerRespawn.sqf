@@ -24,6 +24,13 @@ missionNamespace setVariable ["COMSPEC_DeathThenRespawn", true, false];
 // Éviter anomalie « saut » + flood UpdatePosition / véhicule juste après REAPP
 if (!isNull player) then {
     missionNamespace setVariable ["COMSPEC_lastPos", getPosWorld player, true];
+    private _restoreTeam = toUpper (trim (missionNamespace getVariable ["COMSPEC_AssignedTeam", ""]));
+    if (_restoreTeam isEqualTo "") then {
+        _restoreTeam = toUpper (trim (profileNamespace getVariable ["COMSPEC_AssignedTeam", ""]));
+    };
+    if (_restoreTeam in ["RED", "GREEN", "BLUE", "YELLOW", "MAIN"]) then {
+        player assignTeam _restoreTeam;
+    };
 };
 missionNamespace setVariable ["COMSPEC_lastSendTime", diag_tickTime, true];
 missionNamespace setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];

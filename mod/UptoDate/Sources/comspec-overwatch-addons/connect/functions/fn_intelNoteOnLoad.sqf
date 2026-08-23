@@ -8,6 +8,8 @@ private _disp = uiNamespace getVariable ["COMSPEC_IntelNote_Display", displayNul
 if (isNull _disp) then { _disp = findDisplay 9982; };
 if (isNull _disp) exitWith {};
 
+[] call comspec_overwatch_connect_fnc_intelNoteApplyGeometry;
+
 // Mémoire des champs de la fiche précédente : elle ne doit pas déteindre.
 ["clear"] call comspec_overwatch_connect_fnc_intelNoteCache;
 

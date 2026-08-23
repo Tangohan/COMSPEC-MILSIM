@@ -42,7 +42,27 @@ if (_ok) then {
             if (_detail isEqualType "" && {_detail isNotEqualTo ""} && {_detail isNotEqualTo "Success"}) then {
                 private _n = parseNumber _detail;
                 if (_n > 0) then {
-                    _entity setVariable ["comspec_sse_athenaPersonId", str (floor _n), true];
+                    private _aid = str (floor _n);
+                    _entity setVariable ["comspec_sse_athenaPersonId", _aid, true];
+                    // File offline : les biométries en attente doivent reprendre avec cet id.
+                    private _q = missionNamespace getVariable ["comspec_sse_txQueue", []];
+                    {
+                        if (_x isEqualType createHashMap) then {
+                            if ((toUpper (_x getOrDefault ["kind", ""])) isEqualTo "BIOMETRICS") then {
+                                private _p = _x getOrDefault ["payload", createHashMap];
+                                if (_p isEqualType createHashMap) then {
+                                    private _u = _p getOrDefault ["sse_uid", ""];
+                                    if (_u isEqualTo _uid || {_u isEqualTo "?"} || {_u isEqualTo "any"} || {_u isEqualTo ""}) then {
+                                        _p set ["athena_person_id", _aid];
+                                        _p set ["person_id", _aid];
+                                        _x set ["payload", _p];
+                                        _x set ["txRetryAfter", 0];
+                                    };
+                                };
+                            };
+                        };
+                    } forEach _q;
+                    missionNamespace setVariable ["comspec_sse_txQueue", _q];
                 };
             };
         };

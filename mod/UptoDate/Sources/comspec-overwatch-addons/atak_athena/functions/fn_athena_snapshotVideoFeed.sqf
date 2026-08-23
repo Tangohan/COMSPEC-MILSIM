@@ -1,8 +1,9 @@
 /*
     Aperçu périodique de la propre caméra casque / drone connecté.
-    Utilise screenshot + UploadLatestScreenshot (pas de RTMP).
-    Activé uniquement si le module video_feeds est actif et le réglage CBA l’autorise.
+    Désactivé : la vue casque temps réel n’est pas au point (quota screenshot
+    Arma + file_not_found). Les clichés ATAK passent par captureReconImage.
 */
+if (true) exitWith {};
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
 if (!(["video_feeds"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {};

@@ -160,5 +160,9 @@ if (!isNil "_data") then {
     [_entity, _data, true] call comspec_sse_fnc_setData;
 };
 
+if (!isNil "comspec_sse_fnc_applyAuthoredContent") then {
+    [_entity] call comspec_sse_fnc_applyAuthoredContent;
+};
+
 [format ["applyModel %1 -> %2", _model getOrDefault ["name", "?"], _entity]] call comspec_sse_fnc_log;
 true

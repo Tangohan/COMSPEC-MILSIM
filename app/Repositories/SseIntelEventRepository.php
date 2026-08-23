@@ -249,7 +249,10 @@ final class SseIntelEventRepository
                 ? sse_normalize_ref_display((string) $row['raw_source_id'])
                 : null,
             'identity_tier' => $row['identity_tier'] ?? null,
+            'identity_tier_label' => \App\Support\SseWorkspaceUi::identityTierLabel($row['identity_tier'] ?? null),
             'event_time' => (string) ($row['event_time'] ?? ''),
+            'event_time_label' => \App\Support\SseWorkspaceUi::formatEventTime((string) ($row['event_time'] ?? '')),
+            'icon' => \App\Support\SseWorkspaceUi::iconForEventType((string) ($row['event_type'] ?? '')),
             'author_label' => $row['author_label'] ?? null,
             'unit_label' => $row['unit_label'] ?? null,
             'lat' => isset($row['lat']) ? (float) $row['lat'] : null,
@@ -492,21 +495,7 @@ final class SseIntelEventRepository
      */
     public static function eventTypeOptions(): array
     {
-        return [
-            'OBSERVED' => 'Observation',
-            'IDENTIFIED' => 'Identification',
-            'PHOTOGRAPHED' => 'Photographie',
-            'BIOMETRIC_CAPTURE' => 'Acquisition biométrique',
-            'DEVICE_SEIZED' => 'Appareil saisi',
-            'DEVICE_EXPLOITED' => 'Appareil exploité',
-            'SITE_SEARCHED' => 'Site fouillé',
-            'VEHICLE_OBSERVED' => 'Véhicule observé',
-            'RELATION_CREATED' => 'Relation créée',
-            'REPORT_RECEIVED' => 'Rapport reçu',
-            'INTEL_VALIDATED' => 'Renseignement validé',
-            'INTEL_DISSEMINATED' => 'Renseignement diffusé',
-            'EXPLOSIVE_COMPONENT_FOUND' => 'Composant explosif trouvé',
-        ];
+        return \App\Support\SseWorkspaceUi::eventTypeLabels();
     }
 
     /**
@@ -524,31 +513,12 @@ final class SseIntelEventRepository
 
     public static function labelForEventType(string $type): string
     {
-        $options = self::eventTypeOptions();
-        $key = strtoupper($type);
-        if ($key === 'BIOMETRIC_SCAN') {
-            return $options['BIOMETRIC_CAPTURE'];
-        }
-
-        return $options[$key] ?? ($type !== '' ? $type : 'Événement');
+        return \App\Support\SseWorkspaceUi::eventTypeLabel($type);
     }
 
     public static function labelForSourceSystem(string $src): string
     {
-        return match (strtoupper($src)) {
-            'ACE' => 'ACE',
-            'ACE_DOGTAG' => 'Plaque d’identité ACE',
-            'BII_IDENTIFI' => 'BII Identifi',
-            'ARMA_SSE' => 'Terminal SSE (Arma)',
-            'ZEUS' => 'Zeus',
-            'EDEN' => 'Éditeur de mission',
-            'MANUAL' => 'Saisie analyste',
-            'CTAB' => 'cTAB',
-            'TFAR' => 'TFAR',
-            'ACRE' => 'ACRE',
-            'UAV' => 'Drone / UAV',
-            default => $src !== '' ? $src : 'Source inconnue',
-        };
+        return \App\Support\SseWorkspaceUi::sourceSystemLabel($src);
     }
 
     private function eventTypeLabel(string $type): string

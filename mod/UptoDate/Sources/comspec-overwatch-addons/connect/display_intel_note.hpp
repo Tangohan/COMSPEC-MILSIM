@@ -83,9 +83,15 @@ class COMSPEC_IntelNote_Dialog {
     onUnload = "[] call comspec_overwatch_connect_fnc_intelNoteOnUnload;";
 
     class Controls {
+        // Voile autour du cadre quand la fiche n’occupe pas tout l’écran.
+        class Dimmer: RscText {
+            idc = 9600;
+            x = safezoneX; y = safezoneY; w = safezoneW; h = safezoneH;
+            colorBackground[] = {0, 0, 0, 0};
+        };
         // ================= FOND PLEIN CADRE =================
         class Backdrop: RscText {
-            idc = -1;
+            idc = 9601;
             x = NT_X; y = NT_Y; w = NT_W; h = NT_H;
             colorBackground[] = {0.122, 0.125, 0.137, 0.98};
         };

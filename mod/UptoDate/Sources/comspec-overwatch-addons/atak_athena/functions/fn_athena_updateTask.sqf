@@ -54,22 +54,24 @@ private _pending = 0;
 
 {
     private _id = _x getOrDefault ["id", ""];
-    private _typeLabel = [_x] call comspec_overwatch_connect_fnc_orderTypeLabel;
-    private _issuer = _x getOrDefault ["issuer", "C2"];
-    private _status = toUpper (_x getOrDefault ["status", "PENDING"]);
-    private _statusLabel = switch (_status) do {
-        case "ACK": { "Accepté" };
-        case "EXEC": { "En cours" };
-        case "DONE";
-        case "CLOSED": { "Terminé" };
-        case "FAILED": { "Refusé" };
-        case "CANCELLED": { "Annulé" };
-        case "DELIVERED": { "Remis" };
-        default { "À traiter" };
+    private _kind = "Ordre";
+    if (!isNil "comspec_overwatch_connect_fnc_orderTypeLabel") then {
+        private _lbl = [_x] call comspec_overwatch_connect_fnc_orderTypeLabel;
+        if (_lbl isEqualType "" && {_lbl isNotEqualTo ""}) then { _kind = _lbl; };
     };
-    private _prio = toUpper (_x getOrDefault ["priority", "IMPORTANT"]);
-    private _prioMark = if (_prio isEqualTo "URGENT") then { "! " } else { "" };
-    private _idx = _list lbAdd format ["%1%2 · %3 · %4", _prioMark, _typeLabel, _issuer, _statusLabel];
+    private _who = _x getOrDefault ["issuer", "C2"];
+    if (!(_who isEqualType "") || {_who isEqualTo ""}) then { _who = "C2"; };
+    private _st = toUpper (_x getOrDefault ["status", "PENDING"]);
+    private _stTxt = "À traiter";
+    if (_st isEqualTo "ACK") then { _stTxt = "Accepté"; };
+    if (_st isEqualTo "EXEC") then { _stTxt = "En cours"; };
+    if (_st in ["DONE", "CLOSED"]) then { _stTxt = "Terminé"; };
+    if (_st isEqualTo "FAILED") then { _stTxt = "Refusé"; };
+    if (_st isEqualTo "CANCELLED") then { _stTxt = "Annulé"; };
+    if (_st isEqualTo "DELIVERED") then { _stTxt = "Remis"; };
+    private _mark = "";
+    if ((toUpper (_x getOrDefault ["priority", "IMPORTANT"])) isEqualTo "URGENT") then { _mark = "! "; };
+    private _idx = _list lbAdd format ["%1%2 · %3 · %4", _mark, _kind, _who, _stTxt];
     _list lbSetData [_idx, _id];
     if (_id isEqualTo _prevId) then { _selKeep = _idx; };
 } forEach _rows;

@@ -123,6 +123,7 @@ final class SseDigitalLabRepository
         'GENERIC_PHONE' => 'Téléphone générique',
         'GENERIC_COMPUTER' => 'Ordinateur générique',
         'GENERIC_USB' => 'Clé USB générique',
+        'terrain_seek' => 'Extraction terrain (SEEK)',
     ];
 
     private Database $db;
@@ -263,6 +264,22 @@ final class SseDigitalLabRepository
         $row = $this->db->fetchOne(
             'SELECT * FROM sse_digital_devices WHERE id = :id AND tenant_id = :tenant AND deleted_at IS NULL LIMIT 1',
             ['id' => $id, 'tenant' => $tenantId]
+        );
+
+        return $row ? $this->hydrateDevice($row) : null;
+    }
+
+    public function findDeviceByArmaObjectId(int $tenantId, string $armaObjectId): ?array
+    {
+        $armaObjectId = trim($armaObjectId);
+        if ($armaObjectId === '') {
+            return null;
+        }
+        $row = $this->db->fetchOne(
+            'SELECT * FROM sse_digital_devices
+             WHERE tenant_id = :t AND arma_object_id = :a AND deleted_at IS NULL
+             ORDER BY id DESC LIMIT 1',
+            ['t' => $tenantId, 'a' => $armaObjectId]
         );
 
         return $row ? $this->hydrateDevice($row) : null;

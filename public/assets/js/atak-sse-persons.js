@@ -55,12 +55,32 @@
       .join(', ');
   }
 
+  function bioChips(person) {
+    var kinds = Array.isArray(person.biometric_kinds) ? person.biometric_kinds : [];
+    if (!kinds.length && person.biometrics_simulated) {
+      kinds = [{ kind: 'empreintes', kind_label: 'Empreintes' }];
+    }
+    if (!kinds.length) return '';
+    return (
+      '<div class="atak-sse-person-chips">' +
+      kinds
+        .map(function (k) {
+          var label = (k && (k.kind_label || k.kind)) || '';
+          if (!label) return '';
+          return '<span class="atak-sse-person-chip">' + esc(label) + '</span>';
+        })
+        .filter(Boolean)
+        .join('') +
+      '</div>'
+    );
+  }
+
   function renderPerson(p) {
     var photo = p.primary_photo || null;
     var src = photo ? resolveMediaUrl(photo.url || photo.image_path || '') : '';
     var img = src
-      ? '<img class="atak-cam-thumb" src="' + esc(src) + '" alt="Photo du visage" loading="lazy" />'
-      : '<div class="atak-cam-thumb atak-cam-thumb--empty" aria-hidden="true">◎</div>';
+      ? '<img class="atak-sse-person-thumb" src="' + esc(src) + '" alt="Photo du visage" loading="lazy" />'
+      : '<div class="atak-sse-person-thumb atak-sse-person-thumb--empty" aria-hidden="true">◎</div>';
     var arms = weaponsLine(p);
     var meta = [];
     if (p.status_label) meta.push(esc(p.status_label));
@@ -69,13 +89,13 @@
     if (p.submitter_callsign) meta.push('par ' + esc(p.submitter_callsign));
 
     return (
-      '<article class="atak-cam-card" data-sse-id="' + esc(p.id) + '">' +
-      '<div class="atak-cam-card-media">' + img + '</div>' +
-      '<div class="atak-cam-card-body">' +
-      '<h4 class="atak-cam-card-title">' + esc(p.display_name || 'Personne') + '</h4>' +
-      '<p class="atak-cam-card-meta">' + meta.join(' · ') + '</p>' +
-      (arms ? '<p class="atak-cam-card-meta">Armement : ' + arms + '</p>' : '') +
-      (p.biometrics_simulated ? '<p class="atak-cam-card-meta">Biométrie simulée enregistrée</p>' : '') +
+      '<article class="atak-sse-person-card" data-sse-id="' + esc(p.id) + '">' +
+      '<div class="atak-sse-person-card-media">' + img + '</div>' +
+      '<div class="atak-sse-person-card-body">' +
+      '<h4 class="atak-sse-person-card-title">' + esc(p.display_name || 'Personne') + '</h4>' +
+      (meta.length ? '<p class="atak-sse-person-card-meta">' + meta.join(' · ') + '</p>' : '') +
+      (arms ? '<p class="atak-sse-person-card-meta">Armement : ' + arms + '</p>' : '') +
+      bioChips(p) +
       '</div></article>'
     );
   }
@@ -100,7 +120,7 @@
       updateBadge(0);
       return;
     }
-    root.innerHTML = '<div class="atak-cams-grid">' + persons.map(renderPerson).join('') + '</div>';
+    root.innerHTML = '<div class="atak-sse-persons-grid">' + persons.map(renderPerson).join('') + '</div>';
     updateBadge(persons.length);
     persons.forEach(function (p) {
       if (!p || !p.id) return;

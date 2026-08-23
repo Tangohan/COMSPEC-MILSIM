@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.32;
-        versionStr = "1.0.32";
-        versionAr[] = {1, 0, 32};
+        version = 1.0.38;
+        versionStr = "1.0.38";
+        versionAr[] = {1, 0, 38};
     };
 };
 
@@ -40,6 +40,9 @@ class CfgFunctions
             class athena_selectTab {};
             class athena_sendPhoto {};
             class athena_sendSeekData {};
+            class athena_resynchAll {};
+            class athena_resynchOnOpened {};
+            class athena_openResynch {};
             class athena_collectLocalPhotos {};
         class athena_rememberLocalPhoto {};
             class athena_setPanelFeedback {};
@@ -78,6 +81,10 @@ class CfgFunctions
             class athena_updateSound {};
             class athena_soundAction {};
             class athena_openSound {};
+            class athena_openSettings {};
+            class athena_settingsOnOpened {};
+            class athena_updateSettings {};
+            class athena_settingsSave {};
             class athena_briefingOnOpened {};
             class athena_applyBriefingSlide {};
             class athena_openBriefing {};
@@ -149,11 +156,13 @@ class RscControlsGroup;
 #include "ui\athena_page.hpp"
 #include "ui\status_page.hpp"
 #include "ui\sound_page.hpp"
+#include "ui\settings_page.hpp"
 #include "ui\briefing_page.hpp"
 #include "ui\bda_host_page.hpp"
 #include "ui\bii_page.hpp"
 #include "ui\note_page.hpp"
 #include "ui\task_page.hpp"
+#include "ui\resynch_page.hpp"
 
 class ATAK_APPs
 {
@@ -168,6 +177,18 @@ class ATAK_APPs
             ORDER = 3.5;
             PAGE_CTRL = "COMSPEC_ATAK_Athena";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_onOpened";
+        };
+    };
+    class AtakResynch: message
+    {
+        text = "<t size='1'>Resynch</t>";
+        textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\upload_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 3.45;
+            PAGE_CTRL = "COMSPEC_ATAK_Resynch";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_resynchOnOpened";
         };
     };
     class AtakTask: message
@@ -204,6 +225,18 @@ class ATAK_APPs
             ORDER = 3.7;
             PAGE_CTRL = "COMSPEC_ATAK_Sound";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_soundOnOpened";
+        };
+    };
+    class AtakSettings: message
+    {
+        text = "<t size='1'>Paramètres</t>";
+        textureNoShortcut = "\a3\ui_f\data\gui\rsc\rscdisplaymain\menu_options_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 3.35;
+            PAGE_CTRL = "COMSPEC_ATAK_Settings";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_settingsOnOpened";
         };
     };
     class AtakBriefing: message
@@ -275,6 +308,18 @@ class RscTitles
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_onOpened";
             };
         };
+        class AtakResynch: message
+        {
+            text = "<t size='1'>Resynch</t>";
+            textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\upload_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 3.45;
+                PAGE_CTRL = "COMSPEC_ATAK_Resynch";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_resynchOnOpened";
+            };
+        };
         class AtakTask: message
         {
             text = "<t size='1'>TASK</t>";
@@ -309,6 +354,18 @@ class RscTitles
                 ORDER = 3.7;
                 PAGE_CTRL = "COMSPEC_ATAK_Sound";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_soundOnOpened";
+            };
+        };
+        class AtakSettings: message
+        {
+            text = "<t size='1'>Paramètres</t>";
+            textureNoShortcut = "\a3\ui_f\data\gui\rsc\rscdisplaymain\menu_options_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 3.35;
+                PAGE_CTRL = "COMSPEC_ATAK_Settings";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_settingsOnOpened";
             };
         };
         class AtakBriefing: message

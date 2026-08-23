@@ -270,7 +270,7 @@ if (_noteId isNotEqualTo "" && {_pieces isNotEqualTo []}) then {
             // c'est donc bien le terrain qui est photographié.
             private _target = _path;
             if (_target isEqualTo "") then {
-                _target = format ["COMSPEC_Fiche_%1_%2.png", _noteId, floor (diag_tickTime * 1000)];
+                _target = format ["COMSPEC_Fiche_%1_%2.png", _noteId, (floor (diag_tickTime * 1000)) toFixed 0];
                 screenshot _target;
                 uiSleep 1.25;
             };
