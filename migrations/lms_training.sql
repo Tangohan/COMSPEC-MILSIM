@@ -94,7 +94,8 @@ CREATE TABLE `training_resources` (
     `external_url` VARCHAR(500) NULL,
     `mime_type` VARCHAR(100) NULL,
     `file_size` BIGINT UNSIGNED NULL,
-    `document_id` BIGINT UNSIGNED NULL DEFAULT NULL,
+    -- Doit correspondre au type de documents.id (INT UNSIGNED dans schema.sql), sinon errno 150.
+    `document_id` INT UNSIGNED NULL DEFAULT NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX `idx_training_resources_lesson` (`lesson_id`),
     INDEX `idx_training_resources_document` (`document_id`),

@@ -68,26 +68,6 @@ final class SseFieldNoteController
     public function composer(Request $request, array $params = []): Response
     {
         if (!$this->canWrite()) {
-            if ($this->isAtakEmbed($request)) {
-                return Response::view('atak.sse.field_note_composer', [
-                    'title' => 'Nouvelle fiche de renseignement',
-                    'kinds' => SseFieldNoteCatalog::KINDS,
-                    'themes' => SseFieldNoteCatalog::THEMES,
-                    'urgencies' => SseFieldNoteCatalog::URGENCIES,
-                    'bodyMaxLength' => SseFieldNoteCatalog::BODY_MAX_LENGTH,
-                    'attachmentsMax' => SseFieldNoteCatalog::ATTACHMENTS_MAX,
-                    'themesMax' => SseFieldNoteCatalog::THEMES_MAX,
-                    'defaultKind' => SseFieldNoteCatalog::DEFAULT_KIND,
-                    'authorLabel' => $this->authorLabel(),
-                    'observedInputValue' => date('Y-m-d\TH:i'),
-                    'errors' => ['Votre habilitation ne permet pas de rédiger une fiche.'],
-                    'draft' => [],
-                    'successFlash' => '',
-                    'embedAtak' => true,
-                    'cancelUrl' => $this->composerUrl($request),
-                    'submitUrl' => url('atak/sse/fiches'),
-                ]);
-            }
             Session::flash('error', 'Votre habilitation ne permet pas de rédiger une fiche.');
 
             return Response::redirect(url('atak/sse/fiches'));
@@ -96,8 +76,6 @@ final class SseFieldNoteController
         // getFlash consomme la valeur : la relire renverrait toujours vide.
         $draft = Session::getFlash('sse_field_note_draft');
         $errors = Session::getFlash('sse_field_note_errors');
-        $embed = $this->isAtakEmbed($request);
-        $composerUrl = $this->composerUrl($request);
 
         return Response::view('atak.sse.field_note_composer', [
             'title' => 'Nouvelle fiche de renseignement',
@@ -112,9 +90,7 @@ final class SseFieldNoteController
             'observedInputValue' => date('Y-m-d\TH:i'),
             'errors' => is_array($errors) ? $errors : [],
             'draft' => is_array($draft) ? $draft : [],
-            'successFlash' => (string) (Session::getFlash('success') ?? ''),
-            'embedAtak' => $embed,
-            'cancelUrl' => $embed ? $composerUrl : url('atak/sse/fiches'),
+            'cancelUrl' => url('atak/sse/fiches'),
             'submitUrl' => url('atak/sse/fiches'),
         ]);
     }
@@ -125,7 +101,7 @@ final class SseFieldNoteController
         if (!$this->canWrite() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Action non autorisée ou session expirée. Reprenez la rédaction.');
 
-            return Response::redirect($this->composerUrl($request));
+            return Response::redirect(url('atak/sse/fiches/nouvelle'));
         }
 
         $input = [
@@ -158,7 +134,7 @@ final class SseFieldNoteController
                 'urgency' => $input['urgency'],
             ]);
 
-            return Response::redirect($this->composerUrl($request));
+            return Response::redirect(url('atak/sse/fiches/nouvelle'));
         }
 
         $tenantId = $this->tenantId();
@@ -167,7 +143,7 @@ final class SseFieldNoteController
         if ($noteId < 1) {
             Session::flash('error', 'La fiche n’a pas pu être enregistrée. Réessayez.');
 
-            return Response::redirect($this->composerUrl($request));
+            return Response::redirect(url('atak/sse/fiches/nouvelle'));
         }
 
         $message = 'Fiche ' . (string) ($created['note']['reference_code'] ?? '') . ' transmise au bureau SSE.';
@@ -190,10 +166,6 @@ final class SseFieldNoteController
         }
 
         Session::flash('success', $message);
-
-        if ($this->isAtakEmbed($request)) {
-            return Response::redirect($this->composerUrl($request));
-        }
 
         return Response::redirect(url('atak/sse/fiches/' . $noteId));
     }
@@ -383,21 +355,6 @@ final class SseFieldNoteController
         $tenantId = $this->access->tenantId();
 
         return $tenantId > 0 ? $tenantId : (int) Session::get('tenant_id');
-    }
-
-    private function isAtakEmbed(Request $request): bool
-    {
-        $fromQuery = strtolower(trim((string) $request->query('embed', '')));
-        $fromBody = strtolower(trim((string) $request->input('embed', '')));
-
-        return $fromQuery === 'atak' || $fromBody === 'atak';
-    }
-
-    private function composerUrl(Request $request): string
-    {
-        $url = url('atak/sse/fiches/nouvelle');
-
-        return $this->isAtakEmbed($request) ? $url . '?embed=atak' : $url;
     }
 
     /**

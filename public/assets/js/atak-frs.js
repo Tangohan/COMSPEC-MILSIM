@@ -305,7 +305,6 @@
    * ==================================================== */
 
   function showView(view, data) {
-    var previous = currentView;
     currentView = view;
     var listView = qs('#frs-list-view');
     var composeView = qs('#frs-compose');
@@ -318,16 +317,8 @@
       loadRecentNotes();
     } else if (view === VIEW_COMPOSE) {
       show(composeView);
-      var frame = qs('#frs-compose-frame');
-      if (frame) {
-        if (previous === VIEW_LIST) {
-          var src = frame.getAttribute('data-src') || frame.getAttribute('src');
-          if (src) frame.src = src;
-        }
-      } else {
-        buildComposeView();
-        resetComposeForm();
-      }
+      buildComposeView();
+      resetComposeForm();
     } else if (view === VIEW_SUCCESS) {
       show(successView);
       if (successView) {
@@ -418,23 +409,12 @@
         catalog = data;
         BODY_MAX = data.body_max_length || 1000;
         THEMES_MAX = data.themes_max || 4;
-        showView(qs('#frs-compose-frame') ? VIEW_COMPOSE : VIEW_LIST);
+        showView(VIEW_LIST);
       })
       .catch(function () {
         /* Catalogue indisponible : on garde les valeurs par défaut et on tente quand même */
-        showView(qs('#frs-compose-frame') ? VIEW_COMPOSE : VIEW_LIST);
+        showView(VIEW_LIST);
       });
-
-    var openFromPersons = document.getElementById('atak-sse-open-frs');
-    if (openFromPersons && !openFromPersons._frsBound) {
-      openFromPersons._frsBound = true;
-      openFromPersons.addEventListener('click', function () {
-        if (window.ATAKPanelChrome && typeof window.ATAKPanelChrome.activateTab === 'function') {
-          window.ATAKPanelChrome.activateTab('frs');
-        }
-        showView(VIEW_COMPOSE);
-      });
-    }
   }
 
   /* Lancer quand le panneau devient actif */

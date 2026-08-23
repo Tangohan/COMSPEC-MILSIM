@@ -183,6 +183,17 @@ private _reconAction = [
 ] call ace_interact_menu_fnc_createAction;
 [_reconAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+private _noteAction = [
+    "COMSPEC_IntelNote", "Rédiger une fiche de renseignement…", "", {
+        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openNote") then {
+            [""] call comspec_overwatch_atak_athena_fnc_athena_openNote;
+        } else {
+            [""] call comspec_overwatch_connect_fnc_intelNoteShow;
+        };
+    }, _condSync, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_noteAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
 private _helmetSnapAction = [
     "COMSPEC_HelmetSnap", "Envoyer aperçu casque", "", {
         private _uid = getPlayerUID player;

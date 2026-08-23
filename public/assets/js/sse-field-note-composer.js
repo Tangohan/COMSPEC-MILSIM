@@ -29,13 +29,8 @@
     var placeField = document.getElementById('fn-place');
 
     var bodyMax = parseInt(form.getAttribute('data-body-max'), 10) || 1000;
-    var bodyMin = parseInt(form.getAttribute('data-body-min'), 10) || 10;
     var attachmentsMax = parseInt(form.getAttribute('data-attachments-max'), 10) || 4;
     var themesMax = parseInt(form.getAttribute('data-themes-max'), 10) || 4;
-    var submitButtons = [
-        document.getElementById('fn-submit'),
-        document.getElementById('fn-sheet-submit')
-    ].filter(Boolean);
 
     var fileInputs = ['fn-file-camera', 'fn-file-gallery', 'fn-file-document']
         .map(function (id) { return document.getElementById(id); })
@@ -119,14 +114,6 @@
                 input.parentElement.classList.toggle('is-blocked', blocked);
             }
         });
-        var addButton = document.getElementById('fn-theme-custom-add');
-        var addInput = document.getElementById('fn-theme-custom-label');
-        if (addButton) {
-            addButton.disabled = reached;
-        }
-        if (addInput) {
-            addInput.disabled = reached;
-        }
     }
 
     function refreshTags() {
@@ -181,126 +168,7 @@
             var place = placeField && placeField.value ? placeField.value.trim() : '';
             placeLabel.textContent = place !== '' ? place.toUpperCase() : 'LIEU À PRÉCISER';
         }
-
-        refreshSubmitState();
     }
-
-    function isComplete() {
-        var text = bodyField ? bodyField.value.trim() : '';
-        if (text.length < bodyMin) {
-            return false;
-        }
-        return selectedThemes().length > 0;
-    }
-
-    function refreshSubmitState() {
-        var ok = isComplete();
-        var hint = ok
-            ? 'Transmettre la fiche'
-            : 'Complétez le texte et choisissez au moins un thème pour transmettre.';
-        submitButtons.forEach(function (button) {
-            button.disabled = !ok;
-            button.setAttribute('aria-disabled', ok ? 'false' : 'true');
-            button.setAttribute('title', hint);
-            button.setAttribute('aria-label', hint);
-        });
-    }
-
-    function selectedTone() {
-        var active = document.querySelector('.fn-tone-pick.is-selected');
-        return active ? (active.getAttribute('data-tone') || 'neutral') : 'neutral';
-    }
-
-    function themeLabelKey(value) {
-        return String(value || '').replace(/^c:(critical|warning|info|neutral):/i, '').trim().toLowerCase();
-    }
-
-    function addCustomTheme() {
-        var input = document.getElementById('fn-theme-custom-label');
-        var grid = document.getElementById('fn-theme-grid');
-        var help = document.getElementById('fn-theme-custom-help');
-        if (!input || !grid) {
-            return;
-        }
-        var label = input.value.replace(/[:\[\]"]/g, ' ').replace(/\s+/g, ' ').trim();
-        if (label.length < 2) {
-            if (help) {
-                help.textContent = 'Indiquez un intitulé d’au moins deux caractères.';
-            }
-            input.focus();
-            return;
-        }
-        if (label.length > 40) {
-            label = label.slice(0, 40);
-        }
-        if (selectedThemes().length >= themesMax) {
-            if (help) {
-                help.textContent = 'Quatre thèmes au maximum. Décochez-en un pour en ajouter un autre.';
-            }
-            return;
-        }
-
-        var duplicate = Array.prototype.some.call(form.querySelectorAll('input[name="themes[]"]'), function (existing) {
-            var existingLabel = existing.getAttribute('data-fn-theme-label') || existing.value;
-            return themeLabelKey(existingLabel) === label.toLowerCase()
-                || themeLabelKey(existing.value) === label.toLowerCase();
-        });
-        if (duplicate) {
-            if (help) {
-                help.textContent = 'Ce thème est déjà dans la liste.';
-            }
-            return;
-        }
-
-        var tone = selectedTone();
-        var code = 'c:' + tone + ':' + label;
-        var pill = document.createElement('label');
-        pill.className = 'fn-theme fn-theme--custom fn-tone-' + tone;
-
-        var checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.name = 'themes[]';
-        checkbox.value = code;
-        checkbox.checked = true;
-        checkbox.setAttribute('data-fn-theme-label', label.toUpperCase());
-        checkbox.setAttribute('data-fn-theme-tone', tone);
-
-        var caption = document.createElement('span');
-        caption.textContent = label;
-
-        pill.appendChild(checkbox);
-        pill.appendChild(caption);
-        grid.appendChild(pill);
-
-        input.value = '';
-        if (help) {
-            help.textContent = 'Créez un thème propre à la mission s’il manque dans la liste. Quatre thèmes au total.';
-        }
-        refreshContext();
-    }
-
-    var addThemeButton = document.getElementById('fn-theme-custom-add');
-    var addThemeInput = document.getElementById('fn-theme-custom-label');
-    if (addThemeButton) {
-        addThemeButton.addEventListener('click', addCustomTheme);
-    }
-    if (addThemeInput) {
-        addThemeInput.addEventListener('keydown', function (event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                addCustomTheme();
-            }
-        });
-    }
-    Array.prototype.forEach.call(document.querySelectorAll('.fn-tone-pick'), function (pick) {
-        pick.addEventListener('click', function () {
-            Array.prototype.forEach.call(document.querySelectorAll('.fn-tone-pick'), function (other) {
-                var on = other === pick;
-                other.classList.toggle('is-selected', on);
-                other.setAttribute('aria-pressed', on ? 'true' : 'false');
-            });
-        });
-    });
 
     form.addEventListener('change', function (event) {
         var target = event.target;
@@ -332,10 +200,7 @@
     }
 
     if (bodyField) {
-        bodyField.addEventListener('input', function () {
-            refreshCounter();
-            refreshSubmitState();
-        });
+        bodyField.addEventListener('input', refreshCounter);
     }
 
     // ---------- Pièces jointes ----------
@@ -518,25 +383,23 @@
 
     form.addEventListener('submit', function (event) {
         var text = bodyField ? bodyField.value.trim() : '';
-        if (text.length < bodyMin) {
+        if (text === '') {
             event.preventDefault();
             showPane('redaction');
             if (bodyField) {
                 bodyField.focus();
             }
-            refreshSubmitState();
             return;
         }
         if (selectedThemes().length === 0) {
             event.preventDefault();
             openSheet();
-            refreshSubmitState();
             return;
         }
-        submitButtons.forEach(function (button) {
-            button.disabled = true;
-            button.classList.add('is-sending');
-        });
+        var submit = document.getElementById('fn-submit');
+        if (submit) {
+            submit.disabled = true;
+        }
     });
 
     refreshContext();

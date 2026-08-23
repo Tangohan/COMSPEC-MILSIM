@@ -29,7 +29,8 @@
                     <strong>Investigations</strong> — toiles relationnelles ;
                     <strong>Dossiers d’intérêt</strong> — signalements à qualifier ;
                     <strong>Dossiers validés</strong> — affaires structurées ;
-                    <strong>Transmissions terrain</strong> — journal des envois depuis Arma
+                    <strong>Transmissions terrain</strong> — journal des envois depuis Arma ;
+                    <strong>Fiches de renseignement</strong> — notes libres remontées du terrain
                 </td>
             </tr>
             <tr>
@@ -59,6 +60,19 @@
         Filtrez par nature ou origine, puis ouvrez une fiche pour rejoindre l’identité, le site
         ou le dossier lié. Ce journal n’est pas une chronologie d’analyse : il sert à suivre
         la collecte brute.
+    </p>
+
+    <h3>Fiches de renseignement</h3>
+    <p>
+        La marche la plus basse du renseignement : un texte libre daté et situé, un ou plusieurs
+        thèmes, et jusqu’à quatre pièces jointes. Le rédacteur s’ouvre en plein écran, avec la
+        même disposition que celui de l’ATAK — un opérateur qui passe du jeu au bureau ne
+        réapprend rien.
+    </p>
+    <p>
+        Une fiche n’identifie personne et ne vaut pas preuve : elle consigne un constat.
+        À la lecture, renseignez le suivi (prise en compte, exploitation, classement sans suite)
+        et rattachez-la à un dossier si elle y trouve sa place.
     </p>
 
     <h3>Contexte mission et diffusion</h3>

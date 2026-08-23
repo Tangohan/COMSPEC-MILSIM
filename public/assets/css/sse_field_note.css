@@ -160,11 +160,6 @@
     margin-top: 6px;
 }
 
-.fn-alert--ok {
-    border-left-color: var(--fn-validate);
-    background: rgba(16, 185, 129, 0.16);
-}
-
 /* ---------- Scène à deux volets ---------- */
 
 .fn-stage {
@@ -493,14 +488,7 @@
 
 .fn-bottom-btn--validate[disabled] {
     background: #4b5563;
-    cursor: not-allowed;
-    opacity: 0.55;
-}
-
-.fn-bottom-btn--validate.is-sending,
-.fn-btn--transmit.is-sending {
     cursor: progress;
-    opacity: 0.7;
 }
 
 /* ---------- Feuille de contexte ---------- */
@@ -569,82 +557,8 @@
 }
 
 .fn-sheet-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
     padding: 16px 22px;
     border-top: 1px solid var(--fn-line);
-}
-
-.fn-btn--transmit {
-    background: var(--fn-validate);
-    border-color: transparent;
-    color: #fff;
-    font-weight: 700;
-    min-width: 9.5rem;
-}
-
-.fn-btn--transmit:hover,
-.fn-btn--transmit:focus-visible {
-    background: #059669;
-}
-
-.fn-btn--transmit[disabled] {
-    background: #3a3d44;
-    color: rgba(244, 245, 246, 0.38);
-    cursor: not-allowed;
-}
-
-.fn-theme-add {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 4px;
-}
-
-.fn-theme-add-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-}
-
-.fn-theme-add-row input[type="text"] {
-    flex: 1 1 12rem;
-    min-width: 0;
-}
-
-.fn-tone-picks {
-    display: inline-flex;
-    gap: 6px;
-    align-items: center;
-}
-
-.fn-tone-pick {
-    width: 22px;
-    height: 22px;
-    border-radius: 999px;
-    border: 2px solid transparent;
-    padding: 0;
-    cursor: pointer;
-    background: var(--fn-neutral);
-}
-
-.fn-tone-pick.fn-tone-critical { background: var(--fn-critical); }
-.fn-tone-pick.fn-tone-warning { background: var(--fn-warning); }
-.fn-tone-pick.fn-tone-info { background: var(--fn-info); }
-.fn-tone-pick.fn-tone-neutral { background: var(--fn-neutral); }
-
-.fn-tone-pick.is-selected {
-    border-color: #fff;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
-}
-
-.fn-theme-add .fn-btn[disabled] {
-    opacity: 0.45;
-    cursor: not-allowed;
 }
 
 .fn-sheet-signature {

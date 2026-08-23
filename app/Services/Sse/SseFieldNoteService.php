@@ -62,7 +62,7 @@ final class SseFieldNoteService
         $body = SseFieldNoteCatalog::normalizeBody($input['body'] ?? '');
         if ($body === '') {
             $errors[] = 'Écrivez le renseignement dans le cadre de rédaction avant de valider.';
-        } elseif (mb_strlen($body) < SseFieldNoteCatalog::BODY_MIN_LENGTH) {
+        } elseif (mb_strlen($body) < 10) {
             $errors[] = 'Le renseignement est trop court pour être exploitable. Précisez ce que vous avez constaté.';
         }
 

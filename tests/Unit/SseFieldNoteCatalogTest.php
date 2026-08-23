@@ -25,20 +25,6 @@ final class SseFieldNoteCatalogTest extends TestCase
         self::assertSame(['securite_publique', 'trafics'], $themes);
     }
 
-    public function testNormalizeThemesKeepsCustomLabels(): void
-    {
-        $code = SseFieldNoteCatalog::encodeCustomTheme('Contrôle de zone', 'warning');
-
-        self::assertSame('c:warning:Contrôle de zone', $code);
-        self::assertSame(
-            ['securite_publique', $code],
-            SseFieldNoteCatalog::normalizeThemes(['securite_publique', $code, 'c:info:Contrôle de zone'])
-        );
-        self::assertSame('Contrôle de zone', SseFieldNoteCatalog::themeLabel($code));
-        self::assertSame('warning', SseFieldNoteCatalog::themeTone($code));
-        self::assertSame([], SseFieldNoteCatalog::normalizeThemes(['c:neutral:x']));
-    }
-
     public function testNormalizeThemesCapsAtCatalogLimit(): void
     {
         $themes = SseFieldNoteCatalog::normalizeThemes(array_keys(SseFieldNoteCatalog::THEMES));
@@ -118,7 +104,6 @@ final class SseFieldNoteCatalogTest extends TestCase
         $catalog = SseFieldNoteCatalog::clientCatalog();
 
         self::assertSame(SseFieldNoteCatalog::BODY_MAX_LENGTH, $catalog['body_max_length']);
-        self::assertSame(SseFieldNoteCatalog::BODY_MIN_LENGTH, $catalog['body_min_length']);
         self::assertSame(SseFieldNoteCatalog::ATTACHMENTS_MAX, $catalog['attachments_max']);
         self::assertSame(SseFieldNoteCatalog::THEMES_MAX, $catalog['themes_max']);
         self::assertCount(count(SseFieldNoteCatalog::KINDS), $catalog['kinds']);

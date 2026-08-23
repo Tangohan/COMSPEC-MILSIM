@@ -52,6 +52,20 @@ class CfgFunctions {
             class sseApplyProfile {};
             class sseProfilePreset {};
             class sseModuleTargets {};
+            // Fiches de renseignement simplifiées (rédacteur plein cadre ATAK)
+            class intelNoteCatalog {};
+            class intelNoteCache {};
+            class intelNoteShow {};
+            class intelNoteOnLoad {};
+            class intelNoteOnUnload {};
+            class intelNotePane {};
+            class intelNoteRefresh {};
+            class intelNoteToggleTheme {};
+            class intelNoteAddPiece {};
+            class intelNoteDropPiece {};
+            class intelNoteSaveDraft {};
+            class intelNoteSubmit {};
+            class intelNoteClose {};
             class moduleSseCase {};
             class moduleSseProfile {};
             class moduleSseEquip {};

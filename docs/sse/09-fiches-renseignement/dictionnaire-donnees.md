@@ -14,7 +14,7 @@ obtient les tables au premier accès.
 | `context_id` | `INT UNSIGNED` | Carte / théâtre (`mapId`), 1 par défaut |
 | `reference_code` | `VARCHAR(32)` | `FR-<année>-<séquence>`, unique par communauté |
 | `note_kind` | `VARCHAR(16)` | `FRM`, `FRO`, `FRC`, `FRA`, `FRT` |
-| `themes` | `VARCHAR(400)` | Liste JSON de codes de thème (référentiel ou thème libre), 4 au maximum |
+| `themes` | `VARCHAR(400)` | Liste JSON de codes de thème, 4 au maximum |
 | `body` | `MEDIUMTEXT` | Le renseignement, 1000 caractères utiles |
 | `observed_at` | `DATETIME` | Date du constat, pas de la saisie |
 | `place_label` | `VARCHAR(180)` | Lieu en clair |

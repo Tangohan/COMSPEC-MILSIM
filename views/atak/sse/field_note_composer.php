@@ -18,8 +18,6 @@ declare(strict_types=1);
  * @var string $observedInputValue
  * @var list<string> $errors
  * @var array<string, mixed> $draft
- * @var string $successFlash
- * @var bool $embedAtak
  * @var string $cancelUrl
  * @var string $submitUrl
  */
@@ -29,8 +27,6 @@ $themes = is_array($themes ?? null) ? $themes : [];
 $urgencies = is_array($urgencies ?? null) ? $urgencies : [];
 $errors = is_array($errors ?? null) ? $errors : [];
 $draft = is_array($draft ?? null) ? $draft : [];
-$successFlash = trim((string) ($successFlash ?? ''));
-$embedAtak = (bool) ($embedAtak ?? false);
 $bodyMaxLength = (int) ($bodyMaxLength ?? 1000);
 $attachmentsMax = (int) ($attachmentsMax ?? 4);
 $themesMax = (int) ($themesMax ?? 4);
@@ -41,16 +37,6 @@ if (!isset($kinds[$draftKind])) {
     $draftKind = $defaultKind;
 }
 $draftThemes = is_array($draft['themes'] ?? null) ? $draft['themes'] : [];
-$draftCustomThemes = [];
-foreach ($draftThemes as $draftThemeCode) {
-    if (!is_string($draftThemeCode) || isset($themes[$draftThemeCode])) {
-        continue;
-    }
-    $parsedCustom = \App\Support\SseFieldNoteCatalog::parseTheme($draftThemeCode);
-    if ($parsedCustom !== null && $parsedCustom['custom']) {
-        $draftCustomThemes[] = $parsedCustom;
-    }
-}
 $draftUrgency = (string) ($draft['urgency'] ?? 'routine');
 if (!isset($urgencies[$draftUrgency])) {
     $draftUrgency = 'routine';
@@ -80,13 +66,9 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
 <form class="fn-app" method="post" action="<?= $h((string) ($submitUrl ?? url('atak/sse/fiches'))) ?>"
       enctype="multipart/form-data" id="fn-form"
       data-body-max="<?= $bodyMaxLength ?>"
-      data-body-min="<?= (int) (\App\Support\SseFieldNoteCatalog::BODY_MIN_LENGTH) ?>"
       data-attachments-max="<?= $attachmentsMax ?>"
       data-themes-max="<?= $themesMax ?>">
     <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
-    <?php if ($embedAtak): ?>
-        <input type="hidden" name="embed" value="atak">
-    <?php endif; ?>
     <input type="hidden" name="lat" id="fn-lat" value="">
     <input type="hidden" name="lng" id="fn-lng" value="">
 
@@ -111,11 +93,6 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
         </button>
     </div>
 
-    <?php if ($successFlash !== ''): ?>
-        <div class="fn-alert fn-alert--ok" role="status">
-            <p><?= $h($successFlash) ?></p>
-        </div>
-    <?php endif; ?>
     <?php if ($errors !== []): ?>
         <div class="fn-alert" role="alert">
             <?php foreach ($errors as $error): ?>
@@ -196,7 +173,7 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
             </button>
             <button type="submit" class="fn-bottom-btn fn-bottom-btn--validate" id="fn-submit"
-                    aria-label="Transmettre la fiche" disabled>
+                    aria-label="Transmettre la fiche">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
             </button>
         </div>
@@ -265,36 +242,6 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
                                 <span><?= $h($theme['label']) ?></span>
                             </label>
                         <?php endforeach; ?>
-                        <?php foreach ($draftCustomThemes as $customTheme): ?>
-                            <label class="fn-theme fn-theme--custom fn-tone-<?= $h($customTheme['tone']) ?>">
-                                <input type="checkbox" name="themes[]" value="<?= $h($customTheme['code']) ?>"
-                                       data-fn-theme-label="<?= $h(mb_strtoupper($customTheme['label'])) ?>"
-                                       data-fn-theme-tone="<?= $h($customTheme['tone']) ?>"
-                                       checked>
-                                <span><?= $h($customTheme['label']) ?></span>
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
-                    <div class="fn-theme-add">
-                        <label for="fn-theme-custom-label">Ajouter un thème</label>
-                        <div class="fn-theme-add-row">
-                            <input type="text" id="fn-theme-custom-label" maxlength="40"
-                                   placeholder="Intitulé s’il n’est pas dans la liste" autocomplete="off">
-                            <div class="fn-tone-picks" role="group" aria-label="Couleur du thème">
-                                <button type="button" class="fn-tone-pick fn-tone-critical is-selected" data-tone="critical"
-                                        aria-label="Gravité élevée" aria-pressed="true"></button>
-                                <button type="button" class="fn-tone-pick fn-tone-warning" data-tone="warning"
-                                        aria-label="Attention" aria-pressed="false"></button>
-                                <button type="button" class="fn-tone-pick fn-tone-info" data-tone="info"
-                                        aria-label="Information" aria-pressed="false"></button>
-                                <button type="button" class="fn-tone-pick fn-tone-neutral" data-tone="neutral"
-                                        aria-label="Autre" aria-pressed="false"></button>
-                            </div>
-                            <button type="button" class="fn-btn" id="fn-theme-custom-add">Ajouter</button>
-                        </div>
-                        <p class="fn-field-help" id="fn-theme-custom-help">
-                            Créez un thème propre à la mission s’il manque dans la liste. Quatre thèmes au total.
-                        </p>
                     </div>
                 </fieldset>
 
@@ -326,10 +273,6 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
 
             <div class="fn-sheet-foot">
                 <button type="button" class="fn-btn fn-btn--solid" data-fn-close="contexte">Revenir à la rédaction</button>
-                <button type="submit" class="fn-btn fn-btn--transmit" id="fn-sheet-submit" disabled
-                        aria-label="Transmettre la fiche">
-                    Transmettre
-                </button>
             </div>
         </div>
     </div>

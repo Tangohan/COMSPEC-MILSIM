@@ -62,9 +62,6 @@ Quatre thèmes au maximum. La couleur de la pastille suit la gravité : rouge po
 attitude`, `Infrastructures`, `Communications` et `Logistique adverse` ; gris
 pour `Environnement et terrain` et `Divers`.
 
-Si la liste ne suffit pas, le rédacteur peut **ajouter un thème libre** (intitulé
-et couleur), dans la même limite de quatre. Ce thème est conservé avec la fiche.
-
 L'ordre du référentiel est contractuel : chaque bascule du rédacteur ATAK est
 câblée sur un **rang**, pas sur un code. Réordonner les thèmes côté serveur sans
 mettre à jour `fn_intelNoteCatalog.sqf` décalerait toutes les bascules — un test

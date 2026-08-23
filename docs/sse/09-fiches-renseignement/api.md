@@ -49,7 +49,7 @@ Corps JSON. Seuls `body` et `themes` sont obligatoires.
 | Champ | Type | Rôle |
 |---|---|---|
 | `body` | chaîne | Le renseignement. Tronqué à 1000 caractères. |
-| `themes` | liste | Codes de thème du référentiel, ou thèmes libres `c:<couleur>:<intitulé>`. Les codes inconnus sont ignorés, la liste est plafonnée à 4. |
+| `themes` | liste | Codes de thème. Les codes inconnus sont ignorés, la liste est plafonnée à 4. |
 | `note_kind` | chaîne | `FRM` par défaut. |
 | `urgency` | chaîne | `routine` par défaut. |
 | `observed_at` | chaîne | Date du constat. À défaut, l'instant de réception. |

@@ -1104,6 +1104,11 @@ if ($atakMapConfig) {
           <small class="atak-tab-desc">Identités et fiches terrain</small>
           <span class="atak-tab-badge" id="atak-sse-tab-badge" hidden></span>
         </button>
+        <button type="button" class="atak-tab is-section-visible" role="tab" aria-selected="false" data-tab="frs" data-atak-section="intel" title="Fiches de renseignement">
+          <span class="atak-tab-label">FRS</span>
+          <small class="atak-tab-desc">Fiches de renseignement</small>
+          <span class="atak-tab-badge" id="atak-frs-tab-badge" hidden></span>
+        </button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="markers" data-atak-section="sitac" title="Marqueurs">
           <span class="atak-tab-label">Marqueurs</span>
           <small class="atak-tab-desc">Objets tactiques sur la carte</small>
@@ -1242,44 +1247,95 @@ if ($atakMapConfig) {
           </div>
         </div>
       </div>
-      <div class="atak-tabs-content" id="tab-frs">
-        <div class="frs-panel frs-panel--composer">
-          <div class="frs-toolbar">
-            <button type="button" class="atak-ops-btn" id="frs-btn-compose">Rédiger</button>
-            <button type="button" class="atak-ops-btn" id="frs-btn-back-list">Fiches reçues</button>
-            <a class="atak-ops-link" href="<?= htmlspecialchars(url('atak/sse/fiches/nouvelle'), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">Plein écran</a>
+      <div class="atak-tabs-content" id="tab-frs" role="tabpanel" aria-label="Fiches de renseignement simplifiées">
+
+        <!-- Vue liste -->
+        <div id="frs-list-view">
+          <div class="atak-cams-toolbar">
+            <p class="atak-panel-hint">Fiches de renseignement terrain (FRS) transmises au bureau SSE.</p>
+            <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="frs-btn-compose">Nouvelle fiche</button>
           </div>
-          <div id="frs-compose" class="frs-compose-frame-wrap">
-            <iframe
-              id="frs-compose-frame"
-              class="frs-compose-frame"
-              title="Rédacteur de fiche de renseignement"
-              src="<?= htmlspecialchars(url('atak/sse/fiches/nouvelle?embed=atak'), ENT_QUOTES, 'UTF-8') ?>"
-              data-src="<?= htmlspecialchars(url('atak/sse/fiches/nouvelle?embed=atak'), ENT_QUOTES, 'UTF-8') ?>"
-            ></iframe>
+          <div id="frs-notes-loading" class="atak-panel-hint" style="padding:.75rem 1rem;">Chargement…</div>
+          <div id="frs-notes-empty" class="atak-empty-state" hidden>
+            <div class="atak-empty-state-icon" aria-hidden="true">📋</div>
+            <p class="atak-empty-state-title">Aucune fiche transmise</p>
+            <p class="atak-empty-state-text">Rédigez votre première fiche en appuyant sur « Nouvelle fiche ».</p>
           </div>
-          <div id="frs-list-view" hidden>
-            <div id="frs-notes-loading" class="atak-empty-state" hidden>
-              <p class="atak-empty-state-text">Chargement des fiches…</p>
-            </div>
-            <div id="frs-notes-list" class="frs-notes-list"></div>
-            <div id="frs-notes-empty" class="atak-empty-state">
-              <div class="atak-empty-state-icon" aria-hidden="true">✎</div>
-              <p class="atak-empty-state-title">Aucune fiche</p>
-              <p class="atak-empty-state-text">Rédigez la première dans cet onglet : même écran que le bureau SSE.</p>
-            </div>
+          <div id="frs-notes-list" class="frs-notes-list"></div>
+        </div>
+
+        <!-- Vue rédaction -->
+        <div id="frs-compose" hidden>
+          <div class="frs-compose-header">
+            <button type="button" class="atak-ops-btn" id="frs-btn-back-list">← Retour</button>
+            <span class="frs-compose-title">Nouvelle fiche</span>
           </div>
-          <div id="frs-success" hidden>
-            <div class="atak-empty-state">
-              <p class="atak-empty-state-title">Fiche transmise</p>
-              <p class="atak-empty-state-text">Référence <strong id="frs-success-ref">—</strong></p>
-              <div class="frs-toolbar">
-                <button type="button" class="atak-ops-btn" id="frs-success-new">Rédiger une autre</button>
-                <button type="button" class="atak-ops-btn" id="frs-success-list">Voir la liste</button>
-              </div>
+
+          <div class="frs-compose-body">
+            <div class="frs-field">
+              <label class="frs-label" for="frs-body">Renseignement <span class="frs-required">*</span></label>
+              <textarea id="frs-body" class="frs-editor" maxlength="1000"
+                        placeholder="Décrivez les faits observés. Soyez factuel : qui, quoi, où, quand, comment."></textarea>
+              <div class="frs-counter" id="frs-body-counter">0/1000</div>
             </div>
+
+            <div class="frs-field">
+              <label class="frs-label" for="frs-place">Lieu</label>
+              <input type="text" id="frs-place" class="frs-input" maxlength="180"
+                     placeholder="Secteur, axe, village ou point de repère">
+            </div>
+
+            <div class="frs-field">
+              <label class="frs-label" for="frs-grid">Grille / carroyage</label>
+              <input type="text" id="frs-grid" class="frs-input" maxlength="32"
+                     placeholder="Ex. 14500 16820">
+            </div>
+
+            <div class="frs-field">
+              <label class="frs-label" for="frs-observed">Date et heure de l'événement</label>
+              <input type="datetime-local" id="frs-observed" class="frs-input">
+            </div>
+
+            <fieldset class="frs-field">
+              <legend class="frs-label">Type de fiche <span class="frs-required">*</span></legend>
+              <div id="frs-kind-grid" class="frs-kind-grid"></div>
+            </fieldset>
+
+            <fieldset class="frs-field">
+              <legend class="frs-label">Thèmes <span class="frs-required">*</span> <small class="frs-label-hint">(4 max.)</small></legend>
+              <div id="frs-theme-grid" class="frs-theme-grid"></div>
+            </fieldset>
+
+            <fieldset class="frs-field">
+              <legend class="frs-label">Urgence</legend>
+              <div id="frs-urgency-grid" class="frs-urgency-grid"></div>
+            </fieldset>
+
+            <div class="frs-field">
+              <label class="frs-label" for="frs-case-code">Référence de dossier <small class="frs-label-hint">(facultatif)</small></label>
+              <input type="text" id="frs-case-code" class="frs-input" maxlength="32"
+                     placeholder="Laissez vide si inconnu">
+            </div>
+
+            <p class="frs-feedback" id="frs-feedback" hidden></p>
+
+            <button type="button" class="atak-ops-btn atak-ops-btn--primary frs-submit-btn" id="frs-submit">Transmettre la fiche</button>
           </div>
         </div>
+
+        <!-- Vue confirmation -->
+        <div id="frs-success" class="frs-success" hidden>
+          <div class="atak-empty-state">
+            <div class="atak-empty-state-icon" aria-hidden="true">✓</div>
+            <p class="atak-empty-state-title">Fiche transmise</p>
+            <p class="atak-empty-state-text">Référence : <strong id="frs-success-ref">—</strong></p>
+          </div>
+          <div class="frs-success-actions">
+            <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="frs-success-new">Nouvelle fiche</button>
+            <button type="button" class="atak-ops-btn" id="frs-success-list">Mes fiches</button>
+          </div>
+        </div>
+
       </div>
       <div class="atak-tabs-content" id="tab-markers">
         <div class="atak-markers-list" id="atak-markers-list">

@@ -148,13 +148,13 @@ private _shortcuts = [
 
         198728, 198729, 1350,
 
-        "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa",
+        "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa",
 
-        "Fiche de renseignement — noter un constat daté et situé",
+        "Fiche de renseignement — noter et remonter un constat avec pièces jointes",
 
         "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Fiche<br/>RENS</t>",
 
-        "intel_note"
+        "note"
 
     ]
 
@@ -180,30 +180,18 @@ missionNamespace setVariable ["COMSPEC_Athena_desktopClick", {
 
     };
 
-    if (_tab isEqualTo "account") then {
-        [] call comspec_overwatch_atak_athena_fnc_athena_showLinkDialog;
-    } else {
-        if (_tab isEqualTo "order") then {
-            [] call comspec_overwatch_atak_athena_fnc_athena_openTask;
-        } else {
-            if (_tab isEqualTo "briefing") then {
-                [] call comspec_overwatch_atak_athena_fnc_athena_openBriefing;
-            } else {
-                if (_tab isEqualTo "atak_status" || {_tab isEqualTo "status"}) then {
-                    [] call comspec_overwatch_atak_athena_fnc_athena_openStatus;
-                } else {
-                    if (_tab isEqualTo "atak_sound" || {_tab isEqualTo "sound" || {_tab isEqualTo "sons"}}) then {
-                        [] call comspec_overwatch_atak_athena_fnc_athena_openSound;
-                    } else {
-                        if (_tab isEqualTo "intel_note" || {_tab isEqualTo "note"}) then {
-                            [""] call comspec_overwatch_atak_athena_fnc_athena_openNote;
-                        } else {
-                            [_tab] call comspec_overwatch_atak_athena_fnc_athena_openFeature;
-                        };
-                    };
-                };
-            };
-        };
+    switch (_tab) do {
+        case "intel_note";
+        case "note": { [""] call comspec_overwatch_atak_athena_fnc_athena_openNote; };
+        case "account": { [] call comspec_overwatch_atak_athena_fnc_athena_showLinkDialog; };
+        case "order": { [] call comspec_overwatch_atak_athena_fnc_athena_openTask; };
+        case "briefing": { [] call comspec_overwatch_atak_athena_fnc_athena_openBriefing; };
+        case "atak_status";
+        case "status": { [] call comspec_overwatch_atak_athena_fnc_athena_openStatus; };
+        case "atak_sound";
+        case "sound";
+        case "sons": { [] call comspec_overwatch_atak_athena_fnc_athena_openSound; };
+        default { [_tab] call comspec_overwatch_atak_athena_fnc_athena_openFeature; };
     };
 
 }, false];

@@ -2407,6 +2407,17 @@ public static class Extension
                 if (string.IsNullOrWhiteSpace(json)) json = "{}";
                 return PostAtakJsonSync("/api/sse/persons/" + Uri.EscapeDataString(personId) + "/biometrics-sim", json, token);
             }
+            // Fiche de renseignement simplifiée rédigée dans l'ATAK.
+            if (function == "SubmitSseFieldNote" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostSseFieldNoteSync(json, token);
+            }
+            if (function == "UploadSseNoteAttachment" && args.Length >= 2)
+            {
+                return BeginUploadSseNoteAttachment(args);
+            }
             // Canal générique SSE (numérique / lab / record) — évite le fallback sendIntel texte.
             if (function == "SendSSE" && args.Length >= 1)
             {
@@ -3943,6 +3954,7 @@ public static class Extension
 
             if (function == "UploadSseNoteAttachment" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
+                // Géré en synchrone par TryGetSyncResponse (BeginUploadSseNoteAttachment).
                 return;
             }
 
@@ -4488,8 +4500,8 @@ public static class Extension
     }
 
     /// <summary>
-    /// Pièce jointe de fiche : args[0]=noteId, args[1]=path, args[2]=author, args[3]=kind,
-    /// args[4..6]=pos, args[7]=caption, args[8]=grid.
+    /// Joint une capture ou un fichier local à une fiche de renseignement.
+    /// Args : [noteId, cheminOuMotif, auteur, nature, posX, posY, posZ, légende, repère]
     /// </summary>
     private static string BeginUploadSseNoteAttachment(string?[] args)
     {
@@ -4497,14 +4509,16 @@ public static class Extension
         var noteId = args.Length > 0 ? (args[0] ?? "").Trim() : "";
         if (string.IsNullOrEmpty(noteId)) return "ERR|note_id_empty";
         var rawPath = args.Length > 1 ? (args[1] ?? "") : "";
-        var author = args.Length > 2 ? (args[2] ?? "Unknown") : "Unknown";
-        var kind = args.Length > 3 && !string.IsNullOrEmpty(args[3]) ? args[3]! : "photo";
+        var author = args.Length > 2 && !string.IsNullOrEmpty(args[2]) ? args[2]! : "Terrain";
+        var kind = args.Length > 3 && !string.IsNullOrEmpty(args[3]) ? args[3]! : "capture";
+
         string? resolved = null;
         if (!string.IsNullOrWhiteSpace(rawPath))
             resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(120));
         if (resolved == null)
             resolved = FindNewestScreenshot(TimeSpan.FromSeconds(90));
         if (resolved == null) return "ERR|file_not_found";
+
         try
         {
             var fi = new FileInfo(resolved);
@@ -4520,7 +4534,7 @@ public static class Extension
             AddOptionalForm(multipart, "grid_reference", args, 8);
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
-            var fileName = Path.GetFileName(resolved) ?? "sse_note.png";
+            var fileName = Path.GetFileName(resolved) ?? "fiche_piece.png";
             var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
             var fileContent = new StreamContent(fileStream);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
@@ -5515,7 +5529,8 @@ public static class Extension
     }
 
     /// <summary>
-    /// Transmet une fiche de renseignement simplifiée. Détail OK : « id » ou « id|référence ».
+    /// Transmet une fiche de renseignement simplifiée et renvoie son identifiant
+    /// Athena, dont le rédacteur ATAK a besoin pour envoyer les pièces jointes.
     /// </summary>
     private static string PostSseFieldNoteSync(string jsonBody, CancellationToken token)
     {
@@ -5548,9 +5563,12 @@ public static class Extension
                 {
                     // ignore parse
                 }
-                if (string.IsNullOrEmpty(id))
-                    return FormatAtakExtArray("OK", "Success");
-                return FormatAtakExtArray("OK", string.IsNullOrEmpty(reference) ? id : id + "|" + reference);
+                // « id|référence » : le SQF garde l'id pour les pièces jointes et
+                // affiche la référence à l'opérateur.
+                var detail = string.IsNullOrEmpty(id)
+                    ? "Success"
+                    : (string.IsNullOrEmpty(reference) ? id : id + "|" + reference);
+                return FormatAtakExtArray("OK", detail);
             }
             var code = (int)resp.StatusCode;
             var modBlock = MapModAccessBlockError(body);

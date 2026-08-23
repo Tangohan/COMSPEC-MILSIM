@@ -94,6 +94,9 @@ class CfgFunctions
             class athena_taskSyncButtons {};
             class athena_syncOrdersToGroupChat {};
             class athena_openTask {};
+            class athena_noteOnOpened {};
+            class athena_updateNote {};
+            class athena_openNote {};
         };
     };
     // Workaround BCE: Check_Layout uses undefined _line (Compat updateInterface)
@@ -154,6 +157,7 @@ class RscControlsGroup;
 #include "ui\bii_page.hpp"
 #include "ui\note_page.hpp"
 #include "ui\task_page.hpp"
+#include "ui\note_page.hpp"
 
 class ATAK_APPs
 {
@@ -230,14 +234,15 @@ class ATAK_APPs
             Opened = "comspec_overwatch_atak_athena_fnc_athena_biiOnOpened";
         };
     };
+    // Menu dédié des fiches de renseignement : ouvre un rédacteur plein cadre.
     class AtakNote: message
     {
         text = "<t size='1'>RENS</t>";
-        textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+        textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
         class Menu_Property
         {
-            ORDER = 3.52;
+            ORDER = 1.16;
             PAGE_CTRL = "COMSPEC_ATAK_Note";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_noteOnOpened";
         };
@@ -337,11 +342,11 @@ class RscTitles
         class AtakNote: message
         {
             text = "<t size='1'>RENS</t>";
-            textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+            textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
             class Menu_Property
             {
-                ORDER = 3.52;
+                ORDER = 1.16;
                 PAGE_CTRL = "COMSPEC_ATAK_Note";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_noteOnOpened";
             };

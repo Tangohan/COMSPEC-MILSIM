@@ -14,13 +14,8 @@ namespace App\Support;
 final class SseFieldNoteCatalog
 {
     public const BODY_MAX_LENGTH = 1000;
-    public const BODY_MIN_LENGTH = 10;
     public const ATTACHMENTS_MAX = 4;
     public const THEMES_MAX = 4;
-    public const CUSTOM_THEME_LABEL_MAX = 40;
-
-    /** @var list<string> */
-    public const TONES = ['critical', 'warning', 'info', 'neutral'];
 
     public const DEFAULT_KIND = 'FRM';
     public const DEFAULT_URGENCY = 'routine';
@@ -193,84 +188,12 @@ final class SseFieldNoteCatalog
 
     public static function themeLabel(string $code): string
     {
-        $parsed = self::parseTheme($code);
-
-        return $parsed['label'] ?? $code;
+        return self::THEMES[strtolower($code)]['label'] ?? $code;
     }
 
     public static function themeTone(string $code): string
     {
-        $parsed = self::parseTheme($code);
-
-        return $parsed['tone'] ?? 'neutral';
-    }
-
-    /**
-     * @return array{code: string, label: string, tone: string, custom: bool}|null
-     */
-    public static function parseTheme(mixed $value): ?array
-    {
-        $raw = trim((string) $value);
-        if ($raw === '') {
-            return null;
-        }
-
-        $known = strtolower($raw);
-        if (isset(self::THEMES[$known])) {
-            return [
-                'code' => $known,
-                'label' => self::THEMES[$known]['label'],
-                'tone' => self::THEMES[$known]['tone'],
-                'custom' => false,
-            ];
-        }
-
-        if (!str_starts_with($raw, 'c:')) {
-            return null;
-        }
-
-        $parts = explode(':', $raw, 3);
-        if (count($parts) < 3) {
-            return null;
-        }
-        $tone = strtolower($parts[1]);
-        if (!in_array($tone, self::TONES, true)) {
-            $tone = 'neutral';
-        }
-        $label = self::sanitizeCustomLabel($parts[2]);
-        if ($label === '') {
-            return null;
-        }
-
-        return [
-            'code' => 'c:' . $tone . ':' . $label,
-            'label' => $label,
-            'tone' => $tone,
-            'custom' => true,
-        ];
-    }
-
-    public static function encodeCustomTheme(string $label, string $tone = 'neutral'): ?string
-    {
-        $parsed = self::parseTheme('c:' . $tone . ':' . $label);
-
-        return $parsed['code'] ?? null;
-    }
-
-    public static function sanitizeCustomLabel(string $label): string
-    {
-        $label = trim(strip_tags($label));
-        $label = str_replace([':', '[', ']', '"', "\n", "\r", "\t"], ' ', $label);
-        $label = preg_replace('/\s+/u', ' ', $label) ?? $label;
-        $label = trim($label);
-        if (mb_strlen($label) > self::CUSTOM_THEME_LABEL_MAX) {
-            $label = mb_substr($label, 0, self::CUSTOM_THEME_LABEL_MAX);
-        }
-        if (mb_strlen($label) < 2) {
-            return '';
-        }
-
-        return $label;
+        return self::THEMES[strtolower($code)]['tone'] ?? 'neutral';
     }
 
     public static function attachmentKindLabel(string $code): string
@@ -279,7 +202,7 @@ final class SseFieldNoteCatalog
     }
 
     /**
-     * Garde les thèmes du référentiel et les thèmes libres, sans doublon, dans la limite fixée.
+     * Garde uniquement des thèmes connus, sans doublon, dans la limite fixée.
      *
      * @param mixed $value liste, chaîne JSON ou liste séparée par des virgules
      * @return list<string>
@@ -299,18 +222,11 @@ final class SseFieldNoteCatalog
         }
 
         $out = [];
-        $seenLabels = [];
         foreach ($value as $raw) {
-            $parsed = self::parseTheme($raw);
-            if ($parsed === null) {
+            $code = strtolower(trim((string) $raw));
+            if ($code === '' || !isset(self::THEMES[$code]) || in_array($code, $out, true)) {
                 continue;
             }
-            $code = $parsed['code'];
-            $labelKey = mb_strtolower($parsed['label']);
-            if (in_array($code, $out, true) || isset($seenLabels[$labelKey])) {
-                continue;
-            }
-            $seenLabels[$labelKey] = true;
             $out[] = $code;
             if (count($out) >= self::THEMES_MAX) {
                 break;
@@ -357,7 +273,6 @@ final class SseFieldNoteCatalog
 
         return [
             'body_max_length' => self::BODY_MAX_LENGTH,
-            'body_min_length' => self::BODY_MIN_LENGTH,
             'attachments_max' => self::ATTACHMENTS_MAX,
             'themes_max' => self::THEMES_MAX,
             'kinds' => $kinds,
