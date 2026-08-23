@@ -32,6 +32,18 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/home-impact.css?v=hero-av-5" rel="stylesheet">
     <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/site-marketing.css?v=2" rel="stylesheet">
 <?php
+    $marketingStyles = is_array($marketingStyles ?? null) ? $marketingStyles : [];
+    foreach ($marketingStyles as $href):
+        $href = trim((string) $href);
+        if ($href === '') {
+            continue;
+        }
+?>
+    <link href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<?php
+    endforeach;
+?>
+<?php
     $crumbName = match ($marketingActive) {
         'contact' => __('site.contact'),
         'changelog' => __('site.changelog'),
@@ -64,6 +76,17 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
             ],
         ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
+<?php
+    $jsonLdExtra = is_array($jsonLdExtra ?? null) ? $jsonLdExtra : [];
+    foreach ($jsonLdExtra as $jsonLdBlock):
+        if (!is_array($jsonLdBlock)) {
+            continue;
+        }
+?>
+    <script type="application/ld+json"><?= json_encode($jsonLdBlock, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
+<?php
+    endforeach;
+?>
 </head>
 <body class="home-impact site-marketing layout-light bg-[var(--hi-void)] text-[var(--hi-ink)] antialiased selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
 
@@ -116,6 +139,18 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     </footer>
 
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+<?php
+    $marketingScripts = is_array($marketingScripts ?? null) ? $marketingScripts : [];
+    foreach ($marketingScripts as $src):
+        $src = trim((string) $src);
+        if ($src === '') {
+            continue;
+        }
+?>
+    <script src="<?= htmlspecialchars($src, ENT_QUOTES, 'UTF-8') ?>" defer></script>
+<?php
+    endforeach;
+?>
     <script>
         function toggleMenu() {
             document.body.classList.toggle('drawer-open');
