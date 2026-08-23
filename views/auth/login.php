@@ -26,7 +26,7 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
     <script defer src="https://unpkg.com/alpinejs@3/dist/cdn.min.js"></script>
     <style>[x-cloak] { display: none !important; }</style>
 </head>
-<body class="ds-page" x-data="{ view: 'login', showPassword: false }">
+<body class="ds-page ds-page--split" x-data="{ view: 'login', showPassword: false }">
 <a class="ds-skip" href="#contenu"><?= htmlspecialchars(__('common.skip_to_content'), ENT_QUOTES, 'UTF-8') ?></a>
 
 <header class="ds-header">
@@ -43,7 +43,20 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
     </div>
 </header>
 
-<main class="ds-main" id="contenu">
+<div class="ds-split">
+    <aside class="ds-visual" aria-hidden="true">
+        <img class="ds-visual__img"
+             src="<?= htmlspecialchars(asset_url('assets/images/fog-team.jpg'), ENT_QUOTES, 'UTF-8') ?>"
+             alt=""
+             width="1600"
+             height="1067"
+             decoding="async">
+        <div class="ds-visual__veil"></div>
+        <p class="ds-visual__caption"><?= htmlspecialchars(__('auth.login_aside'), ENT_QUOTES, 'UTF-8') ?></p>
+    </aside>
+
+    <main class="ds-main" id="contenu">
+    <div class="ds-main__inner">
     <p class="ds-kicker"><?= htmlspecialchars(__('auth.title_login'), ENT_QUOTES, 'UTF-8') ?></p>
     <h1 class="ds-title"><?= $brandText ?></h1>
     <p class="ds-lead"><?= htmlspecialchars(__('auth.intro'), ENT_QUOTES, 'UTF-8') ?></p>
@@ -135,7 +148,9 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
             <a href="<?= url('join') ?>"><?= htmlspecialchars(__('auth.join_community'), ENT_QUOTES, 'UTF-8') ?></a>
         </p>
     </div>
+    </div>
 </main>
+</div>
 
 <footer class="ds-footer">
     <div class="ds-footer__inner">

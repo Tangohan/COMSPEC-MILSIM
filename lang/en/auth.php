@@ -11,6 +11,7 @@ return [
     'title_select_community' => 'Choose a community',
     'kicker' => 'MILSIM portal · Secure access',
     'intro' => 'Enter your community space — organisation, training and command.',
+    'login_aside' => 'One space for command, training and field links.',
     'email' => 'Email address',
     'password' => 'Password',
     'forgot_link' => 'Forgot?',

@@ -11,6 +11,7 @@ return [
     'title_select_community' => 'Choisir une communauté',
     'kicker' => 'Portail MILSIM · Accès sécurisé',
     'intro' => 'Entrez dans votre espace communauté — organisation, formations et commandement.',
+    'login_aside' => 'Un même espace pour le commandement, les formations et les liaisons de terrain.',
     'email' => 'Adresse e-mail',
     'password' => 'Mot de passe',
     'forgot_link' => 'Oublié ?',
