@@ -4,6 +4,7 @@ Documentation fonctionnelle et technique du module SSE, incluant les **dossiers 
 
 ## Cycles de référence
 
+- **Fiches de renseignement :** constat terrain → fiche rédigée (ATAK ou portail) → transmission → prise en compte → exploitation ou classement sans suite.
 - **Dossiers d’intérêt :** acquisition → dossier d’intérêt → collecte → propositions de rapprochement → validation humaine → consolidation ou clôture → réévaluation.
 - **Exploitation numérique :** découverte du support → saisie → enregistrement → acquisition → intégrité → extraction → exploitation web → rapprochements SSE → validation → compte rendu.
 
@@ -25,6 +26,12 @@ Une proposition produite par le système constitue une aide à l’analyse. Elle
 - [Intégration Arma 3 / SEEK II](05-arma/seek-ii.md)
 - [Administration et habilitations](06-administration/habilitations.md)
 - [Plan de recette](07-tests/plan-recette.md)
+
+## Documents — Fiches de renseignement simplifiées (`ATH-SSE-FICHES`)
+
+- [Présentation](09-fiches-renseignement/presentation.md)
+- [API et pont ATAK](09-fiches-renseignement/api.md)
+- [Dictionnaire de données](09-fiches-renseignement/dictionnaire-donnees.md)
 
 ## Documents — Exploitation numérique (`ATH-SSE-LABNUM`)
 

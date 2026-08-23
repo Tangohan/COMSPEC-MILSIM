@@ -65,8 +65,41 @@ window.ATAKActivity = (function () {
     }
   }
 
+  function eventType(ev) {
+    return String((ev && ev.type) || '').toLowerCase();
+  }
+
+  function eventActor(ev) {
+    var meta = (ev && ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
+    var a = String((ev && ev.actor) || '').trim();
+    if (a && a.toLowerCase() !== 'unknown') return a;
+    return String(meta.profile_callsign || meta.call_sign || meta.callsign || meta.display_name || '').trim();
+  }
+
+  function reportTypeLabelFr(code) {
+    var t = String(code || '').toUpperCase();
+    var labels = {
+      SPOTREP: 'Observation',
+      SITREP: 'Situation',
+      SALUTE: 'Compte rendu SALUTE',
+      CONTACT: 'Prise de contact',
+      BDA: 'Bilan des dégâts',
+      TIC: 'Contact',
+      EAGLE_DOWN: 'Opérateur à terre',
+      FRAGO: 'Ordre fragmentaire',
+      OTHER: 'Rapport'
+    };
+    if (window.ATAK_REPORT_CATALOG && Array.isArray(window.ATAK_REPORT_CATALOG.types)) {
+      for (var i = 0; i < window.ATAK_REPORT_CATALOG.types.length; i++) {
+        var row = window.ATAK_REPORT_CATALOG.types[i];
+        if (row && String(row.code || '').toUpperCase() === t && row.label) return row.label;
+      }
+    }
+    return labels[t] || 'Rapport';
+  }
+
   function typeClass(type) {
-    switch (type) {
+    switch (String(type || '').toLowerCase()) {
       case 'client_init':
       case 'disconnect':
         return 'atak-activity-item--init';
@@ -97,7 +130,7 @@ window.ATAKActivity = (function () {
 
   function typeLabelFr(type, ev) {
     var labelHint = String((ev && ev.label) || '');
-    switch (type) {
+    switch (String(type || '').toLowerCase()) {
       case 'client_init': return 'Connexion';
       case 'disconnect': return 'Déconnexion';
       case 'callsign_change': return 'Indicatif';
@@ -245,7 +278,7 @@ window.ATAKActivity = (function () {
   var EYE_SVG = '<svg class="atak-activity-jump-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 5c-5.5 0-9.7 4.2-11 7 1.3 2.8 5.5 7 11 7s9.7-4.2 11-7c-1.3-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/></svg>';
 
   function isMedicalActivity(ev) {
-    var type = String((ev && ev.type) || '');
+    var type = eventType(ev);
     if (type === 'medevac' || type === 'nine_line') return true;
     var label = String((ev && ev.label) || '');
     if (/assistance m[ée]dicale|triage m[ée]dical|m[ée]devac/i.test(label)) return true;
@@ -256,7 +289,7 @@ window.ATAKActivity = (function () {
 
   function resolveJumpTarget(ev) {
     if (!ev) return null;
-    var type = String(ev.type || '');
+    var type = eventType(ev);
     var meta = (ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
     var chatId = meta.chat_id != null && meta.chat_id !== '' ? String(meta.chat_id) : '';
     var orderId = meta.order_id != null && meta.order_id !== '' ? String(meta.order_id) : '';
@@ -422,7 +455,7 @@ window.ATAKActivity = (function () {
   }
 
   function renderItem(ev) {
-    var type = ev.type || '';
+    var type = eventType(ev);
     var li = document.createElement('li');
     li.className = 'atak-activity-item ' + typeClass(type);
     if (ev.archived) li.className += ' atak-activity-item--archived';
@@ -430,8 +463,9 @@ window.ATAKActivity = (function () {
     if (stale) li.className += ' atak-activity-item--stale';
     li.setAttribute('data-id', String(ev.id || ''));
     li.setAttribute('data-day', dayKeyFromIso(ev.at));
-    var actorHtml = ev.actor
-      ? '<p class="atak-activity-actor-line"><span class="atak-activity-actor-k">Par</span> <span class="atak-activity-actor">' + escapeHtml(ev.actor) + '</span></p>'
+    var actorName = eventActor(ev);
+    var actorHtml = actorName
+      ? '<p class="atak-activity-actor-line"><span class="atak-activity-actor-k">Par</span> <span class="atak-activity-actor">' + escapeHtml(actorName) + '</span></p>'
       : '';
     var staleTag = stale ? '<span class="atak-activity-stale-tag">Ancien</span>' : '';
     var archivedTag = ev.archived ? '<span class="atak-activity-archived-tag">Archivé</span>' : '';
@@ -453,7 +487,7 @@ window.ATAKActivity = (function () {
     var chipsHtml = buildMetaChipsHtml(ev);
     var labelText = activityLabelPreview(ev);
     var labelPreview = summaryLine(labelText, 110);
-    var actorStr = String(ev.actor || '').trim();
+    var actorStr = eventActor(ev);
     var actorRedundant = !!(actorStr && labelText.toLowerCase().indexOf(actorStr.toLowerCase()) >= 0);
     var needsExpand = labelText.length > labelPreview.length || !!ftChip || !!chipsHtml || (!!actorStr && !actorRedundant);
     var foldKey = 'act-' + String(ev.id || (ev.at || '') + '-' + type);
@@ -628,11 +662,26 @@ window.ATAKActivity = (function () {
     'member_count', 'added', 'removed', 'chat_id'
   ];
 
+  var META_SKIP = {
+    tenant_id: 1, map_id: 1, user_id: 1, steam_uid: 1,
+    routing_error: 1, routing_enabled: 1, routing_rules_applied: 1, routing_routes_created: 1
+  };
+
   function activityLabelPreview(ev) {
-    var type = ev && ev.type ? String(ev.type) : '';
+    var type = eventType(ev);
     var raw = String((ev && ev.label) || '').trim();
-    if (type !== 'tactical_alert') return raw;
     var meta = (ev && ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
+    if (type === 'tactical_report') {
+      var rt = reportTypeLabelFr(meta.report_type);
+      var sum = String(meta.summary || meta.details || '').trim();
+      if (!sum) {
+        sum = raw.replace(/^rapport\s+\w+\s+soumis\s*:\s*/i, '').trim();
+      }
+      if (sum && sum.toLowerCase() !== rt.toLowerCase()) return rt + ' — ' + sum;
+      if (raw && !/^rapport\s+other\s+soumis/i.test(raw)) return raw;
+      return rt;
+    }
+    if (type !== 'tactical_alert') return raw;
     var kind = String(meta.kind || '').toLowerCase();
     if (!kind) {
       if (/fragmentaire|\bfrago\b/i.test(raw)) kind = 'frago';
@@ -732,6 +781,19 @@ window.ATAKActivity = (function () {
   }
 
   function formatMetaValue(key, value) {
+    if (key === 'report_type') {
+      return reportTypeLabelFr(value);
+    }
+    if (key === 'priority') {
+      var p = String(value || '').toUpperCase();
+      var pFr = { ROUTINE: 'Routine', PRIORITY: 'Prioritaire', IMMEDIATE: 'Immédiat', FLASH: 'Flash' };
+      return pFr[p] || String(value || '—');
+    }
+    if (key === 'classification') {
+      var c = String(value || '').toUpperCase();
+      if (c === 'UNCLASSIFIED') return 'Non classifié';
+      return String(value || '—');
+    }
     if (key === 'ok') return value ? 'Réussi' : 'Échec';
     if (key === 'has_ctab' || key === 'has_atak_enhanced' || key === 'has_athena_ctab' || key === 'mod_athena') {
       return value ? 'Oui' : 'Non';
@@ -769,11 +831,12 @@ window.ATAKActivity = (function () {
       return actionFr[a] || a || '—';
     }
     if (key === 'source') {
-      var s = String(value || '');
-      if (s === 'arma') return 'Jeu Arma';
+      var s = String(value || '').toLowerCase();
+      if (s === 'arma') return 'Jeu';
+      if (s === 'web') return 'Portail';
       if (s === 'phone') return 'Téléphone';
       if (s === 'admin') return 'État-major';
-      return s || '—';
+      return String(value || '—');
     }
     if (key === 'fire_team_color' && typeof value === 'string' && /^#[0-9A-Fa-f]{6}$/.test(value.trim())) {
       return value.trim().toUpperCase();
@@ -831,8 +894,8 @@ window.ATAKActivity = (function () {
     var meta = (ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
     var rows = [];
     rows.push({ label: 'Catégorie', value: typeLabelFr(ev.type || '', ev) });
-    rows.push({ label: 'Résumé', value: ev.label || '—' });
-    rows.push({ label: 'Auteur', value: ev.actor || '—' });
+    rows.push({ label: 'Résumé', value: activityLabelPreview(ev) || '—' });
+    rows.push({ label: 'Auteur', value: eventActor(ev) || '—' });
     rows.push({ label: 'Heure', value: formatTime(ev.at) });
     if (ev.archived) {
       rows.push({ label: 'État', value: 'Archivé' });
@@ -840,6 +903,7 @@ window.ATAKActivity = (function () {
 
     var used = {};
     META_PRIMARY_ORDER.forEach(function (key) {
+      if (META_SKIP[key]) return;
       if (!Object.prototype.hasOwnProperty.call(meta, key)) return;
       if (meta[key] == null || meta[key] === '') return;
       used[key] = true;
@@ -849,7 +913,7 @@ window.ATAKActivity = (function () {
       });
     });
     Object.keys(meta).forEach(function (key) {
-      if (used[key]) return;
+      if (used[key] || META_SKIP[key]) return;
       if (meta[key] == null || meta[key] === '') return;
       if (typeof meta[key] === 'object' && !Array.isArray(meta[key])) return;
       used[key] = true;

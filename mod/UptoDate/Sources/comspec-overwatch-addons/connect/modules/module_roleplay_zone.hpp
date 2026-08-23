@@ -76,6 +76,8 @@
         scopeCurator = 2;
         displayName = "Zone sans couverture ATAK";
         function = "comspec_overwatch_connect_fnc_moduleNoCoverage";
+        icon = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_no_coverage_ca.png";
+        portrait = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_no_coverage_ca.png";
 
         class AttributeValues
         {
@@ -226,6 +228,8 @@
         scopeCurator = 2;
         displayName = "Brouilleur ATAK actif";
         function = "comspec_overwatch_connect_fnc_moduleJammer";
+        icon = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_jammer_ca.png";
+        portrait = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_jammer_ca.png";
 
         class AttributeValues
         {

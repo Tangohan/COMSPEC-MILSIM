@@ -1,7 +1,7 @@
 /*
     Journalisation SSE.
-    - ERROR / WARN : toujours RPT + tampon mémoire
-    - INFO : RPT + chat seulement si comspec_sse_debug
+    - ERROR / WARN : toujours RPT + tampon + fichier
+    - INFO : fichier (comme Overwatch) ; RPT / chat seulement si debug
 
     Usage: ["message"] call comspec_sse_fnc_log;
            ["message", "WARN"] call comspec_sse_fnc_log;
@@ -26,7 +26,6 @@ if (_debug && {hasInterface}) then {
     systemChat _text;
 };
 
-// Tampon circulaire (journal consultable in-game)
 private _buf = missionNamespace getVariable ["comspec_sse_logBuffer", []];
 if (!(_buf isEqualType [])) then { _buf = []; };
 _buf pushBack createHashMapFromArray [
@@ -39,5 +38,22 @@ if (count _buf > 120) then {
     _buf deleteRange [0, (count _buf) - 120];
 };
 missionNamespace setVariable ["comspec_sse_logBuffer", _buf];
+
+// Même dossier qu’Overwatch : %LOCALAPPDATA%\Arma 3\COMSPEC\logs
+if (
+    hasInterface
+    && {_level isNotEqualTo "DEBUG" || {_debug}}
+    && {missionNamespace getVariable ["comspec_sse_log_to_file", true]}
+) then {
+    private _res = "COMSPECExtension" callExtension ["LogWrite", [_text]];
+    if (_res isEqualType []) then { _res = _res param [0, ""]; };
+    if (_res isEqualType "" && {(_res select [0, 3]) isEqualTo "OK|"}) then {
+        if (!(missionNamespace getVariable ["comspec_sse_logFilePathLogged", false])) then {
+            missionNamespace setVariable ["comspec_sse_logFilePathLogged", true, false];
+            private _path = _res select [3, (count _res) - 3];
+            diag_log format ["[COMSPEC SSE][INFO] Journal fichier : %1", _path];
+        };
+    };
+};
 
 true

@@ -795,7 +795,7 @@ class AtakOrderRepository
         return match ($next) {
             'ACK' => in_array($current, ['PENDING', 'DELIVERED'], true),
             'EXEC' => $current === 'ACK',
-            'FAILED' => in_array($current, ['DELIVERED', 'ACK', 'EXEC'], true),
+            'FAILED' => in_array($current, ['PENDING', 'DELIVERED', 'ACK', 'EXEC'], true),
             'DELIVERED' => $current === 'PENDING',
             default => false,
         };

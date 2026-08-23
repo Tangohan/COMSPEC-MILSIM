@@ -351,13 +351,13 @@ private _sendMarker = {
     private _sizeA = (1 max _drawSize) * (if (_groupSize > 0) then { 1 + (_groupSize * 0.15) } else { 1 });
     private _json = format [
         "{""pos"":[%1,%2,0],""type"":""%3"",""text"":""%4"",""color"":""%5"",""dir"":%6,""alpha"":1,""shape"":""ICON"",""size"":[%7,%7],""brush"":""Solid"",""polyline"":[],""source"":""ctab_user"",""groupSize"":%8,""texture"":""%9""}",
-        _pos select 0,
-        _pos select 1,
+        (_pos select 0) toFixed 2,
+        (_pos select 1) toFixed 2,
         _type,
         _text,
         _color,
-        _dir,
-        _sizeA,
+        _dir toFixed 2,
+        _sizeA toFixed 2,
         _groupSize,
         _texForJson
     ];

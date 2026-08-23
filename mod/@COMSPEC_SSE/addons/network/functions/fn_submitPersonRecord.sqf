@@ -4,7 +4,8 @@
 */
 params [
     ["_entity", objNull, [objNull]],
-    ["_extra", createHashMap, [createHashMap]]
+    ["_extra", createHashMap, [createHashMap]],
+    ["_announce", true, [true]]
 ];
 
 private _payload = [_entity, _extra] call comspec_sse_fnc_buildAthenaPersonPayload;
@@ -26,6 +27,8 @@ private _envelope = createHashMapFromArray [
 private _ok = false;
 if ([] call comspec_sse_fnc_isOnline) then {
     _ok = [_envelope] call comspec_sse_fnc_sendViaOverwatch;
+} else {
+    [format ["submitPersonRecord hors-ligne uid=%1", _uid], "WARN"] call comspec_sse_fnc_log;
 };
 
 if (_ok) then {
@@ -44,12 +47,17 @@ if (_ok) then {
             };
         };
     };
-    hint format ["Fiche personne transmise — %1", _uid];
+    if (_announce) then {
+        hint "Fiche d’identité envoyée au registre.";
+    };
     [_uid, "person", "athena", "Fiche personne", 80, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
 } else {
     [_envelope] call comspec_sse_fnc_queueOffline;
-    hint format ["Fiche personne QUEUED — %1", _uid];
+    if (_announce) then {
+        hint "La fiche n’est pas encore arrivée au registre. Elle est mise en attente.";
+    };
     [_uid, "person", "athena", "QUEUED", 80, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };
 
+[format ["submitPersonRecord uid=%1 ok=%2 raw=%3", _uid, _ok, missionNamespace getVariable ["comspec_sse_lastExtRaw", ""]]] call comspec_sse_fnc_log;
 _ok

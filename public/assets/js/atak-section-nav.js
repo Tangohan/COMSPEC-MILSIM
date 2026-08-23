@@ -13,7 +13,7 @@
       eyebrow: 'ATHENA / SITAC',
       title: 'Situation tactique',
       meta: 'Théâtre',
-      tabs: ['markers', 'pings', 'identification', 'situation']
+      tabs: ['markers', 'pings', 'charges', 'identification', 'situation']
     },
     forces: {
       eyebrow: 'ATHENA / FORCES',
@@ -25,7 +25,7 @@
       eyebrow: 'ATHENA / INTEL',
       title: 'Renseignement',
       meta: 'Terrain',
-      tabs: ['cams', 'photos', 'personnes']
+      tabs: ['frs', 'cams', 'photos', 'personnes']
     },
     c2: {
       eyebrow: 'ATHENA / C2',

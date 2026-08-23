@@ -40,6 +40,17 @@ private _tabletAction = [
 ] call ace_interact_menu_fnc_createAction;
 [_tabletAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+private _noteAction = [
+    "COMSPEC_IntelNote", "Rédiger une fiche de renseignement…", "", {
+        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openNote") then {
+            [""] call comspec_overwatch_atak_athena_fnc_athena_openNote;
+        } else {
+            [""] call comspec_overwatch_connect_fnc_intelNoteShow;
+        };
+    }, _condSync, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_noteAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
 private _pingAction = [
     "COMSPEC_Ping", "Envoyer Ping", "", {
         [player, "PING", getPos player, "Point d'interet", "INFANTRY"] call comspec_overwatch_connect_fnc_sendIntel;
@@ -293,6 +304,9 @@ private _captureAtakAction = [
     },
     _noChildren
 ] call ace_interact_menu_fnc_createAction;
-["CAManBase", 0, ["ACE_MainActions"], _captureAtakAction, true] call ace_interact_menu_fnc_addActionToClass;
+_captureAtakAction = [_captureAtakAction] call comspec_overwatch_connect_fnc_acePadAction;
+if (_captureAtakAction isNotEqualTo []) then {
+    ["CAManBase", 0, ["ACE_MainActions"], _captureAtakAction, true] call ace_interact_menu_fnc_addActionToClass;
+};
 
 missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];

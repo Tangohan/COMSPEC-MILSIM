@@ -35,10 +35,13 @@ if (_position isEqualTo []) then {
     _position = getPosWorld player;
 };
 
+private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+if (_cs isEqualTo "") then { _cs = name player; };
+
 private _reportData = createHashMap;
 _reportData set ["report_type", _reportType];
 _reportData set ["priority", _priority];
-_reportData set ["submitter_callsign", groupId (group player)];
+_reportData set ["submitter_callsign", _cs];
 _reportData set ["submitter_unit", groupId (group player)];
 _reportData set ["submitter_steam_id", getPlayerUID player];
 _reportData set ["pos_x", _position select 0];
@@ -89,8 +92,8 @@ if (_ok) then {
             "{""missionId"":""%1"",""target_type"":""%2"",""pos_x"":%3,""pos_y"":%4,""source_callsign"":""%5"",""report_type"":""%6""}",
             _missionId,
             _targetType,
-            _position select 0,
-            _position select 1,
+            (_position select 0) toFixed 2,
+            (_position select 1) toFixed 2,
             _cs,
             _upper
         ];

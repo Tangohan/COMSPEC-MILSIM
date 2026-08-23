@@ -49,10 +49,10 @@ class Cfg3DEN
                     class COMSPEC_SSE_LastName
                     {
                         displayName = "Nom";
-                        tooltip = "Laisser vide pour laisser le terminal proposer un nom cohérent.";
+                        tooltip = "Si renseigné, SEEK et les fiches utilisent ce nom. Vide = nom de l’identité Eden (panneau Identité), sinon génération automatique.";
                         property = "COMSPEC_SSE_LastName";
                         control = "Edit";
-                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_SSE_LastName', _value, true]; };";
+                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_SSE_LastName', _value, true]; _this setVariable ['COMSPEC_SSE_NameAuthored', true, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -60,10 +60,10 @@ class Cfg3DEN
                     class COMSPEC_SSE_FirstName
                     {
                         displayName = "Prénom";
-                        tooltip = "Laisser vide pour génération automatique.";
+                        tooltip = "Si renseigné, SEEK et les fiches utilisent ce prénom. Vide = prénom de l’identité Eden, sinon génération automatique.";
                         property = "COMSPEC_SSE_FirstName";
                         control = "Edit";
-                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_SSE_FirstName', _value, true]; };";
+                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_SSE_FirstName', _value, true]; _this setVariable ['COMSPEC_SSE_NameAuthored', true, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                     };

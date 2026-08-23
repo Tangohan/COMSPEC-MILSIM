@@ -140,10 +140,11 @@ class COMSPEC_ATAK_Task: ATAK_Message
             idc = 9904;
             x = QUOTE(COMSPEC_TASK_W(0.08));
             y = QUOTE(COMSPEC_TASK_H(8.56));
-            w = QUOTE(COMSPEC_TASK_W(0.90));
+            w = QUOTE(COMSPEC_TASK_W(1.38));
             h = QUOTE(COMSPEC_TASK_H(0.50));
             size = QUOTE(COMSPEC_TASK_H(0.26));
             text = "Accepter";
+            show = 0;
             colorBackground[] = TASK_OK;
             colorBackground2[] = TASK_OK;
             colorBackgroundFocused[] = TASK_OK_F;
@@ -153,7 +154,6 @@ class COMSPEC_ATAK_Task: ATAK_Message
         class BtnExec: BtnAccept
         {
             idc = 9905;
-            x = QUOTE(COMSPEC_TASK_W(1.05));
             text = "En cours";
             colorBackground[] = TASK_BTN;
             colorBackground2[] = TASK_BTN;
@@ -163,12 +163,18 @@ class COMSPEC_ATAK_Task: ATAK_Message
         class BtnRefuse: BtnAccept
         {
             idc = 9906;
-            x = QUOTE(COMSPEC_TASK_W(2.02));
+            x = QUOTE(COMSPEC_TASK_W(1.54));
             text = "Refuser";
             colorBackground[] = TASK_WARN;
             colorBackground2[] = TASK_WARN;
             colorBackgroundFocused[] = TASK_WARN_F;
             onButtonClick = "['REFUSE'] call comspec_overwatch_atak_athena_fnc_athena_taskRespond";
+        };
+        class BtnAbort: BtnRefuse
+        {
+            idc = 9908;
+            text = "Abort";
+            onButtonClick = "['ABORT'] call comspec_overwatch_atak_athena_fnc_athena_taskRespond";
         };
 
         class BtnRefresh: BCE_RscButtonMenu

@@ -13,6 +13,8 @@ window.ATAKMap = (function () {
   var pingTempMarkersById = {};
   var pingLayer = null;
   var pingMarkersById = {};
+  var explosiveLayer = null;
+  var explosiveMarkersById = {};
   var airAssetsLayer = null;
   var airAssetsById = {};
   var unitsLayer = null;
@@ -598,6 +600,8 @@ window.ATAKMap = (function () {
     pingTempMarkersById = {};
     pingLayer = null;
     pingMarkersById = {};
+    explosiveLayer = null;
+    explosiveMarkersById = {};
     airAssetsLayer = null;
     airAssetsById = {};
     unitsLayer = null;
@@ -688,7 +692,16 @@ window.ATAKMap = (function () {
     // Recalcule la taille Leaflet après layout flex (carte + tiroir effectifs).
     // Debounce + seuil de taille : évite une boucle reflow / tremblement plein écran.
     setTimeout(scheduleInvalidateSize, 0);
-    window._atakMapResizeHandler = function () { scheduleInvalidateSize(); };
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        if (!map) return;
+        try { map.invalidateSize(true); } catch (err) {}
+      });
+    });
+    window._atakMapResizeHandler = function () {
+      if (!map) return;
+      try { map.invalidateSize(false); } catch (err) {}
+    };
     window.addEventListener('resize', window._atakMapResizeHandler);
     if (typeof ResizeObserver !== 'undefined') {
       mapResizeObserver = new ResizeObserver(function (entries) {
@@ -876,6 +889,21 @@ window.ATAKMap = (function () {
     delete markersById[id];
   }
 
+  function extractMarkerPos(data) {
+    if (!data || typeof data !== 'object') return null;
+    var pos = data.pos;
+    if (Array.isArray(pos) && pos.length >= 2) {
+      if (Array.isArray(pos[0]) && pos[0].length >= 2) {
+        return [Number(pos[0][0]), Number(pos[0][1])];
+      }
+      return [Number(pos[0]), Number(pos[1])];
+    }
+    if (data.pos_x != null && data.pos_y != null) {
+      return [Number(data.pos_x), Number(data.pos_y)];
+    }
+    return null;
+  }
+
   function addOrUpdateMarker(payload) {
     var id = payload.id;
     var layerId = payload.layerId;
@@ -884,17 +912,10 @@ window.ATAKMap = (function () {
       removeExistingMarkerLayer(id);
       return;
     }
-    var pos = data.pos;
-    if (!pos || !pos.length) return;
-    var lat, lng;
-    if (Array.isArray(pos[0])) {
-      lat = pos[0][1];
-      lng = pos[0][0];
-    } else {
-      lat = pos[1];
-      lng = pos[0];
-    }
-    if (lat == null || lng == null) return;
+    var xy = extractMarkerPos(data);
+    if (!xy || isNaN(xy[0]) || isNaN(xy[1])) return;
+    var lng = xy[0];
+    var lat = xy[1];
     var applied = applyOffset(lat, lng);
     var latlng = L.latLng(applied[0], applied[1]);
     var popupHtml = markerPopupHtml(data, lng, lat);
@@ -1305,6 +1326,68 @@ window.ATAKMap = (function () {
       if (!seen[k]) {
         try { pingLayer.removeLayer(pingMarkersById[k]); } catch (e) {}
         delete pingMarkersById[k];
+      }
+    });
+  }
+
+  function formatChargeRemain(sec) {
+    sec = Math.max(0, Math.floor(Number(sec) || 0));
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    if (m > 0) return m + ':' + (s < 10 ? '0' : '') + s;
+    return String(s) + 's';
+  }
+
+  function setExplosiveTimersOnMap(rows) {
+    if (!map) return;
+    if (!explosiveLayer) explosiveLayer = L.layerGroup().addTo(map);
+    var list = Array.isArray(rows) ? rows : [];
+    var seen = {};
+    list.forEach(function (item) {
+      if (!item || item.status !== 'armed') return;
+      var id = item.id != null ? String(item.id) : String(item.charge_id || '');
+      if (!id) return;
+      var x = parseFloat(item.pos_x);
+      var y = parseFloat(item.pos_y);
+      if (isNaN(x) || isNaN(y)) return;
+      seen[id] = true;
+      var applied = applyOffset(y, x);
+      var latlng = L.latLng(applied[0], applied[1]);
+      var remaining = Number(item.remaining_seconds);
+      if (isNaN(remaining)) remaining = 0;
+      var urgent = remaining <= 15;
+      var color = urgent ? '#ef4444' : '#f97316';
+      var grid = String(item.grid_ref || '').trim();
+      var pinLabel = formatChargeRemain(remaining);
+      var icon = L.divIcon({
+        className: 'atak-charge-map-icon',
+        html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
+          '<span style="width:12px;height:12px;border-radius:2px;background:' + color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);"></span>' +
+          '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + color + ';text-shadow:0 0 2px #000;white-space:nowrap;">' +
+          pinLabel + '</span></div>',
+        iconSize: [56, 26],
+        iconAnchor: [28, 8]
+      });
+      var popup = '<div class="atak-charge-popup"><div class="atak-marker-popup__kind">Charge à retardement</div><b>' +
+        String(item.magazine_label || 'Charge').replace(/</g, '&lt;') +
+        '</b><br/>Coordonnées : ' + String(grid || (Math.round(x) + ' / ' + Math.round(y))).replace(/</g, '&lt;') +
+        '<br/>Délai programmé : ' + formatChargeRemain(item.fuse_seconds) +
+        '<br/>Temps restant : ' + formatChargeRemain(remaining) + '</div>';
+      if (explosiveMarkersById[id]) {
+        explosiveMarkersById[id].setLatLng(latlng);
+        explosiveMarkersById[id].setIcon(icon);
+        explosiveMarkersById[id].setPopupContent(popup);
+        return;
+      }
+      var marker = L.marker(latlng, { icon: icon, zIndexOffset: 420 });
+      marker.bindPopup(popup);
+      marker.addTo(explosiveLayer);
+      explosiveMarkersById[id] = marker;
+    });
+    Object.keys(explosiveMarkersById).forEach(function (k) {
+      if (!seen[k]) {
+        try { explosiveLayer.removeLayer(explosiveMarkersById[k]); } catch (e) {}
+        delete explosiveMarkersById[k];
       }
     });
   }
@@ -1765,6 +1848,12 @@ window.ATAKMap = (function () {
     init: init,
     destroy: destroy,
     getMap: getMap,
+    invalidateSize: function (animate) {
+      if (!map) return;
+      try {
+        map.invalidateSize(animate === true ? true : false);
+      } catch (err) {}
+    },
     getConfig: getConfig,
     applyOffset: applyOffset,
     addIntelPhotoMarker: addIntelPhotoMarker,
@@ -1797,6 +1886,7 @@ window.ATAKMap = (function () {
     centerOn: centerOn,
     addTemporaryPingMarker: addTemporaryPingMarker,
     removeTemporaryPingMarker: removeTemporaryPingMarker,
-    setPingsOnMap: setPingsOnMap
+    setPingsOnMap: setPingsOnMap,
+    setExplosiveTimersOnMap: setExplosiveTimersOnMap
   };
 })();

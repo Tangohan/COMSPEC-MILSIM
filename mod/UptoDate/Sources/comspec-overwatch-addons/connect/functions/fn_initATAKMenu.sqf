@@ -83,7 +83,10 @@ private _reportAction = [
         ] call ace_interact_menu_fnc_createAction;
         _actions pushBack [_sitrepAction, [], player];
 
-        _actions
+        _actions apply {
+            _x params ["_act", ["_kids", []], ["_obj", player]];
+            [[_act] call comspec_overwatch_connect_fnc_acePadAction, _kids, _obj]
+        }
     }
 ] call ace_interact_menu_fnc_createAction;
 
@@ -136,7 +139,10 @@ private _poiAction = [
         ] call ace_interact_menu_fnc_createAction;
         _actions pushBack [_objectiveAction, [], player];
 
-        _actions
+        _actions apply {
+            _x params ["_act", ["_kids", []], ["_obj", player]];
+            [[_act] call comspec_overwatch_connect_fnc_acePadAction, _kids, _obj]
+        }
     }
 ] call ace_interact_menu_fnc_createAction;
 
@@ -217,7 +223,10 @@ private _supportAction = [
         ] call ace_interact_menu_fnc_createAction;
         _actions pushBack [_qrfAction, [], player];
 
-        _actions
+        _actions apply {
+            _x params ["_act", ["_kids", []], ["_obj", player]];
+            [[_act] call comspec_overwatch_connect_fnc_acePadAction, _kids, _obj]
+        }
     }
 ] call ace_interact_menu_fnc_createAction;
 
@@ -274,7 +283,10 @@ private _vehicleServiceAction = [
         ] call ace_interact_menu_fnc_createAction;
         _actions pushBack [_repairAction, [], player];
 
-        _actions
+        _actions apply {
+            _x params ["_act", ["_kids", []], ["_obj", player]];
+            [[_act] call comspec_overwatch_connect_fnc_acePadAction, _kids, _obj]
+        }
     }
 ] call ace_interact_menu_fnc_createAction;
 

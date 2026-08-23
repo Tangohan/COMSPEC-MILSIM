@@ -57,11 +57,11 @@ Ces textures sont référencées dans `display_device_macros.hpp` et affichées 
 
 | # | Fichier | État | Fonction in-game | Brief créatif |
 |---|---|---|---|---|
-| 11 | `comspec_overlay_screen_cracked_ca` | **Brouillon IA livré** | Écran fissuré (dommage niveau 2, liaison maintenue) | Verre radial fissuré, fond sombre 40 % alpha, léger reflet vert HUD |
-| 12 | `comspec_overlay_screen_off_ca` | Placeholder dev | ATAK éteint (niveau 1) | Noir 85–90 % alpha, vignette ; pas de texte (le SQF affiche « ATAK ÉTEINT ») |
-| 13 | `comspec_overlay_static_noise_ca` | Placeholder dev | Brouillage / glitch (tile) | 512×512 tileable, grain TV, niveaux de gris |
-| 14 | `comspec_overlay_no_signal_ca` | **Brouillon IA livré** | Déconnexion réseau simulée | Bandeau CRT « NO SIGNAL », scanlines, 1024×512 |
-| 15 | `comspec_overlay_low_signal_ca` | Placeholder dev | Zone couverture dégradée | Même style que #14 mais plus léger (pas de texte, interference subtile) |
+| 11 | `comspec_overlay_screen_cracked_ca` | **Brouillon IA 23/08** | Écran fissuré (dommage niveau 2, liaison maintenue) | Verre radial fissuré, fond sombre 40 % alpha, léger reflet vert HUD |
+| 12 | `comspec_overlay_screen_off_ca` | **Brouillon IA 23/08** | ATAK éteint (niveau 1) | Noir 85–90 % alpha, vignette ; pas de texte (le SQF affiche « ATAK ÉTEINT ») |
+| 13 | `comspec_overlay_static_noise_ca` | **Brouillon IA 23/08** | Brouillage / glitch (tile) | 512×512 tileable, grain TV, niveaux de gris |
+| 14 | `comspec_overlay_no_signal_ca` | **Brouillon IA 23/08** | Déconnexion réseau simulée | Bandeau CRT « LIAISON PERDUE », scanlines, 1024×512 |
+| 15 | `comspec_overlay_low_signal_ca` | **Brouillon IA 23/08** | Zone couverture dégradée | Même style que #14 mais plus léger (pas de texte, interference subtle) |
 
 ### Comportement lié (pour les graphistes)
 

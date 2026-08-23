@@ -142,6 +142,20 @@ private _shortcuts = [
 
         "atak_sound"
 
+    ],
+
+    [
+
+        198728, 198729, 1350,
+
+        "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa",
+
+        "Fiche de renseignement — noter un constat daté et situé",
+
+        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Fiche<br/>RENS</t>",
+
+        "intel_note"
+
     ]
 
 ];
@@ -181,7 +195,11 @@ missionNamespace setVariable ["COMSPEC_Athena_desktopClick", {
                     if (_tab isEqualTo "atak_sound" || {_tab isEqualTo "sound" || {_tab isEqualTo "sons"}}) then {
                         [] call comspec_overwatch_atak_athena_fnc_athena_openSound;
                     } else {
-                        [_tab] call comspec_overwatch_atak_athena_fnc_athena_openFeature;
+                        if (_tab isEqualTo "intel_note" || {_tab isEqualTo "note"}) then {
+                            [""] call comspec_overwatch_atak_athena_fnc_athena_openNote;
+                        } else {
+                            [_tab] call comspec_overwatch_atak_athena_fnc_athena_openFeature;
+                        };
                     };
                 };
             };

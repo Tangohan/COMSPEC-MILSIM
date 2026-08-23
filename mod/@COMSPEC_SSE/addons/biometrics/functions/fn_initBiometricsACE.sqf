@@ -46,14 +46,18 @@ private _bioChildren = _items apply {
 };
 
 private _insertBio = {
+    params ["_target"];
     private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
     if (!(_cache isEqualType createHashMap)) exitWith { [] };
-    _cache getOrDefault ["bioChildren", []]
+    [_target, _cache getOrDefault ["bioChildren", []]] call comspec_sse_fnc_aceWrapMenuChildren
 };
 
 private _bioRoot = [
-    "COMSPEC_SSE_Bio", "Biométrie", _icon, {}, _cond, _insertBio, [], {[0,0,0]}, 4, _aceParams
+    "COMSPEC_SSE_Bio", "Biométrie", _icon, {}, _cond, _insertBio, [], {[0,0,0]}, 4, _aceParams, {}
 ] call ace_interact_menu_fnc_createAction;
+if (!isNil "comspec_sse_fnc_acePadAction") then {
+    _bioRoot = [_bioRoot] call comspec_sse_fnc_acePadAction;
+};
 
 private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
 if (!(_cache isEqualType createHashMap)) then { _cache = createHashMap; };

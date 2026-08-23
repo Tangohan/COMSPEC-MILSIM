@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakDataRepository;
+use App\Repositories\AtakExplosiveTimerRepository;
 use App\Repositories\AtakMedicalTriageRepository;
 use App\Repositories\AtakOperatorIdRepository;
 use App\Repositories\AtakOrderRepository;
@@ -107,6 +108,13 @@ class AtakApiController
     private function modReports(): \App\Repositories\AtakModReportRepository
     {
         return $this->modReportRepository ??= new \App\Repositories\AtakModReportRepository();
+    }
+
+    private ?AtakExplosiveTimerRepository $explosiveTimerRepository = null;
+
+    private function explosiveTimers(): AtakExplosiveTimerRepository
+    {
+        return $this->explosiveTimerRepository ??= new AtakExplosiveTimerRepository();
     }
 
     /**
@@ -920,6 +928,13 @@ class AtakApiController
             }
         }
         $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            // SQF `str` / locale FR : 19345,12 casse json_decode (objet vide → rapport OTHER).
+            $commaFixed = preg_replace('/(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,}\]\s])/', '$1.$2', $raw);
+            if (is_string($commaFixed) && $commaFixed !== $raw) {
+                $decoded = json_decode($commaFixed, true);
+            }
+        }
         $this->jsonBodyCache = is_array($decoded) ? $decoded : [];
 
         return $this->jsonBodyCache;
@@ -1530,22 +1545,7 @@ class AtakApiController
 
     public function ping(Request $request, array $params = []): Response
     {
-        // Pour le ping, on applique la latence mais pas les autres effets
-        try {
-            $tenantId = $this->resolveTenantId($request);
-            if ($tenantId !== null && $tenantId > 0) {
-                $this->roleplaySim->applyNetworkLatency($tenantId);
-            }
-        } catch (\Throwable) {
-            // Ping doit rester vivant même si la config roleplay / tenant est cassée.
-        }
-
-        return Response::json([
-            'ok' => true,
-            'service' => 'atak',
-            // Horodatage serveur (ms) pour mesurer la latence côté navigateur.
-            'server_ms' => (int) round(microtime(true) * 1000),
-        ]);
+        return (new AtakPingController())->ping($request, $params);
     }
 
     /**
@@ -3119,14 +3119,38 @@ class AtakApiController
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? self::DEFAULT_MAP_ID);
         $layerId = (int) ($body['layerId'] ?? 1);
-        $markerData = isset($body['markerData']) ? (is_string($body['markerData']) ? $body['markerData'] : json_encode($body['markerData'])) : '{}';
+        $rawMarker = $body['markerData'] ?? '{}';
+        $decoded = [];
+        if (is_array($rawMarker)) {
+            $decoded = $rawMarker;
+        } elseif (is_string($rawMarker) && trim($rawMarker) !== '') {
+            $parsed = json_decode($rawMarker, true);
+            $decoded = is_array($parsed) ? $parsed : [];
+        }
+        if (empty($decoded['source'])) {
+            $decoded['source'] = 'web';
+        }
+        if (empty($decoded['type'])) {
+            $decoded['type'] = 'manual';
+        }
+        $markerData = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}';
         $row = $this->atak->addMarker($tenantId, $mapId, $layerId, $markerData);
+        $author = trim((string) ($decoded['author'] ?? $decoded['callsign'] ?? ''));
+        $label = trim((string) ($decoded['label'] ?? $decoded['text'] ?? 'Marqueur'));
+        if ($label === '') {
+            $label = 'Marqueur';
+        }
         $this->activityLog->record(
             $tenantId,
             $mapId,
             AtakActivityLogService::TYPE_MARKER,
-            'Marqueur placé',
-            null
+            'Marqueur placé — ' . $label,
+            $author !== '' ? $author : null,
+            [
+                'source' => 'web',
+                'grid' => $decoded['grid'] ?? null,
+                'label' => $label,
+            ]
         );
         return Response::json(['id' => $row['id'], 'layerId' => $row['layerId'], 'markerData' => $row['markerData']], 201);
     }
@@ -5136,18 +5160,19 @@ class AtakApiController
             $snap = $this->reconRepo->latestSnapshots($tenantId, $ids, 120);
         } catch (\Throwable $e) {
             error_log('[atak/video-feeds] snapshots: ' . $e->getMessage());
-            $snap = ['by_feed' => [], 'by_author_device' => []];
+            $snap = ['by_feed' => [], 'by_author_device' => [], 'by_author' => []];
         }
         $byFeed = $snap['by_feed'] ?? [];
         $byAuthor = $snap['by_author_device'] ?? [];
+        $byAuthorAny = $snap['by_author'] ?? [];
         foreach ($feeds as &$feed) {
             if (!is_array($feed)) {
                 continue;
             }
             $id = trim((string) ($feed['id'] ?? ''));
             $row = ($id !== '' && isset($byFeed[$id])) ? $byFeed[$id] : null;
+            $cs = strtoupper(trim((string) ($feed['callsign'] ?? '')));
             if ($row === null) {
-                $cs = strtoupper(trim((string) ($feed['callsign'] ?? '')));
                 $kind = strtolower(trim((string) ($feed['kind'] ?? 'helmet')));
                 $device = match ($kind) {
                     'drone', 'uav' => 'DRONE',
@@ -5156,6 +5181,9 @@ class AtakApiController
                 };
                 $key = $cs . ':' . $device;
                 $row = ($cs !== '' && isset($byAuthor[$key])) ? $byAuthor[$key] : null;
+            }
+            if ($row === null && $cs !== '' && isset($byAuthorAny[$cs])) {
+                $row = $byAuthorAny[$cs];
             }
             if (is_array($row)) {
                 $feed['snapshot_url'] = user_media_public_url('uploads/recon/' . basename((string) ($row['image_path'] ?? '')));
@@ -5915,6 +5943,12 @@ class AtakApiController
             if (!empty($tactical['bda']) && is_array($tactical['bda'])) {
                 $tacMeta['bda'] = $tactical['bda'];
             }
+            if (!empty($tactical['eagle_down']) && is_array($tactical['eagle_down'])) {
+                $tacMeta['eagle_down'] = $tactical['eagle_down'];
+            }
+            if (!empty($tactical['tic']) && is_array($tactical['tic'])) {
+                $tacMeta['tic'] = $tactical['tic'];
+            }
             $this->activityLog?->record(
                 $tenantId,
                 $mapId,
@@ -5940,6 +5974,13 @@ class AtakApiController
                     'kind' => (string) ($tactical['kind'] ?? ''),
                     'affiliation' => 'friend',
                 ]
+            );
+            $this->persistIcemanReportFromAlert(
+                $tenantId,
+                $mapId,
+                $tactical,
+                $gameActor,
+                (int) ($row['id'] ?? 0)
             );
         }
 
@@ -7411,6 +7452,84 @@ class AtakApiController
         ]);
     }
 
+    private function reportTypeLabelFr(string $type): string
+    {
+        return \App\Support\AtakIcemanReportCatalog::labelFr($type);
+    }
+
+    /**
+     * Enregistre un rapport structuré (table rapports) à partir d’une alerte Iceman.
+     *
+     * @param array<string, mixed> $tactical
+     * @param array<string, mixed>|null $actor
+     */
+    private function persistIcemanReportFromAlert(
+        int $tenantId,
+        int $mapId,
+        array $tactical,
+        ?array $actor,
+        int $chatId
+    ): void {
+        $kind = strtolower(trim((string) ($tactical['kind'] ?? '')));
+        $reportType = \App\Support\AtakIcemanReportCatalog::reportTypeForAlertKind($kind);
+        if ($reportType === null || !\App\Support\AtakIcemanReportCatalog::shouldPersist($reportType)) {
+            return;
+        }
+        $fields = [];
+        foreach (['eagle_down', 'bda', 'salute', 'frago', 'tic'] as $bag) {
+            if (!empty($tactical[$bag]) && is_array($tactical[$bag])) {
+                $fields = $tactical[$bag];
+                break;
+            }
+        }
+        try {
+            $repo = new \App\Repositories\AtakTacticalReportRepository();
+            if ($chatId > 0 && $repo->findBySourceChatId($tenantId, $chatId) !== null) {
+                return;
+            }
+            $summary = trim((string) ($tactical['summary'] ?? ''));
+            if ($summary === '' && $fields !== []) {
+                $summary = \App\Support\AtakIcemanReportCatalog::summaryFromFields($reportType, $fields);
+            }
+            if ($summary === '') {
+                $summary = \App\Support\AtakIcemanReportCatalog::labelFr($reportType);
+            }
+            $callsign = trim((string) ($tactical['call_sign'] ?? ''));
+            if ($callsign === '' && is_array($actor)) {
+                $callsign = trim((string) ($actor['callsign'] ?? ''));
+            }
+            $repo->create([
+                'tenant_id' => $tenantId,
+                'context_id' => $mapId,
+                'report_type' => $reportType,
+                'report_number' => $repo->generateReportNumber($tenantId, $mapId, $reportType),
+                'priority' => \App\Support\AtakIcemanReportCatalog::priorityFor($reportType, $fields),
+                'classification' => 'UNCLASSIFIED',
+                'submitter_user_id' => is_array($actor) ? ($actor['user_id'] ?? null) : null,
+                'submitter_callsign' => $callsign !== '' ? $callsign : null,
+                'submitter_steam_id' => is_array($actor) ? ($actor['steam_uid'] ?? null) : null,
+                'source_chat_id' => $chatId > 0 ? $chatId : null,
+                'pos_x' => $tactical['pos_x'] ?? null,
+                'pos_y' => $tactical['pos_y'] ?? null,
+                'grid_reference' => $tactical['grid'] ?? ($fields['grid'] ?? null),
+                'dtg' => $fields['dtg'] ?? null,
+                'structured_data' => $fields,
+                'summary' => $summary,
+                'details' => $summary,
+                'status' => 'SUBMITTED',
+                'visibility' => 'ALL',
+            ]);
+        } catch (\Throwable $e) {
+            error_log(sprintf(
+                '[atak_iceman_report] persist kind=%s chat=%d tenant=%d error=%s',
+                $kind,
+                $chatId,
+                $tenantId,
+                $e->getMessage()
+            ));
+        }
+    }
+
     private function orderTypeLabelFr(string $type, string $customLabel = ''): string
     {
         $customLabel = trim($customLabel);
@@ -7864,6 +7983,79 @@ class AtakApiController
         }
 
         return Response::json(['ok' => true]);
+    }
+
+    public function explosiveTimersIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $rows = $this->explosiveTimers()->listForMap($tenantId, $mapId);
+
+        return Response::json([
+            'items' => $rows,
+            'armed_count' => count(array_filter($rows, static fn (array $row): bool => ($row['status'] ?? '') === 'armed')),
+        ]);
+    }
+
+    public function explosiveTimersStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+        }
+        if (!$this->explosiveTimers()->tablesReady()) {
+            return Response::json([
+                'error' => 'migration_required',
+                'message' => 'Le suivi des charges à retardement n’est pas encore disponible sur cette communauté.',
+            ], 503);
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $status = strtolower(trim((string) ($body['status'] ?? 'armed')));
+        if ($status === 'armed' || $status === '') {
+            $posX = (float) ($body['pos_x'] ?? $body['pos'][0] ?? 0);
+            $posY = (float) ($body['pos_y'] ?? $body['pos'][1] ?? 0);
+            $coordsOk = $this->armaGuard->assertPositionCoords($posX, $posY, $tenantId);
+            if ($coordsOk instanceof Response) {
+                return $coordsOk;
+            }
+            $body['pos_x'] = $posX;
+            $body['pos_y'] = $posY;
+            $body['status'] = 'armed';
+        }
+        $row = $this->explosiveTimers()->upsert($tenantId, $mapId, $body);
+        if ($row === null) {
+            return Response::json(['error' => 'Enregistrement impossible.'], 422);
+        }
+        if (($row['status'] ?? '') === 'armed' && (int) ($row['id'] ?? 0) > 0) {
+            $startedTs = strtotime((string) ($row['started_at'] ?? ''));
+            if ($startedTs !== false && abs(time() - $startedTs) <= 8) {
+                $author = (string) ($row['author'] ?? '');
+                $this->activityLog->record(
+                    $tenantId,
+                    $mapId,
+                    AtakActivityLogService::TYPE_EXPLOSIVE_TIMER,
+                    'Charge à retardement — ' . ($author !== '' ? $author : 'terrain'),
+                    $author !== '' ? $author : null
+                );
+            }
+        }
+
+        return Response::json($row, 201);
     }
 
     public function nineLineIndex(Request $request, array $params = []): Response
@@ -8411,6 +8603,11 @@ class AtakApiController
                 'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
                 'captured_at' => isset($_POST['capturedAt']) ? (int) $_POST['capturedAt'] : time(),
             ];
+            try {
+                (new \App\Services\Media\ReconPhotoHudService())->applyToFile($tenantId, $path, $data);
+            } catch (\Throwable $hudErr) {
+                error_log('[atak/recon-images] photo hud ' . $hudErr->getMessage());
+            }
             $row = $this->reconRepo->create($tenantId, $data);
             if ($row === []) {
                 @unlink($path);
@@ -8805,7 +9002,21 @@ class AtakApiController
     // NOUVELLES FEATURES ATAK - Phase 1
     // =============================================================================
 
-    // --- Rapports tactiques structurés (SPOTREP, SITREP, SALUTE, CONTACT) ---
+    // --- Rapports tactiques structurés (SPOTREP, SITREP, SALUTE, CONTACT, Iceman) ---
+
+    /**
+     * Catalogue des types de rapport (Iceman Reports + Overwatch).
+     * GET /api/atak/reports/catalog
+     */
+    public function tacticalReportsCatalog(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+
+        return Response::json(\App\Support\AtakIcemanReportCatalog::forFrontend());
+    }
 
     /**
      * Liste les rapports tactiques pour un contexte
@@ -8865,25 +9076,53 @@ class AtakApiController
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
 
+        $rawType = \App\Support\AtakIcemanReportCatalog::normalizeType(
+            (string) ($body['report_type'] ?? '')
+        );
+        if (($body['report_type'] ?? '') === '' || $rawType === 'OTHER') {
+            $alias = strtoupper(trim((string) ($body['type'] ?? '')));
+            if (\App\Support\AtakIcemanReportCatalog::isKnown($alias)) {
+                $rawType = \App\Support\AtakIcemanReportCatalog::normalizeType($alias);
+            }
+        }
+        $knownTypes = \App\Support\AtakIcemanReportCatalog::knownTypeCodes();
+        $summary = trim((string) ($body['summary'] ?? ''));
+        $details = trim((string) ($body['details'] ?? ''));
+        $hasStructured = is_array($body['structured_data'] ?? null) && $body['structured_data'] !== [];
+        if ($rawType === 'OTHER' && $summary === '' && $details === '' && !$hasStructured) {
+            return Response::json([
+                'error' => 'empty_report',
+                'message' => 'Le rapport n’a pas pu être lu. Renvoyez-le depuis le terminal.',
+            ], 400);
+        }
+        if ($rawType === '' || !in_array($rawType, $knownTypes, true)) {
+            $rawType = 'OTHER';
+        }
+
         $repo = new \App\Repositories\AtakTacticalReportRepository();
-        
+
         // Génération automatique du numéro de rapport si absent
         $reportNumber = $body['report_number'] ?? null;
-        if (!$reportNumber && !empty($body['report_type'])) {
-            $reportNumber = $repo->generateReportNumber($tenantId, $mapId, $body['report_type']);
+        if (!$reportNumber) {
+            $reportNumber = $repo->generateReportNumber($tenantId, $mapId, $rawType);
+        }
+
+        $submitterCallsign = trim((string) ($body['submitter_callsign'] ?? $body['callsign'] ?? $body['call_sign'] ?? ''));
+        if ($submitterCallsign === '' || strcasecmp($submitterCallsign, 'Unknown') === 0) {
+            $submitterCallsign = trim((string) ($actor['callsign'] ?? ''));
         }
 
         $data = [
             'tenant_id' => $tenantId,
             'context_id' => $mapId,
-            'report_type' => $body['report_type'] ?? 'OTHER',
+            'report_type' => $rawType,
             'report_number' => $reportNumber,
             'priority' => $body['priority'] ?? 'ROUTINE',
             'classification' => $body['classification'] ?? 'UNCLASSIFIED',
             'submitter_user_id' => $actor['user_id'] ?? null,
-            'submitter_callsign' => $body['submitter_callsign'] ?? $actor['callsign'] ?? null,
+            'submitter_callsign' => $submitterCallsign !== '' ? $submitterCallsign : null,
             'submitter_unit' => $body['submitter_unit'] ?? null,
-            'submitter_steam_id' => $body['submitter_steam_id'] ?? $actor['steam_id'] ?? null,
+            'submitter_steam_id' => $body['submitter_steam_id'] ?? $actor['steam_uid'] ?? null,
             'pos_x' => $body['pos_x'] ?? null,
             'pos_y' => $body['pos_y'] ?? null,
             'grid_reference' => $body['grid_reference'] ?? null,
@@ -8891,12 +9130,30 @@ class AtakApiController
             'dtg' => $body['dtg'] ?? null,
             'event_timestamp' => $body['event_timestamp'] ?? null,
             'structured_data' => $body['structured_data'] ?? [],
-            'summary' => $body['summary'] ?? null,
-            'details' => $body['details'] ?? null,
+            'summary' => $summary !== '' ? $summary : null,
+            'details' => $details !== '' ? $details : null,
             'remarks' => $body['remarks'] ?? null,
             'visibility' => $body['visibility'] ?? 'ALL',
             'distributed_to' => $body['distributed_to'] ?? null,
         ];
+        if ((!is_array($data['structured_data']) || $data['structured_data'] === []) && ($details !== '' || $summary !== '')) {
+            $parsedFields = \App\Support\AtakIcemanReportCatalog::parseFields($rawType, $details !== '' ? $details : $summary);
+            if ($parsedFields !== []) {
+                $data['structured_data'] = $parsedFields;
+            }
+        }
+        if (!isset($body['priority']) || trim((string) $body['priority']) === '') {
+            $data['priority'] = \App\Support\AtakIcemanReportCatalog::priorityFor(
+                $rawType,
+                is_array($data['structured_data']) ? $data['structured_data'] : []
+            );
+        }
+        if ($summary === '' && is_array($data['structured_data']) && $data['structured_data'] !== []) {
+            $built = \App\Support\AtakIcemanReportCatalog::summaryFromFields($rawType, $data['structured_data']);
+            if ($built !== '') {
+                $data['summary'] = $built;
+            }
+        }
 
         $reportId = $repo->create($data);
         $routing = [
@@ -8970,31 +9227,42 @@ class AtakApiController
                 $activityMeta['report_' . strtolower($safeKey)] = (string) $fieldValue;
             }
         }
-        $activityMeta['routing_enabled'] = (bool) ($routing['enabled'] ?? false);
-        $activityMeta['routing_rules_applied'] = (int) ($routing['rules_applied'] ?? 0);
-        $activityMeta['routing_routes_created'] = (int) ($routing['routes_created'] ?? 0);
-        if (isset($routing['error'])) {
-            $activityMeta['routing_error'] = (string) $routing['error'];
+        $typeLabel = $this->reportTypeLabelFr((string) ($data['report_type'] ?? 'OTHER'));
+        $labelTail = trim((string) ($data['summary'] ?? $data['details'] ?? $reportNumber ?? ''));
+        $activityLabel = $labelTail !== ''
+            ? $typeLabel . ' — ' . $labelTail
+            : $typeLabel;
+        $actorName = trim((string) ($data['submitter_callsign'] ?? ''));
+        if ($actorName === '' || strcasecmp($actorName, 'Unknown') === 0) {
+            $actorName = trim((string) ($activityMeta['profile_callsign'] ?? $activityMeta['display_name'] ?? $activityMeta['call_sign'] ?? ''));
+        }
+        if ($actorName === '') {
+            $actorName = 'Opérateur';
         }
 
         $this->activityLog->record(
             $tenantId,
             $mapId,
-            'TACTICAL_REPORT',
-            sprintf('Rapport %s soumis : %s', $data['report_type'], $data['summary'] ?? $reportNumber),
-            $data['submitter_callsign'] ?? 'Unknown',
+            AtakActivityLogService::TYPE_TACTICAL_REPORT,
+            $activityLabel,
+            $actorName,
             $activityMeta
         );
 
-        // Émission de la notification correspondant à la diffusion qui vient
-        // d'être appliquée. Les destinataires sont relus depuis l'historique
-        // plutôt que déduits du retour du routage : c'est ce qui a réellement
-        // été écrit qui doit être notifié, pas ce qui était prévu.
-        (new \App\Services\Tactical\AtakReportRoutingService())->notifyForReport(
-            $reportId,
-            $tenantId,
-            $mapId
-        );
+        try {
+            (new \App\Services\Tactical\AtakReportRoutingService())->notifyForReport(
+                $reportId,
+                $tenantId,
+                $mapId
+            );
+        } catch (\Throwable $exception) {
+            error_log(sprintf(
+                '[atak_report_routing] notify report=%d tenant=%d error=%s',
+                $reportId,
+                $tenantId,
+                $exception->getMessage()
+            ));
+        }
 
         // Cloisonnement : sans ce filtre, un identifiant deviné suffit à lire le
         // rapport d'une autre communauté.

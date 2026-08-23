@@ -35,24 +35,7 @@ _seen pushBack _id;
 if (count _seen > 80) then { _seen deleteRange [0, (count _seen) - 80]; };
 missionNamespace setVariable ["COMSPEC_OrdersSeen", _seen, false];
 
-private _typeLabelCustom = trim (_order getOrDefault ["typeLabel", ""]);
-private _typeLabel = if (_typeLabelCustom != "") then {
-    _typeLabelCustom
-} else {
-    switch (toUpper _type) do {
-        case "HOLD": { "Tenir la position" };
-        case "RECON": { "Reconnaissance" };
-        case "CAS": { "Appui aérien" };
-        case "QRF": { "Force de réaction" };
-        case "CUSTOM": { "Ordre personnalisé" };
-        case "VIBRATE": { "Faire vibrer le terminal" };
-        case "NOTIFY": { "Notification terminal" };
-        case "HELMET_SNAP": { "Photo casque demandée" };
-        case "HELMET_SNAP_HD": { "Photo casque HD demandée" };
-        case "HELMET_STREAM": { "Flux casque demandé" };
-        default { "Se déplacer" };
-    };
-};
+private _typeLabel = [_order] call comspec_overwatch_connect_fnc_orderTypeLabel;
 
 private _ackTerminalSignal = {
     params ["_oid", "_note"];

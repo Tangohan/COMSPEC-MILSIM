@@ -65,8 +65,10 @@ class AtakReportRoutingRepository
      */
     private function matchesConditions(array $report, array $rule): bool
     {
-        $conditions = json_decode($rule['trigger_conditions'], true);
-        
+        $conditions = json_decode((string) ($rule['trigger_conditions'] ?? ''), true);
+        if (!is_array($conditions)) {
+            $conditions = [];
+        } 
         // Type rapport
         if (isset($conditions['report_types']) && !empty($conditions['report_types'])) {
             if (!in_array($report['report_type'], $conditions['report_types'])) {
@@ -83,7 +85,7 @@ class AtakReportRoutingRepository
 
         // Mots-clés dans contenu
         if (isset($conditions['keywords']) && !empty($conditions['keywords'])) {
-            $content = strtolower($report['summary'] . ' ' . $report['details']);
+            $content = strtolower((string) ($report['summary'] ?? '') . ' ' . (string) ($report['details'] ?? ''));
             $hasKeyword = false;
             foreach ($conditions['keywords'] as $keyword) {
                 if (str_contains($content, strtolower($keyword))) {

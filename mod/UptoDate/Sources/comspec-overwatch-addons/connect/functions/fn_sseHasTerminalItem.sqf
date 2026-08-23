@@ -15,4 +15,9 @@ if ("COMSPEC_Item_SeekTerminal" in _all) exitWith { true };
 // si un script tiers a rangé l’objet autrement.
 if ("COMSPEC_Item_SeekTerminal" in ((uniformItems player) + (vestItems player) + (backpackItems player))) exitWith { true };
 
+if ("BII_Identifi_Device" in ((items player) + (assignedItems player))) exitWith { true };
+
+// Telephone ATAK : terminal de saisie des fiches de renseignement (RENS) sur le terrain.
+if (!isNil "comspec_overwatch_connect_fnc_hasTerminal" && {[player] call comspec_overwatch_connect_fnc_hasTerminal}) exitWith { true };
+
 false

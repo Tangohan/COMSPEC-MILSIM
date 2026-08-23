@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /**
  * Coque téléphone ATAK (texture cTab / IceMan Android S7) + carte Athena dans l’écran.
- * Géométrie calquée sur display_device_macros.hpp (canvas 2048×2048).
+ * Géométrie : canvas 2048×2048, trou (452,713) 1134×624.
  */
 $title = (string) ($title ?? 'ATAK — Appareil de terrain');
 $atakTenantName = trim((string) ($atakTenantName ?? 'Communauté'));
@@ -41,17 +41,6 @@ $signalUrl = $base . '/assets/img/connect-device/comspec_icon_signal_ca.png?v=' 
     </header>
 
     <div class="connect-device-shell" role="presentation">
-      <img
-        class="connect-device-bezel"
-        src="<?= htmlspecialchars($bezelUrl, ENT_QUOTES, 'UTF-8') ?>"
-        alt=""
-        width="2048"
-        height="2048"
-        decoding="async"
-        draggable="false"
-      />
-
-      <!-- Trou écran = coords cTab Android (452,713) / 1134×624 sur 2048 -->
       <div class="connect-device-screen">
         <div class="connect-device-osd" aria-hidden="true">
           <span class="connect-device-osd__brand">ATAK</span>
@@ -74,6 +63,15 @@ $signalUrl = $base . '/assets/img/connect-device/comspec_icon_signal_ca.png?v=' 
           ></iframe>
         </div>
       </div>
+      <img
+        class="connect-device-bezel"
+        src="<?= htmlspecialchars($bezelUrl, ENT_QUOTES, 'UTF-8') ?>"
+        alt=""
+        width="2048"
+        height="2048"
+        decoding="async"
+        draggable="false"
+      />
     </div>
 
     <p class="connect-device-hint">Carte Arma dans le terminal ATAK Android — même liaison que sur Athena.</p>

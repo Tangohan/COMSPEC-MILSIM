@@ -14,9 +14,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.418;
-        versionStr = "1.4.18";
-        versionAr[] = {1, 4, 18};
+        version = 1.430;
+        versionStr = "1.4.30";
+        versionAr[] = {1, 4, 30};
     };
 };
 
@@ -43,6 +43,7 @@ class CfgFunctions {
             class sseBiometricSample {};
             class sseSignAtak {};
             class sseOpenTerminal {};
+            class sseOpenFromKeybind {};
             class sseHasTerminalItem {};
             class sseIdentityQuery {};
             class sseUnitSeed {};
@@ -72,7 +73,10 @@ class CfgFunctions {
             class forceSyncData {};
             class sendIntel {};
             class initACE {};
+            class initExplosiveTimers {};
+            class reportExplosiveTimer {};
             class aceAddSelfAction {};
+            class acePadAction {};
             class pauseManagerShow {};
             class pauseManagerOnLoad {};
             class pauseManagerPageLoaded {};
@@ -95,6 +99,8 @@ class CfgFunctions {
             class openHub {};
             class openTabletView {};
             class tabletChatSend {};
+            class tabletChatLines {};
+            class tabletChatPush {};
             class tabletFlightManifestSend {};
             class hubSelect {};
             class getRadioState {};
@@ -131,6 +137,7 @@ class CfgFunctions {
             class receiveMapShape {};
             class deleteMapShape {};
             class pollMapShapes {};
+            class pollAthenaMarkers {};
             class captureReconImage {};
             class markBcePhotoCapture {};
             class syncLaserCode {};
@@ -158,6 +165,7 @@ class CfgFunctions {
             class orderApplyMoveWaypoint {};
             class receiveOrder {};
             class orderConcernsPlayer {};
+            class orderTypeLabel {};
             class pollOrders {};
             class pollTacticalAlerts {};
             class pollChatMessages {};
@@ -338,6 +346,19 @@ class CfgFunctions {
             class syncPlayerAtakPublicVars {};
             class zeusShowPlayerAtak {};
             class registerZenAtakPlayerActions {};
+            class intelNoteShow {};
+            class intelNoteOnLoad {};
+            class intelNoteOnUnload {};
+            class intelNotePane {};
+            class intelNoteRefresh {};
+            class intelNoteToggleTheme {};
+            class intelNoteAddPiece {};
+            class intelNoteDropPiece {};
+            class intelNoteSubmit {};
+            class intelNoteClose {};
+            class intelNoteCache {};
+            class intelNoteCatalog {};
+            class intelNoteSaveDraft {};
         };
     };
 };
@@ -519,6 +540,7 @@ class CfgFactionClasses
 #include "display_callsign.hpp"
 #include "display_salute.hpp"
 #include "display_sse_person.hpp"
+#include "display_intel_note.hpp"
 #include "display_medevac.hpp"
 #include "display_bug_report.hpp"
 #include "display_order_inbox.hpp"

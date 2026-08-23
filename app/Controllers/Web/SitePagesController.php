@@ -151,6 +151,29 @@ final class SitePagesController
     {
         return [
             [
+                'date' => '2026-08',
+                'title' => __('site.cl_2026_08_t'),
+                'body' => __('site.cl_2026_08_b'),
+                'items' => [
+                    __('site.cl_2026_08_i1'),
+                    __('site.cl_2026_08_i2'),
+                    __('site.cl_2026_08_i3'),
+                    __('site.cl_2026_08_i4'),
+                    __('site.cl_2026_08_i5'),
+                ],
+            ],
+            [
+                'date' => '2026-07',
+                'title' => __('site.cl_2026_07_sse_t'),
+                'body' => __('site.cl_2026_07_sse_b'),
+                'items' => [
+                    __('site.cl_2026_07_sse_i1'),
+                    __('site.cl_2026_07_sse_i2'),
+                    __('site.cl_2026_07_sse_i3'),
+                    __('site.cl_2026_07_sse_i4'),
+                ],
+            ],
+            [
                 'date' => '2026-07',
                 'title' => __('site.cl_2026_07_t'),
                 'body' => __('site.cl_2026_07_b'),

@@ -17,8 +17,12 @@ params [
 if (!hasInterface) exitWith { createHashMap };
 if (isNull player) exitWith { createHashMap };
 
+private _typeUp = toUpper _orderType;
 private _validTypes = ["MOVE", "HOLD", "RECON", "CAS", "QRF", "FRAGO", "CUSTOM"];
-if !(_orderType in _validTypes) then { _orderType = "MOVE"; };
+private _isCustomType = (_typeUp select [0, 4]) isEqualTo "TYP_"
+    || {(_typeUp select [0, 4]) isEqualTo "TPL_"}
+    || {(_typeUp select [0, 7]) isEqualTo "CUSTOM_"};
+if (!(_typeUp in _validTypes) && {!_isCustomType}) then { _orderType = "MOVE"; };
 
 private _id = format ["ORD-%1-%2", round (serverTime * 1000), floor random 9999];
 private _issuer = name player;
@@ -28,6 +32,7 @@ private _order = createHashMapFromArray [
     ["id", _id],
     ["parentId", _parentOrderId],
     ["type", _orderType],
+    ["typeLabel", [_orderType] call comspec_overwatch_connect_fnc_orderTypeLabel],
     ["target", _target],
     ["payload", _payload],
     ["priority", _priority],

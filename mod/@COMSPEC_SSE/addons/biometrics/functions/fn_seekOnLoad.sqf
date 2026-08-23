@@ -2,6 +2,7 @@ private _display = findDisplay 93100;
 if (isNull _display) exitWith {};
 
 private _target = missionNamespace getVariable ["comspec_sse_seekTarget", objNull];
+if (isNull _target) then { _target = player; };
 if (isNull _target) exitWith {};
 
 if (!isNil "comspec_sse_fnc_uiSetRecord") then {

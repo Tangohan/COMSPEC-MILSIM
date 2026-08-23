@@ -1,46 +1,48 @@
-/* Coque téléphone ATAK (bezel comspec_phone_bg_ca — fork cTab Android S7) */
+/* Terminal ATAK Android — PNG 2048×2048, trou écran (452,713) 1134×624 */
 
 :root {
   --cd-bg: #05070c;
   --cd-ink: #e8eef4;
   --cd-muted: #8aa0b4;
   --cd-accent: #34d399;
-  --cd-osd: #0a1218;
-  /* Canvas texture 2048² — trou écran cTab (452,713)-(1586,1337) */
+  --cd-osd-h: 31px;
   --cd-scr-l: 22.0703125%;
-  --cd-scr-t: 34.814453125%;
-  --cd-scr-w: 55.37109375%;
+  --cd-scr-t: 34.8144531%;
+  --cd-scr-w: 55.3710938%;
   --cd-scr-h: 30.46875%;
-  /* Bande OSD 60 px sous le top écran */
-  --cd-osd-h: 9.615384615%; /* 60/624 */
 }
 
-* { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
   margin: 0;
-  min-height: 100%;
-  min-height: 100dvh;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   background: var(--cd-bg);
   color: var(--cd-ink);
   font-family: "Roboto Condensed", "Segoe UI", system-ui, sans-serif;
 }
 
 .connect-device-page {
-  min-height: 100dvh;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
 .connect-device-stage {
-  min-height: 100dvh;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  align-items: stretch;
-  padding:
-    max(0.35rem, env(safe-area-inset-top))
-    max(0.5rem, env(safe-area-inset-right))
-    max(0.35rem, env(safe-area-inset-bottom))
-    max(0.5rem, env(safe-area-inset-left));
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   background:
     radial-gradient(900px 420px at 50% 18%, rgba(52, 211, 153, 0.08), transparent 55%),
     radial-gradient(700px 500px at 80% 100%, rgba(30, 41, 59, 0.55), transparent 50%),
@@ -48,10 +50,26 @@ html, body {
 }
 
 .connect-device-chrome {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.35rem 0.15rem 0.55rem;
+  padding:
+    max(0.35rem, env(safe-area-inset-top))
+    max(0.6rem, env(safe-area-inset-right))
+    0.35rem
+    max(0.6rem, env(safe-area-inset-left));
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(5, 7, 12, 0.72), transparent);
+}
+
+.connect-device-chrome a,
+.connect-device-chrome button {
+  pointer-events: auto;
 }
 
 .connect-device-chrome__back,
@@ -67,17 +85,23 @@ html, body {
   padding: 0.45rem 0.55rem;
   border-radius: 0.55rem;
   border: 1px solid rgba(52, 211, 153, 0.35);
-  background: rgba(6, 40, 28, 0.35);
+  background: rgba(6, 40, 28, 0.55);
   -webkit-tap-highlight-color: transparent;
 }
 
-.connect-device-chrome__link { text-align: right; }
-.connect-device-chrome__spacer { flex: 0 0 4.5rem; }
+.connect-device-chrome__link {
+  text-align: right;
+}
+
+.connect-device-chrome__spacer {
+  flex: 0 0 4.5rem;
+}
 
 .connect-device-chrome__brand {
   flex: 1 1 auto;
   min-width: 0;
   text-align: center;
+  pointer-events: none;
 }
 
 .connect-device-chrome__eyebrow {
@@ -102,18 +126,22 @@ html, body {
 
 .connect-device-shell {
   position: relative;
-  width: min(96vw, calc(92dvh * 0.92));
-  max-width: 52rem;
-  margin: 0 auto;
   aspect-ratio: 1 / 1;
+  height: min(94dvh, 1100px, 100vw);
+  width: auto;
+  flex: 0 0 auto;
+  overflow: hidden;
   filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.55));
 }
 
 .connect-device-bezel {
-  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  display: block;
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
@@ -121,120 +149,139 @@ html, body {
 
 .connect-device-screen {
   position: absolute;
+  z-index: 2;
   left: var(--cd-scr-l);
   top: var(--cd-scr-t);
   width: var(--cd-scr-w);
   height: var(--cd-scr-h);
-  display: grid;
-  grid-template-rows: var(--cd-osd-h) 1fr;
   overflow: hidden;
-  background: #000;
-  border-radius: 2px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  min-width: 0;
+  min-height: 0;
+  background: #03070a;
+  border-radius: 4px;
 }
 
 .connect-device-osd {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--cd-osd-h);
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0 0.45rem;
-  background: linear-gradient(180deg, #152532 0%, var(--cd-osd) 100%);
-  border-bottom: 1px solid rgba(30, 53, 69, 0.95);
-  color: #c8d6e0;
-  font-size: clamp(0.55rem, 1.35vw, 0.72rem);
+  padding: 0 9px;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 27, 32, 0.98),
+    rgba(5, 17, 21, 0.98)
+  );
+  border-bottom: 1px solid rgba(48, 173, 161, 0.35);
+  color: #d8e7e6;
+  font-family: ui-monospace, "IBM Plex Mono", monospace;
+  font-size: 10px;
+  white-space: nowrap;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 700;
-  min-height: 0;
+  gap: 0.35rem;
 }
 
-.connect-device-osd__brand { color: var(--cd-accent); }
-.connect-device-osd__sep { color: #3a5163; }
-.connect-device-osd__mode { color: #8aa0b4; }
+.connect-device-osd__brand {
+  color: var(--cd-accent);
+}
+
+.connect-device-osd__sep {
+  color: #3a5163;
+}
+
+.connect-device-osd__mode {
+  color: #8aa0b4;
+}
+
 .connect-device-osd__clock {
   margin-left: 0.25rem;
   font-variant-numeric: tabular-nums;
   color: #e8eef4;
 }
-.connect-device-osd__grow { flex: 1 1 auto; }
+
+.connect-device-osd__grow {
+  flex: 1 1 auto;
+}
+
 .connect-device-osd__icon {
-  height: 55%;
+  height: 14px;
   width: auto;
-  max-height: 0.9rem;
   opacity: 0.92;
   object-fit: contain;
+  pointer-events: none;
 }
-.connect-device-osd__icon--bat { max-height: 0.85rem; }
+
+.connect-device-osd__icon--bat {
+  height: 13px;
+}
 
 .connect-device-viewport {
-  position: relative;
+  position: absolute;
+  top: var(--cd-osd-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  overflow: hidden;
+  background: #05090b;
+  min-width: 0;
   min-height: 0;
-  background: #020617;
 }
 
 .connect-device-frame {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0;
+  padding: 0;
   border: 0;
-  background: #020617;
+  overflow: hidden;
+  background: #05090b;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  aspect-ratio: unset;
+  transform: none;
+  object-fit: unset;
 }
 
 .connect-device-hint {
-  margin: 0.55rem auto 0.25rem;
-  max-width: 36rem;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(0.4rem, env(safe-area-inset-bottom));
+  z-index: 90;
+  margin: 0;
+  padding: 0 1rem;
   text-align: center;
-  font-size: 0.72rem;
-  line-height: 1.35;
-  color: var(--cd-muted);
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: rgba(138, 160, 180, 0.55);
+  pointer-events: none;
 }
 
-/* Téléphone réel : maximiser le trou d’écran, chrome minimal */
-@media (max-width: 720px) and (orientation: portrait) {
-  .connect-device-stage {
-    grid-template-rows: auto 1fr auto;
-  }
+@media (max-aspect-ratio: 1/1) {
   .connect-device-shell {
-    width: min(100vw, 100%);
-    max-width: none;
+    width: 98vw;
+    height: auto;
+    max-height: 94dvh;
   }
-  .connect-device-hint { display: none; }
 }
 
-@media (max-width: 720px) and (orientation: landscape) {
-  .connect-device-chrome { padding-block: 0.15rem 0.25rem; }
-  .connect-device-chrome__title { font-size: 0.82rem; }
-  .connect-device-shell {
-    width: min(88vw, calc(100dvh * 0.95));
+@media (max-height: 520px) {
+  .connect-device-chrome__eyebrow {
+    display: none;
   }
-  .connect-device-hint { display: none; }
-}
-
-/* Mode immersif : plein viewport dans le trou (évite le letterbox du bezel sur petits écrans) */
-@media (max-width: 560px) {
-  .connect-device-page.is-compact .connect-device-shell {
-    width: 100%;
-    max-width: none;
-    aspect-ratio: auto;
-    height: calc(100dvh - 4.5rem);
-    max-height: calc(100dvh - 4.5rem);
-  }
-  .connect-device-page.is-compact .connect-device-bezel {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-  }
-  .connect-device-page.is-compact .connect-device-screen {
-    /* Sur compact, l’écran occupe presque tout le shell */
-    left: 3%;
-    top: 8%;
-    width: 94%;
-    height: 84%;
-    border-radius: 12px;
-    grid-template-rows: 1.75rem 1fr;
+  .connect-device-hint {
+    display: none;
   }
 }

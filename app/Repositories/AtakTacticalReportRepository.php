@@ -20,21 +20,47 @@ class AtakTacticalReportRepository
         $this->db = $db ?? Database::getInstance();
     }
 
+    private static ?bool $hasSourceChatColumn = null;
+
+    private function hasSourceChatColumn(): bool
+    {
+        if (self::$hasSourceChatColumn !== null) {
+            return self::$hasSourceChatColumn;
+        }
+        try {
+            $row = $this->db->fetchOne(
+                "SELECT 1 AS ok FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = 'atak_tactical_reports'
+                   AND COLUMN_NAME = 'source_chat_id'
+                 LIMIT 1"
+            );
+            self::$hasSourceChatColumn = is_array($row);
+        } catch (\Throwable) {
+            self::$hasSourceChatColumn = false;
+        }
+
+        return self::$hasSourceChatColumn;
+    }
+
     /**
      * Crée un nouveau rapport tactique
      */
     public function create(array $data): int
     {
+        $withChat = $this->hasSourceChatColumn();
         $sql = "INSERT INTO atak_tactical_reports (
             tenant_id, context_id, report_type, report_number, priority, classification,
-            submitter_user_id, submitter_callsign, submitter_unit, submitter_steam_id,
+            submitter_user_id, submitter_callsign, submitter_unit, submitter_steam_id"
+            . ($withChat ? ", source_chat_id" : "") . ",
             pos_x, pos_y, grid_reference, location_description,
             dtg, report_timestamp, event_timestamp,
             structured_data, summary, details, remarks,
             has_attachments, status, visibility, distributed_to
         ) VALUES (
             :tenant_id, :context_id, :report_type, :report_number, :priority, :classification,
-            :submitter_user_id, :submitter_callsign, :submitter_unit, :submitter_steam_id,
+            :submitter_user_id, :submitter_callsign, :submitter_unit, :submitter_steam_id"
+            . ($withChat ? ", :source_chat_id" : "") . ",
             :pos_x, :pos_y, :grid_reference, :location_description,
             :dtg, :report_timestamp, :event_timestamp,
             :structured_data, :summary, :details, :remarks,
@@ -68,6 +94,11 @@ class AtakTacticalReportRepository
             'visibility' => $data['visibility'] ?? 'ALL',
             'distributed_to' => isset($data['distributed_to']) ? json_encode($data['distributed_to']) : null,
         ];
+        if ($withChat) {
+            $params['source_chat_id'] = ((int) ($data['source_chat_id'] ?? 0)) > 0
+                ? (int) $data['source_chat_id']
+                : null;
+        }
 
         return (int) $this->db->insert($sql, $params);
     }
@@ -277,6 +308,32 @@ class AtakTacticalReportRepository
                 ORDER BY priority DESC, report_timestamp ASC";
 
         return $this->db->fetchAll($sql, $params);
+    }
+
+    public function findBySourceChatId(int $tenantId, int $chatId): ?array
+    {
+        if ($tenantId < 1 || $chatId < 1) {
+            return null;
+        }
+        try {
+            $row = $this->db->fetchOne(
+                'SELECT * FROM atak_tactical_reports
+                 WHERE tenant_id = :tenant_id AND source_chat_id = :chat_id AND deleted_at IS NULL
+                 LIMIT 1',
+                ['tenant_id' => $tenantId, 'chat_id' => $chatId]
+            );
+        } catch (\Throwable) {
+            return null;
+        }
+        if (!is_array($row)) {
+            return null;
+        }
+        if (!empty($row['structured_data']) && is_string($row['structured_data'])) {
+            $decoded = json_decode($row['structured_data'], true);
+            $row['structured_data'] = is_array($decoded) ? $decoded : [];
+        }
+
+        return $row;
     }
 
     /**

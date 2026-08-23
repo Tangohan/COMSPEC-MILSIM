@@ -98,6 +98,15 @@ final class TacticalAlertParser
             $salute = null;
             if ($kind === 'salute') {
                 $salute = self::parseSaluteFields($tailParts);
+                if ($salute === null || self::saluteIsEmpty($salute)) {
+                    $fromCatalog = AtakIcemanReportCatalog::parseFields('SALUTE', $rawForBda);
+                    if ($fromCatalog !== []) {
+                        $salute = array_merge([
+                            'size' => '', 'activity' => '', 'location' => '',
+                            'unit' => '', 'time' => '', 'equipment' => '',
+                        ], $fromCatalog);
+                    }
+                }
                 if ($salute !== null) {
                     $built = self::formatSaluteSummary($salute);
                     if ($built !== '') {
@@ -112,16 +121,52 @@ final class TacticalAlertParser
                 if ($frago === []) {
                     $frago = self::parseFragoSections($rawForBda);
                 }
+                if ($frago === []) {
+                    $frago = AtakIcemanReportCatalog::parseFields('FRAGO', $rawForBda);
+                }
             }
 
             $bda = null;
             if ($kind === 'bda') {
                 $bda = self::parseBdaFields($rawForBda !== '' ? $rawForBda : $summary);
+                $fromCatalog = AtakIcemanReportCatalog::parseFields('BDA', $rawForBda !== '' ? $rawForBda : $summary);
+                if ($fromCatalog !== []) {
+                    $bda = array_merge($bda ?? [], $fromCatalog);
+                }
                 if ($bda !== null) {
                     $builtBda = self::formatBdaSummary($bda);
+                    if ($builtBda === '') {
+                        $builtBda = AtakIcemanReportCatalog::summaryFromFields('BDA', $bda);
+                    }
                     if ($builtBda !== '') {
                         $summary = $builtBda;
                     }
+                }
+            }
+
+            $eagle = null;
+            if ($kind === 'eagle_down') {
+                $eagle = AtakIcemanReportCatalog::parseFields('EAGLE_DOWN', $rawForBda !== '' ? $rawForBda : $summary);
+                if ($eagle !== []) {
+                    $builtEagle = AtakIcemanReportCatalog::summaryFromFields('EAGLE_DOWN', $eagle);
+                    if ($builtEagle !== '') {
+                        $summary = $builtEagle;
+                    }
+                } else {
+                    $eagle = null;
+                }
+            }
+
+            $tic = null;
+            if ($kind === 'tic') {
+                $tic = AtakIcemanReportCatalog::parseFields('TIC', $rawForBda !== '' ? $rawForBda : $summary);
+                if ($tic !== []) {
+                    $builtTic = AtakIcemanReportCatalog::summaryFromFields('TIC', $tic, $summary);
+                    if ($builtTic !== '') {
+                        $summary = $builtTic;
+                    }
+                } else {
+                    $tic = null;
                 }
             }
 
@@ -147,6 +192,12 @@ final class TacticalAlertParser
             }
             if ($bda !== null && $bda !== []) {
                 $out['bda'] = $bda;
+            }
+            if ($eagle !== null && $eagle !== []) {
+                $out['eagle_down'] = $eagle;
+            }
+            if ($tic !== null && $tic !== []) {
+                $out['tic'] = $tic;
             }
 
             return $out;
@@ -208,7 +259,8 @@ final class TacticalAlertParser
                 continue;
             }
             // Délimiteur ~ pour éviter toute fermeture précoce sur « / ».
-            if (preg_match('~^([\p{L}]+)\s*[:=]\s*(.*)$~u', $part, $m) === 1) {
+            // Iceman numérote : « 1. Size: 4 pax ».
+            if (preg_match('~^(?:\d+\.\s*)?([\p{L}]+)\s*[:=]\s*(.*)$~u', $part, $m) === 1) {
                 $k = mb_strtoupper(trim($m[1]));
                 $v = trim($m[2]);
                 if (isset($keyMap[$k])) {
@@ -259,6 +311,20 @@ final class TacticalAlertParser
         }
 
         return implode(' · ', $bits);
+    }
+
+    /**
+     * @param array<string, string> $salute
+     */
+    private static function saluteIsEmpty(array $salute): bool
+    {
+        foreach ($salute as $v) {
+            if (trim((string) $v) !== '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static function parseCoord(mixed $raw): ?float
@@ -578,11 +644,16 @@ final class TacticalAlertParser
     public static function formatBdaSummary(array $bda): string
     {
         $labels = [
+            'type' => 'Nature de la cible',
+            'desc' => 'Description',
+            'rating' => 'Notation',
             'target' => 'Cible',
             'damage' => 'Dégâts observés',
             'enemy' => 'Effets ennemis',
             'friendly' => 'Effets amis / civils',
-            'munitions' => 'Munitions / méthode',
+            'munitions' => 'Munitions',
+            'ekia' => 'Pertes ennemies estimées',
+            'reattack' => 'Nouvelle attaque',
             'remarks' => 'Remarques',
         ];
         $bits = [];
@@ -612,11 +683,13 @@ final class TacticalAlertParser
         $summary = preg_replace('/\s+[—–]\s+(?=(?:\d\.\s*)?(?:Situation|Mission|Exécution|Execution|Soutien|Support|Commandement|Command)\b)/iu', "\n", $summary) ?? $summary;
 
         $keys = [
+            'reference' => ['References', 'Reference', 'Référence'],
             'situation' => ['Situation', 'SITUATION'],
             'mission' => ['Mission', 'MISSION'],
             'execution' => ['Exécution', 'Execution', 'EXECUTION'],
             'support' => ['Soutien', 'Support', 'SERVICE SUPPORT', 'Service Support'],
-            'command' => ['Commandement', 'Command', 'COMMAND AND SIGNAL', 'Command and Signal'],
+            'command' => ['Commandement', 'Command', 'COMMAND AND SIGNAL', 'Command and Signal', 'Command/Signal'],
+            'acknowledge' => ['Acknowledge', 'ACKNOWLEDGE', 'Accusé'],
         ];
         $out = [];
         foreach ($keys as $id => $labels) {

@@ -240,11 +240,11 @@ class ReconImageRepository
      * Dernière image par feed (unit_name = feed_id) ou par couple auteur + type d’appareil.
      *
      * @param list<string> $feedIds
-     * @return array{by_feed: array<string, array<string, mixed>>, by_author_device: array<string, array<string, mixed>>}
+     * @return array{by_feed: array<string, array<string, mixed>>, by_author_device: array<string, array<string, mixed>>, by_author: array<string, array<string, mixed>>, recent: list<array<string, mixed>>}
      */
     public function latestSnapshots(int $tenantId, array $feedIds = [], int $limit = 80): array
     {
-        $empty = ['by_feed' => [], 'by_author_device' => [], 'recent' => []];
+        $empty = ['by_feed' => [], 'by_author_device' => [], 'by_author' => [], 'recent' => []];
         if (!$this->tablesReady() || $tenantId < 1) {
             return $empty;
         }
@@ -263,6 +263,7 @@ class ReconImageRepository
 
         $byFeed = [];
         $byAuthorDevice = [];
+        $byAuthorAny = [];
         $feedSet = [];
         foreach ($feedIds as $fid) {
             $fid = trim((string) $fid);
@@ -284,12 +285,16 @@ class ReconImageRepository
                 if (!isset($byAuthorDevice[$key])) {
                     $byAuthorDevice[$key] = $row;
                 }
+                if (!isset($byAuthorAny[$author])) {
+                    $byAuthorAny[$author] = $row;
+                }
             }
         }
 
         return [
             'by_feed' => $byFeed,
             'by_author_device' => $byAuthorDevice,
+            'by_author' => $byAuthorAny,
             'recent' => $rows,
         ];
     }

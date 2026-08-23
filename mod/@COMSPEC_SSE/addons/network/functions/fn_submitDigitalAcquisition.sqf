@@ -3,7 +3,8 @@
 */
 params [
     ["_entity", objNull, [objNull]],
-    ["_fog", createHashMap, [createHashMap]]
+    ["_fog", createHashMap, [createHashMap]],
+    ["_announce", true, [true]]
 ];
 
 if (count _fog == 0) then {
@@ -34,16 +35,17 @@ if ([] call comspec_sse_fnc_isOnline) then {
 };
 
 if (_ok) then {
-    hint format ["Acquisition numérique transmise — %1", _uid];
+    if (_announce) then { hint "Acquisition numérique envoyée au registre."; };
     private _src = _payload getOrDefault ["source_type", "device"];
     private _q = _payload getOrDefault ["quality", 0];
     [_uid, "digital", _src, "Athena digital", _q, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
 } else {
     [_envelope] call comspec_sse_fnc_queueOffline;
-    hint format ["Acquisition numérique QUEUED — %1", _uid];
+    if (_announce) then { hint "Acquisition numérique mise en attente."; };
     private _src = _payload getOrDefault ["source_type", "device"];
     private _q = _payload getOrDefault ["quality", 0];
     [_uid, "digital", _src, "QUEUED", _q, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };
 
+[format ["submitDigitalAcquisition uid=%1 ok=%2 raw=%3", _uid, _ok, missionNamespace getVariable ["comspec_sse_lastExtRaw", ""]]] call comspec_sse_fnc_log;
 _ok

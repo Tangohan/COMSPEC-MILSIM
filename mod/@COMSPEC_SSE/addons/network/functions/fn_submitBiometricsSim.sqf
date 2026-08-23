@@ -3,7 +3,8 @@
 */
 params [
     ["_entity", objNull, [objNull]],
-    ["_bioBundle", createHashMap, [createHashMap]]
+    ["_bioBundle", createHashMap, [createHashMap]],
+    ["_announce", true, [true]]
 ];
 
 private _payload = [_entity, _bioBundle] call comspec_sse_fnc_buildAthenaBiometricsPayload;
@@ -31,12 +32,13 @@ if ([] call comspec_sse_fnc_isOnline) then {
 };
 
 if (_ok) then {
-    hint format ["Biométrie transmise — %1", _uid];
+    if (_announce) then { hint "Biométrie envoyée au registre."; };
     [_uid, "biometrics", "seek_ii", "Bio sim", 80, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
 } else {
     [_envelope] call comspec_sse_fnc_queueOffline;
-    hint format ["Biométrie QUEUED — %1", _uid];
+    if (_announce) then { hint "Biométrie mise en attente."; };
     [_uid, "biometrics", "seek_ii", "QUEUED", 80, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };
 
+[format ["submitBiometricsSim uid=%1 ok=%2 raw=%3", _uid, _ok, missionNamespace getVariable ["comspec_sse_lastExtRaw", ""]]] call comspec_sse_fnc_log;
 _ok

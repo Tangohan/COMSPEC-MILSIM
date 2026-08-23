@@ -1,9 +1,7 @@
 /*
     Ajoute une action ACE self-interact de façon isolée.
-    - Copie le tableau action (+_) pour éviter la mutation partagée (reco ACE)
-    - Ignore si joueur / API ACE absents
-    - Journalise les échecs liés à Overwatch
-    Retour: true si ajoutée
+    Normalise le tableau à 11 cases (index 10 = modificateur) — ACE
+    collectActiveActionTree plante sinon sur « select 10 ».
 */
 params [
     ["_action", [], [[]]],
@@ -24,11 +22,13 @@ if (_action isEqualTo []) exitWith {
     false
 };
 
-private _actionId = "";
-if ((count _action) > 0 && {(_action select 0) isEqualType ""}) then {
-    _actionId = _action select 0;
+private _a = [_action] call comspec_overwatch_connect_fnc_acePadAction;
+if (_a isEqualTo []) exitWith {
+    ["aceAddSelfAction", "Action ACE mal formée", _path, "ACE", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
+    false
 };
 
-[player, 1, _path, +_action] call ace_interact_menu_fnc_addActionToObject;
-["DEBUG", "ACE", format ["Action installée : %1", if (_actionId isEqualTo "") then { str _path } else { _actionId }]] call comspec_overwatch_connect_fnc_log;
+private _actionId = _a select 0;
+[player, 1, _path, _a] call ace_interact_menu_fnc_addActionToObject;
+["DEBUG", "ACE", format ["Action installée : %1", _actionId]] call comspec_overwatch_connect_fnc_log;
 true

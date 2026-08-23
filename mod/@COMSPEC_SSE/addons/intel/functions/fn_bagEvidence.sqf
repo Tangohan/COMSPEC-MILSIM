@@ -15,15 +15,13 @@ if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
 
 [_entity] call comspec_sse_fnc_ensureGenerated;
 private _label = [_entity] call comspec_sse_fnc_makeEvidenceLabel;
-private _data = [_entity] call comspec_sse_fnc_getData;
 private _sec = [_entity, "sections"] call comspec_sse_fnc_getSection;
-if (_sec isEqualType createHashMap) then {
-    _sec set ["bagged", true];
-    _sec set ["evidenceLabel", _label];
-    _sec set ["baggedBy", name _player];
-    _sec set ["baggedAt", time];
-    [_entity, "sections", _sec, true] call comspec_sse_fnc_setSection;
-};
+if (isNil "_sec" || {!(_sec isEqualType createHashMap)}) then { _sec = createHashMap; };
+_sec set ["bagged", true];
+_sec set ["evidenceLabel", _label];
+_sec set ["baggedBy", name _player];
+_sec set ["baggedAt", time];
+[_entity, "sections", _sec, true] call comspec_sse_fnc_setSection;
 
 if (_player canAdd "COMSPEC_SSE_EvidenceBag") then {
     _player addItem "COMSPEC_SSE_EvidenceBag";

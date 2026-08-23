@@ -37,7 +37,12 @@ private _pairs = [];
             _valueStr = _dq + _escaped + _dq;
         };
         case "SCALAR": {
-            _valueStr = str _value;
+            // Point décimal invariant — `str` met une virgule FR et casse le JSON.
+            if (_value == (floor _value) && {abs _value < 1e12}) then {
+                _valueStr = str (round _value);
+            } else {
+                _valueStr = _value toFixed 4;
+            };
         };
         case "BOOL": {
             _valueStr = if (_value) then {"true"} else {"false"};
@@ -45,10 +50,23 @@ private _pairs = [];
         case "ARRAY": {
             // Tableau simple
             private _elements = _value apply {
-                if (typeName _x isEqualTo "STRING") then {
-                    (toString [34]) + _x + (toString [34])
-                } else {
-                    str _x
+                switch (typeName _x) do {
+                    case "STRING": {
+                        private _dq = toString [34];
+                        private _bs = toString [92];
+                        private _esc = (_x splitString _bs) joinString (_bs + _bs);
+                        _esc = (_esc splitString _dq) joinString (_bs + _dq);
+                        _dq + _esc + _dq
+                    };
+                    case "SCALAR": {
+                        if (_x == (floor _x) && {abs _x < 1e12}) then {
+                            str (round _x)
+                        } else {
+                            _x toFixed 4
+                        };
+                    };
+                    case "BOOL": { if (_x) then {"true"} else {"false"} };
+                    default { str _x };
                 };
             };
             _valueStr = format ["[%1]", _elements joinString ","];

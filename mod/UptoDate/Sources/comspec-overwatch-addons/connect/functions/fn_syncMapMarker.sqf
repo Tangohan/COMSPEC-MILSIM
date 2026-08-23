@@ -120,7 +120,7 @@ private _mirroredElsewherePrefixes = [
 
     "poi_local_", "qrf_contact_", "medevac_lz_", "vehicle_service_",
 
-    "comspec_roleplay_zone_", "comspec_tabletmk_", "comspec_shape_", "ctab_u_"
+    "comspec_roleplay_zone_", "comspec_tabletmk_", "comspec_webmk_", "comspec_shape_", "ctab_u_"
 
 ];
 
@@ -257,11 +257,11 @@ private _json = format [
 
     "{""pos"":[%1,%2,%3],""type"":""%4"",""text"":""%5"",""color"":""%6"",""dir"":%7,""alpha"":%8,""shape"":""%9"",""size"":[%10,%11],""brush"":""%12"",""polyline"":%13,""source"":""%14"",""callsign"":""%15"",""grid"":""%16"",""texture"":""%17""}",
 
-    _pos select 0,
+    (_pos select 0) toFixed 2,
 
-    _pos select 1,
+    (_pos select 1) toFixed 2,
 
-    if (count _pos > 2) then { _pos select 2 } else { 0 },
+    (if (count _pos > 2) then { _pos select 2 } else { 0 }) toFixed 2,
 
     _type,
 
@@ -269,15 +269,15 @@ private _json = format [
 
     _color,
 
-    _dir,
+    _dir toFixed 2,
 
-    _alpha,
+    _alpha toFixed 2,
 
     _shape,
 
-    _size select 0,
+    (_size select 0) toFixed 2,
 
-    _size select 1,
+    (_size select 1) toFixed 2,
 
     _brush,
 

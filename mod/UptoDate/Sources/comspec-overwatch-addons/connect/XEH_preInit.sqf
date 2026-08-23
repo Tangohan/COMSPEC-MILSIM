@@ -596,10 +596,29 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
     "comspec_sse_require_item", "CHECKBOX",
     [
         "Terminal SEEK requis",
-        "Exige l’objet « Terminal biométrique SEEK » dans l’inventaire pour ouvrir une fiche de renseignement. Décochez pour conserver l’accès sans objet."
+        "Exige un terminal de recueil (SEEK, BII-10 ou telephone ATAK) pour ouvrir une fiche. Decochez pour conserver l'acces sans objet."
     ],
     ["COMSPEC Overwatch", "Renseignement SSE"], true
 ] call CBA_fnc_addSetting;
+
+private _sseKeyDefault = [0x1F, [true, true, false]]; // Ctrl+Shift+S
+if (isClass (configFile >> "CfgPatches" >> "comspec_sse_biometrics")) then {
+    // Le mod SSE possede deja ce raccourci : eviter deux ouvertures superposees.
+    _sseKeyDefault = [];
+};
+
+[
+    "COMSPEC Overwatch", "comspec_open_sse_fiche",
+    ["Ouvrir fiche SSE (FRS / SEEK)", "Ouvre le terminal de recueil source. Defaut : Ctrl+Shift+S (si le mod SSE n'est pas charge)."],
+    {
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        [] call comspec_overwatch_connect_fnc_sseOpenFromKeybind;
+        true
+    },
+    "",
+    _sseKeyDefault,
+    false, 0, false
+] call CBA_fnc_addKeybind;
 
 [
     "COMSPEC Overwatch - Ordres", "comspec_order_compose_key",

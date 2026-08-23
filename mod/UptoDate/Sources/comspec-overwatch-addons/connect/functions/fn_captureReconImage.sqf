@@ -1,6 +1,6 @@
 /*
     Capture recon : signal « nouvelle photo » vers la DLL (queue async).
-    Params: [path, caption, deviceType, feedId]
+    Params: [path, caption, deviceType, feedId, skipArmaShot, alignDevicePov]
     Retour: true si l’extension a accepté (OK|queued), false sinon
     (OK|duplicate n’est plus traité comme un succès d’envoi).
 */
@@ -9,7 +9,8 @@ params [
     ["_caption", ""],
     ["_deviceType", "CTAB"],
     ["_feedId", ""],
-    ["_skipArmaShot", false]
+    ["_skipArmaShot", false],
+    ["_alignDevicePov", true]
 ];
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 
@@ -193,6 +194,65 @@ private _fnc_armaPngCapture = {
     screenshot _png;
     missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
     _png
+};
+
+// Casque / drone : `screenshot` capture la vue courante (3e personne si le
+// joueur y est). On bascule 2–3 frames en 1re personne / tourelle UAV,
+// on cliche, on restaure. Pas pour les aperçus périodiques (alignDevicePov=false)
+// ni Zeus (curatorCamera) — ça arracherait le joueur.
+if (
+    !_skipArmaShot
+    && {_alignDevicePov}
+    && {_device in ["HELMET", "DRONE"]}
+    && {isNull curatorCamera}
+) exitWith {
+    if (missionNamespace getVariable ["COMSPEC_ReconCaptureBusy", false]) exitWith { false };
+    missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", true, false];
+    [_caption, _device, _feedId] spawn {
+        params ["_caption", "_device", "_feedId"];
+        private _prevView = cameraView;
+
+        if (!isNil "ace_interact_menu_fnc_hideMenu") then {
+            [] call ace_interact_menu_fnc_hideMenu;
+        };
+        showHUD false;
+
+        if (_device isEqualTo "DRONE") then {
+            private _uav = objNull;
+            private _st = missionNamespace getVariable ["Iceman_ATAK_DroneOps_state", createHashMap];
+            if (_st isEqualType createHashMap) then {
+                _uav = _st getOrDefault ["drone", objNull];
+            };
+            if (isNull _uav) then { _uav = getConnectedUAV player; };
+            if (!isNull _uav && {alive _uav}) then {
+                _uav switchCamera "GUNNER";
+            };
+        } else {
+            // 1re personne (yeux / casque). screenshot est synchrone : sans ce
+            // délai d’1–2 frames, Arma cliche encore la 3e personne.
+            if (!isNull player) then {
+                player switchCamera "INTERNAL";
+            };
+        };
+
+        uiSleep 0.16;
+
+        private _png = format ["COMSPEC_%1_%2.png", floor diag_tickTime, floor random 99999];
+        screenshot _png;
+        missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
+
+        showHUD true;
+        if (_prevView isEqualType "" && {_prevView isNotEqualTo ""}) then {
+            player switchCamera _prevView;
+        };
+
+        // Laisser le PNG se flusher (évite file_empty juste après le hitch).
+        uiSleep 0.55;
+
+        [_png, _caption, _device, _feedId, true, false] call comspec_overwatch_connect_fnc_captureReconImage;
+        missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
+    };
+    true
 };
 
 // Chemin fourni (IceMan / BCE / Photo Library) : souvent un .jpg « annoncé » dont le

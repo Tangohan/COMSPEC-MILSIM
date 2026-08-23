@@ -54,19 +54,7 @@ private _pending = 0;
 
 {
     private _id = _x getOrDefault ["id", ""];
-    private _type = _x getOrDefault ["type", "MOVE"];
-    private _typeLabel = trim (_x getOrDefault ["typeLabel", ""]);
-    if (_typeLabel isEqualTo "") then {
-        _typeLabel = switch (toUpper _type) do {
-            case "HOLD": { "Tenir la position" };
-            case "RECON": { "Reconnaissance" };
-            case "CAS": { "Appui aérien" };
-            case "QRF": { "Force de réaction" };
-            case "FRAGO": { "Ordre fragmentaire" };
-            case "CUSTOM": { "Ordre personnalisé" };
-            default { "Se déplacer" };
-        };
-    };
+    private _typeLabel = [_x] call comspec_overwatch_connect_fnc_orderTypeLabel;
     private _issuer = _x getOrDefault ["issuer", "C2"];
     private _status = toUpper (_x getOrDefault ["status", "PENDING"]);
     private _statusLabel = switch (_status) do {
@@ -111,9 +99,12 @@ if (_selKeep >= 0) then {
             _detail ctrlSetStructuredText parseText "<t color='#8aa0b4'>Les ordres du commandement apparaîtront ici dès leur réception.</t>";
         };
         uiNamespace setVariable ["COMSPEC_ATAK_Task_selectedId", ""];
+        [] call comspec_overwatch_atak_athena_fnc_athena_taskSyncButtons;
     };
 };
 
 if ((lbCurSel _list) >= 0) then {
     [_list, lbCurSel _list] call comspec_overwatch_atak_athena_fnc_athena_taskSelect;
+} else {
+    [] call comspec_overwatch_atak_athena_fnc_athena_taskSyncButtons;
 };

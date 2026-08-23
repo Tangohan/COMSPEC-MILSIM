@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.26;
-        versionStr = "1.0.26";
-        versionAr[] = {1, 0, 26};
+        version = 1.0.32;
+        versionStr = "1.0.32";
+        versionAr[] = {1, 0, 32};
     };
 };
 
@@ -84,10 +84,14 @@ class CfgFunctions
             class athena_bdaOnOpened {};
             class athena_biiOnOpened {};
             class athena_openBiiTab {};
+            class athena_noteOnOpened {};
+            class athena_updateNote {};
+            class athena_openNote {};
             class athena_taskOnOpened {};
             class athena_updateTask {};
             class athena_taskSelect {};
             class athena_taskRespond {};
+            class athena_taskSyncButtons {};
             class athena_syncOrdersToGroupChat {};
             class athena_openTask {};
         };
@@ -137,6 +141,8 @@ class BCE_RscButtonMenu;
 class RscStructuredText;
 class RscListBox;
 class RscText;
+class RscEdit;
+class RscCombo;
 class RscPictureKeepAspect;
 class RscControlsGroup;
 
@@ -146,6 +152,7 @@ class RscControlsGroup;
 #include "ui\briefing_page.hpp"
 #include "ui\bda_host_page.hpp"
 #include "ui\bii_page.hpp"
+#include "ui\note_page.hpp"
 #include "ui\task_page.hpp"
 
 class ATAK_APPs
@@ -221,6 +228,18 @@ class ATAK_APPs
             ORDER = 3.55;
             PAGE_CTRL = "COMSPEC_ATAK_BII";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_biiOnOpened";
+        };
+    };
+    class AtakNote: message
+    {
+        text = "<t size='1'>RENS</t>";
+        textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 3.52;
+            PAGE_CTRL = "COMSPEC_ATAK_Note";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_noteOnOpened";
         };
     };
     // Stub BCE BDA_Report : PAGE_CTRL/Opened vides → erreur "Opened function...". On le répare.
@@ -313,6 +332,18 @@ class RscTitles
                 ORDER = 3.55;
                 PAGE_CTRL = "COMSPEC_ATAK_BII";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_biiOnOpened";
+            };
+        };
+        class AtakNote: message
+        {
+            text = "<t size='1'>RENS</t>";
+            textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 3.52;
+                PAGE_CTRL = "COMSPEC_ATAK_Note";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_noteOnOpened";
             };
         };
         class BDA_Report: message

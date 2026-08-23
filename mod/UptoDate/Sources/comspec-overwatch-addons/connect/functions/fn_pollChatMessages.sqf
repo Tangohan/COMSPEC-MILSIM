@@ -262,4 +262,8 @@ if (_groupPanelDirty && {!isNil "Iceman_fnc_group_updatePanel"}) then {
     call Iceman_fnc_group_updatePanel;
 };
 
+if (_added > 0 && {!isNil "comspec_overwatch_connect_fnc_tabletChatPush"}) then {
+    [] call comspec_overwatch_connect_fnc_tabletChatPush;
+};
+
 _added > 0

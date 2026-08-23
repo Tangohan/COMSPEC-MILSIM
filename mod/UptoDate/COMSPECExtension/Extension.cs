@@ -413,6 +413,7 @@ public static class Extension
             || url.Contains("/api/atak/marker", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/markers", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/client-init", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/explosive-timers", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -897,6 +898,24 @@ public static class Extension
         catch
         {
             // ignore — tentative de normalisation ci-dessous
+        }
+
+        // Virgule décimale FR dans les nombres (pos_x, pos_y, etc.)
+        var commaFixed = System.Text.RegularExpressions.Regex.Replace(
+            s,
+            @"(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,\}\]\s])",
+            "$1.$2");
+        if (commaFixed != s)
+        {
+            try
+            {
+                using var _ = JsonDocument.Parse(commaFixed);
+                return commaFixed;
+            }
+            catch
+            {
+                // ignore
+            }
         }
 
         // Cas fréquent : {""mapId"":1,""callsign"":""N-10""}
@@ -1937,7 +1956,7 @@ public static class Extension
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
             // Ordres C2 web → jeu. Args : [mapId, limit, callsign?]
-            // Lignes : id\ttype\ttarget\tpriority\tissuer\tstatus\tpayload\ttarget_type\ttarget_ref\taliases
+            // Lignes : id\ttype\ttarget\tpriority\tissuer\tstatus\tpayload\ttarget_type\ttarget_ref\taliases\ttype_label
             if (function == "GetOrders")
             {
                 var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
@@ -2363,6 +2382,12 @@ public static class Extension
                 if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
                 return PostSsePersonSync(json, token);
             }
+            if (function == "SubmitSseFieldNote" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostSseFieldNoteSync(json, token);
+            }
             // 2 args (Overwatch) : personId + json | 1 arg (COMSPEC_SSE) : json avec person_id / id
             if (function == "SubmitSseBiometricsSim" && args.Length >= 1)
             {
@@ -2400,6 +2425,15 @@ public static class Extension
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
                 return PostAtakJsonSync("/api/atak/medevac", json, token);
+            }
+            if (function == "SubmitExplosiveTimer" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/explosive-timers", out var expUri, out var expErr) || expUri is null)
+                    return FormatAtakExtArray("ERROR", expErr);
+                EnqueueOrSend(expUri.AbsoluteUri, EnrichAtakPayload(json));
+                return FormatAtakExtArray("OK", "queued");
             }
             if (function == "RequestQRF" && args.Length >= 1)
             {
@@ -2445,6 +2479,10 @@ public static class Extension
             if (function == "UploadSsePhoto" && args.Length >= 2)
             {
                 return BeginUploadSsePhoto(args);
+            }
+            if (function == "UploadSseNoteAttachment" && args.Length >= 2)
+            {
+                return BeginUploadSseNoteAttachment(args);
             }
         }
         catch (OperationCanceledException)
@@ -2712,6 +2750,8 @@ public static class Extension
                 double x = 0, y = 0;
                 var type = "mil_dot";
                 var text = "";
+                var color = "";
+                var source = "";
                 try
                 {
                     using var data = JsonDocument.Parse(dataStr);
@@ -2721,15 +2761,27 @@ public static class Extension
                         x = pos[0].GetDouble();
                         y = pos[1].GetDouble();
                     }
+                    else if (root.TryGetProperty("pos_x", out var px) && root.TryGetProperty("pos_y", out var py))
+                    {
+                        x = px.GetDouble();
+                        y = py.GetDouble();
+                    }
                     if (root.TryGetProperty("type", out var t)) type = t.GetString() ?? type;
                     if (root.TryGetProperty("text", out var tx)) text = tx.GetString() ?? "";
+                    if (string.IsNullOrEmpty(text) && root.TryGetProperty("label", out var lb))
+                        text = lb.GetString() ?? "";
+                    if (root.TryGetProperty("color", out var col)) color = col.GetString() ?? "";
+                    if (root.TryGetProperty("source", out var src)) source = src.GetString() ?? "";
                 }
-                catch { }
+                catch { /* blob illisible : ligne quand même, coords 0 */ }
                 text = text.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+                color = color.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+                source = source.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
                 sb.Append("M\t").Append(id).Append("\t").Append(layerId).Append("\t")
                     .Append(x.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\t")
                     .Append(y.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\t")
-                    .Append(type).Append("\t").Append(text).Append("\n");
+                    .Append(type).Append("\t").Append(text).Append("\t")
+                    .Append(color).Append("\t").Append(source).Append("\n");
             }
             return sb.ToString();
         }
@@ -3132,7 +3184,7 @@ public static class Extension
 
     /// <summary>
     /// Simplifie GET /api/atak/orders pour SQF.
-    /// Lignes : id\ttype\ttarget\tpriority\tissuer\tstatus\tpayload\ttarget_type\ttarget_ref\taliases
+    /// Lignes : id\ttype\ttarget\tpriority\tissuer\tstatus\tpayload\ttarget_type\ttarget_ref\taliases\ttype_label
     /// </summary>
     private static string SimplifyOrdersJson(string json)
     {
@@ -3144,6 +3196,20 @@ public static class Extension
                 return "";
             static string Clean(string s) =>
                 (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+            // splitString SQF omet les champs vides : un tiret garde l’alignement des colonnes.
+            static string Cell(string s)
+            {
+                var c = Clean(s);
+                return c.Length == 0 ? "-" : c;
+            }
+            static string PropStr(JsonElement el, string snake, string camel = "")
+            {
+                if (el.TryGetProperty(snake, out var a) && a.ValueKind == JsonValueKind.String)
+                    return a.GetString() ?? "";
+                if (camel.Length > 0 && el.TryGetProperty(camel, out var b) && b.ValueKind == JsonValueKind.String)
+                    return b.GetString() ?? "";
+                return "";
+            }
             foreach (var el in orders.EnumerateArray())
             {
                 var id = el.TryGetProperty("id", out var i) ? (i.GetString() ?? "") : "";
@@ -3156,6 +3222,8 @@ public static class Extension
                 var payload = el.TryGetProperty("payload", out var pl) ? (pl.GetString() ?? "") : "";
                 var targetType = el.TryGetProperty("target_type", out var tt) ? (tt.GetString() ?? "all") : "all";
                 var targetRef = el.TryGetProperty("target_ref", out var tr) ? (tr.GetString() ?? "") : "";
+                var typeLabel = PropStr(el, "type_label", "typeLabel");
+                if (typeLabel.Length > 80) typeLabel = typeLabel.Substring(0, 80);
                 var aliases = "";
                 if (el.TryGetProperty("match_aliases", out var ma))
                 {
@@ -3176,16 +3244,17 @@ public static class Extension
                     }
                 }
                 if (payload.Length > 120) payload = payload.Substring(0, 120);
-                sb.Append(Clean(id)).Append('\t')
-                  .Append(Clean(type)).Append('\t')
-                  .Append(Clean(target)).Append('\t')
-                  .Append(Clean(priority)).Append('\t')
-                  .Append(Clean(issuer)).Append('\t')
-                  .Append(Clean(status)).Append('\t')
-                  .Append(Clean(payload)).Append('\t')
-                  .Append(Clean(targetType)).Append('\t')
-                  .Append(Clean(targetRef)).Append('\t')
-                  .Append(Clean(aliases)).Append('\n');
+                sb.Append(Cell(id)).Append('\t')
+                  .Append(Cell(type)).Append('\t')
+                  .Append(Cell(target)).Append('\t')
+                  .Append(Cell(priority)).Append('\t')
+                  .Append(Cell(issuer)).Append('\t')
+                  .Append(Cell(status)).Append('\t')
+                  .Append(Cell(payload)).Append('\t')
+                  .Append(Cell(targetType)).Append('\t')
+                  .Append(Cell(targetRef)).Append('\t')
+                  .Append(Cell(aliases)).Append('\t')
+                  .Append(Cell(typeLabel)).Append('\n');
             }
             return sb.ToString();
         }
@@ -3872,6 +3941,11 @@ public static class Extension
                 return;
             }
 
+            if (function == "UploadSseNoteAttachment" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
+            {
+                return;
+            }
+
             if (function == "PilotResponse" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
                 var callsign = args[0] ?? "";
@@ -4413,6 +4487,53 @@ public static class Extension
         }
     }
 
+    /// <summary>
+    /// Pièce jointe de fiche : args[0]=noteId, args[1]=path, args[2]=author, args[3]=kind,
+    /// args[4..6]=pos, args[7]=caption, args[8]=grid.
+    /// </summary>
+    private static string BeginUploadSseNoteAttachment(string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+        var noteId = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+        if (string.IsNullOrEmpty(noteId)) return "ERR|note_id_empty";
+        var rawPath = args.Length > 1 ? (args[1] ?? "") : "";
+        var author = args.Length > 2 ? (args[2] ?? "Unknown") : "Unknown";
+        var kind = args.Length > 3 && !string.IsNullOrEmpty(args[3]) ? args[3]! : "photo";
+        string? resolved = null;
+        if (!string.IsNullOrWhiteSpace(rawPath))
+            resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(120));
+        if (resolved == null)
+            resolved = FindNewestScreenshot(TimeSpan.FromSeconds(90));
+        if (resolved == null) return "ERR|file_not_found";
+        try
+        {
+            var fi = new FileInfo(resolved);
+            if (!fi.Exists) return "ERR|file_not_found";
+            if (fi.Length < 32) return "ERR|file_empty";
+            var multipart = new MultipartFormDataContent();
+            multipart.Add(new StringContent(author), "author");
+            multipart.Add(new StringContent(kind), "kind");
+            AddOptionalForm(multipart, "pos_x", args, 4);
+            AddOptionalForm(multipart, "pos_y", args, 5);
+            AddOptionalForm(multipart, "pos_z", args, 6);
+            AddOptionalForm(multipart, "caption", args, 7);
+            AddOptionalForm(multipart, "grid_reference", args, 8);
+            if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
+            if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
+            var fileName = Path.GetFileName(resolved) ?? "sse_note.png";
+            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
+            multipart.Add(fileContent, "piece", fileName);
+            var path = "/api/sse/notes/" + Uri.EscapeDataString(noteId) + "/pieces";
+            return QueueMultipartUpload(path, multipart);
+        }
+        catch
+        {
+            return "ERR|read_failed";
+        }
+    }
+
     private static string BeginUploadLatestScreenshot(string?[] args)
     {
         if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
@@ -4535,7 +4656,9 @@ public static class Extension
             return "{}";
         var sanitized = System.Text.RegularExpressions.Regex.Replace(
             trimmed,
-            @"(?<=[:\[\s])(-?\d+),(\d+)(?=[,\}\]\s])",
+            // Virgule décimale FR (1–3 chiffres) seulement — pas les paires [x,y] entières
+            // du type [19345,17682] qui devenaient 19345.17682 et vidaient le marqueur.
+            @"(?<=[:\[\s])(-?\d+),(\d{1,3})(?=[,\}\]\s])",
             "$1.$2");
         try
         {
@@ -5392,6 +5515,74 @@ public static class Extension
     }
 
     /// <summary>
+    /// Transmet une fiche de renseignement simplifiée. Détail OK : « id » ou « id|référence ».
+    /// </summary>
+    private static string PostSseFieldNoteSync(string jsonBody, CancellationToken token)
+    {
+        if (!TryBuildRequestUri(_baseUrl, "/api/sse/notes", out var uri, out var err) || uri is null)
+            return FormatAtakExtArray("ERROR", err);
+        try
+        {
+            var payload = EnrichAtakPayload(jsonBody);
+            var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
+            var body = ReadContentUtf8(resp, token);
+            if (resp.IsSuccessStatusCode)
+            {
+                var id = "";
+                var reference = "";
+                try
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    if (doc.RootElement.TryGetProperty("id", out var idEl))
+                        id = idEl.ValueKind == JsonValueKind.Number
+                            ? idEl.GetInt32().ToString()
+                            : (idEl.GetString() ?? "");
+                    if (doc.RootElement.TryGetProperty("reference_code", out var refEl))
+                        reference = refEl.GetString() ?? "";
+                    else if (doc.RootElement.TryGetProperty("note", out var noteEl)
+                             && noteEl.ValueKind == JsonValueKind.Object
+                             && noteEl.TryGetProperty("reference_code", out var nestedRef))
+                        reference = nestedRef.GetString() ?? "";
+                }
+                catch
+                {
+                    // ignore parse
+                }
+                if (string.IsNullOrEmpty(id))
+                    return FormatAtakExtArray("OK", "Success");
+                return FormatAtakExtArray("OK", string.IsNullOrEmpty(reference) ? id : id + "|" + reference);
+            }
+            var code = (int)resp.StatusCode;
+            var modBlock = MapModAccessBlockError(body);
+            if (modBlock != null)
+                return FormatAtakExtArray("ERROR", modBlock.Replace("ERR|", "", StringComparison.Ordinal));
+            if (code == 401 || code == 403) return FormatAtakExtArray("ERROR", "unauthorized");
+            if (code == 503 && body.Contains("migration", StringComparison.OrdinalIgnoreCase))
+                return FormatAtakExtArray("ERROR", "migration_required");
+            if (body.Contains("body_required", StringComparison.OrdinalIgnoreCase))
+                return FormatAtakExtArray("ERROR", "body_required");
+            if (body.Contains("theme_required", StringComparison.OrdinalIgnoreCase))
+                return FormatAtakExtArray("ERROR", "theme_required");
+            if (body.Contains("maintenance", StringComparison.OrdinalIgnoreCase))
+                return FormatAtakExtArray("ERROR", "maintenance");
+            var errMsg = body.Length > 240 ? $"HTTP {code}" : body;
+            return FormatAtakExtArray("ERROR", $"HTTP {code}: {errMsg}");
+        }
+        catch (OperationCanceledException)
+        {
+            return FormatAtakExtArray("TIMEOUT", "Request timeout");
+        }
+        catch (HttpRequestException ex)
+        {
+            return FormatAtakExtArray("NETWORK_ERROR", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return FormatAtakExtArray("ERROR", ex.Message);
+        }
+    }
+
+    /// <summary>
     /// Extrait un id Athena depuis un JSON biométrie / envelope (person_id, id, athena_person_id).
     /// </summary>
     private static string TryExtractSsePersonId(string jsonBody)
@@ -5415,28 +5606,26 @@ public static class Extension
     }
 
     /// <summary>
-    /// Envoi générique SendSSE (numérique / record) vers le canal rapports ATAK.
+    /// SendSSE : uniquement un vrai rapport tactique (report_type).
+    /// Le reste ne doit pas créer un rapport vide « OTHER ».
     /// </summary>
     private static string PostSseGenericSync(string jsonBody, CancellationToken token)
     {
         try
         {
             var enriched = EnrichAtakPayload(jsonBody);
-            // Enveloppe rapport : conserve le JSON SSE brut dans le corps.
-            var wrapped = "{\"mapId\":1,\"kind\":\"SSE\",\"payload\":" + enriched + "}";
-            // Si le JSON d’origine est déjà un objet rapport utilisable, poster tel quel.
             try
             {
                 using var doc = JsonDocument.Parse(enriched);
-                if (doc.RootElement.TryGetProperty("kind", out _)
-                    || doc.RootElement.TryGetProperty("report_type", out _)
-                    || doc.RootElement.TryGetProperty("type", out _))
+                if (doc.RootElement.TryGetProperty("report_type", out var rt)
+                    && rt.ValueKind == JsonValueKind.String
+                    && !string.IsNullOrWhiteSpace(rt.GetString()))
                 {
                     return PostAtakJsonSync("/api/atak/reports", enriched, token);
                 }
             }
-            catch { /* ignore → wrapped */ }
-            return PostAtakJsonSync("/api/atak/reports", wrapped, token);
+            catch { /* ignore */ }
+            return FormatAtakExtArray("ERROR", "not_a_tactical_report");
         }
         catch (Exception ex)
         {

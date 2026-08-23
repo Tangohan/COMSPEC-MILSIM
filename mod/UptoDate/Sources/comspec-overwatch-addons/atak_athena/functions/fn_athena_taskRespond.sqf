@@ -1,6 +1,6 @@
 /*
-    Réponse à l’ordre sélectionné dans TASK (Accepter / Refuser / En cours).
-    Params: [_action] ACCEPT | REFUSE | EXEC
+    Réponse à l’ordre sélectionné dans TASK (Accepter / Refuser / En cours / Abort).
+    Params: [_action] ACCEPT | REFUSE | EXEC | ABORT
 */
 params [["_action", "ACCEPT", [""]]];
 
@@ -31,6 +31,12 @@ switch (_actionKey) do {
     case "EXEC": {
         _status = "EXEC";
         _feedback = "Ordre signalé en cours d’exécution.";
+    };
+    case "ABORT";
+    case "CANCELLED": {
+        _status = "CANCELLED";
+        _note = "Abort depuis TASK";
+        _feedback = "L’ordre a été interrompu. Le commandement a été informé.";
     };
     default {
         _status = "ACK";

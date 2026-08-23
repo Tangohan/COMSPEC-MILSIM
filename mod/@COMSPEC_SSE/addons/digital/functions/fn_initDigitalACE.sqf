@@ -69,14 +69,18 @@ private _digChildren = _actions apply {
 };
 
 private _insertDig = {
+    params ["_target"];
     private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
     if (!(_cache isEqualType createHashMap)) exitWith { [] };
-    _cache getOrDefault ["digitalChildren", []]
+    [_target, _cache getOrDefault ["digitalChildren", []]] call comspec_sse_fnc_aceWrapMenuChildren
 };
 
 private _digRoot = [
-    "COMSPEC_SSE_DIGITAL", "Exploitation numérique", _icon, {}, _condDigital, _insertDig, [], {[0,0,0]}, 3, _aceParams
+    "COMSPEC_SSE_DIGITAL", "Exploitation numérique", _icon, {}, _condDigital, _insertDig, [], {[0,0,0]}, 3, _aceParams, {}
 ] call ace_interact_menu_fnc_createAction;
+if (!isNil "comspec_sse_fnc_acePadAction") then {
+    _digRoot = [_digRoot] call comspec_sse_fnc_acePadAction;
+};
 
 private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
 if (!(_cache isEqualType createHashMap)) then { _cache = createHashMap; };

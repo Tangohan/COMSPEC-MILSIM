@@ -31,6 +31,16 @@ if (_first isEqualTo "" && {_last isEqualTo ""} && {_name isNotEqualTo ""}) then
     };
 };
 
+private _keepFirst = trim (_entity getVariable ["COMSPEC_SSE_FirstName", ""]);
+private _keepLast = trim (_entity getVariable ["COMSPEC_SSE_LastName", ""]);
+private _keepAlias = trim (_entity getVariable ["COMSPEC_SSE_Alias", ""]);
+private _authored = _entity getVariable ["COMSPEC_SSE_NameAuthored", false];
+if (_authored) then {
+    if (_keepFirst isNotEqualTo "") then { _first = _keepFirst; };
+    if (_keepLast isNotEqualTo "") then { _last = _keepLast; };
+};
+if (_keepAlias isNotEqualTo "") then { _alias = _keepAlias; };
+
 _entity setVariable ["COMSPEC_SSE_FirstName", _first, _public];
 _entity setVariable ["COMSPEC_SSE_LastName", _last, _public];
 _entity setVariable ["COMSPEC_SSE_Alias", _alias, _public];
