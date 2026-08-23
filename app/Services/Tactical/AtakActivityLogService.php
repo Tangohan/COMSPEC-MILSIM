@@ -41,6 +41,8 @@ final class AtakActivityLogService
     public const TYPE_INTEL = 'intel';
     /** Ordre C2 (émission web ou réception jeu). */
     public const TYPE_ORDER = 'order';
+    /** Alerte tactique (SALUTE, FRAGO, BDA, TIC, Eagle Down, etc.). */
+    public const TYPE_TACTICAL_ALERT = 'tactical_alert';
     /** Tentative de liaison / clé d’accès (succès ou échec). */
     public const TYPE_AUTH = 'auth';
     /** Connexion téléphone (QR / code court). */
