@@ -18,7 +18,7 @@ body.atak-page {
   --atak-c2-red: #dc5d5d;
   --atak-c2-blue: #68a5d8;
   --atak-c2-rail: 68px;
-  --atak-c2-tool: 46px;
+  --atak-c2-tool: 50px;
   --atak-c2-drawer: 38px;
   --atak-left-w: 360px;
   --atak-right-w: 286px;
@@ -62,8 +62,8 @@ body.atak-page.atak-density-comfortable {
 .atak-section-rail {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 7px 5px;
+  gap: 5px;
+  padding: 8px 6px;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -85,12 +85,12 @@ body.atak-page.atak-density-comfortable {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   font: 700 10px/1.15 var(--atak-font-secondary, var(--atak-font-ui));
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  padding: 0;
+  padding: 4px 2px;
 }
 .atak-section-btn:hover {
   background: rgba(255, 255, 255, 0.026);
@@ -216,7 +216,7 @@ a.atak-section-btn--link {
 
 .atak-side-head {
   height: 64px;
-  padding: 0 12px 0 14px;
+  padding: 0 14px 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -539,7 +539,8 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
 .atak-panel-chrome {
   background: linear-gradient(180deg, #0d1319, #0a1016);
   border-bottom-color: var(--atak-c2-line);
-  padding: 0.35rem 0.65rem;
+  padding: 0.45rem 0.8rem;
+  gap: 0.55rem;
 }
 .atak-panel-chrome-label {
   font-family: var(--atak-font-secondary, var(--atak-font-ui));
@@ -558,6 +559,7 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  padding: 0.32rem 0.55rem;
 }
 .atak-panel-chrome-btn:hover {
   border-color: var(--atak-c2-line2);
@@ -598,7 +600,7 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
   height: var(--atak-c2-tool);
   min-height: var(--atak-c2-tool);
   margin: 0;
-  padding: 0 9px;
+  padding: 0 12px;
   border: 0;
   border-bottom: 1px solid var(--atak-c2-line);
   border-radius: 0;
@@ -618,12 +620,12 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
   flex-wrap: nowrap;
   overflow-x: auto;
   overflow-y: hidden;
-  gap: 4px;
+  gap: 8px 10px;
   scrollbar-width: thin;
 }
 .atak-map-tools__btn {
-  height: 29px;
-  padding: 0 9px;
+  height: 32px;
+  padding: 0 12px;
   border: 1px solid transparent;
   border-radius: 3px;
   color: #c5d0d6;
@@ -651,20 +653,33 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
   margin-left: auto;
 }
 .atak-map-tools__sep {
-  height: 22px;
-  min-height: 22px;
+  height: 16px;
+  min-height: 16px;
   align-self: center;
   background: var(--atak-c2-line);
+  margin: 0 10px;
+}
+.atak-map-tools__field {
+  gap: 0.4rem;
   margin: 0 4px;
+  padding: 0.22rem 0.5rem;
+  border-color: var(--atak-c2-line);
+  border-radius: 3px;
+  font-size: 10px;
+}
+.atak-map-tools__field input {
+  width: 3.1rem;
+  padding: 0.18rem 0.28rem;
+  font-size: 11px;
 }
 .atak-map-tools__btn--icon {
-  width: 29px;
-  min-width: 29px;
+  width: 32px;
+  min-width: 32px;
   padding: 0;
   border: 1px solid var(--atak-c2-line);
   background: #0b1117;
   color: #85959f;
-  font-size: 13px;
+  font-size: 14px;
 }
 .atak-map-tools-fab {
   position: relative;
@@ -869,7 +884,7 @@ body.atak-page.atak-drawer-collapsed .atak-drawer__body {
   min-width: var(--atak-c2-rail) !important;
 }
 .atak-units-header {
-  padding: 0.65rem 0.75rem;
+  padding: 0.75rem 0.85rem;
   border-bottom-color: var(--atak-c2-line);
 }
 .atak-units-title {
@@ -906,7 +921,7 @@ body.atak-page.atak-drawer-collapsed .atak-drawer__body {
 .atak-air-assets,
 .atak-ft-composition,
 .atak-effectifs-notepad {
-  margin: 8px 9px;
+  margin: 10px 12px;
   border: 1px solid var(--atak-c2-line);
   border-radius: 4px;
   background: #0a1016;
@@ -915,8 +930,8 @@ body.atak-page.atak-drawer-collapsed .atak-drawer__body {
 .atak-air-assets-header,
 .atak-ft-composition > .atak-collapse-sum,
 .atak-effectifs-notepad > .atak-collapse-sum {
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 36px;
+  padding: 0 12px;
   border-bottom: 1px solid var(--atak-c2-line);
   background: transparent;
   font: 800 8px var(--atak-font-tactical);
@@ -929,6 +944,8 @@ body.atak-page.atak-drawer-collapsed .atak-drawer__body {
 .atak-effectifs-notepad .atak-collapse-body {
   background: #0a1016;
   border-bottom: 0;
+  padding: 12px 14px 14px;
+  gap: 0.7rem;
 }
 
 .atak-ops-btn,
@@ -952,6 +969,9 @@ body.atak-page.atak-drawer-collapsed .atak-drawer__body {
   border: 1px solid var(--atak-c2-line);
   border-radius: 4px;
   background: #0a1016;
+  padding: 1.35rem 1rem;
+  margin: 0.25rem 0;
+  gap: 0.4rem;
 }
 .atak-empty-state-title {
   font-family: var(--atak-font-tactical);
@@ -1011,7 +1031,7 @@ body.atak-page.atak-drawer-collapsed .atak-drawer__body {
   .atak-map-tools {
     height: auto;
     min-height: var(--atak-c2-tool);
-    padding: 4px 8px;
+    padding: 6px 10px;
   }
   .atak-map-tools__row {
     flex-wrap: wrap;
@@ -1244,4 +1264,70 @@ body.atak-page .atak-order-suivi em {
   body.atak-page .atak-order-actions--grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* —— Gouttières panneaux + bloc-notes —— */
+.atak-tabs-content.active:not(#tab-orders) {
+  padding: 0.75rem 0.9rem 1rem;
+  gap: 0.65rem;
+}
+#tab-notes .atak-notes-toolbar {
+  padding: 0.15rem 0 0.55rem;
+  margin-bottom: 0.45rem;
+  gap: 0.55rem 0.85rem;
+}
+.atak-notes-block {
+  margin: 0.2rem 0 0.75rem;
+  padding: 0 0.75rem 0.75rem;
+}
+.atak-notes-block-sum {
+  padding: 0.7rem 0.15rem;
+}
+.atak-notepad {
+  margin-top: 0.15rem;
+  padding: 0.8rem 0.9rem;
+  line-height: 1.55;
+  border-color: var(--atak-c2-line);
+  background: #080d12;
+}
+.atak-notepad--effectifs {
+  min-height: 6.25rem;
+  margin-top: 0;
+}
+.atak-effectifs-notepad-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.45rem;
+}
+.atak-replay-panel {
+  gap: 0.95rem;
+  padding: 0.2rem 0.2rem 0.4rem;
+}
+.atak-replay-controls {
+  gap: 0.6rem;
+}
+.atak-replay-controls .atak-ops-btn {
+  padding: 0.45rem 0.8rem;
+}
+.atak-replay-timeline {
+  gap: 0.45rem;
+  margin-top: 0.15rem;
+}
+.atak-replay-info-row {
+  gap: 0.65rem;
+  align-items: center;
+}
+.frs-panel {
+  padding: 0.15rem 0.15rem 0.7rem;
+  gap: 0.8rem;
+}
+.atak-cams-list,
+.atak-intel-photos,
+.atak-sse-persons-list {
+  padding: 0.15rem 0.1rem 0.55rem;
+}
+.atak-left-aside.atak-module-list {
+  padding: 10px;
+  gap: 4px;
 }
