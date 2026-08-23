@@ -1,10 +1,10 @@
 /*
-    Intercepte les minuteries ACE (pose + désamorçage + détonation).
+    Intercepte les explosifs ACE (pose, déclencheur, minuterie, désamorçage).
     Sans ACE Explosives : no-op.
 */
 if (!hasInterface) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_ExplosiveTimersHooked", false]) exitWith {};
-if (isNil "ace_explosives_fnc_startTimer") exitWith {};
+if (!isClass (configFile >> "CfgPatches" >> "ace_explosives")) exitWith {};
 
 missionNamespace setVariable ["COMSPEC_ExplosiveTimersHooked", true, false];
 
@@ -14,18 +14,28 @@ if (isNil "COMSPEC_ExplosiveLocalIds") then {
 if (isNil "COMSPEC_ExplosiveOutcomes") then {
     missionNamespace setVariable ["COMSPEC_ExplosiveOutcomes", createHashMap, false];
 };
+if (isNil "COMSPEC_ExplosiveObjects") then {
+    missionNamespace setVariable ["COMSPEC_ExplosiveObjects", createHashMap, false];
+};
 
-if (isNil "COMSPEC_ACE_startTimerOrig") then {
+private _kindFromTrigger = {
+    params ["_cfg"];
+    private _s = toLower (if (_cfg isEqualType "") then { _cfg } else { format ["%1", _cfg] });
+    if (_s find "timer" >= 0) exitWith { "timer" };
+    if (_s find "cell" >= 0) exitWith { "cellphone" };
+    if (_s find "command" >= 0 || {_s find "clacker" >= 0} || {_s find "m57" >= 0} || {_s find "m26" >= 0} || {_s find "mk16" >= 0}) exitWith { "clacker" };
+    "command"
+};
+
+missionNamespace setVariable ["COMSPEC_ExplosiveKindFromTrigger", _kindFromTrigger, false];
+
+if (isNil "COMSPEC_ACE_startTimerOrig" && {!isNil "ace_explosives_fnc_startTimer"}) then {
     missionNamespace setVariable ["COMSPEC_ACE_startTimerOrig", ace_explosives_fnc_startTimer, false];
     ace_explosives_fnc_startTimer = {
         params [["_explosive", objNull, [objNull]], ["_delay", 0, [0]], ["_trigger", "#timer", [""]], ["_unit", objNull, [objNull]]];
-        if (
-            !isNull _explosive
-            && { _delay >= 1 }
-            && { !(_explosive getVariable ["COMSPEC_timerReported", false]) }
-        ) then {
+        if (!isNull _explosive && {_delay >= 1}) then {
             _explosive setVariable ["COMSPEC_timerReported", true, true];
-            private _cid = [_explosive, _delay, _unit] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
+            private _cid = [_explosive, _delay, _unit, "armed", "", "timer"] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
             if (_cid isEqualType "" && {_cid isNotEqualTo ""}) then {
                 [{
                     params ["_cid", "_exp"];
@@ -43,6 +53,31 @@ if (isNil "COMSPEC_ACE_startTimerOrig") then {
         _this call _orig;
     };
 };
+
+if (isNil "COMSPEC_ACE_placeExplosiveOrig" && {!isNil "ace_explosives_fnc_placeExplosive"}) then {
+    missionNamespace setVariable ["COMSPEC_ACE_placeExplosiveOrig", ace_explosives_fnc_placeExplosive, false];
+    ace_explosives_fnc_placeExplosive = {
+        private _orig = missionNamespace getVariable ["COMSPEC_ACE_placeExplosiveOrig", {}];
+        private _exp = _this call _orig;
+        if (!(_exp isEqualType objNull) || {isNull _exp}) exitWith { _exp };
+        private _unit = if ((count _this) > 0 && {(_this select 0) isEqualType objNull}) then { _this select 0 } else { player };
+        private _triggerCfg = if ((count _this) > 4) then { _this select 4 } else { "" };
+        private _kind = [_triggerCfg] call (missionNamespace getVariable ["COMSPEC_ExplosiveKindFromTrigger", { "command" }]);
+        if (_kind isEqualTo "timer") exitWith { _exp };
+        [_exp, 0, _unit, "armed", "", _kind] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
+        _exp
+    };
+};
+
+["ace_explosives_setup", {
+    params ["_explosive", "_magazine", "_unit"];
+    if (isNull _explosive) exitWith {};
+    if (!local _explosive) exitWith {};
+    if (!isNull _unit && {_unit isNotEqualTo player}) exitWith {};
+    if (_explosive getVariable ["COMSPEC_timerReported", false]) exitWith {};
+    if ((_explosive getVariable ["COMSPEC_chargeId", ""]) isNotEqualTo "") exitWith {};
+    [_explosive, 0, _unit, "armed", "", "command"] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
+}] call CBA_fnc_addEventHandler;
 
 ["ace_explosives_defuse", {
     params ["_explosive", "_unit"];
@@ -64,4 +99,4 @@ if (isNil "COMSPEC_ACE_startTimerOrig") then {
     [objNull, 0, _unit, "defused", _cid] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
 }] call CBA_fnc_addEventHandler;
 
-["INFO", "Explosives", "Suivi des charges à retardement ACE actif"] call comspec_overwatch_connect_fnc_log;
+["INFO", "Explosives", "Suivi des charges ACE (minuterie et déclenchement) actif"] call comspec_overwatch_connect_fnc_log;

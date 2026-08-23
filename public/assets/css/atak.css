@@ -3158,6 +3158,7 @@ body.atak-theme-light .atak-chat-messages {
   box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.25);
 }
 .atak-charge-card--done { opacity: 0.72; cursor: default; }
+.atak-charge-card--pending { border-color: rgba(250, 204, 21, 0.55); }
 .atak-charge-card-head {
   display: flex;
   align-items: center;
@@ -3184,6 +3185,35 @@ body.atak-theme-light .atak-chat-messages {
 .atak-charge-card--done .atak-charge-pill {
   background: rgba(148, 163, 184, 0.16);
   color: #94a3b8;
+}
+.atak-charge-card--pending .atak-charge-pill {
+  background: rgba(250, 204, 21, 0.18);
+  color: #fde68a;
+}
+.atak-charge-detonate {
+  margin-top: 0.45rem;
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.atak-charge-detonate:hover {
+  background: rgba(239, 68, 68, 0.22);
+}
+.atak-charge-detonate--confirm {
+  background: #b91c1c;
+  border-color: #ef4444;
+  color: #fff;
+}
+.atak-charge-pending {
+  margin: 0.45rem 0 0;
+  font-size: 0.68rem;
+  color: #fde68a;
 }
 
 /* JTAC 9-Line */

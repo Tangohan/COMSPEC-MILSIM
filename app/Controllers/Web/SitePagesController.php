@@ -160,6 +160,7 @@ final class SitePagesController
                     __('site.cl_2026_08_i3'),
                     __('site.cl_2026_08_i4'),
                     __('site.cl_2026_08_i5'),
+                    __('site.cl_2026_08_i6'),
                 ],
             ],
             [

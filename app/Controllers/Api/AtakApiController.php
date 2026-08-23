@@ -7998,6 +7998,7 @@ class AtakApiController
         return Response::json([
             'items' => $rows,
             'armed_count' => count(array_filter($rows, static fn (array $row): bool => ($row['status'] ?? '') === 'armed')),
+            'can_command_detonate' => $this->canIssueOrdersFromWeb() && ComspecApiKeyAuth::extractPresentedKey() === '',
         ]);
     }
 
@@ -8045,17 +8046,97 @@ class AtakApiController
             $startedTs = strtotime((string) ($row['started_at'] ?? ''));
             if ($startedTs !== false && abs(time() - $startedTs) <= 8) {
                 $author = (string) ($row['author'] ?? '');
+                $kind = (string) ($row['trigger_kind'] ?? 'timer');
+                $prefix = $kind === 'timer' ? 'Charge à retardement — ' : 'Charge posée — ';
                 $this->activityLog->record(
                     $tenantId,
                     $mapId,
                     AtakActivityLogService::TYPE_EXPLOSIVE_TIMER,
-                    'Charge à retardement — ' . ($author !== '' ? $author : 'terrain'),
+                    $prefix . ($author !== '' ? $author : 'terrain'),
                     $author !== '' ? $author : null
                 );
             }
         }
 
         return Response::json($row, 201);
+    }
+
+    public function explosiveTimersCommands(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        if (!$this->explosiveTimers()->tablesReady()) {
+            return Response::json(['commands' => []]);
+        }
+
+        return Response::json([
+            'commands' => $this->explosiveTimers()->listPendingDetonations($tenantId, $mapId),
+        ]);
+    }
+
+    public function explosiveTimersDetonate(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Le déclenchement d’une charge se fait depuis le poste de commandement, pas depuis le terrain.',
+            ], 403);
+        }
+        if (!$this->canIssueOrdersFromWeb()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Connectez-vous au portail pour déclencher une charge depuis la carte.',
+            ], 403);
+        }
+        if (!$this->explosiveTimers()->commandColumnsReady()) {
+            return Response::json([
+                'error' => 'migration_required',
+                'message' => 'Le déclenchement des charges n’est pas encore disponible sur cette communauté.',
+            ], 503);
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::json(['error' => 'Not found'], 404);
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $request->query('mapId') ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $user = $this->sessionUserBrief();
+        $by = '';
+        if ($user) {
+            $by = (string) ($user['callsign'] ?: $user['displayName'] ?: 'Poste de commandement');
+        }
+        if ($by === '') {
+            $by = 'Poste de commandement';
+        }
+        $row = $this->explosiveTimers()->requestDetonate($tenantId, $mapId, $id, $by);
+        if ($row === null) {
+            return Response::json([
+                'error' => 'unavailable',
+                'message' => 'Cette charge n’est plus armée, ou elle est introuvable.',
+            ], 404);
+        }
+        $label = (string) ($row['magazine_label'] ?? 'Charge');
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_EXPLOSIVE_TIMER,
+            'Déclenchement demandé — ' . $label,
+            $by
+        );
+
+        return Response::json($row);
     }
 
     public function nineLineIndex(Request $request, array $params = []): Response

@@ -14,9 +14,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.430;
-        versionStr = "1.4.30";
-        versionAr[] = {1, 4, 30};
+        version = 1.431;
+        versionStr = "1.4.31";
+        versionAr[] = {1, 4, 31};
     };
 };
 
@@ -89,6 +89,10 @@ class CfgFunctions {
             class initACE {};
             class initExplosiveTimers {};
             class reportExplosiveTimer {};
+            class findChargeObject {};
+            class detonateChargeLocal {};
+            class detonateChargeById {};
+            class pollExplosiveCommands {};
             class aceAddSelfAction {};
             class acePadAction {};
             class pauseManagerShow {};
@@ -398,6 +402,7 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_createRoleplayZone { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_createRoleplayZoneFromZeus { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_clearDisconnectedAtakState { allowedTargets = 2; };
+        class comspec_overwatch_connect_fnc_detonateChargeLocal { allowedTargets = 0; };
     };
     class Commands {
         mode = 1;

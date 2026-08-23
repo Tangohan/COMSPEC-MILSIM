@@ -29,4 +29,5 @@ return [
     'cgu_cgv' => 'Terms / Sales',
     'your_rights' => 'Your rights',
     'account' => 'Account',
+    'skip_to_content' => 'Skip to content',
 ];

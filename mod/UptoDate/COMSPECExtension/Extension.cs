@@ -1982,6 +1982,25 @@ public static class Extension
                 var simplified = SimplifyOrdersJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
+            // Déclenchements TOC → jeu. Args : [mapId]
+            // Lignes : charge_id\trequested_by\tid
+            if (function == "GetExplosiveCommands")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var url = _baseUrl + "/api/atak/explosive-timers/commands?mapId=" + Uri.EscapeDataString(mapId);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyExplosiveCommandsJson(respBody);
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
             // Mise à jour statut ordre depuis le jeu. Args : [orderId, status, by, mapId?, note?]
             if (function == "UpdateOrderStatus" && args.Length >= 2)
             {
@@ -3266,6 +3285,50 @@ public static class Extension
                   .Append(Cell(targetRef)).Append('\t')
                   .Append(Cell(aliases)).Append('\t')
                   .Append(Cell(typeLabel)).Append('\n');
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
+    /// Simplifie GET /api/atak/explosive-timers/commands pour SQF.
+    /// Lignes : charge_id\trequested_by\tid
+    /// </summary>
+    private static string SimplifyExplosiveCommandsJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("commands", out var commands) || commands.ValueKind != JsonValueKind.Array)
+                return "";
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+            static string Cell(string s)
+            {
+                var c = Clean(s);
+                return c.Length == 0 ? "-" : c;
+            }
+            foreach (var el in commands.EnumerateArray())
+            {
+                var chargeId = "";
+                if (el.TryGetProperty("charge_id", out var c) && c.ValueKind == JsonValueKind.String)
+                    chargeId = c.GetString() ?? "";
+                if (string.IsNullOrEmpty(chargeId)) continue;
+                var by = "";
+                if (el.TryGetProperty("requested_by", out var rb) && rb.ValueKind == JsonValueKind.String)
+                    by = rb.GetString() ?? "";
+                var id = "";
+                if (el.TryGetProperty("id", out var i))
+                {
+                    id = i.ValueKind == JsonValueKind.Number
+                        ? i.GetInt32().ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        : (i.GetString() ?? "");
+                }
+                sb.Append(Cell(chargeId)).Append('\t')
+                  .Append(Cell(by)).Append('\t')
+                  .Append(Cell(id)).Append('\n');
             }
             return sb.ToString();
         }

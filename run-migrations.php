@@ -3422,6 +3422,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakExplosiveCommandMigrate = require $root . '/bootstrap/atak_explosive_command_migration.php';
+try {
+    echo "Migration atak_explosive_command (déclenchement TOC des charges ACE)...\n";
+    $atakExplosiveCommandMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_explosive_command : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $sseCliLog = static function (string $m): void {
     echo $m;
 };

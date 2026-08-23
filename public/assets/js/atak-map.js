@@ -1355,10 +1355,12 @@ window.ATAKMap = (function () {
       var latlng = L.latLng(applied[0], applied[1]);
       var remaining = Number(item.remaining_seconds);
       if (isNaN(remaining)) remaining = 0;
-      var urgent = remaining <= 15;
-      var color = urgent ? '#ef4444' : '#f97316';
+      var countdown = item.has_countdown !== false && item.has_countdown !== 0 && item.remaining_seconds != null;
+      var pending = !!item.detonate_pending;
+      var urgent = countdown && remaining <= 15;
+      var color = pending ? '#facc15' : (urgent ? '#ef4444' : '#f97316');
       var grid = String(item.grid_ref || '').trim();
-      var pinLabel = formatChargeRemain(remaining);
+      var pinLabel = countdown ? formatChargeRemain(remaining) : (pending ? 'TOC' : 'ARM');
       var icon = L.divIcon({
         className: 'atak-charge-map-icon',
         html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
@@ -1368,11 +1370,15 @@ window.ATAKMap = (function () {
         iconSize: [56, 26],
         iconAnchor: [28, 8]
       });
-      var popup = '<div class="atak-charge-popup"><div class="atak-marker-popup__kind">Charge à retardement</div><b>' +
+      var kindTitle = countdown ? 'Charge à retardement' : 'Charge';
+      var delayLine = countdown
+        ? '<br/>Délai programmé : ' + formatChargeRemain(item.fuse_seconds) +
+          '<br/>Temps restant : ' + formatChargeRemain(remaining)
+        : '<br/>Déclenchement : ' + (pending ? 'ordre envoyé' : 'à la demande');
+      var popup = '<div class="atak-charge-popup"><div class="atak-marker-popup__kind">' + kindTitle + '</div><b>' +
         String(item.magazine_label || 'Charge').replace(/</g, '&lt;') +
         '</b><br/>Coordonnées : ' + String(grid || (Math.round(x) + ' / ' + Math.round(y))).replace(/</g, '&lt;') +
-        '<br/>Délai programmé : ' + formatChargeRemain(item.fuse_seconds) +
-        '<br/>Temps restant : ' + formatChargeRemain(remaining) + '</div>';
+        delayLine + '</div>';
       if (explosiveMarkersById[id]) {
         explosiveMarkersById[id].setLatLng(latlng);
         explosiveMarkersById[id].setIcon(icon);

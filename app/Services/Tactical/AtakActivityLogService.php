@@ -41,6 +41,8 @@ final class AtakActivityLogService
     public const TYPE_INTEL = 'intel';
     /** Ordre C2 (émission web ou réception jeu). */
     public const TYPE_ORDER = 'order';
+    /** Alerte tactique (SALUTE, FRAGO, BDA, TIC, Eagle Down, etc.). */
+    public const TYPE_TACTICAL_ALERT = 'tactical_alert';
     /** Tentative de liaison / clé d’accès (succès ou échec). */
     public const TYPE_AUTH = 'auth';
     /** Connexion téléphone (QR / code court). */
@@ -53,7 +55,7 @@ final class AtakActivityLogService
     public const TYPE_TOC_NOTE = 'toc_note';
     /** Demande MEDEVAC 9-line. */
     public const TYPE_MEDEVAC = 'medevac';
-    /** Charge à retardement ACE (minuterie posée sur le terrain). */
+    /** Charge ACE (minuterie posée, ou déclenchement demandé depuis le poste de commandement). */
     public const TYPE_EXPLOSIVE_TIMER = 'explosive_timer';
     /** Équipe de feu (création, attribution, dissolution, couleur). */
     public const TYPE_FIRE_TEAM = 'fire_team';
