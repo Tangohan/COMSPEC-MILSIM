@@ -1,5 +1,5 @@
 /*
-    Envoie une charge à retardement (ou son issue) vers Athena.
+    Envoie une charge ACE (ou son issue) vers Athena.
     Retour : identifiant de charge (chaîne) ou "".
 */
 params [
@@ -7,7 +7,8 @@ params [
     ["_delay", 0, [0]],
     ["_unit", objNull, [objNull]],
     ["_status", "armed", [""]],
-    ["_chargeId", "", [""]]
+    ["_chargeId", "", [""]],
+    ["_triggerKind", "", [""]]
 ];
 
 private _statusKey = toLower _status;
@@ -27,6 +28,17 @@ if (_cid isEqualTo "" && {!isNull _explosive}) then {
 };
 if (_cid isEqualTo "") exitWith { "" };
 
+if (isNil "COMSPEC_ExplosiveObjects") then {
+    missionNamespace setVariable ["COMSPEC_ExplosiveObjects", createHashMap, false];
+};
+if (!isNull _explosive) then {
+    private _objs = missionNamespace getVariable ["COMSPEC_ExplosiveObjects", createHashMap];
+    if (_objs isEqualType createHashMap) then {
+        _objs set [_cid, _explosive];
+        missionNamespace setVariable ["COMSPEC_ExplosiveObjects", _objs, false];
+    };
+};
+
 private _payload = createHashMap;
 _payload set ["charge_id", _cid];
 _payload set ["status", _statusKey];
@@ -36,7 +48,11 @@ if (_statusKey isEqualTo "armed" && {isNull _explosive}) exitWith { "" };
 
 if (_statusKey isEqualTo "armed") then {
     private _pos = getPosATL _explosive;
-    private _fuse = (round _delay) max 1;
+    private _kind = toLower _triggerKind;
+    if (!(_kind in ["timer", "clacker", "cellphone", "command"])) then {
+        if (_delay >= 1) then { _kind = "timer" } else { _kind = "command" };
+    };
+    private _fuse = if (_kind isEqualTo "timer") then { (round _delay) max 1 } else { (round _delay) max 0 };
     private _placer = _unit;
     if (isNull _placer) then { _placer = player; };
     private _author = if (!isNull player && {_placer isEqualTo player}) then {
@@ -52,7 +68,7 @@ if (_statusKey isEqualTo "armed") then {
             private _v = _explosive getVariable [_x, ""];
             if (_v isEqualType "" && {_v isNotEqualTo ""}) then { _mag = _v; };
         };
-    } forEach ["ace_explosives_magazine", "ace_explosives_magazineClass"];
+    } forEach ["ace_explosives_magazine", "ace_explosives_magazineClass", "ace_explosives_class"];
     private _label = "";
     if (_mag isNotEqualTo "") then {
         _label = getText (configFile >> "CfgMagazines" >> _mag >> "displayName");
@@ -71,6 +87,7 @@ if (_statusKey isEqualTo "armed") then {
     _payload set ["pos_x", _pos select 0];
     _payload set ["pos_y", _pos select 1];
     _payload set ["fuse_seconds", _fuse];
+    _payload set ["trigger_kind", _kind];
 
     private _local = missionNamespace getVariable ["COMSPEC_ExplosiveLocalIds", []];
     if (!(_local isEqualType [])) then { _local = []; };
@@ -83,7 +100,7 @@ private _json = [_payload] call comspec_overwatch_connect_fnc_hashMapToJson;
 [
     "SubmitExplosiveTimer",
     [_json],
-    "Charge à retardement",
+    "Charge explosive",
     false,
     true,
     "liaison",

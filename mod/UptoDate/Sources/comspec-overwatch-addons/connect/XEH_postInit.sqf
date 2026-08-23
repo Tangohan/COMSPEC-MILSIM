@@ -115,12 +115,12 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         [] call comspec_overwatch_connect_fnc_initACE;
     }, [], 8] call CBA_fnc_waitAndExecute;
 
-    // Charges ACE à minuterie → section ATAK web (indépendant des menus self-action).
+    // Charges ACE (minuterie + déclenchement TOC) → section ATAK web.
     [{
-        !isNil "ace_explosives_fnc_startTimer"
+        isClass (configFile >> "CfgPatches" >> "ace_explosives")
     }, {
         [] call comspec_overwatch_connect_fnc_initExplosiveTimers;
-    }, [], 120, {}] call CBA_fnc_waitAndExecute;
+    }, [], 120, {}] call CBA_fnc_waitUntilAndExecute;
 
     // Handshake Athena puis attendre stabilisation spawn/JIP avant sync lourde + alertes médicales.
     // CTD observé (RPT 15-22-54) : Handshake OK puis crash avant « Boucles de sync » sur __cur_mp JIP

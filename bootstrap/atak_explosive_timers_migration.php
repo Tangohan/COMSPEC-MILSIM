@@ -41,16 +41,21 @@ return static function (PDO $pdo): void {
                 pos_x DOUBLE NOT NULL DEFAULT 0,
                 pos_y DOUBLE NOT NULL DEFAULT 0,
                 fuse_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+                trigger_kind VARCHAR(16) NOT NULL DEFAULT 'timer',
                 status VARCHAR(16) NOT NULL DEFAULT 'armed',
                 started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                detonates_at DATETIME NOT NULL,
+                detonates_at DATETIME DEFAULT NULL,
                 ended_at DATETIME DEFAULT NULL,
+                detonate_requested_at DATETIME DEFAULT NULL,
+                detonate_requested_by VARCHAR(120) NOT NULL DEFAULT '',
+                detonate_ack_at DATETIME DEFAULT NULL,
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_explosive_timer_charge (tenant_id, map_id, charge_id),
                 KEY idx_explosive_timer_tenant_map (tenant_id, map_id, status),
                 KEY idx_explosive_timer_detonates (tenant_id, map_id, detonates_at),
+                KEY idx_explosive_timer_pending_det (tenant_id, map_id, status, detonate_requested_at),
                 CONSTRAINT fk_explosive_timer_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
