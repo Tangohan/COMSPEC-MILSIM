@@ -7,6 +7,14 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.50] / extension 2.0.10 — 2026-08-23
+
+### Corrigé — lancement et signalement
+
+Fenêtre Windows unique au menu principal (conditions d’utilisation + disclaimer bêta). Plus de parade de dialogues en mission. Le signalement in-game s’ouvre depuis Échap → gestion du mod et part bien vers l’équipe.
+
+---
+
 ## [1.4.49] / Athena ATAK 1.0.42 — 2026-08-23
 
 ### Corrigé — gel à la photo ATAK

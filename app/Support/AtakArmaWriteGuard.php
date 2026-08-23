@@ -37,7 +37,7 @@ final class AtakArmaWriteGuard
      * @param array<string, mixed> $body
      * @return array{steam_uid: ?string, session_ok: bool}|Response
      */
-    public function assertActor(Request $request, int $tenantId, array $body, bool $requireSteam = false): array|Response
+    public function assertActor(Request $request, int $tenantId, array $body, bool $requireSteam = false, string $channel = 'write'): array|Response
     {
         if ($this->isBrowserSession()) {
             return ['steam_uid' => null, 'session_ok' => false];
@@ -135,7 +135,7 @@ final class AtakArmaWriteGuard
             return $modBlock;
         }
 
-        $rate = $this->checkRateLimit($tenantId, $steam, $apiKey);
+        $rate = $this->checkRateLimit($tenantId, $steam, $apiKey, $channel);
         if ($rate instanceof Response) {
             return $rate;
         }
@@ -251,25 +251,52 @@ final class AtakArmaWriteGuard
         return $matched !== null && $matched > 0;
     }
 
-    private function checkRateLimit(int $tenantId, ?string $steam, string $apiKey): ?Response
+    private function checkRateLimit(int $tenantId, ?string $steam, string $apiKey, string $channel = 'write'): ?Response
     {
         $actor = $steam !== null
             ? ('steam:' . $steam)
             : ('key:' . substr(AtakGameSession::keyFingerprint($apiKey), 0, 16));
-        $key = 'atak:write:' . $tenantId . ':' . $actor;
-        // Après réduction client (~1 pos / 3 s + événements) : marge pour chat / marqueurs / CAS.
-        if ($this->limiter->tooManyAttempts($key, 150, 60)) {
+        $writeKey = 'atak:write:' . $tenantId . ':' . $actor;
+        // Plafond global : chat, marqueurs, CAS, positions — le client ne doit pas être la seule protection.
+        if ($this->limiter->tooManyAttempts($writeKey, 150, 60)) {
             $this->log($tenantId, false, 'Synchronisation jeu ralentie — trop d’activité', [
                 'reason' => 'rate_limited',
+                'channel' => $channel,
             ]);
 
-            return Response::json([
-                'error' => 'too_many_requests',
-                'message' => 'Synchronisation Athena temporairement ralentie. Patientez un instant.',
-            ], 429);
+            return $this->rateLimitedResponse(60);
+        }
+        if ($channel === 'position') {
+            $posKey = 'atak:pos:' . $tenantId . ':' . $actor;
+            if ($this->limiter->tooManyAttempts($posKey, 30, 60)) {
+                $this->log($tenantId, false, 'Synchronisation jeu ralentie — trop de positions', [
+                    'reason' => 'rate_limited_position',
+                ]);
+
+                return $this->rateLimitedResponse(60);
+            }
+            $burstKey = 'atak:posburst:' . $tenantId . ':' . $actor;
+            if ($this->limiter->tooManyAttempts($burstKey, 10, 5)) {
+                $this->log($tenantId, false, 'Synchronisation jeu ralentie — rafale de positions', [
+                    'reason' => 'rate_limited_position_burst',
+                ]);
+
+                return $this->rateLimitedResponse(5);
+            }
         }
 
         return null;
+    }
+
+    private function rateLimitedResponse(int $retryAfter): Response
+    {
+        $retryAfter = max(1, min(120, $retryAfter));
+
+        return Response::json([
+            'error' => 'too_many_requests',
+            'message' => 'Synchronisation Athena temporairement ralentie. Patientez un instant.',
+            'retry_after' => $retryAfter,
+        ], 429)->header('Retry-After', (string) $retryAfter);
     }
 
     /**

@@ -5,6 +5,7 @@
 if (!hasInterface) exitWith { false };
 
 profileNamespace setVariable ["comspec_overwatch_beta_note_ack", false];
+profileNamespace setVariable ["comspec_overwatch_cgu_ack", false];
 saveProfileNamespace;
 
 missionNamespace setVariable ["COMSPEC_BetaAccessNoteShown", false, false];

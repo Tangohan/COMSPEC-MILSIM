@@ -43,6 +43,9 @@ public static class Extension
     private static (string Url, string Body)? _coalescedPosition;
     private static readonly object CoalescedPositionLock = new();
     private static System.Threading.Timer? _drainTimer;
+    private static readonly object DrainTimerLock = new();
+    /// <summary>Période de flush des positions coalescées (250–2000 ms), pilotée par le profil réseau SQF.</summary>
+    private static int _drainPeriodMs = 1000;
     /// <summary>Backoff après HTTP 429 (Ticks UTC). Pendant ce délai : pas d’envoi position / drain réduit.</summary>
     private static long _rateLimitUntilTicks;
     private static int _rateLimitBackoffSec = 2;
@@ -403,8 +406,28 @@ public static class Extension
 
     private static void EnsureDrainTimer()
     {
-        if (_drainTimer != null) return;
-        _drainTimer = new System.Threading.Timer(_ => DrainQueue(), null, 2000, 2000);
+        var period = Math.Clamp(_drainPeriodMs, 250, 2000);
+        lock (DrainTimerLock)
+        {
+            if (_drainTimer == null)
+                _drainTimer = new System.Threading.Timer(_ => DrainQueue(), null, period, period);
+            else
+                _drainTimer.Change(period, period);
+        }
+    }
+
+    private static string ApplyTelemetryBatch(string? raw)
+    {
+        var s = (raw ?? "").Trim().Replace(',', '.');
+        if (!double.TryParse(s, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+            return "ERR|invalid_batch";
+        // SQF envoie des millisecondes ; un profil « 1 » (seconde) reste accepté.
+        var ms = parsed <= 10 ? (int)Math.Round(parsed * 1000.0) : (int)Math.Round(parsed);
+        ms = Math.Clamp(ms, 250, 2000);
+        _drainPeriodMs = ms;
+        EnsureDrainTimer();
+        return "OK|" + ms.ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 
     private static bool IsPositionEndpoint(string url) =>
@@ -478,12 +501,43 @@ public static class Extension
         return DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _rateLimitUntilTicks);
     }
 
-    private static void NoteRateLimited()
+    private static int ParseRetryAfterSeconds(HttpResponseMessage? response, int fallback)
+    {
+        if (response == null) return fallback;
+        try
+        {
+            var ra = response.Headers.RetryAfter;
+            if (ra?.Delta is { } delta)
+                return Math.Clamp((int)Math.Ceiling(delta.TotalSeconds), 1, 120);
+            if (ra?.Date is { } date)
+            {
+                var sec = (int)Math.Ceiling((date.UtcDateTime - DateTime.UtcNow).TotalSeconds);
+                if (sec > 0) return Math.Clamp(sec, 1, 120);
+            }
+        }
+        catch { /* ignore */ }
+        try
+        {
+            var body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            if (!string.IsNullOrWhiteSpace(body))
+            {
+                using var doc = JsonDocument.Parse(body);
+                if (doc.RootElement.TryGetProperty("retry_after", out var prop)
+                    && prop.TryGetInt32(out var n)
+                    && n > 0)
+                    return Math.Clamp(n, 1, 120);
+            }
+        }
+        catch { /* ignore */ }
+        return fallback;
+    }
+
+    private static void NoteRateLimited(HttpResponseMessage? response = null)
     {
         var next = Math.Min(_rateLimitBackoffSec * 2, 60);
         if (_rateLimitBackoffSec < 2) _rateLimitBackoffSec = 2;
-        var delaySec = _rateLimitBackoffSec;
-        _rateLimitBackoffSec = next;
+        var delaySec = ParseRetryAfterSeconds(response, _rateLimitBackoffSec);
+        _rateLimitBackoffSec = Math.Max(next, delaySec);
         var until = DateTime.UtcNow.AddSeconds(delaySec).Ticks;
         System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, until);
         var now = DateTime.UtcNow.Ticks;
@@ -491,7 +545,7 @@ public static class Extension
         if (now - System.Threading.Interlocked.Read(ref _lastRateLimitCbTicks) > TimeSpan.FromSeconds(3).Ticks)
         {
             System.Threading.Interlocked.Exchange(ref _lastRateLimitCbTicks, now);
-            InvokeCallback("RateLimited", "Athena est saturé — synchronisation ralentie quelques instants.");
+            InvokeCallback("RateLimited", delaySec.ToString(System.Globalization.CultureInfo.InvariantCulture));
         }
     }
 
@@ -514,7 +568,7 @@ public static class Extension
         }
         if ((int)response.StatusCode == 429)
         {
-            NoteRateLimited();
+            NoteRateLimited(response);
             // Position : garder la dernière pour flush après backoff. Autres : ne pas
             // ré-enfiler (évite boucle 429 → lag) — le SQF renverra si besoin.
             if (IsPositionEndpoint(url))
@@ -556,7 +610,7 @@ public static class Extension
             var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
             if ((int)response.StatusCode == 429)
             {
-                NoteRateLimited();
+                NoteRateLimited(response);
                 EnqueueForRetry(item.Url, item.Body);
                 return false;
             }
@@ -618,6 +672,13 @@ public static class Extension
 
     private static void EnqueueOrSend(string url, string jsonBody)
     {
+        // Positions : toujours coalescer (dernière gagne) puis flush périodique.
+        // Un POST immédiat par callExtension ferait exploser la charge avec N joueurs.
+        if (IsPositionEndpoint(url))
+        {
+            EnqueueForRetry(url, jsonBody);
+            return;
+        }
         if (IsRateLimitedNow())
         {
             // Position : coalescer pour flush dès fin de backoff. Autres : file limitée.
@@ -841,12 +902,16 @@ public static class Extension
 
         try
         {
+            var custom = BetaNoticeWindow.ShowModal();
+            if (custom.StartsWith("OK|", StringComparison.Ordinal))
+                return custom;
+
             const string title = "COMSPEC Overwatch — Bêta publique";
             const string body =
                 "Bienvenue dans la bêta publique de COMSPEC Overwatch.\n\n" +
                 "Ce pack est encore en phase de test. Certaines fonctions peuvent évoluer, " +
                 "être temporairement indisponibles ou se comporter de façon inattendue.\n\n" +
-                "Pour signaler un problème en jeu : menu ACE → COMSPEC → Signaler un problème…\n" +
+                "Pour signaler un problème en jeu : Échap → gestion du mod → Signaler un problème.\n" +
                 "Suivez les nouveautés et le journal des changements sur la page Steam Workshop.\n\n" +
                 "En continuant, des informations techniques limitées (identifiant Steam, " +
                 "version du pack, détails clients associés) peuvent être enregistrées pour " +
@@ -878,7 +943,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.9");
+            Output(output, outputSize, "COMSPECExtension 2.0.11");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1204,13 +1269,18 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.9";
+            return "OK|COMSPECExtension 2.0.11";
+        }
+
+        if (function == "SetTelemetryBatch")
+        {
+            return ApplyTelemetryBatch(args.Length > 0 ? args[0] : "");
         }
 
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.9", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.11", "COMSPEC Extension ATAK");
         }
 
         // Captures locales (dossier Screenshots du profil) — hors ligne, sans liaison Athena.
@@ -1660,12 +1730,34 @@ public static class Extension
             var modVersion = args.Length > 11 ? (args[11] ?? "") : "";
             var armaBuild = args.Length > 12 ? (args[12] ?? "") : "";
             var extVersion = args.Length > 13 ? (args[13] ?? "") : "";
-            var contextJson = args.Length > 14 ? (args[14] ?? "") : "";
 
             if (string.IsNullOrWhiteSpace(message)) return "ERR|missing_message";
 
             if (!TryNormalizeSteamUid(steamUid, out var steamNorm) && steamUid.Length > 0)
                 steamNorm = steamUid;
+
+            // Journal : la DLL lit le fichier elle-même. Le JSON SQF (guillemets, retours
+            // ligne) cassait souvent tout le POST → « impossible d’envoyer ».
+            if (string.Equals(source.Trim(), "player", StringComparison.OrdinalIgnoreCase)
+                && detail.Length < 800)
+            {
+                try
+                {
+                    var logPath = ResolveLogFilePath();
+                    if (logPath != null && File.Exists(logPath))
+                    {
+                        var tail = SanitizeLogForReport(ReadLogFileTail(logPath, 3500));
+                        if (!string.IsNullOrWhiteSpace(tail))
+                            detail = (detail.Length > 0 ? detail + "\n" : "") + "--- journal ---\n" + tail;
+                    }
+                }
+                catch
+                {
+                    // Le signalement part quand même sans journal.
+                }
+            }
+            if (detail.Length > 8000)
+                detail = detail[..8000] + "\n...[tronqué]";
 
             try
             {
@@ -1682,22 +1774,7 @@ public static class Extension
                     $"\"callsign\":\"{EscapeJson(callsign.Trim())}\"," +
                     $"\"mod_version\":\"{EscapeJson(modVersion.Trim())}\"," +
                     $"\"arma_build\":\"{EscapeJson(armaBuild.Trim())}\"," +
-                    $"\"extension_version\":\"{EscapeJson(extVersion.Trim())}\"";
-                if (!string.IsNullOrWhiteSpace(contextJson))
-                {
-                    // contextJson already JSON object/array from SQF — embed raw if it looks valid
-                    var trimmed = contextJson.Trim();
-                    if ((trimmed.StartsWith('{') && trimmed.EndsWith('}'))
-                        || (trimmed.StartsWith('[') && trimmed.EndsWith(']')))
-                    {
-                        payload += $",\"context\":{trimmed}";
-                    }
-                    else
-                    {
-                        payload += $",\"context\":\"{EscapeJson(trimmed)}\"";
-                    }
-                }
-                payload += "}";
+                    $"\"extension_version\":\"{EscapeJson(extVersion.Trim())}\"}}";
 
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
@@ -3985,6 +4062,14 @@ public static class Extension
                 }
                 var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"pos_y\":{posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}{aslJson},\"heading\":{headingStr},\"role\":\"{EscapeJson(role)}\"{steamJson}{sessJson}{modJson},\"extra\":{{{extra}}}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/position", payload);
+                return;
+            }
+
+            if (function == "Terrain.Chunk" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
+            {
+                var json = args[0] ?? "";
+                if (string.IsNullOrWhiteSpace(json) || json.Length < 8) return;
+                EnqueueOrSend(_baseUrl + "/api/atak/terrain/chunk", EnrichAtakPayload(json));
                 return;
             }
 
