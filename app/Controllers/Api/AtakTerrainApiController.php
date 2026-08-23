@@ -32,7 +32,16 @@ final class AtakTerrainApiController
         }
         $mapId = $this->mapId($request);
         $metaOnly = $request->query('meta') === '1';
-        $grid = $this->terrain->getGrid($tenantId, $mapId, !$metaOnly);
+        try {
+            $grid = $this->terrain->getGrid($tenantId, $mapId, !$metaOnly);
+        } catch (\Throwable) {
+            return Response::json([
+                'ok' => true,
+                'ready' => false,
+                'progress' => 0,
+                'message' => 'Relief du théâtre non encore relevé.',
+            ]);
+        }
         if (!is_array($grid)) {
             return Response::json([
                 'ok' => true,
