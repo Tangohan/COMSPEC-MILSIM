@@ -1,0 +1,31 @@
+---
+description: Mettre à jour le journal public /nouveautes à chaque évolution ATAK ou mods
+alwaysApply: true
+---
+
+# Journal produit — mods et ATAK
+
+Toute évolution **visible** des mods (Overwatch, SSE, extension) ou de la **console ATAK** doit apparaître sur le journal public **dans le même lot de travail** (pas « on le fera après »).
+
+Page : `/nouveautes` (prod : https://athena.ttrd.fr/nouveautes).
+
+## Où écrire
+
+1. `app/Support/ChangelogCatalog.php` — nouvelle carte **en tête** de `releasesRaw()`, ou puces ajoutées à la release du mois si c’est la même histoire.
+2. `lang/fr/site.php` **et** `lang/en/site.php` — titres, résumé, puces, why / ops / cmd / admin.
+3. Dates « Dernière évolution » des modules (`cl_mod_atak_u`, `cl_mod_intel_u`, etc.) si le module concerné change.
+4. `tests/Unit/ChangelogCatalogTest.php` — nombre de releases, `featured`, liste des `id`.
+
+## Ton
+
+Même règle que l’UI métier : phrases pour un chef de mission / un admin de communauté. Pas d’SQL, d’endpoint, de version interne seule (`0.7.15`) comme titre.
+
+- Correctif interne sans effet visible → pas de carte (une ligne dans `docs/bugs/` suffit).
+- Capacité jouable, console, Zeus, ACE, liaison → **oui**, même petite.
+
+## Checklist avant de déclarer l’update terminée
+
+- [ ] Carte ou puces FR + EN
+- [ ] Module « dernière évolution » à jour
+- [ ] Test catalogue vert
+- [ ] Pas d’oubli si l’update est splitée en plusieurs PR : **un** des PR porte le journal, ou PR dédié mergé le même jour
