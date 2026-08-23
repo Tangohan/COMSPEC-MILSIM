@@ -68,4 +68,6 @@ php setup-database.php
 - `PUBLIC_PROFILE_V1`
 - `ATAK_CONFIGURATION_V1` (éligibilité selon type de communauté)
 - `SSE_PERSONS_V1`
+- `SSE_DIGITAL_LAB_V1` — laboratoire numérique
+- `SSE_DOMEX_QUEUE_V1` — file « à exploiter » ; configure via le laboratoire, nouveaux tenants marqués satisfaits
 - `ATAK_INTEL_SCRAMBLE_V1` — données chiffrées roleplay (certificat / capture) ; configure via `admin/atak/roleplay#intel-scramble` ; nouveaux tenants : domaine « Réseau ami » seedé + marqué satisfait

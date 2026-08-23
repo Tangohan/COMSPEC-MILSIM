@@ -3571,6 +3571,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakSseDomexPacketsMigrate = require $root . '/bootstrap/atak_sse_domex_packets_migration.php';
+try {
+    echo "Migration atak_sse_domex_packets (SSE — DOMEX paquets)…\n";
+    $atakSseDomexPacketsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_domex_packets : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakSseArmaModelsMigrate = require $root . '/bootstrap/atak_sse_arma_models_migration.php';
 try {
     echo "Migration atak_sse_arma_models (SSE — modèles mission Arma)…\n";

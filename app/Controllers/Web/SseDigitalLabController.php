@@ -40,6 +40,7 @@ final class SseDigitalLabController
             'counts' => $counts,
             'recentDevices' => $this->repo->listDevices($tenantId, ['limit' => 8]),
             'pendingFindings' => $this->repo->listFindings($tenantId, ['status' => 'to_review']),
+            'pendingPackets' => $this->repo->listPackets($tenantId, ['status' => 'a_exploiter', 'limit' => 8]),
             'activeNav' => 'labnum',
             'labSubnav' => 'hub',
         ]);
@@ -150,6 +151,7 @@ final class SseDigitalLabController
             'acquisitions' => $this->repo->listAcquisitions($tenantId, ['device_id' => $deviceId]),
             'artifacts' => $this->repo->listArtifacts($tenantId, ['device_id' => $deviceId, 'limit' => 40]),
             'findings' => $this->repo->listFindings($tenantId, ['device_id' => $deviceId]),
+            'packets' => $this->repo->listPackets($tenantId, ['device_id' => $deviceId, 'limit' => 40]),
             'methods' => SseDigitalLabRepository::ACQUISITION_METHODS,
             'profiles' => SseDigitalLabRepository::DATA_PROFILES,
             'activeNav' => 'labnum',
@@ -317,6 +319,93 @@ final class SseDigitalLabController
             : 'Décision impossible.');
 
         return Response::redirect($back);
+    }
+
+    public function queueIndex(Request $request, array $params = []): Response
+    {
+        $status = (string) $request->query('status', 'a_exploiter');
+        $tenantId = $this->tenantId();
+        $packets = $this->repo->listPackets($tenantId, ['status' => $status, 'limit' => 150]);
+        $groups = [];
+        foreach ($packets as $packet) {
+            $key = (string) ($packet['node_key'] ?? $packet['device_id'] ?? 'support');
+            if ($key === '') {
+                $key = 'support';
+            }
+            if (!isset($groups[$key])) {
+                $groups[$key] = [
+                    'node_key' => (string) ($packet['node_key'] ?? ''),
+                    'support_label' => (string) ($packet['support_label'] ?? 'Support'),
+                    'device_id' => (int) ($packet['device_id'] ?? 0),
+                    'device_type_label' => (string) ($packet['device_type_label'] ?? ''),
+                    'owner_label' => (string) ($packet['device_owner'] ?? ''),
+                    'origin_label' => (string) ($packet['origin_label'] ?? ''),
+                    'collector_label' => (string) ($packet['collector_label'] ?? ''),
+                    'grid_reference' => (string) ($packet['grid_reference'] ?? ''),
+                    'packets' => [],
+                ];
+            }
+            $groups[$key]['packets'][] = $packet;
+        }
+
+        return $this->portalView('atak.sse.digital.queue', [
+            'title' => 'Renseignement à exploiter',
+            'groups' => array_values($groups),
+            'filters' => ['status' => $status],
+            'statuses' => \App\Support\SseDomexContract::PACKET_STATUSES,
+            'activeNav' => 'labnum',
+            'labSubnav' => 'queue',
+        ]);
+    }
+
+    public function packetShow(Request $request, array $params = []): Response
+    {
+        $packet = $this->repo->findPacket((int) ($params['id'] ?? 0), $this->tenantId());
+        if ($packet === null) {
+            Session::flash('error', 'Ce renseignement est introuvable.');
+
+            return Response::redirect(url('atak/sse/exploitation-numerique/a-exploiter'));
+        }
+
+        $cases = $this->cases->listForTenant($this->tenantId(), $this->access->caseScope());
+        $affairs = array_values(array_filter(
+            $cases,
+            static fn (array $c): bool => empty($c['is_folder'])
+        ));
+
+        return $this->portalView('atak.sse.digital.packet_show', [
+            'title' => (string) ($packet['title'] ?? 'Paquet'),
+            'packet' => $packet,
+            'cases' => $affairs,
+            'activeNav' => 'labnum',
+            'labSubnav' => 'queue',
+        ]);
+    }
+
+    public function packetReview(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/exploitation-numerique/a-exploiter/' . $id);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/exploitation-numerique/a-exploiter'));
+        }
+
+        $ok = $this->lab->reviewPacket(
+            $this->tenantId(),
+            $id,
+            (string) $request->input('decision', ''),
+            (int) $request->input('case_id', 0) ?: null,
+            $this->userId()
+        );
+        Session::flash($ok ? 'success' : 'error', $ok
+            ? 'Décision enregistrée. Le lien n’est pas une preuve : il reste à confirmer dans le dossier.'
+            : 'Impossible d’enregistrer cette décision. Choisissez un dossier pour rattacher, ou écartez le paquet.');
+
+        return Response::redirect($ok
+            ? url('atak/sse/exploitation-numerique/a-exploiter')
+            : $back);
     }
 
     public function timeline(Request $request, array $params = []): Response

@@ -132,6 +132,23 @@ _cache set ["personChildren", _personChildren];
 _cache set ["objectChildren", _objectChildren];
 missionNamespace setVariable ["comspec_sse_aceMenuCache", _cache];
 
+// Personnes : une fois pour toute la classe (PNJ, joueurs, corps).
+// Les véhicules restent posés par entité (installEntityAceMenus) pour ne pas
+// polluer chaque voiture de la carte.
+private _addClass = {
+    params ["_cls", "_type", "_path", "_act"];
+    if (_act isEqualTo []) exitWith { false };
+    if (!isNil "comspec_debug_fnc_addACEActionToClass") exitWith {
+        [_cls, _type, _path, _act, true, "sse_interaction"] call comspec_debug_fnc_addACEActionToClass
+    };
+    if (isNil "ace_interact_menu_fnc_addActionToClass") exitWith { false };
+    [_cls, _type, _path, _act, true] call ace_interact_menu_fnc_addActionToClass;
+    true
+};
+if (["CAManBase", 0, ["ACE_MainActions"], _rootPerson] call _addClass) then {
+    ["Menu SSE personnes enregistré sur CAManBase"] call comspec_sse_fnc_log;
+};
+
 // Self interaction (joueur uniquement)
 private _selfRoot = ["COMSPEC_SSE_SELF", "COMSPEC SSE", _icon, {}, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams, {}] call ace_interact_menu_fnc_createAction;
 _selfRoot = [_selfRoot] call comspec_sse_fnc_acePadAction;

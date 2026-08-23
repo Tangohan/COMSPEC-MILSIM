@@ -31,6 +31,18 @@ if (!(_cache isEqualType createHashMap) || {count _cache == 0}) exitWith {
 };
 
 private _isPerson = _entity isKindOf "CAManBase";
+// Racine personne déjà posée sur CAManBase (classe) : ne pas doubler par objet.
+if (_isPerson) exitWith {
+    _entity setVariable ["comspec_sse_aceMenusInstalled", true];
+    _entity setVariable ["comspec_sse_aceInstalling", false];
+    if !(_entity getVariable ["comspec_sse_aceReadyFired", false]) then {
+        _entity setVariable ["comspec_sse_aceReadyFired", true];
+        if (!isNil "CBA_fnc_localEvent") then {
+            ["comspec_sse_entityAceReady", [_entity]] call CBA_fnc_localEvent;
+        };
+    };
+    true
+};
 private _rootKey = if (_isPerson) then { "personRoot" } else { "objectRoot" };
 private _root = [_cache getOrDefault [_rootKey, []]] call comspec_sse_fnc_acePadAction;
 if (_root isEqualTo []) exitWith {

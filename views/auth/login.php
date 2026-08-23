@@ -15,12 +15,13 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?> — <?= $brandText ?></title>
-    <meta name="theme-color" content="#0b3d38">
+    <meta name="theme-color" content="#050505">
     <meta name="robots" content="noindex,nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Source+Sans+3:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
     <?php $tailwindBaseUrl = $base; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/athena-header.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/dsfr-service.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php $GLOBALS['__dsfr_service_css'] = true; ?>
     <script defer src="https://unpkg.com/alpinejs@3/dist/cdn.min.js"></script>
@@ -28,20 +29,7 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
 </head>
 <body class="ds-page ds-page--split" x-data="{ view: 'login', showPassword: false }">
 <a class="ds-skip" href="#contenu"><?= htmlspecialchars(__('common.skip_to_content'), ENT_QUOTES, 'UTF-8') ?></a>
-
-<header class="ds-header">
-    <div class="ds-header__band" aria-hidden="true"></div>
-    <div class="ds-header__inner">
-        <a class="ds-header__brand" href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>">
-            <span class="ds-header__service"><?= $brandText ?></span>
-            <span class="ds-header__tagline"><?= htmlspecialchars(__('auth.kicker'), ENT_QUOTES, 'UTF-8') ?></span>
-        </a>
-        <div class="ds-header__tools">
-            <?php $localeSwitcherVariant = 'light'; $localeSwitcherClass = 'ds-lang'; require base_path('views/partials/language_switcher.php'); ?>
-            <a class="ds-header__link" href="<?= htmlspecialchars(url('register'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('common.register'), ENT_QUOTES, 'UTF-8') ?></a>
-        </div>
-    </div>
-</header>
+<?php require base_path('views/partials/athena_header_guest.php'); ?>
 
 <div class="ds-split">
     <aside class="ds-visual" aria-hidden="true">
@@ -57,8 +45,8 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
 
     <main class="ds-main" id="contenu">
     <div class="ds-main__inner">
-    <p class="ds-kicker"><?= htmlspecialchars(__('auth.title_login'), ENT_QUOTES, 'UTF-8') ?></p>
-    <h1 class="ds-title"><?= $brandText ?></h1>
+    <p class="ds-kicker"><?= htmlspecialchars(__('auth.kicker'), ENT_QUOTES, 'UTF-8') ?></p>
+    <h1 class="ds-title"><?= htmlspecialchars(__('auth.title_login'), ENT_QUOTES, 'UTF-8') ?></h1>
     <p class="ds-lead"><?= htmlspecialchars(__('auth.intro'), ENT_QUOTES, 'UTF-8') ?></p>
 
     <div class="ds-alert-stack">
@@ -152,19 +140,8 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
 </main>
 </div>
 
-<footer class="ds-footer">
-    <div class="ds-footer__inner">
-        <p><?= $brandText ?></p>
-        <nav class="ds-footer__links" aria-label="<?= htmlspecialchars(__('legal.mentions'), ENT_QUOTES, 'UTF-8') ?>">
-            <?php
-            $legal_link_class = '';
-            require base_path('views/partials/legal_site_links.php');
-            ?>
-        </nav>
-    </div>
-</footer>
-
 <?php require base_path('views/partials/cookie_banner.php'); ?>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/athena-header.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <script defer src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/js/auth_forms.js"></script>
 </body>
 </html>

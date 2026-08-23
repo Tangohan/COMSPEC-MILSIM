@@ -18,6 +18,7 @@ final class SseAtakLayersCatalog
         'tracks' => 'Tracés',
         'ghost_tracks' => 'Tracés fantômes',
         'history' => 'Historique',
+        'intel' => 'Points de renseignement',
     ];
 
     /** @var array<string,string> */
@@ -37,6 +38,7 @@ final class SseAtakLayersCatalog
         'ghost_tracks' => '#94a3b8',
         'history' => '#fbbf24',
         'site' => '#f59e0b',
+        'intel' => '#fb923c',
     ];
 
     public static function layerLabel(string $kind): string

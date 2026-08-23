@@ -235,6 +235,8 @@ final class TenantBootstrapService
                 $configSvc->markCompleted($tenantId, 'SSE_PORTAL_V1', $newUserId);
                 // Laboratoire numérique : schéma/UI prêts dès la création (pas de réglage humain requis).
                 $configSvc->markCompleted($tenantId, 'SSE_DIGITAL_LAB_V1', $newUserId);
+                $configSvc->markCompleted($tenantId, 'SSE_DOMEX_QUEUE_V1', $newUserId);
+                $configSvc->markCompleted($tenantId, 'SSE_DOMEX_ZEUS_LIVE_V1', $newUserId);
             } catch (\Throwable $e) {
                 // Tables absentes ou moteur non déployé : non bloquant
             }

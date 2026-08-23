@@ -7,6 +7,7 @@ $h = $h ?? static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUO
 $groups = [
     'Travail' => [
         'hub' => ['', 'Vue d’ensemble'],
+        'queue' => ['a-exploiter', 'À exploiter'],
         'supports' => ['supports', 'Supports'],
         'acquisitions' => ['acquisitions', 'Acquisitions'],
     ],

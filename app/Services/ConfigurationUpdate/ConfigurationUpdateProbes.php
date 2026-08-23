@@ -252,6 +252,44 @@ final class ConfigurationUpdateProbes
     }
 
     /**
+     * Intro file DOMEX : satisfait si un paquet a déjà été traité, ou tenant neuf (markSatisfied).
+     */
+    public function hasSseDomexQueueIntro(int $tenantId): bool
+    {
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM sse_digital_packets
+                 WHERE tenant_id = ? AND status IN ('rattache','ecarte')
+                 LIMIT 1"
+            );
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+
+    /**
+     * Intro Zeus live : un renseignement a déjà été ajouté en cours de mission, ou tenant neuf.
+     */
+    public function hasSseDomexZeusLiveIntro(int $tenantId): bool
+    {
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM sse_digital_packets
+                 WHERE tenant_id = ? AND origin = 'zeus_live'
+                 LIMIT 1"
+            );
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+
+    /**
      * Décision humaine prise : roleplay sauvegardé (reviewed), scramble activé, ou domaine seedé (tenant neuf).
      */
     public function hasAtakIntelScrambleDecision(int $tenantId): bool

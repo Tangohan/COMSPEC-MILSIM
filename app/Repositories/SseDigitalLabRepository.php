@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Support\SilentSchemaMigration;
+use App\Support\SseDomexContract;
 
 /**
  * Laboratoire numérique SSE (ATH-SSE-LABNUM).
@@ -141,6 +142,7 @@ final class SseDigitalLabRepository
             return;
         }
         SilentSchemaMigration::run(base_path('bootstrap/atak_sse_digital_lab_migration.php'));
+        SilentSchemaMigration::run(base_path('bootstrap/atak_sse_domex_packets_migration.php'));
         $done = true;
     }
 
@@ -356,6 +358,57 @@ final class SseDigitalLabRepository
         );
 
         return (int) $this->db->lastInsertId();
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     */
+    public function applyDeviceDomexMeta(int $deviceId, int $tenantId, array $node): void
+    {
+        $this->db->execute(
+            'UPDATE sse_digital_devices SET
+                node_key = COALESCE(:node_key, node_key),
+                owner_label = COALESCE(:owner_label, owner_label),
+                organization_label = COALESCE(:organization_label, organization_label),
+                fictional_network = COALESCE(:fictional_network, fictional_network),
+                access_physical = :access_physical,
+                access_remote = :access_remote,
+                security_tier = COALESCE(:security_tier, security_tier),
+                content_profile = COALESCE(:content_profile, content_profile),
+                terrain_stage = COALESCE(:terrain_stage, terrain_stage),
+                exploit_duration_s = COALESCE(:exploit_duration_s, exploit_duration_s)
+             WHERE id = :id AND tenant_id = :t AND deleted_at IS NULL',
+            [
+                'node_key' => $this->nullStr($node['node_id'] ?? null),
+                'owner_label' => $this->nullStr($node['owner_label'] ?? null),
+                'organization_label' => $this->nullStr($node['organization_label'] ?? null),
+                'fictional_network' => $this->nullStr($node['fictional_network'] ?? null),
+                'access_physical' => !empty($node['access_physical']) ? 1 : 0,
+                'access_remote' => !empty($node['access_remote']) ? 1 : 0,
+                'security_tier' => $this->nullStr($node['security_tier'] ?? null),
+                'content_profile' => $this->nullStr($node['content_profile'] ?? null),
+                'terrain_stage' => $this->nullStr($node['terrain_stage'] ?? null),
+                'exploit_duration_s' => isset($node['duration_s']) ? (int) $node['duration_s'] : null,
+                'id' => $deviceId,
+                't' => $tenantId,
+            ]
+        );
+    }
+
+    public function findDeviceByNodeKey(int $tenantId, string $nodeKey): ?array
+    {
+        $nodeKey = SseDomexContract::cleanId($nodeKey);
+        if ($nodeKey === '') {
+            return null;
+        }
+        $row = $this->db->fetchOne(
+            'SELECT * FROM sse_digital_devices
+             WHERE tenant_id = :t AND node_key = :k AND deleted_at IS NULL
+             ORDER BY id DESC LIMIT 1',
+            ['t' => $tenantId, 'k' => $nodeKey]
+        );
+
+        return $row ? $this->hydrateDevice($row) : null;
     }
 
     public function updateDeviceStatus(int $id, int $tenantId, string $status): bool
@@ -1137,6 +1190,211 @@ final class SseDigitalLabRepository
     }
 
     /** @return array{devices:int,acquisitions:int,artifacts:int,findings_pending:int} */
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function upsertPacket(int $tenantId, array $data, ?int $userId = null): array
+    {
+        $uid = (string) ($data['packet_uid'] ?? '');
+        if ($uid === '') {
+            return ['id' => 0, 'created' => false];
+        }
+        $existing = $this->findPacketByUid($tenantId, $uid);
+        if ($existing !== null) {
+            return ['id' => (int) $existing['id'], 'created' => false];
+        }
+
+        $entities = $data['linked_entities'] ?? [];
+        $this->db->execute(
+            'INSERT INTO sse_digital_packets (
+                tenant_id, mission_id, case_id, device_id, acquisition_id, node_key, packet_uid, packet_type,
+                title, body_text, occurred_at_label, quality, is_decoy, is_fragment, is_complete, channel,
+                reveal_after, delay_seconds, origin, confidence, status, linked_entities_json,
+                collector_label, grid_reference, pos_x, pos_y, pos_z, show_on_map, classification, compartment, created_by
+            ) VALUES (
+                :tenant_id, :mission_id, :case_id, :device_id, :acquisition_id, :node_key, :packet_uid, :packet_type,
+                :title, :body_text, :occurred_at_label, :quality, :is_decoy, :is_fragment, :is_complete, :channel,
+                :reveal_after, :delay_seconds, :origin, :confidence, :status, :linked_entities_json,
+                :collector_label, :grid_reference, :pos_x, :pos_y, :pos_z, :show_on_map, :classification, :compartment, :created_by
+            )',
+            [
+                'tenant_id' => $tenantId,
+                'mission_id' => $data['mission_id'] ?? null,
+                'case_id' => $data['case_id'] ?? null,
+                'device_id' => $data['device_id'] ?? null,
+                'acquisition_id' => $data['acquisition_id'] ?? null,
+                'node_key' => (string) ($data['node_key'] ?? ''),
+                'packet_uid' => $uid,
+                'packet_type' => (string) ($data['packet_type'] ?? 'document'),
+                'title' => (string) ($data['title'] ?? 'Paquet'),
+                'body_text' => (string) ($data['body_text'] ?? ''),
+                'occurred_at_label' => $this->nullStr($data['occurred_at_label'] ?? null),
+                'quality' => (string) ($data['quality'] ?? 'complet'),
+                'is_decoy' => !empty($data['is_decoy']) ? 1 : 0,
+                'is_fragment' => !empty($data['is_fragment']) ? 1 : 0,
+                'is_complete' => !empty($data['is_complete']) ? 1 : 0,
+                'channel' => (string) ($data['channel'] ?? 'physique'),
+                'reveal_after' => (string) ($data['reveal_after'] ?? 'immediat'),
+                'delay_seconds' => (int) ($data['delay_seconds'] ?? 0),
+                'origin' => (string) ($data['origin'] ?? 'terrain'),
+                'confidence' => (string) ($data['confidence'] ?? 'non_evalue'),
+                'status' => (string) ($data['status'] ?? 'a_exploiter'),
+                'linked_entities_json' => json_encode(is_array($entities) ? $entities : [], JSON_UNESCAPED_UNICODE),
+                'collector_label' => $this->nullStr($data['collector_label'] ?? null),
+                'grid_reference' => $this->nullStr($data['grid_reference'] ?? null),
+                'pos_x' => isset($data['pos_x']) && is_numeric($data['pos_x']) ? (float) $data['pos_x'] : null,
+                'pos_y' => isset($data['pos_y']) && is_numeric($data['pos_y']) ? (float) $data['pos_y'] : null,
+                'pos_z' => isset($data['pos_z']) && is_numeric($data['pos_z']) ? (float) $data['pos_z'] : null,
+                'show_on_map' => !empty($data['show_on_map']) ? 1 : 0,
+                'classification' => (string) ($data['classification'] ?? 'confidentiel'),
+                'compartment' => $this->nullStr($data['compartment'] ?? null),
+                'created_by' => $userId,
+            ]
+        );
+
+        return ['id' => (int) $this->db->lastInsertId(), 'created' => true];
+    }
+
+    public function findPacket(int $id, int $tenantId): ?array
+    {
+        $row = $this->db->fetchOne(
+            'SELECT p.*, d.reference_code AS device_reference, d.device_type, d.owner_label AS device_owner
+             FROM sse_digital_packets p
+             LEFT JOIN sse_digital_devices d ON d.id = p.device_id AND d.tenant_id = p.tenant_id
+             WHERE p.id = :id AND p.tenant_id = :t LIMIT 1',
+            ['id' => $id, 't' => $tenantId]
+        );
+
+        return $row ? $this->hydratePacket($row) : null;
+    }
+
+    public function findPacketByUid(int $tenantId, string $uid): ?array
+    {
+        $uid = trim($uid);
+        if ($uid === '') {
+            return null;
+        }
+        $row = $this->db->fetchOne(
+            'SELECT * FROM sse_digital_packets WHERE tenant_id = :t AND packet_uid = :u LIMIT 1',
+            ['t' => $tenantId, 'u' => $uid]
+        );
+
+        return $row ? $this->hydratePacket($row) : null;
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return list<array<string, mixed>>
+     */
+    public function listPackets(int $tenantId, array $filters = []): array
+    {
+        $where = ['p.tenant_id = :t'];
+        $params = ['t' => $tenantId];
+        $status = (string) ($filters['status'] ?? '');
+        if ($status !== '' && isset(SseDomexContract::PACKET_STATUSES[$status])) {
+            $where[] = 'p.status = :status';
+            $params['status'] = $status;
+        }
+        if (!empty($filters['device_id'])) {
+            $where[] = 'p.device_id = :did';
+            $params['did'] = (int) $filters['device_id'];
+        }
+        $limit = min(200, max(1, (int) ($filters['limit'] ?? 100)));
+        $rows = $this->db->fetchAll(
+            'SELECT p.*, d.reference_code AS device_reference, d.device_type, d.owner_label AS device_owner
+             FROM sse_digital_packets p
+             LEFT JOIN sse_digital_devices d ON d.id = p.device_id AND d.tenant_id = p.tenant_id
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY p.updated_at DESC LIMIT ' . $limit,
+            $params
+        );
+
+        return array_map(fn (array $r): array => $this->hydratePacket($r), $rows);
+    }
+
+    public function updatePacketStatus(int $id, int $tenantId, string $status, ?int $caseId = null): bool
+    {
+        if (!isset(SseDomexContract::PACKET_STATUSES[$status])) {
+            return false;
+        }
+        $sql = 'UPDATE sse_digital_packets SET status = :s';
+        $params = ['s' => $status, 'id' => $id, 't' => $tenantId];
+        if ($caseId !== null) {
+            $sql .= ', case_id = :cid';
+            $params['cid'] = $caseId > 0 ? $caseId : null;
+        }
+        $sql .= ' WHERE id = :id AND tenant_id = :t';
+
+        return $this->db->execute($sql, $params) > 0;
+    }
+
+    public function promotePacketsForStage(int $tenantId, string $nodeKey, string $stage): int
+    {
+        $nodeKey = SseDomexContract::cleanId($nodeKey);
+        if ($nodeKey === '' || !in_array($stage, ['acces_etabli', 'exploite'], true)) {
+            return 0;
+        }
+        try {
+            return $this->db->execute(
+                "UPDATE sse_digital_packets
+                 SET status = 'a_exploiter'
+                 WHERE tenant_id = :t AND node_key = :k AND status = 'en_attente' AND reveal_after = 'acces_etabli'",
+                ['t' => $tenantId, 'k' => $nodeKey]
+            );
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
+     * Points carte issus des paquets (injection chef de mission ou rattaché au dossier).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listMapPins(int $tenantId): array
+    {
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT p.*, c.reference_code AS case_ref, c.title AS case_title
+                 FROM sse_digital_packets p
+                 LEFT JOIN sse_cases c ON c.id = p.case_id AND c.tenant_id = p.tenant_id
+                 WHERE p.tenant_id = :t
+                   AND p.pos_x IS NOT NULL AND p.pos_y IS NOT NULL
+                   AND p.status <> \'ecarte\'
+                 ORDER BY p.updated_at DESC
+                 LIMIT 200',
+                ['t' => $tenantId]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($rows as $row) {
+            $packet = $this->hydratePacket($row);
+            if (!SseDomexContract::shouldShowOnMap($packet)) {
+                continue;
+            }
+            $out[] = $packet;
+        }
+
+        return $out;
+    }
+
+    public function countPacketsByStatus(int $tenantId, string $status): int
+    {
+        try {
+            $row = $this->db->fetchOne(
+                'SELECT COUNT(*) AS c FROM sse_digital_packets WHERE tenant_id = :t AND status = :s',
+                ['t' => $tenantId, 's' => $status]
+            );
+        } catch (\Throwable) {
+            return 0;
+        }
+
+        return (int) ($row['c'] ?? 0);
+    }
+
     public function hubCounts(int $tenantId): array
     {
         $devices = $this->countDevices($tenantId);
@@ -1158,6 +1416,7 @@ final class SseDigitalLabRepository
             'acquisitions' => (int) ($acq['c'] ?? 0),
             'artifacts' => (int) ($art['c'] ?? 0),
             'findings_pending' => (int) ($find['c'] ?? 0),
+            'packets_pending' => $this->countPacketsByStatus($tenantId, 'a_exploiter'),
         ];
     }
 
@@ -1174,6 +1433,55 @@ final class SseDigitalLabRepository
             'off' => 'Éteint',
             default => (string) ($row['power_state'] ?? '—') ?: '—',
         };
+        $row['node_key_label'] = (string) ($row['node_key'] ?? '') ?: '—';
+        $row['security_tier_label'] = SseDomexContract::SECURITY_TIERS[(string) ($row['security_tier'] ?? '')] ?? '—';
+        $row['content_profile_label'] = SseDomexContract::CONTENT_PROFILES[(string) ($row['content_profile'] ?? '')] ?? '—';
+        $row['terrain_stage_label'] = SseDomexContract::TERRAIN_STAGES[(string) ($row['terrain_stage'] ?? '')] ?? '—';
+
+        return $row;
+    }
+
+    /** @param array<string, mixed> $row */
+    private function hydratePacket(array $row): array
+    {
+        $row['packet_type_label'] = SseDomexContract::PACKET_TYPES[(string) ($row['packet_type'] ?? '')] ?? 'Paquet';
+        $row['quality_label'] = SseDomexContract::PACKET_QUALITIES[(string) ($row['quality'] ?? '')] ?? 'Complet';
+        $row['channel_label'] = SseDomexContract::CHANNELS[(string) ($row['channel'] ?? '')] ?? '';
+        $row['origin_label'] = SseDomexContract::ORIGINS[(string) ($row['origin'] ?? '')] ?? '';
+        $row['confidence_label'] = SseDomexContract::CONFIDENCES[(string) ($row['confidence'] ?? '')] ?? 'Non évalué';
+        $row['status_label'] = SseDomexContract::PACKET_STATUSES[(string) ($row['status'] ?? '')] ?? '';
+        $row['reveal_label'] = SseDomexContract::REVEAL_MODES[(string) ($row['reveal_after'] ?? '')] ?? '';
+        $entities = $row['linked_entities_json'] ?? [];
+        if (is_string($entities)) {
+            $decoded = json_decode($entities, true);
+            $entities = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($entities)) {
+            $entities = [];
+        }
+        $hydrated = [];
+        foreach ($entities as $entity) {
+            if (!is_array($entity)) {
+                continue;
+            }
+            $kind = (string) ($entity['kind'] ?? 'lieu');
+            $hydrated[] = [
+                'label' => (string) ($entity['label'] ?? ''),
+                'kind' => $kind,
+                'kind_label' => SseDomexContract::ENTITY_KINDS[$kind] ?? 'Lieu',
+            ];
+        }
+        $row['linked_entities'] = $hydrated;
+        $row['device_type_label'] = self::DEVICE_TYPES[(string) ($row['device_type'] ?? '')]
+            ?? SseDomexContract::DEVICE_TYPES[(string) ($row['device_type'] ?? '')]
+            ?? '';
+        $node = (string) ($row['node_key'] ?? '');
+        $row['support_label'] = $node !== '' ? $node : (string) ($row['device_reference'] ?? 'Support');
+        $row['on_map'] = SseDomexContract::shouldShowOnMap($row);
+        $row['on_map_label'] = $row['on_map'] ? 'Visible sur la carte du bureau' : '';
+        $gx = $row['pos_x'] ?? null;
+        $gy = $row['pos_y'] ?? null;
+        $row['has_coordinates'] = is_numeric($gx) && is_numeric($gy);
 
         return $row;
     }

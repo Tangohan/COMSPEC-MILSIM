@@ -49,6 +49,7 @@ window.ATAKMap = (function () {
     showSseLayer_pir: true,
     showSseLayer_taskings: true,
     showSseLayer_photos: true,
+    showSseLayer_intel: true,
     showSseTracks: true,
     showSseGhostTracks: false,
     showSseHistory: false,
@@ -126,6 +127,7 @@ window.ATAKMap = (function () {
       showSseLayer_pir: src.showSseLayer_pir !== false,
       showSseLayer_taskings: src.showSseLayer_taskings !== false,
       showSseLayer_photos: src.showSseLayer_photos !== false,
+      showSseLayer_intel: src.showSseLayer_intel !== false,
       showSseTracks: src.showSseTracks !== false,
       showSseGhostTracks: !!src.showSseGhostTracks,
       showSseHistory: !!src.showSseHistory,
@@ -381,6 +383,8 @@ window.ATAKMap = (function () {
     if (sseTask) sseTask.checked = !!p.showSseLayer_taskings;
     var ssePhotos = document.getElementById('atak-sse-layer-photos');
     if (ssePhotos) ssePhotos.checked = !!p.showSseLayer_photos;
+    var sseIntel = document.getElementById('atak-sse-layer-intel');
+    if (sseIntel) sseIntel.checked = !!p.showSseLayer_intel;
     var sseTracks = document.getElementById('atak-sse-layer-tracks');
     if (sseTracks) sseTracks.checked = !!p.showSseTracks;
     var sseGhost = document.getElementById('atak-sse-layer-ghost');
@@ -520,6 +524,7 @@ window.ATAKMap = (function () {
     bindSseToggle('atak-sse-layer-pir', 'showSseLayer_pir');
     bindSseToggle('atak-sse-layer-taskings', 'showSseLayer_taskings');
     bindSseToggle('atak-sse-layer-photos', 'showSseLayer_photos');
+    bindSseToggle('atak-sse-layer-intel', 'showSseLayer_intel');
     bindSseToggle('atak-sse-layer-tracks', 'showSseTracks');
     bindSseToggle('atak-sse-layer-ghost', 'showSseGhostTracks');
     bindSseToggle('atak-sse-layer-history', 'showSseHistory');

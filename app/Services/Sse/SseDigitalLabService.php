@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Sse;
 
 use App\Repositories\SseDigitalLabRepository;
+use App\Support\SseDomexContract;
 
 /**
  * Orchestration du laboratoire numérique : saisie, acquisition simulée, extraction de profil, signaux.
@@ -88,12 +89,26 @@ final class SseDigitalLabService
         }
 
         $existing = $armaId !== '' ? $this->repo->findDeviceByArmaObjectId($tenantId, $armaId) : null;
+        if ($existing === null) {
+            $domexPreview = $this->extractDomex($body);
+            $nodeKey = (string) ($domexPreview['node']['node_id'] ?? '');
+            if ($nodeKey !== '') {
+                $existing = $this->repo->findDeviceByNodeKey($tenantId, $nodeKey);
+            }
+        }
         if ($existing !== null) {
             $acqs = $this->repo->listAcquisitions($tenantId, [
                 'device_id' => (int) $existing['id'],
                 'limit' => 1,
             ]);
             $acq = $acqs[0] ?? null;
+            $packets = $this->ingestDomexPayload(
+                $tenantId,
+                (int) $existing['id'],
+                isset($acq['id']) ? (int) $acq['id'] : null,
+                $body,
+                $userId
+            );
 
             return [
                 'ok' => true,
@@ -102,6 +117,8 @@ final class SseDigitalLabService
                 'seizure_id' => (int) ($existing['seizure_id'] ?? 0),
                 'acquisition_id' => (int) ($acq['id'] ?? 0),
                 'reference_code' => (string) ($acq['reference_code'] ?? $existing['reference_code'] ?? ''),
+                'packets_created' => $packets['created'],
+                'packets_total' => $packets['total'],
             ];
         }
 
@@ -154,6 +171,11 @@ final class SseDigitalLabService
         }
 
         $personId = (int) ($body['person_id'] ?? $body['athena_person_id'] ?? 0);
+        $domex = $this->extractDomex($body);
+        $node = $domex['node'];
+        if ($node['node_id'] !== '' && $node['device_type'] !== '') {
+            $deviceType = $node['device_type'];
+        }
         $deviceId = $this->repo->createDevice($tenantId, [
             'device_type' => $deviceType,
             'model' => $model !== '' ? $model : null,
@@ -221,6 +243,7 @@ final class SseDigitalLabService
         }
 
         $this->repo->updateDeviceStatus($deviceId, $tenantId, 'acquired');
+        $packets = $this->ingestDomexPayload($tenantId, $deviceId, $acqId, $body, $userId);
         $acq = $this->repo->findAcquisition($acqId, $tenantId);
         $this->repo->createTimelineEvent($tenantId, [
             'device_id' => $deviceId,
@@ -239,7 +262,169 @@ final class SseDigitalLabService
             'seizure_id' => $registered,
             'acquisition_id' => $acqId,
             'reference_code' => (string) ($acq['reference_code'] ?? ''),
+            'packets_created' => $packets['created'],
+            'packets_total' => $packets['total'],
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @return array{created:int,total:int}
+     */
+    public function ingestDomexPayload(
+        int $tenantId,
+        int $deviceId,
+        ?int $acquisitionId,
+        array $body,
+        ?int $userId = null
+    ): array {
+        $extracted = $this->extractDomex($body);
+        $node = $extracted['node'];
+        if ($node['node_id'] !== '') {
+            $this->repo->applyDeviceDomexMeta($deviceId, $tenantId, $node);
+            $this->repo->promotePacketsForStage($tenantId, $node['node_id'], (string) ($node['terrain_stage'] ?? ''));
+        }
+
+        $created = 0;
+        $total = 0;
+        $collector = $this->firstNonEmpty([$body['collector'] ?? null, $body['submitter_callsign'] ?? null]);
+        $grid = trim((string) ($body['grid_reference'] ?? ''));
+        $originHint = (string) ($body['origin'] ?? $extracted['origin'] ?? 'terrain');
+        $liveCreated = 0;
+
+        foreach ($extracted['packets'] as $i => $raw) {
+            if (!is_array($raw)) {
+                continue;
+            }
+            $packet = SseDomexContract::normalizePacket($raw, $node['node_id'], $i + 1);
+            if ($packet === null) {
+                continue;
+            }
+            $total++;
+            if (($packet['origin'] ?? '') === 'scenario' && $originHint === 'terrain') {
+                $packet['origin'] = 'terrain';
+            }
+            $pktGrid = trim((string) ($packet['grid_reference'] ?? ''));
+            $result = $this->repo->upsertPacket($tenantId, [
+                'device_id' => $deviceId,
+                'acquisition_id' => $acquisitionId,
+                'node_key' => $node['node_id'] !== '' ? $node['node_id'] : (string) ($body['record_id'] ?? 'SUPPORT'),
+                'packet_uid' => $packet['packet_uid'],
+                'packet_type' => $packet['packet_type'],
+                'title' => $packet['title'],
+                'body_text' => $packet['body_text'],
+                'occurred_at_label' => $packet['occurred_at_label'],
+                'quality' => $packet['quality'],
+                'is_decoy' => $packet['is_decoy'],
+                'is_fragment' => $packet['is_fragment'],
+                'is_complete' => $packet['is_complete'],
+                'channel' => $packet['channel'],
+                'reveal_after' => $packet['reveal_after'],
+                'delay_seconds' => $packet['delay_seconds'],
+                'origin' => $packet['origin'],
+                'confidence' => $packet['confidence'],
+                'status' => $packet['status'],
+                'linked_entities' => $packet['linked_entities'],
+                'collector_label' => $collector,
+                'grid_reference' => $pktGrid !== '' ? $pktGrid : ($grid !== '' ? $grid : null),
+                'pos_x' => $packet['pos_x'],
+                'pos_y' => $packet['pos_y'],
+                'pos_z' => $packet['pos_z'],
+                'show_on_map' => $packet['show_on_map'],
+            ], $userId);
+            if (!empty($result['created'])) {
+                $created++;
+                if (($packet['origin'] ?? '') === 'zeus_live') {
+                    $liveCreated++;
+                }
+            }
+        }
+
+        if ($created > 0) {
+            $this->repo->createTimelineEvent($tenantId, [
+                'device_id' => $deviceId,
+                'acquisition_id' => $acquisitionId,
+                'event_type' => 'domex_packet',
+                'event_at' => date('Y-m-d H:i:s'),
+                'title' => $liveCreated > 0
+                    ? 'Renseignement ajouté en cours de mission'
+                    : 'Renseignement numérique à exploiter',
+                'detail' => $liveCreated > 0
+                    ? ($liveCreated === 1
+                        ? 'Le chef de mission a ajouté un renseignement dans la file du laboratoire.'
+                        : $liveCreated . ' renseignements ont été ajoutés en cours de mission.')
+                    : ($created === 1
+                        ? 'Un paquet scénarisé a été déposé dans la file du laboratoire.'
+                        : $created . ' paquets scénarisés ont été déposés dans la file du laboratoire.'),
+                'interest_level' => 'a_surveiller',
+            ], $userId);
+        }
+
+        return ['created' => $created, 'total' => $total];
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @return array{node: array<string, mixed>, packets: list<mixed>, origin: string}
+     */
+    public function extractDomex(array $body): array
+    {
+        $block = is_array($body['domex'] ?? null) ? $body['domex'] : $body;
+        $nodeRaw = [];
+        if (is_array($block['node'] ?? null)) {
+            $nodeRaw = $block['node'];
+        } elseif (is_array($body['domex'] ?? null)) {
+            $nodeRaw = $body['domex'];
+        }
+        $packets = $block['packets'] ?? $body['packets'] ?? [];
+        if (!is_array($packets)) {
+            $packets = [];
+        }
+
+        return [
+            'node' => SseDomexContract::normalizeNode($nodeRaw),
+            'packets' => array_values($packets),
+            'origin' => (string) ($block['origin'] ?? $body['origin'] ?? 'terrain'),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     */
+    public function reviewPacket(
+        int $tenantId,
+        int $packetId,
+        string $decision,
+        ?int $caseId,
+        ?int $userId = null
+    ): bool {
+        $packet = $this->repo->findPacket($packetId, $tenantId);
+        if ($packet === null) {
+            return false;
+        }
+        $status = SseDomexContract::pickKey($decision, SseDomexContract::PACKET_STATUSES, '');
+        if (!in_array($status, ['rattache', 'ecarte', 'a_exploiter'], true)) {
+            return false;
+        }
+        $linkCase = $status === 'rattache' ? ($caseId ?? 0) : null;
+        if ($status === 'rattache' && ($linkCase === null || $linkCase < 1)) {
+            return false;
+        }
+        $ok = $this->repo->updatePacketStatus($packetId, $tenantId, $status, $linkCase);
+        if ($ok) {
+            $this->repo->createTimelineEvent($tenantId, [
+                'device_id' => $packet['device_id'] ?? null,
+                'case_id' => $linkCase,
+                'event_type' => 'domex_review',
+                'event_at' => date('Y-m-d H:i:s'),
+                'title' => $status === 'rattache' ? 'Paquet rattaché au dossier' : 'Paquet écarté',
+                'detail' => 'Décision humaine. Aucun lien n’a été consolidé automatiquement.',
+                'interest_level' => 'courant',
+                'is_validated' => 1,
+            ], $userId);
+        }
+
+        return $ok;
     }
 
     /**
@@ -274,6 +459,8 @@ final class SseDigitalLabService
             'camera' => 'appareil_photo',
             'photo' => 'appareil_photo',
             'appareil_photo' => 'appareil_photo',
+            'zeus_live' => 'gps',
+            'map_point' => 'gps',
         ];
         if (isset($map[$s])) {
             return $map[$s];

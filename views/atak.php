@@ -60,6 +60,8 @@ if ($atakMapConfig) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= $atakPopout === 'left' ? 'Panneau ATAK' : ($atakPopout === 'right' ? 'Effectifs ATAK' : 'COMSPEC ATAK | Carte tactique Arma 3') ?></title>
+  <link rel="icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -432,6 +434,13 @@ if ($atakMapConfig) {
           <span class="atak-sound-pref-check">
             <input type="checkbox" id="atak-sse-layer-photos" checked />
             <span>Clichés liés aux dossiers</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-intel">
+          <span class="atak-sound-pref-key">Points de renseignement</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-sse-layer-intel" checked />
+            <span>Points posés en mission ou rattachés à un dossier</span>
           </span>
         </label>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-tracks">
@@ -2720,9 +2729,27 @@ if ($atakMapConfig) {
           }
         }
       });
+      if (window.ATAKSocket && typeof window.ATAKSocket.onApiUnavailable === 'function') {
+        window.ATAKSocket.onApiUnavailable(function () {
+          setNetworkChip(false);
+          if (connectionLostEl) connectionLostEl.classList.add('show');
+        });
+      }
+      setInterval(function () {
+        if (!window.ATAKSocket || typeof window.ATAKSocket.isApiPaused !== 'function') return;
+        if (!window.ATAKSocket.isApiPaused()) {
+          if (statusEl && statusEl.classList.contains('offline')) {
+            setNetworkChip(true);
+            if (connectionLostEl) connectionLostEl.classList.remove('show');
+          }
+        }
+      }, 4000);
       setTimeout(function () { dismissAtakBoot(); }, 6000);
 
       function atakPoll() {
+        if (window.ATAKSocket && typeof window.ATAKSocket.isApiPaused === 'function' && window.ATAKSocket.isApiPaused()) {
+          return;
+        }
         if (window.ATAKUnits) ATAKUnits.fetchUnits();
         if (window.ATAKChat) ATAKChat.fetchMessages();
         if (window.ATAKMedicalAlerts) ATAKMedicalAlerts.fetchAlerts();

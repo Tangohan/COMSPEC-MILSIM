@@ -19,11 +19,15 @@ class CfgPatches {
             "COMSPEC_SSE_Module_AfterAction",
             "COMSPEC_SSE_Module_SandboxSite",
             "COMSPEC_SSE_Module_ZeusControl",
-            "COMSPEC_SSE_Module_ScenarioDirector"
+            "COMSPEC_SSE_Module_ScenarioDirector",
+            "COMSPEC_SSE_Module_DomexMark",
+            "COMSPEC_SSE_Module_DomexAddIntel",
+            "COMSPEC_SSE_Module_DomexSetStage",
+            "COMSPEC_SSE_Module_DomexMapPoint"
         };
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_core", "comspec_sse_generator", "comspec_sse_intel", "comspec_sse_ui", "comspec_sse_main", "A3_Modules_F"};
+        requiredAddons[] = {"comspec_sse_core", "comspec_sse_generator", "comspec_sse_intel", "comspec_sse_ui", "comspec_sse_main", "comspec_sse_eden", "comspec_sse_network", "cba_xeh", "A3_Modules_F"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };
@@ -51,6 +55,17 @@ class CfgFunctions {
             class moduleSandboxSite {};
             class moduleZeusControl {};
             class moduleScenarioDirector {};
+            class moduleDomexMark {};
+            class moduleDomexAddIntel {};
+            class moduleDomexSetStage {};
+            class moduleDomexMapPoint {};
+            class curatorSelectedObjects {};
+            class domexPickObject {};
+            class domexEnsureNode {};
+            class domexAddLivePacket {};
+            class domexSetStage {};
+            class domexPlaceMapPoint {};
+            class registerZenDomexLive {};
             class openGenerateDialog {};
             class applyGenerateDialog {};
             class openModelDialog {};
@@ -411,6 +426,176 @@ class CfgVehicles {
             description = "LOT 8 — Applique un dataset (ex. FALCON) et pilote le niveau de scénario.";
         };
     };
+
+    class COMSPEC_SSE_Module_DomexMark: COMSPEC_SSE_Module_Base {
+        scope = 2;
+        scopeCurator = 2;
+        displayName = "Intelligence numérique (DOMEX)";
+        function = "comspec_sse_fnc_moduleDomexMark";
+        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
+        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
+
+        class Arguments {
+            class NodeId {
+                displayName = "Identifiant";
+                description = "Ex. PC-KESTREL-04";
+                typeName = "STRING";
+                defaultValue = "";
+            };
+            class DeviceType {
+                displayName = "Type de support";
+                typeName = "STRING";
+                class values {
+                    class ordinateur { name = "Ordinateur"; value = "ordinateur"; default = 1; };
+                    class telephone { name = "Téléphone"; value = "telephone"; };
+                    class tablette { name = "Tablette"; value = "tablette"; };
+                    class radio_numerique { name = "Radio"; value = "radio_numerique"; };
+                    class cle_usb { name = "Clé USB"; value = "cle_usb"; };
+                    class gps { name = "GPS"; value = "gps"; };
+                };
+            };
+            class Owner {
+                displayName = "Propriétaire apparent";
+                typeName = "STRING";
+                defaultValue = "";
+            };
+            class Organization {
+                displayName = "Organisation";
+                typeName = "STRING";
+                defaultValue = "";
+            };
+            class Network {
+                displayName = "Réseau fictif";
+                typeName = "STRING";
+                defaultValue = "";
+            };
+            class Security {
+                displayName = "Sécurité scénarisée";
+                typeName = "STRING";
+                class values {
+                    class faible { name = "Faible"; value = "faible"; };
+                    class moyenne { name = "Moyenne"; value = "moyenne"; default = 1; };
+                    class elevee { name = "Élevée"; value = "elevee"; };
+                };
+            };
+            class Profile {
+                displayName = "Profil de contenu";
+                typeName = "STRING";
+                class values {
+                    class generique { name = "Générique"; value = "generique"; default = 1; };
+                    class logistique { name = "Logistique"; value = "logistique"; };
+                    class commandement { name = "Commandement"; value = "commandement"; };
+                    class personnel { name = "Personnel"; value = "personnel"; };
+                    class radio { name = "Radio / liaisons"; value = "radio"; };
+                };
+            };
+            class Duration {
+                displayName = "Durée (secondes)";
+                typeName = "NUMBER";
+                defaultValue = "180";
+            };
+            class AccessRemote {
+                displayName = "Accès distant scénarisé";
+                typeName = "BOOL";
+                defaultValue = "false";
+            };
+            class PacketType {
+                displayName = "Paquet — type";
+                typeName = "STRING";
+                class values {
+                    class none { name = "(aucun)"; value = ""; default = 1; };
+                    class message { name = "Message"; value = "message"; };
+                    class document { name = "Document"; value = "document"; };
+                    class coordinate { name = "Coordonnée / point"; value = "coordinate"; };
+                    class contact { name = "Contact"; value = "contact"; };
+                    class frequency { name = "Fréquence"; value = "frequency"; };
+                };
+            };
+            class PacketText {
+                displayName = "Paquet — texte";
+                typeName = "STRING";
+                defaultValue = "";
+            };
+            class PacketQuality {
+                displayName = "Paquet — qualité";
+                typeName = "STRING";
+                class values {
+                    class complet { name = "Complet"; value = "complet"; default = 1; };
+                    class fragment { name = "Fragment"; value = "fragment"; };
+                    class leurre_possible { name = "Peut être un leurre"; value = "leurre_possible"; };
+                };
+            };
+            class PacketEntities {
+                displayName = "Paquet — entités (Nom | type)";
+                typeName = "STRING";
+                defaultValue = "";
+            };
+        };
+
+        class ModuleDescription {
+            description = "Pose le contrat d’intelligence numérique sur l’objet (laptop, téléphone, radio…). Même schéma qu’Eden. Aucun moteur technique.";
+            sync[] = {"Anything"};
+        };
+    };
+
+    class COMSPEC_SSE_Module_DomexAddIntel: COMSPEC_SSE_Module_Base {
+        scope = 2;
+        scopeCurator = 2;
+        displayName = "Ajouter un renseignement";
+        function = "comspec_sse_fnc_moduleDomexAddIntel";
+        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
+        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
+        class ModuleDescription {
+            description = "Ajoute un renseignement scénarisé pendant la mission. Posez le module sur un objet (pas une personne).";
+            sync[] = {"Anything"};
+        };
+    };
+
+    class COMSPEC_SSE_Module_DomexSetStage: COMSPEC_SSE_Module_Base {
+        scope = 2;
+        scopeCurator = 2;
+        displayName = "Fixer le palier d’accès";
+        function = "comspec_sse_fnc_moduleDomexSetStage";
+        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa";
+        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa";
+        class Arguments {
+            class Stage {
+                displayName = "Palier";
+                typeName = "STRING";
+                class values {
+                    class non_identifie { name = "Non identifié"; value = "non_identifie"; };
+                    class decouvert { name = "Découvert"; value = "decouvert"; default = 1; };
+                    class acces_en_cours { name = "Accès en cours"; value = "acces_en_cours"; };
+                    class acces_etabli { name = "Accès établi"; value = "acces_etabli"; };
+                    class exploite { name = "Exploité"; value = "exploite"; };
+                };
+            };
+        };
+        class ModuleDescription {
+            description = "Change le palier d’accès du support. Au palier « accès établi », les contenus prévus pour ce palier rejoignent la file.";
+            sync[] = {"Anything"};
+        };
+    };
+
+    class COMSPEC_SSE_Module_DomexMapPoint: COMSPEC_SSE_Module_Base {
+        scope = 2;
+        scopeCurator = 2;
+        displayName = "Poser un point carte";
+        function = "comspec_sse_fnc_moduleDomexMapPoint";
+        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa";
+        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa";
+        class Arguments {
+            class Label {
+                displayName = "Libellé";
+                typeName = "STRING";
+                defaultValue = "";
+            };
+        };
+        class ModuleDescription {
+            description = "Pose un point de renseignement sur la carte du bureau. Invisible sur la carte des joueurs.";
+            position = 1;
+        };
+    };
 };
 
 // Classes de base déclarées une seule fois : chaque dialogue inclus ensuite les réutilise.
@@ -421,5 +606,6 @@ class RscCheckbox;
 class RscSlider;
 class RscListbox;
 
+#include "CfgEventHandlers.hpp"
 #include "dialogs\generateDialog.hpp"
 #include "dialogs\modelDialog.hpp"

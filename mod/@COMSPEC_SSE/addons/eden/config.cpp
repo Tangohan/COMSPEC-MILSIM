@@ -19,6 +19,8 @@ class CfgFunctions {
             file = "z\comspec_sse\addons\eden\functions";
             class edenApplyAttributes {};
             class edenInitEntity {};
+            class domexGetNode {};
+            class domexApplyObject {};
         };
     };
 };
@@ -236,6 +238,7 @@ class Cfg3DEN {
                 };
             };
             #include "attributes_authored.hpp"
+            #include "attributes_domex.hpp"
         };
     };
 };
