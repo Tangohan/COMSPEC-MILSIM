@@ -69,4 +69,11 @@ if (_advanced != "") then {
 };
 
 [format ["edenApply %1 lazy model=%2 dataset=%3/%4", _entity, _modelId, _datasetId, _datasetRole]] call comspec_sse_fnc_log;
+
+if (_entity getVariable ["comspec_sse_domex_enabled", false]
+    || {_entity getVariable ["comspec_sse_domex_nodeId", ""] isNotEqualTo ""}
+) then {
+    [_entity] call comspec_sse_fnc_domexApplyObject;
+};
+
 true

@@ -49,6 +49,8 @@ Une proposition produite par le système constitue une aide à l’analyse. Elle
 - [Sécurité](08-exploitation-numerique/securite.md)
 - [Rapports](08-exploitation-numerique/rapports.md)
 - [Dictionnaire de données](08-exploitation-numerique/dictionnaire-donnees.md)
+- [DOMEX lot 1 — contrat objet et file](08-exploitation-numerique/domex-lot1.md)
+- [DOMEX lot 2 — Zeus live, paliers, point carte](08-exploitation-numerique/domex-lot2.md)
 - [Plan de recette](08-exploitation-numerique/plan-recette.md)
 - [Mise en place technique](08-exploitation-numerique/mise-en-place.md)
 

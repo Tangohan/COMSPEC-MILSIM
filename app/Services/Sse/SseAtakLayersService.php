@@ -6,6 +6,7 @@ namespace App\Services\Sse;
 
 use App\Repositories\SseAtakLayersRepository;
 use App\Repositories\SseCaseMapRepository;
+use App\Repositories\SseDigitalLabRepository;
 use App\Support\SseAtakLayersCatalog;
 use App\Support\SseIntelCycleCatalog;
 
@@ -45,6 +46,7 @@ final class SseAtakLayersService
             'tracks' => ['id' => 'tracks', 'label' => SseAtakLayersCatalog::layerLabel('tracks'), 'points' => [], 'polylines' => []],
             'ghost_tracks' => ['id' => 'ghost_tracks', 'label' => SseAtakLayersCatalog::layerLabel('ghost_tracks'), 'points' => [], 'polylines' => []],
             'history' => ['id' => 'history', 'label' => SseAtakLayersCatalog::layerLabel('history'), 'points' => [], 'polylines' => []],
+            'intel' => ['id' => 'intel', 'label' => SseAtakLayersCatalog::layerLabel('intel'), 'points' => [], 'polylines' => []],
         ];
 
         $flat = [];
@@ -212,6 +214,36 @@ final class SseAtakLayersService
                 ['author' => (string) ($h['author_label'] ?? '')]
             );
             $layersOut['history']['points'][] = $pt;
+            $flat[] = $pt;
+        }
+
+        try {
+            $pins = (new SseDigitalLabRepository())->listMapPins($tenantId);
+        } catch (\Throwable) {
+            $pins = [];
+        }
+        foreach ($pins as $pin) {
+            $note = trim((string) ($pin['origin_label'] ?? ''));
+            $grid = trim((string) ($pin['grid_reference'] ?? ''));
+            if ($grid !== '') {
+                $note = $note !== '' ? $note . ' · ' . $grid : $grid;
+            }
+            $pt = $this->point(
+                'intel-' . (int) ($pin['id'] ?? 0),
+                'intel',
+                'intel',
+                (string) ($pin['packet_type'] ?? 'coordinate'),
+                (string) ($pin['title'] ?? 'Renseignement'),
+                $note !== '' ? $note : (string) ($pin['body_text'] ?? ''),
+                SseAtakLayersCatalog::colorFor('intel'),
+                (float) $pin['pos_x'],
+                (float) $pin['pos_y'],
+                (int) ($pin['case_id'] ?? 0),
+                (string) ($pin['case_ref'] ?? ''),
+                (string) ($pin['case_title'] ?? ''),
+                ['support' => (string) ($pin['support_label'] ?? '')]
+            );
+            $layersOut['intel']['points'][] = $pt;
             $flat[] = $pt;
         }
 

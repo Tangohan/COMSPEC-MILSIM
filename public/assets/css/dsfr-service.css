@@ -534,8 +534,14 @@
 .ds-alert--on-dark.ds-alert--info { background: #071a33; }
 
 /* Connexion : volet photo (inspiration split GD / DSFR) */
-.ds-page--split {
-  background: var(--ds-bg);
+.ds-page--split .athena-header {
+  flex: 0 0 auto;
+  width: 100%;
+}
+.athena-header__lang {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 .ds-split {
   flex: 1 1 auto;
@@ -578,7 +584,7 @@
 @media (min-width: 960px) {
   .ds-split {
     grid-template-columns: minmax(28rem, 42rem) minmax(0, 1fr);
-    min-height: calc(100svh - 8.5rem);
+    min-height: calc(100svh - var(--athena-header-h, 4rem));
   }
   .ds-visual {
     order: 2;

@@ -8124,7 +8124,11 @@ class AtakApiController
         $tenantId = $r;
         $mapId = $this->mapId($request);
         $limit = (int) ($request->query('limit') ?: 50);
-        $rows = $this->atak->getPings($tenantId, $mapId, min($limit, 200));
+        try {
+            $rows = $this->atak->getPings($tenantId, $mapId, min($limit, 200));
+        } catch (\Throwable) {
+            return Response::json([]);
+        }
         return Response::json($rows);
     }
 
@@ -8188,7 +8192,15 @@ class AtakApiController
         }
         $tenantId = $r;
         $mapId = $this->mapId($request);
-        $rows = $this->explosiveTimers()->listForMap($tenantId, $mapId);
+        try {
+            $rows = $this->explosiveTimers()->listForMap($tenantId, $mapId);
+        } catch (\Throwable) {
+            return Response::json([
+                'items' => [],
+                'armed_count' => 0,
+                'can_command_detonate' => false,
+            ]);
+        }
 
         return Response::json([
             'items' => $rows,

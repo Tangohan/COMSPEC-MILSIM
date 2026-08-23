@@ -1,14 +1,16 @@
 /*
-    Intercepte les explosifs ACE (pose, déclencheur, minuterie, désamorçage).
-    Sans ACE Explosives : no-op.
+    Suit les explosifs ACE sans envelopper les fonctions (compileFinal :
+    l’affectation est ignorée, plus aucune charge ne remontait).
 
-    Ne pas remonter ace_explosives_setup : c’est le placeholder AVANT le choix
-    du déclencheur (délai inconnu). Un fuse 0 y était forcé à 1 s côté Athena.
+    Événements officiels :
+    - ace_explosives_setup  : placeholder, on mémorise le magasin, on n’envoie rien
+    - ace_explosives_place  : charge armée (déclencheur choisi)
+    - ace_explosives_defuse : désamorçage
 */
 if (!hasInterface) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_ExplosiveTimersHooked", false]) exitWith {};
 if (!isClass (configFile >> "CfgPatches" >> "ace_explosives")) exitWith {};
-if (isNil "ace_explosives_fnc_startTimer" || {isNil "ace_explosives_fnc_placeExplosive"}) exitWith {
+if (isNil "CBA_fnc_addEventHandler") exitWith {
     [{ [] call comspec_overwatch_connect_fnc_initExplosiveTimers }, [], 3] call CBA_fnc_waitAndExecute;
 };
 
@@ -29,84 +31,101 @@ private _kindFromTrigger = {
     private _s = toLower (if (_cfg isEqualType "") then { _cfg } else { format ["%1", _cfg] });
     if (_s find "timer" >= 0) exitWith { "timer" };
     if (_s find "cell" >= 0) exitWith { "cellphone" };
-    if (_s find "command" >= 0 || {_s find "clacker" >= 0} || {_s find "m57" >= 0} || {_s find "m26" >= 0} || {_s find "mk16" >= 0}) exitWith { "clacker" };
+    if (_s find "command" >= 0 || {_s find "clacker" >= 0} || {_s find "m57" >= 0} || {_s find "m26" >= 0} || {_s find "mk16" >= 0} || {_s find "deadman" >= 0}) exitWith { "clacker" };
     "command"
 };
-
-private _delayFromValue = {
-    params ["_value"];
-    if (_value isEqualType 0) exitWith { _value };
-    if (_value isEqualType []) exitWith {
-        private _found = _value select { _x isEqualType 0 && {_x >= 1} };
-        if ((count _found) > 0) then { _found select 0 } else { 0 }
-    };
-    0
-};
-
 missionNamespace setVariable ["COMSPEC_ExplosiveKindFromTrigger", _kindFromTrigger, false];
-missionNamespace setVariable ["COMSPEC_ExplosiveDelayFromValue", _delayFromValue, false];
 
-if (isNil "COMSPEC_ACE_startTimerOrig" && {!isNil "ace_explosives_fnc_startTimer"}) then {
-    missionNamespace setVariable ["COMSPEC_ACE_startTimerOrig", ace_explosives_fnc_startTimer, false];
-    ace_explosives_fnc_startTimer = {
-        private _extract = missionNamespace getVariable ["COMSPEC_ExplosiveDelayFromValue", { 0 }];
-        private _explosive = if ((count _this) > 0 && {(_this select 0) isEqualType objNull}) then { _this select 0 } else { objNull };
-        private _delay = [if ((count _this) > 1) then { _this select 1 } else { 0 }] call _extract;
-        private _unit = objNull;
-        if ((count _this) > 3 && {(_this select 3) isEqualType objNull}) then {
-            _unit = _this select 3;
-        } else {
-            if ((count _this) > 2 && {(_this select 2) isEqualType objNull}) then { _unit = _this select 2 };
+private _kindFromClackers = {
+    params ["_explosive", "_unit"];
+    private _list = _unit getVariable ["ace_explosives_clackers", []];
+    if (!(_list isEqualType [])) exitWith { "" };
+    private _kind = "";
+    {
+        if ((_x isEqualType []) && {(count _x) > 0} && {(_x select 0) isEqualTo _explosive}) then {
+            private _trig = if ((count _x) > 4) then { _x select 4 } else { "Command" };
+            _kind = [_trig] call (missionNamespace getVariable ["COMSPEC_ExplosiveKindFromTrigger", { "command" }]);
         };
-        if (!isNull _explosive && {_delay >= 1}) then {
-            _explosive setVariable ["COMSPEC_timerReported", true, true];
-            _explosive setVariable ["COMSPEC_fuseSeconds", _delay, true];
-            private _cid = [_explosive, _delay, _unit, "armed", "", "timer"] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
-            if (_cid isEqualType "" && {_cid isNotEqualTo ""}) then {
-                [{
-                    params ["_cid", "_exp"];
-                    private _outcomes = missionNamespace getVariable ["COMSPEC_ExplosiveOutcomes", createHashMap];
-                    if (!(_outcomes isEqualType createHashMap)) then { _outcomes = createHashMap; };
-                    if ((_outcomes getOrDefault [_cid, ""]) isNotEqualTo "") exitWith {};
-                    if (!isNull _exp) exitWith {};
-                    _outcomes set [_cid, "detonated"];
-                    missionNamespace setVariable ["COMSPEC_ExplosiveOutcomes", _outcomes, false];
-                    [objNull, 0, objNull, "detonated", _cid] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
-                }, [_cid, _explosive], _delay + 1.5] call CBA_fnc_waitAndExecute;
-            };
-        };
-        private _orig = missionNamespace getVariable ["COMSPEC_ACE_startTimerOrig", {}];
-        _this call _orig;
-    };
+    } forEach _list;
+    _kind
 };
 
-if (isNil "COMSPEC_ACE_placeExplosiveOrig" && {!isNil "ace_explosives_fnc_placeExplosive"}) then {
-    missionNamespace setVariable ["COMSPEC_ACE_placeExplosiveOrig", ace_explosives_fnc_placeExplosive, false];
-    ace_explosives_fnc_placeExplosive = {
-        private _orig = missionNamespace getVariable ["COMSPEC_ACE_placeExplosiveOrig", {}];
-        private _extract = missionNamespace getVariable ["COMSPEC_ExplosiveDelayFromValue", { 0 }];
-        private _kindFn = missionNamespace getVariable ["COMSPEC_ExplosiveKindFromTrigger", { "command" }];
-        private _unit = if ((count _this) > 0 && {(_this select 0) isEqualType objNull}) then { _this select 0 } else { player };
-        private _triggerCfg = if ((count _this) > 4) then { _this select 4 } else { "" };
-        private _vars = if ((count _this) > 5 && {(_this select 5) isEqualType []}) then { _this select 5 } else { [] };
-        private _kind = [_triggerCfg] call _kindFn;
-        private _delay = [_vars] call _extract;
-        private _exp = _this call _orig;
-        if (!(_exp isEqualType objNull) || {isNull _exp}) exitWith { _exp };
-        if (_kind isEqualTo "timer") then {
-            if (_delay < 1) then {
-                _delay = [_exp getVariable ["COMSPEC_fuseSeconds", 0]] call _extract;
-            };
-            if (_delay < 1) exitWith { _exp };
-            _exp setVariable ["COMSPEC_timerReported", true, true];
-            _exp setVariable ["COMSPEC_fuseSeconds", _delay, true];
-            [_exp, _delay, _unit, "armed", "", "timer"] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
-        } else {
-            [_exp, 0, _unit, "armed", "", _kind] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
-        };
-        _exp
+missionNamespace setVariable ["COMSPEC_ExplosiveKindFromClackers", _kindFromClackers, false];
+
+["ace_explosives_setup", {
+    params ["_placeholder", "_magClassname", "_unit"];
+    if (!hasInterface) exitWith {};
+    if (isNull player) exitWith {};
+    if (!(_unit isEqualTo player)) exitWith {};
+    if (_magClassname isEqualType "" && {_magClassname isNotEqualTo ""}) then {
+        missionNamespace setVariable ["COMSPEC_LastAceExpMag", _magClassname, false];
     };
-};
+}] call CBA_fnc_addEventHandler;
+
+["ace_explosives_place", {
+    params ["_explosive", "_dir", "_pitch", "_unit"];
+    if (!hasInterface) exitWith {};
+    if (isNull _explosive) exitWith {};
+    if (isNull player) exitWith {};
+    if (!(_unit isEqualTo player)) exitWith {};
+    if (_explosive getVariable ["COMSPEC_timerReported", false]) exitWith {};
+
+    private _mag = _explosive getVariable ["ace_explosives_class", ""];
+    if (!(_mag isEqualType "") || {_mag isEqualTo ""}) then {
+        _mag = missionNamespace getVariable ["COMSPEC_LastAceExpMag", ""];
+    };
+    if (_mag isEqualType "" && {_mag isNotEqualTo ""}) then {
+        _explosive setVariable ["ace_explosives_magazineClass", _mag, true];
+        _explosive setVariable ["ace_explosives_class", _mag, true];
+    };
+
+    // Le minuteur ACE appelle placeExplosive avant closeDialog : le curseur est encore lisible.
+    private _timerDisplay = uiNamespace getVariable ["ace_explosives_timerDisplay", displayNull];
+    if (!isNull _timerDisplay) then {
+        private _slider = _timerDisplay displayCtrl 8505;
+        if (!isNull _slider) then {
+            private _secNow = floor (sliderPosition _slider);
+            if (_secNow >= 1) then {
+                missionNamespace setVariable ["COMSPEC_LastAceTimerSec", _secNow, false];
+                missionNamespace setVariable ["COMSPEC_LastAceTimerAt", diag_tickTime, false];
+            };
+        };
+    };
+
+    private _kindFn = missionNamespace getVariable ["COMSPEC_ExplosiveKindFromClackers", { "" }];
+    private _kind = [_explosive, _unit] call _kindFn;
+    private _delay = 0;
+    private _timerAt = missionNamespace getVariable ["COMSPEC_LastAceTimerAt", -1e9];
+    private _timerSec = missionNamespace getVariable ["COMSPEC_LastAceTimerSec", 0];
+    private _timerUiOpen = !isNull _timerDisplay;
+    private _timerFresh = ((diag_tickTime - _timerAt) <= 8 && {_timerSec >= 1});
+    if (_timerUiOpen || {_kind isEqualTo "" && {_timerFresh}}) then {
+        _kind = "timer";
+        _delay = _timerSec;
+    };
+    if (_kind isEqualTo "") then {
+        _kind = "command";
+    };
+
+    _explosive setVariable ["COMSPEC_timerReported", true, true];
+    if (_kind isEqualTo "timer") then {
+        _explosive setVariable ["COMSPEC_fuseSeconds", _delay, true];
+    };
+
+    private _cid = [_explosive, _delay, _unit, "armed", "", _kind] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
+    if (_kind isEqualTo "timer" && {_cid isEqualType ""} && {_cid isNotEqualTo ""} && {_delay >= 1}) then {
+        [{
+            params ["_cid", "_exp"];
+            private _outcomes = missionNamespace getVariable ["COMSPEC_ExplosiveOutcomes", createHashMap];
+            if (!(_outcomes isEqualType createHashMap)) then { _outcomes = createHashMap; };
+            if ((_outcomes getOrDefault [_cid, ""]) isNotEqualTo "") exitWith {};
+            if (!isNull _exp) exitWith {};
+            _outcomes set [_cid, "detonated"];
+            missionNamespace setVariable ["COMSPEC_ExplosiveOutcomes", _outcomes, false];
+            [objNull, 0, objNull, "detonated", _cid] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
+        }, [_cid, _explosive], _delay + 1.5] call CBA_fnc_waitAndExecute;
+    };
+}] call CBA_fnc_addEventHandler;
 
 ["ace_explosives_defuse", {
     params ["_explosive", "_unit"];
@@ -128,4 +147,18 @@ if (isNil "COMSPEC_ACE_placeExplosiveOrig" && {!isNil "ace_explosives_fnc_placeE
     [objNull, 0, _unit, "defused", _cid] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
 }] call CBA_fnc_addEventHandler;
 
-["INFO", "Explosives", "Suivi des charges ACE (minuterie et déclenchement) actif"] call comspec_overwatch_connect_fnc_log;
+if (!isNil "CBA_fnc_addPerFrameHandler") then {
+    [{
+        private _display = uiNamespace getVariable ["ace_explosives_timerDisplay", displayNull];
+        if (isNull _display) exitWith {};
+        private _slider = _display displayCtrl 8505;
+        if (isNull _slider) exitWith {};
+        private _sec = floor (sliderPosition _slider);
+        if (_sec >= 1) then {
+            missionNamespace setVariable ["COMSPEC_LastAceTimerSec", _sec, false];
+            missionNamespace setVariable ["COMSPEC_LastAceTimerAt", diag_tickTime, false];
+        };
+    }, 0.2] call CBA_fnc_addPerFrameHandler;
+};
+
+["INFO", "Explosives", "Suivi des charges ACE (événements, pas de wrap)"] call comspec_overwatch_connect_fnc_log;

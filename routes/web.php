@@ -733,6 +733,9 @@ return function (Router $router) {
     $router->get('/atak/sse/exploitation-numerique/artefacts', [SseDigitalLabController::class, 'artifactsIndex'], $mwSsePortal);
     $router->get('/atak/sse/exploitation-numerique/artefacts/{id}', [SseDigitalLabController::class, 'artifactShow'], $mwSsePortal);
     $router->post('/atak/sse/exploitation-numerique/artefacts/{id}', [SseDigitalLabController::class, 'artifactUpdate'], $mwSsePortal);
+    $router->get('/atak/sse/exploitation-numerique/a-exploiter', [SseDigitalLabController::class, 'queueIndex'], $mwSsePortal);
+    $router->get('/atak/sse/exploitation-numerique/a-exploiter/{id}', [SseDigitalLabController::class, 'packetShow'], $mwSsePortal);
+    $router->post('/atak/sse/exploitation-numerique/a-exploiter/{id}/decision', [SseDigitalLabController::class, 'packetReview'], $mwSsePortal);
     $router->get('/atak/sse/exploitation-numerique/analyses', [SseDigitalLabController::class, 'findingsIndex'], $mwSsePortal);
     $router->post('/atak/sse/exploitation-numerique/analyses/{id}/decision', [SseDigitalLabController::class, 'findingReview'], $mwSsePortal);
     $router->get('/atak/sse/exploitation-numerique/chronologies', [SseDigitalLabController::class, 'timeline'], $mwSsePortal);

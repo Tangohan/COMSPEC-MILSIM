@@ -45,6 +45,21 @@ require __DIR__ . '/_subnav.php';
         <div><span class="muted">Opérateur</span><br><strong><?= $h($device['seized_by_label'] ?? '—') ?></strong></div>
         <div><span class="muted">Profil</span><br><strong><?= $h($device['data_profile_label'] ?? '—') ?></strong></div>
         <div><span class="muted">Système</span><br><strong><?= $h($device['presumed_os'] ?? '—') ?></strong></div>
+        <?php if (!empty($device['node_key'])): ?>
+            <div><span class="muted">Identifiant de mission</span><br><strong><?= $h($device['node_key']) ?></strong></div>
+        <?php endif; ?>
+        <?php if (!empty($device['owner_label'])): ?>
+            <div><span class="muted">Propriétaire apparent</span><br><strong><?= $h($device['owner_label']) ?></strong></div>
+        <?php endif; ?>
+        <?php if (!empty($device['organization_label'])): ?>
+            <div><span class="muted">Organisation</span><br><strong><?= $h($device['organization_label']) ?></strong></div>
+        <?php endif; ?>
+        <?php if (!empty($device['fictional_network'])): ?>
+            <div><span class="muted">Réseau fictif</span><br><strong><?= $h($device['fictional_network']) ?></strong></div>
+        <?php endif; ?>
+        <?php if (!empty($device['content_profile'])): ?>
+            <div><span class="muted">Profil de contenu</span><br><strong><?= $h($device['content_profile_label'] ?? '') ?></strong></div>
+        <?php endif; ?>
     </div>
     <?php if (!empty($device['observations'])): ?>
         <div class="panel-body"><p><?= nl2br($h($device['observations'])) ?></p></div>
@@ -76,6 +91,34 @@ require __DIR__ . '/_subnav.php';
     </form>
 </section>
 <?php endif; ?>
+
+<?php
+/** @var list<array<string,mixed>> $packets */
+$packets = is_array($packets ?? null) ? $packets : [];
+?>
+<section class="panel" style="margin-top:10px">
+    <div class="panel-header">
+        <div class="panel-title"><span class="panel-index">02.12b</span> Paquets de mission</div>
+        <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/a-exploiter')) ?>">File à exploiter</a>
+    </div>
+    <?php if ($packets === []): ?>
+        <div class="panel-body"><p class="muted">Aucun paquet scénarisé n’est encore rattaché à ce support.</p></div>
+    <?php else: ?>
+        <div class="table-wrap"><table>
+            <thead><tr><th>Type</th><th>Qualité</th><th>État</th><th></th></tr></thead>
+            <tbody>
+            <?php foreach ($packets as $p): ?>
+                <tr>
+                    <td><?= $h($p['packet_type_label'] ?? '') ?></td>
+                    <td><?= $h($p['quality_label'] ?? '') ?></td>
+                    <td><?= $h($p['status_label'] ?? '') ?></td>
+                    <td><a class="btn-open" href="<?= $h(url('atak/sse/exploitation-numerique/a-exploiter/' . (int) ($p['id'] ?? 0))) ?>">Ouvrir</a></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table></div>
+    <?php endif; ?>
+</section>
 
 <section class="panel" style="margin-top:10px">
     <div class="panel-header"><div class="panel-title"><span class="panel-index">02.12</span> Acquisitions</div></div>

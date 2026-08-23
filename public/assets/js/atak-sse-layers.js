@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var LAYER_IDS = ['cases', 'pir', 'taskings', 'photos', 'tracks', 'ghost_tracks', 'history'];
+    var LAYER_IDS = ['cases', 'pir', 'taskings', 'photos', 'tracks', 'ghost_tracks', 'history', 'intel'];
   var sseLayerGroups = {};
   var trailBuffers = {};
   var ghostBuffers = {};

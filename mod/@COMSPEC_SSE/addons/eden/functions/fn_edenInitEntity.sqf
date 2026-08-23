@@ -17,7 +17,9 @@ if (_entity isEqualType []) then {
 if (isNull _entity) exitWith {};
 if (!isServer) exitWith {};
 
-if !(_entity getVariable ["comspec_sse_enabled", false]) exitWith {};
+if !(_entity getVariable ["comspec_sse_enabled", false]
+    || {_entity getVariable ["comspec_sse_domex_enabled", false]}
+) exitWith {};
 
 // Déjà planifié ou en cours → ne pas re-empiler.
 if (_entity getVariable ["comspec_sse_edenInitQueued", false]) exitWith {};
@@ -33,6 +35,8 @@ private _delay = 0.05 + (_stagger * 0.04);
     params ["_e"];
     if (isNull _e) exitWith {};
     _e setVariable ["comspec_sse_edenInitQueued", false];
-    if !(_e getVariable ["comspec_sse_enabled", false]) exitWith {};
+    if !(_e getVariable ["comspec_sse_enabled", false]
+        || {_e getVariable ["comspec_sse_domex_enabled", false]}
+    ) exitWith {};
     [_e] call comspec_sse_fnc_edenApplyAttributes;
 }, [_entity], _delay] call CBA_fnc_waitAndExecute;

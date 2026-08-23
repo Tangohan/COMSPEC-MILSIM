@@ -14,6 +14,8 @@ $nDevices = (int) ($counts['devices'] ?? 0);
 $nAcq = (int) ($counts['acquisitions'] ?? 0);
 $nArt = (int) ($counts['artifacts'] ?? 0);
 $nPending = (int) ($counts['findings_pending'] ?? 0);
+$nPackets = (int) ($counts['packets_pending'] ?? 0);
+$pendingPackets = is_array($pendingPackets ?? null) ? $pendingPackets : [];
 $isEmpty = $nDevices < 1;
 
 require __DIR__ . '/_subnav.php';
@@ -89,6 +91,11 @@ require __DIR__ . '/_subnav.php';
         <div class="metric-label">À examiner</div>
         <div class="metric-value"><?= $nPending ?></div>
         <div class="metric-detail">Signaux en attente →</div>
+    </a>
+    <a class="metric lab-metric<?= $nPackets > 0 ? ' is-attention' : '' ?>" href="<?= $h(url('atak/sse/exploitation-numerique/a-exploiter')) ?>">
+        <div class="metric-label">À exploiter</div>
+        <div class="metric-value"><?= $nPackets ?></div>
+        <div class="metric-detail">Paquets de mission →</div>
     </a>
 </div>
 <?php endif; ?>
@@ -203,6 +210,25 @@ require __DIR__ . '/_subnav.php';
     </section>
 </div>
 
+<?php if ($pendingPackets !== []): ?>
+<section class="panel" style="margin-top:10px">
+    <div class="panel-header">
+        <div class="panel-title"><span class="panel-index">03b</span> Renseignement à exploiter</div>
+        <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/a-exploiter')) ?>">Ouvrir la file (<?= $nPackets ?>)</a>
+    </div>
+    <div class="panel-body">
+        <?php foreach (array_slice($pendingPackets, 0, 5) as $p): ?>
+            <div class="iw-alert is-moderee" style="margin-bottom:8px">
+                <strong><?= $h($p['support_label'] ?? '') ?> — <?= $h($p['packet_type_label'] ?? '') ?></strong>
+                <p><?= $h(mb_substr((string) ($p['body_text'] ?? ''), 0, 160)) ?><?= mb_strlen((string) ($p['body_text'] ?? '')) > 160 ? '…' : '' ?></p>
+                <em><?= $h($p['quality_label'] ?? '') ?> · <?= $h($p['confidence_label'] ?? '') ?></em>
+                <div><a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/a-exploiter/' . (int) ($p['id'] ?? 0))) ?>">Ouvrir</a></div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</section>
+<?php endif; ?>
+
 <section class="panel" style="margin-top:10px">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">04</span> Lexique rapide</div>
@@ -220,6 +246,10 @@ require __DIR__ . '/_subnav.php';
             <div>
                 <dt>Artefact</dt>
                 <dd>Une donnée utile extraite (message, fichier, contact…).</dd>
+            </div>
+            <div>
+                <dt>Paquet</dt>
+                <dd>Un renseignement scénarisé (message, document, point…) préparé en mission, à traiter ici.</dd>
             </div>
             <div>
                 <dt>Signal</dt>
