@@ -137,6 +137,92 @@ class Cfg3DEN
                     };
                 };
             };
+
+            class COMSPEC_Overwatch_PhoneTrack
+            {
+                displayName = "COMSPEC — Suivi ATAK";
+                collapsed = 1;
+                condition = "objectBrain";
+
+                class Attributes
+                {
+                    class COMSPEC_PhoneTrack
+                    {
+                        displayName = "Téléphone visible sur l’ATAK";
+                        tooltip = "La position de cette personne (joueur ou IA) apparaît sur la carte de commandement, comme si elle portait un téléphone. Utile pour un contact à suivre, un civil équipé, ou un joueur sans tablette ATAK.";
+                        property = "COMSPEC_PhoneTrack";
+                        control = "Checkbox";
+                        expression = "[_this, _value] call comspec_overwatch_connect_fnc_setPhoneTrack;";
+                        defaultValue = "false";
+                        typeName = "BOOL";
+                    };
+
+                    class COMSPEC_PhoneCallsign
+                    {
+                        displayName = "Nom affiché sur la carte";
+                        tooltip = "Laisser vide : le nom de la personne est utilisé. Renseignez un indicatif si plusieurs contacts ont le même nom.";
+                        property = "COMSPEC_PhoneCallsign";
+                        control = "Edit";
+                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_PhoneCallsign', _value, true]; };";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
+
+                    class COMSPEC_AllyTrack
+                    {
+                        displayName = "IA alliée visible sur l’ATAK";
+                        tooltip = "Cette IA apparaît sur la carte de commandement comme une unité de terrain (pas comme un téléphone). Utile pour une section d’accompagnement, un QRF ou un élément ami. Sans effet sur un joueur : il est déjà suivi s’il a une tablette.";
+                        property = "COMSPEC_AllyTrack";
+                        control = "Checkbox";
+                        expression = "[_this, _value] call comspec_overwatch_connect_fnc_setAllyTrack;";
+                        defaultValue = "false";
+                        typeName = "BOOL";
+                    };
+
+                    class COMSPEC_AllyCallsign
+                    {
+                        displayName = "Indicatif de l’unité alliée";
+                        tooltip = "Laisser vide : le nom de l’IA et son groupe sont utilisés. Utile pour un indicatif de section (ex. Alpha 2).";
+                        property = "COMSPEC_AllyCallsign";
+                        control = "Edit";
+                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_AllyCallsign', _value, true]; };";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
+                };
+            };
+
+            class COMSPEC_Overwatch_GpsBeacon
+            {
+                displayName = "COMSPEC — Balise GPS";
+                collapsed = 1;
+                condition = "objectVehicle";
+
+                class Attributes
+                {
+                    class COMSPEC_GpsBeacon
+                    {
+                        displayName = "Balise GPS (suivi ATAK)";
+                        tooltip = "Le véhicule apparaît sur la carte de commandement même sans joueur à bord (convoi IA, véhicule volé, balise posée par le chef de mission).";
+                        property = "COMSPEC_GpsBeacon";
+                        control = "Checkbox";
+                        expression = "[_this, _value] call comspec_overwatch_connect_fnc_setGpsBeacon;";
+                        defaultValue = "false";
+                        typeName = "BOOL";
+                    };
+
+                    class COMSPEC_GpsCallsign
+                    {
+                        displayName = "Nom affiché sur la carte";
+                        tooltip = "Laisser vide : le modèle du véhicule est utilisé. Utile pour distinguer deux véhicules du même type (ex. Convoi 1).";
+                        property = "COMSPEC_GpsCallsign";
+                        control = "Edit";
+                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_GpsCallsign', _value, true]; };";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
+                };
+            };
         };
     };
 };

@@ -1,3 +1,11 @@
+COMSPEC Overwatch 1.4.49 / Athena ATAK 1.0.42 — 23/08/2026
+
+Correctif — gel à la photo ATAK
+
+• Les photos ATAK (JPEG déjà écrit par BCE) ne relancent plus un cliché PNG synchrone
+• Envoi vers Athena en file, comme le flux Discord SOAR (sans figer le jeu au clic)
+• Un PNG de secours seulement si le JPEG est introuvable, après le clic
+
 COMSPEC Overwatch 1.4.19 — 18/08/2026
 
 Fiches de renseignement simplifiées — menu RENS

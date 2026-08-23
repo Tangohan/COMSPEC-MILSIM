@@ -25,6 +25,7 @@ if ((_extensionVersion select 0) isEqualTo "") then {
 };
 
 [] call comspec_overwatch_connect_fnc_initVehicleTracking;
+[] call comspec_overwatch_connect_fnc_initGpsBeacons;
 
 if (
     (missionNamespace getVariable ["comspec_overwatch_ace_menus", false])

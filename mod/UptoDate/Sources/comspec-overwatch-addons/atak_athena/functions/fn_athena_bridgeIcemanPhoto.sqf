@@ -87,7 +87,13 @@ if (!isNull _drone && {alive _drone}) then {
     if (_fileName isNotEqualTo "") then { _caption = _caption + format [" (%1)", _fileName]; };
 };
 
-private _ok = [_filePath, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
+private _skipShot = false;
+private _lowPath = toLower _filePath;
+if ((_lowPath find ".jpg") >= 0 || {(_lowPath find ".jpeg") >= 0}) then {
+    _skipShot = true;
+};
+
+private _ok = [_filePath, _caption, _device, _feedId, _skipShot] call comspec_overwatch_connect_fnc_captureReconImage;
 if (!(_ok isEqualType true)) then { _ok = false; };
 
 if (!_ok) exitWith {

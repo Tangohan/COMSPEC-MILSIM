@@ -206,6 +206,9 @@ $navActive = static function (string $id) use ($activeNav): string {
             <?= $iwLink(url('atak/sse/interet'), $navActive('pressee'), '03', 'Dossiers d’intérêt', 'Signalements à qualifier — hypothèses, pas encore d’identité certaine.', 'interest') ?>
             <?= $iwLink(url('atak/sse/dossiers'), $navActive('validated'), '04', 'Dossiers validés', 'Affaires structurées : preuves, notes, personnel et comptes rendus.', 'folder') ?>
             <?= $iwLink(url('atak/sse/transmissions'), $activeNav === 'transmissions' ? 'is-active' : '', '05', 'Transmissions terrain', 'Journal des envois Arma 3 : fiches, biométrie, sites et relevés.', 'collect') ?>
+            <?php if ($canManage): ?>
+                <?= $iwLink(url('atak/sse/maitre-jeu'), $activeNav === 'maitre-jeu' ? 'is-active' : '', '26', 'Maître du jeu', 'Pilotage des identités, listes et histoires lues par le terminal SEEK.', 'prepare') ?>
+            <?php endif; ?>
             <?= $iwLink(url('atak/sse/fiches'), $activeNav === 'fiches' ? 'is-active' : '', '27', 'Fiches de renseignement', 'Notes libres remontées du terrain : texte, lieu, thèmes et pièces jointes.', 'note') ?>
 
             <p class="iw-nav-section">Objets</p>

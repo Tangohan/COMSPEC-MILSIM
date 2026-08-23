@@ -1,6 +1,7 @@
 /*
     Capture recon : signal « nouvelle photo » vers la DLL (queue async).
-    Params: [path, caption, deviceType, feedId, skipArmaShot, alignDevicePov]
+    Params: [path, caption, deviceType, feedId, skipArmaShot, alignDevicePov, jpegRetryOnce]
+    jpegRetryOnce : un seul report JPEG différé si le fichier n’est pas encore sur disque.
     Retour: true si l’extension a accepté (OK|queued), false sinon
     (OK|duplicate n’est plus traité comme un succès d’envoi).
 */
@@ -10,7 +11,8 @@ params [
     ["_deviceType", "CTAB"],
     ["_feedId", ""],
     ["_skipArmaShot", false],
-    ["_alignDevicePov", true]
+    ["_alignDevicePov", true],
+    ["_jpegRetryOnce", true]
 ];
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 
@@ -273,9 +275,10 @@ if (
     true
 };
 
-// Chemin fourni (IceMan / BCE / Photo Library) : souvent un .jpg « annoncé » dont le
-// dossier n’existe plus (srcdir_missing). On capture TOUJOURS un .png Arma en parallèle
-// et on notifie ce fichier — sinon la DLL cherche un fantôme et échoue.
+// Chemin fourni (IceMan / BCE / Photo Library) : JPEG déjà écrit par
+// Arma_ScreenShot_Extension — ne PAS reclicher un PNG Arma (gel thread jeu).
+// skipArmaShot=true (bridge ATAK) : on notifie le .jpg tel quel.
+// PNG seulement en repli, hors de la frame du clic.
 if (_path isNotEqualTo "") exitWith {
     private _png = _path;
     if (!_skipArmaShot) then {
@@ -289,37 +292,50 @@ if (_path isNotEqualTo "") exitWith {
     };
     private _ok = [_png] call _fnc_notifyPath;
     if (!_ok && {_path isNotEqualTo _png}) then {
-        // Repli : chemin annoncé (si la DLL le retrouve ailleurs).
         _ok = [_path] call _fnc_notifyPath;
     };
-    if (!_ok && {!_skipArmaShot}) then {
-        [_png, _caption, _device, _feedId] spawn {
-            params ["_png", "_caption", "_device", "_feedId"];
-            uiSleep 2.5;
-            // skipArmaShot=true : re-notif seulement (le .png a eu le temps d’être écrit).
-            [_png, _caption, _device, _feedId, true] call comspec_overwatch_connect_fnc_captureReconImage;
+    if (!_ok && {_skipArmaShot} && {_jpegRetryOnce}) then {
+        [_path, _caption, _device, _feedId] spawn {
+            params ["_path", "_caption", "_device", "_feedId"];
+            uiSleep 0.45;
+            private _retry = [_path, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+            if (!(_retry isEqualType true) || {!_retry}) then {
+                uiSleep 0.2;
+                [_path, _caption, _device, _feedId, false, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+            };
         };
-    };
-    if (_ok) then {
-        ["COMSPEC_Info", ["Image de recon mise en file"]] call comspec_overwatch_connect_fnc_showNotification;
+        true
     } else {
-        private _detail = toLower ([missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]] call _fnc_stripExtQuotes);
-        private _msg = "Échec d’envoi de la photo vers Athena";
-        if ((_detail find "not_connected") >= 0 || {(_detail find "unauthorized") >= 0}) then {
-            _msg = "Liaison Athena dégradée — reconnectez-vous puis réessayez";
+        if (!_ok && {!_skipArmaShot}) then {
+            [_png, _caption, _device, _feedId] spawn {
+                params ["_png", "_caption", "_device", "_feedId"];
+                uiSleep 2.5;
+                [_png, _caption, _device, _feedId, true] call comspec_overwatch_connect_fnc_captureReconImage;
+            };
         };
-        if ((_detail find "queue_full") >= 0) then {
-            _msg = "File d’attente photo saturée — réessayez dans un instant";
+        if (_ok) then {
+            if (_jpegRetryOnce) then {
+                ["COMSPEC_Info", ["Image de recon mise en file"]] call comspec_overwatch_connect_fnc_showNotification;
+            };
+        } else {
+            private _detail = toLower ([missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]] call _fnc_stripExtQuotes);
+            private _msg = "Échec d’envoi de la photo vers Athena";
+            if ((_detail find "not_connected") >= 0 || {(_detail find "unauthorized") >= 0}) then {
+                _msg = "Liaison Athena dégradée — reconnectez-vous puis réessayez";
+            };
+            if ((_detail find "queue_full") >= 0) then {
+                _msg = "File d’attente photo saturée — réessayez dans un instant";
+            };
+            if ((_detail find "file_not_found") >= 0 || {(_detail find "screenshot_rejected") >= 0}) then {
+                _msg = "Capture non écrite sur le disque — passez la qualité HDR au moins sur Moyen, puis reprenez une photo";
+                missionNamespace setVariable ["COMSPEC_FeedSnapFailUntil", diag_tickTime + 300, false];
+            };
+            if ((_detail find "ok|duplicate") < 0) then {
+                ["COMSPEC_Error", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
+            };
         };
-        if ((_detail find "file_not_found") >= 0 || {(_detail find "screenshot_rejected") >= 0}) then {
-            _msg = "Capture non écrite sur le disque — passez la qualité HDR au moins sur Moyen, puis reprenez une photo";
-            missionNamespace setVariable ["COMSPEC_FeedSnapFailUntil", diag_tickTime + 300, false];
-        };
-        if ((_detail find "ok|duplicate") < 0) then {
-            ["COMSPEC_Error", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
-        };
-    };
-    _ok
+        _ok
+    }
 };
 
 // Pas de fichier : capture dédiée (BCE d’abord, sinon screenshot Arma).

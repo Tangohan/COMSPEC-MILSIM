@@ -29,7 +29,11 @@ if (!_force && {diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnG
 };
 
 // Équipement requis (réglage CBA) — bloque sync position si manquant
-if !([_unit] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {
+// Exception : géolocalisation téléphone posée en Eden / Zeus (joueur sans tablette).
+if !(
+    ([_unit] call comspec_overwatch_connect_fnc_hasTerminal)
+    || { [_unit, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag }
+) exitWith {
     if (!_force) then { ["no_terminal"] call _fnc_skip; };
     if (_force) then { "" } else { nil }
 };

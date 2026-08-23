@@ -2232,6 +2232,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-session-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-pings.js"></script>
   <script src="<?= $base ?>/assets/js/atak-explosive-timers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-vehicles.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-markers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map-shapes.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-context-menu.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2424,6 +2425,7 @@ if ($atakMapConfig) {
           if (window.ATAKOrders) ATAKOrders.fetchOrders();
           if (window.ATAKPings) ATAKPings.fetchPings();
           if (window.ATAKExplosiveTimers) ATAKExplosiveTimers.fetchList();
+          if (window.ATAKVehicles) ATAKVehicles.fetchList();
           if (window.ATAKJTAC && window.ATAKJTAC.fetchCas) window.ATAKJTAC.fetchCas();
           else if (window.ATAKJTAC && window.ATAKJTAC.fetchNineLines) window.ATAKJTAC.fetchNineLines();
           if (window.ATAKMap && window.ATAKMap.pollMarkers) window.ATAKMap.pollMarkers();
@@ -2550,6 +2552,7 @@ if ($atakMapConfig) {
         if (window.ATAKOrders) ATAKOrders.fetchOrders();
         if (window.ATAKPings) ATAKPings.fetchPings();
         if (window.ATAKExplosiveTimers) ATAKExplosiveTimers.fetchList();
+        if (window.ATAKVehicles) ATAKVehicles.fetchList();
         if (window.ATAKJTAC && window.ATAKJTAC.fetchCas) ATAKJTAC.fetchCas();
         else if (window.ATAKJTAC) ATAKJTAC.fetchNineLines();
         if (window.ATAKCams) {

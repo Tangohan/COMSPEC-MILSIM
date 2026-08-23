@@ -1059,3 +1059,168 @@ body.atak-theme-light .atak-settings-aside .atak-rail-audio {
   background: #ffffff;
   border-color: #d0d7de;
 }
+
+/* —— Cartes C2 (maquette commande) —— */
+body.atak-page .atak-order-item--c2card {
+  position: relative;
+  padding: 0.95rem 1rem 0.85rem;
+  border: 1px solid var(--atak-c2-line2);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #121a22 0%, #0c1218 100%);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+body.atak-page .atak-order-item--c2card .atak-order-card-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin-bottom: 0.7rem;
+}
+body.atak-page .atak-order-item--c2card .atak-order-kind {
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--atak-c2-text);
+  font-weight: 800;
+}
+body.atak-page .atak-order-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+body.atak-page .atak-order-tag,
+body.atak-page .atak-order-item--c2card .atak-order-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+body.atak-page .atak-order-tag--late,
+body.atak-page .atak-order-item--c2card .atak-order-badge--status-overdue {
+  background: rgba(220, 93, 93, 0.18);
+  color: #ff8d8d;
+  border: 1px solid rgba(220, 93, 93, 0.45);
+}
+body.atak-page .atak-order-item--c2card .atak-order-badge--own {
+  background: rgba(53, 214, 161, 0.12);
+  color: var(--atak-c2-green);
+  border: 1px solid rgba(53, 214, 161, 0.35);
+}
+body.atak-page .atak-order-item--c2card .atak-order-badge--source-web {
+  background: rgba(104, 165, 216, 0.14);
+  color: var(--atak-c2-blue);
+  border: 1px solid rgba(104, 165, 216, 0.4);
+}
+body.atak-page .atak-order-infogrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem 0.7rem;
+  margin: 0.15rem 0 0.65rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--atak-c2-line);
+  border-bottom: 1px solid var(--atak-c2-line);
+}
+body.atak-page .atak-order-infogrid span {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--atak-c2-muted2);
+  margin-bottom: 0.15rem;
+}
+body.atak-page .atak-order-infogrid strong {
+  font-size: 0.82rem;
+  color: var(--atak-c2-text);
+}
+body.atak-page .atak-order-infogrid strong.is-hot {
+  color: var(--atak-c2-amber);
+}
+body.atak-page .atak-order-body-label {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--atak-c2-muted2);
+  margin-bottom: 0.2rem;
+}
+body.atak-page .atak-order-actions--grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+body.atak-page .atak-order-actions--wide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+body.atak-page .atak-order-item--c2card .atak-order-btn {
+  min-height: 2.55rem;
+  border-radius: 8px;
+  background: transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 800;
+}
+body.atak-page .atak-order-item--c2card .atak-order-btn--primary {
+  border-color: rgba(53, 214, 161, 0.7);
+  color: var(--atak-c2-green);
+  background: rgba(53, 214, 161, 0.08);
+}
+body.atak-page .atak-order-item--c2card .atak-order-btn--fail {
+  border-color: rgba(220, 93, 93, 0.7);
+  color: var(--atak-c2-red);
+  background: rgba(220, 93, 93, 0.08);
+}
+body.atak-page .atak-order-item--c2card .atak-order-btn--cancel {
+  border-color: rgba(163, 176, 184, 0.45);
+  color: var(--atak-c2-muted);
+}
+body.atak-page .atak-order-item--c2card .atak-order-btn--cmd,
+body.atak-page .atak-order-item--c2card .atak-order-btn--frago {
+  border-color: rgba(167, 139, 250, 0.65);
+  color: #c4b5fd;
+  background: rgba(139, 92, 246, 0.08);
+}
+body.atak-page .atak-order-suivi {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--atak-c2-line);
+}
+body.atak-page .atak-order-suivi span {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--atak-c2-muted2);
+}
+body.atak-page .atak-order-suivi strong {
+  display: block;
+  margin-top: 0.15rem;
+}
+body.atak-page .atak-order-suivi strong.is-late {
+  color: var(--atak-c2-red);
+}
+body.atak-page .atak-order-suivi em {
+  display: block;
+  margin-top: 0.15rem;
+  font-style: normal;
+  font-size: 0.75rem;
+  color: var(--atak-c2-muted);
+}
+@media (max-width: 720px) {
+  body.atak-page .atak-order-infogrid,
+  body.atak-page .atak-order-suivi,
+  body.atak-page .atak-order-actions--grid {
+    grid-template-columns: 1fr;
+  }
+}

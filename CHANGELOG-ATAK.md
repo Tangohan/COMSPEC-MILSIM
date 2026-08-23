@@ -7,6 +7,14 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.49] / Athena ATAK 1.0.42 — 2026-08-23
+
+### Corrigé — gel à la photo ATAK
+
+Les clichés ATAK (JPEG BCE / IceMan) ne déclenchent plus un second `screenshot` PNG synchrone sur le thread jeu. Aligné sur le flux SOAR Discord : un JPEG, envoi en file. Un PNG de repli n’est pris que si le fichier JPEG est vraiment introuvable, hors de la frame du clic.
+
+---
+
 ## [1.4.19] - 2026-08-18
 
 ### Ajouté — Fiches de renseignement simplifiées

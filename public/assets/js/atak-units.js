@@ -435,8 +435,11 @@ window.ATAKUnits = (function () {
       var grid = gridRaw || '—';
       var heading = u.heading != null ? (Math.round(u.heading) + '°') : '—';
       var roleText = String(u.role || ex.role || '').trim();
+      if (ex.ally_ai && (!roleText || roleText === '—' || roleText.toLowerCase() === 'operator')) {
+        roleText = 'Unité alliée';
+      }
       if (!roleText || roleText === '—' || /^[A-Za-z0-9]+_[A-Za-z0-9_]+_F$/i.test(roleText)) {
-        roleText = String(ex.group || u.group || '').trim() || 'Opérateur';
+        roleText = String(ex.group || u.group || '').trim() || (ex.ally_ai ? 'Unité alliée' : 'Opérateur');
       }
       var healthLabel = (window.ATAKUnitPopup && window.ATAKUnitPopup.healthLabelFr)
         ? window.ATAKUnitPopup.healthLabelFr(health)

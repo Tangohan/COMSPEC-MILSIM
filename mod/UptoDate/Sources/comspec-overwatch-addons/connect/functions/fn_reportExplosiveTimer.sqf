@@ -52,7 +52,9 @@ if (_statusKey isEqualTo "armed") then {
     if (!(_kind in ["timer", "clacker", "cellphone", "command"])) then {
         if (_delay >= 1) then { _kind = "timer" } else { _kind = "command" };
     };
-    private _fuse = if (_kind isEqualTo "timer") then { (round _delay) max 1 } else { (round _delay) max 0 };
+    // Ne jamais forcer 1 s : un délai manquant n’est pas une minuterie d’une seconde.
+    private _fuse = (round _delay) max 0;
+    if (_kind isEqualTo "timer" && {_fuse < 1}) then { _kind = "command" };
     private _placer = _unit;
     if (isNull _placer) then { _placer = player; };
     private _author = if (!isNull player && {_placer isEqualTo player}) then {

@@ -1089,8 +1089,18 @@ window.ATAKOrders = (function () {
   function renderList(orders) {
     var list = document.getElementById('atak-orders-list');
     var empty = document.getElementById('atak-orders-empty');
+    var hint = document.querySelector('.atak-c2-suivi-hint');
     if (!list) return;
     orders = Array.isArray(orders) ? orders : [];
+    var activeCount = orders.filter(function (o) {
+      var st = String((o && o.status) || '').toUpperCase();
+      return st !== 'CANCELLED' && st !== 'FAILED';
+    }).length;
+    if (hint) {
+      hint.textContent = activeCount
+        ? (activeCount + ' ordre' + (activeCount > 1 ? 's' : '') + ' actif' + (activeCount > 1 ? 's' : '') + ' — cliquez une carte pour le détail.')
+        : 'Ordres en cours et FRAGO. Cliquez une carte pour le détail.';
+    }
     if (!orders.length) {
       list.innerHTML = '';
       if (empty) empty.hidden = false;
@@ -1147,27 +1157,21 @@ window.ATAKOrders = (function () {
         }
         if (canIssue) {
           btns.push('<button type="button" class="atak-order-btn atak-order-btn--cmd" data-order-cmd="reissue" data-order-id="' + escapeHtml(id) + '">Relancer</button>');
-          btns.push('<button type="button" class="atak-order-btn atak-order-btn--cmd" data-order-cmd="frago" data-order-id="' + escapeHtml(id) + '">FRAGO de suite</button>');
         }
-        if (wpBtn) btns.push(wpBtn);
-        if (btns.length) {
-          actions = '<div class="atak-order-actions">' + btns.join('') + '</div>';
+        var wide = [];
+        if (canIssue) {
+          wide.push('<button type="button" class="atak-order-btn atak-order-btn--frago" data-order-cmd="frago" data-order-id="' + escapeHtml(id) + '">FRAGO de suite</button>');
+        }
+        if (wpBtn) wide.push(wpBtn);
+        if (btns.length || wide.length) {
+          actions = (btns.length ? '<div class="atak-order-actions atak-order-actions--grid">' + btns.join('') + '</div>' : '')
+            + (wide.length ? '<div class="atak-order-actions atak-order-actions--wide">' + wide.join('') + '</div>' : '');
         }
       } else if (wpBtn) {
         actions = '<div class="atak-order-actions">' + wpBtn + '</div>';
       }
 
       var dest = o.target_label || o.target || 'Toute l’équipe';
-      var ackLine = '';
-      if (o.ack_by || o.ack_at) {
-        ackLine = '<div class="atak-order-ack">Confirmé par ' + escapeHtml(o.ack_by || '—') +
-          (o.ack_at ? ' · ' + escapeHtml(formatTime(o.ack_at)) : '') + '</div>';
-      }
-      if (status === 'CANCELLED' && (o.cancelled_by || o.cancelled_at)) {
-        ackLine = '<div class="atak-order-ack">Annulé par ' + escapeHtml(o.cancelled_by || '—') +
-          (o.cancelled_at ? ' · ' + escapeHtml(formatTime(o.cancelled_at)) : '') + '</div>';
-      }
-
       var ownBadge = isOwnIssuedOrder(o)
         ? '<span class="atak-order-badge atak-order-badge--own">Émis par vous</span>'
         : '';
@@ -1179,45 +1183,48 @@ window.ATAKOrders = (function () {
         sourceBadge = '<span class="atak-order-badge atak-order-badge--source-web">Poste de commandement</span>';
       }
 
-      var kindLabel = frago ? 'Ordre fragmentaire' : 'Ordre C2';
       var bodyHtml = fragoHtml
         || (payloadText ? '<p class="atak-order-payload">' + escapeHtml(payloadText) + '</p>' : '')
         || '<p class="atak-order-payload atak-order-payload--empty">Aucun détail textuel.</p>';
+      var overdueTag = isOverdue
+        ? '<span class="atak-order-tag atak-order-tag--late">! En retard</span>'
+        : '';
+      var ackDetail = (o.ack_by || o.ack_at)
+        ? ('Confirmé par ' + (o.ack_by || '—') + (o.ack_at ? ' · ' + formatTime(o.ack_at) : ''))
+        : 'Aucun accusé de réception enregistré';
 
       return (
-        '<article class="atak-order-item ' + statusClass(status, isOverdue) + ' ' + orderTypeModifier(o.type) + '" data-order-id="' + escapeHtml(id) + '" data-order-kind="' + (frago ? 'frago' : 'c2') + '">' +
+        '<article class="atak-order-item atak-order-item--c2card ' + statusClass(status, isOverdue) + ' ' + orderTypeModifier(o.type) + '" data-order-id="' + escapeHtml(id) + '" data-order-kind="' + (frago ? 'frago' : 'c2') + '">' +
           '<header class="atak-order-card-head">' +
             '<div class="atak-order-card-kicker">' +
               '<span class="atak-order-code" aria-hidden="true">' + escapeHtml(typeCodeLabel(o.type)) + '</span>' +
-              '<span class="atak-order-kind">' + escapeHtml(kindLabel) + '</span>' +
+              '<span class="atak-order-kind">' + escapeHtml(o.type_label || typeLabelFr(o.type)) + '</span>' +
             '</div>' +
-            '<div class="atak-order-item-top">' +
-              '<span class="atak-order-type">' + escapeHtml(o.type_label || typeLabelFr(o.type)) + '</span>' +
-              '<span class="atak-order-badges">' +
-                '<span class="atak-order-badge ' + statusBadgeClass(status, isOverdue) + '">' +
-                  escapeHtml(o.status_label || statusLabelFr(status, isOverdue)) +
-                '</span>' +
-                ownBadge +
-                sourceBadge +
+            '<div class="atak-order-tags">' +
+              overdueTag +
+              ownBadge +
+              sourceBadge +
+              '<span class="atak-order-badge ' + statusBadgeClass(status, isOverdue) + '">' +
+                escapeHtml(o.status_label || statusLabelFr(status, isOverdue)) +
               '</span>' +
             '</div>' +
           '</header>' +
-          '<div class="atak-order-meta atak-order-meta--badges">' +
-            '<span class="atak-order-badge ' + priorityBadgeClass(o.priority) + '">' +
-              escapeHtml(o.priority_label || priorityLabelFr(o.priority)) +
-            '</span>' +
-            '<span class="atak-order-badge ' + targetBadgeClass(o.target_type) + '" title="' + escapeHtml(dest) + '">' +
-              escapeHtml(o.target_type_label || targetTypeLabel(o.target_type)) +
-              (dest && String(o.target_type || '') !== 'all' ? ' · ' + escapeHtml(dest) : '') +
-            '</span>' +
-            '<span class="atak-order-badge atak-order-badge--time">' + escapeHtml(formatTime(o.updated_at || o.created_at)) + '</span>' +
+          '<div class="atak-order-infogrid">' +
+            '<div><span>Priorité</span><strong class="' + (String(o.priority || '').toUpperCase() === 'URGENT' || String(o.priority || '').toUpperCase() === 'CONTACT' ? 'is-hot' : '') + '">' +
+              escapeHtml(o.priority_label || priorityLabelFr(o.priority)) + '</strong></div>' +
+            '<div><span>Destinataire</span><strong>' + escapeHtml(dest) + '</strong></div>' +
+            '<div><span>Heure d’émission</span><strong>' + escapeHtml(formatTime(o.created_at || o.updated_at)) + ' Z</strong></div>' +
           '</div>' +
           '<div class="atak-order-issuer">De <strong>' + escapeHtml(o.issuer || '—') + '</strong></div>' +
           radioLine +
-          '<div class="atak-order-body">' + bodyHtml + '</div>' +
+          '<div class="atak-order-body"><span class="atak-order-body-label">Détails</span>' + bodyHtml + '</div>' +
           waypointMeta +
-          ackLine +
           actions +
+          '<div class="atak-order-suivi">' +
+            '<div><span>Statut actuel</span><strong class="' + (isOverdue ? 'is-late' : '') + '">' +
+              escapeHtml(o.status_label || statusLabelFr(status, isOverdue)) + '</strong><em>' + escapeHtml(ackDetail) + '</em></div>' +
+            '<div><span>Émis le</span><strong>' + escapeHtml(formatTime(o.created_at)) + ' Z</strong></div>' +
+          '</div>' +
         '</article>'
       );
     }).join('');

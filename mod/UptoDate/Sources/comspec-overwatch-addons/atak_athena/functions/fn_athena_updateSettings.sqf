@@ -4,6 +4,18 @@
 if (!hasInterface) exitWith {};
 
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Settings_group", controlNull];
+if (isNull _group) then {
+    private _disp = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
+    if (!isNull _disp) then {
+        private _probe = _disp displayCtrl 9841;
+        if (!isNull _probe) then {
+            _group = ctrlParentControlsGroup _probe;
+            if (!isNull _group) then {
+                uiNamespace setVariable ["COMSPEC_ATAK_Settings_group", _group];
+            };
+        };
+    };
+};
 if (isNull _group) exitWith {};
 
 private _ctrl = {

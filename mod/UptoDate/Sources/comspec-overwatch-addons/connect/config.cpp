@@ -14,9 +14,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.443;
-        versionStr = "1.4.43";
-        versionAr[] = {1, 4, 43};
+        version = 1.449;
+        versionStr = "1.4.49";
+        versionAr[] = {1, 4, 49};
     };
 };
 
@@ -63,6 +63,11 @@ class CfgFunctions {
             class intelNoteToggleTheme {};
             class intelNoteAddPiece {};
             class intelNoteDropPiece {};
+            class listLocalScreenshots {};
+            class intelNoteCollectPhotos {};
+            class intelNotePhotoPicker {};
+            class intelNotePickPhoto {};
+            class intelNoteAttachPhoto {};
             class intelNoteSaveDraft {};
             class intelNoteSubmit {};
             class intelNoteClose {};
@@ -234,6 +239,17 @@ class CfgFunctions {
             class updateVehicleTracking {};
             class requestVehicleService {};
             class initVehicleTracking {};
+            class isObjectFlag {};
+            class setGpsBeacon {};
+            class setPhoneTrack {};
+            class setAllyTrack {};
+            class vehicleTrackCallsign {};
+            class phoneTrackCallsign {};
+            class allyTrackCallsign {};
+            class reportPhonePosition {};
+            class reportAllyPosition {};
+            class initGpsBeacons {};
+            class registerZenTrackActions {};
             class initATAKMenu {};
             class initATAK {};
             class hashMapToJson {};
@@ -379,6 +395,9 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_giveSeekTerminal { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_sseApplyProfile { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_sseActiveCase { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_setGpsBeacon { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_setPhoneTrack { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_setAllyTrack { allowedTargets = 0; };
 
         // Ces cinq-là étaient appelées via remoteExec sans figurer ici. « mode = 1 »
         // étant une liste blanche stricte, les appels étaient rejetés en silence :

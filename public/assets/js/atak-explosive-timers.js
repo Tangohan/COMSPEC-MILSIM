@@ -154,7 +154,7 @@ window.ATAKExplosiveTimers = (function () {
       } else {
         remainHtml = 'À la demande';
       }
-      var fuseHtml = hasCountdown(item) || (Number(item.fuse_seconds) > 0)
+      var fuseHtml = (item.trigger_kind === 'timer' && Number(item.fuse_seconds) > 0)
         ? esc(formatDuration(item.fuse_seconds))
         : 'Aucun — déclenchement manuel';
       var actions = '';

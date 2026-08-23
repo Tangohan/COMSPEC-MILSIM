@@ -180,13 +180,12 @@ class AtakExplosiveTimerRepository
         if ($kind === '' && $existing !== null) {
             $kind = $this->normalizeTriggerKind((string) ($existing['trigger_kind'] ?? ''));
         }
+        $fuse = max(0, min(86400, $fuse));
         if ($kind === '') {
-            $kind = $fuse >= 1 ? 'timer' : 'command';
+            $kind = $fuse >= 5 ? 'timer' : 'command';
         }
-        if ($kind === 'timer') {
-            $fuse = max(1, min(86400, $fuse));
-        } else {
-            $fuse = max(0, min(86400, $fuse));
+        if ($kind === 'timer' && $fuse < 1) {
+            $kind = 'command';
         }
 
         $author = mb_substr(trim((string) ($data['author'] ?? '')), 0, 120);
@@ -261,14 +260,18 @@ class AtakExplosiveTimerRepository
                 'trigger_kind' => $kind,
             ]);
         } else {
-            $legacyFuse = max(1, $fuse);
+            $legacyFuse = $fuse;
+            // Ancien schéma : detonates_at parfois NOT NULL — ne jamais inventer 1 s.
+            $legacyDetonate = $legacyFuse >= 1
+                ? "DATE_ADD(NOW(), INTERVAL {$legacyFuse} SECOND)"
+                : 'NOW()';
             $this->pdo()->prepare(
                 "INSERT INTO atak_explosive_timers (
                     tenant_id, map_id, charge_id, author, magazine_label, grid_ref,
                     pos_x, pos_y, fuse_seconds, status, started_at, detonates_at
                 ) VALUES (
                     :tenant_id, :map_id, :charge_id, :author, :magazine_label, :grid_ref,
-                    :pos_x, :pos_y, :fuse_seconds, 'armed', NOW(), DATE_ADD(NOW(), INTERVAL {$legacyFuse} SECOND)
+                    :pos_x, :pos_y, :fuse_seconds, 'armed', NOW(), {$legacyDetonate}
                 )"
             )->execute([
                 'tenant_id' => $tenantId,
@@ -376,7 +379,7 @@ class AtakExplosiveTimerRepository
         $fuse = (int) ($row['fuse_seconds'] ?? 0);
         $kind = $this->normalizeTriggerKind((string) ($row['trigger_kind'] ?? ''));
         if ($kind === '') {
-            $kind = $fuse >= 1 ? 'timer' : 'command';
+            $kind = $fuse >= 5 ? 'timer' : 'command';
         }
         $detonatesAt = (string) ($row['detonates_at'] ?? '');
         $hasCountdown = $status === 'armed' && $kind === 'timer' && $fuse >= 1 && $detonatesAt !== '';

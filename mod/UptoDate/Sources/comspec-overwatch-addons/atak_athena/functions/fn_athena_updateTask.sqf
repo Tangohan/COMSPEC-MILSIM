@@ -71,7 +71,7 @@ private _pending = 0;
     if (_st isEqualTo "DELIVERED") then { _stTxt = "Remis"; };
     private _mark = "";
     if ((toUpper (_x getOrDefault ["priority", "IMPORTANT"])) isEqualTo "URGENT") then { _mark = "! "; };
-    private _idx = _list lbAdd format ["%1%2 · %3 · %4", _mark, _kind, _who, _stTxt];
+    private _idx = _list lbAdd format ["%1%2 · %3 · %4", _mark, _stTxt, _kind, _who];
     _list lbSetData [_idx, _id];
     if (_id isEqualTo _prevId) then { _selKeep = _idx; };
 } forEach _rows;

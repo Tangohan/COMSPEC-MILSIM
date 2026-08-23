@@ -35,7 +35,7 @@ switch (_actionKey) do {
     case "ABORT";
     case "CANCELLED": {
         _status = "CANCELLED";
-        _note = "Abort depuis TASK";
+        _note = "Interrompu depuis TASK";
         _feedback = "L’ordre a été interrompu. Le commandement a été informé.";
     };
     default {

@@ -151,6 +151,15 @@ final class Database
         $stmt = self::getPdo()->prepare($sql);
         $stmt->execute($params);
 
+        return $this->lastInsertId();
+    }
+
+    /**
+     * Dernier identifiant auto-incrémenté de la connexion courante.
+     * Certains dépôts font execute() puis lastInsertId() au lieu d’insert().
+     */
+    public function lastInsertId(): int
+    {
         return (int) self::getPdo()->lastInsertId();
     }
 

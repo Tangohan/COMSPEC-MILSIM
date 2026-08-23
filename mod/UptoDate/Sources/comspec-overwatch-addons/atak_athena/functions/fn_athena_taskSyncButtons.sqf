@@ -1,24 +1,61 @@
 /*
-    Boutons TASK selon l’état de l’ordre sélectionné.
+    Deux boutons d’action TASK, jamais superposés.
     À traiter : Accepter + Refuser
-    Accepté : En cours + Abort
-    En cours : Abort
-    Terminé / refusé / annulé / aucun : aucun bouton d’action
+    Accepté  : En cours + Interrompre
+    En cours : Interrompre
+    Terminé / refusé / annulé : aucun
 */
 if (!hasInterface) exitWith {};
 
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Task_group", controlNull];
 if (isNull _group) exitWith {};
 
-private _btnAccept = _group controlsGroupCtrl 9904;
-private _btnExec = _group controlsGroupCtrl 9905;
-private _btnRefuse = _group controlsGroupCtrl 9906;
-private _btnAbort = _group controlsGroupCtrl 9908;
+private _btnLeft = _group controlsGroupCtrl 9904;
+private _btnRight = _group controlsGroupCtrl 9906;
+private _btnLegacyExec = _group controlsGroupCtrl 9905;
+private _btnLegacyAbort = _group controlsGroupCtrl 9908;
 
-private _showAccept = false;
-private _showExec = false;
-private _showRefuse = false;
-private _showAbort = false;
+{
+    if (!isNull _x) then {
+        _x ctrlShow false;
+        _x ctrlEnable false;
+    };
+} forEach [_btnLegacyExec, _btnLegacyAbort];
+
+private _fnc_paint = {
+    params ["_btn", "_show", "_text", "_action", "_bg", "_bgFocus"];
+    if (isNull _btn) exitWith {};
+    _btn ctrlShow _show;
+    _btn ctrlEnable _show;
+    _btn ctrlSetFade ([1, 0] select _show);
+    if (_show) then {
+        _btn ctrlSetText _text;
+        _btn setVariable ["COMSPEC_TaskAction", _action];
+        _btn ctrlSetBackgroundColor _bg;
+    } else {
+        _btn ctrlSetText "";
+        _btn setVariable ["COMSPEC_TaskAction", ""];
+    };
+    _btn ctrlCommit 0;
+};
+
+private _ok = [0.08, 0.42, 0.32, 0.96];
+private _okF = [0.12, 0.52, 0.40, 1];
+private _exec = [0.10, 0.28, 0.36, 0.96];
+private _execF = [0.14, 0.38, 0.48, 1];
+private _warn = [0.48, 0.18, 0.12, 0.96];
+private _warnF = [0.62, 0.24, 0.14, 1];
+
+private _leftShow = false;
+private _leftTxt = "";
+private _leftAct = "";
+private _leftBg = _ok;
+private _leftFg = _okF;
+private _rightShow = false;
+private _rightTxt = "";
+private _rightAct = "";
+private _rightBg = _warn;
+private _rightFg = _warnF;
 
 private _id = uiNamespace getVariable ["COMSPEC_ATAK_Task_selectedId", ""];
 if (_id isNotEqualTo "") then {
@@ -31,25 +68,42 @@ if (_id isNotEqualTo "") then {
 
     switch (_status) do {
         case "ACK": {
-            _showExec = true;
-            _showAbort = true;
+            _leftShow = true;
+            _leftTxt = "En cours";
+            _leftAct = "EXEC";
+            _leftBg = _exec;
+            _leftFg = _execF;
+            _rightShow = true;
+            _rightTxt = "Interrompre";
+            _rightAct = "ABORT";
+            _rightBg = _warn;
+            _rightFg = _warnF;
         };
         case "EXEC": {
-            _showAbort = true;
+            _rightShow = true;
+            _rightTxt = "Interrompre";
+            _rightAct = "ABORT";
+            _rightBg = _warn;
+            _rightFg = _warnF;
         };
         case "FAILED";
         case "CANCELLED";
         case "DONE";
         case "CLOSED": {};
         default {
-            // PENDING, DELIVERED, ou état inconnu encore à traiter
-            _showAccept = true;
-            _showRefuse = true;
+            _leftShow = true;
+            _leftTxt = "Accepter";
+            _leftAct = "ACCEPT";
+            _leftBg = _ok;
+            _leftFg = _okF;
+            _rightShow = true;
+            _rightTxt = "Refuser";
+            _rightAct = "REFUSE";
+            _rightBg = _warn;
+            _rightFg = _warnF;
         };
     };
 };
 
-if (!isNull _btnAccept) then { _btnAccept ctrlShow _showAccept; };
-if (!isNull _btnExec) then { _btnExec ctrlShow _showExec; };
-if (!isNull _btnRefuse) then { _btnRefuse ctrlShow _showRefuse; };
-if (!isNull _btnAbort) then { _btnAbort ctrlShow _showAbort; };
+[_btnLeft, _leftShow, _leftTxt, _leftAct, _leftBg, _leftFg] call _fnc_paint;
+[_btnRight, _rightShow, _rightTxt, _rightAct, _rightBg, _rightFg] call _fnc_paint;

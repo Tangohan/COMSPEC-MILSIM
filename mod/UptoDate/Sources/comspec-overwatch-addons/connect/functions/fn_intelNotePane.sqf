@@ -25,7 +25,10 @@ uiNamespace setVariable ["COMSPEC_IntelNote_Pane", _pane];
 ["capture"] call comspec_overwatch_connect_fnc_intelNoteCache;
 
 private _redaction = [9615, 9616, 9617, 9618, 9626];
-private _pieces = [9630, 9631, 9632, 9633, 9634, 9635, 9636, 9637, 9638, 9639, 9640, 9641, 9642, 9643];
+private _pieces = [
+    9630, 9631, 9632, 9633, 9634, 9635, 9636, 9637, 9638, 9639, 9640, 9641, 9642, 9643,
+    9710, 9711, 9712, 9713, 9715, 9716, 9717, 9718
+];
 private _contexte = [
     9650, 9651, 9652, 9653, 9654, 9655, 9656, 9657,
     9660, 9661, 9662, 9663, 9664, 9665, 9666, 9667, 9668, 9669, 9670, 9671,
@@ -64,6 +67,17 @@ if (!isNull _edgeRight) then {
 ["restore"] call comspec_overwatch_connect_fnc_intelNoteCache;
 
 [] call comspec_overwatch_connect_fnc_intelNoteRefresh;
+
+private _picker = _disp displayCtrl 9714;
+if (_pane isNotEqualTo "pieces") then {
+    [false] call comspec_overwatch_connect_fnc_intelNotePhotoPicker;
+} else {
+    if (_disp getVariable ["COMSPEC_IntelNote_PickerOn", false]) then {
+        [true] call comspec_overwatch_connect_fnc_intelNotePhotoPicker;
+    } else {
+        if (!isNull _picker) then { _picker ctrlShow false };
+    };
+};
 
 if (_pane isEqualTo "redaction") then {
     ctrlSetFocus (_disp displayCtrl 9616);

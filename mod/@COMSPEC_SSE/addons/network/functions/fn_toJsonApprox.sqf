@@ -19,9 +19,9 @@ private _maxDepth = 32;
 private _esc = {
     params ["_s"];
     private _b = toString [92];
-    _s = [_s, _b, _b + _b] call BIS_fnc_replaceString;
-    _s = [_s, """", _b + """"] call BIS_fnc_replaceString;
-    _s = [_s, endl, _b + "n"] call BIS_fnc_replaceString;
+    _s = _s replaceString [_b, _b + _b];
+    _s = _s replaceString ["""", _b + """"];
+    _s = _s replaceString [endl, _b + "n"];
     format ["""%1""", _s]
 };
 

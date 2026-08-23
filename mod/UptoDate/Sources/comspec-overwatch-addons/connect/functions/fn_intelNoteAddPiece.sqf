@@ -8,7 +8,7 @@
 
     Args: [_source]
       "capture"  capture d'écran de la scène, prise à la validation
-      "galerie"  photographie déjà présente dans la bibliothèque ATAK
+      "galerie"  photographie déjà prise (Photos ATAK ou captures d'écran du jeu)
       "releve"   relevé de position et d'instant, joint comme pièce écrite
 */
 params [["_source", "capture", [""]]];
@@ -39,35 +39,60 @@ private _grid = mapGridPosition player;
 
 switch (toLower _source) do {
     case "galerie": {
-        private _photos = [];
-        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_collectLocalPhotos") then {
-            _photos = [] call comspec_overwatch_atak_athena_fnc_athena_collectLocalPhotos;
+        private _dispPicker = _disp displayCtrl 9714;
+        if (!isNull _dispPicker && { ctrlShown _dispPicker }) exitWith {
+            [false] call comspec_overwatch_connect_fnc_intelNotePhotoPicker;
         };
-        if (!(_photos isEqualType [])) then { _photos = []; };
 
-        // Déjà retenues : ne pas proposer deux fois la même photographie.
+        private _photos = [] call comspec_overwatch_connect_fnc_intelNoteCollectPhotos;
+        if (!(_photos isEqualType [])) then { _photos = [] };
+
         private _taken = _pieces apply { toLower (_x param [1, ""]) };
-        private _pick = [];
+        private _available = [];
         {
             if (!(_x isEqualType [])) then { continue };
             private _path = _x param [0, ""];
             if (!(_path isEqualType "") || {_path isEqualTo ""}) then { continue };
-            if (!((toLower _path) in _taken)) exitWith { _pick = _x; };
+            if ((toLower _path) in _taken) then { continue };
+            _available pushBack _x;
         } forEach _photos;
 
-        if (_pick isEqualTo []) then {
+        if (_available isEqualTo []) exitWith {
             [
-                "Aucune photographie disponible dans la bibliothèque ATAK. Prenez une capture, ou photographiez la scène depuis l’application Photos.",
+                "Aucune photographie disponible. Prenez d’abord une photo depuis Photos, ou une capture d’écran en jeu, puis revenez les joindre ici.",
                 "tactical",
                 "warn"
             ] call comspec_overwatch_connect_fnc_announce;
-        } else {
+        };
+
+        if ((count _available) == 1) then {
+            private _pick = _available select 0;
             _pick params [["_path", ""], ["_name", ""], ["_pgrid", ""], ["_pauthor", ""]];
-            if (_pgrid isEqualTo "") then { _pgrid = _grid; };
-            if (_pauthor isEqualTo "") then { _pauthor = _callsign; };
-            _pieces pushBack ["photo", _path, _name, _pgrid, _pauthor, ""];
-            uiNamespace setVariable ["COMSPEC_IntelNote_Pieces", _pieces];
-            ["Photographie retenue — elle partira avec la fiche.", "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+            [_path, _name, _pgrid, _pauthor] call comspec_overwatch_connect_fnc_intelNoteAttachPhoto;
+        } else {
+            uiNamespace setVariable ["COMSPEC_IntelNote_PhotoChoices", _available];
+            private _lb = _disp displayCtrl 9714;
+            if (isNull _lb) exitWith {
+                private _pick = _available select 0;
+                _pick params [["_path", ""], ["_name", ""], ["_pgrid", ""], ["_pauthor", ""]];
+                [_path, _name, _pgrid, _pauthor] call comspec_overwatch_connect_fnc_intelNoteAttachPhoto;
+            };
+            _lb setVariable ["filling", true];
+            lbClear _lb;
+            {
+                _x params [["_path", ""], ["_name", ""]];
+                if (_name isEqualTo "") then { _name = "photographie" };
+                private _i = _lb lbAdd _name;
+                private _uiPath = (_path splitString "\") joinString "/";
+                if (_uiPath isNotEqualTo "") then { _lb lbSetPicture [_i, _uiPath] };
+            } forEach _available;
+            _lb setVariable ["filling", false];
+            [true] call comspec_overwatch_connect_fnc_intelNotePhotoPicker;
+            [
+                "Choisissez la capture à joindre, ou PHOTO à nouveau pour fermer la liste.",
+                "tactical",
+                "info"
+            ] call comspec_overwatch_connect_fnc_announce;
         };
     };
     case "releve": {
@@ -94,6 +119,10 @@ switch (toLower _source) do {
             "info"
         ] call comspec_overwatch_connect_fnc_announce;
     };
+};
+
+if ((toLower _source) isNotEqualTo "galerie") then {
+    [false] call comspec_overwatch_connect_fnc_intelNotePhotoPicker;
 };
 
 [] call comspec_overwatch_connect_fnc_intelNoteRefresh;

@@ -26,8 +26,8 @@ private _ov = if (_overrides isEqualType createHashMap) then {
     _h
 };
 
-private _idBase = toLower (([_name, " ", "_"] call BIS_fnc_replaceString) + "_" + str (round time) + "_" + str (floor random 9999));
-_idBase = [_idBase, "-", "_"] call BIS_fnc_replaceString;
+private _idBase = toLower ((_name replaceString [" ", "_"]) + "_" + str (round time) + "_" + str (floor random 9999));
+_idBase = _idBase replaceString ["-", "_"];
 private _id = format ["mdl_%1", _idBase];
 
 private _model = createHashMapFromArray [

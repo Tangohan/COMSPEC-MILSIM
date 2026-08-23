@@ -52,6 +52,7 @@ private _ensureAtakApps = {
 
 // Icônes Desktop ATAK Enhanced (Connexion Athena, messages d’urgence, tchat)
 [] call comspec_overwatch_atak_athena_fnc_athena_installDesktopShortcut;
+[] call comspec_overwatch_atak_athena_fnc_athena_installPhotoLibraryAthena;
 
 // Dual-send : alertes Iceman → Athena
 ["Iceman_ATAK_Alerts", {

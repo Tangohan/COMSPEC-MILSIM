@@ -210,6 +210,8 @@ window.ATAKUnitPopup = (function () {
       '<div class="atak-unit-popup__title-wrap">' +
       '<div class="atak-unit-popup__callsign">' + escapeHtml(callSign) + '</div>' +
       (role ? '<div class="atak-unit-popup__subtitle">' + escapeHtml(role) + '</div>' : '') +
+      (extra.phone_geoloc ? '<div class="atak-unit-popup__subtitle">Géolocalisation téléphone</div>' : '') +
+      (extra.ally_ai ? '<div class="atak-unit-popup__subtitle">Unité alliée</div>' : '') +
       '</div></div>' +
       (rows ? '<div class="atak-unit-popup__body">' + rows + '</div>' : '') +
       (notes

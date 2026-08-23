@@ -15,6 +15,8 @@ window.ATAKMap = (function () {
   var pingMarkersById = {};
   var explosiveLayer = null;
   var explosiveMarkersById = {};
+  var gpsVehicleLayer = null;
+  var gpsVehicleMarkersById = {};
   var airAssetsLayer = null;
   var airAssetsById = {};
   var unitsLayer = null;
@@ -602,6 +604,8 @@ window.ATAKMap = (function () {
     pingMarkersById = {};
     explosiveLayer = null;
     explosiveMarkersById = {};
+    gpsVehicleLayer = null;
+    gpsVehicleMarkersById = {};
     airAssetsLayer = null;
     airAssetsById = {};
     unitsLayer = null;
@@ -1398,6 +1402,73 @@ window.ATAKMap = (function () {
     });
   }
 
+  function vehicleClassLabel(cls) {
+    var k = String(cls || '').toUpperCase();
+    if (k === 'TANK') return 'Char';
+    if (k === 'APC') return 'VCI';
+    if (k === 'IFV') return 'VCI';
+    if (k === 'TRUCK') return 'Camion';
+    if (k === 'HELICOPTER') return 'Hélicoptère';
+    if (k === 'FIXED_WING') return 'Avion';
+    if (k === 'UAV') return 'Drone';
+    if (k === 'BOAT') return 'Embarcation';
+    if (k === 'ARTILLERY') return 'Artillerie';
+    return 'Véhicule';
+  }
+
+  function setGpsVehiclesOnMap(rows) {
+    if (!map) return;
+    if (!gpsVehicleLayer) gpsVehicleLayer = L.layerGroup().addTo(map);
+    var list = Array.isArray(rows) ? rows : [];
+    var seen = {};
+    list.forEach(function (item) {
+      if (!item) return;
+      var id = item.id != null ? String(item.id) : String(item.vehicle_callsign || '');
+      if (!id) return;
+      var x = parseFloat(item.pos_x);
+      var y = parseFloat(item.pos_y);
+      if (isNaN(x) || isNaN(y)) return;
+      if (Math.abs(x) < 1 && Math.abs(y) < 1) return;
+      seen[id] = true;
+      var applied = applyOffset(y, x);
+      var latlng = L.latLng(applied[0], applied[1]);
+      var pretty = String(item.vehicle_name || item.vehicle_callsign || 'Véhicule');
+      var gps = String(item.mission_type || '').toUpperCase() === 'GPS_BEACON';
+      var color = gps ? '#38bdf8' : '#f59e0b';
+      var kind = gps ? 'Balise GPS' : 'Véhicule suivi';
+      var icon = L.divIcon({
+        className: 'atak-gps-map-icon',
+        html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
+          '<span style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid ' + color + ';filter:drop-shadow(0 0 1px #000);"></span>' +
+          '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + color + ';text-shadow:0 0 2px #000;white-space:nowrap;max-width:88px;overflow:hidden;text-overflow:ellipsis;">' +
+          pretty.replace(/</g, '&lt;').slice(0, 18) + '</span></div>',
+        iconSize: [88, 28],
+        iconAnchor: [44, 12]
+      });
+      var popup = '<div class="atak-gps-popup"><div class="atak-marker-popup__kind">' + kind + '</div><b>' +
+        pretty.replace(/</g, '&lt;') +
+        '</b><br/>' + vehicleClassLabel(item.vehicle_class) +
+        (item.crew_count != null ? '<br/>Équipage : ' + String(item.crew_count) : '') +
+        '</div>';
+      if (gpsVehicleMarkersById[id]) {
+        gpsVehicleMarkersById[id].setLatLng(latlng);
+        gpsVehicleMarkersById[id].setIcon(icon);
+        gpsVehicleMarkersById[id].setPopupContent(popup);
+        return;
+      }
+      var marker = L.marker(latlng, { icon: icon, zIndexOffset: 380 });
+      marker.bindPopup(popup);
+      marker.addTo(gpsVehicleLayer);
+      gpsVehicleMarkersById[id] = marker;
+    });
+    Object.keys(gpsVehicleMarkersById).forEach(function (k) {
+      if (!seen[k]) {
+        try { gpsVehicleLayer.removeLayer(gpsVehicleMarkersById[k]); } catch (e) {}
+        delete gpsVehicleMarkersById[k];
+      }
+    });
+  }
+
   function addTemporaryPingMarker(posX, posY, author, message, pingId) {
     if (!map) return;
     if (!pingLayer) pingLayer = L.layerGroup().addTo(map);
@@ -1893,6 +1964,7 @@ window.ATAKMap = (function () {
     addTemporaryPingMarker: addTemporaryPingMarker,
     removeTemporaryPingMarker: removeTemporaryPingMarker,
     setPingsOnMap: setPingsOnMap,
-    setExplosiveTimersOnMap: setExplosiveTimersOnMap
+    setExplosiveTimersOnMap: setExplosiveTimersOnMap,
+    setGpsVehiclesOnMap: setGpsVehiclesOnMap
   };
 })();
