@@ -94,9 +94,6 @@ class CfgFunctions
             class athena_taskSyncButtons {};
             class athena_syncOrdersToGroupChat {};
             class athena_openTask {};
-            class athena_noteOnOpened {};
-            class athena_updateNote {};
-            class athena_openNote {};
         };
     };
     // Workaround BCE: Check_Layout uses undefined _line (Compat updateInterface)
@@ -157,7 +154,6 @@ class RscControlsGroup;
 #include "ui\bii_page.hpp"
 #include "ui\note_page.hpp"
 #include "ui\task_page.hpp"
-#include "ui\note_page.hpp"
 
 class ATAK_APPs
 {
