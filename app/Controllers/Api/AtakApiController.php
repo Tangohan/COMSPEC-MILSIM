@@ -4720,6 +4720,15 @@ class AtakApiController
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
         $callSign = trim((string) ($body['call_sign'] ?? $body['callsign'] ?? ''));
         $steamNorm = $actor['steam_uid'] ?? null;
+        $extraEarly = $body['extra'] ?? [];
+        $isProxyTerrain = is_array($extraEarly) && (
+            !empty($extraEarly['phone_geoloc'])
+            || !empty($extraEarly['ally_ai'])
+            || in_array(strtolower(trim((string) ($extraEarly['source'] ?? ''))), ['phone', 'ally'], true)
+        );
+        if ($isProxyTerrain) {
+            $steamNorm = null;
+        }
         if ($callSign === '' || strcasecmp($callSign, 'Unknown') === 0 || strcasecmp($callSign, 'Inconnu') === 0) {
             if ($steamNorm !== null && $steamNorm !== '') {
                 // Réutiliser l’indicatif BFT déjà connu pour ce Steam (évite Newp1 + N-10).
@@ -4811,6 +4820,13 @@ class AtakApiController
         }
         if ($steamNorm !== null && $steamNorm !== '') {
             $extra['steam_uid'] = $steamNorm;
+        }
+        $isProxyTerrain = !empty($extra['phone_geoloc'])
+            || !empty($extra['ally_ai'])
+            || in_array(strtolower(trim((string) ($extra['source'] ?? ''))), ['phone', 'ally'], true);
+        if ($isProxyTerrain) {
+            $steamNorm = null;
+            unset($extra['steam_uid'], $extra['bft_id'], $extra['military_id'], $extra['atak_id']);
         }
         try {
             $this->activityLog->touchModDetection($tenantId, $mapId, [
@@ -8134,7 +8150,9 @@ class AtakApiController
         return Response::json([
             'items' => $rows,
             'armed_count' => count(array_filter($rows, static fn (array $row): bool => ($row['status'] ?? '') === 'armed')),
-            'can_command_detonate' => $this->canIssueOrdersFromWeb() && ComspecApiKeyAuth::extractPresentedKey() === '',
+            'can_command_detonate' => $this->canIssueOrdersFromWeb()
+                && ComspecApiKeyAuth::extractPresentedKey() === ''
+                && $this->explosiveTimers()->commandColumnsReady(),
         ]);
     }
 

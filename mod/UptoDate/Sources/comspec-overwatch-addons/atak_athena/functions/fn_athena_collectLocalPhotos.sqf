@@ -106,4 +106,16 @@ if (_cache isEqualType []) then {
 };
 
 reverse _out;
+
+// 4) Captures d'écran du jeu (dossier Screenshots du profil), même hors ligne.
+if (!isNil "comspec_overwatch_connect_fnc_listLocalScreenshots") then {
+    private _shots = [] call comspec_overwatch_connect_fnc_listLocalScreenshots;
+    if (_shots isEqualType []) then {
+        {
+            if (!(_x isEqualType [])) then { continue };
+            [_x param [0, ""], _x param [1, ""], _x param [2, ""], _x param [3, ""]] call _push;
+        } forEach _shots;
+    };
+};
+
 _out

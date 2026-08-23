@@ -609,6 +609,113 @@ final class SseApiController
         ], $result['duplicate'] ? 200 : 201);
     }
 
+    /**
+     * Interrogation d’identité terrain (SEEK Query) — registre + listes de surveillance réels.
+     */
+    public function identityQuery(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        $first = trim((string) ($request->query('first') ?? $request->query('first_name') ?? ''));
+        $last = trim((string) ($request->query('last') ?? $request->query('last_name') ?? ''));
+        $alias = trim((string) ($request->query('alias') ?? ''));
+        $q = trim((string) ($request->query('q') ?? ''));
+        if ($q === '') {
+            $q = trim($last . ' ' . $first . ' ' . $alias);
+        }
+
+        $clean = static fn (string $s): string => str_replace(["\t", "\n", "\r", '|'], [' ', ' ', '', '-'], $s);
+
+        if ($first === '' && $last === '' && $alias === '' && mb_strlen($q) < 2) {
+            return Response::json([
+                'found' => false,
+                'verdict' => 'Identité insuffisante',
+                'score' => 0,
+                'name' => 'Sujet',
+                'alias' => '',
+                'ref' => '',
+                'note' => 'Nom, prénom ou alias manquant pour interroger le poste.',
+            ]);
+        }
+
+        $person = $this->persons->findLikelyDuplicate($tenantId, $mapId, [
+            'first_name' => $first,
+            'last_name' => $last,
+            'alias' => $alias,
+        ]);
+        if ($person === null && mb_strlen($q) >= 2) {
+            $hits = $this->persons->searchForTenant($tenantId, $q, 8);
+            $person = $hits[0] ?? null;
+        }
+
+        $probe = is_array($person) ? $person : [
+            'first_name' => $first,
+            'last_name' => $last,
+            'alias' => $alias,
+            'display_name' => trim($first . ' ' . $last),
+        ];
+        $watchHits = $this->cross->matchOne($probe, $tenantId);
+        $topWatch = $watchHits[0] ?? null;
+        $entry = is_array($topWatch['entry'] ?? null) ? $topWatch['entry'] : [];
+
+        if ($person === null && $topWatch === null) {
+            return Response::json([
+                'found' => false,
+                'verdict' => 'Aucune correspondance sur le poste',
+                'score' => 0,
+                'name' => $clean(trim($first . ' ' . $last) !== '' ? trim($first . ' ' . $last) : 'Sujet'),
+                'alias' => $clean($alias),
+                'ref' => '',
+                'note' => 'Aucune fiche ni entrée de surveillance pour cette identité.',
+            ]);
+        }
+
+        $score = (int) ($topWatch['score'] ?? 0);
+        $level = (string) ($entry['threat_level'] ?? '');
+        $name = trim((string) ($person['display_name'] ?? $entry['display_name'] ?? trim($first . ' ' . $last)));
+        if ($name === '') {
+            $name = 'Sujet';
+        }
+        $aliasOut = trim((string) ($person['alias'] ?? $entry['alias'] ?? $alias));
+
+        if ($topWatch !== null && $level === 'prioritaire' && $score >= 75) {
+            $verdict = 'RECHERCHÉ — correspondance confirmée';
+        } elseif ($topWatch !== null) {
+            $verdict = 'SIGNALÉ — correspondance partielle';
+        } else {
+            $verdict = 'CONNU du registre';
+            $score = max($score, 70);
+        }
+
+        $refParts = [];
+        if (is_array($person) && (int) ($person['id'] ?? 0) > 0) {
+            $refParts[] = 'IDN-' . str_pad((string) (int) $person['id'], 5, '0', STR_PAD_LEFT);
+        }
+        if ((int) ($entry['id'] ?? 0) > 0) {
+            $refParts[] = 'BIO ' . (int) $entry['id'];
+        }
+
+        $note = trim((string) ($topWatch['reason'] ?? $entry['notes'] ?? ''));
+        if ($note === '' && is_array($person) && $topWatch === null) {
+            $note = 'Fiche présente au registre, hors liste de surveillance.';
+        }
+
+        return Response::json([
+            'found' => true,
+            'verdict' => $clean($verdict),
+            'score' => $score,
+            'name' => $clean($name),
+            'alias' => $clean($aliasOut),
+            'ref' => $clean(implode(' · ', $refParts)),
+            'note' => $clean($note),
+        ]);
+    }
+
     // ================= Exploitation de site =================
 
     public function sitesIndex(Request $request, array $params = []): Response

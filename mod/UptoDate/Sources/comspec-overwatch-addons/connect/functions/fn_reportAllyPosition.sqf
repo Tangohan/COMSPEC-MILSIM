@@ -1,0 +1,92 @@
+/*
+    Remonte une IA comme unité alliée ATAK (pas comme un téléphone).
+    Ne doit pas réutiliser l’identité Steam du client relais.
+*/
+params [
+    ["_unit", objNull, [objNull]]
+];
+if (!hasInterface) exitWith { false };
+if (isNull _unit || {!alive _unit}) exitWith { false };
+if (isPlayer _unit) exitWith { false };
+if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
+if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { false };
+
+private _pos = getPosWorld _unit;
+if ((abs (_pos select 0) < 1) && { abs (_pos select 1) < 1 }) exitWith { false };
+
+private _last = _unit getVariable ["COMSPEC_AllyTrackLastAt", -1e9];
+if ((diag_tickTime - _last) < 6) exitWith { false };
+_unit setVariable ["COMSPEC_AllyTrackLastAt", diag_tickTime, false];
+
+private _fnc_num = { (_this select 0) toFixed (_this select 1) };
+private _callSign = [_unit] call comspec_overwatch_connect_fnc_allyTrackCallsign;
+private _heading = getDir _unit;
+private _aslZ = (getPosASL _unit) select 2;
+private _side = side group _unit;
+private _sideStr = switch (_side) do {
+    case east: { "EAST" };
+    case resistance: { "GUER" };
+    case civilian: { "CIV" };
+    default { "WEST" };
+};
+private _affiliation = switch (_side) do {
+    case east: { "hostile" };
+    case resistance: { "unknown" };
+    case civilian: { "neutral" };
+    default { "friend" };
+};
+private _escCs = (_callSign splitString """" joinString "");
+private _groupName = trim (groupId (group _unit));
+if (!(_groupName isEqualType "")) then { _groupName = ""; };
+_groupName = (_groupName splitString """" joinString "");
+
+private _role = [_unit] call comspec_overwatch_connect_fnc_getUnitRole;
+if (!(_role isEqualType "")) then { _role = str _role };
+_role = trim _role;
+if (_role isEqualTo "" || {(toLower _role) in ["operator", "unknown", "inconnu"]}) then {
+    _role = "Unité alliée";
+};
+_role = (_role splitString """" joinString "");
+
+private _health = "stable";
+if (!isNil "comspec_overwatch_connect_fnc_getMedicalState") then {
+    private _med = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
+    if (_med isEqualType "" && {_med isNotEqualTo ""}) then {
+        _health = (_med splitString "|") select 0;
+    };
+};
+if (!alive _unit) then { _health = "dead" };
+_health = (_health splitString """" joinString "");
+
+private _allyId = _unit getVariable ["COMSPEC_AllyTrackId", ""];
+if (!(_allyId isEqualType "")) then { _allyId = str _allyId };
+if (_allyId isEqualTo "") then {
+    _allyId = format ["ALLY-%1", ((netId _unit) splitString ":") joinString "-"];
+    _unit setVariable ["COMSPEC_AllyTrackId", _allyId, true];
+};
+_allyId = (_allyId splitString """" joinString "");
+
+private _extra = format [
+    "{""ally_ai"":true,""is_ai"":true,""source"":""ally"",""ally_id"":""%1"",""side"":""%2"",""affiliation"":""%3"",""in_vehicle"":%4,""military_id"":""""}",
+    _allyId,
+    _sideStr,
+    _affiliation,
+    if ((vehicle _unit) isNotEqualTo _unit) then { "true" } else { "false" }
+];
+
+"COMSPECExtension" callExtension ["UpdatePosition", [
+    [_pos select 0, 2] call _fnc_num,
+    [_pos select 1, 2] call _fnc_num,
+    [_heading, 2] call _fnc_num,
+    _escCs,
+    _role,
+    _health,
+    "",
+    "",
+    "",
+    _extra,
+    "",
+    _groupName,
+    [_aslZ, 3] call _fnc_num
+]];
+true

@@ -7,3 +7,4 @@
 */
 uiNamespace setVariable ["COMSPEC_IntelNote_Display", displayNull];
 uiNamespace setVariable ["COMSPEC_IntelNote_Pane", "redaction"];
+uiNamespace setVariable ["COMSPEC_IntelNote_PhotoChoices", []];

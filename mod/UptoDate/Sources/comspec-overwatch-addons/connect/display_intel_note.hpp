@@ -23,8 +23,8 @@
 //   9622 fond barre basse    9623 quitter   9624 cadrage   9625 valider
 //   9626 bouton trombone
 //   9630 titre pièces jointes    9631 aide pièces jointes
-//   9632-9635 emplacements de pièces   9636-9639 boutons « retirer »
-//   9640 joindre depuis la galerie   9641 capture d'écran
+//   9632-9635 légendes des pièces     9636-9639 boutons « retirer »
+//   9640 joindre une photo            9641 capture d'écran
 //   9642 pièce depuis un fichier local   9643 revenir à la rédaction
 //   9650 fond du volet contexte   9651 titre contexte
 //   9652 date saisie   9653 lieu saisie   9654 repère   9655 code dossier
@@ -32,6 +32,8 @@
 //   9660-9671 bascules de thème
 //   9680 fermer le volet contexte
 //   9690-9697 libellés du volet contexte
+//   9710-9713 aperçus image           9714 liste de choix photo
+//   9715-9718 fonds des emplacements
 
 #define NT_X        (safezoneX)
 #define NT_Y        (safezoneY)
@@ -70,9 +72,11 @@
 #define NT_FAB_Y    (NT_STAGE_Y + NT_STAGE_H - 0.070 * NT_H)
 #define NT_FAB_X(i) (NT_X + 0.5 * NT_W - 2.1 * NT_FAB_W + (i) * (1.4 * NT_FAB_W))
 
-// Emplacements de pièces jointes : une rangée de quatre.
+// Emplacements de pièces jointes : une rangée de quatre (aperçu + légende).
 #define NT_SLOT_W   ((NT_IN_W - 3 * (0.012 * NT_W)) / 4)
-#define NT_SLOT_H   (0.190 * NT_H)
+#define NT_SLOT_PIC_H (0.145 * NT_H)
+#define NT_SLOT_CAP_H (0.045 * NT_H)
+#define NT_SLOT_H   (NT_SLOT_PIC_H + NT_SLOT_CAP_H)
 #define NT_SLOT_X(i) (NT_IN_X + (i) * (NT_SLOT_W + 0.012 * NT_W))
 #define NT_SLOT_Y   (NT_STAGE_Y + 0.060 * NT_H)
 
@@ -201,18 +205,46 @@ class COMSPEC_IntelNote_Dialog {
         };
         class PiecesHelp: RscStructuredText {
             idc = 9631;
-            text = "<t size='0.42' color='#8b929c'>Quatre pièces au maximum. La capture d’écran est prise à la fermeture du rédacteur : cadrez la scène avant de valider.</t>";
+            text = "<t size='0.42' color='#8b929c'>Quatre pièces au maximum. PHOTO joint une capture déjà prise. CAPTURE photographie la scène à la validation.</t>";
             x = NT_IN_X; y = (NT_STAGE_Y + 0.034 * NT_H); w = (0.70 * NT_W); h = (0.024 * NT_H);
         };
+        class SlotBg0: RscText {
+            idc = 9715;
+            x = NT_SLOT_X(0); y = NT_SLOT_Y; w = NT_SLOT_W; h = NT_SLOT_PIC_H;
+            colorBackground[] = {0.165, 0.169, 0.180, 1};
+        };
+        class SlotBg1: SlotBg0 { idc = 9716; x = NT_SLOT_X(1); };
+        class SlotBg2: SlotBg0 { idc = 9717; x = NT_SLOT_X(2); };
+        class SlotBg3: SlotBg0 { idc = 9718; x = NT_SLOT_X(3); };
+        class SlotPic0: RscPictureKeepAspect {
+            idc = 9710;
+            text = "";
+            x = NT_SLOT_X(0); y = NT_SLOT_Y; w = NT_SLOT_W; h = NT_SLOT_PIC_H;
+            colorText[] = {1, 1, 1, 1};
+        };
+        class SlotPic1: SlotPic0 { idc = 9711; x = NT_SLOT_X(1); };
+        class SlotPic2: SlotPic0 { idc = 9712; x = NT_SLOT_X(2); };
+        class SlotPic3: SlotPic0 { idc = 9713; x = NT_SLOT_X(3); };
         class Slot0: RscStructuredText {
             idc = 9632;
             text = "";
-            x = NT_SLOT_X(0); y = NT_SLOT_Y; w = NT_SLOT_W; h = NT_SLOT_H;
-            colorBackground[] = {0.165, 0.169, 0.180, 1};
+            x = NT_SLOT_X(0); y = (NT_SLOT_Y + NT_SLOT_PIC_H); w = NT_SLOT_W; h = NT_SLOT_CAP_H;
+            colorBackground[] = {0.122, 0.125, 0.137, 1};
         };
         class Slot1: Slot0 { idc = 9633; x = NT_SLOT_X(1); };
         class Slot2: Slot0 { idc = 9634; x = NT_SLOT_X(2); };
         class Slot3: Slot0 { idc = 9635; x = NT_SLOT_X(3); };
+        class PhotoPicker: RscListBox {
+            idc = 9714;
+            x = NT_IN_X; y = NT_SLOT_Y; w = NT_IN_W; h = NT_SLOT_H;
+            colorBackground[] = {0.063, 0.067, 0.078, 0.98};
+            colorSelectBackground[] = {0.165, 0.141, 0.498, 1};
+            colorSelect[] = {1, 1, 1, 1};
+            colorText[] = {0.957, 0.961, 0.965, 1};
+            sizeEx = 0.024;
+            rowHeight = 0.032;
+            onLBSelChanged = "_this call comspec_overwatch_connect_fnc_intelNotePickPhoto;";
+        };
         class Drop0: COMSPEC_RscButtonDanger {
             idc = 9636;
             text = "Retirer";
@@ -227,13 +259,13 @@ class COMSPEC_IntelNote_Dialog {
 
         class FabGallery: COMSPEC_RscButton {
             idc = 9640;
-            text = "GALERIE";
+            text = "PHOTO";
             x = NT_FAB_X(0); y = NT_FAB_Y; w = (1.2 * NT_FAB_W); h = NT_FAB_H;
             sizeEx = 0.022;
             colorBackground[] = {0.122, 0.106, 0.420, 0.95};
             colorBackgroundActive[] = {0.165, 0.141, 0.498, 1};
             colorFocused[] = {0.165, 0.141, 0.498, 1};
-            tooltip = "Joindre une photographie déjà prise (bibliothèque ATAK).";
+            tooltip = "Joindre une photographie déjà prise (Photos ATAK ou captures d’écran du jeu).";
             action = "['galerie'] call comspec_overwatch_connect_fnc_intelNoteAddPiece;";
         };
         class FabCapture: FabGallery {

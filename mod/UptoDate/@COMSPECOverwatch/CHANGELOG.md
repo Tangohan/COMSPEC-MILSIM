@@ -1,3 +1,10 @@
+COMSPEC Overwatch 1.4.49 / Athena ATAK 1.0.42 — 23/08/2026
+
+Correctif — gel à la photo ATAK
+
+• Les photos ATAK (JPEG BCE / IceMan) ne relancent plus un cliché PNG synchrone
+• Envoi Athena en file ; PNG de secours seulement si le JPEG est introuvable
+
 COMSPEC Overwatch 1.4.8 — 29/07/2026
 
 Médical ACE / KAT, carte web, photos recon

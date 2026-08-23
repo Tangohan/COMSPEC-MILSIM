@@ -16,7 +16,7 @@ if (_r isEqualTo "") then {
 };
 
 // Normaliser caractères fragiles
-_r = [_r, " ", "_"] call BIS_fnc_replaceString;
-_r = [_r, "/", "-"] call BIS_fnc_replaceString;
+_r = _r replaceString [" ", "_"];
+_r = _r replaceString ["/", "-"];
 
 format ["%1-%2", _p, _r]

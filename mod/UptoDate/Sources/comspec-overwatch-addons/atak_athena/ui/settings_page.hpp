@@ -70,7 +70,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             y = QUOTE(COMSPEC_SET_H(0.70));
             w = QUOTE(COMSPEC_SET_W(2.84));
             h = QUOTE(COMSPEC_SET_H(1.05));
-            text = "";
+            text = "Chargement des paramètres…";
             colorBackground[] = SET_BG_STRIP;
             class Attributes
             {
@@ -159,7 +159,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             y = QUOTE(COMSPEC_SET_H(4.82));
             w = QUOTE(COMSPEC_SET_W(2.84));
             h = QUOTE(COMSPEC_SET_H(0.70));
-            text = "";
+            text = "Indiquez votre indicatif et votre rôle. L’équipe de feu et le groupe choisis apparaissent ensuite sur ATAK.";
             colorBackground[] = SET_BG_BODY;
             class Attributes
             {

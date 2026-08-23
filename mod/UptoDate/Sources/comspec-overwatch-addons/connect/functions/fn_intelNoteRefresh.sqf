@@ -159,9 +159,15 @@ private _reached = (count _selected) >= _themesMax;
     _piecesMax
 ];
 
+private _pickerOn = _disp getVariable ["COMSPEC_IntelNote_PickerOn", false];
+private _onPieces = (uiNamespace getVariable ["COMSPEC_IntelNote_Pane", "redaction"]) isEqualTo "pieces";
+private _showSlot = _onPieces && {!_pickerOn};
+
 for "_i" from 0 to (_piecesMax - 1) do {
     private _slot = _disp displayCtrl (9632 + _i);
     private _drop = _disp displayCtrl (9636 + _i);
+    private _pic = _disp displayCtrl (9710 + _i);
+    private _bg = _disp displayCtrl (9715 + _i);
     if (isNull _slot) then { continue };
 
     if (_i < (count _pieces)) then {
@@ -175,18 +181,34 @@ for "_i" from 0 to (_piecesMax - 1) do {
         };
         if (_name isEqualTo "") then { _name = "capture à la validation"; };
         _slot ctrlSetStructuredText parseText format [
-            "<t size='0.42' color='#f4f5f6'>%1</t><br/><t size='0.36' color='#8b929c'>%2</t><br/><t size='0.36' color='#8b929c'>%3</t>",
+            "<t size='0.36' color='#f4f5f6'>%1</t><br/><t size='0.32' color='#8b929c'>%2</t>",
             _kindLabel,
-            _name,
-            if (_caption isEqualTo "") then { _grid } else { _caption }
+            if (_caption isEqualTo "") then { _name } else { _caption }
         ];
+        if (!isNull _pic) then {
+            if (_path isNotEqualTo "") then {
+                _pic ctrlSetText ((_path splitString "\") joinString "/");
+                _pic ctrlShow _showSlot;
+            } else {
+                _pic ctrlSetText "";
+                _pic ctrlShow false;
+            };
+        };
+        if (!isNull _bg) then { _bg ctrlShow _showSlot };
+        _slot ctrlShow _showSlot;
         if (!isNull _drop) then {
-            _drop ctrlShow ((uiNamespace getVariable ["COMSPEC_IntelNote_Pane", "redaction"]) isEqualTo "pieces");
+            _drop ctrlShow _showSlot;
             _drop ctrlEnable true;
         };
     } else {
         _slot ctrlSetStructuredText parseText
-            "<t size='0.40' align='center' color='#565c66'>Emplacement libre</t>";
+            "<t size='0.36' align='center' color='#565c66'>Libre</t>";
+        if (!isNull _pic) then {
+            _pic ctrlSetText "";
+            _pic ctrlShow false;
+        };
+        if (!isNull _bg) then { _bg ctrlShow _showSlot };
+        _slot ctrlShow _showSlot;
         if (!isNull _drop) then {
             _drop ctrlShow false;
             _drop ctrlEnable false;

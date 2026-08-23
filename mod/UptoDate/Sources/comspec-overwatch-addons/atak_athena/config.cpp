@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.38;
-        versionStr = "1.0.38";
-        versionAr[] = {1, 0, 38};
+        version = 1.0.42;
+        versionStr = "1.0.42";
+        versionAr[] = {1, 0, 42};
     };
 };
 
@@ -65,6 +65,7 @@ class CfgFunctions
             class athena_bridgeVideoFeeds {};
             class athena_snapshotVideoFeed {};
             class athena_installDesktopShortcut {};
+            class athena_installPhotoLibraryAthena {};
             class athena_createWebMarker {};
             class athena_showLinkDialog {};
             class athena_showPhoneConnect {};
@@ -98,6 +99,8 @@ class CfgFunctions
             class athena_updateTask {};
             class athena_taskSelect {};
             class athena_taskRespond {};
+            class athena_taskClick {};
+            class athena_taskFooter {};
             class athena_taskSyncButtons {};
             class athena_syncOrdersToGroupChat {};
             class athena_openTask {};
@@ -201,6 +204,7 @@ class ATAK_APPs
             ORDER = 1.15;
             PAGE_CTRL = "COMSPEC_ATAK_Task";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_taskOnOpened";
+            ATAK_Buttons = "COMSPEC_Task_Menu";
         };
     };
     class AtakStatus: message
@@ -291,6 +295,15 @@ class ATAK_APPs
     };
 };
 
+class ATAK_Buttons
+{
+    class COMSPEC_Task_Menu
+    {
+        onLoad = "comspec_overwatch_atak_athena_fnc_athena_taskFooter";
+        clickEvents[] = {};
+    };
+};
+
 class RscTitles
 {
     class ATAK_APPs
@@ -330,6 +343,7 @@ class RscTitles
                 ORDER = 1.15;
                 PAGE_CTRL = "COMSPEC_ATAK_Task";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_taskOnOpened";
+                ATAK_Buttons = "COMSPEC_Task_Menu";
             };
         };
         class AtakStatus: message

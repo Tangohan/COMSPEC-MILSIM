@@ -3015,6 +3015,31 @@ final class SsePortalController
         ]);
     }
 
+    public function gameMaster(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage()) {
+            Session::flash('error', 'Seul le personnel habilité peut ouvrir le poste maître du jeu.');
+
+            return Response::redirect(url('atak/sse/operations'));
+        }
+
+        $q = trim((string) $request->query('q', ''));
+        $entries = $this->watchlist->listActive($this->tenantId(), $q);
+        $persons = $this->persons->listForContext($this->tenantId(), 1, ['limit' => 40]);
+        $persons = $this->clearance->redactPeopleForScreens($persons, $this->tenantId());
+
+        return $this->portalView('atak.sse.maitre_jeu', [
+            'title' => 'Maître du jeu — SSE',
+            'entries' => $entries,
+            'persons' => $persons,
+            'searchQuery' => $q,
+            'canManage' => true,
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'maitre-jeu',
+        ]);
+    }
+
     public function watchlistStore(Request $request, array $params = []): Response
     {
         if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
@@ -3031,6 +3056,11 @@ final class SsePortalController
             'notes' => (string) $request->input('notes', ''),
         ]);
         Session::flash('success', 'Entrée ajoutée à la liste de surveillance.');
+
+        $returnTo = trim((string) $request->input('return_to', ''));
+        if ($returnTo === 'maitre-jeu') {
+            return Response::redirect(url('atak/sse/maitre-jeu'));
+        }
 
         return Response::redirect(url('atak/sse/croisements'));
     }
@@ -3049,6 +3079,11 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/croisements'));
         }
         Session::flash('success', 'Entrée retirée de la liste de surveillance.');
+
+        $returnTo = trim((string) $request->input('return_to', ''));
+        if ($returnTo === 'maitre-jeu') {
+            return Response::redirect(url('atak/sse/maitre-jeu'));
+        }
 
         return Response::redirect(url('atak/sse/croisements'));
     }

@@ -675,6 +675,80 @@ public static class Extension
         return HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
     }
 
+    /// <summary>
+    /// Cache des GET périodiques (marqueurs, ordres, chat, CAS…).
+    /// Le thread jeu Arma ne doit jamais attendre le round-trip HTTP : chaque hitch
+    /// de 50–500 ms (jusqu’à SyncTimeoutSeconds si Athena est lent) est un micro-freeze.
+    /// </summary>
+    private sealed class PollGetSlot
+    {
+        public volatile string Result = "OK|";
+        public long FetchedAtMs;
+        public int InFlight;
+    }
+
+    private static readonly ConcurrentDictionary<string, PollGetSlot> PollGetCache = new();
+
+    /// <summary>
+    /// Retourne tout de suite le dernier résultat connu et rafraîchit en arrière-plan.
+    /// Premier appel : "OK|" vide (le SQF ignore déjà les corps vides / non-OK).
+    /// En cas d’erreur réseau après un succès, on conserve le dernier OK.
+    /// </summary>
+    private static string ServePollGet(string cacheKey, string url, Func<string, int, string> format)
+    {
+        if (string.IsNullOrEmpty(url))
+            return "ERR|invalid_url";
+
+        var slot = PollGetCache.GetOrAdd(cacheKey, static _ => new PollGetSlot());
+        var now = Environment.TickCount64;
+        const int minRefreshMs = 1200;
+        var stale = slot.FetchedAtMs == 0 || (now - slot.FetchedAtMs) >= minRefreshMs;
+        if (stale && Interlocked.CompareExchange(ref slot.InFlight, 1, 0) == 0)
+        {
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                    using var resp = SendGet(url, cts.Token);
+                    var body = ReadContentUtf8(resp, cts.Token);
+                    var formatted = format(body, (int)resp.StatusCode);
+                    if (formatted.StartsWith("OK|", StringComparison.Ordinal) || slot.FetchedAtMs == 0)
+                        slot.Result = formatted;
+                    slot.FetchedAtMs = Environment.TickCount64;
+                }
+                catch
+                {
+                    if (slot.FetchedAtMs == 0)
+                        slot.Result = "ERR|network";
+                    slot.FetchedAtMs = Environment.TickCount64;
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref slot.InFlight, 0);
+                }
+            });
+        }
+
+        return slot.Result;
+    }
+
+    private static string PollHttpErr(int code)
+    {
+        if (code == 404) return "ERR|not_found";
+        if (code == 401 || code == 403) return "ERR|unauthorized";
+        if (code == 503) return "ERR|unavailable";
+        return "ERR|http_" + code;
+    }
+
+    private static string PollOkClipped(string payload)
+    {
+        payload ??= "";
+        if (payload.Length > MaxOutputBytes - 4)
+            payload = payload.Substring(0, MaxOutputBytes - 4);
+        return "OK|" + payload;
+    }
+
     private static HttpResponseMessage SendJsonPost(string url, string jsonBody, CancellationToken token)
     {
         using var req = new HttpRequestMessage(HttpMethod.Post, url)
@@ -804,7 +878,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.5");
+            Output(output, outputSize, "COMSPECExtension 2.0.9");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1130,13 +1204,30 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.5";
+            return "OK|COMSPECExtension 2.0.9";
         }
 
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.5", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.9", "COMSPEC Extension ATAK");
+        }
+
+        // Captures locales (dossier Screenshots du profil) — hors ligne, sans liaison Athena.
+        // Lignes : nom\tchemin
+        if (function == "ListLocalScreenshots")
+        {
+            var limit = 24;
+            if (args.Length > 0 && int.TryParse(args[0], out var n) && n > 0)
+                limit = Math.Min(n, 40);
+            var body = ListLocalScreenshotsTab(limit);
+            var cap = MaxOutputBytes - 4;
+            if (body.Length > cap)
+            {
+                var cut = body.LastIndexOf('\n', cap);
+                body = cut > 0 ? body.Substring(0, cut + 1) : body.Substring(0, cap);
+            }
+            return "OK|" + body;
         }
 
         // Alerte Windows : marche à suivre pour lier le compte Athena (bloquant, thread OK).
@@ -1182,7 +1273,8 @@ public static class Extension
         {
             var path = ResolveLogFilePath();
             if (path == null) return "ERR|no_writable_path";
-            return AppendLogLine(path, args[0]!) ? $"OK|{path}" : "ERR|write_failed";
+            EnqueueLogLine(path, args[0]!);
+            return $"OK|{path}";
         }
 
         // Dernières lignes du journal de la session en cours. args[0] = octets max (défaut 14000).
@@ -1652,10 +1744,11 @@ public static class Extension
                     return "ERR|" + markersErr;
                 var url = markersUri.AbsoluteUri;
                 if (!string.IsNullOrEmpty(since)) url += "&since=" + Uri.EscapeDataString(since);
-                var response = SendGet(url, token);
-                response.EnsureSuccessStatusCode();
-                var body = ReadContentUtf8(response, token);
-                return "OK|" + SimplifyMarkersJson(body);
+                return ServePollGet("GetMarkers", url, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return PollOkClipped(SimplifyMarkersJson(body));
+                });
             }
             if (function == "GetUnits")
             {
@@ -1760,11 +1853,12 @@ public static class Extension
                 var callsign = Uri.EscapeDataString(args[0] ?? "");
                 var mapId = args.Length > 1 ? (args[1] ?? "1") : "1";
                 var url = _baseUrl + "/api/cas?mapId=" + mapId + "&assignedTo=" + callsign;
-                var resp = SendGet(url, token);
-                resp.EnsureSuccessStatusCode();
-                var respBody = ReadContentUtf8(resp, token);
-                var safe = respBody.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
-                return "OK|" + (safe.Length > MaxOutputBytes - 4 ? safe.Substring(0, MaxOutputBytes - 4) : safe);
+                return ServePollGet("GetCAS:" + mapId + ":" + (args[0] ?? ""), url, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    var safe = body.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
+                    return PollOkClipped(safe);
+                });
             }
             if (function == "GetMapShapes")
             {
@@ -1772,56 +1866,54 @@ public static class Extension
                 var since = args.Length > 1 ? Uri.EscapeDataString(args[1] ?? "") : "";
                 var url = _baseUrl + "/api/map-shapes?mapId=" + mapId;
                 if (!string.IsNullOrEmpty(since)) url += "&since=" + since;
-                var resp = SendGet(url, token);
-                resp.EnsureSuccessStatusCode();
-                var respBody = ReadContentUtf8(resp, token);
-                var safe = respBody.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
-                return "OK|" + (safe.Length > MaxOutputBytes - 4 ? safe.Substring(0, MaxOutputBytes - 4) : safe);
+                return ServePollGet("GetMapShapes:" + mapId, url, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    var safe = body.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
+                    return PollOkClipped(safe);
+                });
             }
             // Modules pont ATAK Enhanced / cTab (activables admin).
             // Lignes : id\tenabled(0|1)\tlabel
             if (function == "GetModModules")
             {
-                var resp = SendGet(_baseUrl + "/api/atak/mod-modules", token);
-                if (!resp.IsSuccessStatusCode)
+                return ServePollGet("GetModModules", _baseUrl + "/api/atak/mod-modules", (body, code) =>
                 {
-                    var code = (int)resp.StatusCode;
-                    if (code == 401) return "ERR|unauthorized";
-                    if (code == 403) return "ERR|forbidden";
-                    return "ERR|http_" + code;
-                }
-                var respBody = ReadContentUtf8(resp, token);
-                var simplified = SimplifyModModulesJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                    if (code < 200 || code >= 300)
+                    {
+                        if (code == 401) return "ERR|unauthorized";
+                        if (code == 403) return "ERR|forbidden";
+                        return "ERR|http_" + code;
+                    }
+                    return PollOkClipped(SimplifyModModulesJson(body));
+                });
             }
             // Expérience communauté (réalisme, troll, guide). Lignes : clef\tvaleur
             if (function == "GetExperience")
             {
-                var resp = SendGet(_baseUrl + "/api/atak/experience", token);
-                if (!resp.IsSuccessStatusCode)
+                return ServePollGet("GetExperience", _baseUrl + "/api/atak/experience", (body, code) =>
                 {
-                    var code = (int)resp.StatusCode;
-                    if (code == 401) return "ERR|unauthorized";
-                    if (code == 403) return "ERR|forbidden";
-                    return "ERR|http_" + code;
-                }
-                var respBody = ReadContentUtf8(resp, token);
-                var simplified = SimplifyExperienceJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                    if (code < 200 || code >= 300)
+                    {
+                        if (code == 401) return "ERR|unauthorized";
+                        if (code == 403) return "ERR|forbidden";
+                        return "ERR|http_" + code;
+                    }
+                    return PollOkClipped(SimplifyExperienceJson(body));
+                });
             }
             if (function == "GetRoleplayConfig")
             {
-                var resp = SendGet(_baseUrl + "/api/atak/roleplay-stats", token);
-                if (!resp.IsSuccessStatusCode)
+                return ServePollGet("GetRoleplayConfig", _baseUrl + "/api/atak/roleplay-stats", (body, code) =>
                 {
-                    var code = (int)resp.StatusCode;
-                    if (code == 401) return "ERR|unauthorized";
-                    if (code == 403) return "ERR|forbidden";
-                    return "ERR|http_" + code;
-                }
-                var respBody = ReadContentUtf8(resp, token);
-                var simplified = SimplifyRoleplayConfigJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                    if (code < 200 || code >= 300)
+                    {
+                        if (code == 401) return "ERR|unauthorized";
+                        if (code == 403) return "ERR|forbidden";
+                        return "ERR|http_" + code;
+                    }
+                    return PollOkClipped(SimplifyRoleplayConfigJson(body));
+                });
             }
             if (function == "GetSessionRestore")
             {
@@ -1892,6 +1984,39 @@ public static class Extension
                 var simplified = SimplifyFireTeamsJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
+            // SEEK Query : registre + listes de surveillance Athena (pas de tirage simulé).
+            // args : first, last, alias, q
+            // retour : OK|found\tverdict\tscore\tname\talias\tref\tnote
+            if (function == "QuerySseIdentity")
+            {
+                var first = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+                var last = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+                var alias = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                var q = args.Length > 3 ? (args[3] ?? "").Trim() : "";
+                var url = _baseUrl + "/api/sse/identity-query"
+                    + "?first=" + Uri.EscapeDataString(first)
+                    + "&last=" + Uri.EscapeDataString(last)
+                    + "&alias=" + Uri.EscapeDataString(alias);
+                if (!string.IsNullOrEmpty(q))
+                    url += "&q=" + Uri.EscapeDataString(q);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403)
+                    {
+                        if (respBody.Contains("tenant_context_required", StringComparison.Ordinal))
+                            return "ERR|no_tenant";
+                        return "ERR|unauthorized";
+                    }
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
+                var simplifiedId = SimplifyIdentityQueryJson(respBody);
+                return "OK|" + (simplifiedId.Length > MaxOutputBytes - 4 ? simplifiedId.Substring(0, MaxOutputBytes - 4) : simplifiedId);
+            }
             if (function == "JoinFireTeam" && args.Length >= 1)
             {
                 var teamId = (args[0] ?? "").Trim();
@@ -1918,20 +2043,12 @@ public static class Extension
                     + "&limit=" + Uri.EscapeDataString(limit);
                 if (!string.IsNullOrEmpty(afterId) && afterId != "0")
                     url += "&after=" + Uri.EscapeDataString(afterId);
-                var resp = SendGet(url, token);
-                var respBody = ReadContentUtf8(resp, token);
-                if (!resp.IsSuccessStatusCode)
+                return ServePollGet("GetChatMessages:" + mapId, url, (body, code) =>
                 {
-                    var code = (int)resp.StatusCode;
-                    if (code == 404) return "ERR|not_found";
-                    if (code == 401 || code == 403) return "ERR|unauthorized";
-                    if (code == 503) return "ERR|unavailable";
-                    return "ERR|http_" + code;
-                }
-                var simplifiedChat = SimplifyChatMessagesJson(respBody);
-                // Garder les messages les plus récents sous la limite extension (sinon le TOC→jeu disparaît).
-                simplifiedChat = TruncateTabLinesKeepingNewest(simplifiedChat, MaxOutputBytes - 4);
-                return "OK|" + simplifiedChat;
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    var simplifiedChat = TruncateTabLinesKeepingNewest(SimplifyChatMessagesJson(body), MaxOutputBytes - 4);
+                    return "OK|" + simplifiedChat;
+                });
             }
             // Alertes tactiques Athena (Contact / FRAGO / BDA / …) → inbox cTab.
             // Lignes : id\tkind\tkind_label\tcall_sign\tgrid\tsummary\tcreated_at\tseverity
@@ -1941,18 +2058,11 @@ public static class Extension
                 var limit = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]!.Trim() : "40";
                 var url = _baseUrl + "/api/atak/tactical-alerts?mapId=" + Uri.EscapeDataString(mapId)
                     + "&limit=" + Uri.EscapeDataString(limit);
-                var resp = SendGet(url, token);
-                var respBody = ReadContentUtf8(resp, token);
-                if (!resp.IsSuccessStatusCode)
+                return ServePollGet("GetTacticalAlerts:" + mapId, url, (body, code) =>
                 {
-                    var code = (int)resp.StatusCode;
-                    if (code == 404) return "ERR|not_found";
-                    if (code == 401 || code == 403) return "ERR|unauthorized";
-                    if (code == 503) return "ERR|unavailable";
-                    return "ERR|http_" + code;
-                }
-                var simplifiedTac = SimplifyTacticalAlertsJson(respBody);
-                return "OK|" + (simplifiedTac.Length > MaxOutputBytes - 4 ? simplifiedTac.Substring(0, MaxOutputBytes - 4) : simplifiedTac);
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return PollOkClipped(SimplifyTacticalAlertsJson(body));
+                });
             }
             // Alertes médicales actives (≤ 30 min) + triage.
             // Lignes : id\tkind\tcall_sign\tlabel\tgrid\tcreated_at\ttriage_status\ttriage_label\tseverity
@@ -1962,19 +2072,11 @@ public static class Extension
                 var limit = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]!.Trim() : "25";
                 var url = _baseUrl + "/api/atak/medical-alerts?mapId=" + Uri.EscapeDataString(mapId)
                     + "&limit=" + Uri.EscapeDataString(limit);
-                var resp = SendGet(url, token);
-                var respBody = ReadContentUtf8(resp, token);
-                if (!resp.IsSuccessStatusCode)
+                return ServePollGet("GetMedicalAlerts:" + mapId, url, (body, code) =>
                 {
-                    var code = (int)resp.StatusCode;
-                    if (code == 404) return "ERR|not_found";
-                    if (code == 401) return "ERR|unauthorized";
-                    if (code == 403) return "ERR|unauthorized";
-                    if (code == 503) return "ERR|unavailable";
-                    return "ERR|http_" + code;
-                }
-                var simplified = SimplifyMedicalAlertsJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return PollOkClipped(SimplifyMedicalAlertsJson(body));
+                });
             }
             // Ordres C2 web → jeu. Args : [mapId, limit, callsign?]
             // Lignes : id\ttype\ttarget\tpriority\tissuer\tstatus\tpayload\ttarget_type\ttarget_ref\taliases\ttype_label
@@ -1990,18 +2092,11 @@ public static class Extension
                     url += "&steam_uid=" + Uri.EscapeDataString(_steamUid);
                 if (callsign.Length > 0)
                     url += "&callsign=" + Uri.EscapeDataString(callsign);
-                var resp = SendGet(url, token);
-                var respBody = ReadContentUtf8(resp, token);
-                if (!resp.IsSuccessStatusCode)
+                return ServePollGet("GetOrders:" + mapId + ":" + _steamUid + ":" + callsign, url, (body, code) =>
                 {
-                    var code = (int)resp.StatusCode;
-                    if (code == 404) return "ERR|not_found";
-                    if (code == 401 || code == 403) return "ERR|unauthorized";
-                    if (code == 503) return "ERR|unavailable";
-                    return "ERR|http_" + code;
-                }
-                var simplified = SimplifyOrdersJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return PollOkClipped(SimplifyOrdersJson(body));
+                });
             }
             // Déclenchements TOC → jeu. Args : [mapId]
             // Lignes : charge_id\trequested_by\tid
@@ -2009,18 +2104,11 @@ public static class Extension
             {
                 var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
                 var url = _baseUrl + "/api/atak/explosive-timers/commands?mapId=" + Uri.EscapeDataString(mapId);
-                var resp = SendGet(url, token);
-                var respBody = ReadContentUtf8(resp, token);
-                if (!resp.IsSuccessStatusCode)
+                return ServePollGet("GetExplosiveCommands:" + mapId, url, (body, code) =>
                 {
-                    var code = (int)resp.StatusCode;
-                    if (code == 404) return "ERR|not_found";
-                    if (code == 401 || code == 403) return "ERR|unauthorized";
-                    if (code == 503) return "ERR|unavailable";
-                    return "ERR|http_" + code;
-                }
-                var simplified = SimplifyExplosiveCommandsJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return PollOkClipped(SimplifyExplosiveCommandsJson(body));
+                });
             }
             // Mise à jour statut ordre depuis le jeu. Args : [orderId, status, by, mapId?, note?]
             if (function == "UpdateOrderStatus" && args.Length >= 2)
@@ -2712,6 +2800,37 @@ public static class Extension
             catch
             {
                 return false;
+            }
+        }
+    }
+
+    private static readonly ConcurrentQueue<(string Path, string Line)> PendingLogLines = new();
+    private static int _logDrainScheduled;
+
+    /// <summary>
+    /// LogWrite ne doit pas figer le thread jeu (lock fichier + Flush). File + drain ThreadPool.
+    /// </summary>
+    private static void EnqueueLogLine(string path, string line)
+    {
+        PendingLogLines.Enqueue((path, line));
+        if (Interlocked.CompareExchange(ref _logDrainScheduled, 1, 0) == 0)
+            ThreadPool.QueueUserWorkItem(static _ => DrainLogLines());
+    }
+
+    private static void DrainLogLines()
+    {
+        try
+        {
+            while (PendingLogLines.TryDequeue(out var item))
+                AppendLogLine(item.Path, item.Line);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _logDrainScheduled, 0);
+            if (!PendingLogLines.IsEmpty
+                && Interlocked.CompareExchange(ref _logDrainScheduled, 1, 0) == 0)
+            {
+                ThreadPool.QueueUserWorkItem(static _ => DrainLogLines());
             }
         }
     }
@@ -3468,6 +3587,43 @@ public static class Extension
         catch { return ""; }
     }
 
+    private static string SanitizeIdentityField(string s)
+    {
+        return (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+    }
+
+    private static string SimplifyIdentityQueryJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var found = root.TryGetProperty("found", out var f) && f.ValueKind is JsonValueKind.True;
+            var verdict = root.TryGetProperty("verdict", out var v) ? (v.GetString() ?? "") : "";
+            var score = 0;
+            if (root.TryGetProperty("score", out var sc))
+            {
+                if (sc.ValueKind == JsonValueKind.Number) score = sc.GetInt32();
+                else int.TryParse(sc.GetString(), out score);
+            }
+            var name = root.TryGetProperty("name", out var n) ? (n.GetString() ?? "") : "";
+            var alias = root.TryGetProperty("alias", out var a) ? (a.GetString() ?? "") : "";
+            var reference = root.TryGetProperty("ref", out var r) ? (r.GetString() ?? "") : "";
+            var note = root.TryGetProperty("note", out var nt) ? (nt.GetString() ?? "") : "";
+            return string.Join("\t", new[]
+            {
+                found ? "1" : "0",
+                SanitizeIdentityField(verdict),
+                score.ToString(CultureInfo.InvariantCulture),
+                SanitizeIdentityField(name),
+                SanitizeIdentityField(alias),
+                SanitizeIdentityField(reference),
+                SanitizeIdentityField(note)
+            });
+        }
+        catch { return "0\tRéponse illisible\t0\t\t\t\t"; }
+    }
+
     private static string SimplifyPhonePairingJson(string json)
     {
         try
@@ -3766,7 +3922,13 @@ public static class Extension
                     extra.Append(",\"group\":\"").Append(EscapeJson(groupName)).Append("\"");
                 }
                 // ID BFT lié à l’indicatif (mémorisé à client-init / profil)
-                if (_militaryId.Length > 0
+                // Contacts relais (téléphone / IA alliée) : ne pas coller l’identité du joueur pont.
+                var isProxyContact = !string.IsNullOrWhiteSpace(vehicleJson)
+                    && (vehicleJson.Contains("\"phone_geoloc\"", StringComparison.Ordinal)
+                        || vehicleJson.Contains("\"ally_ai\"", StringComparison.Ordinal)
+                        || vehicleJson.Contains("\"source\":\"phone\"", StringComparison.Ordinal)
+                        || vehicleJson.Contains("\"source\":\"ally\"", StringComparison.Ordinal));
+                if (!isProxyContact && _militaryId.Length > 0
                     && (string.IsNullOrWhiteSpace(vehicleJson)
                         || (!vehicleJson.Contains("\"bft_id\"", StringComparison.Ordinal)
                             && !vehicleJson.Contains("\"military_id\"", StringComparison.Ordinal))))
@@ -3805,7 +3967,7 @@ public static class Extension
                         // Métadonnées véhicule irrécupérables : poster quand même la Position2D.
                     }
                 }
-                var steamJson = steamNorm.Length > 0
+                var steamJson = (!isProxyContact && steamNorm.Length > 0)
                     ? $",\"steam_uid\":\"{EscapeJson(steamNorm)}\""
                     : "";
                 var sessJson = _sessionToken.Length > 0
@@ -5808,6 +5970,48 @@ public static class Extension
             }
             foreach (var f in chunk)
                 yield return f;
+        }
+    }
+
+    private static string ListLocalScreenshotsTab(int limit)
+    {
+        try
+        {
+            var files = new List<FileInfo>();
+            foreach (var dir in EnumerateScreenshotDirs())
+            {
+                if (!IsScreenshotCaptureDir(dir)) continue;
+                IEnumerable<string> names;
+                try { names = EnumerateRecentImagesInDir(dir); }
+                catch { continue; }
+                foreach (var f in names)
+                {
+                    try
+                    {
+                        var fi = new FileInfo(f);
+                        if (fi.Exists && fi.Length >= 32)
+                            files.Add(fi);
+                    }
+                    catch { }
+                }
+            }
+            files.Sort((a, b) => b.LastWriteTimeUtc.CompareTo(a.LastWriteTimeUtc));
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var sb = new StringBuilder();
+            var n = 0;
+            foreach (var fi in files)
+            {
+                if (!seen.Add(fi.Name)) continue;
+                sb.Append(SanitizeIdentityField(fi.Name)).Append('\t')
+                  .Append(SanitizeIdentityField(fi.FullName)).Append('\n');
+                n++;
+                if (n >= limit) break;
+            }
+            return sb.ToString();
+        }
+        catch
+        {
+            return "";
         }
     }
 

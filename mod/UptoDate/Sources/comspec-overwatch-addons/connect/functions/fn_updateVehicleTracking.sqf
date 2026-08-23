@@ -24,16 +24,23 @@ if (_vehicle isEqualTo player) exitWith {false}; // Pas un véhicule
 
 // Debounce / grâce REAPP (évite flood extension pendant spike ACE+MRH)
 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {false};
-private _lastPost = missionNamespace getVariable ["COMSPEC_VehTrackLastAt", -1e9];
+private _lastPost = _vehicle getVariable ["COMSPEC_VehTrackLastAt", -1e9];
 if ((diag_tickTime - _lastPost) < 5) exitWith {false};
-missionNamespace setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
+_vehicle setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
 
 // Préparer données
 private _vehicleData = createHashMap;
 
-// Identif ication
-_vehicleData set ["vehicle_callsign", getText (configOf _vehicle >> "displayName")];
-_vehicleData set ["vehicle_name", getText (configOf _vehicle >> "displayName")];
+// Identification (balise GPS : clé unique + nom lisible)
+private _pretty = getText (configOf _vehicle >> "displayName");
+private _customName = _vehicle getVariable ["COMSPEC_GpsCallsign", ""];
+if (!(_customName isEqualType "")) then { _customName = str _customName };
+_customName = trim _customName;
+if (_customName isNotEqualTo "") then { _pretty = _customName };
+if (_pretty isEqualTo "") then { _pretty = typeOf _vehicle };
+if (_pretty isEqualTo "") then { _pretty = "Véhicule" };
+_vehicleData set ["vehicle_callsign", [_vehicle] call comspec_overwatch_connect_fnc_vehicleTrackCallsign];
+_vehicleData set ["vehicle_name", _pretty];
 _vehicleData set ["vehicle_type", typeOf _vehicle];
 
 // Déterminer classe véhicule
@@ -107,7 +114,12 @@ if (damage _vehicle > 0.8) then {_status = "DAMAGED"};
 _vehicleData set ["status", _status];
 
 // Mission type (si défini par variable)
-private _missionType = _vehicle getVariable ["COMSPEC_MissionType", "PATROL"];
+private _isBeacon = [_vehicle, "COMSPEC_GpsBeacon"] call comspec_overwatch_connect_fnc_isObjectFlag;
+private _missionType = _vehicle getVariable ["COMSPEC_MissionType", ""];
+if (!(_missionType isEqualType "")) then { _missionType = str _missionType };
+if (_missionType isEqualTo "") then {
+    _missionType = if (_isBeacon) then { "GPS_BEACON" } else { "PATROL" };
+};
 _vehicleData set ["mission_type", _missionType];
 
 // Destination (si waypoint actif)
@@ -141,7 +153,7 @@ if ((fuel _vehicle) < 0.15) then {
     };
 };
 
-if ((ammo (gunner _vehicle)) < 0.2) then {
+if (!isNull (gunner _vehicle) && {(ammo (gunner _vehicle)) < 0.2}) then {
     // Munitions critiques
     private _lastAmmoAlert = _vehicle getVariable ["COMSPEC_LastAmmoAlert", 0];
     if (time - _lastAmmoAlert > 300) then {

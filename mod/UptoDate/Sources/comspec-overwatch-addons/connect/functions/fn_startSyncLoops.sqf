@@ -11,6 +11,17 @@ missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 [] call comspec_overwatch_connect_fnc_sendFactionSettings;
 [] call comspec_overwatch_connect_fnc_pollModModules;
 [] call comspec_overwatch_connect_fnc_pollExperience;
+// Les GET d’Athena sont asynchrones (cache) : relancer vite après le premier tick vide.
+0 spawn {
+    private _i = 0;
+    for "_i" from 1 to 8 do {
+        uiSleep 0.45;
+        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) then { continue };
+        [] call comspec_overwatch_connect_fnc_pollModModules;
+        [] call comspec_overwatch_connect_fnc_pollExperience;
+        [] call comspec_overwatch_connect_fnc_pollRoleplayConfig;
+    };
+};
 0 spawn {
     uiSleep 2;
     [] call comspec_overwatch_connect_fnc_syncAtakRealism;
@@ -82,121 +93,129 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     [] call comspec_overwatch_connect_fnc_queueMapMarker;
-    [] call comspec_overwatch_connect_fnc_resyncAllMapMarkers;
 }, 5, []] call CBA_fnc_addPerFrameHandler;
-
-private _casPollInterval = 10;
+// Resync complet : les EH MarkerCreated/Updated/Deleted couvrent le temps réel.
+// Un passage toutes les 5 s sur allMapMarkers provoquait un hitch SQF régulier.
 [{
-    params ["_args", "_pfhId"];
-    [{
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
-        private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
-        if !(_txGate getOrDefault ["can_transmit", true]) exitWith {};
-        // Sans indicatif : ne pas interroger avec un fallback « Pilot » (faux positifs / 9-line vide)
-        private _callsign = [] call comspec_overwatch_connect_fnc_getCallsign;
-        if (_callsign isEqualTo "") exitWith {};
-        private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
-        if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
-        private _raw = ["COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, _mapId]]] call comspec_overwatch_connect_fnc_extResult;
-        if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
-        private _payload = _raw select [3, count _raw - 3];
-        private _trimmed = trim _payload;
-        // Liste vide / null : mémoriser pour ne pas retrigger, sans ouvrir le 9-line
-        if (
-            _trimmed isEqualTo ""
-            || {_trimmed isEqualTo "[]"}
-            || {_trimmed isEqualTo "null"}
-            || {_trimmed isEqualTo "{}"}
-        ) exitWith {
-            private _lastEmpty = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
-            if (_payload != _lastEmpty) then {
-                missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
-                missionNamespace setVariable ["COMSPEC_CAS_Raw", ""];
-                // Remise à zéro locale — receiveCASRequest ignore les payloads vides
-                missionNamespace setVariable ["COMSPEC_CurrentCASId", ""];
-                missionNamespace setVariable ["COMSPEC_LastCASOpenedId", ""];
-            };
-        };
-        private _lastPayload = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
-        if (_payload != "" && {_payload != _lastPayload}) then {
-            missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
-            missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
-            private _prevId = missionNamespace getVariable ["COMSPEC_LastCASOpenedId", ""];
-            [] call comspec_overwatch_connect_fnc_receiveCASRequest;
-            private _newId = missionNamespace getVariable ["COMSPEC_CurrentCASId", ""];
-            // Notifier seulement quand une vraie nouvelle demande (nouvel id) a été acceptée
-            if (_newId != "" && {_newId != _prevId}) then {
-                ["COMSPEC_Info", ["Nouvelle demande d’appui aérien reçue"]] call comspec_overwatch_connect_fnc_showNotification;
-                ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
-            };
-        };
-    }, [], "casPoll"] call comspec_overwatch_connect_fnc_profileWrap;
-}, _casPollInterval, []] call CBA_fnc_addPerFrameHandler;
-
-[{
-    [{
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
-        [] call comspec_overwatch_connect_fnc_pollMedicalAlerts;
-    }, [], "pollMedicalAlerts"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 8, []] call CBA_fnc_addPerFrameHandler;
-
-[{
-    [{
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
-        [] call comspec_overwatch_connect_fnc_pollOrders;
-    }, [], "pollOrders"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 8, []] call CBA_fnc_addPerFrameHandler;
-
-[{
-    [{
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
-        [] call comspec_overwatch_connect_fnc_pollExplosiveCommands;
-    }, [], "pollExplosiveCommands"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 4, []] call CBA_fnc_addPerFrameHandler;
-
-[{
-    [{
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
-        [] call comspec_overwatch_connect_fnc_pollTacticalAlerts;
-    }, [], "pollTacticalAlerts"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 10, []] call CBA_fnc_addPerFrameHandler;
-
-[{
-    [{
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
-        [] call comspec_overwatch_connect_fnc_pollChatMessages;
-    }, [], "pollChatMessages"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 6, []] call CBA_fnc_addPerFrameHandler;
-
-[{
-    [{
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
-        [] call comspec_overwatch_connect_fnc_pollMapShapes;
-    }, [], "pollMapShapes"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 10, []] call CBA_fnc_addPerFrameHandler;
-
-[{
-    [{
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
-        [] call comspec_overwatch_connect_fnc_pollAthenaMarkers;
-    }, [], "pollAthenaMarkers"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 8, []] call CBA_fnc_addPerFrameHandler;
-
-[{
-    [{
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
-        [] call comspec_overwatch_connect_fnc_pollModModules;
-    }, [], "pollModModules"] call comspec_overwatch_connect_fnc_profileWrap;
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    [] call comspec_overwatch_connect_fnc_resyncAllMapMarkers;
 }, 45, []] call CBA_fnc_addPerFrameHandler;
+
+private _fnc_addPoll = {
+    params ["_code", "_interval", "_delay"];
+    [{
+        params ["_code", "_interval"];
+        [_code, _interval, []] call CBA_fnc_addPerFrameHandler;
+    }, [_code, _interval], _delay] call CBA_fnc_waitAndExecute;
+};
+
+[{
+        params ["_args", "_pfhId"];
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
+            if !(_txGate getOrDefault ["can_transmit", true]) exitWith {};
+            private _callsign = [] call comspec_overwatch_connect_fnc_getCallsign;
+            if (_callsign isEqualTo "") exitWith {};
+            private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+            if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
+            private _raw = ["COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, _mapId]]] call comspec_overwatch_connect_fnc_extResult;
+            if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
+            private _payload = _raw select [3, count _raw - 3];
+            private _trimmed = trim _payload;
+            if (
+                _trimmed isEqualTo ""
+                || {_trimmed isEqualTo "[]"}
+                || {_trimmed isEqualTo "null"}
+                || {_trimmed isEqualTo "{}"}
+            ) exitWith {
+                private _lastEmpty = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
+                if (_payload != _lastEmpty) then {
+                    missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
+                    missionNamespace setVariable ["COMSPEC_CAS_Raw", ""];
+                    missionNamespace setVariable ["COMSPEC_CurrentCASId", ""];
+                    missionNamespace setVariable ["COMSPEC_LastCASOpenedId", ""];
+                };
+            };
+            private _lastPayload = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
+            if (_payload != "" && {_payload != _lastPayload}) then {
+                missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
+                missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
+                private _prevId = missionNamespace getVariable ["COMSPEC_LastCASOpenedId", ""];
+                [] call comspec_overwatch_connect_fnc_receiveCASRequest;
+                private _newId = missionNamespace getVariable ["COMSPEC_CurrentCASId", ""];
+                if (_newId != "" && {_newId != _prevId}) then {
+                    ["COMSPEC_Info", ["Nouvelle demande d’appui aérien reçue"]] call comspec_overwatch_connect_fnc_showNotification;
+                    ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
+                };
+            };
+        }, [], "casPoll"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 10, 0.3] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollMedicalAlerts;
+        }, [], "pollMedicalAlerts"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 8, 0.9] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollOrders;
+        }, [], "pollOrders"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 8, 1.5] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollExplosiveCommands;
+        }, [], "pollExplosiveCommands"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 4, 0.2] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollTacticalAlerts;
+        }, [], "pollTacticalAlerts"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 10, 2.1] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollChatMessages;
+        }, [], "pollChatMessages"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 6, 1.2] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollMapShapes;
+        }, [], "pollMapShapes"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 10, 2.7] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollAthenaMarkers;
+        }, [], "pollAthenaMarkers"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 8, 1.8] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollModModules;
+        }, [], "pollModModules"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 45, 3.3] call _fnc_addPoll;
 
 ["OnOrderIssued", {
     params ["_order"];

@@ -705,6 +705,7 @@ return function (Router $router) {
     $router->post('/atak/sse/sites/{id}/saisies/{seizureId}/possession', [SsePortalController::class, 'siteSeizureCustodyAction'], $mwSsePortal);
     $router->post('/atak/sse/sites/{id}/cloture', [SsePortalController::class, 'siteCloseAction'], $mwSsePortal);
     $router->get('/atak/sse/croisements', [SsePortalController::class, 'crossIndex'], $mwSsePortal);
+    $router->get('/atak/sse/maitre-jeu', [SsePortalController::class, 'gameMaster'], $mwSsePortal);
     $router->post('/atak/sse/croisements/watchlist', [SsePortalController::class, 'watchlistStore'], $mwSsePortal);
     $router->post('/atak/sse/croisements/watchlist/{id}/retirer', [SsePortalController::class, 'watchlistDeactivate'], $mwSsePortal);
     $router->get('/atak/sse/toiles', [SsePortalController::class, 'meshesIndex'], $mwSsePortal);
@@ -1868,6 +1869,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/sse/persons/{id}/photos', [SseApiController::class, 'personsPhotoStore']);
     $router->post('/api/sse/persons/{id}/biometrics-sim', [SseApiController::class, 'personsBiometricsSim']);
     $router->post('/api/sse/digital-acquisitions', [SseApiController::class, 'digitalAcquisitionStore']);
+    $router->get('/api/sse/identity-query', [SseApiController::class, 'identityQuery']);
 
     // Exploitation de site sensible
     $router->get('/api/sse/sites', [SseApiController::class, 'sitesIndex']);
