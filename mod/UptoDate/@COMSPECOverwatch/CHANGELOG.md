@@ -1,3 +1,10 @@
+COMSPEC Overwatch 1.4.50 / extension 2.0.10 — 23/08/2026
+
+Correctifs — lancement et signalement
+
+• Fenêtre Windows (conditions + bêta) au menu principal, plus de défilé en mission
+• Signaler un problème depuis Échap → gestion du mod
+
 COMSPEC Overwatch 1.4.49 / Athena ATAK 1.0.42 — 23/08/2026
 
 Correctif — gel à la photo ATAK

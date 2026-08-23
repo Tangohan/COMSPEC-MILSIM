@@ -29,9 +29,10 @@ echo.
 echo [DOTNET] Compilation de COMSPECExtension (Release x64)...
 echo [DOTNET] Compilation de COMSPECExtension (Release x64)... >> "%BUILD_LOG%"
 dotnet publish "%CS_PROJ_PATH%" -c Release -r win-x64 /p:NativeLib=Shared /p:SelfContained=true --nologo > "%TMP_OUT%" 2>&1
+set "DOTNET_ERR=%ERRORLEVEL%"
 type "%TMP_OUT%" >> "%BUILD_LOG%"
 type "%TMP_OUT%"
-if %ERRORLEVEL% NEQ 0 (
+if not "%DOTNET_ERR%"=="0" (
     echo [ERROR] La compilation C# a echoue. Verifie ton code .NET. >> "%BUILD_LOG%"
     echo [ERROR] La compilation C# a echoue. Verifie ton code .NET.
     goto :build_fail

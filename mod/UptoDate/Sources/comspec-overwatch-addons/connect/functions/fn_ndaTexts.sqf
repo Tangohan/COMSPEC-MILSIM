@@ -17,7 +17,7 @@ if (_lang isEqualTo "en") exitWith {
             "<t font='RobotoCondensedBold' color='#5a9e88'>1. Public beta</t><br/>" +
             "COMSPEC Overwatch (the Mod), including Athena and companion tools, is available publicly as a beta. Features may change, break, or be temporarily unavailable. Expect rough edges — that is normal at this stage.<br/><br/>" +
             "<t font='RobotoCondensedBold' color='#5a9e88'>2. Report bugs</t><br/>" +
-            "Found something wrong? In game, open the ACE self-interaction menu → COMSPEC → <t color='#e8f4f0'>Report a problem…</t> Describe what happened and when. Clear reports help us fix issues faster.<br/><br/>" +
+            "Found something wrong? In game: Esc → COMSPEC Overwatch — mod manager → <t color='#e8f4f0'>Report a problem</t>. Describe what happened and when. Reports go to the team that maintains the pack.<br/><br/>" +
             "<t font='RobotoCondensedBold' color='#5a9e88'>3. Changelog &amp; updates</t><br/>" +
             "Follow new builds and release notes on the Steam Workshop page for COMSPEC Overwatch. Update the pack when a new version is published so you stay compatible with Athena and organised sessions.<br/><br/>" +
             "<t font='RobotoCondensedBold' color='#5a9e88'>4. Organised play</t><br/>" +
@@ -41,7 +41,7 @@ if (_lang isEqualTo "en") exitWith {
         "<t font='RobotoCondensedBold' color='#5a9e88'>1. Bêta publique</t><br/>" +
         "COMSPEC Overwatch (le Mod), y compris Athena et les outils compagnons, est disponible publiquement en bêta. Des fonctions peuvent évoluer, dysfonctionner ou être temporairement indisponibles. Des aspérités sont normales à ce stade.<br/><br/>" +
         "<t font='RobotoCondensedBold' color='#5a9e88'>2. Signaler un problème</t><br/>" +
-        "Un bug, un gel, un comportement bizarre ? En jeu, ouvrez le menu d’interaction ACE → COMSPEC → <t color='#e8f4f0'>Signaler un problème…</t> Décrivez ce qui s’est passé et dans quel contexte. Des retours clairs accélèrent les correctifs.<br/><br/>" +
+        "Un bug, un gel, un comportement bizarre ? En jeu : Échap → COMSPEC Overwatch — gestion du mod → <t color='#e8f4f0'>Signaler un problème</t>. Décrivez ce qui s’est passé. Les signalements arrivent à l’équipe qui suit le pack.<br/><br/>" +
         "<t font='RobotoCondensedBold' color='#5a9e88'>3. Nouveautés &amp; mises à jour</t><br/>" +
         "Suivez les nouvelles versions et le journal des changements sur la page Steam Workshop de COMSPEC Overwatch. Mettez le pack à jour quand une version sort, pour rester compatible avec Athena et les sessions organisées.<br/><br/>" +
         "<t font='RobotoCondensedBold' color='#5a9e88'>4. Sessions organisées</t><br/>" +

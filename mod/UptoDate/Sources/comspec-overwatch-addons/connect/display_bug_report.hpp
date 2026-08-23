@@ -33,7 +33,7 @@ class COMSPEC_BugReport_Dialog {
         };
         class Hint: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.55' color='#8aa0b4'>Décrivez ce qui ne fonctionne pas. Le rapport est envoyé à l’équipe Athena.</t>";
+            text = "<t align='center' size='0.55' color='#8aa0b4'>Décrivez ce qui ne fonctionne pas. Le rapport est transmis à l’équipe qui suit le pack.</t>";
             x = 0.32 * safezoneW + safezoneX;
             y = 0.270 * safezoneH + safezoneY;
             w = 0.36 * safezoneW;

@@ -841,12 +841,16 @@ public static class Extension
 
         try
         {
+            var custom = BetaNoticeWindow.ShowModal();
+            if (custom.StartsWith("OK|", StringComparison.Ordinal))
+                return custom;
+
             const string title = "COMSPEC Overwatch — Bêta publique";
             const string body =
                 "Bienvenue dans la bêta publique de COMSPEC Overwatch.\n\n" +
                 "Ce pack est encore en phase de test. Certaines fonctions peuvent évoluer, " +
                 "être temporairement indisponibles ou se comporter de façon inattendue.\n\n" +
-                "Pour signaler un problème en jeu : menu ACE → COMSPEC → Signaler un problème…\n" +
+                "Pour signaler un problème en jeu : Échap → gestion du mod → Signaler un problème.\n" +
                 "Suivez les nouveautés et le journal des changements sur la page Steam Workshop.\n\n" +
                 "En continuant, des informations techniques limitées (identifiant Steam, " +
                 "version du pack, détails clients associés) peuvent être enregistrées pour " +
@@ -878,7 +882,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.9");
+            Output(output, outputSize, "COMSPECExtension 2.0.10");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1204,13 +1208,13 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.9";
+            return "OK|COMSPECExtension 2.0.10";
         }
 
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.9", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.10", "COMSPEC Extension ATAK");
         }
 
         // Captures locales (dossier Screenshots du profil) — hors ligne, sans liaison Athena.
@@ -1660,12 +1664,34 @@ public static class Extension
             var modVersion = args.Length > 11 ? (args[11] ?? "") : "";
             var armaBuild = args.Length > 12 ? (args[12] ?? "") : "";
             var extVersion = args.Length > 13 ? (args[13] ?? "") : "";
-            var contextJson = args.Length > 14 ? (args[14] ?? "") : "";
 
             if (string.IsNullOrWhiteSpace(message)) return "ERR|missing_message";
 
             if (!TryNormalizeSteamUid(steamUid, out var steamNorm) && steamUid.Length > 0)
                 steamNorm = steamUid;
+
+            // Journal : la DLL lit le fichier elle-même. Le JSON SQF (guillemets, retours
+            // ligne) cassait souvent tout le POST → « impossible d’envoyer ».
+            if (string.Equals(source.Trim(), "player", StringComparison.OrdinalIgnoreCase)
+                && detail.Length < 800)
+            {
+                try
+                {
+                    var logPath = ResolveLogFilePath();
+                    if (logPath != null && File.Exists(logPath))
+                    {
+                        var tail = SanitizeLogForReport(ReadLogFileTail(logPath, 3500));
+                        if (!string.IsNullOrWhiteSpace(tail))
+                            detail = (detail.Length > 0 ? detail + "\n" : "") + "--- journal ---\n" + tail;
+                    }
+                }
+                catch
+                {
+                    // Le signalement part quand même sans journal.
+                }
+            }
+            if (detail.Length > 8000)
+                detail = detail[..8000] + "\n...[tronqué]";
 
             try
             {
@@ -1682,22 +1708,7 @@ public static class Extension
                     $"\"callsign\":\"{EscapeJson(callsign.Trim())}\"," +
                     $"\"mod_version\":\"{EscapeJson(modVersion.Trim())}\"," +
                     $"\"arma_build\":\"{EscapeJson(armaBuild.Trim())}\"," +
-                    $"\"extension_version\":\"{EscapeJson(extVersion.Trim())}\"";
-                if (!string.IsNullOrWhiteSpace(contextJson))
-                {
-                    // contextJson already JSON object/array from SQF — embed raw if it looks valid
-                    var trimmed = contextJson.Trim();
-                    if ((trimmed.StartsWith('{') && trimmed.EndsWith('}'))
-                        || (trimmed.StartsWith('[') && trimmed.EndsWith(']')))
-                    {
-                        payload += $",\"context\":{trimmed}";
-                    }
-                    else
-                    {
-                        payload += $",\"context\":\"{EscapeJson(trimmed)}\"";
-                    }
-                }
-                payload += "}";
+                    $"\"extension_version\":\"{EscapeJson(extVersion.Trim())}\"}}";
 
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");

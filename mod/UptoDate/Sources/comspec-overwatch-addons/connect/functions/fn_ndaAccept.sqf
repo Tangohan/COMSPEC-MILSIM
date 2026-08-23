@@ -6,6 +6,7 @@ if (!hasInterface) exitWith {};
 private _display = uiNamespace getVariable ["COMSPEC_NDA_Display", displayNull];
 
 profileNamespace setVariable ["comspec_overwatch_beta_note_ack", true];
+profileNamespace setVariable ["comspec_overwatch_cgu_ack", true];
 saveProfileNamespace;
 
 missionNamespace setVariable ["COMSPEC_BetaAccessNoteShown", true, false];

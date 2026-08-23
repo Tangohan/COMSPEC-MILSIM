@@ -228,8 +228,8 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "comspec_overwatch_athena_link_help", "CHECKBOX",
-    ["Windows reminder - link Athena account", "At launch, if account not yet linked, displays Windows alert with instructions. Uncheck to stop seeing this reminder."],
-    "COMSPEC Overwatch", true
+    ["Windows reminder - link Athena account", "If enabled, a Windows alert can remind you to link Athena. Left off by default to avoid pop-ups during a session. Use Esc → mod manager instead."],
+    "COMSPEC Overwatch", false
 ] call CBA_fnc_addSetting;
 
 [

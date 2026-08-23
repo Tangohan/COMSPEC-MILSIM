@@ -182,42 +182,23 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         ["INFO", "Boot", "Boucles de sync démarrées"] call comspec_overwatch_connect_fnc_log;
     };
 
-    // Alerte Windows (MessageBox) si compte Athena non lié — JAMAIS pendant REAPP
+    // Alerte Windows « lier Athena » : plus d’affichage automatique en mission
+    // (parade de fenêtres). Le rappel reste dans Échap → gestion du mod.
+
+    // Note bêta : affichée au menu principal (fenêtre Windows). En mission on
+    // n’ouvre plus de dialogue — seulement l’inscription Athena si déjà acceptée.
     0 spawn {
         uiSleep 8;
         waitUntil {
             missionNamespace getVariable ["COMSPEC_AthenaReady", false]
-            || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 120)}
+            || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 90)}
         };
-        waitUntil {
-            missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false]
-            || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 180)}
-        };
-        // Après armement médical : encore une marge (spike ACE/MRH)
-        uiSleep 20;
-        waitUntil {
-            ([] call comspec_overwatch_connect_fnc_canShowWinMessageBox)
-            || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 240)}
-        };
-        if (missionNamespace getVariable ["COMSPEC_CancelPendingAthenaHelp", false]) exitWith {
-            ["INFO", "Athena", "Aide liaison annulée (respawn / REAPP)"] call comspec_overwatch_connect_fnc_log;
-        };
-        if !([] call comspec_overwatch_connect_fnc_canShowWinMessageBox) exitWith {};
-        [] call comspec_overwatch_connect_fnc_showAthenaLinkHelp;
-    };
-
-    // Note bêta : différée (pas de MessageBox Win32 en mission sur REAPP)
-    0 spawn {
-        uiSleep 25;
-        waitUntil {
-            (
-                missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false]
-                && {diag_tickTime >= (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])}
-            )
-            || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 200)}
-        };
-        uiSleep 5;
-        if (profileNamespace getVariable ["comspec_overwatch_beta_note_ack", false]) then {
+        private _ack = profileNamespace getVariable ["comspec_overwatch_beta_note_ack", false];
+        private _cgu = profileNamespace getVariable ["comspec_overwatch_cgu_ack", false];
+        if (
+            (_ack isEqualTo true) || {_ack isEqualTo 1}
+            || {_cgu isEqualTo true} || {_cgu isEqualTo 1}
+        ) then {
             private _needSend = !(profileNamespace getVariable ["comspec_overwatch_beta_registered", false]);
             private _steamNow = if (!isNull player) then { getPlayerUID player } else { "" };
             if (!_needSend && {(count _steamNow) >= 15} && {!(profileNamespace getVariable ["comspec_overwatch_beta_has_steam", false])}) then {
@@ -226,8 +207,6 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
             if (_needSend) then {
                 [] call comspec_overwatch_connect_fnc_registerBetaClient;
             };
-        } else {
-            [] call comspec_overwatch_connect_fnc_showBetaAccessNote;
         };
     };
     missionNamespace setVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime, false];
