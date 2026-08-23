@@ -29,11 +29,15 @@ final class AtakTerrainRepository
             return null;
         }
         $cols = $withHeights
-            ? 'id, tenant_id, map_id, world_name, world_size, origin_x, origin_y, cell_m, cols, rows, heights, min_z, max_z, filled_cells, ready, sampled_at, updated_at'
-            : 'id, tenant_id, map_id, world_name, world_size, origin_x, origin_y, cell_m, cols, rows, min_z, max_z, filled_cells, ready, sampled_at, updated_at';
-        $st = $this->pdo()->prepare("SELECT {$cols} FROM atak_terrain_grids WHERE tenant_id = ? AND map_id = ? LIMIT 1");
-        $st->execute([$tenantId, $mapId]);
-        $row = $st->fetch(PDO::FETCH_ASSOC);
+            ? '`id`, `tenant_id`, `map_id`, `world_name`, `world_size`, `origin_x`, `origin_y`, `cell_m`, `cols`, `rows`, `heights`, `min_z`, `max_z`, `filled_cells`, `ready`, `sampled_at`, `updated_at`'
+            : '`id`, `tenant_id`, `map_id`, `world_name`, `world_size`, `origin_x`, `origin_y`, `cell_m`, `cols`, `rows`, `min_z`, `max_z`, `filled_cells`, `ready`, `sampled_at`, `updated_at`';
+        try {
+            $st = $this->pdo()->prepare("SELECT {$cols} FROM `atak_terrain_grids` WHERE `tenant_id` = ? AND `map_id` = ? LIMIT 1");
+            $st->execute([$tenantId, $mapId]);
+            $row = $st->fetch(PDO::FETCH_ASSOC);
+        } catch (Throwable) {
+            return null;
+        }
 
         return is_array($row) ? $row : null;
     }
@@ -75,9 +79,9 @@ final class AtakTerrainRepository
             if ($grid === null) {
                 $blob = AtakTerrainMath::emptyBlob($cols * $rows);
                 $ins = $pdo->prepare(
-                    'INSERT INTO atak_terrain_grids (
-                        tenant_id, map_id, world_name, world_size, origin_x, origin_y,
-                        cell_m, cols, rows, heights, filled_cells, ready
+                    'INSERT INTO `atak_terrain_grids` (
+                        `tenant_id`, `map_id`, `world_name`, `world_size`, `origin_x`, `origin_y`,
+                        `cell_m`, `cols`, `rows`, `heights`, `filled_cells`, `ready`
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)'
                 );
                 $ins->execute([$tenantId, $mapId, $worldName, $worldSize, $ox, $oy, $cell, $cols, $rows, $blob]);
@@ -130,17 +134,17 @@ final class AtakTerrainRepository
             $ready = $total > 0 && $filled >= (int) floor($total * 0.96) ? 1 : 0;
 
             $upd = $pdo->prepare(
-                'UPDATE atak_terrain_grids
-                 SET heights = ?, min_z = ?, max_z = ?, filled_cells = ?, ready = ?, sampled_at = NOW(),
-                     world_name = IF(world_name = "", ?, world_name)
-                 WHERE id = ? AND tenant_id = ?'
+                'UPDATE `atak_terrain_grids`
+                 SET `heights` = ?, `min_z` = ?, `max_z` = ?, `filled_cells` = ?, `ready` = ?, `sampled_at` = NOW(),
+                     `world_name` = IF(`world_name` = "", ?, `world_name`)
+                 WHERE `id` = ? AND `tenant_id` = ?'
             );
             $upd->execute([$blob, $minZ, $maxZ, $filled, $ready, $worldName, $gridId, $tenantId]);
 
             $chk = $pdo->prepare(
-                'INSERT INTO atak_terrain_chunks (tenant_id, map_id, grid_id, col0, row0, cw, rh)
+                'INSERT INTO `atak_terrain_chunks` (`tenant_id`, `map_id`, `grid_id`, `col0`, `row0`, `cw`, `rh`)
                  VALUES (?, ?, ?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE cw = VALUES(cw), rh = VALUES(rh), received_at = CURRENT_TIMESTAMP'
+                 ON DUPLICATE KEY UPDATE `cw` = VALUES(`cw`), `rh` = VALUES(`rh`), `received_at` = CURRENT_TIMESTAMP'
             );
             $chk->execute([$tenantId, $mapId, $gridId, $col0, $row0, $cw, $rh]);
 
