@@ -118,7 +118,9 @@ $caseId = (int) ($header['id'] ?? 0);
                 } ?>
                 <li>
                     <span class="iw-intel-kicker"><?= $h((string) ($rel['status'] ?? '') === 'proposed' ? 'Proposées' : 'Confirmées') ?></span>
-                    <strong><?= $h((string) ($rel['from_type'] ?? '')) ?> #<?= (int) ($rel['from_id'] ?? 0) ?> → <?= $h((string) ($rel['relation'] ?? '')) ?></strong>
+                    <strong><?= $h((string) ($rel['from_type_label'] ?? \App\Support\SseWorkspaceUi::entityTypeLabel((string) ($rel['from_type'] ?? '')))) ?>
+                        → <?= $h((string) ($rel['relation_label'] ?? \App\Support\SseWorkspaceUi::relationLabel((string) ($rel['relation'] ?? '')))) ?>
+                        → <?= $h((string) ($rel['to_type_label'] ?? \App\Support\SseWorkspaceUi::entityTypeLabel((string) ($rel['to_type'] ?? '')))) ?></strong>
                 </li>
             <?php endforeach; ?>
             <?php if ($caseRelations === []): ?><li class="iw-intel-empty">Aucune relation.</li><?php endif; ?>
@@ -132,9 +134,9 @@ $caseId = (int) ($header['id'] ?? 0);
                     continue;
                 } ?>
                 <li>
-                    <time><?= $h((string) ($ev['event_time'] ?? '')) ?></time>
+                    <time datetime="<?= $h((string) ($ev['event_time'] ?? '')) ?>"><?= $h((string) ($ev['event_time_label'] ?? \App\Support\SseWorkspaceUi::formatEventTime((string) ($ev['event_time'] ?? '')))) ?></time>
                     <div>
-                        <span class="iw-intel-badge"><?= $h((string) ($ev['event_type_label'] ?? '')) ?></span>
+                        <span class="iw-intel-badge"><?= $h((string) ($ev['event_type_label'] ?? \App\Support\SseWorkspaceUi::eventTypeLabel((string) ($ev['event_type'] ?? '')))) ?></span>
                         <p><?= $h((string) ($ev['summary'] ?? '')) ?></p>
                     </div>
                 </li>

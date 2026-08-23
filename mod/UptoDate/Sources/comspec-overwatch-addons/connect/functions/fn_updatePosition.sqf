@@ -284,6 +284,11 @@ if (!(_bftId isEqualTo "")) then {
         _bftId
     ];
 };
+private _ftIdPos = missionNamespace getVariable ["COMSPEC_FireTeamId", 0];
+if (!(_ftIdPos isEqualType 0)) then { _ftIdPos = parseNumber str _ftIdPos; };
+if (_ftIdPos > 0) then {
+    _vehJson = _vehJson + format [",""fire_team_id"":%1", round _ftIdPos];
+};
 private _modVersion = [] call comspec_overwatch_connect_fnc_getModVersion;
 _modVersion = (_modVersion splitString """" joinString "");
 if (!(_modVersion isEqualTo "")) then {

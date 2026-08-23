@@ -20,6 +20,7 @@ class CfgFunctions {
             file = "z\comspec_sse\addons\generator\functions";
             class generateData {};
             class applyAuthoredIdentity {};
+            class applyAuthoredContent {};
             class generatePerson {};
             class generatePhone {};
             class generateComputer {};

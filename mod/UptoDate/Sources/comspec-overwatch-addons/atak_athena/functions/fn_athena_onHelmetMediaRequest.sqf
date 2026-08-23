@@ -47,6 +47,12 @@ if (!_hasHcam) exitWith {
     [_orderId, _msg] call _ackFail;
 };
 
+if (_mode isEqualTo "stream") exitWith {
+    private _msg = "La vue casque en temps réel n’est pas encore au point — prenez une photo depuis le terminal ATAK.";
+    ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
+    [_orderId, "Vue casque temps réel indisponible"] call _ackFail;
+};
+
 private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_cs isEqualTo "") then { _cs = name player; };
 private _uid = getPlayerUID player;
@@ -76,24 +82,11 @@ while { (count _inbox) > 40 } do { _inbox deleteAt 0; };
 missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", _inbox, false];
 ["COMSPEC_AthenaInboxUpdated", []] call CBA_fnc_localEvent;
 
-if (_mode isEqualTo "stream") then {
-    [180] call comspec_overwatch_connect_fnc_markBcePhotoCapture;
-    missionNamespace setVariable ["COMSPEC_HelmetStreamUntil", diag_tickTime + 180, false];
-    missionNamespace setVariable ["COMSPEC_HelmetStreamActive", true, false];
-} else {
-    [] call comspec_overwatch_connect_fnc_markBcePhotoCapture;
-};
+[] call comspec_overwatch_connect_fnc_markBcePhotoCapture;
 
 private _caption = switch (_mode) do {
     case "hd": { format ["Aperçu casque HD — %1 · grille %2", _cs, _grid] };
-    case "stream": { format ["Flux casque — %1 · grille %2", _cs, _grid] };
     default { format ["Aperçu casque — %1 · grille %2", _cs, _grid] };
 };
 
-if (_mode isEqualTo "stream") then {
-    [] call comspec_overwatch_atak_athena_fnc_athena_snapshotVideoFeed;
-} else {
-    // Un seul screenshot, en vue casque (alignDevicePov par défaut).
-    // L’ancien chemin HD faisait screenshot + un second cliché dans captureReconImage.
-    ["", _caption, "HELMET", _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
-};
+["", _caption, "HELMET", _feedId] call comspec_overwatch_connect_fnc_captureReconImage;

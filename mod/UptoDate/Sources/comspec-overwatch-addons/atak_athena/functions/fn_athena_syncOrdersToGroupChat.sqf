@@ -28,15 +28,14 @@ if (!(_messages isEqualType [])) then { _messages = []; };
         if (!([_x] call comspec_overwatch_connect_fnc_orderConcernsPlayer)) then { continue };
     };
 
-    private _typeLabel = [_x] call comspec_overwatch_connect_fnc_orderTypeLabel;
+    private _kindLbl = [_x] call comspec_overwatch_connect_fnc_orderTypeLabel;
+    if (!(_kindLbl isEqualType "") || {_kindLbl isEqualTo ""}) then { _kindLbl = "Ordre"; };
 
     private _issuer = _x getOrDefault ["issuer", "C2"];
-    private _prio = toUpper (_x getOrDefault ["priority", "IMPORTANT"]);
-    private _prioLabel = switch (_prio) do {
-        case "URGENT": { "Urgent" };
-        case "ROUTINE": { "Routine" };
-        default { "Important" };
-    };
+    private _prioU = toUpper (_x getOrDefault ["priority", "IMPORTANT"]);
+    private _prioLabel = "Important";
+    if (_prioU isEqualTo "URGENT") then { _prioLabel = "Urgent"; };
+    if (_prioU isEqualTo "ROUTINE") then { _prioLabel = "Routine"; };
     private _payload = _x getOrDefault ["payload", ""];
     private _plainPayload = if (_payload isEqualType "") then { _payload } else { str _payload };
 
@@ -48,7 +47,7 @@ if (!(_messages isEqualType [])) then { _messages = []; };
     private _gId = groupId group player;
     private _gText = format [
         "[ORDRE C2] %1 · %2 · de %3%4 — répondre dans TASK",
-        _typeLabel,
+        _kindLbl,
         _prioLabel,
         _issuer,
         if ((trim _plainPayload) isEqualTo "") then { "" } else { format [" — %1", trim _plainPayload] }

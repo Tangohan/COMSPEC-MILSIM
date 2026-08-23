@@ -43,6 +43,10 @@ window.ATAKChat = (function () {
     return out;
   }
 
+  function isCommandPostMessage(m) {
+    return String((m && m.source) || '').toLowerCase() === 'web';
+  }
+
   function clearStorageKey() {
     return LS_PREFIX + String(getMapId());
   }
@@ -335,12 +339,13 @@ window.ATAKChat = (function () {
       ? window.TacmapTacticalAlerts.parseGroupBody(bodyRaw)
       : null;
     var mine = getMyCallsigns();
+    var fromPc = isCommandPostMessage(m);
     var groupOutgoing = !!(groupMsg && (
       (author && mine.indexOf(String(m.author || '').toUpperCase()) >= 0) ||
       (groupMsg.call_sign && mine.indexOf(String(groupMsg.call_sign).toUpperCase()) >= 0)
     ));
     var groupHtml = (!orderHtml && !medicalHtml && !tacticalHtml && groupMsg && window.TacmapTacticalAlerts.formatGroupChatBody)
-      ? window.TacmapTacticalAlerts.formatGroupChatBody(bodyRaw, { outgoing: groupOutgoing })
+      ? window.TacmapTacticalAlerts.formatGroupChatBody(bodyRaw, { outgoing: groupOutgoing, fromCommandPost: fromPc })
       : null;
     var mpMsg = (!orderHtml && !medical && !tactical && !groupMsg && window.TacmapTacticalAlerts && window.TacmapTacticalAlerts.parseMpBody)
       ? window.TacmapTacticalAlerts.parseMpBody(bodyRaw)
@@ -350,7 +355,7 @@ window.ATAKChat = (function () {
       (author && mine.indexOf(String(m.author || '').toUpperCase()) >= 0)
     ));
     var mpHtml = (!orderHtml && !medicalHtml && !tacticalHtml && !groupHtml && mpMsg && window.TacmapTacticalAlerts.formatMpChatBody)
-      ? window.TacmapTacticalAlerts.formatMpChatBody(bodyRaw, { outgoing: mpOutgoing })
+      ? window.TacmapTacticalAlerts.formatMpChatBody(bodyRaw, { outgoing: mpOutgoing, fromCommandPost: fromPc })
       : null;
 
     var cls = 'atak-chat-msg'
@@ -359,6 +364,7 @@ window.ATAKChat = (function () {
       + (tactical ? ' atak-chat-msg-tactical' + (tactical.severity === 'critical' ? ' atak-chat-msg-tactical-critical' : '') : '')
       + (groupMsg ? ' atak-chat-msg-group' + (groupOutgoing ? ' atak-chat-msg-group--out' : ' atak-chat-msg-group--in') : '')
       + (mpMsg ? ' atak-chat-msg-mp' + (mpOutgoing ? ' atak-chat-msg-mp--out' : ' atak-chat-msg-mp--in') : '')
+      + (fromPc ? ' atak-chat-msg--pc' : '')
       + (mentionedMe ? ' atak-chat-msg-mention' : '');
 
     var parsed = (!orderHtml && !medicalHtml && !tacticalHtml && !groupHtml && !mpHtml) ? parseCommsBody(bodyRaw) : null;
@@ -376,13 +382,13 @@ window.ATAKChat = (function () {
       line2 = '<div class="atak-chat-msg-line atak-chat-msg-body">' + wrapBodyHtml(tacticalHtml) +
         ' <button type="button" class="atak-chat-talert-open" data-talert-chat-open="1">Ouvrir</button></div>';
     } else if (groupHtml) {
-      line1Tags = tagHtml('GROUPE');
+      line1Tags = tagHtml('GROUPE') + (fromPc ? ' <span class="atak-chat-pc-tag">Poste</span>' : '');
       line2 = '<div class="atak-chat-msg-line atak-chat-msg-body">' + wrapBodyHtml(groupHtml) + '</div>';
     } else if (mpHtml) {
-      line1Tags = tagHtml('PRIVÉ');
+      line1Tags = tagHtml('PRIVÉ') + (fromPc ? ' <span class="atak-chat-pc-tag">Poste</span>' : '');
       line2 = '<div class="atak-chat-msg-line atak-chat-msg-body">' + wrapBodyHtml(mpHtml) + '</div>';
     } else if (parsed) {
-      line1Tags = tagHtml(parsed.relative) + tagHtml(parsed.channel);
+      line1Tags = tagHtml(parsed.relative) + tagHtml(parsed.channel) + (fromPc ? ' <span class="atak-chat-pc-tag">Poste</span>' : '');
       line2 =
         '<div class="atak-chat-msg-line atak-chat-msg-body">' +
           tagHtml(parsed.priority) +
@@ -391,6 +397,7 @@ window.ATAKChat = (function () {
           bodyWithMentions(parsed.text) +
         '</div>';
     } else {
+      line1Tags = fromPc ? '<span class="atak-chat-pc-tag">Poste</span>' : '';
       line2 =
         '<div class="atak-chat-msg-line atak-chat-msg-body">' +
           bodyWithMentions(bodyRaw) +

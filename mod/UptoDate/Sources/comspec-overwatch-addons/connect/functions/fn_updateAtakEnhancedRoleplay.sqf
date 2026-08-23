@@ -49,12 +49,13 @@ if (_isCrashed && {!isNull _ctrlScreenBroken}) then {
         private _ctrl = _display displayCtrl _x;
         if (!isNull _ctrl) then { _ctrl ctrlShow false; };
     } forEach [9101, 9102, 9103, 9104, 9105, 9106, 9107, 9108];
-    exitWith {};
 } else {
     if (_wasCrashed) then {
         missionNamespace setVariable ["COMSPEC_Roleplay_WasCrashed", false];
     };
 };
+
+if (_isCrashed) exitWith {};
 
 // === ÉCRAN CASSÉ/ÉTEINT ===
 if (!(_atakStatus get "can_display")) then {
@@ -73,7 +74,10 @@ if (!(_atakStatus get "can_display")) then {
         } else {
             // Cracks transparents (atak-fx) — laisse la carte / position lisible.
             private _fx = uiNamespace getVariable ["COMSPEC_Hub_ScreenBrokenFx", controlNull];
-            private _brokenTex = "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.png";
+            private _brokenTex = "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.paa";
+            if (!(fileExists _brokenTex)) then {
+                _brokenTex = "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.png";
+            };
             if (isNull _fx || {ctrlParent _fx != _display}) then {
                 _fx = _display ctrlCreate ["RscPicture", 9205];
                 uiNamespace setVariable ["COMSPEC_Hub_ScreenBrokenFx", _fx];
@@ -129,6 +133,25 @@ if (_isDisconnected && {!isNull _ctrlDisconnect}) then {
         missionNamespace setVariable ["COMSPEC_Roleplay_WasDisconnected", true];
     };
     private _remaining = _disconnectInfo get "remaining_seconds";
+    private _fxDisc = uiNamespace getVariable ["COMSPEC_Hub_DisconnectFx", controlNull];
+    private _noSig = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.paa";
+    if (!(fileExists _noSig)) then {
+        _noSig = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.png";
+    };
+    if (isNull _fxDisc || {ctrlParent _fxDisc isNotEqualTo _display}) then {
+        ctrlDelete _fxDisc;
+        _fxDisc = _display ctrlCreate ["RscPicture", 9206];
+        uiNamespace setVariable ["COMSPEC_Hub_DisconnectFx", _fxDisc];
+    };
+    if (!isNull _fxDisc) then {
+        _fxDisc ctrlSetPosition (ctrlPosition _ctrlDisconnect);
+        _fxDisc ctrlSetText _noSig;
+        _fxDisc ctrlSetFade 0;
+        _fxDisc ctrlEnable false;
+        _fxDisc ctrlShow true;
+        _fxDisc ctrlCommit 0;
+    };
+    _ctrlDisconnect ctrlSetBackgroundColor [0.02, 0.05, 0.08, 0.08];
     _ctrlDisconnect ctrlSetStructuredText parseText format [
         "<t align='center' size='1.2' color='#ff4444'>⚠ LIAISON ATAK PERDUE ⚠</t><br/>" +
         "<t align='center' size='0.9' color='#ffffff'>Reconnexion dans <t color='#ff8888'>%1s</t></t><br/>" +
@@ -146,6 +169,8 @@ if (_isDisconnected && {!isNull _ctrlDisconnect}) then {
     if (!isNull _ctrlDisconnect) then {
         _ctrlDisconnect ctrlShow false;
     };
+    private _fxDiscHide = uiNamespace getVariable ["COMSPEC_Hub_DisconnectFx", controlNull];
+    if (!isNull _fxDiscHide) then { _fxDiscHide ctrlShow false; };
 };
 
 // === AVERTISSEMENT ZONE ===

@@ -48,11 +48,11 @@
 [
     "comspec_sse_autoMarkers",
     "CHECKBOX",
-    ["Marqueurs géospatiaux", "Crée des marqueurs locaux pour les points d'intérêt découverts."],
+    ["Marqueurs SSE sur la carte", "Retirés : ils se superposaient et rendaient la carte illisible. Les dossiers restent dans le terminal et sur Athena."],
     ["COMSPEC SSE", "Intel"],
-    true,
+    false,
     1,
-    {},
+    { [] call comspec_sse_fnc_createMapMarkers },
     true
 ] call CBA_fnc_addSetting;
 

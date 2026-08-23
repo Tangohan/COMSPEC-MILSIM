@@ -155,7 +155,14 @@ if exist "%ARMA_PATH%" (
             if exist "%%~T\addons\atak_athena" rd /s /q "%%~T\addons\atak_athena"
             if exist "%%~T\addons\mavik_compat" rd /s /q "%%~T\addons\mavik_compat"
             if exist "%%~T\addons\sse_ace" rd /s /q "%%~T\addons\sse_ace"
+            if exist "%%~T\addons\comspec_overwatch_atak_athena" rd /s /q "%%~T\addons\comspec_overwatch_atak_athena"
             if exist "%%~T\addons\connect.pbo.pbo" del /f /q "%%~T\addons\connect.pbo.pbo"
+            if exist "%%~T\addons\comspec_overwatch_atak_athena.pbo.pbo" del /f /q "%%~T\addons\comspec_overwatch_atak_athena.pbo.pbo"
+            if exist "%%~T\addons\comspec_overwatch_connect.pbo" del /f /q "%%~T\addons\comspec_overwatch_connect.pbo"
+            if exist "%%~T\addons\comspec_overwatch_atak_athena.pbo" del /f /q "%%~T\addons\comspec_overwatch_atak_athena.pbo"
+            if exist "%%~T\addons\comspec_overwatch_sse_ace.pbo" del /f /q "%%~T\addons\comspec_overwatch_sse_ace.pbo"
+            if exist "%%~T\addons\comspec_overwatch_atak_athena.txt" del /f /q "%%~T\addons\comspec_overwatch_atak_athena.txt"
+            if exist "%%~T\addons\atak_athena.txt" del /f /q "%%~T\addons\atak_athena.txt"
             copy /Y "%OUTPUT_DIR%\addons\connect.pbo" "%%~T\addons\connect.pbo" >> "%BUILD_LOG%" 2>&1
             copy /Y "%OUTPUT_DIR%\addons\main.pbo" "%%~T\addons\main.pbo" >> "%BUILD_LOG%" 2>&1
             if exist "%OUTPUT_DIR%\addons\atak_athena.pbo" copy /Y "%OUTPUT_DIR%\addons\atak_athena.pbo" "%%~T\addons\atak_athena.pbo" >> "%BUILD_LOG%" 2>&1

@@ -112,12 +112,21 @@
   }
 
   var ctx = root.querySelector('[data-iw-context]');
+  var typeLabels = {
+    PERSON: 'Personne',
+    CASE: 'Dossier',
+    SITE: 'Site',
+    VEHICLE: 'Véhicule',
+    ORG: 'Organisation',
+    DOCUMENT: 'Document',
+    EVENT: 'Événement'
+  };
   document.addEventListener('sse-iw-select', function (ev) {
     var node = ev.detail || {};
     if (!ctx) return;
     var title = node.label || node.display_label || 'Élément';
-    var conf = node.confidence_code || '';
-    var type = node.entity_type || '';
+    var conf = node.confidence_label || (node.confidence_code ? ('Confiance ' + node.confidence_code) : '');
+    var type = String(node.entity_type || '').toUpperCase();
     var href = '';
     if (node.source_table === 'sse_persons' && node.source_id) {
       href = '/atak/sse/identites/' + node.source_id;
@@ -127,9 +136,9 @@
       href = '/atak/sse/sites/' + node.source_id;
     }
     ctx.innerHTML = '<div class="iw-intel-context">'
-      + '<span class="iw-intel-kicker">' + type + '</span>'
+      + '<span class="iw-intel-kicker">' + (node.entity_type_label || typeLabels[type] || 'Élément') + '</span>'
       + '<h3>' + title + '</h3>'
-      + (conf ? '<p class="iw-intel-conf">Confiance ' + conf + '</p>' : '')
+      + (conf ? '<p class="iw-intel-conf">' + conf + '</p>' : '')
       + (href ? '<a class="iw-btn" href="' + href + '">Ouvrir</a>' : '')
       + '</div>';
     showTab('graph');

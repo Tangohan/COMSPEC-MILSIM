@@ -187,6 +187,39 @@ switch (_function) do {
         ["google_deck_error", _human, format ["%1|%2", _code, _message], "Athena", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
         ["COMSPEC_Warning", [_human]] call comspec_overwatch_connect_fnc_showNotification;
     };
+    case "SsePhotoUpload": {
+        private _parts = _data splitString "|";
+        private _status = if ((count _parts) > 0) then { _parts select 0 } else { "" };
+        private _detail = if ((count _parts) > 1) then { _parts select 1 } else { "" };
+        if (_status isEqualTo "OK" && {_detail in ["uploaded", "duplicate"]}) then {
+            ["UploadSsePhoto", "ok", format ["%1 · %2", _detail, _data], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+            [
+                "Photo du visage reçue au poste de commandement.",
+                "tactical",
+                "info"
+            ] call comspec_overwatch_connect_fnc_announce;
+        } else {
+            if (_status isEqualTo "ERR") then {
+                ["UploadSsePhoto", "fail", _data, _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+                private _msg = switch (true) do {
+                    case ((_detail find "file_not_found") == 0): {
+                        "La photo du visage n’a pas pu être jointe — passez la qualité HDR au moins sur Moyen, puis refaites PHOTO DU VISAGE."
+                    };
+                    case ((_detail find "not_connected") == 0): {
+                        "Pas de liaison — reconnectez-vous puis retransmettez la fiche avec une nouvelle photo du visage."
+                    };
+                    case ((_detail find "http_") == 0): {
+                        "Le poste de commandement a refusé la photo du visage. Réessayez."
+                    };
+                    case ((_detail find "network") == 0): {
+                        "Liaison instable pendant l’envoi de la photo du visage."
+                    };
+                    default { "La photo du visage n’a pas pu être jointe à la fiche." };
+                };
+                [_msg, "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+            };
+        };
+    };
     case "PhotoUpload": {
         // DLL worker → data = "OK|uploaded|file.jpg" | "OK|duplicate|…" | "ERR|reason|file|…"
         private _parts = _data splitString "|";

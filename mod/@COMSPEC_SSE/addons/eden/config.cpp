@@ -107,44 +107,39 @@ class Cfg3DEN {
                             class CUSTOM { name = "Forcer le nom Eden"; value = "CUSTOM"; };
                         };
                     };
-                    class comspec_sse_phoneMode {
-                        displayName = "Téléphone";
-                        property = "comspec_sse_phoneMode";
-                        control = "Combo";
-                        expression = "_this setVariable ['comspec_sse_phoneMode', _value, true];";
-                        defaultValue = "'AUTO'";
+                    class comspec_sse_personRole {
+                        displayName = "Rôle déclaré";
+                        tooltip = "Fonction ou rôle connu (courrier, financier, habitant…). Vide = génération automatique.";
+                        property = "comspec_sse_personRole";
+                        control = "Edit";
+                        expression = "_this setVariable ['comspec_sse_personRole', _value, true];";
+                        defaultValue = "''";
                         typeName = "STRING";
-                        class values {
-                            class AUTO { name = "AUTO"; value = "AUTO"; default = 1; };
-                            class NONE { name = "NONE"; value = "NONE"; };
-                            class CUSTOM { name = "CUSTOM"; value = "CUSTOM"; };
-                        };
                     };
-                    class comspec_sse_digitalMode {
-                        displayName = "Support numérique";
-                        property = "comspec_sse_digitalMode";
-                        control = "Combo";
-                        expression = "_this setVariable ['comspec_sse_digitalMode', _value, true];";
-                        defaultValue = "'AUTO'";
+                    class comspec_sse_personNationality {
+                        displayName = "Nationalité déclarée";
+                        property = "comspec_sse_personNationality";
+                        control = "Edit";
+                        expression = "_this setVariable ['comspec_sse_personNationality', _value, true];";
+                        defaultValue = "''";
                         typeName = "STRING";
-                        class values {
-                            class AUTO { name = "AUTO"; value = "AUTO"; default = 1; };
-                            class NONE { name = "NONE"; value = "NONE"; };
-                            class CUSTOM { name = "CUSTOM"; value = "CUSTOM"; };
-                        };
                     };
-                    class comspec_sse_documentsMode {
-                        displayName = "Documents";
-                        property = "comspec_sse_documentsMode";
-                        control = "Combo";
-                        expression = "_this setVariable ['comspec_sse_documentsMode', _value, true];";
-                        defaultValue = "'AUTO'";
+                    class comspec_sse_personLanguage {
+                        displayName = "Langue parlée";
+                        property = "comspec_sse_personLanguage";
+                        control = "Edit";
+                        expression = "_this setVariable ['comspec_sse_personLanguage', _value, true];";
+                        defaultValue = "''";
                         typeName = "STRING";
-                        class values {
-                            class AUTO { name = "AUTO"; value = "AUTO"; default = 1; };
-                            class NONE { name = "NONE"; value = "NONE"; };
-                            class CUSTOM { name = "CUSTOM"; value = "CUSTOM"; };
-                        };
+                    };
+                    class comspec_sse_personPhone {
+                        displayName = "Numéro connu";
+                        tooltip = "Numéro associé à la personne (indépendant du téléphone saisi). Vide = génération automatique.";
+                        property = "comspec_sse_personPhone";
+                        control = "Edit";
+                        expression = "_this setVariable ['comspec_sse_personPhone', _value, true];";
+                        defaultValue = "''";
+                        typeName = "STRING";
                     };
                     class comspec_sse_bioMode {
                         displayName = "Biométrie";
@@ -154,8 +149,8 @@ class Cfg3DEN {
                         defaultValue = "'AUTO'";
                         typeName = "STRING";
                         class values {
-                            class AUTO { name = "AUTO"; value = "AUTO"; default = 1; };
-                            class NONE { name = "NONE"; value = "NONE"; };
+                            class AUTO { name = "Générer automatiquement"; value = "AUTO"; default = 1; };
+                            class NONE { name = "Ne pas inclure de biométrie"; value = "NONE"; };
                         };
                     };
                     class comspec_sse_zeusNotes {
@@ -230,8 +225,8 @@ class Cfg3DEN {
                         };
                     };
                     class comspec_sse_advancedData {
-                        displayName = "Données avancées (SQF pairs)";
-                        tooltip = "Réservé mission makers — ex: [[""name"",""Karim Haddad""],[""alias"",""ABU HAMZA""]]";
+                        displayName = "Complément d’identité (usage avancé)";
+                        tooltip = "Réservé à un besoin ponctuel. Préférez les catégories Documents, Téléphone et Ordinateur pour le contenu saisi.";
                         property = "comspec_sse_advancedData";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_advancedData', _value, true];";
@@ -240,6 +235,7 @@ class Cfg3DEN {
                     };
                 };
             };
+            #include "attributes_authored.hpp"
         };
     };
 };

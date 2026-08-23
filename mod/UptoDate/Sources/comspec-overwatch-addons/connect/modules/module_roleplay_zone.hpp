@@ -13,7 +13,8 @@
     {
         author = "COMSPEC";
         scope = 1;
-        scopeCurator = 1;
+        // Zeus : uniquement via Zeus Enhanced (évite un menu vide si l’icône config échoue).
+        scopeCurator = 0;
         category = "COMSPEC_Roleplay";
         functionPriority = 1;
         isGlobal = 1;
@@ -73,11 +74,11 @@
     class COMSPEC_Module_NoCoverage: COMSPEC_Module_RoleplayZone_Base
     {
         scope = 2;
-        scopeCurator = 2;
+        scopeCurator = 0;
         displayName = "Zone sans couverture ATAK";
         function = "comspec_overwatch_connect_fnc_moduleNoCoverage";
-        icon = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_no_coverage_ca.png";
-        portrait = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_no_coverage_ca.png";
+        icon = "\A3\ui_f\data\map\markers\military\objective_CA.paa";
+        portrait = "\A3\ui_f\data\map\markers\military\objective_CA.paa";
 
         class AttributeValues
         {
@@ -125,7 +126,7 @@
     class COMSPEC_Module_Interference: COMSPEC_Module_RoleplayZone_Base
     {
         scope = 2;
-        scopeCurator = 2;
+        scopeCurator = 0;
         displayName = "Zone d'interférence ATAK";
         function = "comspec_overwatch_connect_fnc_moduleInterference";
 
@@ -175,7 +176,7 @@
     class COMSPEC_Module_Degraded: COMSPEC_Module_RoleplayZone_Base
     {
         scope = 2;
-        scopeCurator = 2;
+        scopeCurator = 0;
         displayName = "Zone de couverture dégradée";
         function = "comspec_overwatch_connect_fnc_moduleDegraded";
 
@@ -225,11 +226,11 @@
     class COMSPEC_Module_Jammer: COMSPEC_Module_RoleplayZone_Base
     {
         scope = 2;
-        scopeCurator = 2;
+        scopeCurator = 0;
         displayName = "Brouilleur ATAK actif";
         function = "comspec_overwatch_connect_fnc_moduleJammer";
-        icon = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_jammer_ca.png";
-        portrait = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_jammer_ca.png";
+        icon = "\A3\ui_f\data\map\markers\military\destroy_CA.paa";
+        portrait = "\A3\ui_f\data\map\markers\military\destroy_CA.paa";
 
         class AttributeValues
         {

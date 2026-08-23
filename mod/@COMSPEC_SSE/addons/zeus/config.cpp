@@ -60,17 +60,9 @@ class CfgFunctions {
 };
 
 class CfgVehicles {
-    class Logic;
-    class Module_F: Logic {
-        class AttributesBase {
-            class Default;
-            class Edit;
-            class Combo;
-            class Checkbox;
-            class ModuleDescription;
-        };
-        class ModuleDescription;
-    };
+    // Forward-declare uniquement. Redéfinir Module_F:Logic + AttributesBase
+    // casse CfgVehicles (Eden / Zeus / ACE) : « Updating base class », iteminfo.side.
+    class Module_F;
 
     class COMSPEC_SSE_Module_Base: Module_F {
         author = "COMSPEC";

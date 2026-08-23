@@ -91,13 +91,13 @@ private _bioTxt = if ((count _lines) > 0) then {
 private _sig = uiNamespace getVariable ["COMSPEC_SsePerson_Signature", []];
 private _sigTxt = if ((_sig isEqualType []) && {(count _sig) >= 4}) then {
     format [
-        "<t size='0.5' color='#7ee0a0'>SIGNÉ</t> <t size='0.5' color='#c8e8ff'>%1</t><br/><t size='0.46' color='#7f95a8'>Terminal %2 · %3</t>",
+        "<t size='0.52' color='#7ee0a0'>Signé  %1</t><br/><t size='0.44' color='#8aa0b0'>%2  ·  %3</t>",
         _sig select 0,
         _sig select 1,
         _sig select 3
     ]
 } else {
-    "<t size='0.5' color='#e0b07e'>NON SIGNÉ</t> <t size='0.5' color='#5f7383'>— la fiche partira sans procès-verbal.</t>"
+    "<t size='0.52' color='#e0b07e'>Non signé</t><br/><t size='0.44' color='#8aa0b0'>La fiche partira sans procès-verbal.</t>"
 };
 (_disp displayCtrl 9520) ctrlSetStructuredText parseText _sigTxt;
 
@@ -127,37 +127,38 @@ if (_queryPending) then {
 // --- Barre d’état de l’appareil (9526) : liaison, relevés, heure ---
 private _link = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 private _linkTxt = switch (toLower (str _link)) do {
-    case "linked": { "<t color='#9ed8b4'>LIAISON</t>" };
-    case "degraded": { "<t color='#e0d27e'>DÉGRADÉE</t>" };
-    default { "<t color='#e09a7e'>HORS LIAISON</t>" };
+    case "linked": { "<t color='#9ed8b4'>Liaison</t>" };
+    case "degraded": { "<t color='#e0d27e'>Dégradée</t>" };
+    default { "<t color='#e09a7e'>Hors liaison</t>" };
 };
 private _st = systemTime;
 private _hh = _st select 3;
 private _mm = _st select 4;
-// Le dossier actif prime dans la barre : c'est le contexte de travail.
 private _case = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
 private _caseTxt = if (_case isEqualTo "") then {
-    "<t color='#7f95a8'>HORS DOSSIER</t>"
+    "<t color='#7f95a8'>Sans dossier</t>"
 } else {
     format ["<t color='#9ed8b4'>%1</t>", _case]
 };
-// Transmissions en attente : un tampon invisible ne vaut guère mieux qu'une
-// perte. L'opérateur doit voir qu'il a des fiches non parties avant de quitter
-// l'objectif, sinon il repart en croyant avoir rendu compte.
 private _outbox = ["get"] call comspec_overwatch_connect_fnc_outboxState;
 private _pending = _outbox getOrDefault ["count", 0];
-private _pendingTxt = if (_pending > 0) then {
-    format ["<t color='#e0a233'>%1 EN ATTENTE</t>  ·  ", _pending]
-} else {
-    ""
+private _extra = [];
+if (_pending > 0) then {
+    _extra pushBack (format ["<t color='#e0a233'>%1 en attente</t>", _pending]);
 };
+private _nSamples = count _samples;
+if (_nSamples > 0) then {
+    _extra pushBack (format ["%1 relevé%2", _nSamples, if (_nSamples > 1) then { "s" } else { "" }]);
+};
+_extra pushBack format [
+    "%1:%2",
+    if (_hh < 10) then { format ["0%1", _hh] } else { str _hh },
+    if (_mm < 10) then { format ["0%1", _mm] } else { str _mm }
+];
 
 (_disp displayCtrl 9526) ctrlSetStructuredText parseText format [
-    "<t size='0.38' align='right' color='#c8d4e0'>%1  ·  %5  ·  %6%2 éch.  ·  %3:%4</t>",
+    "<t size='0.46' align='right' color='#c8d4e0'>%1  ·  %2  ·  %3</t>",
     _linkTxt,
-    count _samples,
-    if (_hh < 10) then { format ["0%1", _hh] } else { str _hh },
-    if (_mm < 10) then { format ["0%1", _mm] } else { str _mm },
     _caseTxt,
-    _pendingTxt
+    _extra joinString "  ·  "
 ];

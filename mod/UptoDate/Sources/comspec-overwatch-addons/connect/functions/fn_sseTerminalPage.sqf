@@ -8,8 +8,8 @@
       _page      numéro de page, ou incrément si _relative
       _relative  true = _page est un déplacement (-1 / +1)
 
-    Pages : 0 accueil · 1 sujet · 2 contexte · 3 biométrie · 4 constat
-            5 photo · 6 dossier
+            Pages : 0 accueil · 1 sujet · 2 contexte · 3 biométrie · 4 constat
+            5 photo · 6 dossier · 7 terrain (record / digital / site / preuves)
 */
 params [["_page", 0, [0]], ["_relative", false, [false]]];
 
@@ -29,7 +29,8 @@ private _pages = [
     ["BIOMETRIE", [9514, 9522, 9523, 9524, 9527, 9566]],
     ["CONSTAT",   [9512, 9521, 9564]],
     ["PHOTO",     [9515, 9525, 9567]],
-    ["DOSSIER",   [9513, 9516, 9517, 9518, 9519, 9520, 9544, 9565]]
+    ["DOSSIER",   [9513, 9516, 9517, 9518, 9519, 9520, 9544, 9565, 9568]],
+    ["TERRAIN",   [9580, 9581, 9582, 9590, 9591, 9592, 9593, 9594]]
 ];
 private _count = count _pages;
 
@@ -87,7 +88,7 @@ if (!isNull _hint) then { _hint ctrlShow (_target isEqualTo 0); };
 private _title = _disp displayCtrl 9540;
 if (!isNull _title) then {
     _title ctrlSetStructuredText parseText format [
-        "<t size='0.42' align='center' color='#ffffff'>%1</t>",
+        "<t size='0.50' align='center' color='#ffffff'>%1</t>",
         if (_target isEqualTo 0) then { "SEEK" } else { _label }
     ];
 };

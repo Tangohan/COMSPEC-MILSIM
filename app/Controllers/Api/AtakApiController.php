@@ -33,10 +33,12 @@ use App\Repositories\AtakBetaRegistrationRepository;
 use App\Services\Qr\QrPngGenerator;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Services\Tactical\AtakIntelViewService;
+use App\Services\Tactical\AtakTenantDataService;
 use App\Services\Tactical\RoleplaySimulationService;
 use App\Support\ArmaMarkerLabel;
 use App\Support\AtakArmaWriteGuard;
 use App\Support\AtakOrderWaypoint;
+use App\Support\AtakPlayNight;
 use App\Support\AtakGameSession;
 use App\Support\ChatMentionParser;
 use App\Support\GroupMessageParser;
@@ -2085,6 +2087,123 @@ class AtakApiController
         ]);
     }
 
+    /**
+     * Vide la carte pour une nouvelle soirée : marqueurs, ordres, messages, positions.
+     * Les photos restent ; elles se regroupent d’elles-mêmes par soirée (10 h → 10 h).
+     */
+    public function theatreReset(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            return Response::json([
+                'error' => 'web_session_required',
+                'message' => 'Cette action se fait depuis le poste de commandement, pas depuis le jeu.',
+            ], 403);
+        }
+        if ($resp = $this->requireReconOperatorSession($tenantId)) {
+            return $resp;
+        }
+        $body = $this->jsonBody($request);
+        $confirm = trim((string) ($body['confirm'] ?? $body['confirm_phrase'] ?? ''));
+        if (strcasecmp($confirm, AtakPlayNight::CONFIRM_CLEAR_MAP) !== 0) {
+            return Response::json([
+                'error' => 'confirm_required',
+                'message' => 'Pour confirmer, saisissez exactement « ' . AtakPlayNight::CONFIRM_CLEAR_MAP . ' ».',
+            ], 422);
+        }
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $request->query('mapId') ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $result = (new AtakTenantDataService(null, $this->activityLog))->resetTheatreKeepPhotos($tenantId, $mapId);
+        $removed = array_sum($result['tables']);
+        $actor = $this->sessionUserBrief();
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_TOC_NOTE,
+            'Carte vidée pour la nouvelle soirée — photos conservées',
+            is_array($actor) ? (string) ($actor['callsign'] ?: $actor['displayName'] ?: 'Commandement') : 'Commandement',
+            ['source' => 'theatre_reset', 'rows' => $removed]
+        );
+
+        return Response::json([
+            'ok' => true,
+            'cleared' => $removed,
+            'archived' => $result['activity_archived'],
+            'current_night' => AtakPlayNight::currentKey(),
+            'current_night_label' => AtakPlayNight::label(AtakPlayNight::currentKey()),
+            'message' => 'Carte vidée. Les photos restent disponibles dans l’onglet Photos, classées par soirée.',
+        ]);
+    }
+
+    public function photoNightsIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $current = AtakPlayNight::currentKey();
+        $nights = (new AtakTenantDataService(null, $this->activityLog))->listPhotoNights($tenantId, $mapId);
+
+        return Response::json([
+            'current' => $current,
+            'current_label' => AtakPlayNight::label($current),
+            'cutoff_hour' => AtakPlayNight::CUTOFF_HOUR,
+            'nights' => $nights,
+        ]);
+    }
+
+    public function photoNightsPurge(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            return Response::json([
+                'error' => 'web_session_required',
+                'message' => 'Cette action se fait depuis le poste de commandement, pas depuis le jeu.',
+            ], 403);
+        }
+        if ($resp = $this->requireReconOperatorSession($tenantId)) {
+            return $resp;
+        }
+        $body = $this->jsonBody($request);
+        $confirm = trim((string) ($body['confirm'] ?? $body['confirm_phrase'] ?? ''));
+        if (strcasecmp($confirm, AtakPlayNight::CONFIRM_DELETE_PHOTOS) !== 0) {
+            return Response::json([
+                'error' => 'confirm_required',
+                'message' => 'Pour confirmer, saisissez exactement « ' . AtakPlayNight::CONFIRM_DELETE_PHOTOS . ' ».',
+            ], 422);
+        }
+        $night = AtakPlayNight::normalizeKey((string) ($body['night'] ?? $body['play_night'] ?? ''))
+            ?? AtakPlayNight::currentKey();
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $request->query('mapId') ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $result = (new AtakTenantDataService(null, $this->activityLog))->purgePhotosForNight($tenantId, $mapId, $night);
+        $total = $result['recon_hidden'] + $result['intel_removed'];
+
+        return Response::json([
+            'ok' => true,
+            'night' => $night,
+            'night_label' => AtakPlayNight::label($night),
+            'removed' => $total,
+            'message' => $total > 0
+                ? ('Photos de « ' . AtakPlayNight::label($night) . ' » retirées du poste. Les clichés déjà classés en dossier SSE sont conservés.')
+                : 'Aucune photo à retirer pour cette soirée.',
+        ]);
+    }
+
     /** Entrée manuelle du journal d’opérations (TOC). */
     public function activityStore(Request $request, array $params = []): Response
     {
@@ -2411,7 +2530,8 @@ class AtakApiController
             . ($posX !== null && $posX !== '' ? (string) $posX : '') . '|'
             . ($posY !== null && $posY !== '' ? (string) $posY : '') . '|'
             . $saluteBody;
-        $row = $this->atak->addChatMessage($tenantId, $mapId, $callSign, $msg);
+        $source = ComspecApiKeyAuth::extractPresentedKey() !== '' ? 'game' : 'web';
+        $row = $this->atak->addChatMessage($tenantId, $mapId, $callSign, $msg, $source);
         $parsed = TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
         $summary = is_array($parsed) ? (string) ($parsed['summary'] ?? 'SALUTE') : 'SALUTE';
         $activityMeta = [
@@ -4291,6 +4411,12 @@ class AtakApiController
 
         $body = $this->jsonBody($request);
         $mode = strtolower(trim((string) ($body['mode'] ?? $body['quality'] ?? 'snap')));
+        if (in_array($mode, ['stream', 'video', 'flux'], true)) {
+            return Response::json([
+                'error' => 'not_ready',
+                'message' => 'La vue casque en temps réel n’est pas encore au point. Demandez une photo, ou consultez l’onglet Photos pour les clichés du terminal ATAK.',
+            ], 422);
+        }
         [$orderType, $typeLabel, $payload, $activityLabel, $userMessage] = match ($mode) {
             'snap_hd', 'hd' => [
                 'HELMET_SNAP_HD',
@@ -4894,6 +5020,9 @@ class AtakApiController
             if (!is_array($chatRow)) {
                 continue;
             }
+            $chatRow['source'] = AtakDataRepository::normalizeChatSource(
+                isset($chatRow['source']) ? (string) $chatRow['source'] : null
+            );
             $group = GroupMessageParser::enrichChatRow($chatRow);
             if ($group !== null) {
                 $chatRow['group'] = $group;
@@ -5826,6 +5955,8 @@ class AtakApiController
             $gameActor,
             is_string($author) ? $author : null
         );
+        $source = $gameActor !== null ? 'game' : 'web';
+        $chatActivityMeta['source'] = $source;
 
         // Réglages d’affichage camps (CBA / params mission → Tacmap) :
         // appliqués silencieusement — jamais stockés ni affichés dans le journal radio.
@@ -5863,7 +5994,12 @@ class AtakApiController
             }
         }
         if (!$medicalDup) {
-            $row = $this->atak->addChatMessage($tenantId, $mapId, $author, $bodyText);
+            $row = $this->atak->addChatMessage($tenantId, $mapId, $author, $bodyText, $source);
+        }
+        if (is_array($row)) {
+            $row['source'] = AtakDataRepository::normalizeChatSource(
+                isset($row['source']) ? (string) $row['source'] : $source
+            );
         }
 
         // Messages de groupe ATAK Enhanced (GROUPE|…)
@@ -8269,10 +8405,13 @@ class AtakApiController
         }
         $tenantId = $r;
         $mapId = $this->mapId($request);
+        $night = trim((string) ($request->query('night') ?? $request->query('play_night') ?? 'current'));
         $rows = $this->atak->getIntelPhotos($tenantId, $mapId);
+        $rows = $this->applyPlayNightFilter($rows, $night, ['created_at']);
         foreach ($rows as &$r) {
             $r['url'] = '/uploads/intel/' . basename($r['path']);
         }
+        unset($r);
         return Response::json($rows);
     }
 
@@ -8567,12 +8706,18 @@ class AtakApiController
             $dateTo = $request->query('date_to');
             $deviceType = $request->query('device_type') ?? $request->query('device');
             $limit = min((int) ($request->query('limit') ?: 100), 200);
+            $night = trim((string) ($request->query('night') ?? $request->query('play_night') ?? ''));
             $rows = $this->reconRepo->list($tenantId, $missionId, $author, $dateFrom, $dateTo, $limit);
             if (is_string($deviceType) && $deviceType !== '') {
                 $want = strtoupper($deviceType);
                 $rows = array_values(array_filter($rows, static function (array $row) use ($want): bool {
                     return strtoupper((string) ($row['device_type'] ?? '')) === $want;
                 }));
+            }
+            if ($night !== '') {
+                $rows = $this->applyPlayNightFilter($rows, $night, ['captured_at', 'created_at']);
+            } else {
+                $rows = $this->applyPlayNightFilter($rows, 'all', ['captured_at', 'created_at']);
             }
             foreach ($rows as &$row) {
                 $row['url'] = user_media_public_url('uploads/recon/' . basename((string) ($row['image_path'] ?? '')));
@@ -8911,6 +9056,33 @@ class AtakApiController
         }
 
         return null;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @param list<string> $dateFields
+     * @return list<array<string, mixed>>
+     */
+    private function applyPlayNightFilter(array $rows, string $night, array $dateFields): array
+    {
+        $want = strtolower(trim($night));
+        $current = AtakPlayNight::currentKey();
+        $filterKey = null;
+        if ($want === 'current' || $want === '') {
+            $filterKey = $current;
+        } elseif ($want !== 'all') {
+            $filterKey = AtakPlayNight::normalizeKey($want);
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $decorated = AtakPlayNight::decorateRow($row, $dateFields);
+            if ($filterKey !== null && (string) ($decorated['play_night'] ?? '') !== $filterKey) {
+                continue;
+            }
+            $out[] = $decorated;
+        }
+
+        return $out;
     }
 
     // --- Map shapes ---

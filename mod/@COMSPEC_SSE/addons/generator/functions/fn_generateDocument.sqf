@@ -36,7 +36,7 @@ for "_i" from 0 to (_count - 1) do {
         }
     };
 
-    private _uid = format ["SSE-DOC-%1-%2", _seed, _i];
+    private _uid = format ["SSE-DOC-%1-%2", [_seed, format ["doc%1", _i], 9] call comspec_sse_fnc_idToken, _i];
     private _summary = if (_i == 0) then {
         _packSummary
     } else {

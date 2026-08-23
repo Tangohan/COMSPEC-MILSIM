@@ -67,6 +67,247 @@ final class SseDigitalLabService
     }
 
     /**
+     * Enregistre une acquisition transmise depuis le terminal SEEK (terrain).
+     *
+     * @param array<string, mixed> $body
+     * @return array{
+     *     ok: bool,
+     *     duplicate: bool,
+     *     device_id: int,
+     *     seizure_id: int,
+     *     acquisition_id: int,
+     *     reference_code: string
+     * }
+     */
+    public function ingestFromTerrain(int $tenantId, array $body, ?int $userId = null): array
+    {
+        $armaId = trim((string) ($body['record_id'] ?? $body['sse_uid'] ?? $body['arma_object_id'] ?? ''));
+        $idem = trim((string) ($body['idempotency_key'] ?? ''));
+        if ($armaId === '' && $idem !== '') {
+            $armaId = $idem;
+        }
+
+        $existing = $armaId !== '' ? $this->repo->findDeviceByArmaObjectId($tenantId, $armaId) : null;
+        if ($existing !== null) {
+            $acqs = $this->repo->listAcquisitions($tenantId, [
+                'device_id' => (int) $existing['id'],
+                'limit' => 1,
+            ]);
+            $acq = $acqs[0] ?? null;
+
+            return [
+                'ok' => true,
+                'duplicate' => true,
+                'device_id' => (int) $existing['id'],
+                'seizure_id' => (int) ($existing['seizure_id'] ?? 0),
+                'acquisition_id' => (int) ($acq['id'] ?? 0),
+                'reference_code' => (string) ($acq['reference_code'] ?? $existing['reference_code'] ?? ''),
+            ];
+        }
+
+        $phone = is_array($body['phone_summary'] ?? null) ? $body['phone_summary'] : [];
+        $computer = is_array($body['computer_summary'] ?? null) ? $body['computer_summary'] : [];
+        $sourceType = (string) ($body['source_type'] ?? $phone['deviceType'] ?? $computer['deviceType'] ?? '');
+        $deviceType = self::mapTerrainDeviceType($sourceType, $phone, $computer);
+
+        $lines = $body['extraction_lines'] ?? [];
+        if (!is_array($lines)) {
+            $lines = $lines === '' || $lines === null ? [] : [(string) $lines];
+        }
+        $lineTexts = [];
+        foreach ($lines as $line) {
+            if (is_array($line)) {
+                $line = implode(' — ', array_map(static fn ($v) => is_scalar($v) ? (string) $v : '', $line));
+            }
+            $t = trim((string) $line);
+            if ($t !== '') {
+                $lineTexts[] = $t;
+            }
+        }
+
+        $obsParts = [];
+        $grid = trim((string) ($body['grid_reference'] ?? ''));
+        if ($grid !== '') {
+            $obsParts[] = 'Découvert en ' . $grid;
+        }
+        $model = trim((string) ($phone['model'] ?? $computer['model'] ?? ''));
+        if ($model !== '') {
+            $obsParts[] = 'Modèle : ' . $model;
+        }
+        $owner = trim((string) ($phone['owner'] ?? $computer['owner'] ?? ''));
+        if ($owner !== '') {
+            $obsParts[] = 'Titulaire apparent : ' . $owner;
+        }
+        foreach (array_slice($lineTexts, 0, 12) as $line) {
+            $obsParts[] = $line;
+        }
+
+        $counts = [];
+        foreach (['contacts' => 'contacts', 'messages' => 'messages', 'calls' => 'appels', 'images' => 'images'] as $key => $label) {
+            $n = (int) ($phone[$key] ?? 0);
+            if ($n > 0) {
+                $counts[] = $n . ' ' . $label;
+            }
+        }
+        if ($counts !== []) {
+            $obsParts[] = 'Volume relevé : ' . implode(', ', $counts);
+        }
+
+        $personId = (int) ($body['person_id'] ?? $body['athena_person_id'] ?? 0);
+        $deviceId = $this->repo->createDevice($tenantId, [
+            'device_type' => $deviceType,
+            'model' => $model !== '' ? $model : null,
+            'serial_number' => $this->firstNonEmpty([
+                $phone['imei'] ?? null,
+                $phone['sim'] ?? null,
+                $computer['serial'] ?? null,
+            ]),
+            'discovery_place' => $grid !== '' ? $grid : null,
+            'person_id' => $personId > 0 ? $personId : null,
+            'mission_label' => $this->firstNonEmpty([$body['mission_id'] ?? null, $body['case_reference'] ?? null]),
+            'seized_by_label' => $this->firstNonEmpty([$body['collector'] ?? null, $body['submitter_callsign'] ?? null]),
+            'observations' => $obsParts !== [] ? implode("\n", $obsParts) : 'Acquisition transmise depuis le terrain.',
+            'data_profile' => 'terrain_seek',
+            'arma_object_id' => $armaId !== '' ? $armaId : null,
+            'status' => 'seized',
+            'has_sim' => !empty($phone['sim']),
+        ], $userId);
+
+        $registered = $this->repo->createSeizure($tenantId, $deviceId, [
+            'seized_at' => date('Y-m-d H:i:s'),
+            'observations' => $obsParts !== [] ? implode("\n", $obsParts) : null,
+            'handlers' => array_values(array_filter([
+                $body['collector'] ?? null,
+                $body['submitter_callsign'] ?? null,
+            ])),
+        ], $userId);
+
+        $now = date('Y-m-d H:i:s');
+        $acqId = $this->repo->createAcquisition($tenantId, $deviceId, [
+            'seizure_id' => $registered,
+            'method' => 'logical',
+            'operator_label' => $this->firstNonEmpty([$body['collector'] ?? null, $body['submitter_callsign'] ?? null, 'Terrain']),
+            'started_at' => $now,
+            'ended_at' => $now,
+            'status' => 'completed',
+            'file_count' => count($lineTexts),
+            'artifact_count' => min(40, count($lineTexts)),
+            'data_profile' => 'terrain_seek',
+            'tool_name' => 'Terminal SEEK',
+            'tool_version' => '1.0',
+            'reserves' => null,
+        ], $userId);
+
+        $this->repo->addAcquisitionLog($tenantId, $acqId, 'Acquisition reçue du terrain.', 'info', $userId);
+        $nArt = 0;
+        foreach (array_slice($lineTexts, 0, 40) as $i => $line) {
+            $this->repo->createArtifact($tenantId, $deviceId, $acqId, [
+                'name' => 'Extrait terrain #' . ($i + 1),
+                'category' => 'document',
+                'payload' => ['text' => $line],
+                'interest_level' => 'a_surveiller',
+                'status' => 'unexamined',
+            ], $userId);
+            $nArt++;
+        }
+        if ($nArt === 0 && $obsParts !== []) {
+            $this->repo->createArtifact($tenantId, $deviceId, $acqId, [
+                'name' => 'Synthèse d’extraction',
+                'category' => 'document',
+                'payload' => ['text' => implode("\n", $obsParts)],
+                'interest_level' => 'courant',
+                'status' => 'unexamined',
+            ], $userId);
+        }
+
+        $this->repo->updateDeviceStatus($deviceId, $tenantId, 'acquired');
+        $acq = $this->repo->findAcquisition($acqId, $tenantId);
+        $this->repo->createTimelineEvent($tenantId, [
+            'device_id' => $deviceId,
+            'acquisition_id' => $acqId,
+            'event_type' => 'acquisition',
+            'event_at' => $now,
+            'title' => 'Acquisition terrain',
+            'detail' => 'Reçue depuis le terminal SEEK.',
+            'interest_level' => 'a_surveiller',
+        ], $userId);
+
+        return [
+            'ok' => true,
+            'duplicate' => false,
+            'device_id' => $deviceId,
+            'seizure_id' => $registered,
+            'acquisition_id' => $acqId,
+            'reference_code' => (string) ($acq['reference_code'] ?? ''),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $phone
+     * @param array<string, mixed> $computer
+     */
+    public static function mapTerrainDeviceType(string $sourceType, array $phone = [], array $computer = []): string
+    {
+        $s = strtolower(trim($sourceType));
+        $s = str_replace(['-', ' '], '_', $s);
+        $map = [
+            'phone' => 'telephone',
+            'telephone' => 'telephone',
+            'smartphone' => 'telephone',
+            'mobile' => 'telephone',
+            'cell' => 'telephone',
+            'device' => 'telephone',
+            'computer' => 'ordinateur',
+            'ordinateur' => 'ordinateur',
+            'laptop' => 'ordinateur',
+            'pc' => 'ordinateur',
+            'desktop' => 'ordinateur',
+            'tablet' => 'tablette',
+            'tablette' => 'tablette',
+            'usb' => 'cle_usb',
+            'cle_usb' => 'cle_usb',
+            'key' => 'cle_usb',
+            'stick' => 'cle_usb',
+            'radio' => 'radio_numerique',
+            'radio_numerique' => 'radio_numerique',
+            'gps' => 'gps',
+            'camera' => 'appareil_photo',
+            'photo' => 'appareil_photo',
+            'appareil_photo' => 'appareil_photo',
+        ];
+        if (isset($map[$s])) {
+            return $map[$s];
+        }
+        $hint = strtolower((string) ($phone['deviceType'] ?? $computer['deviceType'] ?? ''));
+        if (isset($map[$hint])) {
+            return $map[$hint];
+        }
+        if ($phone !== [] && empty($phone['ok']) === false && (int) ($phone['contacts'] ?? 0) + (int) ($phone['messages'] ?? 0) > 0) {
+            return 'telephone';
+        }
+        if ($computer !== [] && $computer !== ['ok' => false]) {
+            return 'ordinateur';
+        }
+
+        return 'telephone';
+    }
+
+    private function firstNonEmpty(array $values): ?string
+    {
+        foreach ($values as $v) {
+            if ($v === null) {
+                continue;
+            }
+            $s = trim((string) $v);
+            if ($s !== '') {
+                return $s;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Planifie puis exécute une acquisition simulée (profil de données).
      *
      * @param array<string, mixed> $input

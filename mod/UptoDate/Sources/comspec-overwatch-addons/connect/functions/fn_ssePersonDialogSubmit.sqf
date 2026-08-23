@@ -65,7 +65,7 @@ if (_last isEqualTo "" && {_first isEqualTo ""} && {_alias isEqualTo ""}) then {
 
 if (_last isEqualTo "" && {_first isEqualTo ""} && {_alias isEqualTo ""}) exitWith {
     ["Indiquez au moins un nom, un prénom ou un alias — page Sujet.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
-    (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.55' color='#ff8a4a' align='center'>Nom, prénom ou alias requis.</t>";
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.44' color='#ff8a4a' align='center'>Nom, prénom ou alias requis.</t>";
     [1] call comspec_overwatch_connect_fnc_sseTerminalPage;
 };
 
@@ -238,7 +238,40 @@ if ((count _samples) > 0) then { _bio = true; };
 private _photoPending = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoPending", false];
 private _ageJson = if (_age >= 0) then { str _age } else { "null" };
 
-(_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.55' color='#8aa0b4' align='center'>Transmission en cours…</t>";
+// Même identité déjà transmise cette mission : on ne renvoie pas une seconde fiche
+// sauf iris / empreintes / ADN nouveaux, ou une photo du visage encore en attente.
+private _sentKinds = missionNamespace getVariable ["COMSPEC_SsePerson_SentKinds", createHashMap];
+if (!(_sentKinds isEqualType createHashMap)) then { _sentKinds = createHashMap; };
+private _idKey = toLower format ["%1|%2|%3", _last, _first, _alias];
+if (_netId isNotEqualTo "") then { _idKey = "net:" + _netId; };
+private _incomingKinds = [];
+{
+    if ((_x isEqualType []) && {(count _x) >= 1}) then {
+        private _k = toLower (trim (_x select 0));
+        if (_k in ["fingerprint", "fingerprints", "empreinte"]) then { _k = "empreintes"; };
+        if (_k isEqualTo "dna") then { _k = "adn"; };
+        if (_k in ["empreintes", "iris", "adn"]) then { _incomingKinds pushBackUnique _k; };
+    };
+} forEach _samples;
+if (_bio && {(count _incomingKinds) == 0}) then { _incomingKinds pushBack "empreintes"; };
+private _alreadySent = _idKey in _sentKinds;
+private _hasNewKind = false;
+if (_alreadySent) then {
+    private _prevKinds = _sentKinds getOrDefault [_idKey, []];
+    if (!(_prevKinds isEqualType [])) then { _prevKinds = []; };
+    { if !(_x in _prevKinds) then { _hasNewKind = true; }; } forEach _incomingKinds;
+};
+if (_alreadySent && {!_hasNewKind} && {!_photoPending}) exitWith {
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText
+        "<t size='0.44' color='#e0a233' align='center'>Déjà au registre — transmettez un iris, des empreintes ou de l’ADN pour enrichir la fiche.</t>";
+    [
+        "Cette personne est déjà au registre. Ajoutez un iris, des empreintes ou de l’ADN avant de retransmettre.",
+        "tactical",
+        "warn"
+    ] call comspec_overwatch_connect_fnc_announce;
+};
+
+(_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.44' color='#8aa0b4' align='center'>Transmission en cours…</t>";
 
 // Construction par morceaux (%1 seul) : un seul format à 26 args peut corrompre
 // le JSON (ambiguïté %10/%2, guillemets), et le serveur répond alors identity_required.
@@ -298,7 +331,7 @@ private _json = "{" + (_parts joinString ",") + "}";
 // Garde-fou : ne jamais poster un corps sans identité exploitable.
 if (_eLast isEqualTo "" && {_eFirst isEqualTo ""} && {_eAlias isEqualTo ""}) exitWith {
     ["Indiquez au moins un nom, un prénom ou un alias — page Sujet.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
-    (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.55' color='#ff8a4a' align='center'>Nom, prénom ou alias requis.</t>";
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.44' color='#ff8a4a' align='center'>Nom, prénom ou alias requis.</t>";
     [1] call comspec_overwatch_connect_fnc_sseTerminalPage;
 };
 
@@ -321,7 +354,7 @@ _parsed params ["_ok", "_status", "_detail"];
 // comme doublon.
 if (!_ok && { _status isEqualTo "QUEUED" }) exitWith {
     (_disp displayCtrl 9513) ctrlSetStructuredText parseText
-        "<t size='0.55' color='#e0a233' align='center'>Liaison coupée — fiche conservée, elle partira au rétablissement. Ne la ressaisissez pas.</t>";
+        "<t size='0.44' color='#e0a233' align='center'>Liaison coupée — fiche conservée, elle partira au rétablissement. Ne la ressaisissez pas.</t>";
     [
         "Fiche SSE conservée hors ligne — transmission au rétablissement de la liaison.",
         "tactical",
@@ -348,7 +381,7 @@ if (!_ok) exitWith {
         _reason = "Le poste de commandement est en erreur — signalez-le à l’administrateur.";
     };
     (_disp displayCtrl 9513) ctrlSetStructuredText parseText format [
-        "<t size='0.55' color='#ff8a4a' align='center'>%1</t>",
+        "<t size='0.44' color='#ff8a4a' align='center'>%1</t>",
         _reason
     ];
     [([
@@ -385,19 +418,31 @@ if (_bio && { _personId isNotEqualTo "" } && { (count _samples) == 0 }) then {
     };
 };
 
+if (_photoPending && { _personId isEqualTo "" }) then {
+    ["UploadSsePhoto", "fail", "fiche sans identifiant — photo non jointe", "", true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+    [
+        "Fiche enregistrée, mais la photo du visage n’a pas pu être jointe — ouvrez à nouveau le terminal si besoin.",
+        "tactical",
+        "warn"
+    ] call comspec_overwatch_connect_fnc_announce;
+};
+
 if (_photoPending && { _personId isNotEqualTo "" }) then {
     private _stem = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoStem", ""];
     if (!(_stem isEqualType "") || {_stem isEqualTo ""}) then {
-        // Flag armé sans capture : prendre la photo maintenant avant la file.
-        _stem = format ["COMSPEC_SSE_Face_%1.png", floor (diag_tickTime * 1000)];
+        _stem = format [
+            "COMSPEC_SSE_Face_%1_%2.png",
+            (floor diag_tickTime) toFixed 0,
+            (floor random 99999) toFixed 0
+        ];
         screenshot _stem;
         uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _stem];
     };
     ["UploadSsePhoto", "attempt", format ["personne %1 stem=%2", _personId, _stem], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-    // Différé : laisser Arma écrire le PNG, puis poster le fichier nommé (pas « la plus récente »).
+    // File async : la DLL attend le PNG (jusqu’à ~12 s) hors thread jeu.
     [_personId, _stem, _callsign, _posX, _posY, _posZ, _grid] spawn {
         params ["_pid", "_stem", "_cs", "_px", "_py", "_pz", "_gridRef"];
-        uiSleep 1.25;
+        uiSleep 0.35;
         private _shot = [
             "COMSPECExtension" callExtension ["UploadSsePhoto", [
                 _pid,
@@ -412,17 +457,18 @@ if (_photoPending && { _personId isNotEqualTo "" }) then {
             ]]
         ] call comspec_overwatch_connect_fnc_extResult;
         private _parsed = [_shot] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
-        _parsed params ["_ok"];
-        if (!_ok && { ((toUpper _shot) find "OK") == 0 }) then { _ok = true; };
+        _parsed params ["_ok", "_status", "_detail"];
+        private _u = toUpper (str _shot);
+        if (!_ok && { ((_u find "OK|QUEUED") == 0) || {(_u find "OK|DUPLICATE") == 0} }) then { _ok = true; };
         if (!_ok) then {
             ["UploadSsePhoto", "fail", _shot, _shot, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
             [
-                "Fiche enregistrée, mais la photo du visage n’a pas pu être jointe — refaites PHOTO DU VISAGE puis retransmettez si besoin.",
+                "Fiche enregistrée, mais la photo du visage n’a pas pu être mise en file — refaites PHOTO DU VISAGE puis retransmettez si besoin.",
                 "tactical",
                 "warn"
             ] call comspec_overwatch_connect_fnc_announce;
         } else {
-            ["UploadSsePhoto", "ok", format ["personne %1", _pid], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+            ["UploadSsePhoto", "ok", format ["personne %1 · %2", _pid, _detail], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
         };
         uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", false];
         uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", ""];
@@ -430,6 +476,12 @@ if (_photoPending && { _personId isNotEqualTo "" }) then {
 };
 
 ["Personne enregistrée — fiche transmise au poste de commandement.", "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+
+private _prevKinds = _sentKinds getOrDefault [_idKey, []];
+if (!(_prevKinds isEqualType [])) then { _prevKinds = []; };
+{ _prevKinds pushBackUnique _x; } forEach _incomingKinds;
+_sentKinds set [_idKey, _prevKinds];
+missionNamespace setVariable ["COMSPEC_SsePerson_SentKinds", _sentKinds];
 
 if (!isNull _disp) then {
     _disp closeDisplay 1;

@@ -9,7 +9,6 @@ params [
 if (!hasInterface) exitWith { false };
 
 if (isNull _entity) then {
-    // Si curseur sur une cible SSE, l'utiliser
     private _cursor = cursorObject;
     if (!isNull _cursor && {!isNil {[_cursor] call comspec_sse_fnc_getData}}) then {
         _entity = _cursor;
@@ -18,6 +17,10 @@ if (isNull _entity) then {
 
 if (!isNull _entity) then {
     [_entity] call comspec_sse_fnc_uiSetRecord;
+};
+
+if (!isNil "comspec_overwatch_connect_fnc_sseOpenTerminal") exitWith {
+    [_entity, 0, "terminal"] call comspec_sse_fnc_uiOpenSeekHost
 };
 
 if !(createDialog "COMSPEC_SSE_TerminalDialog") exitWith {

@@ -1,12 +1,15 @@
 /*
     Remplit le Terminal SSE terrain.
 */
-private _disp = findDisplay 93200;
+private _ctx = ["terminal"] call comspec_sse_fnc_uiDisplayCtx;
+_ctx params ["_disp", "_idcSum", "_idcList", "_idcDetail", "_isSeek"];
 if (isNull _disp) exitWith { false };
 
 private _rec = [] call comspec_sse_fnc_uiGetRecord;
 private _nav = "<t size='0.85' color='#8f8'>TERMINAL</t>  ·  Digital · SEEK · Site · Graph · Preuves · Mission";
-(_disp displayCtrl 93210) ctrlSetStructuredText parseText _nav;
+if (!_isSeek) then {
+    (_disp displayCtrl 93210) ctrlSetStructuredText parseText _nav;
+};
 
 private _sum = "";
 private _detail = "";
@@ -58,9 +61,13 @@ if (isNull _rec) then {
     _detail = format ["<t color='#8f8'>Transmission</t><br/>Statut: %1<br/>Intel révélé: %2<br/>Classe: %3", _tx, count _intel, typeOf _rec];
 };
 
-(_disp displayCtrl 93211) ctrlSetStructuredText parseText _sum;
-(_disp displayCtrl 93213) ctrlSetStructuredText parseText _detail;
-private _lb = _disp displayCtrl 93212;
+(_disp displayCtrl _idcSum) ctrlSetStructuredText parseText _sum;
+if (!_isSeek) then {
+    (_disp displayCtrl _idcDetail) ctrlSetStructuredText parseText _detail;
+} else {
+    (_disp displayCtrl _idcSum) ctrlSetStructuredText parseText (_sum + "<br/>" + _detail);
+};
+private _lb = _disp displayCtrl _idcList;
 lbClear _lb;
 { _lb lbAdd _x; } forEach _entries;
 if (_entries isEqualTo []) then { _lb lbAdd "(aucun élément listé)"; };

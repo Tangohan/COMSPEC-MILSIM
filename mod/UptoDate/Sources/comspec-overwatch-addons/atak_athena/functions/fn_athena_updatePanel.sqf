@@ -388,19 +388,18 @@ if (!(_orders isEqualType [])) then { _orders = []; };
     private _type = _x getOrDefault ["type", "MOVE"];
     // Signaux terminal déjà notifiés via onVibrate / onNotify — pas une ligne « ordre »
     if ((toUpper _type) in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM"]) then { continue };
-    private _typeLabel = [_x] call comspec_overwatch_connect_fnc_orderTypeLabel;
+    private _kindLbl = [_x] call comspec_overwatch_connect_fnc_orderTypeLabel;
+    if (!(_kindLbl isEqualType "") || {_kindLbl isEqualTo ""}) then { _kindLbl = "Ordre"; };
     private _issuer = _x getOrDefault ["issuer", "C2"];
-    private _prio = _x getOrDefault ["priority", "IMPORTANT"];
-    private _prioLabel = switch (toUpper _prio) do {
-        case "URGENT": { "Urgent" };
-        case "ROUTINE": { "Routine" };
-        default { "Important" };
-    };
+    private _prioU = toUpper (_x getOrDefault ["priority", "IMPORTANT"]);
+    private _prioLabel = "Important";
+    if (_prioU isEqualTo "URGENT") then { _prioLabel = "Urgent"; };
+    if (_prioU isEqualTo "ROUTINE") then { _prioLabel = "Routine"; };
     private _payload = _x getOrDefault ["payload", ""];
-    private _title = format ["Ordre · %1 · %2", _typeLabel, _issuer];
+    private _title = format ["Ordre · %1 · %2", _kindLbl, _issuer];
     private _detail = format [
         "<t color='#7eb8ff'>Ordre</t> — %1<br/><t color='#8aa0b4'>Priorité</t>  %2<br/><t color='#8aa0b4'>Émetteur</t>  %3<br/><t color='#8aa0b4'>Cible</t>  %4<br/>%5",
-        _typeLabel, _prioLabel, _issuer, _x getOrDefault ["target", "—"],
+        _kindLbl, _prioLabel, _issuer, _x getOrDefault ["target", "—"],
         if (_payload isEqualTo "") then { "" } else { format ["<br/>%1", _payload] }
     ];
     _entries pushBack ["order", _title, _detail, _id, []];

@@ -263,7 +263,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnForceSync: COMSPEC_RscButtonAccent {
             idc = 9119;
-            text = "Transmettre ma position et mes données";
+            text = "Resynch — renvoyer tout vers Athena";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.734 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;

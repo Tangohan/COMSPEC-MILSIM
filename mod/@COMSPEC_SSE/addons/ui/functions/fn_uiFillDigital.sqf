@@ -1,15 +1,22 @@
-private _disp = findDisplay 93250;
+private _ctx = ["digital"] call comspec_sse_fnc_uiDisplayCtx;
+_ctx params ["_disp", "_idcBody", "_idcList", "_idcTabs"];
 if (isNull _disp) exitWith { false };
 
 private _rec = [] call comspec_sse_fnc_uiGetRecord;
 private _tab = missionNamespace getVariable ["comspec_sse_uiDigitalTab", "overview"];
-(_disp displayCtrl 93252) ctrlSetStructuredText parseText format [
-    "<t size='0.85'>Onglet: <t color='#8f8'>%1</t> · Overview / Contacts / Messages / Calls / Files / Photos / Locs / Deleted / Network</t>",
+private _tabLine = format [
+    "<t size='0.85'>Onglet: <t color='#8f8'>%1</t></t>",
     toUpper _tab
 ];
+if (_idcTabs isEqualTo 93252) then {
+    (_disp displayCtrl _idcTabs) ctrlSetStructuredText parseText format [
+        "<t size='0.85'>Onglet: <t color='#8f8'>%1</t> · Overview / Contacts / Messages / Calls / Files / Photos / Locs / Deleted / Network</t>",
+        toUpper _tab
+    ];
+};
 
 if (isNull _rec) exitWith {
-    (_disp displayCtrl 93253) ctrlSetStructuredText parseText "<t color='#f88'>Aucun record SSE lié.</t>";
+    (_disp displayCtrl _idcBody) ctrlSetStructuredText parseText "<t color='#f88'>Aucun record SSE lié.</t>";
     false
 };
 
@@ -126,8 +133,11 @@ switch (_tab) do {
     };
 };
 
-(_disp displayCtrl 93253) ctrlSetStructuredText parseText _body;
-private _lb = _disp displayCtrl 93254;
+if (_idcTabs isEqualTo 9582) then {
+    _body = _tabLine + "<br/>" + _body;
+};
+(_disp displayCtrl _idcBody) ctrlSetStructuredText parseText _body;
+private _lb = _disp displayCtrl _idcList;
 lbClear _lb;
 { _lb lbAdd _x; } forEach _list;
 if (_list isEqualTo []) then { _lb lbAdd "(vide)"; };

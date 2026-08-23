@@ -58,7 +58,7 @@ if (_isDocs && {(count _docs) > 0}) then {
                 "<t color='%2' size='0.95' font='PuristaMedium'>PIÈCE %3 — %4</t><br/>",
                 _rule, _accent, _i, _dt
             ];
-            if (_duid != "") then {
+            if (_duid != "" && {(_duid find "e+") < 0} && {(_duid find "e-") < 0}) then {
                 _html = _html + format ["<t color='%1' size='0.75'>%2</t><br/>", _muted, _duid];
             };
             if (_mode == "feuille" || {_sum != "" && {_q >= 55}}) then {

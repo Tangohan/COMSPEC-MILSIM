@@ -17,7 +17,7 @@
     {
         author = "COMSPEC";
         scope = 1;
-        scopeCurator = 1;
+        scopeCurator = 0;
         category = "COMSPEC_SSE";
         functionPriority = 1;
         isGlobal = 1;
@@ -35,7 +35,7 @@
     class COMSPEC_Module_SSE_Case: COMSPEC_Module_SSE_Base
     {
         scope = 2;
-        scopeCurator = 2;
+        scopeCurator = 0;
         displayName = "Dossier SSE actif";
         function = "comspec_overwatch_connect_fnc_moduleSseCase";
 
@@ -77,7 +77,7 @@
     class COMSPEC_Module_SSE_Profile: COMSPEC_Module_SSE_Base
     {
         scope = 2;
-        scopeCurator = 2;
+        scopeCurator = 0;
         displayName = "Profil d'identité SSE";
         function = "comspec_overwatch_connect_fnc_moduleSseProfile";
 
@@ -213,7 +213,7 @@
     class COMSPEC_Module_SSE_Equip: COMSPEC_Module_SSE_Base
     {
         scope = 2;
-        scopeCurator = 2;
+        scopeCurator = 0;
         displayName = "Doter en terminal SEEK";
         function = "comspec_overwatch_connect_fnc_moduleSseEquip";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";

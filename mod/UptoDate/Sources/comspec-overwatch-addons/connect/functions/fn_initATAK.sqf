@@ -9,6 +9,14 @@ waitUntil {CBA_missionTime > 1};
 
 diag_log "[COMSPEC ATAK] Initialisation système ATAK...";
 
+private _restoreTeam = toUpper (trim (missionNamespace getVariable ["COMSPEC_AssignedTeam", ""]));
+if (_restoreTeam isEqualTo "") then {
+    _restoreTeam = toUpper (trim (profileNamespace getVariable ["COMSPEC_AssignedTeam", ""]));
+};
+if (_restoreTeam in ["RED", "GREEN", "BLUE", "YELLOW", "MAIN"]) then {
+    player assignTeam _restoreTeam;
+};
+
 private _extensionVersion = "COMSPECExtension" callExtension ["GetVersion", []];
 if ((_extensionVersion select 0) isEqualTo "") then {
     diag_log "[COMSPEC ATAK] WARNING: Extension not loaded";

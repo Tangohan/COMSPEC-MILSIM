@@ -53,35 +53,64 @@ private _needsPersonApi = (
 ) || {(toUpper _kind) in ["PERSON", "BIOMETRICS"]};
 
 private _needsTypedApi = _needsPersonApi
-    || {(toUpper _command) isEqualTo "SENDSSE"}
+    || {(toUpper _command) in ["SENDSSE", "SUBMITSSEDIGITAL"]}
     || {(toUpper _kind) in ["DIGITAL", "GENERIC"]};
 
 if (_preferExt) exitWith {
+    private _isAthenaId = {
+        params ["_s"];
+        if (!(_s isEqualType "")) exitWith { false };
+        if (_s isEqualTo "" || {_s isEqualTo "0"}) exitWith { false };
+        private _ok = true;
+        {
+            if (_x < 48 || {_x > 57}) then { _ok = false };
+        } forEach toArray _s;
+        _ok
+    };
     private _extArgs = [_json];
     if ((toUpper _command) isEqualTo "SUBMITSSEBIOMETRICSSIM") then {
         private _pid = _payload getOrDefault ["athena_person_id", ""];
         if (_pid isEqualTo "") then { _pid = _payload getOrDefault ["person_id", ""]; };
         if (_pid isEqualTo "") then { _pid = _payload getOrDefault ["id", ""]; };
-        if (!(_pid isEqualType "")) then { _pid = str _pid; };
-        if (_pid isNotEqualTo "" && {_pid isNotEqualTo "0"}) then {
+        if (!(_pid isEqualType "")) then { _pid = str (floor _pid); };
+        if (!([_pid] call _isAthenaId)) then {
+            ["sendViaOverwatch skip bio — fiche pas encore connue au registre", "WARN"] call comspec_sse_fnc_log;
+            false
+        } else {
             _extArgs = [_pid, _json];
+            [format [
+                "TX %1 names=%2/%3/%4 bytes=%5",
+                _command,
+                _payload getOrDefault ["first_name", ""],
+                _payload getOrDefault ["last_name", ""],
+                _payload getOrDefault ["alias", ""],
+                count _json
+            ]] call comspec_sse_fnc_log;
+            private _raw = [_command, _extArgs] call comspec_sse_fnc_extensionCall;
+            if ([_raw] call _extOk) exitWith {
+                [format ["sendViaOverwatch OK ext %1", _command]] call comspec_sse_fnc_log;
+                true
+            };
+            [format ["sendViaOverwatch FAIL ext %1 raw=%2", _command, _raw], "WARN"] call comspec_sse_fnc_log;
+            false
         };
+    } else {
+        [format [
+            "TX %1 names=%2/%3/%4 bytes=%5",
+            _command,
+            _payload getOrDefault ["first_name", ""],
+            _payload getOrDefault ["last_name", ""],
+            _payload getOrDefault ["alias", ""],
+            count _json
+        ]] call comspec_sse_fnc_log;
+        private _raw = [_command, _extArgs] call comspec_sse_fnc_extensionCall;
+        if ([_raw] call _extOk) exitWith {
+            [format ["sendViaOverwatch OK ext %1", _command]] call comspec_sse_fnc_log;
+            true
+        };
+        [format ["sendViaOverwatch FAIL ext %1 raw=%2", _command, _raw], "WARN"] call comspec_sse_fnc_log;
+        false
     };
-    [format [
-        "TX %1 names=%2/%3/%4 bytes=%5",
-        _command,
-        _payload getOrDefault ["first_name", ""],
-        _payload getOrDefault ["last_name", ""],
-        _payload getOrDefault ["alias", ""],
-        count _json
-    ]] call comspec_sse_fnc_log;
-    private _raw = [_command, _extArgs] call comspec_sse_fnc_extensionCall;
-    if ([_raw] call _extOk) exitWith {
-        [format ["sendViaOverwatch OK ext %1", _command]] call comspec_sse_fnc_log;
-        true
-    };
-    [format ["sendViaOverwatch FAIL ext %1 raw=%2", _command, _raw], "WARN"] call comspec_sse_fnc_log;
-    false
 };
 
 if (!_needsTypedApi && {!isNil "comspec_overwatch_connect_fnc_sendIntel"}) exitWith {

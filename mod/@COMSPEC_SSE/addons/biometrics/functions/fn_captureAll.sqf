@@ -46,6 +46,9 @@ if (!_hasSeek) then {
 
         ["setstate", _target, ["PARTIALLY_EXPLOITED"]] call comspec_sse_fnc_requestServerOp;
         hint "Capture biométrique complète terminée.";
+        if (!isNil "comspec_overwatch_connect_fnc_sseCaptureFacePhoto") then {
+            [_target] call comspec_overwatch_connect_fnc_sseCaptureFacePhoto;
+        };
         private _data = [_target] call comspec_sse_fnc_getData;
         private _uid = if (isNil "_data") then {"?"} else {[_data, "uid", "?"] call BIS_fnc_getFromPairs};
         [_uid, "biometrics", "capture_all", "FP+IRIS+FACE+DNA", 80, "LOCAL"] call comspec_sse_fnc_addJournalEntry;

@@ -1,9 +1,11 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace COMSPECExtension;
@@ -74,6 +76,10 @@ public static class Extension
         public string DedupKey = "";
         public bool NewestFallback;
         public DateTime EnqueuedUtc = DateTime.UtcNow;
+        /// <summary>recon = ATAK Photos ; sse_face = photo visage SEEK.</summary>
+        public string UploadKind = "recon";
+        public string SsePersonId = "";
+        public string SseAngle = "face";
     }
 
     private static readonly ConcurrentQueue<ReconPhotoJob> PhotoJobs = new();
@@ -97,6 +103,7 @@ public static class Extension
     private static string _lastPhotoHeading = "";
     private static string _lastPhotoGrid = "";
     private static long _screenshotWatchersStartedTicks;
+    private static bool _screenshotQuotaEnsured;
 
     private static void NotePostError(int code, string url)
     {
@@ -797,7 +804,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.1");
+            Output(output, outputSize, "COMSPECExtension 2.0.5");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1123,13 +1130,13 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.1";
+            return "OK|COMSPECExtension 2.0.5";
         }
 
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.1", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.5", "COMSPEC Extension ATAK");
         }
 
         // Alerte Windows : marche à suivre pour lier le compte Athena (bloquant, thread OK).
@@ -1885,6 +1892,20 @@ public static class Extension
                 var simplified = SimplifyFireTeamsJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
+            if (function == "JoinFireTeam" && args.Length >= 1)
+            {
+                var teamId = (args[0] ?? "").Trim();
+                var callsign = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+                var role = args.Length > 2 ? (args[2] ?? "member").Trim() : "member";
+                if (string.IsNullOrWhiteSpace(teamId) || teamId == "0")
+                    return FormatAtakExtArray("ERROR", "team empty");
+                if (string.IsNullOrWhiteSpace(callsign))
+                    return FormatAtakExtArray("ERROR", "callsign empty");
+                if (!role.Equals("leader", StringComparison.OrdinalIgnoreCase))
+                    role = "member";
+                var json = "{\"callsign\":\"" + EscapeJson(callsign) + "\",\"role\":\"" + EscapeJson(role) + "\"}";
+                return PostAtakJsonSync("/api/atak/fire-teams/" + Uri.EscapeDataString(teamId) + "/members", json, token);
+            }
             // Messagerie radio Athena (journal /api/chat) → jeu (Groups / inbox Athena).
             // Lignes : id\tauthor\tbody\tcreated_at
             // args: [mapId, limit?, afterId?] — afterId = ne renvoyer que id > afterId
@@ -2412,7 +2433,12 @@ public static class Extension
             {
                 string personId;
                 string json;
-                if (args.Length >= 2)
+                if (args.Length >= 2 && LooksLikeJsonObject(args[0]))
+                {
+                    json = args[0] ?? "{}";
+                    personId = TryExtractSsePersonId(json);
+                }
+                else if (args.Length >= 2 && IsAthenaPersonId(args[0]))
                 {
                     personId = (args[0] ?? "").Trim();
                     json = args[1] ?? "{}";
@@ -2421,10 +2447,18 @@ public static class Extension
                 {
                     json = args[0] ?? "{}";
                     personId = TryExtractSsePersonId(json);
+                    if (!IsAthenaPersonId(personId) && args.Length >= 2)
+                        personId = TryExtractSsePersonId(args[1] ?? "{}");
                 }
-                if (string.IsNullOrWhiteSpace(personId)) return FormatAtakExtArray("ERROR", "person_id empty");
+                if (!IsAthenaPersonId(personId)) return FormatAtakExtArray("ERROR", "person_id empty");
                 if (string.IsNullOrWhiteSpace(json)) json = "{}";
                 return PostAtakJsonSync("/api/sse/persons/" + Uri.EscapeDataString(personId) + "/biometrics-sim", json, token);
+            }
+            if (function == "SubmitSseDigital" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostAtakJsonSync("/api/sse/digital-acquisitions", json, token);
             }
             // Fiche de renseignement simplifiée rédigée dans l'ATAK.
             if (function == "SubmitSseFieldNote" && args.Length >= 1)
@@ -4011,7 +4045,7 @@ public static class Extension
 
             if (function == "UploadSsePhoto" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
-                // Géré en synchrone par TryGetSyncResponse (BeginUploadSsePhoto).
+                // Géré en sync court par TryGetSyncResponse (file + worker, comme NotifyNewPhoto).
                 return;
             }
 
@@ -4073,6 +4107,8 @@ public static class Extension
     {
         if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0)
             return "ERR|not_connected";
+
+        EnsureScreenshotQuota();
 
         var rawPath = args.Length > 0 ? (args[0] ?? "") : "";
         var author = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1])
@@ -4208,10 +4244,14 @@ public static class Extension
     /// </summary>
     private static async Task ProcessReconPhotoJobAsync(ReconPhotoJob job)
     {
+        var cbName = string.Equals(job.UploadKind, "sse_face", StringComparison.OrdinalIgnoreCase)
+            ? "SsePhotoUpload"
+            : "PhotoUpload";
+
         if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0)
         {
             ReleasePhotoDedup(job.DedupKey);
-            InvokeCallback("PhotoUpload", "ERR|not_connected|" + Path.GetFileName(job.RawPath));
+            InvokeCallback(cbName, "ERR|not_connected|" + Path.GetFileName(job.RawPath));
             return;
         }
 
@@ -4219,21 +4259,33 @@ public static class Extension
         string? resolved = null;
         string? identityKey = null;
 
-        // Attente non bloquante du flush disque (BCE / Arma_ScreenShot) — max ~6 s.
+        EnsureScreenshotQuota();
+
+        // Attente non bloquante du flush disque (BCE / Arma_ScreenShot) — max ~12 s.
         // Chemins Photo Library morts (srcdir_missing) : chercher par nom + captures
         // écrites depuis l’enqueue (screenshot Arma / watcher), sans abandon immédiat.
-        for (var attempt = 0; attempt < 15; attempt++)
+        var isSseFace = string.Equals(job.UploadKind, "sse_face", StringComparison.OrdinalIgnoreCase);
+        for (var attempt = 0; attempt < 25; attempt++)
         {
             var fb = newestFallback;
             if (job.NewestFallback && attempt >= 0)
                 fb = TimeSpan.FromSeconds(Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30));
             resolved = ResolveLocalImagePath(job.RawPath, attempt >= 2 ? fb : newestFallback);
+            if (resolved == null && attempt >= 1)
+            {
+                var leaf = Path.GetFileName((job.RawPath ?? "").Replace('/', '\\'));
+                if (!string.IsNullOrWhiteSpace(leaf))
+                    resolved = FindScreenshotByFileName(leaf);
+            }
+            if (resolved == null && isSseFace && attempt >= 2)
+                resolved = FindNewestMatchingPrefix("COMSPEC_SSE_Face", TimeSpan.FromSeconds(
+                    Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30)));
             if (resolved == null && attempt >= 2)
                 resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-5));
             if (resolved != null) break;
             try
             {
-                var p = job.RawPath.Replace('/', '\\');
+                var p = (job.RawPath ?? "").Replace('/', '\\');
                 var parent = Path.GetDirectoryName(p);
                 var parentMissing = !string.IsNullOrWhiteSpace(parent) && !Directory.Exists(parent);
                 var orphan = Path.GetFileName(p);
@@ -4258,7 +4310,7 @@ public static class Extension
             var hint = string.IsNullOrWhiteSpace(job.RawPath)
                 ? "empty_path"
                 : Path.GetFileName(job.RawPath.Replace('/', '\\'));
-            InvokeCallback("PhotoUpload",
+            InvokeCallback(cbName,
                 $"ERR|file_not_found|{hint}|{DescribeImageLookupFailure(job.RawPath)}");
             return;
         }
@@ -4270,13 +4322,13 @@ public static class Extension
             if (!fi.Exists)
             {
                 ReleasePhotoDedup(job.DedupKey);
-                InvokeCallback("PhotoUpload", "ERR|file_not_found|" + Path.GetFileName(resolved));
+                InvokeCallback(cbName, "ERR|file_not_found|" + Path.GetFileName(resolved));
                 return;
             }
             if (fi.Length < 32)
             {
                 ReleasePhotoDedup(job.DedupKey);
-                InvokeCallback("PhotoUpload", "ERR|file_empty|" + Path.GetFileName(resolved));
+                InvokeCallback(cbName, "ERR|file_empty|" + Path.GetFileName(resolved));
                 return;
             }
             identityKey = $"{fi.FullName.ToLowerInvariant()}|{fi.Length}|{fi.LastWriteTimeUtc.Ticks}";
@@ -4284,7 +4336,7 @@ public static class Extension
                 && !TryClaimPhotoDedup(identityKey))
             {
                 // Autre job déjà en cours / récemment traité pour le même fichier.
-                InvokeCallback("PhotoUpload", "OK|duplicate|" + Path.GetFileName(resolved));
+                InvokeCallback(cbName, "OK|duplicate|" + Path.GetFileName(resolved));
                 return;
             }
             MirrorCapture(resolved);
@@ -4293,7 +4345,13 @@ public static class Extension
         {
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
-            InvokeCallback("PhotoUpload", "ERR|read_failed|" + Path.GetFileName(resolved));
+            InvokeCallback(cbName, "ERR|read_failed|" + Path.GetFileName(resolved));
+            return;
+        }
+
+        if (isSseFace)
+        {
+            await ProcessSseFacePhotoUploadAsync(job, resolved, identityKey).ConfigureAwait(false);
             return;
         }
 
@@ -4517,28 +4575,77 @@ public static class Extension
     }
 
     /// <summary>
-    /// Photo visage SSE : args[0]=personId, args[1]=path, args[2]=author, args[3]=angle, args[4..6]=pos.
+    /// Photo visage SSE : file async (même worker que NotifyNewPhoto).
+    /// args[0]=personId, args[1]=path, args[2]=author, args[3]=angle, args[4..6]=pos.
     /// </summary>
     private static string BeginUploadSsePhoto(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0)
+            return "ERR|not_connected";
         var personId = args.Length > 0 ? (args[0] ?? "").Trim() : "";
         if (string.IsNullOrEmpty(personId)) return "ERR|person_id_empty";
+
+        EnsureScreenshotQuota();
+
         var rawPath = args.Length > 1 ? (args[1] ?? "") : "";
-        var author = args.Length > 2 ? (args[2] ?? "Unknown") : "Unknown";
+        var author = args.Length > 2 && !string.IsNullOrWhiteSpace(args[2])
+            ? args[2]!.Trim()
+            : (_callSign.Length > 0 ? _callSign : "Unknown");
         var angle = args.Length > 3 && !string.IsNullOrEmpty(args[3]) ? args[3]! : "face";
-        string? resolved = null;
-        if (!string.IsNullOrWhiteSpace(rawPath))
-            resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(120));
-        if (resolved == null)
-            resolved = FindNewestScreenshot(TimeSpan.FromSeconds(90));
-        if (resolved == null) return "ERR|file_not_found";
+        var trimmedPath = rawPath.Trim().Trim('"').Trim('\'');
+
+        var dedupKey = NormalizePhotoDedupKey("sse|" + personId + "|" + (trimmedPath.Length > 0 ? trimmedPath : "newest"));
+        if (!TryClaimPhotoDedup(dedupKey))
+            return "OK|duplicate";
+        if (PhotoJobs.Count >= PhotoQueueMax)
+            return "ERR|queue_full";
+
+        var meta = new string?[Math.Max(args.Length, 9)];
+        for (var i = 0; i < args.Length; i++)
+            meta[i] = args[i];
+        meta[0] = personId;
+        meta[1] = trimmedPath;
+        meta[2] = author;
+        meta[3] = angle;
+
+        PhotoJobs.Enqueue(new ReconPhotoJob
+        {
+            RawPath = trimmedPath,
+            Author = author,
+            Meta = meta,
+            DedupKey = dedupKey,
+            NewestFallback = true,
+            EnqueuedUtc = DateTime.UtcNow,
+            UploadKind = "sse_face",
+            SsePersonId = personId,
+            SseAngle = angle
+        });
+        EnsureScreenshotWatchers();
+        EnsurePhotoWorker();
+        return "OK|queued";
+    }
+
+    private static async Task ProcessSseFacePhotoUploadAsync(ReconPhotoJob job, string resolved, string? identityKey)
+    {
+        var personId = !string.IsNullOrWhiteSpace(job.SsePersonId)
+            ? job.SsePersonId.Trim()
+            : (job.Meta.Length > 0 ? (job.Meta[0] ?? "").Trim() : "");
+        if (string.IsNullOrEmpty(personId))
+        {
+            ReleasePhotoDedup(job.DedupKey);
+            ReleasePhotoDedup(identityKey);
+            InvokeCallback("SsePhotoUpload", "ERR|person_id_empty|" + Path.GetFileName(resolved));
+            return;
+        }
+
+        MultipartFormDataContent? multipart = null;
+        HttpRequestMessage? req = null;
         try
         {
-            var fi = new FileInfo(resolved);
-            if (!fi.Exists) return "ERR|file_not_found";
-            if (fi.Length < 32) return "ERR|file_empty";
-            var multipart = new MultipartFormDataContent();
+            var args = job.Meta ?? Array.Empty<string?>();
+            var author = !string.IsNullOrWhiteSpace(job.Author) ? job.Author : "Unknown";
+            var angle = !string.IsNullOrWhiteSpace(job.SseAngle) ? job.SseAngle : "face";
+            multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent(author), "author");
             multipart.Add(new StringContent(angle), "angle");
             AddOptionalForm(multipart, "pos_x", args, 4);
@@ -4553,12 +4660,46 @@ public static class Extension
             var fileContent = new StreamContent(fileStream);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
             multipart.Add(fileContent, "image", fileName);
-            var path = "/api/sse/persons/" + Uri.EscapeDataString(personId) + "/photos";
-            return QueueMultipartUpload(path, multipart);
+
+            var apiPath = "/api/sse/persons/" + Uri.EscapeDataString(personId) + "/photos";
+            if (!TryBuildRequestUri(_baseUrl, apiPath, out var uri, out var err) || uri is null)
+            {
+                ReleasePhotoDedup(job.DedupKey);
+                ReleasePhotoDedup(identityKey);
+                try { multipart.Dispose(); } catch { /* ignore */ }
+                InvokeCallback("SsePhotoUpload", "ERR|" + err + "|" + fileName);
+                return;
+            }
+
+            req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = multipart };
+            multipart = null;
+            AttachApiKeyHeader(req);
+            using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
+            var code = (int)resp.StatusCode;
+            if (resp.IsSuccessStatusCode)
+            {
+                NoteRateLimitCleared();
+                InvokeCallback("SsePhotoUpload", "OK|uploaded|" + fileName);
+                return;
+            }
+
+            ReleasePhotoDedup(job.DedupKey);
+            ReleasePhotoDedup(identityKey);
+            NotePostError(code, uri.AbsoluteUri);
+            if (code == 401 && _sessionToken.Length > 0)
+                _sessionToken = "";
+            InvokeCallback("SsePhotoUpload", $"ERR|http_{code}|{fileName}");
         }
         catch
         {
-            return "ERR|read_failed";
+            ReleasePhotoDedup(job.DedupKey);
+            ReleasePhotoDedup(identityKey);
+            InvokeCallback("SsePhotoUpload", "ERR|network|" + Path.GetFileName(resolved));
+        }
+        finally
+        {
+            try { req?.Dispose(); } catch { /* ignore */ }
+            try { multipart?.Dispose(); } catch { /* ignore */ }
         }
     }
 
@@ -4863,9 +5004,12 @@ public static class Extension
         string? byNameOnce = null;
         if (!string.IsNullOrWhiteSpace(fileName))
         {
-            byNameOnce = FindScreenshotByFileName(fileName);
-            if (byNameOnce != null)
-                return byNameOnce;
+            foreach (var variant in ScreenshotFileNameVariants(fileName))
+            {
+                byNameOnce = FindScreenshotByFileName(variant);
+                if (byNameOnce != null)
+                    return byNameOnce;
+            }
         }
 
         if (newestFallback.HasValue)
@@ -5127,9 +5271,9 @@ public static class Extension
     /// </summary>
     private static string? FindScreenshotByFileName(string fileName)
     {
-        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { fileName };
-        foreach (var alt in WithAlternateImageExtensions(fileName))
-            names.Add(Path.GetFileName(alt));
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var variant in ScreenshotFileNameVariants(fileName))
+            names.Add(variant);
 
         var stem = Path.GetFileNameWithoutExtension(fileName);
         foreach (var dir in EnumerateScreenshotDirs())
@@ -5261,6 +5405,218 @@ public static class Extension
         }
     }
 
+    /// <summary>
+    /// SQF <c>format ["%1", 1114100]</c> produit <c>1.1141e+06</c> — le PNG disque
+    /// n’a jamais ce nom. On reconstitue l’entier pour la recherche.
+    /// </summary>
+    private static readonly Regex ArmaScientificNumber = new(
+        @"\d+\.\d+[eE][+\-]?\d+",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static IEnumerable<string> ScreenshotFileNameVariants(string fileName)
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        void Add(string? n)
+        {
+            if (string.IsNullOrWhiteSpace(n)) return;
+            var leaf = Path.GetFileName(n);
+            if (string.IsNullOrWhiteSpace(leaf) || !names.Add(leaf)) return;
+            foreach (var alt in WithAlternateImageExtensions(leaf))
+                names.Add(Path.GetFileName(alt));
+        }
+        Add(fileName);
+        Add(NormalizeArmaScientificFileName(fileName));
+        return names;
+    }
+
+    private static string NormalizeArmaScientificFileName(string fileName)
+    {
+        try
+        {
+            var name = Path.GetFileName(fileName);
+            if (string.IsNullOrWhiteSpace(name)) return fileName;
+            var ext = Path.GetExtension(name);
+            var stem = Path.GetFileNameWithoutExtension(name);
+            if (string.IsNullOrWhiteSpace(stem) || !ArmaScientificNumber.IsMatch(stem))
+                return fileName;
+            var newStem = ArmaScientificNumber.Replace(stem, m =>
+            {
+                if (double.TryParse(m.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var d)
+                    && !double.IsNaN(d) && !double.IsInfinity(d) && d >= 0 && d < 1e15)
+                    return Math.Round(d, MidpointRounding.AwayFromZero)
+                        .ToString("0", CultureInfo.InvariantCulture);
+                return m.Value;
+            });
+            if (string.Equals(newStem, stem, StringComparison.Ordinal)) return fileName;
+            var dir = Path.GetDirectoryName(fileName);
+            var rebuilt = newStem + ext;
+            return string.IsNullOrEmpty(dir) ? rebuilt : Path.Combine(dir, rebuilt);
+        }
+        catch
+        {
+            return fileName;
+        }
+    }
+
+    /// <summary>
+    /// Dossier Screenshots saturé (plafond Arma 250 Mo) → <c>screenshot</c> échoue
+    /// sans écrire. On libère nos PNG COMSPEC et on relève le plafond du profil.
+    /// </summary>
+    private static void EnsureScreenshotQuota()
+    {
+        if (_screenshotQuotaEnsured) return;
+        _screenshotQuotaEnsured = true;
+        try
+        {
+            const long softLimit = 180L * 1024 * 1024;
+            foreach (var dir in EnumerateScreenshotDirs())
+            {
+                if (!IsScreenshotCaptureDir(dir)) continue;
+                FileInfo[] files;
+                try { files = new DirectoryInfo(dir).GetFiles("*.*", SearchOption.TopDirectoryOnly); }
+                catch { continue; }
+                long total = 0;
+                foreach (var f in files)
+                {
+                    try { total += f.Length; } catch { /* ignore */ }
+                }
+                if (total < softLimit) continue;
+                var ours = files
+                    .Where(f =>
+                        f.Name.StartsWith("COMSPEC_", StringComparison.OrdinalIgnoreCase)
+                        && IsImageExtension(f.Extension))
+                    .OrderBy(f => f.LastWriteTimeUtc)
+                    .ToArray();
+                foreach (var f in ours)
+                {
+                    if (total < softLimit) break;
+                    try
+                    {
+                        var len = f.Length;
+                        f.Delete();
+                        total -= len;
+                    }
+                    catch { /* ignore */ }
+                }
+            }
+            PatchArma3ProfilesScreenshotLimit();
+        }
+        catch
+        {
+            // Best-effort : ne jamais faire échouer un envoi pour un ménage.
+        }
+    }
+
+    private static void PatchArma3ProfilesScreenshotLimit()
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var dir in EnumerateScreenshotDirs())
+        {
+            DirectoryInfo? parent;
+            try { parent = Directory.GetParent(dir); }
+            catch { continue; }
+            if (parent == null || !parent.Exists) continue;
+            IEnumerable<string> profiles;
+            try { profiles = parent.EnumerateFiles("*.Arma3Profile", SearchOption.TopDirectoryOnly).Select(f => f.FullName); }
+            catch { continue; }
+            foreach (var prof in profiles)
+            {
+                if (!seen.Add(prof)) continue;
+                try
+                {
+                    var text = File.ReadAllText(prof);
+                    if (Regex.IsMatch(text, @"maxScreenShotFolderSizeMB\s*=\s*\d+", RegexOptions.IgnoreCase))
+                    {
+                        var patched = Regex.Replace(
+                            text,
+                            @"maxScreenShotFolderSizeMB\s*=\s*(\d+)",
+                            m =>
+                            {
+                                if (int.TryParse(m.Groups[1].Value, out var cur) && cur >= 2000)
+                                    return m.Value;
+                                return "maxScreenShotFolderSizeMB=4000";
+                            },
+                            RegexOptions.IgnoreCase);
+                        if (!string.Equals(patched, text, StringComparison.Ordinal))
+                            File.WriteAllText(prof, patched);
+                    }
+                    else
+                    {
+                        File.AppendAllText(prof, "\r\nmaxScreenShotFolderSizeMB=4000;\r\n");
+                    }
+                }
+                catch { /* profil verrouillé par Arma */ }
+            }
+        }
+    }
+
+    private static IEnumerable<string> EnumerateArmaLaunchScreenshotDirs()
+    {
+        string? profiles = null;
+        string? name = null;
+        try
+        {
+            var cmd = Environment.GetCommandLineArgs();
+            for (var i = 0; i < cmd.Length; i++)
+            {
+                var a = cmd[i] ?? "";
+                if (a.StartsWith("-profiles=", StringComparison.OrdinalIgnoreCase))
+                    profiles = a["-profiles=".Length..].Trim().Trim('"');
+                else if (a.Equals("-profiles", StringComparison.OrdinalIgnoreCase) && i + 1 < cmd.Length)
+                    profiles = (cmd[++i] ?? "").Trim().Trim('"');
+                else if (a.StartsWith("-name=", StringComparison.OrdinalIgnoreCase))
+                    name = a["-name=".Length..].Trim().Trim('"');
+                else if (a.Equals("-name", StringComparison.OrdinalIgnoreCase) && i + 1 < cmd.Length)
+                    name = (cmd[++i] ?? "").Trim().Trim('"');
+            }
+        }
+        catch
+        {
+            yield break;
+        }
+        if (string.IsNullOrWhiteSpace(profiles)) yield break;
+        if (!string.IsNullOrWhiteSpace(name))
+            yield return Path.Combine(profiles, name, "Screenshots");
+        yield return Path.Combine(profiles, "Screenshots");
+    }
+
+    private static string? FindNewestMatchingPrefix(string prefix, TimeSpan maxAge)
+    {
+        try
+        {
+            FileInfo? best = null;
+            var cutoff = DateTime.UtcNow - maxAge;
+            foreach (var dir in EnumerateScreenshotDirs())
+            {
+                if (!IsScreenshotCaptureDir(dir)) continue;
+                IEnumerable<string> files;
+                try { files = EnumerateRecentImagesInDir(dir); }
+                catch { continue; }
+                foreach (var f in files)
+                {
+                    try
+                    {
+                        var leaf = Path.GetFileName(f);
+                        if (string.IsNullOrWhiteSpace(leaf)
+                            || !leaf.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        var fi = new FileInfo(f);
+                        if (!fi.Exists || fi.Length < 32) continue;
+                        if (fi.LastWriteTimeUtc < cutoff) continue;
+                        if (best == null || fi.LastWriteTimeUtc > best.LastWriteTimeUtc)
+                            best = fi;
+                    }
+                    catch { /* ignore */ }
+                }
+            }
+            return best?.FullName;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static IEnumerable<string> EnumerateScreenshotDirs()
     {
         var dirs = new List<string>();
@@ -5296,6 +5652,12 @@ public static class Extension
                 // Profils déplacés / -profiles= parfois sous Documents\Arma 3\<name>
                 AddScreenshotsUnder(Path.Combine(docs, "Arma 3"));
             }
+        }
+        catch { /* ignore */ }
+        try
+        {
+            foreach (var launchDir in EnumerateArmaLaunchScreenshotDirs())
+                AddIfExists(launchDir);
         }
         catch { /* ignore */ }
         try
@@ -5664,7 +6026,8 @@ public static class Extension
     }
 
     /// <summary>
-    /// Extrait un id Athena depuis un JSON biométrie / envelope (person_id, id, athena_person_id).
+    /// Extrait un id Athena numérique depuis un JSON biométrie / envelope.
+    /// Ignore les UID terrain (SSE-35-000001) et les objets JSON passés par erreur.
     /// </summary>
     private static string TryExtractSsePersonId(string jsonBody)
     {
@@ -5678,7 +6041,7 @@ public static class Extension
                 var v = el.ValueKind == JsonValueKind.Number
                     ? el.GetInt32().ToString()
                     : (el.GetString() ?? "").Trim();
-                if (v.Length > 0 && v != "0" && !v.Equals("Success", StringComparison.OrdinalIgnoreCase))
+                if (IsAthenaPersonId(v))
                     return v;
             }
         }
@@ -5686,8 +6049,29 @@ public static class Extension
         return "";
     }
 
+    private static bool LooksLikeJsonObject(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+        var t = raw.TrimStart();
+        return t.StartsWith('{') || t.StartsWith('[');
+    }
+
+    private static bool IsAthenaPersonId(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+        var v = raw.Trim();
+        if (v.Length == 0 || v == "0") return false;
+        if (v.Equals("Success", StringComparison.OrdinalIgnoreCase)) return false;
+        if (LooksLikeJsonObject(v)) return false;
+        foreach (var c in v)
+        {
+            if (c < '0' || c > '9') return false;
+        }
+        return true;
+    }
+
     /// <summary>
-    /// SendSSE : uniquement un vrai rapport tactique (report_type).
+    /// SendSSE : rapport tactique, sinon acquisition numérique SSE.
     /// Le reste ne doit pas créer un rapport vide « OTHER ».
     /// </summary>
     private static string PostSseGenericSync(string jsonBody, CancellationToken token)
@@ -5698,11 +6082,16 @@ public static class Extension
             try
             {
                 using var doc = JsonDocument.Parse(enriched);
-                if (doc.RootElement.TryGetProperty("report_type", out var rt)
+                var root = doc.RootElement;
+                if (root.TryGetProperty("report_type", out var rt)
                     && rt.ValueKind == JsonValueKind.String
                     && !string.IsNullOrWhiteSpace(rt.GetString()))
                 {
                     return PostAtakJsonSync("/api/atak/reports", enriched, token);
+                }
+                if (IsSseDigitalPayload(root))
+                {
+                    return PostAtakJsonSync("/api/sse/digital-acquisitions", enriched, token);
                 }
             }
             catch { /* ignore */ }
@@ -5712,6 +6101,21 @@ public static class Extension
         {
             return FormatAtakExtArray("ERROR", ex.Message);
         }
+    }
+
+    private static bool IsSseDigitalPayload(JsonElement root)
+    {
+        if (root.TryGetProperty("category", out var cat)
+            && cat.ValueKind == JsonValueKind.String
+            && string.Equals(cat.GetString(), "digital", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (root.TryGetProperty("schema", out var sch)
+            && sch.ValueKind == JsonValueKind.String
+            && (sch.GetString() ?? "").Contains("digital", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (root.TryGetProperty("phone_summary", out _) || root.TryGetProperty("computer_summary", out _))
+            return true;
+        return false;
     }
 
     /// <summary>

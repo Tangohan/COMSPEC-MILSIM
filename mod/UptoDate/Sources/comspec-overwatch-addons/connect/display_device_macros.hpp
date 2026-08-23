@@ -25,12 +25,12 @@
 #define COMSPEC_IMG_ICON_TABLET "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_tablet.paa"
 #define COMSPEC_IMG_ICON_MAIL "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_mail_ca.paa"
 
-// Overlays roleplay (textures originales COMSPEC — PNG packés tant que TexView n’a pas produit les .paa)
-#define COMSPEC_IMG_OVERLAY_SCREEN_CRACKED "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.png"
-#define COMSPEC_IMG_OVERLAY_SCREEN_OFF "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.png"
-#define COMSPEC_IMG_OVERLAY_STATIC "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.png"
-#define COMSPEC_IMG_OVERLAY_NO_SIGNAL "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.png"
-#define COMSPEC_IMG_OVERLAY_LOW_SIGNAL "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_low_signal_ca.png"
+// Overlays roleplay (PAA puissance de 2 — les PNG 1536×1024 ne s’affichent pas en RscPicture)
+#define COMSPEC_IMG_OVERLAY_SCREEN_CRACKED "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.paa"
+#define COMSPEC_IMG_OVERLAY_SCREEN_OFF "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.paa"
+#define COMSPEC_IMG_OVERLAY_STATIC "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa"
+#define COMSPEC_IMG_OVERLAY_NO_SIGNAL "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.paa"
+#define COMSPEC_IMG_OVERLAY_LOW_SIGNAL "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_low_signal_ca.paa"
 #define COMSPEC_IMG_ICON_JAMMER "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_jammer_ca.png"
 #define COMSPEC_IMG_ICON_NO_COVERAGE "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_no_coverage_ca.png"
 #define COMSPEC_IMG_ICON_DEVICE_DESTROYED "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_device_destroyed_ca.png"

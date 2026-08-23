@@ -37,23 +37,24 @@ private _extractText = {
     // Liste traduite cTab : texte en index 5
     private _pos0 = _data select 0;
     if (_pos0 isEqualType [] && {(count _pos0) >= 2} && {(_pos0 select 0) isEqualType 0}) then {
+        private _translated = "";
         if ((count _data) > 5) then {
             private _t = _data select 5;
-            if (_t isEqualType "") exitWith { trim _t };
+            if (_t isEqualType "") then { _translated = trim _t; };
         };
-        if ((count _data) > 4) then {
+        if (_translated isEqualTo "" && {(count _data) > 4}) then {
             private _t2 = _data select 4;
-            if (_t2 isEqualType "") exitWith { trim _t2 };
+            if (_t2 isEqualType "") then { _translated = trim _t2; };
         };
-        exitWith { "" };
-    };
-
-    // Brut cTab : [pos, iconIdx, sizeIdx, dir, text, creator?]
-    if ((count _data) > 4) then {
-        private _rawText = _data select 4;
-        if (_rawText isEqualType "") exitWith { trim _rawText };
-    };
-    ""
+        _translated
+    } else {
+        // Brut cTab : [pos, iconIdx, sizeIdx, dir, text, creator?]
+        if ((count _data) > 4) then {
+            private _rawText = _data select 4;
+            if (_rawText isEqualType "") exitWith { trim _rawText };
+        };
+        ""
+    }
 };
 
 private _lists = [];

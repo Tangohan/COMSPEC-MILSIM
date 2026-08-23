@@ -79,12 +79,29 @@ switch (_type) do {
         _sections set ["locations", _person getOrDefault ["locations", []]];
         _sections set ["intel", _person getOrDefault ["intel", []]];
 
-        private _phoneData = [_seed + 7, _profile, _complexity, _cluster] call comspec_sse_fnc_generatePhone;
-        private _devices = [_phoneData];
+        private _phoneMode = toUpper (trim (_entity getVariable ["comspec_sse_phoneMode", "AUTO"]));
+        if (!(_phoneMode isEqualType "")) then { _phoneMode = "AUTO"; };
+        private _digMode = toUpper (trim (_entity getVariable ["comspec_sse_digitalMode", "AUTO"]));
+        if (!(_digMode isEqualType "")) then { _digMode = "AUTO"; };
+        private _docMode = toUpper (trim (_entity getVariable ["comspec_sse_documentsMode", "AUTO"]));
+        if (!(_docMode isEqualType "")) then { _docMode = "AUTO"; };
+
+        private _devices = [];
+        if (_phoneMode isNotEqualTo "NONE") then {
+            private _phoneData = [_seed + 7, _profile, _complexity, _cluster] call comspec_sse_fnc_generatePhone;
+            _devices = [_phoneData];
+        };
         _sections set ["digitalDevices", _devices];
 
-        // PC différé hors de la frame generatePerson+phone (anti pic pile DETAILED).
-        if (_complexity in ["DETAILED", "HIGH_VALUE"] && {(([_seed, "pc"] call comspec_sse_fnc_hash) mod 100) < (if (_complexity == "HIGH_VALUE") then {80} else {45})}) then {
+        if (_docMode isEqualTo "NONE") then {
+            _sections set ["documents", []];
+        };
+
+        // PC : richesse élevée, ou ordinateur personnalisé Eden.
+        private _wantPc = (_digMode isEqualTo "CUSTOM")
+            || {_complexity in ["DETAILED", "HIGH_VALUE"] && {(([_seed, "pc"] call comspec_sse_fnc_hash) mod 100) < (if (_complexity == "HIGH_VALUE") then {80} else {45})}};
+        if (_digMode isEqualTo "NONE") then { _wantPc = false; };
+        if (_wantPc) then {
             _entity setVariable ["comspec_sse_pendingComputer", true, false];
             _entity setVariable ["comspec_sse_pendingComputerSeed", _seed + 99, false];
         };
@@ -251,6 +268,9 @@ if (isNil "_data" || {!(_data isEqualType [])}) exitWith {
     false
 };
 [_entity, _data, false] call comspec_sse_fnc_setData;
+if (!isNil "comspec_sse_fnc_applyAuthoredContent") then {
+    [_entity] call comspec_sse_fnc_applyAuthoredContent;
+};
 _entity setVariable ["comspec_sse_clusterId", _cluster getOrDefault ["clusterId", ""], false];
 _entity setVariable ["comspec_sse_theme", _cluster getOrDefault ["theme", ""], false];
 
@@ -296,6 +316,9 @@ if (!isNil "CBA_fnc_waitAndExecute") then {
                 if (isNil "_devs" || {!(_devs isEqualType [])}) then { _devs = []; };
                 _devs pushBack _comp;
                 [_e, "digitalDevices", _devs, false] call comspec_sse_fnc_setSection;
+                if (!isNil "comspec_sse_fnc_applyAuthoredContent") then {
+                    [_e] call comspec_sse_fnc_applyAuthoredContent;
+                };
             };
         };
         private _d = [_e] call comspec_sse_fnc_getData;

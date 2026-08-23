@@ -27,8 +27,9 @@
 //   9530-9535 tuiles d'accueil   9540 titre de page   9541 ◄   9542 ►   9543 accueil
 //   9544 rendre le dossier actif
 //   9551-9556 libellés page sujet   9560-9565 libellés autres pages
-//   9566 platine   9567 cadre LCD
+//   9566 platine   9567 cadre LCD   9568 carte signature (page dossier)
 //   9570-9573 softkeys A1 / A2 / QUERY / SIGN (sous l’écran)
+//   9580-9582 page terrain (record / listes)  9590-9594 DIG SITE GRAPH PREV MISS
 //   Tout libellé doit porter un IDC : sans cela il ne peut pas être masqué et se
 //   superpose d'une page à l'autre.
 
@@ -54,11 +55,25 @@
 #define HALF_W      ((IN_W - SP) / 2)
 #define IN_X2       (IN_X + HALF_W + SP)
 
-#define BAR_H       (0.0165 * safezoneH)
-#define ROW_H       (0.0200 * safezoneH)
-#define LBL_H       (0.0125 * safezoneH)
+#define BAR_H       (0.0190 * safezoneH)
+#define ROW_H       (0.0220 * safezoneH)
+#define LBL_H       (0.0135 * safezoneH)
 #define ROW(n)      (SCR_Y + BAR_H + (0.004 * safezoneH) + (n) * ROW_H)
 #define NAV_Y       (SCR_Y + SCR_H - BAR_H - (0.003 * safezoneH))
+
+// Typo LCD : le sizeEx Overwatch (plein écran) déborde sur ce verre.
+#define SEEK_FONT   0.018
+#define BTN_H       (0.021 * safezoneH)
+#define FOOT_Y      (NAV_Y - BTN_H - (0.003 * safezoneH))
+#define SEC_Y       (FOOT_Y - BTN_H - (0.004 * safezoneH))
+#define MSG_H       (0.022 * safezoneH)
+#define MSG_Y       (SEC_Y - MSG_H - (0.003 * safezoneH))
+#define CASE_TOP    (SCR_Y + BAR_H + (0.005 * safezoneH))
+#define CASE_EDIT_H (0.026 * safezoneH)
+#define SIG_Y       (CASE_TOP + LBL_H + CASE_EDIT_H + (0.005 * safezoneH))
+#define SIG_H       (0.036 * safezoneH)
+#define TX_W        (IN_W * 0.62)
+#define CANCEL_W    (IN_W - TX_W - SP)
 
 // Accueil : deux rangées de trois tuiles.
 #define TILE_W      ((IN_W - 2 * SP) / 3)
@@ -113,25 +128,25 @@ class COMSPEC_SsePerson_Dialog {
         class BtnHome: RscButton {
             idc = 9543;
             text = "Home";
-            x = SCR_X; y = SCR_Y; w = (0.16 * SCR_W); h = BAR_H;
+            x = SCR_X; y = SCR_Y; w = (0.15 * SCR_W); h = BAR_H;
             colorBackground[] = {0, 0, 0, 0};
             colorBackgroundActive[] = {0.24, 0.87, 0.55, 0.35};
             colorText[] = {0.91, 0.96, 0.94, 1};
             colorFocused[] = {0, 0, 0, 0};
-            sizeEx = 0.020;
+            sizeEx = 0.022;
             action = "[0] call comspec_overwatch_connect_fnc_sseTerminalPage;";
         };
         class ScreenTitle: RscStructuredText {
             idc = 9540;
-            text = "<t size='0.42' align='center' color='#ffffff'>SEEK</t>";
-            x = (SCR_X + 0.16 * SCR_W); y = (SCR_Y + 0.001 * safezoneH);
-            w = (0.46 * SCR_W); h = (BAR_H - 0.002 * safezoneH);
+            text = "<t size='0.50' align='center' color='#ffffff'>SEEK</t>";
+            x = (SCR_X + 0.15 * SCR_W); y = (SCR_Y + 0.001 * safezoneH);
+            w = (0.30 * SCR_W); h = (BAR_H - 0.002 * safezoneH);
         };
         class StatusRight: RscStructuredText {
             idc = 9526;
-            text = "<t size='0.38' align='right' color='#c8d4e0'>--:--</t>";
-            x = (SCR_X + 0.62 * SCR_W); y = (SCR_Y + 0.001 * safezoneH);
-            w = (0.37 * SCR_W); h = (BAR_H - 0.002 * safezoneH);
+            text = "<t size='0.48' align='right' color='#c8d4e0'>--:--</t>";
+            x = (SCR_X + 0.45 * SCR_W); y = (SCR_Y + 0.001 * safezoneH);
+            w = (0.54 * SCR_W); h = (BAR_H - 0.002 * safezoneH);
         };
 
         // ================= PAGE 0 — ACCUEIL =================
@@ -142,13 +157,13 @@ class COMSPEC_SsePerson_Dialog {
             colorBackground[] = {0.055, 0.118, 0.125, 0.95};
             colorBackgroundActive[] = {0.07, 0.82, 0.56, 0.35};
             colorText[] = {0.91, 0.97, 0.94, 1};
-            sizeEx = 0.022;
+            sizeEx = SEEK_FONT;
             tooltip = "Identité de la personne";
             action = "[1] call comspec_overwatch_connect_fnc_sseTerminalPage;";
         };
         class Tile1: Tile0 { idc = 9531; text = "CONTEXTE"; x = TILE_X(1); tooltip = "Statut, circonstances, affiliation"; action = "[2] call comspec_overwatch_connect_fnc_sseTerminalPage;"; };
         class Tile2: Tile0 { idc = 9532; text = "BIOMETRIE"; x = TILE_X(2); tooltip = "Empreintes, iris, ADN, requête d’identité"; action = "[3] call comspec_overwatch_connect_fnc_sseTerminalPage;"; };
-        class Tile3: Tile0 { idc = 9533; text = "CONSTAT"; y = TILE_Y(1); tooltip = "Constat de terrain et déclarations"; action = "[4] call comspec_overwatch_connect_fnc_sseTerminalPage;"; };
+        class Tile3: Tile0 { idc = 9533; text = "TERRAIN"; y = TILE_Y(1); tooltip = "Record lié, digital, site, graphe, preuves, mission"; action = "missionNamespace setVariable ['comspec_sse_uiScreen', 'terminal']; [7] call comspec_overwatch_connect_fnc_sseTerminalPage; ['terminal'] call comspec_sse_fnc_uiRefresh;"; };
         class Tile4: Tile0 { idc = 9534; text = "PHOTO"; x = TILE_X(1); y = TILE_Y(1); tooltip = "Photographie du visage"; action = "[5] call comspec_overwatch_connect_fnc_sseTerminalPage;"; };
         class Tile5: Tile0 { idc = 9535; text = "DOSSIER"; x = TILE_X(2); y = TILE_Y(1); tooltip = "Classement, signature, transmission"; action = "[6] call comspec_overwatch_connect_fnc_sseTerminalPage;"; };
 
@@ -161,7 +176,7 @@ class COMSPEC_SsePerson_Dialog {
         // ================= PAGE 1 — SUJET =================
         class LabelLast: RscStructuredText {
             idc = 9551;
-            text = "<t size='0.38' color='#5f7383'>NOM</t>";
+            text = "<t size='0.44' color='#8aa0b0'>NOM</t>";
             x = IN_X; y = ROW(0); w = HALF_W; h = LBL_H;
         };
         class EditLast: RscEdit {
@@ -170,34 +185,34 @@ class COMSPEC_SsePerson_Dialog {
             colorBackground[] = {0.043, 0.110, 0.118, 1}; colorText[] = {0.91, 0.97, 0.94, 1};
             sizeEx = 0.022; autocomplete = "";
         };
-        class LabelFirst: LabelLast { idc = 9552; text = "<t size='0.38' color='#5f7383'>PRENOM</t>"; x = IN_X2; };
+        class LabelFirst: LabelLast { idc = 9552; text = "<t size='0.44' color='#8aa0b0'>PRENOM</t>"; x = IN_X2; };
         class EditFirst: EditLast { idc = 9502; x = IN_X2; };
-        class LabelAlias: LabelLast { idc = 9553; text = "<t size='0.38' color='#5f7383'>ALIAS</t>"; y = ROW(1); };
+        class LabelAlias: LabelLast { idc = 9553; text = "<t size='0.44' color='#8aa0b0'>ALIAS</t>"; y = ROW(1); };
         class EditAlias: EditLast { idc = 9503; y = (ROW(1) + LBL_H); };
-        class LabelAge: LabelLast { idc = 9554; text = "<t size='0.38' color='#5f7383'>AGE</t>"; x = IN_X2; y = ROW(1); };
+        class LabelAge: LabelLast { idc = 9554; text = "<t size='0.44' color='#8aa0b0'>AGE</t>"; x = IN_X2; y = ROW(1); };
         class EditAge: EditLast { idc = 9504; x = IN_X2; y = (ROW(1) + LBL_H); };
-        class LabelNat: LabelLast { idc = 9555; text = "<t size='0.38' color='#5f7383'>NATIONALITE</t>"; y = ROW(2); };
+        class LabelNat: LabelLast { idc = 9555; text = "<t size='0.44' color='#8aa0b0'>NATIONALITE</t>"; y = ROW(2); };
         class EditNat: EditLast { idc = 9507; y = (ROW(2) + LBL_H); };
-        class LabelLang: LabelLast { idc = 9556; text = "<t size='0.38' color='#5f7383'>LANGUE</t>"; x = IN_X2; y = ROW(2); };
+        class LabelLang: LabelLast { idc = 9556; text = "<t size='0.44' color='#8aa0b0'>LANGUE</t>"; x = IN_X2; y = ROW(2); };
         class EditLang: EditLast { idc = 9508; x = IN_X2; y = (ROW(2) + LBL_H); };
         class TextWeapons: RscStructuredText {
             idc = 9511;
-            text = "<t size='0.38' color='#5f7383'>Aucun inventaire détecté.</t>";
+            text = "<t size='0.44' color='#8aa0b0'>Aucun inventaire détecté.</t>";
             x = IN_X; y = ROW(3); w = IN_W; h = (2.4 * ROW_H);
         };
 
         // ================= PAGE 2 — CONTEXTE =================
-        class LabelStatus: LabelLast { idc = 9560; text = "<t size='0.38' color='#5f7383'>STATUT</t>"; };
+        class LabelStatus: LabelLast { idc = 9560; text = "<t size='0.44' color='#8aa0b0'>STATUT</t>"; };
         class ComboStatus: RscCombo {
             idc = 9505;
             x = IN_X; y = (ROW(0) + LBL_H); w = HALF_W; h = (ROW_H - LBL_H);
             colorBackground[] = {0.043, 0.110, 0.118, 1}; colorText[] = {0.91, 0.97, 0.94, 1}; sizeEx = 0.022;
         };
-        class LabelCirc: LabelLast { idc = 9561; text = "<t size='0.38' color='#5f7383'>CIRCONSTANCES</t>"; x = IN_X2; };
+        class LabelCirc: LabelLast { idc = 9561; text = "<t size='0.44' color='#8aa0b0'>CIRCONSTANCES</t>"; x = IN_X2; };
         class ComboCirc: ComboStatus { idc = 9506; x = IN_X2; };
-        class LabelAffil: LabelLast { idc = 9562; text = "<t size='0.38' color='#5f7383'>AFFILIATION ESTIMEE</t>"; y = ROW(1); };
+        class LabelAffil: LabelLast { idc = 9562; text = "<t size='0.44' color='#8aa0b0'>AFFILIATION ESTIMEE</t>"; y = ROW(1); };
         class EditAffil: EditLast { idc = 9510; y = (ROW(1) + LBL_H); w = IN_W; };
-        class LabelMarks: LabelLast { idc = 9563; text = "<t size='0.38' color='#5f7383'>SIGNES DISTINCTIFS</t>"; y = ROW(2); };
+        class LabelMarks: LabelLast { idc = 9563; text = "<t size='0.44' color='#8aa0b0'>SIGNES DISTINCTIFS</t>"; y = ROW(2); };
         class EditMarks: EditLast { idc = 9509; y = (ROW(2) + LBL_H); w = IN_W; };
 
         // ================= PAGE 3 — BIOMETRIE =================
@@ -210,6 +225,7 @@ class COMSPEC_SsePerson_Dialog {
             idc = 9514;
             text = "EMPR.";
             x = IN_X; y = (ROW(1) - 0.003 * safezoneH); w = QW; h = (0.020 * safezoneH);
+            sizeEx = SEEK_FONT;
             action = "['empreintes'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
         };
         class BtnIris: BtnBio { idc = 9523; text = "IRIS"; x = (IN_X + QW + SP); action = "['iris'] call comspec_overwatch_connect_fnc_sseBiometricSample;"; };
@@ -219,21 +235,22 @@ class COMSPEC_SsePerson_Dialog {
             text = "QUERY";
             x = (IN_X + 3 * (QW + SP)); y = (ROW(1) - 0.003 * safezoneH);
             w = QW; h = (0.020 * safezoneH);
+            sizeEx = SEEK_FONT;
             action = "[] call comspec_overwatch_connect_fnc_sseIdentityQuery;";
         };
         class TextBiometrics: RscStructuredText {
             idc = 9522;
-            text = "<t size='0.38' color='#5f7383'>Aucun prélèvement.</t>";
+            text = "<t size='0.44' color='#8aa0b0'>Aucun prélèvement.</t>";
             x = IN_X; y = ROW(2); w = IN_W; h = (3.2 * ROW_H);
         };
 
         // ================= PAGE 4 — CONSTAT =================
         class TextMedical: RscStructuredText {
             idc = 9521;
-            text = "<t size='0.38' color='#5f7383'>Aucun constat.</t>";
+            text = "<t size='0.44' color='#8aa0b0'>Aucun constat.</t>";
             x = IN_X; y = ROW(0); w = IN_W; h = (2.4 * ROW_H);
         };
-        class LabelStmt: LabelLast { idc = 9564; text = "<t size='0.38' color='#5f7383'>DECLARATIONS</t>"; y = ROW(3); };
+        class LabelStmt: LabelLast { idc = 9564; text = "<t size='0.44' color='#8aa0b0'>DECLARATIONS</t>"; y = ROW(3); };
         class EditStmt: EditLast { idc = 9512; y = (ROW(3) + LBL_H); w = IN_W; h = (1.4 * ROW_H); };
 
         // ================= PAGE 5 — PHOTO =================
@@ -241,6 +258,7 @@ class COMSPEC_SsePerson_Dialog {
             idc = 9515;
             text = "PHOTO DU VISAGE";
             x = IN_X; y = ROW(1); w = IN_W; h = (0.022 * safezoneH);
+            sizeEx = SEEK_FONT;
             action = "[] call comspec_overwatch_connect_fnc_sseCaptureFacePhoto;";
         };
         class LcdFrame: RscText {
@@ -255,68 +273,133 @@ class COMSPEC_SsePerson_Dialog {
         };
 
         // ================= PAGE 6 — DOSSIER =================
-        class LabelCase: LabelLast { idc = 9565; text = "<t size='0.38' color='#5f7383'>CODE DOSSIER SSE</t>"; };
+        // Haut : code + état de signature. Bas : actions collées à la navigation.
+        class LabelCase: LabelLast {
+            idc = 9565;
+            text = "<t size='0.46' color='#8aa0b0'>CODE DOSSIER</t>";
+            x = IN_X; y = CASE_TOP; w = IN_W; h = LBL_H;
+        };
         class EditCase: EditLast {
             idc = 9518;
-            y = (ROW(0) + LBL_H); w = IN_W;
-            colorText[] = {0.62, 0.90, 0.72, 1};
+            x = IN_X; y = (CASE_TOP + LBL_H); w = IN_W; h = CASE_EDIT_H;
+            colorBackground[] = {0.03, 0.09, 0.10, 1};
+            colorText[] = {0.72, 0.94, 0.80, 1};
+            sizeEx = 0.024;
         };
-        // Rend le code saisi actif pour tout l'élément : les fiches suivantes en héritent.
+        class SigCard: RscText {
+            idc = 9568;
+            x = IN_X; y = SIG_Y; w = IN_W; h = SIG_H;
+            colorBackground[] = {0.035, 0.09, 0.10, 1};
+        };
+        class TextSignature: RscStructuredText {
+            idc = 9520;
+            text = "<t size='0.48' color='#e0b07e'>Non signé</t>";
+            x = (IN_X + 0.006 * SEEK_W); y = (SIG_Y + 0.003 * safezoneH);
+            w = (IN_W - 0.012 * SEEK_W); h = (SIG_H - 0.005 * safezoneH);
+        };
+        class StatusText: RscStructuredText {
+            idc = 9513;
+            text = "";
+            x = IN_X; y = MSG_Y; w = IN_W; h = MSG_H;
+        };
         class BtnCaseActive: COMSPEC_RscButton {
             idc = 9544;
             text = "DOSSIER ACTIF";
-            x = IN_X; y = ROW(1); w = HALF_W; h = (0.020 * safezoneH);
-            sizeEx = 0.020;
+            x = IN_X; y = SEC_Y; w = HALF_W; h = BTN_H;
+            sizeEx = SEEK_FONT;
             tooltip = "Rend ce dossier actif pour l’élément — les fiches suivantes y seront classées.";
             action = "private _d = uiNamespace getVariable ['COMSPEC_SsePerson_Display', displayNull]; ['set', ctrlText (_d displayCtrl 9518)] call comspec_overwatch_connect_fnc_sseActiveCase; [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;";
         };
         class BtnSign: COMSPEC_RscButton {
             idc = 9519;
-            text = "SIGNER PAR L’ATAK";
-            x = IN_X2; y = ROW(1); w = HALF_W; h = (0.020 * safezoneH);
-            sizeEx = 0.020;
+            text = "SIGNER";
+            x = IN_X2; y = SEC_Y; w = HALF_W; h = BTN_H;
+            sizeEx = SEEK_FONT;
+            tooltip = "Signer la fiche avec l’indicatif ATAK de l’opérateur.";
             action = "[] call comspec_overwatch_connect_fnc_sseSignAtak;";
         };
-        class TextSignature: RscStructuredText {
-            idc = 9520;
-            text = "<t size='0.38' color='#e0b07e'>NON SIGNE</t>";
-            x = IN_X; y = ROW(2); w = IN_W; h = (1.2 * ROW_H);
-        };
-        class StatusText: RscStructuredText {
-            idc = 9513;
-            text = "";
-            x = IN_X; y = ROW(3); w = IN_W; h = (0.9 * ROW_H);
-        };
-        // Au-dessus de la barre de navigation : ne plus coller TRANSMETTRE sur ◄.
         class BtnSave: COMSPEC_RscButtonAccent {
             idc = 9516;
             text = "TRANSMETTRE";
-            x = IN_X; y = ROW(4); w = HALF_W; h = (0.020 * safezoneH);
+            x = IN_X; y = FOOT_Y; w = TX_W; h = BTN_H;
+            sizeEx = SEEK_FONT;
             action = "[] call comspec_overwatch_connect_fnc_ssePersonDialogSubmit;";
         };
         class BtnClose: COMSPEC_RscButtonDanger {
             idc = 9517;
             text = "ANNULER";
-            x = IN_X2; y = ROW(4); w = HALF_W; h = (0.020 * safezoneH);
+            x = (IN_X + TX_W + SP); y = FOOT_Y; w = CANCEL_W; h = BTN_H;
+            sizeEx = SEEK_FONT;
             action = "private _d = uiNamespace getVariable ['COMSPEC_SsePerson_Display', displayNull]; if (!isNull _d) then { _d closeDisplay 2; } else { closeDialog 0; };";
+        };
+
+        // ================= PAGE 7 — TERRAIN (ancien hub vert) =================
+        class TerrainBody: RscStructuredText {
+            idc = 9580;
+            text = "<t size='0.38' color='#7f95a8'>Record terrain.</t>";
+            x = IN_X; y = ROW(0); w = IN_W; h = (1.85 * ROW_H);
+        };
+        class TerrainList: RscListBox {
+            idc = 9581;
+            x = IN_X; y = ROW(2); w = IN_W; h = (1.7 * ROW_H);
+            colorBackground[] = {0.02, 0.05, 0.06, 0.85};
+            colorText[] = {0.91, 0.97, 0.94, 1};
+            sizeEx = 0.018;
+        };
+        class TerrainDetail: RscStructuredText {
+            idc = 9582;
+            text = "";
+            x = IN_X; y = (NAV_Y - 0.001 * safezoneH); w = IN_W; h = 0.001;
+        };
+        class TerrainDig: COMSPEC_RscButton {
+            idc = 9590;
+            text = "DIG";
+            x = IN_X; y = ROW(4); w = ((IN_W - 4 * SP) / 5); h = (0.018 * safezoneH);
+            sizeEx = SEEK_FONT;
+            tooltip = "Exploitation numérique";
+            action = "['digital'] call comspec_sse_fnc_uiOpenScreen;";
+        };
+        class TerrainSite: TerrainDig {
+            idc = 9591; text = "SITE";
+            x = (IN_X + 1 * (((IN_W - 4 * SP) / 5) + SP));
+            tooltip = "Exploitation de site";
+            action = "['site'] call comspec_sse_fnc_uiOpenScreen;";
+        };
+        class TerrainGraph: TerrainDig {
+            idc = 9592; text = "GRAPH";
+            x = (IN_X + 2 * (((IN_W - 4 * SP) / 5) + SP));
+            tooltip = "Graphe de renseignement";
+            action = "['graph'] call comspec_sse_fnc_uiOpenScreen;";
+        };
+        class TerrainEvid: TerrainDig {
+            idc = 9593; text = "PREV";
+            x = (IN_X + 3 * (((IN_W - 4 * SP) / 5) + SP));
+            tooltip = "Preuves et scellés";
+            action = "['evidence'] call comspec_sse_fnc_uiOpenScreen;";
+        };
+        class TerrainMiss: TerrainDig {
+            idc = 9594; text = "MISS";
+            x = (IN_X + 4 * (((IN_W - 4 * SP) / 5) + SP));
+            tooltip = "Fusion mission";
+            action = "['mission'] call comspec_sse_fnc_uiOpenScreen;";
         };
 
         // ================= NAVIGATION =================
         class BtnPrev: RscButton {
             idc = 9541;
             text = "<<";
-            x = IN_X; y = NAV_Y; w = (0.14 * SCR_W); h = BAR_H;
+            x = IN_X; y = NAV_Y; w = (0.20 * SCR_W); h = BAR_H;
             colorBackground[] = {0.055, 0.118, 0.125, 0.9};
             colorBackgroundActive[] = {0.07, 0.82, 0.56, 0.35};
             colorText[] = {0.91, 0.97, 0.94, 1};
             colorFocused[] = {0.055, 0.118, 0.125, 0.9};
-            sizeEx = 0.020;
+            sizeEx = 0.022;
             action = "[-1, true] call comspec_overwatch_connect_fnc_sseTerminalPage;";
         };
         class BtnNext: BtnPrev {
             idc = 9542;
             text = ">>";
-            x = (SCR_X + SCR_W - SP - (0.14 * SCR_W));
+            x = (SCR_X + SCR_W - SP - (0.20 * SCR_W));
             action = "[1, true] call comspec_overwatch_connect_fnc_sseTerminalPage;";
         };
 
@@ -326,7 +409,7 @@ class COMSPEC_SsePerson_Dialog {
             idc = 9570;
             text = "A1";
             x = SOFT_X(0); y = SOFT_Y; w = SOFT_W; h = SOFT_H;
-            sizeEx = 0.018;
+            sizeEx = SEEK_FONT;
             colorBackground[] = {0.04, 0.09, 0.12, 0.72};
             colorBackgroundActive[] = {0.10, 0.28, 0.30, 0.95};
             colorFocused[] = {0.10, 0.28, 0.30, 0.95};

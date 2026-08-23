@@ -2597,8 +2597,111 @@ body.atak-hints-hidden .atak-panel-hint {
 .atak-cams-toolbar .atak-ops-btn {
   align-self: flex-start;
 }
+.atak-photos-night-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  color: #c5d0d6;
+  font: 600 11px/1.3 var(--atak-font-secondary, var(--atak-font-ui));
+}
+.atak-photos-night-label select {
+  min-height: 2rem;
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  background: #0a1016;
+  color: #e7eef2;
+  font: 600 12px/1.3 var(--atak-font-secondary, var(--atak-font-ui));
+}
 .atak-cams-list { padding: 0.5rem; }
 .atak-intel-photos { padding: 0 0.5rem 0.65rem; }
+
+/* Personnes (SSE) — cartes du tiroir INTEL */
+.atak-sse-persons-list {
+  padding: 0.5rem 0.55rem 0.7rem;
+}
+.atak-sse-persons-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.atak-sse-person-card {
+  display: grid;
+  grid-template-columns: 3.1rem minmax(0, 1fr);
+  gap: 0.55rem 0.65rem;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid rgba(52, 211, 153, 0.22);
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(8, 12, 22, 0.88) 100%);
+  box-shadow: inset 0 1px 0 rgba(52, 211, 153, 0.08);
+}
+.atak-sse-person-card-media {
+  width: 3.1rem;
+  height: 3.1rem;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  background: rgba(15, 23, 42, 0.95);
+}
+.atak-sse-person-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.atak-sse-person-thumb--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--atak-accent, #34d399);
+  font-size: 1.15rem;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(52, 211, 153, 0.08),
+      rgba(52, 211, 153, 0.08) 5px,
+      rgba(15, 23, 42, 0.35) 5px,
+      rgba(15, 23, 42, 0.35) 10px
+    );
+}
+.atak-sse-person-card-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+.atak-sse-person-card-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #f4f7fb;
+}
+.atak-sse-person-card-meta {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  color: rgba(196, 210, 224, 0.82);
+}
+.atak-sse-person-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  margin-top: 0.2rem;
+}
+.atak-sse-person-chip {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.12rem 0.38rem;
+  border-radius: 999px;
+  border: 1px solid rgba(52, 211, 153, 0.38);
+  color: #86efac;
+  background: rgba(52, 211, 153, 0.12);
+}
 .atak-cam-item { margin-bottom: 0.5rem; }
 .atak-cam-item video,
 .atak-cam-webrtc-video {
@@ -2963,6 +3066,20 @@ body.atak-hints-hidden .atak-panel-hint {
   font-weight: 500;
   letter-spacing: 0.01em;
   font-size: 0.62rem;
+}
+.atak-chat-pc-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.2rem;
+  padding: 0.04rem 0.32rem;
+  border-radius: 0.2rem;
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .atak-chat-msg-body {
   color: var(--atak-text);
@@ -4212,6 +4329,29 @@ body.atak-theme-light .atak-chat-messages {
 .atak-chat-group-badge {
   background: rgba(34, 197, 94, 0.22);
   color: #86efac;
+}
+.atak-chat-group-badge--pc {
+  background: rgba(245, 158, 11, 0.24);
+  color: #fcd34d;
+}
+.atak-chat-msg--pc,
+.atak-chat-msg-group.atak-chat-msg--pc,
+.atak-chat-msg-mp.atak-chat-msg--pc {
+  margin-left: 0.85rem;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.18), rgba(15, 23, 42, 0.16));
+  border-left: 3px solid #fbbf24;
+  border-right: 1px solid rgba(251, 191, 36, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.12);
+}
+.atak-chat-group-card--pc .atak-chat-group-text {
+  border-color: rgba(251, 191, 36, 0.38);
+  background: rgba(69, 26, 3, 0.42);
+  color: #fef3c7;
+}
+.atak-chat-group-card--pc .atak-chat-group-dir--out {
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(180, 83, 9, 0.28);
 }
 .atak-medical-chat-flag { color: #fecaca; font-weight: 600; }
 /* .atak-medical-tab-badge : styles unifi?s via .atak-tab-badge */
@@ -6355,9 +6495,11 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   background: rgba(148, 163, 184, 0.06);
 }
 .atak-orders-tpl-form[hidden] { display: none !important; }
-#tab-orders > .atak-panel-hint,
-#tab-orders > .atak-orders-issue,
-#tab-orders > .atak-empty-state {
+#tab-orders > .atak-c2-worktabs,
+#tab-orders > .atak-c2-suivi-bar,
+#atak-c2-pane-emettre > .atak-panel-hint,
+#atak-c2-pane-emettre > .atak-orders-issue,
+#atak-c2-pane-suivi > .atak-empty-state {
   flex-shrink: 0;
 }
 .atak-orders-list {
@@ -6776,10 +6918,17 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
 }
 
 /* Session téléphone /connect → /atak : cartes encore plus « app » */
+body.atak-phone-session .atak-c2-suivi-bar {
+  flex-wrap: wrap;
+  padding: 0.45rem 0.65rem 0.15rem;
+}
 body.atak-phone-session #tab-orders .atak-panel-hint {
   font-size: 0.8rem;
   line-height: 1.4;
   margin: 0.35rem 0.65rem 0.55rem;
+}
+body.atak-phone-session .atak-c2-suivi-hint {
+  margin: 0;
 }
 body.atak-phone-session .atak-orders-list {
   gap: 0.85rem;
@@ -10564,7 +10713,8 @@ body.atak-device-embed .leaflet-container {
 body.atak-light .frs-note-card,
 body.atak-light .frs-choice,
 body.atak-light .frs-input,
-body.atak-light .frs-editor {
+body.atak-light .frs-editor,
+body.atak-light .atak-sse-person-card {
   background: var(--atak-panel-alt);
   border-color: rgba(0,0,0,.1);
   color: var(--atak-fg, #1e293b);
@@ -10572,6 +10722,10 @@ body.atak-light .frs-editor {
 
 body.atak-light .frs-note-body,
 body.atak-light .frs-note-place,
-body.atak-light .frs-compose-title {
+body.atak-light .frs-compose-title,
+body.atak-light .atak-sse-person-card-title {
   color: var(--atak-fg, #1e293b);
+}
+body.atak-light .atak-sse-person-card-meta {
+  color: rgba(30, 41, 59, 0.72);
 }

@@ -14,11 +14,13 @@ use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Sse\SseAutomationService;
 use App\Services\Sse\SseCrossMatchService;
+use App\Services\Sse\SseDigitalLabService;
 use App\Services\Sse\SseIntelFoundationService;
 use App\Services\Sse\SseTerrainService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\AtakArmaWriteGuard;
 use App\Support\ComspecApiKeyAuth;
+use App\Support\SsePersonDedupe;
 use App\Support\SteamId;
 
 /**
@@ -43,6 +45,7 @@ final class SseApiController
         private ?AtakActivityLogService $activityLog = null,
         private ?TenantAtakConfigRepository $tenantAtakConfigRepository = null,
         private ?TenantRepository $tenantRepository = null,
+        private ?SseDigitalLabService $digitalLab = null,
     ) {
         $this->persons ??= new SsePersonRepository();
         $this->cases ??= new SseCaseRepository();
@@ -51,6 +54,7 @@ final class SseApiController
         $this->sites ??= new SseSiteRepository();
         $this->intelFoundation ??= new SseIntelFoundationService();
         $this->terrain ??= new SseTerrainService();
+        $this->digitalLab ??= new SseDigitalLabService();
         $this->armaGuard ??= new AtakArmaWriteGuard();
         $this->activityLog ??= new AtakActivityLogService();
         $this->tenantAtakConfigRepository ??= new TenantAtakConfigRepository();
@@ -77,6 +81,16 @@ final class SseApiController
             $filters,
             static fn ($v) => $v !== null && $v !== ''
         ));
+        $summaries = $this->persons->biometricSummariesForPersons(
+            $tenantId,
+            array_map(static fn (array $p) => (int) ($p['id'] ?? 0), $persons)
+        );
+        foreach ($persons as &$person) {
+            $pid = (int) ($person['id'] ?? 0);
+            $person['biometric_kinds'] = $summaries[$pid] ?? [];
+        }
+        unset($person);
+        $persons = SsePersonDedupe::collapseList($persons);
 
         return Response::json([
             'persons' => $persons,
@@ -130,10 +144,40 @@ final class SseApiController
             'submitter_steam_id' => $steam,
         ]);
 
-        $id = $this->persons->create($data);
+        $samples = is_array($body['biometric_samples'] ?? null) ? $body['biometric_samples'] : [];
+        $existing = $this->persons->findLikelyDuplicate($tenantId, $mapId, $data);
+        $existingSamples = [];
+        if ($existing !== null) {
+            $existingSamples = $this->persons->listBiometricSamples((int) $existing['id'], $tenantId);
+        }
+        $kindsForDedupe = $existingSamples;
+        if ($existing !== null && $kindsForDedupe === [] && !empty($existing['biometrics_simulated'])) {
+            $kindsForDedupe[] = ['kind' => 'empreintes'];
+        }
+        $newModalities = SsePersonDedupe::newModalities(
+            $kindsForDedupe,
+            $samples,
+            !empty($body['biometrics_simulated']) && $samples === []
+        );
+
+        if ($existing !== null && $newModalities === []) {
+            $existing['duplicate'] = true;
+            $existing['updated'] = false;
+            $existing['biometric_samples'] = $existingSamples;
+            $existing['message'] = 'Cette personne est déjà au registre. Transmettez un nouvel iris, des empreintes ou de l’ADN pour enrichir la fiche.';
+
+            return Response::json($existing, 200);
+        }
+
+        $merged = false;
+        if ($existing !== null) {
+            $id = (int) $existing['id'];
+            $merged = true;
+        } else {
+            $id = $this->persons->create($data);
+        }
 
         // Échantillons biométriques simulés transmis par le terminal SEEK.
-        $samples = $body['biometric_samples'] ?? [];
         if (is_array($samples)) {
             foreach ($samples as $sample) {
                 if (!is_array($sample)) {
@@ -151,6 +195,14 @@ final class SseApiController
                 }
                 $this->persons->addBiometricSample($id, $tenantId, $sample);
             }
+        }
+        if ($merged && $newModalities !== []) {
+            $this->persons->markBiometricsSimulated(
+                $id,
+                $tenantId,
+                $newModalities[0],
+                (string) ($data['submitter_callsign'] ?? 'Terrain')
+            );
         }
 
         // Classement : code dossier saisi sur le terrain.
@@ -218,18 +270,28 @@ final class SseApiController
             $tenantId,
             $mapId,
             'SSE_PERSON',
-            sprintf(
-                'Personne enregistrée : %s (%s)',
-                $person['display_name'] ?? 'sans nom',
-                $person['status_label'] ?? 'Civil'
-            ),
+            $merged
+                ? sprintf(
+                    'Fiche enrichie : %s (%s)',
+                    $person['display_name'] ?? 'sans nom',
+                    implode(', ', array_map(static fn (string $k) => match ($k) {
+                        'iris' => 'Iris',
+                        'adn' => 'ADN',
+                        default => 'Empreintes',
+                    }, $newModalities))
+                )
+                : sprintf(
+                    'Personne enregistrée : %s (%s)',
+                    $person['display_name'] ?? 'sans nom',
+                    $person['status_label'] ?? 'Civil'
+                ),
             (string) ($data['submitter_callsign'] ?? 'Terrain')
         );
 
         // Automatismes : classement de secours, doublons, escalade, co-présence.
         // Ils s'exécutent après l'enregistrement — une règle qui échoue ne doit
         // jamais faire perdre la fiche que le terrain vient de transmettre.
-        if (is_array($person)) {
+        if (!$merged && is_array($person)) {
             try {
                 $applied = $this->automation->onPersonRecorded(
                     $tenantId,
@@ -257,7 +319,7 @@ final class SseApiController
             }
         }
 
-        if (is_array($person)) {
+        if (!$merged && is_array($person)) {
             try {
                 $this->terrain->applyPersonIngest($tenantId, $id, $body);
                 $person = $this->persons->findById($id, $tenantId) ?? $person;
@@ -285,7 +347,12 @@ final class SseApiController
             ]);
         }
 
-        return Response::json($person, 201);
+        if (is_array($person)) {
+            $person['updated'] = $merged;
+            $person['duplicate'] = false;
+        }
+
+        return Response::json($person, $merged ? 200 : 201);
     }
 
     public function personsShow(Request $request, array $params = []): Response
@@ -462,9 +529,17 @@ final class SseApiController
         }
 
         $body = $this->jsonBody($request);
-        $kind = strtolower(trim((string) ($body['kind'] ?? 'empreintes')));
+        if ($personId < 1) {
+            $personId = (int) ($body['person_id'] ?? $body['athena_person_id'] ?? $body['id'] ?? 0);
+        }
+        $kind = strtolower(trim((string) ($body['kind'] ?? '')));
         if (!in_array($kind, ['empreintes', 'iris', 'adn'], true)) {
             $kind = 'empreintes';
+            if (trim((string) ($body['iris_id'] ?? '')) !== '') {
+                $kind = 'iris';
+            } elseif (trim((string) ($body['dna_id'] ?? '')) !== '') {
+                $kind = 'adn';
+            }
         }
         $callsign = (string) ($body['submitter_callsign'] ?? $actor['callsign'] ?? 'Terrain');
 
@@ -472,6 +547,7 @@ final class SseApiController
             return Response::json(['error' => 'not_found', 'message' => 'Fiche introuvable.'], 404);
         }
 
+        $this->ingestTerrainBiometricSamples($personId, $tenantId, $body, $callsign);
         $person = $this->persons->findById($personId, $tenantId);
 
         return Response::json([
@@ -483,6 +559,54 @@ final class SseApiController
                 default => 'Simulation d’empreintes enregistrée.',
             },
         ]);
+    }
+
+    /**
+     * Acquisition numérique terrain (terminal SEEK) → laboratoire.
+     */
+    public function digitalAcquisitionStore(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized', 'message' => 'Authentification terrain requise.'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+
+        $actor = $this->armaGuard->assertActor($request, $tenantId, $this->jsonBody($request), false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $body = $this->jsonBody($request);
+        $callsign = (string) ($body['collector'] ?? $body['submitter_callsign'] ?? $actor['callsign'] ?? 'Terrain');
+        $result = $this->digitalLab->ingestFromTerrain($tenantId, $body, isset($actor['user_id']) ? (int) $actor['user_id'] : null);
+
+        $this->activityLog->record(
+            $tenantId,
+            $this->mapId($request, true),
+            'SSE_DIGITAL',
+            sprintf(
+                'Acquisition numérique %s (%s)',
+                (string) ($result['reference_code'] ?? ''),
+                $result['duplicate'] ? 'déjà enregistrée' : 'reçue du terrain'
+            ),
+            $callsign
+        );
+
+        return Response::json([
+            'ok' => true,
+            'id' => $result['acquisition_id'],
+            'device_id' => $result['device_id'],
+            'acquisition_id' => $result['acquisition_id'],
+            'reference_code' => $result['reference_code'],
+            'duplicate' => $result['duplicate'],
+            'message' => $result['duplicate']
+                ? 'Cette acquisition est déjà au laboratoire.'
+                : 'Acquisition numérique enregistrée au laboratoire.',
+        ], $result['duplicate'] ? 200 : 201);
     }
 
     // ================= Exploitation de site =================
@@ -752,6 +876,40 @@ final class SseApiController
         );
 
         return Response::json($site);
+    }
+
+    /**
+     * Relevé biométrique transmis avec la simulation (empreintes / iris / ADN).
+     *
+     * @param array<string, mixed> $body
+     */
+    private function ingestTerrainBiometricSamples(int $personId, int $tenantId, array $body, string $callsign): void
+    {
+        $rows = [
+            ['empreintes', $body['fingerprint_id'] ?? '', $body['fingerprint_quality'] ?? null],
+            ['iris', $body['iris_id'] ?? '', $body['iris_quality'] ?? null],
+            ['adn', $body['dna_id'] ?? '', $body['dna_quality'] ?? null],
+        ];
+        foreach ($rows as [$kind, $ref, $qualityRaw]) {
+            $ref = trim((string) $ref);
+            $quality = null;
+            if (is_numeric($qualityRaw)) {
+                $q = (float) $qualityRaw;
+                if ($q > 0 && $q <= 1) {
+                    $q *= 100;
+                }
+                $quality = (int) round($q);
+            }
+            if ($ref === '' && ($quality === null || $quality <= 0)) {
+                continue;
+            }
+            $this->persons->addBiometricSample($personId, $tenantId, [
+                'kind' => $kind,
+                'lab_reference' => $ref,
+                'quality' => $quality,
+                'operator_callsign' => $callsign,
+            ]);
+        }
     }
 
     private function authArma(): bool

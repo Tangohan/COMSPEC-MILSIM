@@ -21,7 +21,7 @@ private _grid = mapGridPosition player;
 private _lines = [
     "<t size='0.80'>Fiche de renseignement simplifiée</t>",
     "",
-    "<t size='0.68' color='#B9C0E0'>Notez ce que vous avez constaté : un texte libre, une date, un lieu, des thèmes et jusqu’à quatre pièces jointes. Le rédacteur occupe tout l’écran de l’ATAK.</t>",
+    "<t size='0.68' color='#B9C0E0'>Notez ce que vous avez constaté : un texte libre, une date, un lieu, des thèmes et jusqu’à quatre pièces jointes. La taille de la fiche se règle dans les options de l’addon (COMSPEC Overwatch → ATAK — fiches FRS / FRM).</t>",
     ""
 ];
 

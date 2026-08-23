@@ -60,4 +60,9 @@ if (_alias isNotEqualTo "") then {
     _cluster set ["primaryAlias", _alias];
 };
 
+private _phoneAuth = trim (_entity getVariable ["comspec_sse_personPhone", ""]);
+if (_phoneAuth isNotEqualTo "") then {
+    _cluster set ["primaryPhone", _phoneAuth];
+};
+
 _cluster

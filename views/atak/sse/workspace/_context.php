@@ -3,6 +3,7 @@ declare(strict_types=1);
 /** @var array<string,mixed>|null $context */
 /** @var list<array<string,mixed>> $entities */
 /** @var callable $h */
+use App\Support\SseWorkspaceUi;
 ?>
 <header class="iw-intel-col-head">
     <h2>Contexte</h2>
@@ -33,7 +34,7 @@ if ($liaison !== []):
     <p class="iw-intel-empty">Sélectionnez une entité ou un dossier.</p>
 <?php else: ?>
     <div class="iw-intel-context">
-        <span class="iw-intel-kicker"><?= $h((string) ($context['entity_type'] ?? 'élément')) ?></span>
+        <span class="iw-intel-kicker"><?= $h((string) ($context['entity_type_label'] ?? SseWorkspaceUi::entityTypeLabel((string) ($context['entity_type'] ?? 'élément')))) ?></span>
         <h3 data-iw-context-title><?= $h((string) ($context['display_label'] ?? $context['title'] ?? $context['reference_code'] ?? 'Élément')) ?></h3>
         <?php if (!empty($context['lifecycle_label'])): ?>
             <p><strong>Cycle :</strong> <?= $h((string) $context['lifecycle_label']) ?></p>
@@ -43,7 +44,7 @@ if ($liaison !== []):
         <?php elseif (!empty($context['confidence_code'])): ?>
             <p class="iw-intel-conf">Confiance <?= $h((string) $context['confidence_code']) ?></p>
         <?php endif; ?>
-        <?php if (!empty($context['identity_tier_label'])): ?>
+        <?php if (!empty($context['identity_tier_label']) && (string) ($context['identity_tier_label'] ?? '') !== 'Identité non précisée'): ?>
             <p><strong>Identité :</strong> <?= $h((string) $context['identity_tier_label']) ?></p>
         <?php endif; ?>
         <?php if (!empty($context['href'])): ?>
@@ -67,12 +68,17 @@ if ($liaison !== []):
         <?php if (!is_array($ent)) {
             continue;
         } ?>
-        <li data-entity-uuid="<?= $h((string) ($ent['uuid'] ?? '')) ?>">
-            <span class="iw-intel-kicker"><?= $h((string) ($ent['entity_type'] ?? '')) ?></span>
-            <strong><?= $h((string) ($ent['display_label'] ?? '')) ?></strong>
-            <?php if (!empty($ent['confidence_code'])): ?>
-                <em><?= $h((string) $ent['confidence_code']) ?></em>
-            <?php endif; ?>
+        <li class="iw-feed-item" data-entity-uuid="<?= $h((string) ($ent['uuid'] ?? '')) ?>">
+            <span class="iw-feed-ico" aria-hidden="true"><?= SseWorkspaceUi::icon((string) ($ent['icon'] ?? SseWorkspaceUi::iconForEntityType((string) ($ent['entity_type'] ?? '')))) ?></span>
+            <span class="iw-feed-copy">
+                <span class="iw-intel-kicker"><?= $h((string) ($ent['entity_type_label'] ?? SseWorkspaceUi::entityTypeLabel((string) ($ent['entity_type'] ?? '')))) ?></span>
+                <strong><?= $h((string) ($ent['display_label'] ?? '')) ?></strong>
+                <?php if (!empty($ent['confidence_label'])): ?>
+                    <em><?= $h((string) $ent['confidence_label']) ?></em>
+                <?php elseif (!empty($ent['confidence_code'])): ?>
+                    <em><?= $h((string) $ent['confidence_code']) ?></em>
+                <?php endif; ?>
+            </span>
         </li>
     <?php endforeach; ?>
     <?php if ($entities === []): ?>

@@ -32,6 +32,13 @@ uiNamespace setVariable ["COMSPEC_SsePerson_Target", _target];
 uiNamespace setVariable ["COMSPEC_SsePerson_BioPending", false];
 uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", false];
 uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", ""];
+if (!isNull _target) then {
+    private _priorStem = _target getVariable ["comspec_sse_facePhotoStem", ""];
+    if (_priorStem isEqualType "" && {_priorStem isNotEqualTo ""}) then {
+        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", true];
+        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _priorStem];
+    };
+};
 
 private _parent = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
 if (isNull _parent) then {

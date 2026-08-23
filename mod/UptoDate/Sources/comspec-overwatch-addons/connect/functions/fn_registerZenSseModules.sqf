@@ -1,37 +1,10 @@
 /*
     Enregistre les modules SSE dans Zeus Enhanced (ZEN) si présent.
-
-    Même précaution anti-doublon que les zones roleplay : les trois modules existent
-    déjà dans CfgVehicles avec scopeCurator = 2, et ZEN fusionne ses modules
-    personnalisés dans le même arbre. Les enregistrer sans condition les afficherait
-    EN DOUBLE, ce qui avait déjà été signalé en partie.
-
-    On ne déclare la variante ZEN que si les modules config sont absents de l'arbre.
-    Pour forcer malgré tout la variante ZEN (boîtes de dialogue au lieu des attributs) :
-      missionNamespace setVariable ["COMSPEC_ZenSseModulesForce", true];
+    Les modules CfgVehicles restent pour Eden (scopeCurator = 0).
 */
 if (!hasInterface) exitWith {};
 if (isNil "zen_custom_modules_fnc_register") exitWith {};
 if (missionNamespace getVariable ["COMSPEC_ZenSseModulesRegistered", false]) exitWith {};
-
-private _configModulesVisible = false;
-if (!(missionNamespace getVariable ["COMSPEC_ZenSseModulesForce", false])) then {
-    {
-        if (getNumber (configFile >> "CfgVehicles" >> _x >> "scopeCurator") > 0) exitWith {
-            _configModulesVisible = true;
-        };
-    } forEach [
-        "COMSPEC_Module_SSE_Case",
-        "COMSPEC_Module_SSE_Profile",
-        "COMSPEC_Module_SSE_Equip"
-    ];
-};
-
-// Sortie au niveau du script : un exitWith dans un bloc « then » ne quitterait que ce bloc.
-if (_configModulesVisible) exitWith {
-    missionNamespace setVariable ["COMSPEC_ZenSseModulesRegistered", true];
-    ["INFO", "SSE", "Modules SSE ZEN ignorés — modules config déjà présents (anti-doublon)"] call comspec_overwatch_connect_fnc_log;
-};
 
 private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
 

@@ -1,4 +1,5 @@
-private _disp = findDisplay 93350;
+private _ctx = ["graph"] call comspec_sse_fnc_uiDisplayCtx;
+_ctx params ["_disp", "_idcEdges", "_idcList"];
 if (isNull _disp) exitWith { false };
 
 private _rec = [] call comspec_sse_fnc_uiGetRecord;
@@ -67,10 +68,10 @@ private _logical = if (!isNil "comspec_sse_fnc_listLogicalEntities") then { [] c
     };
 } forEach (_logical select [0, 12]);
 
-private _lb = _disp displayCtrl 93360;
+private _lb = _disp displayCtrl _idcList;
 lbClear _lb;
 { _lb lbAdd _x; } forEach _nodes;
 if (_nodes isEqualTo []) then { _lb lbAdd "(graphe vide — lier un record)"; };
 
-(_disp displayCtrl 93361) ctrlSetStructuredText parseText (_edges joinString "<br/>");
+(_disp displayCtrl _idcEdges) ctrlSetStructuredText parseText (_edges joinString "<br/>");
 true

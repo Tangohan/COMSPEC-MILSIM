@@ -6,6 +6,19 @@ params [
     ["_screen", "terminal", [""]]
 ];
 
+_screen = toLower _screen;
+
+if (_screen != "zeus" && {!isNil "comspec_overwatch_connect_fnc_sseOpenTerminal"}) exitWith {
+    private _rec = [] call comspec_sse_fnc_uiGetRecord;
+    if (isNull _rec) then { _rec = cursorObject; };
+    private _page = switch (_screen) do {
+        case "seek": { 3 };
+        case "terminal": { 0 };
+        default { 7 };
+    };
+    [_rec, _page, _screen] call comspec_sse_fnc_uiOpenSeekHost
+};
+
 closeDialog 0;
 
 private _map = createHashMapFromArray [
@@ -19,7 +32,7 @@ private _map = createHashMapFromArray [
     ["seek", "SEEK"]
 ];
 
-private _dlg = _map getOrDefault [toLower _screen, "COMSPEC_SSE_TerminalDialog"];
+private _dlg = _map getOrDefault [_screen, "COMSPEC_SSE_TerminalDialog"];
 
 if (_dlg == "SEEK") exitWith {
     private _rec = [] call comspec_sse_fnc_uiGetRecord;
@@ -29,6 +42,6 @@ if (_dlg == "SEEK") exitWith {
     true
 };
 
-missionNamespace setVariable ["comspec_sse_uiScreen", toLower _screen];
+missionNamespace setVariable ["comspec_sse_uiScreen", _screen];
 createDialog _dlg;
 true

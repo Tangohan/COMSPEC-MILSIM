@@ -400,6 +400,34 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 // === ATAK Tactique - Raccourcis configurables ===
 
 [
+    "comspec_overwatch_frs_size", "SLIDER",
+    ["Taille de la fiche FRS / FRM", "Réduit ou agrandit le rédacteur de fiche dans l’ATAK. 100 % = toute la surface (rendu actuel). En dessous, la fiche reste centrée et le téléphone reste visible autour."],
+    ["COMSPEC Overwatch", "ATAK — fiches FRS / FRM"],
+    [0.55, 1, 1, 0, true],
+    false,
+    {
+        if (!hasInterface) exitWith {};
+        if (isNull (uiNamespace getVariable ["COMSPEC_IntelNote_Display", displayNull])) exitWith {};
+        [] call comspec_overwatch_connect_fnc_intelNoteApplyGeometry;
+        [] call comspec_overwatch_connect_fnc_intelNoteRefresh;
+    }
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_frs_ui", "SLIDER",
+    ["Texte et boutons de la fiche", "Agrandit ou réduit le texte, les boutons et les pastilles de la fiche, sans changer le cadre. Utile si le rédacteur est trop petit ou trop dense."],
+    ["COMSPEC Overwatch", "ATAK — fiches FRS / FRM"],
+    [0.75, 1.45, 1, 0, true],
+    false,
+    {
+        if (!hasInterface) exitWith {};
+        if (isNull (uiNamespace getVariable ["COMSPEC_IntelNote_Display", displayNull])) exitWith {};
+        [] call comspec_overwatch_connect_fnc_intelNoteApplyGeometry;
+        [] call comspec_overwatch_connect_fnc_intelNoteRefresh;
+    }
+] call CBA_fnc_addSetting;
+
+[
     "comspec_atak_enable_shortcuts", "CHECKBOX",
     ["Activer raccourcis ATAK", "Active les raccourcis clavier rapides pour rapports et POI. Désactivez si conflit avec cTab ou autres mods."],
     ["COMSPEC Overwatch", "ATAK Tactique"], false  // Désactivé par défaut
@@ -541,6 +569,14 @@ if (!(_savedCallsign isEqualTo "")) then {
 private _savedRole = trim (profileNamespace getVariable ["COMSPEC_Role", ""]);
 if (!(_savedRole isEqualTo "")) then {
     missionNamespace setVariable ["COMSPEC_Role", _savedRole, false];
+};
+private _savedTeam = toUpper (trim (profileNamespace getVariable ["COMSPEC_AssignedTeam", ""]));
+if (_savedTeam in ["RED", "GREEN", "BLUE", "YELLOW", "MAIN"]) then {
+    missionNamespace setVariable ["COMSPEC_AssignedTeam", _savedTeam, false];
+};
+private _savedFt = profileNamespace getVariable ["COMSPEC_FireTeamId", 0];
+if (_savedFt isEqualType 0 && {_savedFt > 0}) then {
+    missionNamespace setVariable ["COMSPEC_FireTeamId", _savedFt, false];
 };
 missionNamespace setVariable ["COMSPEC_HtmlAlerts", [], false];
 

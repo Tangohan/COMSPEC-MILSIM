@@ -1173,6 +1173,7 @@ final class AtakActivityLogService
         $typeLabels = [
             'SSE_PERSON' => 'Personne',
             'SSE_PHOTO' => 'Photo',
+            'SSE_DIGITAL' => 'Numérique',
             'SSE_SITE' => 'Site',
             'SSE_SEIZURE' => 'Saisie',
             'SSE_WATCHLIST' => 'Surveillance',
