@@ -890,12 +890,74 @@ class AtakDataRepository
             return [];
         }
         $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            $fixed = preg_replace('/(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,}\]\s])/', '$1.$2', $raw);
+            if (is_string($fixed) && $fixed !== $raw) {
+                $decoded = json_decode($fixed, true);
+            }
+        }
 
         return is_array($decoded) ? $decoded : [];
     }
 
     /**
-     * @return array{created: bool}
+     * Contact relais (téléphone, IA alliée, balise GPS) : pas l’identité Steam du joueur pont.
+     *
+     * @param array<string, mixed> $extra
+     */
+    public static function isProxyContactExtra(array $extra): bool
+    {
+        foreach (['phone_geoloc', 'ally_ai', 'gps_beacon'] as $flag) {
+            $val = $extra[$flag] ?? false;
+            if ($val === true || $val === 1 || $val === '1' || $val === 'true') {
+                return true;
+            }
+        }
+        $src = strtolower(trim((string) ($extra['source'] ?? '')));
+
+        return in_array($src, ['phone', 'ally', 'gps', 'gps_beacon'], true);
+    }
+
+    /**
+     * Repli si extra n’a pas pu être décodé (JSON SQF cassé) mais le texte trahit un relais.
+     */
+    public static function extraLooksLikeProxy(mixed $raw, array $extra = []): bool
+    {
+        if (self::isProxyContactExtra($extra)) {
+            return true;
+        }
+        if (!is_string($raw) || $raw === '') {
+            return false;
+        }
+
+        return str_contains($raw, '"ally_ai"')
+            || str_contains($raw, '"phone_geoloc"')
+            || str_contains($raw, '"gps_beacon"')
+            || str_contains($raw, '"source":"ally"')
+            || str_contains($raw, '"source":"phone"')
+            || str_contains($raw, '"source":"gps"');
+    }
+
+    /**
+     * Indicatif relais stable (ALLY- / GPS- / TEL-) — ne jamais fusionner avec le joueur pont.
+     */
+    public static function callSignLooksLikeProxy(string $callSign): bool
+    {
+        $cs = trim($callSign);
+        if ($cs === '') {
+            return false;
+        }
+        $fold = function_exists('mb_strtoupper') ? mb_strtoupper($cs, 'UTF-8') : strtoupper($cs);
+
+        return str_starts_with($fold, 'ALLY-')
+            || str_starts_with($fold, 'GPS-')
+            || str_starts_with($fold, 'TEL-')
+            || str_starts_with($fold, 'TEL.')
+            || str_starts_with($fold, 'TÉL');
+    }
+
+    /**
+     * @return array{created: bool, unit_id: int}
      */
     public function upsertUnitPosition(int $tenantId, int $mapId, string $callSign, float $posX, float $posY, ?float $heading, string $role, string $extraJson): array
     {
@@ -1026,13 +1088,13 @@ class AtakDataRepository
                 $extraArr = [];
             }
             $steam = trim((string) ($extraArr['steam_uid'] ?? $extraArr['steamId'] ?? $extraArr['player_uid'] ?? ''));
-            if ($steam !== '') {
+            if ($steam !== '' && !self::isProxyContactExtra($extraArr) && !self::callSignLooksLikeProxy($callSign)) {
                 $this->retireSteamSiblingUnits($tenantId, $mapId, $callSign, $steam);
             }
         } catch (\Throwable) {
         }
 
-        return ['created' => $created];
+        return ['created' => $created, 'unit_id' => $unitId];
     }
 
     /**
@@ -1067,6 +1129,9 @@ class AtakDataRepository
             }
             $uid = trim((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? $extra['player_uid'] ?? ''));
             if ($uid === '' || strcasecmp($uid, $steamUid) !== 0) {
+                continue;
+            }
+            if (self::isProxyContactExtra($extra) || self::callSignLooksLikeProxy($cs)) {
                 continue;
             }
             $id = (int) ($row['id'] ?? 0);

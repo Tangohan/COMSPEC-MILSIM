@@ -32,7 +32,7 @@ window.ATAKMap = (function () {
   var DISPLAY_PREFS_KEY = 'atak_map_display_prefs';
   var DISPLAY_PREFS_DEFAULT = {
     styleMode: 'nato',
-    iconSize: 16,
+    iconSize: 17,
     labelSize: 7,
     showFtFrame: true,
     markerDepth: true,
@@ -53,7 +53,15 @@ window.ATAKMap = (function () {
     showSseGhostTracks: false,
     showSseHistory: false,
     showUnitTrails: true,
-    showUnitGhostTrails: true
+    showUnitGhostTrails: true,
+    showMotionArrows: true,
+    showMotionProjection: true,
+    showAssignmentLines: true,
+    showMotionTrail: true,
+    showEtaLabels: false,
+    terrainLayer: 'off',
+    terrainOpacity: 0.55,
+    terrainSunAzimuth: 315
   };
   var displayPrefsCache = null;
   var lastUnitsListForMap = null;
@@ -101,7 +109,7 @@ window.ATAKMap = (function () {
     var src = raw && typeof raw === 'object' ? raw : {};
     return {
       styleMode: normalizeStyleMode(src.styleMode),
-      iconSize: clampNum(src.iconSize, 8, 48, DISPLAY_PREFS_DEFAULT.iconSize),
+      iconSize: clampNum(src.iconSize, (window.ATAKMarkerSizes && window.ATAKMarkerSizes.PREF_MIN) || 10, (window.ATAKMarkerSizes && window.ATAKMarkerSizes.PREF_MAX) || 22, DISPLAY_PREFS_DEFAULT.iconSize),
       labelSize: clampNum(src.labelSize, 6, 16, DISPLAY_PREFS_DEFAULT.labelSize),
       showFtFrame: src.showFtFrame !== false,
       markerDepth: src.markerDepth !== false,
@@ -122,7 +130,15 @@ window.ATAKMap = (function () {
       showSseGhostTracks: !!src.showSseGhostTracks,
       showSseHistory: !!src.showSseHistory,
       showUnitTrails: src.showUnitTrails !== false,
-      showUnitGhostTrails: src.showUnitGhostTrails !== false
+      showUnitGhostTrails: src.showUnitGhostTrails !== false,
+      showMotionArrows: src.showMotionArrows !== false,
+      showMotionProjection: src.showMotionProjection !== false,
+      showAssignmentLines: src.showAssignmentLines !== false,
+      showMotionTrail: src.showMotionTrail !== false,
+      showEtaLabels: !!src.showEtaLabels,
+      terrainLayer: ['off', 'hillshade', 'hypsometry', 'slope', 'contours', 'ridges', 'depressions'].indexOf(src.terrainLayer) >= 0 ? src.terrainLayer : DISPLAY_PREFS_DEFAULT.terrainLayer,
+      terrainOpacity: clampNum(src.terrainOpacity, 0.05, 1, DISPLAY_PREFS_DEFAULT.terrainOpacity),
+      terrainSunAzimuth: clampNum(src.terrainSunAzimuth, 0, 360, DISPLAY_PREFS_DEFAULT.terrainSunAzimuth)
     };
   }
 
@@ -176,7 +192,7 @@ window.ATAKMap = (function () {
     if (!mapEl) return;
     mapEl.style.setProperty('--atak-unit-label-size', p.labelSize + 'px');
     mapEl.style.setProperty('--atak-unit-icon-size', p.iconSize + 'px');
-    var frame = Math.max(14, Math.round(p.iconSize * 1.55));
+    var frame = Math.max(12, Math.round(p.iconSize * 1.2));
     mapEl.style.setProperty('--atak-ft-frame-size', frame + 'px');
     if (p.showFtFrame) mapEl.classList.remove('atak-map--hide-ft-frames');
     else mapEl.classList.add('atak-map--hide-ft-frames');
@@ -266,35 +282,33 @@ window.ATAKMap = (function () {
   }
 
   function buildIntelDotIcon(callSign, size, labelPx) {
-    var d = Math.max(8, Math.round(size * 0.5));
-    var label = String(callSign || '').slice(0, 12).replace(/</g, '&lt;').replace(/"/g, '&quot;');
-    var w = Math.max(d + 4, 48);
-    var h = d + 4 + Math.round(labelPx) + 4;
+    var S = window.ATAKMarkerSizes;
+    var d = S ? S.px('micro') : 10;
+    var html = '<span class="atak-intel-marker-dot" style="width:' + d + 'px;height:' + d + 'px;"></span>';
+    if (S && S.divIcon) {
+      return S.divIcon(L, html, 'micro', { className: 'atak-unit-intel-dot-marker atak-compact-marker' });
+    }
     return L.divIcon({
-      className: 'atak-unit-intel-dot-marker',
-      html: '<div class="atak-unit-dot-wrap">' +
-        '<span class="atak-intel-marker-dot" style="width:' + d + 'px;height:' + d + 'px;"></span>' +
-        '<span class="atak-unit-dot-label">' + label + '</span>' +
-        '</div>',
-      iconSize: [w, h],
-      iconAnchor: [w / 2, d / 2 + 2],
+      className: 'atak-unit-intel-dot-marker atak-compact-marker',
+      html: html,
+      iconSize: [d, d],
+      iconAnchor: [d / 2, d / 2]
     });
   }
 
   function buildDotIcon(callSign, color, size, labelPx) {
-    var d = Math.max(6, Math.round(size * 0.7));
+    var S = window.ATAKMarkerSizes;
+    var d = S ? S.clampPref(size || S.px('small')) : Math.max(10, Math.round(size || 14));
     var safeColor = color && /^#[0-9A-Fa-f]{6}$/.test(color) ? color : '#22c55e';
-    var label = String(callSign || '').slice(0, 12).replace(/</g, '&lt;').replace(/"/g, '&quot;');
-    var w = Math.max(d + 4, 48);
-    var h = d + 4 + Math.round(labelPx) + 4;
+    var html = '<span class="atak-unit-dot" style="width:' + d + 'px;height:' + d + 'px;background:' + safeColor + ';"></span>';
+    if (S && S.divIcon) {
+      return S.divIcon(L, html, d, { className: 'atak-unit-dot-marker atak-compact-marker' });
+    }
     return L.divIcon({
-      className: 'atak-unit-dot-marker',
-      html: '<div class="atak-unit-dot-wrap">' +
-        '<span class="atak-unit-dot" style="width:' + d + 'px;height:' + d + 'px;background:' + safeColor + ';"></span>' +
-        '<span class="atak-unit-dot-label">' + label + '</span>' +
-        '</div>',
-      iconSize: [w, h],
-      iconAnchor: [w / 2, d / 2 + 2],
+      className: 'atak-unit-dot-marker atak-compact-marker',
+      html: html,
+      iconSize: [d, d],
+      iconAnchor: [d / 2, d / 2]
     });
   }
 
@@ -325,22 +339,32 @@ window.ATAKMap = (function () {
     if (styleEl) styleEl.value = p.styleMode;
     var mapStyleEl = document.getElementById('atak-map-look-style');
     if (mapStyleEl) mapStyleEl.value = p.styleMode;
+    var settingsStyleEl = document.getElementById('atak-settings-look-style');
+    if (settingsStyleEl) settingsStyleEl.value = p.styleMode;
     syncRangePair('atak-unit-icon-size', 'atak-unit-icon-size-val', p.iconSize);
     syncRangePair('atak-map-look-icon-size', 'atak-map-look-icon-size-val', p.iconSize);
+    syncRangePair('atak-settings-look-icon-size', 'atak-settings-look-icon-size-val', p.iconSize);
     syncRangePair('atak-unit-label-size', 'atak-unit-label-size-val', p.labelSize);
     syncRangePair('atak-map-look-label-size', 'atak-map-look-label-size-val', p.labelSize);
+    syncRangePair('atak-settings-look-label-size', 'atak-settings-look-label-size-val', p.labelSize);
     var ftEl = document.getElementById('atak-unit-ft-frame');
     if (ftEl) ftEl.checked = !!p.showFtFrame;
     var mapFtEl = document.getElementById('atak-map-look-ft-frame');
     if (mapFtEl) mapFtEl.checked = !!p.showFtFrame;
+    var settingsFtEl = document.getElementById('atak-settings-look-ft-frame');
+    if (settingsFtEl) settingsFtEl.checked = !!p.showFtFrame;
     var depthEl = document.getElementById('atak-unit-marker-depth');
     if (depthEl) depthEl.checked = !!p.markerDepth;
     var mapDepthEl = document.getElementById('atak-map-look-depth');
     if (mapDepthEl) mapDepthEl.checked = !!p.markerDepth;
+    var settingsDepthEl = document.getElementById('atak-settings-look-depth');
+    if (settingsDepthEl) settingsDepthEl.checked = !!p.markerDepth;
     var motionEl = document.getElementById('atak-unit-marker-motion');
     if (motionEl) motionEl.checked = !!p.markerMotion;
     var mapMotionEl = document.getElementById('atak-map-look-motion');
     if (mapMotionEl) mapMotionEl.checked = !!p.markerMotion;
+    var settingsMotionEl = document.getElementById('atak-settings-look-motion');
+    if (settingsMotionEl) settingsMotionEl.checked = !!p.markerMotion;
     var intelPhotosEl = document.getElementById('atak-show-intel-photo-markers');
     if (intelPhotosEl) intelPhotosEl.checked = !!p.showIntelPhotoMarkers;
     var autoCenterSelf = document.getElementById('atak-auto-center-self');
@@ -367,6 +391,20 @@ window.ATAKMap = (function () {
     if (unitTrails) unitTrails.checked = !!p.showUnitTrails;
     var unitGhost = document.getElementById('atak-show-unit-ghost-trails');
     if (unitGhost) unitGhost.checked = !!p.showUnitGhostTrails;
+    var lookArrows = document.getElementById('atak-map-look-motion-arrows');
+    if (lookArrows) lookArrows.checked = !!p.showMotionArrows;
+    var lookLines = document.getElementById('atak-map-look-assignment-lines');
+    if (lookLines) lookLines.checked = !!p.showAssignmentLines;
+    var motionArrows = document.getElementById('atak-show-motion-arrows');
+    if (motionArrows) motionArrows.checked = !!p.showMotionArrows;
+    var motionProj = document.getElementById('atak-show-motion-projection');
+    if (motionProj) motionProj.checked = !!p.showMotionProjection;
+    var assignLines = document.getElementById('atak-show-assignment-lines');
+    if (assignLines) assignLines.checked = !!p.showAssignmentLines;
+    var motionTrail = document.getElementById('atak-show-motion-trail');
+    if (motionTrail) motionTrail.checked = !!p.showMotionTrail;
+    var etaLabels = document.getElementById('atak-show-eta-labels');
+    if (etaLabels) etaLabels.checked = !!p.showEtaLabels;
     var delayEn = document.getElementById('atak-pos-delay-enabled');
     var delaySec = document.getElementById('atak-pos-delay-sec');
     var delayVal = document.getElementById('atak-pos-delay-sec-val');
@@ -420,6 +458,7 @@ window.ATAKMap = (function () {
     }
     bindStyleSelect('atak-unit-style-mode');
     bindStyleSelect('atak-map-look-style');
+    bindStyleSelect('atak-settings-look-style');
 
     function bindIconSize(id) {
       var el = document.getElementById(id);
@@ -434,6 +473,7 @@ window.ATAKMap = (function () {
     }
     bindIconSize('atak-unit-icon-size');
     bindIconSize('atak-map-look-icon-size');
+    bindIconSize('atak-settings-look-icon-size');
 
     function bindLabelSize(id) {
       var el = document.getElementById(id);
@@ -448,6 +488,7 @@ window.ATAKMap = (function () {
     }
     bindLabelSize('atak-unit-label-size');
     bindLabelSize('atak-map-look-label-size');
+    bindLabelSize('atak-settings-look-label-size');
 
     function bindCheck(id, key) {
       var el = document.getElementById(id);
@@ -462,10 +503,13 @@ window.ATAKMap = (function () {
     }
     bindCheck('atak-unit-ft-frame', 'showFtFrame');
     bindCheck('atak-map-look-ft-frame', 'showFtFrame');
+    bindCheck('atak-settings-look-ft-frame', 'showFtFrame');
     bindCheck('atak-unit-marker-depth', 'markerDepth');
     bindCheck('atak-map-look-depth', 'markerDepth');
+    bindCheck('atak-settings-look-depth', 'markerDepth');
     bindCheck('atak-unit-marker-motion', 'markerMotion');
     bindCheck('atak-map-look-motion', 'markerMotion');
+    bindCheck('atak-settings-look-motion', 'markerMotion');
     bindCheck('atak-show-intel-photo-markers', 'showIntelPhotoMarkers');
 
     function bindSseToggle(id, key) {
@@ -481,6 +525,13 @@ window.ATAKMap = (function () {
     bindSseToggle('atak-sse-layer-history', 'showSseHistory');
     bindSseToggle('atak-show-unit-trails', 'showUnitTrails');
     bindSseToggle('atak-show-unit-ghost-trails', 'showUnitGhostTrails');
+    bindSseToggle('atak-show-motion-arrows', 'showMotionArrows');
+    bindSseToggle('atak-show-motion-projection', 'showMotionProjection');
+    bindSseToggle('atak-show-assignment-lines', 'showAssignmentLines');
+    bindSseToggle('atak-show-motion-trail', 'showMotionTrail');
+    bindSseToggle('atak-show-eta-labels', 'showEtaLabels');
+    bindSseToggle('atak-map-look-motion-arrows', 'showMotionArrows');
+    bindSseToggle('atak-map-look-assignment-lines', 'showAssignmentLines');
 
     var autoCenterSelf = document.getElementById('atak-auto-center-self');
     if (autoCenterSelf && !autoCenterSelf._atakBound) {
@@ -561,7 +612,8 @@ window.ATAKMap = (function () {
       tileSize: raw.tileSize != null ? raw.tileSize : 212,
       center: Array.isArray(raw.center) ? raw.center : [15000, 15000],
       offsetX: raw.offsetX != null ? parseFloat(raw.offsetX) : 0,
-      offsetY: raw.offsetY != null ? parseFloat(raw.offsetY) : 0
+      offsetY: raw.offsetY != null ? parseFloat(raw.offsetY) : 0,
+      worldSize: raw.worldSize != null ? parseFloat(raw.worldSize) : 30720
     };
   }
 
@@ -641,6 +693,9 @@ window.ATAKMap = (function () {
       maxZoom: config.maxZoom,
       crs: config.CRS
     });
+    if (window.ATAKMarkerSizes && typeof window.ATAKMarkerSizes.bindZoom === 'function') {
+      window.ATAKMarkerSizes.bindZoom(map);
+    }
 
     var tileLayer = L.tileLayer(config.tilePattern, {
       attribution: config.attribution,
@@ -742,6 +797,18 @@ window.ATAKMap = (function () {
     return [lat + oy, lng + ox];
   }
 
+  function latLngFromWorld(x, y) {
+    var a = applyOffset(y, x);
+    return L.latLng(a[0], a[1]);
+  }
+
+  function worldFromLatLng(ll) {
+    if (!ll) return { x: 0, y: 0 };
+    var ox = config && config.offsetX != null ? config.offsetX : 0;
+    var oy = config && config.offsetY != null ? config.offsetY : 0;
+    return { x: ll.lng - ox, y: ll.lat - oy };
+  }
+
   function ensureLayer(layerId) {
     if (!layerGroups[layerId]) {
       layerGroups[layerId] = L.layerGroup().addTo(map);
@@ -758,10 +825,25 @@ window.ATAKMap = (function () {
   }
 
   function markerSizePx(size) {
+    var S = window.ATAKMarkerSizes;
+    if (S) {
+      if (size === 'sm' || size === 'small') return S.px('micro');
+      if (size === 'lg' || size === 'large') return S.px('important');
+      if (typeof size === 'number' && size > 0) return S.clampPref(size);
+      return S.px('small');
+    }
     if (size === 'sm' || size === 'small') return 10;
     if (size === 'lg' || size === 'large') return 18;
     if (typeof size === 'number' && size > 0) return size;
     return 14;
+  }
+
+  function bindMarkerChrome(marker, title, lines) {
+    var S = window.ATAKMarkerSizes;
+    if (!S) return marker;
+    if (title) S.bindHoverTip(marker, S.hoverTipHtml(title, lines || []));
+    S.bindSelectVisual(marker);
+    return marker;
   }
 
   function buildManualMarkerIcon(data) {
@@ -776,9 +858,9 @@ window.ATAKMap = (function () {
         functionid: data.functionid,
         scheme: data.scheme,
         battledimension: data.battledimension,
-        callSign: data.label || data.symbolName || '',
-        showLabel: !!(data.label || data.symbolName),
-        size: Math.max(28, Math.min(px + 8, 48)),
+        callSign: '',
+        showLabel: false,
+        size: Math.max((window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('tactical') : 19), Math.min(px, (window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('important') : 22))),
       });
     }
     var color = data.color || '#34d399';
@@ -796,16 +878,18 @@ window.ATAKMap = (function () {
     } else {
       html = '<span class="atak-micon atak-micon--dot" style="--m-color:' + color + ';--m-size:' + px2 + 'px"></span>';
     }
-    var box = Math.max(px2 + 8, 22);
+    var box = px2;
+    var htmlWrap = window.ATAKMarkerSizes && window.ATAKMarkerSizes.wrapGlyph ? window.ATAKMarkerSizes.wrapGlyph(html) : html;
     return L.divIcon({
-      className: 'atak-marker-icon',
-      html: html,
+      className: 'atak-marker-icon atak-compact-marker',
+      html: htmlWrap,
       iconSize: [box, box],
-      iconAnchor: [box / 2, box / 2]
+      iconAnchor: [box / 2, box / 2],
+      popupAnchor: [0, -box / 2]
     });
   }
 
-  function markerPopupHtml(data, lng, lat) {
+  function markerPopupHtml(data, lng, lat, markerId) {
     var arma = window.ArmaMapMarkers;
     var label = (arma && arma.displayLabelOf)
       ? arma.displayLabelOf(data)
@@ -814,7 +898,7 @@ window.ATAKMap = (function () {
     var desc = data.description || data.desc || '';
     var gx = Math.round(Number(lng));
     var gy = Math.round(Number(lat));
-    var html = '<div class="atak-marker-popup">';
+    var html = '<div class="atak-marker-popup"' + (markerId != null ? ' data-atak-marker-id="' + escapeHtml(String(markerId)) + '"' : '') + '>';
     html += '<div class="atak-marker-popup__kind">Repère carte</div>';
     html += '<strong>' + escapeHtml(label) + '</strong>';
     var typeFr = (arma && arma.typeLabelFr)
@@ -834,6 +918,7 @@ window.ATAKMap = (function () {
     if (desc) html += '<p class="atak-marker-popup__desc">' + escapeHtml(desc) + '</p>';
     if (author) html += '<span class="atak-marker-popup__author">' + escapeHtml(author) + '</span>';
     html += '<p class="atak-marker-popup__hint">Ce point n’est pas un effectif en liaison — c’est un repère posé sur la carte.</p>';
+    html += '<div class="atak-marker-popup__arrivals" data-atak-arrivals></div>';
     html += '</div>';
     return html;
   }
@@ -922,7 +1007,7 @@ window.ATAKMap = (function () {
     var lat = xy[1];
     var applied = applyOffset(lat, lng);
     var latlng = L.latLng(applied[0], applied[1]);
-    var popupHtml = markerPopupHtml(data, lng, lat);
+    var popupHtml = markerPopupHtml(data, lng, lat, id);
     var armaHelper = window.ArmaMapMarkers;
     var isArma = armaHelper && typeof armaHelper.isArmaStyleMarker === 'function' && armaHelper.isArmaStyleMarker(data);
     var isArea = armaHelper && typeof armaHelper.isAreaShape === 'function' && armaHelper.isAreaShape(data);
@@ -985,9 +1070,9 @@ window.ATAKMap = (function () {
           affiliation: 'friend',
           role: 'point',
           roleKey: 'recon',
-          callSign: label ? String(label).substring(0, 12) : '',
-          showLabel: !!label,
-          size: 28,
+          callSign: '',
+          showLabel: false,
+          size: window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('normal') : 17,
         });
       } else {
         icon = buildManualMarkerIcon(data);
@@ -999,6 +1084,12 @@ window.ATAKMap = (function () {
     marker._atakData = data;
     marker._atakGrid = { lng: lng, lat: lat };
     marker.bindPopup(popupHtml);
+    var tipLabel = (armaHelper && armaHelper.displayLabelOf) ? armaHelper.displayLabelOf(data) : (data.label || data.text || data.name || 'Repère');
+    var tipType = (armaHelper && armaHelper.typeLabelFr) ? armaHelper.typeLabelFr(data) : '';
+    bindMarkerChrome(marker, tipLabel, [
+      tipType,
+      'Grille ' + Math.round(lng) + ' / ' + Math.round(lat)
+    ]);
     bindMarkerContextMenu(marker, id);
     marker.addTo(layer);
     markersById[id] = marker;
@@ -1174,14 +1265,19 @@ window.ATAKMap = (function () {
       return;
     }
     var fullUrl = photoUrl.indexOf('http') === 0 || photoUrl.indexOf('//') === 0 ? photoUrl : (window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '') + (photoUrl.charAt(0) === '/' ? photoUrl : '/' + photoUrl);
-    var icon = L.divIcon({
-      className: 'atak-intel-marker',
-      html: '<span class="atak-intel-marker-dot" title="Photo terrain"></span>',
-      iconSize: [10, 10],
-      iconAnchor: [5, 5]
-    });
+    var S = window.ATAKMarkerSizes;
+    var intelHtml = '<span class="atak-intel-marker-dot" title="Photo terrain"></span>';
+    var icon = S && S.divIcon
+      ? S.divIcon(L, intelHtml, 'micro', { className: 'atak-intel-marker atak-compact-marker' })
+      : L.divIcon({
+          className: 'atak-intel-marker atak-compact-marker',
+          html: intelHtml,
+          iconSize: [10, 10],
+          iconAnchor: [5, 5]
+        });
     var marker = L.marker(latlng, { icon: icon });
     marker.bindPopup('<img src="' + fullUrl + '" alt="Intel" style="max-width:280px;max-height:200px;display:block;" />');
+    bindMarkerChrome(marker, 'Photo terrain', []);
     marker._atakIntelId = id;
     marker.addTo(layer);
     intelMarkersById[id] = marker;
@@ -1215,14 +1311,19 @@ window.ATAKMap = (function () {
       designatorMarkersById[id].setLatLng(latlng);
       return;
     }
-    var icon = L.divIcon({
-      className: 'atak-designator-marker',
-      html: '<span style="font-size:20px;color:#ef4444;line-height:1;" title="JTAC Designator: ' + (row.call_sign || '') + '">&#10010;</span>',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12]
-    });
+    var S = window.ATAKMarkerSizes;
+    var desHtml = '<span style="font-size:14px;color:#ef4444;line-height:1;">&#10010;</span>';
+    var icon = S && S.divIcon
+      ? S.divIcon(L, desHtml, 'tactical', { className: 'atak-designator-marker atak-compact-marker' })
+      : L.divIcon({
+          className: 'atak-designator-marker atak-compact-marker',
+          html: desHtml,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        });
     var marker = L.marker(latlng, { icon: icon });
     marker.bindPopup('<strong>JTAC</strong> ' + (row.call_sign || '') + '<br/>Cible designee');
+    bindMarkerChrome(marker, 'Désignateur JTAC', [row.call_sign || '']);
     marker._atakDesignatorId = id;
     marker.addTo(designatorLayer);
     designatorMarkersById[id] = marker;
@@ -1289,15 +1390,16 @@ window.ATAKMap = (function () {
       var author = String(p.author || '').trim();
       // Ne jamais afficher l’indicatif seul sous le point (confusion avec un effectif).
       var pinLabel = kind.label || 'Ping';
-      var icon = L.divIcon({
-        className: 'atak-ping-map-icon',
-        html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
-          '<span style="width:12px;height:12px;border-radius:50%;background:' + kind.color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);"></span>' +
-          '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + kind.color + ';text-shadow:0 0 2px #000;white-space:nowrap;max-width:72px;overflow:hidden;text-overflow:ellipsis;">' +
-          String(pinLabel).replace(/</g, '&lt;').slice(0, 14) + '</span></div>',
-        iconSize: [72, 26],
-        iconAnchor: [36, 8]
-      });
+      var S = window.ATAKMarkerSizes;
+      var pingHtml = '<span style="width:12px;height:12px;border-radius:50%;background:' + kind.color + ';border:1px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);display:block;"></span>';
+      var icon = S && S.divIcon
+        ? S.divIcon(L, pingHtml, 'small', { className: 'atak-ping-map-icon atak-compact-marker' })
+        : L.divIcon({
+            className: 'atak-ping-map-icon atak-compact-marker',
+            html: pingHtml,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7]
+          });
       var popup = '<div class="atak-ping-popup"><div class="atak-marker-popup__kind">Ping</div><b>' +
         String(kind.label).replace(/</g, '&lt;') +
         (author ? ' — ' + String(author).replace(/</g, '&lt;') : '') +
@@ -1311,6 +1413,10 @@ window.ATAKMap = (function () {
       }
       var marker = L.marker(latlng, { icon: icon, zIndexOffset: 350 });
       marker.bindPopup(popup);
+      bindMarkerChrome(marker, pinLabel, [
+        author ? 'De ' + author : '',
+        String(kind.rest || p.message || '').slice(0, 80)
+      ]);
       marker._atakPingId = id;
       if (!marker._atakCtxBound) {
         marker._atakCtxBound = true;
@@ -1365,15 +1471,16 @@ window.ATAKMap = (function () {
       var color = pending ? '#facc15' : (urgent ? '#ef4444' : '#f97316');
       var grid = String(item.grid_ref || '').trim();
       var pinLabel = countdown ? formatChargeRemain(remaining) : (pending ? 'TOC' : 'ARM');
-      var icon = L.divIcon({
-        className: 'atak-charge-map-icon',
-        html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
-          '<span style="width:12px;height:12px;border-radius:2px;background:' + color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);"></span>' +
-          '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + color + ';text-shadow:0 0 2px #000;white-space:nowrap;">' +
-          pinLabel + '</span></div>',
-        iconSize: [56, 26],
-        iconAnchor: [28, 8]
-      });
+      var S = window.ATAKMarkerSizes;
+      var chargeHtml = '<span style="width:12px;height:12px;border-radius:2px;background:' + color + ';border:1px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);display:block;"></span>';
+      var icon = S && S.divIcon
+        ? S.divIcon(L, chargeHtml, 'tactical', { className: 'atak-charge-map-icon atak-compact-marker' })
+        : L.divIcon({
+            className: 'atak-charge-map-icon atak-compact-marker',
+            html: chargeHtml,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          });
       var kindTitle = countdown ? 'Charge à retardement' : 'Charge';
       var delayLine = countdown
         ? '<br/>Délai programmé : ' + formatChargeRemain(item.fuse_seconds) +
@@ -1391,6 +1498,10 @@ window.ATAKMap = (function () {
       }
       var marker = L.marker(latlng, { icon: icon, zIndexOffset: 420 });
       marker.bindPopup(popup);
+      bindMarkerChrome(marker, item.magazine_label || 'Charge', [
+        pinLabel,
+        grid ? 'Grille ' + grid : ''
+      ]);
       marker.addTo(explosiveLayer);
       explosiveMarkersById[id] = marker;
     });
@@ -1436,15 +1547,16 @@ window.ATAKMap = (function () {
       var gps = String(item.mission_type || '').toUpperCase() === 'GPS_BEACON';
       var color = gps ? '#38bdf8' : '#f59e0b';
       var kind = gps ? 'Balise GPS' : 'Véhicule suivi';
-      var icon = L.divIcon({
-        className: 'atak-gps-map-icon',
-        html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
-          '<span style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid ' + color + ';filter:drop-shadow(0 0 1px #000);"></span>' +
-          '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + color + ';text-shadow:0 0 2px #000;white-space:nowrap;max-width:88px;overflow:hidden;text-overflow:ellipsis;">' +
-          pretty.replace(/</g, '&lt;').slice(0, 18) + '</span></div>',
-        iconSize: [88, 28],
-        iconAnchor: [44, 12]
-      });
+      var S = window.ATAKMarkerSizes;
+      var gpsHtml = '<span style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid ' + color + ';filter:drop-shadow(0 0 1px #000);display:block;"></span>';
+      var icon = S && S.divIcon
+        ? S.divIcon(L, gpsHtml, 'tactical', { className: 'atak-gps-map-icon atak-compact-marker', pin: true })
+        : L.divIcon({
+            className: 'atak-gps-map-icon atak-compact-marker',
+            html: gpsHtml,
+            iconSize: [16, 16],
+            iconAnchor: [8, 16]
+          });
       var popup = '<div class="atak-gps-popup"><div class="atak-marker-popup__kind">' + kind + '</div><b>' +
         pretty.replace(/</g, '&lt;') +
         '</b><br/>' + vehicleClassLabel(item.vehicle_class) +
@@ -1458,6 +1570,7 @@ window.ATAKMap = (function () {
       }
       var marker = L.marker(latlng, { icon: icon, zIndexOffset: 380 });
       marker.bindPopup(popup);
+      bindMarkerChrome(marker, pretty, [kind, vehicleClassLabel(item.vehicle_class)]);
       marker.addTo(gpsVehicleLayer);
       gpsVehicleMarkersById[id] = marker;
     });
@@ -1477,15 +1590,16 @@ window.ATAKMap = (function () {
     var kind = pingKindFromMessage(message);
     var pinLabel = String(kind.label || 'Ping').slice(0, 14);
     var id = pingId != null && String(pingId) !== '' ? String(pingId) : ('live_' + Date.now());
-    var icon = L.divIcon({
-      className: 'atak-ping-temp-icon',
-      html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
-        '<span style="width:14px;height:14px;border-radius:50%;background:' + kind.color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);"></span>' +
-        '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + kind.color + ';text-shadow:0 0 2px #000;">' +
-        pinLabel.replace(/</g, '&lt;') + '</span></div>',
-      iconSize: [72, 28],
-      iconAnchor: [36, 10]
-    });
+    var S = window.ATAKMarkerSizes;
+    var pingHtml = '<span style="width:12px;height:12px;border-radius:50%;background:' + kind.color + ';border:1px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);display:block;"></span>';
+    var icon = S && S.divIcon
+      ? S.divIcon(L, pingHtml, 'small', { className: 'atak-ping-temp-icon atak-compact-marker' })
+      : L.divIcon({
+          className: 'atak-ping-temp-icon atak-compact-marker',
+          html: pingHtml,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
     var marker = L.marker(latlng, { icon: icon, zIndexOffset: 400 });
     marker.bindPopup(
       '<div class="atak-ping-popup"><div class="atak-marker-popup__kind">Ping</div><b>' +
@@ -1753,19 +1867,23 @@ window.ATAKMap = (function () {
           icon = buildDotIcon(u.call_sign || '', dotColor, prefs.iconSize, prefs.labelSize);
         } else if (preferAvatar) {
           var av = Math.max(12, Math.round(prefs.iconSize));
-          icon = L.divIcon({
-            className: 'atak-unit-avatar-marker' +
-              (emitting ? ' atak-unit-avatar-marker--emit' : '') +
-              (onMonNet ? ' atak-unit-avatar-marker--listen' : ''),
-            html: '<div class="atak-unit-avatar-marker__inner">' +
-              '<img src="' + String(profile.avatarUrl).replace(/"/g, '&quot;') + '" alt="" style="width:' + av + 'px;height:' + av + 'px;"/>' +
-              (emitting ? '<span class="atak-unit-emit-badge">Émet</span>' : '') +
-              (onMonNet && !emitting ? '<span class="atak-unit-listen-badge">Réseau</span>' : '') +
-              '<span class="atak-unit-avatar-marker__label">' + String(u.call_sign || '').slice(0, 12).replace(/</g, '&lt;') + '</span>' +
-              '</div>',
-            iconSize: [Math.max(av + 8, 48), av + 8 + prefs.labelSize],
-            iconAnchor: [Math.max(av + 8, 48) / 2, av / 2],
-          });
+          var avHtml = '<img src="' + String(profile.avatarUrl).replace(/"/g, '&quot;') + '" alt="" style="width:' + av + 'px;height:' + av + 'px;"/>' +
+            (emitting ? '<span class="atak-unit-emit-badge">Émet</span>' : '') +
+            (onMonNet && !emitting ? '<span class="atak-unit-listen-badge">Réseau</span>' : '');
+          icon = window.ATAKMarkerSizes && window.ATAKMarkerSizes.divIcon
+            ? window.ATAKMarkerSizes.divIcon(L, avHtml, av, {
+                className: 'atak-unit-avatar-marker atak-compact-marker' +
+                  (emitting ? ' atak-unit-avatar-marker--emit' : '') +
+                  (onMonNet ? ' atak-unit-avatar-marker--listen' : '')
+              })
+            : L.divIcon({
+                className: 'atak-unit-avatar-marker atak-compact-marker' +
+                  (emitting ? ' atak-unit-avatar-marker--emit' : '') +
+                  (onMonNet ? ' atak-unit-avatar-marker--listen' : ''),
+                html: avHtml,
+                iconSize: [av, av],
+                iconAnchor: [av / 2, av / 2]
+              });
         } else {
           var iconOpts = {
             affiliation: aff,
@@ -1773,7 +1891,7 @@ window.ATAKMap = (function () {
             sidc: extra.sidc || u.sidc || '',
             callSign: u.call_sign || '',
             heading: headingRounded === '' ? u.heading : headingRounded,
-            showLabel: true,
+            showLabel: false,
             size: prefs.iconSize,
             health: health,
             className: healthClass,
@@ -1782,13 +1900,14 @@ window.ATAKMap = (function () {
           };
           icon = nato && nato.leafletDivIcon
             ? nato.leafletDivIcon(L, iconOpts)
-            : L.divIcon({
-                className: 'atak-unit-fallback ' + healthClass,
-                html: '<span style="background:#3b82f6;color:#fff;padding:1px 4px;font-size:' + prefs.labelSize + 'px;border-radius:2px;">' + (u.call_sign || '?') + '</span>' +
-                  (emitting ? '<span class="atak-unit-emit-badge">Émet</span>' : ''),
-                iconSize: [56, 20],
-                iconAnchor: [28, 8],
-              });
+            : (window.ATAKMarkerSizes && window.ATAKMarkerSizes.divIcon
+              ? window.ATAKMarkerSizes.divIcon(L, '<span style="display:block;width:8px;height:8px;border-radius:50%;background:#3b82f6;"></span>', 'small', { className: 'atak-unit-fallback atak-compact-marker ' + healthClass })
+              : L.divIcon({
+                  className: 'atak-unit-fallback atak-compact-marker ' + healthClass,
+                  html: '<span style="display:block;width:8px;height:8px;border-radius:50%;background:#3b82f6;"></span>',
+                  iconSize: [14, 14],
+                  iconAnchor: [7, 7]
+                }));
         }
         if (prefs.showFtFrame && safeFt && prefs.styleMode === 'nato' && icon && icon.options) {
           icon.options.className = (icon.options.className || '') + ' atak-ft-marker';
@@ -1805,6 +1924,7 @@ window.ATAKMap = (function () {
         } else {
           marker.bindPopup('<strong>' + (u.call_sign || '—') + '</strong><br/>' + (u.role || '') + '<br/>' + (u.grid_ref || ''));
         }
+        if (window.ATAKMarkerSizes) window.ATAKMarkerSizes.bindSelectVisual(marker);
         bindUnitMarkerContextMenu(marker);
         marker.addTo(unitsLayer);
         unitsById[id] = marker;
@@ -1834,6 +1954,9 @@ window.ATAKMap = (function () {
     });
     // Unités mises à jour → retirer les repères carte qui doublonnent le BFT.
     refreshMarkersAgainstUnits();
+    try {
+      window.dispatchEvent(new CustomEvent('atak:units-markers-updated', { detail: { units: lastUnitsListForMap } }));
+    } catch (e) {}
   }
 
   function refreshMarkersAgainstUnits() {
@@ -1869,14 +1992,16 @@ window.ATAKMap = (function () {
             aircraftType: a.aircraft_type || 'plane',
             role: a.model || a.aircraft_type || '',
             callSign: a.callsign || '',
-            showLabel: true,
-            size: 36,
+            showLabel: false,
+            size: window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('important') : 22,
           })
         : L.divIcon({
-            className: 'atak-air-asset-marker',
-            html: '<span style="color:#3b82f6;font-size:16px;font-weight:bold;">▲</span>',
-            iconSize: [20, 20],
-            iconAnchor: [10, 10],
+            className: 'atak-air-asset-marker atak-compact-marker',
+            html: window.ATAKMarkerSizes && window.ATAKMarkerSizes.wrapGlyph
+              ? window.ATAKMarkerSizes.wrapGlyph('<span style="color:#3b82f6;font-size:12px;font-weight:bold;">▲</span>')
+              : '<span style="color:#3b82f6;font-size:12px;font-weight:bold;">▲</span>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
           });
       var iconSig = [aff, a.aircraft_type || '', a.model || '', a.callsign || '', status].join('|');
       var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
@@ -1890,6 +2015,10 @@ window.ATAKMap = (function () {
           window.ATAKUnitPopup.bindAir(marker, a);
         } else {
           marker.bindPopup('<strong>' + (a.callsign || '—') + '</strong><br/>' + (a.model || '') + '<br/>' + status);
+        }
+        if (window.ATAKMarkerSizes) {
+          window.ATAKMarkerSizes.bindHoverTip(marker, window.ATAKMarkerSizes.hoverTipHtml(a.callsign || 'Aérien', [a.model || '', status]));
+          window.ATAKMarkerSizes.bindSelectVisual(marker);
         }
         airAssetsById[id] = marker;
       } else {
@@ -1913,6 +2042,9 @@ window.ATAKMap = (function () {
         delete airAssetsById[k];
       }
     });
+    try {
+      window.dispatchEvent(new CustomEvent('atak:air-markers-updated', { detail: { assets: assets } }));
+    } catch (e) {}
   }
 
   if (document.readyState === 'loading') {
@@ -1933,6 +2065,8 @@ window.ATAKMap = (function () {
     },
     getConfig: getConfig,
     applyOffset: applyOffset,
+    latLngFromWorld: latLngFromWorld,
+    worldFromLatLng: worldFromLatLng,
     addIntelPhotoMarker: addIntelPhotoMarker,
     removeIntelPhotoMarker: removeIntelPhotoMarker,
     clearIntelMarkers: clearIntelMarkers,

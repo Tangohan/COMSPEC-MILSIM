@@ -194,6 +194,13 @@ private _reconAction = [
 ] call ace_interact_menu_fnc_createAction;
 [_reconAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+private _terrainAction = [
+    "COMSPEC_Terrain", "Relever le relief du théâtre", "", {
+        [] call comspec_overwatch_connect_fnc_sampleTerrain;
+    }, _condSync, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_terrainAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
 private _noteAction = [
     "COMSPEC_IntelNote", "Rédiger une fiche de renseignement…", "", {
         if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openNote") then {

@@ -19,7 +19,7 @@ Régénérer l’index web après ajout de PNG :
 powershell -File mod/UptoDate/tools/gen-marker-library-index.ps1
 ```
 
-Fichier généré : `public/assets/js/arma-marker-library-index.js` (consommé par `/documentation/marqueurs`).
+Fichier généré : `public/assets/js/arma-marker-library-index.js` (consommé par `/documentation/marqueurs` **et** par la carte ATAK / Tacmap).
 
 ## Convention de chemin
 

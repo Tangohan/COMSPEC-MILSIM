@@ -153,8 +153,9 @@ window.ATAKContextMenu = (function () {
       e.preventDefault();
       e.stopPropagation();
       var action = btn.getAttribute('data-action');
+      var unitRef = btn.getAttribute('data-unit-ref');
       hideMenu();
-      runAction(action);
+      runAction(action, unitRef);
     });
     return menuEl;
   }
@@ -191,9 +192,29 @@ window.ATAKContextMenu = (function () {
     return header +
       '<button type="button" class="atak-ctx-menu__item" data-action="feature-rename" role="menuitem">Renommer</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="feature-edit" role="menuitem">Modifier</button>' +
+      destOfHtml(feature) +
       '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--danger" data-action="feature-delete" role="menuitem">Supprimer</button>' +
       '<div class="atak-ctx-menu__sep" role="separator"></div>' +
       '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--muted" data-action="copy" role="menuitem">Copier les coordonnées</button>';
+  }
+
+  function destOfHtml(feature) {
+    if (!feature || feature.featureType !== 'marker') return '';
+    var units = (window.ATAKUnits && window.ATAKUnits.getUnits) ? window.ATAKUnits.getUnits() : [];
+    var live = units.filter(function (u) {
+      var st = String((u && u.status) || '').toLowerCase();
+      return st === 'linked' || st === 'delayed';
+    }).slice(0, 10);
+    if (!live.length) return '';
+    var html = '<div class="atak-ctx-menu__sep" role="separator"></div>';
+    html += '<div class="atak-ctx-menu__item atak-ctx-menu__item--muted" role="presentation">Définir comme destination de</div>';
+    live.forEach(function (u) {
+      var cs = String(u.call_sign || '').trim();
+      if (!cs) return;
+      html += '<button type="button" class="atak-ctx-menu__item" data-action="dest-of" data-unit-ref="' +
+        escapeHtml(cs) + '" role="menuitem">' + escapeHtml(cs) + '</button>';
+    });
+    return html;
   }
 
   function fillMenuContent(feature) {
@@ -1688,7 +1709,7 @@ window.ATAKContextMenu = (function () {
     });
   }
 
-  function runAction(action) {
+  function runAction(action, unitRef) {
     if (action === 'feature-rename') {
       if (activeFeature) renameFeature(activeFeature);
       return;
@@ -1699,6 +1720,37 @@ window.ATAKContextMenu = (function () {
     }
     if (action === 'feature-delete') {
       if (activeFeature) deleteFeature(activeFeature);
+      return;
+    }
+    if (action === 'dest-of' && activeFeature && unitRef) {
+      var units = (window.ATAKUnits && window.ATAKUnits.getUnits) ? window.ATAKUnits.getUnits() : [];
+      var unit = null;
+      units.some(function (u) {
+        if (String(u.call_sign || '').trim() === String(unitRef).trim()) {
+          unit = u;
+          return true;
+        }
+        return false;
+      });
+      if (!unit || !window.ATAKAssignments || !window.ATAKAssignments.assignTo) return;
+      var data = activeFeature.data || {};
+      var pos = data.pos;
+      var x = data.pos_x != null ? Number(data.pos_x) : (Array.isArray(pos) ? Number(pos[0]) : NaN);
+      var y = data.pos_y != null ? Number(data.pos_y) : (Array.isArray(pos) ? Number(pos[1]) : NaN);
+      if ((!isFinite(x) || !isFinite(y)) && lastLatLng && window.ATAKMap && window.ATAKMap.worldFromLatLng) {
+        var w = window.ATAKMap.worldFromLatLng(lastLatLng);
+        x = w.x;
+        y = w.y;
+      }
+      var label = activeFeature.label || data.label || data.text || data.name || 'Repère';
+      window.ATAKAssignments.assignTo({
+        sourceUnit: unit,
+        type: 'marker',
+        id: activeFeature.id,
+        label: label,
+        x: x,
+        y: y
+      });
       return;
     }
     if (!lastLatLng) return;

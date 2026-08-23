@@ -170,3 +170,30 @@
     font-size: 0.76rem;
   }
 }
+
+/* Icônes PAA→PNG (vanilla blanc, cTab / Iceman / MarkersPlus déjà colorées) */
+.arma-marker-paa-png {
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 0 0.5px #000) drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.65));
+}
+.arma-marker-paa-mask-wrap {
+  display: block;
+  pointer-events: none;
+}
+.arma-marker-paa-mask {
+  display: block;
+  pointer-events: none;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.65));
+}
+.arma-marker-paa-fallback {
+  align-items: center;
+  justify-content: center;
+}

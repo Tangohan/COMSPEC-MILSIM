@@ -66,15 +66,16 @@
 
   function pointMarker(p) {
     var color = p.color || '#34d399';
-    var label = String(p.label || 'SSE').slice(0, 18).replace(/</g, '&lt;');
-    var icon = L.divIcon({
-      className: 'atak-sse-layer-marker',
-      html: '<div class="atak-sse-layer-marker__inner">'
-        + '<span class="atak-sse-layer-marker__dot" style="background:' + color + '"></span>'
-        + '<span class="atak-sse-layer-marker__lbl" style="color:' + color + '">' + label + '</span></div>',
-      iconSize: [96, 28],
-      iconAnchor: [48, 8]
-    });
+    var S = window.ATAKMarkerSizes;
+    var html = '<span class="atak-sse-layer-marker__dot" style="background:' + color + '"></span>';
+    var icon = S && S.divIcon
+      ? S.divIcon(L, html, 'small', { className: 'atak-sse-layer-marker atak-compact-marker' })
+      : L.divIcon({
+          className: 'atak-sse-layer-marker atak-compact-marker',
+          html: html,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
     var applied = applyOffset(p.pos_y, p.pos_x);
     var latlng = L.latLng(applied[0], applied[1]);
     var popup = '<div class="atak-marker-popup__kind">' + String(p.layer || 'SSE').replace(/</g, '&lt;') + '</div>'
@@ -89,7 +90,15 @@
       popup += '<p style="margin:.5rem 0 0"><img src="' + url.replace(/"/g, '&quot;')
         + '" alt="Photo terrain" style="max-width:220px;max-height:160px;display:block;" /></p>';
     }
-    return L.marker(latlng, { icon: icon }).bindPopup(popup);
+    var marker = L.marker(latlng, { icon: icon }).bindPopup(popup);
+    if (window.ATAKMarkerSizes && window.ATAKMarkerSizes.bindHoverTip) {
+      window.ATAKMarkerSizes.bindHoverTip(marker, window.ATAKMarkerSizes.hoverTipHtml(p.label || 'SSE', [
+        p.case_ref || '',
+        p.case_title || ''
+      ]));
+      window.ATAKMarkerSizes.bindSelectVisual(marker);
+    }
+    return marker;
   }
 
   function renderPayload(payload) {

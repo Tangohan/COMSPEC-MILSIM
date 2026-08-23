@@ -102,13 +102,15 @@
 
   function setSettingsOpen(open) {
     var aside = qs('atak-settings-aside');
-    var toggle = qs('atak-settings-toggle');
     if (!aside) return;
+    if (open && window.ATAKSectionNav && typeof window.ATAKSectionNav.setLeftCollapsed === 'function') {
+      window.ATAKSectionNav.setLeftCollapsed(false);
+    }
     aside.hidden = !open;
-    if (toggle) {
+    document.querySelectorAll('.js-atak-settings-toggle').forEach(function (toggle) {
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
       toggle.classList.toggle('is-active', !!open);
-    }
+    });
     document.body.classList.toggle('atak-settings-open', !!open);
   }
 
@@ -152,18 +154,18 @@
     if (!allowed && currentWork === 'emettre') {
       setWork('suivi', { skipStore: true });
     }
+    syncResetAccess();
   }
 
   function initSettings() {
-    var toggle = qs('atak-settings-toggle');
     var closeBtn = qs('atak-settings-close');
     var aside = qs('atak-settings-aside');
-    if (toggle) {
+    document.querySelectorAll('.js-atak-settings-toggle').forEach(function (toggle) {
       toggle.addEventListener('click', function (e) {
         e.preventDefault();
         toggleSettings();
       });
-    }
+    });
     if (closeBtn) {
       closeBtn.addEventListener('click', function (e) {
         e.preventDefault();
@@ -184,6 +186,20 @@
       }
     });
     setSettingsOpen(false);
+    syncResetAccess();
+  }
+
+  function syncResetAccess() {
+    var resetBtn = qs('atak-theatre-reset-btn');
+    var hint = qs('atak-theatre-reset-noperm');
+    var allowed = canIssue();
+    if (resetBtn) {
+      resetBtn.disabled = !allowed;
+      resetBtn.title = allowed
+        ? 'Retirer les marqueurs, ordres, messages et positions pour tout le monde'
+        : 'Réservé au commandement';
+    }
+    if (hint) hint.hidden = allowed;
   }
 
   function initWorktabs() {

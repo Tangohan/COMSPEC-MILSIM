@@ -202,6 +202,17 @@ window.ATAKUnitMenu = (function () {
     html += menuItem('chat', 'Ouvrir la messagerie', { muted: !inLiaison, disabled: !inLiaison, title: inLiaison ? '' : 'Disponible lorsque le contact est en liaison' });
 
     html += '<div class="atak-ctx-menu__sep" role="separator"></div>';
+    html += menuItem('assign-dest', 'Assigner une destination', {
+      disabled: !canCenter,
+      title: canCenter ? 'Pointer un repère, une unité ou un point sur la carte' : 'Position indisponible'
+    });
+    var asg = unit && (unit.navigation || unit.assignment);
+    if (asg && asg.id && asg.status !== 'detached') {
+      html += menuItem('change-dest', 'Changer la destination', { disabled: !canCenter });
+      html += menuItem('detach-dest', 'Détacher la destination');
+    }
+
+    html += '<div class="atak-ctx-menu__sep" role="separator"></div>';
 
     if (fiche && fiche.url) {
       html += menuItem('open-fiche', 'Ouvrir la fiche personnel', {
@@ -681,6 +692,23 @@ window.ATAKUnitMenu = (function () {
 
     if (action === 'chat') {
       openChatTab(unit);
+      return;
+    }
+
+    if (action === 'assign-dest' || action === 'change-dest') {
+      if (window.ATAKAssignments && window.ATAKAssignments.beginPick) {
+        window.ATAKAssignments.beginPick(unit);
+      }
+      return;
+    }
+    if (action === 'detach-dest') {
+      var asg = unit.navigation || unit.assignment;
+      if (asg && asg.id && window.ATAKAssignments && window.ATAKAssignments.detach) {
+        window.ATAKAssignments.detach(asg.id).then(function () {
+          if (window.ATAKShowNotification) window.ATAKShowNotification('Destination détachée');
+          if (window.ATAKUnits && window.ATAKUnits.fetchUnits) window.ATAKUnits.fetchUnits();
+        });
+      }
       return;
     }
 

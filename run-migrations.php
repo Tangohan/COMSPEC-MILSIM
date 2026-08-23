@@ -3405,6 +3405,24 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakUnitMotionMigrate = require $root . '/bootstrap/atak_unit_motion_migration.php';
+try {
+  echo "Migration atak_unit_motion (cinématique BFT et destinations)...\n";
+  $atakUnitMotionMigrate($pdo);
+} catch (Throwable $e) {
+  echo '  [ATTENTION] atak_unit_motion : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakCopTerrainMigrate = require $root . '/bootstrap/atak_cop_terrain_migration.php';
+try {
+  echo "Migration atak_cop_terrain (relief de théâtre et événements d’analyse)...\n";
+  $atakCopTerrainMigrate($pdo);
+} catch (Throwable $e) {
+  echo '  [ATTENTION] atak_cop_terrain : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakMedicalTriageMigrate = require $root . '/bootstrap/atak_medical_triage_migration.php';
 try {
     echo "Migration atak_medical_alert_triage (triage alertes médicales)...\n";

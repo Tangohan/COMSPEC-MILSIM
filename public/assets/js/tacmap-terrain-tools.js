@@ -11,6 +11,10 @@
    * Crédit conceptuel : Iceman viewshed utilise getTerrainHeightASL ; ici approximation.
    */
   function syntheticHeight(x, y) {
+    if (window.ATAKTerrain && typeof window.ATAKTerrain.heightAt === 'function' && window.ATAKTerrain.isReady && window.ATAKTerrain.isReady()) {
+      var z = window.ATAKTerrain.heightAt(x, y);
+      if (z != null && isFinite(z)) return z;
+    }
     var h = 20;
     h += 35 * Math.sin(x / 420) * Math.cos(y / 510);
     h += 18 * Math.sin((x + y) / 280);

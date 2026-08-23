@@ -75,7 +75,8 @@ body.atak-page.atak-density-comfortable {
 .atak-section-btn {
   position: relative;
   width: 100%;
-  height: 57px;
+  height: 48px;
+  flex-shrink: 0;
   border: 0;
   border-radius: 4px;
   background: transparent;
@@ -138,12 +139,27 @@ body.atak-page.atak-density-comfortable {
   display: none !important;
 }
 .atak-section-btn__badge.is-alert {
-  color: #1a1205;
-  background: var(--atak-c2-amber);
+  color: #fff;
+  background: var(--atak-c2-red);
+  box-shadow: 0 0 8px rgba(220, 93, 93, 0.55);
+  animation: atak-badge-pulse 1.5s ease-in-out infinite;
 }
 .atak-section-btn__badge.is-live {
   background: var(--atak-c2-green);
   color: #05100c;
+  box-shadow: 0 0 8px rgba(53, 214, 161, 0.45);
+}
+.atak-section-btn--settings {
+  color: #c5d0d6;
+}
+.atak-section-btn--settings.is-active,
+.atak-section-btn--settings:hover {
+  background: rgba(104, 165, 216, 0.16);
+  color: #8ec5ef;
+}
+@keyframes atak-badge-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.82; }
 }
 
 .atak-section-rail__sep {
@@ -355,8 +371,9 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
 }
 .atak-left-aside .atak-tab-badge.is-warn,
 .atak-left-aside .atak-medical-tab-badge:not([hidden]) {
-  background: rgba(211, 163, 60, 0.13);
-  color: var(--atak-c2-amber);
+  background: rgba(220, 93, 93, 0.22);
+  color: #f0a0a0;
+  animation: atak-badge-pulse 1.6s ease-in-out infinite;
 }
 
 .atak-tab[data-atak-section]:not(.is-section-visible) {
@@ -1216,6 +1233,10 @@ body.atak-page .atak-order-suivi em {
   font-style: normal;
   font-size: 0.75rem;
   color: var(--atak-c2-muted);
+}
+.atak-order-tpl-btn--danger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 @media (max-width: 720px) {
   body.atak-page .atak-order-infogrid,

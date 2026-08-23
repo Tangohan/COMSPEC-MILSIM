@@ -4003,8 +4003,10 @@ public static class Extension
                 var isProxyContact = !string.IsNullOrWhiteSpace(vehicleJson)
                     && (vehicleJson.Contains("\"phone_geoloc\"", StringComparison.Ordinal)
                         || vehicleJson.Contains("\"ally_ai\"", StringComparison.Ordinal)
+                        || vehicleJson.Contains("\"gps_beacon\"", StringComparison.Ordinal)
                         || vehicleJson.Contains("\"source\":\"phone\"", StringComparison.Ordinal)
-                        || vehicleJson.Contains("\"source\":\"ally\"", StringComparison.Ordinal));
+                        || vehicleJson.Contains("\"source\":\"ally\"", StringComparison.Ordinal)
+                        || vehicleJson.Contains("\"source\":\"gps\"", StringComparison.Ordinal));
                 if (!isProxyContact && _militaryId.Length > 0
                     && (string.IsNullOrWhiteSpace(vehicleJson)
                         || (!vehicleJson.Contains("\"bft_id\"", StringComparison.Ordinal)

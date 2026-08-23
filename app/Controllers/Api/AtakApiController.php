@@ -34,6 +34,7 @@ use App\Services\Qr\QrPngGenerator;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Services\Tactical\AtakIntelViewService;
 use App\Services\Tactical\AtakTenantDataService;
+use App\Services\Tactical\AtakUnitMotionService;
 use App\Services\Tactical\RoleplaySimulationService;
 use App\Support\ArmaMarkerLabel;
 use App\Support\AtakArmaWriteGuard;
@@ -58,6 +59,7 @@ class AtakApiController
     private AtakArmaWriteGuard $armaGuard;
     private RoleplaySimulationService $roleplaySim;
     private AtakIntelViewService $intelView;
+    private ?AtakUnitMotionService $unitMotion = null;
 
     public function __construct(
         private AtakDataRepository $atak,
@@ -897,6 +899,11 @@ class AtakApiController
         }
 
         return function_exists('can') && can('admin.access');
+    }
+
+    private function motionService(): AtakUnitMotionService
+    {
+        return $this->unitMotion ??= new AtakUnitMotionService();
     }
 
     private function mapId(Request $request, bool $fromBody = false): int
@@ -3461,6 +3468,14 @@ class AtakApiController
             }
         } elseif (!empty($decoded['pngUrl']) && is_string($decoded['pngUrl'])) {
             $decoded['pngUrl'] = trim((string) $decoded['pngUrl']);
+        } elseif (!empty($decoded['type']) && is_string($decoded['type']) && function_exists('atak_marker_icon_relpath_from_type')) {
+            $fromType = atak_marker_icon_relpath_from_type((string) $decoded['type']);
+            if (is_string($fromType) && $fromType !== '' && function_exists('atak_marker_icon_url')) {
+                $png = atak_marker_icon_url($fromType);
+                if (is_string($png) && $png !== '') {
+                    $decoded['pngUrl'] = $png;
+                }
+            }
         }
 
         // Couleur Arma (ColorRed / ColorWEST…) → hex stable pour le miroir web.
@@ -3622,6 +3637,10 @@ class AtakApiController
         }
 
         $rows = $this->enrichUnitsWithFireTeams($tenantId, $rows);
+        try {
+            $rows = $this->motionService()->attachToUnits($tenantId, $mapId, $rows);
+        } catch (\Throwable) {
+        }
 
         $includeGateway = $request->query('include_gateway') === '1'
             || $request->query('includeGateway') === '1'
@@ -4720,12 +4739,11 @@ class AtakApiController
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
         $callSign = trim((string) ($body['call_sign'] ?? $body['callsign'] ?? ''));
         $steamNorm = $actor['steam_uid'] ?? null;
-        $extraEarly = $body['extra'] ?? [];
-        $isProxyTerrain = is_array($extraEarly) && (
-            !empty($extraEarly['phone_geoloc'])
-            || !empty($extraEarly['ally_ai'])
-            || in_array(strtolower(trim((string) ($extraEarly['source'] ?? ''))), ['phone', 'ally'], true)
-        );
+        $rawExtra = $body['extra'] ?? null;
+        $extraEarly = AtakDataRepository::decodeExtra($rawExtra);
+        $isProxyTerrain = AtakDataRepository::isProxyContactExtra($extraEarly)
+            || AtakDataRepository::extraLooksLikeProxy($rawExtra, $extraEarly)
+            || AtakDataRepository::callSignLooksLikeProxy($callSign);
         if ($isProxyTerrain) {
             $steamNorm = null;
         }
@@ -4787,8 +4805,8 @@ class AtakApiController
             $heading = null;
         }
         $role = $body['role'] ?? '';
-        $extra = $body['extra'] ?? [];
-        if (!is_array($extra)) {
+        $extra = AtakDataRepository::decodeExtra($body['extra'] ?? null);
+        if ($extra === [] && !is_array($body['extra'] ?? null) && !is_string($body['extra'] ?? null)) {
             $extra = ['role' => $body['role'] ?? '', 'health' => $body['health'] ?? 'ok', 'fuel' => $body['fuel'] ?? '', 'ammo' => $body['ammo'] ?? 'n/a'];
         }
         if ($posZ === null) {
@@ -4821,12 +4839,12 @@ class AtakApiController
         if ($steamNorm !== null && $steamNorm !== '') {
             $extra['steam_uid'] = $steamNorm;
         }
-        $isProxyTerrain = !empty($extra['phone_geoloc'])
-            || !empty($extra['ally_ai'])
-            || in_array(strtolower(trim((string) ($extra['source'] ?? ''))), ['phone', 'ally'], true);
+        $isProxyTerrain = AtakDataRepository::isProxyContactExtra($extra)
+            || AtakDataRepository::extraLooksLikeProxy($body['extra'] ?? null, $extra)
+            || AtakDataRepository::callSignLooksLikeProxy($callSign);
         if ($isProxyTerrain) {
             $steamNorm = null;
-            unset($extra['steam_uid'], $extra['bft_id'], $extra['military_id'], $extra['atak_id']);
+            unset($extra['steam_uid'], $extra['steamId'], $extra['player_uid'], $extra['bft_id'], $extra['military_id'], $extra['atak_id']);
         }
         try {
             $this->activityLog->touchModDetection($tenantId, $mapId, [
@@ -4839,6 +4857,19 @@ class AtakApiController
         } catch (\Throwable) {
         }
         $upsert = $this->atak->upsertUnitPosition($tenantId, $mapId, $callSign, $posX, $posY, $heading, $role, json_encode($extra));
+        try {
+            $this->motionService()->ingestGround(
+                $tenantId,
+                $mapId,
+                (int) ($upsert['unit_id'] ?? 0),
+                $callSign,
+                $posX,
+                $posY,
+                $heading,
+                is_array($extra) ? $extra : []
+            );
+        } catch (\Throwable) {
+        }
         $terminalUidPos = trim((string) ($extra['terminal_uid'] ?? ''));
         $compromisePos = strtolower(trim((string) ($extra['compromise_state'] ?? '')));
         if ($terminalUidPos !== '' && in_array($compromisePos, ['none', 'captured', 'compromised'], true)) {
@@ -4889,21 +4920,23 @@ class AtakApiController
             }
         }
         try {
-            $this->activityLog->recordFromPosition(
-                $tenantId,
-                $mapId,
-                $this->activityLog->clientKeyFromRequest(),
-                (string) $callSign,
-                !empty($upsert['created']),
-                $this->buildActivityMeta(
+            if (!$isProxyTerrain) {
+                $this->activityLog->recordFromPosition(
                     $tenantId,
                     $mapId,
-                    $body,
-                    is_array($actor) ? $actor : null,
+                    $this->activityLog->clientKeyFromRequest(),
                     (string) $callSign,
-                    $extra
-                )
-            );
+                    !empty($upsert['created']),
+                    $this->buildActivityMeta(
+                        $tenantId,
+                        $mapId,
+                        $body,
+                        is_array($actor) ? $actor : null,
+                        (string) $callSign,
+                        $extra
+                    )
+                );
+            }
         } catch (\Throwable) {
         }
         $missionId = 'mission_' . $tenantId . '_map_' . $mapId;
@@ -5930,7 +5963,7 @@ class AtakApiController
 
         $extraJson = json_encode($mergedExtra, JSON_UNESCAPED_UNICODE);
         try {
-            $this->atak->upsertUnitPosition(
+            $upPhone = $this->atak->upsertUnitPosition(
                 $tenantId,
                 $mapId,
                 $resolvedCallSign,
@@ -5939,6 +5972,16 @@ class AtakApiController
                 null,
                 $role,
                 is_string($extraJson) ? $extraJson : '{}'
+            );
+            $this->motionService()->ingestGround(
+                $tenantId,
+                $mapId,
+                (int) ($upPhone['unit_id'] ?? 0),
+                $resolvedCallSign,
+                $px,
+                $py,
+                null,
+                is_array($mergedExtra) ? $mergedExtra : []
             );
         } catch (\Throwable) {
         }
@@ -8528,6 +8571,10 @@ class AtakApiController
             'pos_z' => isset($body['pos']) && is_array($body['pos']) && isset($body['pos'][2]) ? $body['pos'][2] : ($body['pos_z'] ?? null),
         ]);
         $row = $this->atak->upsertAirAsset($tenantId, $mapId, $callsign, $data);
+        try {
+            $this->motionService()->ingestAir($tenantId, $mapId, $callsign, is_array($row) ? array_merge($data, $row) : $data);
+        } catch (\Throwable) {
+        }
         $this->atak->setLastActivity($tenantId, $mapId);
         $this->activityLog->record(
             $tenantId,
@@ -9237,6 +9284,10 @@ class AtakApiController
                 'aircraft_count' => (int) ($r['aircraft_count'] ?? 1),
                 'updated_at' => $r['updated_at'],
             ];
+        }
+        try {
+            $out = $this->motionService()->attachToAir($tenantId, $mapId, $out);
+        } catch (\Throwable) {
         }
         return Response::json($out);
     }

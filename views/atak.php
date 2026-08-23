@@ -50,6 +50,7 @@ if ($atakMapConfig) {
     'crs' => $c['crs'] ?? ['factorx' => 0.006839, 'factory' => 0.006836, 'tileWidth' => 212],
     'offsetX' => isset($c['offset_x']) ? (float)$c['offset_x'] : 0,
     'offsetY' => isset($c['offset_y']) ? (float)$c['offset_y'] : 0,
+    'worldSize' => isset($c['worldSize']) ? (int) $c['worldSize'] : 30720,
   ];
 }
 ?>
@@ -66,6 +67,8 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-c2-shell.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-motion.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-cop.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
@@ -204,6 +207,7 @@ if ($atakMapConfig) {
           <span class="atak-header-status-label">Liaison</span>
           <span class="atak-pill atak-pill--muted" id="atak-health-summary-pill">—</span>
         </button>
+        <button type="button" class="atak-header-action js-atak-settings-toggle" aria-expanded="false" aria-controls="atak-settings-aside" title="Réglages du poste ATAK">Réglages</button>
         <button type="button" class="atak-header-action" id="atak-btn-account" title="Compte, guides et navigation">Compte</button>
       </div>
     </div>
@@ -465,6 +469,43 @@ if ($atakMapConfig) {
             <span>Fil en pointillés pour contacts en retard</span>
           </span>
         </label>
+        <h4 class="atak-account-section-subtitle">Mouvement</h4>
+        <p class="atak-game-link-hint">Direction, projection courte et destinations assignées. Tout reste discret sur la carte.</p>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-motion-arrows">
+          <span class="atak-sound-pref-key">Flèche de direction</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-motion-arrows" checked />
+            <span>Petite flèche devant les unités en déplacement</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-motion-projection">
+          <span class="atak-sound-pref-key">Projection courte</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-motion-projection" checked />
+            <span>Trait devant l’unité pour les prochaines secondes</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-assignment-lines">
+          <span class="atak-sound-pref-key">Ligne vers destination</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-assignment-lines" checked />
+            <span>Pointillés entre l’unité et sa destination assignée</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-motion-trail">
+          <span class="atak-sound-pref-key">Trace récente</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-motion-trail" checked />
+            <span>Fil très léger des dernières positions</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-eta-labels">
+          <span class="atak-sound-pref-key">Heure d’arrivée sur la carte</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-eta-labels" />
+            <span>Afficher un tout petit horaire près de l’unité (sinon dans la fiche)</span>
+          </span>
+        </label>
         <label class="atak-sound-pref-label" for="atak-unit-marker-priority">
           <span class="atak-sound-pref-key">Priorité symbole / photo</span>
           <select id="atak-unit-marker-priority" class="atak-header-select atak-sound-pref-select" title="Quand l’apparence est en symbole OTAN ou photo">
@@ -473,8 +514,8 @@ if ($atakMapConfig) {
           </select>
         </label>
         <label class="atak-sound-pref-label" for="atak-unit-icon-size">
-          <span class="atak-sound-pref-key">Taille des icônes <span class="atak-sound-pref-val" id="atak-unit-icon-size-val">16</span></span>
-          <input type="range" id="atak-unit-icon-size" class="atak-sound-pref-slider" min="8" max="48" step="1" value="16" title="Taille des icônes sur la carte" aria-valuemin="8" aria-valuemax="48" aria-valuenow="16" />
+            <span class="atak-sound-pref-key">Taille des icônes <span class="atak-sound-pref-val" id="atak-unit-icon-size-val">17</span></span>
+          <input type="range" id="atak-unit-icon-size" class="atak-sound-pref-slider" min="10" max="22" step="1" value="17" title="Taille des icônes sur la carte" aria-valuemin="10" aria-valuemax="22" aria-valuenow="17" />
         </label>
         <label class="atak-sound-pref-label" for="atak-unit-label-size">
           <span class="atak-sound-pref-key">Taille des libellés <span class="atak-sound-pref-val" id="atak-unit-label-size-val">7</span></span>
@@ -1047,6 +1088,16 @@ if ($atakMapConfig) {
           <span class="atak-section-btn__label">C2</span>
           <span class="atak-section-btn__badge" hidden></span>
         </button>
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="notes" title="Notes de mission">
+          <span class="atak-section-btn__icon" aria-hidden="true">✎</span>
+          <span class="atak-section-btn__label">Notes</span>
+          <span class="atak-section-btn__badge" hidden></span>
+        </button>
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="journal" title="Relecture et bilan après-action">
+          <span class="atak-section-btn__icon" aria-hidden="true">◷</span>
+          <span class="atak-section-btn__label">Journal</span>
+          <span class="atak-section-btn__badge" hidden></span>
+        </button>
         <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="comms" title="Communications">
           <span class="atak-section-btn__icon" aria-hidden="true">≋</span>
           <span class="atak-section-btn__label">Comms</span>
@@ -1068,6 +1119,10 @@ if ($atakMapConfig) {
         </a>
       </nav>
       <div class="atak-rail-bottom">
+        <button type="button" class="atak-section-btn atak-section-btn--settings js-atak-settings-toggle" aria-expanded="false" aria-controls="atak-settings-aside" title="Réglages du poste ATAK">
+          <span class="atak-section-btn__icon" aria-hidden="true">⚙</span>
+          <span class="atak-section-btn__label">Réglages</span>
+        </button>
         <button type="button" class="atak-section-btn" id="atak-section-collapse" aria-expanded="true" title="Réduire ou agrandir le panneau latéral">
           <span class="atak-section-btn__icon" aria-hidden="true">‹</span>
           <span class="atak-section-btn__label">Panneau</span>
@@ -1081,7 +1136,7 @@ if ($atakMapConfig) {
           <h2 class="atak-side-title" id="atak-side-title">Renseignement</h2>
         </div>
         <div class="atak-side-head-actions">
-          <button type="button" class="atak-icon-btn" id="atak-settings-toggle" aria-expanded="false" aria-controls="atak-settings-aside" title="Réglages du poste">⚙</button>
+          <button type="button" class="atak-icon-btn js-atak-settings-toggle" id="atak-settings-toggle" aria-expanded="false" aria-controls="atak-settings-aside" title="Réglages du poste">⚙</button>
           <button type="button" class="atak-icon-btn" id="atak-side-collapse" aria-expanded="true" title="Réduire le panneau">‹</button>
         </div>
       </div>
@@ -1094,11 +1149,7 @@ if ($atakMapConfig) {
           <span class="atak-tab-label">Fiches</span>
           <small class="atak-tab-desc">Rédiger une note datée et située</small>
         </button>
-        <button type="button" class="atak-tab active is-section-visible" role="tab" aria-selected="true" data-tab="cams" data-atak-section="intel" title="Cams">
-          <span class="atak-tab-label">Cams</span>
-          <small class="atak-tab-desc">Aperçus photo des capteurs</small>
-        </button>
-        <button type="button" class="atak-tab is-section-visible" role="tab" aria-selected="false" data-tab="photos" data-atak-section="intel" title="Photos terrain">
+        <button type="button" class="atak-tab active is-section-visible" role="tab" aria-selected="true" data-tab="photos" data-atak-section="intel" title="Photos terrain">
           <span class="atak-tab-label">Photos</span>
           <small class="atak-tab-desc">Captures et pièces image</small>
         </button>
@@ -1144,7 +1195,7 @@ if ($atakMapConfig) {
           <small class="atak-tab-desc">Fréquences et proximité</small>
           <span class="atak-tab-badge" id="atak-radio-tab-badge" hidden></span>
         </button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="notes" data-atak-section="c2" title="Notes de session et tableurs temporaires">
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="notes" data-atak-section="notes" title="Notes de session et tableurs temporaires">
           <span class="atak-tab-label">Notes</span>
           <small class="atak-tab-desc">Bloc-notes de mission</small>
           <span class="atak-tab-badge" id="atak-notes-dirty" hidden>·</span>
@@ -1166,7 +1217,12 @@ if ($atakMapConfig) {
           <span class="atak-tab-label">État</span>
           <small class="atak-tab-desc">Personnel et logistique</small>
         </button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="replay" data-atak-section="c2" title="Relecture mission et bilan après-action">
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="terminaux" data-atak-section="forces" title="Terminaux ATAK — identifiants, santé et liaison">
+          <span class="atak-tab-label">Terminaux</span>
+          <small class="atak-tab-desc">Identifiants, santé et liaison</small>
+          <span class="atak-tab-badge" id="atak-terminals-tab-badge" hidden></span>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="replay" data-atak-section="journal" title="Relecture mission et bilan après-action">
           <span class="atak-tab-label">Relecture</span>
           <small class="atak-tab-desc">Bilan après-action</small>
         </button>
@@ -1181,6 +1237,39 @@ if ($atakMapConfig) {
           <h3 class="atak-settings-aside__title">Réglages du poste</h3>
           <button type="button" class="atak-icon-btn" id="atak-settings-close" title="Fermer les réglages">×</button>
         </div>
+        <section class="atak-settings-block" id="atak-settings-look" aria-label="Apparence de la carte">
+          <h3 class="atak-rail-audio-title">Apparence de la carte</h3>
+          <p class="atak-settings-copy">Taille et style des symboles. Les informations détaillées s’affichent au survol ou au clic.</p>
+          <label class="atak-map-look__row" for="atak-settings-look-style">
+            <span class="atak-map-look__key">Positions</span>
+            <select id="atak-settings-look-style" class="atak-header-select atak-map-look__select" title="Style des marqueurs d’unités">
+              <option value="nato" selected>Symbole OTAN ou photo</option>
+              <option value="intel_dot">Point discret</option>
+              <option value="dot">Point simple</option>
+              <option value="team_dot">Point couleur d’équipe</option>
+            </select>
+          </label>
+          <label class="atak-map-look__row" for="atak-settings-look-icon-size">
+            <span class="atak-map-look__key">Icônes <span class="atak-sound-pref-val" id="atak-settings-look-icon-size-val">17</span></span>
+            <input type="range" id="atak-settings-look-icon-size" class="atak-sound-pref-slider" min="10" max="22" step="1" value="17" aria-valuemin="10" aria-valuemax="22" aria-valuenow="17" />
+          </label>
+          <label class="atak-map-look__row" for="atak-settings-look-label-size">
+            <span class="atak-map-look__key">Libellés infobulle <span class="atak-sound-pref-val" id="atak-settings-look-label-size-val">7</span></span>
+            <input type="range" id="atak-settings-look-label-size" class="atak-sound-pref-slider" min="6" max="16" step="1" value="7" aria-valuemin="6" aria-valuemax="16" aria-valuenow="7" />
+          </label>
+          <label class="atak-map-look__check" for="atak-settings-look-depth">
+            <input type="checkbox" id="atak-settings-look-depth" checked />
+            <span>Relief et profondeur</span>
+          </label>
+          <label class="atak-map-look__check" for="atak-settings-look-motion">
+            <input type="checkbox" id="atak-settings-look-motion" checked />
+            <span>Animation des contacts</span>
+          </label>
+          <label class="atak-map-look__check" for="atak-settings-look-ft-frame">
+            <input type="checkbox" id="atak-settings-look-ft-frame" checked />
+            <span>Cadre d’équipe</span>
+          </label>
+        </section>
         <section class="atak-rail-audio" id="atak-rail-audio" aria-label="Réglages des alertes">
           <h3 class="atak-rail-audio-title">Alertes sonores</h3>
           <label class="atak-rail-audio-vol" for="atak-alert-volume">
@@ -1201,7 +1290,8 @@ if ($atakMapConfig) {
           <h3 class="atak-rail-audio-title">Carte et soirée</h3>
           <p class="atak-settings-copy">Une soirée va de 10 h à 10 h le lendemain : le vendredi soir et le samedi 2 h du matin restent ensemble. Samedi soir, une nouvelle soirée commence.</p>
           <p class="atak-settings-copy">Les photos des soirées précédentes restent dans l’onglet Photos ; elles ne s’empilent plus sur la carte.</p>
-          <button type="button" class="atak-order-tpl-btn atak-order-tpl-btn--danger" id="atak-theatre-reset-btn" data-atak-needs-command>Vider la carte (nouvelle soirée)</button>
+          <button type="button" class="atak-order-tpl-btn atak-order-tpl-btn--danger" id="atak-theatre-reset-btn">Vider l’ATAK (nouvelle soirée)</button>
+          <p class="atak-settings-copy atak-settings-copy--muted" id="atak-theatre-reset-noperm" hidden>Seul le commandement peut vider la carte pour tout le monde.</p>
           <p class="atak-settings-copy atak-settings-copy--muted">Marqueurs, ordres, messages, positions et tracés sont retirés pour tout le monde. Les photos ne sont pas effacées — pour les retirer, ouvrez Photos puis choisissez une soirée.</p>
           <p class="atak-rail-audio-hint" id="atak-theatre-reset-hint" hidden role="status"></p>
         </section>
@@ -1210,7 +1300,7 @@ if ($atakMapConfig) {
         <span class="atak-panel-chrome-label">Panneau</span>
         <button type="button" class="atak-panel-chrome-btn" id="atak-panel-left-popout" data-atak-popout="left" title="Ouvrir dans une autre fenêtre">Ouvrir dans une autre fenêtre</button>
       </div>
-      <div class="atak-tabs-content active" id="tab-cams">
+      <div class="atak-tabs-content" id="tab-cams" hidden>
         <div class="atak-cams-panel">
           <div class="atak-cams-toolbar">
             <p class="atak-panel-hint atak-cams-toolbar-hint">Les clichés pris depuis le terminal ATAK en jeu apparaissent dans l’onglet Photos. La vue casque en temps réel n’est pas au point.</p>
@@ -1227,7 +1317,7 @@ if ($atakMapConfig) {
           </div>
         </div>
       </div>
-      <div class="atak-tabs-content" id="tab-photos">
+      <div class="atak-tabs-content active" id="tab-photos">
         <div class="atak-cams-panel">
           <div class="atak-cams-toolbar" id="atak-photos-night-bar">
             <label class="atak-photos-night-label" for="atak-photos-night">
@@ -1904,6 +1994,17 @@ if ($atakMapConfig) {
           </div>
         </details>
       </div>
+      <div class="atak-tabs-content" id="tab-terminaux" role="tabpanel">
+        <div class="atak-terminals-panel">
+          <p class="atak-panel-hint">Terminaux ATAK liés à cette mission : identifiant de suivi, état de liaison, santé remontée et adresse réseau lorsqu’elle est disponible.</p>
+          <div class="atak-empty-state" id="atak-terminals-empty">
+            <div class="atak-empty-state-icon" aria-hidden="true">▣</div>
+            <p class="atak-empty-state-title">Aucun terminal en vue</p>
+            <p class="atak-empty-state-text">Les postes et téléphones liés, ainsi que les contacts en liaison, apparaîtront ici.</p>
+          </div>
+          <div class="atak-terminals-list" id="atak-terminals-list"></div>
+        </div>
+      </div>
       <div class="atak-tabs-content" id="tab-replay" role="tabpanel" aria-label="Relecture mission">
         <div class="atak-replay-panel">
           <header class="atak-replay-head">
@@ -2025,6 +2126,7 @@ if ($atakMapConfig) {
           <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-in" data-tool-slot="zoom" title="Zoom avant">+</button>
           <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-out" data-tool-slot="zoom" title="Zoom arrière">−</button>
           <button type="button" class="atak-map-tools__btn" data-tool="nvg" data-tool-slot="nvg" title="Vision nocturne (N)" aria-pressed="false">NVG</button>
+          <button type="button" class="atak-map-tools__btn" data-tool="cop" data-tool-slot="cop" title="Tableau tactique des unités">Unités</button>
           <button type="button" class="atak-map-tools__btn" data-tool-ui="look" title="Apparence de la carte (taille, relief, animation)" aria-expanded="false" aria-controls="atak-map-look-prefs">Affichage</button>
           <span class="atak-map-tools__sep" data-tool-sep="chrome" aria-hidden="true"></span>
           <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-tool-ui="customize" title="Choisir les outils affichés" aria-expanded="false" aria-controls="atak-map-tools-prefs">Personnaliser</button>
@@ -2043,8 +2145,8 @@ if ($atakMapConfig) {
             </select>
           </label>
           <label class="atak-map-look__row" for="atak-map-look-icon-size">
-            <span class="atak-map-look__key">Icônes <span class="atak-sound-pref-val" id="atak-map-look-icon-size-val">16</span></span>
-            <input type="range" id="atak-map-look-icon-size" class="atak-sound-pref-slider" min="8" max="48" step="1" value="16" aria-valuemin="8" aria-valuemax="48" aria-valuenow="16" />
+            <span class="atak-map-look__key">Icônes <span class="atak-sound-pref-val" id="atak-map-look-icon-size-val">17</span></span>
+            <input type="range" id="atak-map-look-icon-size" class="atak-sound-pref-slider" min="10" max="22" step="1" value="17" aria-valuemin="10" aria-valuemax="22" aria-valuenow="17" />
           </label>
           <label class="atak-map-look__row" for="atak-map-look-label-size">
             <span class="atak-map-look__key">Libellés <span class="atak-sound-pref-val" id="atak-map-look-label-size-val">7</span></span>
@@ -2062,6 +2164,37 @@ if ($atakMapConfig) {
             <input type="checkbox" id="atak-map-look-ft-frame" checked />
             <span>Cadre d’équipe</span>
           </label>
+          <label class="atak-map-look__check" for="atak-map-look-motion-arrows">
+            <input type="checkbox" id="atak-map-look-motion-arrows" checked />
+            <span>Flèche de direction</span>
+          </label>
+          <label class="atak-map-look__check" for="atak-map-look-assignment-lines">
+            <input type="checkbox" id="atak-map-look-assignment-lines" checked />
+            <span>Ligne vers destination</span>
+          </label>
+          <div class="atak-map-look__terrain">
+            <label class="atak-map-look__row" for="atak-terrain-layer">
+              <span class="atak-map-look__key">Relief</span>
+              <select id="atak-terrain-layer" class="atak-header-select atak-map-look__select" title="Couche de relief du théâtre">
+                <option value="off" selected>Masqué</option>
+                <option value="hillshade">Ombrage</option>
+                <option value="hypsometry">Hypsométrie</option>
+                <option value="slope">Pente</option>
+                <option value="contours">Courbes de niveau</option>
+                <option value="ridges">Crêtes</option>
+                <option value="depressions">Dépressions</option>
+              </select>
+            </label>
+            <label class="atak-map-look__row" for="atak-terrain-opacity">
+              <span class="atak-map-look__key">Opacité <span class="atak-sound-pref-val" id="atak-terrain-opacity-val">55 %</span></span>
+              <input type="range" id="atak-terrain-opacity" class="atak-sound-pref-slider" min="10" max="100" step="5" value="55" />
+            </label>
+            <label class="atak-map-look__row" for="atak-terrain-sun">
+              <span class="atak-map-look__key">Soleil <span class="atak-sound-pref-val" id="atak-terrain-sun-val">315°</span></span>
+              <input type="range" id="atak-terrain-sun" class="atak-sound-pref-slider" min="0" max="360" step="5" value="315" />
+            </label>
+            <span class="atak-terrain-status" id="atak-terrain-status">Relief du théâtre non encore relevé.</span>
+          </div>
           <div class="atak-map-tools__prefs-actions">
             <button type="button" class="atak-map-tools__btn" data-tool-ui="look-close">Fermer</button>
           </div>
@@ -2083,6 +2216,40 @@ if ($atakMapConfig) {
       </div>
       <div class="atak-map-stage">
       <div id="atak-map"></div>
+      <aside class="atak-dossier" id="atak-unit-dossier" hidden aria-label="Fiche d’unité"></aside>
+      <div class="atak-cop" id="atak-cop" hidden role="dialog" aria-label="Tableau tactique des unités">
+        <div class="atak-cop__head">
+          <h2 class="atak-cop__title">Tableau tactique</h2>
+          <button type="button" class="atak-cop__close" data-cop-close>Fermer</button>
+        </div>
+        <div class="atak-cop__filters" id="atak-cop-filters"></div>
+        <div class="atak-cop__table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col" data-cop-sort="cs">Indicatif</th>
+                <th scope="col" data-cop-sort="type">Type</th>
+                <th scope="col" data-cop-sort="etat">État</th>
+                <th scope="col">Effectif</th>
+                <th scope="col" data-cop-sort="cap">Cap</th>
+                <th scope="col" data-cop-sort="spd">Vitesse</th>
+                <th scope="col" data-cop-sort="alt">Alt</th>
+                <th scope="col">Dest</th>
+                <th scope="col" data-cop-sort="eta">ETA</th>
+                <th scope="col">Radio</th>
+                <th scope="col">Contact</th>
+                <th scope="col" data-cop-sort="maj">MAJ</th>
+              </tr>
+            </thead>
+            <tbody id="atak-cop-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <details class="atak-timeline" id="atak-intel-timeline" open>
+        <summary>Journal d’analyse</summary>
+        <p class="atak-timeline__empty" id="atak-intel-timeline-empty">Les mouvements, contacts et alertes analysés apparaîtront ici.</p>
+        <ul class="atak-timeline__list" id="atak-intel-timeline-list"></ul>
+      </details>
       <div class="atak-replay-banner" id="atak-replay-banner" hidden role="status">
         <span class="atak-replay-banner-text">Relecture en cours — les positions live sont en pause</span>
         <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="atak-replay-exit">Revenir au direct</button>
@@ -2205,12 +2372,20 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/vendor/milsymbol/milsymbol.js"></script>
   <script src="<?= $base ?>/assets/vendor/milstd/milstd2525.js"></script>
   <script src="<?= $base ?>/assets/js/milstd-catalog.js"></script>
-  <script src="<?= $base ?>/assets/js/nato-sidc-icons.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-marker-sizes.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/nato-sidc-icons.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/arma-marker-catalog.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/arma-marker-library-index.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/arma-map-markers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-symbol-picker.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-motion.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-popup.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-terrain.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-motion-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-unit-dossier.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-cop.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-intel-timeline.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sse-layers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2237,6 +2412,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-map-shapes.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-context-menu.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-menu.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-assignments.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-jtac.js"></script>
   <script src="<?= $base ?>/assets/js/atak-salute.js"></script>
   <script src="<?= $base ?>/assets/js/atak-iff.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2255,6 +2431,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-shell-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-section-nav.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-c2-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-terminals.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-ctab.js"></script>
   <script src="<?= $base ?>/assets/js/atak-intel-view.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2691,6 +2868,9 @@ if ($atakMapConfig) {
         if (tab === 'replay' && window.ATAKReplay && typeof window.ATAKReplay.load === 'function') {
           window.ATAKReplay.load();
           if (typeof window.ATAKReplay.loadAar === 'function') window.ATAKReplay.loadAar();
+        }
+        if (tab === 'terminaux' && window.ATAKTerminals && typeof window.ATAKTerminals.refresh === 'function') {
+          window.ATAKTerminals.refresh();
         }
         if (tab === 'identification' && window.ATAKIFF && typeof window.ATAKIFF.onTabActivated === 'function') {
           window.ATAKIFF.onTabActivated();

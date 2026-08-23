@@ -232,8 +232,8 @@ window.ATAKMapShapes = (function () {
             html: isComment
               ? '<span class="atak-shape-comment__pin" title="' + escapeHtml(label) + '">✎</span>'
               : '<span class="atak-shape-point__dot"></span>',
-            iconSize: isComment ? [22, 22] : [14, 14],
-            iconAnchor: isComment ? [11, 11] : [7, 7]
+            iconSize: isComment ? [16, 16] : [12, 12],
+            iconAnchor: isComment ? [8, 8] : [6, 6]
           });
           obj = L.marker(pll, { icon: icon });
         }
@@ -254,8 +254,8 @@ window.ATAKMapShapes = (function () {
           html: imageUrl
             ? '<span class="atak-shape-center-icon__image" style="background-image:url(\'' + escapeHtml(imageUrl) + '\')"></span>'
             : '<span class="atak-shape-center-icon__text">' + escapeHtml(iconText) + '</span>',
-          iconSize: imageUrl ? [34, 34] : [26, 26],
-          iconAnchor: imageUrl ? [17, 17] : [13, 13]
+          iconSize: imageUrl ? [22, 22] : [18, 18],
+          iconAnchor: imageUrl ? [11, 11] : [9, 9]
         });
         layers.push(L.marker(centerLatLng, { icon: centerIcon }));
       }

@@ -19,19 +19,31 @@
       eyebrow: 'ATHENA / FORCES',
       title: 'Forces & personnel',
       meta: 'Effectifs',
-      tabs: ['medical', 'etat']
+      tabs: ['medical', 'etat', 'terminaux']
     },
     intel: {
       eyebrow: 'ATHENA / INTEL',
       title: 'Renseignement',
       meta: 'Terrain',
-      tabs: ['frs', 'cams', 'photos', 'personnes']
+      tabs: ['frs', 'photos', 'personnes']
     },
     c2: {
       eyebrow: 'ATHENA / C2',
       title: 'Commandement',
       meta: 'Ordres',
-      tabs: ['orders', 'notes', 'replay']
+      tabs: ['orders']
+    },
+    notes: {
+      eyebrow: 'ATHENA / NOTES',
+      title: 'Notes de mission',
+      meta: 'Bloc-notes',
+      tabs: ['notes']
+    },
+    journal: {
+      eyebrow: 'ATHENA / JOURNAL',
+      title: 'Relecture',
+      meta: 'Après-action',
+      tabs: ['replay']
     },
     comms: {
       eyebrow: 'ATHENA / COMMS',
@@ -119,7 +131,7 @@
         var n = parseInt(raw, 10);
         if (!isNaN(n) && n > 0) {
           total += n;
-          if (tab === 'medical' || tab === 'pings' || tab === 'orders') alertish = true;
+          if (tab === 'medical' || tab === 'pings' || tab === 'orders' || tab === 'terminaux') alertish = true;
         } else if (raw && raw !== '·') {
           total += 1;
         }

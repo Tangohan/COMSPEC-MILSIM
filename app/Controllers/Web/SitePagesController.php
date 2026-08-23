@@ -9,8 +9,10 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
+use App\Support\ChangelogCatalog;
 
 /**
  * Pages marketing publiques : à propos, contact, journal des nouveautés, présentation SSE.
@@ -125,12 +127,60 @@ final class SitePagesController
 
     public function changelog(Request $request, array $params = []): Response
     {
+        $kpis = [];
+        try {
+            /** @var TenantAnalyticsRepository $analyticsRepo */
+            $analyticsRepo = Container::get(TenantAnalyticsRepository::class);
+            $raw = $analyticsRepo->getPlatformOperationalKpis(30);
+            $kpis['communities_total'] = (int) ($raw['communities_total'] ?? 0);
+        } catch (\Throwable) {
+            $kpis = [];
+        }
+
+        $catalog = ChangelogCatalog::hydrate($kpis);
+        $siteRoot = rtrim(url(''), '/');
+        $pageUrl = $siteRoot . '/nouveautes';
+        $itemList = [];
+        foreach ($catalog['releases'] as $index => $release) {
+            $itemList[] = [
+                '@type' => 'ListItem',
+                'position' => $index + 1,
+                'name' => $release['title'],
+                'description' => $release['summary'],
+                'url' => $pageUrl . '#' . rawurlencode((string) $release['id']),
+            ];
+        }
+
         return Response::view('layout.marketing', [
             'content' => 'site.changelog',
             'title' => __('site.changelog_meta_title'),
             'meta_description' => __('site.changelog_meta_description'),
             'marketingActive' => 'changelog',
-            'changelogEntries' => $this->changelogEntries(),
+            'catalog' => $catalog,
+            'marketingStyles' => [asset_url('assets/css/changelog.css')],
+            'marketingScripts' => [asset_url('assets/js/changelog.js')],
+            'jsonLdExtra' => [
+                [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'CollectionPage',
+                    'name' => __('site.changelog_meta_title'),
+                    'description' => __('site.changelog_meta_description'),
+                    'url' => $pageUrl,
+                    'inLanguage' => str_starts_with((string) html_lang(), 'en') ? 'en' : 'fr',
+                    'about' => [
+                        '@type' => 'SoftwareApplication',
+                        'name' => 'Athena',
+                        'applicationCategory' => 'BusinessApplication',
+                        'operatingSystem' => 'Web',
+                    ],
+                    'mainEntity' => [
+                        '@type' => 'ItemList',
+                        'itemListOrder' => 'https://schema.org/ItemListOrderDescending',
+                        'numberOfItems' => count($itemList),
+                        'itemListElement' => $itemList,
+                    ],
+                ],
+            ],
         ]);
     }
 
@@ -142,69 +192,5 @@ final class SitePagesController
             'meta_description' => __('site.sse_meta_description'),
             'marketingActive' => 'sse',
         ]);
-    }
-
-    /**
-     * @return list<array{date: string, title: string, body: string, items: list<string>}>
-     */
-    private function changelogEntries(): array
-    {
-        return [
-            [
-                'date' => '2026-08',
-                'title' => __('site.cl_2026_08_t'),
-                'body' => __('site.cl_2026_08_b'),
-                'items' => [
-                    __('site.cl_2026_08_i1'),
-                    __('site.cl_2026_08_i2'),
-                    __('site.cl_2026_08_i3'),
-                    __('site.cl_2026_08_i4'),
-                    __('site.cl_2026_08_i5'),
-                    __('site.cl_2026_08_i6'),
-                ],
-            ],
-            [
-                'date' => '2026-07',
-                'title' => __('site.cl_2026_07_sse_t'),
-                'body' => __('site.cl_2026_07_sse_b'),
-                'items' => [
-                    __('site.cl_2026_07_sse_i1'),
-                    __('site.cl_2026_07_sse_i2'),
-                    __('site.cl_2026_07_sse_i3'),
-                    __('site.cl_2026_07_sse_i4'),
-                ],
-            ],
-            [
-                'date' => '2026-07',
-                'title' => __('site.cl_2026_07_t'),
-                'body' => __('site.cl_2026_07_b'),
-                'items' => [
-                    __('site.cl_2026_07_i1'),
-                    __('site.cl_2026_07_i2'),
-                    __('site.cl_2026_07_i3'),
-                    __('site.cl_2026_07_i4'),
-                ],
-            ],
-            [
-                'date' => '2026-04',
-                'title' => __('site.cl_2026_04_t'),
-                'body' => __('site.cl_2026_04_b'),
-                'items' => [
-                    __('site.cl_2026_04_i1'),
-                    __('site.cl_2026_04_i2'),
-                    __('site.cl_2026_04_i3'),
-                ],
-            ],
-            [
-                'date' => '2025-12',
-                'title' => __('site.cl_2025_12_t'),
-                'body' => __('site.cl_2025_12_b'),
-                'items' => [
-                    __('site.cl_2025_12_i1'),
-                    __('site.cl_2025_12_i2'),
-                    __('site.cl_2025_12_i3'),
-                ],
-            ],
-        ];
     }
 }

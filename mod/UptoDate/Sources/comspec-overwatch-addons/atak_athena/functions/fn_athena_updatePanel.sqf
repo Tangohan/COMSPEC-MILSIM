@@ -2,6 +2,18 @@
     Rafraîchit statut + inbox (alertes, ordres, BDA Iceman, photos locales).
 */
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
+if (isNull _group) then {
+    {
+        private _title = _x displayCtrl 9700;
+        if (isNull _title) then { continue };
+        private _parent = ctrlParentControlsGroup _title;
+        if (!isNull _parent) then {
+            _group = _parent;
+            uiNamespace setVariable ["COMSPEC_ATAK_Athena_group", _group];
+        };
+        if (!isNull _group) exitWith {};
+    } forEach allDisplays;
+};
 if (isNull _group) exitWith {};
 
 private _statusCtrl = _group controlsGroupCtrl 9701;
@@ -599,6 +611,9 @@ if (!isNull _listCtrl) then {
         _listCtrl lbSetCurSel _sel;
         [_listCtrl, _sel] call comspec_overwatch_atak_athena_fnc_athena_selectInbox;
     } else {
+        private _emptyIdx = _listCtrl lbAdd "Aucune entrée pour le moment";
+        _listCtrl lbSetColor [_emptyIdx, [0.55, 0.62, 0.68, 0.85]];
+        _listCtrl lbSetCurSel -1;
         if (!isNull _detailCtrl) then {
             private _empty = switch (_tab) do {
                 case "bda": { "Aucun bilan des dégâts pour le moment." };
