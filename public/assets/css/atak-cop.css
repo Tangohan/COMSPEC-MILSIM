@@ -1,0 +1,234 @@
+/* COP Athena — fiche unité, tableau global, relief, timeline */
+
+.atak-dossier {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: min(360px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  background: rgba(12, 16, 22, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  color: #e2e8f0;
+  overflow: hidden;
+}
+.atak-dossier[hidden] { display: none !important; }
+.atak-dossier__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+.atak-dossier__cs {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.atak-dossier__sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.atak-dossier__close,
+.atak-cop__close {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+.atak-dossier__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 10px 0;
+}
+.atak-dossier__tab {
+  background: transparent;
+  border: 0;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.atak-dossier__tab.is-active {
+  color: #f8fafc;
+  border-bottom-color: #38bdf8;
+}
+.atak-dossier__body {
+  overflow: auto;
+  padding: 10px 14px 14px;
+}
+.atak-dossier__row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 8px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  padding: 2px 0;
+}
+.atak-dossier__k { color: #94a3b8; }
+.atak-dossier__v { color: #f1f5f9; font-variant-numeric: tabular-nums; }
+.atak-dossier__block {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+.atak-dossier__block-title {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+  margin-bottom: 6px;
+}
+.atak-dossier__empty { color: #94a3b8; font-size: 0.85rem; padding: 8px 14px; }
+
+.atak-cop {
+  position: absolute;
+  inset: 8px;
+  z-index: 1300;
+  background: rgba(8, 12, 18, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  color: #e2e8f0;
+}
+.atak-cop[hidden] { display: none !important; }
+.atak-cop__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+.atak-cop__title {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+.atak-cop__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px;
+}
+.atak-cop__chip {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.atak-cop__chip.is-active {
+  background: #0e7490;
+  border-color: #22d3ee;
+  color: #fff;
+}
+.atak-cop__table-wrap {
+  overflow: auto;
+  flex: 1;
+  padding: 0 10px 12px;
+}
+.atak-cop table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+.atak-cop th,
+.atak-cop td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  white-space: nowrap;
+}
+.atak-cop th {
+  cursor: pointer;
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  position: sticky;
+  top: 0;
+  background: rgba(8, 12, 18, 0.98);
+}
+.atak-cop tbody tr { cursor: pointer; }
+.atak-cop tbody tr:hover { background: rgba(14, 116, 144, 0.18); }
+.atak-cop__empty { text-align: center; color: #94a3b8; padding: 24px !important; }
+
+.atak-timeline {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  width: min(420px, calc(100% - 24px));
+  max-height: 220px;
+  z-index: 1100;
+  background: rgba(12, 16, 22, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  overflow: hidden;
+  color: #e2e8f0;
+}
+.atak-timeline[hidden] { display: none !important; }
+.atak-timeline summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  list-style: none;
+}
+.atak-timeline summary::-webkit-details-marker { display: none; }
+.atak-timeline__list {
+  margin: 0;
+  padding: 0 12px 10px;
+  max-height: 170px;
+  overflow: auto;
+  list-style: none;
+}
+.atak-timeline__item {
+  display: grid;
+  grid-template-columns: 4.6rem 1fr auto;
+  gap: 8px;
+  font-size: 0.75rem;
+  padding: 3px 0;
+  border-left: 2px solid transparent;
+  padding-left: 8px;
+}
+.atak-timeline__item time { color: #64748b; font-variant-numeric: tabular-nums; }
+.atak-timeline__item--warn { border-left-color: #f59e0b; }
+.atak-timeline__item--alert { border-left-color: #ef4444; }
+.atak-timeline__item--info { border-left-color: #38bdf8; }
+.atak-timeline__src { color: #64748b; font-size: 0.65rem; }
+.atak-timeline__empty { color: #64748b; font-size: 0.78rem; padding: 0 12px 10px; }
+
+.atak-map-look__terrain {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+.atak-terrain-status {
+  display: block;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin: 4px 0 0;
+}

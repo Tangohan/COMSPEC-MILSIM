@@ -27,6 +27,12 @@
   --atak-radius: 6px;
   --atak-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --atak-glass: rgba(8, 12, 18, 0.72);
+  --atak-marker-micro: 10px;
+  --atak-marker-small: 14px;
+  --atak-marker-normal: 17px;
+  --atak-marker-tactical: 19px;
+  --atak-marker-important: 22px;
+  --atak-zoom-scale: 1;
 }
 
 * { box-sizing: border-box; }
@@ -278,13 +284,19 @@ body.atak-page.atak-theme-light {
 }
 
 .atak-chip--live {
-  border-color: rgba(34, 197, 94, 0.45);
-  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.55);
+  background: rgba(34, 197, 94, 0.16);
   color: var(--atak-success);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.62rem;
   flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.18);
+  animation: atak-chip-live-pulse 2.4s ease-in-out infinite;
+}
+.atak-chip--live .dot {
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.9);
 }
 
 .atak-chip--weather {
@@ -298,13 +310,16 @@ body.atak-page.atak-theme-light {
 }
 
 .atak-chip--ok {
-  border-color: rgba(52, 211, 153, 0.4);
+  border-color: rgba(52, 211, 153, 0.55);
   background: var(--atak-accent-dim);
+  color: #6ee7b7;
 }
 
 .atak-chip--warn {
-  border-color: rgba(234, 179, 8, 0.45);
-  background: rgba(234, 179, 8, 0.1);
+  border-color: rgba(245, 158, 11, 0.7);
+  background: rgba(245, 158, 11, 0.16);
+  color: #fcd34d;
+  animation: atak-chip-warn-pulse 1.8s ease-in-out infinite;
 }
 
 .atak-chip--off,
@@ -312,6 +327,7 @@ body.atak-page.atak-theme-light {
   border-color: var(--atak-border);
   background: rgba(255, 255, 255, 0.03);
   color: var(--atak-muted);
+  animation: none;
 }
 
 .atak-chip--muted .atak-chip-value {
@@ -2511,6 +2527,96 @@ body.atak-hints-hidden .atak-panel-hint {
   min-height: 0;
   position: relative;
   background: var(--atak-bg);
+  --atak-zoom-scale: 1;
+}
+#atak-map.atak-zoom-theatre { --atak-zoom-scale: 0.82; }
+#atak-map.atak-zoom-ops { --atak-zoom-scale: 0.92; }
+#atak-map.atak-zoom-tac { --atak-zoom-scale: 1; }
+#atak-map.atak-zoom-close { --atak-zoom-scale: 1.08; }
+
+#atak-map .atak-marker-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  transform: scale(var(--atak-zoom-scale, 1));
+  transition: transform 0.12s ease, filter 0.12s ease;
+  pointer-events: none;
+}
+#atak-map .leaflet-marker-icon:hover .atak-marker-glyph {
+  transform: scale(calc(var(--atak-zoom-scale, 1) * 1.15));
+  filter: brightness(1.12);
+}
+#atak-map .leaflet-marker-icon.atak-marker-selected .atak-marker-glyph {
+  transform: scale(calc(var(--atak-zoom-scale, 1) * 1.25));
+  filter: drop-shadow(0 0 3px rgba(56, 189, 248, 0.85));
+}
+#atak-map .leaflet-marker-icon.atak-marker-selected {
+  outline: 1px solid rgba(125, 211, 252, 0.85);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+#atak-map .atak-unit-emit-badge,
+#atak-map .atak-unit-listen-badge {
+  display: none !important;
+}
+
+#atak-map .leaflet-div-icon.atak-compact-marker,
+#atak-map .leaflet-div-icon.arma-map-marker-icon,
+#atak-map .leaflet-div-icon.nato-sidc-icon,
+#atak-map .leaflet-div-icon.atak-ping-map-icon,
+#atak-map .leaflet-div-icon.atak-ping-temp-icon,
+#atak-map .leaflet-div-icon.atak-charge-map-icon,
+#atak-map .leaflet-div-icon.atak-gps-map-icon,
+#atak-map .leaflet-div-icon.atak-marker-icon,
+#atak-map .leaflet-div-icon.atak-unit-fallback,
+#atak-map .leaflet-div-icon.atak-air-asset-marker,
+#atak-map .leaflet-div-icon.atak-designator-marker,
+#atak-map .leaflet-div-icon.atak-intel-marker,
+#atak-map .leaflet-div-icon.atak-sse-layer-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+#atak-map .nato-sidc--critical .atak-marker-glyph,
+#atak-map .nato-sidc--critical {
+  animation: atak-marker-alert-pulse 1.4s ease-in-out infinite;
+}
+#atak-map.atak-zoom-theatre .atak-ping-map-icon,
+#atak-map.atak-zoom-theatre .atak-sse-layer-marker,
+#atak-map.atak-zoom-theatre .atak-intel-marker {
+  opacity: 0.88;
+}
+
+.leaflet-tooltip.atak-map-tip-pane {
+  background: rgba(8, 12, 18, 0.94);
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  color: #e8eef2;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  padding: 0.28rem 0.4rem;
+  border-radius: 3px;
+  font: 600 11px/1.35 var(--atak-font-ui);
+}
+.leaflet-tooltip.atak-map-tip-pane::before {
+  border-top-color: rgba(8, 12, 18, 0.94);
+}
+.atak-map-tip__title {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 10px;
+  color: #7dd3fc;
+}
+.atak-map-tip__line {
+  font-variant-numeric: tabular-nums;
+  color: #d7e2e8;
+  font-size: 10px;
+}
+
+@keyframes atak-marker-alert-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50% { filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.95)); }
 }
 
 .atak-toggle:hover { color: var(--atak-text); }
@@ -10729,3 +10835,84 @@ body.atak-light .atak-sse-person-card-title {
 body.atak-light .atak-sse-person-card-meta {
   color: rgba(30, 41, 59, 0.72);
 }
+
+@keyframes atak-chip-live-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.18); }
+  50% { box-shadow: 0 0 10px 1px rgba(74, 222, 128, 0.45); }
+}
+@keyframes atak-chip-warn-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+  50% { box-shadow: 0 0 8px 0 rgba(245, 158, 11, 0.45); }
+}
+
+.atak-tab-badge:not([hidden]),
+.atak-medical-tab-badge:not([hidden]) {
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.35);
+}
+.atak-tab-badge.is-warn:not([hidden]),
+.atak-medical-tab-badge:not([hidden]) {
+  animation: atak-badge-pulse 1.6s ease-in-out infinite;
+}
+
+.atak-terminals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.65rem 0.75rem 1rem;
+}
+.atak-terminal-card {
+  border: 1px solid var(--atak-c2-line, rgba(151, 177, 195, 0.18));
+  background: rgba(12, 18, 24, 0.85);
+  border-radius: 4px;
+  padding: 0.6rem 0.7rem;
+}
+.atak-terminal-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+.atak-terminal-card__call {
+  font: 800 12px/1.2 var(--atak-font-tactical);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #e8eef2;
+}
+.atak-terminal-card__state {
+  font: 700 10px/1 var(--atak-font-secondary, var(--atak-font-ui));
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+.atak-terminal-card__state--ok {
+  background: rgba(53, 214, 161, 0.16);
+  color: #35d6a1;
+}
+.atak-terminal-card__state--warn {
+  background: rgba(211, 163, 60, 0.16);
+  color: #e8c56a;
+}
+.atak-terminal-card__state--danger {
+  background: rgba(220, 93, 93, 0.18);
+  color: #f0a0a0;
+  animation: atak-badge-pulse 1.6s ease-in-out infinite;
+}
+.atak-terminal-card__rows {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 0.18rem 0.5rem;
+  font-size: 0.72rem;
+}
+.atak-terminal-card__k {
+  color: var(--atak-muted, #94a3b8);
+}
+.atak-terminal-card__v {
+  color: #d7e2e8;
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+}
+.atak-terminal-card__v--ok { color: #6ee7b7; }
+.atak-terminal-card__v--warn { color: #fcd34d; }
+.atak-terminal-card__v--danger { color: #fca5a5; }

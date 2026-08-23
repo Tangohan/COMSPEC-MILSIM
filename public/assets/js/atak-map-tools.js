@@ -671,6 +671,9 @@ window.ATAKMapTools = (function () {
     } else if (tool === 'zoom-in') zoomBy(1);
     else if (tool === 'zoom-out') zoomBy(-1);
     else if (tool === 'nvg') setNvg(!nvgOn);
+    else if (tool === 'cop') {
+      if (window.ATAKCopBoard && window.ATAKCopBoard.toggle) window.ATAKCopBoard.toggle();
+    }
     else if (tool === 'clear-measure') {
       stopMeasure(false);
       toast('Mesure effacée.');
@@ -766,7 +769,8 @@ window.ATAKMapTools = (function () {
     { id: 'speed-presets', label: 'À pied / Véhicule' },
     { id: 'metrics', label: 'Superficie / Délai' },
     { id: 'zoom', label: 'Zoom' },
-    { id: 'nvg', label: 'Vision nocturne' }
+    { id: 'nvg', label: 'Vision nocturne' },
+    { id: 'cop', label: 'Tableau des unités' }
   ];
 
   var SEP_GROUPS = {

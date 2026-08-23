@@ -130,6 +130,69 @@ window.ATAKUnitPopup = (function () {
     );
   }
 
+  function motionSectionHtml(u, extra, airMode) {
+    var M = window.ATAKMotion;
+    if (!M) return '';
+    var m = M.motionOf(u);
+    var moveH = M.formatHeading(u.movement_heading);
+    var objH = M.formatHeading(u.heading_object != null ? u.heading_object : u.heading);
+    var spd = M.formatSpeed(u);
+    var status = M.statusLabel(m.status);
+    var trend = M.trendLabel(m.trend);
+    var conf = M.confidenceLabel(m.confidence);
+    var rows = '';
+    if (airMode || M.isAir(u)) {
+      rows += row('Cap', moveH || objH);
+      rows += row('Vitesse sol', spd);
+      rows += row('Altitude', M.formatAlt(u));
+      rows += row('Vitesse verticale', M.formatVs(u));
+      rows += row('Tendance', trend);
+    } else {
+      rows += row('Cap de déplacement', moveH);
+      if (objH && objH !== moveH) rows += row('Orientation', objH);
+      rows += row('Vitesse', spd);
+      rows += row('Tendance', trend);
+      rows += row('Déplacement', status || conf);
+    }
+    if (!rows) return '';
+    return '<div class="atak-unit-popup__section"><div class="atak-unit-popup__section-title">Mouvement</div>' + rows + '</div>';
+  }
+
+  function navigationSectionHtml(u, airMode) {
+    var M = window.ATAKMotion;
+    var A = window.ATAKAssignments;
+    var asg = M ? M.assignmentOf(u) : null;
+    var cs = u.call_sign || u.callsign || '';
+    var kind = airMode ? 'air' : 'ground';
+    var actions = '<div class="atak-unit-popup__actions">';
+    if (!asg || asg.status === 'arrived' || asg.status === 'detached') {
+      actions += '<button type="button" class="atak-unit-popup__btn" data-atak-assign="pick" data-unit-ref="' +
+        escapeHtml(cs) + '" data-unit-kind="' + kind + '">Assigner une destination</button>';
+    } else {
+      actions += '<button type="button" class="atak-unit-popup__btn" data-atak-assign="pick" data-unit-ref="' +
+        escapeHtml(cs) + '" data-unit-kind="' + kind + '">Changer</button>';
+      if (asg.id) {
+        actions += '<button type="button" class="atak-unit-popup__btn" data-atak-assign="detach" data-assign-id="' +
+          escapeHtml(String(asg.id)) + '">Détacher</button>';
+      }
+    }
+    actions += '</div>';
+    var body = '';
+    if (asg && M) {
+      var course = M.courseLabel(asg.course_status);
+      var courseTone = '';
+      var st = String(asg.course_status || '').toUpperCase();
+      if (st === 'DIVERGING') courseTone = 'course-diverging';
+      if (st === 'ARRIVED') courseTone = 'course-arrived';
+      body += row('Destination', M.destLabel(asg));
+      body += row('Distance', M.formatDistance(asg.distance_m));
+      body += row('Arrivée estimée', M.formatEta(asg.eta && asg.eta.seconds, asg.eta && asg.eta.arrived));
+      body += row('Statut', course, courseTone);
+    }
+    return '<div class="atak-unit-popup__section"><div class="atak-unit-popup__section-title">Navigation</div>' +
+      body + actions + '</div>';
+  }
+
   function badgeHtml(aff, role) {
     if (!window.NatoSidcIcons || !window.NatoSidcIcons.listBadgeHtml) return '';
     return window.NatoSidcIcons.listBadgeHtml({
@@ -185,6 +248,10 @@ window.ATAKUnitPopup = (function () {
       row('Liaison', status, statusTone(statusRaw)) +
       row('État', health, healthTone(healthRaw)) +
       (bftId ? row('Identifiant de suivi', bftId) : '') +
+      (function () {
+        var ip = extra.client_ip || extra.ip || extra.public_ip || extra.network || '';
+        return ip ? row('Adresse réseau', String(ip)) : '';
+      }()) +
       row('Affiliation', affLabel) +
       (side && !affLabel ? row('Camp', String(side)) : '') +
       row('Groupe', parent) +
@@ -203,6 +270,9 @@ window.ATAKUnitPopup = (function () {
       row('Munitions', ammo) +
       row('Dernière MAJ', updated);
 
+    var motionHtml = motionSectionHtml(u, extra, false);
+    var navHtml = navigationSectionHtml(u, false);
+
     return (
       '<div class="atak-unit-popup">' +
       '<div class="' + headClass + '">' +
@@ -214,6 +284,8 @@ window.ATAKUnitPopup = (function () {
       (extra.ally_ai ? '<div class="atak-unit-popup__subtitle">Unité alliée</div>' : '') +
       '</div></div>' +
       (rows ? '<div class="atak-unit-popup__body">' + rows + '</div>' : '') +
+      motionHtml +
+      navHtml +
       (notes
         ? '<div class="atak-unit-popup__notes">' + escapeHtml(String(notes)) + '</div>'
         : '') +
@@ -249,6 +321,9 @@ window.ATAKUnitPopup = (function () {
       row('Coordonnées', grid) +
       row('Dernière MAJ', updated);
 
+    var airMotion = motionSectionHtml(a, {}, true);
+    var airNav = navigationSectionHtml(a, true);
+
     return (
       '<div class="atak-unit-popup atak-unit-popup--air">' +
       '<div class="atak-unit-popup__head">' +
@@ -258,6 +333,8 @@ window.ATAKUnitPopup = (function () {
       (model ? '<div class="atak-unit-popup__subtitle">' + escapeHtml(model) + '</div>' : '') +
       '</div></div>' +
       (rows ? '<div class="atak-unit-popup__body">' + rows + '</div>' : '') +
+      airMotion +
+      airNav +
       '</div>'
     );
   }
@@ -276,23 +353,77 @@ window.ATAKUnitPopup = (function () {
   }
 
   function bindUnit(marker, u) {
-    if (!marker || !marker.bindPopup) return marker;
-    var html = buildUnitHtml(u);
-    if (marker.getPopup && marker.getPopup()) {
-      marker.setPopupContent(html);
-    } else {
-      marker.bindPopup(html, popupOptions());
+    if (!marker) return marker;
+    marker._atakUnit = u;
+    if (marker.unbindPopup) {
+      try { marker.unbindPopup(); } catch (e) {}
+    }
+    if (!marker._atakDossierBound) {
+      marker._atakDossierBound = true;
+      marker.on('click', function (e) {
+        if (window.L && e) {
+          try { window.L.DomEvent.stopPropagation(e); } catch (err) {}
+        }
+        if (window.ATAKUnitDossier) window.ATAKUnitDossier.open(marker._atakUnit || u);
+      });
+    }
+    if (window.ATAKMarkerSizes && window.ATAKMarkerSizes.bindHoverTip) {
+      var extra = parseExtra(u);
+      var callSign = u.call_sign || u.callsign || '—';
+      var grid = formatGrid(u, extra);
+      var updated = formatTimeAgo(u.updated_at || extra.updated_at || u.last_update);
+      window.ATAKMarkerSizes.bindHoverTip(marker, window.ATAKMarkerSizes.hoverTipHtml(callSign, [
+        grid ? 'Grille ' + grid : '',
+        (function () {
+          var M = window.ATAKMotion;
+          if (!M || !M.isMoving(u)) return '';
+          var bits = [];
+          var st = M.statusLabel((u.motion && u.motion.status) || '');
+          var spd = M.formatSpeed(u);
+          var cap = M.formatHeading(u.movement_heading);
+          if (st) bits.push(st);
+          if (spd) bits.push(spd);
+          if (cap) bits.push('Cap ' + cap);
+          var asg = M.assignmentOf(u);
+          if (asg && asg.eta && asg.eta.seconds != null) bits.push('ETA ' + M.formatEta(asg.eta.seconds, asg.eta.arrived));
+          return bits.join(' · ');
+        }()),
+        updated ? 'Dernière liaison : ' + updated : ''
+      ]));
     }
     return marker;
   }
 
   function bindAir(marker, a) {
-    if (!marker || !marker.bindPopup) return marker;
-    var html = buildAirHtml(a);
-    if (marker.getPopup && marker.getPopup()) {
-      marker.setPopupContent(html);
-    } else {
-      marker.bindPopup(html, popupOptions());
+    if (!marker) return marker;
+    marker._atakAir = a;
+    if (marker.unbindPopup) {
+      try { marker.unbindPopup(); } catch (e) {}
+    }
+    if (!marker._atakDossierBound) {
+      marker._atakDossierBound = true;
+      marker.on('click', function (e) {
+        if (window.L && e) {
+          try { window.L.DomEvent.stopPropagation(e); } catch (err) {}
+        }
+        if (window.ATAKUnitDossier) window.ATAKUnitDossier.open(marker._atakAir || a);
+      });
+    }
+    if (window.ATAKMarkerSizes && window.ATAKMarkerSizes.bindHoverTip) {
+      var callsign = a.callsign || a.call_sign || 'Aérien';
+      var bits = [a.model || '', statusLabelFr(a.status || '')];
+      var M = window.ATAKMotion;
+      if (M) {
+        var spd = M.formatSpeed(a);
+        var cap = M.formatHeading(a.movement_heading || a.heading);
+        var alt = M.formatAlt(a);
+        var asg = M.assignmentOf(a);
+        if (spd) bits.push(spd);
+        if (cap) bits.push(cap);
+        if (alt) bits.push(alt);
+        if (asg && asg.eta) bits.push('ETA ' + M.formatEta(asg.eta.seconds, asg.eta.arrived));
+      }
+      window.ATAKMarkerSizes.bindHoverTip(marker, window.ATAKMarkerSizes.hoverTipHtml(callsign, bits));
     }
     return marker;
   }

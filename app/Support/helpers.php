@@ -484,6 +484,33 @@ if (!function_exists('atak_marker_icons_cdn_base')) {
     }
 }
 
+if (!function_exists('atak_marker_icon_rewrite_addon_prefix')) {
+    /**
+     * Aligne les préfixes PBO jeu / forks (Iceman, NLN cTab, MarkersPlus) sur l’arborescence PNG du portail.
+     */
+    function atak_marker_icon_rewrite_addon_prefix(string $rel): string
+    {
+        $map = [
+            'nln_ctab_core/' => 'ctab/',
+            'nln_ctab/' => 'ctab/',
+            'ctab_core/' => 'ctab/',
+            'ctab_rev/' => 'ctab/',
+            'ctab_enhanced/' => 'ctab/',
+            'iceman_atak/' => 'ctab/',
+            'iceman/' => 'ctab/',
+            'markers_plus/' => 'markersplus/',
+            'plp_markersplus/' => 'markersplus/',
+        ];
+        foreach ($map as $from => $to) {
+            if (str_starts_with($rel, $from)) {
+                return $to . substr($rel, strlen($from));
+            }
+        }
+
+        return $rel;
+    }
+}
+
 if (!function_exists('atak_marker_icon_relpath')) {
     /**
      * Normalise un chemin texture Arma (.paa) vers un chemin relatif PNG minuscule.
@@ -493,7 +520,7 @@ if (!function_exists('atak_marker_icon_relpath')) {
     function atak_marker_icon_relpath(?string $texturePath): ?string
     {
         $raw = trim((string) $texturePath);
-        if ($raw === '') {
+        if ($raw === '' || str_starts_with($raw, '#')) {
             return null;
         }
         $normalized = str_replace('\\', '/', $raw);
@@ -515,7 +542,46 @@ if (!function_exists('atak_marker_icon_relpath')) {
             return null;
         }
 
-        return implode('/', $parts);
+        return atak_marker_icon_rewrite_addon_prefix(implode('/', $parts));
+    }
+}
+
+if (!function_exists('atak_marker_icon_relpath_from_type')) {
+    /**
+     * Dérive un PNG du classname CfgMarkers quand le jeu n’a pas envoyé de texture.
+     */
+    function atak_marker_icon_relpath_from_type(?string $type): ?string
+    {
+        $key = strtolower(trim(str_replace([' ', '-'], '_', (string) $type)));
+        if ($key === '') {
+            return null;
+        }
+        if (str_starts_with($key, 'mplus_')) {
+            $rest = substr($key, 6);
+
+            return $rest !== '' ? 'markersplus/data/img/' . $rest . '.png' : null;
+        }
+        if (preg_match('/^mts_(blu|red|neu|unk|com|bludash|reddash)_mod_(.+)$/', $key, $m) === 1) {
+            $aff = $m[1];
+            $role = $m[2];
+
+            return 'z/mts/addons/markers/data/' . $aff . '/mod/mts_markers_' . $aff . '_mod_' . $role . '.png';
+        }
+        if (str_starts_with($key, 'mil_')) {
+            $rest = substr($key, 4);
+
+            return $rest !== '' ? 'a3/ui_f/data/map/markers/military/' . $rest . '_ca.png' : null;
+        }
+        if (str_starts_with($key, 'hd_')) {
+            $rest = substr($key, 3);
+
+            return $rest !== '' ? 'a3/ui_f/data/map/markers/handdrawn/' . $rest . '_ca.png' : null;
+        }
+        if (preg_match('/^[boncu]_[a-z0-9_]+$/', $key) === 1) {
+            return 'a3/ui_f/data/map/markers/nato/' . $key . '.png';
+        }
+
+        return null;
     }
 }
 

@@ -1,0 +1,222 @@
+/**
+ * ATAK — liste des terminaux (identifiants, liaison, santé, adresse réseau).
+ */
+(function () {
+  'use strict';
+
+  var timer = null;
+  var lastHtml = '';
+
+  function qs(id) {
+    return document.getElementById(id);
+  }
+
+  function getApiBase() {
+    if (window.ATAKSocket && typeof window.ATAKSocket.getApiBase === 'function') {
+      return window.ATAKSocket.getApiBase() || '';
+    }
+    return '';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function parseExtra(u) {
+    if (!u) return {};
+    try {
+      if (typeof u.extra === 'string') return JSON.parse(u.extra || '{}') || {};
+      if (u.extra && typeof u.extra === 'object') return u.extra;
+    } catch (e) {}
+    return {};
+  }
+
+  function statusLabel(st) {
+    var s = String(st || '').toLowerCase();
+    if (s === 'linked') return { label: 'En liaison', tone: 'ok' };
+    if (s === 'pending') return { label: 'En attente', tone: 'warn' };
+    if (s === 'offline') return { label: 'Hors liaison', tone: 'danger' };
+    if (s === 'compromised') return { label: 'Compromis', tone: 'danger' };
+    if (!s) return { label: 'Inconnu', tone: 'warn' };
+    return { label: String(st), tone: '' };
+  }
+
+  function healthLabel(h) {
+    var x = String(h || '').toLowerCase();
+    if (x === 'ok' || x === 'stable' || x === 'healthy') return { label: 'Opérationnel', tone: 'ok' };
+    if (x === 'wounded' || x === 'injured') return { label: 'Blessé', tone: 'warn' };
+    if (x === 'unconscious') return { label: 'Inconscient', tone: 'danger' };
+    if (x === 'cardiac_arrest' || x === 'cardiac-arrest' || x === 'dead' || x === 'kia' || x === 'critical') {
+      return { label: 'État critique', tone: 'danger' };
+    }
+    if (!x) return { label: 'Non remonté', tone: '' };
+    return { label: String(h), tone: '' };
+  }
+
+  function compromiseLabel(st) {
+    var s = String(st || '').toLowerCase();
+    if (s === 'none' || s === '') return { label: 'RAS', tone: 'ok' };
+    if (s === 'suspected' || s === 'suspect') return { label: 'À vérifier', tone: 'warn' };
+    if (s === 'confirmed' || s === 'compromised') return { label: 'Compromis', tone: 'danger' };
+    return { label: String(st), tone: 'warn' };
+  }
+
+  function formatSeen(iso) {
+    if (!iso) return 'Jamais';
+    var t = new Date(iso).getTime();
+    if (isNaN(t)) return String(iso);
+    var sec = Math.max(0, Math.floor((Date.now() - t) / 1000));
+    if (sec < 20) return 'À l’instant';
+    if (sec < 60) return 'Il y a ' + sec + ' s';
+    if (sec < 3600) return 'Il y a ' + Math.floor(sec / 60) + ' min';
+    if (sec < 86400) return 'Il y a ' + Math.floor(sec / 3600) + ' h';
+    try {
+      return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return String(iso);
+    }
+  }
+
+  function unitsByCallsign() {
+    var map = {};
+    var list = [];
+    if (window.ATAKUnits && typeof window.ATAKUnits.getUnits === 'function') {
+      list = window.ATAKUnits.getUnits() || [];
+    }
+    list.forEach(function (u) {
+      var key = String(u.call_sign || u.callsign || '').toUpperCase().trim();
+      if (key) map[key] = u;
+    });
+    return { map: map, list: list };
+  }
+
+  function row(k, v, tone) {
+    var cls = tone ? ' atak-terminal-card__v--' + tone : '';
+    return '<div class="atak-terminal-card__k">' + escapeHtml(k) + '</div>' +
+      '<div class="atak-terminal-card__v' + cls + '">' + escapeHtml(v) + '</div>';
+  }
+
+  function cardHtml(t, unit) {
+    var extra = parseExtra(unit);
+    var call = t.operator_callsign || t.callsign || (unit && (unit.call_sign || unit.callsign)) || t.terminal_label || 'Terminal';
+    var st = statusLabel(t.status || (unit && unit.status));
+    var health = healthLabel(extra.health || (unit && unit.health));
+    var comp = compromiseLabel(t.compromise_state);
+    var idFollow = extra.bft_id || extra.military_id || t.operator_military_id || t.terminal_uid || '';
+    var ip = extra.client_ip || extra.ip || extra.public_ip || extra.network || '';
+    var type = t.terminal_type === 'phone' ? 'Téléphone' : (t.platform_label || t.terminal_type || 'Poste');
+    return '<article class="atak-terminal-card">' +
+      '<div class="atak-terminal-card__head">' +
+      '<span class="atak-terminal-card__call">' + escapeHtml(call) + '</span>' +
+      '<span class="atak-terminal-card__state atak-terminal-card__state--' + (st.tone || 'warn') + '">' + escapeHtml(st.label) + '</span>' +
+      '</div>' +
+      '<div class="atak-terminal-card__rows">' +
+      row('Identifiant', idFollow || 'Non attribué') +
+      row('Santé', health.label, health.tone) +
+      row('Intégrité', comp.label, comp.tone) +
+      row('Type', type) +
+      (t.terminal_label && t.terminal_label !== call ? row('Libellé', t.terminal_label) : '') +
+      row('Dernière activité', formatSeen(t.last_seen_at || (unit && unit.updated_at))) +
+      row('Adresse réseau', ip || 'Non remontée') +
+      '</div></article>';
+  }
+
+  function unitAsTerminal(u) {
+    var extra = parseExtra(u);
+    return {
+      operator_callsign: u.call_sign || u.callsign,
+      status: u.status,
+      last_seen_at: u.updated_at,
+      terminal_uid: extra.bft_id || extra.military_id || '',
+      operator_military_id: extra.military_id || extra.bft_id || '',
+      terminal_type: extra.phone_geoloc ? 'phone' : 'arma',
+      platform_label: extra.phone_geoloc ? 'Téléphone' : 'Poste de terrain',
+      compromise_state: extra.compromised ? 'confirmed' : 'none'
+    };
+  }
+
+  function render(terminals) {
+    var wrap = qs('atak-terminals-list');
+    var empty = qs('atak-terminals-empty');
+    var badge = qs('atak-terminals-tab-badge');
+    if (!wrap) return;
+    var units = unitsByCallsign();
+    var list = Array.isArray(terminals) ? terminals.slice() : [];
+    var seen = {};
+    list.forEach(function (t) {
+      var k = String(t.operator_callsign || t.callsign || '').toUpperCase().trim();
+      if (k) seen[k] = true;
+    });
+    units.list.forEach(function (u) {
+      var k = String(u.call_sign || u.callsign || '').toUpperCase().trim();
+      if (!k || seen[k]) return;
+      list.push(unitAsTerminal(u));
+      seen[k] = true;
+    });
+    if (!list.length) {
+      wrap.innerHTML = '';
+      if (empty) empty.hidden = false;
+      if (badge) {
+        badge.hidden = true;
+        badge.textContent = '';
+      }
+      lastHtml = '';
+      return;
+    }
+    if (empty) empty.hidden = true;
+    var html = list.map(function (t) {
+      var k = String(t.operator_callsign || t.callsign || '').toUpperCase().trim();
+      return cardHtml(t, k ? units.map[k] : null);
+    }).join('');
+    if (html !== lastHtml) {
+      wrap.innerHTML = html;
+      lastHtml = html;
+    }
+    if (badge) {
+      var n = list.length;
+      badge.hidden = n < 1;
+      badge.textContent = String(n);
+    }
+  }
+
+  function load() {
+    var base = getApiBase();
+    fetch((base || '') + '/api/atak/terminals', { credentials: 'include', cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : { terminals: [] }; })
+      .then(function (body) {
+        render((body && body.terminals) || []);
+      })
+      .catch(function () {
+        render([]);
+      });
+  }
+
+  function ensureTimer() {
+    if (timer) return;
+    timer = window.setInterval(load, 12000);
+  }
+
+  function onTab(tab) {
+    if (tab !== 'terminaux') return;
+    load();
+    ensureTimer();
+  }
+
+  document.addEventListener('atak:tab-activated', function (ev) {
+    var tab = ev && ev.detail ? ev.detail.tab : '';
+    onTab(tab);
+  });
+  document.addEventListener('atak:section-change', function (ev) {
+    if (ev && ev.detail && ev.detail.section === 'forces') load();
+  });
+  document.addEventListener('DOMContentLoaded', function () {
+    var active = document.querySelector('#atak-panel-left .atak-tab.active[data-tab="terminaux"]');
+    if (active) load();
+  });
+
+  window.ATAKTerminals = { refresh: load };
+})();

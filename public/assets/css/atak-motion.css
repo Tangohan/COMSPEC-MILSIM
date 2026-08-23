@@ -1,0 +1,130 @@
+/* Cinématique BFT — overlays discrets */
+
+.atak-motion-eta-wrap {
+  background: transparent !important;
+  border: 0 !important;
+}
+.atak-motion-eta {
+  font: 600 9px/1.1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  color: rgba(226, 232, 240, 0.72);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.atak-map--pick-dest {
+  cursor: crosshair !important;
+}
+.atak-map--pick-dest .leaflet-container {
+  cursor: crosshair !important;
+}
+
+.atak-assign-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.7rem 0.45rem 0.9rem;
+  background: rgba(18, 18, 26, 0.92);
+  border: 1px solid rgba(125, 211, 192, 0.35);
+  border-radius: 6px;
+  color: #e8e8ed;
+  font-size: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.atak-assign-banner[hidden] {
+  display: none !important;
+}
+.atak-assign-banner__cancel {
+  appearance: none;
+  border: 1px solid #3a3a48;
+  background: transparent;
+  color: #cbd5e1;
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  font-size: 11px;
+}
+.atak-assign-banner__cancel:hover {
+  border-color: #7dd3c0;
+  color: #7dd3c0;
+}
+
+.atak-unit-popup__section {
+  margin-top: 0.55rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid #2a2a35;
+}
+.atak-unit-popup__section-title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8a96;
+  margin-bottom: 0.3rem;
+}
+.atak-unit-popup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+.atak-unit-popup__btn {
+  appearance: none;
+  border: 1px solid #3a3a48;
+  background: #1a1a24;
+  color: #d4d4dc;
+  border-radius: 4px;
+  padding: 0.22rem 0.45rem;
+  font-size: 11px;
+  cursor: pointer;
+}
+.atak-unit-popup__btn:hover {
+  border-color: #7dd3c0;
+  color: #7dd3c0;
+}
+
+.atak-arrival-block {
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid #2a2a35;
+}
+.atak-arrival-block__t {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8a96;
+  margin-bottom: 0.25rem;
+}
+.atak-arrival-row {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 11px;
+  color: #d4d4dc;
+  line-height: 1.45;
+}
+.atak-arrival-row__n {
+  color: #7dd3c0;
+  min-width: 1rem;
+}
+.atak-arrival-row__u {
+  flex: 1;
+  min-width: 0;
+}
+.atak-arrival-row__eta {
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+
+.atak-unit-popup__val--course-diverging {
+  color: #eab308;
+}
+.atak-unit-popup__val--course-arrived {
+  color: #34d399;
+}

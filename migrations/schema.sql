@@ -800,6 +800,135 @@ CREATE TABLE IF NOT EXISTS `atak_units` (
   CONSTRAINT `atak_units_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `atak_unit_motion_samples` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `unit_kind` varchar(16) NOT NULL DEFAULT 'ground',
+  `unit_id` int unsigned DEFAULT NULL,
+  `unit_ref` varchar(64) NOT NULL,
+  `pos_x` decimal(15,4) NOT NULL,
+  `pos_y` decimal(15,4) NOT NULL,
+  `pos_z` decimal(15,4) DEFAULT NULL,
+  `heading_object` decimal(10,4) DEFAULT NULL,
+  `speed_ms` decimal(10,4) DEFAULT NULL,
+  `vel_x` decimal(10,4) DEFAULT NULL,
+  `vel_y` decimal(10,4) DEFAULT NULL,
+  `vel_z` decimal(10,4) DEFAULT NULL,
+  `sampled_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_motion_samples_lookup` (`tenant_id`,`map_id`,`unit_kind`,`unit_ref`,`sampled_at`),
+  KEY `idx_motion_samples_unit` (`tenant_id`,`unit_id`,`sampled_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_unit_motion` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `unit_kind` varchar(16) NOT NULL DEFAULT 'ground',
+  `unit_id` int unsigned DEFAULT NULL,
+  `unit_ref` varchar(64) NOT NULL,
+  `heading_object` decimal(10,4) DEFAULT NULL,
+  `movement_heading` decimal(10,4) DEFAULT NULL,
+  `speed_ms` decimal(10,4) DEFAULT NULL,
+  `speed_avg_30` decimal(10,4) DEFAULT NULL,
+  `speed_avg_60` decimal(10,4) DEFAULT NULL,
+  `eta_speed_ms` decimal(10,4) DEFAULT NULL,
+  `motion_status` varchar(24) NOT NULL DEFAULT 'UNKNOWN',
+  `confidence` decimal(4,3) NOT NULL DEFAULT 0.000,
+  `trend` varchar(24) NOT NULL DEFAULT 'UNKNOWN',
+  `alt_msl` decimal(10,2) DEFAULT NULL,
+  `vertical_speed` decimal(10,4) DEFAULT NULL,
+  `alt_trend` varchar(16) DEFAULT NULL,
+  `motion_json` json DEFAULT NULL,
+  `computed_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_motion_unit` (`tenant_id`,`map_id`,`unit_kind`,`unit_ref`),
+  KEY `idx_motion_map` (`tenant_id`,`map_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_unit_assignments` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `unit_kind` varchar(16) NOT NULL DEFAULT 'ground',
+  `unit_id` int unsigned DEFAULT NULL,
+  `unit_ref` varchar(64) NOT NULL,
+  `destination_type` varchar(32) NOT NULL,
+  `destination_id` varchar(64) DEFAULT NULL,
+  `destination_label` varchar(160) DEFAULT NULL,
+  `destination_x` decimal(15,4) DEFAULT NULL,
+  `destination_y` decimal(15,4) DEFAULT NULL,
+  `assignment_mode` varchar(16) NOT NULL DEFAULT 'DIRECT',
+  `status` varchar(24) NOT NULL DEFAULT 'active',
+  `assigned_by` int unsigned DEFAULT NULL,
+  `assigned_by_label` varchar(120) DEFAULT NULL,
+  `assigned_at` datetime NOT NULL,
+  `arrived_at` datetime DEFAULT NULL,
+  `closed_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_assign_active` (`tenant_id`,`map_id`,`status`),
+  KEY `idx_assign_unit` (`tenant_id`,`map_id`,`unit_kind`,`unit_ref`,`status`),
+  KEY `idx_assign_dest` (`tenant_id`,`destination_type`,`destination_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_terrain_grids` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `world_name` varchar(64) NOT NULL DEFAULT '',
+  `world_size` int unsigned NOT NULL DEFAULT 0,
+  `origin_x` decimal(15,4) NOT NULL DEFAULT 0.0000,
+  `origin_y` decimal(15,4) NOT NULL DEFAULT 0.0000,
+  `cell_m` smallint unsigned NOT NULL DEFAULT 50,
+  `cols` int unsigned NOT NULL DEFAULT 0,
+  `rows` int unsigned NOT NULL DEFAULT 0,
+  `heights` mediumblob DEFAULT NULL,
+  `min_z` smallint DEFAULT NULL,
+  `max_z` smallint DEFAULT NULL,
+  `filled_cells` int unsigned NOT NULL DEFAULT 0,
+  `ready` tinyint unsigned NOT NULL DEFAULT 0,
+  `sampled_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_terrain_grid` (`tenant_id`,`map_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_terrain_chunks` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `grid_id` int unsigned NOT NULL,
+  `col0` int unsigned NOT NULL,
+  `row0` int unsigned NOT NULL,
+  `cw` smallint unsigned NOT NULL,
+  `rh` smallint unsigned NOT NULL,
+  `received_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_terrain_chunk` (`tenant_id`,`map_id`,`col0`,`row0`),
+  KEY `idx_terrain_chunk_grid` (`grid_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_unit_intel_events` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `unit_kind` varchar(16) NOT NULL DEFAULT 'ground',
+  `unit_ref` varchar(64) NOT NULL,
+  `event_type` varchar(40) NOT NULL,
+  `source` varchar(16) NOT NULL DEFAULT 'athena',
+  `severity` varchar(16) NOT NULL DEFAULT 'info',
+  `message` varchar(280) NOT NULL DEFAULT '',
+  `payload_json` json DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_intel_map_time` (`tenant_id`,`map_id`,`created_at`),
+  KEY `idx_intel_unit` (`tenant_id`,`map_id`,`unit_kind`,`unit_ref`,`created_at`),
+  KEY `idx_intel_type` (`tenant_id`,`map_id`,`event_type`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `atak_chat_messages` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned NOT NULL,

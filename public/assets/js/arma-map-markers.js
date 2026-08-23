@@ -312,7 +312,7 @@ window.ArmaMapMarkers = (function () {
 
   function locGlyphHtml(glyph, color) {
     var c = color || '#ef4444';
-    var box = 'display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:3px;background:rgba(0,0,0,.45);border:1px solid ' + c + ';';
+    var box = 'display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:rgba(0,0,0,.45);border:1px solid ' + c + ';';
     if (glyph === 'cross') {
       return '<span style="' + box + '"><span style="position:relative;width:10px;height:10px;">' +
         '<span style="position:absolute;left:4px;top:0;width:2px;height:10px;background:' + c + ';"></span>' +
@@ -505,17 +505,31 @@ window.ArmaMapMarkers = (function () {
     return fromWin || '';
   }
 
-  /**
-   * \A3\ui_f\...\warning_CA.paa → {CDN}/a3/ui_f/.../warning_ca.png
-   */
-  function armaTextureToPngUrl(texturePath) {
-    var raw = String(texturePath || '').replace(/\\/g, '/').replace(/^\/+/, '');
-    if (!raw) return '';
-    raw = raw.replace(/^[a-z]:\//i, '');
-    if (/\.paa$/i.test(raw)) raw = raw.replace(/\.paa$/i, '.png');
-    else if (!/\.(png|jpe?g|webp|svg)$/i.test(raw)) raw += '.png';
-    raw = raw.toLowerCase();
-    var parts = raw.split('/').filter(function (p) {
+  var ADDON_PREFIX_REMAP = [
+    ['nln_ctab_core/', 'ctab/'],
+    ['nln_ctab/', 'ctab/'],
+    ['ctab_core/', 'ctab/'],
+    ['ctab_rev/', 'ctab/'],
+    ['ctab_enhanced/', 'ctab/'],
+    ['iceman_atak/', 'ctab/'],
+    ['iceman/', 'ctab/'],
+    ['markers_plus/', 'markersplus/'],
+    ['plp_markersplus/', 'markersplus/']
+  ];
+
+  function rewriteAddonPrefix(rel) {
+    var raw = String(rel || '');
+    for (var i = 0; i < ADDON_PREFIX_REMAP.length; i++) {
+      if (raw.indexOf(ADDON_PREFIX_REMAP[i][0]) === 0) {
+        return ADDON_PREFIX_REMAP[i][1] + raw.slice(ADDON_PREFIX_REMAP[i][0].length);
+      }
+    }
+    return raw;
+  }
+
+  function relToCdnUrl(rel) {
+    var cleaned = rewriteAddonPrefix(String(rel || '').replace(/\\/g, '/').replace(/^\/+/, '').toLowerCase());
+    var parts = cleaned.split('/').filter(function (p) {
       return p && p !== '.' && p !== '..';
     }).map(encodeURIComponent);
     if (!parts.length) return '';
@@ -524,17 +538,124 @@ window.ArmaMapMarkers = (function () {
     return base + '/' + parts.join('/');
   }
 
-  function resolvePngUrl(data) {
-    if (!data || typeof data !== 'object') return '';
-    var direct = data.pngUrl || data.png_url || '';
-    if (direct) return String(direct);
+  var libMapsCache = null;
+  function libraryMaps() {
+    if (libMapsCache) return libMapsCache;
+    libMapsCache = { byKey: {}, byBase: {} };
+    var items = (window.ArmaMarkerLibraryIndex && window.ArmaMarkerLibraryIndex.ITEMS) || [];
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (!it || !it.png) continue;
+      var png = String(it.png).replace(/\\/g, '/').toLowerCase();
+      var k = String(it.key || '').toLowerCase();
+      if (k && !libMapsCache.byKey[k]) libMapsCache.byKey[k] = png;
+      if (k.indexOf('ctab_') === 0) {
+        var alias = k.slice(5);
+        // o_inf_rifle / b_armor_aa : pas les classnames vanilla b_inf / o_inf
+        if (alias && alias.indexOf('_') !== alias.lastIndexOf('_') && !libMapsCache.byKey[alias]) {
+          libMapsCache.byKey[alias] = png;
+        }
+      }
+      var base = png.split('/').pop().replace(/\.png$/i, '').replace(/_ca$/i, '');
+      if (base && !libMapsCache.byBase[base]) libMapsCache.byBase[base] = png;
+    }
+    return libMapsCache;
+  }
+
+  function packHintFromTexture(tex) {
+    var t = String(tex || '').toLowerCase();
+    if (t.indexOf('ctab') >= 0 || t.indexOf('iceman') >= 0) return 'ctab/';
+    if (t.indexOf('markersplus') >= 0 || t.indexOf('markers_plus') >= 0) return 'markersplus/';
+    if (t.indexOf('/mts') >= 0 || t.indexOf('\\mts') >= 0 || t.indexOf('mts_') >= 0) return 'z/mts/';
+    if (t.indexOf('a3/') === 0 || t.indexOf('/a3/') >= 0) return 'a3/';
+    return '';
+  }
+
+  function libraryPngFor(data) {
+    var maps = libraryMaps();
+    var tex = String((data && (data.texture || data.iconPath)) || '').replace(/\\/g, '/').toLowerCase();
+    if (tex && tex.charAt(0) !== '#') {
+      var base = tex.split('/').pop().replace(/\.paa$/i, '').replace(/\.png$/i, '').replace(/_ca$/i, '');
+      var hint = packHintFromTexture(tex);
+      if (base) {
+        if (hint) {
+          var items = (window.ArmaMarkerLibraryIndex && window.ArmaMarkerLibraryIndex.ITEMS) || [];
+          for (var i = 0; i < items.length; i++) {
+            var png = items[i] && items[i].png ? String(items[i].png).toLowerCase() : '';
+            if (!png || png.indexOf(hint) !== 0) continue;
+            var bn = png.split('/').pop().replace(/\.png$/i, '').replace(/_ca$/i, '');
+            if (bn === base) return png;
+          }
+        }
+        if (maps.byBase[base]) return maps.byBase[base];
+      }
+    }
+    var type = String((data && (data.type || data.icon)) || '').toLowerCase().replace(/[\s-]/g, '_');
+    if (type && maps.byKey[type]) return maps.byKey[type];
     if (window.ArmaMarkerCatalog && typeof window.ArmaMarkerCatalog.get === 'function') {
-      var cat = window.ArmaMarkerCatalog.get(data.type || data.icon || '');
+      var cat = window.ArmaMarkerCatalog.get(type);
       if (cat && cat.pngUrl) return String(cat.pngUrl);
     }
+    return '';
+  }
+
+  function vanillaRelFromType(type) {
+    var key = String(type || '').toLowerCase().replace(/[\s-]/g, '_');
+    if (!key) return '';
+    if (key.indexOf('mplus_') === 0 && key.length > 6) return 'markersplus/data/img/' + key.slice(6) + '.png';
+    if (key.indexOf('mil_') === 0 && key.length > 4) return 'a3/ui_f/data/map/markers/military/' + key.slice(4) + '_ca.png';
+    if (key.indexOf('hd_') === 0 && key.length > 3) return 'a3/ui_f/data/map/markers/handdrawn/' + key.slice(3) + '_ca.png';
+    if (/^[boncu]_[a-z0-9_]+$/.test(key)) return 'a3/ui_f/data/map/markers/nato/' + key + '.png';
+    return '';
+  }
+
+  function rebaseStoredPngUrl(url) {
+    var m = String(url || '').match(/\/assets\/markers\/arma\/(.+)$/i);
+    if (!m) return '';
+    return relToCdnUrl(decodeURIComponent(m[1]));
+  }
+
+  /**
+   * \A3\ui_f\...\warning_CA.paa → {CDN}/a3/ui_f/.../warning_ca.png
+   */
+  function armaTextureToPngUrl(texturePath) {
+    var raw = String(texturePath || '').replace(/\\/g, '/').replace(/^\/+/, '');
+    if (!raw || raw.charAt(0) === '#') return '';
+    raw = raw.replace(/^[a-z]:\//i, '');
+    if (/\.paa$/i.test(raw)) raw = raw.replace(/\.paa$/i, '.png');
+    else if (!/\.(png|jpe?g|webp|svg)$/i.test(raw)) raw += '.png';
+    return relToCdnUrl(raw);
+  }
+
+  function resolvePngUrl(data) {
+    if (!data || typeof data !== 'object') return '';
     var tex = data.texture || data.iconPath || '';
-    if (!tex) return '';
-    return armaTextureToPngUrl(tex);
+    if (tex && String(tex).charAt(0) !== '#') {
+      var fromTex = armaTextureToPngUrl(tex);
+      if (fromTex) return fromTex;
+    }
+    var libRel = libraryPngFor(data);
+    if (libRel) {
+      if (/^https?:\/\//i.test(libRel) || libRel.indexOf('/') === 0) return libRel;
+      var fromLib = relToCdnUrl(libRel);
+      if (fromLib) return fromLib;
+    }
+    var typeRel = vanillaRelFromType(data.type || data.icon || '');
+    if (typeRel) {
+      var fromType = relToCdnUrl(typeRel);
+      if (fromType) return fromType;
+    }
+    var direct = data.pngUrl || data.png_url || '';
+    if (direct) {
+      var rebased = rebaseStoredPngUrl(String(direct));
+      if (rebased) return rebased;
+      return String(direct);
+    }
+    return '';
+  }
+
+  function pngNeedsColorMask(pngUrl) {
+    return /\/(military|handdrawn)\//i.test(String(pngUrl || ''));
   }
 
   function escapeAttr(s) {
@@ -566,25 +687,27 @@ window.ArmaMapMarkers = (function () {
     var labelColor = mutedLabel ? '#94a3b8' : color;
     var pngUrl = resolvePngUrl(data);
 
+    var S = window.ATAKMarkerSizes;
+    var glyphPx = S ? S.px('normal') : 17;
+    var specBox = S ? S.square('normal') : { size: [glyphPx, glyphPx], anchor: [glyphPx / 2, glyphPx / 2], popup: [0, -glyphPx / 2] };
     var glyphHtml = '';
     var kind = decoded.kind;
-    var iconSize = [88, 30];
-    var iconAnchor = [44, 10];
+    var iconSize = specBox.size;
+    var iconAnchor = specBox.anchor;
     var isNatoSvg = false;
 
     if (decoded.kind === 'nato' && window.NatoSidcIcons && typeof window.NatoSidcIcons.svgMarkup === 'function') {
       var natoOpts = natoOptsFromData(data, decoded);
-      // Ne pas coller un indicatif brut sous un symbole NATO de repère (confusion BFT).
-      if (rawLabel && /^[A-Za-z]{1,3}-?\d{1,4}$/.test(rawLabel)) {
-        natoOpts.callSign = '';
-        natoOpts.label = displayLabelOf(data);
-        natoOpts.showLabel = true;
-      }
+      natoOpts.showLabel = false;
+      natoOpts.size = S ? S.px('tactical') : 19;
+      natoOpts.callSign = '';
+      natoOpts.label = '';
       glyphHtml = window.NatoSidcIcons.svgMarkup(natoOpts);
       kind = 'nato';
       isNatoSvg = true;
-      iconSize = [80, label ? 44 : 32];
-      iconAnchor = [40, label ? 22 : 16];
+      var natoBox = S ? S.square('tactical') : { size: [19, 19], anchor: [9.5, 9.5] };
+      iconSize = natoBox.size;
+      iconAnchor = natoBox.anchor;
     } else {
       var rotateStyle = '';
       if (dir && needsRotation(typeKey)) {
@@ -601,18 +724,28 @@ window.ArmaMapMarkers = (function () {
       glyphHtml = '<span style="display:inline-flex;align-items:center;justify-content:center;gap:2px;' + rotateStyle + '">' + shape + badge + '</span>';
     }
 
-    // Texture / PNG : img prioritaire, repli SVG/glyph si 404 (Phase 0 sans assets).
+    // Texture / PNG : icône jeu prioritaire, repli SVG/glyph si le fichier est absent.
     if (pngUrl) {
       var rotImg = (dir && needsRotation(typeKey) && !isNatoSvg) ? 'transform:rotate(' + dir + 'deg);' : '';
       var onErr = "this.style.display='none';var f=this.nextElementSibling;if(f){f.style.display='flex';}";
-      var htmlPng = '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;pointer-events:none;">' +
-        '<img class="arma-marker-paa-png" src="' + escapeAttr(pngUrl) + '" alt="" width="28" height="28" ' +
-        'style="width:28px;height:28px;object-fit:contain;' + rotImg + 'display:block;" onerror="' + onErr + '" />' +
-        '<div class="arma-marker-paa-fallback" style="display:none;flex-direction:column;align-items:center;gap:1px;">' +
-        glyphHtml +
-        '</div>' +
-        (isNatoSvg ? '' : labelSpanHtml(label, labelColor)) +
-        '</div>';
+      var onErrMask = "var w=this.parentNode;if(w){w.style.display='none';var f=w.nextElementSibling;if(f){f.style.display='flex';}}";
+      var wrap = S && S.wrapGlyph ? S.wrapGlyph : function (h) { return h; };
+      var iconInner;
+      if (pngNeedsColorMask(pngUrl)) {
+        iconInner = '<span class="arma-marker-paa-mask-wrap" style="position:relative;width:' + glyphPx + 'px;height:' + glyphPx + 'px;' + rotImg + '">' +
+          '<span class="arma-marker-paa-mask" style="width:' + glyphPx + 'px;height:' + glyphPx + 'px;background:' +
+          escapeAttr(color) + ';-webkit-mask-image:url(\'' + escapeAttr(pngUrl) + '\');mask-image:url(\'' +
+          escapeAttr(pngUrl) + '\');"></span>' +
+          '<img src="' + escapeAttr(pngUrl) + '" alt="" width="1" height="1" style="position:absolute;opacity:0;width:0;height:0;" onerror="' + onErrMask + '" />' +
+          '</span>';
+      } else {
+        iconInner = '<img class="arma-marker-paa-png" src="' + escapeAttr(pngUrl) + '" alt="" width="' + glyphPx + '" height="' + glyphPx + '" ' +
+          'style="width:' + glyphPx + 'px;height:' + glyphPx + 'px;object-fit:contain;' + rotImg + 'display:block;" onerror="' + onErr + '" />';
+      }
+      var htmlPng = wrap(
+        iconInner +
+        '<span class="arma-marker-paa-fallback" style="display:none;">' + glyphHtml + '</span>'
+      );
       return {
         html: htmlPng,
         color: color,
@@ -626,49 +759,31 @@ window.ArmaMapMarkers = (function () {
       };
     }
 
-    if (isNatoSvg) {
-      return {
-        html: glyphHtml,
-        color: color,
-        typeKey: typeKey,
-        label: label,
-        kind: 'nato',
-        iconSize: iconSize,
-        iconAnchor: iconAnchor
-      };
-    }
-
+    var wrapGlyph = S && S.wrapGlyph ? S.wrapGlyph : function (h) { return h; };
     return {
-      html: '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;pointer-events:none;">' +
-        glyphHtml + labelSpanHtml(label, labelColor) +
-        '</div>',
+      html: wrapGlyph(glyphHtml),
       color: color,
       typeKey: typeKey,
       label: label,
-      kind: decoded.kind,
-      iconSize: [88, 30],
-      iconAnchor: [44, 10]
+      kind: isNatoSvg ? 'nato' : decoded.kind,
+      iconSize: iconSize,
+      iconAnchor: iconAnchor
     };
   }
 
   function leafletDivIcon(L, data) {
     if (!L) return null;
     var spec = buildIconSpec(data);
-    // L.icon pur si PNG connu et pas de libellé (sinon divIcon + img + repli).
-    if (spec.iconUrl && L.icon && !spec.label) {
-      return L.icon({
-        iconUrl: spec.iconUrl,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-        className: 'arma-map-marker-icon arma-map-marker-png'
-      });
-    }
+    var S = window.ATAKMarkerSizes;
+    var box = S ? S.square('normal') : { size: spec.iconSize, anchor: spec.iconAnchor, popup: [0, -8] };
     if (!L.divIcon) return null;
     return L.divIcon({
-      className: 'arma-map-marker-icon' + (spec.iconUrl ? ' arma-map-marker-png' : ''),
+      className: 'arma-map-marker-icon atak-compact-marker' + (spec.iconUrl ? ' arma-map-marker-png' : ''),
       html: spec.html,
-      iconSize: spec.iconSize,
-      iconAnchor: spec.iconAnchor
+      iconSize: spec.iconSize || box.size,
+      iconAnchor: spec.iconAnchor || box.anchor,
+      popupAnchor: box.popup || [0, -8],
+      tooltipAnchor: box.tooltip || [0, -8]
     });
   }
 
@@ -807,6 +922,12 @@ window.ArmaMapMarkers = (function () {
       var sh = readShape(data);
       var tip = sh === 'RECTANGLE' ? '▭' : (sh === 'POLYLINE' ? '╱' : '○');
       return '<span class="arma-marker-list-badge" style="display:inline-flex;width:18px;height:14px;align-items:center;justify-content:center;margin-right:6px;color:' + c + ';font-weight:700;">' + tip + '</span>';
+    }
+    if (resolvePngUrl(data)) {
+      var specPng = buildIconSpec(data);
+      return '<span class="arma-marker-list-badge" style="display:inline-flex;vertical-align:middle;margin-right:6px;transform:scale(.85);">' +
+        specPng.html +
+        '</span>';
     }
     if (decoded.kind === 'nato' && window.NatoSidcIcons && typeof window.NatoSidcIcons.listBadgeHtml === 'function') {
       return window.NatoSidcIcons.listBadgeHtml(natoOptsFromData(data, decoded));

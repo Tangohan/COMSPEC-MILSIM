@@ -1895,6 +1895,18 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->delete('/api/atak/waypoints/{id}', [\App\Controllers\Api\AtakWaypointApiController::class, 'waypointsDestroy']);
     $router->post('/api/atak/waypoints/{id}/delete', [\App\Controllers\Api\AtakWaypointApiController::class, 'waypointsDestroy']);
 
+    $router->get('/api/atak/assignments', [\App\Controllers\Api\AtakAssignmentApiController::class, 'index']);
+    $router->post('/api/atak/assignments', [\App\Controllers\Api\AtakAssignmentApiController::class, 'store']);
+    $router->get('/api/atak/assignments/arrivals', [\App\Controllers\Api\AtakAssignmentApiController::class, 'arrivals']);
+    $router->patch('/api/atak/assignments/{id}', [\App\Controllers\Api\AtakAssignmentApiController::class, 'update']);
+    $router->post('/api/atak/assignments/{id}/detach', [\App\Controllers\Api\AtakAssignmentApiController::class, 'detach']);
+    $router->delete('/api/atak/assignments/{id}', [\App\Controllers\Api\AtakAssignmentApiController::class, 'detach']);
+    $router->post('/api/atak/assignments/{id}/delete', [\App\Controllers\Api\AtakAssignmentApiController::class, 'detach']);
+    $router->get('/api/atak/terrain', [\App\Controllers\Api\AtakTerrainApiController::class, 'show']);
+    $router->post('/api/atak/terrain/chunk', [\App\Controllers\Api\AtakTerrainApiController::class, 'chunk']);
+    $router->get('/api/atak/terrain/sample', [\App\Controllers\Api\AtakTerrainApiController::class, 'sample']);
+    $router->get('/api/atak/intel-events', [\App\Controllers\Api\AtakIntelEventApiController::class, 'index']);
+
     // Zones tactiques (LZ, DZ, Objectives, Danger Zones)
     $router->get('/api/atak/zones', [AtakApiController::class, 'tacticalZonesIndex']);
     $router->post('/api/atak/zones', [AtakApiController::class, 'tacticalZonesStore']);

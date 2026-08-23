@@ -116,14 +116,11 @@ window.NatoSidcIcons = (function () {
     if (!hasMilsymbol()) return null;
     try {
       var sidc = resolveSidc(opts);
-      var size = opts.size || 36;
-      // Évite double libellé : si showLabel HTML, ne pas graver le callsign dans milsymbol
-      // (sinon la boîte SVG grossit beaucoup au-delà de `size`).
+      var size = opts.size || (window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('tactical') : 19);
+      // Jamais graver l’indicatif dans milsymbol : ça gonfle la boîte SVG.
       var designation = '';
       if (opts.uniqueDesignation != null && opts.uniqueDesignation !== '') {
         designation = opts.uniqueDesignation;
-      } else if (opts.showLabel === false) {
-        designation = opts.callSign || opts.label || '';
       }
       var symOpts = {
         size: size,
@@ -147,7 +144,7 @@ window.NatoSidcIcons = (function () {
     var aff = normAff(opts.affiliation);
     var roleKey = opts.roleKey || guessRole(opts.role, opts.aircraftType);
     var c = COLORS[aff] || COLORS.friend;
-    var size = opts.size || 36;
+    var size = opts.size || (window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('tactical') : 19);
     return '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" viewBox="0 0 32 32" class="nato-sidc-svg" aria-hidden="true">'
       + '<path d="' + framePath(aff) + '" fill="' + c.fill + '" stroke="' + c.stroke + '" stroke-width="1.5"/>'
       + '<g color="' + c.stroke + '" opacity="0.95">' + roleGlyph(roleKey) + '</g>'
@@ -176,8 +173,8 @@ window.NatoSidcIcons = (function () {
     var label = String(opts.callSign || opts.label || '').slice(0, 12);
     var heading = parseFloat(opts.heading);
     if (isNaN(heading)) heading = 0;
-    var size = opts.size || 36;
-    var showLabel = opts.showLabel !== false;
+    var size = opts.size || (window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('tactical') : 19);
+    var showLabel = opts.showLabel === true;
     var healthClass = healthClassFromOpts(opts);
 
     var mil = milsymbolSvg(opts);
@@ -210,29 +207,32 @@ window.NatoSidcIcons = (function () {
   function leafletDivIcon(L, opts) {
     if (!L || !L.divIcon) return null;
     opts = opts || {};
-    var size = opts.size || 36;
-    var showLabel = opts.showLabel !== false;
+    var S = window.ATAKMarkerSizes;
+    var size = S ? S.clampPref(opts.size || S.px('tactical')) : (opts.size || 19);
+    opts.size = size;
+    opts.showLabel = false;
     var mil = milsymbolSvg(opts);
     var iconW = size;
     var iconH = size;
     var anchorX = size / 2;
     var anchorY = size / 2;
     if (mil && mil.size) {
-      iconW = Math.ceil(mil.size.width) || size;
-      iconH = Math.ceil(mil.size.height) || size;
+      iconW = Math.min(S ? S.px('important') : 22, Math.ceil(mil.size.width) || size);
+      iconH = Math.min(S ? S.px('important') : 22, Math.ceil(mil.size.height) || size);
       if (mil.anchor) {
-        anchorX = mil.anchor.x != null ? mil.anchor.x : iconW / 2;
-        anchorY = mil.anchor.y != null ? mil.anchor.y : iconH / 2;
+        anchorX = mil.anchor.x != null ? Math.min(iconW, mil.anchor.x) : iconW / 2;
+        anchorY = mil.anchor.y != null ? Math.min(iconH, mil.anchor.y) : iconH / 2;
       }
     }
-    var w = Math.max(iconW, showLabel ? Math.max(48, size * 3) : iconW);
-    var h = showLabel ? iconH + 12 : iconH;
+    var html = svgMarkup(opts);
+    if (S && S.wrapGlyph) html = S.wrapGlyph(html);
     return L.divIcon({
-      className: 'nato-sidc-icon',
-      html: svgMarkup(opts),
-      iconSize: [w, h],
-      iconAnchor: [w / 2, showLabel ? anchorY : anchorY],
+      className: 'nato-sidc-icon atak-compact-marker',
+      html: html,
+      iconSize: [iconW, iconH],
+      iconAnchor: [anchorX, anchorY],
       popupAnchor: [0, -anchorY],
+      tooltipAnchor: [0, -anchorY]
     });
   }
 
