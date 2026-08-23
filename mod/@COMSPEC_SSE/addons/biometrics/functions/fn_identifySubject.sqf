@@ -13,6 +13,10 @@ params [
     {
         params ["_target"];
         [_target] call comspec_sse_fnc_ensureGenerated;
+        if (!isNil "comspec_sse_fnc_uiSetRecord") then {
+            [_target] call comspec_sse_fnc_uiSetRecord;
+        };
+        missionNamespace setVariable ["comspec_sse_lastResultEntity", _target];
         private _seed = [_target] call comspec_sse_fnc_getSeed;
         private _identity = [_target, "identity"] call comspec_sse_fnc_getSection;
         private _bio = [_target, "biometrics"] call comspec_sse_fnc_getSection;
@@ -38,6 +42,21 @@ params [
         private _name = if (!isNil "_identity" && {_identity isEqualType createHashMap}) then {
             _identity getOrDefault ["name", "Sujet"]
         } else { "Sujet" };
+
+        private _authored = _target getVariable ["COMSPEC_SSE_NameAuthored", false];
+        private _liveFirst = trim (_target getVariable ["COMSPEC_SSE_FirstName", ""]);
+        private _liveLast = trim (_target getVariable ["COMSPEC_SSE_LastName", ""]);
+        private _live = trim (format ["%1 %2", _liveFirst, _liveLast]);
+        if (_authored && {_live isNotEqualTo ""}) then {
+            _name = _live;
+        } else {
+            if (_target isKindOf "CAManBase") then {
+                private _unitName = name _target;
+                if (_unitName isNotEqualTo "" && {(_unitName find "Error:") < 0}) then {
+                    _name = _unitName;
+                };
+            };
+        };
 
         private _lines = [
             format ["Sujet : %1", _name],

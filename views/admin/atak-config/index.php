@@ -82,6 +82,8 @@ foreach ($dataSummary as $k => $v) {
     $experienceGuideCustom = (string) ($experienceGuideCustom ?? '');
     $experienceUpdatedAt = (string) ($experienceUpdatedAt ?? '');
     $experienceSchemaReady = !empty($experienceSchemaReady);
+    $photoHud = is_array($photoHud ?? null) ? $photoHud : [];
+    $photoHudPreview = (string) ($photoHudPreview ?? '');
     ?>
     <div id="bridge-modules" class="mb-8 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
         <h2 class="text-sm font-bold text-slate-800 mb-1">Modules ATAK Enhanced / cTab</h2>
@@ -242,6 +244,92 @@ foreach ($dataSummary as $k => $v) {
             </div>
         </details>
         <?php endif; ?>
+    </div>
+
+    <?php
+    $hudEnabled = !array_key_exists('enabled', $photoHud) || !empty($photoHud['enabled']);
+    $hudPos = (string) ($photoHud['position'] ?? 'top');
+    $hudStyle = (string) ($photoHud['style'] ?? 'axon');
+    $hudAgency = (string) ($photoHud['agency'] ?? '');
+    $hudCustom = (string) ($photoHud['custom_line'] ?? '');
+    $hudFlags = [
+        'show_datetime' => ['Date et heure (UTC)', !empty($photoHud['show_datetime']) || !array_key_exists('show_datetime', $photoHud)],
+        'show_callsign' => ['Indicatif', !empty($photoHud['show_callsign']) || !array_key_exists('show_callsign', $photoHud)],
+        'show_device' => ['Type de caméra', !empty($photoHud['show_device']) || !array_key_exists('show_device', $photoHud)],
+        'show_grid' => ['Référence de grille', !empty($photoHud['show_grid']) || !array_key_exists('show_grid', $photoHud)],
+        'show_heading' => ['Cap', !empty($photoHud['show_heading'])],
+        'show_altitude' => ['Altitude', !empty($photoHud['show_altitude'])],
+    ];
+    ?>
+    <div id="photo-hud" class="mb-8 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+        <h2 class="text-sm font-bold text-slate-800 mb-1">Bandeau d’identification des photos</h2>
+        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+            Un bandeau du type caméra-piéton est gravé sur les photos reçues du terrain (casque, tablette, drone) :
+            unité, indicatif, grille et horodatage. Les photos déjà archivées ne sont pas modifiées.
+        </p>
+        <form action="<?= $baseUrl ?>/admin/atak-config/photo-hud" method="post" class="space-y-4">
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="photo_hud_enabled" value="0" />
+            <label class="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-3 cursor-pointer hover:border-emerald-300">
+                <input type="checkbox" name="photo_hud_enabled" value="1" class="mt-1 rounded border-slate-300" <?= $hudEnabled ? 'checked' : '' ?> />
+                <span>
+                    <span class="block text-sm font-medium text-slate-800">Graver le bandeau sur les prochaines photos</span>
+                    <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed">Si vous décochez, les captures restent brutes, sans identification incrustée.</span>
+                </span>
+            </label>
+            <div class="grid sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="photo_hud_agency">Nom d’unité ou d’agence</label>
+                    <input id="photo_hud_agency" name="photo_hud_agency" type="text" maxlength="80" value="<?= htmlspecialchars($hudAgency, ENT_QUOTES, 'UTF-8') ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Ex. : GIGN — Détachement Alpha" />
+                    <p class="text-xs text-slate-500 mt-1">Affiché en tête du bandeau. Par défaut, le nom de votre communauté.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="photo_hud_custom">Ligne libre (facultatif)</label>
+                    <input id="photo_hud_custom" name="photo_hud_custom" type="text" maxlength="80" value="<?= htmlspecialchars($hudCustom, ENT_QUOTES, 'UTF-8') ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Ex. : OP FORTERESSE" />
+                    <p class="text-xs text-slate-500 mt-1">Nom d’opération, théâtre, ou tout libellé utile à l’archivage.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="photo_hud_position">Position du bandeau</label>
+                    <select id="photo_hud_position" name="photo_hud_position" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                        <option value="top" <?= $hudPos === 'top' ? 'selected' : '' ?>>En haut de la photo</option>
+                        <option value="bottom" <?= $hudPos === 'bottom' ? 'selected' : '' ?>>En bas de la photo</option>
+                        <option value="both" <?= $hudPos === 'both' ? 'selected' : '' ?>>Haut et bas</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="photo_hud_style">Apparence</label>
+                    <select id="photo_hud_style" name="photo_hud_style" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                        <option value="axon" <?= $hudStyle === 'axon' ? 'selected' : '' ?>>Caméra-piéton (barre sombre, indicateur d’enregistrement)</option>
+                        <option value="discreet" <?= $hudStyle === 'discreet' ? 'selected' : '' ?>>Discret (barre plus fine)</option>
+                    </select>
+                </div>
+            </div>
+            <fieldset>
+                <legend class="text-sm font-medium text-slate-800 mb-2">Informations à afficher</legend>
+                <div class="grid sm:grid-cols-2 gap-2">
+                    <?php foreach ($hudFlags as $flag => $pair): ?>
+                        <?php [$flabel, $fchecked] = $pair; ?>
+                        <label class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 cursor-pointer hover:border-emerald-300">
+                            <input type="hidden" name="photo_hud_<?= htmlspecialchars($flag, ENT_QUOTES, 'UTF-8') ?>" value="0" />
+                            <input type="checkbox" name="photo_hud_<?= htmlspecialchars($flag, ENT_QUOTES, 'UTF-8') ?>" value="1" class="rounded border-slate-300" <?= $fchecked ? 'checked' : '' ?> />
+                            <span class="text-sm text-slate-800"><?= htmlspecialchars($flabel, ENT_QUOTES, 'UTF-8') ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </fieldset>
+            <?php if ($photoHudPreview !== ''): ?>
+                <div>
+                    <p class="text-sm font-medium text-slate-800 mb-2">Aperçu</p>
+                    <img src="<?= htmlspecialchars($photoHudPreview, ENT_QUOTES, 'UTF-8') ?>" alt="Aperçu du bandeau sur une photo" class="w-full max-w-xl rounded-lg border border-slate-200" />
+                    <p class="text-xs text-slate-500 mt-1.5">L’aperçu reprend les réglages actuellement enregistrés. Enregistrez pour le mettre à jour.</p>
+                </div>
+            <?php endif; ?>
+            <div class="pt-1">
+                <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">
+                    Enregistrer le bandeau
+                </button>
+            </div>
+        </form>
     </div>
 
     <div class="grid lg:grid-cols-12 gap-8 items-start">

@@ -80,4 +80,4 @@ private _last = missionNamespace getVariable ["COMSPEC_Athena_LastFeedSnapAt", 0
 if ((diag_tickTime - _last) < _interval) exitWith {};
 missionNamespace setVariable ["COMSPEC_Athena_LastFeedSnapAt", diag_tickTime, false];
 
-["", _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
+["", _caption, _device, _feedId, false, false] call comspec_overwatch_connect_fnc_captureReconImage;

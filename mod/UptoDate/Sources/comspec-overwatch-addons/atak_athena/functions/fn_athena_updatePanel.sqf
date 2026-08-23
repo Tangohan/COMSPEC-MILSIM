@@ -388,17 +388,7 @@ if (!(_orders isEqualType [])) then { _orders = []; };
     private _type = _x getOrDefault ["type", "MOVE"];
     // Signaux terminal déjà notifiés via onVibrate / onNotify — pas une ligne « ordre »
     if ((toUpper _type) in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM"]) then { continue };
-    private _typeLabel = trim (_x getOrDefault ["typeLabel", ""]);
-    if (_typeLabel isEqualTo "") then {
-        _typeLabel = switch (toUpper _type) do {
-            case "HOLD": { "Tenir la position" };
-            case "RECON": { "Reconnaissance" };
-            case "CAS": { "Appui aérien" };
-            case "QRF": { "Force de réaction" };
-            case "CUSTOM": { "Ordre personnalisé" };
-            default { "Se déplacer" };
-        };
-    };
+    private _typeLabel = [_x] call comspec_overwatch_connect_fnc_orderTypeLabel;
     private _issuer = _x getOrDefault ["issuer", "C2"];
     private _prio = _x getOrDefault ["priority", "IMPORTANT"];
     private _prioLabel = switch (toUpper _prio) do {

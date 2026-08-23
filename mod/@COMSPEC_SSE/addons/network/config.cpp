@@ -26,6 +26,7 @@ class CfgFunctions {
             class isOnline {};
             class sendViaOverwatch {};
             class toJsonApprox {};
+            class toJsonPerson {};
             class makeIdempotencyKey {};
             class getCaseReference {};
             class setCaseReference {};
@@ -35,6 +36,7 @@ class CfgFunctions {
             class submitPersonRecord {};
             class submitBiometricsSim {};
             class submitDigitalAcquisition {};
+            class transmitEntity {};
             class extensionCall {};
             class markTransmitted {};
         };

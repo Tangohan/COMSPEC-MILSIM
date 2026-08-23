@@ -22,6 +22,16 @@ if (isNil "_identity" || {!(_identity isEqualType createHashMap)}) then {
 
 [_entity, "identity", _identity, _public] call comspec_sse_fnc_setSection;
 
+private _authoredKeys = [];
+{ _authoredKeys pushBack (toLower (_x select 0)); } forEach _pairs;
+if (
+    ("name" in _authoredKeys)
+    || {"first_name" in _authoredKeys}
+    || {"last_name" in _authoredKeys}
+) then {
+    _entity setVariable ["COMSPEC_SSE_NameAuthored", true, _public];
+};
+
 if (!isNil "comspec_sse_fnc_syncIdentityBridgeVars") then {
     [_entity, _public] call comspec_sse_fnc_syncIdentityBridgeVars;
 };

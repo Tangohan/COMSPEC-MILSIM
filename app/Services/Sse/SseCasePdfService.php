@@ -117,23 +117,28 @@ final class SseCasePdfService
 
                 public function Footer(): void
                 {
+                    $leftM = $this->lMargin;
+                    $rightM = $this->w - $this->rMargin;
+                    $usable = max(1.0, $rightM - $leftM);
                     $this->SetY(-12);
                     $this->SetDrawColor($this->sseFooterAccent[0], $this->sseFooterAccent[1], $this->sseFooterAccent[2]);
                     $this->SetLineWidth(0.35);
-                    $this->Line(14, $this->GetY(), $this->getPageWidth() - 14, $this->GetY());
+                    $this->Line($leftM, $this->GetY(), $rightM, $this->GetY());
                     $this->SetY(-10);
+                    $this->SetX($leftM);
                     $this->SetFont('helvetica', '', 7);
                     $this->SetTextColor(100, 116, 139);
                     $left = $this->sseFooterRef !== '' ? $this->sseFooterRef : 'Athena SSE';
                     $center = $this->sseFooterClass;
                     $right = 'Page ' . $this->getAliasNumPage() . ' / ' . $this->getAliasNbPages();
-                    $this->Cell(60, 5, $left, 0, 0, 'L');
+                    $col = $usable / 3;
+                    $this->Cell($col, 5, $left, 0, 0, 'L');
                     $this->SetTextColor($this->sseFooterAccent[0], $this->sseFooterAccent[1], $this->sseFooterAccent[2]);
                     $this->SetFont('helvetica', 'B', 7);
-                    $this->Cell(0, 5, $center, 0, 0, 'C');
+                    $this->Cell($col, 5, $center, 0, 0, 'C');
                     $this->SetTextColor(100, 116, 139);
                     $this->SetFont('helvetica', '', 7);
-                    $this->Cell(0, 5, $right, 0, 0, 'R');
+                    $this->Cell($col, 5, $right, 0, 0, 'R');
                 }
             };
             $pdf->sseFooterRef = $footerRef;
@@ -145,6 +150,7 @@ final class SseCasePdfService
             $pdf->SetTitle('Dossier complet ' . $footerRef);
             $pdf->SetMargins(12, 14, 12);
             $pdf->SetAutoPageBreak(true, 18);
+            $pdf->setCellHeightRatio(1.35);
             $pdf->setPrintHeader(false);
             $pdf->setPrintFooter(true);
             $pdf->setFooterMargin(12);
@@ -327,8 +333,8 @@ final class SseCasePdfService
 
         // Cadre papier : filet gauche classification + bordure fine
         $html = '<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
-            . '<td width="3" style="background-color:' . $accent . ';"></td>'
-            . '<td style="border:1px solid #cbd5e1;padding:0;">';
+            . '<td width="1.6%" style="background-color:' . $accent . ';"></td>'
+            . '<td width="98.4%" style="border:1px solid #cbd5e1;padding:0;">';
 
         if ($redactedLabel !== '') {
             $html .= '<table cellpadding="5" cellspacing="0" border="0" width="100%" style="background-color:'
@@ -599,8 +605,8 @@ final class SseCasePdfService
         $ink = $this->palette['ink'];
 
         $html = '<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
-            . '<td width="3" style="background-color:' . $accent . ';"></td>'
-            . '<td style="border:1px solid ' . $accent . ';background-color:' . $bannerBg . ';">'
+            . '<td width="1.6%" style="background-color:' . $accent . ';"></td>'
+            . '<td width="98.4%" style="border:1px solid ' . $accent . ';background-color:' . $bannerBg . ';">'
             . '<table cellpadding="4" cellspacing="0" border="0" width="100%">'
             . '<tr>'
             . '<td width="28%" style="font-size:7px;color:' . $muted . ';">'
@@ -633,9 +639,9 @@ final class SseCasePdfService
         $ink = $this->palette['ink'];
 
         return '<br/><table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
-            . '<td width="4" style="background-color:' . $accent . ';"></td>'
-            . '<td width="6"></td>'
-            . '<td style="font-size:9.5px;font-weight:bold;color:' . $ink
+            . '<td width="1.6%" style="background-color:' . $accent . ';"></td>'
+            . '<td width="1.8%"></td>'
+            . '<td width="96.6%" style="font-size:9.5px;font-weight:bold;color:' . $ink
             . ';letter-spacing:1px;">' . $this->e(mb_strtoupper($title, 'UTF-8')) . '</td>'
             . '</tr></table><br/>';
     }
@@ -646,18 +652,79 @@ final class SseCasePdfService
         $bannerBg = $this->palette['banner'];
         $ink = $this->palette['ink'];
         $muted = $this->palette['muted'];
-        $text = trim($body) !== '' ? $body : '(aucun contenu généré)';
 
-        return $this->sectionTitle($title)
-            . '<table cellpadding="0" cellspacing="0" border="1" width="100%" style="border-color:'
+        return '<table cellpadding="0" cellspacing="0" border="1" width="100%" style="border-color:'
             . $accent . ';">'
-            . '<tr style="background-color:' . $bannerBg . ';"><td style="padding:5px;font-size:7px;color:'
-            . $muted . ';letter-spacing:0.8px;">PIÈCE RÉDACTIONNELLE · DIFFUSION CONTRÔLÉE</td></tr>'
-            . '<tr><td style="padding:8px;background-color:#ffffff;">'
-            . '<pre style="font-size:9px;line-height:1.4;font-family:courier;color:' . $ink
-            . ';white-space:pre-wrap;margin:0;">'
-            . $this->e($text)
-            . '</pre></td></tr></table>';
+            . '<tr style="background-color:' . $bannerBg . ';"><td>'
+            . '<table cellpadding="6" cellspacing="0" border="0" width="100%">'
+            . '<tr><td style="font-size:11px;font-weight:bold;color:' . $ink . ';letter-spacing:0.6px;">'
+            . $this->e(mb_strtoupper($title, 'UTF-8')) . '</td></tr>'
+            . '<tr><td style="font-size:7px;color:' . $muted . ';letter-spacing:0.5px;">'
+            . 'PIÈCE RÉDACTIONNELLE · DIFFUSION CONTRÔLÉE</td></tr>'
+            . '</table></td></tr>'
+            . '<tr><td>' . $this->reportBodyHtml($body) . '</td></tr>'
+            . '</table>';
+    }
+
+    /**
+     * TCPDF ignore les blocs pre et le padding CSS : une ligne métier = une rangée.
+     */
+    private function reportBodyHtml(string $text): string
+    {
+        $text = str_replace(["\r\n", "\r"], "\n", trim($text));
+        $ink = $this->palette['ink'];
+        $accent = $this->palette['accent'];
+        $muted = $this->palette['muted'];
+
+        if ($text === '') {
+            return '<table cellpadding="10" cellspacing="0" border="0" width="100%"><tr><td style="font-size:9px;font-style:italic;color:'
+                . $muted . ';">(aucun contenu généré)</td></tr></table>';
+        }
+
+        $html = '<table cellpadding="6" cellspacing="0" border="0" width="100%">';
+        foreach (explode("\n", $text) as $line) {
+            $trim = trim($line);
+            if ($trim === '') {
+                $html .= '<tr><td colspan="2" style="font-size:3px;line-height:3px;">&nbsp;</td></tr>';
+                continue;
+            }
+
+            $colon = mb_strpos($trim, ' : ', 0, 'UTF-8');
+            if ($colon !== false && $colon > 0 && $colon <= 42) {
+                $label = mb_substr($trim, 0, $colon, 'UTF-8');
+                $value = mb_substr($trim, $colon + 3, 400, 'UTF-8');
+                $html .= '<tr>'
+                    . '<td width="44%" style="font-size:9.5px;font-weight:bold;color:' . $ink
+                    . ';border-bottom:0.4px solid #e2e8f0;">' . $this->e($label) . '</td>'
+                    . '<td width="56%" style="font-size:9.5px;color:' . $ink
+                    . ';border-bottom:0.4px solid #e2e8f0;">' . $this->e($value) . '</td>'
+                    . '</tr>';
+                continue;
+            }
+
+            if ($this->isReportHeading($trim)) {
+                $html .= '<tr><td colspan="2" style="font-size:8.5px;font-weight:bold;color:' . $accent
+                    . ';letter-spacing:0.8px;border-bottom:0.7px solid ' . $accent . ';">'
+                    . $this->e($trim) . '</td></tr>';
+                continue;
+            }
+
+            $html .= '<tr><td colspan="2" style="font-size:9.5px;color:' . $ink . ';">'
+                . $this->e($trim) . '</td></tr>';
+        }
+        $html .= '</table>';
+
+        return $html;
+    }
+
+    private function isReportHeading(string $line): bool
+    {
+        if ($line === '' || str_contains($line, ' : ') || str_ends_with($line, '.')) {
+            return false;
+        }
+        $upper = mb_strtoupper($line, 'UTF-8');
+
+        return $upper === $line && mb_strlen($line) <= 56;
     }
 
     private function emptyState(string $message): string
@@ -902,8 +969,8 @@ final class SseCasePdfService
         foreach ($notes as $n) {
             $html .= '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:7px;">'
                 . '<tr>'
-                . '<td width="3" style="background-color:' . $accent . ';"></td>'
-                . '<td style="border:1px solid #cbd5e1;border-left:0;">'
+                . '<td width="1.6%" style="background-color:' . $accent . ';"></td>'
+                . '<td width="98.4%" style="border:1px solid #cbd5e1;border-left:0;">'
                 . '<table cellpadding="5" cellspacing="0" border="0" width="100%">'
                 . '<tr style="background-color:' . $bannerBg . ';"><td style="font-size:7px;color:'
                 . $muted . ';">'

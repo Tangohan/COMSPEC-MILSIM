@@ -10,7 +10,6 @@ params [
     ["_input", createHashMap, [createHashMap]]
 ];
 
-private _envelope = _input;
 private _payload = _input;
 private _command = "SendSSE";
 private _kind = "GENERIC";
@@ -21,38 +20,44 @@ if ((_input getOrDefault ["command", ""]) != "") then {
     _payload = _input getOrDefault ["payload", _input];
 };
 
-private _json = [_payload] call comspec_sse_fnc_toJsonApprox;
+private _json = if ((toUpper _command) isEqualTo "SUBMITSSEPERSON" && {!isNil "comspec_sse_fnc_toJsonPerson"}) then {
+    [_payload] call comspec_sse_fnc_toJsonPerson
+} else {
+    [_payload] call comspec_sse_fnc_toJsonApprox
+};
+
 private _preferExt = missionNamespace getVariable ["comspec_sse_preferExtension", true];
 
+// Ne pas utiliser str sur le statut : str "OK" vaut "\"OK\"" et râte la comparaison.
 private _extOk = {
     params ["_raw"];
     if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
-    private _parsed = parseSimpleArray _raw;
-    if (_parsed isEqualType [] && {count _parsed >= 1}) exitWith {
-        toUpper (str (_parsed select 0)) isEqualTo "OK"
+    private _ok = false;
+    if ((count _raw) >= 4 && {(_raw select [0, 2]) isEqualTo "["""}) then {
+        private _parsed = parseSimpleArray _raw;
+        if (_parsed isEqualType [] && {(count _parsed) >= 1}) then {
+            private _s0 = _parsed select 0;
+            private _status = if (_s0 isEqualType "") then { _s0 } else { format ["%1", _s0] };
+            _ok = (toUpper _status) isEqualTo "OK";
+        };
     };
-    private _low = toLower _raw;
-    // Filet legacy si l’extension ne renvoie pas un tableau simple.
-    (_low find """ok""") >= 0
-        && {(_low find "error") < 0}
-        && {(_low find "fail") < 0}
-        && {(_low find "unknown") < 0}
-        && {(_low find "not implemented") < 0}
+    if (!_ok) then {
+        private _u = toUpper _raw;
+        _ok = ((_u select [0, 2]) isEqualTo "OK") && {(_u find "ERROR") < 0};
+    };
+    _ok
 };
 
 private _needsPersonApi = (
     (toUpper _command) in ["SUBMITSSEPERSON", "SUBMITSSEBIOMETRICSSIM"]
 ) || {(toUpper _kind) in ["PERSON", "BIOMETRICS"]};
 
-// DIGITAL / SendSSE : aussi typé — sendIntel texte ne crée pas d’acquisition Athena.
 private _needsTypedApi = _needsPersonApi
     || {(toUpper _command) isEqualTo "SENDSSE"}
     || {(toUpper _kind) in ["DIGITAL", "GENERIC"]};
 
-// 1) Extension typée
-if (_preferExt) then {
+if (_preferExt) exitWith {
     private _extArgs = [_json];
-    // Biométrie Athena exige l’id numérique personne (pas seulement le JSON sse_uid).
     if ((toUpper _command) isEqualTo "SUBMITSSEBIOMETRICSSIM") then {
         private _pid = _payload getOrDefault ["athena_person_id", ""];
         if (_pid isEqualTo "") then { _pid = _payload getOrDefault ["person_id", ""]; };
@@ -62,22 +67,26 @@ if (_preferExt) then {
             _extArgs = [_pid, _json];
         };
     };
+    [format [
+        "TX %1 names=%2/%3/%4 bytes=%5",
+        _command,
+        _payload getOrDefault ["first_name", ""],
+        _payload getOrDefault ["last_name", ""],
+        _payload getOrDefault ["alias", ""],
+        count _json
+    ]] call comspec_sse_fnc_log;
     private _raw = [_command, _extArgs] call comspec_sse_fnc_extensionCall;
     if ([_raw] call _extOk) exitWith {
         [format ["sendViaOverwatch OK ext %1", _command]] call comspec_sse_fnc_log;
         true
     };
-    if (_needsTypedApi) exitWith {
-        [format ["sendViaOverwatch FAIL ext %1 raw=%2 (pas de fallback sendIntel pour fiche Athena)", _command, _raw], "WARN"] call comspec_sse_fnc_log;
-        false
-    };
+    [format ["sendViaOverwatch FAIL ext %1 raw=%2", _command, _raw], "WARN"] call comspec_sse_fnc_log;
+    false
 };
 
-// 2) Overwatch sendIntel — signal texte seulement (pas de registre Identités)
 if (!_needsTypedApi && {!isNil "comspec_overwatch_connect_fnc_sendIntel"}) exitWith {
     private _sseUid = _payload getOrDefault ["sse_uid", ""];
     if (_sseUid isEqualTo "") then { _sseUid = _payload getOrDefault ["record_id", "?"]; };
-    // Nettoie une éventuelle notation scientifique héritée (1.11e+09).
     if (_sseUid isEqualType "" && {(_sseUid find "e+") >= 0 || {(_sseUid find "e-") >= 0} || {(_sseUid find "E+") >= 0}}) then {
         private _parts = _sseUid splitString "-";
         if ((count _parts) >= 2) then {
@@ -104,14 +113,6 @@ if (!_needsTypedApi && {!isNil "comspec_overwatch_connect_fnc_sendIntel"}) exitW
     [player, "HUMINT", _text, _payload getOrDefault ["idempotency_key", ""], "INFANTRY", _score] call comspec_overwatch_connect_fnc_sendIntel;
     ["sendViaOverwatch OK via sendIntel"] call comspec_sse_fnc_log;
     true
-};
-
-// 3) Extension générique SendSSE (hors fiches personne)
-if (!_needsTypedApi) then {
-    private _raw2 = ["SendSSE", [_json]] call comspec_sse_fnc_extensionCall;
-    if ([_raw2] call _extOk) exitWith {
-        true
-    };
 };
 
 [format ["sendViaOverwatch unavailable kind=%1 cmd=%2", _kind, _command], "WARN"] call comspec_sse_fnc_log;

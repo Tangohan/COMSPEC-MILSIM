@@ -41,19 +41,7 @@ private _shown = [];
     private _status = _order getOrDefault ["status", "PENDING"];
     private _prio = _order getOrDefault ["priority", "IMPORTANT"];
 
-    private _typeLabelCustom = trim (_order getOrDefault ["typeLabel", ""]);
-    private _typeLabel = if (_typeLabelCustom != "") then {
-        _typeLabelCustom
-    } else {
-        switch (toUpper _type) do {
-            case "HOLD": { "Tenir" };
-            case "RECON": { "Reconnaissance" };
-            case "CAS": { "Appui aérien" };
-            case "QRF": { "Force de réaction" };
-            case "CUSTOM": { "Personnalisé" };
-            default { "Mouvement" };
-        };
-    };
+    private _typeLabel = [_order] call comspec_overwatch_connect_fnc_orderTypeLabel;
     private _statusLabel = switch (toUpper _status) do {
         case "ACK": { "Accepté / confirmé" };
         case "EXEC": { "En cours" };

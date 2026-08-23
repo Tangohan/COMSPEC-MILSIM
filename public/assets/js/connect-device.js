@@ -1,4 +1,4 @@
-/* Shell téléphone /connect — OSD + resize carte iframe */
+/* Shell téléphone /connect — OSD + iframe collée au trou écran */
 (function () {
   'use strict';
 
@@ -19,36 +19,49 @@
     try {
       frame.contentWindow.dispatchEvent(new Event('resize'));
       frame.contentWindow.postMessage({ type: 'connect-device-resize' }, window.location.origin);
-    } catch (e) {
-      // cross-origin impossible ici (same-origin)
-    }
-  }
-
-  function applyCompactClass() {
-    var compact = window.matchMedia('(max-width: 560px)').matches;
-    document.body.classList.toggle('is-compact', compact);
+    } catch (e) {}
   }
 
   tickClock();
   setInterval(tickClock, 15000);
-  applyCompactClass();
 
-  window.addEventListener('resize', function () {
-    applyCompactClass();
-    notifyMapResize();
-  });
-  window.addEventListener('orientationchange', function () {
-    setTimeout(function () {
-      applyCompactClass();
-      notifyMapResize();
-    }, 250);
-  });
-
+  var screen = document.querySelector('.connect-device-screen');
   var frame = document.getElementById('connect-device-frame');
+  var lastKey = '';
+
+  function syncFrameToScreen() {
+    if (!screen || !frame) return;
+    var w = Math.round(screen.clientWidth);
+    var h = Math.round(screen.clientHeight);
+    if (w < 2 || h < 2) return;
+    var key = w + 'x' + h;
+    if (key === lastKey) return;
+    lastKey = key;
+    frame.style.width = '100%';
+    frame.style.height = '100%';
+    notifyMapResize();
+  }
+
   if (frame) {
     frame.addEventListener('load', function () {
+      lastKey = '';
+      syncFrameToScreen();
       setTimeout(notifyMapResize, 200);
       setTimeout(notifyMapResize, 800);
     });
   }
+
+  if (screen && typeof ResizeObserver !== 'undefined') {
+    var observer = new ResizeObserver(function () {
+      syncFrameToScreen();
+    });
+    observer.observe(screen);
+  } else {
+    window.addEventListener('resize', syncFrameToScreen);
+  }
+
+  window.addEventListener('orientationchange', function () {
+    lastKey = '';
+    setTimeout(syncFrameToScreen, 250);
+  });
 })();

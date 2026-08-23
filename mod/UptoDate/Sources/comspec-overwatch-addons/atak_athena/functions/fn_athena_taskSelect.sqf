@@ -12,6 +12,7 @@ if (isNull _detail) exitWith {};
 if (_idx < 0) exitWith {
     uiNamespace setVariable ["COMSPEC_ATAK_Task_selectedId", ""];
     _detail ctrlSetStructuredText parseText "<t color='#8aa0b4'>Sélectionnez un ordre.</t>";
+    [] call comspec_overwatch_atak_athena_fnc_athena_taskSyncButtons;
 };
 
 private _id = _ctrl lbData _idx;
@@ -24,21 +25,11 @@ private _order = createHashMap;
 
 if ((count _order) < 1) exitWith {
     _detail ctrlSetStructuredText parseText "<t color='#e8a0a0'>Ordre introuvable.</t>";
+    [] call comspec_overwatch_atak_athena_fnc_athena_taskSyncButtons;
 };
 
 private _type = _order getOrDefault ["type", "MOVE"];
-private _typeLabel = trim (_order getOrDefault ["typeLabel", ""]);
-if (_typeLabel isEqualTo "") then {
-    _typeLabel = switch (toUpper _type) do {
-        case "HOLD": { "Tenir la position" };
-        case "RECON": { "Reconnaissance" };
-        case "CAS": { "Appui aérien" };
-        case "QRF": { "Force de réaction" };
-        case "FRAGO": { "Ordre fragmentaire" };
-        case "CUSTOM": { "Ordre personnalisé" };
-        default { "Se déplacer" };
-    };
-};
+private _typeLabel = [_order] call comspec_overwatch_connect_fnc_orderTypeLabel;
 
 private _status = toUpper (_order getOrDefault ["status", "PENDING"]);
 private _statusLabel = switch (_status) do {
@@ -75,3 +66,5 @@ _detail ctrlSetStructuredText parseText format [
     _order getOrDefault ["target", "—"],
     if (_safePayload isEqualTo "") then { "<t color='#8aa0b4'>Aucun détail supplémentaire.</t>" } else { _safePayload }
 ];
+
+[] call comspec_overwatch_atak_athena_fnc_athena_taskSyncButtons;

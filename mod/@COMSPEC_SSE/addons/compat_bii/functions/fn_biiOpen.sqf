@@ -14,6 +14,10 @@ if !(_tab in ["scan", "sse", "db", "watch", "leads", "case", "sync", "builder"])
     _tab = "scan";
 };
 
+if (!isNil "BII_fnc_identifi_hasDevice" && {!([player] call BII_fnc_identifi_hasDevice)}) exitWith {
+    false
+};
+
 // Aligner la cible BII sur le curseur / dernière cible SEEK
 private _target = cursorObject;
 if (isNull _target) then { _target = cursorTarget; };
@@ -28,15 +32,19 @@ if (!isNull _target && {_target isKindOf "CAManBase"} && {!isNil "BII_fnc_identi
 };
 
 missionNamespace setVariable ["comspec_sse_biiPendingTab", _tab];
-private _ok = call BII_fnc_identifi_open;
+call BII_fnc_identifi_open;
 
-if (_ok && {!isNil "BII_fnc_identifi_setTab"}) then {
+private _disp = uiNamespace getVariable ["BII_Identifi_Dialog", displayNull];
+if (isNull _disp) then { _disp = findDisplay 861010; };
+if (isNull _disp) exitWith { false };
+
+if (!isNil "BII_fnc_identifi_setTab") then {
     [{
         if (isNull (uiNamespace getVariable ["BII_Identifi_Dialog", displayNull])) exitWith {};
         private _tab = missionNamespace getVariable ["comspec_sse_biiPendingTab", "scan"];
         missionNamespace setVariable ["comspec_sse_biiPendingTab", nil];
         [_tab] call BII_fnc_identifi_setTab;
-    }, [], 0.05] call CBA_fnc_waitAndExecute;
+    }, [], 0.08] call CBA_fnc_waitAndExecute;
 };
 
-_ok
+true

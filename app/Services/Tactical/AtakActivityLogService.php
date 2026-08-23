@@ -47,12 +47,14 @@ final class AtakActivityLogService
     public const TYPE_PHONE = 'phone';
     /** Joueur quitte Arma / la mission — présence ATAK hors ligne. */
     public const TYPE_DISCONNECT = 'disconnect';
-    /** Alerte tactique structurée (Contact, FRAGO, SALUTE, etc.). */
-    public const TYPE_TACTICAL_ALERT = 'tactical_alert';
+    /** Rapport tactique structuré (observation, situation, SALUTE, contact). */
+    public const TYPE_TACTICAL_REPORT = 'tactical_report';
     /** Entrée manuelle du journal d’opérations (TOC). */
     public const TYPE_TOC_NOTE = 'toc_note';
     /** Demande MEDEVAC 9-line. */
     public const TYPE_MEDEVAC = 'medevac';
+    /** Charge à retardement ACE (minuterie posée sur le terrain). */
+    public const TYPE_EXPLOSIVE_TIMER = 'explosive_timer';
     /** Équipe de feu (création, attribution, dissolution, couleur). */
     public const TYPE_FIRE_TEAM = 'fire_team';
 
@@ -76,8 +78,10 @@ final class AtakActivityLogService
             self::TYPE_INTEL,
             self::TYPE_ORDER,
             self::TYPE_TACTICAL_ALERT,
+            self::TYPE_TACTICAL_REPORT,
             self::TYPE_TOC_NOTE,
             self::TYPE_MEDEVAC,
+            self::TYPE_EXPLOSIVE_TIMER,
             self::TYPE_FIRE_TEAM,
         ],
     ];
@@ -199,7 +203,7 @@ final class AtakActivityLogService
         $data['next_id'] = $id + 1;
         $event = [
             'id' => $id,
-            'type' => $type,
+            'type' => strtolower($type),
             'label' => $label,
             'actor' => $actor !== null && $actor !== '' ? $actor : null,
             'at' => date('c'),
@@ -525,7 +529,7 @@ final class AtakActivityLogService
             foreach ($opts['exclude_types'] as $ex) {
                 $ex = trim((string) $ex);
                 if ($ex !== '') {
-                    $excludeTypes[] = $ex;
+                    $excludeTypes[] = strtolower($ex);
                 }
             }
             $excludeTypes = array_values(array_unique($excludeTypes));
@@ -564,7 +568,8 @@ final class AtakActivityLogService
             if ($beforeId !== null && $beforeId > 0 && $id >= $beforeId) {
                 continue;
             }
-            $type = (string) ($e['type'] ?? '');
+            $type = strtolower((string) ($e['type'] ?? ''));
+            $e['type'] = $type;
             if ($excludeTypes !== [] && in_array($type, $excludeTypes, true)) {
                 continue;
             }
@@ -665,7 +670,7 @@ final class AtakActivityLogService
                 }
                 continue;
             }
-            $out[] = $t;
+            $out[] = strtolower($t);
         }
         $out = array_values(array_unique($out));
 

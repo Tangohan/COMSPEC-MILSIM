@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.27;
-        versionStr = "1.0.27";
-        versionAr[] = {1, 0, 27};
+        version = 1.0.32;
+        versionStr = "1.0.32";
+        versionAr[] = {1, 0, 32};
     };
 };
 
@@ -84,10 +84,14 @@ class CfgFunctions
             class athena_bdaOnOpened {};
             class athena_biiOnOpened {};
             class athena_openBiiTab {};
+            class athena_noteOnOpened {};
+            class athena_updateNote {};
+            class athena_openNote {};
             class athena_taskOnOpened {};
             class athena_updateTask {};
             class athena_taskSelect {};
             class athena_taskRespond {};
+            class athena_taskSyncButtons {};
             class athena_syncOrdersToGroupChat {};
             class athena_openTask {};
             class athena_noteOnOpened {};
@@ -140,6 +144,8 @@ class BCE_RscButtonMenu;
 class RscStructuredText;
 class RscListBox;
 class RscText;
+class RscEdit;
+class RscCombo;
 class RscPictureKeepAspect;
 class RscControlsGroup;
 
@@ -149,6 +155,7 @@ class RscControlsGroup;
 #include "ui\briefing_page.hpp"
 #include "ui\bda_host_page.hpp"
 #include "ui\bii_page.hpp"
+#include "ui\note_page.hpp"
 #include "ui\task_page.hpp"
 #include "ui\note_page.hpp"
 

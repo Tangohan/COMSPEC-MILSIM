@@ -225,6 +225,55 @@
     line-height: 1.35;
     word-break: break-word;
   }
+  #chat-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    overflow: auto;
+    min-height: 120px;
+    padding: 4px 0 8px;
+  }
+  .chat-bubble {
+    max-width: 86%;
+    padding: 7px 10px 8px;
+    border-radius: 8px;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+  .chat-bubble--in {
+    align-self: flex-start;
+    background: rgba(16, 42, 36, 0.92);
+    border: 1px solid rgba(52, 211, 153, 0.28);
+  }
+  .chat-bubble--out {
+    align-self: flex-end;
+    background: rgba(18, 36, 54, 0.95);
+    border: 1px solid rgba(125, 211, 252, 0.32);
+  }
+  .chat-bubble--toc {
+    align-self: flex-start;
+    background: rgba(42, 28, 14, 0.94);
+    border: 1px solid rgba(255, 138, 74, 0.45);
+  }
+  .chat-bubble .meta {
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8aa0b4;
+    margin-bottom: 4px;
+  }
+  .chat-bubble--toc .meta { color: #ffb07a; }
+  .chat-bubble--out .meta { color: #7dd3fc; }
+  .chat-bubble .body {
+    font-size: 13px;
+    color: #e8f4f0;
+  }
+  .chat-bubble .grid {
+    margin-top: 4px;
+    font-size: 10px;
+    color: #6b7c88;
+  }
   .feed-empty { font-size: 12px; color: var(--muted); padding: 12px 4px; }
   .order-row {
     display: grid;
@@ -789,6 +838,21 @@
     overflow-y: auto;
   }
 
+  body.skin-fbcb2 .chat-bubble--in {
+    background: #cfd8c8;
+    border: 1px solid #5a6a50;
+  }
+  body.skin-fbcb2 .chat-bubble--out {
+    background: #c8d4e0;
+    border: 1px solid #406080;
+  }
+  body.skin-fbcb2 .chat-bubble--toc {
+    background: #e8d8b8;
+    border: 1px solid #8a5a20;
+  }
+  body.skin-fbcb2 .chat-bubble .meta { color: #3a3830; }
+  body.skin-fbcb2 .chat-bubble .body { color: #000; }
+  body.skin-fbcb2 .chat-bubble .grid { color: #4a4840; }
   body.skin-fbcb2 .feed-line,
   body.skin-fbcb2 .order-row,
   body.skin-fbcb2 .alert-row .title,
@@ -1174,7 +1238,7 @@
       </div>
       <div class="panel-view" id="view-chat">
         <div class="panel-toolbar"><button type="button" class="btn-clear" data-clear="chat" title="Vider l’historique local du tchat">Vider</button></div>
-        <div class="feed-empty" id="chat-empty">Aucune conversation récente. Saisissez un message ci-dessous.</div>
+        <div class="feed-empty" id="chat-empty">Aucun message du poste de commandement ni du terrain pour le moment.</div>
         <div id="chat-feed"></div>
         <div class="composer">
           <input type="text" id="chat-input" maxlength="280" placeholder="Message… (#CONTACT #SITREP #URGENT)" autocomplete="off">
@@ -2084,14 +2148,83 @@
     return '<span class="stale-badge">Ancien</span>';
   }
 
+  function parseGroupPayload(raw) {
+    var s = String(raw || "").trim();
+    if (s.toUpperCase().indexOf("GROUPE|") !== 0) return null;
+    var parts = s.split("|");
+    return {
+      from: parts[2] || parts[1] || "TOC",
+      text: parts.slice(4).join("|") || s,
+      grid: parts[3] || "",
+      kind: "group"
+    };
+  }
+
+  function normalizeChatRow(line, idx, total) {
+    var now = Date.now();
+    var ageBias = Math.max(0, total - 1 - idx) * 60 * 1000;
+    if (line && typeof line === "object") {
+      var from = String(line.from || "");
+      var text = String(line.text || "");
+      var dir = String(line.dir || "");
+      var kind = String(line.kind || "radio");
+      var parsed = parseGroupPayload(text);
+      if (parsed) {
+        from = from || parsed.from;
+        text = parsed.text;
+        kind = "group";
+        if (!line.grid) line.grid = parsed.grid;
+      }
+      if (!dir) {
+        if (/\(TOC\)/i.test(from) || from.toUpperCase() === "TOC") dir = "toc";
+        else dir = "in";
+      }
+      return {
+        from: from,
+        text: text,
+        time: String(line.time || ""),
+        dir: dir,
+        kind: kind,
+        grid: String(line.grid || ""),
+        receivedAt: line.receivedAt != null ? line.receivedAt : (now - ageBias)
+      };
+    }
+    var raw = String(line || "");
+    var g = parseGroupPayload(raw);
+    if (g) {
+      return {
+        from: g.from,
+        text: g.text,
+        time: "",
+        dir: "toc",
+        kind: "group",
+        grid: g.grid,
+        receivedAt: now - ageBias
+      };
+    }
+    return {
+      from: "",
+      text: raw,
+      time: "",
+      dir: "in",
+      kind: "radio",
+      grid: "",
+      receivedAt: now - ageBias
+    };
+  }
+
+  function chatDirLabel(row) {
+    if (row.dir === "out") return "Transmis";
+    if (row.dir === "toc") return "Poste de commandement";
+    if (row.kind === "hq") return "Message HQ";
+    if (row.kind === "group") return "Terrain";
+    return "Reçu";
+  }
+
   function renderChat(lines) {
     if (Array.isArray(lines)) {
-      var now = Date.now();
       chatLines = lines.map(function (line, idx) {
-        if (line && typeof line === "object") return line;
-        // Boot : lignes plus anciennes = reçues plus tôt (approximation)
-        var ageBias = Math.max(0, lines.length - 1 - idx) * 60 * 1000;
-        return { text: String(line || ""), receivedAt: now - ageBias };
+        return normalizeChatRow(line, idx, lines.length);
       });
     }
     var feed = document.getElementById("chat-feed");
@@ -2100,7 +2233,7 @@
       feed.innerHTML = "";
       empty.style.display = "block";
       empty.textContent = (boot && boot.status === "linked")
-        ? "Aucun message récent dans le journal de liaison."
+        ? "Aucun message récent entre le poste de commandement et le terrain."
         : "Hors liaison — liez votre compte Athena pour recevoir la messagerie réseau.";
       return;
     }
@@ -2109,13 +2242,25 @@
     for (var i = 0; i < chatLines.length; i++) {
       var row = chatLines[i];
       var stale = isWallStale(row.receivedAt);
-      html += '<div class="feed-line' + (stale ? " stale" : "") + '">' +
-        escapeHtml(row.text || "") +
+      var cls = "chat-bubble chat-bubble--" + (row.dir === "out" ? "out" : (row.dir === "toc" ? "toc" : "in"));
+      if (stale) cls += " stale";
+      var who = row.from || chatDirLabel(row);
+      var meta = chatDirLabel(row);
+      if (row.time) meta += " · " + row.time;
+      html += '<div class="' + cls + '">' +
+        '<div class="meta">' + escapeHtml(who) + " · " + escapeHtml(meta) + "</div>" +
+        '<div class="body">' + escapeHtml(row.text || "") + "</div>" +
+        (row.grid ? '<div class="grid">Grille ' + escapeHtml(row.grid) + "</div>" : "") +
         (stale ? staleBadgeHtml() : "") +
         "</div>";
     }
     feed.innerHTML = html;
+    feed.scrollTop = feed.scrollHeight;
   }
+
+  window.COMSPEC_setChat = function (lines) {
+    renderChat(Array.isArray(lines) ? lines : []);
+  };
 
   function orderStatusPillClass(status) {
     var s = String(status || "À traiter").toLowerCase()

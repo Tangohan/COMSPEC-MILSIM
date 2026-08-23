@@ -110,6 +110,7 @@ window.ATAKSounds = (function () {
         return 'liaison';
       case 'order':
       case 'tactical_alert':
+      case 'tactical_report':
       case 'chat':
       case 'ping':
       case 'marker':

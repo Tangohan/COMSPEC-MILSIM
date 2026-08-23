@@ -29,6 +29,8 @@ class CfgFunctions {
             file = "z\comspec_sse\addons\interaction\functions";
             class initACE {};
             class installEntityAceMenus {};
+            class acePadAction {};
+            class aceWrapMenuChildren {};
             class canInspect {};
             class doInspect {};
             class doPhotograph {};

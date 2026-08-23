@@ -152,8 +152,22 @@ private _idCode = format [
 ];
 private _dobApprox = format ["19%1", 70 + (([_seed, "dob"] call comspec_sse_fnc_hash) mod 30)];
 
+private _firstName = _cluster getOrDefault ["authoredFirst", ""];
+private _lastName = _cluster getOrDefault ["authoredLast", ""];
+if (_firstName isEqualTo "" && {_lastName isEqualTo ""} && {_name isNotEqualTo ""}) then {
+    private _parts = _name splitString " ";
+    if ((count _parts) > 1) then {
+        _firstName = _parts select 0;
+        _lastName = (_parts select [1, (count _parts) - 1]) joinString " ";
+    } else {
+        _firstName = _name;
+    };
+};
+
 private _identity = createHashMapFromArray [
     ["name", _name],
+    ["first_name", _firstName],
+    ["last_name", _lastName],
     ["alias", _alias],
     ["nationality", _nat],
     ["role", _role],

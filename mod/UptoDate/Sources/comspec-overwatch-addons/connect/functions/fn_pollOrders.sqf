@@ -73,29 +73,41 @@ private _newOnes = [];
 
 
 
-    private _id = _cols select 0;
+    private _unblank = {
+        params ["_s"];
+        _s = trim _s;
+        if (_s isEqualTo "-") then { "" } else { _s };
+    };
 
-    private _type = _cols select 1;
+    private _id = [_cols select 0] call _unblank;
 
-    private _target = _cols select 2;
+    private _type = [_cols select 1] call _unblank;
 
-    private _priority = _cols select 3;
+    private _target = [_cols select 2] call _unblank;
 
-    private _issuer = _cols select 4;
+    private _priority = [_cols select 3] call _unblank;
 
-    private _status = _cols select 5;
+    private _issuer = [_cols select 4] call _unblank;
 
-    private _payload = if ((count _cols) > 6) then { _cols select 6 } else { "" };
+    private _status = [_cols select 5] call _unblank;
 
-    private _targetType = if ((count _cols) > 7) then { _cols select 7 } else { "all" };
+    private _payload = if ((count _cols) > 6) then { [_cols select 6] call _unblank } else { "" };
 
-    private _targetRef = if ((count _cols) > 8) then { _cols select 8 } else { "" };
+    private _targetType = if ((count _cols) > 7) then { [_cols select 7] call _unblank } else { "all" };
 
-    private _aliases = if ((count _cols) > 9) then { _cols select 9 } else { "" };
+    private _targetRef = if ((count _cols) > 8) then { [_cols select 8] call _unblank } else { "" };
+
+    private _aliases = if ((count _cols) > 9) then { [_cols select 9] call _unblank } else { "" };
+
+    private _typeLabel = if ((count _cols) > 10) then { [_cols select 10] call _unblank } else { "" };
 
 
 
     if (_id isEqualTo "") then { continue };
+
+    if (_type isEqualTo "") then { _type = "MOVE"; };
+
+    if (_targetType isEqualTo "") then { _targetType = "all"; };
 
 
 
@@ -120,6 +132,8 @@ private _newOnes = [];
         _existing set ["targetRef", _targetRef];
 
         _existing set ["aliases", _aliases];
+
+        _existing set ["typeLabel", _typeLabel];
 
         _existing set ["source", "web"];
 
@@ -154,6 +168,8 @@ private _newOnes = [];
         ["targetRef", _targetRef],
 
         ["aliases", _aliases],
+
+        ["typeLabel", _typeLabel],
 
         ["source", "web"],
 

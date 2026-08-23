@@ -228,6 +228,19 @@ SQL
             'dismissible' => 1,
             'sort_order' => 70,
         ],
+        [
+            'code' => 'ATAK_PHOTO_HUD_V1',
+            'version' => '1',
+            'title' => 'Bandeau d’identification des photos terrain',
+            'description' => 'Les photos reçues du terrain peuvent porter un bandeau du type caméra-piéton (unité, indicatif, grille, horodatage). Vérifiez le libellé de votre unité et les informations à afficher.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'admin/atak-config#photo-hud',
+            'estimate_minutes' => 2,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 72,
+        ],
     ];
 
     $upsert = $pdo->prepare(

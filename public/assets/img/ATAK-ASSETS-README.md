@@ -6,10 +6,10 @@
 
 - `atak-eagle-logo.png` — écran chargement
 - `atak-link-lost-icon.png` — alerte liaison perdue
+- `atak-jammer-badge.png` — badge brouillage
+- `atak-device-damaged.png` — appareil endommagé
 
-## Placeholders dev (rectangles colorés)
+## Placeholders dev
 
 - `atak-signal-icons.png`
-- `atak-jammer-badge.png`
-- `atak-device-damaged.png`
 - `atak-favicon.png` / `atak-favicon-180.png`

@@ -174,6 +174,20 @@ final class ConfigurationUpdateCatalog
                 isApplicable: fn (int $tenantId): bool => $p->atakApplicable($tenantId),
                 isSatisfied: fn (int $tenantId): bool => $p->hasAtakIntelScrambleDecision($tenantId),
             ),
+            new ConfigurationUpdateDefinition(
+                code: 'ATAK_PHOTO_HUD_V1',
+                title: 'Bandeau d’identification des photos terrain',
+                description: 'Les photos reçues du terrain peuvent porter un bandeau du type caméra-piéton (unité, indicatif, grille, horodatage). Vérifiez le libellé de votre unité et les informations à afficher.',
+                level: ConfigurationUpdateDefinition::LEVEL_RECOMMENDED,
+                configurePath: 'admin/atak-config#photo-hud',
+                estimateMinutes: 2,
+                dismissible: true,
+                blocking: false,
+                dependsOn: [],
+                sortOrder: 72,
+                isApplicable: fn (int $tenantId): bool => $p->atakApplicable($tenantId),
+                isSatisfied: fn (int $tenantId): bool => $p->hasAtakPhotoHudReviewed($tenantId),
+            ),
         ];
     }
 

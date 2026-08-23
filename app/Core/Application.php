@@ -61,6 +61,10 @@ class Application
             // Lazy : ne pas new TenantRepository / PDO au boot de *chaque* requête.
             // Sans communauté en session, le contrôle de profil est inutile.
             static function (\App\Core\Request $req, callable $next): \App\Core\Response {
+                $path = $req->path();
+                if ($path === '/api/atak/ping' || $path === '/api/health') {
+                    return $next($req);
+                }
                 $tenantId = (int) \App\Core\Session::get('tenant_id');
                 if ($tenantId < 1) {
                     return $next($req);

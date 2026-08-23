@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakReportRoutingRepository;
+use App\Support\AtakIcemanReportCatalog;
 use App\Support\ModuleFeatureAccess;
 
 /**
@@ -22,9 +23,13 @@ final class AdminAtakReportRoutingController
 {
     /** Types de rapport reconnus par le moteur, tels que déclarés en base. */
     public const REPORT_TYPES = [
-        'SPOTREP' => 'Observation (SPOTREP)',
-        'SITREP' => 'Situation (SITREP)',
+        'TIC' => 'Contact',
+        'EAGLE_DOWN' => 'Opérateur à terre',
+        'BDA' => 'Bilan des dégâts',
+        'FRAGO' => 'Ordre fragmentaire',
         'SALUTE' => 'Compte rendu SALUTE',
+        'SPOTREP' => 'Observation',
+        'SITREP' => 'Situation',
         'CONTACT' => 'Prise de contact',
         'OTHER' => 'Autre',
     ];

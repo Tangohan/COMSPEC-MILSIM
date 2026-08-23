@@ -14,24 +14,70 @@
     { id: 'eagle_down', label: 'À terre' },
   ];
 
+  var BDA_LABELS = {
+    observer: 'Observateur',
+    grid: 'Grille',
+    time: 'Heure',
+    dtg: 'Groupe date-heure',
+    unit: 'Unité',
+    trn: 'Numéro de transmission',
+    type: 'Nature de la cible',
+    desc: 'Description',
+    ordnance: 'Munition employée',
+    munitions: 'Munitions',
+    platform: 'Plateforme',
+    ekia: 'Pertes ennemies estimées',
+    equip: 'Matériel observé',
+    rating: 'Notation',
+    reattack: 'Nouvelle attaque',
+    send_to: 'Destinataires',
+    reports: 'Comptes rendus liés',
+    target: 'Cible',
+    damage: 'Dégâts observés',
+    enemy: 'Effets ennemis',
+    friendly: 'Effets amis / civils',
+    remarks: 'Remarques'
+  };
+
+  var EAGLE_LABELS = {
+    category: 'Catégorie',
+    dtg: 'Groupe date-heure',
+    callsign: 'Indicatif',
+    grid: 'Grille',
+    casualty: 'Blessé',
+    status: 'État',
+    mechanism: 'Mécanisme',
+    situation: 'Situation',
+    medevac: 'Évacuation sanitaire',
+    lz: 'Zone d’atterrissage',
+    treatment: 'Traitement en cours',
+    remarks: 'Remarques'
+  };
+
+  var TIC_LABELS = {
+    unit: 'Unité',
+    grid: 'Grille',
+    desc: 'Description',
+    send_to: 'Destinataires'
+  };
+
+  var SALUTE_LABELS = {
+    size: 'Taille',
+    activity: 'Activité',
+    location: 'Localisation',
+    unit: 'Unité / uniforme',
+    time: 'Heure observée',
+    equipment: 'Équipement'
+  };
+
   var FRAGO_LABELS = {
+    reference: 'Référence',
     situation: 'Situation',
     mission: 'Mission',
     execution: 'Exécution',
     support: 'Soutien',
     command: 'Commandement',
-  };
-
-  var BDA_LABELS = {
-    observer: 'Observateur',
-    grid: 'Grille (rapport)',
-    time: 'Heure (rapport)',
-    target: 'Cible / objectif',
-    damage: 'Dégâts observés',
-    enemy: 'Effets ennemis',
-    friendly: 'Effets amis / civils',
-    munitions: 'Munitions / méthode',
-    remarks: 'Remarques',
+    acknowledge: 'Accusé de réception'
   };
 
   function escapeHtml(s) {
@@ -60,13 +106,24 @@
     s = s.replace(/\s+[—–]\s+(?=\d\.\s)/g, '\n');
     var rules = [
       ['observer', /^(?:Observer|Observateur|Émetteur)\s*:\s*(.+)$/i],
-      ['grid', /^(?:Grid|Grille)\s*:\s*(.+)$/i],
+      ['grid', /^(?:Grid|Grille|Reported Grid)\s*:\s*(.+)$/i],
       ['time', /^(?:Time|Heure)\s*:\s*(.+)$/i],
+      ['dtg', /^(?:DTG)\s*:\s*(.+)$/i],
+      ['unit', /^(?:Unit|Unité)\s*:\s*(.+)$/i],
+      ['trn', /^(?:TRN)\s*:\s*(.+)$/i],
+      ['type', /^(?:Type)\s*:\s*(.+)$/i],
+      ['desc', /^(?:Desc|Description)\s*:\s*(.+)$/i],
+      ['ordnance', /^(?:Ordnance|Munition)\s*:\s*(.+)$/i],
+      ['platform', /^(?:Platform|Plateforme)\s*:\s*(.+)$/i],
+      ['ekia', /^(?:EKIA)\s*:\s*(.+)$/i],
+      ['equip', /^(?:Equip|Équipement|Equipement)\s*:\s*(.+)$/i],
+      ['rating', /^(?:Rating|Notation)\s*:\s*(.+)$/i],
+      ['reattack', /^(?:Reattack|Nouvelle attaque)\s*:\s*(.+)$/i],
       ['target', /^(?:1\.\s*)?(?:Target\/?Objective|Cible(?:\s*\/\s*Objectif)?)\s*:\s*(.+)$/i],
       ['damage', /^(?:2\.\s*)?(?:Damage\s*Observed|Dégâts(?:\s*observés)?)\s*:\s*(.+)$/i],
       ['enemy', /^(?:3\.\s*)?(?:Enemy\s*BDA|Effets\s*ennemis)\s*:\s*(.+)$/i],
       ['friendly', /^(?:4\.\s*)?(?:Friendly\/?Civilian\s*Effects|Effets\s*amis(?:\s*\/\s*civils)?)\s*:\s*(.+)$/i],
-      ['munitions', /^(?:5\.\s*)?(?:Munitions\/?Method|Munitions(?:\s*\/\s*méthode)?)\s*:\s*(.+)$/i],
+      ['munitions', /^(?:5\.\s*)?(?:Munition\(s\) Count|Munitions Count|Munitions\/?Method|Munitions(?:\s*\/\s*méthode)?)\s*:\s*(.+)$/i],
       ['remarks', /^(?:6\.\s*)?(?:Remarks|Remarques)\s*:\s*(.+)$/i],
     ];
     var out = {};
@@ -285,6 +342,20 @@
     return el;
   }
 
+  function renderFieldDl(css, labels, bag) {
+    if (!bag || typeof bag !== 'object') return '';
+    var html = '<dl class="' + css + '">';
+    var any = false;
+    Object.keys(labels).forEach(function (k) {
+      var v = String(bag[k] || '').trim();
+      if (!v) return;
+      any = true;
+      html += '<div><dt>' + escapeHtml(labels[k]) + '</dt><dd>' + escapeHtml(v) + '</dd></div>';
+    });
+    html += '</dl>';
+    return any ? html : '';
+  }
+
   function openDetail(a, onLocate) {
     var modal = ensureModal();
     var title = document.getElementById('tacmap-talert-modal-title');
@@ -300,6 +371,8 @@
     var bda = a.bda && typeof a.bda === 'object' && Object.keys(a.bda).length
       ? a.bda
       : (kind === 'bda' ? parseBdaFields(String(a.summary || '') || summary) : null);
+    var eagle = a.eagle_down && typeof a.eagle_down === 'object' ? a.eagle_down : null;
+    var tic = a.tic && typeof a.tic === 'object' ? a.tic : null;
 
     if (title) title.textContent = a.kind_label || 'Signalement';
 
@@ -310,28 +383,25 @@
       (a.created_at ? '<div><span>Heure</span><strong>' + escapeHtml(formatDetailTime(a.created_at)) + '</strong></div>' : '') +
       '</div>';
 
+    var structured = '';
     if (kind === 'frago' && frago && Object.keys(frago).length) {
-      rows += '<ol class="tacmap-talert-modal__frago">';
+      structured += '<ol class="tacmap-talert-modal__frago">';
       Object.keys(FRAGO_LABELS).forEach(function (k) {
         if (!frago[k]) return;
-        rows += '<li><strong>' + escapeHtml(FRAGO_LABELS[k]) + '</strong><p>' + escapeHtml(frago[k]) + '</p></li>';
+        structured += '<li><strong>' + escapeHtml(FRAGO_LABELS[k]) + '</strong><p>' + escapeHtml(frago[k]) + '</p></li>';
       });
-      rows += '</ol>';
-    } else if (a.salute && typeof a.salute === 'object') {
-      rows += '<dl class="tacmap-talert-modal__salute">';
-      Object.keys(a.salute).forEach(function (k) {
-        var v = String(a.salute[k] || '').trim();
-        if (!v) return;
-        rows += '<div><dt>' + escapeHtml(k) + '</dt><dd>' + escapeHtml(v) + '</dd></div>';
-      });
-      rows += '</dl>';
+      structured += '</ol>';
+    } else if (kind === 'salute' || (a.salute && typeof a.salute === 'object')) {
+      structured += renderFieldDl('tacmap-talert-modal__salute', SALUTE_LABELS, a.salute);
     } else if (kind === 'bda' && bda && Object.keys(bda).length) {
-      rows += '<dl class="tacmap-talert-modal__bda">';
-      Object.keys(BDA_LABELS).forEach(function (k) {
-        if (!bda[k]) return;
-        rows += '<div><dt>' + escapeHtml(BDA_LABELS[k]) + '</dt><dd>' + escapeHtml(bda[k]) + '</dd></div>';
-      });
-      rows += '</dl>';
+      structured += renderFieldDl('tacmap-talert-modal__bda', BDA_LABELS, bda);
+    } else if (kind === 'eagle_down' && eagle) {
+      structured += renderFieldDl('tacmap-talert-modal__eagle', EAGLE_LABELS, eagle);
+    } else if (kind === 'tic' && tic) {
+      structured += renderFieldDl('tacmap-talert-modal__tic', TIC_LABELS, tic);
+    }
+    if (structured) {
+      rows += structured;
     } else {
       rows += '<p class="tacmap-talert-modal__text">' + escapeHtml(summary || 'Aucun détail textuel.') + '</p>';
     }

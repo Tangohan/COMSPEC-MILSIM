@@ -39,5 +39,16 @@ missionNamespace setVariable ["COMSPEC_RadioReplay", _radioLog, true];
 
 [_formatted] call comspec_overwatch_connect_fnc_appendLinkLog;
 [player, "CHAT", _formatted, "", "INFANTRY", 0.7] call comspec_overwatch_connect_fnc_sendIntel;
+
+private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+if (_cs isEqualTo "") then { _cs = name player; };
+private _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
+private _gMessages = +(missionNamespace getVariable ["Iceman_ATAK_Group_messages", []]);
+if (!(_gMessages isEqualType [])) then { _gMessages = []; };
+_gMessages pushBack [_timeStr, _cs, groupId group player, mapGridPosition player, _msg, getPosATL player, false];
+while { (count _gMessages) > 50 } do { _gMessages deleteAt 0; };
+missionNamespace setVariable ["Iceman_ATAK_Group_messages", _gMessages, false];
+Iceman_ATAK_Group_messages = _gMessages;
+
 ["OnCommsMessage", createHashMapFromArray [["channel", _channel], ["priority", _priority], ["kind", _kind], ["text", _msg]]] call comspec_overwatch_connect_fnc_publishEvent;
 ["Message transmis.", "system", "info"] call comspec_overwatch_connect_fnc_announce;

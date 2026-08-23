@@ -155,6 +155,7 @@ if (!isNil "ace_interact_menu_fnc_createAction" && {!isNil "ace_interact_menu_fn
         {},
         _hasPlayer
     ] call ace_interact_menu_fnc_createAction;
+    _root = [_root] call comspec_overwatch_connect_fnc_acePadAction;
     [["ACE_ZeusActions"], _root] call ace_interact_menu_fnc_addActionToZeus;
 
     private _panel = [
@@ -164,6 +165,7 @@ if (!isNil "ace_interact_menu_fnc_createAction" && {!isNil "ace_interact_menu_fn
         { [] call (missionNamespace getVariable "COMSPEC_ZeusOpenPlayerAtak"); },
         { true }
     ] call ace_interact_menu_fnc_createAction;
+    _panel = [_panel] call comspec_overwatch_connect_fnc_acePadAction;
     [["ACE_ZeusActions", "comspec_atak_zeus_root"], _panel] call ace_interact_menu_fnc_addActionToZeus;
 
     {
@@ -185,6 +187,7 @@ if (!isNil "ace_interact_menu_fnc_createAction" && {!isNil "ace_interact_menu_fn
             {},
             [_act, _dur]
         ] call ace_interact_menu_fnc_createAction;
+        _a = [_a] call comspec_overwatch_connect_fnc_acePadAction;
         [["ACE_ZeusActions", "comspec_atak_zeus_root"], _a] call ace_interact_menu_fnc_addActionToZeus;
     } forEach [
         ["jam", "Brouiller (45s)", "jam", 45],

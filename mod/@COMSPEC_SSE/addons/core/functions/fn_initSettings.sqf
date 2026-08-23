@@ -1,9 +1,20 @@
 [
     "comspec_sse_debug",
     "CHECKBOX",
-    ["Logs debug SSE", "Affiche les messages de diagnostic SSE dans le RPT et le chat système."],
+    ["Logs debug SSE", "Affiche les messages de diagnostic SSE dans le journal Arma et le chat système."],
     ["COMSPEC SSE", "Général"],
     false,
+    0,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_sse_log_to_file",
+    "CHECKBOX",
+    ["Journal SSE dans un fichier", "Enregistre les lignes SSE dans le même dossier que le journal Overwatch, à chaque session."],
+    ["COMSPEC SSE", "Général"],
+    true,
     0,
     {},
     true

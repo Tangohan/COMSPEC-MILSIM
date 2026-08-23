@@ -32,7 +32,7 @@ if (!(_cache isEqualType createHashMap) || {count _cache == 0}) exitWith {
 
 private _isPerson = _entity isKindOf "CAManBase";
 private _rootKey = if (_isPerson) then { "personRoot" } else { "objectRoot" };
-private _root = _cache getOrDefault [_rootKey, []];
+private _root = [_cache getOrDefault [_rootKey, []]] call comspec_sse_fnc_acePadAction;
 if (_root isEqualTo []) exitWith {
     _entity setVariable ["comspec_sse_aceInstalling", false];
     if (!isNil "CBA_fnc_waitAndExecute") then {

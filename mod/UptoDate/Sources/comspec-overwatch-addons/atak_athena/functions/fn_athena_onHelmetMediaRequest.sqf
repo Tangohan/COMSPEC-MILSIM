@@ -93,15 +93,7 @@ private _caption = switch (_mode) do {
 if (_mode isEqualTo "stream") then {
     [] call comspec_overwatch_atak_athena_fnc_athena_snapshotVideoFeed;
 } else {
-    private _stem = if (_mode isEqualTo "hd") then { "COMSPEC_AthenaHD.png" } else { "COMSPEC_AthenaFeed.png" };
-    if (_mode isEqualTo "hd") then {
-        screenshot _stem;
-        [_stem, _caption, "HELMET", _feedId] spawn {
-            params ["_stem", "_caption", "_device", "_feedId"];
-            uiSleep 1.1;
-            [_stem, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
-        };
-    } else {
-        ["", _caption, "HELMET", _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
-    };
+    // Un seul screenshot, en vue casque (alignDevicePov par défaut).
+    // L’ancien chemin HD faisait screenshot + un second cliché dans captureReconImage.
+    ["", _caption, "HELMET", _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
 };

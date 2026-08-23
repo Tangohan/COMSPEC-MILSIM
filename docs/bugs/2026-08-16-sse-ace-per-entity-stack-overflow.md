@@ -94,3 +94,13 @@ Crash du **16/08/2026 21:11:57** (`Arma3_x64_2026-08-16_21-01-38.rpt`) pendant u
 - Overwatch : plus de greffe `addActionToObject` si SSE terrain présent (Athena via insertChildren)
 
 **Rebuild** : `interaction`, `biometrics`, `digital` (+ `sse_ace` Overwatch) → Workshop. Relancer mission / régénérer le profil sur l’unité déjà dupliquée.
+
+## Correctif (suite — ACE `fnc_render` 0/4 à l’ouverture SSE)
+
+**Symptôme (22/08)** : ACE Interact → SSE → `Error 0 éléments fournis, 4 attendus` (`interact_menu/fnc_render.sqf` L82, `select 9` → `select 3`).
+
+**Cause** : `insertChildren` renvoyait des tableaux `createAction` bruts. ACE attend des triplets `[action, [], cible]`. Un tableau vide à l’index 9 (runOnHover) fait planter le rendu.
+
+**Fix** : `comspec_sse_fnc_aceWrapMenuChildren` + wrapping dans les insertChildren personne / objet / bio / digital. otherParams forcé à 5 booléens.
+
+**Rebuild** : `interaction`, `biometrics`, `digital` → Workshop. **Fermer Arma** (PBO verrouillés sinon), relancer, ACE → SSE.

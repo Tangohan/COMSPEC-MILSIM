@@ -6317,6 +6317,7 @@ body.sse-theme-bureau .interest-cross__note {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
 .sse-mesh-sel-image {
     margin: 0.65rem 0 0.35rem;
 }

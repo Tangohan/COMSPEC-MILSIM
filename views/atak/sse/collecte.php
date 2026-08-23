@@ -25,6 +25,10 @@ $recentSites = is_array($recentSites ?? null) ? $recentSites : [];
 </div>
 
 <div class="sse-ops-grid">
+    <a href="<?= $h(url('atak/sse/fiches/nouvelle')) ?>">
+        <strong>Fiches de renseignement</strong>
+        <span>Note libre datée et située, avec thèmes et pièces jointes</span>
+    </a>
     <a href="<?= $h(url('atak/sse/identites')) ?>">
         <strong>Identités</strong>
         <span>Fiches personnes remontées depuis le terrain (SEEK / terminal)</span>

@@ -95,15 +95,16 @@ class Cfg3DEN {
                     };
                     class comspec_sse_identityMode {
                         displayName = "Identité";
+                        tooltip = "Automatique : SEEK reprend le nom du panneau Identité Eden (ou Nom/Prénom COMSPEC s’ils sont remplis). Inventer : ignore l’identité Eden. Forcer : même effet que automatique, nom Eden imposé.";
                         property = "comspec_sse_identityMode";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_identityMode', _value, true];";
                         defaultValue = "'AUTO'";
                         typeName = "STRING";
                         class values {
-                            class AUTO { name = "AUTO"; value = "AUTO"; default = 1; };
-                            class NONE { name = "NONE"; value = "NONE"; };
-                            class CUSTOM { name = "CUSTOM"; value = "CUSTOM"; };
+                            class AUTO { name = "Automatique (identité Eden)"; value = "AUTO"; default = 1; };
+                            class NONE { name = "Inventer un nom SSE"; value = "NONE"; };
+                            class CUSTOM { name = "Forcer le nom Eden"; value = "CUSTOM"; };
                         };
                     };
                     class comspec_sse_phoneMode {

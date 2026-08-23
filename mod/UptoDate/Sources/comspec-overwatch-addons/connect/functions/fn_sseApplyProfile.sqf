@@ -43,6 +43,9 @@ private _setText = {
     private _clean = trim _v;
     if (_clean isEqualTo "") exitWith {};
     _unit setVariable [_varName, _clean, true];
+    if (_varName in ["COMSPEC_SSE_LastName", "COMSPEC_SSE_FirstName"]) then {
+        _unit setVariable ["COMSPEC_SSE_NameAuthored", true, true];
+    };
 };
 
 ["COMSPEC_SSE_LastName",    "last_name"]   call _setText;

@@ -3232,6 +3232,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakIcemanReportsMigrate = require $root . '/bootstrap/atak_iceman_reports_migration.php';
+try {
+    echo "Migration atak_iceman_reports (types Reports ATAK Enhanced)…\n";
+    $atakIcemanReportsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_iceman_reports : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $c2PillarsMigrate = require $root . '/bootstrap/c2_pillars_migration.php';
 try {
     echo "Migration c2_pillars (appui-feu, zones danger, logistique, intel, replay, IFF)...\n";
@@ -3299,6 +3308,16 @@ try {
     $tenantAtakExperienceMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_atak_experience : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$tenantAtakPhotoHudMigrate = require $root . '/bootstrap/tenant_atak_photo_hud_migration.php';
+try {
+    echo "Migration tenant_atak_photo_hud (bandeau d’identification des photos terrain)...\n";
+    $migrationFlush();
+    $tenantAtakPhotoHudMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_atak_photo_hud : ' . $e->getMessage() . "\n";
 }
 $migrationEnsurePdo();
 
@@ -3391,6 +3410,15 @@ try {
     $atakMedicalTriageMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_medical_alert_triage : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakExplosiveTimersMigrate = require $root . '/bootstrap/atak_explosive_timers_migration.php';
+try {
+    echo "Migration atak_explosive_timers (charges à retardement ATAK)...\n";
+    $atakExplosiveTimersMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_explosive_timers : ' . $e->getMessage() . "\n";
 }
 $migrationEnsurePdo();
 

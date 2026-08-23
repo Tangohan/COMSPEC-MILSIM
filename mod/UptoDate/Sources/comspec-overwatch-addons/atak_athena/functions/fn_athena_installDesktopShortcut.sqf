@@ -181,6 +181,7 @@ missionNamespace setVariable ["COMSPEC_Athena_desktopClick", {
     };
 
     switch (_tab) do {
+        case "intel_note";
         case "note": { [""] call comspec_overwatch_atak_athena_fnc_athena_openNote; };
         case "account": { [] call comspec_overwatch_atak_athena_fnc_athena_showLinkDialog; };
         case "order": { [] call comspec_overwatch_atak_athena_fnc_athena_openTask; };

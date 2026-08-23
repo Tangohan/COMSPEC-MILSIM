@@ -275,6 +275,15 @@ final class ConfigurationUpdateProbes
         return false;
     }
 
+    public function hasAtakPhotoHudReviewed(int $tenantId): bool
+    {
+        try {
+            return (new \App\Services\Media\ReconPhotoHudService())->isReviewed($tenantId);
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+
     public function registrationConfigured(int $tenantId): bool
     {
         $settings = $this->tenants->getSettings($tenantId);

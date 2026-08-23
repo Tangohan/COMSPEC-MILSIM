@@ -73,11 +73,15 @@ if (count _contactPool > 0) then {
 private _namePool = _model getOrDefault ["namePool", []];
 if (count _namePool > 0) then {
     _cluster set ["primaryName", [_seed, "name", _namePool] call comspec_sse_fnc_pickFromSeed];
+    _cluster set ["nameForced", true];
 };
 
 private _forcedId = _model getOrDefault ["forcedIdentity", createHashMap];
 if (_forcedId isEqualType createHashMap && {count _forcedId > 0}) then {
-    if ((_forcedId getOrDefault ["name", ""]) != "") then { _cluster set ["primaryName", _forcedId get "name"]; };
+    if ((_forcedId getOrDefault ["name", ""]) != "") then {
+        _cluster set ["primaryName", _forcedId get "name"];
+        _cluster set ["nameForced", true];
+    };
     if ((_forcedId getOrDefault ["alias", ""]) != "") then { _cluster set ["primaryAlias", _forcedId get "alias"]; };
     if ((_forcedId getOrDefault ["phone", ""]) != "") then { _cluster set ["primaryPhone", _forcedId get "phone"]; };
 };

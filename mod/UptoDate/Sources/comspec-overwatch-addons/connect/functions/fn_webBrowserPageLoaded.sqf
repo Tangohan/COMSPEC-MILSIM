@@ -146,37 +146,22 @@ private _unitJs = [];
 
 
 
-// Aperçu messagerie
-
-private _nl = toString [10];
-
-private _log = missionNamespace getVariable ["COMSPEC_Log", ""];
-
-private _logLines = if (_log isEqualTo "") then { [] } else { _log splitString _nl };
-
+// Aperçu messagerie TOC (web → jeu + terrain), pas le journal technique brut
+private _chatRows = [] call comspec_overwatch_connect_fnc_tabletChatLines;
 private _chatJs = [];
-
-private _chatStart = (count _logLines) - 12;
-
-if (_chatStart < 0) then { _chatStart = 0; };
-
-if ((count _logLines) > 0) then {
-
-    for "_i" from _chatStart to ((count _logLines) - 1) do {
-
-        private _line = trim (_logLines select _i);
-
-        if (!(_line isEqualTo "")) then {
-
-            private _safe = [_line] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
-
-            _chatJs pushBack format ["'%1'", _safe];
-
-        };
-
-    };
-
-};
+{
+    _x params ["_from", "_text", "_time", "_dir", "_kind", ["_grid", ""]];
+    private _safeFrom = [_from] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+    private _safeText = [_text] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+    private _safeTime = [_time] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+    private _safeDir = [_dir] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+    private _safeKind = [_kind] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+    private _safeGrid = [_grid] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+    _chatJs pushBack format [
+        "{from:'%1',text:'%2',time:'%3',dir:'%4',kind:'%5',grid:'%6'}",
+        _safeFrom, _safeText, _safeTime, _safeDir, _safeKind, _safeGrid
+    ];
+} forEach _chatRows;
 
 
 
@@ -214,23 +199,9 @@ private _myCallsign = _callsign;
 
     if ((_issuer isEqualTo _myName || {_issuer isEqualTo _myCallsign}) && {!_explicitMe}) then { continue };
 
-    private _type = _order getOrDefault ["type", "MOVE"];
-
     private _status = _order getOrDefault ["status", "PENDING"];
 
-    private _typeLabel = switch (toUpper _type) do {
-
-        case "HOLD": { "Tenir" };
-
-        case "RECON": { "Recon" };
-
-        case "CAS": { "Air support" };
-
-        case "QRF": { "QRF" };
-
-        default { "Mouvement" };
-
-    };
+    private _typeLabel = [_order] call comspec_overwatch_connect_fnc_orderTypeLabel;
 
     private _statusLabelO = switch (toUpper _status) do {
 

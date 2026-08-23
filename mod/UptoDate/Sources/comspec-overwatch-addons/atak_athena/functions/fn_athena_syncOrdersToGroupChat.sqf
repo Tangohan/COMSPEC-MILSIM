@@ -28,18 +28,7 @@ if (!(_messages isEqualType [])) then { _messages = []; };
         if (!([_x] call comspec_overwatch_connect_fnc_orderConcernsPlayer)) then { continue };
     };
 
-    private _typeLabel = trim (_x getOrDefault ["typeLabel", ""]);
-    if (_typeLabel isEqualTo "") then {
-        _typeLabel = switch (_type) do {
-            case "HOLD": { "Tenir la position" };
-            case "RECON": { "Reconnaissance" };
-            case "CAS": { "Appui aérien" };
-            case "QRF": { "Force de réaction" };
-            case "FRAGO": { "Ordre fragmentaire" };
-            case "CUSTOM": { "Ordre personnalisé" };
-            default { "Se déplacer" };
-        };
-    };
+    private _typeLabel = [_x] call comspec_overwatch_connect_fnc_orderTypeLabel;
 
     private _issuer = _x getOrDefault ["issuer", "C2"];
     private _prio = toUpper (_x getOrDefault ["priority", "IMPORTANT"]);

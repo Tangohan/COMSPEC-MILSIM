@@ -73,6 +73,7 @@ if ($atakMapConfig) {
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
     window.ATAK_API_BASE = <?= json_encode($base) ?>;
+    window.ATAK_CSRF_TOKEN = <?= json_encode(\App\Core\Csrf::token(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?>;
     window.ATAK_TENANT_ID = <?= (int) ($atakTenantId ?? ($atakUserForJs['tenantId'] ?? 0)) ?>;
     window.NODE_ATAK_URL = '';
     window.ATAK_MARKER_ICONS_CDN = <?= json_encode(function_exists('atak_marker_icons_cdn_base') ? atak_marker_icons_cdn_base() : rtrim($base, '/') . '/assets/markers/arma') ?>;
@@ -106,10 +107,10 @@ if ($atakMapConfig) {
         'hasSuggestionBasis' => false,
     ]) ?>;
     window.ATAK_PHONE_SESSION = <?= json_encode($phoneOperatorSession ?: null) ?>;
-    window.ATAK_CSRF_TOKEN = <?= json_encode(\App\Core\Csrf::token()) ?>;
+    window.ATAK_REPORT_CATALOG = <?= json_encode(\App\Support\AtakIcemanReportCatalog::forFrontend(), JSON_UNESCAPED_UNICODE) ?>;
   </script>
 </head>
-<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
+<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed atak-page--device' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
   <?php
   $baseUrl = $base;
   $haloLoaderHint = 'Préparation de la carte tactique…';
@@ -122,6 +123,9 @@ if ($atakMapConfig) {
     <a href="<?= htmlspecialchars(url('admin/atak-config'), ENT_QUOTES, 'UTF-8') ?>" style="color:#fde68a;font-weight:700;margin-left:0.5rem;">Gérer</a>
   </div>
   <?php endif; ?>
+  <div class="atak-api-outage" id="atak-api-outage" hidden role="status">
+    Liaison temporairement coupée — caméras, ordres et alertes ne se mettent pas à jour.
+  </div>
   <header class="atak-header">
     <div class="atak-header-brand">
       <div class="atak-logo-wrap">
@@ -1083,6 +1087,10 @@ if ($atakMapConfig) {
         <span id="atak-side-meta">3 modules</span>
       </div>
       <nav class="atak-left-aside atak-module-list" role="tablist" aria-label="Modules du domaine">
+        <button type="button" class="atak-tab is-section-visible" role="tab" aria-selected="false" data-tab="frs" data-atak-section="intel" title="Fiches de renseignement simplifiées">
+          <span class="atak-tab-label">Fiches</span>
+          <small class="atak-tab-desc">Rédiger une note datée et située</small>
+        </button>
         <button type="button" class="atak-tab active is-section-visible" role="tab" aria-selected="true" data-tab="cams" data-atak-section="intel" title="Cams">
           <span class="atak-tab-label">Cams</span>
           <small class="atak-tab-desc">Aperçus photo des capteurs</small>
@@ -1142,6 +1150,11 @@ if ($atakMapConfig) {
           <span class="atak-tab-label">Pings</span>
           <small class="atak-tab-desc">Contacts à traiter</small>
         </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="charges" data-atak-section="sitac" title="Charges à retardement">
+          <span class="atak-tab-label">Charges</span>
+          <small class="atak-tab-desc">Explosifs à minuterie</small>
+          <span class="atak-tab-badge" id="atak-charges-tab-badge" hidden></span>
+        </button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="jtac" data-atak-section="support" title="JTAC">
           <span class="atak-tab-label">JTAC</span>
           <small class="atak-tab-desc">9-Line, CAS et laser</small>
@@ -1183,9 +1196,10 @@ if ($atakMapConfig) {
       <div class="atak-tabs-content active" id="tab-cams">
         <div class="atak-cams-panel">
           <div class="atak-cams-toolbar">
-            <p class="atak-panel-hint atak-cams-toolbar-hint">Aperçus photo — pas de RTMP. Clic droit sur un opérateur en liaison pour demander photo casque, HD ou flux d’aperçus rapides.</p>
+            <p class="atak-panel-hint atak-cams-toolbar-hint">Aperçus photo — pas de vidéo en direct. Clic droit sur un opérateur en liaison pour demander une vue casque.</p>
             <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="atak-cams-request-view" title="Demander une nouvelle capture photo aux opérateurs">Demander une nouvelle vue</button>
           </div>
+          <p class="atak-cams-link-alert" id="atak-cams-link-alert" hidden role="status">Liaison coupée — les aperçus ne se mettent pas à jour. Demandez une nouvelle vue dès que la liaison revient.</p>
           <div class="atak-cams-list" id="atak-cams-list">
             <div class="atak-empty-state">
               <div class="atak-empty-state-icon" aria-hidden="true">▣</div>
@@ -1212,6 +1226,7 @@ if ($atakMapConfig) {
             <p class="atak-panel-hint atak-cams-toolbar-hint">Personnes enregistrées sur le terrain (identité, photo du visage, statut).
               <a href="<?= htmlspecialchars(url('atak/sse'), ENT_QUOTES, 'UTF-8') ?>" class="atak-ops-link" style="margin-left:.35rem;">Portail SSE classifié</a>
             </p>
+            <button type="button" class="atak-ops-btn" id="atak-sse-open-frs">Rédiger une fiche</button>
             <label class="atak-panel-hint" for="atak-sse-status-filter" style="display:flex;align-items:center;gap:.4rem;margin:0;">
               <span>Statut</span>
               <select id="atak-sse-status-filter" class="atak-ops-btn" title="Filtrer par statut">
@@ -1783,6 +1798,18 @@ if ($atakMapConfig) {
           </div>
         </div>
       </div>
+      <div class="atak-tabs-content" id="tab-charges">
+        <div class="atak-charges-panel">
+          <p class="atak-panel-hint">Explosifs posés avec une minuterie : coordonnées, délai demandé et temps restant.</p>
+          <div class="atak-charges-list" id="atak-charges-list">
+            <div class="atak-empty-state">
+              <div class="atak-empty-state-icon" aria-hidden="true">◉</div>
+              <p class="atak-empty-state-title">Aucune charge à retardement</p>
+              <p class="atak-empty-state-text">Les explosifs posés avec une minuterie apparaissent ici.</p>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="atak-tabs-content" id="tab-jtac">
         <div class="atak-jtac-form">
           <button type="button" id="atak-jtac-new">Nouvelle 9-Line CAS</button>
@@ -2164,6 +2191,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-soi.js"></script>
   <script src="<?= $base ?>/assets/js/atak-session-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-pings.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-explosive-timers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-markers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map-shapes.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-context-menu.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2354,6 +2382,7 @@ if ($atakMapConfig) {
           if (window.ATAKMedicalAlerts) ATAKMedicalAlerts.fetchAlerts();
           if (window.ATAKOrders) ATAKOrders.fetchOrders();
           if (window.ATAKPings) ATAKPings.fetchPings();
+          if (window.ATAKExplosiveTimers) ATAKExplosiveTimers.fetchList();
           if (window.ATAKJTAC && window.ATAKJTAC.fetchCas) window.ATAKJTAC.fetchCas();
           else if (window.ATAKJTAC && window.ATAKJTAC.fetchNineLines) window.ATAKJTAC.fetchNineLines();
           if (window.ATAKMap && window.ATAKMap.pollMarkers) window.ATAKMap.pollMarkers();
@@ -2378,23 +2407,34 @@ if ($atakMapConfig) {
         ATAKMap.init(mapId);
       }
       if (window.ATAK_DEVICE_EMBED) {
+        function invalidateDeviceMap() {
+          try {
+            if (window.ATAKMap && typeof window.ATAKMap.invalidateSize === 'function') {
+              window.ATAKMap.invalidateSize(false);
+            } else if (window.ATAKMap && window.ATAKMap.getMap) {
+              var m = window.ATAKMap.getMap();
+              if (m && m.invalidateSize) m.invalidateSize(false);
+            }
+          } catch (err) {}
+        }
         window.addEventListener('message', function (ev) {
           if (ev.origin !== window.location.origin) return;
           if (!ev.data || ev.data.type !== 'connect-device-resize') return;
-          try {
-            if (window.ATAKMap && typeof window.ATAKMap.invalidateSize === 'function') {
-              window.ATAKMap.invalidateSize();
-            } else if (window.ATAKMap && window.ATAKMap.getMap) {
-              var m = window.ATAKMap.getMap();
-              if (m && m.invalidateSize) m.invalidateSize({ animate: false });
-            }
-          } catch (err) {}
+          invalidateDeviceMap();
         });
-        setTimeout(function () {
-          try {
-            window.dispatchEvent(new Event('resize'));
-          } catch (err2) {}
-        }, 400);
+        window.addEventListener('resize', invalidateDeviceMap);
+        var mapEl = document.getElementById('atak-map');
+        if (mapEl && window.ResizeObserver) {
+          var embedRo = new ResizeObserver(function () {
+            invalidateDeviceMap();
+          });
+          embedRo.observe(mapEl);
+        }
+        requestAnimationFrame(function () {
+          invalidateDeviceMap();
+        });
+        setTimeout(invalidateDeviceMap, 400);
+        setTimeout(invalidateDeviceMap, 1200);
       }
       if (mapSelect && window.ATAK_MAPS_CONFIGS) {
         mapSelect.addEventListener('change', function () {
@@ -2468,6 +2508,7 @@ if ($atakMapConfig) {
         if (window.ATAKMedicalAlerts) ATAKMedicalAlerts.fetchAlerts();
         if (window.ATAKOrders) ATAKOrders.fetchOrders();
         if (window.ATAKPings) ATAKPings.fetchPings();
+        if (window.ATAKExplosiveTimers) ATAKExplosiveTimers.fetchList();
         if (window.ATAKJTAC && window.ATAKJTAC.fetchCas) ATAKJTAC.fetchCas();
         else if (window.ATAKJTAC) ATAKJTAC.fetchNineLines();
         if (window.ATAKCams) {
@@ -2551,12 +2592,16 @@ if ($atakMapConfig) {
             clearTimeout(to);
             lastPingOk = !!res.ok;
             lastMeasuredLatencyMs = lastPingOk ? (performance.now() - t0) : null;
+            var outageEl = document.getElementById('atak-api-outage');
+            if (outageEl) outageEl.hidden = lastPingOk;
             return res;
           })
           .catch(function () {
             clearTimeout(to);
             lastPingOk = false;
             lastMeasuredLatencyMs = null;
+            var outageEl = document.getElementById('atak-api-outage');
+            if (outageEl) outageEl.hidden = false;
           });
       }
       var lastLiaisonChipAt = 0;

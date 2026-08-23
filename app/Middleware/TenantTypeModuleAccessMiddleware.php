@@ -36,6 +36,11 @@ final class TenantTypeModuleAccessMiddleware
 
     public function __invoke(Request $request, callable $next): Response
     {
+        $path = $request->path();
+        if ($path === '/api/atak/ping' || $path === '/api/health') {
+            return $next($request);
+        }
+
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return $next($request);

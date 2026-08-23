@@ -2,6 +2,9 @@
 window.ATAKCams = (function () {
   var apiBase = null;
   var lastFeedIds = {};
+  var lastFeeds = [];
+  var lastPhotos = [];
+  var lastLinkDown = false;
   var lightboxBound = false;
   var hiddenPhotoIds = loadHiddenPhotoIds();
   var streamRefreshTimer = null;
@@ -176,8 +179,47 @@ window.ATAKCams = (function () {
     var sep = path.indexOf('?') >= 0 ? '&' : '?';
     var url = (base ? base : '') + path + sep + 'mapId=' + encodeURIComponent(mapId);
     return fetch(url, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
-      .catch(function () { return null; });
+      .then(function (r) {
+        return r.json().then(function (body) {
+          if (!r.ok) lastLinkDown = true;
+          return body;
+        }).catch(function () {
+          lastLinkDown = true;
+          return null;
+        });
+      })
+      .catch(function () {
+        lastLinkDown = true;
+        return null;
+      });
+  }
+
+  function attachSnapshotsFromPhotos(feeds, photos) {
+    var list = Array.isArray(feeds) ? feeds : [];
+    var pics = Array.isArray(photos) ? photos : [];
+    return list.map(function (f) {
+      if (!f || f.snapshot_url) return f;
+      var cs = String(f.callsign || '').toUpperCase();
+      if (!cs) return f;
+      for (var i = 0; i < pics.length; i++) {
+        var p = pics[i];
+        var pcs = String((p && (p.author_callsign || p.author)) || '').toUpperCase();
+        if (pcs !== cs) continue;
+        var copy = {};
+        Object.keys(f).forEach(function (k) { copy[k] = f[k]; });
+        copy.snapshot_url = p.url || p.path || '';
+        copy.snapshot_id = p.id;
+        return copy;
+      }
+      return f;
+    });
+  }
+
+  function setLinkAlert(down) {
+    var el = document.getElementById('atak-cams-link-alert');
+    if (el) {
+      el.hidden = !down;
+    }
   }
 
   function fetchWithMapFallback(path, parseResult) {
@@ -219,7 +261,7 @@ window.ATAKCams = (function () {
           '<div class="atak-cam-tile-media">' +
             (src
               ? '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" data-atak-cam-full="' + escapeHtml(src) + '" />'
-              : '<div class="atak-cam-tile-placeholder" aria-hidden="true"></div>') +
+              : '<div class="atak-cam-tile-placeholder"><span>Aucun aperçu photo</span></div>') +
             '<span class="atak-cam-tile-badge">' + escapeHtml(kindLabel) + '</span>' +
             (streaming ? '<span class="atak-cam-tile-badge atak-cam-tile-badge--stream">Flux actif</span>' : '') +
             '<span class="atak-cam-tile-status">' + escapeHtml(status) + (age ? ' · ' + escapeHtml(age) : '') + (streaming ? ' · ~5 s' : '') + '</span>' +
@@ -397,6 +439,7 @@ window.ATAKCams = (function () {
     if (window.ATAKMap && window.ATAKMap.clearIntelMarkers) {
       window.ATAKMap.clearIntelMarkers();
     }
+    lastLinkDown = false;
     return Promise.all([fetchVideoFeeds(), fetchReconImages(), fetchIntelPhotos()])
       .then(function (parts) {
         var feeds = parts[0] || [];
@@ -445,6 +488,15 @@ window.ATAKCams = (function () {
           if (!p.author_callsign && p.author) p.author_callsign = p.author;
           pushPhoto(p);
         });
+        if (lastLinkDown) {
+          if (!feeds.length && lastFeeds.length) feeds = lastFeeds;
+          if (!photos.length && lastPhotos.length) photos = lastPhotos;
+        } else {
+          lastFeeds = feeds;
+          lastPhotos = photos;
+        }
+        feeds = attachSnapshotsFromPhotos(feeds, photos);
+        setLinkAlert(lastLinkDown);
         paint(feeds, photos);
         return { feeds: feeds, photos: photos };
       });

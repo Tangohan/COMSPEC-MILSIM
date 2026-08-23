@@ -59,6 +59,9 @@ if ((_cluster getOrDefault ["clusterId", ""]) isEqualTo "") then {
     private _region = _entity getVariable ["comspec_sse_region", "IRAQ"];
     _cluster = [_seed, _profile, _complexity, _region] call comspec_sse_fnc_generateCluster;
 };
+if (!isNil "comspec_sse_fnc_applyAuthoredIdentity") then {
+    _cluster = [_entity, _cluster] call comspec_sse_fnc_applyAuthoredIdentity;
+};
 _data = [_data, "clusterId", _cluster getOrDefault ["clusterId", ""]] call comspec_sse_fnc_setPair;
 _data = [_data, "theme", _cluster getOrDefault ["theme", ""]] call comspec_sse_fnc_setPair;
 

@@ -220,6 +220,15 @@ final class TenantBootstrapService
             }
 
             try {
+                $photoHud = new \App\Services\Media\ReconPhotoHudService();
+                $defaults = $photoHud->defaults();
+                $defaults['reviewed'] = true;
+                $photoHud->put($tenantId, $defaults);
+            } catch (\Throwable $e) {
+                // Colonne photo_hud_config absente : non bloquant
+            }
+
+            try {
                 $configSvc = \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class);
                 $configSvc->markSatisfiedForNewTenant($tenantId, $newUserId);
                 // Portail SSE : rôles seedés + module prêt — pas d’action humaine obligatoire à la création.

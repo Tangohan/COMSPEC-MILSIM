@@ -8,6 +8,9 @@ window.ATAKArmaOffline = (function () {
   var lastSelfId = null;
   var lastCallsign = '';
   var busy = false;
+  /** Confirmation hors-liaison : un poll manqué / lag / ATAK figé ne doit pas ouvrir la fenêtre. */
+  var GRACE_MS = 30000;
+  var pendingTimer = null;
 
   function isEligible() {
     var caps = window.ATAK_CAPS || {};
@@ -133,7 +136,28 @@ window.ATAKArmaOffline = (function () {
     }
   }
 
+  function clearPendingPrompt() {
+    if (pendingTimer) {
+      clearTimeout(pendingTimer);
+      pendingTimer = null;
+    }
+  }
+
+  function schedulePrompt(callsign) {
+    if (promptOpen || dismissedUntilLive || !isEligible()) return;
+    if (callsign) lastCallsign = String(callsign);
+    if (pendingTimer) return;
+    pendingTimer = setTimeout(function () {
+      pendingTimer = null;
+      if (dismissedUntilLive || promptOpen || !isEligible()) return;
+      var unit = findSelfUnit();
+      if (unit && isLiveStatus(resolveStatus(unit))) return;
+      showPrompt(lastCallsign);
+    }, GRACE_MS);
+  }
+
   function showPrompt(callsign) {
+    clearPendingPrompt();
     if (promptOpen || dismissedUntilLive || !isEligible()) return;
     var profileOverlay = document.getElementById('atak-session-profile-overlay');
     if (profileOverlay && !profileOverlay.hidden) return;
@@ -151,6 +175,7 @@ window.ATAKArmaOffline = (function () {
   }
 
   function hidePrompt() {
+    clearPendingPrompt();
     var el = document.getElementById('atak-arma-offline-modal');
     if (el) {
       el.hidden = true;
@@ -233,7 +258,7 @@ window.ATAKArmaOffline = (function () {
     var unit = findSelfUnit();
     if (!unit) {
       if (sawLive && !dismissedUntilLive) {
-        showPrompt(lastCallsign);
+        schedulePrompt(lastCallsign);
       }
       return;
     }
@@ -245,13 +270,14 @@ window.ATAKArmaOffline = (function () {
     if (isLiveStatus(status)) {
       sawLive = true;
       dismissedUntilLive = false;
+      clearPendingPrompt();
       if (promptOpen) hidePrompt();
       return;
     }
 
-    // offline / absent de liaison
+    // offline / absent de liaison — attendre GRACE_MS (lag, ATAK figé, poll manqué)
     if (sawLive && !dismissedUntilLive) {
-      showPrompt(cs || lastCallsign);
+      schedulePrompt(cs || lastCallsign);
     }
   }
 
@@ -271,7 +297,7 @@ window.ATAKArmaOffline = (function () {
         var meta = list[i].meta && typeof list[i].meta === 'object' ? list[i].meta : {};
         var cs = String(meta.call_sign || meta.callsign || list[i].actor || lastCallsign || '').trim();
         if (cs) lastCallsign = cs;
-        showPrompt(cs);
+        schedulePrompt(cs);
         break;
       }
     }

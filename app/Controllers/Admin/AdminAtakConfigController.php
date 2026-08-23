@@ -60,6 +60,9 @@ class AdminAtakConfigController
         $experiencePack = $experienceSvc->get($tenantId);
         $experienceCatalog = $experienceSvc->catalogWithState($tenantId);
         $experienceSchemaReady = $this->atakConfigRepository->isExperienceSchemaReady();
+        $photoHudSvc = new \App\Services\Media\ReconPhotoHudService();
+        $photoHud = $photoHudSvc->get($tenantId);
+        $photoHudPreview = $photoHudSvc->previewDataUri($tenantId, $photoHud);
 
         return Response::view('layout.main', [
             'content' => 'admin.atak-config.index',
@@ -86,6 +89,8 @@ class AdminAtakConfigController
             'experienceGuideCustom' => trim((string) ($experiencePack['settings']['guide_custom'] ?? '')),
             'experienceUpdatedAt' => $experiencePack['updated_at'],
             'experienceSchemaReady' => $experienceSchemaReady,
+            'photoHud' => $photoHud,
+            'photoHudPreview' => $photoHudPreview,
         ]);
     }
 
@@ -212,6 +217,38 @@ class AdminAtakConfigController
         Session::flash('success', 'Expérience Overwatch enregistrée. Les opérateurs en liaison récupèrent les réglages sous environ une minute.');
 
         return Response::redirect(url('admin/atak-config'));
+    }
+
+    /** Bandeau d’identification des photos terrain (type caméra-piéton). */
+    public function storePhotoHud(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('admin/atak-config'));
+        }
+
+        $svc = new \App\Services\Media\ReconPhotoHudService();
+        $svc->put((int) $tenantId, [
+            'enabled' => (string) $request->input('photo_hud_enabled', '0') === '1',
+            'position' => trim((string) $request->input('photo_hud_position', 'top')),
+            'style' => trim((string) $request->input('photo_hud_style', 'axon')),
+            'agency' => trim((string) $request->input('photo_hud_agency', '')),
+            'custom_line' => trim((string) $request->input('photo_hud_custom', '')),
+            'show_datetime' => (string) $request->input('photo_hud_show_datetime', '0') === '1',
+            'show_callsign' => (string) $request->input('photo_hud_show_callsign', '0') === '1',
+            'show_device' => (string) $request->input('photo_hud_show_device', '0') === '1',
+            'show_grid' => (string) $request->input('photo_hud_show_grid', '0') === '1',
+            'show_heading' => (string) $request->input('photo_hud_show_heading', '0') === '1',
+            'show_altitude' => (string) $request->input('photo_hud_show_altitude', '0') === '1',
+        ]);
+        Session::flash('success', 'Bandeau des photos terrain enregistré. Il s’appliquera aux prochaines captures.');
+
+        return Response::redirect(url('admin/atak-config') . '#photo-hud');
     }
 
     /** Active ou désactive le mode maintenance ATAK / Tacmap. */
