@@ -6,18 +6,9 @@ if (missionNamespace getVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", fal
 
 private _open = {
     private _unit = objNull;
-    private _pool = [];
-    if (!isNil "zen_context_menu_selectedObjects") then {
-        _pool = zen_context_menu_selectedObjects;
-    };
-    if (!(_pool isEqualType []) || {_pool isEqualTo []}) then {
-        _pool = missionNamespace getVariable ["zen_context_menu_selected", []];
-    };
-    if (!(_pool isEqualType []) || {_pool isEqualTo []}) then {
-        _pool = curatorSelected select 0;
-    };
+    private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
     {
-        if (!isNull _x && {isPlayer _x} && {_x isKindOf "CAManBase"}) exitWith { _unit = _x; };
+        if (isPlayer _x && {_x isKindOf "CAManBase"}) exitWith { _unit = _x; };
     } forEach _pool;
     if (isNull _unit) exitWith {
         ["Sélectionnez un joueur.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
@@ -35,12 +26,8 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
         "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa",
         { [] call (missionNamespace getVariable "COMSPEC_ZeusOpenPlayerAtak"); },
         {
-            private _pool = if (!isNil "zen_context_menu_selectedObjects") then {
-                zen_context_menu_selectedObjects
-            } else {
-                curatorSelected select 0
-            };
-            ({ !isNull _x && {isPlayer _x} && {_x isKindOf "CAManBase"} } count _pool) > 0
+            private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
+            ({ isPlayer _x && {_x isKindOf "CAManBase"} } count _pool) > 0
         }
     ] call zen_context_menu_fnc_createAction;
     [_action, [], 6] call zen_context_menu_fnc_addAction;
@@ -58,7 +45,7 @@ if (!isNil "zen_custom_modules_fnc_register") then {
                 { if (isPlayer _x) exitWith { _unit = _x; }; } forEach (nearestObjects [_pos, ["CAManBase"], 5]);
             };
             if (isNull _unit || {!isPlayer _unit}) then {
-                { if (isPlayer _x) exitWith { _unit = _x; }; } forEach (curatorSelected select 0);
+                { if (isPlayer _x) exitWith { _unit = _x; }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
             };
             [_unit] call comspec_overwatch_connect_fnc_zeusShowPlayerAtak;
         },
@@ -102,7 +89,7 @@ if (!isNil "ace_zeus_fnc_addModule") then {
     ["COMSPEC ATAK", "Doter du terminal SEEK", {
         params ["", ["_unit", objNull]];
         if (isNull _unit) then {
-            { if (_x isKindOf "CAManBase") exitWith { _unit = _x; }; } forEach (curatorSelected select 0);
+            { if (_x isKindOf "CAManBase") exitWith { _unit = _x; }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
         };
         [_unit] call (uiNamespace getVariable ["COMSPEC_ZeusGiveSeek", {}]);
     }, "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa"] call ace_zeus_fnc_addModule;
@@ -110,7 +97,7 @@ if (!isNil "ace_zeus_fnc_addModule") then {
     ["COMSPEC ATAK", "Infos / dégâts / brouillage", {
         params ["", ["_unit", objNull]];
         if (isNull _unit || {!isPlayer _unit}) then {
-            { if (isPlayer _x) exitWith { _unit = _x; }; } forEach (curatorSelected select 0);
+            { if (isPlayer _x) exitWith { _unit = _x; }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
         };
         [_unit] call comspec_overwatch_connect_fnc_zeusShowPlayerAtak;
     }, "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa"] call ace_zeus_fnc_addModule;
@@ -146,7 +133,7 @@ if (!isNil "ace_zeus_fnc_addModule") then {
 
 if (!isNil "ace_interact_menu_fnc_createAction" && {!isNil "ace_interact_menu_fnc_addActionToZeus"}) then {
     private _hasPlayer = {
-        ({ !isNull _x && {isPlayer _x} && {_x isKindOf "CAManBase"} } count (curatorSelected select 0)) > 0
+        ({ isPlayer _x && {_x isKindOf "CAManBase"} } count ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects)) > 0
     };
     private _root = [
         "comspec_atak_zeus_root",
@@ -178,7 +165,7 @@ if (!isNil "ace_interact_menu_fnc_createAction" && {!isNil "ace_interact_menu_fn
                 private _p = _this select 2;
                 _p params ["_act", "_dur"];
                 private _unit = objNull;
-                { if (isPlayer _x) exitWith { _unit = _x; }; } forEach (curatorSelected select 0);
+                { if (isPlayer _x) exitWith { _unit = _x; }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
                 if (isNull _unit) exitWith {};
                 [_unit, _act, _dur] remoteExecCall ["comspec_overwatch_connect_fnc_relayZeusAtakEffect", 2];
                 [format ["Zeus → %1 : %2", name _unit, _act], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;

@@ -14,9 +14,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.451;
-        versionStr = "1.4.51";
-        versionAr[] = {1, 4, 51};
+        version = 1.452;
+        versionStr = "1.4.52";
+        versionAr[] = {1, 4, 52};
     };
 };
 
@@ -253,6 +253,8 @@ class CfgFunctions {
             class allyTrackCallsign {};
             class reportPhonePosition {};
             class reportAllyPosition {};
+            class reportGpsBeacon {};
+            class curatorSelectedObjects {};
             class initGpsBeacons {};
             class registerZenTrackActions {};
             class initATAKMenu {};

@@ -25,7 +25,7 @@ private _collectAi = {
         };
     };
     {
-        if (isNull _x) then { continue };
+        if (!(_x isEqualType objNull) || {isNull _x}) then { continue };
         if (_x isKindOf "CAManBase") then {
             [_x] call _pushUnit;
         } else {
@@ -134,7 +134,7 @@ if (!isNil "zen_custom_modules_fnc_register") then {
         "IA alliée sur l’ATAK",
         {
             params ["_pos", "_obj"];
-            private _pool = curatorSelected select 0;
+            private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
             if (isNull _obj) then {
                 { if (_x isKindOf "CAManBase" && {!isPlayer _x}) exitWith { _obj = _x }; } forEach (nearestObjects [_pos, ["CAManBase"], 8]);
             };
@@ -150,22 +150,14 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
         "Balise GPS ATAK",
         _iconGps,
         {
-            private _pool = if (!isNil "zen_context_menu_selectedObjects") then {
-                zen_context_menu_selectedObjects
-            } else {
-                curatorSelected select 0
-            };
+            private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
             private _obj = objNull;
-            { if (!isNull _x && {!(_x isKindOf "CAManBase")}) exitWith { _obj = _x }; } forEach _pool;
+            { if (!(_x isKindOf "CAManBase")) exitWith { _obj = _x }; } forEach _pool;
             [_obj] call (missionNamespace getVariable ["COMSPEC_ZeusToggleGpsBeacon", {}]);
         },
         {
-            private _pool = if (!isNil "zen_context_menu_selectedObjects") then {
-                zen_context_menu_selectedObjects
-            } else {
-                curatorSelected select 0
-            };
-            ({ !isNull _x && {!(_x isKindOf "CAManBase")} && {_x isKindOf "AllVehicles"} } count _pool) > 0
+            private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
+            ({ !(_x isKindOf "CAManBase") && {_x isKindOf "AllVehicles"} } count _pool) > 0
         }
     ] call zen_context_menu_fnc_createAction;
     [_gpsAction, [], 7] call zen_context_menu_fnc_addAction;
@@ -175,22 +167,14 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
         "Géolocalisation téléphone",
         _iconPhone,
         {
-            private _pool = if (!isNil "zen_context_menu_selectedObjects") then {
-                zen_context_menu_selectedObjects
-            } else {
-                curatorSelected select 0
-            };
+            private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
             private _obj = objNull;
-            { if (!isNull _x && {_x isKindOf "CAManBase"}) exitWith { _obj = _x }; } forEach _pool;
+            { if (_x isKindOf "CAManBase") exitWith { _obj = _x }; } forEach _pool;
             [_obj] call (missionNamespace getVariable ["COMSPEC_ZeusTogglePhoneTrack", {}]);
         },
         {
-            private _pool = if (!isNil "zen_context_menu_selectedObjects") then {
-                zen_context_menu_selectedObjects
-            } else {
-                curatorSelected select 0
-            };
-            ({ !isNull _x && {_x isKindOf "CAManBase"} } count _pool) > 0
+            private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
+            ({ _x isKindOf "CAManBase" } count _pool) > 0
         }
     ] call zen_context_menu_fnc_createAction;
     [_phoneAction, [], 7] call zen_context_menu_fnc_addAction;
@@ -200,29 +184,19 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
         "IA alliée sur l’ATAK",
         _iconAlly,
         {
-            private _pool = if (!isNil "zen_context_menu_selectedObjects") then {
-                zen_context_menu_selectedObjects
-            } else {
-                curatorSelected select 0
-            };
+            private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
             private _obj = objNull;
-            { if (!isNull _x && {_x isKindOf "CAManBase"} && {!isPlayer _x}) exitWith { _obj = _x }; } forEach _pool;
+            { if (_x isKindOf "CAManBase" && {!isPlayer _x}) exitWith { _obj = _x }; } forEach _pool;
             if (isNull _obj) then {
-                { if (!isNull _x && {!(_x isKindOf "CAManBase")}) exitWith { _obj = _x }; } forEach _pool;
+                { if (!(_x isKindOf "CAManBase")) exitWith { _obj = _x }; } forEach _pool;
             };
             [_obj, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusToggleAllyTrack", {}]);
         },
         {
-            private _pool = if (!isNil "zen_context_menu_selectedObjects") then {
-                zen_context_menu_selectedObjects
-            } else {
-                curatorSelected select 0
-            };
+            private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
             ({
-                !isNull _x && {
-                    (_x isKindOf "CAManBase" && {!isPlayer _x})
-                    || {({ !isPlayer _y && {alive _y} } count (crew _x)) > 0}
-                }
+                (_x isKindOf "CAManBase" && {!isPlayer _x})
+                || {({ !isPlayer _y && {alive _y} } count (crew _x)) > 0}
             } count _pool) > 0
         }
     ] call zen_context_menu_fnc_createAction;
@@ -233,7 +207,7 @@ if (!isNil "ace_zeus_fnc_addModule") then {
     ["COMSPEC ATAK", "Balise GPS véhicule", {
         params ["", ["_obj", objNull]];
         if (isNull _obj) then {
-            { if (!(_x isKindOf "CAManBase")) exitWith { _obj = _x }; } forEach (curatorSelected select 0);
+            { if (!(_x isKindOf "CAManBase")) exitWith { _obj = _x }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
         };
         [_obj] call (missionNamespace getVariable ["COMSPEC_ZeusToggleGpsBeacon", {}]);
     }, _iconGps] call ace_zeus_fnc_addModule;
@@ -241,14 +215,14 @@ if (!isNil "ace_zeus_fnc_addModule") then {
     ["COMSPEC ATAK", "Géolocalisation téléphone", {
         params ["", ["_obj", objNull]];
         if (isNull _obj || {!(_obj isKindOf "CAManBase")}) then {
-            { if (_x isKindOf "CAManBase") exitWith { _obj = _x }; } forEach (curatorSelected select 0);
+            { if (_x isKindOf "CAManBase") exitWith { _obj = _x }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
         };
         [_obj] call (missionNamespace getVariable ["COMSPEC_ZeusTogglePhoneTrack", {}]);
     }, _iconPhone] call ace_zeus_fnc_addModule;
 
     ["COMSPEC ATAK", "IA alliée sur l’ATAK", {
         params ["", ["_obj", objNull]];
-        private _pool = curatorSelected select 0;
+        private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
         if (isNull _obj) then {
             { if (_x isKindOf "CAManBase" && {!isPlayer _x}) exitWith { _obj = _x }; } forEach _pool;
         };

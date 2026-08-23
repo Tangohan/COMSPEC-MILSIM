@@ -196,6 +196,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(0.52));
             colorBackground[] = {0.025, 0.06, 0.08, 0.9};
+            colorText[] = {0.88, 0.93, 0.94, 1};
             colorSelect[] = {0.02, 0.04, 0.05, 1};
             colorSelect2[] = {0.02, 0.04, 0.05, 1};
             colorSelectBackground[] = {0.35, 0.55, 0.48, 0.88};
@@ -219,6 +220,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(1.00));
             colorBackground[] = ATHENA_BG_LIST;
+            colorText[] = {0.88, 0.93, 0.94, 1};
             colorSelect[] = {0.02, 0.04, 0.05, 1};
             colorSelect2[] = {0.02, 0.04, 0.05, 1};
             colorSelectBackground[] = {0.45, 0.72, 0.62, 0.92};

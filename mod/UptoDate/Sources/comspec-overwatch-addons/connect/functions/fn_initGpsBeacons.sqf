@@ -61,6 +61,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
 
 [{
     if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
+    [] call (missionNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]);
     if !(call (missionNamespace getVariable ["COMSPEC_GpsBeaconIsBridge", { false }])) exitWith {};
 
     private _vehs = missionNamespace getVariable ["COMSPEC_GpsBeaconObjects", []];
@@ -70,6 +71,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
             if (isNull _x) then { continue };
             _keep pushBack _x;
             [_x] call comspec_overwatch_connect_fnc_updateVehicleTracking;
+            [_x] call comspec_overwatch_connect_fnc_reportGpsBeacon;
         } forEach _vehs;
         if ((count _keep) isNotEqualTo (count _vehs)) then {
             missionNamespace setVariable ["COMSPEC_GpsBeaconObjects", _keep, false];

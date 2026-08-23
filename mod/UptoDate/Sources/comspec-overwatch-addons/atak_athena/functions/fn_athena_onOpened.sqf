@@ -1,11 +1,13 @@
 /*
     Ouverture de l’app Athena dans cTab (pattern ATAK_APPs Opened).
+    Le groupe PAGE_CTRL n’est pas toujours prêt au premier Opened (listes vides).
 */
 params ["_group", ["_interfaceInit", false], "_isDialog", "_settings"];
 
-if (isNull _group) exitWith {};
+if (!isNull _group) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_Athena_group", _group];
+};
 
-uiNamespace setVariable ["COMSPEC_ATAK_Athena_group", _group];
 private _token = diag_tickTime;
 uiNamespace setVariable ["COMSPEC_ATAK_Athena_token", _token];
 
@@ -15,7 +17,13 @@ if (_pending isEqualType "" && {_pending isNotEqualTo ""}) then {
     missionNamespace setVariable ["COMSPEC_Athena_PendingTab", "", false];
 };
 
-[] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
+private _paint = {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
+};
+[] call _paint;
+{
+    [_paint, [], _x] call CBA_fnc_waitAndExecute;
+} forEach [0.08, 0.25, 0.7, 1.4];
 
 [_token] spawn {
     params ["_token"];
