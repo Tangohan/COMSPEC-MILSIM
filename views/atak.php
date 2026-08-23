@@ -1150,9 +1150,9 @@ if ($atakMapConfig) {
           <span class="atak-tab-label">Pings</span>
           <small class="atak-tab-desc">Contacts à traiter</small>
         </button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="charges" data-atak-section="sitac" title="Charges à retardement">
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="charges" data-atak-section="sitac" title="Charges explosives">
           <span class="atak-tab-label">Charges</span>
-          <small class="atak-tab-desc">Explosifs à minuterie</small>
+          <small class="atak-tab-desc">Explosifs posés</small>
           <span class="atak-tab-badge" id="atak-charges-tab-badge" hidden></span>
         </button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="jtac" data-atak-section="support" title="JTAC">
@@ -1800,12 +1800,12 @@ if ($atakMapConfig) {
       </div>
       <div class="atak-tabs-content" id="tab-charges">
         <div class="atak-charges-panel">
-          <p class="atak-panel-hint">Explosifs posés avec une minuterie : coordonnées, délai demandé et temps restant.</p>
+          <p class="atak-panel-hint">Explosifs posés sur le terrain : minuterie ou déclenchement à la demande. Un second clic confirme le déclenchement depuis le poste de commandement.</p>
           <div class="atak-charges-list" id="atak-charges-list">
             <div class="atak-empty-state">
               <div class="atak-empty-state-icon" aria-hidden="true">◉</div>
-              <p class="atak-empty-state-title">Aucune charge à retardement</p>
-              <p class="atak-empty-state-text">Les explosifs posés avec une minuterie apparaissent ici.</p>
+              <p class="atak-empty-state-title">Aucune charge posée</p>
+              <p class="atak-empty-state-text">Les explosifs posés sur le terrain apparaissent ici.</p>
             </div>
           </div>
         </div>

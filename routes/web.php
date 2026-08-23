@@ -1741,6 +1741,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->delete('/api/pings/{id}', [AtakApiController::class, 'pingsDelete']);
     $router->get('/api/atak/explosive-timers', [AtakApiController::class, 'explosiveTimersIndex']);
     $router->post('/api/atak/explosive-timers', [AtakApiController::class, 'explosiveTimersStore']);
+    $router->get('/api/atak/explosive-timers/commands', [AtakApiController::class, 'explosiveTimersCommands']);
+    $router->post('/api/atak/explosive-timers/{id}/detonate', [AtakApiController::class, 'explosiveTimersDetonate']);
     $router->get('/api/atak/sse-case-overlay', [AtakApiController::class, 'sseCaseOverlay']);
     $router->post('/api/atak/sse-tracks', [AtakApiController::class, 'sseTrackStore']);
     $router->get('/api/nine-line', [AtakApiController::class, 'nineLineIndex']);

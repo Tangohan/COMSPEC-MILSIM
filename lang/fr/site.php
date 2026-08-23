@@ -222,6 +222,7 @@ return [
     'cl_2026_08_i3' => 'Export PDF du dossier : chemise selon le niveau de diffusion, flash et compte rendu initial lisibles',
     'cl_2026_08_i4' => 'Portail SSE : dossiers, identités, transmissions terrain et atelier de modèles de mission',
     'cl_2026_08_i5' => 'ATAK : photos de reconnaissance, transmissions terrain et terminal de liaison plus stables',
+    'cl_2026_08_i6' => 'ATAK : le poste de commandement peut déclencher une charge posée (double confirmation, sans toucher à la minuterie)',
 
     'cl_2026_07_sse_t' => 'Renseignement interpersonnel (Overwatch 1.4.0)',
     'cl_2026_07_sse_b' => 'Les opérateurs peuvent enregistrer une personne sur le terrain (identité, photo du visage, armement) depuis le terminal Overwatch. Les fiches apparaissent au poste de commandement Athena, onglet Personnes.',

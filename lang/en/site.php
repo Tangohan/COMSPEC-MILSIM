@@ -222,6 +222,7 @@ return [
     'cl_2026_08_i3' => 'Case PDF export: cover matching the release level, readable flash and initial report',
     'cl_2026_08_i4' => 'SSE portal: cases, identities, field transmissions and mission model workshop',
     'cl_2026_08_i5' => 'ATAK: recon photos, field transmissions and a more stable link terminal',
+    'cl_2026_08_i6' => 'ATAK: the command post can detonate a placed charge (double confirmation, without changing the timer)',
 
     'cl_2026_07_sse_t' => 'Interpersonal intelligence (Overwatch 1.4.0)',
     'cl_2026_07_sse_b' => 'Operators can enrol a person in the field (identity, face photo, weapons) from the Overwatch terminal. Records appear on the Athena command post under the Persons tab.',

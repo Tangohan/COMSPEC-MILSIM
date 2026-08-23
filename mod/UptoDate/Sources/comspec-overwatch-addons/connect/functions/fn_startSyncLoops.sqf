@@ -154,6 +154,14 @@ private _casPollInterval = 10;
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        [] call comspec_overwatch_connect_fnc_pollExplosiveCommands;
+    }, [], "pollExplosiveCommands"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 4, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    [{
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
         [] call comspec_overwatch_connect_fnc_pollTacticalAlerts;
     }, [], "pollTacticalAlerts"] call comspec_overwatch_connect_fnc_profileWrap;
 }, 10, []] call CBA_fnc_addPerFrameHandler;
