@@ -14,9 +14,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.450;
-        versionStr = "1.4.50";
-        versionAr[] = {1, 4, 50};
+        version = 1.451;
+        versionStr = "1.4.51";
+        versionAr[] = {1, 4, 51};
     };
 };
 
@@ -90,6 +90,8 @@ class CfgFunctions {
             class disconnect {};
             class playtimeTracker {};
             class updatePosition {};
+            class applyNetworkProfile {};
+            class sampleTerrain {};
             class forceSyncData {};
             class sendIntel {};
             class initACE {};
@@ -220,6 +222,9 @@ class CfgFunctions {
             class refreshAccountLinkStatusBar {};
             class showAthenaLinkHelp {};
             class showBetaAccessNote {};
+            class openNdaDialog {};
+            class decorateMainMenu {};
+            class refreshMainMenuBetaBanner {};
             class ndaTexts {};
             class ndaOnLoad {};
             class ndaSetLanguage {};

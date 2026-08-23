@@ -45,15 +45,19 @@ switch (_function) do {
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
     case "RateLimited": {
-        // Backoff exponentiel côté SQF (la DLL applique aussi un délai d’envoi).
-        private _prev = missionNamespace getVariable ["COMSPEC_ApiBackoffSec", 2];
-        if (!(_prev isEqualType 0)) then { _prev = 2; };
-        private _next = (_prev * 2) min 60;
+        // La DLL envoie la pause (Retry-After). Repli : backoff exponentiel.
+        private _fromDll = parseNumber _data;
+        private _next = if (_fromDll > 0 && {_fromDll <= 120}) then {
+            _fromDll
+        } else {
+            private _prev = missionNamespace getVariable ["COMSPEC_ApiBackoffSec", 2];
+            if (!(_prev isEqualType 0)) then { _prev = 2; };
+            (_prev * 2) min 60
+        };
         missionNamespace setVariable ["COMSPEC_ApiBackoffSec", _next, false];
         missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + _next, false];
-        private _msg = if (!(_data isEqualTo "")) then { _data } else {
-            "Athena est saturé — synchronisation ralentie quelques instants."
-        };
+        private _msg = "Athena est saturé — synchronisation ralentie quelques instants.";
+        if (!(_data isEqualTo "") && {_fromDll <= 0}) then { _msg = _data; };
         ["WARN", "Tx", format ["Rate limit — pause %1 s", round _next], _msg] call comspec_overwatch_connect_fnc_log;
         [format ["[Athena] %1 (pause %2 s)", _msg, round _next], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
         if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {

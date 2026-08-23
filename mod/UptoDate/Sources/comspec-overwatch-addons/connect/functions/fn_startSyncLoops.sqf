@@ -27,10 +27,10 @@ missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
     [] call comspec_overwatch_connect_fnc_syncAtakRealism;
 };
 
-private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 3];
-if (!(_interval isEqualType 0)) then { _interval = 2; };
-_interval = (_interval max 1) min 15;
-// Premier push immédiat (sinon attendre tout l’intervalle PFH → carte web vide au boot).
+[] call comspec_overwatch_connect_fnc_applyNetworkProfile;
+private _loadHint = missionNamespace getVariable ["COMSPEC_NetworkLoadHint", "normale"];
+[format ["[Athena] Profil réseau actif — charge estimée : %1.", _loadHint]] call comspec_overwatch_connect_fnc_appendLinkLog;
+// PFH 1 s : l’intervalle réel (profil / seuil / heartbeat) est décidé dans updatePosition.
 0 spawn {
     uiSleep 0.5;
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
@@ -40,7 +40,7 @@ _interval = (_interval max 1) min 15;
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     [{ [player] call comspec_overwatch_connect_fnc_updatePosition }, [], "updatePosition"] call comspec_overwatch_connect_fnc_profileWrap;
-}, _interval] call CBA_fnc_addPerFrameHandler;
+}, 1] call CBA_fnc_addPerFrameHandler;
 
 [] call comspec_overwatch_connect_fnc_initRadioMonitor;
 

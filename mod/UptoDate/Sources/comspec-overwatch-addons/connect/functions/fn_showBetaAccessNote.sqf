@@ -1,7 +1,8 @@
 /*
-    Note bêta / CGU — fenêtre Windows au menu principal Arma (une fois par profil).
+    Note bêta / CGU — overlay dans le menu principal Arma (une fois par profil).
+    Fenêtre Windows en repli si l’overlay n’a pas pu s’ouvrir.
     Jamais de popup automatique en mission (parade de dialogues + gel REAPP).
-    Params: [_force] — relire depuis le hub / réglages.
+    Params: [_force] — relire depuis le bandeau menu / hub / réglages.
 */
 params [["_force", false]];
 
@@ -41,7 +42,17 @@ if (
     }
 ) exitWith {};
 
-if (_force && {!([] call comspec_overwatch_connect_fnc_canShowWinMessageBox)} && {!isNull findDisplay 46}) exitWith {};
+private _onMainMenu = isNull findDisplay 46 && {!isNull findDisplay 0};
+private _opened = false;
+if (_onMainMenu || _force) then {
+    _opened = [] call comspec_overwatch_connect_fnc_openNdaDialog;
+};
+if (_opened) exitWith {
+    missionNamespace setVariable ["COMSPEC_BetaAccessNoteShown", true, false];
+};
+
+if (!_force && {!_onMainMenu}) exitWith {};
+if (_force && {!isNull findDisplay 46} && {!([] call comspec_overwatch_connect_fnc_canShowWinMessageBox)}) exitWith {};
 
 missionNamespace setVariable ["COMSPEC_BetaAccessNoteShown", true, false];
 
@@ -55,16 +66,11 @@ if (_prefix isEqualTo "OK" && {_action in ["ack", "dismissed"]}) exitWith {
     profileNamespace setVariable ["comspec_overwatch_beta_note_ack", true];
     saveProfileNamespace;
     [] call comspec_overwatch_connect_fnc_registerBetaClient;
+    [] call comspec_overwatch_connect_fnc_refreshMainMenuBetaBanner;
 };
 
 if (_prefix isEqualTo "OK") exitWith {};
 
-// Repli dialogue Arma uniquement au menu principal (jamais en mission).
-if (isNull findDisplay 46 && {!isNull findDisplay 0}) then {
-    if (!isNull (uiNamespace getVariable ["COMSPEC_NDA_Display", displayNull])) exitWith {};
-    private _parent = findDisplay 0;
-    private _child = _parent createDisplay "COMSPEC_NDA_Dialog";
-    if (isNull _child) then {
-        createDialog "COMSPEC_NDA_Dialog";
-    };
+if (_onMainMenu || {_force && {isNull findDisplay 46}}) then {
+    [] call comspec_overwatch_connect_fnc_openNdaDialog;
 };

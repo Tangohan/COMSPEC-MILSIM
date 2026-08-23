@@ -128,16 +128,49 @@ private _radioSig = format [
     if (_radioTxFlag) then { "1" } else { "0" }
 ];
 
-private _threshold = missionNamespace getVariable ["comspec_overwatch_position_threshold", 5];
-private _batchInterval = missionNamespace getVariable ["comspec_overwatch_batch_interval", 3];
-if (!(_batchInterval isEqualType 0)) then { _batchInterval = 3; };
-_batchInterval = (_batchInterval max 1) min 30;
+private _heading = getDir (if (_inVeh) then { _veh } else { _unit });
+private _airborne = false;
+if (_inVeh && {
+    _veh isKindOf "Air"
+    || {_veh isKindOf "Helicopter"}
+    || {_veh isKindOf "Plane"}
+    || {unitIsUAV _veh}
+}) then {
+    _airborne = !(isTouchingGround _veh) && {((getPosASL _veh) select 2) > 5};
+};
+private _moveTh = missionNamespace getVariable ["COMSPEC_MoveThresholdInf", 3];
+if (!(_moveTh isEqualType 0)) then { _moveTh = 3; };
+if (_inVeh) then {
+    if (_airborne) then {
+        _moveTh = missionNamespace getVariable ["COMSPEC_MoveThresholdAir", 15];
+        if (!(_moveTh isEqualType 0)) then { _moveTh = 15; };
+    } else {
+        _moveTh = missionNamespace getVariable ["COMSPEC_MoveThresholdVeh", 10];
+        if (!(_moveTh isEqualType 0)) then { _moveTh = 10; };
+    };
+};
+private _headingTh = missionNamespace getVariable ["COMSPEC_HeadingThreshold", 15];
+if (!(_headingTh isEqualType 0)) then { _headingTh = 15; };
+private _posMin = missionNamespace getVariable ["COMSPEC_PositionMinInterval", 5];
+if (!(_posMin isEqualType 0)) then { _posMin = 5; };
+private _heartbeat = missionNamespace getVariable ["COMSPEC_HeartbeatInterval", 30];
+if (!(_heartbeat isEqualType 0)) then { _heartbeat = 30; };
+private _policy = missionNamespace getVariable ["COMSPEC_NetworkPolicy", 2];
+if (!(_policy isEqualType 0)) then { _policy = 2; };
+_policy = (round _policy) max 0 min 2;
+if (_airborne) then {
+    _posMin = (_posMin * 0.5) max 0.5;
+    _moveTh = (_moveTh * 0.65) max 1;
+};
+
 private _lastPos = missionNamespace getVariable ["COMSPEC_lastPos", [0,0,0]];
 private _lastName = missionNamespace getVariable ["COMSPEC_lastName", ""];
 private _lastRole = missionNamespace getVariable ["COMSPEC_lastRole", ""];
 private _lastRadio = missionNamespace getVariable ["COMSPEC_lastRadio", ""];
 private _lastMedical = missionNamespace getVariable ["COMSPEC_lastMedical", ""];
 private _lastGroup = missionNamespace getVariable ["COMSPEC_lastGroup", ""];
+private _lastHeading = missionNamespace getVariable ["COMSPEC_lastHeading", -1];
+private _lastVehSig = missionNamespace getVariable ["COMSPEC_lastVehSig", ""];
 private _lastSendTime = missionNamespace getVariable ["COMSPEC_lastSendTime", 0];
 private _now = diag_tickTime;
 
@@ -145,25 +178,48 @@ private _groupName = trim (groupId (group _unit));
 if (!(_groupName isEqualType "")) then { _groupName = str _groupName; };
 _groupName = trim _groupName;
 
+private _vehSig = format [
+    "%1|%2",
+    if (_inVeh) then { typeOf _veh } else { "INF" },
+    if (_inVeh) then { str (floor ((fuel _veh) * 10)) } else { "" }
+];
+
 private _distance = _pos distance _lastPos;
-private _distanceOk = _distance > _threshold;
+private _distanceOk = _distance > _moveTh;
+private _headingDelta = if (!(_lastHeading isEqualType 0) || {_lastHeading < 0}) then {
+    999
+} else {
+    private _d = abs (_heading - _lastHeading);
+    if (_d > 180) then { _d = 360 - _d; };
+    _d
+};
+private _headingChanged = _headingDelta > _headingTh;
 private _nameChanged = _callSign != _lastName;
 private _roleChanged = _role != _lastRole;
 private _radioChanged = _radioSig != _lastRadio;
 private _medicalChanged = _medicalSig != _lastMedical;
 private _groupChanged = _groupName != _lastGroup;
-private _batchOk = (_now - _lastSendTime) >= _batchInterval;
-// Keep-alive : rafraîchir updated_at même immobile (TTL Tacmap ~180 s)
-private _heartbeatOk = (_now - _lastSendTime) >= 45;
-// Émission radio : pousser hors batch pour pastille « Émet » quasi temps réel
+private _vehChanged = _vehSig != _lastVehSig;
+private _stateChanged = _nameChanged || _roleChanged || _radioChanged || _medicalChanged || _groupChanged || _vehChanged;
+private _minOk = (_now - _lastSendTime) >= _posMin;
+private _heartbeatOk = (_now - _lastSendTime) >= _heartbeat;
 private _txUrgent = _radioChanged && {
     _radioSpeaking || _radioTxFlag || ((_lastRadio find "|1|") >= 0) || ((_lastRadio find "|1") >= 0)
 };
+private _medUrgent = _medicalChanged && {_health in ["unconscious", "cardiac_arrest"]};
 
-private _shouldSend = _force
-    || _heartbeatOk
-    || (_batchOk && (_distanceOk || _nameChanged || _roleChanged || _radioChanged || _medicalChanged || _groupChanged))
-    || _txUrgent;
+private _shouldSend = _force || _txUrgent || _medUrgent;
+switch (_policy) do {
+    case 0: {
+        _shouldSend = _shouldSend || _minOk;
+    };
+    case 1: {
+        _shouldSend = _shouldSend || (_minOk && (_distanceOk || _headingChanged || _stateChanged));
+    };
+    default {
+        _shouldSend = _shouldSend || _heartbeatOk || (_minOk && (_distanceOk || _headingChanged || _stateChanged));
+    };
+};
 if (!_shouldSend) exitWith {};
 
 // Pipeline liaison unifié — position seule si écran cassé, blocage si hors couverture
@@ -174,9 +230,8 @@ if !(_txGate getOrDefault ["can_transmit", true]) exitWith {
 private _txMode = _txGate getOrDefault ["mode", "full"];
 private _linkState = _txGate getOrDefault ["link_state", missionNamespace getVariable ["COMSPEC_LinkState", "linked"]];
 
-private _velocity = velocity _unit;
+private _velocity = if (_inVeh) then { velocity _veh } else { velocity _unit };
 private _speed = vectorMagnitude _velocity;
-private _heading = getDir _unit;
 private _future = [
     (_pos select 0) + ((_velocity select 0) * 10),
     (_pos select 1) + ((_velocity select 1) * 10),
@@ -199,24 +254,48 @@ if ((abs (_reportedPos select 0) < 1) && { abs (_reportedPos select 1) < 1 }) ex
 // Même piège que SALUTE avant toFixed : sous locale FR, str/format cassent POST /api/atak/position.
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };
 
-// JSON véhicule / cinématique + asl_z joueur (altitude mer, pas ATL)
+// JSON cinématique : vitesse / vecteur toujours, orientation objet distincte du cap de déplacement
+private _velDir = (_velocity select 0) atan2 (_velocity select 1);
+if (_velDir < 0) then { _velDir = _velDir + 360; };
+private _platform = "INFANTRY";
+if (_inVeh) then {
+    if (_veh isKindOf "UAV" || {unitIsUAV _veh}) then {
+        _platform = "UAV";
+    } else {
+        if (_veh isKindOf "Helicopter") then {
+            _platform = "HELICOPTER";
+        } else {
+            if (_veh isKindOf "Plane" || {_veh isKindOf "Air"}) then {
+                _platform = "FIXED_WING";
+            } else {
+                _platform = "GROUND_VEHICLE";
+            };
+        };
+    };
+};
 private _vehJson = format [
-    "{""speed"":%1,""in_vehicle"":%2,""asl_z"":%3,""pos_z"":%3",
+    "{""speed"":%1,""in_vehicle"":%2,""asl_z"":%3,""pos_z"":%3,""heading_object"":%4,""velocity"":[%5,%6,%7]",
     [((round (_speed * 10)) / 10), 1] call _fnc_num,
     if (_inVeh) then { "true" } else { "false" },
-    [_aslZ, 3] call _fnc_num
+    [_aslZ, 3] call _fnc_num,
+    [_heading, 2] call _fnc_num,
+    [_velocity select 0, 3] call _fnc_num,
+    [_velocity select 1, 3] call _fnc_num,
+    [_velocity select 2, 3] call _fnc_num
 ];
+if (_speed > 0.15) then {
+    _vehJson = _vehJson + format [",""movement_heading"":%1", [_velDir, 1] call _fnc_num];
+};
+_vehJson = _vehJson + format [",""platform"":""%1""", _platform];
 if (_inVeh && {missionNamespace getVariable ["comspec_overwatch_vehicle_mode", true]}) then {
     private _vd = vectorDir _veh;
     private _vu = vectorUp _veh;
-    private _vv = velocity _veh;
     private _vp = getPosASL _veh;
     _vehJson = _vehJson + format [
-        ",""vehicle"":""%1"",""vector_dir"":[%2,%3,%4],""vector_up"":[%5,%6,%7],""velocity"":[%8,%9,%10],""pos_asl"":[%11,%12,%13]",
+        ",""vehicle"":""%1"",""vector_dir"":[%2,%3,%4],""vector_up"":[%5,%6,%7],""pos_asl"":[%8,%9,%10]",
         typeOf _veh,
         [_vd select 0, 5] call _fnc_num, [_vd select 1, 5] call _fnc_num, [_vd select 2, 5] call _fnc_num,
         [_vu select 0, 5] call _fnc_num, [_vu select 1, 5] call _fnc_num, [_vu select 2, 5] call _fnc_num,
-        [_vv select 0, 3] call _fnc_num, [_vv select 1, 3] call _fnc_num, [_vv select 2, 3] call _fnc_num,
         [_vp select 0, 2] call _fnc_num, [_vp select 1, 2] call _fnc_num, [_vp select 2, 3] call _fnc_num
     ];
 };
@@ -273,6 +352,39 @@ _vehJson = _vehJson + format [
     _sideStr,
     _affiliation
 ];
+private _grp = group _unit;
+private _grpCount = { alive _x } count units _grp;
+private _crewCount = if (_inVeh) then { { alive _x } count crew _veh } else { _grpCount };
+private _leaderName = name (leader _grp);
+_leaderName = (_leaderName splitString """" joinString "");
+private _escWeapon = ((currentWeapon _unit) splitString """" joinString "");
+private _bloodPct = if (count _medicalParts >= 2) then { _medicalParts select 1 } else { "100" };
+private _vehDmg = if (_inVeh) then { damage _veh } else { -1 };
+_vehJson = _vehJson + format [
+    ",""group_count"":%1,""crew_count"":%2,""leader"":""%3"",""combat_mode"":""%4"",""behaviour"":""%5"",""formation"":""%6"",""current_weapon"":""%7"",""blood"":%8",
+    _grpCount,
+    _crewCount,
+    _leaderName,
+    combatMode _unit,
+    behaviour _unit,
+    formation _grp,
+    _escWeapon,
+    _bloodPct
+];
+if (_vehDmg >= 0) then {
+    _vehJson = _vehJson + format [",""vehicle_damage"":%1", [_vehDmg, 3] call _fnc_num];
+};
+if (isClass (configFile >> "CfgPatches" >> "tfar_core") && {!isNil "TFAR_fnc_getLrFrequency"}) then {
+    private _lrFreq = "";
+    private _lrRadio = if (!isNil "TFAR_fnc_activeLrRadio") then { _unit call TFAR_fnc_activeLrRadio } else { nil };
+    if (!isNil "_lrRadio") then {
+        _lrFreq = str (_unit call TFAR_fnc_getLrFrequency);
+        _lrFreq = (_lrFreq splitString """" joinString "");
+    };
+    if (!(_lrFreq isEqualTo "") && {!(_lrFreq in ["any", "<null>", "nil"])}) then {
+        _vehJson = _vehJson + format [",""radio_lr"":""%1"",""lr_freq"":""%1""", _lrFreq];
+    };
+};
 // Identifiant BFT lié à l’indicatif (Athena / military_id) — même clé TOC ↔ carte ↔ terminal
 private _bftId = trim (missionNamespace getVariable ["COMSPEC_MilitaryId", ""]);
 if (_bftId isEqualTo "") then {
@@ -353,6 +465,17 @@ if (count _medicalParts >= 8) then {
         _medicalParts select 7
     ];
 };
+private _telKind = "position";
+if (!_force && {!_distanceOk} && {!_headingChanged} && {!_stateChanged} && {!_txUrgent} && {!_medUrgent}) then {
+    _telKind = "heartbeat";
+};
+private _histMin = missionNamespace getVariable ["COMSPEC_HistorySampleMin", 15];
+if (!(_histMin isEqualType 0)) then { _histMin = 15; };
+_vehJson = _vehJson + format [
+    ",""telemetry_kind"":""%1"",""history_sample_min"":%2",
+    _telKind,
+    round _histMin
+];
 _vehJson = _vehJson + "}";
 
 private _steamUid = getPlayerUID player;
@@ -397,7 +520,7 @@ if (!_realism && !_milsimUi) then {
         ["OnTrackingAnomaly", _alert] call comspec_overwatch_connect_fnc_publishEvent;
     };
     private _jumpThreshold = if (_troll) then { 150 } else { 250 };
-    if ((_distance > _jumpThreshold) && {_batchInterval > 2}) then {
+    if ((_distance > _jumpThreshold) && {_posMin > 2}) then {
         private _lastIncoherent = missionNamespace getVariable ["COMSPEC_IncoherentAlertAt", -1e9];
         if ((_now - _lastIncoherent) > 60) then {
             missionNamespace setVariable ["COMSPEC_IncoherentAlertAt", _now, false];
@@ -413,6 +536,8 @@ missionNamespace setVariable ["COMSPEC_lastRole", _role, true];
 missionNamespace setVariable ["COMSPEC_lastRadio", _radioSig, true];
 missionNamespace setVariable ["COMSPEC_lastMedical", _medicalSig, true];
 missionNamespace setVariable ["COMSPEC_lastGroup", _groupName, true];
+missionNamespace setVariable ["COMSPEC_lastHeading", _heading, true];
+missionNamespace setVariable ["COMSPEC_lastVehSig", _vehSig, true];
 missionNamespace setVariable ["COMSPEC_lastSendTime", _now, true];
 missionNamespace setVariable ["COMSPEC_LastPositionSync", _now, false];
 

@@ -51,3 +51,15 @@ class COMSPEC_RscButtonDanger: COMSPEC_RscButton {
     colorFocused[] = {0.4, 0.12, 0.12, 1};
     colorText[] = {0.95, 0.88, 0.88, 1};
 };
+
+class COMSPEC_RscInvisibleButton: COMSPEC_RscButton {
+    shadow = 0;
+    colorText[] = {0, 0, 0, 0};
+    colorDisabled[] = {0, 0, 0, 0};
+    colorBackground[] = {0, 0, 0, 0};
+    colorBackgroundDisabled[] = {0, 0, 0, 0};
+    colorBackgroundActive[] = {1, 1, 1, 0.08};
+    colorFocused[] = {0, 0, 0, 0};
+    colorShadow[] = {0, 0, 0, 0};
+    colorBorder[] = {0, 0, 0, 0};
+};

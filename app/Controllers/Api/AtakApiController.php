@@ -1540,9 +1540,9 @@ class AtakApiController
      *
      * @return array{steam_uid: ?string, session_ok: bool}|Response
      */
-    private function guardArmaWrite(Request $request, int $tenantId, bool $requireSteam = false): array|Response
+    private function guardArmaWrite(Request $request, int $tenantId, bool $requireSteam = false, string $channel = 'write'): array|Response
     {
-        return $this->armaGuard->assertActor($request, $tenantId, $this->jsonBody($request), $requireSteam);
+        return $this->armaGuard->assertActor($request, $tenantId, $this->jsonBody($request), $requireSteam, $channel);
     }
 
     public function ping(Request $request, array $params = []): Response
@@ -4712,7 +4712,7 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
-        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        $actor = $this->guardArmaWrite($request, $tenantId, false, 'position');
         if ($actor instanceof Response) {
             return $actor;
         }

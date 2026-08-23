@@ -106,6 +106,7 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {
         ["WARN", "Boot", "Overwatch désactivé — pas de sync / ACE"] call comspec_overwatch_connect_fnc_log;
     };
+    [] call comspec_overwatch_connect_fnc_applyNetworkProfile;
 
     // Menus ACE uniquement si l’option est activée (évite conflits pack au démarrage).
     [{

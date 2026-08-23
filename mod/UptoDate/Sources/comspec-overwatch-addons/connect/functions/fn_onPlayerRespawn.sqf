@@ -33,6 +33,10 @@ if (!isNull player) then {
     };
 };
 missionNamespace setVariable ["COMSPEC_lastSendTime", diag_tickTime, true];
+if (!isNull player) then {
+    missionNamespace setVariable ["COMSPEC_lastHeading", getDir player, true];
+};
+missionNamespace setVariable ["COMSPEC_lastVehSig", "", true];
 missionNamespace setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
 
 // Hit / Explosion sont des EH objet : perdus avec l’ancienne unité

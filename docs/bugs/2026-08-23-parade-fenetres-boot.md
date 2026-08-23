@@ -19,7 +19,7 @@ Le menu principal affichait déjà la note. En mission, les retries REAPP pouvai
 
 ## Correctif
 
-- Une seule fenêtre Windows (CGU + disclaimer bêta) au **menu principal** Arma.
+- Une note **dans le menu principal Arma** (bandeau visible + overlay) ; fenêtre Windows en repli.
 - Plus aucun popup automatique en mission (inscription bêta silencieuse si déjà acceptée).
 - Rappel liaison Athena : Échap → gestion du mod (réglage Windows off par défaut).
 
@@ -32,7 +32,7 @@ Le menu principal affichait déjà la note. En mission, les retries REAPP pouvai
 ## Vérification
 
 1. Rebuild DLL + PBO connect, quitter Arma.
-2. Menu principal : **une** fenêtre Windows CGU/bêta (si pas encore acceptée).
+2. Menu principal : bandeau **Bêta publique** en haut, et overlay de la note si pas encore confirmée.
 3. Entrer en mission : plus de défilé de fenêtres.
 4. Échap → gestion du mod reste disponible.
 

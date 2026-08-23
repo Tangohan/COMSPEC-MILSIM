@@ -65,22 +65,110 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
     "COMSPEC Overwatch", [1, 600, 10, 0]
 ] call CBA_fnc_addSetting;
 
+private _fnc_applyNet = {
+    if (!isNil "comspec_overwatch_connect_fnc_applyNetworkProfile") then {
+        [] call comspec_overwatch_connect_fnc_applyNetworkProfile;
+    };
+};
+
+[
+    "comspec_overwatch_network_authority", "LIST",
+    ["Autorité du profil réseau", "SERVEUR IMPOSÉ : toute la mission utilise le profil serveur. CLIENT AUTORISÉ : chaque joueur choisit. CLIENT LIMITÉ : le joueur peut descendre, pas dépasser le profil serveur."],
+    ["COMSPEC Overwatch", "Réseau"],
+    [
+        [0, 1, 2],
+        ["Serveur imposé", "Client autorisé", "Client limité"],
+        0
+    ],
+    1,
+    _fnc_applyNet
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_network_profile_server", "LIST",
+    ["Profil réseau (serveur / plafond)", "Économie : peu de requêtes. Standard : hybride recommandé. Tactique / Temps réel : petites opérations uniquement. Charge estimée affichée dans le journal de liaison."],
+    ["COMSPEC Overwatch", "Réseau"],
+    [
+        [0, 1, 2, 3, 4],
+        [
+            "Économie — charge faible",
+            "Standard — charge normale",
+            "Tactique — charge élevée",
+            "Temps réel — charge très élevée",
+            "Personnalisé"
+        ],
+        1
+    ],
+    1,
+    _fnc_applyNet
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_network_profile", "LIST",
+    ["Profil réseau (client)", "Utilisé si le serveur autorise le choix client. En mode limité, le profil ne peut pas dépasser celui du serveur."],
+    ["COMSPEC Overwatch", "Réseau"],
+    [
+        [0, 1, 2, 3, 4],
+        [
+            "Économie — charge faible",
+            "Standard — charge normale",
+            "Tactique — charge élevée",
+            "Temps réel — charge très élevée",
+            "Personnalisé"
+        ],
+        1
+    ],
+    0,
+    _fnc_applyNet
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_network_policy", "LIST",
+    ["Politique de transmission", "Intervalle fixe : envoi cadencé même immobile. Sur changement : mouvement / cap / état. Hybride (recommandé) : changement + heartbeat périodique."],
+    ["COMSPEC Overwatch", "Réseau"],
+    [
+        [0, 1, 2],
+        ["Intervalle fixe", "Sur changement", "Hybride (recommandé)"],
+        2
+    ],
+    1,
+    _fnc_applyNet
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_heartbeat_interval", "SLIDER",
+    ["Heartbeat (s) — personnalisé", "Même immobile, Athena reçoit un signal de présence. Utilisé uniquement en profil Personnalisé."],
+    ["COMSPEC Overwatch", "Réseau"],
+    [8, 120, 30, 0],
+    0,
+    _fnc_applyNet
+] call CBA_fnc_addSetting;
+
 [
     "comspec_overwatch_position_interval", "SLIDER",
-    ["Position interval (s)", "Time between two position checks (longer = fewer requests)"],
-    "COMSPEC Overwatch", [1, 60, 3, 2]
+    ["Intervalle position (s) — personnalisé", "Délai minimum entre deux envois de position. Utilisé uniquement en profil Personnalisé."],
+    ["COMSPEC Overwatch", "Réseau"],
+    [1, 60, 5, 0],
+    0,
+    _fnc_applyNet
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_batch_interval", "SLIDER",
-    ["Network batching (s)", "Minimum delay between two position sends to Athena (longer = fewer requests)"],
-    "COMSPEC Overwatch", [1, 60, 3, 1]
+    ["Regroupement réseau (s) — personnalisé", "Délai de regroupement des positions avant envoi. Utilisé uniquement en profil Personnalisé."],
+    ["COMSPEC Overwatch", "Réseau"],
+    [0.25, 5, 1, 2],
+    0,
+    _fnc_applyNet
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_position_threshold", "SLIDER",
-    ["Distance threshold (m)", "Send if movement > X m"],
-    "COMSPEC Overwatch", [1, 50, 5, 0]
+    ["Seuil de déplacement (m) — personnalisé", "Envoi si le déplacement dépasse cette distance (infanterie). Véhicule et aérien sont dérivés. Utilisé uniquement en profil Personnalisé."],
+    ["COMSPEC Overwatch", "Réseau"],
+    [1, 50, 3, 0],
+    0,
+    _fnc_applyNet
 ] call CBA_fnc_addSetting;
 
 [
@@ -508,6 +596,8 @@ if (hasInterface) then {
     missionNamespace setVariable ["COMSPEC_DeathThenRespawn", false, false];
     missionNamespace setVariable ["COMSPEC_VehicleTrackingInited", false, false];
     missionNamespace setVariable ["COMSPEC_lastSendTime", 0, false];
+    missionNamespace setVariable ["COMSPEC_lastHeading", -1, false];
+    missionNamespace setVariable ["COMSPEC_lastVehSig", "", false];
     missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
     missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];
     missionNamespace setVariable ["COMSPEC_PositionTrail", [], false];
