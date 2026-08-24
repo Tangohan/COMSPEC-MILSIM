@@ -6,6 +6,8 @@ namespace App\Services\Portal;
 
 use App\Core\Gate;
 use App\Repositories\EnlistmentRepository;
+use App\Repositories\CommunityEventRepository;
+use App\Repositories\PersonnelQualificationRepository;
 use App\Services\Notifications\PersonalMessageUnreadCounter;
 
 /**
@@ -16,6 +18,8 @@ final class UnifiedActionDigestService
     public function __construct(
         private EnlistmentRepository $enlistmentRepository,
         private PersonalMessageUnreadCounter $personalMessageUnreadCounter,
+        private CommunityEventRepository $communityEventRepository,
+        private PersonnelQualificationRepository $qualificationRepository,
     ) {}
 
     /**
@@ -25,7 +29,8 @@ final class UnifiedActionDigestService
      *   tenant_messages_unread: int,
      *   my_enlistments_pending: int,
      *   staff_enlistments_pending: int,
-     *   sections: list<array{title: string, items: list<array{label: string, href: string, hint: string, count?: int}>}>
+     *   total_attention: int,
+     *   sections: list<array{title: string, items: list<array{label: string, href: string, hint: string, count?: int, priority?: string, action?: string, event_id?: int, rsvp_status?: string}>}>
      * }
      */
     public function buildActionCenter(
@@ -57,6 +62,8 @@ final class UnifiedActionDigestService
                 'href' => url('activite'),
                 'hint' => 'Forum, suivi roleplay et autres alertes non lues dans Mon activité.',
                 'count' => $forumUnread,
+                'priority' => 'normal',
+                'action' => 'Consulter',
             ];
         }
         if ($courrierUnread > 0 && $gate->allows('courrier.view')) {
@@ -65,6 +72,8 @@ final class UnifiedActionDigestService
                 'href' => url('courrier/notifications'),
                 'hint' => 'Documents ou messages officiels non lus.',
                 'count' => $courrierUnread,
+                'priority' => 'high',
+                'action' => 'Ouvrir',
             ];
         }
         if ($tenantMessagesUnread > 0) {
@@ -73,6 +82,8 @@ final class UnifiedActionDigestService
                 'href' => url('messages'),
                 'hint' => 'Conversations avec l’encadrement — nouveaux messages non lus.',
                 'count' => $tenantMessagesUnread,
+                'priority' => 'normal',
+                'action' => 'Répondre',
             ];
         }
         if ($myPendingN > 0) {
@@ -81,6 +92,8 @@ final class UnifiedActionDigestService
                 'href' => url('account'),
                 'hint' => 'Une ou plusieurs étapes attendent votre complément.',
                 'count' => $myPendingN,
+                'priority' => 'high',
+                'action' => 'Compléter',
             ];
         }
         if ($personal !== []) {
@@ -95,8 +108,60 @@ final class UnifiedActionDigestService
                     'href' => url('back-office/recruitments'),
                     'hint' => 'Candidatures soumises en attente de traitement.',
                     'count' => $staffPendingN,
+                    'priority' => 'high',
+                    'action' => 'Examiner',
                 ]],
             ];
+        }
+
+        $scheduleAttention = 0;
+        $agenda = [];
+        try {
+            $events = $this->communityEventRepository->upcomingForTenantWithUserRsvp($tenantId, $userId, 4);
+            foreach ($events as $event) {
+                $startsAt = trim((string) ($event['starts_at'] ?? ''));
+                $startsTs = $startsAt !== '' ? strtotime($startsAt) : false;
+                if ($startsTs === false || $startsTs > strtotime('+14 days')) {
+                    continue;
+                }
+                $rsvp = trim((string) ($event['rsvp_status'] ?? ''));
+                $requiresAnswer = $rsvp === '';
+                if ($requiresAnswer) {
+                    $scheduleAttention++;
+                }
+                $agenda[] = [
+                    'label' => trim((string) ($event['title'] ?? '')) ?: 'Événement communautaire',
+                    'href' => url('evenements'),
+                    'hint' => self::formatAgendaHint($startsTs, trim((string) ($event['location'] ?? '')), $rsvp),
+                    'priority' => $requiresAnswer ? 'high' : 'low',
+                    'action' => $requiresAnswer ? 'Répondre' : 'Voir le rendez-vous',
+                    'event_id' => (int) ($event['id'] ?? 0),
+                    'rsvp_status' => $rsvp,
+                ];
+            }
+        } catch (\Throwable) {
+            // Le briefing reste disponible pendant une migration partielle du calendrier.
+        }
+
+        try {
+            $expiration = $this->qualificationRepository->getNextExpiration($userId);
+            $expirationTs = $expiration !== null ? strtotime($expiration) : false;
+            if ($expirationTs !== false && $expirationTs <= strtotime('+30 days')) {
+                $scheduleAttention++;
+                $agenda[] = [
+                    'label' => 'Qualification à renouveler',
+                    'href' => url('personnel/me'),
+                    'hint' => 'Prochaine échéance le ' . date('d/m/Y', $expirationTs) . '.',
+                    'priority' => 'high',
+                    'action' => 'Préparer le renouvellement',
+                ];
+            }
+        } catch (\Throwable) {
+            // La table de qualifications est optionnelle sur les déploiements en transition.
+        }
+
+        if ($agenda !== []) {
+            $sections[] = ['title' => 'Agenda et échéances', 'items' => $agenda];
         }
 
         $sections[] = [
@@ -114,8 +179,27 @@ final class UnifiedActionDigestService
             'tenant_messages_unread' => $tenantMessagesUnread,
             'my_enlistments_pending' => $myPendingN,
             'staff_enlistments_pending' => $staffPendingN,
+            'total_attention' => $forumUnread + $courrierUnread + $tenantMessagesUnread + $myPendingN + $staffPendingN + $scheduleAttention,
             'sections' => $sections,
         ];
+    }
+
+    private static function formatAgendaHint(int $startsTs, string $location, string $rsvp): string
+    {
+        $today = date('Y-m-d');
+        $day = date('Y-m-d', $startsTs);
+        $when = $day === $today ? 'Aujourd’hui à ' . date('H:i', $startsTs) : 'Le ' . date('d/m/Y à H:i', $startsTs);
+        if ($location !== '') {
+            $when .= ' · ' . $location;
+        }
+        $labels = ['yes' => 'Présence confirmée', 'no' => 'Absence signalée', 'maybe' => 'Présence incertaine'];
+        if ($rsvp !== '') {
+            $when .= ' · ' . ($labels[$rsvp] ?? 'Réponse enregistrée');
+        } else {
+            $when .= ' · Réponse attendue';
+        }
+
+        return $when;
     }
 
     /**

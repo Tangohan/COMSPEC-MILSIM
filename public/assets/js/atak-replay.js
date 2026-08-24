@@ -7,6 +7,8 @@ window.ATAKReplay = (function () {
   var active = false;
   var loaded = false;
   var bound = false;
+  var eventFilter = 'all';
+  var eventWindowSeconds = 90;
 
   function apiRoot() {
     var base = '';
@@ -159,11 +161,25 @@ window.ATAKReplay = (function () {
     return 'contact';
   }
 
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function filterEvents(list) {
+    if (eventFilter === 'all') return list;
+    return list.filter(function (ev) { return String(ev.type || 'contact') === eventFilter; });
+  }
+
   function eventsNearFrame(frameTs) {
     var t = parseTsMs(frameTs);
     if (isNaN(t) || !events.length) return [];
-    var windowMs = 90 * 1000;
-    return events.filter(function (ev) {
+    var windowMs = eventWindowSeconds * 1000;
+    return filterEvents(events).filter(function (ev) {
       var et = parseTsMs(ev.timestamp);
       if (isNaN(et)) return false;
       return Math.abs(et - t) <= windowMs;
@@ -175,7 +191,7 @@ window.ATAKReplay = (function () {
     if (!box) return;
     var list = nearOnly && timeline.length
       ? eventsNearFrame(timeline[index] && timeline[index].timestamp)
-      : events.slice(0, 40);
+      : filterEvents(events).slice(0, 40);
     if (!list.length) {
       if (!events.length) {
         box.hidden = true;
@@ -190,10 +206,15 @@ window.ATAKReplay = (function () {
     var html = '<p class="atak-replay-events-title">Événements clés</p><ul class="atak-replay-events-list">';
     list.forEach(function (ev) {
       var tone = eventTone(ev.type);
-      var lab = String(ev.label || ev.type || 'Événement').replace(/</g, '&lt;');
-      html += '<li class="atak-replay-event atak-replay-event--' + tone + '" data-x="' + (ev.x != null ? ev.x : '') + '" data-y="' + (ev.y != null ? ev.y : '') + '">' +
+      var lab = escapeHtml(ev.label || ev.type || 'Événement');
+      var x = Number(ev.x);
+      var y = Number(ev.y);
+      var canLocate = Number.isFinite(x) && Number.isFinite(y);
+      html += '<li class="atak-replay-event atak-replay-event--' + tone + '">' +
+        (canLocate ? '<button type="button" class="atak-replay-event-target" data-x="' + x + '" data-y="' + y + '" aria-label="Centrer la carte sur ' + lab + '">' : '<div class="atak-replay-event-target">') +
         '<span class="atak-replay-event-ts">' + formatTs(ev.timestamp) + '</span> ' +
-        '<span class="atak-replay-event-label">' + lab + '</span></li>';
+        '<span class="atak-replay-event-label">' + lab + '</span>' +
+        (canLocate ? '</button>' : '</div>') + '</li>';
     });
     html += '</ul>';
     box.innerHTML = html;
@@ -410,6 +431,8 @@ window.ATAKReplay = (function () {
     var exitBtn = el('atak-replay-exit');
     var slider = el('atak-replay-slider');
     var speed = el('atak-replay-speed');
+    var filter = el('atak-replay-event-filter');
+    var zoom = el('atak-replay-zoom');
 
     if (playBtn) playBtn.addEventListener('click', play);
     if (pauseBtn) pauseBtn.addEventListener('click', pause);
@@ -434,14 +457,28 @@ window.ATAKReplay = (function () {
         if (timer) play();
       });
     }
+    if (filter) {
+      filter.addEventListener('change', function () {
+        eventFilter = String(filter.value || 'all');
+        renderEventsList(!!timeline.length);
+      });
+    }
+    if (zoom) {
+      zoom.addEventListener('input', function () {
+        eventWindowSeconds = Math.max(30, Math.min(300, parseInt(zoom.value, 10) || 90));
+        var output = el('atak-replay-zoom-value');
+        if (output) output.textContent = '± ' + eventWindowSeconds + ' s';
+        renderEventsList(!!timeline.length);
+      });
+    }
 
     var eventsBox = el('atak-replay-events');
     if (eventsBox) {
       eventsBox.addEventListener('click', function (e) {
-        var li = e.target && e.target.closest ? e.target.closest('[data-x]') : null;
-        if (!li) return;
-        var x = parseFloat(li.getAttribute('data-x'));
-        var y = parseFloat(li.getAttribute('data-y'));
+        var target = e.target && e.target.closest ? e.target.closest('[data-x]') : null;
+        if (!target) return;
+        var x = parseFloat(target.getAttribute('data-x'));
+        var y = parseFloat(target.getAttribute('data-y'));
         if (isNaN(x) || isNaN(y)) return;
         if (window.ATAKMap && typeof window.ATAKMap.setView === 'function') {
           window.ATAKMap.setView(y, x, 5);

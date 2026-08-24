@@ -1130,6 +1130,8 @@ class Container
             \App\Services\Portal\UnifiedActionDigestService::class => new \App\Services\Portal\UnifiedActionDigestService(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(\App\Services\Notifications\PersonalMessageUnreadCounter::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Repositories\PersonnelQualificationRepository::class),
             ),
             \App\Services\Portal\BackOfficeSidebarBadgeService::class => new \App\Services\Portal\BackOfficeSidebarBadgeService(
                 self::get(\App\Repositories\EnlistmentRepository::class),
@@ -1141,6 +1143,9 @@ class Container
             \App\Controllers\Web\ActionCenterController::class => new \App\Controllers\Web\ActionCenterController(
                 self::get(\App\Services\Portal\UnifiedActionDigestService::class),
                 self::get(UserRepository::class),
+            ),
+            \App\Controllers\Web\OnboardingController::class => new \App\Controllers\Web\OnboardingController(
+                self::get(\App\Repositories\UserProfileRepository::class),
             ),
             \App\Services\Notifications\ActivityHubPresentationService::class => new \App\Services\Notifications\ActivityHubPresentationService(),
             \App\Controllers\Web\ActivityHubController::class => new \App\Controllers\Web\ActivityHubController(

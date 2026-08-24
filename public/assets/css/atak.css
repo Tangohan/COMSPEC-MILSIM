@@ -10078,6 +10078,39 @@ body.atak-theme-light .atak-panel-chrome-btn {
   cursor: pointer;
 }
 
+.atak-replay-explore {
+  display: grid;
+  grid-template-columns: minmax(10rem, .7fr) minmax(14rem, 1.3fr);
+  gap: .75rem;
+  align-items: end;
+  margin-top: .75rem;
+  padding: .75rem;
+  border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: .75rem;
+  background: rgba(15, 23, 42, .38);
+}
+
+.atak-replay-zoom {
+  display: grid;
+  gap: .4rem;
+}
+
+.atak-replay-zoom output {
+  color: #a7f3d0;
+  font-variant-numeric: tabular-nums;
+}
+
+.atak-replay-zoom input {
+  width: 100%;
+  accent-color: #34d399;
+}
+
+@media (max-width: 640px) {
+  .atak-replay-explore {
+    grid-template-columns: 1fr;
+  }
+}
+
 .atak-replay-info-row {
   display: flex;
   align-items: flex-start;
@@ -10151,6 +10184,26 @@ body.atak-theme-light .atak-panel-chrome-btn {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+.atak-replay-event-target {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  font: inherit;
+}
+
+button.atak-replay-event-target {
+  cursor: pointer;
+}
+
+button.atak-replay-event-target:focus-visible {
+  outline: 2px solid var(--atak-accent);
+  outline-offset: 3px;
 }
 .atak-replay-event {
   display: flex;
