@@ -122,7 +122,7 @@ $featuredDispatch = is_array($featuredDispatch ?? null) ? $featuredDispatch : nu
                     data-year="<?= $h((string) ($featuredDispatch['year'] ?? '')) ?>"
                     data-search="<?= $h($featuredDispatch['search'] ?? '') ?>"
                 >
-                    <?php $dispatch = $featuredDispatch; require base_path('views/partials/dispatch_article.php'); ?>
+                    <?php $dispatch = $featuredDispatch; $dispatchHeadingTag = 'h3'; require base_path('views/partials/dispatch_article.php'); ?>
                     <p class="tr-featured__more"><a href="<?= $h($featuredDispatch['href'] ?? '#') ?>"><?= $h(__('site.cl_dispatch_open')) ?></a></p>
                 </div>
             <?php endif; ?>

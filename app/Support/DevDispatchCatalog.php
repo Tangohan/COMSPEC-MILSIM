@@ -156,6 +156,7 @@ final class DevDispatchCatalog
             'date' => (string) $raw['date'],
             'date_label' => self::formatDate((string) $raw['date']),
             'reported_on' => self::formatReported((string) $raw['date']),
+            'reporter' => (string) ($raw['reporter'] ?? 'Athena Operations'),
             'from' => (string) ($raw['from'] ?? 'État-major COMSPEC'),
             'to' => (string) ($raw['to'] ?? 'Communautés Athena'),
             'category' => (string) ($raw['category'] ?? 'Opérations'),
@@ -202,7 +203,7 @@ final class DevDispatchCatalog
         }
         $m = (int) date('n', $ts);
 
-        return 'reported on ' . ($months[$m] ?? date('F', $ts)) . ' ' . date('j, Y', $ts);
+        return 'on ' . ($months[$m] ?? date('F', $ts)) . ' ' . date('j, Y', $ts);
     }
 
     /**
