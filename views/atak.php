@@ -1186,6 +1186,11 @@ if ($atakMapConfig) {
           <span class="atak-section-btn__label">Appuis</span>
           <span class="atak-section-btn__badge" hidden></span>
         </button>
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="qr" title="Accès mobile par QR code">
+          <span class="atak-section-btn__icon" aria-hidden="true">▦</span>
+          <span class="atak-section-btn__label">QR</span>
+          <span class="atak-section-btn__badge" hidden></span>
+        </button>
         <span class="atak-section-rail__sep" aria-hidden="true"></span>
         <a class="atak-section-btn atak-section-btn--link atak-section-btn--jnet" href="<?= htmlspecialchars(url('jnet'), ENT_QUOTES, 'UTF-8') ?>" title="Ouvrir le portail JNET">
           <span class="atak-section-btn__icon" aria-hidden="true">⬡</span>
@@ -1316,6 +1321,10 @@ if ($atakMapConfig) {
           <span class="atak-tab-label">Liaison</span>
           <small class="atak-tab-desc">État C2 / Arma</small>
           <span class="atak-tab-badge" id="atak-liaison-tab-badge" hidden></span>
+        </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="qrcode" data-atak-section="qr" title="QR codes d'accès mobile">
+          <span class="atak-tab-label">QR codes</span>
+          <small class="atak-tab-desc">C2, tchat, ordres et explosifs</small>
         </button>
       </nav>
       <aside class="atak-settings-aside" id="atak-settings-aside" hidden>
@@ -1634,6 +1643,34 @@ if ($atakMapConfig) {
             </svg>
           </button>
         </div>
+      </div>
+      <div class="atak-tabs-content" id="tab-qrcode" role="tabpanel">
+        <section class="atak-qr-hub" aria-labelledby="atak-qr-title">
+          <div class="atak-qr-hub__hero">
+            <span class="atak-qr-hub__kicker">PASSERELLE MOBILE SÉCURISÉE</span>
+            <h3 id="atak-qr-title">Emportez le C2 sur le terrain</h3>
+            <p>Choisissez un module, générez une liaison temporaire puis scannez-la avec le téléphone. Chaque QR ouvre directement la bonne vue ATAK.</p>
+          </div>
+          <div class="atak-qr-destinations" role="radiogroup" aria-label="Vue à ouvrir sur le téléphone">
+            <button type="button" class="atak-qr-destination is-active" data-qr-destination="c2" aria-pressed="true"><strong>C2</strong><span>Conduite et suivi</span></button>
+            <button type="button" class="atak-qr-destination" data-qr-destination="chat" aria-pressed="false"><strong>Tchat</strong><span>Messagerie terrain</span></button>
+            <button type="button" class="atak-qr-destination" data-qr-destination="orders" aria-pressed="false"><strong>Ordres</strong><span>Directives et FRAGO</span></button>
+            <button type="button" class="atak-qr-destination" data-qr-destination="explosives" aria-pressed="false"><strong>Explosifs</strong><span>Charges et minuteries</span></button>
+          </div>
+          <button type="button" class="atak-qr-generate" id="atak-qr-generate" data-qr-api="<?= htmlspecialchars(url('api/atak/phone-pairing'), ENT_QUOTES, 'UTF-8') ?>">Générer le QR C2</button>
+          <div class="atak-qr-result" id="atak-qr-result" hidden aria-live="polite">
+            <div class="atak-qr-result__image"><img id="atak-qr-image" alt="QR code d'accès ATAK mobile" width="240" height="240" /></div>
+            <div class="atak-qr-result__details">
+              <span class="atak-qr-status">PRÊT À SCANNER</span>
+              <h4 id="atak-qr-result-title">Accès C2</h4>
+              <p>Ce lien est temporaire et associe le téléphone à votre espace opérationnel.</p>
+              <div class="atak-qr-code-row"><code id="atak-qr-code">————</code><button type="button" id="atak-qr-copy">Copier</button></div>
+              <p class="atak-qr-expiry" id="atak-qr-expiry"></p>
+              <a id="atak-qr-open" href="#" target="_blank" rel="noopener noreferrer">Ouvrir sur cet appareil ↗</a>
+            </div>
+          </div>
+          <p class="atak-qr-error" id="atak-qr-error" hidden role="alert"></p>
+        </section>
       </div>
       <div class="atak-tabs-content" id="tab-orders" role="tabpanel">
         <nav class="atak-c2-worktabs" role="tablist" aria-label="Travail commandement">
@@ -2699,6 +2736,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-panel-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-shell-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-section-nav.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-qr-hub.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-c2-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terminals.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>

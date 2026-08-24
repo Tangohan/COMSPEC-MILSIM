@@ -56,6 +56,12 @@
       title: 'Appuis',
       meta: 'Feu & air',
       tabs: ['jtac']
+    },
+    qr: {
+      eyebrow: 'ATHENA / MOBILE',
+      title: 'Accès QR code',
+      meta: 'Terminaux',
+      tabs: ['qrcode']
     }
   };
 

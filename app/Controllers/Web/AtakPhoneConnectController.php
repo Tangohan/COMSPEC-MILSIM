@@ -255,6 +255,21 @@ final class AtakPhoneConnectController
         return $this->openDevice($params, 'chat');
     }
 
+    public function openOrders(Request $request, array $params = []): Response
+    {
+        return $this->openDevice($params, 'orders');
+    }
+
+    public function openExplosives(Request $request, array $params = []): Response
+    {
+        return $this->openDevice($params, 'charges');
+    }
+
+    public function openC2(Request $request, array $params = []): Response
+    {
+        return $this->openDevice($params, 'c2');
+    }
+
     /** Prépare une vue ATAK mobile ciblée à partir d'une liaison QR valide. */
     private function openDevice(array $params, string $view): Response
     {
@@ -289,18 +304,21 @@ final class AtakPhoneConnectController
         }
 
         $tenantName = $this->tenantDisplayName($tenantId);
-        $isChat = $view === 'chat';
-        $atakEmbedUrl = url('atak') . ($isChat
-            ? '?embed=device&popout=left&tab=chat'
+        $tabs = ['chat' => 'chat', 'orders' => 'orders', 'charges' => 'charges', 'c2' => 'orders'];
+        $tab = $tabs[$view] ?? '';
+        $labels = ['chat' => 'Tchat', 'orders' => 'Ordres', 'charges' => 'Explosifs', 'c2' => 'C2'];
+        $label = $labels[$view] ?? 'ATAK';
+        $atakEmbedUrl = url('atak') . ($tab !== ''
+            ? '?embed=device&popout=left&tab=' . rawurlencode($tab)
             : '?embed=device');
 
         return Response::view('atak.connect_device', [
-            'title' => ($isChat ? 'Tchat ATAK — ' : 'ATAK — ') . $tenantName,
+            'title' => $label . ' ATAK — ' . $tenantName,
             'atakTenantName' => $tenantName,
             'atakEmbedUrl' => $atakEmbedUrl,
-            'atakDeviceMode' => $isChat ? 'TCHAT' : 'BFT',
-            'atakDeviceHint' => $isChat
-                ? 'Vue communications déléguée — le téléphone reste synchronisé avec le poste de commandement.'
+            'atakDeviceMode' => strtoupper($label),
+            'atakDeviceHint' => $tab !== ''
+                ? 'Vue ' . strtolower($label) . ' déléguée — le téléphone reste synchronisé avec le poste de commandement.'
                 : 'Carte Arma dans le terminal ATAK Android — même liaison que sur Athena.',
             'slidesUrl' => url('connect/' . $token . '/slides'),
             'chooseUrl' => url('connect/' . $token),

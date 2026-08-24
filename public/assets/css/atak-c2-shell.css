@@ -1456,3 +1456,29 @@ body.atak-page .atak-order-suivi em {
   padding: 10px;
   gap: 4px;
 }
+
+/* Hub QR mobile */
+.atak-qr-hub { padding: 18px; display: grid; gap: 16px; overflow-y: auto; }
+.atak-qr-hub__hero { padding: 18px; border: 1px solid rgba(68, 214, 173, .22); background: linear-gradient(135deg, rgba(27, 70, 64, .45), rgba(10, 19, 24, .75)); }
+.atak-qr-hub__kicker { color: #59ddbc; font: 700 10px/1.2 var(--atak-font-mono, monospace); letter-spacing: .14em; }
+.atak-qr-hub__hero h3 { margin: 8px 0 6px; font: 700 22px/1.1 var(--atak-font-condensed, sans-serif); color: #f0f7f5; }
+.atak-qr-hub__hero p, .atak-qr-result__details p { margin: 0; color: #9fb2b0; font-size: 12px; line-height: 1.5; }
+.atak-qr-destinations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.atak-qr-destination { padding: 12px; border: 1px solid rgba(142, 168, 164, .2); border-radius: 3px; background: rgba(12, 23, 27, .72); color: #d9e6e3; text-align: left; cursor: pointer; }
+.atak-qr-destination strong, .atak-qr-destination span { display: block; }
+.atak-qr-destination strong { font: 700 15px/1.2 var(--atak-font-condensed, sans-serif); }
+.atak-qr-destination span { margin-top: 4px; color: #819693; font-size: 10px; }
+.atak-qr-destination:hover, .atak-qr-destination.is-active { border-color: #43d4ad; background: rgba(40, 118, 99, .25); box-shadow: inset 3px 0 #43d4ad; }
+.atak-qr-generate { min-height: 42px; border: 1px solid #49d9b4; border-radius: 3px; background: #2f9f84; color: #07120f; font: 800 12px/1 var(--atak-font-mono, monospace); letter-spacing: .06em; cursor: pointer; }
+.atak-qr-generate:disabled { opacity: .55; cursor: wait; }
+.atak-qr-result { display: grid; grid-template-columns: minmax(160px, 240px) 1fr; gap: 18px; padding: 16px; border: 1px solid rgba(73, 217, 180, .28); background: rgba(7, 16, 20, .8); }
+.atak-qr-result__image { padding: 10px; border-radius: 4px; background: #fff; }
+.atak-qr-result__image img { display: block; width: 100%; height: auto; }
+.atak-qr-status { color: #55dab7; font: 700 9px/1 var(--atak-font-mono, monospace); letter-spacing: .12em; }
+.atak-qr-result h4 { margin: 8px 0; color: #edf7f4; font-size: 18px; }
+.atak-qr-code-row { display: flex; gap: 8px; margin: 14px 0 8px; }
+.atak-qr-code-row code { flex: 1; padding: 9px; background: #101d20; color: #f1b95b; font-size: 16px; letter-spacing: .15em; text-align: center; }
+.atak-qr-code-row button { border: 1px solid #3e5d58; background: transparent; color: #b9cbc7; cursor: pointer; }
+.atak-qr-result a { display: inline-block; margin-top: 10px; color: #55dab7; font-size: 11px; }
+.atak-qr-error { margin: 0; padding: 10px; border-left: 3px solid #e56565; color: #ffaaaa; background: rgba(119, 30, 30, .2); }
+@media (max-width: 620px) { .atak-qr-result { grid-template-columns: 1fr; } .atak-qr-result__image { max-width: 220px; } }
