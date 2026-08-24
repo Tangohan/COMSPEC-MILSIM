@@ -58,4 +58,14 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertStringContainsString("style.mixBlendMode = 'multiply'", $javascript);
         self::assertStringContainsString('.atakHillshade-pane { mix-blend-mode: multiply; }', $css);
     }
+
+    public function testReadyTerrainMeshDoesNotApplyHillshadeTwice(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak.css');
+
+        self::assertStringContainsString(
+            '.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .atakHillshade-pane { opacity: 0; }',
+            $css
+        );
+    }
 }
