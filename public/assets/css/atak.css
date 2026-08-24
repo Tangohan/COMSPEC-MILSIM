@@ -4674,6 +4674,32 @@ body.atak-theme-light .atak-chat-messages {
   border: 1px solid var(--atak-border);
 }
 
+/* Vue tactique inclinée — conserve la pile Leaflet afin que les unités et tracés
+   restent exactement calés sur la cartographie. */
+.atak-map-stage { perspective: 1350px; perspective-origin: 50% 42%; overflow: hidden; }
+#atak-map { transform-origin: 50% 58%; transition: transform 420ms cubic-bezier(.2,.75,.2,1), filter 240ms ease; }
+.atak-map-stage.atak-map-stage--3d #atak-map {
+  transform: scale(1.18) rotateX(var(--atak-map-pitch, 48deg)) rotateZ(var(--atak-map-bearing, 0deg));
+  filter: saturate(1.08) contrast(1.06);
+}
+.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-tile-pane,
+.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-overlay-pane { filter: drop-shadow(0 14px 11px rgba(0, 0, 0, .42)); }
+.atak-map-tools__btn--view3d.is-active { color: #6ee7c4; border-color: rgba(52, 211, 153, .7); background: rgba(16, 185, 129, .16); }
+.atak-map-3d-nav { position: absolute; right: 16px; top: 18px; z-index: 1100; display: grid; justify-items: center; gap: 7px; }
+.atak-map-3d-nav[hidden] { display: none !important; }
+.atak-map-3d-nav__compass {
+  width: 54px; height: 54px; border: 1px solid rgba(110, 231, 196, .65); border-radius: 50%;
+  background: radial-gradient(circle, rgba(15, 33, 39, .96) 0 48%, rgba(4, 12, 16, .96) 49%);
+  color: #fb7185; box-shadow: 0 8px 22px rgba(0, 0, 0, .45), inset 0 0 0 4px rgba(52, 211, 153, .08); cursor: grab;
+}
+.atak-map-3d-nav__compass:active { cursor: grabbing; }
+.atak-map-3d-nav__needle { display: block; transform: rotate(calc(-1 * var(--atak-map-bearing-number, 0) * 1deg)); font: 800 12px/44px ui-monospace, monospace; }
+.atak-map-3d-nav__flat { border: 1px solid #334155; border-radius: 5px; padding: 4px 9px; background: rgba(8, 16, 22, .94); color: #cbd5e1; font: 800 10px/1 ui-monospace, monospace; cursor: pointer; }
+.atak-terrain-3d-settings { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(100, 116, 139, .28); }
+.atak-terrain-3d-settings[hidden] { display: none !important; }
+.atak-terrain-3d-hint { margin: 6px 0 0; color: #7f9aaa; font-size: 10px; line-height: 1.35; }
+@media (prefers-reduced-motion: reduce) { #atak-map { transition: none; } }
+
 /* Coin bas-droit : légende Traces au-dessus du HUD grille/réseau, sans chevauchement. */
 .atak-map-br-stack {
   position: absolute;
