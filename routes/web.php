@@ -519,12 +519,18 @@ return function (Router $router) {
     $router->get('/connect/{token}/slides', [\App\Controllers\Web\AtakPhoneConnectController::class, 'slides']);
     $router->get('/connect/{token}/carte', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openCarte']);
     $router->get('/connect/{token}/tchat', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openChat']);
+    $router->get('/connect/{token}/ordres', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openOrders']);
+    $router->get('/connect/{token}/explosifs', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openExplosives']);
+    $router->get('/connect/{token}/c2', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openC2']);
     $router->get('/connect/{token}', [\App\Controllers\Web\AtakPhoneConnectController::class, 'show']);
     $router->get('/atak/connect', [\App\Controllers\Web\AtakPhoneConnectController::class, 'codeForm']);
     $router->post('/atak/connect/code', [\App\Controllers\Web\AtakPhoneConnectController::class, 'codeSubmit']);
     $router->get('/atak/connect/{token}/slides', [\App\Controllers\Web\AtakPhoneConnectController::class, 'slides']);
     $router->get('/atak/connect/{token}/carte', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openCarte']);
     $router->get('/atak/connect/{token}/tchat', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openChat']);
+    $router->get('/atak/connect/{token}/ordres', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openOrders']);
+    $router->get('/atak/connect/{token}/explosifs', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openExplosives']);
+    $router->get('/atak/connect/{token}/c2', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openC2']);
     $router->get('/atak/connect/{token}', [\App\Controllers\Web\AtakPhoneConnectController::class, 'show']);
     $router->get('/enlistment/suivi/{token}/piece/{attachmentId}/preparation', [EnlistmentCandidatePortalController::class, 'attachmentDownloadPreparation']);
     $router->get('/enlistment/suivi/{token}/piece/{attachmentId}', [EnlistmentCandidatePortalController::class, 'downloadAttachment']);

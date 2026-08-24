@@ -546,10 +546,12 @@ class AtakApiController
         // Adresse courte affichée en jeu / sur le TOC ; le QR encode le lien direct (jeton).
         $entryUrl = $this->phoneConnectPublicUrl('connect');
         $destination = strtolower(trim((string) $request->query('destination', '')));
-        $pairPath = 'connect/' . $token . ($destination === 'chat' ? '/tchat' : '');
+        $destinationPaths = ['chat' => 'tchat', 'orders' => 'ordres', 'explosives' => 'explosifs', 'c2' => 'c2'];
+        $destinationPath = $destinationPaths[$destination] ?? '';
+        $pairPath = 'connect/' . $token . ($destinationPath !== '' ? '/' . $destinationPath : '');
         $pairUrl = $this->phoneConnectPublicUrl($pairPath);
         $qrImageUrl = url('api/atak/phone-pairing/' . $token . '/qr.png')
-            . ($destination === 'chat' ? '?destination=chat' : '');
+            . ($destinationPath !== '' ? '?destination=' . rawurlencode($destination) : '');
 
         // Data-URI inline : le dashboard ATAK affiche le QR sans second GET
         // (évite img cassée si l’endpoint PNG est bloqué, en 503, ou mal servi).
@@ -788,8 +790,10 @@ class AtakApiController
                 ->setBody('Not found');
         }
         $destination = strtolower(trim((string) $request->query('destination', '')));
+        $destinationPaths = ['chat' => 'tchat', 'orders' => 'ordres', 'explosives' => 'explosifs', 'c2' => 'c2'];
+        $destinationPath = $destinationPaths[$destination] ?? '';
         $pairUrl = $this->phoneConnectPublicUrl(
-            'connect/' . $token . ($destination === 'chat' ? '/tchat' : '')
+            'connect/' . $token . ($destinationPath !== '' ? '/' . $destinationPath : '')
         );
         $generator = new QrPngGenerator();
         // pngOnly : Arma RscPicture n’affiche pas de SVG — forcer un PNG binaire (Endroid, GD ou zlib).
