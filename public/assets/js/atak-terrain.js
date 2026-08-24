@@ -60,6 +60,10 @@ window.ATAKTerrain = (function () {
       map.createPane('atakHillshadePane');
       map.getPane('atakHillshadePane').style.zIndex = 350;
       map.getPane('atakHillshadePane').style.pointerEvents = 'none';
+      /* Le PNG d'ombrage est une information lumineuse, pas un fond de carte.
+         En multiplication, ses pixels clairs conservent la texture cartographique
+         même à 100 % d'opacité, tandis que les pixels sombres marquent le relief. */
+      map.getPane('atakHillshadePane').style.mixBlendMode = 'multiply';
     }
     if (!map.getPane('atakSlopePane')) {
       map.createPane('atakSlopePane');
