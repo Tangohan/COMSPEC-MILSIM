@@ -1,6 +1,10 @@
-name: Deploy Athena (Hostinger FTP)
+name: Deploy Athena (secours FTP manuel)
 
-# Déploie le site sur Hostinger après un push sur main.
+# Déploiement FTP de secours, à lancer manuellement depuis GitHub Actions.
+#
+# La production suit déjà `main` via l'intégration Git Hostinger. Ne pas relancer ce
+# workflow à chaque push : les deux synchronisations se chevauchent, mettent en file
+# les releases suivantes et peuvent laisser Hostinger compiler un arbre en mutation.
 # Secrets GitHub requis (Settings → Secrets and variables → Actions) :
 #   FTP_SERVER   ex. 92.113.24.96  ou  ftp.athena.ttrd.fr
 #   FTP_USERNAME ex. u416380327
@@ -12,9 +16,12 @@ name: Deploy Athena (Hostinger FTP)
 # Sur Hostinger, préférer SESSION_SAVE_PATH hors public_html (voir .env.example).
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Saisir DEPLOY pour confirmer le déploiement FTP de secours"
+        required: true
+        type: string
 
 concurrency:
   group: deploy-athena-prod
@@ -23,6 +30,7 @@ concurrency:
 
 jobs:
   ftp-deploy:
+    if: ${{ inputs.confirmation == 'DEPLOY' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
