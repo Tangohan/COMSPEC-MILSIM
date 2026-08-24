@@ -4690,10 +4690,6 @@ body.atak-theme-light .atak-chat-messages {
    refusée ou une restauration du contexte WebGL, au lieu d'exposer le gris. */
 .atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 1; }
 .atak-map-stage #atak-map .atakHillshade-pane { mix-blend-mode: multiply; }
-/* Le maillage WebGL calcule déjà son propre éclairage à partir du DEM. Dès
-   qu'il est prêt, ne superpose pas une seconde fois le PNG d'ombrage : à forte
-   opacité il grisait la texture drapée et effaçait les couleurs de la carte. */
-.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .atakHillshade-pane { opacity: 0; }
 .atak-map-stage:not(.atak-map-stage--3d) .atak-terrain-mesh { display: none; }
 .atak-map-tools__btn--view3d.is-active { color: #6ee7c4; border-color: rgba(52, 211, 153, .7); background: rgba(16, 185, 129, .16); }
 .atak-map-3d-nav { position: absolute; right: 16px; top: 18px; z-index: 1100; display: grid; justify-items: center; gap: 7px; }
