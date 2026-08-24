@@ -2272,6 +2272,7 @@ if ($atakMapConfig) {
             <div class="atak-map-tools__cluster-btns">
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-in" data-tool-slot="zoom" title="Zoom avant">+</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-out" data-tool-slot="zoom" title="Zoom arrière">−</button>
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--view3d" id="atak-view-3d" data-tool-slot="view3d" title="Incliner la carte sur le relief" aria-pressed="false">3D</button>
               <button type="button" class="atak-map-tools__btn" data-tool="nvg" data-tool-slot="nvg" title="Vision nocturne (N)" aria-pressed="false">NVG</button>
               <button type="button" class="atak-map-tools__btn" data-tool="cop" data-tool-slot="cop" title="Tableau tactique des unités">Unités</button>
             </div>
@@ -2351,6 +2352,13 @@ if ($atakMapConfig) {
               <span class="atak-map-look__key">Opacité <span class="atak-sound-pref-val" id="atak-terrain-opacity-val">32 %</span></span>
               <input type="range" id="atak-terrain-opacity" class="atak-sound-pref-slider" min="10" max="100" step="5" value="32" />
             </label>
+            <div class="atak-terrain-3d-settings" id="atak-terrain-3d-settings" hidden>
+              <label class="atak-map-look__row" for="atak-terrain-pitch">
+                <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
+                <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
+              </label>
+              <p class="atak-terrain-3d-hint">Glissez sur la rose pour orienter la vue. Le relief, les tracés et les unités restent synchronisés.</p>
+            </div>
             <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
           </div>
           <div class="atak-map-tools__prefs-actions">
@@ -2401,6 +2409,12 @@ if ($atakMapConfig) {
       </aside>
       <div class="atak-map-stage">
       <div id="atak-map"></div>
+      <div class="atak-map-3d-nav" id="atak-map-3d-nav" hidden aria-label="Orientation de la vue 3D">
+        <button type="button" class="atak-map-3d-nav__compass" id="atak-map-3d-compass" title="Glisser pour orienter · cliquer pour remettre le nord en haut" aria-label="Orienter la carte, nord en haut">
+          <span class="atak-map-3d-nav__needle">N</span>
+        </button>
+        <button type="button" class="atak-map-3d-nav__flat" id="atak-map-3d-flat">2D</button>
+      </div>
       <div class="atak-map-br-stack" id="atak-map-br-stack">
       <div class="atak-trail-legend" id="atak-trail-legend" hidden>
         <p class="atak-trail-legend__title">Traces</p>
@@ -2601,6 +2615,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-unit-popup.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-terrain-3d.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-motion-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-dossier.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
