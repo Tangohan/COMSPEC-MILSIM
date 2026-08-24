@@ -1423,7 +1423,10 @@ final class SseDigitalLabRepository
     /** @param array<string, mixed> $row */
     private function hydrateDevice(array $row): array
     {
-        $row['device_type_label'] = self::DEVICE_TYPES[(string) ($row['device_type'] ?? '')] ?? 'Support';
+        $row['device_type_label'] = SseDomexContract::deviceTypeLabel(
+            (string) ($row['device_type'] ?? ''),
+            self::DEVICE_TYPES
+        );
         $row['status_label'] = self::DEVICE_STATUSES[(string) ($row['status'] ?? '')] ?? 'Inconnu';
         $profile = (string) ($row['data_profile'] ?? '');
         $row['data_profile_label'] = self::DATA_PROFILES[$profile] ?? ($profile !== '' ? $profile : '—');
@@ -1447,7 +1450,7 @@ final class SseDigitalLabRepository
         $row['packet_type_label'] = SseDomexContract::PACKET_TYPES[(string) ($row['packet_type'] ?? '')] ?? 'Paquet';
         $row['quality_label'] = SseDomexContract::PACKET_QUALITIES[(string) ($row['quality'] ?? '')] ?? 'Complet';
         $row['channel_label'] = SseDomexContract::CHANNELS[(string) ($row['channel'] ?? '')] ?? '';
-        $row['origin_label'] = SseDomexContract::ORIGINS[(string) ($row['origin'] ?? '')] ?? '';
+        $row['origin_label'] = SseDomexContract::originLabel((string) ($row['origin'] ?? ''));
         $row['confidence_label'] = SseDomexContract::CONFIDENCES[(string) ($row['confidence'] ?? '')] ?? 'Non évalué';
         $row['status_label'] = SseDomexContract::PACKET_STATUSES[(string) ($row['status'] ?? '')] ?? '';
         $row['reveal_label'] = SseDomexContract::REVEAL_MODES[(string) ($row['reveal_after'] ?? '')] ?? '';
@@ -1472,9 +1475,10 @@ final class SseDigitalLabRepository
             ];
         }
         $row['linked_entities'] = $hydrated;
-        $row['device_type_label'] = self::DEVICE_TYPES[(string) ($row['device_type'] ?? '')]
-            ?? SseDomexContract::DEVICE_TYPES[(string) ($row['device_type'] ?? '')]
-            ?? '';
+        $row['device_type_label'] = SseDomexContract::deviceTypeLabel(
+            (string) ($row['device_type'] ?? ''),
+            self::DEVICE_TYPES
+        );
         $node = (string) ($row['node_key'] ?? '');
         $row['support_label'] = $node !== '' ? $node : (string) ($row['device_reference'] ?? 'Support');
         $row['on_map'] = SseDomexContract::shouldShowOnMap($row);
@@ -1491,7 +1495,10 @@ final class SseDigitalLabRepository
     {
         $row['method_label'] = self::ACQUISITION_METHODS[(string) ($row['method'] ?? '')] ?? 'Acquisition';
         $row['status_label'] = self::ACQUISITION_STATUSES[(string) ($row['status'] ?? '')] ?? 'Inconnu';
-        $row['device_type_label'] = self::DEVICE_TYPES[(string) ($row['device_type'] ?? '')] ?? '';
+        $row['device_type_label'] = SseDomexContract::deviceTypeLabel(
+            (string) ($row['device_type'] ?? ''),
+            self::DEVICE_TYPES
+        );
         $bytes = (int) ($row['volume_bytes'] ?? 0);
         $row['volume_label'] = $bytes > 0 ? $this->formatBytes($bytes) : '—';
         $row['partial_label'] = !empty($row['is_partial']) ? 'Partielle' : 'Complète';

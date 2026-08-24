@@ -280,7 +280,7 @@ $editValidTabIds = implode(',', array_map(
                   <p class="mt-1 text-[11px] leading-relaxed text-slate-500">Optionnel : fond du portrait en tête de fiche. Choisissez « Ne pas afficher » pour un fond neutre.</p>
                 </div>
                 <div>
-                  <label for="blood_type" class="mb-1 block text-xs font-bold text-slate-600">Groupe sanguin (en jeu)</label>
+                  <label for="blood_type" class="mb-1 block text-xs font-bold text-slate-600">Groupe sanguin</label>
                   <select name="blood_type" id="blood_type" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
                     <?php
                     $bt = trim((string) ($p['blood_type'] ?? ''));
@@ -292,8 +292,12 @@ $editValidTabIds = implode(',', array_map(
                     if ($bt !== '' && !in_array($bt, $bloodOptions, true)) {
                         echo '<option value="' . htmlspecialchars($bt) . '" selected>' . htmlspecialchars($bt) . '</option>';
                     }
+                    $armaBt = trim((string) ($p['rp_arma_blood_type'] ?? ''));
                     ?>
                   </select>
+                  <?php if ($armaBt !== '' && $armaBt !== $bt): ?>
+                  <p class="mt-1 text-[11px] leading-relaxed text-amber-800">En jeu actuellement : <?= htmlspecialchars($armaBt) ?>. À confirmer lors du prochain bilan médical.</p>
+                  <?php endif; ?>
                 </div>
               </div>
             </div>

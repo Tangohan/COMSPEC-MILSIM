@@ -130,12 +130,12 @@
 }
 
 .atak-trail-legend {
-  position: absolute;
-  right: 10px;
+  position: relative;
+  right: auto;
   left: auto;
-  bottom: 12px;
-  z-index: 520;
-  max-width: 16.5rem;
+  bottom: auto;
+  z-index: auto;
+  max-width: none;
   padding: 0.45rem 0.6rem 0.5rem;
   background: rgba(12, 14, 20, 0.86);
   border: 1px solid rgba(148, 163, 184, 0.28);
@@ -147,6 +147,10 @@
 }
 .atak-trail-legend[hidden] {
   display: none !important;
+}
+.atak-map-br-stack .atak-trail-legend:not([hidden]) {
+  min-height: 0;
+  overflow: auto;
 }
 .atak-trail-legend__title {
   margin: 0 0 0.3rem;

@@ -13,6 +13,7 @@ use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Support\ChangelogCatalog;
+use App\Support\DevDispatchCatalog;
 
 /**
  * Pages marketing publiques : à propos, contact, journal des nouveautés, présentation SSE.
@@ -138,6 +139,8 @@ final class SitePagesController
         }
 
         $catalog = ChangelogCatalog::hydrate($kpis);
+        $dispatches = DevDispatchCatalog::all();
+        $featuredDispatch = DevDispatchCatalog::featured();
         $siteRoot = rtrim(url(''), '/');
         $pageUrl = $siteRoot . '/nouveautes';
         $itemList = [];
@@ -157,6 +160,8 @@ final class SitePagesController
             'meta_description' => __('site.changelog_meta_description'),
             'marketingActive' => 'changelog',
             'catalog' => $catalog,
+            'dispatches' => $dispatches,
+            'featuredDispatch' => $featuredDispatch,
             'marketingStyles' => [asset_url('assets/css/changelog.css')],
             'marketingScripts' => [asset_url('assets/js/changelog.js')],
             'jsonLdExtra' => [
@@ -179,6 +184,37 @@ final class SitePagesController
                         'numberOfItems' => count($itemList),
                         'itemListElement' => $itemList,
                     ],
+                ],
+            ],
+        ]);
+    }
+
+    public function dispatch(Request $request, array $params = []): Response
+    {
+        $kind = strtolower(trim((string) ($params['kind'] ?? '')));
+        $number = (string) ($params['number'] ?? '');
+        $dispatch = DevDispatchCatalog::find($kind, $number);
+        if ($dispatch === null) {
+            return Response::redirect(url('nouveautes'));
+        }
+        $pageUrl = rtrim(url(''), '/') . '/nouveautes/' . $kind . '/' . $dispatch['number_pad'];
+
+        return Response::view('layout.marketing', [
+            'content' => 'site.dispatch',
+            'title' => $dispatch['heading'] . ' — ' . $dispatch['title'],
+            'meta_description' => $dispatch['activity'] !== '' ? $dispatch['activity'] : $dispatch['title'],
+            'marketingActive' => 'changelog',
+            'dispatch' => $dispatch,
+            'marketingStyles' => [asset_url('assets/css/changelog.css')],
+            'jsonLdExtra' => [
+                [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'Article',
+                    'headline' => $dispatch['heading'] . ' — ' . $dispatch['title'],
+                    'datePublished' => $dispatch['date'],
+                    'inLanguage' => str_starts_with((string) html_lang(), 'en') ? 'en' : 'fr',
+                    'url' => $pageUrl,
+                    'author' => ['@type' => 'Organization', 'name' => 'Athena COMSPEC'],
                 ],
             ],
         ]);

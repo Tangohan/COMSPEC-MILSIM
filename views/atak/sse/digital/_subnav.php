@@ -4,7 +4,7 @@ declare(strict_types=1);
 $labSubnav = (string) ($labSubnav ?? 'hub');
 $h = $h ?? static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
-$groups = [
+$labNavGroups = [
     'Travail' => [
         'hub' => ['', 'Vue d’ensemble'],
         'queue' => ['a-exploiter', 'À exploiter'],
@@ -23,7 +23,7 @@ $groups = [
 ];
 ?>
 <nav class="lab-subnav" aria-label="Sections de l’exploitation numérique">
-    <?php foreach ($groups as $groupLabel => $items): ?>
+    <?php foreach ($labNavGroups as $groupLabel => $items): ?>
         <div class="lab-subnav__group">
             <span class="lab-subnav__group-label"><?= $h($groupLabel) ?></span>
             <div class="lab-subnav__links" role="list">

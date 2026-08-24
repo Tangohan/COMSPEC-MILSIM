@@ -1,0 +1,31 @@
+---
+description: Publier un bulletin SPOTREP / TECHREP / UPDATE à chaque mise à jour visible
+alwaysApply: true
+---
+
+# Journal public — un article par mise à jour
+
+À **chaque** évolution visible (portail, carte ATAK, pack jeu, SSE, effectifs), publier un bulletin dans `app/Support/DevDispatchCatalog.php`.
+
+## Quel type
+
+| Livrable | Type | Numéro |
+| --- | --- | --- |
+| Une PR Git | **UPDATE** | le numéro de PR (`#198` → `00198`) |
+| Un commit livré sans PR | **UPDATE** | le prochain numéro libre après le plus haut UPDATE |
+| Une vague / un thème opérateur | **SPOTREP** | incrémenter (`#00002`, `#00003`…) |
+| Un changement d’outils / de pack | **TECHREP** compagnon du SPOTREP | même numéro que le SPOTREP |
+
+## Textes
+
+- Langage métier (opérateurs, TOC, Zeus, S1). Phrases complètes.
+- Interdit dans les textes **publics** : vocabulaire d’atelier (`sqf`, endpoint, JSON, SQL, noms de tables, chemins d’API, PBO, rebuild).
+- Structure type Dev Hub Arma : `FROM` / `TO` / `MATERIEL` / `ACTIVITY` / `SIZE`, puis **NOTES** et **CHANGELOG** avec `Added` / `Tweaked` / `Fixed` / `Changed`.
+- Un SPOTREP ou TECHREP a aussi un fichier miroir dans `docs/dev/` (sans jargon si le fichier est destiné au site). L’archive d’atelier peut rester dans `TECHREP-00001.md`.
+
+## Après rédaction
+
+- Pointer le compagnon (`companion_kind` / `companion_number`) entre SPOTREP et TECHREP.
+- Marquer `featured => true` sur le SPOTREP courant.
+- Mettre à jour `docs/dev/README.md` si un nouveau SPOTREP / TECHREP est créé.
+- Si la capacité est mise en avant sur `/nouveautes`, aligner aussi `ChangelogCatalog` et les clés `lang/*/site.php`.

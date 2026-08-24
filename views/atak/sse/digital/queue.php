@@ -5,7 +5,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var list<array<string,mixed>> $groups */
 /** @var array<string,mixed> $filters */
 /** @var array<string,string> $statuses */
-$groups = is_array($groups ?? null) ? $groups : [];
+$queueGroups = is_array($groups ?? null) ? $groups : [];
 $filters = is_array($filters ?? null) ? $filters : [];
 $statuses = is_array($statuses ?? null) ? $statuses : [];
 require __DIR__ . '/_subnav.php';
@@ -35,7 +35,7 @@ require __DIR__ . '/_subnav.php';
     <div class="toolbar-actions"><button class="btn" type="submit">Filtrer</button></div>
 </form>
 
-<?php if ($groups === []): ?>
+<?php if ($queueGroups === []): ?>
 <section class="panel">
     <div class="empty-state">
         <div class="empty-state-inner">
@@ -46,7 +46,7 @@ require __DIR__ . '/_subnav.php';
     </div>
 </section>
 <?php else: ?>
-    <?php foreach ($groups as $group): ?>
+    <?php foreach ($queueGroups as $group): ?>
         <?php
         $packets = is_array($group['packets'] ?? null) ? $group['packets'] : [];
         $decoy = 0;
@@ -60,6 +60,13 @@ require __DIR__ . '/_subnav.php';
             }
         }
         $note = \App\Support\SseDomexContract::qualityNote($decoy, $frag, count($packets));
+        $typeLabel = trim((string) ($group['device_type_label'] ?? 'Inconnu'));
+        if ($typeLabel === '' || $typeLabel === '—') {
+            $typeLabel = \App\Support\SseDomexContract::deviceTypeLabel((string) ($group['device_type'] ?? ''));
+        }
+        $originLabel = (string) ($group['origin_label'] ?? '');
+        $collectorLabel = (string) ($group['collector_label'] ?? '');
+        $gridLabel = (string) ($group['grid_reference'] ?? '');
         ?>
         <section class="panel" style="margin-bottom:12px">
             <div class="panel-header">
@@ -70,12 +77,12 @@ require __DIR__ . '/_subnav.php';
                 <div class="panel-meta"><?= $h($note) ?></div>
             </div>
             <div class="panel-body" style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
-                <div><span class="muted">Type</span><br><strong><?= $h($group['device_type_label'] ?: '—') ?></strong></div>
-                <div><span class="muted">Origine</span><br><strong><?= $h($group['origin_label'] ?: '—') ?></strong></div>
-                <div><span class="muted">Collecteur</span><br><strong><?= $h($group['collector_label'] ?: '—') ?></strong></div>
-                <div><span class="muted">Lieu</span><br><strong><?= $h($group['grid_reference'] ?: '—') ?></strong></div>
+                <div><span class="muted">Type</span><br><strong><?= $h($typeLabel !== '' ? $typeLabel : 'Inconnu') ?></strong></div>
+                <div><span class="muted">Origine</span><br><strong><?= $h($originLabel !== '' ? $originLabel : '—') ?></strong></div>
+                <div><span class="muted">Collecteur</span><br><strong><?= $h($collectorLabel !== '' ? $collectorLabel : '—') ?></strong></div>
+                <div><span class="muted">Lieu</span><br><strong><?= $h($gridLabel !== '' ? $gridLabel : '—') ?></strong></div>
                 <?php if (!empty($group['owner_label'])): ?>
-                    <div><span class="muted">Propriétaire apparent</span><br><strong><?= $h($group['owner_label']) ?></strong></div>
+                    <div><span class="muted">Propriétaire apparent</span><br><strong><?= $h((string) ($group['owner_label'] ?? '')) ?></strong></div>
                 <?php endif; ?>
             </div>
             <div class="table-wrap">

@@ -49,7 +49,7 @@ if (_statusKey isEqualTo "armed" && {isNull _explosive}) exitWith { "" };
 if (_statusKey isEqualTo "armed") then {
     private _pos = getPosATL _explosive;
     private _kind = toLower _triggerKind;
-    if (!(_kind in ["timer", "clacker", "cellphone", "command"])) then {
+    if (!(_kind in ["timer", "clacker", "cellphone", "command", "atak"])) then {
         if (_delay >= 1) then { _kind = "timer" } else { _kind = "command" };
     };
     // Ne jamais forcer 1 s : un délai manquant n’est pas une minuterie d’une seconde.

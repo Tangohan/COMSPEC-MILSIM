@@ -53,16 +53,53 @@ window.ATAKUnitPopup = (function () {
     };
   }
 
-  function phoneDisplayName(u, ex) {
+  function looksLikeAutoAllyId(cs) {
+    return /^ALLY-\d+-\d+(-\d+)*$/i.test(String(cs || '').trim());
+  }
+
+  function isAllyAi(ex, u) {
+    if (ex && (flagOn(ex.ally_ai) || flagOn(ex.is_ai) || String(ex.source || '').toLowerCase() === 'ally')) {
+      return true;
+    }
+    var cs = String((u && (u.call_sign || u.callsign)) || '').toUpperCase();
+    return cs.indexOf('ALLY-') === 0;
+  }
+
+  function stripAllyPrefix(cs) {
+    var s = String(cs || '').trim();
+    var m = s.match(/^ALLY-\S+\s+[·\-–—]\s+(.+)$/i);
+    if (m && m[1]) return String(m[1]).trim();
+    return s;
+  }
+
+  function unitDisplayName(u, ex) {
     ex = ex || parseExtra(u || {});
-    if (!isPhoneGeoloc(ex)) {
-      return String((u && (u.call_sign || u.callsign)) || '').trim() || '—';
+    if (isPhoneGeoloc(ex)) {
+      if (phoneReveal(ex).identity) {
+        var pretty = String(ex.display_name || (u && (u.call_sign || u.callsign)) || '').trim();
+        return pretty || 'Téléphone';
+      }
+      return 'Téléphone';
     }
-    if (phoneReveal(ex).identity) {
-      var pretty = String(ex.display_name || (u && (u.call_sign || u.callsign)) || '').trim();
-      return pretty || 'Téléphone';
+    var named = String(ex.display_name || ex.callsign_display || (u && u.display_call_sign) || '').trim();
+    if (named && !looksLikeAutoAllyId(named) && named.toUpperCase().indexOf('ALLY-') !== 0) {
+      return named;
     }
-    return 'Téléphone';
+    var raw = String((u && (u.call_sign || u.callsign)) || '').trim();
+    if (isAllyAi(ex, u)) {
+      var fromRaw = stripAllyPrefix(raw);
+      if (fromRaw && !looksLikeAutoAllyId(fromRaw) && fromRaw.toUpperCase().indexOf('ALLY-') !== 0) {
+        return fromRaw;
+      }
+      var group = String(ex.group_name || ex.group || (u && (u.group_name || u.group)) || '').trim();
+      if (group) return group;
+      return 'Unité alliée';
+    }
+    return raw || '—';
+  }
+
+  function phoneDisplayName(u, ex) {
+    return unitDisplayName(u, ex);
   }
 
     function statusLabelFr(status) {
@@ -278,7 +315,7 @@ window.ATAKUnitPopup = (function () {
     u = u || {};
     var extra = parseExtra(u);
     if (isPhoneGeoloc(extra)) return buildPhoneHtml(u, extra);
-    var callSign = u.call_sign || u.callsign || '—';
+    var callSign = unitDisplayName(u, extra);
     var role = u.role || extra.role || '';
     var aff = extra.affiliation || extra.affil || u.affiliation || '';
     var affLabel = affiliationLabelFr(aff);
@@ -519,6 +556,7 @@ window.ATAKUnitPopup = (function () {
     formatTimeAgo: formatTimeAgo,
     isPhoneGeoloc: isPhoneGeoloc,
     phoneReveal: phoneReveal,
-    phoneDisplayName: phoneDisplayName
+    phoneDisplayName: phoneDisplayName,
+    unitDisplayName: unitDisplayName
   };
 })();

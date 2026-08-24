@@ -47,6 +47,9 @@ use App\Support\MpMessageParser;
 use App\Support\MedicalAlertParser;
 use App\Support\TacticalAlertParser;
 use App\Support\SteamId;
+use App\Support\AtakDeviceLog;
+use App\Repositories\AtakDeviceLogRepository;
+use App\Repositories\AtakRealismRepository;
 use App\Services\Tactical\MissionDisplaySettingsService;
 
 class AtakApiController
@@ -112,6 +115,19 @@ class AtakApiController
     private function modReports(): \App\Repositories\AtakModReportRepository
     {
         return $this->modReportRepository ??= new \App\Repositories\AtakModReportRepository();
+    }
+
+    private ?AtakDeviceLogRepository $deviceLogRepository = null;
+    private ?AtakRealismRepository $realismRegistry = null;
+
+    private function deviceLogs(): AtakDeviceLogRepository
+    {
+        return $this->deviceLogRepository ??= new AtakDeviceLogRepository();
+    }
+
+    private function realismRegistry(): AtakRealismRepository
+    {
+        return $this->realismRegistry ??= new AtakRealismRepository();
     }
 
     private ?AtakExplosiveTimerRepository $explosiveTimerRepository = null;
@@ -1051,6 +1067,12 @@ class AtakApiController
         if ($asl !== null) {
             $meta['asl_z'] = round($asl, 2);
         }
+        $terrainZ = AtakDataRepository::coerceFloat(
+            $body['terrain_z'] ?? (is_array($extra) ? ($extra['terrain_z'] ?? null) : null)
+        );
+        if ($terrainZ !== null) {
+            $meta['terrain_z'] = round($terrainZ, 1);
+        }
         if (isset($body['heading']) && is_numeric($body['heading'])) {
             $meta['heading'] = round((float) $body['heading'], 1);
         }
@@ -1527,7 +1549,26 @@ class AtakApiController
             return $r;
         }
         $mapId = $this->mapId($request);
-        $alerts = $this->intelView->collectDeviceAlerts($r, $mapId);
+        try {
+            $alerts = $this->intelView->collectDeviceAlerts($r, $mapId);
+        } catch (\Throwable) {
+            $alerts = [];
+        }
+        if (!is_array($alerts)) {
+            $alerts = [];
+        }
+
+        $intelView = [
+            'mode' => AtakIntelViewService::MODE_CLEAR,
+            'reason' => '',
+            'reason_label' => '',
+            'intensity' => 0.0,
+            'scramble_enabled' => false,
+        ];
+        try {
+            $intelView = $this->resolveIntelView($request, $r, $mapId);
+        } catch (\Throwable) {
+        }
 
         return Response::json([
             'ok' => true,
@@ -1538,7 +1579,7 @@ class AtakApiController
                 'critical' => count(array_filter($alerts, static fn ($a) => ($a['severity'] ?? '') === 'critical')),
                 'warn' => count(array_filter($alerts, static fn ($a) => ($a['severity'] ?? '') === 'warn')),
             ],
-            'intel_view' => $this->resolveIntelView($request, $r, $mapId),
+            'intel_view' => $intelView,
         ]);
     }
 
@@ -1939,6 +1980,91 @@ class AtakApiController
     }
 
     /**
+     * Remontée du journal d’appareil (même lignes que le fichier d’activité Overwatch).
+     */
+    public function deviceLogsStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $body = $this->jsonBody($request);
+        $callsign = trim((string) ($body['callsign'] ?? $body['call_sign'] ?? ''));
+        $steamUid = trim((string) ($body['steam_uid'] ?? $body['steam_id'] ?? ''));
+        $playerName = trim((string) ($body['player_name'] ?? $body['name'] ?? ''));
+        $sourceRaw = strtolower(trim((string) ($body['source'] ?? '')));
+        $source = match ($sourceRaw) {
+            AtakDeviceLog::SOURCE_WEB => AtakDeviceLog::SOURCE_WEB,
+            AtakDeviceLog::SOURCE_SYSTEM => AtakDeviceLog::SOURCE_SYSTEM,
+            default => AtakDeviceLog::SOURCE_MOD,
+        };
+        if ($source === AtakDeviceLog::SOURCE_MOD && !$this->authArma()) {
+            $brief = $this->sessionUserBrief();
+            $source = is_array($brief) ? AtakDeviceLog::SOURCE_WEB : AtakDeviceLog::SOURCE_MOD;
+        }
+
+        $uid = trim((string) ($body['terminal_uid'] ?? $body['terminalUid'] ?? ''));
+        $uid = $this->resolveDeviceTerminalUid($tenantId, $uid, $callsign, $this->sessionUserBrief());
+        if ($uid === '') {
+            return Response::json([
+                'error' => 'missing_terminal',
+                'message' => 'Impossible de rattacher ce journal à un appareil.',
+            ], 422);
+        }
+
+        $rawLines = $body['lines'] ?? $body['entries'] ?? $body['events'] ?? [];
+        if (!is_array($rawLines) || $rawLines === []) {
+            $single = trim((string) ($body['message'] ?? $body['line'] ?? ''));
+            if ($single === '') {
+                return Response::json([
+                    'error' => 'missing_lines',
+                    'message' => 'Aucune ligne de journal à enregistrer.',
+                ], 400);
+            }
+            $rawLines = [$body];
+        }
+
+        $lines = [];
+        foreach (array_slice(array_values($rawLines), 0, AtakDeviceLogRepository::MAX_BATCH) as $row) {
+            if (is_array($row)) {
+                $lines[] = $row;
+            } elseif (is_string($row) && trim($row) !== '') {
+                $lines[] = ['line' => $row];
+            }
+        }
+        if ($lines === []) {
+            return Response::json([
+                'error' => 'missing_lines',
+                'message' => 'Aucune ligne de journal à enregistrer.',
+            ], 400);
+        }
+
+        try {
+            $result = $this->deviceLogs()->ingest(
+                $tenantId,
+                $uid,
+                $lines,
+                $callsign !== '' ? $callsign : null,
+                $steamUid !== '' ? $steamUid : null,
+                $playerName !== '' ? $playerName : null,
+                $source
+            );
+        } catch (\Throwable) {
+            return Response::json([
+                'error' => 'store_failed',
+                'message' => 'Impossible d’enregistrer le journal pour le moment.',
+            ], 503);
+        }
+
+        return Response::json([
+            'ok' => true,
+            'accepted' => $result['accepted'],
+            'skipped' => $result['skipped'],
+        ]);
+    }
+
+    /**
      * Journal d’activité de liaison (init client, indicatifs, messages / positions).
      * Consommé par le panneau « Activité de liaison » et la page dédiée.
      *
@@ -2310,10 +2436,24 @@ class AtakApiController
                 if ($kind === 'incident' || $kind === 'error') {
                     $this->activityLog->recordError($tenantId, $mapId, $label, $actor, $meta);
                     $accepted++;
+                    $this->recordDeviceTrace($tenantId, [
+                        'level' => AtakDeviceLog::LEVEL_ERROR,
+                        'channel' => 'Carte',
+                        'message' => $label,
+                        'detail' => $detail,
+                        'source' => AtakDeviceLog::SOURCE_WEB,
+                    ], is_array($brief) ? $brief['callsign'] : $actor, $brief);
                 } elseif ($kind === 'remontee' || $kind === 'ingest' || $kind === 'donnees') {
                     $ingestKind = strtolower(trim((string) ($ev['ingest_kind'] ?? $ev['ingestKind'] ?? 'web')));
                     $this->activityLog->recordIngest($tenantId, $mapId, $ingestKind !== '' ? $ingestKind : 'web', $label, $actor, $meta);
                     $accepted++;
+                    $this->recordDeviceTrace($tenantId, [
+                        'level' => AtakDeviceLog::LEVEL_INFO,
+                        'channel' => 'Carte',
+                        'message' => $label,
+                        'detail' => $detail,
+                        'source' => AtakDeviceLog::SOURCE_WEB,
+                    ], is_array($brief) ? $brief['callsign'] : $actor, $brief);
                 }
             } catch (\Throwable) {
             }
@@ -3162,6 +3302,7 @@ class AtakApiController
                 }
             } catch (\Throwable) {
             }
+            $this->persistArmaBloodType((int) ($user['id'] ?? 0), $body);
         } elseif ($callSign !== '') {
             try {
                 $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
@@ -3178,6 +3319,30 @@ class AtakApiController
         try {
             $expSvc = new \App\Services\Tactical\AtakExperienceService();
             $payload['experience'] = $expSvc->payloadForGame($tenantId);
+        } catch (\Throwable) {
+        }
+
+        $termUid = trim((string) ($body['terminal_uid'] ?? $body['terminalUid'] ?? ''));
+        try {
+            $uid = $termUid !== '' ? $termUid : $this->resolveDeviceTerminalUid($tenantId, '', $callSign);
+            if ($uid !== '') {
+                $this->deviceLogs()->recordEvent($tenantId, $uid, [
+                    'level' => AtakDeviceLog::LEVEL_INFO,
+                    'channel' => 'Etat',
+                    'message' => ($callSign !== '' ? $callSign . ' — ' : '') . 'Liaison établie avec Athena',
+                    'source' => AtakDeviceLog::SOURCE_SYSTEM,
+                ], $callSign !== '' ? $callSign : null);
+            }
+            $host = strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '')));
+            $host = preg_replace('/:\d+$/', '', $host) ?? $host;
+            $this->realismRegistry()->recordTerminalHeartbeat($tenantId, [
+                'terminal_uid' => $uid,
+                'operator_callsign' => $callSign,
+                'mod_version' => trim((string) ($body['mod_version'] ?? $body['modVersion'] ?? '')),
+                'extension_version' => trim((string) ($body['extension_version'] ?? $body['dll_version'] ?? '')),
+                'last_client_ip' => $request->ip(),
+                'server_host' => $host,
+            ]);
         } catch (\Throwable) {
         }
 
@@ -3242,6 +3407,13 @@ class AtakApiController
             } catch (\Throwable) {
             }
         }
+
+        $this->recordDeviceTrace($tenantId, [
+            'level' => AtakDeviceLog::LEVEL_WARN,
+            'channel' => 'Etat',
+            'message' => ($resolved !== '' ? $resolved . ' — ' : '') . 'Fin de liaison (déconnexion du jeu)',
+            'source' => AtakDeviceLog::SOURCE_SYSTEM,
+        ], $resolved !== '' ? $resolved : $callSign);
 
         return Response::json(['ok' => true]);
     }
@@ -4946,6 +5118,13 @@ class AtakApiController
             $extra['asl_z'] = $posZ;
             $extra['pos_z'] = $posZ;
         }
+        $terrainZ = AtakDataRepository::coerceFloat($body['terrain_z'] ?? $extra['terrain_z'] ?? null);
+        if ($terrainZ === null && is_array($extra)) {
+            $terrainZ = AtakDataRepository::coerceFloat($extra['terrain_z'] ?? null);
+        }
+        if ($terrainZ !== null) {
+            $extra['terrain_z'] = round($terrainZ, 1);
+        }
         // Groupe Arma (groupId) — top-level ou déjà dans extra
         $groupName = trim((string) ($body['group_name'] ?? $body['groupName'] ?? $body['group'] ?? $extra['group_name'] ?? $extra['groupName'] ?? $extra['group'] ?? ''));
         if ($groupName !== '') {
@@ -5149,10 +5328,14 @@ class AtakApiController
         $afterId = ($afterRaw !== null && $afterRaw !== '') ? (int) $afterRaw : 0;
         // Sur-échantillonner puis filtrer le bruit technique (réglages camps) déjà en base.
         $fetchLimit = min(max((int) ($limit * 2), $limit), 500);
-        if ($afterId > 0) {
-            $rows = $this->atak->getChatMessagesAfter($tenantId, $mapId, $afterId, $fetchLimit);
-        } else {
-            $rows = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit);
+        try {
+            if ($afterId > 0) {
+                $rows = $this->atak->getChatMessagesAfter($tenantId, $mapId, $afterId, $fetchLimit);
+            } else {
+                $rows = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit);
+            }
+        } catch (\Throwable) {
+            return Response::json([]);
         }
         $rows = array_values(array_filter(
             is_array($rows) ? $rows : [],
@@ -5219,7 +5402,11 @@ class AtakApiController
             $rows = array_slice($rows, -$limit);
         }
 
-        $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'chat', $rows);
+        try {
+            $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'chat', $rows);
+        } catch (\Throwable) {
+            // Un brouillage intel défaillant ne doit pas couper le journal radio.
+        }
 
         return Response::json($rows);
     }
@@ -8338,6 +8525,92 @@ class AtakApiController
     }
 
     /**
+     * @param array{level?:string,channel?:string,message:string,detail?:string,source?:string} $event
+     * @param array{displayName?:string,callsign?:string,userId?:int}|null $brief
+     */
+    private function recordDeviceTrace(int $tenantId, array $event, string $callsign = '', ?array $brief = null): void
+    {
+        try {
+            $uid = $this->resolveDeviceTerminalUid($tenantId, '', $callsign, $brief);
+            if ($uid === '') {
+                return;
+            }
+            $name = is_array($brief) ? trim((string) ($brief['displayName'] ?? '')) : '';
+            $this->deviceLogs()->recordEvent(
+                $tenantId,
+                $uid,
+                $event,
+                $callsign !== '' ? $callsign : null,
+                null,
+                $name !== '' ? $name : null
+            );
+        } catch (\Throwable) {
+        }
+    }
+
+    /**
+     * Mémorise le groupe sanguin lu en jeu (ACE / plaque) pour le prochain bilan médical.
+     *
+     * @param array<string, mixed> $body
+     */
+    private function persistArmaBloodType(int $userId, array $body): void
+    {
+        if ($userId < 1) {
+            return;
+        }
+        $raw = trim((string) ($body['blood_type'] ?? $body['bloodType'] ?? ''));
+        $normalized = \App\Support\RoleplayDeadlinePolicy::normalizeBloodType($raw);
+        if ($normalized === '') {
+            return;
+        }
+        try {
+            $profiles = new \App\Repositories\PersonnelProfileRepository();
+            $existing = $profiles->getByUserId($userId) ?? [];
+            $previous = \App\Support\RoleplayDeadlinePolicy::normalizeBloodType((string) ($existing['rp_arma_blood_type'] ?? ''));
+            if ($previous === $normalized) {
+                return;
+            }
+            $profiles->update($userId, [
+                'rp_arma_blood_type' => $normalized,
+                'rp_arma_blood_type_at' => date('Y-m-d H:i:s'),
+            ]);
+        } catch (\Throwable) {
+        }
+    }
+
+    /**
+     * @param array{displayName?:string,callsign?:string,userId?:int}|null $brief
+     */
+    private function resolveDeviceTerminalUid(int $tenantId, string $terminalUid, string $callsign, ?array $brief = null): string
+    {
+        $uid = trim($terminalUid);
+        if ($uid !== '') {
+            return $uid;
+        }
+        try {
+            $registry = $this->realismRegistry();
+            if ($callsign !== '') {
+                $row = $registry->findLatestTerminalByCallsign($tenantId, $callsign);
+                $found = trim((string) ($row['terminal_uid'] ?? ''));
+                if ($found !== '') {
+                    return $found;
+                }
+            }
+            $userId = is_array($brief) ? (int) ($brief['userId'] ?? 0) : 0;
+            if ($userId > 0) {
+                $web = $registry->findWebSessionForUser($tenantId, $userId);
+                $found = trim((string) ($web['terminal_uid'] ?? ''));
+                if ($found !== '') {
+                    return $found;
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        return '';
+    }
+
+    /**
      * Calque « Dossiers SSE » + LOT 5 (PIR, taskings, photos, tracks, historique).
      */
     public function sseCaseOverlay(Request $request, array $params = []): Response
@@ -8610,7 +8883,7 @@ class AtakApiController
         if ($row === null) {
             return Response::json([
                 'error' => 'unavailable',
-                'message' => 'Cette charge n’est plus armée, ou elle est introuvable.',
+                'message' => 'Cette charge ne se déclenche pas depuis le poste, ou elle n’est plus armée.',
             ], 404);
         }
         $label = (string) ($row['magazine_label'] ?? 'Charge');
@@ -8623,6 +8896,65 @@ class AtakApiController
         );
 
         return Response::json($row);
+    }
+
+    public function explosiveTimersDetonateAll(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Le déclenchement groupé se fait depuis le poste de commandement, pas depuis le terrain.',
+            ], 403);
+        }
+        if (!$this->canIssueOrdersFromWeb()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Connectez-vous au portail pour déclencher les charges depuis la carte.',
+            ], 403);
+        }
+        if (!$this->explosiveTimers()->commandColumnsReady()) {
+            return Response::json([
+                'error' => 'migration_required',
+                'message' => 'Le déclenchement des charges n’est pas encore disponible sur cette communauté.',
+            ], 503);
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $request->query('mapId') ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $user = $this->sessionUserBrief();
+        $by = '';
+        if ($user) {
+            $by = (string) ($user['callsign'] ?: $user['displayName'] ?: 'Poste de commandement');
+        }
+        if ($by === '') {
+            $by = 'Poste de commandement';
+        }
+        $items = $this->explosiveTimers()->requestDetonateAll($tenantId, $mapId, $by, ['atak']);
+        $n = count($items);
+        if ($n > 0) {
+            $this->activityLog->record(
+                $tenantId,
+                $mapId,
+                AtakActivityLogService::TYPE_EXPLOSIVE_TIMER,
+                'Déclenchement groupé demandé — ' . $n . ' charge(s) ATAK',
+                $by
+            );
+        }
+
+        return Response::json([
+            'items' => $items,
+            'count' => $n,
+            'message' => $n > 0
+                ? 'Déclenchement demandé pour ' . $n . ' charge(s). En attente du terrain.'
+                : 'Aucune charge ATAK armée à déclencher pour le moment.',
+        ]);
     }
 
     public function nineLineIndex(Request $request, array $params = []): Response
@@ -8845,10 +9177,15 @@ class AtakApiController
         }
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        $occupancy = \App\Services\Tactical\AtakAirAssetMergeService::isOccupancyPayload($body);
         $callsign = $this->resolveFlightManifestCallsign($tenantId, $mapId, $body, $actor);
         $missionToken = getenv('ATAK_MISSION_AUTH_TOKEN') ?: getenv('COMSPEC_MISSION_AUTH') ?: '';
         $status = $body['status'] ?? 'IN-FLIGHT';
-        if ($missionToken !== '' && ($body['auth'] ?? $body['authCode'] ?? '') !== $missionToken) {
+        if (
+            !$occupancy
+            && $missionToken !== ''
+            && ($body['auth'] ?? $body['authCode'] ?? '') !== $missionToken
+        ) {
             $status = 'SUSPECT';
         }
         $data = array_merge($body, [
@@ -8865,18 +9202,20 @@ class AtakApiController
         } catch (\Throwable) {
         }
         $this->atak->setLastActivity($tenantId, $mapId);
-        $this->activityLog->record(
-            $tenantId,
-            $mapId,
-            AtakActivityLogService::TYPE_FLIGHT,
-            'Manifeste de vol déclaré — ' . $callsign,
-            $callsign,
-            $this->buildActivityMeta($tenantId, $mapId, $body, is_array($actor) ? $actor : null, $callsign, [
-                'model' => (string) ($data['model'] ?? ''),
-                'aircraft_type' => (string) ($data['aircraft_type'] ?? $data['aircraftType'] ?? ''),
-                'laser' => (string) ($data['laser'] ?? ''),
-            ])
-        );
+        if (!$occupancy) {
+            $this->activityLog->record(
+                $tenantId,
+                $mapId,
+                AtakActivityLogService::TYPE_FLIGHT,
+                'Manifeste de vol déclaré — ' . $callsign,
+                $callsign,
+                $this->buildActivityMeta($tenantId, $mapId, $body, is_array($actor) ? $actor : null, $callsign, [
+                    'model' => (string) ($data['model'] ?? ''),
+                    'aircraft_type' => (string) ($data['aircraft_type'] ?? $data['aircraftType'] ?? ''),
+                    'laser' => (string) ($data['laser'] ?? ''),
+                ])
+            );
+        }
         return Response::json($row, 201);
     }
 
@@ -9577,7 +9916,14 @@ class AtakApiController
                 'pilot_status' => $r['pilot_status'],
                 'aircraft_count' => (int) ($r['aircraft_count'] ?? 1),
                 'updated_at' => $r['updated_at'],
+                'source' => $r['source'] ?? null,
+                'vehicle_id' => $r['vehicle_id'] ?? null,
             ];
+        }
+        try {
+            $units = $this->atak->getUnits($tenantId, $mapId);
+            $out = \App\Services\Tactical\AtakAirAssetMergeService::merge($out, is_array($units) ? $units : []);
+        } catch (\Throwable) {
         }
         try {
             $out = $this->motionService()->attachToAir($tenantId, $mapId, $out);

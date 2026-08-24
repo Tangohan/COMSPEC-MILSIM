@@ -74,6 +74,7 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak-mission-plan.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/app-update-modal.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <script>
@@ -114,6 +115,8 @@ if ($atakMapConfig) {
     ]) ?>;
     window.ATAK_PHONE_SESSION = <?= json_encode($phoneOperatorSession ?: null) ?>;
     window.ATAK_REPORT_CATALOG = <?= json_encode(\App\Support\AtakIcemanReportCatalog::forFrontend(), JSON_UNESCAPED_UNICODE) ?>;
+    window.APP_VERSION = <?= json_encode($assetVer, JSON_UNESCAPED_UNICODE) ?>;
+    window.APP_BASE_URL = <?= json_encode(rtrim((string) $base, '/'), JSON_UNESCAPED_UNICODE) ?>;
   </script>
 </head>
 <body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed atak-page--device' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
@@ -2044,7 +2047,7 @@ if ($atakMapConfig) {
       </div>
       <div class="atak-tabs-content" id="tab-charges">
         <div class="atak-charges-panel">
-          <p class="atak-panel-hint">Explosifs posés sur le terrain : minuterie ou déclenchement à la demande. Un second clic confirme le déclenchement depuis le poste de commandement.</p>
+          <p class="atak-panel-hint">Explosifs posés sur le terrain : minuterie, déclencheur porté, ou uniquement depuis ATAK (tablette et poste). Un second clic confirme le déclenchement. « Tout déclencher » ne concerne que les charges armées en mode ATAK.</p>
           <div class="atak-charges-list" id="atak-charges-list">
             <div class="atak-empty-state">
               <div class="atak-empty-state-icon" aria-hidden="true">◉</div>
@@ -2257,6 +2260,13 @@ if ($atakMapConfig) {
               <button type="button" class="atak-map-tools__btn" data-tool="clear-drawings" data-tool-slot="clear-drawings" title="Effacer les tracés et zones">Effacer</button>
             </div>
           </div>
+          <div class="atak-map-tools__cluster" data-tool-sep="analyse">
+            <span class="atak-map-tools__cluster-label">Analyse</span>
+            <div class="atak-map-tools__cluster-btns">
+              <button type="button" class="atak-map-tools__btn" data-tool="route" data-tool-slot="route" title="Profil du sol le long d’un itinéraire" aria-pressed="false">Itinéraire</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="los" data-tool-slot="los" title="Visée observateur vers cible (masque du relief)" aria-pressed="false">Visée</button>
+            </div>
+          </div>
           <div class="atak-map-tools__cluster" data-tool-sep="view">
             <span class="atak-map-tools__cluster-label">Vue</span>
             <div class="atak-map-tools__cluster-btns">
@@ -2316,27 +2326,32 @@ if ($atakMapConfig) {
             <span>Ligne vers destination</span>
           </label>
           <div class="atak-map-look__terrain">
-            <label class="atak-map-look__row" for="atak-terrain-layer">
-              <span class="atak-map-look__key">Relief</span>
-              <select id="atak-terrain-layer" class="atak-header-select atak-map-look__select" title="Couche de relief du théâtre">
-                <option value="off" selected>Masqué</option>
-                <option value="hillshade">Ombrage</option>
-                <option value="hypsometry">Hypsométrie</option>
-                <option value="slope">Pente</option>
-                <option value="contours">Courbes de niveau</option>
-                <option value="ridges">Crêtes</option>
-                <option value="depressions">Dépressions</option>
-              </select>
+            <p class="atak-map-look__key">Relief</p>
+            <label class="atak-map-look__check" for="atak-terrain-hillshade">
+              <input type="checkbox" id="atak-terrain-hillshade" checked />
+              <span>Ombrage</span>
+            </label>
+            <label class="atak-map-look__check" for="atak-terrain-contours10">
+              <input type="checkbox" id="atak-terrain-contours10" checked />
+              <span>Courbes 10 m</span>
+            </label>
+            <label class="atak-map-look__check" for="atak-terrain-contours50">
+              <input type="checkbox" id="atak-terrain-contours50" />
+              <span>Courbes 50 m</span>
+            </label>
+            <label class="atak-map-look__check" for="atak-terrain-altitudes">
+              <input type="checkbox" id="atak-terrain-altitudes" />
+              <span>Altitudes</span>
+            </label>
+            <label class="atak-map-look__check" for="atak-terrain-slope">
+              <input type="checkbox" id="atak-terrain-slope" />
+              <span>Pentes</span>
             </label>
             <label class="atak-map-look__row" for="atak-terrain-opacity">
-              <span class="atak-map-look__key">Opacité <span class="atak-sound-pref-val" id="atak-terrain-opacity-val">55 %</span></span>
-              <input type="range" id="atak-terrain-opacity" class="atak-sound-pref-slider" min="10" max="100" step="5" value="55" />
+              <span class="atak-map-look__key">Opacité <span class="atak-sound-pref-val" id="atak-terrain-opacity-val">32 %</span></span>
+              <input type="range" id="atak-terrain-opacity" class="atak-sound-pref-slider" min="10" max="100" step="5" value="32" />
             </label>
-            <label class="atak-map-look__row" for="atak-terrain-sun">
-              <span class="atak-map-look__key">Soleil <span class="atak-sound-pref-val" id="atak-terrain-sun-val">315°</span></span>
-              <input type="range" id="atak-terrain-sun" class="atak-sound-pref-slider" min="0" max="360" step="5" value="315" />
-            </label>
-            <span class="atak-terrain-status" id="atak-terrain-status">Relief du théâtre non encore relevé.</span>
+            <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
           </div>
           <div class="atak-map-tools__prefs-actions">
             <button type="button" class="atak-map-tools__btn" data-tool-ui="look-close">Fermer</button>
@@ -2357,8 +2372,36 @@ if ($atakMapConfig) {
           </div>
         </div>
       </div>
+      <aside class="atak-route-panel" id="atak-route-panel" hidden>
+        <div class="atak-route-panel__head">
+          <h2 class="atak-route-panel__title" id="atak-route-panel-title">Analyse d’itinéraire</h2>
+          <button type="button" class="atak-route-panel__close" id="atak-route-panel-close" title="Fermer">Fermer</button>
+        </div>
+        <p class="atak-route-panel__hint" id="atak-route-panel-hint">Cliquez au moins deux points sur la carte, puis double-cliquez pour terminer.</p>
+        <div class="atak-route-panel__los-opts" id="atak-route-los-opts" hidden>
+          <label class="atak-route-panel__field" for="atak-route-obs-eye">Observateur
+            <select id="atak-route-obs-eye">
+              <option value="0.5">À terre (0,5 m)</option>
+              <option value="1.6" selected>Debout (1,6 m)</option>
+              <option value="5">Surélevé (5 m)</option>
+            </select>
+          </label>
+          <label class="atak-route-panel__field" for="atak-route-tgt-eye">Cible
+            <select id="atak-route-tgt-eye">
+              <option value="0" selected>Au sol</option>
+              <option value="1.6">Personne (1,6 m)</option>
+              <option value="3">Véhicule (3 m)</option>
+            </select>
+          </label>
+        </div>
+        <canvas class="atak-route-panel__spark" id="atak-route-spark" width="320" height="96" hidden aria-label="Profil du sol"></canvas>
+        <dl class="atak-route-panel__stats" id="atak-route-stats"></dl>
+        <p class="atak-route-panel__verdict" id="atak-route-verdict" hidden></p>
+        <p class="atak-route-panel__gap" id="atak-route-gap" hidden></p>
+      </aside>
       <div class="atak-map-stage">
       <div id="atak-map"></div>
+      <div class="atak-map-br-stack" id="atak-map-br-stack">
       <div class="atak-trail-legend" id="atak-trail-legend" hidden>
         <p class="atak-trail-legend__title">Traces</p>
         <ul class="atak-trail-legend__list">
@@ -2370,6 +2413,14 @@ if ($atakMapConfig) {
           <li><span class="atak-trail-legend__x">✕</span>Perte de liaison ou de position</li>
           <li><span class="atak-trail-legend__swatch atak-trail-legend__swatch--reach"></span>Distance possible depuis la dernière position</li>
         </ul>
+      </div>
+      <div class="atak-map-hud" id="atak-map-hud">
+        <div class="atak-map-hud__row"><span class="atak-map-hud__k">Grille</span> <span class="atak-map-hud__v" data-hud-grid>0 0</span></div>
+        <div class="atak-map-hud__row"><span class="atak-map-hud__k">Échelle</span> <span class="atak-map-hud__v" data-hud-zoom>—</span></div>
+        <div class="atak-map-hud__row" data-hud-measure-row hidden><span class="atak-map-hud__k">Mesure</span> <span class="atak-map-hud__v atak-map-hud__measure" data-hud-measure>—</span></div>
+        <div class="atak-map-hud__row"><span class="atak-map-hud__k">Contacts</span> <span class="atak-map-hud__v" data-hud-contacts>—</span></div>
+        <div class="atak-map-hud__row"><span class="atak-map-hud__k">Réseau</span> <span class="atak-map-hud__v atak-map-hud__ok" data-hud-net>En liaison</span></div>
+      </div>
       </div>
       <aside class="atak-dossier" id="atak-unit-dossier" hidden aria-label="Fiche d’unité"></aside>
       <div class="atak-cop" id="atak-cop" hidden role="dialog" aria-label="Tableau tactique des unités">
@@ -2481,7 +2532,7 @@ if ($atakMapConfig) {
         <div class="atak-air-assets-list" id="atak-air-assets-list">
           <div class="atak-air-assets-empty atak-empty-state" id="atak-air-assets-empty">
             <p class="atak-empty-state-title">Aucun aéronef</p>
-            <p class="atak-empty-state-text">Les pilotes enregistrent un vol depuis le menu Overwatch en jeu (touche K).</p>
+            <p class="atak-empty-state-text">Aucun aéronef occupé n’est visible pour le moment. Un vol déclaré depuis Overwatch (touche K) reste facultatif : il enrichit la fiche (indicatif, passagers, mission).</p>
           </div>
         </div>
       </details>
@@ -2550,6 +2601,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-unit-popup.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-terrain-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-motion-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-dossier.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-cop.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2593,7 +2645,8 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-cams.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sse-persons.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-frs.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
-  <script src="<?= $base ?>/assets/js/atak-air-assets.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-air-assets.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script defer src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/js/app-version-check.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-laser-codes.js"></script>
   <script src="<?= $base ?>/assets/js/atak-activity.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-arma-offline.js"></script>

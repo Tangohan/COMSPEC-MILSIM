@@ -5,6 +5,52 @@ Toutes les modifications notables des features ATAK sont documentées ici.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Journal développeur (style Bohemia) : [SPOTREP #00001](docs/dev/SPOTREP-00001.md) · [TECHREP #00001](docs/dev/TECHREP-00001.md).
+
+---
+
+## [1.5.34] / Overwatch 1.4.67 / extension 2.0.14 — 2026-08-24
+
+### Corrigé — météo en erreur rouge au spawn
+
+Le bandeau météo n’est plus envoyé pendant le handshake. Un timeout ou un refus temporaire ne s’affiche plus comme une panne. Dès que le poste a bien reçu, le terminal s’arrête de renvoyer le même ciel.
+
+---
+
+## [1.5.33] / Overwatch 1.4.66 / extension 2.0.13 — 2026-08-24
+
+### Corrigé — rafale 0 / -1 / 503 au spawn
+
+Si Athena ne répond pas tout de suite (timeout, saturation), le terminal ne réessaie plus en boucle les caméras, la météo, les photos et la position. Il attend quelques secondes, puis reprend. Une photo refusée pour saturation part dès que le poste respire, sans marteler le même cliché. Le journal ne traite plus ça comme une panne rouge.
+
+---
+
+## [1.5.32] / Overwatch 1.4.65 — 2026-08-24
+
+### Corrigé — IA alliée sur l’ATAK
+
+Le suivi posé depuis Zeus reste après la fermeture du curateur. On peut le retirer (menu « Retirer l’IA de l’ATAK » ou case décochée), sans étendre tout le groupe.
+
+---
+
+## [1.5.31] / Overwatch 1.4.64 / Athena ATAK 1.0.46 — 2026-08-24
+
+### Amélioré — sons ATAK (web et jeu)
+
+Nouveau pack d’alertes, identique sur la carte web et en mission : bip radio court, carillon de réception d’ordre, confirmation d’acceptation, transmission de renseignement, signal médical Motorola (trois fois), démarrage.
+
+---
+
+## [1.5.30] / Overwatch 1.4.63 / extension 2.0.12 — 2026-08-24
+
+Vague 2026.08c — voir SPOTREP #00001 pour le détail opérateur.
+
+- Poste de situation (dossiers SSE + localisation téléphone)
+- Parc de terminaux (retrait appareils / sessions web)
+- Relecture : joueurs, IA alliées, téléphones, GPS
+- Relief autour de l’équipe (`getTerrainHeightASL`), plus de spam 401
+- Overlays liaison, Zeus SSE/ATAK/Overwatch, proximité téléphone
+
 ---
 
 ## [1.4.50] / extension 2.0.10 — 2026-08-23

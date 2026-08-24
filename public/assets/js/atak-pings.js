@@ -36,8 +36,10 @@ window.ATAKPings = (function () {
             : r.status === 403
               ? 'Vous n’avez pas l’autorisation d’accéder aux pings.'
               : 'Impossible de charger les pings pour le moment.';
-          if (window.ATAKShowError) window.ATAKShowError(msg);
           if (window.ATAKLastPingsError) window.ATAKLastPingsError(msg);
+          if ((r.status === 401 || r.status === 403) && window.ATAKShowError) {
+            window.ATAKShowError(msg);
+          }
           throw new Error('Pings:');
         }
         return r.json();

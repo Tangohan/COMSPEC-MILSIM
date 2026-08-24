@@ -1073,49 +1073,85 @@ body.sse-iw {
 }
 .iw-intel-col-head h2 { margin: 0; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; color: rgba(242,244,243,.7); }
 .iw-intel-empty { margin: 0; font-size: .82rem; color: rgba(242,244,243,.45); }
-.iw-intel-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
-.iw-intel-list li > a, .iw-intel-list li { display: grid; gap: .12rem; text-decoration: none; color: inherit; padding: .55rem .6rem; border-radius: .4rem; border: 1px solid transparent; }
-.iw-intel-list li > a:hover { border-color: rgba(52,211,153,.28); background: rgba(5,150,105,.07); }
+.iw-intel-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; align-content: start; }
+.iw-intel-list li > a, .iw-intel-list:not(.iw-intel-list--cards) li {
+  display: grid; gap: .12rem; text-decoration: none; color: inherit;
+  padding: .55rem .6rem; border-radius: .4rem; border: 1px solid transparent;
+}
+.iw-intel-list:not(.iw-intel-list--cards) li > a:hover { border-color: rgba(52,211,153,.28); background: rgba(5,150,105,.07); }
 .iw-intel-list strong { font-size: .88rem; }
 .iw-intel-list em { font-style: normal; font-size: .74rem; color: rgba(242,244,243,.48); }
-.iw-intel-kicker { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: rgba(148,163,184,.85); }
+.iw-intel-kicker {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .06em;
+  color: rgba(148,163,184,.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .iw-tone-danger .iw-intel-kicker, .iw-tone-danger .iw-feed-ico { color: #f87171; }
 .iw-tone-warn .iw-intel-kicker, .iw-tone-warn .iw-feed-ico { color: #fbbf24; }
 .iw-tone-ok .iw-intel-kicker, .iw-tone-ok .iw-feed-ico { color: #34d399; }
 .iw-intel-list--compact li { padding: .4rem .5rem; }
-.iw-intel-list--cards { gap: .5rem; }
-.iw-feed-item {
-  display: grid !important;
-  grid-template-columns: 2.1rem minmax(0, 1fr);
-  align-items: start;
-  gap: .45rem .55rem;
-  padding: .55rem .55rem !important;
+.iw-intel-list--cards { gap: .4rem; }
+/* Inbox : ligne compacte icône | texte. Ne pas utiliser display:contents
+   (le sélecteur li > a est plus spécifique et coincait le titre dans 2,1 rem). */
+.iw-intel-list--cards > .iw-feed-item {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: .3rem;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: .45rem .55rem !important;
   border: 1px solid rgba(148,163,184,.14) !important;
   background: rgba(8, 12, 16, .45);
 }
-.iw-feed-item:hover {
+.iw-intel-list--cards > .iw-feed-item:hover {
   border-color: rgba(52, 211, 153, .28) !important;
   background: rgba(5, 150, 105, .07);
 }
-.iw-feed-item .iw-inbox-actions { grid-column: 2; margin-top: .15rem; }
-.iw-feed-link {
-  display: contents;
+.iw-intel-list--cards > .iw-feed-item > a.iw-feed-link {
+  display: grid !important;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: start;
+  gap: .3rem .5rem;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-decoration: none;
+  color: inherit;
+}
+.iw-feed-item .iw-inbox-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin: 0 0 0 2.5rem;
 }
 .iw-feed-ico {
-  width: 2.1rem;
-  height: 2.1rem;
+  width: 2rem;
+  height: 2rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: .4rem;
+  border-radius: .35rem;
   border: 1px solid rgba(52, 211, 153, .28);
   background: rgba(52, 211, 153, .08);
   color: #6ee7b7;
   flex-shrink: 0;
 }
-.iw-feed-ico .iw-item-ico { display: block; }
-.iw-feed-copy { min-width: 0; display: grid; gap: .12rem; }
-.iw-feed-copy strong { line-height: 1.3; }
+.iw-feed-ico .iw-item-ico { display: block; width: 16px; height: 16px; }
+.iw-feed-copy { min-width: 0; display: grid; gap: .08rem; }
+.iw-feed-copy strong {
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.iw-feed-copy em {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .iw-intel-timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: .85rem; }
 .iw-intel-timeline > li { display: grid; grid-template-columns: 6.4rem minmax(0,1fr); gap: .65rem; align-items: start; }
 .iw-intel-timeline time { font-family: ui-monospace, monospace; font-size: .72rem; color: rgba(242,244,243,.55); padding-top: .35rem; }

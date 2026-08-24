@@ -86,8 +86,8 @@
       var key = (a.code || '') + '|' + (a.call_sign || '') + '|' + (a.terminal_uid || '');
       if (!lastAlertKeys[key]) {
         lastAlertKeys[key] = true;
-        if (window.AtakSounds && typeof window.AtakSounds.playAlert === 'function') {
-          try { window.AtakSounds.playAlert('warn'); } catch (e) {}
+        if (window.ATAKSounds && typeof window.ATAKSounds.playEvent === 'function') {
+          try { window.ATAKSounds.playEvent('beep', { priority: true }); } catch (e) {}
         } else if (typeof window.atakShowNotification === 'function') {
           try { window.atakShowNotification(a.title || 'Alerte appareil', a.message || ''); } catch (e2) {}
         }

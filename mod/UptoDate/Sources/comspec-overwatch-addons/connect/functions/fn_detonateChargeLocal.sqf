@@ -5,6 +5,7 @@
 params [["_explosive", objNull, [objNull]], ["_chargeId", "", [""]]];
 if (isNull _explosive) exitWith { false };
 if (_explosive getVariable ["COMSPEC_detonateFired", false]) exitWith { false };
+_explosive setVariable ["COMSPEC_atakFireOk", true, true];
 _explosive setVariable ["COMSPEC_detonateFired", true, true];
 
 if (!isNil "ace_explosives_fnc_scriptedExplosive") then {

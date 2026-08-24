@@ -404,22 +404,22 @@ if (!$requiredRoleDefinitionsFeature) {
         </article>
     </section>
 
-    <section id="rf-graphe" class="scroll-mt-28 grid gap-4 lg:grid-cols-[1.55fr_1fr]">
+    <section id="rf-graphe" class="scroll-mt-28 grid gap-4">
         <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-5 py-4">
                 <div>
-                    <h2 class="text-base font-black text-slate-900">Graphe des rôles</h2>
-                    <p class="mt-1 text-sm text-slate-600">Maillage de commandement actif dans votre communauté.</p>
+                    <h2 class="text-base font-black text-slate-900">Carte des rôles</h2>
+                    <p class="mt-1 text-sm text-slate-600">Qui relève de qui, et les liens de tutorat ou de coordination.</p>
                 </div>
                 <a href="<?= htmlspecialchars($graphJsonUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:bg-slate-50">Télécharger la carte</a>
             </div>
             <div class="p-5">
-                <div class="rounded-xl border border-slate-100 bg-slate-50/80 p-4 min-h-[220px]" id="roles-graph-host" data-graph-url="<?= htmlspecialchars($graphJsonUrl, ENT_QUOTES, 'UTF-8') ?>" data-edge-palette="<?= htmlspecialchars(json_encode($edgePalette, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>">
-                    <canvas id="roles-graph-canvas" class="w-full max-h-64 border border-slate-200 rounded-lg bg-white" width="800" height="240"></canvas>
-                    <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-slate-600" aria-label="Légende des types de liens">
+                <div class="bo-rf__graph-host rounded-xl border border-slate-100 bg-slate-50/80 p-4" id="roles-graph-host" data-graph-url="<?= htmlspecialchars($graphJsonUrl, ENT_QUOTES, 'UTF-8') ?>" data-edge-palette="<?= htmlspecialchars(json_encode($edgePalette, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>">
+                    <div class="bo-rf__graph-stage" aria-live="polite"></div>
+                    <ul class="bo-rf__graph-legend mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-slate-600" aria-label="Légende des types de liens">
                         <?php foreach ($edgeLegend as $leg): ?>
-                            <li class="inline-flex items-center gap-2">
-                                <span class="inline-block h-0.5 w-7 rounded-full shrink-0" style="background-color: <?= htmlspecialchars($leg['color'], ENT_QUOTES, 'UTF-8') ?>"></span>
+                            <li class="inline-flex items-center gap-2" data-type="<?= htmlspecialchars((string) ($leg['type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" style="color: <?= htmlspecialchars($leg['color'], ENT_QUOTES, 'UTF-8') ?>">
+                                <span class="bo-rf__graph-legend-line"></span>
                                 <span><?= htmlspecialchars($leg['label'], ENT_QUOTES, 'UTF-8') ?></span>
                             </li>
                         <?php endforeach; ?>
@@ -510,54 +510,8 @@ if (!$requiredRoleDefinitionsFeature) {
     <?php endif; ?>
 </div>
 </div>
+<script src="<?= htmlspecialchars(asset_url('assets/js/roles-graph.js'), ENT_QUOTES, 'UTF-8') ?>?v=<?= htmlspecialchars(platform_app_version(), ENT_QUOTES, 'UTF-8') ?>"></script>
 <script>
-(function () {
-  var host = document.getElementById('roles-graph-host');
-  var canvas = document.getElementById('roles-graph-canvas');
-  if (!host || !canvas) return;
-  var url = host.getAttribute('data-graph-url');
-  if (!url) return;
-  var palette = {};
-  try {
-    palette = JSON.parse(host.getAttribute('data-edge-palette') || '{}') || {};
-  } catch (e) {}
-  fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (data) {
-    var nodes = data.nodes || [];
-    var edges = data.edges || [];
-    var ctx = canvas.getContext('2d');
-    var w = canvas.width;
-    var h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
-    ctx.lineWidth = 1.5;
-    ctx.fillStyle = '#0f172a';
-    ctx.font = '11px system-ui,sans-serif';
-    var pos = {};
-    nodes.forEach(function (n, i) {
-      var angle = (2 * Math.PI * i) / Math.max(nodes.length, 1);
-      pos[n.id] = { x: w / 2 + Math.cos(angle) * (w * 0.35), y: h / 2 + Math.sin(angle) * (h * 0.35) };
-    });
-    edges.forEach(function (e) {
-      var a = pos[e.from], b = pos[e.to];
-      if (!a || !b) return;
-      ctx.beginPath();
-      ctx.strokeStyle = palette[e.type] || '#94a3b8';
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-    });
-    nodes.forEach(function (n) {
-      var p = pos[n.id];
-      if (!p) return;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 6, 0, 2 * Math.PI);
-      ctx.fillStyle = '#059669';
-      ctx.fill();
-      ctx.fillStyle = '#334155';
-      ctx.fillText((n.label || n.slug || '').slice(0, 24), p.x + 10, p.y + 4);
-    });
-  }).catch(function () {});
-})();
-
 (function () {
   var dataEl = document.getElementById('s1-assign-roles-data');
   var defSel = document.getElementById('s1-def-pick');

@@ -25,31 +25,28 @@
     #define COMSPEC_STATUS_H(n) ((n) * COMSPEC_STATUS_POS_H)
 #endif
 
-#define STATUS_BG_TITLE {0.02, 0.05, 0.07, 0.92}
-#define STATUS_BG_STRIP {0.03, 0.07, 0.09, 0.88}
-#define STATUS_BG_BODY {0.02, 0.05, 0.06, 0.9}
-#define STATUS_BTN {0.06, 0.18, 0.22, 0.95}
-#define STATUS_BTN_F {0.1, 0.32, 0.38, 1}
-#define STATUS_ACCENT {0.35, 0.75, 0.95, 0.95}
+#define STATUS_BG_TITLE ATAK_BG_TITLE
+#define STATUS_BG_STRIP ATAK_BG_STRIP
+#define STATUS_BG_BODY ATAK_BG_DETAIL
+#define STATUS_BTN ATAK_BTN
+#define STATUS_BTN_F ATAK_BTN_F
+#define STATUS_ACCENT ATAK_ACCENT
 
 class COMSPEC_ATAK_Status: ATAK_Message
 {
     class controls
     {
-        class Title: BCE_RscButtonMenu
+        class Title: COMSPEC_ATAK_Title
         {
             idc = 9800;
             x = 0;
             y = 0;
             w = QUOTE(COMSPEC_STATUS_W(3));
             h = QUOTE(COMSPEC_STATUS_H(0.62));
-            size = QUOTE(COMSPEC_STATUS_H(0.44));
-            text = "État ATAK";
-            colorBackground[] = STATUS_BG_TITLE;
-            colorBackground2[] = STATUS_BG_TITLE;
-            colorBackgroundFocused[] = {0.04, 0.1, 0.12, 0.95};
+            size = QUOTE(COMSPEC_STATUS_H(0.40));
+            text = "  État ATAK";
             onButtonClick = "call BCE_fnc_ATAK_toggleSubListMenu";
-            class Attributes { align = "center"; valign = "middle"; };
+            tooltip = "Revenir au tiroir des applications.";
         };
 
         class AccentBar: RscText
@@ -60,6 +57,16 @@ class COMSPEC_ATAK_Status: ATAK_Message
             w = QUOTE(COMSPEC_STATUS_W(3));
             h = QUOTE(COMSPEC_STATUS_H(0.06));
             colorBackground[] = STATUS_ACCENT;
+        };
+
+        class PanelFill: RscText
+        {
+            idc = -1;
+            x = 0;
+            y = QUOTE(COMSPEC_STATUS_H(0.68));
+            w = QUOTE(COMSPEC_STATUS_W(3));
+            h = QUOTE(COMSPEC_STATUS_H(7.40));
+            colorBackground[] = ATAK_BG_PANEL;
         };
 
         class Summary: RscStructuredText
@@ -140,7 +147,7 @@ class COMSPEC_ATAK_Status: ATAK_Message
             };
         };
 
-        class BtnRefresh: BCE_RscButtonMenu
+        class BtnRefresh: COMSPEC_ATAK_Btn
         {
             idc = 9803;
             x = QUOTE(COMSPEC_STATUS_W(0.08));
@@ -153,7 +160,6 @@ class COMSPEC_ATAK_Status: ATAK_Message
             colorBackground2[] = STATUS_BTN;
             colorBackgroundFocused[] = STATUS_BTN_F;
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_updateStatus";
-            class Attributes { align = "center"; valign = "middle"; };
         };
 
         class BtnSound: BtnRefresh

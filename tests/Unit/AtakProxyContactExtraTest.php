@@ -46,4 +46,39 @@ final class AtakProxyContactExtraTest extends TestCase
         self::assertFalse(AtakDataRepository::callSignLooksLikeProxy('Alpha 1-2 — James Brown'));
         self::assertFalse(AtakDataRepository::callSignLooksLikeProxy('N-10'));
     }
+
+    public function testAutoAllyIdIsDetected(): void
+    {
+        self::assertTrue(AtakDataRepository::looksLikeAutoAllyId('ALLY-0-1780311'));
+        self::assertFalse(AtakDataRepository::looksLikeAutoAllyId('RAVEN'));
+        self::assertFalse(AtakDataRepository::looksLikeAutoAllyId('ALLY-6'));
+    }
+
+    public function testDisplayCallSignHidesAutoAllyId(): void
+    {
+        self::assertSame(
+            'Alpha 1-2 — James Brown',
+            AtakDataRepository::displayCallSign('ALLY-0-1780311 · Alpha 1-2 — James Brown', [
+                'ally_ai' => true,
+                'ally_id' => 'ALLY-0-1780311',
+            ])
+        );
+        self::assertSame(
+            'RAVEN',
+            AtakDataRepository::displayCallSign('RAVEN', [
+                'ally_ai' => true,
+                'ally_id' => 'ALLY-0-12',
+                'display_name' => 'RAVEN',
+            ])
+        );
+        self::assertSame(
+            'Alpha 1-2',
+            AtakDataRepository::displayCallSign('ALLY-0-1780311', [
+                'ally_ai' => true,
+                'ally_id' => 'ALLY-0-1780311',
+                'group_name' => 'Alpha 1-2',
+            ])
+        );
+        self::assertSame('N-10', AtakDataRepository::displayCallSign('N-10', []));
+    }
 }

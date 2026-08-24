@@ -346,24 +346,36 @@ $rpDateFr = static function (?string $date): ?string {
 
     return date('d/m/Y', $ts);
 };
+$rpMedicalBlood = trim((string) (($personnelProfile['rp_blood_type_confirmed'] ?? '') !== '' ? $personnelProfile['rp_blood_type_confirmed'] : ($personnelProfile['blood_type'] ?? '')));
+$rpArmaBlood = trim((string) ($personnelProfile['rp_arma_blood_type'] ?? ''));
+$rpRotationKindLabel = \App\Support\RoleplayDeadlinePolicy::rotationKindLabel((string) ($personnelProfile['rp_rotation_kind'] ?? 'service'));
 $rpTimelineCards = [
     [
         'title' => 'Prochain entretien individuel',
         'date' => $rpDateFr((string) ($personnelProfile['rp_next_interview_date'] ?? '')),
         'fallback' => 'À planifier',
         'accent' => 'border-emerald-300 bg-emerald-50/60',
+        'note' => null,
     ],
     [
         'title' => 'Visite médicale',
         'date' => $rpDateFr((string) ($personnelProfile['rp_medical_due_date'] ?? '')),
         'fallback' => 'Échéance non renseignée',
-        'accent' => 'border-slate-200 bg-slate-50/70',
+        'accent' => ($rpArmaBlood !== '' && $rpMedicalBlood !== '' && $rpArmaBlood !== $rpMedicalBlood)
+            ? 'border-amber-300 bg-amber-50/60'
+            : 'border-slate-200 bg-slate-50/70',
+        'note' => $rpMedicalBlood !== ''
+            ? ('Groupe sanguin : ' . $rpMedicalBlood . ($rpArmaBlood !== '' && $rpArmaBlood !== $rpMedicalBlood ? ' · En jeu : ' . $rpArmaBlood : ''))
+            : ($rpArmaBlood !== ''
+                ? ('En jeu : ' . $rpArmaBlood . ' — à confirmer au bilan')
+                : 'Groupe sanguin à confirmer au bilan'),
     ],
     [
-        'title' => 'Rotation de service',
+        'title' => 'Rotation',
         'date' => $rpDateFr((string) ($personnelProfile['rp_service_rotation_date'] ?? '')),
         'fallback' => 'Non planifiée',
         'accent' => 'border-slate-200 bg-slate-50/70',
+        'note' => 'Objet : ' . $rpRotationKindLabel,
     ],
 ];
 $rpTimelineStatusFr = static function (?string $s): string {
@@ -935,6 +947,9 @@ $personnelFileShell = $personnelFileIsRhFull
                             <article class="rounded-2xl border p-4 <?= htmlspecialchars($card['accent']) ?>">
                                 <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-600"><?= htmlspecialchars($card['title']) ?></p>
                                 <p class="mt-2 text-lg font-black text-slate-900"><?= htmlspecialchars($card['date'] ?? $card['fallback']) ?></p>
+                                <?php if (!empty($card['note'])): ?>
+                                <p class="mt-1 text-xs text-slate-600"><?= htmlspecialchars((string) $card['note']) ?></p>
+                                <?php endif; ?>
                             </article>
                             <?php endforeach; ?>
                         </div>
@@ -1219,7 +1234,8 @@ $personnelFileShell = $personnelFileIsRhFull
                     </div>
                     <?php
                     $rpMotto = trim((string) ($personnelProfile['motto'] ?? ''));
-                    $rpBlood = trim((string) ($personnelProfile['blood_type'] ?? ''));
+                    $rpBlood = trim((string) (($personnelProfile['rp_blood_type_confirmed'] ?? '') !== '' ? $personnelProfile['rp_blood_type_confirmed'] : ($personnelProfile['blood_type'] ?? '')));
+                    $rpBloodArma = trim((string) ($personnelProfile['rp_arma_blood_type'] ?? ''));
                     $rpLangs = trim((string) ($personnelProfile['languages'] ?? ''));
                     $rpNat = trim((string) ($personnelProfile['nationality'] ?? ''));
                     $rpSex = trim((string) ($personnelProfile['sex'] ?? ''));
@@ -1228,7 +1244,7 @@ $personnelFileShell = $personnelFileIsRhFull
                     $rpWeight = (int) ($personnelProfile['weight_kg'] ?? 0);
                     $rpOperatorStatus = trim((string) ($personnelProfile['operator_status'] ?? ''));
                     $rpOperatorTags = trim((string) ($personnelProfile['operator_tags'] ?? ''));
-                    $rpExtra = $rpMotto !== '' || $rpBlood !== '' || $rpLangs !== '' || $rpNat !== ''
+                    $rpExtra = $rpMotto !== '' || $rpBlood !== '' || $rpBloodArma !== '' || $rpLangs !== '' || $rpNat !== ''
                         || $rpSex !== '' || $rpBirthPlace !== '' || $rpFamily !== '' || $rpWeight > 0
                         || $rpOperatorStatus !== '' || $rpOperatorTags !== '';
                     ?>
@@ -1248,8 +1264,14 @@ $personnelFileShell = $personnelFileIsRhFull
                             <?php if ($rpSex !== ''): ?>
                             <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Sexe</p><p class="text-sm text-slate-800"><?= htmlspecialchars($rpSex) ?></p></div>
                             <?php endif; ?>
-                            <?php if ($rpBlood !== ''): ?>
-                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Groupe sanguin</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($rpBlood) ?></p></div>
+                            <?php if ($rpBlood !== '' || $rpBloodArma !== ''): ?>
+                            <div>
+                                <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Groupe sanguin</p>
+                                <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($rpBlood !== '' ? $rpBlood : 'À confirmer') ?></p>
+                                <?php if ($rpBloodArma !== '' && $rpBloodArma !== $rpBlood): ?>
+                                <p class="mt-0.5 text-[11px] text-amber-800">En jeu : <?= htmlspecialchars($rpBloodArma) ?> — à confirmer au prochain bilan</p>
+                                <?php endif; ?>
+                            </div>
                             <?php endif; ?>
                             <?php if ($rpWeight > 0): ?>
                             <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Poids</p><p class="text-sm text-slate-800"><?= $rpWeight ?> kg</p></div>

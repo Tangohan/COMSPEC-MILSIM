@@ -25,32 +25,29 @@
     #define COMSPEC_SOUND_H(n) ((n) * COMSPEC_SOUND_POS_H)
 #endif
 
-#define SOUND_BG_TITLE {0.02, 0.05, 0.07, 0.92}
-#define SOUND_BG_STRIP {0.03, 0.07, 0.09, 0.88}
-#define SOUND_BG_BODY {0.02, 0.05, 0.06, 0.9}
-#define SOUND_BTN {0.06, 0.18, 0.22, 0.95}
-#define SOUND_BTN_F {0.1, 0.32, 0.38, 1}
-#define SOUND_BTN_DIM {0.05, 0.12, 0.16, 0.92}
-#define SOUND_ACCENT {0.45, 0.82, 0.55, 0.95}
+#define SOUND_BG_TITLE ATAK_BG_TITLE
+#define SOUND_BG_STRIP ATAK_BG_STRIP
+#define SOUND_BG_BODY ATAK_BG_DETAIL
+#define SOUND_BTN ATAK_BTN
+#define SOUND_BTN_F ATAK_BTN_F
+#define SOUND_BTN_DIM {0.11, 0.11, 0.11, 0.96}
+#define SOUND_ACCENT ATAK_ACCENT
 
 class COMSPEC_ATAK_Sound: ATAK_Message
 {
     class controls
     {
-        class Title: BCE_RscButtonMenu
+        class Title: COMSPEC_ATAK_Title
         {
             idc = 9820;
             x = 0;
             y = 0;
             w = QUOTE(COMSPEC_SOUND_W(3));
             h = QUOTE(COMSPEC_SOUND_H(0.58));
-            size = QUOTE(COMSPEC_SOUND_H(0.40));
-            text = "Sons ATAK";
-            colorBackground[] = SOUND_BG_TITLE;
-            colorBackground2[] = SOUND_BG_TITLE;
-            colorBackgroundFocused[] = {0.04, 0.1, 0.12, 0.95};
+            size = QUOTE(COMSPEC_SOUND_H(0.36));
+            text = "  Sons ATAK";
             onButtonClick = "call BCE_fnc_ATAK_toggleSubListMenu";
-            class Attributes { align = "center"; valign = "middle"; };
+            tooltip = "Revenir au tiroir des applications.";
         };
 
         class AccentBar: RscText
@@ -83,7 +80,7 @@ class COMSPEC_ATAK_Sound: ATAK_Message
             };
         };
 
-        class BtnStyle: BCE_RscButtonMenu
+        class BtnStyle: COMSPEC_ATAK_Btn
         {
             idc = 9822;
             x = QUOTE(COMSPEC_SOUND_W(0.08));
@@ -96,7 +93,6 @@ class COMSPEC_ATAK_Sound: ATAK_Message
             colorBackground2[] = SOUND_BTN;
             colorBackgroundFocused[] = SOUND_BTN_F;
             onButtonClick = "['cycle_style'] call comspec_overwatch_atak_athena_fnc_athena_soundAction";
-            class Attributes { align = "center"; valign = "middle"; };
         };
 
         class LblMaster: RscStructuredText
@@ -117,7 +113,7 @@ class COMSPEC_ATAK_Sound: ATAK_Message
                 size = "0.68";
             };
         };
-        class BtnMasterDown: BCE_RscButtonMenu
+        class BtnMasterDown: COMSPEC_ATAK_Btn
         {
             idc = 9824;
             x = QUOTE(COMSPEC_SOUND_W(1.82));
@@ -130,7 +126,6 @@ class COMSPEC_ATAK_Sound: ATAK_Message
             colorBackground2[] = SOUND_BTN_DIM;
             colorBackgroundFocused[] = SOUND_BTN_F;
             onButtonClick = "['vol_master', -0.1] call comspec_overwatch_atak_athena_fnc_athena_soundAction";
-            class Attributes { align = "center"; valign = "middle"; };
         };
         class BtnMasterUp: BtnMasterDown
         {
@@ -197,7 +192,7 @@ class COMSPEC_ATAK_Sound: ATAK_Message
             onButtonClick = "['vol_fx', 0.1] call comspec_overwatch_atak_athena_fnc_athena_soundAction";
         };
 
-        class BtnQuiet: BCE_RscButtonMenu
+        class BtnQuiet: COMSPEC_ATAK_Btn
         {
             idc = 9835;
             x = QUOTE(COMSPEC_SOUND_W(0.08));
@@ -210,7 +205,6 @@ class COMSPEC_ATAK_Sound: ATAK_Message
             colorBackground2[] = SOUND_BTN_DIM;
             colorBackgroundFocused[] = SOUND_BTN_F;
             onButtonClick = "['toggle_quiet'] call comspec_overwatch_atak_athena_fnc_athena_soundAction";
-            class Attributes { align = "center"; valign = "middle"; };
         };
         class BtnScreen: BtnQuiet
         {
@@ -220,7 +214,7 @@ class COMSPEC_ATAK_Sound: ATAK_Message
             onButtonClick = "['toggle_screen'] call comspec_overwatch_atak_athena_fnc_athena_soundAction";
         };
 
-        class BtnRoleplay: BCE_RscButtonMenu
+        class BtnRoleplay: COMSPEC_ATAK_Btn
         {
             idc = 9837;
             x = QUOTE(COMSPEC_SOUND_W(0.08));
@@ -233,10 +227,9 @@ class COMSPEC_ATAK_Sound: ATAK_Message
             colorBackground2[] = SOUND_BTN_DIM;
             colorBackgroundFocused[] = SOUND_BTN_F;
             onButtonClick = "['toggle_roleplay'] call comspec_overwatch_atak_athena_fnc_athena_soundAction";
-            class Attributes { align = "center"; valign = "middle"; };
         };
 
-        class BtnTest: BCE_RscButtonMenu
+        class BtnTest: COMSPEC_ATAK_Btn
         {
             idc = 9838;
             x = QUOTE(COMSPEC_SOUND_W(0.08));
@@ -249,7 +242,6 @@ class COMSPEC_ATAK_Sound: ATAK_Message
             colorBackground2[] = SOUND_BTN;
             colorBackgroundFocused[] = SOUND_BTN_F;
             onButtonClick = "['test'] call comspec_overwatch_atak_athena_fnc_athena_soundAction";
-            class Attributes { align = "center"; valign = "middle"; };
         };
         class BtnStatus: BtnTest
         {

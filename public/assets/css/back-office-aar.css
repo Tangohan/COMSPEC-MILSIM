@@ -550,6 +550,13 @@
   margin: 0;
 }
 
+.ath-aar-builder__types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
 .ath-aar-builder-card {
   margin: 0 0 14px;
   padding: 14px;

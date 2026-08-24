@@ -35,6 +35,7 @@ require base_path('views/partials/ath_kpis.php');
 
 $templates = is_array($aarTemplates ?? null) ? $aarTemplates : [];
 $canManageTemplates = !empty($aarCanManageTemplates);
+$canCreate = !empty($aarCanCreate) || $canManageTemplates;
 $templatesJson = json_encode(array_map(static function (array $tpl): array {
     return [
         'id' => (int) ($tpl['id'] ?? 0),
@@ -65,6 +66,17 @@ $e = \App\Core\Session::getFlash('error');
     <?php endif; ?>
 </div>
 
+<?php if ($canCreate): ?>
+<?php if ($canManageTemplates && $templates === []): ?>
+<div class="ath-card ath-aar-form-card ath-rise" style="margin-bottom:16px;">
+    <h2>Questionnaire sur mesure</h2>
+    <p class="ath-aar-form-card__hint">
+        Composez un modèle avec des questions courtes, des listes, des cases à cocher et des zones de texte libre,
+        puis choisissez-le au moment de déposer un compte rendu.
+    </p>
+    <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/atak/comptes-rendus/modeles/nouveau')) ?>">Créer un modèle</a>
+</div>
+<?php endif; ?>
 <div class="ath-aar-list-tools ath-rise" x-data="aarCreateForm(<?= $templatesJson ?>)">
     <div class="ath-card ath-aar-form-card">
         <button type="button" class="ath-aar-form-card__toggle" @click="formOpen = !formOpen" :aria-expanded="formOpen.toString()">
@@ -85,6 +97,7 @@ $e = \App\Core\Session::getFlash('error');
         </form>
     </div>
 </div>
+<?php endif; ?>
 
 <?php
 $athTableRows = [];
@@ -135,7 +148,7 @@ require base_path('views/partials/ath_table.php');
 <script>
 function aarCreateForm(templates) {
     return {
-        formOpen: window.location.hash === '#nouveau',
+        formOpen: true,
         templateId: 0,
         templates: Array.isArray(templates) ? templates : [],
         get current() {

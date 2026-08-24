@@ -1,8 +1,8 @@
 /*
-    Relevé du sol Arma (getTerrainHeightASL = altitude du terrain au-dessus de la mer).
-    Distinct de l’altitude d’un opérateur (getPosASL), déjà envoyée avec chaque position ATAK.
-    Par défaut : zone autour du joueur. Param 0 = true pour toute la carte (lent).
-    Ne jamais appeler depuis un PFH.
+    Relevé du sol Arma (getTerrainHeightASL) — DEM local fusionné sur Athena.
+    Pas l’altitude opérateur (getPosASL / asl_z).
+    Défaut : 50 m, rayon 4 km autour du joueur (~25 600 points).
+    Param 0 = true pour toute la carte (lent). Ne jamais appeler depuis un PFH.
 */
 params [["_fullTheater", false, [true]]];
 if (!hasInterface) exitWith {};

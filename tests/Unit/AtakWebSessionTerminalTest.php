@@ -45,6 +45,15 @@ final class AtakWebSessionTerminalTest extends TestCase
         ]));
     }
 
+    public function testDesktopWithoutPlatformIsSession(): void
+    {
+        self::assertTrue(AtakRealismRepository::isWebSessionTerminal([
+            'terminal_type' => 'desktop',
+            'terminal_uid' => 'OW-AA11-000001',
+            'platform_label' => '',
+        ]));
+    }
+
     public function testPartitionKeepsPhysicalAndWebApart(): void
     {
         $split = AtakRealismRepository::partitionTerminals([
@@ -56,5 +65,48 @@ final class AtakWebSessionTerminalTest extends TestCase
         self::assertCount(1, $split['web']);
         self::assertSame(1, (int) $split['physical'][0]['id']);
         self::assertSame(2, (int) $split['web'][0]['id']);
+    }
+
+    public function testCollapseKeepsNewestGameTerminalPerOperator(): void
+    {
+        $rows = [
+            [
+                'id' => 10,
+                'terminal_type' => 'tablet',
+                'terminal_uid' => 'OW-NEW',
+                'operator_callsign' => 'N-10',
+                'operator_military_id' => 'MID-MTXN',
+                'platform_label' => 'Arma 3 · COMSPEC 1.4.53',
+                'last_seen_at' => '2026-08-24 15:10:00',
+            ],
+            [
+                'id' => 3,
+                'terminal_type' => 'tablet',
+                'terminal_uid' => 'OW-OLD',
+                'operator_callsign' => 'N-10',
+                'operator_military_id' => 'MID-MTXN',
+                'platform_label' => 'Arma 3 · COMSPEC 1.3.0',
+                'last_seen_at' => '2026-07-28 15:56:00',
+            ],
+            [
+                'id' => 8,
+                'terminal_type' => 'phone',
+                'terminal_uid' => 'PH-1',
+                'operator_callsign' => 'N-10',
+                'operator_military_id' => 'MID-MTXN',
+                'platform_label' => 'Téléphone ATAK',
+            ],
+        ];
+
+        $collapsed = AtakRealismRepository::collapsePhysicalDuplicates($rows);
+        self::assertCount(2, $collapsed);
+        self::assertSame(10, (int) $collapsed[0]['id']);
+        self::assertSame(8, (int) $collapsed[1]['id']);
+    }
+
+    public function testMysqlUtcToIsoAddsZulu(): void
+    {
+        self::assertSame('2026-08-24T15:10:00Z', AtakRealismRepository::mysqlUtcToIso('2026-08-24 15:10:00'));
+        self::assertSame('2026-08-24T15:10:00Z', AtakRealismRepository::mysqlUtcToIso('2026-08-24T15:10:00Z'));
     }
 }

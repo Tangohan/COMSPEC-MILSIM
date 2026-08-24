@@ -248,6 +248,9 @@ uiNamespace setVariable ["COMSPEC_IntelNote_Idempotency", ""];
     "tactical",
     "info"
 ] call comspec_overwatch_connect_fnc_announce;
+if (!isNil "comspec_overwatch_connect_fnc_playAtakNotification") then {
+    ["intel"] call comspec_overwatch_connect_fnc_playAtakNotification;
+};
 
 // Referme avant les captures : c'est la scène qui doit être photographiée.
 if (!isNull _disp) then {

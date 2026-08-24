@@ -12,16 +12,16 @@ params [
 if (_message isEqualTo "") exitWith {};
 
 private _color = switch (toLower _tone) do {
-    case "ok": { "#9dffc4" };
-    case "warn": { "#ffe08a" };
-    case "error": { "#ffb0a0" };
-    default { "#e8f4f0" };
+    case "ok": { "#7CFF9A" };
+    case "warn": { "#FFD080" };
+    case "error": { "#FF8A7A" };
+    default { "#E8EEF2" };
 };
 private _bg = switch (toLower _tone) do {
-    case "ok": { [0.05, 0.2, 0.14, 0.98] };
-    case "warn": { [0.22, 0.16, 0.05, 0.98] };
-    case "error": { [0.24, 0.08, 0.06, 0.98] };
-    default { [0.04, 0.12, 0.14, 0.98] };
+    case "ok": { [0.05, 0.16, 0.10, 0.98] };
+    case "warn": { [0.16, 0.12, 0.04, 0.98] };
+    case "error": { [0.18, 0.05, 0.05, 0.98] };
+    default { [0.10, 0.10, 0.10, 0.98] };
 };
 
 private _html = format [

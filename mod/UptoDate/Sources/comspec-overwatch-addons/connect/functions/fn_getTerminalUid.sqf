@@ -41,23 +41,17 @@ if (_uid call _isBadUid) then { _uid = ""; } else { _uid = trim _uid; };
 if (_uid isEqualTo "") then {
 
     private _steam = getPlayerUID player;
-
     if (!(_steam isEqualType "")) then { _steam = ""; };
+    private _profile = profileName;
+    if (!(_profile isEqualType "")) then { _profile = ""; };
 
-    private _seed = format ["%1|%2|%3|%4", _steam, profileName, worldName, diag_tickTime];
-
+    // Stable : sans tick ni hasard, sinon chaque profil vidé recrée une fiche Athena.
+    private _seed = format ["%1|%2", _steam, _profile];
     private _hash = 0;
-
-    {
-
-        _hash = (_hash + _x) mod 1000000007;
-
-    } forEach toArray _seed;
-
-    _uid = format ["OW-%1-%2", _hash mod 100000000, floor (random 1e6)];
+    { _hash = (_hash + _x) mod 1000000007; } forEach toArray _seed;
+    _uid = format ["OW-%1", _hash mod 100000000];
 
     profileNamespace setVariable ["comspec_overwatch_terminal_uid", _uid];
-
     saveProfileNamespace;
 
 };

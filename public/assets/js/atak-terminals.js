@@ -37,10 +37,10 @@
 
   function statusLabel(st) {
     var s = String(st || '').toLowerCase();
-    if (s === 'linked') return { label: 'En liaison', tone: 'ok' };
+    if (s === 'linked' || s === 'active') return { label: 'En liaison', tone: 'ok' };
     if (s === 'pending') return { label: 'En attente', tone: 'warn' };
-    if (s === 'offline') return { label: 'Hors liaison', tone: 'danger' };
-    if (s === 'compromised') return { label: 'Compromis', tone: 'danger' };
+    if (s === 'offline' || s === 'inactive') return { label: 'Hors liaison', tone: 'danger' };
+    if (s === 'compromised' || s === 'lost' || s === 'revoked') return { label: 'Compromis', tone: 'danger' };
     if (!s) return { label: 'Inconnu', tone: 'warn' };
     return { label: String(st), tone: '' };
   }
@@ -65,9 +65,24 @@
     return { label: String(st), tone: 'warn' };
   }
 
-  function formatSeen(iso) {
+  function parseUtcMs(iso) {
+    if (!iso) return NaN;
+    var s = String(iso).trim();
+    if (!s) return NaN;
+    if (/[zZ]$/.test(s) || /[+-]\d{2}:?\d{2}$/.test(s)) {
+      return new Date(s).getTime();
+    }
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+      s = s.replace(' ', 'T');
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) s += ':00';
+      return new Date(s + 'Z').getTime();
+    }
+    return new Date(s).getTime();
+  }
+
+  function formatSeen(iso, assumeUtc) {
     if (!iso) return 'Jamais';
-    var t = new Date(iso).getTime();
+    var t = assumeUtc ? parseUtcMs(iso) : new Date(iso).getTime();
     if (isNaN(t)) return String(iso);
     var sec = Math.max(0, Math.floor((Date.now() - t) / 1000));
     if (sec < 20) return 'À l’instant';
@@ -75,7 +90,7 @@
     if (sec < 3600) return 'Il y a ' + Math.floor(sec / 60) + ' min';
     if (sec < 86400) return 'Il y a ' + Math.floor(sec / 3600) + ' h';
     try {
-      return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      return new Date(t).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     } catch (e) {
       return String(iso);
     }
@@ -103,12 +118,14 @@
   function cardHtml(t, unit) {
     var extra = parseExtra(unit);
     var call = t.operator_callsign || t.callsign || (unit && (unit.call_sign || unit.callsign)) || t.terminal_label || 'Terminal';
-    var st = statusLabel(t.status || (unit && unit.status));
+    var st = statusLabel((unit && unit.status) || t.status);
     var health = healthLabel(extra.health || (unit && unit.health));
     var comp = compromiseLabel(t.compromise_state);
     var idFollow = extra.bft_id || extra.military_id || t.operator_military_id || t.terminal_uid || '';
     var ip = extra.client_ip || extra.ip || extra.public_ip || extra.network || '';
     var type = t.terminal_type === 'phone' ? 'Téléphone' : (t.platform_label || t.terminal_type || 'Poste');
+    var seenRaw = t.last_seen_at || '';
+    var seenLabel = seenRaw ? formatSeen(seenRaw, true) : formatSeen(unit && unit.updated_at, false);
     return '<article class="atak-terminal-card">' +
       '<div class="atak-terminal-card__head">' +
       '<span class="atak-terminal-card__call">' + escapeHtml(call) + '</span>' +
@@ -120,7 +137,7 @@
       row('Intégrité', comp.label, comp.tone) +
       row('Type', type) +
       (t.terminal_label && t.terminal_label !== call ? row('Libellé', t.terminal_label) : '') +
-      row('Dernière activité', formatSeen(t.last_seen_at || (unit && unit.updated_at))) +
+      row('Dernière activité', seenLabel) +
       row('Adresse réseau', ip || 'Non remontée') +
       '</div></article>';
   }

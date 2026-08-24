@@ -178,7 +178,8 @@ if ((count _steamForConnect) < 15) then {
     _steamForConnect = profileNamespace getVariable ["comspec_overwatch_saved_steam_uid", ""];
 };
 private _modVersion = [] call comspec_overwatch_connect_fnc_getModVersion;
-private _result = ["COMSPECExtension" callExtension ["Connect", [_url, _key, _tenant, _steamForConnect, _modVersion]]] call comspec_overwatch_connect_fnc_extResult;
+private _bloodType = [] call comspec_overwatch_connect_fnc_getBloodType;
+private _result = ["COMSPECExtension" callExtension ["Connect", [_url, _key, _tenant, _steamForConnect, _modVersion, _bloodType]]] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _result splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { _result };

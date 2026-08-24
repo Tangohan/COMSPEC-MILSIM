@@ -21,8 +21,11 @@ window.ATAKSounds = (function () {
     disconnect: { file: 'atak_disconnect.ogg', cooldown: 2500 },
     unconscious: { file: 'atak_alert_2.ogg', cooldown: 4000 },
     death: { file: 'atak_death.ogg', cooldown: 4000 },
-    order: { file: 'roger_simple.ogg', cooldown: 1200 },
-    order_priority: { file: 'roger_prio.ogg', cooldown: 1200 },
+    order: { file: 'atak_order_receive.ogg', cooldown: 1200 },
+    order_priority: { file: 'atak_order_receive.ogg', cooldown: 1200 },
+    order_ack: { file: 'atak_deep_chime.ogg', cooldown: 1200 },
+    intel: { file: 'atak_deep_chime.ogg', cooldown: 1200 },
+    beep: { file: 'atak_beep.ogg', cooldown: 450 },
     medevac: { file: 'medevac.mp3', cooldown: 2500 }
   };
   var DEFAULT_PREF = 'stalker';
@@ -72,6 +75,9 @@ window.ATAKSounds = (function () {
     if (n === 'boot' || n === 'connect' || n === 'client_init') return 'start';
     if (n === 'cardiac_arrest' || n === 'kia' || n === 'dead' || n === 'killed') return 'death';
     if (n === 'order_prio' || n === 'order-priority' || n === 'urgent_order') return 'order_priority';
+    if (n === 'order_ack' || n === 'ack' || n === 'accept' || n === 'accepted' || n === 'wilco') return 'order_ack';
+    if (n === 'intel' || n === 'sse' || n === 'fiche') return 'intel';
+    if (n === 'beep' || n === 'chat' || n === 'ping' || n === 'marker' || n === 'urgent') return 'beep';
     if (n === 'medevac' || n === 'evac' || n === '9line_medevac' || n === 'nine_line_medevac') return 'medevac';
     if (EVENTS[n]) return n;
     return '';
@@ -91,6 +97,9 @@ window.ATAKSounds = (function () {
         return 'liaison';
       case 'order':
       case 'order_priority':
+      case 'order_ack':
+      case 'intel':
+      case 'beep':
         return 'orders';
       case 'unconscious':
       case 'death':
@@ -365,6 +374,29 @@ window.ATAKSounds = (function () {
       return false;
     }
   }
+  /** Rejoue un même clip N fois à la suite (signal médical). */
+  function playAudioRepeats(a, times) {
+    var n = parseInt(times, 10);
+    if (!a) return false;
+    if (!(n > 1)) return playAudio(a);
+    if (a._repeatHandler) {
+      a.removeEventListener('ended', a._repeatHandler);
+      a._repeatHandler = null;
+    }
+    var left = n;
+    var handler = function () {
+      left -= 1;
+      if (left <= 0) {
+        a.removeEventListener('ended', handler);
+        a._repeatHandler = null;
+        return;
+      }
+      playAudio(a);
+    };
+    a._repeatHandler = handler;
+    a.addEventListener('ended', handler);
+    return playAudio(a);
+  }
   /**
    * Alerte générique (bip radio / activité).
    * Modes silence : pas de son ; vibration si « silence avec vibration » ou opts.priority.
@@ -384,9 +416,11 @@ window.ATAKSounds = (function () {
       return false;
     }
     var now = Date.now();
-    if (!opts.force && now - lastPlayAt < COOLDOWN_MS) return false;
+    var cool = pref === 'health' ? 7000 : COOLDOWN_MS;
+    if (!opts.force && now - lastPlayAt < cool) return false;
     lastPlayAt = now;
-    var ok = playAudio(getAudio(pref));
+    var clip = getAudio(pref);
+    var ok = pref === 'health' ? playAudioRepeats(clip, 3) : playAudio(clip);
     if (opts.priority) tryVibrate(opts);
     return ok;
   }
@@ -407,11 +441,11 @@ window.ATAKSounds = (function () {
     lastEventAt[eventKey] = now;
     lastPlayAt = now;
     var isCritical = eventKey === 'unconscious' || eventKey === 'death';
-    var isOrder = eventKey === 'order' || eventKey === 'order_priority';
+    var isOrder = eventKey === 'order' || eventKey === 'order_priority' || eventKey === 'order_ack' || eventKey === 'intel';
     var isMedevac = eventKey === 'medevac';
     var vibOpts = (isCritical || isOrder || isMedevac) ? Object.assign({}, opts, { priority: true }) : opts;
     if (pref === 'silent_vib') {
-      // Ordres / MEDEVAC : toujours le son dédié (comme les urgences médicales en jeu).
+      // Ordres / renseignement / MEDEVAC : toujours le son dédié (comme les urgences médicales en jeu).
       if (isOrder || isCritical || isMedevac) {
         var okSilent = playAudio(getAudioByFile(meta.file, cacheKey('event', eventKey)));
         tryVibrate(vibOpts);
@@ -456,6 +490,10 @@ window.ATAKSounds = (function () {
     if (t === 'client_init') return playEvent('start', opts);
     if (t === 'disconnect') return playEvent('disconnect', opts);
     if (t === 'medevac') return playEvent('medevac', Object.assign({}, opts, { priority: true }));
+    if (t === 'intel') return playEvent('intel', opts);
+    if (t === 'chat' || t === 'ping' || t === 'marker') {
+      return playEvent('beep', opts);
+    }
     if (t === 'order') {
       return playEvent(opts.highPriority ? 'order_priority' : 'order', opts);
     }
@@ -464,11 +502,11 @@ window.ATAKSounds = (function () {
     }
     return play(opts);
   }
-  /** Ordre prioritaire (URGENT / CONTACT) : roger_prio + vibration (sauf mute). */
+  /** Ordre prioritaire (URGENT / CONTACT) : même carillon de réception + vibration (sauf mute). */
   function playPriority(opts) {
     return playEvent('order_priority', Object.assign({}, opts || {}, { priority: true }));
   }
-  /** Ordre standard : roger_simple. */
+  /** Ordre standard : carillon de réception. */
   function playOrder(opts) {
     opts = opts || {};
     if (opts.highPriority || opts.priority === 'URGENT' || opts.priority === 'CONTACT') {

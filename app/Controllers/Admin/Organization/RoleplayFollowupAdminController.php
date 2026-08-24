@@ -13,6 +13,7 @@ use App\Repositories\PersonnelRoleplayTimelineRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Personnel\RoleplayFollowupNotificationService;
+use App\Support\RoleplayDeadlinePolicy;
 
 final class RoleplayFollowupAdminController
 {
@@ -36,8 +37,8 @@ final class RoleplayFollowupAdminController
             'field' => 'rp_service_rotation_date',
             'type' => 'rotation',
             'label' => 'Rotation',
-            'plan_title' => 'Planification rotation de service',
-            'done_title' => 'Rotation de service réalisée',
+            'plan_title' => 'Planification rotation',
+            'done_title' => 'Rotation réalisée',
         ],
     ];
 
@@ -239,6 +240,13 @@ final class RoleplayFollowupAdminController
                 }
             }
 
+            $bloodDossier = trim((string) ($p['blood_type'] ?? ''));
+            $bloodConfirmed = trim((string) ($p['rp_blood_type_confirmed'] ?? ''));
+            $bloodArma = trim((string) ($p['rp_arma_blood_type'] ?? ''));
+            $interviewDoneAt = trim((string) ($p['rp_last_interview_completed_at'] ?? '')) ?: null;
+            $rotationDoneAt = trim((string) ($p['rp_last_rotation_completed_at'] ?? '')) ?: null;
+            $rotationKind = RoleplayDeadlinePolicy::normalizeRotationKind((string) ($p['rp_rotation_kind'] ?? 'service'));
+
             $rows[] = [
                 'user_id' => $uid,
                 'display_name' => trim((string) ($u['display_name'] ?? '')),
@@ -251,6 +259,17 @@ final class RoleplayFollowupAdminController
                 'next_due' => $nextDue,
                 'next_due_is_overdue' => $nextDue !== null && $nextDue < $today,
                 'notes' => trim((string) ($p['rp_followup_notes'] ?? '')),
+                'blood_type' => $bloodDossier,
+                'blood_type_confirmed' => $bloodConfirmed,
+                'blood_type_confirmed_at' => trim((string) ($p['rp_blood_type_confirmed_at'] ?? '')) ?: null,
+                'arma_blood_type' => $bloodArma,
+                'blood_needs_confirmation' => RoleplayDeadlinePolicy::bloodTypeNeedsConfirmation($bloodDossier, $bloodConfirmed, $bloodArma),
+                'suggested_blood_type' => RoleplayDeadlinePolicy::suggestedBloodType($bloodDossier, $bloodConfirmed, $bloodArma),
+                'last_interview_completed_at' => $interviewDoneAt,
+                'last_rotation_completed_at' => $rotationDoneAt,
+                'rotation_kind' => $rotationKind,
+                'rotation_kind_label' => RoleplayDeadlinePolicy::rotationKindLabel($rotationKind),
+                'rotation_interview_ready' => RoleplayDeadlinePolicy::canProceedWithRotation($interviewDoneAt, $rotationDoneAt),
             ];
         }
 
@@ -275,6 +294,8 @@ final class RoleplayFollowupAdminController
             'rpTimelineTableReady' => $this->timelineRepository->tableExists(),
             'rpCsrfToken' => Csrf::token(),
             'rpDeadlineKinds' => self::DEADLINE_KINDS,
+            'rpBloodTypes' => RoleplayDeadlinePolicy::BLOOD_TYPES,
+            'rpRotationKinds' => RoleplayDeadlinePolicy::ROTATION_KINDS,
         ]);
     }
 
@@ -316,6 +337,22 @@ final class RoleplayFollowupAdminController
         $existing = $this->personnelProfileRepository->getByUserId($uid) ?? [];
         $oldDate = trim((string) ($existing[$field] ?? ''));
         $note = trim((string) $request->input('deadline_note', ''));
+        $rotationKind = RoleplayDeadlinePolicy::normalizeRotationKind((string) $request->input('rotation_kind', (string) ($existing['rp_rotation_kind'] ?? 'service')));
+        $bloodType = RoleplayDeadlinePolicy::normalizeBloodType((string) $request->input('blood_type', ''));
+        if ($kind === 'rotation' && in_array($action, ['save', 'complete'], true)) {
+            $interviewDoneAt = trim((string) ($existing['rp_last_interview_completed_at'] ?? '')) ?: null;
+            $rotationDoneAt = trim((string) ($existing['rp_last_rotation_completed_at'] ?? '')) ?: null;
+            if (!RoleplayDeadlinePolicy::canProceedWithRotation($interviewDoneAt, $rotationDoneAt)) {
+                Session::flash('error', 'Un entretien individuel doit d’abord être réalisé avant de planifier ou valider une rotation.');
+
+                return Response::redirect($redirectTo);
+            }
+        }
+        if ($kind === 'medical' && $action === 'complete' && $bloodType === '') {
+            Session::flash('error', 'Indiquez le groupe sanguin constaté au bilan, pour que les médecins l’aient au dossier.');
+
+            return Response::redirect($redirectTo);
+        }
         if (function_exists('mb_strlen') && mb_strlen($note) > 500) {
             $note = mb_substr($note, 0, 500);
         } elseif (strlen($note) > 500) {
@@ -342,11 +379,41 @@ final class RoleplayFollowupAdminController
             $newDate = null;
         }
 
-        $this->personnelProfileRepository->update($uid, [$field => $newDate]);
+        $extra = [$field => $newDate];
+        $description = $note !== '' ? $note : null;
+        if ($kind === 'rotation' && in_array($action, ['save', 'complete'], true)) {
+            $extra['rp_rotation_kind'] = $rotationKind;
+            $kindLabel = RoleplayDeadlinePolicy::rotationKindLabel($rotationKind);
+            $kindLine = 'Objet : ' . $kindLabel . '.';
+            $description = $description !== null ? $kindLine . ' ' . $description : $kindLine;
+        }
+        if ($kind === 'entretien' && $action === 'complete') {
+            $extra['rp_last_interview_completed_at'] = date('Y-m-d H:i:s');
+        }
+        if ($kind === 'rotation' && $action === 'complete') {
+            $extra['rp_last_rotation_completed_at'] = date('Y-m-d H:i:s');
+        }
+        if ($kind === 'medical' && $action === 'complete') {
+            $previousBlood = RoleplayDeadlinePolicy::normalizeBloodType((string) ($existing['rp_blood_type_confirmed'] ?? $existing['blood_type'] ?? ''));
+            $armaBlood = RoleplayDeadlinePolicy::normalizeBloodType((string) ($existing['rp_arma_blood_type'] ?? ''));
+            $extra['blood_type'] = $bloodType;
+            $extra['rp_blood_type_confirmed'] = $bloodType;
+            $extra['rp_blood_type_confirmed_at'] = date('Y-m-d H:i:s');
+            $bloodLine = 'Groupe sanguin constaté : ' . $bloodType . '.';
+            if (RoleplayDeadlinePolicy::bloodTypeChanged($previousBlood, $bloodType)) {
+                $bloodLine = 'Groupe sanguin mis à jour : '
+                    . ($previousBlood !== '' ? $previousBlood : 'non renseigné')
+                    . ' → ' . $bloodType . '.';
+            } elseif (RoleplayDeadlinePolicy::bloodTypeChanged($armaBlood, $bloodType) && $armaBlood !== '') {
+                $bloodLine = 'Groupe sanguin confirmé : ' . $bloodType
+                    . ' (Arma indiquait ' . $armaBlood . ').';
+            }
+            $description = $description !== null ? $bloodLine . ' ' . $description : $bloodLine;
+        }
+        $this->personnelProfileRepository->update($uid, $extra);
 
         $actorId = (int) Session::get('user_id');
         $actorOrNull = $actorId > 0 ? $actorId : null;
-        $description = $note !== '' ? $note : null;
 
         if ($action === 'complete') {
             $this->timelineRepository->addEvent(
@@ -397,8 +464,7 @@ final class RoleplayFollowupAdminController
             Session::flash('success', 'Échéance ' . strtolower($meta['label']) . ' enregistrée.');
         }
 
-        $after = $existing;
-        $after[$field] = $newDate;
+        $after = array_merge($existing, $extra);
         $this->roleplayFollowupNotificationService->notifyAfterSave(
             $tenantId,
             $uid,

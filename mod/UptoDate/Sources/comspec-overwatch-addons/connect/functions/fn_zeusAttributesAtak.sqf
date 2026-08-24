@@ -46,29 +46,43 @@ if (_isVeh) exitWith {
     private _gpsOn = [_obj, "COMSPEC_GpsBeacon"] call comspec_overwatch_connect_fnc_isObjectFlag;
     private _cs = _obj getVariable ["COMSPEC_GpsCallsign", ""];
     if (!(_cs isEqualType "")) then { _cs = "" };
+    private _crewAlly = false;
+    {
+        if (!isPlayer _x && {alive _x} && {_x isKindOf "CAManBase"} && {[_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag}) then {
+            _crewAlly = true;
+        };
+    } forEach (crew _obj);
     private _opened = [
         format ["ATAK — %1", getText (configOf _obj >> "displayName")],
         [
             ["CHECKBOX", ["Balise GPS", "Le véhicule apparaît sur la carte de commandement, même sans joueur à bord."], _gpsOn],
             ["EDIT", ["Nom sur la carte", "Laisser vide : le modèle du véhicule est utilisé."], _cs],
-            ["CHECKBOX", ["Équipage IA sur la carte", "Les IA à bord apparaissent comme unités alliées."], false]
+            ["CHECKBOX", ["Équipage IA sur la carte", "Les IA à bord apparaissent comme unités alliées. Décochez pour retirer."], _crewAlly],
+            ["EDIT", ["Indicatif des IA à bord", "Laisser vide : chaque IA utilise son groupe et son nom. Renseignez un indicatif commun si besoin."], ""]
         ],
         {
             params ["_values", "_args"];
-            _values params ["_gps", "_name", "_crewAlly"];
+            _values params ["_gps", "_name", "_crewAlly", "_crewCs"];
             _args params ["_veh"];
             [_veh, _gps] call comspec_overwatch_connect_fnc_setGpsBeacon;
             private _n = trim _name;
             if (_n isNotEqualTo "") then {
                 _veh setVariable ["COMSPEC_GpsCallsign", _n, true];
             };
-            if (_crewAlly) then {
-                {
-                    if (!isPlayer _x && {alive _x} && {_x isKindOf "CAManBase"}) then {
-                        [_x, true] call comspec_overwatch_connect_fnc_setAllyTrack;
+            private _crewLabel = trim _crewCs;
+            {
+                if (!isPlayer _x && {alive _x} && {_x isKindOf "CAManBase"}) then {
+                    if (_crewLabel isNotEqualTo "") then {
+                        [_x, _crewAlly, _crewLabel] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 0];
+                    } else {
+                        [_x, _crewAlly] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 0];
                     };
-                } forEach (crew _veh);
-            };
+                    if (_crewAlly) then {
+                        _x setVariable ["COMSPEC_AllyTrackLastAt", -1e9, false];
+                        [_x] call comspec_overwatch_connect_fnc_reportAllyPosition;
+                    };
+                };
+            } forEach (crew _veh);
             if (_gps) then {
                 _veh setVariable ["COMSPEC_GpsBeaconLastAt", -1e9, false];
                 [_veh] call comspec_overwatch_connect_fnc_reportGpsBeacon;
@@ -101,6 +115,13 @@ private _fields = [
 ];
 if (!_isPlayer) then {
     _fields pushBack ["CHECKBOX", ["IA alliée (unité de terrain)", "Apparaît comme une unité, pas comme un téléphone."], _allyOn];
+    private _allyCs = _obj getVariable ["COMSPEC_AllyCallsign", ""];
+    if (!(_allyCs isEqualType "")) then { _allyCs = "" };
+    _allyCs = trim _allyCs;
+    if (_allyCs isEqualTo "") then {
+        _allyCs = [_obj] call comspec_overwatch_connect_fnc_allyTrackCallsign;
+    };
+    _fields pushBack ["EDIT", ["Indicatif", "Nom court affiché sur la carte et dans les effectifs (ex. RAVEN). Vide : groupe et nom de l’IA."], _allyCs];
 };
 
 private _opened = [
@@ -124,7 +145,12 @@ private _opened = [
             [_unit] call comspec_overwatch_connect_fnc_reportPhonePosition;
         };
         if (!_isPlayer && {(count _values) > 8}) then {
-            [_unit, _values select 8] call comspec_overwatch_connect_fnc_setAllyTrack;
+            private _allyCs = if ((count _values) > 9) then { trim (_values select 9) } else { "" };
+            [_unit, _values select 8, _allyCs] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 0];
+            if (_values select 8) then {
+                _unit setVariable ["COMSPEC_AllyTrackLastAt", -1e9, false];
+                [_unit] call comspec_overwatch_connect_fnc_reportAllyPosition;
+            };
         };
         [format ["Suivi ATAK réglé pour %1.", name _unit], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
     },

@@ -127,6 +127,9 @@ class PersonnelProfileRepository
             'rp_recruitment_stream', 'rp_operational_function', 'rp_recruitment_origin',
             'rp_next_interview_date', 'rp_medical_due_date', 'rp_service_rotation_date',
             'rp_followup_notes', 'rp_eligibility_snapshot_json', 'rp_last_review_at',
+            'rp_last_interview_completed_at', 'rp_last_rotation_completed_at', 'rp_rotation_kind',
+            'rp_blood_type_confirmed', 'rp_blood_type_confirmed_at',
+            'rp_arma_blood_type', 'rp_arma_blood_type_at',
         ];
         $set = [];
         $params = [];

@@ -804,6 +804,9 @@ class AtakDataRepository
         } elseif (trim((string) ($row['grid_ref'] ?? '')) === '' || trim((string) $row['grid_ref']) === '0 0') {
             $row['grid_ref'] = (string) round($posX) . ' ' . round($posY);
         }
+        $extra = self::decodeExtra($row['extra'] ?? null);
+        $shown = self::displayCallSign((string) ($row['call_sign'] ?? ''), is_array($extra) ? $extra : []);
+        $row['display_call_sign'] = $shown;
 
         return $row;
     }
@@ -957,6 +960,99 @@ class AtakDataRepository
     }
 
     /**
+     * Identifiant auto ALLY-0-1780311 (netId), pas un indicatif choisi.
+     */
+    public static function looksLikeAutoAllyId(string $callSign): bool
+    {
+        $cs = trim($callSign);
+        if ($cs === '') {
+            return false;
+        }
+
+        return preg_match('/^ALLY-\d+-\d+(-\d+)*$/iu', $cs) === 1;
+    }
+
+    /**
+     * Indicatif à afficher : jamais l’identifiant technique ALLY-0-….
+     *
+     * @param array<string, mixed> $extra
+     */
+    public static function displayCallSign(string $callSign, array $extra = []): string
+    {
+        $named = trim((string) ($extra['display_name'] ?? $extra['callsign_display'] ?? ''));
+        if ($named !== '' && !self::looksLikeAutoAllyId($named) && !str_starts_with(strtoupper($named), 'ALLY-')) {
+            return $named;
+        }
+        $cs = trim($callSign);
+        if (preg_match('/^ALLY-\S+\s+[·\-–—]\s+(.+)$/u', $cs, $m) === 1) {
+            $pretty = trim((string) ($m[1] ?? ''));
+            if ($pretty !== '' && !self::looksLikeAutoAllyId($pretty)) {
+                return $pretty;
+            }
+        }
+        $isAlly = self::isProxyContactExtra($extra)
+            || self::looksLikeAutoAllyId($cs)
+            || str_starts_with(function_exists('mb_strtoupper') ? mb_strtoupper($cs, 'UTF-8') : strtoupper($cs), 'ALLY-');
+        if ($isAlly && (self::looksLikeAutoAllyId($cs) || str_starts_with(strtoupper($cs), 'ALLY-'))) {
+            $group = trim((string) ($extra['group_name'] ?? $extra['group'] ?? ''));
+            if ($group !== '' && !self::looksLikeAutoAllyId($group)) {
+                return $group;
+            }
+
+            return 'Unité alliée';
+        }
+
+        return $cs;
+    }
+
+    /**
+     * Retrouve une IA alliée par identifiant interne (survît au changement d’indicatif affiché).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function findAllyUnitByStableId(int $tenantId, int $mapId, string $allyId, bool $hasPos): ?array
+    {
+        $id = trim($allyId);
+        if ($id === '' || preg_match('/^[A-Za-z0-9._-]{3,80}$/', $id) !== 1) {
+            return null;
+        }
+        $cols = $hasPos
+            ? 'id, grid_ref, pos_x, pos_y, extra, call_sign'
+            : 'id, grid_ref, extra, call_sign';
+        $stmt = $this->pdo()->prepare(
+            "SELECT {$cols} FROM atak_units
+             WHERE tenant_id = ? AND map_id = ?
+               AND (call_sign = ? OR call_sign LIKE ? OR extra LIKE ?)
+             ORDER BY updated_at DESC
+             LIMIT 12"
+        );
+        $stmt->execute([$tenantId, $mapId, $id, $id . '%', '%"ally_id":"' . $id . '"%']);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return null;
+        }
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $extra = self::decodeExtra($row['extra'] ?? null);
+            $got = trim((string) ($extra['ally_id'] ?? ''));
+            if ($got !== '' && strcasecmp($got, $id) === 0) {
+                return $row;
+            }
+            $cs = trim((string) ($row['call_sign'] ?? ''));
+            if (strcasecmp($cs, $id) === 0) {
+                return $row;
+            }
+            if (preg_match('/^' . preg_quote($id, '/') . '(?:\s+[·\-–—]|$)/u', $cs) === 1) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @return array{created: bool, unit_id: int}
      */
     public function upsertUnitPosition(int $tenantId, int $mapId, string $callSign, float $posX, float $posY, ?float $heading, string $role, string $extraJson): array
@@ -966,20 +1062,28 @@ class AtakDataRepository
         // hasPos AVANT le SELECT : sans migration pos_x/pos_y, un SELECT pos_* plante
         // toute la méthode (pas d’INSERT, pas de setLastActivity) → /units vide.
         $hasPos = $this->hasPosColumns();
-        $stmt = $this->pdo()->prepare(
-            $hasPos
-                ? 'SELECT id, grid_ref, pos_x, pos_y, extra FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
-                : 'SELECT id, grid_ref, extra FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
-        );
-        $stmt->execute([$tenantId, $mapId, $callSign]);
-        $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+        $incomingExtra = self::decodeExtra($extraJson);
+        $existing = null;
+        $allyId = trim((string) ($incomingExtra['ally_id'] ?? ''));
+        if ($allyId !== '' && (self::isProxyContactExtra($incomingExtra) || self::looksLikeAutoAllyId($allyId))) {
+            $existing = $this->findAllyUnitByStableId($tenantId, $mapId, $allyId, $hasPos);
+        }
+        if (!is_array($existing)) {
+            $stmt = $this->pdo()->prepare(
+                $hasPos
+                    ? 'SELECT id, grid_ref, pos_x, pos_y, extra FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
+                    : 'SELECT id, grid_ref, extra FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
+            );
+            $stmt->execute([$tenantId, $mapId, $callSign]);
+            $hit = $stmt->fetch(PDO::FETCH_ASSOC);
+            $existing = is_array($hit) ? $hit : null;
+        }
         $created = false;
         $unitId = 0;
 
         if ($existing) {
             $unitId = (int) $existing['id'];
             // Conserver notes TOC (fréquence / véhicule / note) écrites depuis la Tacmap.
-            $incomingExtra = self::decodeExtra($extraJson);
             $mergedExtra = self::mergePreservedTocExtra(self::decodeExtra($existing['extra'] ?? null), $incomingExtra);
             $extraJson = json_encode($mergedExtra, JSON_UNESCAPED_UNICODE);
             if ($extraJson === false) {
@@ -1007,12 +1111,12 @@ class AtakDataRepository
             }
             if ($hasPos) {
                 $this->pdo()->prepare(
-                    'UPDATE atak_units SET grid_ref = ?, heading = ?, role = ?, extra = ?, status = ?, pos_x = ?, pos_y = ?, updated_at = NOW() WHERE id = ?'
-                )->execute([$storeGrid, $heading, $role, $extraJson, 'linked', $storeX, $storeY, $unitId]);
+                    'UPDATE atak_units SET call_sign = ?, grid_ref = ?, heading = ?, role = ?, extra = ?, status = ?, pos_x = ?, pos_y = ?, updated_at = NOW() WHERE id = ?'
+                )->execute([$callSign, $storeGrid, $heading, $role, $extraJson, 'linked', $storeX, $storeY, $unitId]);
             } else {
                 $this->pdo()->prepare(
-                    'UPDATE atak_units SET grid_ref = ?, heading = ?, role = ?, extra = ?, status = ?, updated_at = NOW() WHERE id = ?'
-                )->execute([$storeGrid, $heading, $role, $extraJson, 'linked', $unitId]);
+                    'UPDATE atak_units SET call_sign = ?, grid_ref = ?, heading = ?, role = ?, extra = ?, status = ?, updated_at = NOW() WHERE id = ?'
+                )->execute([$callSign, $storeGrid, $heading, $role, $extraJson, 'linked', $unitId]);
             }
         } else {
             if ($hasPos) {
@@ -1260,8 +1364,12 @@ class AtakDataRepository
 
     public function getChatMessages(int $tenantId, int $mapId, int $limit = 100): array
     {
-        $stmt = $this->pdo()->prepare('SELECT * FROM atak_chat_messages WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ?');
-        $stmt->execute([$tenantId, $mapId, $limit]);
+        $limit = max(1, min($limit, 500));
+        $stmt = $this->pdo()->prepare(
+            'SELECT * FROM atak_chat_messages WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ' . $limit
+        );
+        $stmt->execute([$tenantId, $mapId]);
+
         return array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
@@ -1281,9 +1389,9 @@ class AtakDataRepository
             'SELECT * FROM atak_chat_messages
              WHERE tenant_id = ? AND map_id = ? AND id > ?
              ORDER BY id ASC
-             LIMIT ?'
+             LIMIT ' . $limit
         );
-        $stmt->execute([$tenantId, $mapId, $afterId, $limit]);
+        $stmt->execute([$tenantId, $mapId, $afterId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -1608,8 +1716,12 @@ class AtakDataRepository
 
     public function getPings(int $tenantId, int $mapId, int $limit = 50): array
     {
-        $stmt = $this->pdo()->prepare('SELECT * FROM atak_pings WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ?');
-        $stmt->execute([$tenantId, $mapId, $limit]);
+        $limit = max(1, min($limit, 200));
+        $stmt = $this->pdo()->prepare(
+            'SELECT * FROM atak_pings WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ' . $limit
+        );
+        $stmt->execute([$tenantId, $mapId]);
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -1707,8 +1819,11 @@ class AtakDataRepository
 
     public function getSigintZones(int $tenantId, int $mapId, int $limit = 50): array
     {
-        $stmt = $this->pdo()->prepare('SELECT * FROM atak_sigint_reports WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ?');
-        $stmt->execute([$tenantId, $mapId, $limit]);
+        $limit = max(1, min($limit, 200));
+        $stmt = $this->pdo()->prepare(
+            'SELECT * FROM atak_sigint_reports WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ' . $limit
+        );
+        $stmt->execute([$tenantId, $mapId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $zones = [];
         if (count($rows) >= 2) {
@@ -1790,11 +1905,21 @@ class AtakDataRepository
         string $callsign,
         array $data
     ): array {
-        $stmt = $this->pdo()->prepare('SELECT id FROM atak_air_assets WHERE tenant_id = ? AND map_id = ? AND callsign = ?');
-        $stmt->execute([$tenantId, $mapId, $callsign]);
-        $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+        $occupancy = \App\Services\Tactical\AtakAirAssetMergeService::isOccupancyPayload($data);
+        $existing = $this->findAirAssetForUpsert($tenantId, $mapId, $callsign, $data);
         $now = date('Y-m-d H:i:s');
         $pos = $data['pos'] ?? null;
+        $incomingSource = $occupancy
+            ? \App\Services\Tactical\AtakAirAssetMergeService::SOURCE_OCCUPANCY
+            : \App\Services\Tactical\AtakAirAssetMergeService::SOURCE_MANIFEST;
+        $keepCallsign = $callsign;
+        if ($existing && $occupancy) {
+            $prevCs = trim((string) ($existing['callsign'] ?? ''));
+            $prevSource = strtolower(trim((string) ($existing['source'] ?? '')));
+            if ($prevCs !== '' && ($prevSource === 'manifest' || $prevCs !== $callsign)) {
+                $keepCallsign = $prevCs;
+            }
+        }
         $fields = [
             'mission_id' => $data['mission_id'] ?? $data['missionId'] ?? null,
             'model' => $data['model'] ?? null,
@@ -1802,7 +1927,7 @@ class AtakDataRepository
             'freq' => $data['freq'] ?? $data['radioMain'] ?? $data['radio_main'] ?? null,
             'radio_main' => $data['radio_main'] ?? $data['radioMain'] ?? null,
             'radio_aux' => $data['radio_aux'] ?? $data['radioAux'] ?? null,
-            'laser' => $data['laser'] ?? '1688',
+            'laser' => array_key_exists('laser', $data) ? $data['laser'] : ($occupancy ? null : '1688'),
             'auth' => $data['auth'] ?? null,
             'auth_code' => $data['auth_code'] ?? $data['authCode'] ?? null,
             'pilot' => $data['pilot'] ?? null,
@@ -1822,25 +1947,128 @@ class AtakDataRepository
             'status' => $data['status'] ?? 'AVAILABLE',
             'aircraft_count' => (int) ($data['aircraft_count'] ?? $data['count'] ?? 1),
             'last_update' => isset($data['lastUpdate']) ? (int) $data['lastUpdate'] : time(),
+            'source' => $incomingSource,
+            'vehicle_id' => trim((string) ($data['vehicle_id'] ?? $data['vehicleId'] ?? '')),
             'updated_at' => $now,
         ];
+        if ($occupancy && is_array($existing)) {
+            $prevSource = strtolower(trim((string) ($existing['source'] ?? '')));
+            if ($prevSource === 'manifest') {
+                $fields['source'] = 'manifest';
+            }
+            foreach (['freq', 'radio_main', 'radio_aux', 'laser', 'auth', 'auth_code', 'pilot', 'crew', 'ordnance', 'station', 'eta_minutes', 'bingo_fuel', 'checklist', 'mission_id'] as $keep) {
+                $incomingEmpty = $fields[$keep] === null || $fields[$keep] === '';
+                $prev = $existing[$keep] ?? null;
+                if ($incomingEmpty && $prev !== null && $prev !== '') {
+                    $fields[$keep] = $prev;
+                }
+            }
+        }
+        if ($fields['vehicle_id'] === '' && is_array($existing)) {
+            $fields['vehicle_id'] = trim((string) ($existing['vehicle_id'] ?? ''));
+        }
+        if ($fields['vehicle_id'] === '') {
+            $fields['vehicle_id'] = null;
+        }
         if ($existing) {
+            if (!$occupancy && $keepCallsign !== trim((string) ($existing['callsign'] ?? ''))) {
+                $fields['callsign'] = $keepCallsign;
+            } elseif ($occupancy) {
+                unset($fields['callsign']);
+            }
             $set = implode(', ', array_map(fn ($k) => "`$k` = ?", array_keys($fields)));
             $params = array_values($fields);
             $params[] = $existing['id'];
-            $this->pdo()->prepare("UPDATE atak_air_assets SET $set WHERE id = ?")->execute($params);
+            try {
+                $this->pdo()->prepare("UPDATE atak_air_assets SET $set WHERE id = ?")->execute($params);
+            } catch (\Throwable) {
+                unset($fields['source'], $fields['vehicle_id']);
+                $set = implode(', ', array_map(fn ($k) => "`$k` = ?", array_keys($fields)));
+                $params = array_values($fields);
+                $params[] = $existing['id'];
+                $this->pdo()->prepare("UPDATE atak_air_assets SET $set WHERE id = ?")->execute($params);
+            }
             $id = (int) $existing['id'];
         } else {
             $cols = array_keys($fields);
             $placeholders = implode(', ', array_merge(['?', '?', '?'], array_fill(0, count($cols), '?')));
-            $this->pdo()->prepare(
-                'INSERT INTO atak_air_assets (tenant_id, map_id, callsign, ' . implode(', ', $cols) . ') VALUES (' . $placeholders . ')'
-            )->execute(array_merge([$tenantId, $mapId, $callsign], array_values($fields)));
+            try {
+                $this->pdo()->prepare(
+                    'INSERT INTO atak_air_assets (tenant_id, map_id, callsign, ' . implode(', ', $cols) . ') VALUES (' . $placeholders . ')'
+                )->execute(array_merge([$tenantId, $mapId, $keepCallsign], array_values($fields)));
+            } catch (\Throwable) {
+                unset($fields['source'], $fields['vehicle_id']);
+                $cols = array_keys($fields);
+                $placeholders = implode(', ', array_merge(['?', '?', '?'], array_fill(0, count($cols), '?')));
+                $this->pdo()->prepare(
+                    'INSERT INTO atak_air_assets (tenant_id, map_id, callsign, ' . implode(', ', $cols) . ') VALUES (' . $placeholders . ')'
+                )->execute(array_merge([$tenantId, $mapId, $keepCallsign], array_values($fields)));
+            }
             $id = (int) $this->pdo()->lastInsertId();
         }
         $stmt = $this->pdo()->prepare('SELECT * FROM atak_air_assets WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>|null
+     */
+    private function findAirAssetForUpsert(int $tenantId, int $mapId, string $callsign, array $data): ?array
+    {
+        $vehicleId = trim((string) ($data['vehicle_id'] ?? $data['vehicleId'] ?? ''));
+        if ($vehicleId !== '') {
+            try {
+                $stmt = $this->pdo()->prepare(
+                    'SELECT * FROM atak_air_assets WHERE tenant_id = ? AND map_id = ? AND vehicle_id = ? ORDER BY updated_at DESC LIMIT 1'
+                );
+                $stmt->execute([$tenantId, $mapId, $vehicleId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if (is_array($row)) {
+                    return $row;
+                }
+            } catch (\Throwable) {
+            }
+        }
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_air_assets WHERE tenant_id = ? AND map_id = ? AND callsign = ?');
+        $stmt->execute([$tenantId, $mapId, $callsign]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (is_array($row)) {
+            return $row;
+        }
+        $pos = $data['pos'] ?? null;
+        $x = isset($data['pos_x']) ? (float) $data['pos_x'] : (is_array($pos) && isset($pos[0]) ? (float) $pos[0] : null);
+        $y = isset($data['pos_y']) ? (float) $data['pos_y'] : (is_array($pos) && isset($pos[1]) ? (float) $pos[1] : null);
+        if ($x === null || $y === null) {
+            return null;
+        }
+        $cutoff = date('Y-m-d H:i:s', time() - 90);
+        try {
+            $stmt = $this->pdo()->prepare(
+                'SELECT * FROM atak_air_assets WHERE tenant_id = ? AND map_id = ? AND updated_at >= ?'
+            );
+            $stmt->execute([$tenantId, $mapId, $cutoff]);
+            $incoming = [
+                'callsign' => $callsign,
+                'model' => $data['model'] ?? null,
+                'aircraft_type' => $data['aircraft_type'] ?? $data['aircraftType'] ?? null,
+                'pos_x' => $x,
+                'pos_y' => $y,
+                'vehicle_id' => $vehicleId,
+                'source' => \App\Services\Tactical\AtakAirAssetMergeService::isOccupancyPayload($data)
+                    ? \App\Services\Tactical\AtakAirAssetMergeService::SOURCE_OCCUPANCY
+                    : \App\Services\Tactical\AtakAirAssetMergeService::SOURCE_MANIFEST,
+            ];
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $cand) {
+                if (\App\Services\Tactical\AtakAirAssetMergeService::sameAirframe($cand, $incoming)) {
+                    return $cand;
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        return null;
     }
 
     public function getActiveAirAssets(int $tenantId, int $mapId): array

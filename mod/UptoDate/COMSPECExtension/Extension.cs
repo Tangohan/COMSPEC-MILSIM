@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net.Http;
+using System.Reflection;
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -24,12 +25,18 @@ public static class Extension
     private static string _steamUid = "";
     /// <summary>Version du mod Overwatch (CfgPatches) — remontée dans les journal Activité.</summary>
     private static string _modVersion = "";
+    /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
+    private static string _bloodType = "";
+    /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
+    private const string ExtensionVersion = "1.17";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
     private static string _militaryId = "";
     /// <summary>Indicatif tactique confirmé par Athena (client-init).</summary>
     private static string _callSign = "";
+    /// <summary>Identifiant terminal ATAK mémorisé (RegisterTerminal / LogWrite).</summary>
+    private static string _terminalUid = "";
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(SyncTimeoutSeconds) };
     /// <summary>Client dédié aux photos (PNG volumineux + liaison dégradée).</summary>
     private static readonly HttpClient UploadHttpClient = new() { Timeout = TimeSpan.FromSeconds(UploadTimeoutSeconds) };
@@ -84,6 +91,7 @@ public static class Extension
         public string UploadKind = "recon";
         public string SsePersonId = "";
         public string SseAngle = "face";
+        public int Attempts;
     }
 
     private static readonly ConcurrentQueue<ReconPhotoJob> PhotoJobs = new();
@@ -96,6 +104,7 @@ public static class Extension
     private static readonly ConcurrentDictionary<string, byte> WatcherDebounce = new(StringComparer.OrdinalIgnoreCase);
     private const int PhotoDedupTtlSeconds = 300;
     private const int PhotoQueueMax = 64;
+    private const int PhotoRetryMax = 6;
     private const int WatcherMinAgeSeconds = 2;   // ignorer fichiers déjà présents au démarrage (sauf très récents)
     private const int WatcherMaxAgeSeconds = 120; // ne pas remonter des captures anciennes
 
@@ -116,6 +125,10 @@ public static class Extension
         try { path = new Uri(url).AbsolutePath; } catch { path = url; }
         _lastPostErrorPath = path.Replace("|", "/");
         System.Threading.Interlocked.Exchange(ref _lastPostErrorAtTicks, DateTime.UtcNow.Ticks);
+
+        // Météo : jamais d’overlay rouge. Le SQF renvoie au prochain cycle.
+        if (IsWeatherEndpoint(url) && (code <= 0 || code == 401 || code == 429 || code == 503))
+            return;
 
         // Remonte vers le journal SQF (anti-spam : 1 callback / 3 s max).
         var now = DateTime.UtcNow.Ticks;
@@ -163,10 +176,36 @@ public static class Extension
         _modVersion = v;
     }
 
+    private static void ApplyBloodType(string? raw)
+    {
+        var v = (raw ?? "").Trim();
+        if (v.Length == 0 || v.Length > 16) return;
+        _bloodType = v;
+    }
+
     private static string ModVersionJsonFragment()
     {
         if (_modVersion.Length == 0) return "";
         return $",\"mod_version\":\"{EscapeJson(_modVersion)}\"";
+    }
+
+    private static string CurrentExtensionVersion()
+    {
+        try
+        {
+            var info = typeof(Extension).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            if (!string.IsNullOrWhiteSpace(info))
+            {
+                var plus = info.IndexOf('+');
+                if (plus > 0) info = info[..plus];
+                info = info.Trim();
+                if (info.Length > 0 && info.Length <= 40)
+                    return info;
+            }
+        }
+        catch { }
+        return ExtensionVersion;
     }
 
     /// <summary>
@@ -187,6 +226,9 @@ public static class Extension
             sb.Append(",\"steam_uid\":\"").Append(EscapeJson(_steamUid)).Append('"');
         if (_modVersion.Length > 0)
             sb.Append(",\"mod_version\":\"").Append(EscapeJson(_modVersion)).Append('"');
+        if (_bloodType.Length > 0)
+            sb.Append(",\"blood_type\":\"").Append(EscapeJson(_bloodType)).Append('"');
+        sb.Append(",\"extension_version\":\"").Append(EscapeJson(CurrentExtensionVersion())).Append('"');
         sb.Append('}');
         return sb.ToString();
     }
@@ -321,6 +363,7 @@ public static class Extension
             return "ERR|not_connected";
         if (_apiKey.Length == 0)
             return "ERR|unauthorized";
+        FlushDeviceLogsSync();
         if (!TryBuildRequestUri(baseUrl, "/api/atak/disconnect", out var discUri, out var discErr) || discUri is null)
             return "ERR|" + discErr;
 
@@ -434,6 +477,9 @@ public static class Extension
     private static bool IsPositionEndpoint(string url) =>
         url.Contains("/api/atak/position", StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsWeatherEndpoint(string url) =>
+        url.Contains("/api/atak/weather", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>
     /// Routes ATAK authentifiées où un 401 transitoire (clé / session) justifie un re-client-init.
     /// </summary>
@@ -444,6 +490,8 @@ public static class Extension
             || url.Contains("/api/atak/marker", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/markers", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/client-init", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/weather", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/video-feeds", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/explosive-timers", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase);
     }
@@ -559,12 +607,38 @@ public static class Extension
         InvokeCallback("RateLimitClear", "");
     }
 
-    private static void HandlePostResponse(HttpResponseMessage? response, string url, string jsonBody)
+    private static void HandleWeatherPostResponse(HttpResponseMessage? response, string url)
     {
         if (response == null)
         {
-            NotePostError(0, url);
-            EnqueueForRetry(url, jsonBody);
+            NoteRateLimited();
+            return;
+        }
+        if (response.IsSuccessStatusCode)
+        {
+            NoteRateLimitCleared();
+            InvokeCallback("WeatherOk", "");
+            return;
+        }
+        var code = (int)response.StatusCode;
+        if (code == 401)
+            MaybeReauthAfter401(url);
+        if (code == 429 || code == 503 || code <= 0)
+            NoteRateLimited(response);
+    }
+
+    private static void HandlePostResponse(HttpResponseMessage? response, string url, string jsonBody)
+    {
+        if (IsWeatherEndpoint(url))
+        {
+            HandleWeatherPostResponse(response, url);
+            return;
+        }
+        if (response == null)
+        {
+            // Timeout / coupure : code 0. Pause globale, sinon video-feeds / position
+            // se ré-enfilent en boucle et saturent Athena (503 ensuite).
+            NoteTransientPostFailure(0, url, jsonBody, response: null);
             return;
         }
         if ((int)response.StatusCode == 429)
@@ -593,13 +667,30 @@ public static class Extension
                     ref _terrainChunkBlockedUntilTicks,
                     DateTime.UtcNow.AddSeconds(90).Ticks);
         }
+        if (code == 503)
+        {
+            NoteRateLimited(response);
+            if (IsPositionEndpoint(url))
+                EnqueueForRetry(url, jsonBody);
+            return;
+        }
         if (ShouldRetryStatusCode(code))
+            EnqueueForRetry(url, jsonBody);
+    }
+
+    /// <summary>0 / -1 / timeout : pause comme un 429, ne retente que la position.</summary>
+    private static void NoteTransientPostFailure(int code, string url, string jsonBody, HttpResponseMessage? response)
+    {
+        NotePostError(code, url);
+        NoteRateLimited(response);
+        if (IsPositionEndpoint(url))
             EnqueueForRetry(url, jsonBody);
     }
 
     private static bool ShouldRetryStatusCode(int code)
     {
         if (code <= 0) return true;
+        if (code == 503) return false;
         if (code >= 500) return true;
         return code is 408 or 425;
     }
@@ -625,6 +716,13 @@ public static class Extension
             {
                 var code = (int)response.StatusCode;
                 NotePostError(code, item.Url);
+                if (code == 503)
+                {
+                    NoteRateLimited(response);
+                    if (IsPositionEndpoint(item.Url))
+                        EnqueueForRetry(item.Url, item.Body);
+                    return false;
+                }
                 if (ShouldRetryStatusCode(code))
                     EnqueueForRetry(item.Url, item.Body);
             }
@@ -635,8 +733,8 @@ public static class Extension
         }
         catch
         {
-            NotePostError(-1, item.Url);
-            EnqueueForRetry(item.Url, item.Body);
+            NoteTransientPostFailure(-1, item.Url, item.Body, response: null);
+            return false;
         }
         return true;
     }
@@ -703,14 +801,8 @@ public static class Extension
         }
         if (IsRateLimitedNow())
         {
-            // Position : coalescer pour flush dès fin de backoff. Autres : file limitée.
-            if (IsPositionEndpoint(url))
-                EnqueueForRetry(url, jsonBody);
-            else if (PendingPosts.Count < MaxQueueSize)
-            {
-                PendingPosts.Enqueue((url, jsonBody));
-                EnsureDrainTimer();
-            }
+            // Position déjà coalescée plus haut. Météo / caméras / marqueurs :
+            // ne pas les empiler pendant la pause — le SQF les renverra.
             return;
         }
         try
@@ -731,8 +823,12 @@ public static class Extension
         }
         catch
         {
-            NotePostError(-1, url);
-            EnqueueForRetry(url, jsonBody);
+            if (IsWeatherEndpoint(url))
+            {
+                NoteRateLimited();
+                return;
+            }
+            NoteTransientPostFailure(-1, url, jsonBody, response: null);
         }
     }
 
@@ -965,7 +1061,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.12");
+            Output(output, outputSize, "COMSPECExtension 2.0.14");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1291,7 +1387,7 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.12";
+            return "OK|COMSPECExtension 2.0.14";
         }
 
         if (function == "SetTelemetryBatch")
@@ -1302,7 +1398,7 @@ public static class Extension
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.12", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.14", "COMSPEC Extension ATAK");
         }
 
         if (function == "Terrain.Chunk")
@@ -1371,6 +1467,13 @@ public static class Extension
             var path = ResolveLogFilePath();
             if (path == null) return "ERR|no_writable_path";
             EnqueueLogLine(path, args[0]!);
+            EnqueueDeviceLogFromWrite(
+                args[0]!,
+                args.Length > 1 ? args[1] : null,
+                args.Length > 2 ? args[2] : null,
+                args.Length > 3 ? args[3] : null,
+                args.Length > 4 ? args[4] : null,
+                args.Length > 5 ? args[5] : null);
             return $"OK|{path}";
         }
 
@@ -1464,6 +1567,8 @@ public static class Extension
             // args[4] = version mod Overwatch (journal Activité).
             if (args.Length > 4)
                 ApplyModVersion(args[4]);
+            if (args.Length > 5)
+                ApplyBloodType(args[5]);
             if (_apiKey.Length == 0)
                 return "OK|connected";
 
@@ -1488,6 +1593,20 @@ public static class Extension
                 }
             }
             return verify;
+        }
+
+        if (function == "SetBloodType" && args.Length >= 1)
+        {
+            ApplyBloodType(args[0]);
+            // ACE est souvent prêt après le premier client-init : renvoyer le groupe sans bloquer le jeu.
+            if (_apiKey.Length > 0 && _bloodType.Length > 0 && !string.IsNullOrEmpty(_baseUrl))
+            {
+                ThreadPool.QueueUserWorkItem(static _ =>
+                {
+                    try { VerifyClientInitSync(); } catch { }
+                });
+            }
+            return "OK";
         }
 
         // Déconnexion explicite (sortie mission / quit) — sync court avant mort du process.
@@ -1681,7 +1800,8 @@ public static class Extension
             var modVersion = args.Length > 4 ? (args[4] ?? "").Trim() : "";
             var armaBuild = args.Length > 5 ? (args[5] ?? "").Trim() : "";
             var armaBranch = args.Length > 6 ? (args[6] ?? "").Trim() : "";
-            var extVersion = args.Length > 7 ? (args[7] ?? "").Trim() : "1.17";
+            var extVersion = args.Length > 7 ? (args[7] ?? "").Trim() : "";
+            if (extVersion.Length == 0) extVersion = CurrentExtensionVersion();
             var ackRaw = args.Length > 8 ? (args[8] ?? "1").Trim() : "1";
             var acknowledged = ackRaw is not ("0" or "false" or "no");
 
@@ -2359,6 +2479,7 @@ public static class Extension
                     || terminalUid.Equals("nil", StringComparison.OrdinalIgnoreCase)
                     || terminalUid.StartsWith("<null", StringComparison.OrdinalIgnoreCase))
                     return "ERR|missing_terminal_uid";
+                _terminalUid = terminalUid;
                 var terminalLabel = args.Length > 1 ? (args[1] ?? "").Trim() : "";
                 var terminalType = args.Length > 2 ? (args[2] ?? "tablet").Trim() : "tablet";
                 var operatorCallsign = args.Length > 3 ? (args[3] ?? "").Trim() : "";
@@ -2963,6 +3084,181 @@ public static class Extension
             {
                 ThreadPool.QueueUserWorkItem(static _ => DrainLogLines());
             }
+        }
+    }
+
+    private readonly struct DeviceLogItem
+    {
+        public DeviceLogItem(string level, string channel, string message, string detail, string line, string loggedAt)
+        {
+            Level = level;
+            Channel = channel;
+            Message = message;
+            Detail = detail;
+            Line = line;
+            LoggedAt = loggedAt;
+        }
+        public string Level { get; }
+        public string Channel { get; }
+        public string Message { get; }
+        public string Detail { get; }
+        public string Line { get; }
+        public string LoggedAt { get; }
+    }
+
+    private static readonly ConcurrentQueue<DeviceLogItem> PendingDeviceLogs = new();
+    private static int _deviceLogDrainScheduled;
+    private const int MaxPendingDeviceLogs = 800;
+    private static readonly Regex DeviceLogLineRx = new(
+        @"\[COMSPEC(?:\s+Overwatch)?\]\[([^\]]+)\]\[([^\]]+)\]\s*(.*)$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static void RememberTerminalUid(string? raw)
+    {
+        var uid = (raw ?? "").Trim();
+        if (uid.Length == 0
+            || uid.Equals("null", StringComparison.OrdinalIgnoreCase)
+            || uid.Equals("<null>", StringComparison.OrdinalIgnoreCase)
+            || uid.Equals("nil", StringComparison.OrdinalIgnoreCase)
+            || uid.StartsWith("<null", StringComparison.OrdinalIgnoreCase))
+            return;
+        _terminalUid = uid;
+    }
+
+    private static string NormalizeDeviceLevel(string raw)
+    {
+        var key = (raw ?? "").Trim().ToUpperInvariant();
+        if (key is "ERROR" or "ERR" or "FATAL" or "BUG") return "error";
+        if (key is "WARN" or "WARNING" or "ALERT") return "warn";
+        if (key is "DEBUG" or "TRACE" or "DETAIL") return "debug";
+        return "info";
+    }
+
+    private static void EnqueueDeviceLogFromWrite(
+        string line,
+        string? levelArg,
+        string? channelArg,
+        string? messageArg,
+        string? detailArg,
+        string? terminalUid)
+    {
+        RememberTerminalUid(terminalUid);
+        var level = NormalizeDeviceLevel(levelArg ?? "");
+        var channel = (channelArg ?? "").Trim();
+        var message = (messageArg ?? "").Trim();
+        var detail = (detailArg ?? "").Trim();
+        if (message.Length == 0)
+        {
+            var m = DeviceLogLineRx.Match(line ?? "");
+            if (m.Success)
+            {
+                if (string.IsNullOrWhiteSpace(levelArg))
+                    level = NormalizeDeviceLevel(m.Groups[1].Value);
+                if (channel.Length == 0)
+                    channel = m.Groups[2].Value.Trim();
+                var rest = m.Groups[3].Value.Trim();
+                var splitAt = rest.IndexOf(" | ", StringComparison.Ordinal);
+                if (splitAt >= 0)
+                {
+                    message = rest[..splitAt].Trim();
+                    if (detail.Length == 0)
+                        detail = rest[(splitAt + 3)..].Trim();
+                }
+                else
+                    message = rest;
+            }
+            else
+                message = (line ?? "").Trim();
+        }
+        if (message.Length == 0)
+            return;
+        if (channel.Length == 0)
+            channel = "Core";
+        if (message.Length > 512)
+            message = message[..512];
+        if (detail.Length > 2000)
+            detail = detail[..2000];
+        var loggedAt = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff");
+        while (PendingDeviceLogs.Count >= MaxPendingDeviceLogs && PendingDeviceLogs.TryDequeue(out _))
+        { /* drop oldest */ }
+        PendingDeviceLogs.Enqueue(new DeviceLogItem(level, channel, message, detail, line ?? "", loggedAt));
+        if (Interlocked.CompareExchange(ref _deviceLogDrainScheduled, 1, 0) == 0)
+            ThreadPool.QueueUserWorkItem(static _ => DrainDeviceLogs());
+    }
+
+    private static void DrainDeviceLogs()
+    {
+        try
+        {
+            FlushDeviceLogsBatch(40);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _deviceLogDrainScheduled, 0);
+            if (!PendingDeviceLogs.IsEmpty
+                && Interlocked.CompareExchange(ref _deviceLogDrainScheduled, 1, 0) == 0)
+            {
+                ThreadPool.QueueUserWorkItem(static _ => DrainDeviceLogs());
+            }
+        }
+    }
+
+    private static void FlushDeviceLogsSync()
+    {
+        try
+        {
+            FlushDeviceLogsBatch(80);
+        }
+        catch
+        {
+            // Best-effort : la déconnexion Athena part quand même.
+        }
+    }
+
+    private static void FlushDeviceLogsBatch(int maxLines)
+    {
+        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0 || _terminalUid.Length == 0)
+            return;
+        if (!TryBuildRequestUri(_baseUrl, "/api/atak/device-logs", out var uri, out _) || uri is null)
+            return;
+        var batch = new List<DeviceLogItem>(Math.Min(maxLines, 80));
+        while (batch.Count < maxLines && PendingDeviceLogs.TryDequeue(out var item))
+            batch.Add(item);
+        if (batch.Count == 0)
+            return;
+        var sb = new StringBuilder(256 + batch.Count * 160);
+        sb.Append("{\"terminal_uid\":\"").Append(EscapeJson(_terminalUid)).Append('"');
+        if (_callSign.Length > 0)
+            sb.Append(",\"callsign\":\"").Append(EscapeJson(_callSign)).Append('"');
+        if (_steamUid.Length > 0)
+            sb.Append(",\"steam_uid\":\"").Append(EscapeJson(_steamUid)).Append('"');
+        sb.Append(",\"source\":\"mod\",\"lines\":[");
+        for (var i = 0; i < batch.Count; i++)
+        {
+            if (i > 0) sb.Append(',');
+            var it = batch[i];
+            sb.Append("{\"level\":\"").Append(EscapeJson(it.Level)).Append('"')
+                .Append(",\"channel\":\"").Append(EscapeJson(it.Channel)).Append('"')
+                .Append(",\"message\":\"").Append(EscapeJson(it.Message)).Append('"')
+                .Append(",\"detail\":\"").Append(EscapeJson(it.Detail)).Append('"')
+                .Append(",\"line\":\"").Append(EscapeJson(it.Line)).Append('"')
+                .Append(",\"logged_at\":\"").Append(EscapeJson(it.LoggedAt)).Append("\"}");
+        }
+        sb.Append("]}");
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+            var resp = SendJsonPost(uri.AbsoluteUri, sb.ToString(), cts.Token);
+            if (!resp.IsSuccessStatusCode)
+            {
+                foreach (var it in batch)
+                    PendingDeviceLogs.Enqueue(it);
+            }
+        }
+        catch
+        {
+            foreach (var it in batch)
+                PendingDeviceLogs.Enqueue(it);
         }
     }
 
@@ -4443,7 +4739,7 @@ public static class Extension
             {
                 var weatherJson = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(weatherJson)) return;
-                EnqueueOrSend(_baseUrl + "/api/atak/weather", weatherJson);
+                EnqueueOrSend(_baseUrl + "/api/atak/weather", EnrichAtakPayload(weatherJson));
                 return;
             }
 
@@ -4691,6 +4987,25 @@ public static class Extension
         }
     }
 
+    /// <summary>
+    /// 503 / coupure : garder le dédup chemin (le watcher ne spam pas) et
+    /// remettre le job en file. Le worker attend la fin de saturation.
+    /// Libère l’empreinte fichier pour que la tentative suivante puisse la reclamer.
+    /// </summary>
+    private static void RequeuePhotoAfterTransient(ReconPhotoJob job, string? identityKey, string cbName, string errDetail, string fileHint)
+    {
+        ReleasePhotoDedup(identityKey);
+        job.Attempts++;
+        if (job.Attempts >= PhotoRetryMax || PhotoJobs.Count >= PhotoQueueMax)
+        {
+            ReleasePhotoDedup(job.DedupKey);
+            InvokeCallback(cbName, $"ERR|{errDetail}|{fileHint}");
+            return;
+        }
+        PhotoJobs.Enqueue(job);
+        EnsurePhotoWorker();
+    }
+
     private static void EnsurePhotoWorker()
     {
         if (Interlocked.CompareExchange(ref _photoWorkerRunning, 1, 0) != 0)
@@ -4701,6 +5016,8 @@ public static class Extension
             {
                 while (PhotoJobs.TryDequeue(out var job))
                 {
+                    while (IsRateLimitedNow())
+                        await Task.Delay(500).ConfigureAwait(false);
                     try { await ProcessReconPhotoJobAsync(job).ConfigureAwait(false); }
                     catch { /* ne jamais tuer le worker */ }
                 }
@@ -4885,18 +5202,23 @@ public static class Extension
                 return;
             }
 
+            NotePostError(code, uri.AbsoluteUri);
+            if (code == 503 || code == 429)
+            {
+                NoteRateLimited(resp);
+                RequeuePhotoAfterTransient(job, identityKey, "PhotoUpload", $"http_{code}", fileName);
+                return;
+            }
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
-            NotePostError(code, uri.AbsoluteUri);
             if (code == 401 && _sessionToken.Length > 0)
                 _sessionToken = "";
             InvokeCallback("PhotoUpload", $"ERR|http_{code}|{fileName}");
         }
         catch
         {
-            ReleasePhotoDedup(job.DedupKey);
-            ReleasePhotoDedup(identityKey);
-            InvokeCallback("PhotoUpload", "ERR|network|" + Path.GetFileName(resolved));
+            NoteRateLimited();
+            RequeuePhotoAfterTransient(job, identityKey, "PhotoUpload", "network", Path.GetFileName(resolved) ?? "");
         }
         finally
         {
@@ -5159,18 +5481,23 @@ public static class Extension
                 return;
             }
 
+            NotePostError(code, uri.AbsoluteUri);
+            if (code == 503 || code == 429)
+            {
+                NoteRateLimited(resp);
+                RequeuePhotoAfterTransient(job, identityKey, "SsePhotoUpload", $"http_{code}", fileName);
+                return;
+            }
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
-            NotePostError(code, uri.AbsoluteUri);
             if (code == 401 && _sessionToken.Length > 0)
                 _sessionToken = "";
             InvokeCallback("SsePhotoUpload", $"ERR|http_{code}|{fileName}");
         }
         catch
         {
-            ReleasePhotoDedup(job.DedupKey);
-            ReleasePhotoDedup(identityKey);
-            InvokeCallback("SsePhotoUpload", "ERR|network|" + Path.GetFileName(resolved));
+            NoteRateLimited();
+            RequeuePhotoAfterTransient(job, identityKey, "SsePhotoUpload", "network", Path.GetFileName(resolved) ?? "");
         }
         finally
         {
@@ -6375,6 +6702,14 @@ public static class Extension
                     writer.WriteString("steam_uid", _steamUid);
                 if (_sessionToken.Length > 0 && !doc.RootElement.TryGetProperty("session_token", out _))
                     writer.WriteString("session_token", _sessionToken);
+                if (_modVersion.Length > 0 && !doc.RootElement.TryGetProperty("mod_version", out _))
+                    writer.WriteString("mod_version", _modVersion);
+                if (_bloodType.Length > 0 && !doc.RootElement.TryGetProperty("blood_type", out _)
+                    && !doc.RootElement.TryGetProperty("bloodType", out _))
+                    writer.WriteString("blood_type", _bloodType);
+                if (!doc.RootElement.TryGetProperty("extension_version", out _)
+                    && !doc.RootElement.TryGetProperty("dll_version", out _))
+                    writer.WriteString("extension_version", CurrentExtensionVersion());
                 writer.WriteEndObject();
             }
             return Encoding.UTF8.GetString(stream.ToArray());

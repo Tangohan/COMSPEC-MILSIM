@@ -18,11 +18,11 @@ window.ArmaMapMarkers = (function () {
   /** Rôles CfgMarkers NATO → clé NatoSidcIcons / MilstdCatalog. */
   var NATO_ROLE = {
     inf: 'infantry',
-    mech_inf: 'armor',
-    motor_inf: 'logistics',
+    mech_inf: 'mechanized',
+    motor_inf: 'motorized',
     armor: 'armor',
     art: 'artillery',
-    mortar: 'artillery',
+    mortar: 'mortar',
     antiair: 'artillery',
     air: 'aviation_rotary',
     plane: 'aviation_fixed',
@@ -34,11 +34,11 @@ window.ArmaMapMarkers = (function () {
     maint: 'logistics',
     service: 'logistics',
     installation: 'hq',
-    naval: 'logistics',
+    naval: 'naval',
     ordnance: 'artillery',
     unknown: 'infantry',
-    car: 'logistics',
-    ship: 'logistics'
+    car: 'motorized',
+    ship: 'naval'
   };
 
   var AFF_FROM_PREFIX = {

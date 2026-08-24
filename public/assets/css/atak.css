@@ -3549,6 +3549,9 @@ body.atak-theme-light .atak-chat-messages {
   border-color: #ef4444;
   color: #fff;
 }
+.atak-charge-detonate-all {
+  margin-bottom: 0.35rem;
+}
 .atak-charge-pending {
   margin: 0.45rem 0 0;
   font-size: 0.68rem;
@@ -4661,20 +4664,42 @@ body.atak-theme-light .atak-chat-messages {
   margin: 0 8px 6px 0 !important;
   max-width: 42%;
 }
+/* Le coin bas-droit est occupé par la pile Traces + grille/réseau. */
+.atak-map-wrap .leaflet-bottom.leaflet-right {
+  display: none;
+}
 .atak-map-wrap .leaflet-grid-mouseposition {
   background: var(--atak-panel) !important;
   color: var(--atak-text) !important;
   border: 1px solid var(--atak-border);
 }
 
-/* HUD carte (grille curseur + ?tat r?seau) ? ancr? dans #atak-map, au-dessus du tiroir */
+/* Coin bas-droit : légende Traces au-dessus du HUD grille/réseau, sans chevauchement. */
+.atak-map-br-stack {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: max-content;
+  min-width: 10rem;
+  max-width: min(16.5rem, calc(100% - 20px));
+  max-height: calc(100% - 20px);
+  overflow: auto;
+  pointer-events: none;
+}
+
+/* HUD carte — dans la pile bas-droite, jamais collé tout seul sur Traces. */
 .atak-map-hud {
-  position: absolute !important;
-  right: 10px !important;
-  bottom: 10px !important;
+  position: relative !important;
+  right: auto !important;
+  bottom: auto !important;
   top: auto !important;
   left: auto !important;
-  z-index: 900 !important;
+  z-index: auto !important;
   min-width: 10rem;
   padding: 0.5rem 0.65rem !important;
   background: rgba(8, 12, 18, 0.92) !important;
@@ -4683,6 +4708,10 @@ body.atak-theme-light .atak-chat-messages {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.45);
   pointer-events: none;
+}
+.atak-map-br-stack .atak-map-hud {
+  min-width: 0;
+  flex-shrink: 0;
 }
 .atak-map-hud__row {
   display: flex;
@@ -4866,9 +4895,155 @@ body.atak-theme-light .atak-chat-messages {
 .atak-map--place-note,
 .atak-map--place-jackpot,
 .atak-map--drawing,
-.atak-map--measuring {
+.atak-map--measuring,
+.atak-map--routing {
   cursor: crosshair !important;
 }
+
+.atak-route-panel {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 940;
+  width: min(22rem, calc(100% - 1.4rem));
+  max-height: min(28rem, calc(100% - 5.5rem));
+  overflow: auto;
+  padding: 0.65rem 0.75rem 0.7rem;
+  background: rgba(8, 12, 18, 0.94);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.45);
+  color: #e2e8f0;
+  font-family: var(--atak-font-tactical, inherit);
+  pointer-events: auto;
+}
+.atak-route-panel[hidden] { display: none !important; }
+.atak-route-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+.atak-route-panel__title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ecfdf5;
+}
+.atak-route-panel__close {
+  appearance: none;
+  margin: 0;
+  padding: 0.18rem 0.45rem;
+  border-radius: 3px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.atak-route-panel__close:hover,
+.atak-route-panel__close:focus-visible {
+  border-color: rgba(52, 211, 153, 0.55);
+  color: #ecfdf5;
+  outline: none;
+}
+.atak-route-panel__hint,
+.atak-route-panel__gap {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: #94a3b8;
+}
+.atak-route-panel__gap {
+  color: #fbbf24;
+}
+.atak-route-panel__los-opts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 0.55rem;
+  margin-bottom: 0.5rem;
+}
+.atak-route-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+.atak-route-panel__field select {
+  appearance: none;
+  width: 100%;
+  padding: 0.28rem 0.4rem;
+  border-radius: 3px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.85);
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.atak-route-panel__spark {
+  display: block;
+  width: 100%;
+  height: 6rem;
+  margin: 0 0 0.45rem;
+  border-radius: 3px;
+  background: rgba(15, 23, 42, 0.7);
+}
+.atak-route-panel__spark[hidden] { display: none !important; }
+.atak-route-panel__stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.12rem 0.75rem;
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+}
+.atak-route-panel__stats dt {
+  margin: 0;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.65rem;
+}
+.atak-route-panel__stats dd {
+  margin: 0;
+  color: #e2e8f0;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.atak-route-panel__verdict {
+  margin: 0.15rem 0 0;
+  padding: 0.35rem 0.45rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  font-weight: 700;
+}
+.atak-route-panel__verdict.is-clear {
+  background: rgba(16, 185, 129, 0.16);
+  color: #6ee7b7;
+}
+.atak-route-panel__verdict.is-masked {
+  background: rgba(248, 113, 113, 0.16);
+  color: #fca5a5;
+}
+.atak-route-panel__verdict.is-unknown {
+  background: rgba(251, 191, 36, 0.14);
+  color: #fde68a;
+}
+.atak-route-panel__verdict[hidden] { display: none !important; }
 .atak-ctx-menu__item--jackpot {
   color: #fbbf24;
   font-weight: 800;
@@ -5180,6 +5355,27 @@ body.atak-theme-light .atak-map-hud__k { color: #627d98; }
 body.atak-theme-light .atak-map-hud__v { color: #1f2933; }
 body.atak-theme-light .atak-map-hud__ok { color: #0f766e !important; }
 body.atak-theme-light .atak-map-hud__measure { color: #b45309 !important; }
+body.atak-theme-light .atak-route-panel {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(15, 118, 110, 0.35);
+  color: #1f2933;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06), 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+body.atak-theme-light .atak-route-panel__title { color: #0f766e; }
+body.atak-theme-light .atak-route-panel__hint { color: #627d98; }
+body.atak-theme-light .atak-route-panel__gap { color: #b45309; }
+body.atak-theme-light .atak-route-panel__close { color: #334e68; border-color: rgba(148, 163, 184, 0.5); }
+body.atak-theme-light .atak-route-panel__field { color: #627d98; }
+body.atak-theme-light .atak-route-panel__field select {
+  background: #fff;
+  color: #1f2933;
+  border-color: rgba(148, 163, 184, 0.55);
+}
+body.atak-theme-light .atak-route-panel__stats dt { color: #627d98; }
+body.atak-theme-light .atak-route-panel__stats dd { color: #1f2933; }
+body.atak-theme-light .atak-route-panel__verdict.is-clear { background: rgba(15, 118, 110, 0.12); color: #0f766e; }
+body.atak-theme-light .atak-route-panel__verdict.is-masked { background: rgba(185, 28, 28, 0.1); color: #b91c1c; }
+body.atak-theme-light .atak-route-panel__verdict.is-unknown { background: rgba(180, 83, 9, 0.12); color: #92400e; }
 body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   background: rgba(255, 255, 255, 0.92) !important;
   border-color: rgba(15, 118, 110, 0.35) !important;

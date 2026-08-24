@@ -25,30 +25,27 @@
     #define COMSPEC_RESYNCH_H(n) ((n) * COMSPEC_RESYNCH_POS_H)
 #endif
 
-#define RESYNCH_BG_TITLE {0.02, 0.05, 0.07, 0.92}
-#define RESYNCH_BG_BODY {0.02, 0.05, 0.06, 0.9}
-#define RESYNCH_BTN {0.06, 0.22, 0.16, 0.95}
-#define RESYNCH_BTN_F {0.10, 0.38, 0.28, 1}
-#define RESYNCH_ACCENT {0.20, 0.72, 0.55, 0.95}
+#define RESYNCH_BG_TITLE ATAK_BG_TITLE
+#define RESYNCH_BG_BODY ATAK_BG_DETAIL
+#define RESYNCH_BTN ATAK_GO
+#define RESYNCH_BTN_F ATAK_GO_F
+#define RESYNCH_ACCENT ATAK_ACCENT
 
 class COMSPEC_ATAK_Resynch: ATAK_Message
 {
     class controls
     {
-        class Title: BCE_RscButtonMenu
+        class Title: COMSPEC_ATAK_Title
         {
             idc = 9870;
             x = 0;
             y = 0;
             w = QUOTE(COMSPEC_RESYNCH_W(3));
             h = QUOTE(COMSPEC_RESYNCH_H(0.62));
-            size = QUOTE(COMSPEC_RESYNCH_H(0.44));
-            text = "Resynch";
-            colorBackground[] = RESYNCH_BG_TITLE;
-            colorBackground2[] = RESYNCH_BG_TITLE;
-            colorBackgroundFocused[] = {0.04, 0.1, 0.12, 0.95};
+            size = QUOTE(COMSPEC_RESYNCH_H(0.40));
+            text = "  Resynch";
             onButtonClick = "call BCE_fnc_ATAK_toggleSubListMenu";
-            class Attributes { align = "center"; valign = "middle"; };
+            tooltip = "Revenir au tiroir des applications.";
         };
 
         class AccentBar: RscText
@@ -81,7 +78,7 @@ class COMSPEC_ATAK_Resynch: ATAK_Message
             };
         };
 
-        class BtnRelancer: BCE_RscButtonMenu
+        class BtnRelancer: COMSPEC_ATAK_BtnGo
         {
             idc = 9872;
             x = QUOTE(COMSPEC_RESYNCH_W(0.08));
@@ -94,7 +91,6 @@ class COMSPEC_ATAK_Resynch: ATAK_Message
             colorBackground2[] = RESYNCH_BTN;
             colorBackgroundFocused[] = RESYNCH_BTN_F;
             onButtonClick = "[] spawn { [] call comspec_overwatch_atak_athena_fnc_athena_resynchAll; };";
-            class Attributes { align = "center"; valign = "middle"; };
         };
     };
 };

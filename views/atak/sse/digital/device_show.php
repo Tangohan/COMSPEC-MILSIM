@@ -18,7 +18,7 @@ require __DIR__ . '/_subnav.php';
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline"><?= $h($device['device_type_label'] ?? '') ?> // <?= $h($device['status_label'] ?? '') ?></div>
+        <div class="page-heading-overline"><?= $h(trim((string) ($device['device_type_label'] ?? '')) ?: 'Inconnu') ?> // <?= $h($device['status_label'] ?? '') ?></div>
         <h1><?= $h(trim(($device['manufacturer'] ?? '') . ' ' . ($device['model'] ?? '')) ?: ($device['reference_code'] ?? 'Support')) ?></h1>
         <p><?= $h($device['reference_code'] ?? '') ?><?php if (!empty($device['mission_label'])): ?> · <?= $h($device['mission_label']) ?><?php endif; ?></p>
     </div>

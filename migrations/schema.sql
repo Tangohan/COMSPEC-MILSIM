@@ -1151,10 +1151,13 @@ CREATE TABLE IF NOT EXISTS `atak_air_assets` (
   `pilot_status` varchar(32) DEFAULT NULL,
   `aircraft_count` int unsigned DEFAULT 1,
   `last_update` bigint DEFAULT NULL,
+  `source` varchar(32) DEFAULT NULL,
+  `vehicle_id` varchar(64) DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tenant_map_callsign` (`tenant_id`,`map_id`,`callsign`),
   KEY `tenant_map` (`tenant_id`,`map_id`),
+  KEY `tenant_map_vehicle` (`tenant_id`,`map_id`,`vehicle_id`),
   CONSTRAINT `atak_air_assets_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

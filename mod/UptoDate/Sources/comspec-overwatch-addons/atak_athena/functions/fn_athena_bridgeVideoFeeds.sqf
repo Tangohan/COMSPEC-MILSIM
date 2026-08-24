@@ -10,6 +10,13 @@ if (!hasInterface) exitWith {};
 
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
 
+private _readyAt = missionNamespace getVariable ["COMSPEC_AthenaReadyAt", 0];
+if (!(_readyAt isEqualType 0)) then { _readyAt = 0; };
+if (_readyAt > 0 && {(diag_tickTime - _readyAt) < 15}) exitWith {};
+
+private _backUntil = missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0];
+if ((_backUntil isEqualType 0) && {diag_tickTime < _backUntil}) exitWith {};
+
 if (!(["video_feeds"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {};
 
 

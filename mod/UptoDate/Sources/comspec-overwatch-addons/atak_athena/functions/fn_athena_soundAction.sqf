@@ -80,7 +80,15 @@ switch (toLower _action) do {
             };
             case "health": {
                 private _vol = ["notif"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
-                if (_vol > 0.01) then { playSoundUI ["COMSPEC_ATAK_Health", _vol, 1]; };
+                if (_vol > 0.01) then {
+                    [_vol] spawn {
+                        params ["_v"];
+                        for "_i" from 1 to 3 do {
+                            playSoundUI ["COMSPEC_ATAK_Health", _v, 1];
+                            if (_i < 3) then { uiSleep 2.2; };
+                        };
+                    };
+                };
             };
             default {
                 private _vol = ["notif"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;

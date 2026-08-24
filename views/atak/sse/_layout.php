@@ -89,8 +89,9 @@ $navActive = static function (string $id) use ($activeNav): string {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_portal.css')) ?>?v=202608222340">
-    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_workspace.css')) ?>?v=202608230521">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_workspace.css')) ?>?v=202608241800">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_field_note.css')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/app-update-modal.css')) ?>">
     <?php if (!empty($sseNeedLeaflet)): ?>
         <link rel="stylesheet" href="<?= $h(asset_url('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>">
     <?php endif; ?>
@@ -277,6 +278,11 @@ window.SSE_CTX = {
 </script>
 <script src="<?= $h(asset_url('assets/js/sse-context-menu.js')) ?>?v=202608072010"></script>
 <script src="<?= $h(asset_url('assets/js/sse-global-search.js')) ?>?v=202608161745"></script>
+<script>
+  window.APP_VERSION = <?= json_encode(platform_app_version(), JSON_UNESCAPED_UNICODE) ?>;
+  window.APP_BASE_URL = <?= json_encode(rtrim((string) url(''), '/'), JSON_UNESCAPED_UNICODE) ?>;
+</script>
+<script defer src="<?= $h(asset_url('assets/js/app-version-check.js')) ?>"></script>
 <?php if (!empty($sseNeedLeaflet)): ?>
 <script src="<?= $h(asset_url('assets/vendor/leaflet-1.9.4/leaflet.js')) ?>"></script>
 <?php endif; ?>

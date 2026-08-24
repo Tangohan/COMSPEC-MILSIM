@@ -400,18 +400,18 @@ $athTableShowCheckbox = true;
         <article class="ath-card bo-rf__section">
             <div class="bo-rf__section-head bo-rf__section-head--row">
                 <div>
-                    <h2 class="ath-section-title">Graphe des rôles</h2>
-                    <p class="ath-body">Maillage de commandement actif dans votre communauté.</p>
+                    <h2 class="ath-section-title">Carte des rôles</h2>
+                    <p class="ath-body">Qui relève de qui, et les liens de tutorat ou de coordination.</p>
                 </div>
                 <a href="<?= $h($graphJsonUrl) ?>" class="ath-btn">Télécharger la carte</a>
             </div>
             <div class="bo-rf__section-body">
                 <div class="bo-rf__graph-host" id="roles-graph-host" data-graph-url="<?= $h($graphJsonUrl) ?>" data-edge-palette="<?= $h(json_encode($edgePalette, JSON_UNESCAPED_UNICODE)) ?>">
-                    <canvas id="roles-graph-canvas" class="bo-rf__graph-canvas" width="800" height="240"></canvas>
+                    <div class="bo-rf__graph-stage" aria-live="polite"></div>
                     <ul class="bo-rf__graph-legend" aria-label="Légende des types de liens">
                         <?php foreach ($edgeLegend as $leg): ?>
-                        <li>
-                            <span class="bo-rf__graph-legend-line" style="background-color: <?= $h($leg['color']) ?>"></span>
+                        <li data-type="<?= $h((string) ($leg['type'] ?? '')) ?>" style="color: <?= $h($leg['color']) ?>">
+                            <span class="bo-rf__graph-legend-line"></span>
                             <span><?= $h($leg['label']) ?></span>
                         </li>
                         <?php endforeach; ?>
@@ -487,54 +487,8 @@ $athTableShowCheckbox = true;
     <?php endif; ?>
 </div>
 
+<script src="<?= $h(asset_url('assets/js/roles-graph.js')) ?>?v=<?= $h(platform_app_version()) ?>"></script>
 <script>
-(function () {
-  var host = document.getElementById('roles-graph-host');
-  var canvas = document.getElementById('roles-graph-canvas');
-  if (!host || !canvas) return;
-  var url = host.getAttribute('data-graph-url');
-  if (!url) return;
-  var palette = {};
-  try {
-    palette = JSON.parse(host.getAttribute('data-edge-palette') || '{}') || {};
-  } catch (e) {}
-  fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (data) {
-    var nodes = data.nodes || [];
-    var edges = data.edges || [];
-    var ctx = canvas.getContext('2d');
-    var w = canvas.width;
-    var h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
-    ctx.lineWidth = 1.5;
-    ctx.fillStyle = '#0f172a';
-    ctx.font = '11px system-ui,sans-serif';
-    var pos = {};
-    nodes.forEach(function (n, i) {
-      var angle = (2 * Math.PI * i) / Math.max(nodes.length, 1);
-      pos[n.id] = { x: w / 2 + Math.cos(angle) * (w * 0.35), y: h / 2 + Math.sin(angle) * (h * 0.35) };
-    });
-    edges.forEach(function (e) {
-      var a = pos[e.from], b = pos[e.to];
-      if (!a || !b) return;
-      ctx.beginPath();
-      ctx.strokeStyle = palette[e.type] || '#94a3b8';
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-    });
-    nodes.forEach(function (n) {
-      var p = pos[n.id];
-      if (!p) return;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 6, 0, 2 * Math.PI);
-      ctx.fillStyle = '#059669';
-      ctx.fill();
-      ctx.fillStyle = '#334155';
-      ctx.fillText((n.label || n.slug || '').slice(0, 24), p.x + 10, p.y + 4);
-    });
-  }).catch(function () {});
-})();
-
 (function () {
   var dataEl = document.getElementById('s1-assign-roles-data');
   var defSel = document.getElementById('s1-def-pick');

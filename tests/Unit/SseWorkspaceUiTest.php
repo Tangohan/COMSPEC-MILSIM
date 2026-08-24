@@ -43,4 +43,12 @@ final class SseWorkspaceUiTest extends TestCase
         self::assertSame(2, $out[0]['repeat_count']);
         self::assertSame('2026-08-23 02:33:07', $out[0]['event_time']);
     }
+
+    public function testInboxCardsCssDoesNotRelyOnDisplayContents(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/sse_workspace.css');
+        self::assertStringContainsString('.iw-intel-list--cards > .iw-feed-item > a.iw-feed-link', $css);
+        self::assertStringContainsString('grid-template-columns: 2rem minmax(0, 1fr)', $css);
+        self::assertStringNotContainsString('.iw-feed-link {\n  display: contents;', $css);
+    }
 }

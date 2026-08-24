@@ -25,32 +25,29 @@
     #define COMSPEC_BRIEF_H(n) ((n) * COMSPEC_BRIEF_POS_H)
 #endif
 
-#define BRIEF_BG_TITLE {0.02, 0.05, 0.07, 0.92}
-#define BRIEF_BG_STRIP {0.03, 0.07, 0.09, 0.88}
-#define BRIEF_BG_PIC {0.01, 0.02, 0.03, 1}
-#define BRIEF_BTN {0.06, 0.18, 0.22, 0.95}
-#define BRIEF_BTN_F {0.1, 0.32, 0.38, 1}
-#define BRIEF_BTN_DIM {0.05, 0.12, 0.16, 0.92}
-#define BRIEF_ACCENT {0.55, 0.78, 0.95, 0.95}
+#define BRIEF_BG_TITLE ATAK_BG_TITLE
+#define BRIEF_BG_STRIP ATAK_BG_STRIP
+#define BRIEF_BG_PIC {0.04, 0.04, 0.04, 1}
+#define BRIEF_BTN ATAK_BTN
+#define BRIEF_BTN_F ATAK_BTN_F
+#define BRIEF_BTN_DIM {0.11, 0.11, 0.11, 0.96}
+#define BRIEF_ACCENT ATAK_ACCENT
 
 class COMSPEC_ATAK_Briefing: ATAK_Message
 {
     class controls
     {
-        class Title: BCE_RscButtonMenu
+        class Title: COMSPEC_ATAK_Title
         {
             idc = 9850;
             x = 0;
             y = 0;
             w = QUOTE(COMSPEC_BRIEF_W(3));
             h = QUOTE(COMSPEC_BRIEF_H(0.52));
-            size = QUOTE(COMSPEC_BRIEF_H(0.36));
-            text = "Briefing";
-            colorBackground[] = BRIEF_BG_TITLE;
-            colorBackground2[] = BRIEF_BG_TITLE;
-            colorBackgroundFocused[] = {0.04, 0.1, 0.12, 0.95};
+            size = QUOTE(COMSPEC_BRIEF_H(0.34));
+            text = "  Briefing";
             onButtonClick = "call BCE_fnc_ATAK_toggleSubListMenu";
-            class Attributes { align = "center"; valign = "middle"; };
+            tooltip = "Revenir au tiroir des applications.";
         };
 
         class AccentBar: RscText
@@ -112,7 +109,7 @@ class COMSPEC_ATAK_Briefing: ATAK_Message
             };
         };
 
-        class BtnPrev: BCE_RscButtonMenu
+        class BtnPrev: COMSPEC_ATAK_Btn
         {
             idc = 9854;
             x = QUOTE(COMSPEC_BRIEF_W(0.08));
@@ -125,7 +122,6 @@ class COMSPEC_ATAK_Briefing: ATAK_Message
             colorBackground2[] = BRIEF_BTN;
             colorBackgroundFocused[] = BRIEF_BTN_F;
             onButtonClick = "[-1] call comspec_overwatch_connect_fnc_briefingBoardStep";
-            class Attributes { align = "center"; valign = "middle"; };
         };
 
         class BtnNext: BtnPrev
@@ -146,7 +142,7 @@ class COMSPEC_ATAK_Briefing: ATAK_Message
             onButtonClick = "[] call comspec_overwatch_connect_fnc_refreshBriefingSlides";
         };
 
-        class BtnPhone: BCE_RscButtonMenu
+        class BtnPhone: COMSPEC_ATAK_Btn
         {
             idc = 9857;
             x = QUOTE(COMSPEC_BRIEF_W(0.08));
@@ -159,7 +155,6 @@ class COMSPEC_ATAK_Briefing: ATAK_Message
             colorBackground2[] = BRIEF_BTN_DIM;
             colorBackgroundFocused[] = BRIEF_BTN_F;
             onButtonClick = "['liaison'] call comspec_overwatch_atak_athena_fnc_athena_openFeature";
-            class Attributes { align = "center"; valign = "middle"; };
         };
 
         class BtnAthena: BtnPhone

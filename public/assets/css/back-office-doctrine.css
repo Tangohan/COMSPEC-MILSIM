@@ -170,7 +170,7 @@
 .bo-rf__grid-graph {
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  grid-template-columns: 1fr;
 }
 
 @media (max-width: 960px) {
@@ -212,27 +212,104 @@
 
 .bo-rf__graph-host {
   border: 1px solid var(--ath-line);
-  background: var(--ath-bg);
-  padding: 14px;
+  background: #eef3f0;
+  padding: 12px 12px 8px;
   margin-bottom: 14px;
 }
 
-.bo-rf__graph-canvas {
-  display: block;
-  width: 100%;
-  max-height: 240px;
+.bo-rf__graph-stage {
+  overflow: auto;
+  min-height: 240px;
+  max-height: 620px;
+  padding: 4px;
+  background: #f7faf8;
   border: 1px solid var(--ath-line);
-  background: #fff;
+}
+
+.bo-rf__graph-svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.bo-rf__graph-bg {
+  fill: transparent;
+}
+
+.bo-rf__graph-band {
+  pointer-events: none;
+}
+
+.bo-rf__graph-node {
+  cursor: pointer;
+}
+
+.bo-rf__graph-node rect:first-of-type {
+  fill: #fff;
+  stroke: #d5ddd8;
+  stroke-width: 1.35;
+  filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.07));
+}
+
+.bo-rf__graph-node[data-root="1"] rect:first-of-type {
+  fill: #f4fbf7;
+  stroke: #c5d9ce;
+}
+
+.bo-rf__graph-node-bar {
+  fill: var(--ath-accent, #0b8a5c);
+  stroke: none;
+}
+
+.bo-rf__graph-node text {
+  font: 700 12.5px/1.25 Inter, system-ui, sans-serif;
+  fill: #1e2937;
+  pointer-events: none;
+}
+
+.bo-rf__graph-node.is-on rect:first-of-type {
+  stroke: var(--ath-accent, #0b8a5c);
+  stroke-width: 2;
+}
+
+.bo-rf__graph-node.is-dim {
+  opacity: 0.3;
+}
+
+.bo-rf__graph-edge {
+  pointer-events: stroke;
+}
+
+.bo-rf__graph-edge .bo-rf__graph-edge-hit {
+  pointer-events: stroke;
+}
+
+.bo-rf__graph-edge.is-on path:not(.bo-rf__graph-edge-hit) {
+  stroke-width: 3.1;
+}
+
+.bo-rf__graph-edge.is-dim {
+  opacity: 0.16;
+}
+
+.bo-rf__graph-empty {
+  margin: 48px 16px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ath-muted, #64748b);
 }
 
 .bo-rf__graph-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 16px;
-  margin: 12px 0 0;
+  gap: 10px 18px;
+  margin: 12px 0 4px;
   padding: 0;
   list-style: none;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ath-muted);
 }
@@ -240,10 +317,26 @@
 .bo-rf__graph-legend-line {
   display: inline-block;
   width: 28px;
-  height: 2px;
+  height: 3px;
   border-radius: 999px;
   vertical-align: middle;
   margin-right: 6px;
+  background: currentColor;
+}
+
+.bo-rf__graph-legend [data-type="mentored_by"] .bo-rf__graph-legend-line,
+.bo-rf__graph-legend [data-type="independent"] .bo-rf__graph-legend-line {
+  background: none;
+  border-top: 2px dashed currentColor;
+  height: 0;
+  border-radius: 0;
+}
+
+.bo-rf__graph-legend [data-type="cross_cutting"] .bo-rf__graph-legend-line {
+  background: none;
+  border-top: 2px dotted currentColor;
+  height: 0;
+  border-radius: 0;
 }
 
 .bo-rf__links {

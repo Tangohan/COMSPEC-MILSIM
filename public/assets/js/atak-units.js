@@ -134,14 +134,22 @@ window.ATAKUnits = (function () {
         '</span>';
     }
     var roleText = String(u.role || ex.role || '').trim();
-    var hasRole = roleText !== '' && roleText !== '—';
-    var hasSidc = !!(ex.sidc || u.sidc || ex.functionid || u.functionid);
-    if ((hasRole || hasSidc) && window.NatoSidcIcons && window.NatoSidcIcons.listBadgeHtml) {
-      return window.NatoSidcIcons.listBadgeHtml({
+    var fields = (window.NatoSidcIcons && window.NatoSidcIcons.symbolFieldsFromUnit)
+      ? window.NatoSidcIcons.symbolFieldsFromUnit(u, ex)
+      : null;
+    if (window.NatoSidcIcons && window.NatoSidcIcons.listBadgeHtml) {
+      return window.NatoSidcIcons.listBadgeHtml(fields ? Object.assign({}, fields, {
+        affiliation: fields.affiliation || 'friend',
+        role: roleText,
+        size: 20,
+      }) : {
         affiliation: ex.affiliation || ex.affil || u.affiliation || 'friend',
         role: roleText,
         sidc: ex.sidc || u.sidc || '',
         functionid: ex.functionid || u.functionid || '',
+        platform: ex.platform || ex.vehicle_class || '',
+        vehicle: ex.vehicle || ex.vehicle_name || '',
+        in_vehicle: ex.in_vehicle,
         size: 20,
       });
     }
@@ -171,8 +179,14 @@ window.ATAKUnits = (function () {
   function fetchUnits() {
     if (!isNodeConfigured()) return;
     var url = getApiBase() + '/api/units?mapId=' + getMapId() + '&include_gateway=1';
-    fetch(url, { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (data) {
-      units = Array.isArray(data) ? data : (data.units || []);
+    fetch(url, { credentials: 'include' }).then(function (r) {
+      if (!r.ok) return null;
+      return r.json();
+    }).then(function (data) {
+      if (!data || data.paused) return;
+      var next = Array.isArray(data) ? data : (Array.isArray(data.units) ? data.units : null);
+      if (next == null) return;
+      units = next;
       render();
       pushMarkers();
       if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
@@ -182,7 +196,6 @@ window.ATAKUnits = (function () {
         window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { count: units.length } }));
       } catch (e) {}
     }).catch(function () {
-      if (window.ATAKShowError) window.ATAKShowError('Impossible de charger les unités.');
       render();
     });
   }

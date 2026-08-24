@@ -15,10 +15,12 @@ private _scan = {
     if (!(_u isEqualType objNull) || {isNull _u} || {!alive _u}) exitWith { false };
     if (isPlayer _u) exitWith { false };
     private _aid = toLower (trim (_u getVariable ["COMSPEC_AllyTrackId", ""]));
+    private _custom = toLower (trim (_u getVariable ["COMSPEC_AllyCallsign", ""]));
     private _cs = toLower (trim ([_u] call comspec_overwatch_connect_fnc_allyTrackCallsign));
     if (_aid isEqualTo _needle) exitWith { true };
     if (_cs isEqualTo _needle) exitWith { true };
-    if (_aid isNotEqualTo "" && {(_cs find _aid) >= 0} && {_needle isEqualTo _aid}) exitWith { true };
+    if (_custom isNotEqualTo "" && {_custom isEqualTo _needle}) exitWith { true };
+    if (_aid isNotEqualTo "" && {(_needle find _aid) == 0}) exitWith { true };
     false
 };
 

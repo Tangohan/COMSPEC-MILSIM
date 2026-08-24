@@ -333,17 +333,7 @@ final class SseDigitalLabController
                 $key = 'support';
             }
             if (!isset($groups[$key])) {
-                $groups[$key] = [
-                    'node_key' => (string) ($packet['node_key'] ?? ''),
-                    'support_label' => (string) ($packet['support_label'] ?? 'Support'),
-                    'device_id' => (int) ($packet['device_id'] ?? 0),
-                    'device_type_label' => (string) ($packet['device_type_label'] ?? ''),
-                    'owner_label' => (string) ($packet['device_owner'] ?? ''),
-                    'origin_label' => (string) ($packet['origin_label'] ?? ''),
-                    'collector_label' => (string) ($packet['collector_label'] ?? ''),
-                    'grid_reference' => (string) ($packet['grid_reference'] ?? ''),
-                    'packets' => [],
-                ];
+                $groups[$key] = \App\Support\SseDomexContract::queueGroupFromPacket($packet);
             }
             $groups[$key]['packets'][] = $packet;
         }

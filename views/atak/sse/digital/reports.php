@@ -28,7 +28,7 @@ require __DIR__ . '/_subnav.php';
 <section class="panel">
     <div class="panel-header"><div class="panel-title">Rapport d’exploitation — <?= $h($device['reference_code'] ?? '') ?></div></div>
     <div class="panel-body" style="display:grid;gap:14px">
-        <div><strong>1. Objet de l’exploitation</strong><p>Exploitation numérique du support <?= $h($device['reference_code'] ?? '') ?> (<?= $h($device['device_type_label'] ?? '') ?>).</p></div>
+        <div><strong>1. Objet de l’exploitation</strong><p>Exploitation numérique du support <?= $h($device['reference_code'] ?? '') ?> (<?= $h(trim((string) ($device['device_type_label'] ?? '')) ?: 'Inconnu') ?>).</p></div>
         <div><strong>2. Support examiné</strong><p><?= $h(trim(($device['manufacturer'] ?? '') . ' ' . ($device['model'] ?? '')) ?: '—') ?> · série <?= $h($device['serial_number'] ?? '—') ?></p></div>
         <div><strong>3. État du support</strong><p><?= $h($device['power_state_label'] ?? '—') ?> · <?= $h($device['locked_label'] ?? '') ?> · statut <?= $h($device['status_label'] ?? '') ?></p></div>
         <div><strong>4–6. Acquisitions et intégrité</strong>

@@ -329,6 +329,62 @@ final class SseDomexContract
     }
 
     /**
+     * Libellé métier du type de support. Jamais une clé technique, jamais une clé absente.
+     *
+     * @param array<string, string> $extraMap cartes supplémentaires (ex. types laboratoire)
+     */
+    public static function deviceTypeLabel(string $code, array $extraMap = []): string
+    {
+        $code = trim($code);
+        if ($code === '') {
+            return 'Inconnu';
+        }
+
+        return $extraMap[$code] ?? self::DEVICE_TYPES[$code] ?? 'Inconnu';
+    }
+
+    public static function originLabel(string $code): string
+    {
+        $code = trim($code);
+        if ($code === '') {
+            return '';
+        }
+
+        return self::ORIGINS[$code] ?? '';
+    }
+
+    /**
+     * En-tête de groupe pour la file « À exploiter ». Toujours les mêmes clés,
+     * même si le paquet n’a pas encore de support rattaché.
+     *
+     * @param array<string, mixed> $packet
+     * @return array<string, mixed>
+     */
+    public static function queueGroupFromPacket(array $packet): array
+    {
+        $type = trim((string) ($packet['device_type_label'] ?? ''));
+        if ($type === '' || $type === '—') {
+            $type = self::deviceTypeLabel((string) ($packet['device_type'] ?? ''));
+        }
+        $origin = trim((string) ($packet['origin_label'] ?? ''));
+        if ($origin === '') {
+            $origin = self::originLabel((string) ($packet['origin'] ?? ''));
+        }
+
+        return [
+            'node_key' => (string) ($packet['node_key'] ?? ''),
+            'support_label' => (string) ($packet['support_label'] ?? 'Support'),
+            'device_id' => (int) ($packet['device_id'] ?? 0),
+            'device_type_label' => $type,
+            'owner_label' => (string) ($packet['device_owner'] ?? $packet['owner_label'] ?? ''),
+            'origin_label' => $origin,
+            'collector_label' => (string) ($packet['collector_label'] ?? ''),
+            'grid_reference' => (string) ($packet['grid_reference'] ?? ''),
+            'packets' => [],
+        ];
+    }
+
+    /**
      * @param array<string, mixed> $node
      * @param list<array<string, mixed>> $packets
      * @return array<string, mixed>
@@ -348,8 +404,8 @@ final class SseDomexContract
 
         return [
             'node_id' => (string) ($node['node_id'] ?? $node['node_key'] ?? ''),
-            'device_type_label' => self::DEVICE_TYPES[(string) ($node['device_type'] ?? '')] ?? 'Support',
-            'origin_label' => self::ORIGINS[(string) ($packets[0]['origin'] ?? 'terrain')] ?? 'Collecté sur le terrain',
+            'device_type_label' => self::deviceTypeLabel((string) ($node['device_type'] ?? '')),
+            'origin_label' => self::originLabel((string) ($packets[0]['origin'] ?? 'terrain')) ?: 'Collecté sur le terrain',
             'packet_count' => count($packets),
             'quality_note' => self::qualityNote($decoy, $frag, count($packets)),
         ];

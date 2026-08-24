@@ -56,7 +56,11 @@ missionNamespace setVariable ["COMSPEC_DiagLog", _buf, false];
 
 // Fichier .log (best-effort) — jamais côté serveur dédié (pas d'interface/extension GUI).
 if (hasInterface && {missionNamespace getVariable ["comspec_overwatch_log_to_file", true]}) then {
-    private _res = "COMSPECExtension" callExtension ["LogWrite", [_line]];
+    private _termUid = missionNamespace getVariable ["COMSPEC_TerminalUid", ""];
+    if (!(_termUid isEqualType "")) then { _termUid = ""; };
+    _termUid = trim _termUid;
+    private _det = if (isNil "_detail") then { "" } else { str _detail };
+    private _res = "COMSPECExtension" callExtension ["LogWrite", [_line, _levelKey, _channel, _message, _det, _termUid]];
     if (_res isEqualType "" && {(_res select [0, 3]) == "OK|"}) then {
         if (!(missionNamespace getVariable ["COMSPEC_LogFilePathLogged", false])) then {
             missionNamespace setVariable ["COMSPEC_LogFilePathLogged", true, false];

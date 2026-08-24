@@ -151,7 +151,7 @@ final class AtakTerrainRepository
 
             $filled = (int) ($grid['filled_cells'] ?? 0) + $wrote;
             $total = $gCols * $gRows;
-            $ready = $total > 0 && $filled >= (int) floor($total * 0.96) ? 1 : 0;
+            $ready = $filled >= 9 ? 1 : 0;
 
             $upd = $pdo->prepare(
                 'UPDATE `atak_terrain_grids`
@@ -188,6 +188,98 @@ final class AtakTerrainRepository
 
             return ['ok' => false, 'error' => 'Enregistrement du relief impossible.'];
         }
+    }
+
+    /**
+     * Fusion d’échantillons ponctuels (x, y, z) dans la grille DEM.
+     *
+     * @param array<string, mixed> $meta
+     * @param list<array<string, mixed>> $points
+     * @return array<string, mixed>
+     */
+    public function upsertSamples(int $tenantId, int $mapId, array $meta, array $points): array
+    {
+        $cell = (int) ($meta['resolution'] ?? $meta['cell_m'] ?? 50);
+        if ($cell < 10) {
+            $cell = 25;
+        }
+        if ($cell > 200) {
+            $cell = 200;
+        }
+        $worldSize = (int) ($meta['world_size'] ?? $meta['worldSize'] ?? 0);
+        if ($worldSize < 1024) {
+            $worldSize = 30720;
+        }
+        $worldName = substr(trim((string) ($meta['world'] ?? $meta['world_name'] ?? '')), 0, 64);
+        $ox = (float) ($meta['origin_x'] ?? 0);
+        $oy = (float) ($meta['origin_y'] ?? 0);
+        $cols = (int) ($meta['cols'] ?? (int) floor($worldSize / $cell) + 1);
+        $rows = (int) ($meta['rows'] ?? $meta['grid_rows'] ?? $cols);
+        $cols = max(8, min(2048, $cols));
+        $rows = max(8, min(2048, $rows));
+
+        $chunkMeta = [
+            'cell_m' => $cell,
+            'world_size' => $worldSize,
+            'world_name' => $worldName,
+            'origin_x' => $ox,
+            'origin_y' => $oy,
+            'cols' => $cols,
+            'rows' => $rows,
+        ];
+
+        $wroteTotal = 0;
+        $last = ['ok' => true, 'wrote' => 0, 'ready' => false, 'filled_cells' => 0, 'total_cells' => $cols * $rows, 'progress' => 0];
+        $bucket = [];
+        foreach ($points as $p) {
+            if (!is_array($p)) {
+                continue;
+            }
+            $x = $p['x'] ?? null;
+            $y = $p['y'] ?? null;
+            $z = $p['z'] ?? $p['terrain_z'] ?? null;
+            if (!is_numeric($x) || !is_numeric($y) || !is_numeric($z)) {
+                continue;
+            }
+            $c = (int) round(((float) $x - $ox) / $cell);
+            $r = (int) round(((float) $y - $oy) / $cell);
+            if ($c < 0 || $r < 0 || $c >= $cols || $r >= $rows) {
+                continue;
+            }
+            $col0 = intdiv($c, 32) * 32;
+            $row0 = intdiv($r, 32) * 32;
+            $key = $col0 . ':' . $row0;
+            if (!isset($bucket[$key])) {
+                $cw = min(32, $cols - $col0);
+                $rh = min(32, $rows - $row0);
+                $bucket[$key] = ['col0' => $col0, 'row0' => $row0, 'cw' => $cw, 'rh' => $rh, 'heights' => array_fill(0, $cw * $rh, null)];
+            }
+            $cw = $bucket[$key]['cw'];
+            $idx = ($r - $row0) * $cw + ($c - $col0);
+            if ($idx >= 0 && $idx < count($bucket[$key]['heights'])) {
+                $bucket[$key]['heights'][$idx] = (float) $z;
+            }
+        }
+        foreach ($bucket as $block) {
+            $last = $this->upsertChunk(
+                $tenantId,
+                $mapId,
+                $chunkMeta,
+                (int) $block['col0'],
+                (int) $block['row0'],
+                (int) $block['cw'],
+                (int) $block['rh'],
+                $block['heights']
+            );
+            $wroteTotal += (int) ($last['wrote'] ?? 0);
+            if (empty($last['ok'])) {
+                return $last;
+            }
+        }
+        $last['wrote'] = $wroteTotal;
+        $last['points'] = count($points);
+
+        return $last;
     }
 
     /**

@@ -26,7 +26,7 @@ final class AarCustomForm
     {
         return match ($type) {
             self::TYPE_TEXT => 'Question courte',
-            self::TYPE_TEXTAREA => 'Zone de texte',
+            self::TYPE_TEXTAREA => 'Zone de texte libre',
             self::TYPE_SELECT => 'Liste déroulante',
             self::TYPE_CHECKBOX => 'Cases à cocher',
             default => 'Question',

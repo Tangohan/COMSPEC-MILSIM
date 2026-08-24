@@ -37,6 +37,21 @@ final class AarCustomFormTest extends TestCase
         self::assertSame(['Succès', 'Partiel', 'Échec'], $fields[0]['options']);
         self::assertSame(['Liaison', 'Munitions'], $fields[1]['options']);
         self::assertSame(AarCustomForm::TYPE_TEXTAREA, $fields[2]['type']);
+        self::assertSame('Zone de texte libre', AarCustomForm::typeLabel(AarCustomForm::TYPE_TEXTAREA));
+        self::assertSame('Liste déroulante', AarCustomForm::typeLabel(AarCustomForm::TYPE_SELECT));
+        self::assertSame('Cases à cocher', AarCustomForm::typeLabel(AarCustomForm::TYPE_CHECKBOX));
+        self::assertSame('Question courte', AarCustomForm::typeLabel(AarCustomForm::TYPE_TEXT));
+    }
+
+    public function testNormalizeFieldsKeepsStableIds(): void
+    {
+        $fields = AarCustomForm::normalizeFields([
+            ['id' => 'issue', 'type' => 'select', 'label' => 'Issue', 'options' => ['Succès']],
+            ['id' => 'issue', 'type' => 'text', 'label' => 'Commentaire'],
+        ]);
+
+        self::assertSame('issue', $fields[0]['id']);
+        self::assertSame('q2', $fields[1]['id']);
     }
 
     public function testCollectAndPresentAnswers(): void

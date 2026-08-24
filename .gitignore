@@ -18,6 +18,8 @@ config/cdn_libraries.local.php
 !/storage/atak-mod/.gitkeep
 /storage/intel/*
 !/storage/intel/.gitkeep
+/storage/atak_terrain/*
+!/storage/atak_terrain/.gitkeep
 composer.lock
 
 # --- Exports / dumps de base : jamais dans le dépôt ---

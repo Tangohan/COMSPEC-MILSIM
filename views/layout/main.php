@@ -149,6 +149,9 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/styles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/app-update-modal.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/app-update-modal.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/portal-nav.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/portal-nav.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>

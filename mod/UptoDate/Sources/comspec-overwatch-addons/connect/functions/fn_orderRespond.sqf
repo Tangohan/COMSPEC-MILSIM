@@ -104,6 +104,9 @@ if (!_ok) exitWith {
 
 [_feedback, "order", "info"] call comspec_overwatch_connect_fnc_announce;
 ["COMSPEC_Info", [_feedback]] call comspec_overwatch_connect_fnc_showNotification;
+if (_status isEqualTo "ACK" && {!isNil "comspec_overwatch_connect_fnc_playAtakNotification"}) then {
+    ["order_ack"] call comspec_overwatch_connect_fnc_playAtakNotification;
+};
 
 if (_status isEqualTo "ACK") then {
     private _orderData = createHashMap;
