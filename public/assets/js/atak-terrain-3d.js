@@ -3,12 +3,13 @@ window.ATAKTerrain3D = (function () {
   'use strict';
 
   var KEY = 'atak_terrain_3d_view';
-  var state = { enabled: false, pitch: 48, bearing: 0 };
+  var state = { enabled: false, pitch: 48, bearing: 0, verticalExaggeration: 2.5 };
   var stage;
   var button;
   var nav;
   var settings;
   var pitchInput;
+  var exaggerationInput;
   var dragging = false;
   var dragged = false;
   var startX = 0;
@@ -42,6 +43,7 @@ window.ATAKTerrain3D = (function () {
       state.enabled = !!saved.enabled;
       state.pitch = clamp(saved.pitch == null ? 48 : saved.pitch, 25, 65);
       state.bearing = normalizeBearing(saved.bearing);
+      state.verticalExaggeration = clamp(saved.verticalExaggeration == null ? 2.5 : saved.verticalExaggeration, 1, 4);
     } catch (e) {}
   }
 
@@ -68,7 +70,19 @@ window.ATAKTerrain3D = (function () {
     var row = Math.round((world.y - Number(g.origin_y)) / Number(g.cell_m));
     if (col < 0 || row < 0 || col >= g.cols || row >= g.rows) return 0;
     var z = g.values[row * g.cols + col];
-    return z === -32768 ? 0 : z;
+    return z === -32768 ? Number(g.min_z || 0) : z;
+  }
+
+  /* Convertit toute la plage altimétrique en pixels avant d'appliquer le
+     facteur Z. L'ancien coefficient exprimé en pixels/mètre atteignait presque
+     toujours sa limite de 550 px : plusieurs valeurs du curseur produisaient
+     donc exactement le même maillage, donnant l'impression qu'il ne marchait pas. */
+  function reliefOffset(z) {
+    var minZ = Number(terrainGrid && terrainGrid.min_z);
+    var maxZ = Number(terrainGrid && terrainGrid.max_z);
+    if (!Number.isFinite(minZ) || !Number.isFinite(maxZ) || maxZ <= minZ) return 0;
+    var normalizedHeight = Math.max(0, Math.min(1, (Number(z) - minZ) / (maxZ - minZ)));
+    return normalizedHeight * 110 * state.verticalExaggeration;
   }
 
   function reliefShade(world) {
@@ -79,8 +93,8 @@ window.ATAKTerrain3D = (function () {
     var right = heightAt({ x: world.x + cell, y: world.y });
     var down = heightAt({ x: world.x, y: world.y - cell });
     var up = heightAt({ x: world.x, y: world.y + cell });
-    var dx = (right - left) / (cell * 2);
-    var dy = (up - down) / (cell * 2);
+    var dx = (right - left) / (cell * 2) * state.verticalExaggeration;
+    var dy = (up - down) / (cell * 2) * state.verticalExaggeration;
     /* Lumière rasante nord-ouest : les versants opposés restent lisibles sur le fond IGN. */
     var length = Math.sqrt(dx * dx + dy * dy + 1);
     var light = (-dx * -.58 + -dy * .58 + .58) / length;
@@ -186,7 +200,8 @@ window.ATAKTerrain3D = (function () {
         var sx = left + w * x / steps, sy = top + h * y / steps;
         var ll = map.containerPointToLatLng([sx, sy]);
         var world = window.ATAKMap.worldFromLatLng(ll);
-        var z = heightAt(world), relief = Math.max(-120, Math.min(220, (z - Number(terrainGrid.min_z || 0)) * .32));
+        var z = heightAt(world);
+        var relief = reliefOffset(z);
         vertices.push(sx, sy - relief); uvs.push(x / steps, y / steps); shades.push(reliefShade(world));
       }
       for (var gy = 0; gy < steps; gy += 1) for (var gx = 0; gx < steps; gx += 1) {
@@ -222,8 +237,11 @@ window.ATAKTerrain3D = (function () {
     if (nav) nav.hidden = !state.enabled;
     if (settings) settings.hidden = !state.enabled;
     if (pitchInput) pitchInput.value = String(state.pitch);
+    if (exaggerationInput) exaggerationInput.value = String(state.verticalExaggeration);
     var pitchValue = document.getElementById('atak-terrain-pitch-val');
     if (pitchValue) pitchValue.textContent = state.pitch + '°';
+    var exaggerationValue = document.getElementById('atak-terrain-exaggeration-val');
+    if (exaggerationValue) exaggerationValue.textContent = state.verticalExaggeration.toFixed(1) + '×';
   }
 
   function setEnabled(enabled) {
@@ -272,6 +290,7 @@ window.ATAKTerrain3D = (function () {
     nav = document.getElementById('atak-map-3d-nav');
     settings = document.getElementById('atak-terrain-3d-settings');
     pitchInput = document.getElementById('atak-terrain-pitch');
+    exaggerationInput = document.getElementById('atak-terrain-exaggeration');
     if (!stage || !button) return;
     restore();
     button.addEventListener('click', function () { setEnabled(!state.enabled); });
@@ -279,6 +298,12 @@ window.ATAKTerrain3D = (function () {
     if (flat) flat.addEventListener('click', function () { setEnabled(false); });
     if (pitchInput) pitchInput.addEventListener('input', function () {
       state.pitch = clamp(pitchInput.value, 25, 65);
+      render();
+      save();
+    });
+    if (exaggerationInput) exaggerationInput.addEventListener('input', function () {
+      state.verticalExaggeration = clamp(exaggerationInput.value, 1, 4);
+      scheduleTerrain();
       render();
       save();
     });

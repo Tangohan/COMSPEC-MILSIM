@@ -2452,11 +2452,15 @@ if ($atakMapConfig) {
               <input type="range" id="atak-terrain-opacity" class="atak-sound-pref-slider" min="10" max="100" step="5" value="32" />
             </label>
             <div class="atak-terrain-3d-settings" id="atak-terrain-3d-settings" hidden>
+              <label class="atak-map-look__row" for="atak-terrain-exaggeration">
+                <span class="atak-map-look__key">Exagération Z <span class="atak-sound-pref-val" id="atak-terrain-exaggeration-val">2.5×</span></span>
+                <input type="range" id="atak-terrain-exaggeration" class="atak-sound-pref-slider" min="1" max="4" step="0.1" value="2.5" />
+              </label>
               <label class="atak-map-look__row" for="atak-terrain-pitch">
                 <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
                 <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
               </label>
-              <p class="atak-terrain-3d-hint">Les PNG sont drapés et déformés sur le relevé altimétrique, comme une carte IGN en relief. Glissez sur la rose pour orienter la vue.</p>
+              <p class="atak-terrain-3d-hint">Amplifiez le relief, puis réduisez l'inclinaison pour une vue plus rasante. Glissez sur la rose pour orienter la vue.</p>
             </div>
             <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
           </div>
