@@ -789,6 +789,7 @@ window.ATAKMapTools = (function () {
   var LS_COLLAPSED = 'atak_map_tools_collapsed';
   var LS_VISIBLE = 'atak_map_tools_visible_v1';
   var LS_PRESET = 'atak_map_tools_preset_v1';
+  var LS_GROUP = 'atak_map_tools_group_v1';
 
   var TOOL_PREF_DEFS = [
     { id: 'goto', label: 'Grille' },
@@ -814,6 +815,42 @@ window.ATAKMapTools = (function () {
     analyse: ['route', 'los'],
     view: ['zoom', 'nvg', 'cop']
   };
+
+  function setOpenToolGroup(groupId, persist) {
+    var bar = document.getElementById('atak-map-tools');
+    if (!bar) return;
+    var requested = SEP_GROUPS[groupId] ? groupId : '';
+    bar.querySelectorAll('[data-tool-group]').forEach(function (toggle) {
+      var id = toggle.getAttribute('data-tool-group');
+      var open = id === requested;
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      toggle.closest('.atak-map-tools__cluster').classList.toggle('is-open', open);
+      var panelId = toggle.getAttribute('aria-controls');
+      var panel = panelId ? document.getElementById(panelId) : null;
+      if (panel) panel.hidden = !open;
+    });
+    if (persist) {
+      try { localStorage.setItem(LS_GROUP, requested); } catch (e) {}
+    }
+  }
+
+  function loadOpenToolGroup() {
+    try {
+      var stored = localStorage.getItem(LS_GROUP) || 'nav';
+      return SEP_GROUPS[stored] ? stored : 'nav';
+    } catch (e) {
+      return 'nav';
+    }
+  }
+
+  function onToolGroupClick(e) {
+    var toggle = e.target.closest('[data-tool-group]');
+    if (!toggle) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var groupId = toggle.getAttribute('data-tool-group');
+    setOpenToolGroup(toggle.getAttribute('aria-expanded') === 'true' ? '' : groupId, true);
+  }
 
   /** Profils métier : TOC (tout), chef d’équipe (manœuvre), médecin (repères + mesure). */
   var ROLE_PRESETS = {
@@ -1063,6 +1100,7 @@ window.ATAKMapTools = (function () {
     bar._atakBound = true;
     bar.addEventListener('click', onToolClick);
     bar.addEventListener('click', onChromeClick);
+    bar.addEventListener('click', onToolGroupClick);
     var fab = document.getElementById('atak-map-tools-fab');
     if (fab && !fab._atakBound) {
       fab._atakBound = true;
@@ -1075,6 +1113,7 @@ window.ATAKMapTools = (function () {
     window.addEventListener('atak:zone-radius-preview', onZoneRadiusPreview);
     bindZoneMetricInputs();
     applyVisibleSlots(loadVisibleMap());
+    setOpenToolGroup(loadOpenToolGroup(), false);
     setToolbarCollapsed(isToolbarCollapsed());
     try {
       if (localStorage.getItem('atak_map_nvg') === '1') setNvg(true);
