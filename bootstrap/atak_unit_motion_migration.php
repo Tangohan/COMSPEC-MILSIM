@@ -89,16 +89,23 @@ CREATE TABLE IF NOT EXISTS `atak_unit_assignments` (
 SQL,
     ];
 
+    $cli = PHP_SAPI === 'cli';
     foreach ($tables as $name => $ddl) {
         if (schema_table_exists($pdo, $name)) {
-            echo "  [OK] {$name} déjà présente\n";
+            if ($cli) {
+                echo "  [OK] {$name} déjà présente\n";
+            }
             continue;
         }
         try {
             $pdo->exec($ddl);
-            echo "  [COMPLÉTÉ] Table créée : {$name}\n";
+            if ($cli) {
+                echo "  [COMPLÉTÉ] Table créée : {$name}\n";
+            }
         } catch (Throwable $e) {
-            echo "  [ATTENTION] {$name} : " . $e->getMessage() . "\n";
+            if ($cli) {
+                echo "  [ATTENTION] {$name} : " . $e->getMessage() . "\n";
+            }
         }
     }
 };

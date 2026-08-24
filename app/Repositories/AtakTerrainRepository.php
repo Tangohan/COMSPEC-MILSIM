@@ -14,6 +14,8 @@ final class AtakTerrainRepository
 {
     use LazyDatabaseConnection;
 
+    private ?string $rowCountColumn = null;
+
     public function __construct(?PDO $pdo = null)
     {
         AtakCopTerrainSchema::ensure();
@@ -28,18 +30,35 @@ final class AtakTerrainRepository
         if ($tenantId < 1 || $mapId < 1) {
             return null;
         }
-        $cols = $withHeights
-            ? '`id`, `tenant_id`, `map_id`, `world_name`, `world_size`, `origin_x`, `origin_y`, `cell_m`, `cols`, `rows`, `heights`, `min_z`, `max_z`, `filled_cells`, `ready`, `sampled_at`, `updated_at`'
-            : '`id`, `tenant_id`, `map_id`, `world_name`, `world_size`, `origin_x`, `origin_y`, `cell_m`, `cols`, `rows`, `min_z`, `max_z`, `filled_cells`, `ready`, `sampled_at`, `updated_at`';
+        $rowCol = $this->rowCountColumn();
+        $cols = [
+            'id', 'tenant_id', 'map_id', 'world_name', 'world_size',
+            'origin_x', 'origin_y', 'cell_m', 'cols', $rowCol,
+            'min_z', 'max_z', 'filled_cells', 'ready', 'sampled_at', 'updated_at',
+        ];
+        if ($withHeights) {
+            $cols[] = 'heights';
+        }
+        $select = implode(', ', array_map(static function (string $c): string {
+            $safe = str_replace('`', '', $c);
+            $expr = '`' . $safe . '`';
+            if ($safe === 'rows') {
+                return $expr . ' AS `grid_rows`';
+            }
+
+            return $expr;
+        }, $cols));
         try {
-            $st = $this->pdo()->prepare("SELECT {$cols} FROM `atak_terrain_grids` WHERE `tenant_id` = ? AND `map_id` = ? LIMIT 1");
+            $st = $this->pdo()->prepare(
+                "SELECT {$select} FROM `atak_terrain_grids` WHERE `tenant_id` = ? AND `map_id` = ? LIMIT 1"
+            );
             $st->execute([$tenantId, $mapId]);
             $row = $st->fetch(PDO::FETCH_ASSOC);
         } catch (Throwable) {
             return null;
         }
 
-        return is_array($row) ? $row : null;
+        return is_array($row) ? $this->normalizeGridRow($row) : null;
     }
 
     /**
@@ -61,7 +80,7 @@ final class AtakTerrainRepository
             $worldSize = 30720;
         }
         $cols = (int) ($meta['cols'] ?? (int) floor($worldSize / $cell) + 1);
-        $rows = (int) ($meta['rows'] ?? $cols);
+        $rows = (int) ($meta['rows'] ?? $meta['grid_rows'] ?? $cols);
         $cols = max(8, min(2048, $cols));
         $rows = max(8, min(2048, $rows));
         $cw = max(1, min(64, $cw));
@@ -78,11 +97,12 @@ final class AtakTerrainRepository
             $grid = $this->getGrid($tenantId, $mapId, true);
             if ($grid === null) {
                 $blob = AtakTerrainMath::emptyBlob($cols * $rows);
+                $rowCol = $this->rowCountColumn();
                 $ins = $pdo->prepare(
-                    'INSERT INTO `atak_terrain_grids` (
+                    "INSERT INTO `atak_terrain_grids` (
                         `tenant_id`, `map_id`, `world_name`, `world_size`, `origin_x`, `origin_y`,
-                        `cell_m`, `cols`, `rows`, `heights`, `filled_cells`, `ready`
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)'
+                        `cell_m`, `cols`, `{$rowCol}`, `heights`, `filled_cells`, `ready`
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)"
                 );
                 $ins->execute([$tenantId, $mapId, $worldName, $worldSize, $ox, $oy, $cell, $cols, $rows, $blob]);
                 $grid = $this->getGrid($tenantId, $mapId, true);
@@ -94,7 +114,7 @@ final class AtakTerrainRepository
             }
             $gridId = (int) $grid['id'];
             $gCols = (int) $grid['cols'];
-            $gRows = (int) $grid['rows'];
+            $gRows = (int) ($grid['rows'] ?? $grid['grid_rows'] ?? 0);
             $blob = is_string($grid['heights'] ?? null) ? (string) $grid['heights'] : AtakTerrainMath::emptyBlob($gCols * $gRows);
             if (strlen($blob) < $gCols * $gRows * 2) {
                 $blob = AtakTerrainMath::emptyBlob($gCols * $gRows);
@@ -168,5 +188,48 @@ final class AtakTerrainRepository
 
             return ['ok' => false, 'error' => 'Enregistrement du relief impossible.'];
         }
+    }
+
+    /**
+     * L’API et le JS parlent encore de « rows ».
+     * En base : `grid_rows` (schéma actuel) ou `rows` (tenants historiques, mot réservé MariaDB).
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function normalizeGridRow(array $row): array
+    {
+        if (!isset($row['rows']) && isset($row['grid_rows'])) {
+            $row['rows'] = $row['grid_rows'];
+        }
+        if (!isset($row['grid_rows']) && isset($row['rows'])) {
+            $row['grid_rows'] = $row['rows'];
+        }
+
+        return $row;
+    }
+
+    private function rowCountColumn(): string
+    {
+        if ($this->rowCountColumn !== null) {
+            return $this->rowCountColumn;
+        }
+        $this->rowCountColumn = 'grid_rows';
+        try {
+            $st = $this->pdo()->query('SHOW COLUMNS FROM `atak_terrain_grids`');
+            $fields = $st ? $st->fetchAll(PDO::FETCH_COLUMN, 0) : [];
+            $names = [];
+            foreach ($fields as $field) {
+                $names[strtolower((string) $field)] = true;
+            }
+            if (isset($names['grid_rows'])) {
+                $this->rowCountColumn = 'grid_rows';
+            } elseif (isset($names['rows'])) {
+                $this->rowCountColumn = 'rows';
+            }
+        } catch (Throwable) {
+        }
+
+        return $this->rowCountColumn;
     }
 }

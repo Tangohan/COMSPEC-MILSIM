@@ -1764,12 +1764,15 @@ class AtakApiController
         }
         $tenantId = $this->resolveTenantId($request);
         if ($tenantId !== null) {
-            $mapId = $this->mapId($request);
-            $this->activityLog->recordClientInit(
-                $tenantId,
-                $mapId,
-                $this->activityLog->clientKeyFromRequest()
-            );
+            try {
+                $mapId = $this->mapId($request);
+                $this->activityLog->recordClientInit(
+                    $tenantId,
+                    $mapId,
+                    $this->activityLog->clientKeyFromRequest()
+                );
+            } catch (\Throwable) {
+            }
         }
         return Response::json(['ip' => $ip ?: '—']);
     }
@@ -3061,6 +3064,23 @@ class AtakApiController
             $payload['call_sign'] = $callSign;
             $payload['callsign'] = $callSign;
         }
+        if ($steam !== null && isset($user) && is_array($user)) {
+            try {
+                $live = \App\Core\Container::get(\App\Services\MissionPlanning\MissionPlanningLiveService::class);
+                $sync = $live->onPlayerConnected($tenantId, $user, $steam, $callSign);
+                if (!empty($sync['callsign'])) {
+                    $slotCs = (string) $sync['callsign'];
+                    $payload['call_sign'] = $slotCs;
+                    $payload['callsign'] = $slotCs;
+                    $callSign = $slotCs;
+                }
+                $payload['mission_slot'] = [
+                    'status' => (string) ($sync['status'] ?? 'none'),
+                    'callsign' => $sync['callsign'] ?? null,
+                ];
+            } catch (\Throwable) {
+            }
+        }
         // ID BFT lié à l’indicatif (même identité TOC / carte / terminal).
         if ($steam !== null && isset($user) && is_array($user)) {
             try {
@@ -3142,6 +3162,11 @@ class AtakApiController
                 $this->atak->markUnitOfflineByCallSign($tenantId, $mapId, $resolved);
             } catch (\Throwable) {
             }
+            try {
+                $live = \App\Core\Container::get(\App\Services\MissionPlanning\MissionPlanningLiveService::class);
+                $live->onPlayerDisconnected($tenantId, $resolved);
+            } catch (\Throwable) {
+            }
             // Hors liaison : masquer les alertes actives (bannière / À secourir), archive intacte.
             try {
                 $this->autoResolveOpenMedicalAlertsForCallSign(
@@ -3164,52 +3189,66 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
-        $mapId = $this->mapId($request);
-        $last = $this->resolveLatestArmaActivity($tenantId, $mapId);
-        $ago = null;
-        if ($last !== null) {
-            $ago = (int) (time() - strtotime($last));
-        }
-        $units = $this->unitsForTransmission($tenantId, $mapId);
-        $unitsCount = count(array_filter(
-            $units,
-            static fn ($u) => is_array($u) && (string) ($u['status'] ?? '') === 'linked'
-        ));
-        $activeCallSigns = $this->atak->getActiveUnitsSummary($tenantId, $mapId, 15);
-        if ($mapId !== self::DEFAULT_MAP_ID) {
-            $modSummary = $this->atak->getActiveUnitsSummary($tenantId, self::DEFAULT_MAP_ID, 15);
-            if ($modSummary !== []) {
-                $seen = [];
-                foreach ($activeCallSigns as $row) {
-                    $cs = strtolower(trim((string) ($row['call_sign'] ?? '')));
-                    if ($cs !== '') {
+        $empty = [
+            'sockets' => 0,
+            'lastArmaActivity' => null,
+            'lastArmaActivityAgo' => null,
+            'unitsCount' => 0,
+            'activeCallSigns' => [],
+            'transmissions' => [],
+            'link_telemetry' => null,
+            'measured_packet_loss' => null,
+        ];
+        try {
+            $mapId = $this->mapId($request);
+            $last = $this->resolveLatestArmaActivity($tenantId, $mapId);
+            $ago = null;
+            if ($last !== null) {
+                $ago = (int) (time() - strtotime($last));
+            }
+            $units = $this->unitsForTransmission($tenantId, $mapId);
+            $unitsCount = count(array_filter(
+                $units,
+                static fn ($u) => is_array($u) && (string) ($u['status'] ?? '') === 'linked'
+            ));
+            $activeCallSigns = $this->atak->getActiveUnitsSummary($tenantId, $mapId, 15);
+            if ($mapId !== self::DEFAULT_MAP_ID) {
+                $modSummary = $this->atak->getActiveUnitsSummary($tenantId, self::DEFAULT_MAP_ID, 15);
+                if ($modSummary !== []) {
+                    $seen = [];
+                    foreach ($activeCallSigns as $row) {
+                        $cs = strtolower(trim((string) ($row['call_sign'] ?? '')));
+                        if ($cs !== '') {
+                            $seen[$cs] = true;
+                        }
+                    }
+                    foreach ($modSummary as $row) {
+                        $cs = strtolower(trim((string) ($row['call_sign'] ?? '')));
+                        if ($cs === '' || isset($seen[$cs])) {
+                            continue;
+                        }
+                        $activeCallSigns[] = $row;
                         $seen[$cs] = true;
                     }
+                    $activeCallSigns = array_slice($activeCallSigns, 0, 15);
                 }
-                foreach ($modSummary as $row) {
-                    $cs = strtolower(trim((string) ($row['call_sign'] ?? '')));
-                    if ($cs === '' || isset($seen[$cs])) {
-                        continue;
-                    }
-                    $activeCallSigns[] = $row;
-                    $seen[$cs] = true;
-                }
-                $activeCallSigns = array_slice($activeCallSigns, 0, 15);
             }
-        }
-        $transmissions = $this->buildTransmissionSources($tenantId, $mapId, $ago, $units);
-        $linkTelemetry = $this->getLatestLinkTelemetry($tenantId, $mapId);
+            $transmissions = $this->buildTransmissionSources($tenantId, $mapId, $ago, $units);
+            $linkTelemetry = $this->getLatestLinkTelemetry($tenantId, $mapId);
 
-        return Response::json([
-            'sockets' => 0,
-            'lastArmaActivity' => $last,
-            'lastArmaActivityAgo' => $ago,
-            'unitsCount' => $unitsCount,
-            'activeCallSigns' => $activeCallSigns,
-            'transmissions' => $transmissions,
-            'link_telemetry' => $linkTelemetry,
-            'measured_packet_loss' => $linkTelemetry,
-        ]);
+            return Response::json([
+                'sockets' => 0,
+                'lastArmaActivity' => $last,
+                'lastArmaActivityAgo' => $ago,
+                'unitsCount' => $unitsCount,
+                'activeCallSigns' => $activeCallSigns,
+                'transmissions' => $transmissions,
+                'link_telemetry' => $linkTelemetry,
+                'measured_packet_loss' => $linkTelemetry,
+            ]);
+        } catch (\Throwable) {
+            return Response::json($empty);
+        }
     }
 
     public function markersIndex(Request $request, array $params = []): Response
@@ -3579,10 +3618,15 @@ class AtakApiController
         }
         
         $mapId = $this->mapId($request);
-        $rows = $this->atak->getUnits($tenantId, $mapId);
-        $this->logStaleUnitDisconnects($tenantId, $mapId);
-        $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
-        if ($opIds->tablesReady() && $opIds->unitsMilitaryIdColumnReady()) {
+        try {
+            $rows = $this->atak->getUnits($tenantId, $mapId);
+            $this->logStaleUnitDisconnects($tenantId, $mapId);
+        } catch (\Throwable) {
+            return Response::json([]);
+        }
+        try {
+            $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
+            if ($opIds->tablesReady() && $opIds->unitsMilitaryIdColumnReady()) {
             foreach ($rows as &$row) {
                 $mid = trim((string) ($row['military_id'] ?? ''));
                 $cs = trim((string) ($row['call_sign'] ?? ''));
@@ -3623,6 +3667,8 @@ class AtakApiController
                 }
             }
             unset($row);
+            }
+        } catch (\Throwable) {
         }
 
         // Filtre opt-in : ne pas casser Tacmap (qui n’envoie pas ce paramètre).
@@ -3636,7 +3682,10 @@ class AtakApiController
             ));
         }
 
-        $rows = $this->enrichUnitsWithFireTeams($tenantId, $rows);
+        try {
+            $rows = $this->enrichUnitsWithFireTeams($tenantId, $rows);
+        } catch (\Throwable) {
+        }
         try {
             $rows = $this->motionService()->attachToUnits($tenantId, $mapId, $rows);
         } catch (\Throwable) {
@@ -3646,10 +3695,16 @@ class AtakApiController
             || $request->query('includeGateway') === '1'
             || $request->query('gateway') === '1';
         if ($includeGateway) {
-            $rows = array_merge($rows, $this->collectGatewayMirrorUnits($tenantId));
+            try {
+                $rows = array_merge($rows, $this->collectGatewayMirrorUnits($tenantId));
+            } catch (\Throwable) {
+            }
         }
 
-        $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $rows);
+        try {
+            $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $rows);
+        } catch (\Throwable) {
+        }
 
         return Response::json($rows);
     }
@@ -4125,6 +4180,11 @@ class AtakApiController
         if ($callSign !== '') {
             try {
                 $this->atak->markUnitOfflineByCallSign($tenantId, $mapId, $callSign);
+            } catch (\Throwable) {
+            }
+            try {
+                $live = \App\Core\Container::get(\App\Services\MissionPlanning\MissionPlanningLiveService::class);
+                $live->onPlayerDisconnected($tenantId, $callSign);
             } catch (\Throwable) {
             }
             try {

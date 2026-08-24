@@ -134,6 +134,7 @@ return [
         ['path' => 'back-office/communications/templates', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Modèles d’e-mail'],
         ['path' => 'back-office/communications/groups', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Groupes de diffusion'],
         ['path' => 'back-office/communications', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Nouveau message'],
+        ['path' => 'back-office/planification', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · PLANIFICATION', 'title' => 'Planification de mission', 'subtitle' => 'Organisation de combat, affectations et documents d’ordre avant et pendant la session.', 'css' => ['back-office-mission-planning.css']],
         ['path' => 'back-office/events/insights', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · PRÉSENCES', 'title' => 'Insights présence', 'css' => ['back-office-events.css']],
         ['path' => 'back-office/events/reponses-nominatives', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · CRÉNEAU', 'title' => 'Réponses nominatives', 'subtitle' => 'Suivi nominatif des réponses pour ce créneau.', 'css' => ['back-office-events.css']],
         ['path' => 'back-office/events', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · REGISTRE', 'title' => 'Opérations', 'subtitle' => 'Registre des opérations passées et à venir.', 'css' => ['back-office-events.css']],

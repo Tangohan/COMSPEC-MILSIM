@@ -115,6 +115,30 @@ final class ConfigurationUpdateProbes
         return $welcome !== '' || $publicDoctrine !== '' || $tagline !== '';
     }
 
+    public function operationsPlanningApplicable(int $tenantId): bool
+    {
+        $type = TenantTypeConfig::normalizeType(
+            (string) ($this->tenants->getTenantType($tenantId) ?? TenantTypeConfig::TYPE_FULL)
+        );
+
+        return $type !== TenantTypeConfig::TYPE_EFFECTIFS;
+    }
+
+    /**
+     * Satisfait dès qu’un plan existe, ou si les tables ne sont pas encore déployées.
+     */
+    public function hasMissionPlan(int $tenantId): bool
+    {
+        try {
+            $st = $this->pdo->prepare('SELECT 1 FROM mission_plans WHERE tenant_id = ? LIMIT 1');
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+
     public function atakApplicable(int $tenantId): bool
     {
         $type = TenantTypeConfig::normalizeType(

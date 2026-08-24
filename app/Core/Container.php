@@ -351,6 +351,31 @@ class Container
             ),
             \App\Repositories\TenantAnalyticsRepository::class => new \App\Repositories\TenantAnalyticsRepository(),
             \App\Repositories\CommunityEventRepository::class => new \App\Repositories\CommunityEventRepository(),
+            \App\Repositories\MissionPlanRepository::class => new \App\Repositories\MissionPlanRepository(),
+            \App\Services\MissionPlanning\MissionPlanningService::class => new \App\Services\MissionPlanning\MissionPlanningService(
+                self::get(\App\Repositories\MissionPlanRepository::class)
+            ),
+            \App\Services\MissionPlanning\MissionPlanningLiveService::class => new \App\Services\MissionPlanning\MissionPlanningLiveService(
+                self::get(\App\Repositories\MissionPlanRepository::class)
+            ),
+            \App\Services\MissionPlanning\MissionPlanningPdfService::class => new \App\Services\MissionPlanning\MissionPlanningPdfService(
+                self::get(\App\Services\MissionPlanning\MissionPlanningService::class)
+            ),
+            \App\Services\MissionPlanning\MissionPlanningAtakService::class => new \App\Services\MissionPlanning\MissionPlanningAtakService(
+                self::get(\App\Repositories\MissionPlanRepository::class),
+                self::get(\App\Services\MissionPlanning\MissionPlanningService::class)
+            ),
+            \App\Controllers\Api\AtakMissionApiController::class => new \App\Controllers\Api\AtakMissionApiController(
+                self::get(\App\Services\MissionPlanning\MissionPlanningAtakService::class),
+                self::get(\App\Services\MissionPlanning\MissionPlanningPdfService::class)
+            ),
+            \App\Controllers\Admin\Organization\MissionPlanningController::class => new \App\Controllers\Admin\Organization\MissionPlanningController(
+                self::get(\App\Services\MissionPlanning\MissionPlanningService::class),
+                self::get(\App\Services\MissionPlanning\MissionPlanningPdfService::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\AtakMapRepository::class)
+            ),
             \App\Repositories\CommunityEventSlotRepository::class => new \App\Repositories\CommunityEventSlotRepository(),
             \App\Repositories\CommunityEventSlotAssignmentRepository::class => new \App\Repositories\CommunityEventSlotAssignmentRepository(),
             \App\Repositories\CommunityMediaRepository::class => new \App\Repositories\CommunityMediaRepository(),
@@ -2147,6 +2172,7 @@ class Container
                 self::get(\App\Repositories\EventRsvpNominativeRepository::class),
                 self::get(\App\Services\Attendance\EventRsvpNominativeService::class)
             ),
+            \App\Controllers\Api\AtakPingController::class => new \App\Controllers\Api\AtakPingController(),
             \App\Controllers\Api\AtakApiController::class => new \App\Controllers\Api\AtakApiController(
                 atak: self::get(\App\Repositories\AtakDataRepository::class),
                 casRepo: self::get(\App\Repositories\CasNineLineRepository::class),

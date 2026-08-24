@@ -30,8 +30,8 @@
     c2: {
       eyebrow: 'ATHENA / C2',
       title: 'Commandement',
-      meta: 'Ordres',
-      tabs: ['orders']
+      meta: 'Conduite',
+      tabs: ['orders', 'mission']
     },
     notes: {
       eyebrow: 'ATHENA / NOTES',

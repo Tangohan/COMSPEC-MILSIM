@@ -356,6 +356,7 @@ final class TenantTypeConfig
             'back-office/centre-operations' => 'operations',
             'back-office/operations-admin' => 'operations',
             'back-office/events' => 'operations',
+            'back-office/planification' => 'operations',
             'equipment' => 'operations',
             'equipement' => 'operations',
             'modpacks' => 'operations',

@@ -159,6 +159,38 @@ window.ATAKUnitDossier = (function () {
   }
   function msnHtml(u, ex, ath) {
     var asg = (window.ATAKMotion && window.ATAKMotion.assignmentOf) ? window.ATAKMotion.assignmentOf(u) : null;
+    var cs = u.call_sign || u.callsign || '';
+    var slot = window.ATAKMissionPlan && window.ATAKMissionPlan.slotFor ? window.ATAKMissionPlan.slotFor(cs) : null;
+    var html = '';
+    if (slot) {
+      html += block('Prévu',
+        row('Joueur prévu', slot.planned_name) +
+        row('Poste', slot.callsign) +
+        row('Fonction', slot.function_label) +
+        row('Véhicule', slot.vehicle_label)
+      );
+      var pos = '';
+      if (slot.pos_x != null && slot.pos_y != null) {
+        pos = Math.round(Number(slot.pos_x)) + ' / ' + Math.round(Number(slot.pos_y));
+      }
+      var cap = slot.heading != null ? String(slot.heading).padStart(3, '0') + '°' : '';
+      var spd = slot.speed_kmh != null ? slot.speed_kmh + ' km/h' : '';
+      html += block('Actuel',
+        row('Arma', slot.arma_status_label) +
+        row('Position', pos) +
+        row('Cap', cap) +
+        row('Vitesse', spd) +
+        row('Destination', slot.destination) +
+        row('ETA', etaFmt(slot.eta_seconds, false))
+      );
+      html += block('Mission',
+        row('Tâche', slot.task_status_label) +
+        row('Phase', slot.phase_label) +
+        row('Présence', slot.presence_label) +
+        row('Affectation', slot.mode_label)
+      );
+      return html;
+    }
     return row('Phase', ex.mission_phase || ex.phase)
       + row('Tâche', ex.mission_task || ex.task)
       + row('Objectif', asg && asg.destination_label ? asg.destination_label : ath.destination);
@@ -184,7 +216,16 @@ window.ATAKUnitDossier = (function () {
     var ath = u.analysis_athena || {};
     var op = u.operational || {};
     var cs = u.call_sign || u.callsign || openRef;
+    var slot = window.ATAKMissionPlan && window.ATAKMissionPlan.slotFor ? window.ATAKMissionPlan.slotFor(cs) : null;
     var sub = typeLabel(u, ex);
+    if (slot) {
+      var tf = '';
+      if (window.ATAKMissionPlan.snapshot) {
+        var plan = window.ATAKMissionPlan.snapshot();
+        tf = plan && plan.plan ? (plan.plan.task_force_name || '') : '';
+      }
+      sub = [slot.function_label, [tf, slot.element_label].filter(Boolean).join(' / ')].filter(Boolean).join(' · ') || sub;
+    }
     var body = '';
     if (tab === 'nav') body = navHtml(u, ex, arma, ath);
     else if (tab === 'pers') body = persHtml(u, ex);
@@ -238,6 +279,7 @@ window.ATAKUnitDossier = (function () {
   document.addEventListener('click', onClick);
   window.addEventListener('atak:units-updated', function () { if (openRef) render(); });
   window.addEventListener('atak:units-markers-updated', function () { if (openRef) render(); });
+  window.addEventListener('atak:mission-plan-updated', function () { if (openRef) render(); });
   window.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && openRef) close();
   });
