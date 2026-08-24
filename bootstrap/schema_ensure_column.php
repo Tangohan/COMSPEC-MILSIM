@@ -48,8 +48,11 @@ if (!function_exists('schema_ensure_column')) {
      */
     function schema_ensure_column(PDO $pdo, string $table, string $column, string $definition): bool
     {
+        $cli = PHP_SAPI === 'cli';
         if (!schema_table_exists($pdo, $table)) {
-            echo "  [ATTENTION] Table absente — skip colonne {$table}.{$column}\n";
+            if ($cli) {
+                echo "  [ATTENTION] Table absente — skip colonne {$table}.{$column}\n";
+            }
 
             return false;
         }
@@ -60,18 +63,24 @@ if (!function_exists('schema_ensure_column')) {
 
         $definition = trim($definition);
         if ($definition === '') {
-            echo "  [ATTENTION] Définition vide pour {$table}.{$column}\n";
+            if ($cli) {
+                echo "  [ATTENTION] Définition vide pour {$table}.{$column}\n";
+            }
 
             return false;
         }
 
         try {
             $pdo->exec('ALTER TABLE `' . str_replace('`', '``', $table) . '` ADD COLUMN ' . $definition);
-            echo "  [COMPLÉTÉ] Colonne ajoutée : {$table}.{$column}\n";
+            if ($cli) {
+                echo "  [COMPLÉTÉ] Colonne ajoutée : {$table}.{$column}\n";
+            }
 
             return true;
         } catch (Throwable $e) {
-            echo "  [ATTENTION] Impossible d’ajouter {$table}.{$column} : " . $e->getMessage() . "\n";
+            if ($cli) {
+                echo "  [ATTENTION] Impossible d’ajouter {$table}.{$column} : " . $e->getMessage() . "\n";
+            }
 
             return false;
         }

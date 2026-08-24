@@ -175,6 +175,7 @@ $maintenanceSafelist = [
     '/api/stripe/webhook',
     '/api/health',
     '/api/system/version',
+    '/api/atak/ping',
     '/cron/run',
     '/maintenance-toggle.php',
 ];

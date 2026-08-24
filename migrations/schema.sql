@@ -883,7 +883,7 @@ CREATE TABLE IF NOT EXISTS `atak_terrain_grids` (
   `origin_y` decimal(15,4) NOT NULL DEFAULT 0.0000,
   `cell_m` smallint unsigned NOT NULL DEFAULT 50,
   `cols` int unsigned NOT NULL DEFAULT 0,
-  `rows` int unsigned NOT NULL DEFAULT 0,
+  `grid_rows` int unsigned NOT NULL DEFAULT 0,
   `heights` mediumblob DEFAULT NULL,
   `min_z` smallint DEFAULT NULL,
   `max_z` smallint DEFAULT NULL,

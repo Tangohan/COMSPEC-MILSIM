@@ -71,6 +71,7 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-motion.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-cop.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-mission-plan.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
@@ -406,6 +407,13 @@ if ($atakMapConfig) {
           <span class="atak-sound-pref-check">
             <input type="checkbox" id="atak-show-sse-overlay" checked />
             <span>Activer les calques de renseignement</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-mission-overlay">
+          <span class="atak-sound-pref-key">Calque mission</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-mission-overlay" checked />
+            <span>Afficher les repères de planification sur la carte</span>
           </span>
         </label>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-cases">
@@ -1185,6 +1193,10 @@ if ($atakMapConfig) {
           <small class="atak-tab-desc">Directives et FRAGO</small>
           <span class="atak-tab-badge" id="atak-orders-tab-badge" hidden></span>
         </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="mission" data-atak-section="c2" title="Mission — conduite et organisation">
+          <span class="atak-tab-label">Mission</span>
+          <small class="atak-tab-desc">Conduite, organisation, jalons</small>
+        </button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="medical" data-atak-section="forces" title="Médical — alertes, triage et MEDEVAC">
           <span class="atak-tab-label">Médical</span>
           <small class="atak-tab-desc">Alertes, triage et MEDEVAC</small>
@@ -1650,6 +1662,10 @@ if ($atakMapConfig) {
         </div>
         </div>
       </div>
+      <div class="atak-tabs-content" id="tab-mission" role="tabpanel">
+        <p class="atak-panel-hint">Le plan de mission se lit ici sans quitter la carte : horloge, effectifs, jalons et repères à poser.</p>
+        <div id="atak-mission-panel"></div>
+      </div>
       <div class="atak-tabs-content" id="tab-identification" role="tabpanel">
         <div class="atak-iff-panel">
           <div class="atak-panel-strip">
@@ -2097,6 +2113,15 @@ if ($atakMapConfig) {
     </aside>
 
     <div class="atak-map-wrap">
+      <div class="atak-mission-c2bar" id="atak-mission-c2bar">
+        <div class="atak-mission-c2bar__modes" role="toolbar" aria-label="Vue de conduite">
+          <button type="button" class="atak-mission-c2bar__mode is-active" data-mission-mode="map">Carte</button>
+          <button type="button" class="atak-mission-c2bar__mode" data-mission-mode="mission">Mission</button>
+          <button type="button" class="atak-mission-c2bar__mode" data-mission-mode="cop">Tableau</button>
+          <button type="button" class="atak-mission-c2bar__mode" data-mission-mode="roster">Effectifs</button>
+        </div>
+        <div class="atak-mission-c2bar__status" id="atak-mission-c2-status"></div>
+      </div>
       <div class="atak-map-fab" id="atak-map-fab" aria-label="Afficher les panneaux">
         <button type="button" class="atak-map-fab__btn" id="atak-fab-left" title="Panneau outils">Outils</button>
         <button type="button" class="atak-map-fab__btn" id="atak-fab-right" title="Effectifs">Effectifs</button>
@@ -2254,6 +2279,19 @@ if ($atakMapConfig) {
           </table>
         </div>
       </div>
+      <div class="atak-mission-board" id="atak-mission-board" hidden role="dialog" aria-label="Tableau de mission">
+        <div class="atak-mission-board__head">
+          <h2 class="atak-mission-board__title" id="atak-mission-board-title">Tableau de mission</h2>
+          <button type="button" class="atak-cop__close" data-mission-board-close>Fermer</button>
+        </div>
+        <div class="atak-mission-board__tabs" role="tablist" aria-label="Vues du tableau de mission">
+          <button type="button" class="atak-mission-board__tab is-active" data-mission-board-tab="taskorg">Organisation</button>
+          <button type="button" class="atak-mission-board__tab" data-mission-board-tab="roster">Effectifs</button>
+          <button type="button" class="atak-mission-board__tab" data-mission-board-tab="timeline">Chronologie</button>
+          <button type="button" class="atak-mission-board__tab" data-mission-board-tab="documents">Documents</button>
+        </div>
+        <div class="atak-mission-board__body" id="atak-mission-board-body"></div>
+      </div>
       <details class="atak-timeline" id="atak-intel-timeline" open>
         <summary>Journal d’analyse</summary>
         <p class="atak-timeline__empty" id="atak-intel-timeline-empty">Les mouvements, contacts et alertes analysés apparaîtront ici.</p>
@@ -2396,6 +2434,8 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-cop.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-intel-timeline.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sse-layers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-mission-plan.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-mission-overlay.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-units.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>

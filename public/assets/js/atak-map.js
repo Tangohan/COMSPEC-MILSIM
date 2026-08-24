@@ -45,6 +45,7 @@ window.ATAKMap = (function () {
     packetLossEnabled: false,
     packetLossPercent: 25,
     showSseOverlay: true,
+    showMissionOverlay: true,
     showSseLayer_cases: true,
     showSseLayer_pir: true,
     showSseLayer_taskings: true,
@@ -123,6 +124,7 @@ window.ATAKMap = (function () {
       packetLossEnabled: !!src.packetLossEnabled,
       packetLossPercent: Math.round(clampNum(src.packetLossPercent, 5, 80, DISPLAY_PREFS_DEFAULT.packetLossPercent)),
       showSseOverlay: src.showSseOverlay !== false,
+      showMissionOverlay: src.showMissionOverlay !== false,
       showSseLayer_cases: src.showSseLayer_cases !== false,
       showSseLayer_pir: src.showSseLayer_pir !== false,
       showSseLayer_taskings: src.showSseLayer_taskings !== false,
@@ -375,6 +377,8 @@ window.ATAKMap = (function () {
     if (showDelayedUnits) showDelayedUnits.checked = !!p.showDelayedUnits;
     var sseOverlay = document.getElementById('atak-show-sse-overlay');
     if (sseOverlay) sseOverlay.checked = !!p.showSseOverlay;
+    var missionOverlay = document.getElementById('atak-show-mission-overlay');
+    if (missionOverlay) missionOverlay.checked = !!p.showMissionOverlay;
     var sseCases = document.getElementById('atak-sse-layer-cases');
     if (sseCases) sseCases.checked = !!p.showSseLayer_cases;
     var ssePir = document.getElementById('atak-sse-layer-pir');
@@ -520,6 +524,7 @@ window.ATAKMap = (function () {
       bindCheck(id, key);
     }
     bindSseToggle('atak-show-sse-overlay', 'showSseOverlay');
+    bindSseToggle('atak-show-mission-overlay', 'showMissionOverlay');
     bindSseToggle('atak-sse-layer-cases', 'showSseLayer_cases');
     bindSseToggle('atak-sse-layer-pir', 'showSseLayer_pir');
     bindSseToggle('atak-sse-layer-taskings', 'showSseLayer_taskings');

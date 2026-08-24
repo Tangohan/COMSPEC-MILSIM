@@ -1,0 +1,219 @@
+/**
+ * Planification de mission — organisation dense, tableaux Athena.
+ */
+.mp-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.mp-muted {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.mp-lede {
+  font-size: 13px;
+  color: #475569;
+  margin: 0 0 14px;
+}
+.mp-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 14px;
+}
+.mp-strip__kicker {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+}
+.mp-strip__id {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+.mp-strip__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  margin: 0;
+}
+.mp-strip__stats div {
+  min-width: 88px;
+}
+.mp-strip__stats dt {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #8c979b;
+}
+.mp-strip__stats dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+.mp-strip__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.mp-org-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .mp-org-layout { grid-template-columns: 1fr; }
+}
+.mp-org-board {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  padding: 12px 14px 16px;
+  font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #0f172a;
+}
+.mp-org-root {
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.mp-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 14px;
+  border-left: 1px solid #cbd5e1;
+}
+.mp-tree__el {
+  margin: 6px 0;
+}
+.mp-tree__el-head {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 4px -14px;
+  padding-left: 14px;
+}
+.mp-tree__slots {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 4px 8px;
+  min-height: 18px;
+}
+.mp-tree__slot {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr 1.4fr auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 2px 4px;
+  border: 1px dashed transparent;
+  cursor: grab;
+}
+.mp-tree__slot:hover,
+.mp-tree__slot.is-dragging {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+.mp-tree__slots.is-drop {
+  outline: 1px dashed #1e4f80;
+  background: #f1f5f9;
+}
+.mp-tree__cs { font-weight: 700; }
+.mp-tree__fn { color: #64748b; }
+.mp-tree__who { color: #0f172a; }
+.mp-tree__st {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.mp-tree__st--confirmed,
+.mp-tree__st--present { color: #0b8a5c; }
+.mp-tree__st--vacant,
+.mp-tree__st--open { color: #94a3b8; }
+.mp-tree__st--mismatch,
+.mp-tree__st--unreconciled { color: #b45309; }
+.mp-tree__st--temporary { color: #1e4f80; }
+.mp-tree__st--absent { color: #b91c1c; }
+.mp-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.mp-inline-form .bo-select { height: 36px; min-width: 160px; }
+.mp-slot-extra td {
+  background: #fafcfc;
+  padding-top: 0;
+}
+.mp-slot-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+.mp-slot-details label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #64748b;
+}
+.mp-slot-details input {
+  height: 34px;
+  border: 1px solid #e2e8f0;
+  padding: 0 8px;
+  font-size: 13px;
+}
+.mp-total-row td { font-weight: 700; }
+.mp-doc-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(240px, 0.6fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .mp-doc-grid { grid-template-columns: 1fr; }
+}
+.mp-textarea {
+  width: 100%;
+  min-height: 88px;
+  margin: 0 0 12px;
+  border: 1px solid #e2e8f0;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.mp-toc {
+  margin: 12px 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.mp-mission-line {
+  font-size: 14px;
+  line-height: 1.45;
+  margin: 0 0 14px;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

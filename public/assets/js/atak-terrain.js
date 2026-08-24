@@ -292,8 +292,19 @@ window.ATAKTerrain = (function () {
     return fetch(apiBase() + '/api/atak/terrain?mapId=' + encodeURIComponent(mapId()), {
       credentials: 'same-origin',
       headers: { Accept: 'application/json' }
-    }).then(function (r) { return r.json(); }).then(function (j) {
-      if (!j || !j.ok) {
+    }).then(function (r) {
+      return r.text().then(function (raw) {
+        var j = null;
+        try { j = raw ? JSON.parse(raw) : null; } catch (e) { j = null; }
+        if (!r.ok || !j) {
+          setStatus('Relief du théâtre non encore relevé.');
+          return false;
+        }
+        return j;
+      });
+    }).then(function (j) {
+      if (!j || j === false) return false;
+      if (!j.ok) {
         setStatus('Relief indisponible.');
         return false;
       }

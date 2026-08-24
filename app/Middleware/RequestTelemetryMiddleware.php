@@ -53,6 +53,7 @@ final class RequestTelemetryMiddleware
     {
         return $path === '/analytics/beacon'
             || $path === '/api/health'
+            || $path === '/api/atak/ping'
             || str_starts_with($path, '/assets/')
             || str_starts_with($path, '/storage/');
     }

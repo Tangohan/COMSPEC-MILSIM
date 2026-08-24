@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `atak_terrain_grids` (
   `origin_y` decimal(15,4) NOT NULL DEFAULT 0.0000,
   `cell_m` smallint unsigned NOT NULL DEFAULT 50,
   `cols` int unsigned NOT NULL DEFAULT 0,
-  `rows` int unsigned NOT NULL DEFAULT 0,
+  `grid_rows` int unsigned NOT NULL DEFAULT 0,
   `heights` mediumblob DEFAULT NULL,
   `min_z` smallint DEFAULT NULL,
   `max_z` smallint DEFAULT NULL,
@@ -89,6 +89,26 @@ SQL,
             if ($cli) {
                 echo "  [ATTENTION] {$name} : " . $e->getMessage() . "\n";
             }
+        }
+    }
+
+    $cli = PHP_SAPI === 'cli';
+
+    // MariaDB : ROWS est un mot réservé. Le renommage réécrit le MEDIUMBLOB `heights` :
+    // uniquement en CLI (run-migrations), jamais sur une requête HTTP ATAK.
+    if ($cli
+        && schema_table_exists($pdo, 'atak_terrain_grids')
+        && schema_column_exists($pdo, 'atak_terrain_grids', 'rows')
+        && !schema_column_exists($pdo, 'atak_terrain_grids', 'grid_rows')
+    ) {
+        try {
+            $pdo->exec(
+                'ALTER TABLE `atak_terrain_grids`
+                 CHANGE `rows` `grid_rows` int unsigned NOT NULL DEFAULT 0'
+            );
+            echo "  [OK] atak_terrain_grids.rows → grid_rows\n";
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] rename rows : ' . $e->getMessage() . "\n";
         }
     }
 };

@@ -3342,6 +3342,16 @@ try {
 }
 $migrationEnsurePdo();
 
+$missionPlanningMigrate = require $root . '/bootstrap/mission_planning_migration.php';
+try {
+    echo "Migration mission_planning (planification / organisation de combat)...\n";
+    $migrationFlush();
+    $missionPlanningMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] mission_planning : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakOrdersMigrate = require $root . '/bootstrap/atak_orders_migration.php';
 try {
     echo "Migration atak_orders (ordres C2 Tacmap)...\n";

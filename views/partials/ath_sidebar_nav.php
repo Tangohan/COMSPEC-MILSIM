@@ -67,6 +67,7 @@ $navRolesTableActive = $boNavRoles;
 $navProfilsActive = $boNavRolesPresets;
 $navRsvpActive = $boNavEvents && !$boNavEventInsights;
 $navRsvpHistActive = $boNavEventInsights;
+$boNavPlanning = !empty($boNavPlanning);
 
 $recBadgeStr = !empty($boBadges['show_staff_recruitment']) && $boRecN > 0
     ? ($boRecN > 99 ? '99+' : (string) $boRecN)
@@ -204,6 +205,7 @@ $athNavGroups = [
         'label' => 'OPÉRATIONS',
         'items' => array_values(array_filter([
             ['label' => 'Opérations', 'href' => url('back-office/events'), 'icon' => 'ops', 'active' => $boNavEvents],
+            ['label' => 'Planification', 'href' => url('back-office/planification'), 'icon' => 'orbat', 'active' => $boNavPlanning],
             [
                 'label' => 'RSVP',
                 'href' => url('back-office/events'),

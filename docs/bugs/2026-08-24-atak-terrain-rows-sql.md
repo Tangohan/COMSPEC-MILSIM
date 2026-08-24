@@ -2,36 +2,41 @@
 
 ## Contexte
 
-GET `/api/atak/terrain` (console ATAK, calque relief encore en test) en production Hostinger.
+GET `/api/atak/terrain?mapId=1` depuis la carte ATAK (calque relief), production Hostinger.
+Réf. corrélation `295b70ff20a0bc93` (compte 5, communauté 7).
 
 ## Symptôme
 
-Exception signalée :
+Exception PDO 1064 :
 
-`SQLSTATE[42000]: Syntax error or access violation: 1064 ... near 'rows, heights, min_z, max_z, ...'`
+`near 'rows, heights, min_z, max_z, filled_cells, ready, sampled_at, updated_at FROM...'`
 
-La page / la console ATAK remonte une erreur technique au lieu d’un relief simplement indisponible.
+La page d’erreur technique s’affiche au lieu d’un JSON « relief non encore relevé ». La bannière ATAK « Liaison temporairement coupée » peut apparaître dans le même écran.
 
 ## Cause
 
-La colonne `rows` n’était pas protégées par des backticks. Sur MariaDB, `ROWS` est un mot réservé (fenêtres / `FETCH`). La lecture `SELECT ... cols, rows, heights ...` est donc rejetée à la préparation.
+La colonne s’appelait `rows`. Sur MariaDB, `ROWS` est un mot réservé (fenêtres / `FETCH`). Un `SELECT … cols, rows, heights …` sans protection est rejeté à la préparation. Un 500 JSON/HTML casse le chargement du relief.
 
 ## Correctif
 
-- Entourer les identifiants SQL du dépôt relief (`atak_terrain_grids` / chunks), notamment `` `rows` ``.
-- Si la lecture échoue encore, renvoyer « relief non encore relevé » au lieu d’une exception 500.
+- Renommer la colonne SQL en `grid_rows` **en CLI seulement** (`run-migrations`).
+  Un `ALTER` HTTP réécrit le blob d’altitudes et peut faire timeout toute la carte.
+- Les lectures détectent `grid_rows` **ou** `` `rows` `` (identifiant protégé).
+  Le JSON ATAK conserve `rows` pour le calque.
+- Si la lecture échoue encore, répondre « relief non encore relevé » (pas d’exception 500).
 
 ## Fichiers touchés
 
+- `bootstrap/atak_cop_terrain_migration.php`
 - `app/Repositories/AtakTerrainRepository.php`
 - `app/Controllers/Api/AtakTerrainApiController.php`
 
 ## Vérification
 
-- Relire la requête : plus de `rows` nu dans le SELECT / INSERT.
-- `php -l` sur les deux fichiers.
-- En prod, GET `/api/atak/terrain?mapId=1` doit répondre du JSON métier, pas une page d’erreur SQL.
+- `php -l` sur le dépôt et la migration.
+- Relire le SELECT : identifiant `` `grid_rows` `` ou `` `rows` AS grid_rows ``, jamais `rows` nu.
+- Après déploiement : GET `/api/atak/terrain?mapId=1` doit renvoyer du JSON métier (`ok: true`), pas une page d’erreur SQL.
 
 ## Statut
 
-corrigé (déploiement prod requis)
+corrigé (déploiement prod requis ; le rename CLI reste à lancer pour figer le schéma)
