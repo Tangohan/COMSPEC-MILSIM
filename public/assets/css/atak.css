@@ -4823,8 +4823,10 @@ body.atak-theme-light .atak-chat-messages {
   min-width: 0;
 }
 .atak-map-tools__cluster {
+  position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   justify-content: center;
   gap: 3px;
   padding: 2px 8px;
@@ -4839,21 +4841,81 @@ body.atak-theme-light .atak-chat-messages {
   margin-left: auto;
 }
 .atak-map-tools__cluster-label {
-  display: block;
-  color: #64748b;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.32rem 0.42rem;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #94a3b8;
   font-family: var(--atak-font-tactical);
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   line-height: 1;
   white-space: nowrap;
+  cursor: pointer;
+}
+.atak-map-tools__cluster-label:hover,
+.atak-map-tools__cluster-label:focus-visible,
+.atak-map-tools__cluster-label[aria-expanded="true"] {
+  color: #a7f3d0;
+  border-color: rgba(52, 211, 153, 0.32);
+  background: rgba(52, 211, 153, 0.1);
+  outline: none;
+}
+.atak-map-tools__cluster-label span {
+  font-size: 10px;
+  transition: transform 0.15s var(--atak-ease);
+}
+.atak-map-tools__cluster-label[aria-expanded="true"] span {
+  transform: rotate(180deg);
 }
 .atak-map-tools__cluster-btns {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  z-index: 3;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 1px 2px;
+  min-width: max-content;
+  padding: 0.35rem;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  border-radius: var(--atak-radius);
+  background: rgba(8, 12, 18, 0.96);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+.atak-map-tools__cluster-btns[hidden] {
+  display: none !important;
+}
+.atak-map-tools__cluster--chrome {
+  flex-direction: column;
+  align-items: stretch;
+}
+.atak-map-tools__cluster--chrome .atak-map-tools__cluster-label {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #64748b;
+  cursor: default;
+}
+.atak-map-tools__cluster--chrome .atak-map-tools__cluster-btns {
+  position: static;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .atak-map-tools__btn {
   appearance: none;
@@ -10869,6 +10931,10 @@ body.atak-device-embed .atak-map-tools {
 body.atak-page--device .atak-map-tools__cluster-label,
 body.atak-device-embed .atak-map-tools__cluster-label {
   display: none;
+}
+body.atak-page--device button.atak-map-tools__cluster-label,
+body.atak-device-embed button.atak-map-tools__cluster-label {
+  display: inline-flex;
 }
 body.atak-page--device .atak-map-tools__cluster,
 body.atak-device-embed .atak-map-tools__cluster {

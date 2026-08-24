@@ -2266,22 +2266,22 @@ if ($atakMapConfig) {
       <div class="atak-map-tools" id="atak-map-tools" role="toolbar" aria-label="Outils de la carte">
         <div class="atak-map-tools__row" id="atak-map-tools-row">
           <div class="atak-map-tools__cluster" data-tool-sep="nav">
-            <span class="atak-map-tools__cluster-label">Position</span>
-            <div class="atak-map-tools__cluster-btns">
+            <button type="button" class="atak-map-tools__cluster-label" data-tool-group="nav" aria-expanded="true" aria-controls="atak-tool-group-nav">Position <span aria-hidden="true">⌄</span></button>
+            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-nav">
               <button type="button" class="atak-map-tools__btn" data-tool="goto" data-tool-slot="goto" title="Aller à une grille (G)">Grille</button>
               <button type="button" class="atak-map-tools__btn" data-tool="follow" data-tool-slot="follow" title="Suivre ma position (F)" aria-pressed="false">Suivre</button>
             </div>
           </div>
           <div class="atak-map-tools__cluster" data-tool-sep="mark">
-            <span class="atak-map-tools__cluster-label">Annoter</span>
-            <div class="atak-map-tools__cluster-btns">
+            <button type="button" class="atak-map-tools__cluster-label" data-tool-group="mark" aria-expanded="false" aria-controls="atak-tool-group-mark">Annoter <span aria-hidden="true">⌄</span></button>
+            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-mark" hidden>
               <button type="button" class="atak-map-tools__btn" data-tool="measure" data-tool-slot="measure" title="Mesurer une distance (M)" aria-pressed="false">Mesurer</button>
               <button type="button" class="atak-map-tools__btn" data-tool="note" data-tool-slot="note" title="Enregistrer une note sur la carte" aria-pressed="false">Note</button>
             </div>
           </div>
           <div class="atak-map-tools__cluster" data-tool-sep="draw">
-            <span class="atak-map-tools__cluster-label">Tracer</span>
-            <div class="atak-map-tools__cluster-btns">
+            <button type="button" class="atak-map-tools__cluster-label" data-tool-group="draw" aria-expanded="false" aria-controls="atak-tool-group-draw">Tracer <span aria-hidden="true">⌄</span></button>
+            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-draw" hidden>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="search-zone" data-tool-slot="search-zone" title="Délimiter une zone de recherche" aria-pressed="false">Recherche</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="perimeter" data-tool-slot="perimeter" title="Tracer un périmètre de sécurité" aria-pressed="false">Périmètre</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="aoi" data-tool-slot="aoi" title="Délimiter une zone d’intérêt" aria-pressed="false">Intérêt</button>
@@ -2290,15 +2290,15 @@ if ($atakMapConfig) {
             </div>
           </div>
           <div class="atak-map-tools__cluster" data-tool-sep="analyse">
-            <span class="atak-map-tools__cluster-label">Analyse</span>
-            <div class="atak-map-tools__cluster-btns">
+            <button type="button" class="atak-map-tools__cluster-label" data-tool-group="analyse" aria-expanded="false" aria-controls="atak-tool-group-analyse">Analyse <span aria-hidden="true">⌄</span></button>
+            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-analyse" hidden>
               <button type="button" class="atak-map-tools__btn" data-tool="route" data-tool-slot="route" title="Profil du sol le long d’un itinéraire" aria-pressed="false">Itinéraire</button>
               <button type="button" class="atak-map-tools__btn" data-tool="los" data-tool-slot="los" title="Visée observateur vers cible (masque du relief)" aria-pressed="false">Visée</button>
             </div>
           </div>
           <div class="atak-map-tools__cluster" data-tool-sep="view">
-            <span class="atak-map-tools__cluster-label">Vue</span>
-            <div class="atak-map-tools__cluster-btns">
+            <button type="button" class="atak-map-tools__cluster-label" data-tool-group="view" aria-expanded="false" aria-controls="atak-tool-group-view">Vue <span aria-hidden="true">⌄</span></button>
+            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-view" hidden>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-in" data-tool-slot="zoom" title="Zoom avant">+</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-out" data-tool-slot="zoom" title="Zoom arrière">−</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--view3d" id="atak-view-3d" data-tool-slot="view3d" title="Incliner la carte sur le relief" aria-pressed="false">3D</button>
