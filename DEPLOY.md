@@ -6,11 +6,19 @@ Checklist de déploiement pour **athena.ttrd.fr** : coque ATHENA (sidebar, topba
 
 ## Déploiement production (Git → Hostinger)
 
-Plus d’upload SCP fichier par fichier. Flux :
+Le déploiement nominal est assuré par **l’intégration Git Hostinger**, qui suit
+directement `main`. Il ne doit y avoir qu’un seul déploiement automatique par commit :
+le workflow FTP GitHub est conservé uniquement comme solution de secours manuelle.
+
+Flux normal :
 
 1. **Commit** local des changements web.
 2. **`git push origin main`**
-3. **GitHub Actions** (`deploy-hostinger-ftp.yml`) pousse via FTP sur Hostinger.
+3. **Hostinger** récupère et déploie automatiquement le nouveau commit de `main`.
+
+> Ne pas activer simultanément le déploiement FTP automatique GitHub : deux
+> synchronisations concurrentes créent une file d’attente, retardent la mise en
+> production et peuvent faire compiler à Hostinger un arbre en cours de modification.
 
 ### Secrets GitHub (une seule fois)
 
@@ -23,7 +31,9 @@ Dans le dépôt → *Settings → Secrets and variables → Actions* :
 | `FTP_PASSWORD` | mot de passe FTP Hostinger |
 | `FTP_SERVER_DIR` | optionnel — souvent `./` si le compte FTP ouvre déjà `public_html` |
 
-Puis *Actions → Deploy Athena (Hostinger FTP) → Run workflow* pour un premier test.
+En cas de panne de l’intégration Git Hostinger uniquement, lancer
+*Actions → Deploy Athena (secours FTP manuel) → Run workflow* et saisir `DEPLOY` dans le
+champ de confirmation. Attendre la fin de ce secours avant de relancer un déploiement.
 
 **Fichiers critiques** : `routes/web.php` doit exister à la racine applicative (`public_html/routes/web.php`). Le workflow le vérifie avant upload et **ne l’exclut pas**. Si un déploiement FTP est annulé en cours de route, le fichier peut manquer → toute l’app plante au boot. Relancer l’Action jusqu’à succès complet.
 
