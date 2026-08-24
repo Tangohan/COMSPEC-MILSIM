@@ -39,7 +39,9 @@ if (_custom isNotEqualTo "") then {
         ["NOTIFY", "Notification terminal"],
         ["HELMET_SNAP", "Photo casque"],
         ["HELMET_SNAP_HD", "Photo casque HD"],
-        ["HELMET_STREAM", "Flux casque"]
+        ["HELMET_STREAM", "Flux casque"],
+        ["PHONE_GEOLOC", "Géolocalisation téléphone"],
+        ["PHONE_GEOLOC_OFF", "Arrêt géolocalisation téléphone"]
     ];
     private _fallback = "Se déplacer";
     if (

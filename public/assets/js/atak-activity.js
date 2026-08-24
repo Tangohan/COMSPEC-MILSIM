@@ -107,6 +107,8 @@ window.ATAKActivity = (function () {
       case 'position': return 'atak-activity-item--position';
       case 'auth': return 'atak-activity-item--auth';
       case 'phone': return 'atak-activity-item--phone';
+      case 'error': return 'atak-activity-item--error';
+      case 'ingest': return 'atak-activity-item--ingest';
       case 'chat':
       case 'ping':
       case 'marker':
@@ -137,6 +139,8 @@ window.ATAKActivity = (function () {
       case 'position': return 'Position';
       case 'auth': return 'Accès';
       case 'phone': return 'Briefing';
+      case 'error': return 'Incident';
+      case 'ingest': return 'Remontée';
       case 'chat': return 'Radio';
       case 'ping': return 'Repère';
       case 'marker': return 'Marqueur';

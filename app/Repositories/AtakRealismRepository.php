@@ -101,6 +101,146 @@ final class AtakRealismRepository
     }
 
     /**
+     * Session navigateur / TOC — pas un terminal terrain (jeu, téléphone appairé, radio).
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function isWebSessionTerminal(array $row): bool
+    {
+        $type = strtolower(trim((string) ($row['terminal_type'] ?? '')));
+        if ($type === 'web') {
+            return true;
+        }
+        $uid = strtoupper(trim((string) ($row['terminal_uid'] ?? '')));
+        if (str_starts_with($uid, 'WEB-') || str_starts_with($uid, 'SESSION-')) {
+            return true;
+        }
+        $platform = strtolower(trim((string) ($row['platform_label'] ?? '')));
+        if ($platform !== '' && preg_match('/web|navigateur|browser|session web|poste de commandement|\btoc\b/u', $platform) === 1) {
+            return true;
+        }
+        if ($type === 'desktop' && ($platform === '' || preg_match('/web|navigateur|browser|athena/u', $platform) === 1)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return array{physical: list<array<string, mixed>>, web: list<array<string, mixed>>}
+     */
+    public static function partitionTerminals(array $rows): array
+    {
+        $physical = [];
+        $web = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            if (self::isWebSessionTerminal($row)) {
+                $web[] = $row;
+            } else {
+                $physical[] = $row;
+            }
+        }
+
+        return ['physical' => $physical, 'web' => $web];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listPhysicalTerminals(int $tenantId): array
+    {
+        return self::partitionTerminals($this->listTerminals($tenantId))['physical'];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findWebSessionForUser(int $tenantId, int $userId): ?array
+    {
+        if ($tenantId < 1 || $userId < 1) {
+            return null;
+        }
+        foreach ($this->listTerminals($tenantId) as $row) {
+            if ((int) ($row['user_id'] ?? 0) !== $userId) {
+                continue;
+            }
+            if (self::isWebSessionTerminal($row)) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findTerminalById(int $tenantId, int $terminalId): ?array
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $terminalId < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare('SELECT * FROM atak_terminals WHERE tenant_id = ? AND id = ? LIMIT 1');
+        $st->execute([$tenantId, $terminalId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function deleteTerminal(int $tenantId, int $terminalId): bool
+    {
+        return $this->deleteTerminals($tenantId, [$terminalId]) > 0;
+    }
+
+    /**
+     * @param list<int|string> $terminalIds
+     */
+    public function deleteTerminals(int $tenantId, array $terminalIds): int
+    {
+        $ids = [];
+        foreach ($terminalIds as $raw) {
+            $id = (int) $raw;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+        $ids = array_values($ids);
+        if (!$this->tablesReady() || $tenantId < 1 || $ids === []) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $params = array_merge([$tenantId], $ids);
+        try {
+            $this->pdo->beginTransaction();
+            try {
+                $this->pdo->prepare(
+                    "UPDATE atak_certificates SET terminal_id = NULL WHERE tenant_id = ? AND terminal_id IN ({$placeholders})"
+                )->execute($params);
+            } catch (\Throwable) {
+                // Table absente ou schéma partiel — on tente quand même le retrait.
+            }
+            $st = $this->pdo->prepare(
+                "DELETE FROM atak_terminals WHERE tenant_id = ? AND id IN ({$placeholders})"
+            );
+            $st->execute($params);
+            $deleted = $st->rowCount();
+            $this->pdo->commit();
+
+            return $deleted;
+        } catch (\Throwable) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            return 0;
+        }
+    }
+
+    /**
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
@@ -134,7 +274,7 @@ final class AtakRealismRepository
         $fields = [
             'user_id' => $userId > 0 ? $userId : null,
             'terminal_label' => $this->clip((string) ($payload['terminal_label'] ?? 'Terminal ATAK'), 160),
-            'terminal_type' => $this->allowed((string) ($payload['terminal_type'] ?? 'phone'), ['phone', 'tablet', 'radio', 'vehicle', 'desktop'], 'phone'),
+            'terminal_type' => $this->allowed((string) ($payload['terminal_type'] ?? 'phone'), ['phone', 'tablet', 'radio', 'vehicle', 'desktop', 'web'], 'phone'),
             'platform_label' => $this->nullableString($payload['platform_label'] ?? null, 120),
             'operator_callsign' => $callsign,
             'operator_military_id' => $mid,

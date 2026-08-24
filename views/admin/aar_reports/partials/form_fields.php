@@ -50,6 +50,9 @@ $closedActionsText = $linesFromList(is_array($report['closed_actions'] ?? null) 
 
 $status = $val('status', 'pending');
 $missionId = (int) ($report['mission_cycle_id'] ?? 0);
+$isCustomReport = $isEdit && !empty($report['is_custom']);
+$templates = is_array($aarTemplates ?? null) ? $aarTemplates : [];
+$canManageTemplates = !empty($aarCanManageTemplates);
 ?>
 
 <label for="aar-title">Titre</label>
@@ -77,6 +80,85 @@ $missionId = (int) ($report['mission_cycle_id'] ?? 0);
 </select>
 <?php endif; ?>
 
+<?php if (!$isEdit): ?>
+<label for="aar-template">Formulaire</label>
+<select id="aar-template" name="template_id" x-model.number="templateId">
+    <option value="0">Formulaire standard</option>
+    <?php foreach ($templates as $tpl): ?>
+    <option value="<?= (int) ($tpl['id'] ?? 0) ?>"><?= $h((string) ($tpl['title'] ?? 'Modèle')) ?></option>
+    <?php endforeach; ?>
+</select>
+<p class="ath-aar-custom-q__help">
+    Le formulaire standard reprend les points forts, points faibles et actions.
+    <?php if ($canManageTemplates): ?>
+        <a href="<?= $h(url('back-office/atak/comptes-rendus/modeles')) ?>">Gérer les modèles</a>
+    <?php endif; ?>
+</p>
+<?php endif; ?>
+
+<?php if ($isCustomReport): ?>
+    <?php
+    $customFields = is_array($report['custom_fields'] ?? null) ? $report['custom_fields'] : [];
+    $customAnswers = is_array($report['custom_answers'] ?? null) ? $report['custom_answers'] : [];
+    require base_path('views/admin/aar_reports/partials/custom_fields.php');
+    ?>
+<?php else: ?>
+
+<template x-if="isCustom">
+<div class="ath-aar-custom-block">
+    <p class="ath-aar-custom-block__title">Questions du debriefing</p>
+    <template x-for="field in currentFields" :key="field.id">
+        <div class="ath-aar-custom-q">
+            <label>
+                <span x-text="field.label"></span>
+                <span class="ath-aar-req" x-show="field.required">obligatoire</span>
+            </label>
+            <p class="ath-aar-custom-q__help" x-show="field.help" x-text="field.help"></p>
+
+            <template x-if="field.type === 'text'">
+                <input type="text" :name="'answers[' + field.id + ']'" :required="field.required">
+            </template>
+            <template x-if="field.type === 'textarea'">
+                <textarea :name="'answers[' + field.id + ']'" rows="4" :required="field.required"></textarea>
+            </template>
+            <template x-if="field.type === 'select'">
+                <select :name="'answers[' + field.id + ']'" :required="field.required">
+                    <option value="">Choisir</option>
+                    <template x-for="opt in (field.options || [])" :key="opt">
+                        <option :value="opt" x-text="opt"></option>
+                    </template>
+                </select>
+            </template>
+            <template x-if="field.type === 'checkbox' && !(field.options || []).length">
+                <div class="ath-aar-yesno">
+                    <label class="ath-aar-yesno__opt">
+                        <input type="radio" :name="'answers[' + field.id + ']'" value="1" :required="field.required">
+                        Oui
+                    </label>
+                    <label class="ath-aar-yesno__opt">
+                        <input type="radio" :name="'answers[' + field.id + ']'" value="0" :required="field.required">
+                        Non
+                    </label>
+                </div>
+            </template>
+            <template x-if="field.type === 'checkbox' && (field.options || []).length">
+                <div class="ath-aar-checks">
+                    <template x-for="opt in (field.options || [])" :key="opt">
+                        <label class="ath-aar-checks__opt">
+                            <input type="checkbox" :name="'answers[' + field.id + '][]'" :value="opt">
+                            <span x-text="opt"></span>
+                        </label>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </template>
+    <p class="ath-aar-custom-q__help" x-show="currentFields.length === 0">Ce modèle n’a pas encore de question.</p>
+</div>
+</template>
+
+<template x-if="!isCustom">
+<div>
 <label for="aar-summary-heading">Titre de synthèse</label>
 <input id="aar-summary-heading" name="summary_heading" value="<?= $h($val('summary_heading')) ?>" placeholder="Ex. Mission remplie sans perte">
 
@@ -103,3 +185,6 @@ $missionId = (int) ($report['mission_cycle_id'] ?? 0);
 
 <label for="aar-closed-actions">Actions closes (une ligne par action)</label>
 <textarea id="aar-closed-actions" name="closed_actions" rows="2"><?= $h($closedActionsText) ?></textarea>
+</div>
+</template>
+<?php endif; ?>

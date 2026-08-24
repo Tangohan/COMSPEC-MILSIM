@@ -58,6 +58,7 @@ $navCommunityActive = $boNavOrgSettings;
 $navPublicPageActive = $boNavCommPres;
 $navInscriptionActive = $boNavCommInscription;
 $navMediasActive = $boNavMedia;
+$navAtakHubActive = $p === 'back-office/atak';
 $navAtakDevicesActive = str_starts_with($p, 'back-office/atak/realisme');
 $navAtakCertsActive = str_starts_with($p, 'back-office/atak/certificats');
 $navAtakSessionsActive = $boNavAtakOperators;
@@ -108,6 +109,7 @@ $rsvpChildren = array_values(array_filter([
 ], static fn (?array $row): bool => is_array($row)));
 
 $atakDeviceChildren = array_values(array_filter([
+    ['label' => 'Poste de situation', 'href' => url('back-office/atak'), 'active' => $navAtakHubActive],
     ['label' => 'Parc de terminaux', 'href' => url('back-office/atak/realisme'), 'active' => $navAtakDevicesActive],
     ['label' => 'Sessions & connexions', 'href' => url('back-office/atak/operateurs'), 'active' => $navAtakSessionsActive],
     ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'active' => $navAtakCertsActive, 'warn' => true],
@@ -228,6 +230,12 @@ $athNavGroups = [
         'key' => 'atak',
         'label' => 'ATAK',
         'items' => array_values(array_filter([
+            [
+                'label' => 'Poste de situation',
+                'href' => url('back-office/atak'),
+                'icon' => 'ops',
+                'active' => $navAtakHubActive,
+            ],
             [
                 'label' => 'Terminaux',
                 'href' => url('back-office/atak/realisme'),

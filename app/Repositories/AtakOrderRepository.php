@@ -25,13 +25,13 @@ class AtakOrderRepository
 {
     use LazyDatabaseConnection;
 
-    public const TYPES = ['MOVE', 'HOLD', 'RECON', 'CAS', 'QRF', 'FRAGO', 'CUSTOM', 'VIBRATE', 'NOTIFY', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM'];
+    public const TYPES = ['MOVE', 'HOLD', 'RECON', 'CAS', 'QRF', 'FRAGO', 'CUSTOM', 'VIBRATE', 'NOTIFY', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM', 'PHONE_GEOLOC', 'PHONE_GEOLOC_OFF'];
 
     /** Signaux terminal (pas des ordres C2 à acquitter dans le panneau web). */
-    public const TERMINAL_SIGNAL_TYPES = ['VIBRATE', 'NOTIFY', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM'];
+    public const TERMINAL_SIGNAL_TYPES = ['VIBRATE', 'NOTIFY', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM', 'PHONE_GEOLOC', 'PHONE_GEOLOC_OFF'];
     public const PRIORITIES = ['ROUTINE', 'IMPORTANT', 'URGENT', 'CONTACT'];
     public const STATUSES = ['PENDING', 'DELIVERED', 'ACK', 'EXEC', 'FAILED', 'CANCELLED'];
-    public const TARGET_TYPES = ['all', 'user', 'group', 'fire_team', 'channel', 'solo'];
+    public const TARGET_TYPES = ['all', 'user', 'group', 'fire_team', 'channel', 'solo', 'ally'];
     public const CHANNELS = ['GLOBAL', 'COMMAND', 'SQUAD', 'JTAC', 'AIR'];
     public const SIM_STATES = ['queued', 'transmitting', 'jammed', 'retransmit', 'delivered', 'lost'];
 
@@ -815,6 +815,9 @@ class AtakOrderRepository
         }
         if ($t === 'atak' || $t === 'device') {
             $t = 'solo';
+        }
+        if ($t === 'ally_ai' || $t === 'allie' || $t === 'allied' || $t === 'ai') {
+            $t = 'ally';
         }
 
         return in_array($t, self::TARGET_TYPES, true) ? $t : 'all';

@@ -161,6 +161,9 @@ private _ensureAtakApps = {
     if (!isNil "comspec_overwatch_connect_fnc_pollOrders") then {
         [] call comspec_overwatch_connect_fnc_pollOrders;
     };
+    if (!isNil "comspec_overwatch_connect_fnc_pollMissionPlan") then {
+        [] call comspec_overwatch_connect_fnc_pollMissionPlan;
+    };
     [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
 }, [], 12] call CBA_fnc_waitAndExecute;
 [{
@@ -357,3 +360,15 @@ private _ensureAtakApps = {
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     [] call comspec_overwatch_atak_athena_fnc_athena_snapshotVideoFeed;
 }, 20, []] call CBA_fnc_addPerFrameHandler;
+
+// Alerte vibrante : ATAK allié proche d’un téléphone suivi (rayon dans Paramètres)
+private _proxM = profileNamespace getVariable ["COMSPEC_AtakPhoneProximityM", 200];
+if (!(_proxM isEqualType 0)) then { _proxM = 200; };
+if ((_proxM isNotEqualTo 0) && {_proxM isNotEqualTo 50} && {_proxM isNotEqualTo 100} && {_proxM isNotEqualTo 200} && {_proxM isNotEqualTo 500} && {_proxM isNotEqualTo 1000} && {_proxM isNotEqualTo 2000}) then {
+    _proxM = 200;
+};
+missionNamespace setVariable ["COMSPEC_AtakPhoneProximityM", _proxM, false];
+missionNamespace setVariable ["COMSPEC_AtakPhoneProxInside", createHashMap, false];
+[{
+    [] call comspec_overwatch_atak_athena_fnc_athena_phoneProximityTick;
+}, 1.5, []] call CBA_fnc_addPerFrameHandler;

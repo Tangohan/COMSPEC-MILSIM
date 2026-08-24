@@ -13,7 +13,7 @@
       eyebrow: 'ATHENA / SITAC',
       title: 'Situation tactique',
       meta: 'Théâtre',
-      tabs: ['markers', 'pings', 'charges', 'identification', 'situation']
+      tabs: ['markers', 'zones', 'pings', 'charges', 'identification', 'situation']
     },
     forces: {
       eyebrow: 'ATHENA / FORCES',

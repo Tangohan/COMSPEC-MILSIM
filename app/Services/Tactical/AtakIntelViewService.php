@@ -194,6 +194,9 @@ final class AtakIntelViewService
 
         if ($this->realism->tablesReady()) {
             foreach ($this->realism->listTerminals($tenantId) as $terminal) {
+                if (AtakRealismRepository::isWebSessionTerminal($terminal)) {
+                    continue;
+                }
                 $uid = (string) ($terminal['terminal_uid'] ?? '');
                 $label = (string) ($terminal['terminal_label'] ?? $terminal['operator_callsign'] ?? $uid);
                 $compromise = strtolower((string) ($terminal['compromise_state'] ?? 'none'));

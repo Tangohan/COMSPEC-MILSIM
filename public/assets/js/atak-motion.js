@@ -154,6 +154,71 @@ window.ATAKMotion = (function () {
     return String(asg.destination_label || '').trim();
   }
 
+  function parseExtra(u) {
+    if (!u) return {};
+    try {
+      if (typeof u.extra === 'string') return JSON.parse(u.extra || '{}') || {};
+      if (u.extra && typeof u.extra === 'object') return u.extra;
+    } catch (e) {}
+    return {};
+  }
+
+  function isPhone(u) {
+    var ex = parseExtra(u);
+    if (ex.phone_geoloc === true || ex.phone_geoloc === 1 || ex.phone_geoloc === '1' || ex.phone_geoloc === 'true') {
+      return true;
+    }
+    return String(ex.source || '').toLowerCase() === 'phone';
+  }
+
+  function trackKind(u) {
+    if (isPhone(u)) return 'phone';
+    if (isAir(u)) return 'air';
+    var cat = String((motionOf(u).category) || '').toUpperCase();
+    if (cat === 'GROUND_VEHICLE') return 'vehicle';
+    var ex = parseExtra(u);
+    var inVeh = ex.in_vehicle === true || ex.in_vehicle === 1 || ex.in_vehicle === '1' || ex.in_vehicle === 'true';
+    if (inVeh) return 'vehicle';
+    return 'infantry';
+  }
+
+  function trackColor(kind, lost) {
+    if (lost) return '#f87171';
+    if (kind === 'phone') return '#22d3ee';
+    if (kind === 'vehicle') return '#f59e0b';
+    if (kind === 'air') return '#60a5fa';
+    return '#4ade80';
+  }
+
+  function trackKindLabel(kind) {
+    if (kind === 'phone') return 'Téléphone';
+    if (kind === 'vehicle') return 'Véhicule';
+    if (kind === 'air') return 'Aérien';
+    return 'À pied';
+  }
+
+  function gapSecFor(kind) {
+    if (kind === 'phone') return 20;
+    if (kind === 'vehicle') return 10;
+    if (kind === 'air') return 8;
+    return 15;
+  }
+
+  function plausibleSpeedMs(kind, lastSpeed) {
+    var typical = kind === 'vehicle' ? 16 : (kind === 'air' ? 45 : (kind === 'phone' ? 1.6 : 1.4));
+    var cap = kind === 'vehicle' ? 33 : (kind === 'air' ? 70 : (kind === 'phone' ? 3.5 : 3));
+    var v = typical;
+    var s = num(lastSpeed);
+    if (s != null && s > 0.3) v = Math.max(s * 1.12, typical * 0.55);
+    return Math.min(cap, v);
+  }
+
+  function reachRadiusM(kind, elapsedSec, lastSpeed) {
+    if (!(elapsedSec > 6)) return 0;
+    var cap = kind === 'vehicle' ? 3500 : (kind === 'air' ? 7000 : (kind === 'phone' ? 700 : 600));
+    return Math.min(cap, plausibleSpeedMs(kind, lastSpeed) * elapsedSec);
+  }
+
   return {
     esc: esc,
     num: num,
@@ -161,6 +226,12 @@ window.ATAKMotion = (function () {
     assignmentOf: assignmentOf,
     isAir: isAir,
     isMoving: isMoving,
+    isPhone: isPhone,
+    trackKind: trackKind,
+    trackColor: trackColor,
+    trackKindLabel: trackKindLabel,
+    gapSecFor: gapSecFor,
+    reachRadiusM: reachRadiusM,
     statusLabel: statusLabel,
     trendLabel: trendLabel,
     courseLabel: courseLabel,

@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakRealismRepository;
+use App\Services\Rbac\RolePermissionMatrixCatalog;
 use App\Support\ModuleFeatureAccess;
 
 final class AdminAtakRealismController
@@ -31,11 +32,14 @@ final class AdminAtakRealismController
         }
 
         $this->realismRepository->repairCorruptIdentitiesForTenant($tenantId);
+        $split = AtakRealismRepository::partitionTerminals($this->realismRepository->listTerminals($tenantId));
 
         return Response::view('layout.main', [
             'content' => 'admin.atak_realism.index',
             'title' => 'Parc de terminaux',
-            'atakRealismTerminals' => $this->realismRepository->listTerminals($tenantId),
+            'atakRealismTerminals' => $split['physical'],
+            'atakRealismWebSessions' => $split['web'],
+            'canManageAtakTerminals' => ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'manage'),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -57,7 +61,7 @@ final class AdminAtakRealismController
         return Response::view('layout.main', [
             'content' => 'admin.atak_realism.certificates',
             'title' => 'Certificats ATAK',
-            'atakRealismTerminals' => $this->realismRepository->listTerminals($tenantId),
+            'atakRealismTerminals' => $this->realismRepository->listPhysicalTerminals($tenantId),
             'atakRealismCertificates' => $this->realismRepository->listCertificates($tenantId),
             'atakCryptoDomains' => $this->realismRepository->listCryptoDomains($tenantId),
             'csrfToken' => Csrf::token(),
@@ -90,6 +94,101 @@ final class AdminAtakRealismController
             'notes' => $request->input('notes'),
         ]);
         Session::flash('success', 'Terminal ATAK enregistré.');
+
+        return Response::redirect(url('back-office/atak/realisme'));
+    }
+
+    public function deleteTerminal(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/atak/realisme'));
+        }
+        $forbidden = ModuleFeatureAccess::guardAtak('manage');
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        $id = (int) ($params['id'] ?? $request->input('id') ?? 0);
+        $existing = $this->realismRepository->findTerminalById($tenantId, $id);
+        if ($existing === null || !$this->realismRepository->deleteTerminal($tenantId, $id)) {
+            Session::flash('error', 'Impossible de retirer cet appareil. Il a peut-être déjà été enlevé.');
+        } elseif (AtakRealismRepository::isWebSessionTerminal($existing)) {
+            Session::flash('success', 'Session web retirée du parc.');
+        } else {
+            Session::flash('success', 'Terminal retiré du parc.');
+        }
+
+        return Response::redirect(url('back-office/atak/realisme'));
+    }
+
+    public function deleteTerminalsSelection(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/atak/realisme'));
+        }
+        $forbidden = ModuleFeatureAccess::guardAtak('manage');
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        $rawIds = $request->input('ids', []);
+        if (!is_array($rawIds)) {
+            $rawIds = [];
+        }
+        $deleted = $this->realismRepository->deleteTerminals($tenantId, $rawIds);
+        if ($deleted < 1) {
+            Session::flash('error', 'Cochez au moins un appareil à retirer du parc.');
+        } elseif ($deleted === 1) {
+            Session::flash('success', '1 appareil retiré du parc.');
+        } else {
+            Session::flash('success', $deleted . ' appareils retirés du parc.');
+        }
+
+        return Response::redirect(url('back-office/atak/realisme'));
+    }
+
+    public function deleteWebSessions(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/atak/realisme'));
+        }
+        $forbidden = ModuleFeatureAccess::guardAtak('manage');
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        $ids = [];
+        foreach ($this->realismRepository->listTerminals($tenantId) as $row) {
+            if (AtakRealismRepository::isWebSessionTerminal($row)) {
+                $ids[] = (int) ($row['id'] ?? 0);
+            }
+        }
+        $deleted = $this->realismRepository->deleteTerminals($tenantId, $ids);
+        if ($deleted < 1) {
+            Session::flash('error', 'Aucune session web à retirer.');
+        } elseif ($deleted === 1) {
+            Session::flash('success', '1 session web retirée du parc.');
+        } else {
+            Session::flash('success', $deleted . ' sessions web retirées du parc.');
+        }
 
         return Response::redirect(url('back-office/atak/realisme'));
     }

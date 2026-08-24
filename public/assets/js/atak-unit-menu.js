@@ -170,6 +170,8 @@ window.ATAKUnitMenu = (function () {
       disabled: !canPing,
       title: canPing ? '' : (canCenter ? 'Action indisponible' : 'Position indisponible')
     });
+    var isAlly = window.ATAKUnits && window.ATAKUnits.isAllyAi && window.ATAKUnits.isAllyAi(unit);
+    if (!isAlly) {
     html += menuItem('vibrate', 'Faire vibrer le terminal', {
       disabled: !inLiaison,
       title: !inLiaison
@@ -200,11 +202,18 @@ window.ATAKUnitMenu = (function () {
       title: 'Pas encore au point — utilisez une photo depuis le terminal ATAK, ou l’onglet Photos'
     });
     html += menuItem('chat', 'Ouvrir la messagerie', { muted: !inLiaison, disabled: !inLiaison, title: inLiaison ? '' : 'Disponible lorsque le contact est en liaison' });
+    }
 
     html += '<div class="atak-ctx-menu__sep" role="separator"></div>';
-    html += menuItem('assign-dest', 'Assigner une destination', {
+    html += menuItem('assign-dest', (window.ATAKUnits && window.ATAKUnits.isAllyAi && window.ATAKUnits.isAllyAi(unit))
+      ? 'Ordre de déplacement…'
+      : 'Assigner une destination', {
       disabled: !canCenter,
-      title: canCenter ? 'Pointer un repère, une unité ou un point sur la carte' : 'Position indisponible'
+      title: canCenter
+        ? ((window.ATAKUnits && window.ATAKUnits.isAllyAi && window.ATAKUnits.isAllyAi(unit))
+          ? 'Cliquez ensuite le point d’arrivée sur la carte — le groupe se déplace en jeu'
+          : 'Pointer un repère, une unité ou un point sur la carte')
+        : 'Position indisponible'
     });
     var asg = unit && (unit.navigation || unit.assignment);
     if (asg && asg.id && asg.status !== 'detached') {
@@ -294,7 +303,20 @@ window.ATAKUnitMenu = (function () {
     ensureMenu();
     var coords = document.getElementById('atak-unit-ctx-coords');
     if (coords) {
-      coords.textContent = (unit.call_sign || 'Contact') + ' — grille ' + gridLabel(unit);
+      var P = window.ATAKUnitPopup;
+      var ex = {};
+      try {
+        if (typeof unit.extra === 'string') ex = JSON.parse(unit.extra || '{}') || {};
+        else if (unit.extra && typeof unit.extra === 'object') ex = unit.extra;
+      } catch (e) {}
+      var name = (P && P.phoneDisplayName) ? P.phoneDisplayName(unit, ex) : (unit.call_sign || 'Contact');
+      var isPhone = P && P.isPhoneGeoloc ? P.isPhoneGeoloc(ex) : !!(ex.phone_geoloc);
+      var rev = (isPhone && P && P.phoneReveal) ? P.phoneReveal(ex) : null;
+      if (isPhone && (!rev || !rev.grid)) {
+        coords.textContent = name + ' — signal téléphone';
+      } else {
+        coords.textContent = name + ' — grille ' + gridLabel(unit);
+      }
     }
     var items = document.getElementById('atak-unit-ctx-items');
     if (items) items.innerHTML = renderItems(unit);

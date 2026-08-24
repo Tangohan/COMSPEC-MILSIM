@@ -173,9 +173,25 @@ private _fnc_addPoll = {
         [{
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollMissionPlan;
+        }, [], "pollMissionPlan"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 30, 2.4] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollExplosiveCommands;
         }, [], "pollExplosiveCommands"] call comspec_overwatch_connect_fnc_profileWrap;
 }, 4, 0.2] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollAiOrders;
+        }, [], "pollAiOrders"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 5, 0.7] call _fnc_addPoll;
 
 [{
         [{
@@ -273,7 +289,9 @@ private _fnc_addPoll = {
 [{
     private _ctab = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
     private _hub = uiNamespace getVariable ["COMSPEC_Hub_Display", displayNull];
-    if (isNull _ctab && {isNull _hub}) exitWith {};
+    private _web = uiNamespace getVariable ["COMSPEC_WebBrowser_Display", displayNull];
+    if (isNull _web) then { _web = findDisplay 9974; };
+    if (isNull _ctab && {isNull _hub} && {isNull _web}) exitWith {};
     [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
 }, 1, []] call CBA_fnc_addPerFrameHandler;
 

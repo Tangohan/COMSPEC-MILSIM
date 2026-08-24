@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\MissionPlanning;
 
+use App\Repositories\AarReportRepository;
+use App\Repositories\CommunityEventRepository;
+use App\Repositories\CommunityEventSlotAssignmentRepository;
+use App\Repositories\CommunityEventSlotRepository;
 use App\Repositories\MissionPlanRepository;
+use App\Repositories\PersonnelAssignmentRepository;
+use App\Repositories\UnitRepository;
 use App\Support\MissionPlanningLabels;
 use App\Support\MissionPlanningTemplate;
 use Throwable;
@@ -64,7 +70,10 @@ final class MissionPlanningService
                 'opord_version' => '1.0',
             ], $createdBy);
 
-            $this->seedDefaultOrganization($planId);
+            $this->seedOrganization($planId, $tenantId, (string) ($input['org_source'] ?? 'orbat'));
+            if ($eventId > 0) {
+                $this->importEventRoster($planId, $eventId, $createdBy);
+            }
             $this->seedControlMeasures($planId);
             $this->seedPlannedTimeline($planId);
             $this->plans->upsertDocument($planId, $this->prefillDocument([
@@ -275,6 +284,7 @@ final class MissionPlanningService
         }
         if ($status === 'closed') {
             $this->plans->saveSnapshot($planId, 'final_snapshot_json', $this->encodeSnapshot($this->rosterRows($planId)));
+            $this->openAarDraft($tenantId, $planId, $actorId);
         }
         $this->plans->setStatus($tenantId, $planId, $status);
         $label = MissionPlanningLabels::status($status);
@@ -297,6 +307,12 @@ final class MissionPlanningService
         $matrix = $this->strengthMatrix($elements, $roster);
         $counts = $this->headlineCounts($roster);
         $comparison = $this->plannedVsActual($plan, $roster);
+        $aar = null;
+        try {
+            $aar = (new AarReportRepository())->findByMissionPlanId($tenantId, $planId);
+        } catch (Throwable) {
+            $aar = null;
+        }
 
         return [
             'plan' => $plan,
@@ -309,6 +325,7 @@ final class MissionPlanningService
             'counts' => $counts,
             'comparison' => $comparison,
             'mission_sentence' => $this->missionSentence($plan, $document),
+            'aar' => $aar,
         ];
     }
 
@@ -417,10 +434,12 @@ final class MissionPlanningService
                 }
             }
             $attached = (string) ($el['kind'] ?? '') === 'attachment' ? $assigned : 0;
+            $kind = (string) ($el['kind'] ?? '');
             $row = [
                 'id' => $eid,
                 'label' => (string) ($el['label'] ?? ''),
-                'kind' => (string) ($el['kind'] ?? ''),
+                'kind' => $kind,
+                'kind_label' => MissionPlanningLabels::elementKind($kind),
                 'auth' => $auth,
                 'assigned' => $assigned,
                 'present' => $present,
@@ -573,6 +592,348 @@ final class MissionPlanningService
         };
 
         return $walk(0);
+    }
+
+    /**
+     * Remplace l’organisation de combat par l’organigramme réel (chaque unité garde un type).
+     */
+    public function importCommunityOrbat(int $tenantId, int $planId, ?int $actorId): int
+    {
+        $this->plans->clearOrganization($planId);
+        $count = $this->seedFromOrbat($planId, $tenantId);
+        if ($count < 1) {
+            $this->seedDefaultOrganization($planId);
+            $this->plans->addLog($planId, 'Organigramme communautaire vide — gabarit type repris.', $actorId);
+
+            return 0;
+        }
+        $this->plans->addLog($planId, 'Organisation reprise depuis l’organigramme de la communauté.', $actorId);
+
+        return $count;
+    }
+
+    /**
+     * Affecte les inscrits de l’événement lié sur les postes encore vacants.
+     */
+    public function importLinkedEventRoster(int $tenantId, int $planId, ?int $actorId): int
+    {
+        $plan = $this->plans->findByIdForTenant($tenantId, $planId);
+        if ($plan === null) {
+            return 0;
+        }
+        $eventId = (int) ($plan['event_id'] ?? 0);
+        if ($eventId < 1) {
+            return 0;
+        }
+        $n = $this->importEventRoster($planId, $eventId, $actorId);
+        $this->plans->addLog(
+            $planId,
+            $n > 0
+                ? $n . ' inscrit' . ($n > 1 ? 's' : '') . ' repris depuis l’événement.'
+                : 'Aucun inscrit à placer depuis l’événement.',
+            $actorId
+        );
+
+        return $n;
+    }
+
+    private function seedOrganization(int $planId, int $tenantId, string $source): void
+    {
+        if ($source !== 'template') {
+            if ($this->seedFromOrbat($planId, $tenantId) > 0) {
+                return;
+            }
+        }
+        $this->seedDefaultOrganization($planId);
+    }
+
+    private function seedFromOrbat(int $planId, int $tenantId): int
+    {
+        $units = (new UnitRepository())->allForTenant($tenantId);
+        if ($units === []) {
+            return 0;
+        }
+        $members = (new PersonnelAssignmentRepository())->listActiveMembersByUnitForTenant($tenantId);
+        $byParent = [];
+        foreach ($units as $unit) {
+            $pid = (int) ($unit['parent_id'] ?? 0);
+            $byParent[$pid][] = $unit;
+        }
+        $created = 0;
+        $usedCodes = [];
+        $walk = function (int $parentUnitId, ?int $parentElementId) use (&$walk, &$created, &$usedCodes, $byParent, $members, $planId): void {
+            $order = 10;
+            foreach ($byParent[$parentUnitId] ?? [] as $unit) {
+                $unitId = (int) ($unit['id'] ?? 0);
+                $label = trim((string) ($unit['name'] ?? ''));
+                if ($label === '') {
+                    continue;
+                }
+                $code = strtoupper(trim((string) ($unit['code'] ?? '')));
+                if ($code === '') {
+                    $code = strtoupper(trim((string) ($unit['slug'] ?? '')));
+                }
+                if ($code === '') {
+                    $code = 'U' . $unitId;
+                }
+                $code = mb_substr(preg_replace('/[^A-Z0-9]/', '', $code) ?: ('U' . $unitId), 0, 32);
+                $base = $code;
+                $n = 2;
+                while (isset($usedCodes[$code])) {
+                    $code = mb_substr($base, 0, 28) . $n;
+                    $n++;
+                }
+                $usedCodes[$code] = true;
+                $people = $members[$unitId] ?? [];
+                $elementId = $this->plans->insertElement(
+                    $planId,
+                    $parentElementId,
+                    $code,
+                    mb_substr($label, 0, 80),
+                    $this->inferElementKind(
+                        trim((string) ($unit['type'] ?? '') . ' ' . (string) ($unit['orbat_display_type'] ?? '')),
+                        $label
+                    ),
+                    max(count($people), 1),
+                    $order
+                );
+                $created++;
+                $slotOrder = 10;
+                if ($people === []) {
+                    $slotId = $this->plans->insertSlot(
+                        $planId,
+                        $elementId,
+                        mb_substr($label, 0, 64),
+                        'Opérateur',
+                        'rifle',
+                        $slotOrder
+                    );
+                    $this->plans->insertAssignment($planId, $slotId);
+                }
+                foreach ($people as $person) {
+                    $cs = trim((string) ($person['callsign'] ?? ''));
+                    if ($cs === '') {
+                        $cs = trim((string) ($person['display_name'] ?? 'Poste'));
+                    }
+                    $fn = trim((string) ($person['role_name'] ?? ''));
+                    if ($fn === '') {
+                        $fn = 'Opérateur';
+                    }
+                    $slotId = $this->plans->insertSlot(
+                        $planId,
+                        $elementId,
+                        mb_substr($cs, 0, 64),
+                        mb_substr($fn, 0, 80),
+                        $this->inferRoleCode($fn),
+                        $slotOrder
+                    );
+                    $this->plans->insertAssignment($planId, $slotId);
+                    $userId = (int) ($person['user_id'] ?? 0);
+                    if ($userId > 0) {
+                        $this->plans->updateAssignment($slotId, [
+                            'planned_user_id' => $userId,
+                            'current_user_id' => $userId,
+                            'detected_user_id' => null,
+                            'assignment_mode' => 'preassigned',
+                            'presence_status' => 'confirmed',
+                            'arma_uid' => '',
+                            'notes' => '',
+                        ]);
+                    }
+                    $slotOrder += 10;
+                }
+                $walk($unitId, $elementId);
+                $order += 10;
+            }
+        };
+        $walk(0, null);
+
+        return $created;
+    }
+
+    private function inferElementKind(string $type, string $label): string
+    {
+        $hay = mb_strtolower($type . ' ' . $label, 'UTF-8');
+        if (preg_match('/\b(hq|em|etat|état|command|staff|coe|pc)\b/u', $hay)) {
+            return 'hq';
+        }
+        if (preg_match('/\b(air|helo|hélico|aviation|cas|pilote|uas|drone|squadron|escadron)\b/u', $hay)) {
+            return 'air';
+        }
+        if (preg_match('/\b(log|soutien|support|medic|médic|medevac|eod|trans|ravit)\b/u', $hay)) {
+            return 'support';
+        }
+        if (preg_match('/\b(special|recon|recce|sniper|sof)\b/u', $hay)) {
+            return 'maneuver';
+        }
+
+        return 'maneuver';
+    }
+
+    private function inferRoleCode(string $function): string
+    {
+        $hay = mb_strtolower($function, 'UTF-8');
+        if (preg_match('/command|chef|tl|sl|leader/u', $hay)) {
+            return 'tl';
+        }
+        if (preg_match('/radio|rto|trans/u', $hay)) {
+            return 'rto';
+        }
+        if (preg_match('/medic|médic|infirm/u', $hay)) {
+            return 'medic';
+        }
+        if (preg_match('/jtac|fac/u', $hay)) {
+            return 'jtac';
+        }
+
+        return 'rifle';
+    }
+
+    private function importEventRoster(int $planId, int $eventId, ?int $actorId): int
+    {
+        $roster = $this->rosterRows($planId);
+        $vacant = [];
+        $taken = [];
+        foreach ($roster as $row) {
+            $uid = (int) ($row['planned_user_id'] ?? 0);
+            if ($uid > 0) {
+                $taken[$uid] = true;
+                continue;
+            }
+            $vacant[] = $row;
+        }
+        $placed = 0;
+        $candidates = [];
+
+        $grouped = (new CommunityEventSlotAssignmentRepository())->listForEventGroupedBySlot($eventId);
+        $slots = (new CommunityEventSlotRepository())->listForEventWithCounts($eventId);
+        $slotMeta = [];
+        foreach ($slots as $slot) {
+            $slotMeta[(int) ($slot['id'] ?? 0)] = $slot;
+        }
+        foreach ($grouped as $eventSlotId => $people) {
+            $meta = $slotMeta[$eventSlotId] ?? [];
+            $label = mb_strtoupper(trim((string) ($meta['label'] ?? '')));
+            $unitName = mb_strtoupper(trim((string) ($meta['unit_name'] ?? '')));
+            foreach ($people as $person) {
+                $status = strtolower((string) ($person['status'] ?? ''));
+                if ($status === 'waitlisted') {
+                    continue;
+                }
+                $candidates[] = [
+                    'user_id' => (int) ($person['user_id'] ?? 0),
+                    'callsign' => mb_strtoupper(trim((string) ($person['callsign'] ?? ''))),
+                    'label' => $label,
+                    'unit' => $unitName,
+                ];
+            }
+        }
+        if ($candidates === []) {
+            foreach ((new CommunityEventRepository())->listRsvpsWithUsersForEvent($eventId) as $rsvp) {
+                $st = strtolower((string) ($rsvp['status'] ?? ''));
+                if (!in_array($st, ['yes', 'going', 'confirmed', 'present'], true)) {
+                    continue;
+                }
+                $candidates[] = [
+                    'user_id' => (int) ($rsvp['user_id'] ?? 0),
+                    'callsign' => mb_strtoupper(trim((string) ($rsvp['callsign'] ?? ''))),
+                    'label' => '',
+                    'unit' => '',
+                ];
+            }
+        }
+
+        $score = static function (array $slot, array $cand): int {
+            $s = 0;
+            $cs = mb_strtoupper(trim((string) ($slot['callsign'] ?? '')));
+            $el = mb_strtoupper(trim((string) ($slot['element_label'] ?? $slot['element_code'] ?? '')));
+            $fn = mb_strtoupper(trim((string) ($slot['function_label'] ?? '')));
+            if ($cand['callsign'] !== '' && $cs !== '' && $cand['callsign'] === $cs) {
+                $s += 80;
+            }
+            if ($cand['label'] !== '' && $cs !== '' && str_contains($cs, $cand['label'])) {
+                $s += 40;
+            }
+            if ($cand['label'] !== '' && $fn !== '' && str_contains($fn, $cand['label'])) {
+                $s += 25;
+            }
+            if ($cand['unit'] !== '' && $el !== '' && (str_contains($el, $cand['unit']) || str_contains($cand['unit'], $el))) {
+                $s += 30;
+            }
+
+            return $s;
+        };
+
+        foreach ($candidates as $cand) {
+            $userId = (int) ($cand['user_id'] ?? 0);
+            if ($userId < 1 || isset($taken[$userId]) || $vacant === []) {
+                continue;
+            }
+            $bestI = null;
+            $bestScore = -1;
+            foreach ($vacant as $i => $slot) {
+                $sc = $score($slot, $cand);
+                if ($sc > $bestScore) {
+                    $bestScore = $sc;
+                    $bestI = $i;
+                }
+            }
+            $idx = $bestI ?? 0;
+            $slot = $vacant[$idx];
+            $slotId = (int) ($slot['id'] ?? 0);
+            if ($slotId < 1) {
+                continue;
+            }
+            $this->plans->updateAssignment($slotId, [
+                'planned_user_id' => $userId,
+                'current_user_id' => $userId,
+                'detected_user_id' => null,
+                'assignment_mode' => 'preassigned',
+                'presence_status' => 'confirmed',
+                'arma_uid' => '',
+                'notes' => '',
+            ]);
+            $taken[$userId] = true;
+            array_splice($vacant, $idx, 1);
+            $placed++;
+        }
+
+        return $placed;
+    }
+
+    private function openAarDraft(int $tenantId, int $planId, ?int $actorId): void
+    {
+        try {
+            $plan = $this->plans->findByIdForTenant($tenantId, $planId);
+            if ($plan === null) {
+                return;
+            }
+            $counts = $this->headlineCounts($this->rosterRows($planId));
+            $title = trim((string) ($plan['title'] ?? 'Compte rendu de mission'));
+            $op = trim((string) ($plan['operation_name'] ?? $title));
+            $summary = 'Clôture de ' . ($plan['mission_code'] ?? '') . ' — ' . $op
+                . '. Effectifs figés : ' . (int) ($counts['present'] ?? 0) . ' présents / '
+                . (int) ($counts['assigned'] ?? 0) . ' affectés. Complétez le bilan (prévu / réel, enseignements).';
+            $aar = (new AarReportRepository())->ensureDraftForPlan(
+                $tenantId,
+                $planId,
+                (int) ($actorId ?? 0),
+                'Compte rendu — ' . $title,
+                $op,
+                $summary,
+                [
+                    'mission_code' => (string) ($plan['mission_code'] ?? ''),
+                    'present' => (int) ($counts['present'] ?? 0),
+                    'assigned' => (int) ($counts['assigned'] ?? 0),
+                    'auth' => (int) ($counts['auth'] ?? 0),
+                    'source' => 'mission_plan_close',
+                ]
+            );
+            if (is_array($aar) && (int) ($aar['id'] ?? 0) > 0) {
+                $this->plans->addLog($planId, 'Compte rendu ouvert — à compléter avant publication.', $actorId);
+            }
+        } catch (Throwable) {
+        }
     }
 
     private function seedDefaultOrganization(int $planId): void

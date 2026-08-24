@@ -51,6 +51,15 @@ if (!_force && {diag_tickTime < _backoffUntil}) exitWith {
     ["api_backoff"] call _fnc_skip;
 };
 
+// Joueur sans tablette, suivi téléphone Zeus : même filtrage de données que les IA.
+if (
+    !([_unit] call comspec_overwatch_connect_fnc_hasTerminal)
+    && { [_unit, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag }
+) exitWith {
+    [_unit] call comspec_overwatch_connect_fnc_reportPhonePosition;
+    if (_force) then { "ok" } else { nil }
+};
+
 // Alertes KO / rythme cardiaque à zéro (chaque tick PFH, avant le filtre de batch position)
 [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
 
@@ -273,11 +282,13 @@ if (_inVeh) then {
         };
     };
 };
+private _terrainZ = getTerrainHeightASL [_pos select 0, _pos select 1];
 private _vehJson = format [
-    "{""speed"":%1,""in_vehicle"":%2,""asl_z"":%3,""pos_z"":%3,""heading_object"":%4,""velocity"":[%5,%6,%7]",
+    "{""speed"":%1,""in_vehicle"":%2,""asl_z"":%3,""pos_z"":%3,""terrain_z"":%4,""heading_object"":%5,""velocity"":[%6,%7,%8]",
     [((round (_speed * 10)) / 10), 1] call _fnc_num,
     if (_inVeh) then { "true" } else { "false" },
     [_aslZ, 3] call _fnc_num,
+    [_terrainZ, 3] call _fnc_num,
     [_heading, 2] call _fnc_num,
     [_velocity select 0, 3] call _fnc_num,
     [_velocity select 1, 3] call _fnc_num,

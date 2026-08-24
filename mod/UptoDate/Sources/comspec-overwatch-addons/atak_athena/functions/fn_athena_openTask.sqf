@@ -38,6 +38,9 @@ if (isNull _parent) then {
     if (!isNil "comspec_overwatch_connect_fnc_pollOrders") then {
         [] call comspec_overwatch_connect_fnc_pollOrders;
     };
+    if (!isNil "comspec_overwatch_connect_fnc_pollMissionPlan") then {
+        [] call comspec_overwatch_connect_fnc_pollMissionPlan;
+    };
     [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
 
     ["AtakTask"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;

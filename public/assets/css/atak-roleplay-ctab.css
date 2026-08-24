@@ -1,15 +1,18 @@
 /* COMSPEC ATAK - Effets roleplay pour tablette cTab ingame */
 
-/* Overlay de déconnexion plein écran */
+/* Overlay de déconnexion — visuel tactique (bande hazard, scanlines) */
 .atak-disconnect-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background:
+    linear-gradient(180deg, rgba(5, 8, 14, 0.28) 0%, rgba(5, 8, 14, 0.12) 22%, rgba(5, 8, 14, 0.12) 100%),
+    url('/assets/img/atak-fx/liaison-perdue.png') center / cover no-repeat,
+    #05080e;
   display: none;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 99999;
   animation: atak-fade-in 0.3s ease-out;
@@ -17,37 +20,37 @@
 
 .atak-disconnect-content {
   text-align: center;
-  color: #fff;
-  max-width: 400px;
-  padding: 30px;
-  background: rgba(20, 20, 20, 0.95);
-  border: 2px solid #ff4444;
-  border-radius: 8px;
-  box-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
+  color: #f4f7fa;
+  width: min(92vw, 720px);
+  margin-top: 7vh;
+  padding: 0.85rem 1.2rem 1rem;
+  background: rgba(6, 12, 20, 0.55);
+  border: 1px solid rgba(232, 138, 26, 0.45);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.04em;
 }
 
 .atak-disconnect-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
-  animation: atak-pulse-red 1.5s ease-in-out infinite;
+  display: none;
 }
 
 .atak-disconnect-content h2 {
-  color: #ff4444;
-  font-size: 24px;
-  margin: 0 0 15px 0;
+  color: #f4f7fa;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem 0;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 0.14em;
 }
 
 .atak-disconnect-content p {
-  font-size: 18px;
-  margin: 10px 0;
+  font-size: 0.92rem;
+  margin: 0.2rem 0 0;
+  color: #e8eef2;
 }
 
 .atak-disconnect-content small {
-  color: #999;
-  font-size: 14px;
+  display: none;
 }
 
 @keyframes atak-pulse-red {
@@ -126,13 +129,17 @@
   right: 0 !important;
   bottom: 0 !important;
   pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.15),
-    rgba(0, 0, 0, 0.15) 1px,
-    transparent 1px,
-    transparent 2px
-  );
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.12),
+      rgba(0, 0, 0, 0.12) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    url('/assets/img/atak-fx/glitch-hud.png') center / cover no-repeat;
+  opacity: 0.42;
+  mix-blend-mode: screen;
   z-index: 1000;
   display: none;
 }
@@ -187,10 +194,6 @@
 
 /* Style pour tablette cTab (écran sombre) */
 @media (prefers-color-scheme: dark) {
-  .atak-disconnect-overlay {
-    background: rgba(0, 0, 0, 0.95);
-  }
-  
   .atak-zone-warning {
     background: rgba(10, 10, 10, 0.95);
   }
@@ -227,11 +230,11 @@
 }
 
 .atak-broken-text h2 {
-  font-size: 32px;
-  margin: 0 0 20px 0;
-  color: #ff8a7a;
+  font-size: 1.15rem;
+  margin: 0 0 0.5rem 0;
+  color: #f4f7fa;
   text-transform: uppercase;
-  letter-spacing: 3px;
+  letter-spacing: 0.14em;
 }
 
 .atak-broken-text p {
@@ -268,7 +271,7 @@
 }
 
 .atak-screen-destroyed .atak-broken-text h2 {
-  color: #ff4444;
+  color: #f4f7fa;
 }
 
 /* Animation de clignotement pour rallumage */

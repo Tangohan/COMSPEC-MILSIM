@@ -125,20 +125,6 @@
       '</div></article>';
   }
 
-  function unitAsTerminal(u) {
-    var extra = parseExtra(u);
-    return {
-      operator_callsign: u.call_sign || u.callsign,
-      status: u.status,
-      last_seen_at: u.updated_at,
-      terminal_uid: extra.bft_id || extra.military_id || '',
-      operator_military_id: extra.military_id || extra.bft_id || '',
-      terminal_type: extra.phone_geoloc ? 'phone' : 'arma',
-      platform_label: extra.phone_geoloc ? 'Téléphone' : 'Poste de terrain',
-      compromise_state: extra.compromised ? 'confirmed' : 'none'
-    };
-  }
-
   function render(terminals) {
     var wrap = qs('atak-terminals-list');
     var empty = qs('atak-terminals-empty');
@@ -146,17 +132,6 @@
     if (!wrap) return;
     var units = unitsByCallsign();
     var list = Array.isArray(terminals) ? terminals.slice() : [];
-    var seen = {};
-    list.forEach(function (t) {
-      var k = String(t.operator_callsign || t.callsign || '').toUpperCase().trim();
-      if (k) seen[k] = true;
-    });
-    units.list.forEach(function (u) {
-      var k = String(u.call_sign || u.callsign || '').toUpperCase().trim();
-      if (!k || seen[k]) return;
-      list.push(unitAsTerminal(u));
-      seen[k] = true;
-    });
     if (!list.length) {
       wrap.innerHTML = '';
       if (empty) empty.hidden = false;

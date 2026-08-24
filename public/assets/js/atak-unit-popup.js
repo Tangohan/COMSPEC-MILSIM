@@ -30,6 +30,41 @@ window.ATAKUnitPopup = (function () {
     return {};
   }
 
+  function flagOn(v) {
+    return v === true || v === 1 || v === '1' || v === 'true';
+  }
+
+  function isPhoneGeoloc(ex) {
+    if (!ex) return false;
+    if (flagOn(ex.phone_geoloc)) return true;
+    return String(ex.source || '').toLowerCase() === 'phone';
+  }
+
+  function phoneReveal(ex) {
+    var r = (ex && ex.reveal && typeof ex.reveal === 'object' && !Array.isArray(ex.reveal)) ? ex.reveal : {};
+    return {
+      identity: flagOn(r.identity),
+      grid: flagOn(r.grid),
+      altitude: flagOn(r.altitude),
+      heading: flagOn(r.heading),
+      updated: flagOn(r.updated),
+      affiliation: flagOn(r.affiliation),
+      vehicle: flagOn(r.vehicle)
+    };
+  }
+
+  function phoneDisplayName(u, ex) {
+    ex = ex || parseExtra(u || {});
+    if (!isPhoneGeoloc(ex)) {
+      return String((u && (u.call_sign || u.callsign)) || '').trim() || '—';
+    }
+    if (phoneReveal(ex).identity) {
+      var pretty = String(ex.display_name || (u && (u.call_sign || u.callsign)) || '').trim();
+      return pretty || 'Téléphone';
+    }
+    return 'Téléphone';
+  }
+
     function statusLabelFr(status) {
     var s = String(status || '').toLowerCase().trim();
     if (s === 'linked') return 'En liaison';
@@ -206,9 +241,43 @@ window.ATAKUnitPopup = (function () {
    * @param {object} u unit row from /api/units
    * @returns {string} HTML
    */
+  function buildPhoneHtml(u, extra) {
+    var rev = phoneReveal(extra);
+    var callSign = phoneDisplayName(u, extra);
+    var rows = '';
+    if (rev.affiliation) {
+      var aff = extra.affiliation || extra.affil || u.affiliation || '';
+      rows += row('Camp', affiliationLabelFr(aff));
+    }
+    if (rev.grid) rows += row('Coordonnées', formatGrid(u, extra));
+    if (rev.heading) rows += row('Cap', formatHeading(u.heading != null ? u.heading : extra.heading));
+    if (rev.vehicle) {
+      var inVeh = extra.in_vehicle === true || extra.in_vehicle === 1 || extra.in_vehicle === 'true';
+      rows += row('Véhicule', inVeh ? 'À bord' : 'À pied');
+    }
+    if (rev.updated) {
+      var upd = formatTimeAgo(u.updated_at || extra.updated_at || u.last_update);
+      if (upd) rows += row('Dernier signal', upd);
+    }
+    if (!rows) {
+      rows = '<p class="atak-unit-popup__empty">Signal téléphone — aucun détail publié.</p>';
+    }
+    return (
+      '<div class="atak-unit-popup atak-unit-popup--phone">' +
+      '<div class="atak-unit-popup__head">' +
+      '<div class="atak-unit-popup__title-wrap">' +
+      '<div class="atak-unit-popup__callsign">' + escapeHtml(callSign) + '</div>' +
+      '<div class="atak-unit-popup__subtitle">Signal téléphone</div>' +
+      '</div></div>' +
+      '<div class="atak-unit-popup__body">' + rows + '</div>' +
+      '</div>'
+    );
+  }
+
   function buildUnitHtml(u) {
     u = u || {};
     var extra = parseExtra(u);
+    if (isPhoneGeoloc(extra)) return buildPhoneHtml(u, extra);
     var callSign = u.call_sign || u.callsign || '—';
     var role = u.role || extra.role || '';
     var aff = extra.affiliation || extra.affil || u.affiliation || '';
@@ -369,12 +438,15 @@ window.ATAKUnitPopup = (function () {
     }
     if (window.ATAKMarkerSizes && window.ATAKMarkerSizes.bindHoverTip) {
       var extra = parseExtra(u);
-      var callSign = u.call_sign || u.callsign || '—';
-      var grid = formatGrid(u, extra);
-      var updated = formatTimeAgo(u.updated_at || extra.updated_at || u.last_update);
-      window.ATAKMarkerSizes.bindHoverTip(marker, window.ATAKMarkerSizes.hoverTipHtml(callSign, [
-        grid ? 'Grille ' + grid : '',
-        (function () {
+      var callSign = phoneDisplayName(u, extra);
+      var rev = isPhoneGeoloc(extra) ? phoneReveal(extra) : null;
+      var grid = (!rev || rev.grid) ? formatGrid(u, extra) : '';
+      var updated = (!rev || rev.updated)
+        ? formatTimeAgo(u.updated_at || extra.updated_at || u.last_update)
+        : '';
+      var moveBits = '';
+      if (!rev) {
+        moveBits = (function () {
           var M = window.ATAKMotion;
           if (!M || !M.isMoving(u)) return '';
           var bits = [];
@@ -387,7 +459,14 @@ window.ATAKUnitPopup = (function () {
           var asg = M.assignmentOf(u);
           if (asg && asg.eta && asg.eta.seconds != null) bits.push('ETA ' + M.formatEta(asg.eta.seconds, asg.eta.arrived));
           return bits.join(' · ');
-        }()),
+        }());
+      } else if (rev.heading) {
+        var capOnly = formatHeading(u.heading != null ? u.heading : extra.heading);
+        if (capOnly) moveBits = 'Cap ' + capOnly;
+      }
+      window.ATAKMarkerSizes.bindHoverTip(marker, window.ATAKMarkerSizes.hoverTipHtml(callSign, [
+        rev && !rev.grid ? 'Signal téléphone' : (grid ? 'Grille ' + grid : ''),
+        moveBits,
         updated ? 'Dernière liaison : ' + updated : ''
       ]));
     }
@@ -438,5 +517,8 @@ window.ATAKUnitPopup = (function () {
     affiliationLabelFr: affiliationLabelFr,
     healthLabelFr: healthLabelFr,
     formatTimeAgo: formatTimeAgo,
+    isPhoneGeoloc: isPhoneGeoloc,
+    phoneReveal: phoneReveal,
+    phoneDisplayName: phoneDisplayName
   };
 })();

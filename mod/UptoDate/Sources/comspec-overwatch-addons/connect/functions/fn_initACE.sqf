@@ -195,7 +195,7 @@ private _reconAction = [
 [_reconAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _terrainAction = [
-    "COMSPEC_Terrain", "Relever le relief du théâtre", "", {
+    "COMSPEC_Terrain", "Relever le relief autour de l'équipe", "", {
         [] call comspec_overwatch_connect_fnc_sampleTerrain;
     }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
@@ -308,6 +308,21 @@ private _bugAction = [
 ] call ace_interact_menu_fnc_createAction;
 [_bugAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+private _disableOwnPhone = [
+    "COMSPEC_DisableOwnPhoneGps",
+    "Couper mon téléphone GPS",
+    "\A3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa",
+    {
+        [player] call comspec_overwatch_connect_fnc_aceDisablePhoneTrack;
+    },
+    {
+        (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+        && { [player, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag }
+    },
+    _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_disableOwnPhone, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
 // Action sur un autre joueur : saisir / marquer ATAK capturé (clé incorrecte)
 private _captureAtakAction = [
     "COMSPEC_CaptureAtak",
@@ -336,6 +351,30 @@ private _captureAtakAction = [
 _captureAtakAction = [_captureAtakAction] call comspec_overwatch_connect_fnc_acePadAction;
 if (_captureAtakAction isNotEqualTo []) then {
     ["CAManBase", 0, ["ACE_MainActions"], _captureAtakAction, true] call ace_interact_menu_fnc_addActionToClass;
+};
+
+private _disablePhoneAction = [
+    "COMSPEC_DisablePhoneGps",
+    "Couper le téléphone GPS",
+    "\A3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa",
+    {
+        params ["_target"];
+        [_target] call comspec_overwatch_connect_fnc_aceDisablePhoneTrack;
+    },
+    {
+        params ["_target"];
+        (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+        && { !isNull _target }
+        && { !(_target isEqualTo player) }
+        && { _target isKindOf "CAManBase" }
+        && { (player distance _target) < 4 }
+        && { [_target, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag }
+    },
+    _noChildren
+] call ace_interact_menu_fnc_createAction;
+_disablePhoneAction = [_disablePhoneAction] call comspec_overwatch_connect_fnc_acePadAction;
+if (_disablePhoneAction isNotEqualTo []) then {
+    ["CAManBase", 0, ["ACE_MainActions"], _disablePhoneAction, true] call ace_interact_menu_fnc_addActionToClass;
 };
 
 missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];

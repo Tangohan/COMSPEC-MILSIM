@@ -20,6 +20,7 @@ final class ContainerIntegrations
                 Container::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class),
                 Container::get(\App\Repositories\TenantMessageRepository::class),
                 Container::get(\App\Services\Notifications\ActivityHubPresentationService::class),
+                Container::get(\App\Services\Alerts\AlertPresentationService::class),
             ),
             \App\Services\Alerts\MemberAlertsPageService::class => new \App\Services\Alerts\MemberAlertsPageService(
                 Container::get(\App\Services\Alerts\AlertPresentationService::class),

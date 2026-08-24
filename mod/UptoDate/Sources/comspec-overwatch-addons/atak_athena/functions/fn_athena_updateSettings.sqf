@@ -163,6 +163,32 @@ if (!isNull _cbGrp) then {
     _cbGrp lbSetCurSel 0;
 };
 
+private _cbProx = [9849] call _ctrl;
+if (!isNull _cbProx) then {
+    missionNamespace setVariable ["COMSPEC_AtakPhoneProxFilling", true, false];
+    private _presets = [
+        [0, "Désactivée"],
+        [50, "50 mètres"],
+        [100, "100 mètres"],
+        [200, "200 mètres"],
+        [500, "500 mètres"],
+        [1000, "1 kilomètre"],
+        [2000, "2 kilomètres"]
+    ];
+    private _cur = missionNamespace getVariable ["COMSPEC_AtakPhoneProximityM", 200];
+    if (!(_cur isEqualType 0)) then { _cur = 200; };
+    lbClear _cbProx;
+    private _selP = 3;
+    {
+        _x params ["_meters", "_label"];
+        private _i = _cbProx lbAdd _label;
+        _cbProx lbSetData [_i, str _meters];
+        if (_meters isEqualTo _cur) then { _selP = _i; };
+    } forEach _presets;
+    _cbProx lbSetCurSel _selP;
+    missionNamespace setVariable ["COMSPEC_AtakPhoneProxFilling", false, false];
+};
+
 private _fb = [9847] call _ctrl;
 if (!isNull _fb && {ctrlText _fb isEqualTo ""}) then {
     _fb ctrlSetStructuredText parseText "<t size='0.9'>Indiquez votre indicatif et votre rôle. L’équipe de feu et le groupe choisis apparaissent ensuite sur ATAK.</t>";

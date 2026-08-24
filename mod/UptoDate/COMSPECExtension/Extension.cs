@@ -51,6 +51,7 @@ public static class Extension
     private static int _rateLimitBackoffSec = 2;
     private static long _lastRateLimitCbTicks;
     private static long _lastAuth401ReauthTicks;
+    private static long _terrainChunkBlockedUntilTicks;
 
     /// <summary>
     /// Dernier échec d'envoi fire-and-forget (position, tchat, marqueurs...) : ces requêtes ne
@@ -585,7 +586,13 @@ public static class Extension
         // 401 : clé / session temporairement incohérente — retenter client-init
         // (position, marqueur, recon… ; le chat synchrone peut encore passer).
         if (code == 401)
+        {
             MaybeReauthAfter401(url);
+            if (url.Contains("/terrain/chunk", StringComparison.OrdinalIgnoreCase))
+                System.Threading.Interlocked.Exchange(
+                    ref _terrainChunkBlockedUntilTicks,
+                    DateTime.UtcNow.AddSeconds(90).Ticks);
+        }
         if (ShouldRetryStatusCode(code))
             EnqueueForRetry(url, jsonBody);
     }
@@ -668,6 +675,21 @@ public static class Extension
             if (!hadCoalesced && sent < maxPerTick && TryTakeCoalescedPosition(out var fromFifo))
                 TrySendQueuedPost(fromFifo);
         }
+    }
+
+    private static string HandleTerrainChunk(string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl))
+            return FormatAtakExtArray("ERROR", "not_connected");
+        if (args.Length < 1)
+            return FormatAtakExtArray("ERROR", "empty");
+        if (DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _terrainChunkBlockedUntilTicks))
+            return FormatAtakExtArray("ERROR", "unauthorized");
+        var json = args[0] ?? "";
+        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
+            return FormatAtakExtArray("ERROR", "empty");
+        EnqueueOrSend(_baseUrl + "/api/atak/terrain/chunk", EnrichAtakPayload(json));
+        return FormatAtakExtArray("OK", "queued");
     }
 
     private static void EnqueueOrSend(string url, string jsonBody)
@@ -943,7 +965,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.11");
+            Output(output, outputSize, "COMSPECExtension 2.0.12");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1269,7 +1291,7 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.11";
+            return "OK|COMSPECExtension 2.0.12";
         }
 
         if (function == "SetTelemetryBatch")
@@ -1280,7 +1302,12 @@ public static class Extension
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.11", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.12", "COMSPEC Extension ATAK");
+        }
+
+        if (function == "Terrain.Chunk")
+        {
+            return HandleTerrainChunk(args);
         }
 
         // Captures locales (dossier Screenshots du profil) — hors ligne, sans liaison Athena.
@@ -2175,6 +2202,20 @@ public static class Extension
                     return PollOkClipped(SimplifyOrdersJson(body));
                 });
             }
+            // Ordre de mission (objectifs, LD, H). Lecture seule. Args : [mapId]
+            // Lignes : P\tcode\ttitle\tstatus\th_hour\tsentence\tphase\tclock
+            //          G\tid\tcode\tlabel\tkind\tx\ty\tstate
+            //          T\tcode\tlabel\toccurred\tclock
+            if (function == "GetMissionPlan")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var url = _baseUrl + "/api/atak/mission-plan?mapId=" + Uri.EscapeDataString(mapId);
+                return ServePollGet("GetMissionPlan:" + mapId, url, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return PollOkClipped(SimplifyMissionPlanJson(body));
+                });
+            }
             // Déclenchements TOC → jeu. Args : [mapId]
             // Lignes : charge_id\trequested_by\tid
             if (function == "GetExplosiveCommands")
@@ -2185,6 +2226,19 @@ public static class Extension
                 {
                     if (code < 200 || code >= 300) return PollHttpErr(code);
                     return PollOkClipped(SimplifyExplosiveCommandsJson(body));
+                });
+            }
+            // Déplacements IA alliée (carte ATAK → groupe en jeu). Args : [mapId]
+            // Lignes : id\ttype\ttarget_ref\tstatus\tpos_x\tpos_y\tlabel
+            if (function == "GetAiOrders")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var url = _baseUrl + "/api/atak/orders?mapId=" + Uri.EscapeDataString(mapId)
+                    + "&limit=20&for_game=1&for_ai=1";
+                return ServePollGet("GetAiOrders:" + mapId, url, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return PollOkClipped(SimplifyAiOrdersJson(body));
                 });
             }
             // Mise à jour statut ordre depuis le jeu. Args : [orderId, status, by, mapId?, note?]
@@ -3522,6 +3576,181 @@ public static class Extension
     }
 
     /// <summary>
+    /// Ordres de déplacement IA : id, type, cible, statut, coordonnées (pas le payload tronqué).
+    /// Lignes : id\ttype\ttarget_ref\tstatus\tpos_x\tpos_y\tlabel
+    /// </summary>
+    private static string SimplifyAiOrdersJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("orders", out var orders) || orders.ValueKind != JsonValueKind.Array)
+                return "";
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+            static string Cell(string s)
+            {
+                var c = Clean(s);
+                return c.Length == 0 ? "-" : c;
+            }
+            foreach (var el in orders.EnumerateArray())
+            {
+                var id = el.TryGetProperty("id", out var i) ? (i.GetString() ?? "") : "";
+                if (string.IsNullOrEmpty(id)) continue;
+                double posX = 0, posY = 0;
+                var label = "";
+                if (el.TryGetProperty("waypoint", out var wp) && wp.ValueKind == JsonValueKind.Object)
+                {
+                    if (wp.TryGetProperty("pos_x", out var px) && px.ValueKind == JsonValueKind.Number)
+                        posX = px.GetDouble();
+                    if (wp.TryGetProperty("pos_y", out var py) && py.ValueKind == JsonValueKind.Number)
+                        posY = py.GetDouble();
+                    if (wp.TryGetProperty("label", out var lb) && lb.ValueKind == JsonValueKind.String)
+                        label = lb.GetString() ?? "";
+                }
+                if (Math.Abs(posX) < 0.5 && Math.Abs(posY) < 0.5) continue;
+                var type = el.TryGetProperty("type", out var t) ? (t.GetString() ?? "MOVE") : "MOVE";
+                var targetRef = el.TryGetProperty("target_ref", out var tr) ? (tr.GetString() ?? "") : "";
+                if (string.IsNullOrEmpty(targetRef) && el.TryGetProperty("target", out var tg))
+                    targetRef = tg.GetString() ?? "";
+                var status = el.TryGetProperty("status", out var st) ? (st.GetString() ?? "PENDING") : "PENDING";
+                if (label.Length == 0 && el.TryGetProperty("payload_display", out var pd) && pd.ValueKind == JsonValueKind.String)
+                    label = pd.GetString() ?? "";
+                if (label.Length > 40) label = label.Substring(0, 40);
+                sb.Append(Cell(id)).Append('\t')
+                  .Append(Cell(type)).Append('\t')
+                  .Append(Cell(targetRef)).Append('\t')
+                  .Append(Cell(status)).Append('\t')
+                  .Append(posX.ToString("0.##", CultureInfo.InvariantCulture)).Append('\t')
+                  .Append(posY.ToString("0.##", CultureInfo.InvariantCulture)).Append('\t')
+                  .Append(Cell(label)).Append('\n');
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
+    /// Simplifie GET /api/atak/mission-plan pour SQF (ordre, repères, chronologie).
+    /// Lignes : P\tcode\ttitle\tstatus\th_hour\tsentence\tphase\tclock
+    ///          G\tid\tcode\tlabel\tkind\tx\ty\tstate
+    ///          T\tcode\tlabel\toccurred\tclock
+    /// </summary>
+    private static string SimplifyMissionPlanJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("plan", out var plan) || plan.ValueKind != JsonValueKind.Object)
+                return "";
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+            static string Cell(string s)
+            {
+                var c = Clean(s);
+                return c.Length == 0 ? "-" : c;
+            }
+            static string Prop(JsonElement el, string name)
+            {
+                if (!el.TryGetProperty(name, out var p) || p.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                    return "";
+                if (p.ValueKind == JsonValueKind.Number)
+                    return p.GetRawText();
+                if (p.ValueKind == JsonValueKind.True) return "1";
+                if (p.ValueKind == JsonValueKind.False) return "0";
+                return p.GetString() ?? "";
+            }
+            static string Coord(JsonElement el, string name)
+            {
+                if (!el.TryGetProperty(name, out var p) || p.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                    return "0";
+                if (p.ValueKind == JsonValueKind.Number)
+                    return p.GetRawText();
+                var s = (p.GetString() ?? "").Trim();
+                return s.Length == 0 ? "0" : s;
+            }
+            var sb = new StringBuilder();
+            var title = Prop(plan, "operation_name");
+            if (title.Length == 0) title = Prop(plan, "title");
+            var sentence = Prop(plan, "mission_sentence");
+            if (sentence.Length > 220) sentence = sentence.Substring(0, 220);
+            var status = Prop(plan, "status_label");
+            if (status.Length == 0) status = Prop(plan, "status");
+            var phase = Prop(plan, "phase_label");
+            if (phase.Length == 0) phase = Prop(plan, "phase");
+            sb.Append('P').Append('\t')
+              .Append(Cell(Prop(plan, "mission_code"))).Append('\t')
+              .Append(Cell(title)).Append('\t')
+              .Append(Cell(status)).Append('\t')
+              .Append(Cell(Prop(plan, "h_hour_at"))).Append('\t')
+              .Append(Cell(sentence)).Append('\t')
+              .Append(Cell(phase)).Append('\t')
+              .Append(Cell(Prop(plan, "clock_seconds"))).Append('\n');
+
+            if (root.TryGetProperty("overlay", out var overlay) && overlay.ValueKind == JsonValueKind.Object
+                && overlay.TryGetProperty("graphics", out var graphics) && graphics.ValueKind == JsonValueKind.Array)
+            {
+                var n = 0;
+                foreach (var g in graphics.EnumerateArray())
+                {
+                    if (n >= 40) break;
+                    var code = Prop(g, "code");
+                    var id = Prop(g, "id");
+                    if (id.Length == 0 && code.Length == 0) continue;
+                    var x = Coord(g, "x");
+                    var y = Coord(g, "y");
+                    if ((x == "0" || x == "0.0") && (y == "0" || y == "0.0")
+                        && g.TryGetProperty("path", out var path) && path.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var pt in path.EnumerateArray())
+                        {
+                            var px = Coord(pt, "x");
+                            var py = Coord(pt, "y");
+                            if (px != "0" || py != "0")
+                            {
+                                x = px;
+                                y = py;
+                                break;
+                            }
+                        }
+                    }
+                    sb.Append('G').Append('\t')
+                      .Append(Cell(id)).Append('\t')
+                      .Append(Cell(code)).Append('\t')
+                      .Append(Cell(Prop(g, "label"))).Append('\t')
+                      .Append(Cell(Prop(g, "kind"))).Append('\t')
+                      .Append(Cell(x)).Append('\t')
+                      .Append(Cell(y)).Append('\t')
+                      .Append(Cell(Prop(g, "draw_state"))).Append('\n');
+                    n++;
+                }
+            }
+
+            if (root.TryGetProperty("timeline", out var timeline) && timeline.ValueKind == JsonValueKind.Array)
+            {
+                var n = 0;
+                foreach (var ev in timeline.EnumerateArray())
+                {
+                    if (n >= 16) break;
+                    var label = Prop(ev, "label");
+                    if (label.Length == 0) continue;
+                    sb.Append('T').Append('\t')
+                      .Append(Cell(Prop(ev, "event_code"))).Append('\t')
+                      .Append(Cell(label)).Append('\t')
+                      .Append(Cell(Prop(ev, "occurred"))).Append('\t')
+                      .Append(Cell(Prop(ev, "clock"))).Append('\n');
+                    n++;
+                }
+            }
+
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
     /// Simplifie GET /api/atak/explosive-timers/commands pour SQF.
     /// Lignes : charge_id\trequested_by\tid
     /// </summary>
@@ -4067,11 +4296,9 @@ public static class Extension
                 return;
             }
 
-            if (function == "Terrain.Chunk" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
+            if (function == "Terrain.Chunk")
             {
-                var json = args[0] ?? "";
-                if (string.IsNullOrWhiteSpace(json) || json.Length < 8) return;
-                EnqueueOrSend(_baseUrl + "/api/atak/terrain/chunk", EnrichAtakPayload(json));
+                // Acquittement synchrone dans TryGetSyncResponse (HandleTerrainChunk).
                 return;
             }
 

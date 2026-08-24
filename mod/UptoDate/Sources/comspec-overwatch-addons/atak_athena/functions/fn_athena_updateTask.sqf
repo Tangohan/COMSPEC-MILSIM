@@ -35,7 +35,7 @@ private _rows = [];
     private _id = _x getOrDefault ["id", ""];
     if (_id isEqualTo "") then { continue };
     private _type = toUpper (_x getOrDefault ["type", "MOVE"]);
-    if (_type in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM"]) then { continue };
+    if (_type in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM", "PHONE_GEOLOC", "PHONE_GEOLOC_OFF"]) then { continue };
     if (!isNil "comspec_overwatch_connect_fnc_orderConcernsPlayer") then {
         if (!([_x] call comspec_overwatch_connect_fnc_orderConcernsPlayer)) then { continue };
     };

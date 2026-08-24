@@ -97,7 +97,8 @@ private _apply = {
     [format ["Zeus → %1 : %2", name _unit, _label], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
 };
 
-if (!isNil "zen_dialog_fnc_create") exitWith {
+private _opened = false;
+if (!isNil "zen_dialog_fnc_create") then {
     // Format ZEN : COMBO = [values, labels, defaultIndex]
     // EDIT:MULTI = [defaultText, sanitizer CODE, height NUMBER]
     private _actionValues = [
@@ -124,10 +125,10 @@ if (!isNil "zen_dialog_fnc_create") exitWith {
         "Lever capture / compromission",
         "Réparer / rétablir"
     ];
-    [
+    _opened = [
         format ["ATAK — %1", _name],
         [
-            ["EDIT:MULTI", ["Identifiants", "Steam, terminal, ID ATAK, certificat, état…"], [_info, {}, 7]],
+            ["EDIT:MULTI", ["Identifiants", "Steam, terminal, ID ATAK, certificat, état…"], [_info, {_this}, 7]],
             ["COMBO", ["Action", "Effet appliqué immédiatement sur le joueur."], [_actionValues, _actionLabels, 0]],
             ["SLIDER", ["Durée crash / brouillage (s)", "Pour crash et brouillage uniquement."], [5, 300, 45, 0]]
         ],
@@ -141,8 +142,8 @@ if (!isNil "zen_dialog_fnc_create") exitWith {
         {},
         [_unit, _apply]
     ] call zen_dialog_fnc_create;
-    true
 };
+if (!(_opened isEqualTo false)) exitWith { true };
 
 // Repli sans ZEN
 copyToClipboard _info;

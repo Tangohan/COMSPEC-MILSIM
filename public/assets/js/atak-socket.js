@@ -30,6 +30,22 @@ window.ATAKSocket = (function () {
     return abs.indexOf(base + '/api/') === 0 || /\/api\//.test(abs);
   }
 
+  function isHeartbeatUrl(url) {
+    var s = String(url || '');
+    return /\/api\/atak\/ping(?:\?|$)/.test(s) || /\/api\/health(?:\?|$)/.test(s);
+  }
+
+  function isSecondaryPollUrl(url) {
+    var s = String(url || '');
+    return /\/api\/atak\/weather(?:\?|$)/.test(s)
+      || /\/api\/atak\/stats(?:\?|$)/.test(s)
+      || /\/api\/atak\/video-feeds(?:\?|$)/.test(s)
+      || /\/api\/atak\/laser-codes(?:\?|$)/.test(s)
+      || /\/api\/cas(?:\?|\/|$)/.test(s)
+      || /\/api\/nine-line(?:\?|\/|$)/.test(s)
+      || /\/api\/recon\//.test(s);
+  }
+
   function requestMethod(input, init) {
     if (init && init.method) return String(init.method).toUpperCase();
     if (input && typeof input !== 'string' && input.method) return String(input.method).toUpperCase();
@@ -73,17 +89,20 @@ window.ATAKSocket = (function () {
       var url = requestUrl(input);
       var method = requestMethod(input, init);
       var ours = isOurApiUrl(url);
-      if (ours && method === 'GET' && isApiPaused()) {
+      var heartbeat = isHeartbeatUrl(url);
+      if (ours && method === 'GET' && isApiPaused() && !heartbeat) {
         return Promise.resolve(new Response(JSON.stringify({
+          ok: true,
+          paused: true,
           error: 'database_unavailable',
           message: 'Service temporairement indisponible. Réessayez dans un instant.'
         }), {
-          status: 503,
+          status: 200,
           headers: { 'Content-Type': 'application/json' }
         }));
       }
       return nativeFetch(input, init).then(function (res) {
-        if (ours && res && res.status === 503) {
+        if (ours && res && res.status === 503 && !heartbeat && !isSecondaryPollUrl(url)) {
           var retry = 30;
           try {
             var header = res.headers.get('Retry-After');

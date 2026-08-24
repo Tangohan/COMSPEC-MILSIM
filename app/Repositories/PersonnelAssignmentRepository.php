@@ -34,6 +34,75 @@ class PersonnelAssignmentRepository
         return $this->listActiveForUserLegacy($userId);
     }
 
+    /**
+     * Membres actuellement rattachés, groupés par unité de l’organigramme.
+     *
+     * @return array<int, list<array{user_id:int,role_name:string,callsign:string,display_name:string}>>
+     */
+    public function listActiveMembersByUnitForTenant(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $out = [];
+        if ($this->personnelAssignmentsTableExists()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT pa.unit_id, pa.user_id, pa.role_name, usr.callsign, usr.display_name
+                 FROM personnel_assignments pa
+                 INNER JOIN users usr ON usr.id = pa.user_id AND usr.tenant_id = ?
+                 INNER JOIN units un ON un.id = pa.unit_id AND un.tenant_id = ?
+                 WHERE (pa.status = \'active\' OR pa.status = \'\' OR pa.status IS NULL)
+                   AND (pa.ended_at IS NULL OR pa.ended_at >= CURDATE())
+                   AND usr.status = \'active\'
+                 ORDER BY pa.is_primary DESC, usr.display_name ASC'
+            );
+            $stmt->execute([$tenantId, $tenantId]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $uid = (int) ($row['unit_id'] ?? 0);
+                $userId = (int) ($row['user_id'] ?? 0);
+                if ($uid < 1 || $userId < 1) {
+                    continue;
+                }
+                $out[$uid][] = [
+                    'user_id' => $userId,
+                    'role_name' => trim((string) ($row['role_name'] ?? '')),
+                    'callsign' => trim((string) ($row['callsign'] ?? '')),
+                    'display_name' => trim((string) ($row['display_name'] ?? '')),
+                ];
+            }
+        }
+        if ($out !== []) {
+            return $out;
+        }
+        if (!$this->userUnitsTableExists()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT uu.unit_id, uu.user_id, uu.assignment_type AS role_name, usr.callsign, usr.display_name
+             FROM user_units uu
+             INNER JOIN users usr ON usr.id = uu.user_id AND usr.tenant_id = ?
+             INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = ?
+             WHERE usr.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+             ORDER BY uu.is_primary DESC, usr.display_name ASC'
+        );
+        $stmt->execute([$tenantId, $tenantId]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $uid = (int) ($row['unit_id'] ?? 0);
+            $userId = (int) ($row['user_id'] ?? 0);
+            if ($uid < 1 || $userId < 1) {
+                continue;
+            }
+            $out[$uid][] = [
+                'user_id' => $userId,
+                'role_name' => trim((string) ($row['role_name'] ?? '')),
+                'callsign' => trim((string) ($row['callsign'] ?? '')),
+                'display_name' => trim((string) ($row['display_name'] ?? '')),
+            ];
+        }
+
+        return $out;
+    }
+
     /** @return list<array<string, mixed>> Affectations actives (status = active, ended_at null ou future). */
     public function listActiveForUser(int $userId): array
     {

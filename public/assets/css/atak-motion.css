@@ -128,3 +128,95 @@
 .atak-unit-popup__val--course-arrived {
   color: #34d399;
 }
+
+.atak-trail-legend {
+  position: absolute;
+  right: 10px;
+  left: auto;
+  bottom: 12px;
+  z-index: 520;
+  max-width: 16.5rem;
+  padding: 0.45rem 0.6rem 0.5rem;
+  background: rgba(12, 14, 20, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 11px;
+  line-height: 1.35;
+  pointer-events: none;
+}
+.atak-trail-legend[hidden] {
+  display: none !important;
+}
+.atak-trail-legend__title {
+  margin: 0 0 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+.atak-trail-legend__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.atak-trail-legend__list li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.18rem 0;
+}
+.atak-trail-legend__swatch {
+  display: inline-block;
+  width: 1.15rem;
+  height: 0;
+  border-top: 3px solid #4ade80;
+  flex-shrink: 0;
+}
+.atak-trail-legend__swatch--phone { border-top-color: #22d3ee; }
+.atak-trail-legend__swatch--vehicle { border-top-color: #f59e0b; }
+.atak-trail-legend__swatch--infantry { border-top-color: #4ade80; }
+.atak-trail-legend__swatch--air { border-top-color: #60a5fa; }
+.atak-trail-legend__swatch--dash {
+  border-top: 0;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, #fbbf24 0 5px, transparent 5px 9px);
+}
+.atak-trail-legend__swatch--reach {
+  border-top: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px dashed #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+}
+.atak-trail-legend__x {
+  color: #f87171;
+  font-weight: 800;
+  width: 1.15rem;
+  text-align: center;
+  text-shadow: 0 0 2px #0b0d12;
+}
+
+.atak-trail-loss {
+  background: transparent !important;
+  border: 0 !important;
+}
+.atak-trail-loss__x {
+  display: block;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  color: #fecaca;
+  font-size: 15px;
+  font-weight: 800;
+  text-shadow:
+    0 0 2px #7f1d1d,
+    0 1px 0 #111827,
+    1px 0 0 #111827,
+    -1px 0 0 #111827,
+    0 -1px 0 #111827;
+  pointer-events: none;
+}

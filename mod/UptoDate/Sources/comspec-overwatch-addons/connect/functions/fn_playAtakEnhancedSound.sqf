@@ -1,44 +1,49 @@
 /*
-    Joue un son roleplay dans l'ATAK Enhanced.
-    
-    Params:
-        0: STRING - Type de son ("disconnect", "reconnect", "interference", "zone_alert")
+    Son roleplay ATAK (coupure, gel, zone, réparation).
+    Jamais les bips vanilla Arma (FD_CP / AddItemFailed / beep_target) :
+    ils passent pour des erreurs script et spamment sur les coupures courtes.
 */
-
 if (!hasInterface) exitWith {};
 
-params [
-    ["_soundType", "", [""]]
-];
+params [["_soundType", "", [""]]];
+if (_soundType isEqualTo "") exitWith {};
+_soundType = toLower _soundType;
 
-if (_soundType == "") exitWith {};
+private _kind = switch (_soundType) do {
+    case "disconnect";
+    case "crash";
+    case "screen_broken";
+    case "interference";
+    case "glitch": { "down" };
+    case "reconnect": { "up" };
+    case "zone_alert";
+    case "warning";
+    case "degraded": { "warn" };
+    default { "" };
+};
+if (_kind isEqualTo "") exitWith {};
 
-// Sons du jeu Arma 3 (pas de fichiers externes requis)
-private _sound = switch (_soundType) do {
-    case "disconnect": {
-        ["A3\Sounds_F\sfx\radio\ambient_radio18.wss", 0.8]
-    };
-    case "reconnect": {
-        ["A3\Sounds_F\sfx\beep_target.wss", 0.5]
-    };
-    case "interference": {
-        ["A3\Sounds_F\sfx\radio\ambient_radio17.wss", 0.4]
-    };
-    case "zone_alert": {
-        ["A3\Sounds_F\sfx\alarm_independent.wss", 0.6]
-    };
-    case "screen_broken": {
-        ["A3\Sounds_F\sfx\ui\vehicles\vehicle_collision.wss", 0.7]
-    };
-    case "crash": {
-        ["A3\Sounds_F\sfx\ui\vehicles\vehicle_collision.wss", 0.9]
-    };
-    default { nil };
+private _now = diag_tickTime;
+private _lastMap = missionNamespace getVariable ["COMSPEC_AtakMalfunctionSoundAt", createHashMap];
+if (!(_lastMap isEqualType createHashMap)) then { _lastMap = createHashMap; };
+private _prev = _lastMap getOrDefault [_kind, -1e9];
+if ((_now - _prev) < 8) exitWith {};
+_lastMap set [_kind, _now];
+missionNamespace setVariable ["COMSPEC_AtakMalfunctionSoundAt", _lastMap, false];
+
+private _pref = missionNamespace getVariable ["comspec_overwatch_notif_sound", "silent_vib"];
+if (!(_pref isEqualType "")) then { _pref = "silent_vib"; };
+_pref = toLower _pref;
+if (_pref isEqualTo "mute") exitWith {};
+
+private _vol = ["fx"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
+if (_vol <= 0.01) exitWith {};
+
+private _silentVib = _pref isEqualTo "silent_vib";
+private _snd = switch (_kind) do {
+    case "down": { if (_silentVib) then { "COMSPEC_ATAK_Vibrate" } else { "COMSPEC_ATAK_Disconnect" } };
+    case "up": { if (_silentVib) then { "COMSPEC_ATAK_Vibrate" } else { "COMSPEC_ATAK_Start" } };
+    default { "COMSPEC_ATAK_Vibrate" };
 };
 
-if (isNil "_sound") exitWith {};
-
-_sound params ["_file", "_volume"];
-private _gain = ["fx"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
-if (_gain <= 0.01) exitWith {};
-playSound3D [_file, player, false, getPosASL player, (_volume * _gain) min 2, 1, 10];
+playSoundUI [_snd, _vol, 1];

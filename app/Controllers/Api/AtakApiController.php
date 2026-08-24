@@ -2258,6 +2258,70 @@ class AtakApiController
         return Response::json(['ok' => true, 'message' => 'Entrée ajoutée au journal.'], 201);
     }
 
+    /**
+     * Lots d’incidents / remontées depuis la carte web (session opérateur).
+     */
+    public function webLogStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $request->query('mapId') ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $rawEvents = $body['events'] ?? [];
+        if (!is_array($rawEvents)) {
+            return Response::json([
+                'error' => 'invalid',
+                'message' => 'Aucune entrée à enregistrer.',
+            ], 422);
+        }
+        $brief = $this->sessionUserBrief();
+        $actor = 'Carte web';
+        if (is_array($brief)) {
+            $cs = trim((string) ($brief['callsign'] ?? ''));
+            $dn = trim((string) ($brief['displayName'] ?? ''));
+            if ($cs !== '') {
+                $actor = $cs;
+            } elseif ($dn !== '') {
+                $actor = $dn;
+            }
+        }
+        $accepted = 0;
+        foreach (array_slice($rawEvents, 0, 40) as $ev) {
+            if (!is_array($ev)) {
+                continue;
+            }
+            $kind = strtolower(trim((string) ($ev['kind'] ?? $ev['type'] ?? '')));
+            $label = trim(strip_tags((string) ($ev['label'] ?? $ev['message'] ?? '')));
+            if ($label === '') {
+                continue;
+            }
+            $detail = trim(strip_tags((string) ($ev['detail'] ?? '')));
+            $meta = ['source' => 'web'];
+            if ($detail !== '') {
+                $meta['detail'] = mb_strlen($detail) > 240 ? (mb_substr($detail, 0, 240) . '…') : $detail;
+            }
+            try {
+                if ($kind === 'incident' || $kind === 'error') {
+                    $this->activityLog->recordError($tenantId, $mapId, $label, $actor, $meta);
+                    $accepted++;
+                } elseif ($kind === 'remontee' || $kind === 'ingest' || $kind === 'donnees') {
+                    $ingestKind = strtolower(trim((string) ($ev['ingest_kind'] ?? $ev['ingestKind'] ?? 'web')));
+                    $this->activityLog->recordIngest($tenantId, $mapId, $ingestKind !== '' ? $ingestKind : 'web', $label, $actor, $meta);
+                    $accepted++;
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return Response::json(['ok' => true, 'accepted' => $accepted]);
+    }
+
     public function soiPaceIndex(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);
@@ -4996,6 +5060,14 @@ class AtakApiController
                         $extra
                     )
                 );
+                $this->activityLog->recordIngest(
+                    $tenantId,
+                    $mapId,
+                    'position',
+                    'Position reçue — ' . $callSign,
+                    (string) $callSign,
+                    ['source' => 'terrain']
+                );
             }
         } catch (\Throwable) {
         }
@@ -5313,10 +5385,28 @@ class AtakApiController
 
         $mapId = $this->mapId($request);
 
-        return Response::json([
-            'mapId' => $mapId,
-            'weather' => $svc->get($tenantId, $mapId),
-        ]);
+        try {
+            return Response::json([
+                'mapId' => $mapId,
+                'weather' => $svc->get($tenantId, $mapId),
+            ]);
+        } catch (\Throwable) {
+            return Response::json([
+                'mapId' => $mapId,
+                'weather' => [
+                    'condition' => '',
+                    'temperature_c' => null,
+                    'wind_kph' => null,
+                    'wind_dir' => null,
+                    'cloud_pct' => null,
+                    'fog_pct' => null,
+                    'rain_pct' => null,
+                    'humidity_pct' => null,
+                    'call_sign' => '',
+                    'updated_at' => '',
+                ],
+            ]);
+        }
     }
 
     /**
@@ -6519,10 +6609,13 @@ class AtakApiController
         $since = is_string($sinceRaw) ? trim($sinceRaw) : '';
         $isDelta = $since !== '';
         $user = $this->sessionUserBrief();
+        $forAi = (int) ($request->query('for_ai') ?? 0) === 1;
         $forGame = (int) ($request->query('for_game') ?? 0) === 1
+            || $forAi
             || ($user === null && ComspecApiKeyAuth::matchedTenantId() !== null);
         // Vue émetteur (web connecté) : voit aussi le transit radio. Jeu / clé API : destinataire.
-        $issuerView = $user !== null && !$forGame;
+        // Ordres IA : le poll jeu doit les voir tout de suite (pas d’attente radio).
+        $issuerView = ($user !== null && !$forGame) || $forAi;
         $rows = $this->orderRepository->listForMap(
             $r,
             $mapId,
@@ -6534,7 +6627,7 @@ class AtakApiController
         $steamRaw = (string) ($request->query('steam_uid') ?? $request->query('steam') ?? '');
         $steam = SteamId::normalize($steamRaw);
         $callsignQ = trim((string) ($request->query('callsign') ?? $request->query('call_sign') ?? ''));
-        $recipientAliases = $forGame
+        $recipientAliases = ($forGame && !$forAi)
             ? $this->resolveGameRecipientAliases($r, $mapId, $steam, $callsignQ)
             : [];
 
@@ -6542,7 +6635,20 @@ class AtakApiController
         $maxUpdated = '';
         foreach ($rows as $row) {
             $orderType = strtoupper((string) ($row['order_type'] ?? ''));
+            $targetTypeRow = strtolower((string) ($row['target_type'] ?? 'all'));
             $isTerminalSignal = in_array($orderType, AtakOrderRepository::TERMINAL_SIGNAL_TYPES, true);
+            if ($forAi) {
+                if ($targetTypeRow !== 'ally' || $orderType !== 'MOVE') {
+                    continue;
+                }
+                $aiStatus = strtoupper((string) ($row['status'] ?? 'PENDING'));
+                if (!in_array($aiStatus, ['PENDING', 'DELIVERED'], true)) {
+                    continue;
+                }
+            }
+            if ($forGame && !$forAi && $targetTypeRow === 'ally') {
+                continue;
+            }
             // Signaux terminal : visibles côté jeu uniquement, jamais dans le panneau ordres web.
             if (!$forGame && $isTerminalSignal) {
                 continue;
@@ -6557,10 +6663,13 @@ class AtakApiController
             }
 
             $serialized = $this->serializeOrder($row);
+            if ($forAi && empty($serialized['waypoint'])) {
+                continue;
+            }
             $aliases = $this->orderMatchAliases($r, $mapId, $row);
             $serialized['match_aliases'] = $aliases;
 
-            if ($forGame && $recipientAliases !== [] && !$this->orderMatchesRecipientAliases($row, $aliases, $recipientAliases)) {
+            if ($forGame && !$forAi && $recipientAliases !== [] && !$this->orderMatchesRecipientAliases($row, $aliases, $recipientAliases)) {
                 continue;
             }
 
@@ -7100,6 +7209,30 @@ class AtakApiController
         }
         usort($solos, static fn ($a, $b) => strcasecmp((string) $a['label'], (string) $b['label']));
 
+        $allies = [];
+        foreach ($liveUnits as $unit) {
+            if (!$this->unitIsAllyAi($unit)) {
+                continue;
+            }
+            $allyId = $this->unitAllyId($unit);
+            $callSign = trim((string) ($unit['call_sign'] ?? ''));
+            if ($allyId === '' && $callSign === '') {
+                continue;
+            }
+            $label = $callSign !== '' ? $callSign : $allyId;
+            $status = (string) ($unit['status'] ?? '');
+            if ($status === 'offline') {
+                $label .= ' (hors ligne)';
+            }
+            $allies[] = [
+                'id' => $allyId !== '' ? $allyId : $callSign,
+                'label' => $label,
+                'callsign' => $callSign,
+                'status' => $status,
+            ];
+        }
+        usort($allies, static fn ($a, $b) => strcasecmp((string) $a['label'], (string) $b['label']));
+
         return Response::json([
             'ok' => true,
             'mapId' => $mapId,
@@ -7110,12 +7243,14 @@ class AtakApiController
                 ['id' => 'fire_team', 'label' => 'Fire team'],
                 ['id' => 'channel', 'label' => 'Canal'],
                 ['id' => 'solo', 'label' => 'ATAK Solo'],
+                ['id' => 'ally', 'label' => 'Unité alliée'],
             ],
             'users' => $users,
             'groups' => $groups,
             'fire_teams' => $fireTeams,
             'channels' => $channels,
             'solos' => $solos,
+            'allies' => $allies,
         ]);
     }
 
@@ -7179,7 +7314,9 @@ class AtakApiController
         }
 
         $radioSim = true;
-        if (array_key_exists('radio_sim', $body)) {
+        if ($targetType === 'ally') {
+            $radioSim = false;
+        } elseif (array_key_exists('radio_sim', $body)) {
             $radioSim = (bool) $body['radio_sim'];
         } elseif (array_key_exists('radioSim', $body)) {
             $radioSim = (bool) $body['radioSim'];
@@ -7501,6 +7638,28 @@ class AtakApiController
             if ($label === '') {
                 $label = $targetRef . ($mid !== '' ? ' — ' . $mid : '');
             }
+        } elseif ($targetType === 'ally') {
+            $found = null;
+            foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+                if (!$this->unitIsAllyAi($unit)) {
+                    continue;
+                }
+                $allyId = $this->unitAllyId($unit);
+                $cs = trim((string) ($unit['call_sign'] ?? ''));
+                if (strcasecmp($allyId, $targetRef) === 0 || strcasecmp($cs, $targetRef) === 0) {
+                    $found = $unit;
+                    $targetRef = $allyId !== '' ? $allyId : $cs;
+                    break;
+                }
+            }
+            if (!$found) {
+                return ['target' => '', 'target_ref' => '', 'target_label' => '', 'error' => 'Unité alliée introuvable sur cette carte. Pensez à l’afficher depuis Zeus (IA alliée sur l’ATAK).'];
+            }
+            $matchTarget = $targetRef;
+            if ($label === '') {
+                $cs = trim((string) ($found['call_sign'] ?? ''));
+                $label = $cs !== '' ? $cs : $targetRef;
+            }
         } else {
             $matchTarget = $legacyTarget !== '' ? $legacyTarget : $targetRef;
             if ($label === '') {
@@ -7536,10 +7695,50 @@ class AtakApiController
         if (is_string($raw) && $raw !== '') {
             $decoded = json_decode($raw, true);
 
-            return is_array($decoded) ? $decoded : [];
+            return is_array($decoded) ? $decoded : AtakDataRepository::decodeExtra($raw);
         }
 
         return [];
+    }
+
+    /**
+     * @param array<string, mixed> $unit
+     */
+    private function unitIsAllyAi(array $unit): bool
+    {
+        $extra = $this->parseUnitExtra($unit);
+        foreach (['ally_ai', 'is_ai'] as $flag) {
+            $val = $extra[$flag] ?? false;
+            if ($val === true || $val === 1 || $val === '1' || $val === 'true') {
+                return true;
+            }
+        }
+        if (strtolower(trim((string) ($extra['source'] ?? ''))) === 'ally') {
+            return true;
+        }
+        $cs = trim((string) ($unit['call_sign'] ?? ''));
+
+        return $cs !== '' && str_starts_with(function_exists('mb_strtoupper') ? mb_strtoupper($cs, 'UTF-8') : strtoupper($cs), 'ALLY-');
+    }
+
+    /**
+     * Identifiant stable ALLY-… (netId), pas le libellé d’affichage.
+     *
+     * @param array<string, mixed> $unit
+     */
+    private function unitAllyId(array $unit): string
+    {
+        $extra = $this->parseUnitExtra($unit);
+        $id = trim((string) ($extra['ally_id'] ?? ''));
+        if ($id !== '') {
+            return $id;
+        }
+        $cs = trim((string) ($unit['call_sign'] ?? ''));
+        if (preg_match('/^(ALLY-[^\s·]+)/iu', $cs, $m) === 1) {
+            return (string) $m[1];
+        }
+
+        return $cs;
     }
 
     /**
@@ -7801,6 +8000,8 @@ class AtakApiController
             'HELMET_SNAP' => 'Photo casque',
             'HELMET_SNAP_HD' => 'Photo casque HD',
             'HELMET_STREAM' => 'Flux casque',
+            'PHONE_GEOLOC' => 'Géolocalisation téléphone',
+            'PHONE_GEOLOC_OFF' => 'Arrêt géolocalisation téléphone',
             default => null,
         };
         if ($builtin !== null) {
@@ -7851,6 +8052,7 @@ class AtakApiController
             'fire_team' => 'Fire team',
             'channel' => 'Canal',
             'solo' => 'ATAK Solo',
+            'ally' => 'Unité alliée',
             default => 'Toute l’équipe',
         };
     }
@@ -7953,6 +8155,21 @@ class AtakApiController
                     if ($uid > 0) {
                         $add('user:' . $uid);
                     }
+                }
+            }
+        } elseif ($targetType === 'ally') {
+            $add($targetRef);
+            $add((string) ($row['target'] ?? ''));
+            foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+                if (!$this->unitIsAllyAi($unit)) {
+                    continue;
+                }
+                $allyId = $this->unitAllyId($unit);
+                $cs = trim((string) ($unit['call_sign'] ?? ''));
+                if (strcasecmp($allyId, $targetRef) === 0 || strcasecmp($cs, $targetRef) === 0) {
+                    $add($allyId);
+                    $add($cs);
+                    break;
                 }
             }
         } elseif ($targetType === 'group') {
@@ -8715,8 +8932,13 @@ class AtakApiController
         $mapId = $this->mapId($request);
         $assignedTo = $request->query('assignedTo') ?? $request->query('assigned_to');
         $status = $request->query('status');
-        $rows = $this->casRepo->listCas($tenantId, $mapId, $assignedTo, $status, CasNineLineRepository::KIND_CAS);
-        return Response::json($rows);
+        try {
+            $rows = $this->casRepo->listCas($tenantId, $mapId, $assignedTo, $status, CasNineLineRepository::KIND_CAS);
+
+            return Response::json($rows);
+        } catch (\Throwable) {
+            return Response::json([]);
+        }
     }
 
     public function casStore(Request $request, array $params = []): Response

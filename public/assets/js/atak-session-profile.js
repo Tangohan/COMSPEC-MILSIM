@@ -194,6 +194,7 @@ window.ATAKSessionProfile = (function () {
         return true;
       case 'cams':
       case 'markers':
+      case 'zones':
       case 'chat':
       case 'pings':
       case 'liaison':

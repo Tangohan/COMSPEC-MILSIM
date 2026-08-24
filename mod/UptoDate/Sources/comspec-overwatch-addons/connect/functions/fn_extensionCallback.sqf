@@ -346,12 +346,16 @@ switch (_function) do {
         private _path = if ((count _parts) > 1) then { _parts select 1 } else { "" };
         private _age = if ((count _parts) > 2) then { _parts select 2 } else { "0" };
         private _label = if (_path isEqualTo "") then { "POST" } else { _path };
-        // 401 position / marqueur : souvent transitoire (clé / session) — WARN, pas ERROR spam.
+        if ((_path find "terrain") >= 0) then {
+            missionNamespace setVariable ["COMSPEC_TerrainAbort", true, false];
+        };
+        // 401 position / marqueur / relief : souvent transitoire (clé / session) — WARN, pas ERROR spam.
         private _phase = if (
             _code isEqualTo "401"
             && {
                 (_path find "position") >= 0
                 || {(_path find "marker") >= 0}
+                || {(_path find "terrain") >= 0}
             }
         ) then { "warn" } else { "fail" };
         ["HTTP POST", _phase, format ["code %1 · %2 (il y a %3 s)", _code, _label, _age], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;

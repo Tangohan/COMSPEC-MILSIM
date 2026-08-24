@@ -71,6 +71,10 @@ final class MissionPlanningAtakService
             $liveIndex = $this->liveIndex($tenantId, $mapId);
             $slots = $this->slotCards($plan, $roster, $liveIndex);
             $graphics = $this->serializeGraphics($this->plans->graphicsForPlan($planId));
+            if (($plan['status'] ?? '') === 'live') {
+                $this->markReachedGraphics($planId, $graphics, $slots);
+                $graphics = $this->serializeGraphics($this->plans->graphicsForPlan($planId));
+            }
             $timeline = $this->serializeTimeline($plan, $this->plans->timelineForPlan($planId));
 
             return [
@@ -438,6 +442,114 @@ final class MissionPlanningAtakService
         }
 
         return $out;
+    }
+
+    /**
+     * Passe un repère à « terminé » dès qu’une unité en liaison est à proximité.
+     *
+     * @param list<array<string,mixed>> $graphics
+     * @param array<string,array<string,mixed>> $slots
+     */
+    private function markReachedGraphics(int $planId, array $graphics, array $slots): void
+    {
+        $positions = [];
+        foreach ($slots as $slot) {
+            if (empty($slot['online'])) {
+                continue;
+            }
+            $x = isset($slot['pos_x']) ? (float) $slot['pos_x'] : 0.0;
+            $y = isset($slot['pos_y']) ? (float) $slot['pos_y'] : 0.0;
+            if (abs($x) < 0.5 && abs($y) < 0.5) {
+                continue;
+            }
+            $positions[] = [$x, $y];
+        }
+        if ($positions === []) {
+            return;
+        }
+        $reachKinds = ['ld' => true, 'obj' => true, 'orp' => true, 'lz' => true, 'pl' => true, 'cp' => true];
+        foreach ($graphics as $g) {
+            $id = (int) ($g['id'] ?? 0);
+            $state = (string) ($g['draw_state'] ?? '');
+            $kind = (string) ($g['kind'] ?? '');
+            if ($id < 1 || $state === 'completed' || empty($reachKinds[$kind]) || empty($g['placed'])) {
+                continue;
+            }
+            if (!$this->anyNearGraphic($g, $positions, 80.0)) {
+                continue;
+            }
+            $this->plans->updateGraphic($planId, $id, ['draw_state' => 'completed']);
+            $code = (string) ($g['code'] ?? '');
+            $label = trim((string) ($g['label'] ?? $code));
+            if ($label === '') {
+                $label = $code;
+            }
+            $this->plans->insertTimeline(
+                $planId,
+                'arma',
+                $code !== '' ? $code : strtoupper($kind),
+                $label . ' atteint.',
+                null,
+                date('Y-m-d H:i:s')
+            );
+            $this->plans->addLog($planId, $label . ' — atteint par une unité en liaison.', null);
+        }
+    }
+
+    /**
+     * @param array<string,mixed> $graphic
+     * @param list<array{0:float,1:float}> $positions
+     */
+    private function anyNearGraphic(array $graphic, array $positions, float $meters): bool
+    {
+        $path = is_array($graphic['path'] ?? null) ? $graphic['path'] : [];
+        $pts = [];
+        foreach ($path as $pt) {
+            if (!is_array($pt) || $pt['x'] === null || $pt['y'] === null) {
+                continue;
+            }
+            $pts[] = [(float) $pt['x'], (float) $pt['y']];
+        }
+        if ($pts === [] && $graphic['x'] !== null && $graphic['y'] !== null) {
+            $pts[] = [(float) $graphic['x'], (float) $graphic['y']];
+        }
+        if ($pts === []) {
+            return false;
+        }
+        foreach ($positions as $pos) {
+            if (count($pts) === 1) {
+                if ($this->distM($pos[0], $pos[1], $pts[0][0], $pts[0][1]) <= $meters) {
+                    return true;
+                }
+                continue;
+            }
+            for ($i = 0; $i < count($pts) - 1; $i++) {
+                if ($this->distToSegment($pos[0], $pos[1], $pts[$i][0], $pts[$i][1], $pts[$i + 1][0], $pts[$i + 1][1]) <= $meters) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function distM(float $x1, float $y1, float $x2, float $y2): float
+    {
+        return hypot($x2 - $x1, $y2 - $y1);
+    }
+
+    private function distToSegment(float $px, float $py, float $ax, float $ay, float $bx, float $by): float
+    {
+        $dx = $bx - $ax;
+        $dy = $by - $ay;
+        $len2 = ($dx * $dx) + ($dy * $dy);
+        if ($len2 < 0.0001) {
+            return $this->distM($px, $py, $ax, $ay);
+        }
+        $t = (($px - $ax) * $dx + ($py - $ay) * $dy) / $len2;
+        $t = max(0.0, min(1.0, $t));
+
+        return $this->distM($px, $py, $ax + $t * $dx, $ay + $t * $dy);
     }
 
     /**

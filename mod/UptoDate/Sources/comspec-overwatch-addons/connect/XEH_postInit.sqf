@@ -264,12 +264,14 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
         [] call comspec_overwatch_connect_fnc_registerZenSseModules;
         [] call comspec_overwatch_connect_fnc_registerZenTrackActions;
+        [] call comspec_overwatch_connect_fnc_registerZeusAttributeButtons;
     }, [], 2] call CBA_fnc_waitAndExecute;
     [{
         [] call comspec_overwatch_connect_fnc_registerZenRoleplayModules;
         [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
         [] call comspec_overwatch_connect_fnc_registerZenSseModules;
         [] call comspec_overwatch_connect_fnc_registerZenTrackActions;
+        [] call comspec_overwatch_connect_fnc_registerZeusAttributeButtons;
     }, [], 8] call CBA_fnc_waitAndExecute;
 
     // Tampon hors ligne : rejeu des transmissions mises en attente. La boucle est

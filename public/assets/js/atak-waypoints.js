@@ -134,15 +134,19 @@ window.ATAKWaypoints = (function () {
 
   function resolveOriginPos(targetType, targetRef) {
     var units = (window.ATAKUnits && window.ATAKUnits.getUnits) ? (window.ATAKUnits.getUnits() || []) : [];
-    if (targetType === 'solo' && targetRef) {
-      var ref = String(targetRef).trim().toLowerCase();
+    if (targetType === 'solo' || targetType === 'ally') {
+      var ref = String(targetRef || '').trim().toLowerCase();
       for (var i = 0; i < units.length; i++) {
         var u = units[i];
         var id = String(u.id != null ? u.id : '').toLowerCase();
-        var cs = String(u.callsign || u.displayName || '').toLowerCase();
-        if (id === ref || cs === ref) {
+        var cs = String(u.call_sign || u.callsign || u.displayName || '').toLowerCase();
+        var allyId = '';
+        if (window.ATAKUnits && window.ATAKUnits.allyIdOf) {
+          allyId = String(window.ATAKUnits.allyIdOf(u) || '').toLowerCase();
+        }
+        if (id === ref || cs === ref || (allyId && allyId === ref)) {
           if (u.pos_x != null && u.pos_y != null) {
-            return { pos_x: parseFloat(u.pos_x), pos_y: parseFloat(u.pos_y), label: u.callsign || u.displayName || 'Opérateur' };
+            return { pos_x: parseFloat(u.pos_x), pos_y: parseFloat(u.pos_y), label: u.call_sign || u.callsign || u.displayName || 'Unité' };
           }
         }
       }
@@ -267,7 +271,7 @@ window.ATAKWaypoints = (function () {
       '<div class="atak-input-modal__backdrop" data-wp-close></div>' +
       '<div class="atak-input-modal__box atak-waypoint-modal__box">' +
         '<h2 class="atak-input-modal__title">Point de mission</h2>' +
-        '<p class="atak-input-modal__hint">L’ordre est transmis sur l’ATAK du destinataire. Il pourra confirmer ou refuser ; le point apparaît sur sa carte après acceptation.</p>' +
+        '<p class="atak-input-modal__hint">L’ordre est transmis au destinataire. Pour une unité alliée, le groupe se déplace en jeu. Pour un opérateur, le point apparaît sur son ATAK après confirmation.</p>' +
         '<label class="atak-input-modal__field-label">Nom du point</label>' +
         '<input type="text" class="atak-input-modal__field" id="atak-wp-label" maxlength="80" placeholder="Ex. Phase nord — RV" />' +
         '<label class="atak-input-modal__field-label">Consignes</label>' +
@@ -283,6 +287,7 @@ window.ATAKWaypoints = (function () {
           '<label class="atak-input-modal__field-label">Destinataires</label>' +
           '<select class="atak-input-modal__field" id="atak-wp-target-type">' +
             '<option value="solo">Un opérateur</option>' +
+            '<option value="ally">Unité alliée</option>' +
             '<option value="fire_team">Équipe feu</option>' +
             '<option value="group">Groupe</option>' +
             '<option value="channel">Canal radio</option>' +
@@ -370,6 +375,7 @@ window.ATAKWaypoints = (function () {
     var targetRef = (document.getElementById('atak-wp-target-ref') || {}).value || '';
     var speedKph = parseFloat((document.getElementById('atak-wp-speed') || {}).value) || 5;
     var radioSim = !!(document.getElementById('atak-wp-radio-sim') || {}).checked;
+    if (targetType === 'ally') radioSim = false;
 
     label = String(label).trim();
     text = String(text).trim();
@@ -472,6 +478,65 @@ window.ATAKWaypoints = (function () {
     return '<div class="atak-order-waypoint-meta">' + parts.join(' · ') + '</div>';
   }
 
+  function issueAllyMove(unit, latlng) {
+    if (!canIssue()) {
+      if (window.ATAKShowError) window.ATAKShowError('Profil commandement requis pour déplacer une unité alliée.');
+      return Promise.resolve(false);
+    }
+    if (!unit || !latlng) return Promise.resolve(false);
+    var allyId = (window.ATAKUnits && window.ATAKUnits.allyIdOf) ? window.ATAKUnits.allyIdOf(unit) : '';
+    var cs = String(unit.call_sign || unit.callsign || '').trim();
+    var ref = allyId || cs;
+    if (!ref) {
+      if (window.ATAKShowError) window.ATAKShowError('Cette unité alliée n’a pas d’identité utilisable.');
+      return Promise.resolve(false);
+    }
+    var posX = Number(latlng.lng);
+    var posY = Number(latlng.lat);
+    if (!isFinite(posX) || !isFinite(posY)) return Promise.resolve(false);
+    var grid = gridLabelFromLatLng(latlng);
+    var origin = null;
+    if (unit.pos_x != null && unit.pos_y != null) {
+      origin = { pos_x: parseFloat(unit.pos_x), pos_y: parseFloat(unit.pos_y), label: cs || ref };
+    }
+    var dist = origin ? euclideanDistance(origin.pos_x, origin.pos_y, posX, posY) : null;
+    var payload = buildPayload('Déplacement', posX, posY, {
+      grid_reference: grid,
+      distance_m: dist,
+      speed_kph: 5,
+      label: 'Déplacement'
+    });
+    if (!window.ATAKOrders || !window.ATAKOrders.postOrder) {
+      if (window.ATAKShowError) window.ATAKShowError('Émission d’ordre indisponible.');
+      return Promise.resolve(false);
+    }
+    return window.ATAKOrders.postOrder({
+      mapId: getMapId(),
+      type: 'MOVE',
+      priority: 'IMPORTANT',
+      target_type: 'ally',
+      target_ref: ref,
+      payload: payload,
+      issuer: getAuthor(),
+      radio_sim: false
+    }).then(function (res) {
+      if (!res.ok) {
+        if (window.ATAKShowError) {
+          window.ATAKShowError((res.data && res.data.message) || 'Impossible d’envoyer le déplacement.');
+        }
+        return false;
+      }
+      if (window.ATAKShowNotification) {
+        window.ATAKShowNotification((cs || 'Unité alliée') + ' se déplace vers ' + grid);
+      }
+      if (window.ATAKOrders && window.ATAKOrders.fetchOrders) window.ATAKOrders.fetchOrders();
+      return true;
+    }).catch(function () {
+      if (window.ATAKShowError) window.ATAKShowError('Liaison interrompue — déplacement non transmis.');
+      return false;
+    });
+  }
+
   return {
     parseWaypoint: parseWaypoint,
     buildPayload: buildPayload,
@@ -481,6 +546,7 @@ window.ATAKWaypoints = (function () {
     closeModal: closeModal,
     focusOrderWaypoint: focusOrderWaypoint,
     renderWaypointMetaHtml: renderWaypointMetaHtml,
-    formatDistance: formatDistance
+    formatDistance: formatDistance,
+    issueAllyMove: issueAllyMove
   };
 })();

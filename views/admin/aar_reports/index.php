@@ -33,6 +33,20 @@ $filterLink = static function (string $status = '', bool $openActions = false) u
 $athKpis = $kpis;
 require base_path('views/partials/ath_kpis.php');
 
+$templates = is_array($aarTemplates ?? null) ? $aarTemplates : [];
+$canManageTemplates = !empty($aarCanManageTemplates);
+$templatesJson = json_encode(array_map(static function (array $tpl): array {
+    return [
+        'id' => (int) ($tpl['id'] ?? 0),
+        'title' => (string) ($tpl['title'] ?? ''),
+        'description' => (string) ($tpl['description'] ?? ''),
+        'fields' => is_array($tpl['fields'] ?? null) ? $tpl['fields'] : [],
+    ];
+}, $templates), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+if (!is_string($templatesJson)) {
+    $templatesJson = '[]';
+}
+
 $s = \App\Core\Session::getFlash('success');
 $e = \App\Core\Session::getFlash('error');
 ?>
@@ -46,9 +60,12 @@ $e = \App\Core\Session::getFlash('error');
     <a href="<?= $h($filterLink('validated')) ?>" class="ath-btn<?= $statusFilter === 'validated' ? ' ath-btn--solid' : '' ?>">Validés</a>
     <a href="<?= $h($filterLink('missing')) ?>" class="ath-btn<?= $statusFilter === 'missing' ? ' ath-btn--solid' : '' ?>">Manquants</a>
     <a href="<?= $h($filterLink('', true)) ?>" class="ath-btn<?= $openActionsFilter ? ' ath-btn--solid' : '' ?>">Actions ouvertes</a>
+    <?php if ($canManageTemplates): ?>
+    <a href="<?= $h(url('back-office/atak/comptes-rendus/modeles')) ?>" class="ath-btn">Modèles de debriefing</a>
+    <?php endif; ?>
 </div>
 
-<div class="ath-aar-list-tools ath-rise" x-data="{ formOpen: false }">
+<div class="ath-aar-list-tools ath-rise" x-data="aarCreateForm(<?= $templatesJson ?>)">
     <div class="ath-card ath-aar-form-card">
         <button type="button" class="ath-aar-form-card__toggle" @click="formOpen = !formOpen" :aria-expanded="formOpen.toString()">
             <span>
@@ -114,3 +131,23 @@ $athTableFoot = count($reports) > 0
     : 'Aucun compte rendu · ' . date('d/m/Y H:i');
 $athTableExportUrl = url('api/atak/aar-reports/export');
 require base_path('views/partials/ath_table.php');
+?>
+<script>
+function aarCreateForm(templates) {
+    return {
+        formOpen: window.location.hash === '#nouveau',
+        templateId: 0,
+        templates: Array.isArray(templates) ? templates : [],
+        get current() {
+            const id = Number(this.templateId) || 0;
+            return this.templates.find((t) => Number(t.id) === id) || null;
+        },
+        get isCustom() {
+            return this.current !== null;
+        },
+        get currentFields() {
+            return this.current ? (this.current.fields || []) : [];
+        }
+    };
+}
+</script>

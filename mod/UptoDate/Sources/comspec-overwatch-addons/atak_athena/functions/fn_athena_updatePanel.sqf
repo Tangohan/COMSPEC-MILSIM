@@ -390,6 +390,65 @@ if (!(_localPhotos isEqualType [])) then { _localPhotos = []; };
     _entries pushBack ["photo", _title, _detail, _short, [_filePath, _short]];
 } forEach _localPhotos;
 
+// --- Ordre de mission (objectifs, LD, H) ---
+private _mp = missionNamespace getVariable ["COMSPEC_MissionPlan", createHashMap];
+if (_mp isEqualType createHashMap && {count _mp > 0}) then {
+    private _mpCode = _mp getOrDefault ["code", ""];
+    private _mpTitle = _mp getOrDefault ["title", ""];
+    if (_mpCode isNotEqualTo "" || {_mpTitle isNotEqualTo ""}) then {
+        private _mpH = _mp getOrDefault ["h_hour", ""];
+        private _mpClock = _mp getOrDefault ["clock", ""];
+        private _mpPhase = _mp getOrDefault ["phase", ""];
+        private _mpSentence = _mp getOrDefault ["sentence", ""];
+        private _hLine = "H non posée";
+        if (_mpH isNotEqualTo "") then {
+            private _sec = parseNumber _mpClock;
+            if (_mpClock isNotEqualTo "" && {_sec != 0 || {_mpClock isEqualTo "0"}}) then {
+                private _mins = floor ((abs _sec) / 60);
+                _hLine = if (_sec >= 0) then { format ["H+%1 min", _mins] } else { format ["H−%1 min", _mins] };
+            } else {
+                _hLine = _mpH;
+            };
+        };
+        private _gfx = missionNamespace getVariable ["COMSPEC_MissionPlanGraphics", []];
+        if (!(_gfx isEqualType [])) then { _gfx = []; };
+        private _ldLines = "";
+        private _objLines = "";
+        {
+            if (!(_x isEqualType createHashMap)) then { continue };
+            private _gk = toLower (_x getOrDefault ["kind", ""]);
+            private _gc = _x getOrDefault ["code", ""];
+            private _gl = _x getOrDefault ["label", ""];
+            private _gs = _x getOrDefault ["state", ""];
+            private _stLab = "Prévu";
+            if (_gs isEqualTo "current") then { _stLab = "En cours"; };
+            if (_gs isEqualTo "completed") then { _stLab = "Atteint"; };
+            if (_gs isEqualTo "modified") then { _stLab = "Modifié"; };
+            private _line = format ["%1 %2 (%3)", _gc, _gl, _stLab];
+            if (_gk in ["ld", "pl", "orp", "lz", "hlz", "cp", "axis"]) then {
+                _ldLines = _ldLines + format ["<br/>%1", _line];
+            };
+            if (_gk isEqualTo "obj") then {
+                _objLines = _objLines + format ["<br/>%1", _line];
+            };
+        } forEach _gfx;
+        if (_ldLines isEqualTo "") then { _ldLines = "<br/>—"; };
+        if (_objLines isEqualTo "") then { _objLines = "<br/>—"; };
+        private _head = if (_mpTitle isEqualTo "") then { _mpCode } else { format ["%1 · %2", _mpCode, _mpTitle] };
+        private _detail = format [
+            "<t color='#7eb8ff'>Ordre de mission</t> — %1<br/><t color='#8aa0b4'>État</t>  %2<br/><t color='#8aa0b4'>Phase</t>  %3<br/><t color='#8aa0b4'>H</t>  %4<br/><br/>%5<br/><br/><t color='#8aa0b4'>Objectifs</t>%6<br/><br/><t color='#8aa0b4'>Repères (LD, axes, LZ)</t>%7",
+            _head,
+            _mp getOrDefault ["status", "—"],
+            if (_mpPhase isEqualTo "") then { "—" } else { _mpPhase },
+            _hLine,
+            if (_mpSentence isEqualTo "") then { "Phrase de mission non rédigée." } else { _mpSentence },
+            _objLines,
+            _ldLines
+        ];
+        _entries pushBack ["order", format ["Ordre de mission · %1", if (_mpCode isEqualTo "") then { _mpTitle } else { _mpCode }], _detail, "mission-plan", []];
+    };
+};
+
 // --- Ordres Athena ---
 private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
 if (!(_orders isEqualType [])) then { _orders = []; };
@@ -399,7 +458,7 @@ if (!(_orders isEqualType [])) then { _orders = []; };
     if (_id isEqualTo "") then { continue };
     private _type = _x getOrDefault ["type", "MOVE"];
     // Signaux terminal déjà notifiés via onVibrate / onNotify — pas une ligne « ordre »
-    if ((toUpper _type) in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM"]) then { continue };
+    if ((toUpper _type) in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM", "PHONE_GEOLOC", "PHONE_GEOLOC_OFF"]) then { continue };
     private _kindLbl = [_x] call comspec_overwatch_connect_fnc_orderTypeLabel;
     if (!(_kindLbl isEqualType "") || {_kindLbl isEqualTo ""}) then { _kindLbl = "Ordre"; };
     private _issuer = _x getOrDefault ["issuer", "C2"];

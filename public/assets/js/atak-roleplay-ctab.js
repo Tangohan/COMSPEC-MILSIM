@@ -30,10 +30,8 @@
       
       overlay.innerHTML = `
         <div class="atak-disconnect-content">
-          <div class="atak-disconnect-icon">⚠</div>
           <h2>${title}</h2>
           <p>${message}</p>
-          <small>Aucune donnée transmise</small>
         </div>
       `;
       overlay.style.display = 'flex';

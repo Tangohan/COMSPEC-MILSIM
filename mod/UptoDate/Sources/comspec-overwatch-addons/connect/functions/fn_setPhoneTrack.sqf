@@ -3,7 +3,8 @@
 */
 params [
     ["_unit", objNull, [objNull]],
-    ["_on", true]
+    ["_on", true],
+    ["_reveal", nil]
 ];
 if (isNull _unit || {!(_unit isKindOf "CAManBase")}) exitWith { false };
 
@@ -18,6 +19,15 @@ if (_flag) then {
         private _id = format ["TEL-%1", ((netId _unit) splitString ":") joinString "-"];
         _unit setVariable ["COMSPEC_PhoneTrackId", _id, true];
     };
+    if (!isNil "_reveal" && {_reveal isEqualType []}) then {
+        _unit setVariable ["COMSPEC_PhoneReveal", _reveal, true];
+    } else {
+        if (isNil {_unit getVariable "COMSPEC_PhoneReveal"}) then {
+            _unit setVariable ["COMSPEC_PhoneReveal", [], true];
+        };
+    };
+} else {
+    _unit setVariable ["COMSPEC_PhoneReveal", [], true];
 };
 
 private _list = missionNamespace getVariable ["COMSPEC_PhoneTrackUnits", []];

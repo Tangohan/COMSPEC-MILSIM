@@ -79,11 +79,16 @@ window.ATAKMotionMap = (function () {
   function clearId(id) {
     var pack = byId[id];
     if (!pack || !layer) return;
-    ['arrow', 'proj', 'trail', 'dest', 'eta'].forEach(function (k) {
+    ['arrow', 'proj', 'trail', 'dest', 'eta', 'reach', 'loss', 'async'].forEach(function (k) {
       if (pack[k]) {
         try { layer.removeLayer(pack[k]); } catch (e) {}
       }
     });
+    if (pack.trailParts) {
+      pack.trailParts.forEach(function (pl) {
+        try { layer.removeLayer(pl); } catch (e) {}
+      });
+    }
     delete byId[id];
   }
 
@@ -119,14 +124,21 @@ window.ATAKMotionMap = (function () {
     var moving = M && M.isMoving(u);
     var heading = M ? M.num(u.movement_heading) : null;
     var m = M ? M.motionOf(u) : {};
+    var kind = M && M.trackKind ? M.trackKind(u) : 'infantry';
+    var live = (window.ATAKUnits && window.ATAKUnits.resolveLiveStatus)
+      ? window.ATAKUnits.resolveLiveStatus(u)
+      : String((u && u.status) || '').toLowerCase();
+    var lost = live === 'offline' || live === 'delayed';
+    var conf = M ? M.num(m.confidence) : null;
+    var color = M && M.trackColor ? M.trackColor(kind, live === 'offline') : '#cbd5e1';
 
     if (pr.arrows && moving && heading != null) {
       var len = arrowLenM(u, map);
       var tip = offsetPoint(pos.x, pos.y, heading, len);
       setLine(pack, 'arrow', [start, worldToLatLng(tip.x, tip.y)], {
-        color: '#cbd5e1',
-        weight: 1.2,
-        opacity: 0.42,
+        color: color,
+        weight: 1.4,
+        opacity: 0.55,
         lineCap: 'round',
         interactive: false,
         className: 'atak-motion-arrow-line'
@@ -136,13 +148,23 @@ window.ATAKMotionMap = (function () {
     }
 
     var proj = m.projection || {};
-    if (pr.projection && moving && heading != null && proj.visible && proj.length_m > 8) {
-      var pTip = offsetPoint(pos.x, pos.y, heading, Number(proj.length_m));
+    var staleSec = 0;
+    if (u && u.updated_at) {
+      var ts = Date.parse(String(u.updated_at).replace(' ', 'T'));
+      if (!isNaN(ts)) staleSec = Math.max(0, (Date.now() - ts) / 1000);
+    }
+    var asyncReach = lost && M && M.reachRadiusM
+      ? M.reachRadiusM(kind, staleSec, m.speed_current || u.speed)
+      : 0;
+
+    if (pr.projection && heading != null && ((moving && proj.visible && proj.length_m > 8) || asyncReach > 12)) {
+      var projLen = asyncReach > 12 ? asyncReach : Number(proj.length_m);
+      var pTip = offsetPoint(pos.x, pos.y, heading, projLen);
       setLine(pack, 'proj', [start, worldToLatLng(pTip.x, pTip.y)], {
-        color: '#94a3b8',
-        weight: 1,
-        opacity: 0.28,
-        dashArray: '3 7',
+        color: color,
+        weight: asyncReach > 12 ? 1.4 : 1,
+        opacity: asyncReach > 12 ? 0.42 : 0.32,
+        dashArray: (conf != null && conf < 0.45) || lost || asyncReach > 12 ? '4 6' : '3 7',
         interactive: false
       });
     } else {
@@ -150,19 +172,43 @@ window.ATAKMotionMap = (function () {
     }
 
     if (pr.trail && Array.isArray(m.trail) && m.trail.length >= 2) {
-      var pts = m.trail.map(function (s) {
-        return worldToLatLng(Number(s.x), Number(s.y));
-      }).filter(Boolean);
-      setLine(pack, 'trail', pts, {
-        color: '#64748b',
-        weight: 1,
-        opacity: 0.18,
-        lineCap: 'round',
-        interactive: false,
-        className: 'atak-motion-trail'
-      });
+      if (pack.trail) {
+        try { layer.removeLayer(pack.trail); } catch (e) {}
+        pack.trail = null;
+      }
+      if (pack.trailParts) {
+        pack.trailParts.forEach(function (pl) {
+          try { layer.removeLayer(pl); } catch (e2) {}
+        });
+      }
+      pack.trailParts = [];
+      var i;
+      for (i = 1; i < m.trail.length; i++) {
+        var a = m.trail[i - 1];
+        var b = m.trail[i];
+        var la = worldToLatLng(Number(a.x), Number(a.y));
+        var lb = worldToLatLng(Number(b.x), Number(b.y));
+        if (!la || !lb) continue;
+        var doubt = !!(b.uncertain || b.gap || (conf != null && conf < 0.45));
+        var pl = L.polyline([la, lb], {
+          color: color,
+          weight: 1.6,
+          opacity: doubt ? 0.35 : 0.5,
+          dashArray: doubt ? '4 6' : null,
+          lineCap: 'round',
+          interactive: false,
+          className: 'atak-motion-trail'
+        }).addTo(layer);
+        pack.trailParts.push(pl);
+      }
     } else {
       setLine(pack, 'trail', null);
+      if (pack.trailParts) {
+        pack.trailParts.forEach(function (pl) {
+          try { layer.removeLayer(pl); } catch (e3) {}
+        });
+        pack.trailParts = [];
+      }
     }
 
     var dest = destFrom(u);

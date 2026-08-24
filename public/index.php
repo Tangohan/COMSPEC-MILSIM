@@ -185,6 +185,15 @@ $maintenancePrefixSafelist = [
     '/calendrier/abonnement/',
     '/admin/system/updates',
     '/cron/',
+    '/api/atak/',
+    '/api/cas',
+    '/api/units',
+    '/api/chat',
+    '/api/pings',
+    '/api/nine-line',
+    '/api/medical-alerts',
+    '/api/recon/',
+    '/api/map-shapes',
 ];
 $maintenanceSkipped = in_array($requestPath, $maintenanceSafelist, true)
     || $requestPath === '/sw.js'

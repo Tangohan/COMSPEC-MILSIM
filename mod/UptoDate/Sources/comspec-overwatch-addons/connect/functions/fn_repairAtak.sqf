@@ -33,7 +33,7 @@ switch (_repairType) do {
             _atakState set ["device_crashed", false];
             _atakState set ["crash_until", -1];
             ["ATAK rallumé", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
-            playSound "FD_CP_Clear_F";
+            ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
             _success = true;
         };
     };
@@ -49,7 +49,7 @@ switch (_repairType) do {
                 _state set ["screen_destroyed", false];
                 _state set ["powered_on", true];
                 ["Écran ATAK réparé", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
-                playSound "FD_CP_Clear_F";
+                ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
             }, [_atakState], 5] call CBA_fnc_waitAndExecute;
             
             _success = true;
@@ -70,7 +70,7 @@ switch (_repairType) do {
             _state set ["screen_destroyed", false];
             _state set ["powered_on", true];
             ["ATAK réparé", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
-            playSound "FD_CP_Clear_F";
+            ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         }, [_atakState], 8] call CBA_fnc_waitAndExecute;
         
         _success = true;

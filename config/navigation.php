@@ -81,6 +81,7 @@ return [
                     'links' => [
                         ['label' => 'Poste de commandement', 'path' => 'c2', 'description' => 'Accès aux modes de coordination'],
                         ['label' => 'Situation tactique (ATAK)', 'path' => 'atak', 'description' => 'Vue opérationnelle'],
+                        ['label' => 'Poste ATAK', 'path' => 'back-office/atak', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Dossiers SSE identifiés et localisation téléphone'],
                         ['label' => 'Effectifs en liaison', 'path' => 'back-office/atak/operateurs', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Tableur des opérateurs connectés'],
                         ['label' => 'Overwatch', 'path' => 'overwatch', 'description' => 'Situation en carte et commandement'],
                         ['label' => 'TACMAP', 'path' => 'tacmap', 'description' => 'Cartographie tactique'],
@@ -374,6 +375,7 @@ return [
                         ['label' => 'Cycle de mission', 'path' => 'back-office/atak/cycle-mission', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Créer, ouvrir et clôturer une mission (briefing → carte → après-action)'],
                         ['label' => 'Comptes rendus (AAR)', 'path' => 'back-office/atak/comptes-rendus', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Rapports post-opération, points relevés et actions de suivi'],
                         ['label' => 'Certificats et terminaux', 'path' => 'back-office/atak/realisme', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Terminaux in-game, certificats et rattachement aux profils'],
+                        ['label' => 'Poste ATAK', 'path' => 'back-office/atak', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Dossiers SSE identifiés et localisation téléphone'],
                         ['label' => 'Effectifs en liaison', 'path' => 'back-office/atak/operateurs', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Tableur des opérateurs connectés'],
                         ['label' => 'Mod ATAK', 'path' => 'back-office/ressources/atak-mod', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Configuration forum', 'path' => 'back-office/ressources/forum-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],

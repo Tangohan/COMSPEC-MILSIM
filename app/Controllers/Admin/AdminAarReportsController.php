@@ -9,7 +9,10 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AarReportRepository;
+use App\Repositories\AarReportTemplateRepository;
 use App\Repositories\TheatreMissionCycleRepository;
+use App\Services\Rbac\RolePermissionMatrixCatalog;
+use App\Support\AarCustomForm;
 use App\Support\ModuleFeatureAccess;
 
 final class AdminAarReportsController
@@ -17,9 +20,11 @@ final class AdminAarReportsController
     public function __construct(
         private ?AarReportRepository $reports = null,
         private ?TheatreMissionCycleRepository $cycles = null,
+        private ?AarReportTemplateRepository $templates = null,
     ) {
         $this->reports ??= new AarReportRepository();
         $this->cycles ??= new TheatreMissionCycleRepository();
+        $this->templates ??= new AarReportTemplateRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -33,6 +38,7 @@ final class AdminAarReportsController
             return $forbidden;
         }
 
+        $canManage = ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'manage');
         $status = trim((string) $request->query('status', ''));
         $openActions = trim((string) $request->query('open_actions', '')) === '1';
         $allReports = $this->reports->listForTenant($tenantId, []);
@@ -44,6 +50,16 @@ final class AdminAarReportsController
             ? $this->reports->listForTenant($tenantId, $filters)
             : $allReports;
 
+        $activeTemplates = $this->templates->listForTenant($tenantId, true);
+        $quick = [
+            ['label' => 'En attente', 'href' => url('back-office/atak/comptes-rendus') . '?status=pending'],
+            ['label' => 'Validés', 'href' => url('back-office/atak/comptes-rendus') . '?status=validated'],
+            ['label' => 'Actions ouvertes', 'href' => url('back-office/atak/comptes-rendus') . '?open_actions=1'],
+        ];
+        if ($canManage) {
+            $quick[] = ['label' => 'Modèles', 'href' => url('back-office/atak/comptes-rendus/modeles')];
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.aar_reports.index',
             'title' => 'Comptes rendus post-op',
@@ -54,14 +70,12 @@ final class AdminAarReportsController
             'boPageSubtitle' => 'Rapports post-opération, points d’amélioration relevés et suivi de leur traitement.',
             'boPageAction' => 'Déposer un rapport',
             'boPageActionUrl' => url('back-office/atak/comptes-rendus') . '#nouveau',
-            'boPageQuick' => [
-                ['label' => 'En attente', 'href' => url('back-office/atak/comptes-rendus') . '?status=pending'],
-                ['label' => 'Validés', 'href' => url('back-office/atak/comptes-rendus') . '?status=validated'],
-                ['label' => 'Actions ouvertes', 'href' => url('back-office/atak/comptes-rendus') . '?open_actions=1'],
-            ],
+            'boPageQuick' => $quick,
             'backOfficePageCss' => ['back-office-aar.css'],
             'aarReports' => $reports,
             'aarMissions' => array_map(fn (array $row) => $this->cycles->present($row), $this->cycles->listForTenant($tenantId, 100)),
+            'aarTemplates' => $activeTemplates,
+            'aarCanManageTemplates' => $canManage,
             'aarStatusFilter' => $status,
             'aarOpenActionsFilter' => $openActions,
             'aarKpis' => $this->buildListKpis($allReports),
@@ -142,6 +156,214 @@ final class AdminAarReportsController
             'aarMissions' => array_map(fn (array $row) => $this->cycles->present($row), $this->cycles->listForTenant($tenantId, 100)),
             'csrfToken' => Csrf::token(),
         ]);
+    }
+
+    public function store(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect(url('back-office/atak/comptes-rendus'));
+        }
+        $forbidden = ModuleFeatureAccess::guardAtak('manage', 'back-office/atak/comptes-rendus');
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        $built = $this->payloadFromRequest($request, $tenantId);
+        if ($built['error'] !== null) {
+            Session::flash('error', $built['error']);
+            return Response::redirect(url('back-office/atak/comptes-rendus') . '#nouveau');
+        }
+
+        $saved = $this->reports->save($tenantId, null, $userId, $built['payload']);
+        Session::flash('success', 'Compte rendu enregistré.');
+        $id = (int) ($saved['id'] ?? 0);
+
+        return Response::redirect(url('back-office/atak/comptes-rendus' . ($id > 0 ? '/' . $id : '')));
+    }
+
+    public function update(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            Session::flash('error', 'Ce compte rendu est introuvable.');
+            return Response::redirect(url('back-office/atak/comptes-rendus'));
+        }
+
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect(url('back-office/atak/comptes-rendus/' . $id . '/edit'));
+        }
+
+        $existing = $this->reports->findForTenant($tenantId, $id);
+        if ($existing === null) {
+            Session::flash('error', 'Ce compte rendu est introuvable.');
+            return Response::redirect(url('back-office/atak/comptes-rendus'));
+        }
+
+        $built = $this->payloadFromRequest($request, $tenantId, true, $existing);
+        if ($built['error'] !== null) {
+            Session::flash('error', $built['error']);
+            return Response::redirect(url('back-office/atak/comptes-rendus/' . $id . '/edit'));
+        }
+
+        $this->reports->save($tenantId, $id, $userId, $built['payload']);
+        Session::flash('success', 'Compte rendu mis à jour.');
+
+        return Response::redirect(url('back-office/atak/comptes-rendus/' . $id));
+    }
+
+    public function templatesIndex(Request $request, array $params = []): Response
+    {
+        $ctx = $this->templatesContext('manage');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'admin.aar_reports.templates',
+            'title' => 'Modèles de debriefing',
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Opérations',
+            'boPageTitle' => 'Modèles de debriefing',
+            'boPageKicker' => 'OPÉRATIONS · RETOURS',
+            'boPageSubtitle' => 'Préparez des questionnaires de compte rendu (questions courtes, listes, cases à cocher, texte libre).',
+            'boPageAction' => 'Nouveau modèle',
+            'boPageActionUrl' => url('back-office/atak/comptes-rendus/modeles/nouveau'),
+            'boPageQuick' => [
+                ['label' => 'Comptes rendus', 'href' => url('back-office/atak/comptes-rendus')],
+            ],
+            'backOfficePageCss' => ['back-office-aar.css'],
+            'aarTemplates' => $this->templates->listForTenant($ctx['tenant_id']),
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    public function templatesCreate(Request $request, array $params = []): Response
+    {
+        $ctx = $this->templatesContext('manage');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+
+        return $this->templateFormView(null);
+    }
+
+    public function templatesStore(Request $request, array $params = []): Response
+    {
+        $ctx = $this->templatesContext('manage');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect(url('back-office/atak/comptes-rendus/modeles/nouveau'));
+        }
+
+        $payload = $this->templatePayloadFromRequest($request);
+        $payload['fields'] = AarCustomForm::normalizeFields($payload['fields'] ?? []);
+        if ($payload['fields'] === []) {
+            Session::flash('error', 'Ajoutez au moins une question au modèle.');
+            return Response::redirect(url('back-office/atak/comptes-rendus/modeles/nouveau'));
+        }
+
+        $saved = $this->templates->save($ctx['tenant_id'], null, $ctx['user_id'], $payload);
+        Session::flash('success', 'Modèle enregistré. Vous pouvez l’utiliser pour un nouveau compte rendu.');
+
+        return Response::redirect(url('back-office/atak/comptes-rendus/modeles/' . (int) ($saved['id'] ?? 0)));
+    }
+
+    public function templatesEdit(Request $request, array $params = []): Response
+    {
+        $ctx = $this->templatesContext('manage');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $template = $this->templates->findForTenant($ctx['tenant_id'], $id);
+        if ($template === null) {
+            Session::flash('error', 'Ce modèle est introuvable.');
+            return Response::redirect(url('back-office/atak/comptes-rendus/modeles'));
+        }
+
+        return $this->templateFormView($template);
+    }
+
+    public function templatesUpdate(Request $request, array $params = []): Response
+    {
+        $ctx = $this->templatesContext('manage');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $template = $this->templates->findForTenant($ctx['tenant_id'], $id);
+        if ($template === null) {
+            Session::flash('error', 'Ce modèle est introuvable.');
+            return Response::redirect(url('back-office/atak/comptes-rendus/modeles'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect(url('back-office/atak/comptes-rendus/modeles/' . $id));
+        }
+
+        $payload = $this->templatePayloadFromRequest($request);
+        $payload['fields'] = AarCustomForm::normalizeFields($payload['fields'] ?? []);
+        if ($payload['fields'] === []) {
+            Session::flash('error', 'Ajoutez au moins une question au modèle.');
+            return Response::redirect(url('back-office/atak/comptes-rendus/modeles/' . $id));
+        }
+
+        $this->templates->save($ctx['tenant_id'], $id, $ctx['user_id'], $payload);
+        Session::flash('success', 'Modèle mis à jour. Les comptes rendus déjà déposés conservent leurs questions d’origine.');
+
+        return Response::redirect(url('back-office/atak/comptes-rendus/modeles'));
+    }
+
+    public function templatesArchive(Request $request, array $params = []): Response
+    {
+        $ctx = $this->templatesContext('manage');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect(url('back-office/atak/comptes-rendus/modeles'));
+        }
+        $this->templates->archive($ctx['tenant_id'], $id);
+        Session::flash('success', 'Modèle archivé. Il n’apparaît plus pour les nouveaux comptes rendus.');
+
+        return Response::redirect(url('back-office/atak/comptes-rendus/modeles'));
+    }
+
+    public function templatesRestore(Request $request, array $params = []): Response
+    {
+        $ctx = $this->templatesContext('manage');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect(url('back-office/atak/comptes-rendus/modeles'));
+        }
+        $this->templates->restore($ctx['tenant_id'], $id);
+        Session::flash('success', 'Modèle réactivé.');
+
+        return Response::redirect(url('back-office/atak/comptes-rendus/modeles'));
     }
 
     /**
@@ -231,64 +453,11 @@ final class AdminAarReportsController
         ];
     }
 
-    public function store(Request $request, array $params = []): Response
-    {
-        $tenantId = (int) Session::get('tenant_id');
-        $userId = (int) Session::get('user_id');
-        if ($tenantId < 1 || $userId < 1) {
-            return Response::redirect(url('dashboard'));
-        }
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-            return Response::redirect(url('back-office/atak/comptes-rendus'));
-        }
-        $forbidden = ModuleFeatureAccess::guardAtak('manage', 'back-office/atak/comptes-rendus');
-        if ($forbidden instanceof Response) {
-            return $forbidden;
-        }
-
-        $saved = $this->reports->save($tenantId, null, $userId, $this->payloadFromRequest($request));
-        Session::flash('success', 'Compte rendu enregistré.');
-        $id = (int) ($saved['id'] ?? 0);
-
-        return Response::redirect(url('back-office/atak/comptes-rendus' . ($id > 0 ? '/' . $id : '')));
-    }
-
-    public function update(Request $request, array $params = []): Response
-    {
-        $tenantId = (int) Session::get('tenant_id');
-        $userId = (int) Session::get('user_id');
-        if ($tenantId < 1 || $userId < 1) {
-            return Response::redirect(url('dashboard'));
-        }
-
-        $id = (int) ($params['id'] ?? 0);
-        if ($id < 1) {
-            Session::flash('error', 'Ce compte rendu est introuvable.');
-            return Response::redirect(url('back-office/atak/comptes-rendus'));
-        }
-
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-            return Response::redirect(url('back-office/atak/comptes-rendus/' . $id . '/edit'));
-        }
-
-        $existing = $this->reports->findForTenant($tenantId, $id);
-        if ($existing === null) {
-            Session::flash('error', 'Ce compte rendu est introuvable.');
-            return Response::redirect(url('back-office/atak/comptes-rendus'));
-        }
-
-        $this->reports->save($tenantId, $id, $userId, $this->payloadFromRequest($request, true));
-        Session::flash('success', 'Compte rendu mis à jour.');
-
-        return Response::redirect(url('back-office/atak/comptes-rendus/' . $id));
-    }
-
     /**
-     * @return array<string, mixed>
+     * @param array<string, mixed>|null $existing
+     * @return array{payload: array<string, mixed>, error: ?string}
      */
-    private function payloadFromRequest(Request $request, bool $allowStatus = false): array
+    private function payloadFromRequest(Request $request, int $tenantId, bool $allowStatus = false, ?array $existing = null): array
     {
         $payload = [
             'mission_cycle_id' => $request->input('mission_cycle_id'),
@@ -310,6 +479,101 @@ final class AdminAarReportsController
             $payload['status'] = $request->input('status');
         }
 
-        return $payload;
+        $rawAnswers = $request->input('answers', []);
+        if (!is_array($rawAnswers)) {
+            $rawAnswers = [];
+        }
+
+        if ($existing !== null && !empty($existing['is_custom'])) {
+            $fields = is_array($existing['custom_fields'] ?? null) ? $existing['custom_fields'] : [];
+            $bundle = AarCustomForm::collectAnswers($fields, $rawAnswers);
+            $missing = AarCustomForm::missingRequired($fields, $bundle['answers']);
+            if ($missing !== []) {
+                return ['payload' => [], 'error' => 'Merci de répondre à : ' . implode(', ', $missing) . '.'];
+            }
+            $payload['template_id'] = (int) ($existing['template_id'] ?? 0);
+            $payload['custom_answers'] = $bundle;
+
+            return ['payload' => $payload, 'error' => null];
+        }
+
+        $templateId = (int) $request->input('template_id', 0);
+        if ($templateId > 0) {
+            $template = $this->templates->findForTenant($tenantId, $templateId);
+            if ($template === null || ($template['status'] ?? '') !== 'active') {
+                return ['payload' => [], 'error' => 'Ce modèle de debriefing n’est plus disponible.'];
+            }
+            $fields = is_array($template['fields'] ?? null) ? $template['fields'] : [];
+            if ($fields === []) {
+                return ['payload' => [], 'error' => 'Ce modèle n’a aucune question. Choisissez-en un autre ou le formulaire standard.'];
+            }
+            $bundle = AarCustomForm::collectAnswers($fields, $rawAnswers);
+            $missing = AarCustomForm::missingRequired($fields, $bundle['answers']);
+            if ($missing !== []) {
+                return ['payload' => [], 'error' => 'Merci de répondre à : ' . implode(', ', $missing) . '.'];
+            }
+            $payload['template_id'] = $templateId;
+            $payload['custom_answers'] = $bundle;
+        }
+
+        return ['payload' => $payload, 'error' => null];
+    }
+
+    /**
+     * @return array{tenant_id:int,user_id:int}|Response
+     */
+    private function templatesContext(string $action): array|Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        $forbidden = ModuleFeatureAccess::guardAtak($action, 'back-office/atak/comptes-rendus');
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        return ['tenant_id' => $tenantId, 'user_id' => $userId];
+    }
+
+    /**
+     * @param array<string, mixed>|null $template
+     */
+    private function templateFormView(?array $template): Response
+    {
+        $isEdit = $template !== null;
+        $title = $isEdit
+            ? 'Modifier le modèle'
+            : 'Nouveau modèle de debriefing';
+
+        return Response::view('layout.main', [
+            'content' => 'admin.aar_reports.template_form',
+            'title' => $title,
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Opérations',
+            'boPageTitle' => $title,
+            'boPageKicker' => 'OPÉRATIONS · RETOURS',
+            'boPageSubtitle' => 'Composez les questions que les opérateurs rempliront après l’opération.',
+            'boPageQuick' => [
+                ['label' => 'Tous les modèles', 'href' => url('back-office/atak/comptes-rendus/modeles')],
+            ],
+            'backOfficePageCss' => ['back-office-aar.css'],
+            'aarTemplate' => $template ?? [],
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function templatePayloadFromRequest(Request $request): array
+    {
+        return [
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'status' => $request->input('status', 'active'),
+            'fields' => $request->input('fields', []),
+        ];
     }
 }

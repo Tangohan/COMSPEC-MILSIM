@@ -346,6 +346,20 @@ final class ConfigurationUpdateProbes
         }
     }
 
+    public function hasAarDebriefTemplate(int $tenantId): bool
+    {
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM aar_report_templates WHERE tenant_id = ? AND status = 'active' LIMIT 1"
+            );
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+
     public function registrationConfigured(int $tenantId): bool
     {
         $settings = $this->tenants->getSettings($tenantId);
