@@ -1143,6 +1143,9 @@ class Container
             \App\Controllers\Web\ActionCenterController::class => new \App\Controllers\Web\ActionCenterController(
                 self::get(\App\Services\Portal\UnifiedActionDigestService::class),
                 self::get(UserRepository::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Services\Attendance\CommunityEventAttendanceService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
             ),
             \App\Controllers\Web\OnboardingController::class => new \App\Controllers\Web\OnboardingController(
                 self::get(\App\Repositories\UserProfileRepository::class),

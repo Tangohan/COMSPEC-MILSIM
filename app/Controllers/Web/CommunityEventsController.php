@@ -165,16 +165,14 @@ final class CommunityEventsController
 
     public function rsvp(Request $request, array $params = []): Response
     {
-        $returnTo = trim((string) $request->input('return_to', 'evenements'));
-        $returnUrl = $returnTo === 'aujourdhui' ? url('aujourdhui') . '#agenda-et-echeances' : url('evenements');
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect($returnUrl);
+            return Response::redirect(url('evenements'));
         }
         $tenantId = (int) Session::get('tenant_id');
         if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
-            return Response::redirect($returnUrl);
+            return Response::redirect(url('evenements'));
         }
         $user = $this->authService->user();
         if (!$user) {
@@ -188,7 +186,7 @@ final class CommunityEventsController
         if (!$this->events->belongsToTenant($eventId, $tenantId)) {
             Session::flash('error', 'Événement introuvable.');
 
-            return Response::redirect($returnUrl);
+            return Response::redirect(url('evenements'));
         }
         $result = $this->attendance->setRsvpWithNotifications(
             $eventId,
@@ -201,11 +199,11 @@ final class CommunityEventsController
         if (!($result['ok'] ?? false)) {
             Session::flash('error', $result['error'] ?? 'Impossible d’enregistrer.');
 
-            return Response::redirect($returnUrl);
+            return Response::redirect(url('evenements'));
         }
         Session::flash('success', 'Participation enregistrée.');
 
-        return Response::redirect($returnUrl);
+        return Response::redirect(url('evenements'));
     }
 
     /**

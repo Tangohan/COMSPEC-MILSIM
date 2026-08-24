@@ -14,19 +14,19 @@ final class ActionCenterRsvpTest extends TestCase
 
         self::assertIsString($view);
         self::assertStringContainsString("['yes' => 'Présent', 'maybe' => 'Peut-être', 'no' => 'Absent']", $view);
-        self::assertStringContainsString("url('evenements/rsvp')", $view);
+        self::assertStringContainsString("url('aujourdhui/rsvp')", $view);
         self::assertStringContainsString('name="_csrf_token"', $view);
-        self::assertStringContainsString('name="return_to" value="aujourdhui"', $view);
         self::assertStringContainsString('aria-pressed=', $view);
     }
 
-    public function testEventsControllerOnlyAcceptsKnownReturnDestination(): void
+    public function testDedicatedControllerValidatesTenantStatusAndCsrf(): void
     {
-        $controller = file_get_contents(__DIR__ . '/../../app/Controllers/Web/CommunityEventsController.php');
+        $controller = file_get_contents(__DIR__ . '/../../app/Controllers/Web/ActionCenterController.php');
 
         self::assertIsString($controller);
-        self::assertStringContainsString("\$returnTo === 'aujourdhui'", $controller);
-        self::assertStringContainsString("url('aujourdhui') . '#agenda-et-echeances'", $controller);
-        self::assertStringNotContainsString('Response::redirect($returnTo)', $controller);
+        self::assertStringContainsString('Csrf::validate', $controller);
+        self::assertStringContainsString("in_array(\$status, ['yes', 'no', 'maybe'], true)", $controller);
+        self::assertStringContainsString('belongsToTenant($eventId, $tenantId)', $controller);
+        self::assertStringContainsString('setRsvpWithNotifications', $controller);
     }
 }

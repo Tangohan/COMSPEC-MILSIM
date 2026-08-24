@@ -110,7 +110,7 @@ $flashError = \App\Core\Session::getFlash('error');
                 </ol>
                 <form method="post" action="<?= htmlspecialchars(url('onboarding/complete'), ENT_QUOTES, 'UTF-8') ?>" class="mt-8">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                    <button type="submit" <?= $journeyCompletedCount < $journeyStepCount ? 'disabled aria-disabled="true"' : '' ?> class="inline-flex rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600">
+                    <button type="submit" <?= $journeyCompletedCount < $journeyStepCount ? 'disabled aria-disabled="true"' : '' ?> class="inline-flex rounded-xl px-5 py-3 text-sm font-semibold shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 <?= $journeyCompletedCount < $journeyStepCount ? 'cursor-not-allowed bg-slate-300 text-slate-600' : 'bg-emerald-700 text-white hover:bg-emerald-800' ?>">
                         J’ai terminé l’accueil
                     </button>
                     <?php if ($journeyCompletedCount < $journeyStepCount): ?><p class="mt-2 text-xs text-slate-500">Marquez les trois étapes comme réalisées pour terminer l’accueil.</p><?php endif; ?>

@@ -431,6 +431,7 @@ return function (Router $router) {
     $router->get('/hub', [HubController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/centre-actions', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/aujourdhui', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/aujourdhui/rsvp', [ActionCenterController::class, 'rsvp'], [AuthMiddleware::class]);
     $router->get('/pointage', [PointageController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/pointage/rsvp', [PointageController::class, 'rsvp'], [AuthMiddleware::class]);
     $router->post('/pointage/check-in', [PointageController::class, 'checkIn'], [AuthMiddleware::class]);
