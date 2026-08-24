@@ -9,6 +9,8 @@ $atakTenantName = trim((string) ($atakTenantName ?? 'Communauté'));
 $atakEmbedUrl = (string) ($atakEmbedUrl ?? url('atak'));
 $slidesUrl = (string) ($slidesUrl ?? '');
 $chooseUrl = (string) ($chooseUrl ?? url('connect'));
+$atakDeviceMode = trim((string) ($atakDeviceMode ?? 'BFT'));
+$atakDeviceHint = trim((string) ($atakDeviceHint ?? 'Carte Arma dans le terminal ATAK Android — même liaison que sur Athena.'));
 $base = rtrim((string) url(''), '/');
 $assetVer = platform_app_version();
 $bezelUrl = $base . '/assets/img/connect-device/comspec_phone_bg_ca.png?v=' . rawurlencode($assetVer);
@@ -45,7 +47,7 @@ $signalUrl = $base . '/assets/img/connect-device/comspec_icon_signal_ca.png?v=' 
         <div class="connect-device-osd" aria-hidden="true">
           <span class="connect-device-osd__brand">ATAK</span>
           <span class="connect-device-osd__sep">·</span>
-          <span class="connect-device-osd__mode">BFT</span>
+          <span class="connect-device-osd__mode"><?= htmlspecialchars($atakDeviceMode, ENT_QUOTES, 'UTF-8') ?></span>
           <span class="connect-device-osd__clock" id="connect-device-clock">--:--</span>
           <span class="connect-device-osd__grow"></span>
           <img class="connect-device-osd__icon" src="<?= htmlspecialchars($signalUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="32" height="16" />
@@ -74,7 +76,7 @@ $signalUrl = $base . '/assets/img/connect-device/comspec_icon_signal_ca.png?v=' 
       />
     </div>
 
-    <p class="connect-device-hint">Carte Arma dans le terminal ATAK Android — même liaison que sur Athena.</p>
+    <p class="connect-device-hint"><?= htmlspecialchars($atakDeviceHint, ENT_QUOTES, 'UTF-8') ?></p>
   </div>
 
   <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/js/connect-device.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" defer></script>
