@@ -16,12 +16,25 @@ window.ATAKTerrain3D = (function () {
   var terrainCanvas;
   var terrainGl;
   var terrainGrid;
+  var terrainGridMapId;
   var terrainProgram;
   var terrainFrame;
   var terrainListeners = [];
 
   function clamp(value, min, max) { return Math.max(min, Math.min(max, Number(value) || min)); }
   function normalizeBearing(value) { return ((Number(value) || 0) % 360 + 360) % 360; }
+
+  function apiBase() {
+    return window.ATAKSocket && window.ATAKSocket.getApiBase
+      ? window.ATAKSocket.getApiBase()
+      : (window.ATAK_API_BASE || window.ATAK_BASE_URL || '');
+  }
+
+  function mapId() {
+    return window.ATAKSocket && window.ATAKSocket.getMapId
+      ? window.ATAKSocket.getMapId()
+      : 1;
+  }
 
   function restore() {
     try {
@@ -58,6 +71,22 @@ window.ATAKTerrain3D = (function () {
     return z === -32768 ? 0 : z;
   }
 
+  function reliefShade(world) {
+    var g = terrainGrid;
+    if (!g || !world) return 1;
+    var cell = Math.max(1, Number(g.cell_m) || 1);
+    var left = heightAt({ x: world.x - cell, y: world.y });
+    var right = heightAt({ x: world.x + cell, y: world.y });
+    var down = heightAt({ x: world.x, y: world.y - cell });
+    var up = heightAt({ x: world.x, y: world.y + cell });
+    var dx = (right - left) / (cell * 2);
+    var dy = (up - down) / (cell * 2);
+    /* Lumière rasante nord-ouest : les versants opposés restent lisibles sur le fond IGN. */
+    var length = Math.sqrt(dx * dx + dy * dy + 1);
+    var light = (-dx * -.58 + -dy * .58 + .58) / length;
+    return Math.max(.48, Math.min(1.28, .82 + light * .46));
+  }
+
   function shader(gl, type, source) {
     var item = gl.createShader(type);
     gl.shaderSource(item, source); gl.compileShader(item);
@@ -75,11 +104,11 @@ window.ATAKTerrain3D = (function () {
     terrainGl = terrainCanvas.getContext('webgl', { alpha: true, antialias: true });
     if (!terrainGl) { terrainCanvas.remove(); terrainCanvas = null; return false; }
     var vs = shader(terrainGl, terrainGl.VERTEX_SHADER,
-      'attribute vec2 p;attribute vec2 uv;varying vec2 v;uniform vec2 size;'+
-      'void main(){vec2 q=p/size*2.0-1.0;gl_Position=vec4(q.x,-q.y,0.,1.);v=uv;}');
+      'attribute vec2 p;attribute vec2 uv;attribute float shade;varying vec2 v;varying float s;uniform vec2 size;'+
+      'void main(){vec2 q=p/size*2.0-1.0;gl_Position=vec4(q.x,-q.y,0.,1.);v=uv;s=shade;}');
     var fs = shader(terrainGl, terrainGl.FRAGMENT_SHADER,
-      'precision mediump float;varying vec2 v;uniform sampler2D image;'+
-      'void main(){gl_FragColor=texture2D(image,v);}');
+      'precision mediump float;varying vec2 v;varying float s;uniform sampler2D image;'+
+      'void main(){vec4 c=texture2D(image,v);gl_FragColor=vec4(c.rgb*s,c.a);}');
     terrainProgram = terrainGl.createProgram();
     terrainGl.attachShader(terrainProgram, vs); terrainGl.attachShader(terrainProgram, fs);
     terrainGl.linkProgram(terrainProgram);
@@ -95,10 +124,17 @@ window.ATAKTerrain3D = (function () {
     var map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
     if (!map || !initRenderer()) return;
     if (!terrainListeners.length) ['move', 'moveend', 'zoomend', 'resize'].forEach(function (name) { bindMapEvent(map, name); });
-    if (!terrainGrid) {
-      fetch((window.ATAK_BASE_URL || '') + '/api/atak/terrain?include=heights', { credentials: 'same-origin' })
+    var activeMapId = mapId();
+    if (!terrainGrid || terrainGridMapId !== activeMapId) {
+      terrainGrid = null;
+      terrainGridMapId = activeMapId;
+      fetch(apiBase() + '/api/atak/terrain?mapId=' + encodeURIComponent(activeMapId) + '&include=heights', { credentials: 'same-origin' })
         .then(function (response) { return response.ok ? response.json() : null; })
-        .then(function (data) { terrainGrid = decodeGrid(data); scheduleTerrain(); })
+        .then(function (data) {
+          if (terrainGridMapId !== activeMapId) return;
+          terrainGrid = decodeGrid(data);
+          scheduleTerrain();
+        })
         .catch(function () {});
     }
     scheduleTerrain();
@@ -121,6 +157,7 @@ window.ATAKTerrain3D = (function () {
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.useProgram(terrainProgram);
     gl.uniform2f(gl.getUniformLocation(terrainProgram, 'size'), size.x, size.y);
     var pLoc = gl.getAttribLocation(terrainProgram, 'p'), uvLoc = gl.getAttribLocation(terrainProgram, 'uv');
+    var shadeLoc = gl.getAttribLocation(terrainProgram, 'shade');
     var renderedTiles = 0;
     Object.keys(layer._tiles).forEach(function (key) {
       var tile = layer._tiles[key];
@@ -129,13 +166,13 @@ window.ATAKTerrain3D = (function () {
       var nw = map.latLngToContainerPoint(geoBounds.getNorthWest());
       var se = map.latLngToContainerPoint(geoBounds.getSouthEast());
       var left = nw.x, top = nw.y, w = se.x - nw.x, h = se.y - nw.y;
-      var steps = 12, vertices = [], uvs = [], indices = [];
+      var steps = 16, vertices = [], uvs = [], shades = [], indices = [];
       for (var y = 0; y <= steps; y += 1) for (var x = 0; x <= steps; x += 1) {
         var sx = left + w * x / steps, sy = top + h * y / steps;
         var ll = map.containerPointToLatLng([sx, sy]);
         var world = window.ATAKMap.worldFromLatLng(ll);
-        var z = heightAt(world), relief = Math.max(-90, Math.min(160, (z - Number(terrainGrid.min_z || 0)) * .20));
-        vertices.push(sx, sy - relief); uvs.push(x / steps, y / steps);
+        var z = heightAt(world), relief = Math.max(-120, Math.min(220, (z - Number(terrainGrid.min_z || 0)) * .32));
+        vertices.push(sx, sy - relief); uvs.push(x / steps, y / steps); shades.push(reliefShade(world));
       }
       for (var gy = 0; gy < steps; gy += 1) for (var gx = 0; gx < steps; gx += 1) {
         var a = gy * (steps + 1) + gx, b = a + 1, c = a + steps + 1, d = c + 1;
@@ -147,9 +184,10 @@ window.ATAKTerrain3D = (function () {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
         var pb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, pb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STREAM_DRAW); gl.enableVertexAttribArray(pLoc); gl.vertexAttribPointer(pLoc, 2, gl.FLOAT, false, 0, 0);
         var ub = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, ub); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STREAM_DRAW); gl.enableVertexAttribArray(uvLoc); gl.vertexAttribPointer(uvLoc, 2, gl.FLOAT, false, 0, 0);
+        var sb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, sb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shades), gl.STREAM_DRAW); gl.enableVertexAttribArray(shadeLoc); gl.vertexAttribPointer(shadeLoc, 1, gl.FLOAT, false, 0, 0);
         var ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STREAM_DRAW); gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
         renderedTiles += 1;
-        gl.deleteBuffer(pb); gl.deleteBuffer(ub); gl.deleteBuffer(ib); gl.deleteTexture(texture);
+        gl.deleteBuffer(pb); gl.deleteBuffer(ub); gl.deleteBuffer(sb); gl.deleteBuffer(ib); gl.deleteTexture(texture);
       } catch (error) { /* Une tuile distante sans CORS reste rendue par Leaflet. */ }
     });
     stage.classList.toggle('atak-terrain-mesh-ready', renderedTiles > 0);
