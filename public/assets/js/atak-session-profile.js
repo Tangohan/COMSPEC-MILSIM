@@ -241,7 +241,6 @@ window.ATAKSessionProfile = (function () {
       var tab = btn.getAttribute('data-tab');
       var ok = !state || canAccessTab(tab);
       btn.hidden = !ok;
-      btn.setAttribute('aria-hidden', ok ? 'false' : 'true');
       if (ok && !firstVisible) firstVisible = btn;
       if (!ok && btn.classList.contains('active')) {
         btn.classList.remove('active');
