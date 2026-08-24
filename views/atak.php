@@ -278,6 +278,35 @@ if ($atakMapConfig) {
   </div>
 
   <div class="atak-account-overlay" id="atak-account-overlay" aria-hidden="true"></div>
+  <div class="atak-screen-modal" id="atak-screen-modal" hidden aria-hidden="true">
+    <button type="button" class="atak-screen-modal__backdrop" data-atak-screen-close aria-label="Fermer"></button>
+    <section class="atak-screen-modal__panel" role="dialog" aria-modal="true" aria-labelledby="atak-screen-modal-title">
+      <button type="button" class="atak-screen-modal__close" data-atak-screen-close aria-label="Fermer">×</button>
+      <p class="atak-screen-modal__eyebrow">Affichage déporté</p>
+      <h2 class="atak-screen-modal__title" id="atak-screen-modal-title">Où afficher le module&nbsp;?</h2>
+      <p class="atak-screen-modal__lead">Gardez la carte visible et choisissez votre second écran.</p>
+      <div class="atak-screen-modal__choices">
+        <button type="button" class="atak-screen-modal__choice" id="atak-screen-modal-window">
+          <span class="atak-screen-modal__choice-icon" aria-hidden="true">↗</span>
+          <span><strong>Fenêtre supplémentaire</strong><small>Ouvrir le module actif dans une fenêtre dédiée.</small></span>
+        </button>
+        <button type="button" class="atak-screen-modal__choice" id="atak-screen-modal-phone">
+          <span class="atak-screen-modal__choice-icon" aria-hidden="true">▦</span>
+          <span><strong>Tchat sur téléphone</strong><small>Générer un QR code qui ouvre directement le tchat mobile.</small></span>
+        </button>
+      </div>
+      <div class="atak-screen-modal__phone" id="atak-screen-modal-phone-result" hidden aria-live="polite">
+        <div class="atak-screen-modal__qr-frame">
+          <img id="atak-screen-modal-qr" alt="QR code pour ouvrir le tchat ATAK sur téléphone" width="220" height="220" />
+        </div>
+        <div class="atak-screen-modal__phone-copy">
+          <strong>Scannez pour ouvrir le tchat</strong>
+          <p id="atak-screen-modal-status">Génération du QR code…</p>
+          <a id="atak-screen-modal-open" href="#" target="_blank" rel="noopener noreferrer" hidden>Ouvrir sur cet appareil</a>
+        </div>
+      </div>
+    </section>
+  </div>
   <aside class="atak-account-panel" id="atak-account-panel" aria-labelledby="atak-account-title">
     <div class="atak-account-panel-head">
       <h2 id="atak-account-title" class="atak-account-panel-title">Compte &amp; liaison</h2>
