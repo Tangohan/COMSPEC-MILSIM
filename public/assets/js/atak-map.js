@@ -2115,6 +2115,7 @@ window.ATAKMap = (function () {
       } catch (err) {}
     },
     getConfig: getConfig,
+    getBaseTileLayer: function () { return baseTileLayer; },
     applyOffset: applyOffset,
     latLngFromWorld: latLngFromWorld,
     worldFromLatLng: worldFromLatLng,

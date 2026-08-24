@@ -4684,6 +4684,9 @@ body.atak-theme-light .atak-chat-messages {
 }
 .atak-map-stage.atak-map-stage--3d #atak-map .leaflet-tile-pane,
 .atak-map-stage.atak-map-stage--3d #atak-map .leaflet-overlay-pane { filter: drop-shadow(0 14px 11px rgba(0, 0, 0, .42)); }
+.atak-terrain-mesh { position: absolute; inset: 0; z-index: 210; pointer-events: none; }
+.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 0; }
+.atak-map-stage:not(.atak-map-stage--3d) .atak-terrain-mesh { display: none; }
 .atak-map-tools__btn--view3d.is-active { color: #6ee7c4; border-color: rgba(52, 211, 153, .7); background: rgba(16, 185, 129, .16); }
 .atak-map-3d-nav { position: absolute; right: 16px; top: 18px; z-index: 1100; display: grid; justify-items: center; gap: 7px; }
 .atak-map-3d-nav[hidden] { display: none !important; }

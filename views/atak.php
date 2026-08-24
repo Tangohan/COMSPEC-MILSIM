@@ -2357,7 +2357,7 @@ if ($atakMapConfig) {
                 <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
                 <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
               </label>
-              <p class="atak-terrain-3d-hint">Glissez sur la rose pour orienter la vue. Le relief, les tracés et les unités restent synchronisés.</p>
+              <p class="atak-terrain-3d-hint">Les PNG sont drapés et déformés sur le relevé altimétrique, comme une carte IGN en relief. Glissez sur la rose pour orienter la vue.</p>
             </div>
             <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
           </div>
