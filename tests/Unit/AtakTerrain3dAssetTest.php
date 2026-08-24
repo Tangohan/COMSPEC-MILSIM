@@ -25,6 +25,17 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertStringContainsString("bindMapEvent(layer, 'tileunload')", $javascript);
     }
 
+    public function testTerrainMeshOffersPersistentVerticalExaggeration(): void
+    {
+        $javascript = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain-3d.js');
+        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
+
+        self::assertStringContainsString('verticalExaggeration: 2.5', $javascript);
+        self::assertStringContainsString('* state.verticalExaggeration', $javascript);
+        self::assertStringContainsString('id="atak-terrain-exaggeration"', $view);
+        self::assertStringContainsString('Exagération Z', $view);
+    }
+
     public function testTerrainMeshKeepsTheLeafletTextureAsFallback(): void
     {
         $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak.css');
