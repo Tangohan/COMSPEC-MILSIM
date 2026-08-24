@@ -1203,7 +1203,7 @@ if ($atakMapConfig) {
           <span class="atak-section-btn__label">Appuis</span>
           <span class="atak-section-btn__badge" hidden></span>
         </button>
-        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="qr" title="Accès mobile par QR code">
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="qr" title="Accès mobile par QR code" onclick="if (window.ATAKPanelChrome) { window.ATAKPanelChrome.activateTab('qrcode'); }">
           <span class="atak-section-btn__icon" aria-hidden="true">▦</span>
           <span class="atak-section-btn__label">QR</span>
           <span class="atak-section-btn__badge" hidden></span>
