@@ -22,6 +22,7 @@ final class AtakOperationalStatusService
             ? ($row['navigation'] ?? $row['assignment'])
             : null;
 
+        $isPhone = self::isPhoneContact($extra);
         $speedMs = self::num($payload['speed'] ?? $extra['speed'] ?? null);
         $heading = self::num($payload['heading_object'] ?? $row['heading'] ?? $extra['heading_object'] ?? null);
         $moveH = self::num($payload['movement_heading'] ?? $extra['movement_heading'] ?? null);
@@ -34,6 +35,30 @@ final class AtakOperationalStatusService
         $inVeh = $extra['in_vehicle'] ?? null;
         $combatMode = (string) ($extra['combat_mode'] ?? '');
         $behaviour = (string) ($extra['behaviour'] ?? '');
+
+        if ($isPhone) {
+            $speedMs = null;
+            $fuel = null;
+            $ammo = null;
+            $health = '';
+            $radioFreq = '';
+            $radioNet = '';
+            $combatMode = '';
+            $behaviour = '';
+            if (!self::reveal($extra, 'heading')) {
+                $heading = null;
+                $moveH = null;
+                $row['heading'] = null;
+                $row['heading_object'] = null;
+                $row['movement_heading'] = null;
+            }
+            if (!self::reveal($extra, 'altitude')) {
+                $alt = null;
+            }
+            if (!self::reveal($extra, 'vehicle')) {
+                $inVeh = null;
+            }
+        }
 
         $row['source_arma'] = [
             'speed_ms' => $speedMs,
@@ -59,34 +84,58 @@ final class AtakOperationalStatusService
 
         $eta = is_array($nav) ? ($nav['eta'] ?? null) : null;
         $terrain = is_array($nav) ? ($nav['terrain'] ?? null) : null;
-        $row['analysis_athena'] = [
-            'motion_status' => $motion['status'] ?? null,
-            'trend' => $motion['trend'] ?? null,
-            'confidence' => $motion['confidence'] ?? null,
-            'category' => $motion['category'] ?? null,
-            'course_status' => is_array($nav) ? ($nav['course_status'] ?? null) : null,
-            'destination' => is_array($nav) ? ($nav['destination_label'] ?? null) : null,
-            'eta_kinematic_s' => is_array($eta) ? ($eta['seconds'] ?? null) : null,
-            'eta_terrain_s' => is_array($terrain) ? ($terrain['eta_terrain_s'] ?? null) : null,
-            'terrain_confidence' => is_array($terrain) ? ($terrain['confidence'] ?? null) : null,
-        ];
+        $row['analysis_athena'] = $isPhone
+            ? [
+                'motion_status' => null,
+                'trend' => null,
+                'confidence' => null,
+                'category' => null,
+                'course_status' => null,
+                'destination' => null,
+                'eta_kinematic_s' => null,
+                'eta_terrain_s' => null,
+                'terrain_confidence' => null,
+            ]
+            : [
+                'motion_status' => $motion['status'] ?? null,
+                'trend' => $motion['trend'] ?? null,
+                'confidence' => $motion['confidence'] ?? null,
+                'category' => $motion['category'] ?? null,
+                'course_status' => is_array($nav) ? ($nav['course_status'] ?? null) : null,
+                'destination' => is_array($nav) ? ($nav['destination_label'] ?? null) : null,
+                'eta_kinematic_s' => is_array($eta) ? ($eta['seconds'] ?? null) : null,
+                'eta_terrain_s' => is_array($terrain) ? ($terrain['eta_terrain_s'] ?? null) : null,
+                'terrain_confidence' => is_array($terrain) ? ($terrain['confidence'] ?? null) : null,
+            ];
 
         $contact = !empty($extra['radio_speaking'])
             || in_array(strtoupper((string) ($extra['behaviour'] ?? '')), ['COMBAT'], true)
             || in_array(strtoupper((string) ($extra['combat_mode'] ?? '')), ['YELLOW', 'RED', 'COMBAT'], true);
+        if ($isPhone) {
+            $contact = false;
+            $row['source_arma']['vehicle'] = self::reveal($extra, 'vehicle') ? ($extra['vehicle'] ?? null) : null;
+            $row['source_arma']['radio_lr'] = null;
+            $row['source_arma']['formation'] = null;
+            $row['source_arma']['group_count'] = null;
+            $row['source_arma']['leader'] = null;
+            $row['source_arma']['current_weapon'] = null;
+            $row['source_arma']['blood_pct'] = null;
+        }
         $row['operational'] = [
             'unit' => [
                 'call_sign' => $row['call_sign'] ?? $row['callsign'] ?? null,
-                'role' => $row['role'] ?? $extra['role'] ?? null,
-                'category' => $motion['category'] ?? null,
-                'affiliation' => $extra['affiliation'] ?? $row['affiliation'] ?? null,
+                'role' => $isPhone ? 'Téléphone' : ($row['role'] ?? $extra['role'] ?? null),
+                'category' => $isPhone ? null : ($motion['category'] ?? null),
+                'affiliation' => ($isPhone && !self::reveal($extra, 'affiliation'))
+                    ? null
+                    : ($extra['affiliation'] ?? $row['affiliation'] ?? null),
                 'status' => $row['status'] ?? null,
             ],
             'task' => [
-                'destination' => is_array($nav) ? ($nav['destination_label'] ?? null) : null,
-                'course' => is_array($nav) ? ($nav['course_status'] ?? null) : null,
-                'phase' => $extra['mission_phase'] ?? $extra['phase'] ?? null,
-                'task' => $extra['mission_task'] ?? $extra['task'] ?? null,
+                'destination' => $isPhone ? null : (is_array($nav) ? ($nav['destination_label'] ?? null) : null),
+                'course' => $isPhone ? null : (is_array($nav) ? ($nav['course_status'] ?? null) : null),
+                'phase' => $isPhone ? null : ($extra['mission_phase'] ?? $extra['phase'] ?? null),
+                'task' => $isPhone ? null : ($extra['mission_task'] ?? $extra['task'] ?? null),
             ],
             'combat' => [
                 'contact' => $contact,
@@ -119,6 +168,32 @@ final class AtakOperationalStatusService
         ];
 
         return $row;
+    }
+
+    /**
+     * @param array<string, mixed> $extra
+     */
+    public static function isPhoneContact(array $extra): bool
+    {
+        if (!empty($extra['phone_geoloc'])) {
+            return true;
+        }
+
+        return strtolower((string) ($extra['source'] ?? '')) === 'phone';
+    }
+
+    /**
+     * @param array<string, mixed> $extra
+     */
+    public static function reveal(array $extra, string $key): bool
+    {
+        $rev = $extra['reveal'] ?? null;
+        if (!is_array($rev)) {
+            return false;
+        }
+        $v = $rev[$key] ?? false;
+
+        return $v === true || $v === 1 || $v === '1' || $v === 'true';
     }
 
     /**

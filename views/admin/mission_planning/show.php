@@ -23,6 +23,7 @@ $matrix = is_array($board['matrix'] ?? null) ? $board['matrix'] : [];
 $log = is_array($board['log'] ?? null) ? $board['log'] : [];
 $counts = is_array($board['counts'] ?? null) ? $board['counts'] : [];
 $cmp = is_array($board['comparison'] ?? null) ? $board['comparison'] : [];
+$aar = is_array($board['aar'] ?? null) ? $board['aar'] : null;
 $planId = (int) ($plan['id'] ?? 0);
 $status = (string) ($plan['status'] ?? 'draft');
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
@@ -75,6 +76,9 @@ $e = \App\Core\Session::getFlash('error');
             <option value="closed" <?= $status === 'closed' ? 'selected' : '' ?>>Clôturé</option>
         </select>
         <button type="submit" class="ath-btn ath-btn--solid">Mettre à jour</button>
+        <?php if (is_array($aar) && (int) ($aar['id'] ?? 0) > 0): ?>
+            <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/atak/comptes-rendus/' . (int) $aar['id'] . '/edit')) ?>">Ouvrir le compte rendu</a>
+        <?php endif; ?>
         <a class="ath-btn" href="<?= $h($base . '/paquet.pdf') ?>">Télécharger le paquet</a>
         <a class="ath-btn" href="<?= $h(url('back-office/planification')) ?>">Tous les plans</a>
     </form>
@@ -140,6 +144,14 @@ $e = \App\Core\Session::getFlash('error');
     <button type="submit" class="ath-btn ath-btn--solid" style="margin-top:14px;">Enregistrer le planning</button>
 </form>
 
+<?php if (is_array($aar) && (int) ($aar['id'] ?? 0) > 0): ?>
+<div class="ath-card ath-rise" style="padding:18px 20px;margin-top:16px;">
+    <div style="font-size:9px;font-weight:800;letter-spacing:0.18em;color:#8c979b;margin-bottom:8px;">COMPTE RENDU</div>
+    <p>Un compte rendu est ouvert pour cette mission (<?= $h($aar['status_label'] ?? 'En attente') ?>). Il n’est pas publié tout seul : complétez-le puis validez-le.</p>
+    <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/atak/comptes-rendus/' . (int) $aar['id'] . '/edit')) ?>">Compléter le compte rendu</a>
+</div>
+<?php endif; ?>
+
 <div class="ath-table-panel ath-rise" style="margin-top:16px;">
     <div class="ath-table-toolbar">
         <span class="ath-table-toolbar__title">Prévu / réel</span>
@@ -194,7 +206,22 @@ $e = \App\Core\Session::getFlash('error');
 <?php endif; ?>
 
 <?php if ($tab === 'organisation'): ?>
-<p class="mp-lede">L’organisation prévue reste la référence. L’organisation en cours reflète ce qui est réellement engagé. Glissez un poste vers une autre unité pour le réaffecter.</p>
+<p class="mp-lede">L’organisation prévue reste la référence. Chaque unité garde son type (état-major, manœuvre, air, soutien). L’organisation en cours reflète ce qui est réellement engagé. Glissez un poste vers une autre unité pour le réaffecter.</p>
+
+<div class="mp-org-toolbar" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+    <form method="post" action="<?= $h($base . '/organigramme') ?>">
+        <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+        <button type="submit" class="ath-btn">Reprendre l’organigramme de la communauté</button>
+    </form>
+    <?php if ((int) ($plan['event_id'] ?? 0) > 0): ?>
+        <form method="post" action="<?= $h($base . '/inscrits-evenement') ?>">
+            <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+            <button type="submit" class="ath-btn ath-btn--solid">Reprendre les inscrits de l’événement</button>
+        </form>
+    <?php else: ?>
+        <p class="mp-muted" style="margin:0;align-self:center;">Liez un événement dans l’onglet Planning pour reprendre les inscrits.</p>
+    <?php endif; ?>
+</div>
 
 <div class="mp-org-layout">
     <div class="mp-org-board" id="mp-org-board" data-move-base="<?= $h($base) ?>" data-csrf="<?= $h($csrf) ?>">
@@ -207,7 +234,8 @@ $e = \App\Core\Session::getFlash('error');
                 $el = $node['element'] ?? [];
                 $eid = (int) ($el['id'] ?? 0);
                 echo '<li class="mp-tree__el" data-element-id="' . $eid . '">';
-                echo '<div class="mp-tree__el-head">' . $h($el['label'] ?? '') . '</div>';
+                echo '<div class="mp-tree__el-head">' . $h($el['label'] ?? '')
+                    . ' <span class="mp-muted">· ' . $h(MissionPlanningLabels::elementKind((string) ($el['kind'] ?? ''))) . '</span></div>';
                 echo '<ul class="mp-tree__slots" data-drop-element="' . $eid . '">';
                 foreach ($node['slots'] ?? [] as $slot) {
                     $sid = (int) ($slot['id'] ?? 0);
@@ -251,7 +279,7 @@ $e = \App\Core\Session::getFlash('error');
                     <tbody>
                         <?php foreach ($matrix as $row): ?>
                             <tr<?= ($row['kind'] ?? '') === 'total' ? ' class="mp-total-row"' : '' ?>>
-                                <td><?= $h($row['label'] ?? '') ?></td>
+                                <td><?= $h($row['label'] ?? '') ?><?php if (($row['kind'] ?? '') !== 'total' && ($row['kind_label'] ?? '') !== ''): ?> <span class="mp-muted">· <?= $h($row['kind_label']) ?></span><?php endif; ?></td>
                                 <td><?= (int) ($row['auth'] ?? 0) ?></td>
                                 <td><?= (int) ($row['assigned'] ?? 0) ?></td>
                                 <td><?= (int) ($row['present'] ?? 0) ?></td>
@@ -276,6 +304,7 @@ $e = \App\Core\Session::getFlash('error');
             <thead>
                 <tr>
                     <th>Unité</th>
+                    <th>Type</th>
                     <th>Indicatif</th>
                     <th>Fonction</th>
                     <th>Personnel</th>
@@ -291,6 +320,7 @@ $e = \App\Core\Session::getFlash('error');
                     ?>
                     <tr>
                         <td><?= $h($row['element_label'] ?? '') ?></td>
+                        <td><?= $h(MissionPlanningLabels::elementKind((string) ($row['element_kind'] ?? ''))) ?></td>
                         <td><?= $h($row['callsign'] ?? '') ?></td>
                         <td><?= $h($row['function_label'] ?? '') ?></td>
                         <td><?= $h($row['assigned_label'] ?? 'Vacant') ?></td>
@@ -313,7 +343,7 @@ $e = \App\Core\Session::getFlash('error');
                         </td>
                     </tr>
                     <tr class="mp-slot-extra">
-                        <td colspan="7">
+                        <td colspan="8">
                             <form method="post" action="<?= $h($base . '/postes/' . $sid) ?>" class="mp-slot-details">
                                 <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
                                 <input type="hidden" name="element_id" value="<?= (int) ($row['element_id'] ?? 0) ?>">

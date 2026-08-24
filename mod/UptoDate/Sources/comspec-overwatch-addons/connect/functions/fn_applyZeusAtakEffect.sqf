@@ -72,7 +72,7 @@ switch (_action) do {
         missionNamespace setVariable ["COMSPEC_AtakState", _atakState, false];
         player setVariable ["COMSPEC_AtakState", _atakState, true];
         ["ATAK éteint (Zeus)", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
-        playSound "addItemFailed";
+        ["disconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         call _fnc_refreshUi;
     };
 
@@ -82,7 +82,7 @@ switch (_action) do {
         missionNamespace setVariable ["COMSPEC_AtakState", _atakState, false];
         player setVariable ["COMSPEC_AtakState", _atakState, true];
         ["Écran ATAK endommagé (Zeus)", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
-        playSound "FD_CP_Not_Clear_F";
+        ["disconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         [0.55, 8, false] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects;
         call _fnc_refreshUi;
     };
@@ -96,7 +96,7 @@ switch (_action) do {
         player setVariable ["COMSPEC_AtakState", _atakState, true];
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
         ["ATAK hors service — liaison coupée (Zeus)", "system", "critical"] call comspec_overwatch_connect_fnc_ambientHint;
-        playSound "FD_CP_Not_Clear_F";
+        ["disconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         [0.9, 12, false] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects;
         call _fnc_refreshUi;
     };
@@ -161,7 +161,7 @@ switch (_action) do {
         missionNamespace setVariable ["COMSPEC_CompromiseState", _state, false];
         player setVariable ["COMSPEC_CompromiseState", _state, true];
         ["Appareil capturé — clé incorrecte", "system", "critical"] call comspec_overwatch_connect_fnc_ambientHint;
-        playSound "FD_CP_Not_Clear_F";
+        ["disconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         [0.45, 6, false] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects;
         [] call comspec_overwatch_connect_fnc_syncTerminalCompromise;
         call _fnc_refreshUi;
@@ -172,7 +172,7 @@ switch (_action) do {
         missionNamespace setVariable ["COMSPEC_CompromiseState", "none", false];
         player setVariable ["COMSPEC_CompromiseState", "none", true];
         ["Contrôle appareil rétabli", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
-        playSound "FD_CP_Clear_F";
+        ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         [] call comspec_overwatch_connect_fnc_syncTerminalCompromise;
         call _fnc_refreshUi;
     };
@@ -201,7 +201,7 @@ switch (_action) do {
         missionNamespace setVariable ["COMSPEC_InRoleplayZone", false, false];
         [0, 0, true] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects;
         ["ATAK rétabli (Zeus)", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
-        playSound "FD_CP_Clear_F";
+        ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         [] call comspec_overwatch_connect_fnc_syncTerminalCompromise;
         [] call comspec_overwatch_connect_fnc_refreshLinkState;
         call _fnc_refreshUi;

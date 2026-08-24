@@ -120,15 +120,29 @@ window.ATAKAssignments = (function () {
       assignment_mode: dest.mode || 'DIRECT'
     };
     return postAssign(payload).then(function (res) {
-      if (!res.ok || !res.body || !res.body.ok) {
+      var assigned = !!(res.ok && res.body && res.body.ok);
+      if (!assigned) {
         err((res.body && res.body.error) || 'Impossible d’assigner la destination.');
+      } else {
+        notify((callsignOf(unit) || 'Unité') + ' → ' + (dest.label || 'destination'));
+      }
+      if (window.ATAKUnits && window.ATAKUnits.isAllyAi && window.ATAKUnits.isAllyAi(unit)
+          && window.ATAKWaypoints && window.ATAKWaypoints.issueAllyMove
+          && dest.x != null && dest.y != null) {
+        window.ATAKWaypoints.issueAllyMove(unit, { lng: dest.x, lat: dest.y });
+      } else if (!assigned) {
         return;
       }
-      notify((callsignOf(unit) || 'Unité') + ' → ' + (dest.label || 'destination'));
       cancelPick();
       refreshUnits();
     }).catch(function () {
       err('Impossible d’assigner la destination.');
+      if (window.ATAKUnits && window.ATAKUnits.isAllyAi && window.ATAKUnits.isAllyAi(unit)
+          && window.ATAKWaypoints && window.ATAKWaypoints.issueAllyMove
+          && dest.x != null && dest.y != null) {
+        window.ATAKWaypoints.issueAllyMove(unit, { lng: dest.x, lat: dest.y });
+        cancelPick();
+      }
     });
   }
 

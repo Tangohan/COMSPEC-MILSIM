@@ -6,6 +6,10 @@
 */
 if (!hasInterface) exitWith {};
 
+// Les ppEffects Arma s’appliquent à tout le viewport (3D + HUD), y compris
+// autour du téléphone ATAK. Le réglage « effets visuels » vise uniquement
+// l’écran du terminal (overlay / HTML). On nettoie d’éventuels effets restants.
+
 // Compat : [true] call … devait stopper — l’ancien params type [0] ignorait le bool
 if (_this isEqualType true) exitWith {
     if (_this) then { [0, 0, true] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects; };
@@ -55,53 +59,6 @@ private _cleanup = {
 
 if (_stop) exitWith { call _cleanup; };
 
-if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_visual_effects", true])) exitWith {};
-if (_intensity <= 0.05) exitWith { call _cleanup; };
-
+// Ne jamais appliquer de ppEffect monde : ça recouvre le 3D et le cadre du téléphone.
 call _cleanup;
 
-private _aberration = ppEffectCreate ["ChromAberration", 210];
-_aberration ppEffectEnable true;
-private _grain = ppEffectCreate ["FilmGrain", 2010];
-_grain ppEffectEnable true;
-private _color = ppEffectCreate ["ColorCorrections", 1998];
-_color ppEffectEnable true;
-
-missionNamespace setVariable ["COMSPEC_RoleplayPpAber", _aberration, false];
-missionNamespace setVariable ["COMSPEC_RoleplayPpGrain", _grain, false];
-missionNamespace setVariable ["COMSPEC_RoleplayPpColor", _color, false];
-
-private _endTime = CBA_missionTime + (_durationSec max 1);
-
-private _handle = [{
-    params ["_args", "_h"];
-    _args params ["_aberration", "_grain", "_color", "_endTime", "_baseIntensity"];
-
-    if (CBA_missionTime >= _endTime) exitWith {
-        _aberration ppEffectEnable false;
-        _grain ppEffectEnable false;
-        _color ppEffectEnable false;
-        ppEffectDestroy _aberration;
-        ppEffectDestroy _grain;
-        ppEffectDestroy _color;
-        missionNamespace setVariable ["COMSPEC_RoleplayPpAber", -1, false];
-        missionNamespace setVariable ["COMSPEC_RoleplayPpGrain", -1, false];
-        missionNamespace setVariable ["COMSPEC_RoleplayPpColor", -1, false];
-        missionNamespace setVariable ["COMSPEC_RoleplayPpFnc", -1, false];
-        [_h] call CBA_fnc_removePerFrameHandler;
-    };
-
-    private _strength = linearConversion [_endTime - 8, _endTime, CBA_missionTime, _baseIntensity, 0.08, true];
-    private _jolt = _strength * (0.015 + random 0.065);
-    _aberration ppEffectAdjust [_jolt, _jolt, true];
-    _aberration ppEffectCommit 0.08;
-    _grain ppEffectAdjust [_strength * (0.16 + random 0.38), 1.15, 1.3, 0, 1, false];
-    _grain ppEffectCommit 0.08;
-    private _dark = 1 - (_strength * 0.22);
-    private _sat = 1 - (_strength * 0.35);
-    private _tint = [1, 0.92 - (_strength * 0.18), 0.86 - (_strength * 0.25), 1];
-    _color ppEffectAdjust [_dark, _dark, 0, _tint, [1, 1, 1, 1], [0.199, 0.587, 0.114, 0]];
-    _color ppEffectCommit 0.08;
-}, 0.12, [_aberration, _grain, _color, _endTime, _intensity min 1 max 0]] call CBA_fnc_addPerFrameHandler;
-
-missionNamespace setVariable ["COMSPEC_RoleplayPpFnc", _handle, false];

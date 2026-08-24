@@ -476,7 +476,7 @@ if ($atakMapConfig) {
           <span class="atak-sound-pref-key">Traces d’unités</span>
           <span class="atak-sound-pref-check">
             <input type="checkbox" id="atak-show-unit-trails" checked />
-            <span>Fil de déplacement des contacts actifs</span>
+            <span>Fil coloré : téléphone, véhicule, à pied. Tirets = doute. Croix = perte de liaison.</span>
           </span>
         </label>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-unit-ghost-trails">
@@ -499,7 +499,7 @@ if ($atakMapConfig) {
           <span class="atak-sound-pref-key">Projection courte</span>
           <span class="atak-sound-pref-check">
             <input type="checkbox" id="atak-show-motion-projection" checked />
-            <span>Trait devant l’unité pour les prochaines secondes</span>
+            <span>Cercle en pointillés : distance qu’un contact a pu parcourir depuis le dernier point connu</span>
           </span>
         </label>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-assignment-lines">
@@ -622,6 +622,19 @@ if ($atakMapConfig) {
             <option value="mute">Silencieux — sans vibration</option>
           </select>
         </label>
+        <label class="atak-sound-pref-label" for="atak-phone-proximity-account">
+          <span class="atak-sound-pref-key">Alerte des téléphones suivis</span>
+          <select id="atak-phone-proximity-account" class="atak-header-select atak-sound-pref-select" title="Rayon dans lequel le terminal vibre près d’un téléphone suivi">
+            <option value="0">Désactivée</option>
+            <option value="50">50 mètres</option>
+            <option value="100">100 mètres</option>
+            <option value="200" selected>200 mètres</option>
+            <option value="500">500 mètres</option>
+            <option value="1000">1 kilomètre</option>
+            <option value="2000">2 kilomètres</option>
+          </select>
+        </label>
+        <p class="atak-game-link-hint">Votre terminal vibre lorsque vous (indicatif de session) approchez d’un téléphone suivi, dans le rayon choisi sur ce poste ou sur l’ATAK en jeu.</p>
         <h4 class="atak-account-section-subtitle">Types d’alertes</h4>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-alert-cat-liaison">
           <span class="atak-sound-pref-key">État de liaison</span>
@@ -812,6 +825,22 @@ if ($atakMapConfig) {
             <span class="atak-health-label">Pings</span>
             <span class="atak-health-cell" id="health-pings-error">Aucun incident</span>
           </div>
+        </div>
+      </details>
+      <details class="atak-details atak-weblog-details" open>
+        <summary>Journal de la liaison <span class="atak-weblog-badge" id="atak-weblog-badge" hidden>0</span></summary>
+        <div class="atak-details-body">
+          <p class="atak-health-muted atak-weblog-intro">Incidents d’affichage et données reçues pendant cette session.</p>
+          <div class="atak-weblog-toolbar" role="toolbar" aria-label="Filtrer le journal">
+            <button type="button" class="atak-weblog-filter is-active" data-weblog-filter="all" aria-pressed="true">Tout</button>
+            <button type="button" class="atak-weblog-filter" data-weblog-filter="incident" aria-pressed="false">Incidents</button>
+            <button type="button" class="atak-weblog-filter" data-weblog-filter="remontee" aria-pressed="false">Remontées</button>
+            <span class="atak-weblog-count" id="atak-weblog-count"></span>
+            <button type="button" class="atak-weblog-tool" data-weblog-copy>Copier</button>
+            <button type="button" class="atak-weblog-tool" data-weblog-clear>Effacer</button>
+          </div>
+          <ol class="atak-weblog-list" id="atak-weblog-list" aria-live="polite"></ol>
+          <p class="atak-health-muted" id="atak-weblog-empty">Aucune entrée pour le moment.</p>
         </div>
       </details>
       <div class="atak-game-config-footer">
@@ -1184,6 +1213,10 @@ if ($atakMapConfig) {
           <span class="atak-tab-label">Marqueurs</span>
           <small class="atak-tab-desc">Objets tactiques sur la carte</small>
         </button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="zones" data-atak-section="sitac" title="Rayon, vitesse et délai des zones tracées">
+          <span class="atak-tab-label">Zones</span>
+          <small class="atak-tab-desc">Rayon, vitesse et délai</small>
+        </button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="chat" data-atak-section="comms" title="Tchat">
           <span class="atak-tab-label">Tchat</span>
           <small class="atak-tab-desc">Messagerie terrain ↔ TOC</small>
@@ -1304,6 +1337,18 @@ if ($atakMapConfig) {
           <label class="atak-rail-audio-opt" for="atak-alert-silence-novib" title="Coupe les sons et toute vibration. Les bandeaux d’alerte restent visibles.">
             <input type="checkbox" id="atak-alert-silence-novib" />
             <span>Silencieux — sans vibration</span>
+          </label>
+          <label class="atak-sound-pref-label" for="atak-phone-proximity">
+            <span class="atak-sound-pref-key">Alerte des téléphones suivis</span>
+            <select id="atak-phone-proximity" class="atak-header-select atak-sound-pref-select" title="Rayon dans lequel le terminal vibre près d’un téléphone suivi">
+              <option value="0">Désactivée</option>
+              <option value="50">50 mètres</option>
+              <option value="100">100 mètres</option>
+              <option value="200" selected>200 mètres</option>
+              <option value="500">500 mètres</option>
+              <option value="1000">1 kilomètre</option>
+              <option value="2000">2 kilomètres</option>
+            </select>
           </label>
           <p class="atak-rail-audio-hint" id="atak-alert-mute-hint" hidden role="status"></p>
         </section>
@@ -1485,6 +1530,49 @@ if ($atakMapConfig) {
           </div>
         </div>
       </div>
+      <div class="atak-tabs-content" id="tab-zones" role="tabpanel" aria-label="Zones et délais">
+        <div class="atak-zone-module">
+          <div class="atak-panel-strip">
+            <span class="atak-panel-strip-title">Zones et délais</span>
+          </div>
+          <p class="atak-panel-hint">Ces réglages servent au tracé d’une zone de recherche, d’un périmètre ou d’une zone d’intérêt. Le rayon se met à jour pendant le dessin ; la vitesse calcule le délai pour aller du centre au bord.</p>
+          <div class="atak-zone-module__grid">
+            <label class="atak-ops-field" for="atak-tool-radius">
+              Rayon de référence
+              <span class="atak-zone-module__input-row">
+                <input type="number" id="atak-tool-radius" min="10" max="50000" step="10" value="500" inputmode="numeric" />
+                <span class="atak-zone-module__unit">m</span>
+              </span>
+            </label>
+            <label class="atak-ops-field" for="atak-tool-speed">
+              Vitesse de progression
+              <span class="atak-zone-module__input-row">
+                <input type="number" id="atak-tool-speed" min="1" max="200" step="0.5" value="5" inputmode="decimal" />
+                <span class="atak-zone-module__unit">km/h</span>
+              </span>
+            </label>
+          </div>
+          <div class="atak-zone-module__presets" role="group" aria-label="Vitesses habituelles">
+            <button type="button" class="atak-ops-btn" data-tool="speed-foot" title="Vitesse à pied (5 km/h)">À pied — 5 km/h</button>
+            <button type="button" class="atak-ops-btn" data-tool="speed-vehicle" title="Vitesse véhicule (40 km/h)">Véhicule — 40 km/h</button>
+          </div>
+          <dl class="atak-zone-module__stats" aria-live="polite">
+            <div>
+              <dt>Superficie</dt>
+              <dd id="atak-zone-area">—</dd>
+            </div>
+            <div>
+              <dt>Délai jusqu’au bord</dt>
+              <dd id="atak-zone-delay">—</dd>
+            </div>
+            <div>
+              <dt>Vitesse retenue</dt>
+              <dd id="atak-zone-speed-readout">5 km/h</dd>
+            </div>
+          </dl>
+          <p class="atak-sr-only" id="atak-zone-metrics" role="status"></p>
+        </div>
+      </div>
       <div class="atak-tabs-content" id="tab-chat">
         <div class="atak-panel-strip">
           <span class="atak-panel-strip-title">Journal radio</span>
@@ -1572,6 +1660,7 @@ if ($atakMapConfig) {
                 <option value="fire_team">Fire team</option>
                 <option value="channel">Canal</option>
                 <option value="solo">ATAK Solo</option>
+                <option value="ally">Unité alliée</option>
               </select>
             </label>
             <label class="atak-orders-field" id="atak-order-target-wrap" hidden>
@@ -2033,15 +2122,14 @@ if ($atakMapConfig) {
       <div class="atak-tabs-content" id="tab-replay" role="tabpanel" aria-label="Relecture mission">
         <div class="atak-replay-panel">
           <header class="atak-replay-head">
-            <h3 class="atak-replay-title">Relecture mission</h3>
-            <span class="atak-replay-badge" title="Bilan après-action">Après-action</span>
+            <div>
+              <h3 class="atak-replay-title">Relecture</h3>
+              <p class="atak-replay-sub">Bilan après-action</p>
+            </div>
           </header>
-          <p class="atak-panel-hint">Parcourez les positions enregistrées sur la carte, puis consultez le bilan de mission.</p>
           <div class="atak-replay-controls" role="group" aria-label="Commandes de relecture">
             <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="atak-replay-play">Lecture</button>
             <button type="button" class="atak-ops-btn" id="atak-replay-pause">Pause</button>
-            <button type="button" class="atak-ops-btn" id="atak-replay-aar-refresh" title="Actualiser le bilan après-action">Après-action</button>
-            <button type="button" class="atak-ops-btn" id="atak-replay-export" title="Exporter le bilan en PDF">Export PDF</button>
             <label class="atak-replay-speed-wrap">
               <span class="atak-replay-speed-label">Vitesse</span>
               <select id="atak-replay-speed" class="atak-replay-speed" title="Vitesse de lecture">
@@ -2051,18 +2139,18 @@ if ($atakMapConfig) {
                 <option value="8">×8</option>
               </select>
             </label>
+            <button type="button" class="atak-ops-btn" id="atak-replay-export">Export PDF</button>
+            <button type="button" class="atak-ops-btn atak-replay-reload" id="atak-replay-reload">Actualiser</button>
           </div>
           <label class="atak-replay-timeline">
             <span class="atak-replay-timeline-label">Chronologie</span>
             <input type="range" id="atak-replay-slider" class="atak-replay-slider" min="0" max="0" value="0" />
           </label>
-          <div class="atak-replay-info-row">
-            <p id="atak-replay-info" class="atak-replay-info" role="status">Ouvrez cet onglet pour charger les positions.</p>
-            <button type="button" class="atak-ops-btn atak-replay-reload" id="atak-replay-reload" title="Recharger les positions">Actualiser</button>
-          </div>
+          <p id="atak-replay-info" class="atak-replay-info" role="status">Ouvrez cet onglet pour charger les positions.</p>
+          <div id="atak-replay-legend" class="atak-replay-legend" hidden></div>
           <div id="atak-replay-events" class="atak-replay-events" aria-label="Événements clés" hidden></div>
           <div id="atak-replay-aar" class="atak-replay-aar" aria-live="polite">
-            <p class="atak-panel-hint">Le bilan après-action s’affichera ici.</p>
+            <p class="atak-panel-hint">Le bilan s’affichera ici.</p>
           </div>
         </div>
       </div>
@@ -2074,6 +2162,22 @@ if ($atakMapConfig) {
               <p class="atak-web-presence-intro">Opérateurs connectés à la carte Athena depuis le portail.</p>
               <ul class="atak-web-presence-list" id="atak-web-presence-list" aria-live="polite"></ul>
               <p class="atak-web-presence-empty" id="atak-web-presence-empty">En attente de liaison</p>
+            </div>
+          </details>
+          <details class="atak-collapse atak-weblog-journal" data-atak-collapse="liaison-weblog" data-atak-collapse-default="1" open>
+            <summary class="atak-collapse-sum">Incidents et remontées</summary>
+            <div class="atak-collapse-body">
+              <p class="atak-activity-intro">Ce que la carte a vu pendant cette session : pannes d’affichage et données reçues du terrain.</p>
+              <div class="atak-weblog-toolbar" role="toolbar" aria-label="Filtrer le journal de session">
+                <button type="button" class="atak-weblog-filter is-active" data-weblog-filter="all" aria-pressed="true">Tout</button>
+                <button type="button" class="atak-weblog-filter" data-weblog-filter="incident" aria-pressed="false">Incidents</button>
+                <button type="button" class="atak-weblog-filter" data-weblog-filter="remontee" aria-pressed="false">Remontées</button>
+                <span class="atak-weblog-count" id="atak-weblog-count-liaison"></span>
+                <button type="button" class="atak-weblog-tool" data-weblog-copy>Copier</button>
+                <button type="button" class="atak-weblog-tool" data-weblog-clear>Effacer</button>
+              </div>
+              <ol class="atak-weblog-list" id="atak-weblog-list-liaison" aria-live="polite"></ol>
+              <p class="atak-health-muted" id="atak-weblog-empty-liaison">Aucune entrée pour le moment.</p>
             </div>
           </details>
           <details class="atak-collapse atak-activity-journal" data-atak-collapse="liaison-journal" data-atak-collapse-default="1" open>
@@ -2129,42 +2233,47 @@ if ($atakMapConfig) {
       <button type="button" class="atak-map-tools-fab" id="atak-map-tools-fab" hidden title="Afficher la barre d’outils de la carte">Outils</button>
       <div class="atak-map-tools" id="atak-map-tools" role="toolbar" aria-label="Outils de la carte">
         <div class="atak-map-tools__row" id="atak-map-tools-row">
-          <button type="button" class="atak-map-tools__btn" data-tool="goto" data-tool-slot="goto" title="Aller à une grille (G)">Grille</button>
-          <button type="button" class="atak-map-tools__btn" data-tool="me" data-tool-slot="me" title="Centrer sur ma position (H)">Moi</button>
-          <button type="button" class="atak-map-tools__btn" data-tool="follow" data-tool-slot="follow" title="Suivre ma position (F)" aria-pressed="false">Suivre</button>
-          <span class="atak-map-tools__sep" data-tool-sep="nav" aria-hidden="true"></span>
-          <button type="button" class="atak-map-tools__btn" data-tool="measure" data-tool-slot="measure" title="Mesurer une distance (M)" aria-pressed="false">Mesurer</button>
-          <button type="button" class="atak-map-tools__btn" data-tool="note" data-tool-slot="note" title="Enregistrer une note sur la carte" aria-pressed="false">Note</button>
-          <button type="button" class="atak-map-tools__btn atak-map-tools__btn--jackpot" data-tool="jackpot" data-tool-slot="jackpot" title="JACKPOT — marquer une cible de haute valeur" aria-pressed="false">JACKPOT</button>
-          <span class="atak-map-tools__sep" data-tool-sep="mark" aria-hidden="true"></span>
-          <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="search-zone" data-tool-slot="search-zone" title="Délimiter une zone de recherche" aria-pressed="false">Recherche</button>
-          <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="perimeter" data-tool-slot="perimeter" title="Tracer un périmètre de sécurité" aria-pressed="false">Périmètre</button>
-          <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="aoi" data-tool-slot="aoi" title="Délimiter une zone d’intérêt" aria-pressed="false">Intérêt</button>
-          <button type="button" class="atak-map-tools__btn" data-tool="line" data-tool-slot="line" title="Tracer un trait" aria-pressed="false">Trait</button>
-          <button type="button" class="atak-map-tools__btn" data-tool="clear-drawings" data-tool-slot="clear-drawings" title="Effacer les tracés et zones">Effacer</button>
-          <span class="atak-map-tools__sep" data-tool-sep="draw" aria-hidden="true"></span>
-          <label class="atak-map-tools__field" data-tool-slot="radius" title="Rayon de référence en mètres (mis à jour lors du tracé)">
-            <span class="atak-map-tools__field-label">Rayon</span>
-            <input type="number" id="atak-tool-radius" min="10" max="50000" step="10" value="500" inputmode="numeric" />
-            <span class="atak-map-tools__field-unit">m</span>
-          </label>
-          <label class="atak-map-tools__field" data-tool-slot="speed" title="Vitesse pour le délai jusqu’au bord">
-            <span class="atak-map-tools__field-label">Vitesse</span>
-            <input type="number" id="atak-tool-speed" min="1" max="200" step="0.5" value="5" inputmode="decimal" />
-            <span class="atak-map-tools__field-unit">km/h</span>
-          </label>
-          <button type="button" class="atak-map-tools__btn" data-tool="speed-foot" data-tool-slot="speed-presets" title="Vitesse à pied (5 km/h)">À pied</button>
-          <button type="button" class="atak-map-tools__btn" data-tool="speed-vehicle" data-tool-slot="speed-presets" title="Vitesse véhicule (40 km/h)">Véhicule</button>
-          <span class="atak-map-tools__metrics" id="atak-zone-metrics" data-atak-zone-metrics data-tool-slot="metrics" hidden role="status" aria-live="polite"></span>
-          <span class="atak-map-tools__sep" data-tool-sep="view" aria-hidden="true"></span>
-          <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-in" data-tool-slot="zoom" title="Zoom avant">+</button>
-          <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-out" data-tool-slot="zoom" title="Zoom arrière">−</button>
-          <button type="button" class="atak-map-tools__btn" data-tool="nvg" data-tool-slot="nvg" title="Vision nocturne (N)" aria-pressed="false">NVG</button>
-          <button type="button" class="atak-map-tools__btn" data-tool="cop" data-tool-slot="cop" title="Tableau tactique des unités">Unités</button>
-          <button type="button" class="atak-map-tools__btn" data-tool-ui="look" title="Apparence de la carte (taille, relief, animation)" aria-expanded="false" aria-controls="atak-map-look-prefs">Affichage</button>
-          <span class="atak-map-tools__sep" data-tool-sep="chrome" aria-hidden="true"></span>
-          <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-tool-ui="customize" title="Choisir les outils affichés" aria-expanded="false" aria-controls="atak-map-tools-prefs">Personnaliser</button>
-          <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-tool-ui="collapse" title="Masquer la barre d’outils">Masquer</button>
+          <div class="atak-map-tools__cluster" data-tool-sep="nav">
+            <span class="atak-map-tools__cluster-label">Position</span>
+            <div class="atak-map-tools__cluster-btns">
+              <button type="button" class="atak-map-tools__btn" data-tool="goto" data-tool-slot="goto" title="Aller à une grille (G)">Grille</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="follow" data-tool-slot="follow" title="Suivre ma position (F)" aria-pressed="false">Suivre</button>
+            </div>
+          </div>
+          <div class="atak-map-tools__cluster" data-tool-sep="mark">
+            <span class="atak-map-tools__cluster-label">Annoter</span>
+            <div class="atak-map-tools__cluster-btns">
+              <button type="button" class="atak-map-tools__btn" data-tool="measure" data-tool-slot="measure" title="Mesurer une distance (M)" aria-pressed="false">Mesurer</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="note" data-tool-slot="note" title="Enregistrer une note sur la carte" aria-pressed="false">Note</button>
+            </div>
+          </div>
+          <div class="atak-map-tools__cluster" data-tool-sep="draw">
+            <span class="atak-map-tools__cluster-label">Tracer</span>
+            <div class="atak-map-tools__cluster-btns">
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="search-zone" data-tool-slot="search-zone" title="Délimiter une zone de recherche" aria-pressed="false">Recherche</button>
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="perimeter" data-tool-slot="perimeter" title="Tracer un périmètre de sécurité" aria-pressed="false">Périmètre</button>
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="aoi" data-tool-slot="aoi" title="Délimiter une zone d’intérêt" aria-pressed="false">Intérêt</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="line" data-tool-slot="line" title="Tracer un trait" aria-pressed="false">Trait</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="clear-drawings" data-tool-slot="clear-drawings" title="Effacer les tracés et zones">Effacer</button>
+            </div>
+          </div>
+          <div class="atak-map-tools__cluster" data-tool-sep="view">
+            <span class="atak-map-tools__cluster-label">Vue</span>
+            <div class="atak-map-tools__cluster-btns">
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-in" data-tool-slot="zoom" title="Zoom avant">+</button>
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-out" data-tool-slot="zoom" title="Zoom arrière">−</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="nvg" data-tool-slot="nvg" title="Vision nocturne (N)" aria-pressed="false">NVG</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="cop" data-tool-slot="cop" title="Tableau tactique des unités">Unités</button>
+            </div>
+          </div>
+          <div class="atak-map-tools__cluster atak-map-tools__cluster--chrome" data-tool-sep="chrome">
+            <span class="atak-map-tools__cluster-label">Barre</span>
+            <div class="atak-map-tools__cluster-btns">
+              <button type="button" class="atak-map-tools__btn" data-tool-ui="look" title="Apparence de la carte (taille, relief, animation)" aria-expanded="false" aria-controls="atak-map-look-prefs">Affichage</button>
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-tool-ui="customize" title="Choisir les outils affichés" aria-expanded="false" aria-controls="atak-map-tools-prefs">Personnaliser</button>
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-tool-ui="collapse" title="Masquer la barre d’outils">Masquer</button>
+            </div>
+          </div>
         </div>
         <div class="atak-map-tools__prefs atak-map-tools__prefs--look" id="atak-map-look-prefs" hidden role="dialog" aria-label="Apparence de la carte">
           <p class="atak-map-tools__prefs-title">Apparence de la carte</p>
@@ -2250,6 +2359,18 @@ if ($atakMapConfig) {
       </div>
       <div class="atak-map-stage">
       <div id="atak-map"></div>
+      <div class="atak-trail-legend" id="atak-trail-legend" hidden>
+        <p class="atak-trail-legend__title">Traces</p>
+        <ul class="atak-trail-legend__list">
+          <li><span class="atak-trail-legend__swatch atak-trail-legend__swatch--phone"></span>Téléphone</li>
+          <li><span class="atak-trail-legend__swatch atak-trail-legend__swatch--vehicle"></span>Véhicule</li>
+          <li><span class="atak-trail-legend__swatch atak-trail-legend__swatch--infantry"></span>À pied</li>
+          <li><span class="atak-trail-legend__swatch atak-trail-legend__swatch--air"></span>Aérien</li>
+          <li><span class="atak-trail-legend__swatch atak-trail-legend__swatch--dash"></span>Doute (silence / imprécis)</li>
+          <li><span class="atak-trail-legend__x">✕</span>Perte de liaison ou de position</li>
+          <li><span class="atak-trail-legend__swatch atak-trail-legend__swatch--reach"></span>Distance possible depuis la dernière position</li>
+        </ul>
+      </div>
       <aside class="atak-dossier" id="atak-unit-dossier" hidden aria-label="Fiche d’unité"></aside>
       <div class="atak-cop" id="atak-cop" hidden role="dialog" aria-label="Tableau tactique des unités">
         <div class="atak-cop__head">
@@ -2438,6 +2559,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-mission-overlay.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-web-log.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-units.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-fire-teams.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-replay.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2476,6 +2598,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-activity.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-arma-offline.js"></script>
   <script src="<?= $base ?>/assets/js/atak-sounds.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-phone-proximity.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-panel-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-shell-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-section-nav.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2772,7 +2895,6 @@ if ($atakMapConfig) {
       if (window.ATAKSocket && typeof window.ATAKSocket.onApiUnavailable === 'function') {
         window.ATAKSocket.onApiUnavailable(function () {
           setNetworkChip(false);
-          if (connectionLostEl) connectionLostEl.classList.add('show');
         });
       }
       setInterval(function () {
@@ -2809,14 +2931,18 @@ if ($atakMapConfig) {
         if (window.ATAKLaserCodes) ATAKLaserCodes.fetchLaserCodes();
         if (window.ATAKMap && window.ATAKMap.pollMarkers) window.ATAKMap.pollMarkers();
         else if (window.ATAKMarkers && window.ATAKMarkers.renderFromMap) window.ATAKMarkers.renderFromMap();
-        if (window.TacmapWeather) {
-          var wEl = document.getElementById('atak-weather');
-          var wVal = document.getElementById('atak-weather-value');
-          var mid = resolveAtakMapId();
-          var ab = window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '';
-          TacmapWeather.poll(ab || (window.ATAK_API_BASE || ''), mid, wEl, { compact: true, valueEl: wVal });
-        }
         refreshLiaisonChipQuiet();
+      }
+      function pollWeatherQuiet() {
+        if (!window.TacmapWeather) return;
+        if (window.ATAKSocket && typeof window.ATAKSocket.isApiPaused === 'function' && window.ATAKSocket.isApiPaused()) {
+          return;
+        }
+        var wEl = document.getElementById('atak-weather');
+        var wVal = document.getElementById('atak-weather-value');
+        var mid = resolveAtakMapId();
+        var ab = window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '';
+        TacmapWeather.poll(ab || (window.ATAK_API_BASE || ''), mid, wEl, { compact: true, valueEl: wVal });
       }
       var lastMeasuredLatencyMs = null;
       var lastPingOk = false;
@@ -2882,6 +3008,10 @@ if ($atakMapConfig) {
             lastMeasuredLatencyMs = lastPingOk ? (performance.now() - t0) : null;
             var outageEl = document.getElementById('atak-api-outage');
             if (outageEl) outageEl.hidden = lastPingOk;
+            if (connectionLostEl) {
+              connectionLostEl.classList.toggle('show', !lastPingOk && atakLiveConnectedOnce);
+            }
+            if (lastPingOk) setNetworkChip(true);
             return res;
           })
           .catch(function () {
@@ -2890,6 +3020,8 @@ if ($atakMapConfig) {
             lastMeasuredLatencyMs = null;
             var outageEl = document.getElementById('atak-api-outage');
             if (outageEl) outageEl.hidden = false;
+            if (connectionLostEl && atakLiveConnectedOnce) connectionLostEl.classList.add('show');
+            setNetworkChip(false);
           });
       }
       var lastLiaisonChipAt = 0;
@@ -3021,6 +3153,8 @@ if ($atakMapConfig) {
       }
       atakPoll();
       setInterval(atakPoll, 3000);
+      pollWeatherQuiet();
+      setInterval(pollWeatherQuiet, 30000);
       if (window.ATAKActivity && typeof window.ATAKActivity.start === 'function') {
         ATAKActivity.start();
       }
@@ -3677,6 +3811,7 @@ if ($atakMapConfig) {
             <option value="fire_team">Fire team</option>
             <option value="user">Utilisateur</option>
             <option value="solo">ATAK Solo</option>
+            <option value="ally">Unité alliée</option>
             <option value="channel">Canal</option>
           </select>
         </label>

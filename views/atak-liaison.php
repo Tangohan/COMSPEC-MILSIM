@@ -1,5 +1,6 @@
 <?php
 $base = url('');
+$assetVer = platform_app_version();
 $atakToken = $atakToken ?? '';
 $atakWorkspaces = $atakWorkspaces ?? [['mapId' => 1, 'label' => 'Principal']];
 $atakDefaultMapId = (int) ($atakDefaultMapId ?? 1);
@@ -11,7 +12,7 @@ $demoSeedAllowed = !empty($demoSeedAllowed);
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Journal de liaison — ATAK</title>
-  <link href="<?= $base ?>/assets/css/atak.css?v=202607261920" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
@@ -26,7 +27,7 @@ $demoSeedAllowed = !empty($demoSeedAllowed);
       <div class="atak-liaison-hero-brand">
         <a href="<?= $base ?>/atak" class="atak-liaison-back">← Retour à la carte</a>
         <h1 class="atak-liaison-title">Journal de liaison</h1>
-        <p class="atak-liaison-lead">Historique des connexions, indicatifs, échanges et actions tactiques remontés depuis le théâtre.</p>
+        <p class="atak-liaison-lead">Historique des connexions, incidents, données reçues, échanges et actions tactiques remontés depuis le théâtre.</p>
       </div>
       <div class="atak-liaison-hero-actions">
         <?php if ($demoSeedAllowed): ?>
@@ -63,6 +64,8 @@ $demoSeedAllowed = !empty($demoSeedAllowed);
           <option value="tchat">Tchat</option>
           <option value="ping">Ping</option>
           <option value="tactique">Tactique</option>
+          <option value="incidents">Incidents</option>
+          <option value="donnees">Remontées de données</option>
         </select>
       </label>
       <label class="atak-liaison-field">
@@ -91,7 +94,7 @@ $demoSeedAllowed = !empty($demoSeedAllowed);
     </div>
   </main>
 
-  <script src="<?= $base ?>/assets/js/atak-activity.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-liaison-page.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-activity.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-liaison-page.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
 </body>
 </html>

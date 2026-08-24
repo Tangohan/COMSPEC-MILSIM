@@ -8,6 +8,8 @@
   var ghostBuffers = {};
   var trailLayer = null;
   var ghostTrailLayer = null;
+  var lossLayer = null;
+  var reachLayer = null;
   var pollTimer = null;
   var TRAIL_MAX = 48;
 
@@ -47,8 +49,12 @@
     });
     if (!trailLayer) trailLayer = L.layerGroup();
     if (!ghostTrailLayer) ghostTrailLayer = L.layerGroup();
+    if (!lossLayer) lossLayer = L.layerGroup();
+    if (!reachLayer) reachLayer = L.layerGroup();
     if (map && !map.hasLayer(trailLayer)) trailLayer.addTo(map);
     if (map && !map.hasLayer(ghostTrailLayer)) ghostTrailLayer.addTo(map);
+    if (map && !map.hasLayer(lossLayer)) lossLayer.addTo(map);
+    if (map && !map.hasLayer(reachLayer)) reachLayer.addTo(map);
   }
 
   function layerVisible(id) {
@@ -164,15 +170,83 @@
       .catch(function () { /* silencieux */ });
   }
 
-  function pushTrail(unitKey, latlng, isGhost) {
-    if (!unitKey || !latlng) return;
+  function pushTrail(unitKey, sample, isGhost) {
+    if (!unitKey || !sample) return;
     var bag = isGhost ? ghostBuffers : trailBuffers;
     var buf = bag[unitKey] || [];
     var last = buf.length ? buf[buf.length - 1] : null;
-    if (last && last[0] === latlng.lat && last[1] === latlng.lng) return;
-    buf.push([latlng.lat, latlng.lng]);
+    if (last && last.lat === sample.lat && last.lng === sample.lng && sample.live === last.live) return;
+    if (last && last.live === 'linked' && (sample.live === 'delayed' || sample.live === 'offline')) {
+      sample.loss = true;
+    }
+    if (sample.live === 'offline') sample.loss = true;
+    buf.push(sample);
     if (buf.length > TRAIL_MAX) buf = buf.slice(buf.length - TRAIL_MAX);
     bag[unitKey] = buf;
+  }
+
+  function lossIcon() {
+    return L.divIcon({
+      className: 'atak-trail-loss',
+      html: '<span class="atak-trail-loss__x" title="Perte de liaison">✕</span>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    });
+  }
+
+  function drawReach(latlng, kind, elapsedSec, lastSpeed, heading) {
+    if (!reachLayer || !latlng) return;
+    var M = window.ATAKMotion;
+    var r = M && M.reachRadiusM ? M.reachRadiusM(kind, elapsedSec, lastSpeed) : 0;
+    if (!(r > 12)) return;
+    var color = M && M.trackColor ? M.trackColor(kind, false) : '#fbbf24';
+    L.circle(latlng, {
+      radius: r,
+      color: color,
+      weight: 1.4,
+      opacity: 0.55,
+      dashArray: '5 7',
+      fillColor: color,
+      fillOpacity: 0.07,
+      interactive: false,
+      className: 'atak-trail-reach'
+    }).addTo(reachLayer);
+    if (heading != null && isFinite(Number(heading))) {
+      var rad = (Number(heading) * Math.PI) / 180;
+      var to = L.latLng(latlng.lat + Math.cos(rad) * r, latlng.lng + Math.sin(rad) * r);
+      L.polyline([latlng, to], {
+        color: color,
+        weight: 1.5,
+        opacity: 0.45,
+        dashArray: '2 6',
+        interactive: false
+      }).addTo(reachLayer);
+    }
+  }
+
+  function renderColoredTrail(pts) {
+    if (!pts || pts.length < 2 || !trailLayer) return;
+    var M = window.ATAKMotion;
+    var i;
+    for (i = 1; i < pts.length; i++) {
+      var a = pts[i - 1];
+      var b = pts[i];
+      var dt = ((b.t || 0) - (a.t || 0)) / 1000;
+      var kind = b.kind || a.kind || 'infantry';
+      var gapLimit = M && M.gapSecFor ? M.gapSecFor(kind) : 15;
+      var lost = a.live === 'offline' || b.live === 'offline';
+      var doubt = lost || a.live === 'delayed' || b.live === 'delayed' || dt >= gapLimit * 0.55;
+      var color = M && M.trackColor ? M.trackColor(kind, lost) : (lost ? '#f87171' : '#22d3ee');
+      L.polyline([[a.lat, a.lng], [b.lat, b.lng]], {
+        color: color,
+        weight: lost ? 2.2 : 2.4,
+        opacity: doubt ? 0.62 : 0.88,
+        dashArray: doubt ? '5 7' : null,
+        lineCap: 'round',
+        interactive: false,
+        className: doubt ? 'atak-unit-trail atak-unit-trail--doubt' : 'atak-unit-trail'
+      }).addTo(trailLayer);
+    }
   }
 
   function renderUnitTrails() {
@@ -182,28 +256,57 @@
     var p = prefs();
     if (trailLayer) trailLayer.clearLayers();
     if (ghostTrailLayer) ghostTrailLayer.clearLayers();
+    if (lossLayer) lossLayer.clearLayers();
+    if (reachLayer) reachLayer.clearLayers();
     if (p.showUnitTrails !== false) {
       Object.keys(trailBuffers).forEach(function (key) {
         var pts = trailBuffers[key];
-        if (!pts || pts.length < 2) return;
-        L.polyline(pts, { color: '#67e8f9', weight: 2, opacity: 0.75, interactive: false }).addTo(trailLayer);
+        if (!pts || !pts.length) return;
+        renderColoredTrail(pts);
+        var last = pts[pts.length - 1];
+        var now = Date.now();
+        var elapsed = last.t ? (now - last.t) / 1000 : 0;
+        var kind = last.kind || 'infantry';
+        pts.forEach(function (pt) {
+          if (!pt.loss) return;
+          L.marker(L.latLng(pt.lat, pt.lng), {
+            icon: lossIcon(),
+            interactive: false,
+            zIndexOffset: 420
+          }).addTo(lossLayer);
+        });
+        if (last.live === 'delayed' || last.live === 'offline') {
+          var heading = last.heading;
+          drawReach(L.latLng(last.lat, last.lng), kind, elapsed, last.speed, heading);
+          if (!last.loss) {
+            L.marker(L.latLng(last.lat, last.lng), {
+              icon: lossIcon(),
+              interactive: false,
+              zIndexOffset: 420
+            }).addTo(lossLayer);
+          }
+        }
       });
     }
     if (p.showSseGhostTracks || p.showUnitGhostTrails) {
       Object.keys(ghostBuffers).forEach(function (key) {
         var pts = ghostBuffers[key];
         if (!pts || pts.length < 2) return;
-        L.polyline(pts, {
+        var latlngs = pts.map(function (s) { return [s.lat, s.lng]; });
+        L.polyline(latlngs, {
           color: '#94a3b8', weight: 2, opacity: 0.5, dashArray: '5 7', interactive: false
         }).addTo(ghostTrailLayer);
       });
     }
+    var legend = document.getElementById('atak-trail-legend');
+    if (legend) legend.hidden = p.showUnitTrails === false;
   }
 
   function onUnits(list) {
     if (!Array.isArray(list)) return;
     var p = prefs();
     if (p.showUnitTrails === false && !p.showUnitGhostTrails && !p.showSseGhostTracks) return;
+    var M = window.ATAKMotion;
     list.forEach(function (u) {
       var live = 'live';
       if (window.ATAKUnits && window.ATAKUnits.resolveLiveStatus) {
@@ -217,12 +320,23 @@
       if (isNaN(x) || isNaN(y)) return;
       if (Math.abs(x) < 0.5 && Math.abs(y) < 0.5) return;
       var applied = applyOffset(y, x);
-      var latlng = L.latLng(applied[0], applied[1]);
-      if (live === 'delayed' || live === 'offline') {
-        pushTrail(id, latlng, true);
-      } else {
-        pushTrail(id, latlng, false);
+      var kind = M && M.trackKind ? M.trackKind(u) : 'infantry';
+      var heading = M ? M.num(u.movement_heading) : null;
+      if (heading == null && M && M.isPhone && !M.isPhone(u)) heading = M.num(u.heading);
+      var speed = M ? M.num((u.motion && u.motion.speed_current) || u.speed) : null;
+      var sample = {
+        lat: applied[0],
+        lng: applied[1],
+        t: Date.now(),
+        live: live,
+        kind: kind,
+        heading: heading,
+        speed: speed
+      };
+      if (live === 'offline' && (p.showUnitGhostTrails || p.showSseGhostTracks)) {
+        pushTrail(id, sample, true);
       }
+      pushTrail(id, sample, false);
     });
     renderUnitTrails();
   }
@@ -243,6 +357,7 @@
   window.addEventListener('atak:mapready', function () {
     ensureGroups(window.ATAKMap.getMap());
     startPolling();
+    renderUnitTrails();
   });
 
   window.addEventListener('atak:display-prefs-changed', function () {

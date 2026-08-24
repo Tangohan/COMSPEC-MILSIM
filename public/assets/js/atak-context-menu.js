@@ -165,6 +165,7 @@ window.ATAKContextMenu = (function () {
       '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--jackpot" data-action="jackpot" role="menuitem">JACKPOT — HVT</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="marker" role="menuitem">Placer un marqueur</button>' +
       '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--mission" data-action="waypoint" role="menuitem">Point de mission</button>' +
+      allyMoveHereHtml() +
       '<button type="button" class="atak-ctx-menu__item" data-action="sitrep" role="menuitem">Signaler une situation</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="ping" role="menuitem">Envoyer un ping</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="line" role="menuitem">Tracer un trait</button>' +
@@ -205,14 +206,48 @@ window.ATAKContextMenu = (function () {
       var st = String((u && u.status) || '').toLowerCase();
       return st === 'linked' || st === 'delayed';
     }).slice(0, 10);
-    if (!live.length) return '';
+    var allies = (window.ATAKUnits && window.ATAKUnits.listAllyUnits)
+      ? window.ATAKUnits.listAllyUnits()
+      : [];
+    if (!live.length && !allies.length) return '';
+    var html = '';
+    if (live.length) {
+      html += '<div class="atak-ctx-menu__sep" role="separator"></div>';
+      html += '<div class="atak-ctx-menu__item atak-ctx-menu__item--muted" role="presentation">Définir comme destination de</div>';
+      live.forEach(function (u) {
+        var cs = String(u.call_sign || '').trim();
+        if (!cs) return;
+        html += '<button type="button" class="atak-ctx-menu__item" data-action="dest-of" data-unit-ref="' +
+          escapeHtml(cs) + '" role="menuitem">' + escapeHtml(cs) + '</button>';
+      });
+    }
+    if (allies.length) {
+      html += '<div class="atak-ctx-menu__sep" role="separator"></div>';
+      html += '<div class="atak-ctx-menu__item atak-ctx-menu__item--muted" role="presentation">Déplacer une unité alliée ici</div>';
+      allies.slice(0, 8).forEach(function (u) {
+        var ref = window.ATAKUnits.allyIdOf ? window.ATAKUnits.allyIdOf(u) : String(u.call_sign || '').trim();
+        var label = String(u.call_sign || ref).trim();
+        if (!ref) return;
+        html += '<button type="button" class="atak-ctx-menu__item" data-action="ally-move" data-unit-ref="' +
+          escapeHtml(ref) + '" role="menuitem">' + escapeHtml(label) + '</button>';
+      });
+    }
+    return html;
+  }
+
+  function allyMoveHereHtml() {
+    var allies = (window.ATAKUnits && window.ATAKUnits.listAllyUnits)
+      ? window.ATAKUnits.listAllyUnits()
+      : [];
+    if (!allies.length) return '';
     var html = '<div class="atak-ctx-menu__sep" role="separator"></div>';
-    html += '<div class="atak-ctx-menu__item atak-ctx-menu__item--muted" role="presentation">Définir comme destination de</div>';
-    live.forEach(function (u) {
-      var cs = String(u.call_sign || '').trim();
-      if (!cs) return;
-      html += '<button type="button" class="atak-ctx-menu__item" data-action="dest-of" data-unit-ref="' +
-        escapeHtml(cs) + '" role="menuitem">' + escapeHtml(cs) + '</button>';
+    html += '<div class="atak-ctx-menu__item atak-ctx-menu__item--muted" role="presentation">Déplacer une unité alliée ici</div>';
+    allies.slice(0, 8).forEach(function (u) {
+      var ref = window.ATAKUnits.allyIdOf ? window.ATAKUnits.allyIdOf(u) : String(u.call_sign || '').trim();
+      var label = String(u.call_sign || ref).trim();
+      if (!ref) return;
+      html += '<button type="button" class="atak-ctx-menu__item" data-action="ally-move" data-unit-ref="' +
+        escapeHtml(ref) + '" role="menuitem">' + escapeHtml(label) + '</button>';
     });
     return html;
   }
@@ -1720,6 +1755,35 @@ window.ATAKContextMenu = (function () {
     }
     if (action === 'feature-delete') {
       if (activeFeature) deleteFeature(activeFeature);
+      return;
+    }
+    if (action === 'ally-move' && unitRef) {
+      var llAlly = lastLatLng;
+      if (!llAlly && activeFeature && activeFeature.data) {
+        var d = activeFeature.data;
+        var ax = d.pos_x != null ? Number(d.pos_x) : NaN;
+        var ay = d.pos_y != null ? Number(d.pos_y) : NaN;
+        if (isFinite(ax) && isFinite(ay)) llAlly = { lng: ax, lat: ay };
+      }
+      if (!llAlly) return;
+      var allies = (window.ATAKUnits && window.ATAKUnits.listAllyUnits) ? window.ATAKUnits.listAllyUnits() : [];
+      var target = null;
+      allies.some(function (u) {
+        var id = window.ATAKUnits.allyIdOf ? window.ATAKUnits.allyIdOf(u) : '';
+        var cs = String(u.call_sign || '').trim();
+        if (id === unitRef || cs === unitRef) {
+          target = u;
+          return true;
+        }
+        return false;
+      });
+      if (!target) {
+        if (window.ATAKShowError) window.ATAKShowError('Unité alliée introuvable sur la carte.');
+        return;
+      }
+      if (window.ATAKWaypoints && window.ATAKWaypoints.issueAllyMove) {
+        window.ATAKWaypoints.issueAllyMove(target, llAlly);
+      }
       return;
     }
     if (action === 'dest-of' && activeFeature && unitRef) {

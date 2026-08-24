@@ -131,22 +131,28 @@ window.ATAKCopBoard = (function () {
     body.innerHTML = list.map(function (u) {
       var ex = extra(u);
       var asg = M ? M.assignmentOf(u) : null;
-      var cs = u.call_sign || u.callsign || '—';
-      var cap = M ? M.formatHeading(u.movement_heading || u.heading_object || u.heading) : '';
-      var spd = M ? M.formatSpeed(u) : '';
-      var alt = M ? M.formatAlt(u) : '';
-      var n = extra(u).group_count || extra(u).crew_count || '';
-      var eta = asg && asg.eta ? (M ? M.formatEta(asg.eta.seconds, asg.eta.arrived) : '') : '—';
-      var dest = asg && asg.destination_label ? asg.destination_label : '—';
-      var radio = (u.source_arma && u.source_arma.radio_freq) || ex.radio_freq || '—';
-      var contact = (u.operational && u.operational.combat && u.operational.combat.contact) ? 'Oui' : 'Non';
+      var P = window.ATAKUnitPopup;
+      var isPhone = P && P.isPhoneGeoloc ? P.isPhoneGeoloc(ex) : !!(ex.phone_geoloc);
+      var rev = (isPhone && P && P.phoneReveal) ? P.phoneReveal(ex) : null;
+      var cs = (isPhone && P && P.phoneDisplayName) ? P.phoneDisplayName(u, ex) : (u.call_sign || u.callsign || '—');
+      var cap = (!isPhone || (rev && rev.heading)) ? (M ? M.formatHeading(u.movement_heading || u.heading_object || u.heading) : '') : '';
+      var spd = isPhone ? '' : (M ? M.formatSpeed(u) : '');
+      var alt = (!isPhone || (rev && rev.altitude)) ? (M ? M.formatAlt(u) : '') : '';
+      var n = isPhone ? '' : (extra(u).group_count || extra(u).crew_count || '');
+      var eta = (isPhone || !asg || !asg.eta) ? '—' : (M ? M.formatEta(asg.eta.seconds, asg.eta.arrived) : '');
+      var dest = isPhone ? '—' : (asg && asg.destination_label ? asg.destination_label : '—');
+      var radio = isPhone ? '—' : ((u.source_arma && u.source_arma.radio_freq) || ex.radio_freq || '—');
+      var contact = isPhone ? '—' : ((u.operational && u.operational.combat && u.operational.combat.contact) ? 'Oui' : 'Non');
+      var typeCell = isPhone ? 'TEL' : typeShort(u);
+      var statusCell = isPhone ? '—' : statusShort(u);
+      var agoCell = (!isPhone || (rev && rev.updated)) ? ago(u.updated_at) : '—';
       var x = u.pos_x;
       var y = u.pos_y;
-      return '<tr data-cop-cs="' + esc(cs) + '" data-cop-x="' + esc(x) + '" data-cop-y="' + esc(y) + '">'
-        + '<td>' + esc(cs) + '</td><td>' + esc(typeShort(u)) + '</td><td>' + esc(statusShort(u)) + '</td>'
+      return '<tr data-cop-cs="' + esc(u.call_sign || u.callsign || '') + '" data-cop-x="' + esc(x) + '" data-cop-y="' + esc(y) + '">'
+        + '<td>' + esc(cs) + '</td><td>' + esc(typeCell) + '</td><td>' + esc(statusCell) + '</td>'
         + '<td>' + esc(n || '—') + '</td><td>' + esc(cap || '—') + '</td><td>' + esc(spd || '—') + '</td>'
         + '<td>' + esc(alt || '—') + '</td><td>' + esc(dest) + '</td><td>' + esc(eta) + '</td>'
-        + '<td>' + esc(radio) + '</td><td>' + esc(contact) + '</td><td>' + esc(ago(u.updated_at)) + '</td></tr>';
+        + '<td>' + esc(radio) + '</td><td>' + esc(contact) + '</td><td>' + esc(agoCell) + '</td></tr>';
     }).join('');
   }
 

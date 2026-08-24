@@ -91,6 +91,13 @@ $e = \App\Core\Session::getFlash('error');
                 <?php endforeach; ?>
             </select>
         </div>
+        <div>
+            <label class="ath-users-filters__label" for="mp-org">Organisation de départ</label>
+            <select id="mp-org" name="org_source" class="bo-select">
+                <option value="orbat" selected>Organigramme de la communauté (avec type de poste)</option>
+                <option value="template">Gabarit type (état-major / Alpha / Bravo / Air / Soutien)</option>
+            </select>
+        </div>
     </div>
     <button type="submit" class="ath-btn ath-btn--solid" style="margin-top:14px;">Créer le plan</button>
 </form>

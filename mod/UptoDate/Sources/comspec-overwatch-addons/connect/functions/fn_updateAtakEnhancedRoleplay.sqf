@@ -20,6 +20,13 @@ private _atakStatus = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
 private _isCrashed = _atakStatus getOrDefault ["device_crashed", false];
 private _isDisconnected = _disconnectInfo get "is_disconnected";
 private _packetLoss = _packetLossStats get "packet_loss_percent";
+private _zoneOut = false;
+private _zoneName = "";
+if (!isNil "_zoneInfo" && {_zoneInfo isEqualType createHashMap}) then {
+    _zoneName = _zoneInfo getOrDefault ["name", ""];
+    _zoneOut = (_zoneInfo getOrDefault ["type", ""]) isEqualTo "no_coverage"
+        || {(missionNamespace getVariable ["COMSPEC_ZoneEffects", createHashMap]) getOrDefault ["force_disconnect", false]};
+};
 
 // Variables d'état persistantes (pour détecter changements et jouer sons)
 private _wasDisconnected = missionNamespace getVariable ["COMSPEC_Roleplay_WasDisconnected", false];
@@ -37,7 +44,6 @@ private _ctrlGlitch = _display displayCtrl 9204;
 // === GEL APPAREIL (crash ATAK) ===
 if (_isCrashed && {!isNull _ctrlScreenBroken}) then {
     if (!_wasCrashed) then {
-        ["crash"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         missionNamespace setVariable ["COMSPEC_Roleplay_WasCrashed", true];
     };
     _ctrlScreenBroken ctrlSetStructuredText parseText (
@@ -59,9 +65,7 @@ if (_isCrashed) exitWith {};
 
 // === ÉCRAN CASSÉ/ÉTEINT ===
 if (!(_atakStatus get "can_display")) then {
-    // Son si changement d'état
     if (!_wasScreenBroken) then {
-        ["screen_broken"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         missionNamespace setVariable ["COMSPEC_Roleplay_WasScreenBroken", true];
     };
     if (!isNull _ctrlScreenBroken) then {
@@ -89,11 +93,10 @@ if (!(_atakStatus get "can_display")) then {
             _fx ctrlShow true;
             _fx ctrlEnable false;
             _fx ctrlCommit 0;
-            _ctrlScreenBroken ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.16];
+            _ctrlScreenBroken ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.08];
             _ctrlScreenBroken ctrlSetStructuredText parseText format [
-                "<br/><br/><t align='center' size='1.5' color='#ff4444'>ÉCRAN ENDOMMAGÉ</t><br/>" +
-                "<t align='center' size='0.9' color='#ffffff'>Position seule — connexion maintenue</t><br/>" +
-                "<t align='center' size='0.8' color='#aaaaaa'>Toolkit ACE pour réparer</t>"
+                "<t align='center' size='0.95' color='#F4F7FA'>ÉCRAN ENDOMMAGÉ</t><br/>" +
+                "<t align='center' size='0.72' color='#C9D4DC'>Position seule — réparez avec un toolkit</t>"
             ];
         };
         _ctrlScreenBroken ctrlShow true;
@@ -126,10 +129,8 @@ if (!(_atakStatus get "can_display")) then {
 if (!(_atakStatus get "can_display")) exitWith {};
 
 // === DECONNEXION ===
-if (_isDisconnected && {!isNull _ctrlDisconnect}) then {
-    // Son si nouvelle déconnexion
+if ((_isDisconnected || _zoneOut) && {!isNull _ctrlDisconnect}) then {
     if (!_wasDisconnected) then {
-        ["disconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         missionNamespace setVariable ["COMSPEC_Roleplay_WasDisconnected", true];
     };
     private _remaining = _disconnectInfo get "remaining_seconds";
@@ -143,26 +144,44 @@ if (_isDisconnected && {!isNull _ctrlDisconnect}) then {
         _fxDisc = _display ctrlCreate ["RscPicture", 9206];
         uiNamespace setVariable ["COMSPEC_Hub_DisconnectFx", _fxDisc];
     };
+    private _fullPos = if (!isNull _ctrlScreenBroken) then {
+        ctrlPosition _ctrlScreenBroken
+    } else {
+        [0.33 * safezoneW + safezoneX, 0.08 * safezoneH + safezoneY, 0.34 * safezoneW, 0.89 * safezoneH]
+    };
     if (!isNull _fxDisc) then {
-        _fxDisc ctrlSetPosition (ctrlPosition _ctrlDisconnect);
+        _fxDisc ctrlSetPosition _fullPos;
         _fxDisc ctrlSetText _noSig;
         _fxDisc ctrlSetFade 0;
         _fxDisc ctrlEnable false;
         _fxDisc ctrlShow true;
         _fxDisc ctrlCommit 0;
     };
-    _ctrlDisconnect ctrlSetBackgroundColor [0.02, 0.05, 0.08, 0.08];
-    _ctrlDisconnect ctrlSetStructuredText parseText format [
-        "<t align='center' size='1.2' color='#ff4444'>⚠ LIAISON ATAK PERDUE ⚠</t><br/>" +
-        "<t align='center' size='0.9' color='#ffffff'>Reconnexion dans <t color='#ff8888'>%1s</t></t><br/>" +
-        "<t align='center' size='0.7' color='#aaaaaa'>Aucune donnée transmise</t>",
-        _remaining
-    ];
+    _fullPos params ["_hx", "_hy", "_hw", "_hh"];
+    _ctrlDisconnect ctrlSetPosition [_hx, _hy, _hw, (_hh * 0.12) max 0.04];
+    _ctrlDisconnect ctrlSetBackgroundColor [0.02, 0.04, 0.08, 0.55];
+    if (_zoneOut) then {
+        _ctrlDisconnect ctrlSetStructuredText parseText format [
+            "<t align='center' size='0.95' color='#F4F7FA'>AUCUNE COUVERTURE</t><br/>" +
+            "<t align='center' size='0.72' color='#C9D4DC'>%1</t>",
+            _zoneName
+        ];
+        if (!isNull _fxDisc) then {
+            private _jam = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa";
+            if (!(fileExists _jam)) then {
+                _jam = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.png";
+            };
+            _fxDisc ctrlSetText _jam;
+        };
+    } else {
+        _ctrlDisconnect ctrlSetStructuredText parseText format [
+            "<t align='center' size='0.82' color='#F4F7FA'>Reconnexion estimée dans %1 s</t>",
+            _remaining
+        ];
+    };
     _ctrlDisconnect ctrlShow true;
 } else {
-    // Reconnexion
     if (_wasDisconnected) then {
-        ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         missionNamespace setVariable ["COMSPEC_Roleplay_WasDisconnected", false];
     };
     
@@ -175,12 +194,10 @@ if (_isDisconnected && {!isNull _ctrlDisconnect}) then {
 
 // === AVERTISSEMENT ZONE ===
 if (!isNil "_zoneInfo" && {!isNull _ctrlZoneWarning}) then {
-    // Son si entrée dans une zone
     if (!_wasInZone) then {
-        ["zone_alert"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         missionNamespace setVariable ["COMSPEC_Roleplay_WasInZone", true];
     };
-    private _zoneName = _zoneInfo get "name";
+    _zoneName = _zoneInfo get "name";
     private _intensity = _zoneInfo get "intensity";
     private _color = switch (_zoneInfo get "type") do {
         case "no_coverage": { "#ff4444" };
@@ -215,10 +232,6 @@ if (_packetLoss > 5 && {!isNull _ctrlPacketLoss}) then {
         _color, (_packetLoss toFixed 1)
     ];
     _ctrlPacketLoss ctrlShow true;
-    if (_packetLoss > 8 && {missionNamespace getVariable ["comspec_overwatch_roleplay_visual_effects", true]}) then {
-        private _pp = linearConversion [8, 45, _packetLoss, 0.22, 1, true];
-        [_pp, 2.5, false] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects;
-    };
 } else {
     if (!isNull _ctrlPacketLoss) then {
         _ctrlPacketLoss ctrlShow false;

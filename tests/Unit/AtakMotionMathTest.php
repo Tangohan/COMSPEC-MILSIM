@@ -109,4 +109,33 @@ final class AtakMotionMathTest extends TestCase
         $eta = AtakMotionMath::etaDirect(1000.0, 10.0, AtakMotionMath::CAT_INFANTRY);
         self::assertSame(AtakMotionMath::ETA_DIRECT, $eta['kind']);
     }
+
+    public function testReachGrowsWithSilenceThenCaps(): void
+    {
+        $phoneWalk = AtakMotionMath::reachRadiusM(AtakMotionMath::CAT_INFANTRY, 60.0, null, true);
+        self::assertGreaterThan(80.0, $phoneWalk);
+        self::assertLessThan(700.0, $phoneWalk);
+
+        $tooSoon = AtakMotionMath::reachRadiusM(AtakMotionMath::CAT_INFANTRY, 3.0, null, true);
+        self::assertSame(0.0, $tooSoon);
+
+        $vehicle = AtakMotionMath::reachRadiusM(AtakMotionMath::CAT_GROUND_VEHICLE, 120.0, 20.0, false);
+        self::assertGreaterThan($phoneWalk, $vehicle);
+        self::assertLessThanOrEqual(3500.0, $vehicle);
+    }
+
+    public function testTrailMarksUncertainGaps(): void
+    {
+        $base = 1_700_000_000;
+        $samples = [
+            ['x' => 1000.0, 'y' => 2000.0, 't' => $base + 0],
+            ['x' => 1010.0, 'y' => 2000.0, 't' => $base + 5],
+            ['x' => 1300.0, 'y' => 2000.0, 't' => $base + 40],
+        ];
+        $out = AtakMotionMath::compute($samples, ['platform' => 'GROUND_VEHICLE', 'speed_ms' => 8]);
+        $trail = $out['trail'];
+        self::assertGreaterThanOrEqual(2, count($trail));
+        $last = $trail[count($trail) - 1];
+        self::assertTrue(!empty($last['gap']) || !empty($last['uncertain']));
+    }
 }

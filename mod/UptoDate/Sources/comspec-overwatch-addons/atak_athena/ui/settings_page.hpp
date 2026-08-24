@@ -1,4 +1,4 @@
-// App « Paramètres » — identité, équipe de feu, groupe.
+// App « Paramètres » — identité, équipe de feu, groupe, alerte téléphones.
 #ifndef QUOTE
     #define QUOTE(var1) #var1
 #endif
@@ -152,13 +152,25 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             y = QUOTE(COMSPEC_SET_H(4.32));
         };
 
+        class LblProximity: LblCallsign
+        {
+            y = QUOTE(COMSPEC_SET_H(4.78));
+            text = "Alerte téléphones suivis";
+        };
+        class ComboProximity: ComboRole
+        {
+            idc = 9849;
+            y = QUOTE(COMSPEC_SET_H(5.04));
+            onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_phoneProximitySave";
+        };
+
         class Feedback: RscStructuredText
         {
             idc = 9847;
             x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(4.82));
+            y = QUOTE(COMSPEC_SET_H(5.50));
             w = QUOTE(COMSPEC_SET_W(2.84));
-            h = QUOTE(COMSPEC_SET_H(0.70));
+            h = QUOTE(COMSPEC_SET_H(0.48));
             text = "Indiquez votre indicatif et votre rôle. L’équipe de feu et le groupe choisis apparaissent ensuite sur ATAK.";
             colorBackground[] = SET_BG_BODY;
             class Attributes
@@ -175,7 +187,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
         {
             idc = 9846;
             x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(5.62));
+            y = QUOTE(COMSPEC_SET_H(6.04));
             w = QUOTE(COMSPEC_SET_W(1.80));
             h = QUOTE(COMSPEC_SET_H(0.50));
             size = QUOTE(COMSPEC_SET_H(0.28));

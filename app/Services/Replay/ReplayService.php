@@ -20,35 +20,22 @@ class ReplayService
      */
     public function getTimeline(string $missionId, ?string $from, ?string $to): array
     {
-        $rows = $this->repository->getTimeline($missionId, $from, $to);
-        $byTime = [];
-        foreach ($rows as $r) {
-            $ts = $r['logged_at'];
-            if (!isset($byTime[$ts])) {
-                $byTime[$ts] = ['timestamp' => $ts, 'units' => []];
-            }
-            $byTime[$ts]['units'][] = [
-                'unitId' => $r['unit_id'],
-                'callsign' => $r['callsign'],
-                'x' => (float) $r['pos_x'],
-                'y' => (float) $r['pos_y'],
-                'z' => (float) ($r['pos_z'] ?? 0),
-                'heading' => $r['heading'] !== null ? (float) $r['heading'] : null,
-            ];
-        }
+        $rows = $this->repository->getTimeline($missionId, $from, $to, 15000);
+
         return [
             'missionId' => $missionId,
-            'timeline' => array_values($byTime),
+            'timeline' => ReplayTimelineBuilder::framesFromRows($rows),
         ];
     }
 
     public function logPosition(string $missionId, string $unitId, string $callsign, float $posX, float $posY, ?float $posZ = null, ?float $heading = null, ?string $unitType = null, ?string $side = null, ?float $speed = null, ?array $state = null): void
     {
+        $kind = ReplayTimelineBuilder::inferKind($callsign, $unitType, $state);
         $this->repository->insertLog(
             $missionId,
             $unitId,
             $callsign,
-            $unitType,
+            $kind,
             $side,
             $posX,
             $posY,
@@ -95,9 +82,16 @@ class ReplayService
             ];
             $timeline[] = $pt;
             if (!isset($unitTracks[$unitId])) {
+                $kind = ReplayTimelineBuilder::inferKind(
+                    (string) $row['callsign'],
+                    isset($row['unit_type']) ? (string) $row['unit_type'] : null,
+                    $row['state_json'] ?? null
+                );
                 $unitTracks[$unitId] = [
                     'unitId' => $unitId,
                     'callsign' => (string) $row['callsign'],
+                    'kind' => $kind,
+                    'kindLabel' => ReplayTimelineBuilder::kindLabel($kind),
                     'samples' => 0,
                     'distance' => 0.0,
                     'firstSeen' => (string) $row['logged_at'],
@@ -228,6 +222,8 @@ class ReplayService
             $unitSummaries[] = [
                 'unitId' => $track['unitId'],
                 'callsign' => $track['callsign'],
+                'kind' => $track['kind'] ?? 'player',
+                'kindLabel' => $track['kindLabel'] ?? ReplayTimelineBuilder::kindLabel((string) ($track['kind'] ?? 'player')),
                 'samples' => (int) $track['samples'],
                 'distance' => round((float) $track['distance'], 2),
                 'firstSeen' => $track['firstSeen'],
@@ -245,6 +241,15 @@ class ReplayService
             }
         }
 
+        $byKind = ['player' => 0, 'ally_ai' => 0, 'phone' => 0, 'gps' => 0];
+        foreach ($unitSummaries as $u) {
+            $k = (string) ($u['kind'] ?? 'player');
+            if (!isset($byKind[$k])) {
+                $byKind[$k] = 0;
+            }
+            $byKind[$k]++;
+        }
+
         return [
             'missionId' => $missionId,
             'window' => ['from' => $from, 'to' => $to],
@@ -252,6 +257,10 @@ class ReplayService
                 'missionStart' => $missionStart,
                 'missionEnd' => $missionEnd,
                 'unitCount' => count($unitSummaries),
+                'operators' => $byKind['player'],
+                'allies' => $byKind['ally_ai'],
+                'phones' => $byKind['phone'],
+                'beacons' => $byKind['gps'],
                 'positionSamples' => count($timelineRows),
                 'intelEvents' => count($intelTimeline),
                 'contactEvents' => $counts['contact'],

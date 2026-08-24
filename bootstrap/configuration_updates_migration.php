@@ -280,6 +280,19 @@ SQL
             'dismissible' => 1,
             'sort_order' => 72,
         ],
+        [
+            'code' => 'AAR_CUSTOM_TEMPLATES_V1',
+            'version' => '1',
+            'title' => 'Modèles de debriefing',
+            'description' => 'Les gestionnaires peuvent maintenant composer des questionnaires de compte rendu (questions courtes, listes, cases à cocher, texte libre) pour standardiser les retours d’opération.',
+            'configuration_level' => 'informative',
+            'configure_path' => 'back-office/atak/comptes-rendus/modeles',
+            'estimate_minutes' => 8,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 74,
+        ],
     ];
 
     $upsert = $pdo->prepare(

@@ -1148,6 +1148,7 @@ class Container
                 self::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class),
                 self::get(\App\Repositories\TenantMessageRepository::class),
                 self::get(\App\Services\Notifications\ActivityHubPresentationService::class),
+                self::get(\App\Services\Alerts\AlertPresentationService::class),
             ),
             \App\Controllers\Web\DocumentationController::class => new \App\Controllers\Web\DocumentationController(),
             \App\Controllers\Web\DossierOperateurController::class => new \App\Controllers\Web\DossierOperateurController(
@@ -2128,9 +2129,11 @@ class Container
                 self::get(\App\Repositories\AtakRealismRepository::class),
                 self::get(\App\Repositories\TacticalPhonePairingRepository::class)
             ),
+            \App\Repositories\AarReportTemplateRepository::class => new \App\Repositories\AarReportTemplateRepository(),
             \App\Controllers\Admin\AdminAarReportsController::class => new \App\Controllers\Admin\AdminAarReportsController(
                 self::get(\App\Repositories\AarReportRepository::class),
-                new \App\Repositories\TheatreMissionCycleRepository()
+                new \App\Repositories\TheatreMissionCycleRepository(),
+                self::get(\App\Repositories\AarReportTemplateRepository::class)
             ),
             \App\Controllers\Api\AarReportsApiController::class => new \App\Controllers\Api\AarReportsApiController(
                 self::get(\App\Repositories\AarReportRepository::class)

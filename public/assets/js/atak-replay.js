@@ -93,16 +93,51 @@ window.ATAKReplay = (function () {
     var units = (frame && frame.units) || [];
     return units.map(function (u, i) {
       var cs = String(u.callsign || u.unitId || ('U' + i));
+      var extra = {};
+      if (u.extra && typeof u.extra === 'object') {
+        Object.keys(u.extra).forEach(function (k) { extra[k] = u.extra[k]; });
+      }
+      var kind = String(u.kind || extra.source || '');
+      if (kind === 'phone' || extra.phone_geoloc) extra.phone_geoloc = true;
+      if (kind === 'ally_ai' || extra.ally_ai) extra.ally_ai = true;
+      if (kind === 'gps' || extra.gps_beacon) extra.gps_beacon = true;
+      if (!extra.affiliation && !extra.affil) {
+        extra.affiliation = extra.phone_geoloc ? 'unknown' : 'friend';
+      }
       return {
-        id: 'replay_' + cs,
+        id: 'replay_' + String(u.unitId || cs || i),
         call_sign: cs,
         pos_x: u.x,
         pos_y: u.y,
         heading: u.heading,
         status: 'linked',
-        extra: { affiliation: 'friend', health: 'ok' }
+        extra: extra
       };
     });
+  }
+
+  function renderLegend(frame) {
+    var box = el('atak-replay-legend');
+    if (!box) return;
+    var units = (frame && frame.units) || [];
+    var counts = { player: 0, ally_ai: 0, phone: 0, gps: 0 };
+    units.forEach(function (u) {
+      var k = String(u.kind || 'player');
+      if (counts[k] == null) counts[k] = 0;
+      counts[k]++;
+    });
+    var parts = [];
+    if (counts.player) parts.push('<span class="atak-replay-leg atak-replay-leg--op">' + counts.player + ' opérateur' + (counts.player > 1 ? 's' : '') + '</span>');
+    if (counts.ally_ai) parts.push('<span class="atak-replay-leg atak-replay-leg--ai">' + counts.ally_ai + ' unité' + (counts.ally_ai > 1 ? 's' : '') + ' alliée' + (counts.ally_ai > 1 ? 's' : '') + '</span>');
+    if (counts.phone) parts.push('<span class="atak-replay-leg atak-replay-leg--phone">' + counts.phone + ' téléphone' + (counts.phone > 1 ? 's' : '') + '</span>');
+    if (counts.gps) parts.push('<span class="atak-replay-leg atak-replay-leg--gps">' + counts.gps + ' balise' + (counts.gps > 1 ? 's' : '') + '</span>');
+    if (!parts.length) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    box.hidden = false;
+    box.innerHTML = parts.join('');
   }
 
   function parseTsMs(ts) {
@@ -173,8 +208,11 @@ window.ATAKReplay = (function () {
     if (slider) slider.value = String(index);
     var info = el('atak-replay-info');
     if (info) {
-      info.textContent = (index + 1) + ' / ' + timeline.length + ' · ' + formatTs(frame && frame.timestamp);
+      var n = (frame && frame.units) ? frame.units.length : 0;
+      info.textContent = (index + 1) + ' / ' + timeline.length + ' · ' + formatTs(frame && frame.timestamp)
+        + (n ? ' · ' + n + ' sur la carte' : '');
     }
+    renderLegend(frame);
     renderEventsList(true);
     if (!opts.previewOnly) {
       if (!active) setActive(true);
@@ -270,26 +308,23 @@ window.ATAKReplay = (function () {
     if (!box) return;
     var s = (data && data.summary) || {};
     var errors = (data && data.errors) || [];
-    var delay = s.medianReactionDelaySeconds;
-    var delayLabel = delay != null ? (Number(delay) + ' s') : 'Non calculé';
     var html = ''
       + '<div class="atak-replay-stats">'
-      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Unités</span><strong>' + (s.unitCount || 0) + '</strong></div>'
-      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Instantanés</span><strong>' + (s.positionSamples || 0) + '</strong></div>'
+      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Opérateurs</span><strong>' + (s.operators != null ? s.operators : (s.unitCount || 0)) + '</strong></div>'
+      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Unités alliées</span><strong>' + (s.allies || 0) + '</strong></div>'
+      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Téléphones</span><strong>' + (s.phones || 0) + '</strong></div>'
+      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Balises GPS</span><strong>' + (s.beacons || 0) + '</strong></div>'
       + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Contacts</span><strong>' + (s.contactEvents != null ? s.contactEvents : (s.intelEvents || 0)) + '</strong></div>'
-      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">MEDEVAC</span><strong>' + (s.medevacEvents || 0) + '</strong></div>'
+      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Évacuations</span><strong>' + (s.medevacEvents || 0) + '</strong></div>'
       + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Ordres</span><strong>' + (s.orderEvents || 0) + '</strong></div>'
       + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Repères</span><strong>' + (s.markerEvents || 0) + '</strong></div>'
-      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Délai médian</span><strong>' + delayLabel + '</strong></div>'
       + '</div>';
     if (errors.length) {
       html += '<div class="atak-replay-errors"><p class="atak-replay-errors-title">Points d’attention</p><ul>';
       errors.forEach(function (e) {
-        html += '<li>' + String(e.label || 'Alerte') + ' <span class="atak-replay-errors-count">(' + (e.count || 0) + ')</span></li>';
+        html += '<li>' + String(e.label || 'Alerte') + (e.count ? ' (' + e.count + ')' : '') + '</li>';
       });
       html += '</ul></div>';
-    } else {
-      html += '<p class="atak-replay-ok">Aucun état critique automatique détecté.</p>';
     }
     box.innerHTML = html;
   }
@@ -349,6 +384,10 @@ window.ATAKReplay = (function () {
       return;
     }
     var url = apiRoot() + '/api/replay/aar/' + encodeURIComponent(missionId()) + '/export.pdf' + windowQuery();
+    var w = window.ATAK_MISSION_CYCLE_WINDOW;
+    if (w && w.title) {
+      url += (url.indexOf('?') >= 0 ? '&' : '?') + 'title=' + encodeURIComponent(String(w.title));
+    }
     window.open(url, '_blank', 'noopener');
   }
 

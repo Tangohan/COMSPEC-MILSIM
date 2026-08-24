@@ -59,6 +59,10 @@ final class MissionPlanningController
 
             return Response::redirect(url('back-office/planification'));
         }
+        $orgSource = (string) $request->input('org_source', 'orbat');
+        if (!in_array($orgSource, ['orbat', 'template'], true)) {
+            $orgSource = 'orbat';
+        }
         $id = $this->planning->createPlan($tenantId, [
             'title' => (string) $request->input('title', ''),
             'operation_name' => (string) $request->input('operation_name', ''),
@@ -67,6 +71,7 @@ final class MissionPlanningController
             'dtg' => (string) $request->input('dtg', ''),
             'event_id' => (int) $request->input('event_id', 0),
             'map_id' => (int) $request->input('map_id', 0),
+            'org_source' => $orgSource,
         ], $this->userId());
         Session::flash('success', 'Plan créé. Complétez l’organisation de combat et les documents.');
 
@@ -125,10 +130,52 @@ final class MissionPlanningController
     public function updateStatus(Request $request, array $params = []): Response
     {
         return $this->guardPost($request, $params, function (int $tenantId, int $id) use ($request): Response {
-            $this->planning->setStatus($tenantId, $id, (string) $request->input('status', ''), $this->userId());
-            Session::flash('success', 'État du plan mis à jour.');
+            $status = (string) $request->input('status', '');
+            $this->planning->setStatus($tenantId, $id, $status, $this->userId());
+            if ($status === 'closed') {
+                $board = $this->planning->board($tenantId, $id);
+                $aarId = is_array($board) ? (int) (($board['aar']['id'] ?? 0)) : 0;
+                Session::flash(
+                    'success',
+                    $aarId > 0
+                        ? 'Plan clôturé. Un compte rendu a été ouvert : complétez-le puis publiez-le.'
+                        : 'Plan clôturé. Les effectifs sont figés.'
+                );
+            } else {
+                Session::flash('success', 'État du plan mis à jour.');
+            }
 
             return Response::redirect(url('back-office/planification/' . $id));
+        });
+    }
+
+    public function importOrbat(Request $request, array $params = []): Response
+    {
+        return $this->guardPost($request, $params, function (int $tenantId, int $id): Response {
+            $n = $this->planning->importCommunityOrbat($tenantId, $id, $this->userId());
+            Session::flash(
+                'success',
+                $n > 0
+                    ? 'Organisation reprise depuis l’organigramme de la communauté. Chaque unité conserve son type (état-major, manœuvre, air, soutien).'
+                    : 'Organigramme communautaire vide : le gabarit type a été repris.'
+            );
+
+            return Response::redirect(url('back-office/planification/' . $id . '?vue=organisation'));
+        });
+    }
+
+    public function importEventRoster(Request $request, array $params = []): Response
+    {
+        return $this->guardPost($request, $params, function (int $tenantId, int $id): Response {
+            $n = $this->planning->importLinkedEventRoster($tenantId, $id, $this->userId());
+            Session::flash(
+                'success',
+                $n > 0
+                    ? $n . ' inscrit' . ($n > 1 ? 's' : '') . ' repris depuis l’événement lié.'
+                    : 'Aucun inscrit à placer. Liez un événement au plan, puis réessayez.'
+            );
+
+            return Response::redirect(url('back-office/planification/' . $id . '?vue=organisation'));
         });
     }
 

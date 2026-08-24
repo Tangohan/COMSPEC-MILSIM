@@ -118,12 +118,19 @@ final class AdminAtakOperatorsController
         }
 
         $terminal = null;
+        $webFallback = null;
         foreach ($terminals as $row) {
-            if (strtoupper(trim((string) ($row['operator_callsign'] ?? ''))) === $requestedKey) {
-                $terminal = $row;
-                break;
+            if (strtoupper(trim((string) ($row['operator_callsign'] ?? ''))) !== $requestedKey) {
+                continue;
             }
+            if (AtakRealismRepository::isWebSessionTerminal($row)) {
+                $webFallback ??= $row;
+                continue;
+            }
+            $terminal = $row;
+            break;
         }
+        $terminal ??= $webFallback;
 
         $certificate = null;
         $terminalId = (int) ($terminal['id'] ?? 0);

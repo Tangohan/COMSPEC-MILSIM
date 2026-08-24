@@ -865,6 +865,7 @@ window.ATAKOrders = (function () {
       case 'fire_team': return 'atak-order-badge--target-ft';
       case 'channel': return 'atak-order-badge--target-channel';
       case 'solo': return 'atak-order-badge--target-solo';
+      case 'ally': return 'atak-order-badge--target-ally';
       default: return 'atak-order-badge--target-all';
     }
   }
@@ -980,6 +981,7 @@ window.ATAKOrders = (function () {
       case 'fire_team': return 'Fire team';
       case 'channel': return 'Canal';
       case 'solo': return 'ATAK Solo';
+      case 'ally': return 'Unité alliée';
       default: return 'Toute l’équipe';
     }
   }
@@ -991,6 +993,7 @@ window.ATAKOrders = (function () {
       case 'fire_team': return 'Aucune fire team disponible';
       case 'channel': return 'Aucun canal disponible';
       case 'solo': return 'Aucun terminal ATAK disponible';
+      case 'ally': return 'Aucune unité alliée sur la carte — affichez-la depuis Zeus';
       default: return 'Aucun destinataire disponible';
     }
   }
@@ -1002,6 +1005,7 @@ window.ATAKOrders = (function () {
     if (type === 'fire_team') return recipientsCache.fire_teams || [];
     if (type === 'channel') return recipientsCache.channels || [];
     if (type === 'solo') return recipientsCache.solos || [];
+    if (type === 'ally') return recipientsCache.allies || [];
     return [];
   }
 
@@ -1078,7 +1082,7 @@ window.ATAKOrders = (function () {
         return recipientsCache;
       })
       .catch(function () {
-        recipientsCache = recipientsCache || { users: [], groups: [], fire_teams: [], channels: [], solos: [] };
+        recipientsCache = recipientsCache || { users: [], groups: [], fire_teams: [], channels: [], solos: [], allies: [] };
         return recipientsCache;
       })
       .finally(function () {
@@ -1780,6 +1784,7 @@ window.ATAKOrders = (function () {
     recipientsForType: recipientsForType,
     openComposeModal: openComposeModal,
     closeComposeModal: closeComposeModal,
-    openOrder: openOrder
+    openOrder: openOrder,
+    postOrder: postOrder
   };
 })();

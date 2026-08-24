@@ -74,6 +74,25 @@ $headTitle = $operation !== '' ? $operation : $title;
                 · <?= (int) $pageCount ?> page<?= $pageCount > 1 ? 's' : '' ?>
             </div>
 
+            <?php
+            $customRows = is_array($report['custom_rows'] ?? null) ? $report['custom_rows'] : [];
+            $isCustom = !empty($report['is_custom']);
+            ?>
+            <?php if ($isCustom && $customRows !== []): ?>
+            <section class="ath-aar-section" id="section-debrief">
+                <div class="ath-aar-section__num">Debriefing</div>
+                <h2 class="ath-aar-section__title">Réponses au questionnaire</h2>
+                <dl class="ath-aar-qa">
+                    <?php foreach ($customRows as $row): ?>
+                    <div class="ath-aar-qa__row">
+                        <dt><?= $h((string) ($row['label'] ?? '')) ?></dt>
+                        <dd><?= $h((string) (($row['empty'] ?? false) ? 'Non renseigné' : ($row['display'] ?? ''))) ?></dd>
+                    </div>
+                    <?php endforeach; ?>
+                </dl>
+            </section>
+            <?php endif; ?>
+
             <?php if ($summaryText !== '' || $summaryHeading !== ''): ?>
             <section class="ath-aar-section" id="section-synthese">
                 <div class="ath-aar-section__num">1 · Synthèse</div>
@@ -128,7 +147,7 @@ $headTitle = $operation !== '' ? $operation : $title;
             </section>
             <?php endif; ?>
 
-            <?php if ($summaryText === '' && $summaryHeading === '' && $strengths === [] && $weaknesses === [] && $lessons === '' && $conclusion === ''): ?>
+            <?php if ($summaryText === '' && $summaryHeading === '' && $strengths === [] && $weaknesses === [] && $lessons === '' && $conclusion === '' && !($isCustom && $customRows !== [])): ?>
             <section class="ath-aar-section">
                 <p class="ath-aar-section__text">Ce compte rendu n’a pas encore de contenu détaillé.</p>
             </section>
@@ -146,6 +165,9 @@ $headTitle = $operation !== '' ? $operation : $title;
         <div class="ath-aar-panel__body" x-show="tab === 'sommaire'" x-cloak>
             <div class="ath-aar-panel__label">Sommaire</div>
             <nav class="ath-aar-toc" aria-label="Sommaire du compte rendu">
+                <?php if ($isCustom && $customRows !== []): ?>
+                <a href="#section-debrief">Debriefing</a>
+                <?php endif; ?>
                 <?php if ($summaryText !== '' || $summaryHeading !== ''): ?>
                 <a href="#section-synthese">Synthèse</a>
                 <?php endif; ?>

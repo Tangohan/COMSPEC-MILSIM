@@ -230,6 +230,20 @@ final class ConfigurationUpdateCatalog
                 isApplicable: fn (int $tenantId): bool => $p->atakApplicable($tenantId),
                 isSatisfied: fn (int $tenantId): bool => $p->hasAtakPhotoHudReviewed($tenantId),
             ),
+            new ConfigurationUpdateDefinition(
+                code: 'AAR_CUSTOM_TEMPLATES_V1',
+                title: 'Modèles de debriefing',
+                description: 'Les gestionnaires peuvent maintenant composer des questionnaires de compte rendu (questions courtes, listes, cases à cocher, texte libre) pour standardiser les retours d’opération.',
+                level: ConfigurationUpdateDefinition::LEVEL_INFORMATIVE,
+                configurePath: 'back-office/atak/comptes-rendus/modeles',
+                estimateMinutes: 8,
+                dismissible: true,
+                blocking: false,
+                dependsOn: [],
+                sortOrder: 74,
+                isApplicable: fn (int $tenantId): bool => $p->atakApplicable($tenantId),
+                isSatisfied: fn (int $tenantId): bool => $p->hasAarDebriefTemplate($tenantId),
+            ),
         ];
     }
 

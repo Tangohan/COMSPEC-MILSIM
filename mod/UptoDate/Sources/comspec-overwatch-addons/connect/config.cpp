@@ -14,9 +14,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.453;
-        versionStr = "1.4.53";
-        versionAr[] = {1, 4, 53};
+        version = 1.463;
+        versionStr = "1.4.63";
+        versionAr[] = {1, 4, 63};
     };
 };
 
@@ -193,6 +193,10 @@ class CfgFunctions {
             class orderConcernsPlayer {};
             class orderTypeLabel {};
             class pollOrders {};
+            class pollAiOrders {};
+            class findAllyTrackUnit {};
+            class applyAiMoveOrder {};
+            class pollMissionPlan {};
             class pollTacticalAlerts {};
             class pollChatMessages {};
             class orderInboxShow {};
@@ -247,6 +251,9 @@ class CfgFunctions {
             class isObjectFlag {};
             class setGpsBeacon {};
             class setPhoneTrack {};
+            class applyPhoneGeolocOrder {};
+            class phoneRevealHas {};
+            class phoneTrackConfigure {};
             class setAllyTrack {};
             class vehicleTrackCallsign {};
             class phoneTrackCallsign {};
@@ -385,9 +392,17 @@ class CfgFunctions {
             class updateDeviceOverlay {};
             class syncTerminalCompromise {};
             class captureEnemyAtak {};
+            class aceDisablePhoneTrack {};
             class syncPlayerAtakPublicVars {};
             class zeusShowPlayerAtak {};
             class registerZenAtakPlayerActions {};
+            class zeusAttributesTarget {};
+            class zeusAttributesPerson {};
+            class zeusAttributesInject {};
+            class registerZeusAttributeButtons {};
+            class zeusAttributesSse {};
+            class zeusAttributesAtak {};
+            class zeusAttributesOverwatch {};
         };
     };
 };
@@ -405,6 +420,7 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_setGpsBeacon { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_setPhoneTrack { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_setAllyTrack { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_forceSyncData { allowedTargets = 0; };
 
         // Ces cinq-là étaient appelées via remoteExec sans figurer ici. « mode = 1 »
         // étant une liste blanche stricte, les appels étaient rejetés en silence :
@@ -417,6 +433,7 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_createRoleplayZoneFromZeus { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_clearDisconnectedAtakState { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_detonateChargeLocal { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_applyAiMoveOrder { allowedTargets = 0; };
     };
     class Commands {
         mode = 1;

@@ -23,5 +23,7 @@ Remplacer tous les appels SSE concernés par `replaceString`.
 ## Vérification
 Rebuild PBO SSE, relancer Arma, Resynch : plus d’overlay `bis_fnc_replacestring`.
 
+**24/08 :** overlay encore visible en jeu — le PBO **Workshop** (`!Workshop\@COMSPEC_SSE`) datait de 15:01 (encore `call BIS_fnc_replaceString`). Les sources + PBO local 18:26 étaient déjà corrigés (`replaceString` natif). Recopie de `comspec_sse_network.pbo` vers le Workshop.
+
 ## Statut
-corrigé
+corrigé — déployer le PBO Workshop puis quitter le launcher / relancer Arma

@@ -21,4 +21,19 @@ class Extended_DisplayLoad_EventHandlers {
     class RscDisplayMPInterrupt {
         comspec_overwatch_connect = "_this call comspec_overwatch_connect_fnc_onInterruptLoad";
     };
+    class RscDisplayAttributesMan {
+        comspec_overwatch_connect = "[(_this select 0)] call comspec_overwatch_connect_fnc_zeusAttributesInject";
+    };
+    class RscDisplayAttributesVehicle {
+        comspec_overwatch_connect = "[(_this select 0)] call comspec_overwatch_connect_fnc_zeusAttributesInject";
+    };
+    class RscDisplayAttributesVehicleEmpty {
+        comspec_overwatch_connect = "[(_this select 0)] call comspec_overwatch_connect_fnc_zeusAttributesInject";
+    };
+    class RscDisplayAttributesGroup {
+        comspec_overwatch_connect = "[(_this select 0)] call comspec_overwatch_connect_fnc_zeusAttributesInject";
+    };
+    class RscDisplayAttributes {
+        comspec_overwatch_connect = "[(_this select 0)] call comspec_overwatch_connect_fnc_zeusAttributesInject";
+    };
 };

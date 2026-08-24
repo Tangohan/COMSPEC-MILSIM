@@ -147,6 +147,14 @@ final class RateLimitMiddleware
         if ($path === '/api/sse/v1/health') {
             return true;
         }
+        if (str_starts_with($path, '/api/atak/')) {
+            return true;
+        }
+        foreach (['/api/cas', '/api/units', '/api/chat', '/api/pings', '/api/nine-line', '/api/medical-alerts', '/api/recon/', '/api/map-shapes'] as $pfx) {
+            if ($path === $pfx || str_starts_with($path, $pfx)) {
+                return true;
+            }
+        }
         // QR téléphone : téléchargement anonyme (token = secret) — ne pas compter comme scraping.
         if (str_starts_with($path, '/api/atak/phone-pairing/') && str_ends_with($path, '/qr.png')) {
             return true;

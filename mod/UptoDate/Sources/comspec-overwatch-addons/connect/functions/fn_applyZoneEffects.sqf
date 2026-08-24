@@ -11,12 +11,6 @@ if (_zones isEqualType [] && {count _zones > 0}) then {
     if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_enabled", false])) then {
         missionNamespace setVariable ["comspec_overwatch_roleplay_enabled", true, false];
     };
-    if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_visual_effects", true])) then {
-        missionNamespace setVariable ["comspec_overwatch_roleplay_visual_effects", true, false];
-    };
-    if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_network_failures", true])) then {
-        missionNamespace setVariable ["comspec_overwatch_roleplay_network_failures", true, false];
-    };
 };
 
 if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_enabled", false])) exitWith {};
@@ -49,6 +43,7 @@ if (isNil "_zone" && {!isNil "_lastZone"}) then {
     missionNamespace setVariable ["COMSPEC_InRoleplayZone", false, false];
     missionNamespace setVariable ["COMSPEC_JammerDropUntil", -1, false];
     [] call comspec_overwatch_connect_fnc_refreshLinkState;
+    [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
     diag_log "[COMSPEC Roleplay] Joueur sorti de zone";
 };
 
@@ -136,20 +131,11 @@ if (!isNil "_zone") then {
         [] call comspec_overwatch_connect_fnc_refreshLinkState;
     };
 
-    // Effets visuels proportionnels à l’intensité (tous types sauf couverture nulle pure → plus fort)
-    private _ppIntensity = switch (_type) do {
-        case "no_coverage": { 0.95 };
-        case "jammer": { (0.25 + (_intensity / 100) * 0.75) min 1 };
-        case "interference": { (0.18 + (_intensity / 100) * 0.55) min 0.9 };
-        case "degraded": { (0.10 + (_intensity / 100) * 0.35) min 0.6 };
-        default { (_intensity / 100) * 0.4 };
-    };
-    if (_ppIntensity > 0.08 && {missionNamespace getVariable ["comspec_overwatch_roleplay_visual_effects", true]}) then {
-        [_ppIntensity, 4, false] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects;
-    };
+    // Visuel = overlay sur l’écran ATAK uniquement (jamais le viewport 3D).
+    [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
 } else {
     missionNamespace setVariable ["COMSPEC_ZoneEffects", nil, false];
-    [0, 0, true] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects;
     [] call comspec_overwatch_connect_fnc_refreshLinkState;
+    [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
 };
 

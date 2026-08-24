@@ -184,6 +184,40 @@ final class SsePersonRepository
     }
 
     /**
+     * @param list<int> $ids
+     * @return list<array<string, mixed>>
+     */
+    public function listByIds(int $tenantId, array $ids): array
+    {
+        $clean = [];
+        foreach ($ids as $raw) {
+            $id = (int) $raw;
+            if ($id > 0) {
+                $clean[$id] = $id;
+            }
+        }
+        $clean = array_values($clean);
+        if ($tenantId < 1 || $clean === []) {
+            return [];
+        }
+        $in = implode(',', $clean);
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT * FROM sse_persons WHERE tenant_id = :t AND id IN ({$in}) ORDER BY last_name ASC, first_name ASC, id ASC",
+                ['t' => $tenantId]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = $this->hydrate($row, false);
+        }
+
+        return $out;
+    }
+
+    /**
      * @param array<string, mixed> $filters
      * @return list<array<string, mixed>>
      */

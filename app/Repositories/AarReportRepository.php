@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\AarCustomForm;
 use PDO;
 
 final class AarReportRepository
@@ -173,23 +174,91 @@ final class AarReportRepository
         $weaknesses = $this->normalizeStringList($payload['weaknesses'] ?? []);
         $openActions = $this->normalizeActionList($payload['open_actions'] ?? []);
         $closedActions = $this->normalizeActionList($payload['closed_actions'] ?? []);
+        $templateId = (int) ($payload['template_id'] ?? ($existing['template_id'] ?? 0));
+        $customAnswersJson = $this->encodeCustomAnswers($payload['custom_answers'] ?? ($existing['custom_answers_raw'] ?? null));
 
         $missionWindow = $this->missionWindow($tenantId, $missionId);
+        $hasCustom = $this->hasCustomColumns();
         if ($id !== null && $id > 0) {
-            $sql = 'UPDATE aar_reports
-                    SET mission_cycle_id = ?, title = ?, operation_label = ?, status = ?, reported_at = ?, validated_at = ?,
-                        validated_by_user_id = ?, mission_started_at = ?, mission_ended_at = ?, summary_text = ?,
-                        strengths_json = ?, weaknesses_json = ?, open_actions_json = ?, closed_actions_json = ?,
-                        scores_json = ?, metrics_json = ?, updated_at = UTC_TIMESTAMP()
-                    WHERE tenant_id = ? AND id = ?';
+            if ($hasCustom) {
+                $sql = 'UPDATE aar_reports
+                        SET mission_cycle_id = ?, title = ?, operation_label = ?, status = ?, reported_at = ?, validated_at = ?,
+                            validated_by_user_id = ?, mission_started_at = ?, mission_ended_at = ?, summary_text = ?,
+                            strengths_json = ?, weaknesses_json = ?, open_actions_json = ?, closed_actions_json = ?,
+                            scores_json = ?, metrics_json = ?, template_id = ?, custom_answers_json = ?, updated_at = UTC_TIMESTAMP()
+                        WHERE tenant_id = ? AND id = ?';
+                $this->pdo->prepare($sql)->execute([
+                    $missionId > 0 ? $missionId : null,
+                    $title !== '' ? $title : 'Compte rendu post-op',
+                    $operationLabel,
+                    $status,
+                    $reportedAt,
+                    $validatedAt,
+                    $validatorId,
+                    $missionWindow['mission_started_at'],
+                    $missionWindow['mission_ended_at'],
+                    $summaryText,
+                    $this->json($strengths),
+                    $this->json($weaknesses),
+                    $this->json($openActions),
+                    $this->json($closedActions),
+                    $this->json($scores),
+                    $this->json($metrics),
+                    $templateId > 0 ? $templateId : null,
+                    $customAnswersJson,
+                    $tenantId,
+                    $id,
+                ]);
+            } else {
+                $sql = 'UPDATE aar_reports
+                        SET mission_cycle_id = ?, title = ?, operation_label = ?, status = ?, reported_at = ?, validated_at = ?,
+                            validated_by_user_id = ?, mission_started_at = ?, mission_ended_at = ?, summary_text = ?,
+                            strengths_json = ?, weaknesses_json = ?, open_actions_json = ?, closed_actions_json = ?,
+                            scores_json = ?, metrics_json = ?, updated_at = UTC_TIMESTAMP()
+                        WHERE tenant_id = ? AND id = ?';
+                $this->pdo->prepare($sql)->execute([
+                    $missionId > 0 ? $missionId : null,
+                    $title !== '' ? $title : 'Compte rendu post-op',
+                    $operationLabel,
+                    $status,
+                    $reportedAt,
+                    $validatedAt,
+                    $validatorId,
+                    $missionWindow['mission_started_at'],
+                    $missionWindow['mission_ended_at'],
+                    $summaryText,
+                    $this->json($strengths),
+                    $this->json($weaknesses),
+                    $this->json($openActions),
+                    $this->json($closedActions),
+                    $this->json($scores),
+                    $this->json($metrics),
+                    $tenantId,
+                    $id,
+                ]);
+            }
+
+            return $this->findForTenant($tenantId, $id) ?? [];
+        }
+
+        if ($hasCustom) {
+            $sql = 'INSERT INTO aar_reports
+                    (tenant_id, mission_cycle_id, template_id, author_user_id, validated_by_user_id, title, operation_label, status,
+                     reported_at, validated_at, mission_started_at, mission_ended_at, summary_text,
+                     strengths_json, weaknesses_json, open_actions_json, closed_actions_json, scores_json, metrics_json,
+                     custom_answers_json, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())';
             $this->pdo->prepare($sql)->execute([
+                $tenantId,
                 $missionId > 0 ? $missionId : null,
+                $templateId > 0 ? $templateId : null,
+                $authorUserId > 0 ? $authorUserId : null,
+                $validatorId,
                 $title !== '' ? $title : 'Compte rendu post-op',
                 $operationLabel,
                 $status,
                 $reportedAt,
                 $validatedAt,
-                $validatorId,
                 $missionWindow['mission_started_at'],
                 $missionWindow['mission_ended_at'],
                 $summaryText,
@@ -199,38 +268,36 @@ final class AarReportRepository
                 $this->json($closedActions),
                 $this->json($scores),
                 $this->json($metrics),
-                $tenantId,
-                $id,
+                $customAnswersJson,
             ]);
-            return $this->findForTenant($tenantId, $id) ?? [];
+        } else {
+            $sql = 'INSERT INTO aar_reports
+                    (tenant_id, mission_cycle_id, author_user_id, validated_by_user_id, title, operation_label, status,
+                     reported_at, validated_at, mission_started_at, mission_ended_at, summary_text,
+                     strengths_json, weaknesses_json, open_actions_json, closed_actions_json, scores_json, metrics_json,
+                     created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())';
+            $this->pdo->prepare($sql)->execute([
+                $tenantId,
+                $missionId > 0 ? $missionId : null,
+                $authorUserId > 0 ? $authorUserId : null,
+                $validatorId,
+                $title !== '' ? $title : 'Compte rendu post-op',
+                $operationLabel,
+                $status,
+                $reportedAt,
+                $validatedAt,
+                $missionWindow['mission_started_at'],
+                $missionWindow['mission_ended_at'],
+                $summaryText,
+                $this->json($strengths),
+                $this->json($weaknesses),
+                $this->json($openActions),
+                $this->json($closedActions),
+                $this->json($scores),
+                $this->json($metrics),
+            ]);
         }
-
-        $sql = 'INSERT INTO aar_reports
-                (tenant_id, mission_cycle_id, author_user_id, validated_by_user_id, title, operation_label, status,
-                 reported_at, validated_at, mission_started_at, mission_ended_at, summary_text,
-                 strengths_json, weaknesses_json, open_actions_json, closed_actions_json, scores_json, metrics_json,
-                 created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())';
-        $this->pdo->prepare($sql)->execute([
-            $tenantId,
-            $missionId > 0 ? $missionId : null,
-            $authorUserId > 0 ? $authorUserId : null,
-            $validatorId,
-            $title !== '' ? $title : 'Compte rendu post-op',
-            $operationLabel,
-            $status,
-            $reportedAt,
-            $validatedAt,
-            $missionWindow['mission_started_at'],
-            $missionWindow['mission_ended_at'],
-            $summaryText,
-            $this->json($strengths),
-            $this->json($weaknesses),
-            $this->json($openActions),
-            $this->json($closedActions),
-            $this->json($scores),
-            $this->json($metrics),
-        ]);
 
         return $this->findForTenant($tenantId, (int) $this->pdo->lastInsertId()) ?? [];
     }
@@ -247,6 +314,7 @@ final class AarReportRepository
         $closedActions = $this->decodeActions($row['closed_actions_json'] ?? null);
         $scores = $this->decodeArray($row['scores_json'] ?? null);
         $metrics = $this->decodeArray($row['metrics_json'] ?? null);
+        $customBundle = AarCustomForm::unwrap($row['custom_answers_json'] ?? null);
         $pageCount = max(0, (int) ($metrics['page_count'] ?? 0));
         if ($pageCount < 1) {
             $pageCount = max(
@@ -263,6 +331,7 @@ final class AarReportRepository
         return [
             'id' => (int) ($row['id'] ?? 0),
             'mission_cycle_id' => isset($row['mission_cycle_id']) ? (int) $row['mission_cycle_id'] : null,
+            'mission_plan_id' => isset($row['mission_plan_id']) ? (int) $row['mission_plan_id'] : null,
             'title' => (string) ($row['title'] ?? ''),
             'operation_label' => (string) ($row['operation_label'] ?? $row['mission_title'] ?? ''),
             'status' => (string) ($row['status'] ?? 'pending'),
@@ -281,6 +350,13 @@ final class AarReportRepository
             'closed_actions' => $closedActions,
             'scores' => $scores,
             'metrics' => $metrics,
+            'template_id' => isset($row['template_id']) ? (int) $row['template_id'] : 0,
+            'custom_answers_raw' => $row['custom_answers_json'] ?? null,
+            'custom_bundle' => $customBundle,
+            'custom_fields' => $customBundle['fields'],
+            'custom_answers' => $customBundle['answers'],
+            'custom_rows' => AarCustomForm::presentAnswers($customBundle['fields'], $customBundle['answers']),
+            'is_custom' => $customBundle['fields'] !== [],
             'summary_heading' => trim((string) ($metrics['summary_heading'] ?? '')),
             'lessons_learned' => trim((string) ($metrics['lessons_learned'] ?? '')),
             'conclusion_text' => trim((string) ($metrics['conclusion_text'] ?? '')),
@@ -504,6 +580,117 @@ final class AarReportRepository
             return null;
         }
         return gmdate('Y-m-d H:i:s', $ts);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findByMissionPlanId(int $tenantId, int $planId): ?array
+    {
+        if (!$this->tablesReady() || !$this->hasMissionPlanColumn() || $tenantId < 1 || $planId < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT r.*, u.display_name AS author_name, uv.display_name AS validator_name, m.title AS mission_title
+             FROM aar_reports r
+             LEFT JOIN users u ON u.id = r.author_user_id
+             LEFT JOIN users uv ON uv.id = r.validated_by_user_id
+             LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id
+             WHERE r.tenant_id = ? AND r.mission_plan_id = ?
+             ORDER BY r.id DESC LIMIT 1'
+        );
+        $st->execute([$tenantId, $planId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $this->present($row) : null;
+    }
+
+    /**
+     * Ouvre un brouillon de compte rendu pour un plan clôturé (sans le publier).
+     *
+     * @param array<string, mixed> $metrics
+     * @return array<string, mixed>|null
+     */
+    public function ensureDraftForPlan(
+        int $tenantId,
+        int $planId,
+        int $authorUserId,
+        string $title,
+        string $operationLabel,
+        string $summary,
+        array $metrics,
+    ): ?array {
+        if (!$this->tablesReady() || !$this->hasMissionPlanColumn() || $tenantId < 1 || $planId < 1) {
+            return null;
+        }
+        $existing = $this->findByMissionPlanId($tenantId, $planId);
+        if ($existing !== null) {
+            return $existing;
+        }
+        $sql = 'INSERT INTO aar_reports
+                (tenant_id, mission_plan_id, author_user_id, title, operation_label, status,
+                 reported_at, summary_text, metrics_json, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, \'pending\', UTC_TIMESTAMP(), ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())';
+        $this->pdo->prepare($sql)->execute([
+            $tenantId,
+            $planId,
+            $authorUserId > 0 ? $authorUserId : null,
+            $this->clip($title !== '' ? $title : 'Compte rendu de mission', 200),
+            $this->nullableString($operationLabel !== '' ? $operationLabel : null, 200),
+            $this->nullableText($summary, 20000),
+            $this->json($metrics),
+        ]);
+
+        return $this->findForTenant($tenantId, (int) $this->pdo->lastInsertId());
+    }
+
+    private function hasMissionPlanColumn(): bool
+    {
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'aar_reports' AND COLUMN_NAME = 'mission_plan_id' LIMIT 1"
+            );
+
+            return $st !== false && (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function hasCustomColumns(): bool
+    {
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'aar_reports' AND COLUMN_NAME = 'custom_answers_json' LIMIT 1"
+            );
+
+            return $st !== false && (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function encodeCustomAnswers(mixed $value): ?string
+    {
+        if (is_string($value) && trim($value) !== '') {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                $value = $decoded;
+            }
+        }
+        if (!is_array($value) || $value === []) {
+            return null;
+        }
+        $bundle = isset($value['fields']) || isset($value['answers'])
+            ? AarCustomForm::unwrap($value)
+            : ['fields' => [], 'answers' => $value];
+        if ($bundle['fields'] === [] && $bundle['answers'] === []) {
+            return null;
+        }
+
+        return $this->json($bundle);
     }
 
     private function referenceCode(int $id): string

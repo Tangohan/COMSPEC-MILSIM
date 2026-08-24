@@ -49,7 +49,7 @@ final class AtakRealismApiController
                 return $this->terminalStatusForGame($tenantId, $terminalUid);
             }
 
-            return Response::json(['ok' => true, 'terminals' => $this->realismRepository->listTerminals($tenantId)]);
+            return Response::json(['ok' => true, 'terminals' => $this->realismRepository->listPhysicalTerminals($tenantId)]);
         }
         if (!$this->writeAllowed($request)) {
             return Response::json(['ok' => false, 'error' => 'Session expirée.'], 419);
@@ -63,6 +63,12 @@ final class AtakRealismApiController
                 return Response::json(['ok' => false, 'error' => 'Liaison téléphone introuvable ou expirée.'], 422);
             }
             $body['pairing_code'] = $body['pairing_code'] ?? ($pairing['code'] ?? null);
+            if (trim((string) ($body['terminal_type'] ?? '')) === '') {
+                $body['terminal_type'] = 'phone';
+            }
+            if (trim((string) ($body['platform_label'] ?? '')) === '') {
+                $body['platform_label'] = 'Téléphone ATAK';
+            }
         }
 
         $body = $body + [
@@ -76,6 +82,7 @@ final class AtakRealismApiController
             'notes' => $request->input('notes'),
         ];
         $body['user_id'] = $this->resolveUserId($tenantId, $body);
+        $body = $this->tagWebSessionIfNeeded($tenantId, $pairingToken, $body);
         $terminal = $this->realismRepository->upsertTerminal($tenantId, $body);
 
         return Response::json([
@@ -336,6 +343,40 @@ final class AtakRealismApiController
         $settings = $this->adminSettings->getForTenant($tenantId);
 
         return is_array($settings['atak_defaults'] ?? null) ? $settings['atak_defaults'] : [];
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>
+     */
+    private function tagWebSessionIfNeeded(int $tenantId, string $pairingToken, array $body): array
+    {
+        if ($this->isGameClient() || $pairingToken !== '') {
+            return $body;
+        }
+        $uid = trim((string) ($body['terminal_uid'] ?? ''));
+        $existing = $uid !== '' ? $this->realismRepository->findTerminalByUid($tenantId, $uid) : null;
+        if (is_array($existing) && !AtakRealismRepository::isWebSessionTerminal($existing)) {
+            return $body;
+        }
+        $explicitType = strtolower(trim((string) ($body['terminal_type'] ?? '')));
+        if (in_array($explicitType, ['phone', 'tablet', 'radio', 'vehicle'], true)) {
+            return $body;
+        }
+        $body['terminal_type'] = 'web';
+        if (trim((string) ($body['platform_label'] ?? '')) === '') {
+            $body['platform_label'] = 'Session web Athena';
+        }
+        if ($uid === '') {
+            $userId = (int) ($body['user_id'] ?? 0);
+            $reuse = $userId > 0 ? $this->realismRepository->findWebSessionForUser($tenantId, $userId) : null;
+            $body['terminal_uid'] = trim((string) ($reuse['terminal_uid'] ?? ''));
+            if ($body['terminal_uid'] === '') {
+                $body['terminal_uid'] = 'WEB-' . strtoupper(bin2hex(random_bytes(6)));
+            }
+        }
+
+        return $body;
     }
 
     private function csrfOk(Request $request): bool

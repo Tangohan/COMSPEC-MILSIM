@@ -16,6 +16,8 @@ final class AtakActivityLogService
     /** Capacité totale (actifs + archivés) par fichier théâtre. */
     private const MAX_EVENTS = 5000;
     private const INIT_THROTTLE_SEC = 90;
+    private const ERROR_THROTTLE_SEC = 12;
+    private const INGEST_THROTTLE_SEC = 20;
     private const SESSION_TTL_SEC = 86400;
     /** Présence des visiteurs web sur la Tacmap (TTL court). */
     private const WEB_PRESENCE_TTL_SEC = 90;
@@ -59,6 +61,10 @@ final class AtakActivityLogService
     public const TYPE_EXPLOSIVE_TIMER = 'explosive_timer';
     /** Équipe de feu (création, attribution, dissolution, couleur). */
     public const TYPE_FIRE_TEAM = 'fire_team';
+    /** Incident carte web (affichage, liaison, action refusée). */
+    public const TYPE_ERROR = 'error';
+    /** Remontée de données (position, effectifs, transmission). */
+    public const TYPE_INGEST = 'ingest';
 
     /** Carte « virtuelle » pour les événements d’auth / téléphone non liés à un théâtre. */
     public const AUTH_MAP_ID = 1;
@@ -86,6 +92,8 @@ final class AtakActivityLogService
             self::TYPE_EXPLOSIVE_TIMER,
             self::TYPE_FIRE_TEAM,
         ],
+        'incidents' => [self::TYPE_ERROR],
+        'donnees' => [self::TYPE_INGEST],
     ];
 
     /**
@@ -111,6 +119,80 @@ final class AtakActivityLogService
         $safeMeta = $this->sanitizeMeta($meta);
         $this->mutate($tenantId, $mapId, function (array &$data) use ($type, $label, $actor, $safeMeta): void {
             $this->appendEvent($data, $type, $label, $actor, $safeMeta);
+        });
+    }
+
+    /**
+     * Incident carte web (toast, liaison, script). Anti-spam par libellé.
+     *
+     * @param array<string, mixed> $meta
+     */
+    public function recordError(
+        int $tenantId,
+        int $mapId,
+        string $label,
+        ?string $actor = null,
+        array $meta = []
+    ): void {
+        $label = $this->normalizeJournalLabel($label);
+        if ($tenantId < 1 || $mapId < 1 || $label === '') {
+            return;
+        }
+        if ($actor !== null && $actor !== '') {
+            $actor = Utf8Text::normalize($actor);
+        }
+        $fp = md5(mb_strtolower($label, 'UTF-8'));
+        $safeMeta = $this->sanitizeMeta($meta);
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($fp, $label, $actor, $safeMeta): void {
+            $now = time();
+            $th = is_array($data['error_throttle'] ?? null) ? $data['error_throttle'] : [];
+            $last = (int) ($th[$fp] ?? 0);
+            if ($last > 0 && ($now - $last) < self::ERROR_THROTTLE_SEC) {
+                return;
+            }
+            $th[$fp] = $now;
+            $data['error_throttle'] = $this->pruneThrottleMap($th, $now, self::ERROR_THROTTLE_SEC * 10);
+            $this->appendEvent($data, self::TYPE_ERROR, $label, $actor, $safeMeta);
+        });
+    }
+
+    /**
+     * Remontée de données (position, effectifs, transmission). Anti-spam par nature + auteur.
+     *
+     * @param array<string, mixed> $meta
+     */
+    public function recordIngest(
+        int $tenantId,
+        int $mapId,
+        string $kind,
+        string $label,
+        ?string $actor = null,
+        array $meta = []
+    ): void {
+        $label = $this->normalizeJournalLabel($label);
+        if ($tenantId < 1 || $mapId < 1 || $label === '') {
+            return;
+        }
+        $kind = strtolower(trim($kind));
+        $kind = preg_replace('/[^a-z0-9_\-]/', '', $kind) ?? '';
+        if ($kind === '') {
+            $kind = 'data';
+        }
+        if ($actor !== null && $actor !== '') {
+            $actor = Utf8Text::normalize($actor);
+        }
+        $fp = md5($kind . '|' . mb_strtolower((string) ($actor ?? ''), 'UTF-8'));
+        $safeMeta = $this->sanitizeMeta(array_merge($meta, ['kind' => $kind]));
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($fp, $label, $actor, $safeMeta): void {
+            $now = time();
+            $th = is_array($data['ingest_throttle'] ?? null) ? $data['ingest_throttle'] : [];
+            $last = (int) ($th[$fp] ?? 0);
+            if ($last > 0 && ($now - $last) < self::INGEST_THROTTLE_SEC) {
+                return;
+            }
+            $th[$fp] = $now;
+            $data['ingest_throttle'] = $this->pruneThrottleMap($th, $now, self::INGEST_THROTTLE_SEC * 8);
+            $this->appendEvent($data, self::TYPE_INGEST, $label, $actor, $safeMeta);
         });
     }
 
@@ -771,6 +853,8 @@ final class AtakActivityLogService
             ['type' => self::TYPE_PHONE, 'label' => 'Connexion au briefing', 'actor' => 'Opérateur', 'offset_sec' => 20],
             ['type' => self::TYPE_AUTH, 'label' => 'Liaison en jeu réussie — code accepté', 'actor' => 'HAWK-1', 'offset_sec' => 15],
             ['type' => self::TYPE_NINE_LINE, 'label' => '9-Line CAS transmise', 'actor' => 'JTAC-1', 'offset_sec' => 10],
+            ['type' => self::TYPE_ERROR, 'label' => 'Le poste est momentanément injoignable.', 'actor' => 'Carte web', 'offset_sec' => 8],
+            ['type' => self::TYPE_INGEST, 'label' => 'Position reçue — HAWK-1', 'actor' => 'HAWK-1', 'offset_sec' => 6],
             ['type' => self::TYPE_DISCONNECT, 'label' => 'Déconnexion jeu — GHOST-3', 'actor' => 'GHOST-3', 'offset_sec' => 5],
             // Hier
             ['type' => self::TYPE_CLIENT_INIT, 'label' => 'Connexion établie — RAVEN', 'actor' => 'RAVEN', 'offset_sec' => $day + 3600],
@@ -1038,6 +1122,45 @@ final class AtakActivityLogService
         usort($out, static function (array $a, array $b): int {
             return strcasecmp($a['label'], $b['label']);
         });
+
+        return $out;
+    }
+
+    private function normalizeJournalLabel(string $label): string
+    {
+        $label = Utf8Text::normalize(trim(strip_tags($label)));
+        $label = preg_replace('#https?://\S+#i', '', $label) ?? $label;
+        $label = preg_replace('#(?:^|[\s])(/api/[\w\-./?=&%]+)#i', ' ', $label) ?? $label;
+        $label = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $label) ?? $label;
+        $label = trim(preg_replace('/\s+/u', ' ', $label) ?? $label);
+        if ($label === '') {
+            return '';
+        }
+        if (mb_strlen($label) > 280) {
+            return mb_substr($label, 0, 280) . '…';
+        }
+
+        return $label;
+    }
+
+    /**
+     * @param array<string, mixed> $map
+     * @return array<string, int>
+     */
+    private function pruneThrottleMap(array $map, int $now, int $keepSec): array
+    {
+        $out = [];
+        $i = 0;
+        foreach ($map as $key => $ts) {
+            if ($i >= 400) {
+                break;
+            }
+            $t = (int) $ts;
+            if ($t > 0 && ($now - $t) <= $keepSec) {
+                $out[(string) $key] = $t;
+                $i++;
+            }
+        }
 
         return $out;
     }

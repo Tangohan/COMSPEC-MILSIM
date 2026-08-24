@@ -149,7 +149,7 @@ class Cfg3DEN
                     class COMSPEC_PhoneTrack
                     {
                         displayName = "Téléphone visible sur l’ATAK";
-                        tooltip = "La position de cette personne (joueur ou IA) apparaît sur la carte de commandement, comme si elle portait un téléphone. Utile pour un contact à suivre, un civil équipé, ou un joueur sans tablette ATAK.";
+                        tooltip = "La position de cette personne apparaît sur la carte de commandement, comme si elle portait un téléphone. Par défaut, aucun détail (nom, grille, cap…) n’est publié : le Zeus choisit ensuite ce qui apparaît, en jeu.";
                         property = "COMSPEC_PhoneTrack";
                         control = "Checkbox";
                         expression = "[_this, _value] call comspec_overwatch_connect_fnc_setPhoneTrack;";

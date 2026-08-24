@@ -154,6 +154,15 @@ final class MissionPlanRepository
         $st->execute([$json, $id]);
     }
 
+    public function clearOrganization(int $planId): void
+    {
+        if ($planId < 1) {
+            return;
+        }
+        $st = $this->pdo()->prepare('DELETE FROM mission_to_elements WHERE plan_id = ?');
+        $st->execute([$planId]);
+    }
+
     public function insertElement(int $planId, ?int $parentId, string $code, string $label, string $kind, int $auth, int $order): int
     {
         $st = $this->pdo()->prepare(

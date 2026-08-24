@@ -56,19 +56,12 @@ private _toggleGps = {
     };
 };
 
-private _togglePhone = {
-    params ["_obj"];
+private _configurePhone = {
+    params ["_obj", ["_delay", 0]];
     if (isNull _obj || {!(_obj isKindOf "CAManBase")}) exitWith {
         ["Sélectionnez une personne (joueur ou IA).", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
     };
-    private _on = !([_obj, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag);
-    [_obj, _on] call comspec_overwatch_connect_fnc_setPhoneTrack;
-    private _who = name _obj;
-    if (_on) then {
-        [format ["Téléphone localisé — %1 apparaît sur l’ATAK.", _who], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
-    } else {
-        [format ["Géolocalisation coupée pour %1.", _who], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
-    };
+    [_obj, _delay] call comspec_overwatch_connect_fnc_phoneTrackConfigure;
 };
 
 private _toggleAlly = {
@@ -98,7 +91,8 @@ private _toggleAlly = {
 };
 
 missionNamespace setVariable ["COMSPEC_ZeusToggleGpsBeacon", _toggleGps];
-missionNamespace setVariable ["COMSPEC_ZeusTogglePhoneTrack", _togglePhone];
+missionNamespace setVariable ["COMSPEC_ZeusTogglePhoneTrack", _configurePhone];
+missionNamespace setVariable ["COMSPEC_ZeusConfigurePhoneTrack", _configurePhone];
 missionNamespace setVariable ["COMSPEC_ZeusToggleAllyTrack", _toggleAlly];
 missionNamespace setVariable ["COMSPEC_ZeusCollectAllyAi", _collectAi];
 
@@ -124,7 +118,7 @@ if (!isNil "zen_custom_modules_fnc_register") then {
             if (isNull _obj || {!(_obj isKindOf "CAManBase")}) then {
                 { if (_x isKindOf "CAManBase") exitWith { _obj = _x }; } forEach (nearestObjects [_pos, ["CAManBase"], 5]);
             };
-            [_obj] call (missionNamespace getVariable ["COMSPEC_ZeusTogglePhoneTrack", {}]);
+            [_obj, 0] call (missionNamespace getVariable ["COMSPEC_ZeusConfigurePhoneTrack", {}]);
         },
         _iconPhone
     ] call zen_custom_modules_fnc_register;
@@ -170,7 +164,7 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
             private _obj = objNull;
             { if (_x isKindOf "CAManBase") exitWith { _obj = _x }; } forEach _pool;
-            [_obj] call (missionNamespace getVariable ["COMSPEC_ZeusTogglePhoneTrack", {}]);
+            [_obj, 0.12] call (missionNamespace getVariable ["COMSPEC_ZeusConfigurePhoneTrack", {}]);
         },
         {
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
@@ -217,7 +211,7 @@ if (!isNil "ace_zeus_fnc_addModule") then {
         if (isNull _obj || {!(_obj isKindOf "CAManBase")}) then {
             { if (_x isKindOf "CAManBase") exitWith { _obj = _x }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
         };
-        [_obj] call (missionNamespace getVariable ["COMSPEC_ZeusTogglePhoneTrack", {}]);
+        [_obj, 0] call (missionNamespace getVariable ["COMSPEC_ZeusConfigurePhoneTrack", {}]);
     }, _iconPhone] call ace_zeus_fnc_addModule;
 
     ["COMSPEC ATAK", "IA alliée sur l’ATAK", {

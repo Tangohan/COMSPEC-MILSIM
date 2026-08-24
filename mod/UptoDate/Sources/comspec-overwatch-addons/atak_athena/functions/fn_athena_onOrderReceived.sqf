@@ -44,7 +44,7 @@ if (!isNil "cTab_phoneVibrate") then {
 if (
     !(missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false])
     && {!isNil "Iceman_fnc_alerts_receive"}
-    && {!(toUpper _type in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM"])}
+    && {!(toUpper _type in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM", "PHONE_GEOLOC", "PHONE_GEOLOC_OFF"])}
 ) then {
     private _time = if (!isNil "cTab_fnc_currentTime") then { call cTab_fnc_currentTime } else { _timeStr };
     private _pos = getPos player;

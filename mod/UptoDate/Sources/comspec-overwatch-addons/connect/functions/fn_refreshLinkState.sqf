@@ -55,7 +55,14 @@ private _prev = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 if (_prev isNotEqualTo _state) then {
     missionNamespace setVariable ["COMSPEC_LinkState", _state, false];
     if (_prev isEqualTo "offline" && {_state in ["linked", "degraded"]}) then {
-        ["reconnect"] call comspec_overwatch_connect_fnc_playRoleplaySound;
+        // Pas de bip à chaque micro-coupure brouilleur (1–7 s).
+        private _zoneFx = missionNamespace getVariable ["COMSPEC_ZoneEffects", nil];
+        private _jammerFlicker = !isNil "_zoneFx" && {_zoneFx isEqualType createHashMap} && {
+            (toLower (_zoneFx getOrDefault ["type", ""])) isEqualTo "jammer"
+        };
+        if (!_jammerFlicker) then {
+            ["reconnect"] call comspec_overwatch_connect_fnc_playRoleplaySound;
+        };
     };
     ["COMSPEC_AthenaLinkChanged", [_state]] call CBA_fnc_localEvent;
 };

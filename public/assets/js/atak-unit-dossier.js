@@ -95,6 +95,60 @@ window.ATAKUnitDossier = (function () {
     return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
   }
 
+  function phoneMeta(u, ex) {
+    var P = window.ATAKUnitPopup;
+    if (!P) return { phone: false, rev: {}, name: (u && (u.call_sign || u.callsign)) || '—' };
+    return {
+      phone: P.isPhoneGeoloc(ex),
+      rev: P.isPhoneGeoloc(ex) ? P.phoneReveal(ex) : null,
+      name: P.phoneDisplayName(u, ex)
+    };
+  }
+
+  function phoneHtml(u, ex) {
+    var meta = phoneMeta(u, ex);
+    var rev = meta.rev || {};
+    var rowsHtml = '';
+    if (rev.affiliation) {
+      var aff = window.ATAKUnitPopup.affiliationLabelFr
+        ? window.ATAKUnitPopup.affiliationLabelFr(ex.affiliation || u.affiliation)
+        : (ex.affiliation || '');
+      rowsHtml += row('Camp', aff);
+    }
+    if (rev.grid) {
+      var x = num(u.pos_x);
+      var y = num(u.pos_y);
+      var pos = (x != null && y != null) ? (Math.round(x) + ' / ' + Math.round(y)) : (u.grid_ref || '');
+      rowsHtml += row('Position', pos);
+    }
+    if (rev.altitude) {
+      var arma = u.source_arma || {};
+      var alt = arma.altitude_m != null ? (Math.round(arma.altitude_m) + ' m') : (u.pos_z != null ? Math.round(Number(u.pos_z)) + ' m' : '');
+      rowsHtml += row('Altitude', alt);
+    }
+    if (rev.heading) {
+      var cap = '';
+      if (window.ATAKMotion && window.ATAKMotion.formatHeading) {
+        cap = window.ATAKMotion.formatHeading(u.heading_object || u.heading);
+      } else if (u.heading != null && u.heading !== '') {
+        cap = Math.round(Number(u.heading)) + '°';
+      }
+      rowsHtml += row('Cap', cap);
+    }
+    if (rev.vehicle) {
+      var inVeh = ex.in_vehicle === true || ex.in_vehicle === 1 || ex.in_vehicle === 'true'
+        || (u.source_arma && u.source_arma.in_vehicle === true);
+      rowsHtml += row('Véhicule', inVeh ? 'À bord' : 'À pied');
+    }
+    if (rev.updated) {
+      rowsHtml += row('Dernier signal', ago(u.updated_at || u.last_update));
+    }
+    if (!rowsHtml) {
+      rowsHtml = '<p class="atak-dossier__empty">Signal téléphone. Aucun détail n’est publié pour ce contact.</p>';
+    }
+    return rowsHtml;
+  }
+
   function sitHtml(u, ex, arma, ath) {
     var M = window.ATAKMotion;
     var x = num(u.pos_x);
@@ -212,13 +266,14 @@ window.ATAKUnitDossier = (function () {
       return;
     }
     var ex = extra(u);
+    var meta = phoneMeta(u, ex);
     var arma = u.source_arma || {};
     var ath = u.analysis_athena || {};
     var op = u.operational || {};
-    var cs = u.call_sign || u.callsign || openRef;
-    var slot = window.ATAKMissionPlan && window.ATAKMissionPlan.slotFor ? window.ATAKMissionPlan.slotFor(cs) : null;
-    var sub = typeLabel(u, ex);
-    if (slot) {
+    var cs = meta.phone ? meta.name : (u.call_sign || u.callsign || openRef);
+    var slot = window.ATAKMissionPlan && window.ATAKMissionPlan.slotFor ? window.ATAKMissionPlan.slotFor(u.call_sign || u.callsign || '') : null;
+    var sub = meta.phone ? 'Signal téléphone' : typeLabel(u, ex);
+    if (!meta.phone && slot) {
       var tf = '';
       if (window.ATAKMissionPlan.snapshot) {
         var plan = window.ATAKMissionPlan.snapshot();
@@ -227,22 +282,28 @@ window.ATAKUnitDossier = (function () {
       sub = [slot.function_label, [tf, slot.element_label].filter(Boolean).join(' / ')].filter(Boolean).join(' · ') || sub;
     }
     var body = '';
-    if (tab === 'nav') body = navHtml(u, ex, arma, ath);
-    else if (tab === 'pers') body = persHtml(u, ex);
-    else if (tab === 'cbt') body = cbtHtml(u, ex, arma, ath, op);
-    else if (tab === 'rad') body = radHtml(u, ex, arma, op);
-    else if (tab === 'msn') body = msnHtml(u, ex, ath);
-    else body = sitHtml(u, ex, arma, ath);
-    var tabs = TABS.map(function (t) {
-      return '<button type="button" class="atak-dossier__tab' + (t.id === tab ? ' is-active' : '') + '" data-dossier-tab="' + t.id + '">' + esc(t.label) + '</button>';
-    }).join('');
+    var tabsHtml = '';
+    if (meta.phone) {
+      body = phoneHtml(u, ex);
+    } else {
+      if (tab === 'nav') body = navHtml(u, ex, arma, ath);
+      else if (tab === 'pers') body = persHtml(u, ex);
+      else if (tab === 'cbt') body = cbtHtml(u, ex, arma, ath, op);
+      else if (tab === 'rad') body = radHtml(u, ex, arma, op);
+      else if (tab === 'msn') body = msnHtml(u, ex, ath);
+      else body = sitHtml(u, ex, arma, ath);
+      tabsHtml = '<div class="atak-dossier__tabs">' + TABS.map(function (t) {
+        return '<button type="button" class="atak-dossier__tab' + (t.id === tab ? ' is-active' : '') + '" data-dossier-tab="' + t.id + '">' + esc(t.label) + '</button>';
+      }).join('') + '</div>';
+    }
     el.hidden = false;
+    el.classList.toggle('atak-dossier--phone', !!meta.phone);
     el.innerHTML =
       '<div class="atak-dossier__head">' +
         '<div><div class="atak-dossier__cs">' + esc(cs) + '</div><div class="atak-dossier__sub">' + esc(sub) + '</div></div>' +
         '<button type="button" class="atak-dossier__close" data-dossier-close title="Fermer la fiche">Fermer</button>' +
       '</div>' +
-      '<div class="atak-dossier__tabs">' + tabs + '</div>' +
+      tabsHtml +
       '<div class="atak-dossier__body">' + body + '</div>';
   }
 
@@ -259,7 +320,10 @@ window.ATAKUnitDossier = (function () {
   function close() {
     openRef = null;
     var el = ensure();
-    if (el) el.hidden = true;
+    if (el) {
+      el.hidden = true;
+      el.classList.remove('atak-dossier--phone');
+    }
   }
 
   function onClick(ev) {

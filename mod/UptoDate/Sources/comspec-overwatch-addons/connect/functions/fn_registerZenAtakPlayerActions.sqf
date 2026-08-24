@@ -4,33 +4,114 @@
 if (!hasInterface) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", false]) exitWith {};
 
-private _open = {
-    private _unit = objNull;
+private _pickPlayer = {
+    params [["_pos", []], ["_obj", objNull]];
     private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
+    private _flatten = {
+        params ["_item"];
+        if (_item isEqualType []) exitWith {
+            { [_x] call _flatten } forEach _item;
+        };
+        if (_item isEqualType objNull && {!isNull _item}) then {
+            _pool pushBackUnique _item;
+        };
+    };
+    [_obj] call _flatten;
+    private _unit = objNull;
     {
+        if (!(_x isEqualType objNull) || {isNull _x}) then { continue };
         if (isPlayer _x && {_x isKindOf "CAManBase"}) exitWith { _unit = _x; };
+        if (!(_x isKindOf "CAManBase")) then {
+            private _veh = _x;
+            {
+                if (isPlayer _x && {alive _x}) exitWith { _unit = _x; };
+            } forEach (crew _veh);
+        };
+        if (!isNull _unit) exitWith {};
     } forEach _pool;
+    _unit
+};
+missionNamespace setVariable ["COMSPEC_ZeusPickPlayer", _pickPlayer];
+
+private _open = {
+    params [["_unit", objNull]];
+    if (isNull _unit) then {
+        _unit = [[], objNull] call (missionNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
+    };
     if (isNull _unit) exitWith {
         ["Sélectionnez un joueur.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
     };
-    [_unit] call comspec_overwatch_connect_fnc_zeusShowPlayerAtak;
+    // Le menu clic droit ZEN tient encore l’affichage : ouvrir le panneau tout de suite échoue sans message.
+    [{
+        [_this] call comspec_overwatch_connect_fnc_zeusShowPlayerAtak;
+    }, _unit, 0.12] call CBA_fnc_waitAndExecute;
 };
 
 missionNamespace setVariable ["COMSPEC_ZeusOpenPlayerAtak", _open];
 
-// --- ZEN : clic droit sur joueur ---
+private _applyFx = {
+    params [["_pos", []], ["_obj", objNull], "_act", "_dur"];
+    private _unit = [_pos, _obj] call (missionNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
+    if (isNull _unit) exitWith {
+        ["Sélectionnez un joueur.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+    };
+    [_unit, _act, _dur] remoteExecCall ["comspec_overwatch_connect_fnc_relayZeusAtakEffect", 2];
+    [format ["Zeus → %1 : %2", name _unit, _act], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
+};
+missionNamespace setVariable ["COMSPEC_ZeusApplyAtakFx", _applyFx];
+
+// --- ZEN : clic droit sur joueur (dossier + actions) ---
 if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_addAction"}) then {
-    private _action = [
+    private _hasPlayer = {
+        params [["_pos", []], ["_obj", objNull]];
+        !isNull ([_pos, _obj] call (missionNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]))
+    };
+    private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa";
+    private _root = [
         "comspec_atak_player",
         "ATAK — Infos / dégâts / brouillage",
-        "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa",
-        { [] call (missionNamespace getVariable "COMSPEC_ZeusOpenPlayerAtak"); },
-        {
-            private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
-            ({ isPlayer _x && {_x isKindOf "CAManBase"} } count _pool) > 0
-        }
+        _icon,
+        {},
+        _hasPlayer
     ] call zen_context_menu_fnc_createAction;
-    [_action, [], 6] call zen_context_menu_fnc_addAction;
+    [_root, [], 6] call zen_context_menu_fnc_addAction;
+
+    private _panel = [
+        "comspec_atak_player_panel",
+        "Ouvrir le panneau",
+        _icon,
+        {
+            params ["_pos", "_obj"];
+            private _unit = [_pos, _obj] call (missionNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
+            [_unit] call (missionNamespace getVariable ["COMSPEC_ZeusOpenPlayerAtak", {}]);
+        },
+        { true }
+    ] call zen_context_menu_fnc_createAction;
+    [_panel, ["comspec_atak_player"], 0] call zen_context_menu_fnc_addAction;
+
+    {
+        _x params ["_id", "_label", "_act", "_dur"];
+        private _child = [
+            format ["comspec_atak_player_%1", _id],
+            _label,
+            "",
+            compile format [
+                "params ['_pos', '_obj']; [_pos, _obj, '%1', %2] call (missionNamespace getVariable ['COMSPEC_ZeusApplyAtakFx', {}]);",
+                _act,
+                _dur
+            ],
+            { true }
+        ] call zen_context_menu_fnc_createAction;
+        [_child, ["comspec_atak_player"], _forEachIndex + 1] call zen_context_menu_fnc_addAction;
+    } forEach [
+        ["jam", "Brouiller (45 s)", "jam", 45],
+        ["screen", "Casser l’écran", "screen_break", 30],
+        ["power", "Éteindre", "power_off", 30],
+        ["crash", "Crash (30 s)", "crash", 30],
+        ["destroy", "Détruire l’appareil", "device_destroy", 30],
+        ["capture", "Capturer (illisible)", "capture", 30],
+        ["repair", "Réparer / rétablir", "repair", 30]
+    ];
 };
 
 // --- ZEN : module « poser sur joueur » ---
@@ -40,14 +121,11 @@ if (!isNil "zen_custom_modules_fnc_register") then {
         "ATAK — Éditer joueur",
         {
             params ["_pos", "_obj"];
-            private _unit = _obj;
-            if (isNull _unit || {!isPlayer _unit}) then {
+            private _unit = [_pos, _obj] call (missionNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
+            if (isNull _unit) then {
                 { if (isPlayer _x) exitWith { _unit = _x; }; } forEach (nearestObjects [_pos, ["CAManBase"], 5]);
             };
-            if (isNull _unit || {!isPlayer _unit}) then {
-                { if (isPlayer _x) exitWith { _unit = _x; }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
-            };
-            [_unit] call comspec_overwatch_connect_fnc_zeusShowPlayerAtak;
+            [_unit] call (missionNamespace getVariable ["COMSPEC_ZeusOpenPlayerAtak", {}]);
         },
         "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa"
     ] call zen_custom_modules_fnc_register;
@@ -99,7 +177,7 @@ if (!isNil "ace_zeus_fnc_addModule") then {
         if (isNull _unit || {!isPlayer _unit}) then {
             { if (isPlayer _x) exitWith { _unit = _x; }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
         };
-        [_unit] call comspec_overwatch_connect_fnc_zeusShowPlayerAtak;
+        [_unit] call (missionNamespace getVariable ["COMSPEC_ZeusOpenPlayerAtak", {}]);
     }, "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa"] call ace_zeus_fnc_addModule;
 
     ["COMSPEC ATAK", "Brouiller joueur (45s)", {

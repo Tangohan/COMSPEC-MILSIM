@@ -197,19 +197,21 @@ window.ATAKMapTools = (function () {
   }
 
   function refreshZoneMetrics(radiusOverride) {
-    var el = document.getElementById('atak-zone-metrics');
-    if (!el) return;
-    var prefOff = el.getAttribute('data-pref-hidden') === '1';
     var r = radiusOverride != null ? Number(radiusOverride) : getToolRadiusM();
-    if (!isFinite(r) || r <= 0) {
-      el.hidden = true;
-      el.textContent = '';
-      return;
-    }
+    if (!isFinite(r) || r <= 0) r = getToolRadiusM();
     var m = circleMetrics(r, getToolSpeedKph());
-    el.textContent = m.summary + ' · ' + String(m.speedKph).replace('.', ',') + ' km/h';
-    el.title = el.textContent;
-    el.hidden = prefOff;
+    var speedLabel = String(m.speedKph).replace('.', ',') + ' km/h';
+    var areaEl = document.getElementById('atak-zone-area');
+    var delayEl = document.getElementById('atak-zone-delay');
+    var speedReadout = document.getElementById('atak-zone-speed-readout');
+    var el = document.getElementById('atak-zone-metrics');
+    if (areaEl) areaEl.textContent = m.areaLabel;
+    if (delayEl) delayEl.textContent = m.delayLabel;
+    if (speedReadout) speedReadout.textContent = speedLabel;
+    if (el) {
+      el.textContent = m.summary + ' · ' + speedLabel;
+      el.title = el.textContent;
+    }
   }
 
   function onZoneRadiusPreview(ev) {
@@ -503,10 +505,27 @@ window.ATAKMapTools = (function () {
       ctx.startZoneTool(preset, null);
     }
     setDrawToolActive(tool);
+    if (tool === 'search-zone' || tool === 'perimeter' || tool === 'aoi') {
+      revealZoneModule();
+    }
     if (tool === 'search-zone') toast('Zone de recherche : cliquez le centre, puis le bord.');
     else if (tool === 'perimeter') toast('Périmètre : cliquez les sommets, puis Terminer.');
     else if (tool === 'aoi') toast('Zone d’intérêt : cliquez deux coins opposés.');
     else if (tool === 'line') toast('Trait : cliquez les points, puis Terminer.');
+  }
+
+  function revealZoneModule() {
+    var panel = document.getElementById('atak-panel-left');
+    if (panel && panel.classList.contains('collapsed') && window.ATAKSectionNav && window.ATAKSectionNav.setLeftCollapsed) {
+      window.ATAKSectionNav.setLeftCollapsed(false);
+    }
+    var btn = document.querySelector('#atak-panel-left .atak-tab[data-tab="zones"]');
+    if (btn) {
+      if (!btn.classList.contains('active')) btn.click();
+      else if (window.ATAKSectionNav && window.ATAKSectionNav.setSection) {
+        window.ATAKSectionNav.setSection('sitac', { skipActivate: true });
+      }
+    }
   }
 
   function clearDrawings() {
@@ -653,13 +672,9 @@ window.ATAKMapTools = (function () {
     e.preventDefault();
     var tool = btn.getAttribute('data-tool');
     if (tool === 'goto') goToGrid();
-    else if (tool === 'me') {
-      setFollow(false);
-      centerOnSelf(true);
-    } else if (tool === 'follow') setFollow(!followOn);
+    else if (tool === 'follow') setFollow(!followOn);
     else if (tool === 'measure') startMeasure();
     else if (tool === 'note') startPlaceMode('note');
-    else if (tool === 'jackpot') startPlaceMode('jackpot');
     else if (tool === 'search-zone' || tool === 'perimeter' || tool === 'aoi' || tool === 'line') startDrawTool(tool);
     else if (tool === 'clear-drawings') clearDrawings();
     else if (tool === 'speed-foot') {
@@ -754,30 +769,24 @@ window.ATAKMapTools = (function () {
 
   var TOOL_PREF_DEFS = [
     { id: 'goto', label: 'Grille' },
-    { id: 'me', label: 'Moi' },
     { id: 'follow', label: 'Suivre' },
     { id: 'measure', label: 'Mesurer' },
     { id: 'note', label: 'Note' },
-    { id: 'jackpot', label: 'JACKPOT' },
     { id: 'search-zone', label: 'Recherche' },
     { id: 'perimeter', label: 'Périmètre' },
     { id: 'aoi', label: 'Zone d’intérêt' },
     { id: 'line', label: 'Trait' },
     { id: 'clear-drawings', label: 'Effacer' },
-    { id: 'radius', label: 'Rayon' },
-    { id: 'speed', label: 'Vitesse' },
-    { id: 'speed-presets', label: 'À pied / Véhicule' },
-    { id: 'metrics', label: 'Superficie / Délai' },
     { id: 'zoom', label: 'Zoom' },
     { id: 'nvg', label: 'Vision nocturne' },
     { id: 'cop', label: 'Tableau des unités' }
   ];
 
   var SEP_GROUPS = {
-    nav: ['goto', 'me', 'follow'],
-    mark: ['measure', 'note', 'jackpot'],
+    nav: ['goto', 'follow'],
+    mark: ['measure', 'note'],
     draw: ['search-zone', 'perimeter', 'aoi', 'line', 'clear-drawings'],
-    view: ['radius', 'speed', 'speed-presets', 'metrics']
+    view: ['zoom', 'nvg', 'cop']
   };
 
   /** Profils métier : TOC (tout), chef d’équipe (manœuvre), médecin (repères + mesure). */
@@ -788,11 +797,11 @@ window.ATAKMapTools = (function () {
     },
     sl: {
       label: 'Chef d’équipe',
-      ids: ['goto', 'me', 'follow', 'measure', 'note', 'jackpot', 'search-zone', 'perimeter', 'aoi', 'line', 'clear-drawings', 'radius', 'speed', 'speed-presets', 'metrics', 'zoom']
+      ids: ['goto', 'follow', 'measure', 'note', 'search-zone', 'perimeter', 'aoi', 'line', 'clear-drawings', 'zoom']
     },
     medic: {
       label: 'Médecin',
-      ids: ['goto', 'me', 'follow', 'measure', 'note', 'aoi', 'line', 'clear-drawings', 'radius', 'speed', 'speed-presets', 'metrics', 'zoom']
+      ids: ['goto', 'follow', 'measure', 'note', 'aoi', 'line', 'clear-drawings', 'zoom']
     }
   };
 
@@ -890,14 +899,6 @@ window.ATAKMapTools = (function () {
     bar.querySelectorAll('[data-tool-slot]').forEach(function (el) {
       var slot = el.getAttribute('data-tool-slot');
       var show = map[slot] !== false;
-      // metrics stays driven by content when visible preference is on
-      if (slot === 'metrics') {
-        if (!show) el.hidden = true;
-        else if (!el.textContent || !String(el.textContent).trim()) el.hidden = true;
-        else el.hidden = false;
-        el.setAttribute('data-pref-hidden', show ? '0' : '1');
-        return;
-      }
       el.hidden = !show;
     });
     Object.keys(SEP_GROUPS).forEach(function (sepId) {
@@ -1026,6 +1027,11 @@ window.ATAKMapTools = (function () {
   }
 
   function initToolbar() {
+    var zoneTab = document.getElementById('tab-zones');
+    if (zoneTab && !zoneTab._atakToolsBound) {
+      zoneTab._atakToolsBound = true;
+      zoneTab.addEventListener('click', onToolClick);
+    }
     var bar = document.getElementById('atak-map-tools');
     if (!bar || bar._atakBound) return;
     bar._atakBound = true;

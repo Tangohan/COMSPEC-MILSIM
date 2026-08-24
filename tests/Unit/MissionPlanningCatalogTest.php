@@ -52,6 +52,10 @@ final class MissionPlanningCatalogTest extends TestCase
         self::assertSame('En cours', MissionPlanningLabels::drawState('current'));
         self::assertSame('Terminé', MissionPlanningLabels::drawState('completed'));
         self::assertSame('Modifié en session', MissionPlanningLabels::drawState('modified'));
+        self::assertSame('État-major', MissionPlanningLabels::elementKind('hq'));
+        self::assertSame('Manœuvre', MissionPlanningLabels::elementKind('maneuver'));
+        self::assertSame('Air', MissionPlanningLabels::elementKind('air'));
+        self::assertSame('Soutien', MissionPlanningLabels::elementKind('support'));
         self::assertSame('En liaison', MissionPlanningLabels::armaLink('linked'));
         self::assertSame('Assaut', MissionPlanningLabels::phase('ASSAULT'));
         $tl = MissionPlanningTemplate::defaultTimeline();

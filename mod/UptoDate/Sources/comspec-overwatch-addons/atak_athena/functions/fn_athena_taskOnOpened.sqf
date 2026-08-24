@@ -15,6 +15,9 @@ uiNamespace setVariable ["COMSPEC_ATAK_Task_selectedId", ""];
 if (!isNil "comspec_overwatch_connect_fnc_pollOrders") then {
     [] spawn {
         [] call comspec_overwatch_connect_fnc_pollOrders;
+        if (!isNil "comspec_overwatch_connect_fnc_pollMissionPlan") then {
+            [] call comspec_overwatch_connect_fnc_pollMissionPlan;
+        };
         [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
         [] call comspec_overwatch_atak_athena_fnc_athena_updateTask;
     };

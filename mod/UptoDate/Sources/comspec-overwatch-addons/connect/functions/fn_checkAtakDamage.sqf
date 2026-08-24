@@ -29,7 +29,7 @@ if (_impact > 0.25) then {
     if (_realism >= 2 && {random 100 < (_impact * 50)}) then {
         _atakState set ["screen_destroyed", true];
         ["Écran ATAK endommagé par choc", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
-        playSound "FD_CP_Not_Clear_F";
+        ["disconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
         [
             "WARN",
             "Terminal",
@@ -119,7 +119,7 @@ switch (_realism) do {
             _atakState set ["powered_on", false];
             if (_wasPowered) then {
                 ["ATAK hors service", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
-                playSound "addItemFailed";
+                ["disconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
                 [{
                     private _state = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
                     if (_state getOrDefault ["device_destroyed", false]) exitWith {};
@@ -134,7 +134,7 @@ switch (_realism) do {
         if (_chestDamage > 0.7 && {!_wasScreenDestroyed} && {random 100 < 40}) then {
             _atakState set ["screen_destroyed", true];
             ["Écran ATAK hors service", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
-            playSound "FD_CP_Not_Clear_F";
+            ["disconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
             [
                 "WARN",
                 "Terminal",
@@ -151,7 +151,7 @@ switch (_realism) do {
             _atakState set ["screen_destroyed", true];
             _atakState set ["powered_on", false];
             ["ATAK hors service — liaison coupée", "system", "critical"] call comspec_overwatch_connect_fnc_ambientHint;
-            playSound "FD_CP_Not_Clear_F";
+            ["disconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
             [
                 "ERROR",
                 "Terminal",

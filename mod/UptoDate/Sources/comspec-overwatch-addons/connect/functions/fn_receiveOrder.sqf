@@ -25,8 +25,8 @@ private _explicitMe = (_target != "") && {
     (toLower _target) isEqualTo (toLower _myCallsign)
     || {(toLower _target) isEqualTo (toLower _myName)}
 };
-if (_issuer isEqualTo _myName && {!_explicitMe}) exitWith {};
-if (_issuer isEqualTo _myCallsign && {!_explicitMe}) exitWith {};
+if (_issuer isEqualTo _myName && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF"])}) exitWith {};
+if (_issuer isEqualTo _myCallsign && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF"])}) exitWith {};
 
 // Éviter les doublons (remoteExec + bus local + poll)
 private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
@@ -97,6 +97,21 @@ if ((toUpper _type) in ["HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM"]) exitW
         ["COMSPEC_Warning", ["Demande caméra casque reçue — module Athena requis."]] call comspec_overwatch_connect_fnc_showNotification;
     };
     [_id, "Demande caméra reçue"] call _ackTerminalSignal;
+};
+
+// Géolocalisation téléphone demandée depuis le poste ATAK (comme Zeus)
+if ((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF"]) exitWith {
+    if (_alreadyConsumed) exitWith {};
+    private _ok = false;
+    if (!isNil "comspec_overwatch_connect_fnc_applyPhoneGeolocOrder") then {
+        _ok = [_order] call comspec_overwatch_connect_fnc_applyPhoneGeolocOrder;
+    };
+    if (!_ok) then {
+        _seen = _seen - [_id];
+        missionNamespace setVariable ["COMSPEC_OrdersSeen", _seen, false];
+    } else {
+        [_id, "Localisation telephone"] call _ackTerminalSignal;
+    };
 };
 
 private _prioLabel = switch (toUpper _priority) do {

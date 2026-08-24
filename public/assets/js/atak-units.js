@@ -270,9 +270,13 @@ window.ATAKUnits = (function () {
     }
     body.innerHTML = list.map(function (u) {
       var ex = parseExtra(u);
-      var roleRaw = u.role || ex.role || '';
+      var P = window.ATAKUnitPopup;
+      var isPhone = P && P.isPhoneGeoloc ? P.isPhoneGeoloc(ex) : !!(ex.phone_geoloc);
+      var rev = (isPhone && P && P.phoneReveal) ? P.phoneReveal(ex) : null;
+      var displayName = (P && P.phoneDisplayName) ? P.phoneDisplayName(u, ex) : (u.call_sign || '—');
+      var roleRaw = isPhone ? 'Téléphone' : (u.role || ex.role || '');
       var roleText = String(roleRaw || '').trim();
-      if (!roleText || roleText === '—' || /^[A-Za-z0-9]+_[A-Za-z0-9_]+_F$/i.test(roleText)) {
+      if (!isPhone && (!roleText || roleText === '—' || /^[A-Za-z0-9]+_[A-Za-z0-9_]+_F$/i.test(roleText))) {
         roleText = String(ex.group || u.group || '').trim() || 'Opérateur';
         roleRaw = roleText !== 'Opérateur' ? roleText : '';
       }
@@ -280,9 +284,9 @@ window.ATAKUnits = (function () {
       var statusLabel = (window.ATAKUnitPopup && window.ATAKUnitPopup.statusLabelFr)
         ? window.ATAKUnitPopup.statusLabelFr(statusClass)
         : statusClass;
-      var hasHeading = u.heading != null && u.heading !== '';
+      var hasHeading = (!isPhone || (rev && rev.heading)) && u.heading != null && u.heading !== '';
       var heading = hasHeading ? (Math.round(u.heading) + '°') : '—';
-      var gridRaw = formatGrid(u);
+      var gridRaw = (!isPhone || (rev && rev.grid)) ? formatGrid(u) : '';
       var grid = gridRaw || '—';
       var c = parseCoords(u);
       var posOk = hasValidPosition(u);
@@ -301,15 +305,15 @@ window.ATAKUnits = (function () {
         ' data-x="' + esc(posOk ? c.x : '') + '"' +
         ' data-y="' + esc(posOk ? c.y : '') + '"' +
         (ftColor ? ' style="--ft-color:' + esc(ftColor) + '"' : '') + '>' +
-        '<td class="atak-drawer-cs"><span class="atak-drawer-cs-text">' + esc(u.call_sign || '—') + '</span></td>' +
+        '<td class="atak-drawer-cs"><span class="atak-drawer-cs-text">' + esc(displayName) + '</span></td>' +
         '<td' + (roleRaw ? '' : ' class="atak-drawer-muted"') + '>' + esc(roleText) + '</td>' +
         '<td>' + ftCell + '</td>' +
         '<td><span class="atak-unit-status ' + statusClass + '">' + esc(statusLabel) + '</span></td>' +
         '<td class="atak-drawer-hdg' + (hasHeading ? '' : ' atak-drawer-muted') + '">' + esc(heading) + '</td>' +
         '<td class="atak-drawer-grid' + (gridRaw ? '' : ' atak-drawer-muted') + '">' + esc(grid) + '</td>' +
-        '<td class="atak-drawer-notes">' + notesCellHtml(ex) + '</td>' +
+        '<td class="atak-drawer-notes">' + (isPhone ? '<span class="atak-drawer-muted">—</span>' : notesCellHtml(ex)) + '</td>' +
         '<td class="atak-drawer-actions">' +
-        ((statusClass === 'linked' || statusClass === 'delayed')
+        ((!isPhone && (statusClass === 'linked' || statusClass === 'delayed'))
           ? '<button type="button" class="atak-unit-vibrate atak-unit-vibrate--table" data-unit-vibrate aria-label="Faire vibrer le terminal" title="Faire vibrer le terminal">Vibrer</button>'
           : '') +
         '<button type="button" class="atak-unit-more" data-unit-more aria-label="Actions sur ce contact" title="Actions">⋯</button>' +
@@ -357,9 +361,12 @@ window.ATAKUnits = (function () {
         : '';
       var heading = u.heading != null && u.heading !== '' ? Math.round(Number(u.heading)) : '';
       var toc = tocNotesFromExtra(ex);
+      var P = window.ATAKUnitPopup;
+      var displayName = (P && P.phoneDisplayName) ? P.phoneDisplayName(u, ex) : (u.call_sign || '');
       return [
         u.id || '',
-        u.call_sign || '',
+        displayName,
+        JSON.stringify(ex.reveal || {}),
         resolveLiveStatus(u),
         formatGrid(u),
         heading,
@@ -393,18 +400,22 @@ window.ATAKUnits = (function () {
       if (filterText) {
         var t = filterText.toLowerCase();
         var ex = parseExtra(u);
-        var role = (u.role || ex.role || '').toLowerCase();
+        var P = window.ATAKUnitPopup;
+        var isPhone = P && P.isPhoneGeoloc ? P.isPhoneGeoloc(ex) : !!(ex.phone_geoloc);
+        var shown = (P && P.phoneDisplayName) ? P.phoneDisplayName(u, ex) : (u.call_sign || '');
+        var role = isPhone ? 'téléphone' : (u.role || ex.role || '').toLowerCase();
         var toc = tocNotesFromExtra(ex);
         var hay = [
-          u.call_sign || '',
-          u.military_id || '',
-          u.bft_id || '',
+          shown,
+          isPhone ? '' : (u.call_sign || ''),
+          isPhone ? '' : (u.military_id || ''),
+          isPhone ? '' : (u.bft_id || ''),
           role,
-          u.fire_team_label || '',
-          toc.radio,
-          toc.vehicle,
-          toc.note,
-          displayRadio(ex)
+          isPhone ? '' : (u.fire_team_label || ''),
+          isPhone ? '' : toc.radio,
+          isPhone ? '' : toc.vehicle,
+          isPhone ? '' : toc.note,
+          isPhone ? '' : displayRadio(ex)
         ].join(' ').toLowerCase();
         return hay.indexOf(t) >= 0;
       }
@@ -420,25 +431,32 @@ window.ATAKUnits = (function () {
     }
     listEl.innerHTML = filtered.map(function (u) {
       var ex = parseExtra(u);
-      var health = ex.health || u.health || 'ok';
+      var P = window.ATAKUnitPopup;
+      var isPhone = P && P.isPhoneGeoloc ? P.isPhoneGeoloc(ex) : !!(ex.phone_geoloc);
+      var rev = (isPhone && P && P.phoneReveal) ? P.phoneReveal(ex) : null;
+      var displayName = (P && P.phoneDisplayName) ? P.phoneDisplayName(u, ex) : (u.call_sign || '—');
+      var health = isPhone ? '' : (ex.health || u.health || 'ok');
       var statusClass = resolveLiveStatus(u);
       var statusLabel = (window.ATAKUnitPopup && window.ATAKUnitPopup.statusLabelFr)
         ? window.ATAKUnitPopup.statusLabelFr(statusClass)
         : statusClass;
       var cardClass = 'atak-unit-card ' + (statusClass === 'delayed' ? 'delayed' : (statusClass === 'offline' ? 'delayed' : 'linked'));
+      if (isPhone) cardClass += ' atak-unit-card--phone';
       var healthNorm = String(health || '').toLowerCase();
       if (healthNorm === 'wounded' || healthNorm === 'injured') cardClass += ' atak-unit-bft-wounded';
       if (healthNorm === 'unconscious' || healthNorm === 'cardiac_arrest' || healthNorm === 'cardiac-arrest' || healthNorm === 'dead' || healthNorm === 'kia') {
         cardClass += ' atak-unit-bft-critical';
       }
-      var gridRaw = formatGrid(u);
-      var grid = gridRaw || '—';
-      var heading = u.heading != null ? (Math.round(u.heading) + '°') : '—';
-      var roleText = String(u.role || ex.role || '').trim();
-      if (ex.ally_ai && (!roleText || roleText === '—' || roleText.toLowerCase() === 'operator')) {
+      var gridRaw = (!isPhone || (rev && rev.grid)) ? formatGrid(u) : '';
+      var grid = gridRaw || (isPhone ? '—' : '—');
+      var heading = (!isPhone || (rev && rev.heading)) && u.heading != null && u.heading !== ''
+        ? (Math.round(u.heading) + '°')
+        : '—';
+      var roleText = isPhone ? 'Téléphone' : String(u.role || ex.role || '').trim();
+      if (!isPhone && ex.ally_ai && (!roleText || roleText === '—' || roleText.toLowerCase() === 'operator')) {
         roleText = 'Unité alliée';
       }
-      if (!roleText || roleText === '—' || /^[A-Za-z0-9]+_[A-Za-z0-9_]+_F$/i.test(roleText)) {
+      if (!isPhone && (!roleText || roleText === '—' || /^[A-Za-z0-9]+_[A-Za-z0-9_]+_F$/i.test(roleText))) {
         roleText = String(ex.group || u.group || '').trim() || (ex.ally_ai ? 'Unité alliée' : 'Opérateur');
       }
       var healthLabel = (window.ATAKUnitPopup && window.ATAKUnitPopup.healthLabelFr)
@@ -451,31 +469,39 @@ window.ATAKUnits = (function () {
       var toc = tocNotesFromExtra(ex);
 
       var vitals = [];
-      var hTone = vitalTone('health', health);
-      if (healthNorm !== 'ok' && healthNorm !== 'stable' && healthNorm !== 'healthy') {
-        vitals.push('<span class="atak-unit-vital atak-unit-vital--' + hTone + '">État ' + esc(healthLabel) + '</span>');
+      if (isPhone) {
+        vitals.push('<span class="atak-unit-vital">Signal</span>');
+        if (rev && rev.vehicle) {
+          var inVeh = ex.in_vehicle === true || ex.in_vehicle === 1 || ex.in_vehicle === 'true';
+          vitals.push('<span class="atak-unit-vital">' + (inVeh ? 'À bord' : 'À pied') + '</span>');
+        }
       } else {
-        vitals.push('<span class="atak-unit-vital atak-unit-vital--ok">État stable</span>');
-      }
-      if (battery != null && battery !== '') {
-        var bTone = vitalTone('battery', battery);
-        vitals.push('<span class="atak-unit-vital' + (bTone ? ' atak-unit-vital--' + bTone : '') + '">Batt. ' + esc(battery) + '%</span>');
-      }
-      if (fuel != null) {
-        var fTone = vitalTone('fuel', fuel);
-        vitals.push('<span class="atak-unit-vital' + (fTone ? ' atak-unit-vital--' + fTone : '') + '">Carb. ' + esc(fuel) + '%</span>');
-      }
-      if (ammo != null) {
-        vitals.push('<span class="atak-unit-vital">Mun. ' + esc(ammo) + '</span>');
-      }
-      if (radio != null) {
-        vitals.push('<span class="atak-unit-vital">Radio ' + esc(radio) + '</span>');
-      }
-      if (toc.vehicle) {
-        vitals.push('<span class="atak-unit-vital">Véhicule ' + esc(toc.vehicle) + '</span>');
-      }
-      if (toc.note) {
-        vitals.push('<span class="atak-unit-vital atak-unit-vital--note" title="' + esc(toc.note) + '">Note</span>');
+        var hTone = vitalTone('health', health);
+        if (healthNorm !== 'ok' && healthNorm !== 'stable' && healthNorm !== 'healthy') {
+          vitals.push('<span class="atak-unit-vital atak-unit-vital--' + hTone + '">État ' + esc(healthLabel) + '</span>');
+        } else {
+          vitals.push('<span class="atak-unit-vital atak-unit-vital--ok">État stable</span>');
+        }
+        if (battery != null && battery !== '') {
+          var bTone = vitalTone('battery', battery);
+          vitals.push('<span class="atak-unit-vital' + (bTone ? ' atak-unit-vital--' + bTone : '') + '">Batt. ' + esc(battery) + '%</span>');
+        }
+        if (fuel != null) {
+          var fTone = vitalTone('fuel', fuel);
+          vitals.push('<span class="atak-unit-vital' + (fTone ? ' atak-unit-vital--' + fTone : '') + '">Carb. ' + esc(fuel) + '%</span>');
+        }
+        if (ammo != null) {
+          vitals.push('<span class="atak-unit-vital">Mun. ' + esc(ammo) + '</span>');
+        }
+        if (radio != null) {
+          vitals.push('<span class="atak-unit-vital">Radio ' + esc(radio) + '</span>');
+        }
+        if (toc.vehicle) {
+          vitals.push('<span class="atak-unit-vital">Véhicule ' + esc(toc.vehicle) + '</span>');
+        }
+        if (toc.note) {
+          vitals.push('<span class="atak-unit-vital atak-unit-vital--note" title="' + esc(toc.note) + '">Note</span>');
+        }
       }
       if (u.gateway_partner) {
         vitals.push('<span class="atak-unit-vital atak-unit-vital--gateway" title="Contact via passerelle inter-équipes">'
@@ -511,18 +537,23 @@ window.ATAKUnits = (function () {
       var tooltip = tooltipParts.join(' · ');
 
       var callsignKey = (u.call_sign || '').toUpperCase().trim();
-      var userLink = (window.ATAK_CALLSIGN_TO_USER && callsignKey && window.ATAK_CALLSIGN_TO_USER[callsignKey])
+      var userLink = (!isPhone && window.ATAK_CALLSIGN_TO_USER && callsignKey && window.ATAK_CALLSIGN_TO_USER[callsignKey])
         ? '<a href="' + (window.ATAK_CALLSIGN_TO_USER[callsignKey].url || '') + '" class="atak-unit-fiche-link" onclick="event.stopPropagation();" title="Ouvrir la fiche personnel">Fiche</a>'
         : '';
-      var natoBadge = unitBadgeHtml(u, ex);
-      var bftId = String(u.military_id || u.bft_id || ex.military_id || ex.bft_id || '').trim();
+      var badgeUnit = u;
+      var badgeEx = ex;
+      if (isPhone && (!rev || !rev.affiliation)) {
+        badgeEx = Object.assign({}, ex, { affiliation: 'unknown' });
+      }
+      var natoBadge = unitBadgeHtml(badgeUnit, badgeEx);
+      var bftId = isPhone ? '' : String(u.military_id || u.bft_id || ex.military_id || ex.bft_id || '').trim();
       var bftLine = bftId
         ? ('<div class="atak-unit-mid" title="Identifiant de suivi lié à cet indicatif">Suivi ' + esc(bftId) + '</div>')
         : '';
       var c = parseCoords(u);
       var posOk = hasValidPosition(u);
-      var ftLabel = String(u.fire_team_label || '').trim();
-      var ftColor = String(u.fire_team_color || '').trim();
+      var ftLabel = isPhone ? '' : String(u.fire_team_label || '').trim();
+      var ftColor = isPhone ? '' : String(u.fire_team_color || '').trim();
       if (ftColor) {
         cardClass += ' atak-unit-card--ft';
       }
@@ -531,14 +562,21 @@ window.ATAKUnits = (function () {
           + (ftColor ? '<span class="atak-ft-chip-dot" aria-hidden="true"></span>' : '')
           + esc(ftLabel) + '</span>')
         : '';
+      var metaRow = '';
+      if (!isPhone || (rev && (rev.grid || rev.heading))) {
+        metaRow = '<div class="atak-unit-meta-row">' +
+          '<div class="atak-unit-grid">' + (isPhone && !(rev && rev.grid) ? '' : ('Coord. ' + esc(grid))) + '</div>' +
+          '<div class="atak-unit-heading">' + (isPhone && !(rev && rev.heading) ? '' : ('Cap ' + esc(heading))) + '</div>' +
+          '</div>';
+      }
       return '<div class="' + cardClass + '" data-unit-id="' + esc(u.id || '') + '" data-callsign="' + esc(u.call_sign || '') + '" data-bft-id="' + esc(bftId) + '" data-grid="' + esc(gridRaw) + '" data-x="' + esc(posOk ? c.x : '') + '" data-y="' + esc(posOk ? c.y : '') + '"'
         + (ftColor ? ' style="--ft-color:' + esc(ftColor) + '"' : '')
-        + ' title="' + esc(tooltip) + '">' +
+        + ' title="' + esc(isPhone ? displayName : tooltip) + '">' +
         '<div class="atak-unit-callsign-wrap">' +
-        '<div class="atak-unit-callsign">' + natoBadge + esc(u.call_sign || '—') + '</div>' +
+        '<div class="atak-unit-callsign">' + natoBadge + esc(displayName) + '</div>' +
         '<span class="atak-unit-status ' + statusClass + '">' + esc(statusLabel) + '</span>' +
         (userLink ? userLink : '') +
-        ((statusClass === 'linked' || statusClass === 'delayed')
+        ((!isPhone && (statusClass === 'linked' || statusClass === 'delayed'))
           ? '<button type="button" class="atak-unit-vibrate" data-unit-vibrate aria-label="Faire vibrer le terminal" title="Faire vibrer le terminal">Vibrer</button>'
           : '') +
         '<button type="button" class="atak-unit-more" data-unit-more aria-label="Actions sur ce contact" title="Actions">⋯</button>' +
@@ -546,10 +584,7 @@ window.ATAKUnits = (function () {
         bftLine +
         '<div class="atak-unit-role">' + esc(roleText) + ftBadge + '</div>' +
         '<div class="atak-unit-vitals">' + vitals.join('') + '</div>' +
-        '<div class="atak-unit-meta-row">' +
-        '<div class="atak-unit-grid">Coord. ' + esc(grid) + '</div>' +
-        '<div class="atak-unit-heading">Cap ' + esc(heading) + '</div>' +
-        '</div>' +
+        metaRow +
         '</div>';
     }).join('');
 
@@ -693,6 +728,33 @@ window.ATAKUnits = (function () {
     initFilters();
   }
 
+  function isAllyAi(u) {
+    var ex = parseExtra(u || {});
+    if (ex.ally_ai === true || ex.ally_ai === 1 || ex.ally_ai === '1' || ex.ally_ai === 'true') return true;
+    if (ex.is_ai === true || ex.is_ai === 1 || ex.is_ai === 'true') return true;
+    if (String(ex.source || '').toLowerCase() === 'ally') return true;
+    var cs = String((u && (u.call_sign || u.callsign)) || '').toUpperCase();
+    return cs.indexOf('ALLY-') === 0;
+  }
+
+  function allyIdOf(u) {
+    var ex = parseExtra(u || {});
+    var id = String(ex.ally_id || '').trim();
+    if (id) return id;
+    var cs = String((u && (u.call_sign || u.callsign)) || '').trim();
+    var m = cs.match(/^(ALLY-[^\s·]+)/i);
+    return m ? m[1] : cs;
+  }
+
+  function listAllyUnits() {
+    return (units || []).filter(function (u) {
+      if (!isAllyAi(u)) return false;
+      var st = String((u && u.status) || '').toLowerCase();
+      if (st === 'offline') return false;
+      return true;
+    });
+  }
+
   return {
     setUnits: setUnits,
     fetchUnits: fetchUnits,
@@ -705,5 +767,8 @@ window.ATAKUnits = (function () {
     resolveLiveStatus: resolveLiveStatus,
     setFireTeamFilter: setFireTeamFilter,
     getFireTeamFilter: function () { return filterFireTeamId; },
+    isAllyAi: isAllyAi,
+    allyIdOf: allyIdOf,
+    listAllyUnits: listAllyUnits
   };
 })();

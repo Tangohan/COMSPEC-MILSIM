@@ -144,12 +144,22 @@ final class AtakMotionMath
             && ($etaSpeed ?? 0.0) > 0.2;
 
         $trail = [];
-        foreach (array_slice($window, -12) as $s) {
+        $prevSample = null;
+        $isPhone = !empty($arma['phone_geoloc'])
+            || strtolower(trim((string) ($arma['source'] ?? ''))) === 'phone';
+        $gapSec = self::gapThresholdSec($category, $isPhone);
+        foreach (array_slice($window, -16) as $s) {
+            $dt = $prevSample !== null ? ((float) $s['t'] - (float) $prevSample['t']) : 0.0;
+            $gap = $prevSample !== null && $dt >= $gapSec;
+            $uncertain = $prevSample !== null && $dt >= ($gapSec * 0.55);
             $trail[] = [
                 'x' => round((float) $s['x'], 2),
                 'y' => round((float) $s['y'], 2),
                 't' => (float) $s['t'],
+                'gap' => $gap,
+                'uncertain' => $uncertain,
             ];
+            $prevSample = $s;
         }
 
         $air = null;
@@ -292,6 +302,77 @@ final class AtakMotionMath
             self::CAT_FIXED_WING => 4500.0,
             default => 600.0,
         };
+    }
+
+    /**
+     * Délai au-delà duquel un segment de trace est un trou (doute / perte).
+     */
+    public static function gapThresholdSec(string $category, bool $isPhone = false): float
+    {
+        if ($isPhone) {
+            return 20.0;
+        }
+
+        return match ($category) {
+            self::CAT_GROUND_VEHICLE => 10.0,
+            self::CAT_HELICOPTER, self::CAT_UAV => 8.0,
+            self::CAT_FIXED_WING => 6.0,
+            default => 15.0,
+        };
+    }
+
+    /**
+     * Vitesse plausible pour une enveloppe « où ça a pu aller » pendant un silence.
+     */
+    public static function plausibleSpeedMs(string $category, ?float $lastSpeedMs, bool $isPhone = false): float
+    {
+        $typical = match ($category) {
+            self::CAT_INFANTRY => $isPhone ? 1.6 : 1.4,
+            self::CAT_GROUND_VEHICLE => 16.0,
+            self::CAT_HELICOPTER => 45.0,
+            self::CAT_UAV => 18.0,
+            self::CAT_FIXED_WING => 110.0,
+            default => $isPhone ? 1.6 : 1.5,
+        };
+        $cap = match ($category) {
+            self::CAT_INFANTRY => $isPhone ? 3.5 : 3.0,
+            self::CAT_GROUND_VEHICLE => 33.0,
+            self::CAT_HELICOPTER => 70.0,
+            self::CAT_UAV => 35.0,
+            self::CAT_FIXED_WING => 180.0,
+            default => 4.0,
+        };
+        $v = $typical;
+        if ($lastSpeedMs !== null && $lastSpeedMs > 0.3) {
+            $v = max($lastSpeedMs * 1.12, $typical * 0.55);
+        }
+
+        return min($cap, $v);
+    }
+
+    /**
+     * Rayon max depuis la dernière position connue (silence radio / GPS).
+     */
+    public static function reachRadiusM(
+        string $category,
+        float $elapsedSec,
+        ?float $lastSpeedMs,
+        bool $isPhone = false
+    ): float {
+        if ($elapsedSec < 6.0) {
+            return 0.0;
+        }
+        $cap = match ($category) {
+            self::CAT_INFANTRY => $isPhone ? 700.0 : 600.0,
+            self::CAT_GROUND_VEHICLE => 3500.0,
+            self::CAT_HELICOPTER => 7000.0,
+            self::CAT_UAV => 4000.0,
+            self::CAT_FIXED_WING => 14000.0,
+            default => 800.0,
+        };
+        $r = self::plausibleSpeedMs($category, $lastSpeedMs, $isPhone) * $elapsedSec;
+
+        return min($cap, max(0.0, $r));
     }
 
     public static function headingFromDelta(float $dx, float $dy): float

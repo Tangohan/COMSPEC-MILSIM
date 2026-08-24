@@ -1816,8 +1816,14 @@ window.ATAKMap = (function () {
         if (typeof u.extra === 'string') extra = JSON.parse(u.extra || '{}');
         else if (u.extra && typeof u.extra === 'object') extra = u.extra;
       } catch (e) {}
+      var P = window.ATAKUnitPopup;
+      var isPhone = P && P.isPhoneGeoloc ? P.isPhoneGeoloc(extra) : !!(extra.phone_geoloc);
+      var rev = (isPhone && P && P.phoneReveal) ? P.phoneReveal(extra) : null;
+      var labelCs = (isPhone && P && P.phoneDisplayName) ? P.phoneDisplayName(u, extra) : (u.call_sign || '');
       var aff = extra.affiliation || extra.affil || u.affiliation || 'friend';
+      if (isPhone && (!rev || !rev.affiliation)) aff = 'unknown';
       var health = String(extra.health || u.health || '').toLowerCase();
+      if (isPhone) health = '';
       var healthClass = '';
       if (health === 'wounded' || health === 'injured') healthClass = 'nato-sidc--wounded';
       if (health === 'unconscious' || health === 'cardiac_arrest' || health === 'cardiac-arrest' || health === 'dead' || health === 'kia') {
@@ -1837,12 +1843,14 @@ window.ATAKMap = (function () {
       if (onMonNet) {
         healthClass = (healthClass ? healthClass + ' ' : '') + 'nato-sidc--radio-listen';
       }
-      var roleText = String(u.role || extra.role || '').trim();
+      var roleText = isPhone ? 'Téléphone' : String(u.role || extra.role || '').trim();
       var callsignKey = String(u.call_sign || '').toUpperCase().trim();
       var profile = (window.ATAK_CALLSIGN_TO_USER && callsignKey)
         ? window.ATAK_CALLSIGN_TO_USER[callsignKey]
         : null;
+      if (isPhone && (!rev || !rev.identity)) profile = null;
       var headingRounded = u.heading != null && u.heading !== '' ? Math.round(Number(u.heading)) : '';
+      if (isPhone && (!rev || !rev.heading)) headingRounded = '';
       var markerPriority = getUnitMarkerPriority();
       var preferAvatar = prefs.styleMode === 'nato' && markerPriority === 'avatar' && profile && profile.avatarUrl;
       var ftColor = String(u.fire_team_color || '').trim();
@@ -1854,14 +1862,15 @@ window.ATAKMap = (function () {
         prefs.labelSize,
         prefs.showFtFrame ? '1' : '0',
         markerPriority,
-        aff, roleText, health, healthClass, u.call_sign || '', headingRounded,
+        aff, roleText, health, healthClass, labelCs, headingRounded,
         preferAvatar ? profile.avatarUrl : '',
         extra.sidc || u.sidc || '',
         emitting ? '1' : '0',
         radioCh,
         onMonNet ? '1' : '0',
         u.fire_team_id || '',
-        safeFt
+        safeFt,
+        isPhone ? JSON.stringify(rev || {}) : ''
       ].join('|');
       var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
       if (existing && existing._atakIconSig === iconSig && existing._atakPosSig === posSig) {
@@ -1871,10 +1880,10 @@ window.ATAKMap = (function () {
       var icon = null;
       if (!existing || existing._atakIconSig !== iconSig) {
         if (prefs.styleMode === 'intel_dot') {
-          icon = buildIntelDotIcon(u.call_sign || '', prefs.iconSize, prefs.labelSize);
+          icon = buildIntelDotIcon(labelCs, prefs.iconSize, prefs.labelSize);
         } else if (prefs.styleMode === 'dot' || prefs.styleMode === 'team_dot') {
           var dotColor = prefs.styleMode === 'team_dot' && safeFt ? safeFt : '#22c55e';
-          icon = buildDotIcon(u.call_sign || '', dotColor, prefs.iconSize, prefs.labelSize);
+          icon = buildDotIcon(labelCs, dotColor, prefs.iconSize, prefs.labelSize);
         } else if (preferAvatar) {
           var av = Math.max(12, Math.round(prefs.iconSize));
           var avHtml = '<img src="' + String(profile.avatarUrl).replace(/"/g, '&quot;') + '" alt="" style="width:' + av + 'px;height:' + av + 'px;"/>' +
@@ -1899,8 +1908,8 @@ window.ATAKMap = (function () {
             affiliation: aff,
             role: roleText,
             sidc: extra.sidc || u.sidc || '',
-            callSign: u.call_sign || '',
-            heading: headingRounded === '' ? u.heading : headingRounded,
+            callSign: labelCs,
+            heading: headingRounded,
             showLabel: false,
             size: prefs.iconSize,
             health: health,
@@ -1932,7 +1941,7 @@ window.ATAKMap = (function () {
         if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindUnit) {
           window.ATAKUnitPopup.bindUnit(marker, u);
         } else {
-          marker.bindPopup('<strong>' + (u.call_sign || '—') + '</strong><br/>' + (u.role || '') + '<br/>' + (u.grid_ref || ''));
+          marker.bindPopup('<strong>' + (labelCs || '—') + '</strong><br/>' + (isPhone ? 'Signal téléphone' : (u.role || '')) + '<br/>' + ((isPhone && (!rev || !rev.grid)) ? '' : (u.grid_ref || '')));
         }
         if (window.ATAKMarkerSizes) window.ATAKMarkerSizes.bindSelectVisual(marker);
         bindUnitMarkerContextMenu(marker);
