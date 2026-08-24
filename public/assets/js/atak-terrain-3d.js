@@ -120,10 +120,25 @@ window.ATAKTerrain3D = (function () {
     map.on(name, fn); terrainListeners.push([map, name, fn]);
   }
 
+  function tileImageReady(tile) {
+    var image = tile && tile.el;
+    if (!image) return false;
+    /* Leaflet 1.9 ne publie pas de drapeau `loaded` dans ses entrées _tiles.
+       L'état de l'élément image est la source fiable, y compris pour une
+       tuile déjà présente dans le cache du navigateur. */
+    return image.complete && Number(image.naturalWidth || image.width) > 0;
+  }
+
   function startTerrain() {
     var map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
     if (!map || !initRenderer()) return;
     if (!terrainListeners.length) ['move', 'moveend', 'zoomend', 'resize'].forEach(function (name) { bindMapEvent(map, name); });
+    var layer = window.ATAKMap.getBaseTileLayer && window.ATAKMap.getBaseTileLayer();
+    if (layer && !layer._atakTerrain3DBound) {
+      layer._atakTerrain3DBound = true;
+      bindMapEvent(layer, 'tileload');
+      bindMapEvent(layer, 'tileunload');
+    }
     var activeMapId = mapId();
     if (!terrainGrid || terrainGridMapId !== activeMapId) {
       terrainGrid = null;
@@ -161,7 +176,7 @@ window.ATAKTerrain3D = (function () {
     var renderedTiles = 0;
     Object.keys(layer._tiles).forEach(function (key) {
       var tile = layer._tiles[key];
-      if (!tile || !tile.el || !tile.loaded) return;
+      if (!tileImageReady(tile)) return;
       var image = tile.el, geoBounds = layer._tileCoordsToBounds(tile.coords);
       var nw = map.latLngToContainerPoint(geoBounds.getNorthWest());
       var se = map.latLngToContainerPoint(geoBounds.getSouthEast());
