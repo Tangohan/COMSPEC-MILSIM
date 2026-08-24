@@ -4,6 +4,7 @@ $title = (string) ($title ?? 'Choisir une destination — Athena ATAK');
 $atakTenantName = trim((string) ($atakTenantName ?? 'Communauté'));
 $slidesUrl = (string) ($slidesUrl ?? url('connect'));
 $carteUrl = (string) ($carteUrl ?? url('atak'));
+$chatUrl = (string) ($chatUrl ?? $carteUrl);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -161,6 +162,10 @@ $carteUrl = (string) ($carteUrl ?? url('atak'));
                 <a class="choice choice--map" href="<?= htmlspecialchars($carteUrl, ENT_QUOTES, 'UTF-8') ?>">
                     <span class="label">Terminal ATAK</span>
                     <span class="desc">Appareil Android de terrain avec la carte Arma, les effectifs en liaison, les ordres et les alertes — comme sur ATAK IceMan.</span>
+                </a>
+                <a class="choice" href="<?= htmlspecialchars($chatUrl, ENT_QUOTES, 'UTF-8') ?>">
+                    <span class="label">Tchat délégué</span>
+                    <span class="desc">Confiez les communications à un second opérateur sur mobile, sans encombrer la carte du poste principal.</span>
                 </a>
                 <a class="choice" href="<?= htmlspecialchars($slidesUrl, ENT_QUOTES, 'UTF-8') ?>">
                     <span class="label">Diapositives</span>

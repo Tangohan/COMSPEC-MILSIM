@@ -1367,7 +1367,7 @@ if ($atakMapConfig) {
       </aside>
       <div class="atak-panel-chrome" id="atak-panel-left-chrome" role="toolbar" aria-label="Contrôles du panneau">
         <span class="atak-panel-chrome-label">Panneau</span>
-        <button type="button" class="atak-panel-chrome-btn" id="atak-panel-left-popout" data-atak-popout="left" title="Ouvrir dans une autre fenêtre">Ouvrir dans une autre fenêtre</button>
+        <button type="button" class="atak-panel-chrome-btn" id="atak-panel-left-popout" data-atak-popout="left" title="Détacher le module actif sur un second écran">Écran 2 · module actif</button>
       </div>
       <div class="atak-tabs-content" id="tab-cams" hidden>
         <div class="atak-cams-panel">
@@ -2537,7 +2537,7 @@ if ($atakMapConfig) {
       </div>
       <div class="atak-panel-chrome atak-panel-chrome--right" id="atak-panel-right-chrome" role="toolbar" aria-label="Contrôles des effectifs">
         <span class="atak-panel-chrome-label">Effectifs</span>
-        <button type="button" class="atak-panel-chrome-btn" id="atak-panel-right-popout" data-atak-popout="right" title="Ouvrir dans une autre fenêtre">Ouvrir dans une autre fenêtre</button>
+        <button type="button" class="atak-panel-chrome-btn" id="atak-panel-right-popout" data-atak-popout="right" title="Détacher les effectifs sur un second écran">Écran 2 · effectifs</button>
       </div>
       <details class="atak-air-assets atak-collapse" data-atak-collapse="air-assets" data-atak-collapse-default="0">
         <summary class="atak-air-assets-header atak-collapse-sum">

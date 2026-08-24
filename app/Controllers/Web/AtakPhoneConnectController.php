@@ -184,6 +184,8 @@ final class AtakPhoneConnectController
 
             'carteUrl' => url('connect/' . $token . '/carte'),
 
+            'chatUrl' => url('connect/' . $token . '/tchat'),
+
         ]);
 
     }
@@ -244,6 +246,18 @@ final class AtakPhoneConnectController
      */
     public function openCarte(Request $request, array $params = []): Response
     {
+        return $this->openDevice($params, 'map');
+    }
+
+    /** Ouvre uniquement le tchat pour déléguer les communications à un mobile. */
+    public function openChat(Request $request, array $params = []): Response
+    {
+        return $this->openDevice($params, 'chat');
+    }
+
+    /** Prépare une vue ATAK mobile ciblée à partir d'une liaison QR valide. */
+    private function openDevice(array $params, string $view): Response
+    {
         $token = trim((string) ($params['token'] ?? ''));
         $pairing = $this->pairingRepository->findValidByToken($token);
         if ($pairing === null) {
@@ -275,12 +289,19 @@ final class AtakPhoneConnectController
         }
 
         $tenantName = $this->tenantDisplayName($tenantId);
-        $atakEmbedUrl = url('atak') . '?embed=device';
+        $isChat = $view === 'chat';
+        $atakEmbedUrl = url('atak') . ($isChat
+            ? '?embed=device&popout=left&tab=chat'
+            : '?embed=device');
 
         return Response::view('atak.connect_device', [
-            'title' => 'ATAK — ' . $tenantName,
+            'title' => ($isChat ? 'Tchat ATAK — ' : 'ATAK — ') . $tenantName,
             'atakTenantName' => $tenantName,
             'atakEmbedUrl' => $atakEmbedUrl,
+            'atakDeviceMode' => $isChat ? 'TCHAT' : 'BFT',
+            'atakDeviceHint' => $isChat
+                ? 'Vue communications déléguée — le téléphone reste synchronisé avec le poste de commandement.'
+                : 'Carte Arma dans le terminal ATAK Android — même liaison que sur Athena.',
             'slidesUrl' => url('connect/' . $token . '/slides'),
             'chooseUrl' => url('connect/' . $token),
         ]);
@@ -383,4 +404,3 @@ final class AtakPhoneConnectController
     }
 
 }
-
