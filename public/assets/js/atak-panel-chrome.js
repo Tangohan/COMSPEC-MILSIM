@@ -177,6 +177,79 @@
     }, 900);
   }
 
+  function openScreenModal(side) {
+    if (side !== 'left') {
+      openPopout(side);
+      return;
+    }
+    var modal = document.getElementById('atak-screen-modal');
+    if (!modal) {
+      openPopout(side);
+      return;
+    }
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('atak-screen-modal-open');
+    var firstChoice = document.getElementById('atak-screen-modal-window');
+    if (firstChoice) firstChoice.focus();
+  }
+
+  function closeScreenModal() {
+    var modal = document.getElementById('atak-screen-modal');
+    if (!modal) return;
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('atak-screen-modal-open');
+    var trigger = document.getElementById('atak-panel-left-popout');
+    if (trigger) trigger.focus();
+  }
+
+  function generateChatQr() {
+    var result = document.getElementById('atak-screen-modal-phone-result');
+    var status = document.getElementById('atak-screen-modal-status');
+    var image = document.getElementById('atak-screen-modal-qr');
+    var openLink = document.getElementById('atak-screen-modal-open');
+    var button = document.getElementById('atak-screen-modal-phone');
+    if (!result || !status || !image || !button) return;
+    result.hidden = false;
+    status.textContent = 'Génération du QR code…';
+    image.hidden = true;
+    if (openLink) openLink.hidden = true;
+    button.disabled = true;
+
+    var base = window.ATAK_API_BASE || '';
+    fetch(base + '/api/atak/phone-pairing?destination=chat', {
+      method: 'GET', credentials: 'include', cache: 'no-store', headers: { 'Accept': 'application/json' }
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (body) {
+        return { ok: response.ok, body: body };
+      });
+    }).then(function (response) {
+      if (!response.ok || !response.body || !response.body.pair_url) {
+        throw new Error(response.body && response.body.message ? response.body.message : 'QR code indisponible.');
+      }
+      var body = response.body;
+      var qrSrc = body.qr_image_data_uri || body.qr_image_url || '';
+      if (!qrSrc) throw new Error('QR code indisponible.');
+      image.onload = function () { image.hidden = false; };
+      image.onerror = function () {
+        image.hidden = true;
+        status.textContent = 'Le QR code ne peut pas être affiché. Utilisez le lien ci-dessous.';
+      };
+      image.src = qrSrc;
+      image.hidden = false;
+      status.textContent = 'Ce QR code est temporaire et à usage unique.';
+      if (openLink) {
+        openLink.href = body.pair_url;
+        openLink.hidden = false;
+      }
+    }).catch(function (error) {
+      status.textContent = error && error.message ? error.message : 'Impossible de générer le QR code.';
+    }).then(function () {
+      button.disabled = false;
+    });
+  }
+
   function focusPopout(side) {
     var win = popoutWindows[side];
     if (win && !win.closed) {
@@ -300,8 +373,22 @@
 
     document.querySelectorAll('[data-atak-popout]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        openPopout(btn.getAttribute('data-atak-popout'));
+        openScreenModal(btn.getAttribute('data-atak-popout'));
       });
+    });
+
+    document.querySelectorAll('[data-atak-screen-close]').forEach(function (btn) {
+      btn.addEventListener('click', closeScreenModal);
+    });
+    var windowChoice = document.getElementById('atak-screen-modal-window');
+    if (windowChoice) windowChoice.addEventListener('click', function () {
+      closeScreenModal();
+      openPopout('left');
+    });
+    var phoneChoice = document.getElementById('atak-screen-modal-phone');
+    if (phoneChoice) phoneChoice.addEventListener('click', generateChatQr);
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeScreenModal();
     });
 
     document.querySelectorAll('[data-atak-popout-focus]').forEach(function (btn) {
