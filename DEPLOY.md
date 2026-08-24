@@ -16,6 +16,40 @@ Flux normal :
 2. **`git push origin main`**
 3. **Hostinger** récupère et déploie automatiquement le nouveau commit de `main`.
 
+### Échec Composer avec une archive ZIP vide
+
+Le message `is a corrupted zip archive (0 bytes)` émis par
+`vendor/composer/tmp-*.zip` signifie que le téléchargement d'une dépendance a été
+interrompu côté réseau ou cache Hostinger. Ce n'est ni une erreur PHP de
+l'application, ni une archive stockée dans ce dépôt (`vendor/` est ignoré).
+
+Procédure de reprise :
+
+1. Relancer une fois le **même déploiement** depuis hPanel. Composer recrée son
+   fichier temporaire lors de la nouvelle tentative ; il est inutile de produire
+   un commit vide ou de modifier les dépendances.
+2. Si la seconde tentative échoue encore, attendre quelques minutes puis relancer,
+   afin de ne pas réutiliser immédiatement un miroir ou un cache défaillant.
+3. Si l'incident persiste, utiliser l'Action GitHub manuelle de secours décrite
+   ci-dessous (`Deploy Athena (secours FTP manuel)`, confirmation `DEPLOY`). Cette
+   voie exclut `vendor/` du transfert, conserve les dépendances déjà présentes en
+   production et ne déclenche donc pas le téléchargement Composer de hPanel. Ne
+   l'utiliser que si les dépendances de `composer.json` n'ont pas changé.
+4. Ne supprimer `composer.json`, ne versionner `vendor/` et ne désactiver TLS sous
+   aucun prétexte : ces contournements rendraient les versions non maîtrisées ou
+   affaibliraient la sécurité du déploiement.
+
+Avant d'attribuer l'échec au dépôt, le contrôle local suivant doit réussir :
+
+```bash
+composer validate --strict
+```
+
+Si hPanel affiche à nouveau une archive de **0 octet** après plusieurs tentatives,
+transmettre au support Hostinger l'heure du déploiement et le chemin
+`vendor/composer/tmp-*.zip` : le fichier vide est la preuve utile d'un échec de
+téléchargement sur leur infrastructure.
+
 > Ne pas activer simultanément le déploiement FTP automatique GitHub : deux
 > synchronisations concurrentes créent une file d’attente, retardent la mise en
 > production et peuvent faire compiler à Hostinger un arbre en cours de modification.
