@@ -25,7 +25,8 @@ final class UnifiedActionDigestService
      *   tenant_messages_unread: int,
      *   my_enlistments_pending: int,
      *   staff_enlistments_pending: int,
-     *   sections: list<array{title: string, items: list<array{label: string, href: string, hint: string, count?: int}>}>
+     *   total_attention: int,
+     *   sections: list<array{title: string, items: list<array{label: string, href: string, hint: string, count?: int, priority?: string, action?: string}>}>
      * }
      */
     public function buildActionCenter(
@@ -57,6 +58,8 @@ final class UnifiedActionDigestService
                 'href' => url('activite'),
                 'hint' => 'Forum, suivi roleplay et autres alertes non lues dans Mon activité.',
                 'count' => $forumUnread,
+                'priority' => 'normal',
+                'action' => 'Consulter',
             ];
         }
         if ($courrierUnread > 0 && $gate->allows('courrier.view')) {
@@ -65,6 +68,8 @@ final class UnifiedActionDigestService
                 'href' => url('courrier/notifications'),
                 'hint' => 'Documents ou messages officiels non lus.',
                 'count' => $courrierUnread,
+                'priority' => 'high',
+                'action' => 'Ouvrir',
             ];
         }
         if ($tenantMessagesUnread > 0) {
@@ -73,6 +78,8 @@ final class UnifiedActionDigestService
                 'href' => url('messages'),
                 'hint' => 'Conversations avec l’encadrement — nouveaux messages non lus.',
                 'count' => $tenantMessagesUnread,
+                'priority' => 'normal',
+                'action' => 'Répondre',
             ];
         }
         if ($myPendingN > 0) {
@@ -81,6 +88,8 @@ final class UnifiedActionDigestService
                 'href' => url('account'),
                 'hint' => 'Une ou plusieurs étapes attendent votre complément.',
                 'count' => $myPendingN,
+                'priority' => 'high',
+                'action' => 'Compléter',
             ];
         }
         if ($personal !== []) {
@@ -95,6 +104,8 @@ final class UnifiedActionDigestService
                     'href' => url('back-office/recruitments'),
                     'hint' => 'Candidatures soumises en attente de traitement.',
                     'count' => $staffPendingN,
+                    'priority' => 'high',
+                    'action' => 'Examiner',
                 ]],
             ];
         }
@@ -114,6 +125,7 @@ final class UnifiedActionDigestService
             'tenant_messages_unread' => $tenantMessagesUnread,
             'my_enlistments_pending' => $myPendingN,
             'staff_enlistments_pending' => $staffPendingN,
+            'total_attention' => $forumUnread + $courrierUnread + $tenantMessagesUnread + $myPendingN + $staffPendingN,
             'sections' => $sections,
         ];
     }

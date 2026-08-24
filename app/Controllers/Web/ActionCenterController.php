@@ -43,7 +43,7 @@ final class ActionCenterController
         );
 
         return Response::view('layout.main', [
-            'title' => 'Centre d’actions',
+            'title' => 'Aujourd’hui — Athena',
             'content' => 'portal.action_center',
             'action_center_digest' => $digestPayload,
         ]);

@@ -22,7 +22,7 @@ final class PortalNextStepsService
         $steps[] = [
             'label' => 'Voir ce qui demande votre attention',
             'description' => 'Synthèse des notifications et dossiers en attente, avec liens vers les écrans concernés.',
-            'href' => url('centre-actions'),
+            'href' => url('aujourdhui'),
             'accent' => 'emerald',
         ];
         if ($gate->allows('forum.view')) {

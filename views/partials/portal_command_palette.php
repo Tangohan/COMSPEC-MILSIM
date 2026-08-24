@@ -13,7 +13,7 @@ $command_palette_api = $command_palette_api ?? url('api/portal/search');
             <a href="<?= htmlspecialchars(url('hub'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:bg-white">Hub</a>
             <a href="<?= htmlspecialchars(url('activite'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:bg-white">Mon activité</a>
             <a href="<?= htmlspecialchars(url('search'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:bg-white">Recherche plein écran</a>
-            <a href="<?= htmlspecialchars(url('centre-actions'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:bg-white">Centre d’actions</a>
+            <a href="<?= htmlspecialchars(url('aujourdhui'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:bg-white">Aujourd’hui</a>
         </div>
         <label for="portal-command-palette-q" class="mt-4 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Rechercher</label>
         <input id="portal-command-palette-q" type="search" autocomplete="off" placeholder="Document, sujet, membre…" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100" />

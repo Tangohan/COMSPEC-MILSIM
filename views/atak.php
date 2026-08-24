@@ -2213,8 +2213,24 @@ if ($atakMapConfig) {
           </div>
           <label class="atak-replay-timeline">
             <span class="atak-replay-timeline-label">Chronologie</span>
-            <input type="range" id="atak-replay-slider" class="atak-replay-slider" min="0" max="0" value="0" />
+            <input type="range" id="atak-replay-slider" class="atak-replay-slider" min="0" max="0" value="0" aria-describedby="atak-replay-info" />
           </label>
+          <div class="atak-replay-explore" role="group" aria-label="Filtres de la chronologie">
+            <label class="atak-replay-speed-wrap">
+              <span class="atak-replay-speed-label">Événements</span>
+              <select id="atak-replay-event-filter" class="atak-replay-speed">
+                <option value="all">Tous</option>
+                <option value="contact">Contacts</option>
+                <option value="medevac">MEDEVAC</option>
+                <option value="order">Ordres</option>
+                <option value="marker">Repères</option>
+              </select>
+            </label>
+            <label class="atak-replay-zoom">
+              <span class="atak-replay-speed-label">Fenêtre autour du curseur <output id="atak-replay-zoom-value">± 90 s</output></span>
+              <input type="range" id="atak-replay-zoom" min="30" max="300" step="30" value="90" />
+            </label>
+          </div>
           <p id="atak-replay-info" class="atak-replay-info" role="status">Ouvrez cet onglet pour charger les positions.</p>
           <div id="atak-replay-legend" class="atak-replay-legend" hidden></div>
           <div id="atak-replay-events" class="atak-replay-events" aria-label="Événements clés" hidden></div>
