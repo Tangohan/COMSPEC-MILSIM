@@ -32,6 +32,8 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertSame('spotrep', $featured['kind']);
         self::assertSame('00002', $featured['number_pad']);
         self::assertTrue($featured['featured']);
+        self::assertSame('Athena Operations', $featured['reporter']);
+        self::assertSame('on August 24, 2026', $featured['reported_on']);
         self::assertStringContainsString('nouveautes/spotrep/00002', (string) $featured['href']);
     }
 

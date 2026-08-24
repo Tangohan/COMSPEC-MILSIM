@@ -874,6 +874,9 @@
   margin-bottom: 1.4rem;
 }
 .tr__stamp {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
   margin: 0;
   font-size: clamp(1.65rem, 4vw, 2.35rem);
   font-weight: 800;
@@ -881,6 +884,26 @@
   text-transform: uppercase;
   color: var(--tr-orange);
   line-height: 1.05;
+}
+.tr__signal {
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  border: 0.12em solid currentColor;
+  border-radius: 50%;
+  position: relative;
+  flex: 0 0 auto;
+}
+.tr__signal::after {
+  content: "";
+  position: absolute;
+  width: 0.12em;
+  height: 0.55em;
+  background: currentColor;
+  top: 0.52em;
+  left: 0.1em;
+  transform: rotate(28deg);
+  transform-origin: top;
 }
 .tr--tech .tr__stamp { color: var(--tr-orange); }
 .tr--upd .tr__stamp {
@@ -892,6 +915,10 @@
   font-size: 0.78rem;
   font-style: italic;
   color: var(--tr-muted);
+}
+.tr__reported strong {
+  color: var(--tr-orange);
+  font-style: normal;
 }
 .tr__companion {
   margin: 0.45rem 0 0;
