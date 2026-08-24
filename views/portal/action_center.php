@@ -2,13 +2,21 @@
 /** @var array<string, mixed> $action_center_digest */
 $action_center_digest = $action_center_digest ?? [];
 $sections = $action_center_digest['sections'] ?? [];
+$totalAttention = max(0, (int) ($action_center_digest['total_attention'] ?? 0));
+$todayLabel = (new DateTimeImmutable('now'))->format('d/m/Y');
 ?>
-<div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+<div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
     <header class="mb-10">
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Synthèse personnelle</p>
-        <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Centre d’actions</h1>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Synthèse personnelle · <?= htmlspecialchars($todayLabel, ENT_QUOTES, 'UTF-8') ?></p>
+        <div class="mt-2 flex flex-wrap items-end justify-between gap-4">
+            <h1 class="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Aujourd’hui</h1>
+            <div class="rounded-2xl border <?= $totalAttention > 0 ? 'border-amber-200 bg-amber-50 text-amber-950' : 'border-emerald-200 bg-emerald-50 text-emerald-950' ?> px-4 py-3">
+                <strong class="text-2xl"><?= $totalAttention ?></strong>
+                <span class="ml-1 text-xs font-bold uppercase tracking-[0.12em]">élément<?= $totalAttention > 1 ? 's' : '' ?> à traiter</span>
+            </div>
+        </div>
         <p class="mt-3 text-sm leading-relaxed text-slate-600">
-            Vue consolidée des éléments à traiter ou à consulter en priorité. Chaque lien ouvre l’écran métier concerné : les actions se poursuivent toujours au même endroit qu’à l’habitude.
+            Votre briefing transversal : messages, courriers et dossiers prioritaires réunis sans déplacer les actions hors de leur module métier.
         </p>
     </header>
 
@@ -24,7 +32,7 @@ $sections = $action_center_digest['sections'] ?? [];
         ?>
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" aria-labelledby="<?= htmlspecialchars($secDomId, ENT_QUOTES, 'UTF-8') ?>">
             <h2 id="<?= htmlspecialchars($secDomId, ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-bold text-slate-900"><?= htmlspecialchars($st, ENT_QUOTES, 'UTF-8') ?></h2>
-            <ul class="mt-4 space-y-2">
+            <ul class="mt-4 grid gap-3 sm:grid-cols-2">
                 <?php foreach ($items as $it): ?>
                 <?php
                 if (! is_array($it)) {
@@ -38,8 +46,22 @@ $sections = $action_center_digest['sections'] ?? [];
                     continue;
                 }
                 $meta = $count !== null && $count > 0 ? (string) $count : '';
+                $priority = (string) ($it['priority'] ?? 'low');
+                $action = (string) ($it['action'] ?? 'Ouvrir');
                 ?>
-                <?php $ui_row_title = $label; $ui_row_href = $href; $ui_row_subtitle = $hint; $ui_row_meta = $meta; require base_path('views/partials/ui/list_row_link.php'); ?>
+                <li>
+                    <a href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>" class="group flex h-full items-start gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-white hover:shadow-sm">
+                        <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full <?= $priority === 'high' ? 'bg-amber-500' : ($priority === 'normal' ? 'bg-sky-500' : 'bg-slate-300') ?>" aria-hidden="true"></span>
+                        <span class="min-w-0 flex-1">
+                            <span class="flex items-center justify-between gap-3">
+                                <strong class="text-sm text-slate-950"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></strong>
+                                <?php if ($meta !== ''): ?><span class="rounded-full bg-slate-900 px-2 py-0.5 text-xs font-bold text-white"><?= htmlspecialchars($meta, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                            </span>
+                            <span class="mt-1 block text-xs leading-relaxed text-slate-600"><?= htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="mt-3 block text-xs font-bold text-emerald-700 group-hover:text-emerald-800"><?= htmlspecialchars($action, ENT_QUOTES, 'UTF-8') ?> →</span>
+                        </span>
+                    </a>
+                </li>
                 <?php endforeach; ?>
             </ul>
         </section>
