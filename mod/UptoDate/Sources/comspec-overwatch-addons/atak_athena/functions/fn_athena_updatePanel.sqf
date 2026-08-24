@@ -31,9 +31,9 @@ if (_cs isEqualTo "") then { _cs = name player; };
 private _hasBda = !isNil "Iceman_fnc_bda_receive" || {!isNil { missionNamespace getVariable "Iceman_ATAK_BDA_reports" }};
 private _hasPhoto = !isNil "Iceman_fnc_photo_getRecords";
 
-// Onglets : idle / actif (teal Athena)
-private _tabIdle = [0.06, 0.1, 0.12, 0.92];
-private _tabActive = [0.08, 0.32, 0.28, 0.96];
+// Onglets : tuile grise / sélection verte (style terrain)
+private _tabIdle = [0.145, 0.145, 0.145, 1];
+private _tabActive = [0.06, 0.22, 0.12, 1];
 private _tabMap = [
     ["all", 9740],
     ["messages", 9741],

@@ -84,6 +84,9 @@ if (!_ok) exitWith {
 };
 
 [_feedback, "order", "info"] call comspec_overwatch_connect_fnc_announce;
+if (_status isEqualTo "ACK" && {!isNil "comspec_overwatch_connect_fnc_playAtakNotification"}) then {
+    ["order_ack"] call comspec_overwatch_connect_fnc_playAtakNotification;
+};
 
 if (_status isEqualTo "ACK" && {(toUpper (_orderData getOrDefault ["type", ""])) isEqualTo "MOVE"}) then {
     if (!isNil "comspec_overwatch_connect_fnc_orderApplyMoveWaypoint") then {

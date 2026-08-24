@@ -26,22 +26,22 @@
     #define COMSPEC_TASK_H(n) ((n) * COMSPEC_TASK_POS_H)
 #endif
 
-#define TASK_BG_TITLE {0.04, 0.05, 0.08, 0.96}
-#define TASK_BG_STRIP {0.06, 0.07, 0.10, 0.92}
-#define TASK_BG_BODY {0.05, 0.06, 0.09, 0.94}
-#define TASK_BTN {0.10, 0.28, 0.36, 0.96}
-#define TASK_BTN_F {0.14, 0.38, 0.48, 1}
-#define TASK_OK {0.08, 0.42, 0.32, 0.96}
-#define TASK_OK_F {0.12, 0.52, 0.40, 1}
-#define TASK_WARN {0.48, 0.18, 0.12, 0.96}
-#define TASK_WARN_F {0.62, 0.24, 0.14, 1}
-#define TASK_ACCENT {0.95, 0.72, 0.28, 1}
+#define TASK_BG_TITLE ATAK_BG_TITLE
+#define TASK_BG_STRIP ATAK_BG_STRIP
+#define TASK_BG_BODY ATAK_BG_DETAIL
+#define TASK_BTN ATAK_BTN
+#define TASK_BTN_F ATAK_BTN_F
+#define TASK_OK ATAK_GO
+#define TASK_OK_F ATAK_GO_F
+#define TASK_WARN ATAK_DANGER
+#define TASK_WARN_F ATAK_DANGER_F
+#define TASK_ACCENT ATAK_ACCENT
 
 class COMSPEC_ATAK_Task: ATAK_Message
 {
     class controls
     {
-        class Title: BCE_RscButtonMenu
+        class Title: COMSPEC_ATAK_Title
         {
             idc = 9900;
             x = 0;
@@ -49,13 +49,9 @@ class COMSPEC_ATAK_Task: ATAK_Message
             w = QUOTE(COMSPEC_TASK_W(3));
             h = QUOTE(COMSPEC_TASK_H(0.48));
             size = QUOTE(COMSPEC_TASK_H(0.32));
-            text = "Ordres reçus";
-            colorBackground[] = TASK_BG_TITLE;
-            colorBackground2[] = TASK_BG_TITLE;
-            colorBackgroundFocused[] = {0.08, 0.09, 0.14, 0.98};
+            text = "  Ordres reçus";
             onButtonClick = "call BCE_fnc_ATAK_toggleSubListMenu";
             tooltip = "Revenir au tiroir des applications.";
-            class Attributes { align = "center"; valign = "middle"; };
         };
 
         class AccentBar: RscText
@@ -95,11 +91,11 @@ class COMSPEC_ATAK_Task: ATAK_Message
             y = QUOTE(COMSPEC_TASK_H(1.04));
             w = QUOTE(COMSPEC_TASK_W(2.84));
             h = QUOTE(COMSPEC_TASK_H(2.72));
-            colorBackground[] = {0.04, 0.05, 0.08, 0.94};
-            colorSelect[] = {0.05, 0.05, 0.07, 1};
-            colorSelect2[] = {0.05, 0.05, 0.07, 1};
-            colorSelectBackground[] = {0.90, 0.72, 0.28, 0.92};
-            colorSelectBackground2[] = {0.90, 0.72, 0.28, 0.92};
+            colorBackground[] = {0.09, 0.09, 0.09, 0.94};
+            colorSelect[] = ATAK_LIST_SEL;
+            colorSelect2[] = ATAK_LIST_SEL;
+            colorSelectBackground[] = ATAK_LIST_SEL_BG;
+            colorSelectBackground2[] = ATAK_LIST_SEL_BG;
             sizeEx = QUOTE(COMSPEC_TASK_H(0.32));
             rowHeight = QUOTE(COMSPEC_TASK_H(0.50));
             onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_taskSelect";
@@ -125,7 +121,7 @@ class COMSPEC_ATAK_Task: ATAK_Message
             };
         };
 
-        class BtnLeft: BCE_RscButtonMenu
+        class BtnLeft: COMSPEC_ATAK_BtnGo
         {
             idc = 9904;
             x = QUOTE(COMSPEC_TASK_W(0.08));
@@ -139,7 +135,6 @@ class COMSPEC_ATAK_Task: ATAK_Message
             colorBackground2[] = TASK_OK;
             colorBackgroundFocused[] = TASK_OK_F;
             onButtonClick = "[_this select 0] call comspec_overwatch_atak_athena_fnc_athena_taskClick";
-            class Attributes { align = "center"; valign = "middle"; };
         };
         class BtnRight: BtnLeft
         {
@@ -149,9 +144,10 @@ class COMSPEC_ATAK_Task: ATAK_Message
             colorBackground[] = TASK_WARN;
             colorBackground2[] = TASK_WARN;
             colorBackgroundFocused[] = TASK_WARN_F;
+            class Attributes { font = "RobotoCondensed"; color = "#FF8A7A"; align = "center"; valign = "middle"; shadow = "false"; };
         };
 
-        class BtnRefresh: BCE_RscButtonMenu
+        class BtnRefresh: COMSPEC_ATAK_Btn
         {
             idc = 9907;
             x = QUOTE(COMSPEC_TASK_W(0.08));
@@ -164,7 +160,6 @@ class COMSPEC_ATAK_Task: ATAK_Message
             colorBackground2[] = TASK_BTN;
             colorBackgroundFocused[] = TASK_BTN_F;
             onButtonClick = "if (!isNil 'comspec_overwatch_connect_fnc_pollOrders') then { [] call comspec_overwatch_connect_fnc_pollOrders; }; [] call comspec_overwatch_atak_athena_fnc_athena_updateTask";
-            class Attributes { align = "center"; valign = "middle"; };
         };
     };
 };

@@ -83,6 +83,19 @@ final class AtakRealismApiController
         ];
         $body['user_id'] = $this->resolveUserId($tenantId, $body);
         $body = $this->tagWebSessionIfNeeded($tenantId, $pairingToken, $body);
+        $body['last_client_ip'] = AtakRealismRepository::extractClientIp($request->ip());
+        $host = $this->requestHost();
+        if ($host !== '') {
+            if (trim((string) ($body['server_host'] ?? '')) === '') {
+                $body['server_host'] = $host;
+            }
+            if (trim((string) ($body['server_signature'] ?? '')) === '') {
+                $body['server_signature'] = AtakRealismRepository::computeServerSignature(
+                    $tenantId,
+                    (string) $body['server_host']
+                );
+            }
+        }
         $terminal = $this->realismRepository->upsertTerminal($tenantId, $body);
 
         return Response::json([
@@ -405,5 +418,19 @@ final class AtakRealismApiController
         $this->jsonBodyCache = is_array($decoded) ? $decoded : [];
 
         return $this->jsonBodyCache;
+    }
+
+    private function requestHost(): string
+    {
+        $host = trim((string) ($_SERVER['HTTP_HOST'] ?? ''));
+        if ($host === '') {
+            $host = trim((string) ($_SERVER['SERVER_NAME'] ?? ''));
+        }
+        if ($host === '') {
+            return '';
+        }
+        $host = preg_replace('/:\d+$/', '', $host) ?? $host;
+
+        return strtolower($host);
     }
 }

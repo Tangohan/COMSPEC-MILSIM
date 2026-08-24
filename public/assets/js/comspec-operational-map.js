@@ -1286,6 +1286,12 @@
           ? nato.leafletDivIcon(L, {
               affiliation: aff,
               role: u.role || extra.role || '',
+              sidc: extra.sidc || u.sidc || '',
+              platform: extra.platform || extra.vehicle_class || '',
+              vehicle: extra.vehicle || extra.vehicle_type || extra.vehicle_name || extra.model || '',
+              vehicle_class: extra.vehicle_class || '',
+              in_vehicle: extra.in_vehicle,
+              aircraftType: extra.aircraft_type || u.aircraft_type || '',
               callSign: u.call_sign || '',
               heading: u.heading,
               showLabel: true,

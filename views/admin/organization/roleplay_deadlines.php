@@ -48,8 +48,8 @@ $kindUi = [
         'plan_action' => 'Planifier la visite',
         'reschedule_action' => 'Reporter la visite',
         'complete_action' => 'Visite faite',
-        'dialog_sub' => 'Planifier la visite médicale ou enregistrer qu’elle a été réalisée.',
-        'complete_confirm' => 'Confirmer que la visite médicale a bien été réalisée.',
+        'dialog_sub' => 'Planifier la visite. Quand elle est réalisée, confirmez le groupe sanguin — y compris s’il a changé en jeu.',
+        'complete_confirm' => 'Confirmer la visite et le groupe sanguin constaté.',
         'date_label' => 'Date de visite médicale',
     ],
     'rotation' => [
@@ -62,8 +62,8 @@ $kindUi = [
         'plan_action' => 'Planifier la rotation',
         'reschedule_action' => 'Reporter la rotation',
         'complete_action' => 'Rotation faite',
-        'dialog_sub' => 'Planifier la rotation de service ou la marquer comme effectuée.',
-        'complete_confirm' => 'Confirmer que la rotation de service a bien eu lieu.',
+        'dialog_sub' => 'Choisir l’objet (service, avancement, formation ou notation) et la date. Un entretien individuel doit d’abord avoir été réalisé.',
+        'complete_confirm' => 'Confirmer que la rotation a bien eu lieu.',
         'date_label' => 'Date de rotation',
     ],
 ];
@@ -411,6 +411,22 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
                                     <span class="rp-deadlines-state <?= $h($stateClass) ?>"><?= $h($stateLabel) ?></span>
                                     <span class="rp-deadlines-cell__date <?= $h($stateClass) ?>"><?= $h($fmtDate($dateRaw)) ?></span>
                                 </div>
+                                <?php if ($kindKey === 'medical'):
+                                    $bloodShow = trim((string) (($row['blood_type_confirmed'] ?? '') !== '' ? $row['blood_type_confirmed'] : ($row['blood_type'] ?? '')));
+                                    $armaBlood = trim((string) ($row['arma_blood_type'] ?? ''));
+                                    $bloodWarn = !empty($row['blood_needs_confirmation']);
+                                ?>
+                                <span class="rp-deadlines-sheets__meta">
+                                    Groupe sanguin : <?= $h($bloodShow !== '' ? $bloodShow : 'à confirmer') ?>
+                                    <?php if ($armaBlood !== ''): ?> · Arma : <?= $h($armaBlood) ?><?php endif; ?>
+                                    <?php if ($bloodWarn): ?> · à valider au bilan<?php endif; ?>
+                                </span>
+                                <?php elseif ($kindKey === 'rotation'): ?>
+                                <span class="rp-deadlines-sheets__meta">
+                                    <?= $h((string) ($row['rotation_kind_label'] ?? 'Service')) ?>
+                                    <?php if (empty($row['rotation_interview_ready'])): ?> · entretien préalable requis<?php endif; ?>
+                                </span>
+                                <?php endif; ?>
                                 <div class="rp-deadlines-actions">
                                     <button
                                         type="button"
@@ -427,14 +443,20 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
                                         data-complete-label="<?= $h($kindMeta['complete_action']) ?>"
                                         data-save-label="<?= $h($stateKey === 'empty' ? $kindMeta['plan_action'] : $kindMeta['reschedule_action']) ?>"
                                         data-action-url="<?= $h($actionUrl) ?>"
+                                        data-blood-type="<?= $h((string) ($row['suggested_blood_type'] ?? '')) ?>"
+                                        data-rotation-kind="<?= $h((string) ($row['rotation_kind'] ?? 'service')) ?>"
+                                        data-interview-ready="<?= !empty($row['rotation_interview_ready']) ? '1' : '0' ?>"
                                     >
                                         <?= $h($openLabel) ?>
                                     </button>
-                                    <?php if ($stateKey !== 'empty'): ?>
+                                    <?php if ($stateKey !== 'empty' && $kindKey !== 'medical' && ($kindKey !== 'rotation' || !empty($row['rotation_interview_ready']))): ?>
                                     <form method="post" action="<?= $h($actionUrl) ?>" class="contents">
                                         <input type="hidden" name="_csrf_token" value="<?= $h($rpCsrfToken) ?>">
                                         <input type="hidden" name="deadline_kind" value="<?= $h($kindKey) ?>">
                                         <input type="hidden" name="deadline_action" value="complete">
+                                        <?php if ($kindKey === 'rotation'): ?>
+                                        <input type="hidden" name="rotation_kind" value="<?= $h((string) ($row['rotation_kind'] ?? 'service')) ?>">
+                                        <?php endif; ?>
                                         <button type="submit" class="is-complete" title="<?= $h($kindMeta['complete_confirm']) ?>">
                                             <?= $h($kindMeta['complete_action']) ?>
                                         </button>
@@ -475,6 +497,23 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
                 <span class="ath-field__label" id="rp-deadline-date-label">Date prévue</span>
                 <input type="date" name="deadline_date" id="rp-deadline-date" class="ath-field__input">
             </label>
+            <label class="ath-field" id="rp-deadline-blood-wrap" hidden>
+                <span class="ath-field__label">Groupe sanguin constaté</span>
+                <select name="blood_type" id="rp-deadline-blood" class="ath-field__input">
+                    <option value="">Choisir…</option>
+                    <?php foreach (is_array($rpBloodTypes ?? null) ? $rpBloodTypes : ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'Inconnu'] as $btOpt): ?>
+                    <option value="<?= $h((string) $btOpt) ?>"><?= $h((string) $btOpt) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label class="ath-field" id="rp-deadline-rotation-wrap" hidden>
+                <span class="ath-field__label">Objet de la rotation</span>
+                <select name="rotation_kind" id="rp-deadline-rotation-kind" class="ath-field__input">
+                    <?php foreach (is_array($rpRotationKinds ?? null) ? $rpRotationKinds : ['service' => 'Service', 'advancement' => 'Avancement', 'training' => 'Formation', 'evaluation' => 'Notation'] as $rk => $rl): ?>
+                    <option value="<?= $h((string) $rk) ?>"><?= $h((string) $rl) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
             <label class="ath-field">
                 <span class="ath-field__label">Note (facultatif)</span>
                 <textarea name="deadline_note" id="rp-deadline-note" class="ath-field__textarea" maxlength="500" placeholder="Précisions pour l’historique du dossier"></textarea>
@@ -505,6 +544,10 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
     var dateEl = document.getElementById('rp-deadline-date');
     var dateLabelEl = document.getElementById('rp-deadline-date-label');
     var noteEl = document.getElementById('rp-deadline-note');
+    var bloodWrap = document.getElementById('rp-deadline-blood-wrap');
+    var bloodEl = document.getElementById('rp-deadline-blood');
+    var rotationWrap = document.getElementById('rp-deadline-rotation-wrap');
+    var rotationEl = document.getElementById('rp-deadline-rotation-kind');
     var clearBtn = document.getElementById('rp-deadline-clear');
     var completeBtn = document.getElementById('rp-deadline-complete');
     var saveBtn = document.getElementById('rp-deadline-save');
@@ -526,10 +569,29 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
         dateLabelEl.textContent = dateLabel;
         completeBtn.textContent = completeLabel;
         saveBtn.textContent = saveLabel;
+        var kind = btn.getAttribute('data-kind') || '';
+        var interviewReady = btn.getAttribute('data-interview-ready') !== '0';
+        if (bloodWrap && bloodEl) {
+            var showBlood = kind === 'medical';
+            bloodWrap.hidden = !showBlood;
+            bloodEl.value = showBlood ? (btn.getAttribute('data-blood-type') || '') : '';
+        }
+        if (rotationWrap && rotationEl) {
+            var showRotation = kind === 'rotation';
+            rotationWrap.hidden = !showRotation;
+            rotationEl.value = showRotation ? (btn.getAttribute('data-rotation-kind') || 'service') : 'service';
+        }
         clearBtn.hidden = state === 'empty';
-        completeBtn.hidden = state === 'empty';
+        completeBtn.hidden = state === 'empty' || (kind === 'rotation' && !interviewReady);
+        saveBtn.hidden = kind === 'rotation' && !interviewReady;
         if (hintEl) {
-            if (state === 'late') {
+            if (kind === 'rotation' && !interviewReady) {
+                hintEl.hidden = false;
+                hintEl.textContent = 'Un entretien individuel doit d’abord être réalisé avant de planifier une rotation (avancement, formation ou notation).';
+            } else if (kind === 'medical') {
+                hintEl.hidden = false;
+                hintEl.textContent = 'À chaque bilan, confirmez le groupe sanguin — y compris s’il a changé en jeu — pour que les médecins l’aient au dossier.';
+            } else if (state === 'late') {
                 hintEl.hidden = false;
                 hintEl.textContent = 'Cette échéance est dépassée. Reportez-la ou confirmez qu’elle a été réalisée.';
             } else if (state === 'soon') {
@@ -558,6 +620,23 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
     dialog.addEventListener('click', function (e) {
         if (e.target === dialog) {
             dialog.close();
+        }
+    });
+
+    form.addEventListener('submit', function (e) {
+        var submitter = e.submitter;
+        var action = (submitter && submitter.value) ? submitter.value : '';
+        if ((kindEl.value === 'medical') && action === 'complete') {
+            if (!bloodEl || bloodEl.value === '') {
+                e.preventDefault();
+                if (hintEl) {
+                    hintEl.hidden = false;
+                    hintEl.textContent = 'Indiquez le groupe sanguin constaté au bilan, pour que les médecins l’aient au dossier.';
+                }
+                if (bloodEl) {
+                    bloodEl.focus();
+                }
+            }
         }
     });
 })();

@@ -25,32 +25,29 @@
     #define COMSPEC_SET_H(n) ((n) * COMSPEC_SET_POS_H)
 #endif
 
-#define SET_BG_TITLE {0.02, 0.05, 0.07, 0.92}
-#define SET_BG_STRIP {0.03, 0.07, 0.09, 0.88}
-#define SET_BG_BODY {0.02, 0.05, 0.06, 0.9}
-#define SET_BTN {0.08, 0.28, 0.22, 0.95}
-#define SET_BTN_F {0.12, 0.42, 0.34, 1}
-#define SET_ACCENT {0.85, 0.72, 0.28, 0.95}
-#define SET_EDIT_BG {0.04, 0.08, 0.12, 1}
+#define SET_BG_TITLE ATAK_BG_TITLE
+#define SET_BG_STRIP ATAK_BG_STRIP
+#define SET_BG_BODY ATAK_BG_DETAIL
+#define SET_BTN ATAK_GO
+#define SET_BTN_F ATAK_GO_F
+#define SET_ACCENT ATAK_ACCENT
+#define SET_EDIT_BG ATAK_BG_EDIT
 
 class COMSPEC_ATAK_Settings: ATAK_Message
 {
     class controls
     {
-        class Title: BCE_RscButtonMenu
+        class Title: COMSPEC_ATAK_Title
         {
             idc = 9840;
             x = 0;
             y = 0;
             w = QUOTE(COMSPEC_SET_W(3));
             h = QUOTE(COMSPEC_SET_H(0.56));
-            size = QUOTE(COMSPEC_SET_H(0.38));
-            text = "Paramètres";
-            colorBackground[] = SET_BG_TITLE;
-            colorBackground2[] = SET_BG_TITLE;
-            colorBackgroundFocused[] = {0.04, 0.1, 0.12, 0.95};
+            size = QUOTE(COMSPEC_SET_H(0.36));
+            text = "  Paramètres";
             onButtonClick = "call BCE_fnc_ATAK_toggleSubListMenu";
-            class Attributes { align = "center"; valign = "middle"; };
+            tooltip = "Revenir au tiroir des applications.";
         };
 
         class AccentBar: RscText
@@ -95,7 +92,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             class Attributes
             {
                 font = "RobotoCondensed";
-                color = "#8FBEA8";
+                color = "#5EC8F0";
                 align = "left";
                 size = "0.58";
             };
@@ -126,7 +123,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             w = QUOTE(COMSPEC_SET_W(2.84));
             h = QUOTE(COMSPEC_SET_H(0.42));
             colorBackground[] = SET_EDIT_BG;
-            colorSelectBackground[] = {0.08, 0.28, 0.22, 1};
+            colorSelectBackground[] = {0.06, 0.22, 0.12, 1};
             sizeEx = QUOTE(COMSPEC_SET_H(0.26));
         };
 
@@ -183,7 +180,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             };
         };
 
-        class BtnSave: BCE_RscButtonMenu
+        class BtnSave: COMSPEC_ATAK_BtnGo
         {
             idc = 9846;
             x = QUOTE(COMSPEC_SET_W(0.08));
@@ -196,7 +193,6 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             colorBackground2[] = SET_BTN;
             colorBackgroundFocused[] = SET_BTN_F;
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_settingsSave";
-            class Attributes { align = "center"; valign = "middle"; };
         };
 
         class BtnRefresh: BtnSave
@@ -205,7 +201,11 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             x = QUOTE(COMSPEC_SET_W(1.96));
             w = QUOTE(COMSPEC_SET_W(0.96));
             text = "Actualiser";
+            colorBackground[] = ATAK_BTN;
+            colorBackground2[] = ATAK_BTN;
+            colorBackgroundFocused[] = ATAK_BTN_F;
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_updateSettings";
+            class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
         };
     };
 };

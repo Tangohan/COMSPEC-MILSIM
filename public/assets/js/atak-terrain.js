@@ -1,27 +1,25 @@
-/* Relief de théâtre — grille métrique Arma, hillshade / hypsométrie / pente / courbes. */
+/* Relief ATAK — DEM serveur : hillshade PNG + courbes GeoJSON. Jamais la grille brute. */
 window.ATAKTerrain = (function () {
   'use strict';
 
-  var MISSING = -32768;
-  var grid = null;
-  var heights = null;
-  var overlay = null;
-  var paneName = 'atakTerrainPane';
-  var lastKey = '';
-  var sunAzimuth = 315;
-  var opacity = 0.55;
-  var layer = 'hillshade';
+  var meta = null;
+  var hillshade = null;
+  var slopeLayer = null;
+  var contourLayer = null;
+  var panesReady = false;
+  var lastPaintKey = '';
+  var opacity = 0.32;
+  var flags = {
+    hillshade: true,
+    contours10: true,
+    contours50: false,
+    altitudes: false,
+    slope: false
+  };
   var statusEl = null;
-
-  var LAYERS = [
-    { id: 'off', label: 'Aucun' },
-    { id: 'hillshade', label: 'Ombrage' },
-    { id: 'hypsometry', label: 'Hypsométrie' },
-    { id: 'slope', label: 'Pente' },
-    { id: 'contours', label: 'Courbes de niveau' },
-    { id: 'ridges', label: 'Crêtes' },
-    { id: 'depressions', label: 'Dépressions' }
-  ];
+  var solEl = null;
+  var sampleTimer = null;
+  var lastSol = null;
 
   function apiBase() {
     return window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : (window.ATAK_API_BASE || '');
@@ -29,257 +27,63 @@ window.ATAKTerrain = (function () {
   function mapId() {
     return window.ATAKSocket && window.ATAKSocket.getMapId ? window.ATAKSocket.getMapId() : 1;
   }
-
-  function i16(u) {
-    return u >= 32768 ? u - 65536 : u;
-  }
-
-  function cellZ(c, r) {
-    if (!heights || !grid) return null;
-    if (c < 0 || r < 0 || c >= grid.cols || r >= grid.rows) return null;
-    var z = heights[r * grid.cols + c];
-    if (z == null || z === MISSING) return null;
-    return z;
-  }
-
-  function heightAt(x, y) {
-    if (!heights || !grid) return null;
-    var cell = grid.cell_m || 50;
-    var fx = (x - (grid.origin_x || 0)) / cell;
-    var fy = (y - (grid.origin_y || 0)) / cell;
-    if (fx < 0 || fy < 0 || fx > grid.cols - 1 || fy > grid.rows - 1) return null;
-    var x0 = Math.floor(fx);
-    var y0 = Math.floor(fy);
-    var x1 = Math.min(grid.cols - 1, x0 + 1);
-    var y1 = Math.min(grid.rows - 1, y0 + 1);
-    var z00 = cellZ(x0, y0);
-    var z10 = cellZ(x1, y0);
-    var z01 = cellZ(x0, y1);
-    var z11 = cellZ(x1, y1);
-    if (z00 == null || z10 == null || z01 == null || z11 == null) return z00 != null ? z00 : (z10 != null ? z10 : (z01 != null ? z01 : z11));
-    var tx = fx - x0;
-    var ty = fy - y0;
-    return (1 - tx) * (1 - ty) * z00 + tx * (1 - ty) * z10 + (1 - tx) * ty * z01 + tx * ty * z11;
+  function leafletMap() {
+    return window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
   }
 
   function isReady() {
-    return !!(grid && heights && grid.ready);
+    return !!(meta && meta.ready);
   }
 
-  function decode(payload) {
-    if (!payload || !payload.ready || !payload.heights) {
-      grid = payload || null;
-      heights = null;
-      return false;
+  function heightAt(x, y) {
+    if (lastSol && lastSol.z != null) {
+      var dx = Math.abs((lastSol.x || 0) - x);
+      var dy = Math.abs((lastSol.y || 0) - y);
+      if (dx < 40 && dy < 40) return lastSol.z;
     }
-    var bin;
-    try {
-      bin = atob(payload.heights);
-    } catch (e) {
-      return false;
-    }
-    var n = (payload.cols || 0) * (payload.rows || 0);
-    if (n < 4) return false;
-    var view = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i);
-    var out = new Int16Array(n);
-    var dv = new DataView(view.buffer, view.byteOffset, view.byteLength);
-    var count = Math.min(n, Math.floor(view.byteLength / 2));
-    for (var k = 0; k < count; k++) {
-      out[k] = i16(dv.getUint16(k * 2, true));
-    }
-    grid = {
-      ready: true,
-      world_size: payload.world_size || 0,
-      origin_x: payload.origin_x || 0,
-      origin_y: payload.origin_y || 0,
-      cell_m: payload.cell_m || 50,
-      cols: payload.cols,
-      rows: payload.rows,
-      min_z: payload.min_z,
-      max_z: payload.max_z,
-      world_name: payload.world_name || ''
-    };
-    heights = out;
-    return true;
-  }
-
-  function hypsoColor(t) {
-    var stops = [
-      [0.00, 30, 80, 40],
-      [0.18, 56, 118, 52],
-      [0.38, 140, 150, 70],
-      [0.58, 168, 132, 72],
-      [0.78, 150, 110, 78],
-      [1.00, 236, 236, 230]
-    ];
-    t = Math.max(0, Math.min(1, t));
-    for (var i = 1; i < stops.length; i++) {
-      if (t <= stops[i][0]) {
-        var a = stops[i - 1];
-        var b = stops[i];
-        var u = (t - a[0]) / (b[0] - a[0] || 1);
-        return [
-          a[1] + (b[1] - a[1]) * u,
-          a[2] + (b[2] - a[2]) * u,
-          a[3] + (b[3] - a[3]) * u
-        ];
-      }
-    }
-    return [236, 236, 230];
-  }
-
-  function renderCanvas(kind, azimuthDeg) {
-    if (!isReady()) return null;
-    var cols = grid.cols;
-    var rows = grid.rows;
-    var canvas = document.createElement('canvas');
-    canvas.width = cols;
-    canvas.height = rows;
-    var ctx = canvas.getContext('2d');
-    var img = ctx.createImageData(cols, rows);
-    var data = img.data;
-    var minZ = grid.min_z != null ? grid.min_z : 0;
-    var maxZ = grid.max_z != null ? grid.max_z : 400;
-    var span = Math.max(1, maxZ - minZ);
-    var cell = grid.cell_m || 50;
-    var az = ((azimuthDeg != null ? azimuthDeg : sunAzimuth) - 90) * Math.PI / 180;
-    var zenith = 45 * Math.PI / 180;
-    var sinZ = Math.sin(zenith);
-    var cosZ = Math.cos(zenith);
-    var contourStep = span > 250 ? 50 : (span > 80 ? 25 : 10);
-
-    function slopeAspect(c, r) {
-      var z2 = cellZ(c + 1, r + 1);
-      var z3 = cellZ(c + 1, r);
-      var z4 = cellZ(c + 1, r - 1);
-      var z1 = cellZ(c, r + 1);
-      var z5 = cellZ(c, r - 1);
-      var z0 = cellZ(c - 1, r + 1);
-      var z7 = cellZ(c - 1, r);
-      var z6 = cellZ(c - 1, r - 1);
-      if (z0 == null || z1 == null || z2 == null || z3 == null || z4 == null || z5 == null || z6 == null || z7 == null) {
-        return null;
-      }
-      var dzdx = ((z2 + 2 * z3 + z4) - (z0 + 2 * z7 + z6)) / (8 * cell);
-      var dzdy = ((z6 + 2 * z5 + z4) - (z0 + 2 * z1 + z2)) / (8 * cell);
-      var slope = Math.atan(Math.sqrt(dzdx * dzdx + dzdy * dzdy));
-      var aspect = Math.atan2(dzdy, -dzdx);
-      return { slope: slope, aspect: aspect, dzdx: dzdx, dzdy: dzdy };
-    }
-
-    for (var r = 0; r < rows; r++) {
-      var pr = rows - 1 - r;
-      for (var c = 0; c < cols; c++) {
-        var i = (pr * cols + c) * 4;
-        var z = cellZ(c, r);
-        if (z == null) {
-          data[i + 3] = 0;
-          continue;
-        }
-        var rgb = [40, 40, 40];
-        var a = 220;
-        if (kind === 'hypsometry') {
-          rgb = hypsoColor((z - minZ) / span);
-        } else if (kind === 'slope') {
-          var sa = slopeAspect(c, r);
-          var pct = sa ? Math.min(1, (Math.tan(sa.slope) * 100) / 45) : 0;
-          rgb = [40 + pct * 200, 40 + (1 - pct) * 90, 30];
-        } else if (kind === 'contours') {
-          var n = cellZ(c + 1, r);
-          var w = cellZ(c, r + 1);
-          var band = Math.floor(z / contourStep);
-          var edge = (n != null && Math.floor(n / contourStep) !== band) || (w != null && Math.floor(w / contourStep) !== band);
-          if (edge) {
-            rgb = [28, 22, 12];
-            a = 230;
-          } else {
-            a = 0;
-          }
-        } else if (kind === 'ridges') {
-          var up = cellZ(c, r + 1);
-          var dn = cellZ(c, r - 1);
-          var lf = cellZ(c - 1, r);
-          var rt = cellZ(c + 1, r);
-          var ridge = up != null && dn != null && lf != null && rt != null && z >= up && z >= dn && z >= lf && z >= rt;
-          if (ridge) {
-            rgb = [210, 190, 140];
-            a = 230;
-          } else a = 0;
-        } else if (kind === 'depressions') {
-          var u2 = cellZ(c, r + 1);
-          var d2 = cellZ(c, r - 1);
-          var l2 = cellZ(c - 1, r);
-          var r2 = cellZ(c + 1, r);
-          var bowl = u2 != null && d2 != null && l2 != null && r2 != null && z <= u2 && z <= d2 && z <= l2 && z <= r2;
-          if (bowl) {
-            rgb = [40, 90, 140];
-            a = 210;
-          } else a = 0;
-        } else {
-          var hs = slopeAspect(c, r);
-          var shade = 0.35;
-          if (hs) {
-            shade = cosZ * Math.cos(hs.slope) + sinZ * Math.sin(hs.slope) * Math.cos(az - hs.aspect);
-            shade = Math.max(0, Math.min(1, shade));
-          }
-          var v = 18 + shade * 210;
-          rgb = [v, v, v];
-        }
-        data[i] = rgb[0];
-        data[i + 1] = rgb[1];
-        data[i + 2] = rgb[2];
-        data[i + 3] = a;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-    return canvas;
+    return null;
   }
 
   function boundsLatLng() {
-    if (!grid || !window.ATAKMap || !window.ATAKMap.latLngFromWorld) return null;
-    var cell = grid.cell_m || 50;
-    var x0 = grid.origin_x || 0;
-    var y0 = grid.origin_y || 0;
-    var x1 = x0 + (grid.cols - 1) * cell;
-    var y1 = y0 + (grid.rows - 1) * cell;
-    var sw = window.ATAKMap.latLngFromWorld(x0, y0);
-    var ne = window.ATAKMap.latLngFromWorld(x1, y1);
-    return [sw, ne];
+    if (!meta || !window.ATAKMap || !window.ATAKMap.latLngFromWorld) return null;
+    var cell = meta.cell_m || 50;
+    var x0 = meta.origin_x || 0;
+    var y0 = meta.origin_y || 0;
+    var x1 = x0 + Math.max(1, (meta.cols || 1) - 1) * cell;
+    var y1 = y0 + Math.max(1, (meta.rows || 1) - 1) * cell;
+    return [window.ATAKMap.latLngFromWorld(x0, y0), window.ATAKMap.latLngFromWorld(x1, y1)];
   }
 
-  function paint() {
-    var map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
-    if (!map || !window.L) return;
-    if (layer === 'off' || !isReady()) {
-      if (overlay) {
-        map.removeLayer(overlay);
-        overlay = null;
-      }
-      lastKey = '';
-      return;
+  function ensurePanes(map) {
+    if (panesReady || !map) return;
+    if (!map.getPane('atakHillshadePane')) {
+      map.createPane('atakHillshadePane');
+      map.getPane('atakHillshadePane').style.zIndex = 350;
+      map.getPane('atakHillshadePane').style.pointerEvents = 'none';
     }
-    var key = [layer, sunAzimuth, grid.cols, grid.rows, grid.min_z, grid.max_z].join('|');
-    if (overlay && lastKey === key) {
-      overlay.setOpacity(opacity);
-      return;
+    if (!map.getPane('atakSlopePane')) {
+      map.createPane('atakSlopePane');
+      map.getPane('atakSlopePane').style.zIndex = 345;
+      map.getPane('atakSlopePane').style.pointerEvents = 'none';
     }
-    var canvas = renderCanvas(layer, sunAzimuth);
-    var b = boundsLatLng();
-    if (!canvas || !b) return;
-    if (!map.getPane(paneName)) {
-      map.createPane(paneName);
-      map.getPane(paneName).style.zIndex = 350;
-      map.getPane(paneName).style.pointerEvents = 'none';
+    if (!map.getPane('atakContourPane')) {
+      map.createPane('atakContourPane');
+      map.getPane('atakContourPane').style.zIndex = 360;
+      map.getPane('atakContourPane').style.pointerEvents = 'none';
     }
-    var url = canvas.toDataURL('image/png');
-    if (overlay) {
-      map.removeLayer(overlay);
-      overlay = null;
+    panesReady = true;
+  }
+
+  function overlayUrl(kind, stamp) {
+    return apiBase() + '/api/atak/terrain/' + kind + '?mapId=' + encodeURIComponent(mapId()) + '&t=' + encodeURIComponent(stamp || '');
+  }
+
+  function removeLayer(layer) {
+    var map = leafletMap();
+    if (map && layer) {
+      try { map.removeLayer(layer); } catch (e) {}
     }
-    overlay = window.L.imageOverlay(url, b, { opacity: opacity, pane: paneName, interactive: false });
-    overlay.addTo(map);
-    lastKey = key;
+    return null;
   }
 
   function setStatus(text) {
@@ -287,76 +91,241 @@ window.ATAKTerrain = (function () {
     if (statusEl) statusEl.textContent = text || '';
   }
 
-  function load() {
+  function coverageLabel() {
+    if (!meta) return 'Données terrain — aucune couverture';
+    var pct = meta.coverage_pct != null ? meta.coverage_pct : Math.round((meta.progress || 0) * 100);
+    var world = meta.world_name ? (' · ' + meta.world_name) : '';
+    return 'Données terrain — couverture ' + pct + ' %' + world;
+  }
+
+  function paintOverlays() {
+    var map = leafletMap();
+    if (!map || !window.L || !isReady()) {
+      hillshade = removeLayer(hillshade);
+      slopeLayer = removeLayer(slopeLayer);
+      contourLayer = removeLayer(contourLayer);
+      lastPaintKey = '';
+      return;
+    }
+    ensurePanes(map);
+    var b = boundsLatLng();
+    if (!b) return;
+    var stamp = meta.sampled_at || String(meta.filled_cells || 0);
+    var key = [stamp, flags.hillshade, flags.slope, flags.contours10, flags.contours50, flags.altitudes, opacity].join('|');
+    if (lastPaintKey === key) {
+      if (hillshade && hillshade.setOpacity) hillshade.setOpacity(opacity);
+      if (slopeLayer && slopeLayer.setOpacity) slopeLayer.setOpacity(Math.min(0.55, opacity + 0.12));
+      return;
+    }
+    lastPaintKey = key;
+
+    if (flags.hillshade) {
+      if (hillshade) hillshade = removeLayer(hillshade);
+      hillshade = window.L.imageOverlay(overlayUrl('hillshade', stamp), b, {
+        opacity: opacity,
+        pane: 'atakHillshadePane',
+        interactive: false
+      });
+      hillshade.addTo(map);
+    } else {
+      hillshade = removeLayer(hillshade);
+    }
+
+    if (flags.slope) {
+      if (slopeLayer) slopeLayer = removeLayer(slopeLayer);
+      slopeLayer = window.L.imageOverlay(overlayUrl('slope', stamp), b, {
+        opacity: Math.min(0.55, opacity + 0.12),
+        pane: 'atakSlopePane',
+        interactive: false
+      });
+      slopeLayer.addTo(map);
+    } else {
+      slopeLayer = removeLayer(slopeLayer);
+    }
+
+    loadContours(map, stamp);
+  }
+
+  function loadContours(map, stamp) {
+    contourLayer = removeLayer(contourLayer);
+    if (!flags.contours10 && !flags.contours50) return;
+    fetch(apiBase() + '/api/atak/terrain/contours?mapId=' + encodeURIComponent(mapId()) + '&t=' + encodeURIComponent(stamp || ''), {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' }
+    }).then(function (r) { return r.json(); }).then(function (geo) {
+      if (!geo || !geo.features || !window.L) return;
+      var show10 = flags.contours10;
+      var show50 = flags.contours50;
+      var labels = flags.altitudes;
+      contourLayer = window.L.geoJSON(geo, {
+        pane: 'atakContourPane',
+        interactive: false,
+        coordsToLatLng: function (c) {
+          return window.ATAKMap.latLngFromWorld(c[0], c[1]);
+        },
+        filter: function (feat) {
+          var major = !!(feat.properties && feat.properties.major);
+          if (major) return show50 || show10;
+          return show10;
+        },
+        style: function (feat) {
+          var major = !!(feat.properties && feat.properties.major);
+          return {
+            color: major ? '#1c1917' : '#44403c',
+            weight: major ? 1.6 : 0.8,
+            opacity: major ? 0.85 : 0.55,
+            fill: false
+          };
+        },
+        onEachFeature: function (feat, layer) {
+          if (!labels || !feat.properties || !feat.properties.major) return;
+          var el = feat.properties.elevation;
+          if (el == null) return;
+          try {
+            layer.bindTooltip(String(el) + ' m', {
+              permanent: true,
+              direction: 'center',
+              className: 'atak-contour-label',
+              pane: 'atakContourPane'
+            });
+          } catch (e) {}
+        }
+      });
+      contourLayer.addTo(map);
+    }).catch(function () {});
+  }
+
+  function loadMeta() {
     if (!apiBase()) return Promise.resolve(false);
     return fetch(apiBase() + '/api/atak/terrain?mapId=' + encodeURIComponent(mapId()), {
       credentials: 'same-origin',
       headers: { Accept: 'application/json' }
     }).then(function (r) {
       return r.text().then(function (raw) {
-        var j = null;
-        try { j = raw ? JSON.parse(raw) : null; } catch (e) { j = null; }
-        if (!r.ok || !j) {
-          setStatus('Relief du théâtre non encore relevé.');
-          return false;
-        }
-        return j;
+        try { return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
       });
     }).then(function (j) {
-      if (!j || j === false) return false;
-      if (!j.ok) {
-        setStatus('Relief indisponible.');
+      if (!j || !j.ok) {
+        meta = null;
+        setStatus('Relief du théâtre non encore relevé.');
+        paintOverlays();
         return false;
       }
-      if (!j.ready) {
-        var pct = j.progress != null ? Math.round(j.progress * 100) : 0;
-        setStatus(pct > 0 ? ('Relevé du relief en cours — ' + pct + ' %') : 'Relief du théâtre non encore relevé.');
-        decode(j);
-        paint();
-        return false;
-      }
-      decode(j);
-      setStatus('Relief chargé' + (j.world_name ? ' (' + j.world_name + ')' : '') + '.');
-      paint();
-      try { window.dispatchEvent(new CustomEvent('atak:terrain-ready', { detail: grid })); } catch (e) {}
-      return true;
+      var prevStamp = meta && meta.sampled_at;
+      meta = j;
+      if (prevStamp !== j.sampled_at) lastPaintKey = '';
+      setStatus(coverageLabel());
+      paintOverlays();
+      try { window.dispatchEvent(new CustomEvent('atak:terrain-ready', { detail: meta })); } catch (e) {}
+      return !!j.ready;
     }).catch(function () {
       setStatus('Impossible de charger le relief.');
       return false;
     });
   }
 
+  function sampleSol(x, y) {
+    if (!flags.altitudes || !apiBase() || !isReady()) {
+      if (solEl) solEl.textContent = '—';
+      return;
+    }
+    fetch(apiBase() + '/api/atak/terrain/sample?mapId=' + encodeURIComponent(mapId())
+      + '&x=' + encodeURIComponent(String(x)) + '&y=' + encodeURIComponent(String(y)), {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' }
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j || !j.ok || j.z == null) {
+        lastSol = null;
+        if (solEl) solEl.textContent = '—';
+        return;
+      }
+      lastSol = { x: x, y: y, z: j.z };
+      if (solEl) solEl.textContent = 'SOL ' + Math.round(Number(j.z)) + ' m';
+    }).catch(function () {});
+  }
+
+  function bindHud() {
+    var map = leafletMap();
+    if (!map || map._atakTerrainHud) return;
+    map._atakTerrainHud = true;
+    var hud = document.querySelector('.atak-map-hud');
+    if (hud && !hud.querySelector('[data-hud-sol]')) {
+      var row = document.createElement('div');
+      row.className = 'atak-map-hud__row';
+      row.innerHTML = '<span class="atak-map-hud__k">Sol</span> <span class="atak-map-hud__v" data-hud-sol>—</span>';
+      hud.appendChild(row);
+    }
+    solEl = document.querySelector('[data-hud-sol]');
+    map.on('mousemove', function (e) {
+      if (!flags.altitudes) return;
+      var w = window.ATAKMap && window.ATAKMap.worldFromLatLng ? window.ATAKMap.worldFromLatLng(e.latlng) : null;
+      if (!w) return;
+      clearTimeout(sampleTimer);
+      sampleTimer = setTimeout(function () { sampleSol(w.x, w.y); }, 180);
+    });
+  }
+
+  function prefsFrom(p) {
+    p = p || {};
+    if (p.terrainHillshade != null || p.terrainContours10 != null) {
+      flags.hillshade = p.terrainHillshade !== false;
+      flags.contours10 = p.terrainContours10 !== false;
+      flags.contours50 = !!p.terrainContours50;
+      flags.altitudes = !!p.terrainAltitudes;
+      flags.slope = !!p.terrainSlope;
+    } else if (p.terrainLayer) {
+      flags.hillshade = p.terrainLayer === 'hillshade' || p.terrainLayer === 'hypsometry';
+      flags.contours10 = p.terrainLayer === 'contours';
+      flags.contours50 = false;
+      flags.altitudes = false;
+      flags.slope = p.terrainLayer === 'slope';
+    }
+    opacity = p.terrainOpacity != null ? Number(p.terrainOpacity) : 0.32;
+  }
+
   function applyPrefs(p) {
-    p = p || (window.ATAKMap && window.ATAKMap.getDisplayPrefs ? window.ATAKMap.getDisplayPrefs() : {});
-    layer = p.terrainLayer || 'off';
-    opacity = p.terrainOpacity != null ? Number(p.terrainOpacity) : 0.55;
-    sunAzimuth = p.terrainSunAzimuth != null ? Number(p.terrainSunAzimuth) : 315;
-    paint();
+    prefsFrom(p || (window.ATAKMap && window.ATAKMap.getDisplayPrefs ? window.ATAKMap.getDisplayPrefs() : {}));
+    paintOverlays();
+    if (solEl && !flags.altitudes) solEl.textContent = '—';
   }
 
   function syncUi(p) {
     p = p || (window.ATAKMap && window.ATAKMap.getDisplayPrefs ? window.ATAKMap.getDisplayPrefs() : {});
-    var sel = document.getElementById('atak-terrain-layer');
-    if (sel && p.terrainLayer) sel.value = p.terrainLayer;
+    prefsFrom(p);
+    function setChk(id, on) {
+      var el = document.getElementById(id);
+      if (el) el.checked = !!on;
+    }
+    setChk('atak-terrain-hillshade', flags.hillshade);
+    setChk('atak-terrain-contours10', flags.contours10);
+    setChk('atak-terrain-contours50', flags.contours50);
+    setChk('atak-terrain-altitudes', flags.altitudes);
+    setChk('atak-terrain-slope', flags.slope);
     var op = document.getElementById('atak-terrain-opacity');
     var opv = document.getElementById('atak-terrain-opacity-val');
-    if (op && p.terrainOpacity != null) op.value = String(Math.round(p.terrainOpacity * 100));
-    if (opv && p.terrainOpacity != null) opv.textContent = Math.round(p.terrainOpacity * 100) + ' %';
-    var sun = document.getElementById('atak-terrain-sun');
-    var sunv = document.getElementById('atak-terrain-sun-val');
-    if (sun && p.terrainSunAzimuth != null) sun.value = String(p.terrainSunAzimuth);
-    if (sunv && p.terrainSunAzimuth != null) sunv.textContent = Math.round(p.terrainSunAzimuth) + '°';
+    if (op) op.value = String(Math.round(opacity * 100));
+    if (opv) opv.textContent = Math.round(opacity * 100) + ' %';
   }
 
   function bindUi() {
     function patch(part) {
       if (window.ATAKMap && window.ATAKMap.patchDisplayPrefs) window.ATAKMap.patchDisplayPrefs(part);
     }
-    var sel = document.getElementById('atak-terrain-layer');
-    if (sel && !sel._bound) {
-      sel._bound = true;
-      sel.addEventListener('change', function () { patch({ terrainLayer: sel.value }); });
+    function chk(id, key) {
+      var el = document.getElementById(id);
+      if (!el || el._bound) return;
+      el._bound = true;
+      el.addEventListener('change', function () {
+        var o = {};
+        o[key] = !!el.checked;
+        patch(o);
+      });
     }
+    chk('atak-terrain-hillshade', 'terrainHillshade');
+    chk('atak-terrain-contours10', 'terrainContours10');
+    chk('atak-terrain-contours50', 'terrainContours50');
+    chk('atak-terrain-altitudes', 'terrainAltitudes');
+    chk('atak-terrain-slope', 'terrainSlope');
     var op = document.getElementById('atak-terrain-opacity');
     if (op && !op._bound) {
       op._bound = true;
@@ -367,23 +336,15 @@ window.ATAKTerrain = (function () {
         patch({ terrainOpacity: v });
       });
     }
-    var sun = document.getElementById('atak-terrain-sun');
-    if (sun && !sun._bound) {
-      sun._bound = true;
-      sun.addEventListener('input', function () {
-        var v = parseInt(sun.value, 10);
-        var lab = document.getElementById('atak-terrain-sun-val');
-        if (lab) lab.textContent = v + '°';
-        patch({ terrainSunAzimuth: v });
-      });
-    }
   }
 
   window.addEventListener('atak:mapready', function () {
     bindUi();
+    bindHud();
     applyPrefs();
     syncUi();
-    load();
+    loadMeta();
+    setInterval(function () { loadMeta(); }, 45000);
   });
   window.addEventListener('atak:display-prefs-changed', function (ev) {
     applyPrefs(ev.detail || {});
@@ -391,12 +352,11 @@ window.ATAKTerrain = (function () {
   });
 
   return {
-    LAYERS: LAYERS,
-    load: load,
+    load: loadMeta,
     heightAt: heightAt,
     isReady: isReady,
-    getGrid: function () { return grid; },
-    paint: paint,
+    getGrid: function () { return meta; },
+    paint: paintOverlays,
     applyPrefs: applyPrefs
   };
 })();

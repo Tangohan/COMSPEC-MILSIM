@@ -1054,6 +1054,8 @@ $airAssetCols = [
     'checklist' => "ADD COLUMN checklist json DEFAULT NULL AFTER bingo_fuel",
     'pos_z' => "ADD COLUMN pos_z decimal(15,4) DEFAULT NULL AFTER pos_y",
     'last_update' => "ADD COLUMN last_update bigint DEFAULT NULL AFTER aircraft_count",
+    'source' => "ADD COLUMN source varchar(32) DEFAULT NULL AFTER last_update",
+    'vehicle_id' => "ADD COLUMN vehicle_id varchar(64) DEFAULT NULL AFTER source",
 ];
 foreach ($airAssetCols as $col => $alterFrag) {
     $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_air_assets' AND COLUMN_NAME = '$col'");
@@ -3167,6 +3169,14 @@ try {
     echo '  [ATTENTION] roleplay_bilan_cadence : ' . $e->getMessage() . "\n";
 }
 
+$roleplayDeadlinesMedicalRotationMigrate = require $root . '/bootstrap/roleplay_deadlines_medical_rotation_migration.php';
+try {
+    echo "Migration roleplay_deadlines_medical_rotation (groupe sanguin + type de rotation)...\n";
+    $roleplayDeadlinesMedicalRotationMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] roleplay_deadlines_medical_rotation : ' . $e->getMessage() . "\n";
+}
+
 $tacticalPhonePairingMigrate = require $root . '/bootstrap/tactical_phone_pairing_migration.php';
 try {
     echo "Migration tactical_phone_pairing (connexion téléphone ATAK)...\n";
@@ -3205,6 +3215,14 @@ try {
     run_atak_mod_reports_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_mod_reports : ' . $e->getMessage() . "\n";
+}
+
+require_once $root . '/bootstrap/atak_device_logs_migration.php';
+try {
+    echo "Migration atak_device_logs (journal des appareils ATAK)...\n";
+    run_atak_device_logs_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_device_logs : ' . $e->getMessage() . "\n";
 }
 
 $tenantAtakAccessKeyMigrate = require $root . '/bootstrap/tenant_atak_access_key_migration.php';

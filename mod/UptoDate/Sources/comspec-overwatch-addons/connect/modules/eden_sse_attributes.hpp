@@ -181,8 +181,8 @@ class Cfg3DEN
 
                     class COMSPEC_AllyCallsign
                     {
-                        displayName = "Indicatif de l’unité alliée";
-                        tooltip = "Laisser vide : le nom de l’IA et son groupe sont utilisés. Utile pour un indicatif de section (ex. Alpha 2).";
+                        displayName = "Indicatif";
+                        tooltip = "Nom court affiché sur la carte et dans les effectifs (ex. RAVEN). Laisser vide : le nom du groupe, sinon le nom de l’IA.";
                         property = "COMSPEC_AllyCallsign";
                         control = "Edit";
                         expression = "if (_value != '') then { _this setVariable ['COMSPEC_AllyCallsign', _value, true]; };";

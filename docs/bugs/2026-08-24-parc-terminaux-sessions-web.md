@@ -14,7 +14,8 @@ Le parc listait toutes les lignes `atak_terminals` sans distinguer l’origine. 
 
 ## Correctif
 
-- Bouton **Supprimer** sur chaque fiche (terminaux et sessions web).
+- Bouton **Dissocier** (session web, ou fiche encore lue comme un terminal).
+- Bouton **Supprimer** sur chaque terminal terrain.
 - Les sessions web sont listées à part et exclues des certificats, des alertes d’appareil et de l’API carte.
 - Un enregistrement issu d’une session navigateur (hors appairage téléphone / client jeu) est étiqueté `web` et n’est plus fusionné avec les unités live.
 
@@ -43,7 +44,7 @@ Le bouton **Supprimer** existait mais était trop petit, tout à droite d’un t
 
 ## Vérification
 
-Ouvrir le parc : cocher un terminal → Retirer la sélection. L’appareil disparaît. Une session web peut être retirée sans enlever un ATAK de jeu.
+Ouvrir le parc : **Supprimer** un terminal, **Dissocier** une session web (ou une fiche encore lue comme un terminal). Les sessions web sont listées à part. Un passage sur la page reclasse les fiches navigateur encore enregistrées comme téléphone / ordinateur.
 
 ## Statut
 

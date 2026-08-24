@@ -21,7 +21,7 @@ $id = (int) ($device['id'] ?? 0);
     <div class="metric"><div class="metric-label">Médias</div><div class="metric-value"><?= count($media) ?></div></div>
 </div>
 <section class="panel"><div class="panel-header"><div class="panel-title">Résumé de l’appareil</div></div>
-<div class="panel-body"><?= $h($device['device_type_label'] ?? '') ?> · <?= $h(trim(($device['manufacturer'] ?? '') . ' ' . ($device['model'] ?? '')) ?: '—') ?> · <?= $h($device['status_label'] ?? '') ?></div></section>
+<div class="panel-body"><?= $h(trim((string) ($device['device_type_label'] ?? '')) ?: 'Inconnu') ?> · <?= $h(trim(($device['manufacturer'] ?? '') . ' ' . ($device['model'] ?? '')) ?: '—') ?> · <?= $h($device['status_label'] ?? '') ?></div></section>
 
 <section class="panel" style="margin-top:10px"><div class="panel-header"><div class="panel-title">Contacts</div></div>
 <div class="table-wrap"><table><thead><tr><th>Nom</th><th>Numéro</th><th>Alias</th></tr></thead><tbody>

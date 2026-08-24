@@ -21,13 +21,19 @@ use App\Services\Notifications\PersonalMessageUnreadCounter;
 
 final class ActivityHubController
 {
+    private AlertPresentationService $alertPresentation;
+
     public function __construct(
         private ForumNotificationRepository $forumNotifications,
         private CourrierDocumentNotificationRepository $courrierNotifications,
         private TenantMessageRepository $tenantMessages,
         private ActivityHubPresentationService $presentation,
-        private AlertPresentationService $alertPresentation,
-    ) {}
+        ?AlertPresentationService $alertPresentation = null,
+    ) {
+        // Repli si un ancien câblage DI n’injecte que 4 services (500 sur /activite).
+        $this->alertPresentation = $alertPresentation
+            ?? Container::get(AlertPresentationService::class);
+    }
 
     public function index(Request $request, array $params = []): Response
     {

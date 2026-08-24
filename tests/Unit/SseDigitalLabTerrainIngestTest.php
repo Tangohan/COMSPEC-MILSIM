@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Repositories\SseDigitalLabRepository;
 use App\Services\Sse\SseDigitalLabService;
+use App\Support\SseDomexContract;
 use PHPUnit\Framework\TestCase;
 
 final class SseDigitalLabTerrainIngestTest extends TestCase
@@ -31,6 +33,19 @@ final class SseDigitalLabTerrainIngestTest extends TestCase
                 'contacts' => 3,
                 'messages' => 1,
             ])
+        );
+    }
+
+    public function testDeviceTypeLabelUsesLabMapThenInconnu(): void
+    {
+        self::assertSame('Téléphone', SseDomexContract::deviceTypeLabel('telephone'));
+        self::assertSame(
+            'Image disque (simulation)',
+            SseDomexContract::deviceTypeLabel('image_disque', SseDigitalLabRepository::DEVICE_TYPES)
+        );
+        self::assertSame(
+            'Inconnu',
+            SseDomexContract::deviceTypeLabel('', SseDigitalLabRepository::DEVICE_TYPES)
         );
     }
 }

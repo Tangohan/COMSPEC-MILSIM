@@ -13,6 +13,7 @@ foreach ($fields as $field) {
     }
     $opts = is_array($field['options'] ?? null) ? $field['options'] : [];
     $initial[] = [
+        'id' => (string) ($field['id'] ?? ''),
         'type' => (string) ($field['type'] ?? 'text'),
         'label' => (string) ($field['label'] ?? ''),
         'help' => (string) ($field['help'] ?? ''),
@@ -53,20 +54,30 @@ $action = $isEdit
 
     <div class="ath-aar-builder__head">
         <h2>Questions</h2>
-        <button type="button" class="ath-btn" @click="addField()" :disabled="fields.length >= 40">Ajouter une question</button>
     </div>
     <p class="ath-aar-form-card__hint">
-        Pour une liste ou des cases à cocher, indiquez un choix par ligne.
+        Ajoutez les champs que les opérateurs rempliront. Pour une liste ou des cases à cocher, indiquez un choix par ligne.
         Sans choix, les cases à cocher deviennent une question Oui / Non.
     </p>
+    <div class="ath-aar-builder__types">
+        <button type="button" class="ath-btn" @click="addField('text')" :disabled="fields.length >= 40">Question courte</button>
+        <button type="button" class="ath-btn" @click="addField('select')" :disabled="fields.length >= 40">Liste déroulante</button>
+        <button type="button" class="ath-btn" @click="addField('checkbox')" :disabled="fields.length >= 40">Cases à cocher</button>
+        <button type="button" class="ath-btn" @click="addField('textarea')" :disabled="fields.length >= 40">Texte libre</button>
+    </div>
 
-    <template x-for="(field, index) in fields" :key="index">
+    <p class="ath-aar-form-card__hint" x-show="fields.length === 0">
+        Ajoutez au moins une question avec les boutons ci-dessus.
+    </p>
+
+    <template x-for="(field, index) in fields" :key="field.uid">
         <article class="ath-aar-builder-card">
+            <input type="hidden" :name="'fields[' + index + '][id]'" :value="field.id">
             <div class="ath-aar-builder-card__toolbar">
                 <span class="ath-aar-builder-card__num" x-text="'Question ' + (index + 1)"></span>
                 <button type="button" class="ath-btn" @click="move(index, -1)" :disabled="index === 0">Monter</button>
                 <button type="button" class="ath-btn" @click="move(index, 1)" :disabled="index === fields.length - 1">Descendre</button>
-                <button type="button" class="ath-btn" @click="removeField(index)" :disabled="fields.length <= 1">Retirer</button>
+                <button type="button" class="ath-btn" @click="removeField(index)">Retirer</button>
             </div>
 
             <label>Intitulé</label>
@@ -75,7 +86,7 @@ $action = $isEdit
             <label>Type de réponse</label>
             <select :name="'fields[' + index + '][type]'" x-model="field.type">
                 <option value="text">Question courte</option>
-                <option value="textarea">Zone de texte</option>
+                <option value="textarea">Zone de texte libre</option>
                 <option value="select">Liste déroulante</option>
                 <option value="checkbox">Cases à cocher</option>
             </select>
@@ -96,24 +107,33 @@ $action = $isEdit
     </template>
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-        <button type="submit" class="ath-btn ath-btn--solid"><?= $isEdit ? 'Enregistrer le modèle' : 'Créer le modèle' ?></button>
+        <button type="submit" class="ath-btn ath-btn--solid" :disabled="fields.length === 0"><?= $isEdit ? 'Enregistrer le modèle' : 'Créer le modèle' ?></button>
         <a class="ath-btn" href="<?= $h(url('back-office/atak/comptes-rendus/modeles')) ?>">Annuler</a>
     </div>
 </form>
 
 <script>
 function aarTemplateBuilder(initial) {
-    const blank = function () {
-        return { type: 'text', label: '', help: '', required: false, optionsText: '' };
+    let seq = 0;
+    const blank = function (type) {
+        return { uid: ++seq, id: '', type: type || 'text', label: '', help: '', required: false, optionsText: '' };
     };
+    const seeded = (Array.isArray(initial) ? initial : []).map(function (row) {
+        const next = blank(row.type || 'text');
+        next.id = row.id || '';
+        next.label = row.label || '';
+        next.help = row.help || '';
+        next.required = !!row.required;
+        next.optionsText = row.optionsText || '';
+        return next;
+    });
     return {
-        fields: (Array.isArray(initial) && initial.length) ? initial : [blank()],
-        addField() {
+        fields: seeded,
+        addField(type) {
             if (this.fields.length >= 40) return;
-            this.fields.push(blank());
+            this.fields.push(blank(type));
         },
         removeField(index) {
-            if (this.fields.length <= 1) return;
             this.fields.splice(index, 1);
         },
         move(index, dir) {

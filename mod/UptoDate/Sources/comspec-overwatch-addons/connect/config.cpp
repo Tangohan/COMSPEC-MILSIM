@@ -14,9 +14,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.463;
-        versionStr = "1.4.63";
-        versionAr[] = {1, 4, 63};
+        version = 1.473;
+        versionStr = "1.4.73";
+        versionAr[] = {1, 4, 73};
     };
 };
 
@@ -90,17 +90,25 @@ class CfgFunctions {
             class disconnect {};
             class playtimeTracker {};
             class updatePosition {};
+            class bftPlatform {};
             class applyNetworkProfile {};
             class sampleTerrain {};
             class forceSyncData {};
             class sendIntel {};
             class initACE {};
             class initExplosiveTimers {};
+            class initChargeAceActions {};
             class reportExplosiveTimer {};
             class findChargeObject {};
             class detonateChargeLocal {};
             class detonateChargeById {};
             class pollExplosiveCommands {};
+            class chargeUnhookClacker {};
+            class chargeSetTrigger {};
+            class chargeArmAtak {};
+            class chargeOwnedAtak {};
+            class chargeDetonateAll {};
+            class chargeConfirmDetonate {};
             class aceAddSelfAction {};
             class acePadAction {};
             class pauseManagerShow {};
@@ -238,6 +246,7 @@ class CfgFunctions {
             class registerBetaClient {};
             class onMainMenuLoad {};
             class getCallsign {};
+            class getBloodType {};
             class setCallsign {};
             
             // ATAK Phase 1 & 2 - Nouvelles fonctions
@@ -254,12 +263,14 @@ class CfgFunctions {
             class applyPhoneGeolocOrder {};
             class phoneRevealHas {};
             class phoneTrackConfigure {};
+            class allyTrackConfigure {};
             class setAllyTrack {};
             class vehicleTrackCallsign {};
             class phoneTrackCallsign {};
             class allyTrackCallsign {};
             class reportPhonePosition {};
             class reportAllyPosition {};
+            class reportCrewedAirAssets {};
             class reportGpsBeacon {};
             class curatorSelectedObjects {};
             class initGpsBeacons {};
@@ -524,12 +535,27 @@ class CfgSounds {
     };
     class COMSPEC_ATAK_Order {
         name = "Ordre reçu";
-        sound[] = {"\z\comspec_overwatch\addons\connect\sounds\roger_simple.ogg", 1, 1, 50};
+        sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_order_receive.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_OrderPrio {
         name = "Ordre prioritaire";
-        sound[] = {"\z\comspec_overwatch\addons\connect\sounds\roger_prio.ogg", 1, 1, 50};
+        sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_order_receive.ogg", 1, 1, 50};
+        titles[] = {};
+    };
+    class COMSPEC_ATAK_OrderAck {
+        name = "Ordre accepté";
+        sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_deep_chime.ogg", 1, 1, 50};
+        titles[] = {};
+    };
+    class COMSPEC_ATAK_Intel {
+        name = "Renseignement transmis";
+        sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_deep_chime.ogg", 1, 1, 50};
+        titles[] = {};
+    };
+    class COMSPEC_ATAK_Beep {
+        name = "Bip ATAK";
+        sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_beep.ogg", 1, 1, 50};
         titles[] = {};
     };
 };

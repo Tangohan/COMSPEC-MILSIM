@@ -35,8 +35,13 @@ private _detail = format [
 ] call comspec_overwatch_atak_athena_fnc_athena_pushNotification;
 
 ["ATHENA", format ["Nouvel ordre — %1 (de %2)", _typeLabel, _issuer], 8] call comspec_overwatch_connect_fnc_addScreenToast;
-if (!isNil "cTab_phoneVibrate") then {
-    playSound "cTab_phoneVibrate";
+if (!isNil "comspec_overwatch_connect_fnc_playAtakNotification") then {
+    private _soundEv = if ((toUpper _prio) isEqualTo "URGENT" || {(toUpper _prio) isEqualTo "CONTACT"}) then {
+        "order_priority"
+    } else {
+        "order"
+    };
+    [_soundEv] call comspec_overwatch_connect_fnc_playAtakNotification;
 };
 
 // Miroir IceMan Reports (FRAGO destinataire) — hors signaux terminal / hors drone.

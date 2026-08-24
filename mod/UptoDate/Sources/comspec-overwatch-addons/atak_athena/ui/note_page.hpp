@@ -30,30 +30,27 @@
     #define COMSPEC_NOTE_H(n) ((n) * COMSPEC_NOTE_POS_H)
 #endif
 
-#define NOTE_BG_TITLE {0.02, 0.03, 0.09, 0.92}
-#define NOTE_BG_BODY {0.02, 0.03, 0.07, 0.9}
-#define NOTE_BTN {0.12, 0.10, 0.42, 0.95}
-#define NOTE_BTN_F {0.18, 0.15, 0.55, 1}
-#define NOTE_ACCENT {0.30, 0.26, 0.85, 0.95}
+#define NOTE_BG_TITLE ATAK_BG_TITLE
+#define NOTE_BG_BODY ATAK_BG_DETAIL
+#define NOTE_BTN ATAK_BG_TILE
+#define NOTE_BTN_F ATAK_BG_TILE_F
+#define NOTE_ACCENT ATAK_ACCENT
 
 class COMSPEC_ATAK_Note: ATAK_Message
 {
     class controls
     {
-        class Title: BCE_RscButtonMenu
+        class Title: COMSPEC_ATAK_Title
         {
             idc = 9862;
             x = 0;
             y = 0;
             w = QUOTE(COMSPEC_NOTE_W(3));
             h = QUOTE(COMSPEC_NOTE_H(0.62));
-            size = QUOTE(COMSPEC_NOTE_H(0.44));
-            text = "Fiches de renseignement";
-            colorBackground[] = NOTE_BG_TITLE;
-            colorBackground2[] = NOTE_BG_TITLE;
-            colorBackgroundFocused[] = {0.04, 0.05, 0.14, 0.95};
+            size = QUOTE(COMSPEC_NOTE_H(0.40));
+            text = "  Fiches de renseignement";
             onButtonClick = "call BCE_fnc_ATAK_toggleSubListMenu";
-            class Attributes { align = "center"; valign = "middle"; };
+            tooltip = "Revenir au tiroir des applications.";
         };
 
         class AccentBar: RscText
@@ -86,7 +83,7 @@ class COMSPEC_ATAK_Note: ATAK_Message
             };
         };
 
-        class BtnCompose: BCE_RscButtonMenu
+        class BtnCompose: COMSPEC_ATAK_BtnGo
         {
             idc = 9864;
             x = QUOTE(COMSPEC_NOTE_W(0.08));
@@ -99,7 +96,6 @@ class COMSPEC_ATAK_Note: ATAK_Message
             colorBackground2[] = NOTE_BTN;
             colorBackgroundFocused[] = NOTE_BTN_F;
             onButtonClick = "[''] call comspec_overwatch_atak_athena_fnc_athena_openNote";
-            class Attributes { align = "center"; valign = "middle"; };
         };
 
         class BtnAmbiance: BtnCompose
@@ -108,7 +104,11 @@ class COMSPEC_ATAK_Note: ATAK_Message
             y = QUOTE(COMSPEC_NOTE_H(5.90));
             w = QUOTE(COMSPEC_NOTE_W(1.38));
             text = "Fiche d’ambiance";
+            colorBackground[] = ATAK_BG_TILE;
+            colorBackground2[] = ATAK_BG_TILE;
+            colorBackgroundFocused[] = ATAK_BG_TILE_F;
             onButtonClick = "['FRA'] call comspec_overwatch_atak_athena_fnc_athena_openNote";
+            class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
         };
 
         class BtnContact: BtnCompose
@@ -118,7 +118,11 @@ class COMSPEC_ATAK_Note: ATAK_Message
             y = QUOTE(COMSPEC_NOTE_H(5.90));
             w = QUOTE(COMSPEC_NOTE_W(1.38));
             text = "Fiche de contact";
+            colorBackground[] = ATAK_BG_TILE;
+            colorBackground2[] = ATAK_BG_TILE;
+            colorBackgroundFocused[] = ATAK_BG_TILE_F;
             onButtonClick = "['FRC'] call comspec_overwatch_atak_athena_fnc_athena_openNote";
+            class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
         };
 
         class BtnRefresh: BtnCompose
@@ -127,7 +131,11 @@ class COMSPEC_ATAK_Note: ATAK_Message
             y = QUOTE(COMSPEC_NOTE_H(6.75));
             w = QUOTE(COMSPEC_NOTE_W(1.38));
             text = "Actualiser";
+            colorBackground[] = ATAK_BG_TILE;
+            colorBackground2[] = ATAK_BG_TILE;
+            colorBackgroundFocused[] = ATAK_BG_TILE_F;
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_updateNote";
+            class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
         };
 
         class BtnAthena: BtnCompose
@@ -135,6 +143,10 @@ class COMSPEC_ATAK_Note: ATAK_Message
             idc = 9868;
             x = QUOTE(COMSPEC_NOTE_W(1.54));
             y = QUOTE(COMSPEC_NOTE_H(6.75));
+            colorBackground[] = ATAK_BG_TILE;
+            colorBackground2[] = ATAK_BG_TILE;
+            colorBackgroundFocused[] = ATAK_BG_TILE_F;
+            class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
             w = QUOTE(COMSPEC_NOTE_W(1.38));
             text = "Athena";
             onButtonClick = "['all'] call comspec_overwatch_atak_athena_fnc_athena_openFeature";

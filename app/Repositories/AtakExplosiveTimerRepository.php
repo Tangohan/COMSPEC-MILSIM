@@ -16,7 +16,7 @@ class AtakExplosiveTimerRepository
 
     private const STATUSES = ['armed', 'detonated', 'defused'];
 
-    private const TRIGGER_KINDS = ['timer', 'clacker', 'cellphone', 'command'];
+    private const TRIGGER_KINDS = ['timer', 'clacker', 'cellphone', 'command', 'atak'];
 
     private ?bool $tablesReady = null;
 
@@ -308,6 +308,10 @@ class AtakExplosiveTimerRepository
         if ($this->normalizeStatus((string) ($row['status'] ?? '')) !== 'armed') {
             return null;
         }
+        $kind = $this->normalizeTriggerKind((string) ($row['trigger_kind'] ?? ''));
+        if (!in_array($kind, ['atak', 'command'], true)) {
+            return null;
+        }
         $by = mb_substr(trim($by), 0, 120);
         $already = trim((string) ($row['detonate_requested_at'] ?? '')) !== ''
             && trim((string) ($row['detonate_ack_at'] ?? '')) === '';
@@ -325,6 +329,47 @@ class AtakExplosiveTimerRepository
         }
 
         return $this->findById($id);
+    }
+
+    /**
+     * @param list<string> $kinds
+     * @return list<array<string, mixed>>
+     */
+    public function requestDetonateAll(int $tenantId, int $mapId, string $by, array $kinds = ['atak']): array
+    {
+        if (!$this->commandColumnsReady()) {
+            return [];
+        }
+        $allowed = [];
+        foreach ($kinds as $kind) {
+            $n = $this->normalizeTriggerKind((string) $kind);
+            if ($n !== '') {
+                $allowed[$n] = true;
+            }
+        }
+        if ($allowed === []) {
+            $allowed = ['atak' => true];
+        }
+        $out = [];
+        foreach ($this->listForMap($tenantId, $mapId) as $row) {
+            if (($row['status'] ?? '') !== 'armed') {
+                continue;
+            }
+            $kind = $this->normalizeTriggerKind((string) ($row['trigger_kind'] ?? ''));
+            if (!isset($allowed[$kind])) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $updated = $this->requestDetonate($tenantId, $mapId, $id, $by);
+            if ($updated !== null) {
+                $out[] = $updated;
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -431,7 +476,7 @@ class AtakExplosiveTimerRepository
         return in_array($k, self::STATUSES, true) ? $k : 'armed';
     }
 
-    private function normalizeTriggerKind(string $kind): string
+    public function normalizeTriggerKind(string $kind): string
     {
         $k = strtolower(trim($kind));
         if ($k === 'cell' || $k === 'phone') {
@@ -443,16 +488,20 @@ class AtakExplosiveTimerRepository
         if ($k === 'on_demand' || $k === 'demand' || $k === 'toc') {
             $k = 'command';
         }
+        if ($k === 'athena' || $k === 'web' || $k === 'toc_only' || $k === 'atak_only') {
+            $k = 'atak';
+        }
 
         return in_array($k, self::TRIGGER_KINDS, true) ? $k : '';
     }
 
-    private function triggerLabelFr(string $kind): string
+    public function triggerLabelFr(string $kind): string
     {
         return match ($kind) {
             'clacker' => 'Déclencheur',
             'cellphone' => 'Téléphone',
             'command' => 'À la demande',
+            'atak' => 'Uniquement depuis ATAK',
             default => 'À retardement',
         };
     }

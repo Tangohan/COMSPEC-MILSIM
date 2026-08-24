@@ -20,12 +20,6 @@ if ((_input getOrDefault ["command", ""]) != "") then {
     _payload = _input getOrDefault ["payload", _input];
 };
 
-private _json = if ((toUpper _command) isEqualTo "SUBMITSSEPERSON" && {!isNil "comspec_sse_fnc_toJsonPerson"}) then {
-    [_payload] call comspec_sse_fnc_toJsonPerson
-} else {
-    [_payload] call comspec_sse_fnc_toJsonApprox
-};
-
 private _preferExt = missionNamespace getVariable ["comspec_sse_preferExtension", true];
 
 // Ne pas utiliser str sur le statut : str "OK" vaut "\"OK\"" et râte la comparaison.
@@ -57,6 +51,21 @@ private _needsTypedApi = _needsPersonApi
     || {(toUpper _kind) in ["DIGITAL", "GENERIC"]};
 
 if (_preferExt) exitWith {
+    // _json déclaré ICI : un private du parent n’est pas toujours visible dans exitWith,
+    // et une sérialisation qui plante laissait [_json] indéfini (Resynch / file SEEK).
+    private _json = "";
+    if ((toUpper _command) isEqualTo "SUBMITSSEPERSON" && {!isNil "comspec_sse_fnc_toJsonPerson"}) then {
+        _json = [_payload] call comspec_sse_fnc_toJsonPerson;
+    } else {
+        if (!isNil "comspec_sse_fnc_toJsonApprox") then {
+            _json = [_payload] call comspec_sse_fnc_toJsonApprox;
+        };
+    };
+    if (isNil "_json" || {!(_json isEqualType "")} || {_json isEqualTo ""}) exitWith {
+        [format ["sendViaOverwatch FAIL serial kind=%1 cmd=%2", _kind, _command], "WARN"] call comspec_sse_fnc_log;
+        false
+    };
+
     private _isAthenaId = {
         params ["_s"];
         if (!(_s isEqualType "")) exitWith { false };

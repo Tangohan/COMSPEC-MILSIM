@@ -30,6 +30,7 @@ private _kindFromTrigger = {
     params ["_cfg"];
     private _s = toLower (if (_cfg isEqualType "") then { _cfg } else { format ["%1", _cfg] });
     if (_s find "timer" >= 0) exitWith { "timer" };
+    if (_s find "atak" >= 0 || {_s find "comspec" >= 0}) exitWith { "atak" };
     if (_s find "cell" >= 0) exitWith { "cellphone" };
     if (_s find "command" >= 0 || {_s find "clacker" >= 0} || {_s find "m57" >= 0} || {_s find "m26" >= 0} || {_s find "mk16" >= 0} || {_s find "deadman" >= 0}) exitWith { "clacker" };
     "command"
@@ -59,6 +60,27 @@ missionNamespace setVariable ["COMSPEC_ExplosiveKindFromClackers", _kindFromClac
     if (!(_unit isEqualTo player)) exitWith {};
     if (_magClassname isEqualType "" && {_magClassname isNotEqualTo ""}) then {
         missionNamespace setVariable ["COMSPEC_LastAceExpMag", _magClassname, false];
+    };
+    if (isNull _placeholder) exitWith {};
+    if (_placeholder getVariable ["COMSPEC_atakActionOnPlaceholder", false]) exitWith {};
+    _placeholder setVariable ["COMSPEC_atakActionOnPlaceholder", true, false];
+    if (!isNil "ace_interact_menu_fnc_createAction" && {!isNil "ace_interact_menu_fnc_addActionToObject"}) then {
+        private _arm = [
+            "COMSPEC_ArmAtakObj",
+            "Uniquement depuis ATAK",
+            "\a3\ui_f\data\igui\cfg\simpletasks\types\destroy_ca.paa",
+            {
+                params ["_target", "_player"];
+                [_target, _player] call comspec_overwatch_connect_fnc_chargeArmAtak;
+            },
+            { true },
+            { [] }
+        ] call ace_interact_menu_fnc_createAction;
+        _arm = [_arm] call comspec_overwatch_connect_fnc_acePadAction;
+        if (_arm isNotEqualTo []) then {
+            [_placeholder, 0, ["ACE_MainActions", "ACE_SetTrigger"], _arm] call ace_interact_menu_fnc_addActionToObject;
+            [_placeholder, 0, ["ACE_MainActions"], _arm] call ace_interact_menu_fnc_addActionToObject;
+        };
     };
 }] call CBA_fnc_addEventHandler;
 
@@ -99,7 +121,12 @@ missionNamespace setVariable ["COMSPEC_ExplosiveKindFromClackers", _kindFromClac
     private _timerSec = missionNamespace getVariable ["COMSPEC_LastAceTimerSec", 0];
     private _timerUiOpen = !isNull _timerDisplay;
     private _timerFresh = ((diag_tickTime - _timerAt) <= 8 && {_timerSec >= 1});
-    if (_timerUiOpen || {_kind isEqualTo "" && {_timerFresh}}) then {
+    private _wantAtak = missionNamespace getVariable ["COMSPEC_ArmAsAtak", false];
+    if (_wantAtak) then {
+        missionNamespace setVariable ["COMSPEC_ArmAsAtak", false, false];
+        _kind = "atak";
+    };
+    if (!_wantAtak && {_timerUiOpen || {_kind isEqualTo "" && {_timerFresh}}}) then {
         _kind = "timer";
         _delay = _timerSec;
     };
@@ -108,8 +135,13 @@ missionNamespace setVariable ["COMSPEC_ExplosiveKindFromClackers", _kindFromClac
     };
 
     _explosive setVariable ["COMSPEC_timerReported", true, true];
+    _explosive setVariable ["COMSPEC_triggerKind", _kind, true];
+    _explosive setVariable ["COMSPEC_chargeOwnerUid", getPlayerUID _unit, true];
     if (_kind isEqualTo "timer") then {
         _explosive setVariable ["COMSPEC_fuseSeconds", _delay, true];
+    };
+    if (_kind isEqualTo "atak") then {
+        [_explosive, _unit] call comspec_overwatch_connect_fnc_chargeUnhookClacker;
     };
 
     private _cid = [_explosive, _delay, _unit, "armed", "", _kind] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
@@ -160,5 +192,17 @@ if (!isNil "CBA_fnc_addPerFrameHandler") then {
         };
     }, 0.2] call CBA_fnc_addPerFrameHandler;
 };
+
+if (!isNil "ace_explosives_fnc_addDetonateHandler") then {
+    [{
+        params ["_unit", "_range", "_explosive", "_fuse", "_triggerItem"];
+        if (isNull _explosive) exitWith { true };
+        if ((toLower (_explosive getVariable ["COMSPEC_triggerKind", ""])) isNotEqualTo "atak") exitWith { true };
+        if (_explosive getVariable ["COMSPEC_atakFireOk", false]) exitWith { true };
+        false
+    }] call ace_explosives_fnc_addDetonateHandler;
+};
+
+[] call comspec_overwatch_connect_fnc_initChargeAceActions;
 
 ["INFO", "Explosives", "Suivi des charges ACE (événements, pas de wrap)"] call comspec_overwatch_connect_fnc_log;

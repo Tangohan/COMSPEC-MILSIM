@@ -222,6 +222,13 @@ final class AtakMotionMath
         if (in_array($explicit, $allowed, true)) {
             return $explicit;
         }
+        $groundAliases = [
+            'TANK', 'APC', 'IFV', 'TRUCK', 'LIGHT_VEHICLE', 'ARTILLERY', 'MORTAR',
+            'BOAT', 'SHIP', 'CAR', 'ARMOR', 'MECH', 'MBT',
+        ];
+        if (in_array($explicit, $groundAliases, true)) {
+            return self::CAT_GROUND_VEHICLE;
+        }
 
         $kind = strtolower(trim((string) ($arma['unit_kind'] ?? '')));
         $ac = strtolower(trim((string) ($arma['aircraft_type'] ?? $arma['model'] ?? $arma['vehicle'] ?? '')));

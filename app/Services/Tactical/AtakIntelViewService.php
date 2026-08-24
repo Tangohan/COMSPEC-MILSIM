@@ -192,7 +192,8 @@ final class AtakIntelViewService
         $alerts = [];
         $now = time();
 
-        if ($this->realism->tablesReady()) {
+        try {
+            if ($this->realism->tablesReady()) {
             foreach ($this->realism->listTerminals($tenantId) as $terminal) {
                 if (AtakRealismRepository::isWebSessionTerminal($terminal)) {
                     continue;
@@ -225,20 +226,26 @@ final class AtakIntelViewService
                 }
                 $terminalId = (int) ($terminal['id'] ?? 0);
                 if ($terminalId > 0) {
-                    $cert = $this->realism->findLatestCertificateForTerminal($tenantId, $terminalId);
-                    if ($cert === null || !$this->realism->certificateIsValid($cert)) {
-                        $alerts[] = [
-                            'code' => 'bad_certificate',
-                            'severity' => 'warn',
-                            'title' => 'Certificat invalide',
-                            'message' => $label . ' — certificat manquant, expiré ou révoqué.',
-                            'call_sign' => (string) ($terminal['operator_callsign'] ?? ''),
-                            'terminal_uid' => $uid,
-                            'at' => (string) ($cert['updated_at'] ?? $terminal['updated_at'] ?? ''),
-                        ];
+                    try {
+                        $cert = $this->realism->findLatestCertificateForTerminal($tenantId, $terminalId);
+                        if ($cert === null || !$this->realism->certificateIsValid($cert)) {
+                            $alerts[] = [
+                                'code' => 'bad_certificate',
+                                'severity' => 'warn',
+                                'title' => 'Certificat invalide',
+                                'message' => $label . ' — certificat manquant, expiré ou révoqué.',
+                                'call_sign' => (string) ($terminal['operator_callsign'] ?? ''),
+                                'terminal_uid' => $uid,
+                                'at' => (string) ($cert['updated_at'] ?? $terminal['updated_at'] ?? ''),
+                            ];
+                        }
+                    } catch (\Throwable) {
                     }
                 }
             }
+            }
+        } catch (\Throwable) {
+            // Registre terminaux / certificats incomplet : on continue avec les unités.
         }
 
         try {

@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.45;
-        versionStr = "1.0.45";
-        versionAr[] = {1, 0, 45};
+        version = 1.0.49;
+        versionStr = "1.0.49";
+        versionAr[] = {1, 0, 49};
     };
 };
 
@@ -159,6 +159,7 @@ class RscCombo;
 class RscPictureKeepAspect;
 class RscControlsGroup;
 
+#include "ui\atak_theme.hpp"
 #include "ui\athena_page.hpp"
 #include "ui\status_page.hpp"
 #include "ui\sound_page.hpp"

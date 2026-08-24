@@ -27,6 +27,8 @@ $featuredImg = ($featured && is_string($featured['image'] ?? null) && $featured[
     ? asset_url((string) $featured['image'])
     : '';
 $discoverHref = url('a-propos');
+$dispatches = is_array($dispatches ?? null) ? $dispatches : [];
+$featuredDispatch = is_array($featuredDispatch ?? null) ? $featuredDispatch : null;
 ?>
 <div class="cl" data-cl-root>
     <header class="cl-hero">
@@ -37,7 +39,7 @@ $discoverHref = url('a-propos');
             <h1><?= $h(__('site.changelog_title')) ?></h1>
             <p class="cl-hero__lead"><?= $h(__('site.changelog_lead')) ?></p>
             <div class="cl-hero__actions">
-                <a href="#release" class="hi-cta hi-cta-solid"><?= $h(__('site.cl_cta_latest')) ?></a>
+                <a href="#journal" class="hi-cta hi-cta-solid"><?= $h(__('site.cl_cta_latest')) ?></a>
                 <a href="<?= $h($discoverHref) ?>" class="hi-cta hi-cta-ghost"><?= $h(__('site.cl_cta_discover')) ?></a>
             </div>
             <dl class="cl-status">
@@ -61,6 +63,7 @@ $discoverHref = url('a-propos');
         <div class="cl-wrap cl-nav__inner">
             <nav class="cl-nav__links" aria-label="<?= $h(__('site.changelog')) ?>">
                 <a href="#presentation"><?= $h(__('site.cl_nav_presentation')) ?></a>
+                <a href="#journal"><?= $h(__('site.cl_nav_dispatch')) ?></a>
                 <a href="#release"><?= $h(__('site.cl_nav_release')) ?></a>
                 <a href="#historique"><?= $h(__('site.cl_nav_history')) ?></a>
                 <a href="#modules"><?= $h(__('site.cl_nav_modules')) ?></a>
@@ -103,6 +106,41 @@ $discoverHref = url('a-propos');
             </div>
         </div>
     </section>
+
+    <?php if ($featuredDispatch !== null || $dispatches !== []): ?>
+    <section class="cl-section" id="journal">
+        <div class="cl-wrap">
+            <p class="cl-section__kicker"><?= $h(__('site.cl_dispatch_kicker')) ?></p>
+            <h2 class="cl-section__title"><?= $h(__('site.cl_dispatch_title')) ?></h2>
+            <p class="cl-hero__lead" style="margin-top:0.85rem"><?= $h(__('site.cl_dispatch_lead')) ?></p>
+            <?php if ($featuredDispatch !== null): ?>
+                <div
+                    class="tr-featured"
+                    data-cl-reveal
+                    data-cl-card
+                    data-groups="<?= $h(implode(' ', array_map('strval', $featuredDispatch['filter_groups'] ?? []))) ?>"
+                    data-year="<?= $h((string) ($featuredDispatch['year'] ?? '')) ?>"
+                    data-search="<?= $h($featuredDispatch['search'] ?? '') ?>"
+                >
+                    <?php $dispatch = $featuredDispatch; require base_path('views/partials/dispatch_article.php'); ?>
+                    <p class="tr-featured__more"><a href="<?= $h($featuredDispatch['href'] ?? '#') ?>"><?= $h(__('site.cl_dispatch_open')) ?></a></p>
+                </div>
+            <?php endif; ?>
+            <?php if ($dispatches !== []): ?>
+                <div class="tr-grid">
+                    <?php foreach ($dispatches as $dispatch): ?>
+                        <?php
+                        if ($featuredDispatch && ($dispatch['id'] ?? '') === ($featuredDispatch['id'] ?? '')) {
+                            continue;
+                        }
+                        require base_path('views/partials/dispatch_card.php');
+                        ?>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <?php if ($featured !== null): ?>
     <section

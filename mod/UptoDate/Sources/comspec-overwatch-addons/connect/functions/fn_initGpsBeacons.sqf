@@ -39,10 +39,17 @@ private _scan = {
     if (!(_phones isEqualType [])) then { _phones = []; };
     private _allies = missionNamespace getVariable ["COMSPEC_AllyTrackUnits", []];
     if (!(_allies isEqualType [])) then { _allies = []; };
+    private _allyIds = missionNamespace getVariable ["COMSPEC_AllyTrackNetIds", []];
+    if (!(_allyIds isEqualType [])) then { _allyIds = []; };
     {
         if (isNull _x || {!alive _x}) then { continue };
         if (isPlayer _x) then { continue };
-        if ([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then {
+        private _nid = netId _x;
+        private _listed = _nid in _allyIds;
+        if (_listed && {!([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag)}) then {
+            _x setVariable ["COMSPEC_AllyTrack", true, true];
+        };
+        if ([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag || {_listed}) then {
             _allies pushBackUnique _x;
         };
         if ([_x, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then {
@@ -84,6 +91,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
         {
             if (isNull _x || {!alive _x}) then { continue };
             if (isPlayer _x) then { continue };
+            if !([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then { continue };
             _keepA pushBack _x;
             [_x] call comspec_overwatch_connect_fnc_reportAllyPosition;
         } forEach _allies;
@@ -105,6 +113,10 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
         if ((count _keepU) isNotEqualTo (count _phones)) then {
             missionNamespace setVariable ["COMSPEC_PhoneTrackUnits", _keepU, false];
         };
+    };
+
+    if (!isNil "comspec_overwatch_connect_fnc_reportCrewedAirAssets") then {
+        [] call comspec_overwatch_connect_fnc_reportCrewedAirAssets;
     };
 }, 8, []] call CBA_fnc_addPerFrameHandler;
 

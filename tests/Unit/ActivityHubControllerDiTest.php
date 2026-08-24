@@ -51,4 +51,12 @@ final class ActivityHubControllerDiTest extends TestCase
             );
         }
     }
+
+    public function testFifthDependencyIsOptionalForLegacyFourArgumentWiring(): void
+    {
+        $ctor = (new ReflectionClass(ActivityHubController::class))->getConstructor();
+        self::assertNotNull($ctor);
+        self::assertSame(5, $ctor->getNumberOfParameters());
+        self::assertSame(4, $ctor->getNumberOfRequiredParameters());
+    }
 }

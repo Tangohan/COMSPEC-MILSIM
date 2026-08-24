@@ -19,24 +19,25 @@ if (_hasBii && {!isNil "BII_fnc_identifi_hasDevice"}) then {
 };
 
 private _lines = [
-    "<t size='0.85'>Terminal biométrique BII-10 Identifi</t>",
+    "<t size='0.95' color='#5EC8F0'>Identification</t>",
+    "<t size='0.72' color='#A0A0A0'>Reconnaissance et dossiers terrain</t>",
     "",
     if (_hasBii) then {
-        "<t color='#8dffc0'>Mod BII détecté</t>"
+        "<t color='#7CFF9A'>Module d’identification présent</t>"
     } else {
-        "<t color='#ffb080'>Mod BII Identifi non chargé</t>"
+        "<t color='#FF8A7A'>Module d’identification absent</t>"
     },
     if (_hasDevice) then {
-        "<t color='#8dffc0'>Appareil BII-10 en inventaire</t>"
+        "<t color='#7CFF9A'>Appareil d’identification en inventaire</t>"
     } else {
         if (_hasBii) then {
-            "<t color='#ffd080'>Équipez un BII-10 Identifi</t>"
+            "<t color='#FFD080'>Équipez un appareil d’identification</t>"
         } else {
             ""
         }
     },
     "",
-    "<t size='0.72' color='#b9efff'>Les boutons ouvrent l’application Identifi (même coque téléphone) sur l’onglet demandé.</t>"
+    "<t size='0.72' color='#A0A0A0'>Choisissez un outil ci-dessous. L’écran s’ouvre dans le même téléphone.</t>"
 ];
 
 _body ctrlSetStructuredText parseText (_lines joinString "<br/>");

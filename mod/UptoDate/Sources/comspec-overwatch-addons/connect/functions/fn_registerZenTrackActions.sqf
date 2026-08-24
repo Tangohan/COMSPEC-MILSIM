@@ -64,35 +64,46 @@ private _configurePhone = {
     [_obj, _delay] call comspec_overwatch_connect_fnc_phoneTrackConfigure;
 };
 
-private _toggleAlly = {
-    params ["_obj", ["_pool", []]];
+private _applyAlly = {
+    params ["_obj", ["_pool", []], ["_forced", -1]];
     private _targets = [_obj, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusCollectAllyAi", { [] }]);
-    if (_targets isEqualTo [] && {!isNull _obj} && {_obj isKindOf "CAManBase"} && {!isPlayer _obj}) then {
-        { if (!isPlayer _x && {alive _x}) then { _targets pushBackUnique _x }; } forEach (units group _obj);
-    };
     if (_targets isEqualTo []) exitWith {
         ["Sélectionnez une IA (ou un véhicule avec un équipage IA).", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
     };
-    if ((count _targets) == 1) then {
-        private _u0 = _targets select 0;
-        { if (!isPlayer _x && {alive _x}) then { _targets pushBackUnique _x }; } forEach (units group _u0);
-    };
-    private _anyOff = false;
-    {
-        if !([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then { _anyOff = true };
-    } forEach _targets;
-    private _on = _anyOff;
-    { [_x, _on] call comspec_overwatch_connect_fnc_setAllyTrack; } forEach _targets;
-    if (_on) then {
-        [format ["%1 unité(s) alliée(s) visible(s) sur l’ATAK.", count _targets], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
+    private _on = if (_forced isEqualTo -1) then {
+        private _anyOff = false;
+        {
+            if !([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then { _anyOff = true };
+        } forEach _targets;
+        _anyOff
     } else {
-        [format ["Suivi ATAK coupé pour %1 unité(s).", count _targets], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
+        (_forced isEqualTo true) || {_forced isEqualTo 1}
     };
+    if (_on && {(count _targets) == 1} && {!isNil "zen_dialog_fnc_create"}) exitWith {
+        [_targets select 0] call comspec_overwatch_connect_fnc_allyTrackConfigure;
+    };
+    {
+        [_x, _on] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 0];
+        if (_on) then {
+            _x setVariable ["COMSPEC_AllyTrackLastAt", -1e9, false];
+            [_x] call comspec_overwatch_connect_fnc_reportAllyPosition;
+        };
+    } forEach _targets;
+    if (_on) then {
+        [format ["%1 unité(s) alliée(s) visible(s) sur l’ATAK. « Retirer l’IA de l’ATAK » coupe le suivi.", count _targets], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
+    } else {
+        [format ["Suivi ATAK retiré pour %1 unité(s).", count _targets], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
+    };
+};
+private _toggleAlly = {
+    params ["_obj", ["_pool", []]];
+    [_obj, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusApplyAllyTrack", {}]);
 };
 
 missionNamespace setVariable ["COMSPEC_ZeusToggleGpsBeacon", _toggleGps];
 missionNamespace setVariable ["COMSPEC_ZeusTogglePhoneTrack", _configurePhone];
 missionNamespace setVariable ["COMSPEC_ZeusConfigurePhoneTrack", _configurePhone];
+missionNamespace setVariable ["COMSPEC_ZeusApplyAllyTrack", _applyAlly];
 missionNamespace setVariable ["COMSPEC_ZeusToggleAllyTrack", _toggleAlly];
 missionNamespace setVariable ["COMSPEC_ZeusCollectAllyAi", _collectAi];
 
@@ -184,17 +195,36 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
             if (isNull _obj) then {
                 { if (!(_x isKindOf "CAManBase")) exitWith { _obj = _x }; } forEach _pool;
             };
-            [_obj, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusToggleAllyTrack", {}]);
+            [_obj, _pool, true] call (missionNamespace getVariable ["COMSPEC_ZeusApplyAllyTrack", {}]);
         },
         {
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
-            ({
-                (_x isKindOf "CAManBase" && {!isPlayer _x})
-                || {({ !isPlayer _y && {alive _y} } count (crew _x)) > 0}
-            } count _pool) > 0
+            private _units = [objNull, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusCollectAllyAi", { [] }]);
+            ({ !([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) } count _units) > 0
         }
     ] call zen_context_menu_fnc_createAction;
     [_allyAction, [], 7] call zen_context_menu_fnc_addAction;
+
+    private _allyOffAction = [
+        "comspec_ally_track_off",
+        "Retirer l’IA de l’ATAK",
+        _iconAlly,
+        {
+            private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
+            private _obj = objNull;
+            { if (_x isKindOf "CAManBase" && {!isPlayer _x}) exitWith { _obj = _x }; } forEach _pool;
+            if (isNull _obj) then {
+                { if (!(_x isKindOf "CAManBase")) exitWith { _obj = _x }; } forEach _pool;
+            };
+            [_obj, _pool, false] call (missionNamespace getVariable ["COMSPEC_ZeusApplyAllyTrack", {}]);
+        },
+        {
+            private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
+            private _units = [objNull, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusCollectAllyAi", { [] }]);
+            ({ [_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag } count _units) > 0
+        }
+    ] call zen_context_menu_fnc_createAction;
+    [_allyOffAction, [], 7] call zen_context_menu_fnc_addAction;
 };
 
 if (!isNil "ace_zeus_fnc_addModule") then {

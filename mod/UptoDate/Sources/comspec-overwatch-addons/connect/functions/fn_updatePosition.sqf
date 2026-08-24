@@ -266,22 +266,7 @@ private _fnc_num = { (_this select 0) toFixed (_this select 1) };
 // JSON cinématique : vitesse / vecteur toujours, orientation objet distincte du cap de déplacement
 private _velDir = (_velocity select 0) atan2 (_velocity select 1);
 if (_velDir < 0) then { _velDir = _velDir + 360; };
-private _platform = "INFANTRY";
-if (_inVeh) then {
-    if (_veh isKindOf "UAV" || {unitIsUAV _veh}) then {
-        _platform = "UAV";
-    } else {
-        if (_veh isKindOf "Helicopter") then {
-            _platform = "HELICOPTER";
-        } else {
-            if (_veh isKindOf "Plane" || {_veh isKindOf "Air"}) then {
-                _platform = "FIXED_WING";
-            } else {
-                _platform = "GROUND_VEHICLE";
-            };
-        };
-    };
-};
+private _platform = [_unit] call comspec_overwatch_connect_fnc_bftPlatform;
 private _terrainZ = getTerrainHeightASL [_pos select 0, _pos select 1];
 private _vehJson = format [
     "{""speed"":%1,""in_vehicle"":%2,""asl_z"":%3,""pos_z"":%3,""terrain_z"":%4,""heading_object"":%5,""velocity"":[%6,%7,%8]",

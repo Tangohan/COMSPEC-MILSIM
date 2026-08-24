@@ -51,8 +51,8 @@ window.ATAKAirAssets = (function () {
       var html = '<div class="atak-air-asset-card ' + statusClass(status) + '" data-callsign="' + (a.callsign || '').replace(/"/g, '&quot;') + '" data-x="' + (a.pos_x != null ? a.pos_x : '') + '" data-y="' + (a.pos_y != null ? a.pos_y : '') + '">' +
         '<div class="atak-air-asset-callsign">' + (a.callsign || '—') + '</div>' +
         '<div class="atak-air-asset-model">' + (a.model || '—') + (a.aircraft_count > 1 ? ' ×' + a.aircraft_count : '') + '</div>' +
-        '<div class="atak-air-asset-freq">FREQ ' + (a.freq || '—') + '</div>' +
-        '<div class="atak-air-asset-laser">LASER ' + (a.laser || '1688') + '</div>' +
+        (a.freq ? '<div class="atak-air-asset-freq">FREQ ' + a.freq + '</div>' : '') +
+        (a.laser ? '<div class="atak-air-asset-laser">LASER ' + a.laser + '</div>' : '') +
         '<span class="atak-air-asset-status ' + statusClass(status) + '">' + (status === 'SUSPECT' ? 'SUSPECT' : status === 'OFFLINE' ? 'OFFLINE' : 'IN-FLIGHT') + '</span>' +
         (pilotStatus ? '<div class="atak-air-asset-pilot">' + pilotStatus + '</div>' : '') +
         '</div>';

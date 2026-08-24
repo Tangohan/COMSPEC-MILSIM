@@ -164,7 +164,7 @@ require __DIR__ . '/_subnav.php';
                     <?php foreach ($recentDevices as $d): ?>
                         <tr>
                             <td class="record-id"><?= $h($d['reference_code'] ?? '') ?></td>
-                            <td><?= $h($d['device_type_label'] ?? '') ?></td>
+                            <td><?= $h(trim((string) ($d['device_type_label'] ?? '')) ?: 'Inconnu') ?></td>
                             <td><span class="badge"><?= $h($d['status_label'] ?? '') ?></span></td>
                             <td><a class="btn-open" href="<?= $h(url('atak/sse/exploitation-numerique/supports/' . (int) ($d['id'] ?? 0))) ?>">Ouvrir</a></td>
                         </tr>

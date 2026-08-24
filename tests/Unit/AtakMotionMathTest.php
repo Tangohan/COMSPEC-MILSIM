@@ -138,4 +138,13 @@ final class AtakMotionMathTest extends TestCase
         $last = $trail[count($trail) - 1];
         self::assertTrue(!empty($last['gap']) || !empty($last['uncertain']));
     }
+
+    public function testFineVehiclePlatformsCountAsGroundForMotion(): void
+    {
+        self::assertSame(AtakMotionMath::CAT_GROUND_VEHICLE, AtakMotionMath::classifyCategory(['platform' => 'TANK']));
+        self::assertSame(AtakMotionMath::CAT_GROUND_VEHICLE, AtakMotionMath::classifyCategory(['platform' => 'APC']));
+        self::assertSame(AtakMotionMath::CAT_GROUND_VEHICLE, AtakMotionMath::classifyCategory(['platform' => 'ARTILLERY']));
+        self::assertSame(AtakMotionMath::CAT_HELICOPTER, AtakMotionMath::classifyCategory(['platform' => 'HELICOPTER']));
+        self::assertSame(AtakMotionMath::CAT_INFANTRY, AtakMotionMath::classifyCategory(['platform' => 'INFANTRY']));
+    }
 }

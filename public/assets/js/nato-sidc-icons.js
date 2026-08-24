@@ -22,32 +22,120 @@ window.NatoSidcIcons = (function () {
     return 'friend';
   }
 
-  function guessRole(role, aircraftType) {
+  function flagTrue(v) {
+    return v === true || v === 1 || v === '1' || v === 'true';
+  }
+
+  function platformToRoleKey(platform) {
+    var p = String(platform || '').toUpperCase().replace(/[\s-]+/g, '_');
+    if (!p) return '';
+    if (p === 'TANK' || p === 'ARMOR' || p === 'MBT') return 'armor';
+    if (p === 'IFV' || p === 'APC' || p === 'MECH') return 'mechanized';
+    if (p === 'ARTILLERY' || p === 'ARTY') return 'artillery';
+    if (p === 'MORTAR') return 'mortar';
+    if (p === 'HELICOPTER' || p === 'ROTARY' || p === 'HELI') return 'aviation_rotary';
+    if (p === 'FIXED_WING' || p === 'PLANE' || p === 'AIRCRAFT') return 'aviation_fixed';
+    if (p === 'UAV' || p === 'DRONE') return 'uav';
+    if (p === 'TRUCK' || p === 'SUPPORT' || p === 'LOGISTICS') return 'logistics';
+    if (p === 'BOAT' || p === 'SHIP' || p === 'NAVAL') return 'naval';
+    if (p === 'LIGHT_VEHICLE' || p === 'CAR' || p === 'MRAP' || p === 'MOTORIZED') return 'motorized';
+    if (p === 'GROUND_VEHICLE') return 'ground_vehicle';
+    if (p === 'INFANTRY' || p === 'MAN' || p === 'SOLDIER' || p === 'FOOT') return 'infantry';
+    return '';
+  }
+
+  function guessFromVehicleName(name) {
+    var v = String(name || '').toLowerCase();
+    if (!v) return '';
+    if (/uav|darter|greyhawk|falcon|pelican|mq-|drone/.test(v)) return 'uav';
+    if (/heli|huron|ghosthawk|humming|pawnee|orca|kajman|taru|mohawk|ah-|uh-|mh-|ch-|ka-|mi-/.test(v)) {
+      return 'aviation_rotary';
+    }
+    if (/plane|wipeout|neophron|buzzard|blackfish|caesar|wasp|a-10|f-|c-130/.test(v)) return 'aviation_fixed';
+    if (/mortar|mk6/.test(v)) return 'mortar';
+    if (/artillery|howitzer|mlrs|himars|sochor|scorcher|sandstorm|_arty/.test(v)) return 'artillery';
+    if (/mbt|tank|slammer|kuma|panther|abrams|leopard|t72|t80|t90|merkava|angara/.test(v)) return 'armor';
+    if (/apc|ifv|marshall|gorgon|mora|bradley|bmp|warrior|btr|tracked_apc|wheeled_apc/.test(v)) {
+      return 'mechanized';
+    }
+    if (/medical|ambulance|medevac/.test(v)) return 'medical';
+    if (/truck|hemtt|zamak|tempest|kamaz|repair|ammo|fuel/.test(v)) return 'logistics';
+    if (/ship|boat|speedboat|sdv|assault_boat/.test(v)) return 'naval';
+    return '';
+  }
+
+  function guessFromJobRole(role, aircraftType) {
     var r = String(role || '').toLowerCase();
     var ac = String(aircraftType || '').toLowerCase();
     if (ac === 'helicopter' || /heli|ah-|uh-|mh-/.test(r + ac)) return 'aviation_rotary';
     if (ac === 'uav' || /uav|drone|mq-/.test(r + ac)) return 'uav';
-    if (ac === 'plane' || /air|avion|f-|a-10|cas/.test(r + ac)) return 'aviation_fixed';
+    if (ac === 'plane' || /avion|f-|a-10|\bcas\b/.test(r + ' ' + ac)) return 'aviation_fixed';
     if (/armor|char|tank|blindé|blinde/.test(r)) return 'armor';
-    if (/arty|artiller|mortier|appui.?feu|fire.?support/.test(r)) return 'artillery';
+    if (/mortier/.test(r)) return 'mortar';
+    if (/arty|artiller|appui.?feu|fire.?support/.test(r)) return 'artillery';
     if (/log|supply|ravitail/.test(r)) return 'logistics';
-    if (/cmd|hq|command|état.?major|etat.?major/.test(r)) return 'hq';
-    if (/medic|opsan|santé|sante|medical/.test(r)) return 'medical';
-    if (/recon|scout|isr/.test(r)) return 'recon';
+    if (/\bhq\b|commandant|état.?major|etat.?major/.test(r)) return 'hq';
+    if (/medic|opsan|santé|sante|medical|médecin|medecin/.test(r)) return 'medical';
+    if (/\brecon\b|scout|isr/.test(r)) return 'recon';
+    return '';
+  }
+
+  /**
+   * Type de symbole : plateforme / véhicule d’abord, métier seulement à pied.
+   * extras : { platform, vehicle, vehicle_class, in_vehicle, aircraftType }
+   */
+  function guessRole(role, aircraftType, extras) {
+    extras = extras || {};
+    var fromPlatform = platformToRoleKey(extras.platform || extras.vehicle_class || extras.vehicleClass);
+    if (fromPlatform && fromPlatform !== 'ground_vehicle') return fromPlatform;
+    var fromVeh = guessFromVehicleName(extras.vehicle || extras.vehicle_type || extras.model || '');
+    if (fromVeh) return fromVeh;
+    if (fromPlatform === 'ground_vehicle') return 'motorized';
+    if (flagTrue(extras.in_vehicle)) return 'motorized';
+    var fromJob = guessFromJobRole(role, aircraftType || extras.aircraftType);
+    if (fromJob) return fromJob;
     return 'infantry';
   }
 
+  function symbolFieldsFromUnit(u, extra) {
+    u = u || {};
+    extra = extra || {};
+    return {
+      affiliation: extra.affiliation || extra.affil || u.affiliation || 'friend',
+      role: u.role || extra.role || '',
+      sidc: extra.sidc || u.sidc || '',
+      functionid: extra.functionid || u.functionid || '',
+      platform: extra.platform || extra.vehicle_class || u.vehicle_class || '',
+      vehicle: extra.vehicle || extra.vehicle_type || extra.model || extra.vehicle_name || u.model || '',
+      vehicle_class: extra.vehicle_class || '',
+      in_vehicle: extra.in_vehicle,
+      aircraftType: extra.aircraft_type || u.aircraft_type || '',
+    };
+  }
+
   function roleGlyph(roleKey) {
+    var infX = '<line x1="10" y1="10" x2="22" y2="22" stroke="currentColor" stroke-width="1.8"/>'
+      + '<line x1="22" y1="10" x2="10" y2="22" stroke="currentColor" stroke-width="1.8"/>';
     switch (roleKey) {
       case 'armor':
         return '<ellipse cx="16" cy="16" rx="7" ry="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/>'
           + '<circle cx="11" cy="16" r="1.4" fill="currentColor"/><circle cx="21" cy="16" r="1.4" fill="currentColor"/>';
+      case 'mechanized':
+        return infX
+          + '<ellipse cx="16" cy="24" rx="7" ry="2.2" fill="none" stroke="currentColor" stroke-width="1.4"/>';
+      case 'motorized':
+        return infX
+          + '<circle cx="12" cy="24" r="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/>'
+          + '<circle cx="20" cy="24" r="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/>';
       case 'artillery':
         return '<circle cx="16" cy="16" r="3.2" fill="currentColor"/>'
           + '<line x1="16" y1="8" x2="16" y2="12" stroke="currentColor" stroke-width="1.6"/>'
           + '<line x1="16" y1="20" x2="16" y2="24" stroke="currentColor" stroke-width="1.6"/>'
           + '<line x1="8" y1="16" x2="12" y2="16" stroke="currentColor" stroke-width="1.6"/>'
           + '<line x1="20" y1="16" x2="24" y2="16" stroke="currentColor" stroke-width="1.6"/>';
+      case 'mortar':
+        return '<circle cx="16" cy="16" r="2.6" fill="currentColor"/>'
+          + '<line x1="16" y1="7" x2="16" y2="12" stroke="currentColor" stroke-width="1.6"/>';
       case 'aviation_fixed':
         return '<path d="M6 16 L26 16 M16 10 L16 22 M10 14 L16 10 L22 14" fill="none" stroke="currentColor" stroke-width="1.7"/>';
       case 'aviation_rotary':
@@ -64,13 +152,15 @@ window.NatoSidcIcons = (function () {
       case 'logistics':
         return '<rect x="10" y="12" width="12" height="8" fill="none" stroke="currentColor" stroke-width="1.6"/>'
           + '<line x1="10" y1="16" x2="22" y2="16" stroke="currentColor" stroke-width="1.3"/>';
+      case 'naval':
+        return '<path d="M8 18 L24 18 L21 22 L11 22 Z" fill="none" stroke="currentColor" stroke-width="1.6"/>'
+          + '<line x1="16" y1="10" x2="16" y2="18" stroke="currentColor" stroke-width="1.5"/>';
       case 'recon':
         return '<circle cx="16" cy="16" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>'
           + '<circle cx="16" cy="16" r="1.8" fill="currentColor"/>';
       case 'infantry':
       default:
-        return '<line x1="10" y1="10" x2="22" y2="22" stroke="currentColor" stroke-width="1.8"/>'
-          + '<line x1="22" y1="10" x2="10" y2="22" stroke="currentColor" stroke-width="1.8"/>';
+        return infX;
     }
   }
 
@@ -99,15 +189,16 @@ window.NatoSidcIcons = (function () {
         functionid: opts.functionid,
       });
     }
-    var roleKey = opts.roleKey || guessRole(opts.role, opts.aircraftType);
+    var roleKey = opts.roleKey || guessRole(opts.role, opts.aircraftType, opts);
     if (cat && cat.sidcForRole) return cat.sidcForRole(roleKey, aff);
     var letter = { friend: 'F', hostile: 'H', neutral: 'N', unknown: 'U', suspect: 'S' }[aff] || 'F';
     var fidMap = {
-      infantry: 'UCI---', armor: 'UCA---', artillery: 'UCF---', recon: 'UCR---',
-      hq: 'UH----', medical: 'USM---', logistics: 'US----',
+      infantry: 'UCI---', mechanized: 'UCIM--', motorized: 'UCIMO-',
+      armor: 'UCA---', artillery: 'UCF---', mortar: 'UCFM--', recon: 'UCR---',
+      hq: 'UH----', medical: 'USM---', logistics: 'US----', naval: 'CL----',
       aviation_fixed: 'MF----', aviation_rotary: 'MH----', uav: 'MFQ---',
     };
-    var dim = /aviation|uav/.test(roleKey) ? 'A' : 'G';
+    var dim = /aviation|uav/.test(roleKey) ? 'A' : (roleKey === 'naval' ? 'S' : 'G');
     var fid = fidMap[roleKey] || 'UCI---';
     return ('S' + letter + dim + 'P' + fid + '-----').slice(0, 15);
   }
@@ -142,7 +233,7 @@ window.NatoSidcIcons = (function () {
 
   function fallbackSvgInner(opts) {
     var aff = normAff(opts.affiliation);
-    var roleKey = opts.roleKey || guessRole(opts.role, opts.aircraftType);
+    var roleKey = opts.roleKey || guessRole(opts.role, opts.aircraftType, opts);
     var c = COLORS[aff] || COLORS.friend;
     var size = opts.size || (window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('tactical') : 19);
     return '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" viewBox="0 0 32 32" class="nato-sidc-svg" aria-hidden="true">'
@@ -256,6 +347,8 @@ window.NatoSidcIcons = (function () {
     colors: COLORS,
     normalizeAffiliation: normAff,
     guessRole: guessRole,
+    symbolFieldsFromUnit: symbolFieldsFromUnit,
+    platformToRoleKey: platformToRoleKey,
     resolveSidc: resolveSidc,
     hasMilsymbol: hasMilsymbol,
     milsymbolSvg: milsymbolSvg,

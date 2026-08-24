@@ -58,15 +58,27 @@ final class AtakRealismRepository
         if (!$this->tablesReady() || $tenantId < 1) {
             return [];
         }
-        $sql = 'SELECT t.*, u.display_name, u.callsign
-                FROM atak_terminals t
-                LEFT JOIN users u ON u.id = t.user_id
-                WHERE t.tenant_id = ?
-                ORDER BY COALESCE(t.last_seen_at, t.updated_at, t.created_at) DESC, t.id DESC';
-        $st = $this->pdo->prepare($sql);
-        $st->execute([$tenantId]);
+        try {
+            $st = $this->pdo->prepare(
+                $this->terminalsWithCertSql()
+                . ' WHERE t.tenant_id = ?
+                    ORDER BY COALESCE(t.last_seen_at, t.updated_at, t.created_at) DESC, t.id DESC'
+            );
+            $st->execute([$tenantId, $tenantId]);
 
-        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            $st = $this->pdo->prepare(
+                'SELECT t.*, u.display_name, u.callsign
+                 FROM atak_terminals t
+                 LEFT JOIN users u ON u.id = t.user_id
+                 WHERE t.tenant_id = ?
+                 ORDER BY COALESCE(t.last_seen_at, t.updated_at, t.created_at) DESC, t.id DESC'
+            );
+            $st->execute([$tenantId]);
+
+            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
     }
 
     /**
@@ -149,11 +161,170 @@ final class AtakRealismRepository
     }
 
     /**
+     * Range en « session web » les fiches déjà détectées comme telles
+     * mais encore enregistrées comme téléphone / ordinateur.
+     */
+    public function persistWebSessionClassification(int $tenantId): int
+    {
+        if (!$this->tablesReady() || $tenantId < 1) {
+            return 0;
+        }
+        $updated = 0;
+        foreach ($this->listTerminals($tenantId) as $row) {
+            if (!self::isWebSessionTerminal($row)) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $type = strtolower(trim((string) ($row['terminal_type'] ?? '')));
+            $platform = trim((string) ($row['platform_label'] ?? ''));
+            if ($type === 'web' && $platform !== '') {
+                continue;
+            }
+            $st = $this->pdo->prepare(
+                'UPDATE atak_terminals
+                 SET terminal_type = ?,
+                     platform_label = CASE WHEN platform_label IS NULL OR TRIM(platform_label) = \'\' THEN ? ELSE platform_label END,
+                     pairing_token = NULL,
+                     pairing_code = NULL,
+                     updated_at = UTC_TIMESTAMP()
+                 WHERE tenant_id = ? AND id = ?'
+            );
+            $st->execute(['web', 'Session web Athena', $tenantId, $id]);
+            $updated += $st->rowCount();
+        }
+
+        return $updated;
+    }
+
+    /**
+     * Marque une fiche comme session navigateur (plus un terminal terrain).
+     */
+    public function markAsWebSession(int $tenantId, int $terminalId): bool
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $terminalId < 1) {
+            return false;
+        }
+        $existing = $this->findTerminalById($tenantId, $terminalId);
+        if ($existing === null) {
+            return false;
+        }
+        $platform = trim((string) ($existing['platform_label'] ?? ''));
+        if ($platform === '') {
+            $platform = 'Session web Athena';
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE atak_terminals
+             SET terminal_type = ?, platform_label = ?, pairing_token = NULL, pairing_code = NULL, updated_at = UTC_TIMESTAMP()
+             WHERE tenant_id = ? AND id = ?'
+        );
+        $st->execute(['web', $platform, $tenantId, $terminalId]);
+
+        return $st->rowCount() > 0 || strtolower(trim((string) ($existing['terminal_type'] ?? ''))) === 'web';
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function listPhysicalTerminals(int $tenantId): array
     {
-        return self::partitionTerminals($this->listTerminals($tenantId))['physical'];
+        $physical = self::partitionTerminals($this->listTerminals($tenantId))['physical'];
+
+        return array_map(
+            [$this, 'presentTerminalForClient'],
+            self::collapsePhysicalDuplicates($physical)
+        );
+    }
+
+    /**
+     * Une fiche par opérateur et par famille (jeu / téléphone) : l’UID change
+     * parfois après une mise à jour du mod, ce qui doublonnait N-10, etc.
+     *
+     * @param list<array<string, mixed>> $rows  déjà triées (plus récent d’abord)
+     * @return list<array<string, mixed>>
+     */
+    public static function collapsePhysicalDuplicates(array $rows): array
+    {
+        $out = [];
+        $seen = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $key = self::operatorDedupeKey($row);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    public static function physicalFamily(array $row): string
+    {
+        if (self::isWebSessionTerminal($row)) {
+            return 'web';
+        }
+        $type = strtolower(trim((string) ($row['terminal_type'] ?? '')));
+        if ($type === 'phone') {
+            return 'phone';
+        }
+
+        return 'game';
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    public static function operatorDedupeKey(array $row): string
+    {
+        $family = self::physicalFamily($row);
+        $mid = strtoupper(trim((string) ($row['operator_military_id'] ?? '')));
+        if ($mid !== '') {
+            return $family . ':mid:' . $mid;
+        }
+        $userId = (int) ($row['user_id'] ?? 0);
+        if ($userId > 0) {
+            return $family . ':user:' . $userId;
+        }
+        $cs = strtoupper(trim((string) ($row['operator_callsign'] ?? $row['callsign'] ?? '')));
+        if ($cs !== '' && !self::isGenericCallsign($cs)) {
+            return $family . ':cs:' . $cs;
+        }
+        $uid = strtoupper(trim((string) ($row['terminal_uid'] ?? '')));
+        if ($uid !== '') {
+            return $family . ':uid:' . $uid;
+        }
+
+        return $family . ':id:' . (int) ($row['id'] ?? 0);
+    }
+
+    public static function mysqlUtcToIso(string $raw): string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return $raw;
+        }
+        if (str_ends_with($raw, 'Z') || preg_match('/[+-]\d{2}:?\d{2}$/', $raw) === 1) {
+            return $raw;
+        }
+        $dt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $raw, new \DateTimeZone('UTC'));
+        if ($dt instanceof \DateTimeImmutable) {
+            return $dt->format('Y-m-d\TH:i:s\Z');
+        }
+        $iso = str_replace(' ', 'T', $raw);
+        if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $iso) === 1) {
+            $iso .= ':00';
+        }
+
+        return $iso . 'Z';
     }
 
     /**
@@ -183,6 +354,17 @@ final class AtakRealismRepository
     {
         if (!$this->tablesReady() || $tenantId < 1 || $terminalId < 1) {
             return null;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                $this->terminalsWithCertSql() . ' WHERE t.tenant_id = ? AND t.id = ? LIMIT 1'
+            );
+            $st->execute([$tenantId, $tenantId, $terminalId]);
+            $row = $st->fetch(PDO::FETCH_ASSOC);
+            if (is_array($row)) {
+                return $row;
+            }
+        } catch (\Throwable) {
         }
         $st = $this->pdo->prepare('SELECT * FROM atak_terminals WHERE tenant_id = ? AND id = ? LIMIT 1');
         $st->execute([$tenantId, $terminalId]);
@@ -262,6 +444,8 @@ final class AtakRealismRepository
             $mid = $this->operatorIds->ensureForCallSign($tenantId, $callsign);
         }
 
+        $incomingType = $this->allowed((string) ($payload['terminal_type'] ?? 'phone'), ['phone', 'tablet', 'radio', 'vehicle', 'desktop', 'web'], 'phone');
+
         $row = $this->findTerminalByUid($tenantId, $uid);
         // Récupère une fiche corrompue (<null>) du même compte / indicatif pour la réparer
         if ($row === null) {
@@ -271,10 +455,17 @@ final class AtakRealismRepository
                 $row = $this->findTerminalByUid($tenantId, $uid);
             }
         }
+        if ($row === null) {
+            $twin = $this->findOperatorPhysicalTwin($tenantId, $uid, $userId, $callsign, $mid, $incomingType);
+            if ($twin !== null) {
+                $this->repairTerminalIdentity($tenantId, (int) $twin['id'], $uid);
+                $row = $this->findTerminalByUid($tenantId, $uid);
+            }
+        }
         $fields = [
             'user_id' => $userId > 0 ? $userId : null,
             'terminal_label' => $this->clip((string) ($payload['terminal_label'] ?? 'Terminal ATAK'), 160),
-            'terminal_type' => $this->allowed((string) ($payload['terminal_type'] ?? 'phone'), ['phone', 'tablet', 'radio', 'vehicle', 'desktop', 'web'], 'phone'),
+            'terminal_type' => $incomingType,
             'platform_label' => $this->nullableString($payload['platform_label'] ?? null, 120),
             'operator_callsign' => $callsign,
             'operator_military_id' => $mid,
@@ -332,7 +523,222 @@ final class AtakRealismRepository
             ]);
         }
 
+        $this->applyTerminalTelemetry($tenantId, $uid, $payload);
+        $this->retireOperatorTwins($tenantId, $uid, $userId, $callsign, $mid, $incomingType);
+
         return $this->findTerminalByUid($tenantId, $uid) ?? [];
+    }
+
+    /**
+     * Met à jour IP, versions et signature serveur d’un terminal déjà connu.
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function recordTerminalHeartbeat(int $tenantId, array $payload): void
+    {
+        $uid = $this->sanitizeTerminalUid((string) ($payload['terminal_uid'] ?? ''));
+        if ($uid === '') {
+            $callsign = trim((string) ($payload['operator_callsign'] ?? ''));
+            if ($callsign === '') {
+                return;
+            }
+            $row = $this->findLatestTerminalByCallsign($tenantId, $callsign);
+            if ($row === null) {
+                return;
+            }
+            $uid = $this->sanitizeTerminalUid((string) ($row['terminal_uid'] ?? ''));
+        }
+        if ($uid === '') {
+            return;
+        }
+        $this->applyTerminalTelemetry($tenantId, $uid, $payload);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function applyTerminalTelemetry(int $tenantId, string $uid, array $payload): void
+    {
+        if (!$this->hasTelemetryColumns() || $tenantId < 1 || $uid === '') {
+            return;
+        }
+        $ip = self::extractClientIp((string) ($payload['last_client_ip'] ?? $payload['client_ip'] ?? ''));
+        $mod = $this->nullableString($payload['mod_version'] ?? $payload['modVersion'] ?? null, 40);
+        $ext = $this->nullableString(
+            $payload['extension_version'] ?? $payload['dll_version'] ?? $payload['extensionVersion'] ?? null,
+            40
+        );
+        $host = $this->nullableString($payload['server_host'] ?? $payload['athena_host'] ?? null, 190);
+        $sig = $this->nullableString($payload['server_signature'] ?? null, 32);
+        if ($sig === null && $host !== null) {
+            $computed = self::computeServerSignature($tenantId, $host);
+            $sig = $computed !== '' ? $computed : null;
+        }
+        if ($ip === '' && $mod === null && $ext === null && $host === null && $sig === null) {
+            return;
+        }
+        try {
+            $this->pdo->prepare(
+                'UPDATE atak_terminals
+                 SET last_client_ip = COALESCE(?, last_client_ip),
+                     mod_version = COALESCE(?, mod_version),
+                     extension_version = COALESCE(?, extension_version),
+                     server_host = COALESCE(?, server_host),
+                     server_signature = COALESCE(?, server_signature),
+                     updated_at = UTC_TIMESTAMP()
+                 WHERE tenant_id = ? AND terminal_uid = ?'
+            )->execute([
+                $ip !== '' ? $ip : null,
+                $mod,
+                $ext,
+                $host,
+                $sig,
+                $tenantId,
+                $uid,
+            ]);
+        } catch (\Throwable) {
+        }
+    }
+
+    public function hasTelemetryColumns(): bool
+    {
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_terminals'
+                   AND COLUMN_NAME = 'last_client_ip' LIMIT 1"
+            );
+
+            return $st !== false && (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public static function extractClientIp(string $raw): string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return '';
+        }
+        $first = trim(explode(',', $raw)[0]);
+        if (str_starts_with($first, '[') && str_contains($first, ']')) {
+            $end = strpos($first, ']');
+            $first = $end !== false ? substr($first, 1, $end - 1) : $first;
+        } elseif (substr_count($first, ':') === 1 && !str_contains($first, ']')) {
+            $first = explode(':', $first, 2)[0];
+        }
+        if ($first !== '' && filter_var($first, FILTER_VALIDATE_IP)) {
+            return $first;
+        }
+
+        return mb_substr($first, 0, 45);
+    }
+
+    public static function computeServerSignature(int $tenantId, string $host): string
+    {
+        $host = strtolower(trim($host));
+        if ($host === '' || $tenantId < 1) {
+            return '';
+        }
+        $host = preg_replace('/:\d+$/', '', $host) ?? $host;
+
+        return strtoupper(substr(hash('sha256', 'athena-atak|' . $tenantId . '|' . $host), 0, 16));
+    }
+
+    public static function formatServerSignature(string $raw): string
+    {
+        $hex = strtoupper(preg_replace('/[^A-Fa-f0-9]/', '', $raw) ?? '');
+        if ($hex === '') {
+            return '';
+        }
+
+        return trim(chunk_split($hex, 4, ' '));
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    public static function trustChainLabel(array $row): string
+    {
+        $domain = trim((string) ($row['crypto_domain_label'] ?? ''));
+        $status = strtolower(trim((string) ($row['certificate_status'] ?? '')));
+        if ($status === 'revoked') {
+            return 'Révoquée';
+        }
+        $expires = trim((string) ($row['certificate_expires_at'] ?? ''));
+        $expiredByDate = false;
+        if ($expires !== '') {
+            $ts = strtotime($expires . ' UTC');
+            $expiredByDate = $ts !== false && $ts < time();
+        }
+        if ($status === 'expired' || $expiredByDate) {
+            return 'Expirée';
+        }
+        if (in_array($status, ['active', 'issued'], true)) {
+            return $domain !== '' ? 'Établie · ' . $domain : 'Établie';
+        }
+
+        return $domain !== '' ? $domain : 'Non établie';
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array{trust:string,authority:string,versions:string,signature:string,host:string,ip:string}
+     */
+    public static function liaisonIdentity(array $row): array
+    {
+        $mod = trim((string) ($row['mod_version'] ?? ''));
+        $dll = trim((string) ($row['extension_version'] ?? ''));
+        $versions = [];
+        if ($mod !== '') {
+            $versions[] = 'Mod ' . $mod;
+        }
+        if ($dll !== '') {
+            $versions[] = 'DLL ' . $dll;
+        }
+        $authority = trim((string) ($row['certificate_authority'] ?? ''));
+        $sig = self::formatServerSignature((string) ($row['server_signature'] ?? ''));
+        $ip = trim((string) ($row['last_client_ip'] ?? ''));
+
+        return [
+            'trust' => self::trustChainLabel($row),
+            'authority' => $authority !== '' ? $authority : '—',
+            'versions' => $versions !== [] ? implode(' · ', $versions) : '—',
+            'signature' => $sig !== '' ? $sig : '—',
+            'host' => trim((string) ($row['server_host'] ?? '')),
+            'ip' => $ip !== '' ? $ip : '—',
+        ];
+    }
+
+    private function terminalsWithCertSql(): string
+    {
+        return 'SELECT t.*, u.display_name, u.callsign,
+                       c.authority_label AS certificate_authority,
+                       c.fingerprint_sha256 AS certificate_fingerprint,
+                       c.certificate_ref AS certificate_ref,
+                       c.status AS certificate_status,
+                       c.expires_at AS certificate_expires_at,
+                       c.certificate_type AS certificate_type'
+            . ($this->cryptoDomainsReady()
+                ? ', d.label AS crypto_domain_label, d.domain_ref AS crypto_domain_ref'
+                : ', NULL AS crypto_domain_label, NULL AS crypto_domain_ref')
+            . '
+                FROM atak_terminals t
+                LEFT JOIN users u ON u.id = t.user_id
+                LEFT JOIN (
+                    SELECT c1.*
+                    FROM atak_certificates c1
+                    INNER JOIN (
+                        SELECT terminal_id, MAX(id) AS max_id
+                        FROM atak_certificates
+                        WHERE tenant_id = ? AND terminal_id IS NOT NULL
+                        GROUP BY terminal_id
+                    ) latest ON latest.max_id = c1.id
+                ) c ON c.terminal_id = t.id'
+            . ($this->cryptoDomainsReady()
+                ? ' LEFT JOIN atak_crypto_domains d ON d.id = c.crypto_domain_id'
+                : '');
     }
 
     /**
@@ -637,6 +1043,27 @@ final class AtakRealismRepository
     /**
      * @return array<string, mixed>|null
      */
+    public function findLatestTerminalByCallsign(int $tenantId, string $callsign): ?array
+    {
+        $callsign = trim($callsign);
+        if (!$this->tablesReady() || $tenantId < 1 || $callsign === '') {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT * FROM atak_terminals
+             WHERE tenant_id = ? AND UPPER(TRIM(operator_callsign)) = UPPER(?)
+             ORDER BY COALESCE(last_seen_at, updated_at, created_at) DESC, id DESC
+             LIMIT 1'
+        );
+        $st->execute([$tenantId, $callsign]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findLatestCertificateForTerminal(int $tenantId, int $terminalId): ?array
     {
         if (!$this->tablesReady() || $tenantId < 1 || $terminalId < 1) {
@@ -816,6 +1243,137 @@ final class AtakRealismRepository
         }
 
         return false;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function presentTerminalForClient(array $row): array
+    {
+        foreach (['last_seen_at', 'first_seen_at', 'updated_at', 'created_at', 'linked_at'] as $key) {
+            $raw = $row[$key] ?? null;
+            if (is_string($raw) && trim($raw) !== '') {
+                $row[$key] = self::mysqlUtcToIso($raw);
+            }
+        }
+
+        return $row;
+    }
+
+    public static function isGenericCallsign(string $callsign): bool
+    {
+        $cs = strtolower(trim($callsign));
+
+        return $cs === '' || in_array($cs, ['operateur', 'opérateur', 'operator', 'unknown', 'inconnu'], true);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function findOperatorPhysicalTwin(
+        int $tenantId,
+        string $incomingUid,
+        int $userId,
+        ?string $callsign,
+        ?string $militaryId,
+        string $type
+    ): ?array {
+        $twins = $this->listOperatorPhysicalTwins($tenantId, $incomingUid, $userId, $callsign, $militaryId, $type);
+        foreach ($twins as $twin) {
+            return $twin;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function listOperatorPhysicalTwins(
+        int $tenantId,
+        string $keepUid,
+        int $userId,
+        ?string $callsign,
+        ?string $militaryId,
+        string $type
+    ): array {
+        if (!$this->tablesReady() || $tenantId < 1) {
+            return [];
+        }
+        $family = self::physicalFamily(['terminal_type' => $type, 'terminal_uid' => $keepUid]);
+        if ($family === 'web') {
+            return [];
+        }
+        $wantMid = strtoupper(trim((string) $militaryId));
+        $wantCs = strtoupper(trim((string) $callsign));
+        $out = [];
+        foreach ($this->listTerminals($tenantId) as $row) {
+            if (!is_array($row) || self::isWebSessionTerminal($row)) {
+                continue;
+            }
+            if (self::physicalFamily($row) !== $family) {
+                continue;
+            }
+            $uid = strtoupper(trim((string) ($row['terminal_uid'] ?? '')));
+            if ($uid === '' || $uid === strtoupper($keepUid)) {
+                continue;
+            }
+            $same = false;
+            $rowMid = strtoupper(trim((string) ($row['operator_military_id'] ?? '')));
+            if ($wantMid !== '' && $rowMid === $wantMid) {
+                $same = true;
+            }
+            if (!$same && $userId > 0 && (int) ($row['user_id'] ?? 0) === $userId) {
+                $same = true;
+            }
+            $rowCs = strtoupper(trim((string) ($row['operator_callsign'] ?? '')));
+            if (!$same && $wantCs !== '' && !self::isGenericCallsign($wantCs) && $rowCs === $wantCs) {
+                $same = true;
+            }
+            if ($same) {
+                $out[] = $row;
+            }
+        }
+
+        return $out;
+    }
+
+    private function retireOperatorTwins(
+        int $tenantId,
+        string $keepUid,
+        int $userId,
+        ?string $callsign,
+        ?string $militaryId,
+        string $type
+    ): void {
+        $twins = $this->listOperatorPhysicalTwins($tenantId, $keepUid, $userId, $callsign, $militaryId, $type);
+        if ($twins === []) {
+            return;
+        }
+        $keeper = $this->findTerminalByUid($tenantId, $keepUid);
+        $keeperId = (int) ($keeper['id'] ?? 0);
+        $ids = [];
+        foreach ($twins as $twin) {
+            $id = (int) ($twin['id'] ?? 0);
+            if ($id > 0 && $id !== $keeperId) {
+                $ids[] = $id;
+            }
+        }
+        if ($ids === []) {
+            return;
+        }
+        if ($keeperId > 0) {
+            try {
+                $placeholders = implode(',', array_fill(0, count($ids), '?'));
+                $params = array_merge([$keeperId, $tenantId], $ids);
+                $this->pdo->prepare(
+                    "UPDATE atak_certificates SET terminal_id = ? WHERE tenant_id = ? AND terminal_id IN ({$placeholders})"
+                )->execute($params);
+            } catch (\Throwable) {
+            }
+        }
+        $this->deleteTerminals($tenantId, $ids);
     }
 
     /**

@@ -1,0 +1,290 @@
+/**
+ * Fenêtre « mise à jour du portail » — motifs DSFR (overlay, titre, fermer, boutons)
+ * sans police Marianne ni bleu France institutionnel.
+ * Tokens alignés sur dsfr-service.css (portail clair).
+ */
+
+.ds-app-update {
+  --ds-upd-text: #161616;
+  --ds-upd-text-alt: #3a3a3a;
+  --ds-upd-text-mention: #666;
+  --ds-upd-bg: #fff;
+  --ds-upd-border: #ddd;
+  --ds-upd-primary: #0b3d38;
+  --ds-upd-primary-hover: #062824;
+  --ds-upd-focus: #0a76a6;
+  --ds-upd-radius: 8px;
+  --ds-upd-font: "Source Sans 3", "Source Serif 4", Inter, "Segoe UI", system-ui, sans-serif;
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.ds-app-update *,
+.ds-app-update *::before,
+.ds-app-update *::after {
+  box-sizing: border-box;
+}
+
+.ds-app-update__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(22, 22, 22, 0.64);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.ds-app-update__dialog {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 40rem);
+  max-height: min(90vh, 36rem);
+  margin: 0;
+  overflow: auto;
+  color: var(--ds-upd-text);
+  background: var(--ds-upd-bg);
+  border: 1px solid var(--ds-upd-border);
+  border-radius: var(--ds-upd-radius);
+  box-shadow:
+    0 0.5rem 2rem rgba(22, 22, 22, 0.28),
+    0 0 0 1px rgba(22, 22, 22, 0.04);
+  font-family: var(--ds-upd-font);
+  animation: ds-app-update-in 0.18s ease-out;
+}
+
+@keyframes ds-app-update-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-app-update__dialog {
+    animation: none;
+  }
+}
+
+.ds-app-update__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem 0 1.5rem;
+}
+
+.ds-app-update__close {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.5rem 0.25rem 0.5rem 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--ds-upd-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.ds-app-update__close:hover {
+  background: #f6f6f6;
+}
+
+.ds-app-update__close:focus-visible,
+.ds-app-update__btn:focus-visible {
+  outline: 2px solid var(--ds-upd-focus);
+  outline-offset: 2px;
+}
+
+.ds-app-update__close-icon {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.ds-app-update__body {
+  padding: 0.75rem 1.5rem 1.25rem;
+}
+
+.ds-app-update__title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  color: var(--ds-upd-text);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.ds-app-update__title-icon {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.1rem;
+  color: var(--ds-upd-primary);
+}
+
+.ds-app-update__lead,
+.ds-app-update__versions {
+  margin: 0;
+  color: var(--ds-upd-text-alt);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.ds-app-update__versions {
+  margin-top: 0.75rem;
+  color: var(--ds-upd-text-mention);
+  font-size: 0.875rem;
+}
+
+.ds-app-update__versions strong {
+  color: var(--ds-upd-text);
+  font-weight: 700;
+}
+
+.ds-app-update__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.25rem;
+  border-top: 1px solid var(--ds-upd-border);
+  background: #f6f6f6;
+}
+
+.ds-app-update__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.25;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ds-app-update__btn--primary {
+  background: var(--ds-upd-primary);
+  color: #fff;
+}
+
+.ds-app-update__btn--primary:hover {
+  background: var(--ds-upd-primary-hover);
+}
+
+.ds-app-update__btn--secondary {
+  background: #fff;
+  color: var(--ds-upd-primary);
+  border-color: var(--ds-upd-primary);
+}
+
+.ds-app-update__btn--secondary:hover {
+  background: #f6f6f6;
+}
+
+html.ds-app-update-open,
+html.ds-app-update-open body {
+  overflow: hidden;
+}
+
+/* Carte ATAK sombre : mêmes motifs, tokens du poste. */
+.ds-app-update--atak {
+  --ds-upd-text: #e2e8f0;
+  --ds-upd-text-alt: #cbd5e1;
+  --ds-upd-text-mention: #94a3b8;
+  --ds-upd-bg: #0b1220;
+  --ds-upd-border: #334155;
+  --ds-upd-primary: #34d399;
+  --ds-upd-primary-hover: #6ee7b7;
+  --ds-upd-focus: #22d3ee;
+}
+
+.ds-app-update--atak .ds-app-update__dialog {
+  box-shadow:
+    0 0.5rem 2rem rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(52, 211, 153, 0.12);
+}
+
+.ds-app-update--atak .ds-app-update__close:hover {
+  background: #1e293b;
+}
+
+.ds-app-update--atak .ds-app-update__footer {
+  background: #020617;
+  border-top-color: #334155;
+}
+
+.ds-app-update--atak .ds-app-update__btn--primary {
+  background: var(--ds-upd-primary);
+  color: #042f2e;
+}
+
+.ds-app-update--atak .ds-app-update__btn--primary:hover {
+  background: var(--ds-upd-primary-hover);
+}
+
+.ds-app-update--atak .ds-app-update__btn--secondary {
+  background: transparent;
+  color: #e2e8f0;
+  border-color: #64748b;
+}
+
+.ds-app-update--atak .ds-app-update__btn--secondary:hover {
+  background: #1e293b;
+}
+
+body.atak-theme-light .ds-app-update--atak {
+  --ds-upd-text: #161616;
+  --ds-upd-text-alt: #3a3a3a;
+  --ds-upd-text-mention: #666;
+  --ds-upd-bg: #fff;
+  --ds-upd-border: #ddd;
+  --ds-upd-primary: #0b3d38;
+  --ds-upd-primary-hover: #062824;
+  --ds-upd-focus: #0a76a6;
+}
+
+body.atak-theme-light .ds-app-update--atak .ds-app-update__footer {
+  background: #f6f6f6;
+  border-top-color: #ddd;
+}
+
+body.atak-theme-light .ds-app-update--atak .ds-app-update__btn--primary {
+  background: var(--ds-upd-primary);
+  color: #fff;
+}
+
+body.atak-theme-light .ds-app-update--atak .ds-app-update__btn--secondary {
+  background: #fff;
+  color: var(--ds-upd-primary);
+  border-color: var(--ds-upd-primary);
+}
+
+body.atak-theme-light .ds-app-update--atak .ds-app-update__close:hover,
+body.atak-theme-light .ds-app-update--atak .ds-app-update__btn--secondary:hover {
+  background: #f6f6f6;
+}

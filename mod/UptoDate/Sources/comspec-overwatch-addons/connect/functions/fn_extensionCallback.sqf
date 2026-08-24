@@ -67,6 +67,15 @@ switch (_function) do {
     case "RateLimitClear": {
         missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];
         missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
+        missionNamespace setVariable ["COMSPEC_Athena_LastWeatherSig", "", false];
+        missionNamespace setVariable ["COMSPEC_Athena_LastVideoFeedsSig", "", false];
+    };
+    case "WeatherOk": {
+        private _pending = missionNamespace getVariable ["COMSPEC_Athena_PendingWeatherSig", ""];
+        if (!(_pending isEqualType "")) then { _pending = ""; };
+        if (_pending isNotEqualTo "") then {
+            missionNamespace setVariable ["COMSPEC_Athena_LastWeatherSig", _pending, false];
+        };
     };
     case "BftIdentity": {
         // data = "indicatif\tID_BFT" — lie le suivi Blue Force à l’indicatif Athena
@@ -320,16 +329,27 @@ switch (_function) do {
                     // Coupe le spam d’aperçus auto (COMSPEC_AthenaFeed / stems sans fichier).
                     missionNamespace setVariable ["COMSPEC_FeedSnapFailUntil", diag_tickTime + 300, false];
                 };
-                ["PhotoUpload", "fail", format ["%1 · %2", _detail, _fileHint], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+                private _txPhase = if (
+                    (_detail find "http_503") == 0
+                    || {(_detail find "network") == 0}
+                    || {(_detail find "http_429") == 0}
+                ) then { "warn" } else { "fail" };
+                ["PhotoUpload", _txPhase, format ["%1 · %2", _detail, _fileHint], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
                 private _msg = switch (true) do {
                     case ((_detail find "file_not_found") == 0): { "Photo introuvable sur le disque — capturez à nouveau." };
                     case ((_detail find "not_connected") == 0): { "Pas de liaison Athena — reconnectez-vous puis renvoyez." };
+                    case ((_detail find "http_503") == 0): { "Le poste est saturé — la photo partira dès qu’il respirera." };
                     case ((_detail find "http_") == 0): { "Le poste de commandement a refusé la photo. Réessayez." };
                     case ((_detail find "network") == 0): { "Liaison réseau instable pendant l’envoi de la photo." };
                     default { "Échec d’envoi de la photo vers ATAK web." };
                 };
                 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback") then {
-                    [_msg, "error", 8] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
+                    private _fbKind = if (
+                        (_detail find "http_503") == 0
+                        || {(_detail find "http_429") == 0}
+                        || {(_detail find "network") == 0}
+                    ) then { "warn" } else { "error" };
+                    [_msg, _fbKind, 8] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
                 };
                 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updatePanel") then {
                     [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
@@ -350,15 +370,25 @@ switch (_function) do {
             missionNamespace setVariable ["COMSPEC_TerrainAbort", true, false];
         };
         // 401 position / marqueur / relief : souvent transitoire (clé / session) — WARN, pas ERROR spam.
+        // 0 / -1 / 503 : Athena injoignable ou saturé — même traitement, pas un overlay rouge.
         private _phase = if (
-            _code isEqualTo "401"
+            (_code in ["0", "-1", "401", "503"])
             && {
                 (_path find "position") >= 0
                 || {(_path find "marker") >= 0}
                 || {(_path find "terrain") >= 0}
+                || {(_path find "video-feeds") >= 0}
+                || {(_path find "recon") >= 0}
+                || {(_path find "weather") >= 0}
             }
         ) then { "warn" } else { "fail" };
         ["HTTP POST", _phase, format ["code %1 · %2 (il y a %3 s)", _code, _label, _age], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+        if ((_path find "weather") >= 0) then {
+            missionNamespace setVariable ["COMSPEC_Athena_LastWeatherSig", "", false];
+        };
+        if ((_path find "video-feeds") >= 0) then {
+            missionNamespace setVariable ["COMSPEC_Athena_LastVideoFeedsSig", "", false];
+        };
     };
     case "NetworkDisconnected": {
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];

@@ -39,10 +39,10 @@ final class AtakTerrainMath
         $y1 = min($rows - 1, $y0 + 1);
         $tx = $fx - $x0;
         $ty = $fy - $y0;
-        $z00 = self::cell($blob, $cols, $x0, $y0);
-        $z10 = self::cell($blob, $cols, $x1, $y0);
-        $z01 = self::cell($blob, $cols, $x0, $y1);
-        $z11 = self::cell($blob, $cols, $x1, $y1);
+        $z00 = self::cellZ($blob, $cols, $x0, $y0);
+        $z10 = self::cellZ($blob, $cols, $x1, $y0);
+        $z01 = self::cellZ($blob, $cols, $x0, $y1);
+        $z11 = self::cellZ($blob, $cols, $x1, $y1);
         if ($z00 === null || $z10 === null || $z01 === null || $z11 === null) {
             return $z00 ?? $z10 ?? $z01 ?? $z11;
         }
@@ -175,10 +175,109 @@ final class AtakTerrainMath
         return str_repeat(pack('v', $u), $cells);
     }
 
-    private static function cell(string $blob, int $cols, int $c, int $r): ?float
+    public static function cellZ(string $blob, int $cols, int $c, int $r): ?float
     {
+        if ($c < 0 || $r < 0 || $cols < 1) {
+            return null;
+        }
         $v = self::unpackInt16Le($blob, $r * $cols + $c);
 
         return $v === null ? null : (float) $v;
+    }
+
+    /**
+     * Emprise des cellules renseignées (indices inclusifs), ou null si vide.
+     *
+     * @return array{min_c:int,max_c:int,min_r:int,max_r:int,filled:int}|null
+     */
+    public static function filledBBox(string $blob, int $cols, int $rows): ?array
+    {
+        if ($cols < 1 || $rows < 1 || $blob === '') {
+            return null;
+        }
+        $minC = $cols;
+        $maxC = -1;
+        $minR = $rows;
+        $maxR = -1;
+        $filled = 0;
+        for ($r = 0; $r < $rows; $r++) {
+            $rowOff = $r * $cols;
+            for ($c = 0; $c < $cols; $c++) {
+                if (self::unpackInt16Le($blob, $rowOff + $c) === null) {
+                    continue;
+                }
+                $filled++;
+                if ($c < $minC) {
+                    $minC = $c;
+                }
+                if ($c > $maxC) {
+                    $maxC = $c;
+                }
+                if ($r < $minR) {
+                    $minR = $r;
+                }
+                if ($r > $maxR) {
+                    $maxR = $r;
+                }
+            }
+        }
+        if ($filled < 1 || $maxC < 0) {
+            return null;
+        }
+
+        return ['min_c' => $minC, 'max_c' => $maxC, 'min_r' => $minR, 'max_r' => $maxR, 'filled' => $filled];
+    }
+
+    /**
+     * Ombrage Horn (lumière 315° / zénith 45°). Null si voisinage incomplet.
+     *
+     * @return array{shade:float,slope_rad:float,slope_deg:float}|null
+     */
+    public static function hornShade(string $blob, int $cols, int $c, int $r, float $cellM, float $azimuthDeg = 315.0): ?array
+    {
+        $z2 = self::cellZ($blob, $cols, $c + 1, $r + 1);
+        $z3 = self::cellZ($blob, $cols, $c + 1, $r);
+        $z4 = self::cellZ($blob, $cols, $c + 1, $r - 1);
+        $z1 = self::cellZ($blob, $cols, $c, $r + 1);
+        $z5 = self::cellZ($blob, $cols, $c, $r - 1);
+        $z0 = self::cellZ($blob, $cols, $c - 1, $r + 1);
+        $z7 = self::cellZ($blob, $cols, $c - 1, $r);
+        $z6 = self::cellZ($blob, $cols, $c - 1, $r - 1);
+        if ($z0 === null || $z1 === null || $z2 === null || $z3 === null || $z4 === null || $z5 === null || $z6 === null || $z7 === null) {
+            return null;
+        }
+        $cell = max(1.0, $cellM);
+        $dzdx = (($z2 + 2.0 * $z3 + $z4) - ($z0 + 2.0 * $z7 + $z6)) / (8.0 * $cell);
+        $dzdy = (($z6 + 2.0 * $z5 + $z4) - ($z0 + 2.0 * $z1 + $z2)) / (8.0 * $cell);
+        $slope = atan(sqrt($dzdx * $dzdx + $dzdy * $dzdy));
+        $aspect = atan2($dzdy, -$dzdx);
+        $az = deg2rad($azimuthDeg - 90.0);
+        $zenith = deg2rad(45.0);
+        $shade = cos($zenith) * cos($slope) + sin($zenith) * sin($slope) * cos($az - $aspect);
+        $shade = max(0.0, min(1.0, $shade));
+
+        return [
+            'shade' => $shade,
+            'slope_rad' => $slope,
+            'slope_deg' => rad2deg($slope),
+        ];
+    }
+
+    public static function slopeClass(float $deg): string
+    {
+        if ($deg < 5) {
+            return 'praticable';
+        }
+        if ($deg < 15) {
+            return 'moderee';
+        }
+        if ($deg < 30) {
+            return 'forte';
+        }
+        if ($deg < 45) {
+            return 'tres_forte';
+        }
+
+        return 'critique';
     }
 }

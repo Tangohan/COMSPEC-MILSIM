@@ -138,7 +138,7 @@ return [
         ['path' => 'back-office/events/insights', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · PRÉSENCES', 'title' => 'Insights présence', 'css' => ['back-office-events.css']],
         ['path' => 'back-office/events/reponses-nominatives', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · CRÉNEAU', 'title' => 'Réponses nominatives', 'subtitle' => 'Suivi nominatif des réponses pour ce créneau.', 'css' => ['back-office-events.css']],
         ['path' => 'back-office/events', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · REGISTRE', 'title' => 'Opérations', 'subtitle' => 'Registre des opérations passées et à venir.', 'css' => ['back-office-events.css']],
-        ['path' => 'back-office/atak/comptes-rendus', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Comptes rendus (AAR)', 'subtitle' => 'Rapports post-opération, points d’amélioration relevés et suivi de leur traitement.', 'css' => ['back-office-aar.css'], 'quick' => [
+        ['path' => 'back-office/atak/comptes-rendus', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Comptes rendus', 'subtitle' => 'Rapports post-opération et questionnaires de debriefing.', 'css' => ['back-office-aar.css'], 'quick' => [
             ['label' => 'En attente', 'href' => 'back-office/atak/comptes-rendus?status=pending'],
             ['label' => 'Validés', 'href' => 'back-office/atak/comptes-rendus?status=validated'],
             ['label' => 'Actions ouvertes', 'href' => 'back-office/atak/comptes-rendus?open_actions=1'],
@@ -158,6 +158,7 @@ return [
         ['path' => 'back-office/atak/operateurs', 'group' => 'ATAK', 'kicker' => 'ATAK · SESSIONS', 'title' => 'Sessions & connexions', 'subtitle' => 'Opérateurs actuellement en liaison et historique de présence sur la carte.'],
         ['path' => 'back-office/atak/fiche-operateur', 'group' => 'ATAK', 'kicker' => 'ATAK · FICHE OPÉRATEUR', 'title' => 'Fiche opérateur', 'subtitle' => 'Vue consolidée identité, terminal, certificat et liaison.'],
         ['path' => 'back-office/atak/realisme', 'group' => 'ATAK', 'kicker' => 'ATAK · PARC', 'title' => 'Parc de terminaux', 'subtitle' => 'Inventaire des terminaux appairés et rattachements opérateur.'],
+        ['path' => 'back-office/atak/realisme/terminaux', 'group' => 'ATAK', 'kicker' => 'ATAK · PARC', 'title' => 'Journal de l’appareil', 'subtitle' => 'Traces d’activité : erreurs, déconnexions et état de liaison.'],
         ['path' => 'back-office/atak/certificats', 'group' => 'ATAK', 'kicker' => 'ATAK · SÉCURITÉ', 'title' => 'Certificats & data packages', 'subtitle' => 'Cycle de vie des certificats client et échéances.'],
         ['path' => 'admin/atak-mod-reports', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · MOD', 'title' => 'Signalements mod', 'css' => ['back-office-atak-beta.css']],
         ['path' => 'admin/atak-mod', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · MOD', 'title' => 'Mod Arma', 'css' => ['back-office-atak-mod.css']],

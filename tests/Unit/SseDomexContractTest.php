@@ -125,4 +125,48 @@ final class SseDomexContractTest extends TestCase
         self::assertStringContainsString('corroborer', $note);
         self::assertStringNotContainsString('leurre confirmé', $note);
     }
+
+    public function testQueueGroupFromPacketAlwaysExposesDeviceTypeLabel(): void
+    {
+        $group = SseDomexContract::queueGroupFromPacket([
+            'device_type' => 'telephone',
+            'origin' => 'terrain',
+            'support_label' => 'Téléphone saisi',
+        ]);
+        self::assertArrayHasKey('device_type_label', $group);
+        self::assertSame('Téléphone', $group['device_type_label']);
+        self::assertSame('Collecté sur le terrain', $group['origin_label']);
+        self::assertSame([], $group['packets']);
+        foreach (['origin_label', 'collector_label', 'grid_reference', 'support_label', 'owner_label'] as $key) {
+            self::assertArrayHasKey($key, $group);
+        }
+
+        $bare = SseDomexContract::queueGroupFromPacket([]);
+        self::assertSame('Inconnu', $bare['device_type_label']);
+        self::assertSame('Support', $bare['support_label']);
+        self::assertSame('', $bare['origin_label']);
+    }
+
+    public function testDeviceTypeLabelFallsBackToInconnu(): void
+    {
+        self::assertSame('Téléphone', SseDomexContract::deviceTypeLabel('telephone'));
+        self::assertSame('Ordinateur', SseDomexContract::deviceTypeLabel('ordinateur'));
+        self::assertSame('Inconnu', SseDomexContract::deviceTypeLabel(''));
+        self::assertSame('Inconnu', SseDomexContract::deviceTypeLabel('not_a_real_type'));
+        self::assertSame('SSD', SseDomexContract::deviceTypeLabel('ssd', ['ssd' => 'SSD']));
+    }
+
+    public function testLabSubnavDoesNotClobberQueueGroups(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $subnav = (string) file_get_contents($root . '/views/atak/sse/digital/_subnav.php');
+        self::assertDoesNotMatchRegularExpression('/^\s*\$groups\s*=/m', $subnav);
+        self::assertStringContainsString('$labNavGroups', $subnav);
+
+        $queue = (string) file_get_contents($root . '/views/atak/sse/digital/queue.php');
+        self::assertStringContainsString('$queueGroups', $queue);
+        self::assertStringContainsString("\$group['device_type_label'] ??", $queue);
+        self::assertStringNotContainsString("\$group['device_type_label'] ?:", $queue);
+        self::assertStringContainsString("'Inconnu'", $queue);
+    }
 }

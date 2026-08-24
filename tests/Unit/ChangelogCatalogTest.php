@@ -13,19 +13,21 @@ final class ChangelogCatalogTest extends TestCase
     {
         $catalog = ChangelogCatalog::hydrate(['communities_total' => 0]);
 
-        self::assertCount(6, $catalog['releases']);
-        self::assertSame('2026-08-planning', $catalog['featured']['id']);
+        self::assertCount(7, $catalog['releases']);
+        self::assertSame('2026-08-ops', $catalog['featured']['id']);
         self::assertTrue($catalog['featured']['featured']);
-        self::assertSame(['c2', 'atak'], $catalog['featured']['categories']);
+        self::assertSame(['c2', 'atak', 'sse'], $catalog['featured']['categories']);
         self::assertContains('command', $catalog['featured']['filter_groups']);
         self::assertContains('atak', $catalog['featured']['filter_groups']);
+        self::assertContains('intel', $catalog['featured']['filter_groups']);
         self::assertNotSame('', $catalog['featured']['title']);
         self::assertNotSame('', $catalog['featured']['why']);
-        self::assertCount(6, $catalog['featured']['features']);
-        self::assertSame('assets/images/night-team.jpg', $catalog['featured']['image']);
+        self::assertCount(7, $catalog['featured']['features']);
+        self::assertSame('assets/images/fog-team.jpg', $catalog['featured']['image']);
 
         $ids = array_column($catalog['releases'], 'id');
         self::assertSame([
+            '2026-08-ops',
             '2026-08-planning',
             '2026-08-intel',
             '2026-07-sse',

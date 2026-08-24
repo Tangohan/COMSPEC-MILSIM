@@ -70,10 +70,25 @@ if (_type isEqualTo "medical") then {
     };
 } else {
     if (_type isEqualTo "order") then {
-        if ((_msgLow find "urgent") >= 0 || {(_msgLow find "contact") >= 0}) then {
-            _soundEvent = "order_priority";
+        if (
+            (_msgLow find "accept") >= 0
+            || {(_msgLow find "confirm") >= 0}
+            || {(_msgLow find "réception confirm") >= 0}
+            || {(_msgLow find "reception confirm") >= 0}
+        ) then {
+            _soundEvent = "order_ack";
         } else {
-            _soundEvent = "order";
+            if (
+                (_msgLow find "nouvel ordre") >= 0
+                || {(_msgLow find "ordre de déplacement") >= 0}
+                || {(_msgLow find "ordre de deplacement") >= 0}
+            ) then {
+                if ((_msgLow find "urgent") >= 0 || {(_msgLow find "contact") >= 0}) then {
+                    _soundEvent = "order_priority";
+                } else {
+                    _soundEvent = "order";
+                };
+            };
         };
     };
 };

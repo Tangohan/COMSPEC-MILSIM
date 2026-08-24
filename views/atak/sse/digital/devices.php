@@ -64,7 +64,7 @@ require __DIR__ . '/_subnav.php';
                 <?php foreach ($devices as $d): ?>
                     <tr>
                         <td><?= $h($d['reference_code'] ?? '') ?></td>
-                        <td><?= $h($d['device_type_label'] ?? '') ?></td>
+                        <td><?= $h(trim((string) ($d['device_type_label'] ?? '')) ?: 'Inconnu') ?></td>
                         <td><?= $h(trim(($d['manufacturer'] ?? '') . ' ' . ($d['model'] ?? '')) ?: '—') ?></td>
                         <td><?= $h($d['mission_label'] ?? '—') ?></td>
                         <td><?= $h($d['status_label'] ?? '') ?></td>

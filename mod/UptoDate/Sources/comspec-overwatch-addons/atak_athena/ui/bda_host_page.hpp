@@ -37,7 +37,7 @@ class COMSPEC_ATAK_BdaHost: ATAK_Message
             w = QUOTE(COMSPEC_BDA_W(2.84));
             h = QUOTE(COMSPEC_BDA_H(1.20));
             text = "<t align='center'>Chargement du rapport BDA…</t>";
-            colorBackground[] = {0.02, 0.05, 0.07, 0.85};
+            colorBackground[] = ATAK_BG_PANEL;
             class Attributes
             {
                 font = "RobotoCondensed";

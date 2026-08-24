@@ -417,6 +417,7 @@ window.ATAKMapTools = (function () {
       onMapClickPlace(e);
       return;
     }
+    if (window.ATAKTerrainTools && window.ATAKTerrainTools.isActive && window.ATAKTerrainTools.isActive()) return;
     if (!measureOn || !e || !e.latlng) return;
     if (measurePoints.length >= 2) {
       measurePoints = [];
@@ -431,6 +432,7 @@ window.ATAKMapTools = (function () {
   }
 
   function onMapDblClick(e) {
+    if (window.ATAKTerrainTools && window.ATAKTerrainTools.isActive && window.ATAKTerrainTools.isActive()) return;
     if (!e || !e.latlng || measureOn) return;
     var gx = Math.round(e.latlng.lng);
     var gy = Math.round(e.latlng.lat);
@@ -485,6 +487,7 @@ window.ATAKMapTools = (function () {
     stopMeasure(false);
     setFollow(false);
     clearPlaceMode();
+    cancelTerrainTools();
     var ctx = window.ATAKContextMenu;
     if (!ctx) {
       toast('Outils de dessin indisponibles.');
@@ -568,6 +571,7 @@ window.ATAKMapTools = (function () {
     stopMeasure(false);
     setFollow(false);
     cancelMapDraw();
+    cancelTerrainTools();
     clearPlaceMode();
     placeMode = mode;
     setToolActive(mode, true);
@@ -600,6 +604,12 @@ window.ATAKMapTools = (function () {
     }
   }
 
+  function cancelTerrainTools() {
+    if (window.ATAKTerrainTools && window.ATAKTerrainTools.isActive && window.ATAKTerrainTools.isActive()) {
+      window.ATAKTerrainTools.stop(false);
+    }
+  }
+
   function startMeasure() {
     if (measureOn) {
       stopMeasure(false);
@@ -608,6 +618,7 @@ window.ATAKMapTools = (function () {
     }
     clearPlaceMode();
     cancelMapDraw();
+    cancelTerrainTools();
     setFollow(false);
     measureOn = true;
     measurePoints = [];
@@ -676,6 +687,14 @@ window.ATAKMapTools = (function () {
     else if (tool === 'measure') startMeasure();
     else if (tool === 'note') startPlaceMode('note');
     else if (tool === 'search-zone' || tool === 'perimeter' || tool === 'aoi' || tool === 'line') startDrawTool(tool);
+    else if (tool === 'route' || tool === 'los') {
+      stopMeasure(false);
+      cancelMapDraw();
+      clearPlaceMode();
+      setFollow(false);
+      if (window.ATAKTerrainTools && window.ATAKTerrainTools.start) window.ATAKTerrainTools.start(tool);
+      else toast('Outil d’analyse indisponible.');
+    }
     else if (tool === 'clear-drawings') clearDrawings();
     else if (tool === 'speed-foot') {
       setToolSpeedKph(5);
@@ -730,6 +749,10 @@ window.ATAKMapTools = (function () {
         toast('Placement annulé.');
       }
       if (activeDrawTool) setDrawToolActive(null);
+      if (window.ATAKTerrainTools && window.ATAKTerrainTools.isActive && window.ATAKTerrainTools.isActive()) {
+        window.ATAKTerrainTools.stop(false);
+        toast('Analyse annulée.');
+      }
       if (followOn) setFollow(false);
       return;
     }
@@ -777,6 +800,8 @@ window.ATAKMapTools = (function () {
     { id: 'aoi', label: 'Zone d’intérêt' },
     { id: 'line', label: 'Trait' },
     { id: 'clear-drawings', label: 'Effacer' },
+    { id: 'route', label: 'Itinéraire' },
+    { id: 'los', label: 'Visée' },
     { id: 'zoom', label: 'Zoom' },
     { id: 'nvg', label: 'Vision nocturne' },
     { id: 'cop', label: 'Tableau des unités' }
@@ -786,6 +811,7 @@ window.ATAKMapTools = (function () {
     nav: ['goto', 'follow'],
     mark: ['measure', 'note'],
     draw: ['search-zone', 'perimeter', 'aoi', 'line', 'clear-drawings'],
+    analyse: ['route', 'los'],
     view: ['zoom', 'nvg', 'cop']
   };
 
@@ -797,7 +823,7 @@ window.ATAKMapTools = (function () {
     },
     sl: {
       label: 'Chef d’équipe',
-      ids: ['goto', 'follow', 'measure', 'note', 'search-zone', 'perimeter', 'aoi', 'line', 'clear-drawings', 'zoom']
+      ids: ['goto', 'follow', 'measure', 'note', 'search-zone', 'perimeter', 'aoi', 'line', 'clear-drawings', 'route', 'los', 'zoom']
     },
     medic: {
       label: 'Médecin',

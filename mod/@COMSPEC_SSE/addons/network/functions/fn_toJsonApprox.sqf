@@ -18,6 +18,8 @@ private _maxDepth = 32;
 // Échapper via toString [92] : les littéraux "\" / "\"" cassent le parseur SQF
 private _esc = {
     params ["_s"];
+    if (isNil "_s") exitWith { """""" };
+    if (!(_s isEqualType "")) then { _s = format ["%1", _s]; };
     private _b = toString [92];
     _s = _s replaceString [_b, _b + _b];
     _s = _s replaceString ["""", _b + """"];
@@ -58,6 +60,7 @@ if (_value isEqualType createHashMap) exitWith {
     private _parts = [];
     {
         private _child = [_y, _depth + 1, _visited] call comspec_sse_fnc_toJsonApprox;
+        if (isNil "_child" || {!(_child isEqualType "")}) then { _child = "null"; };
         _parts pushBack format ["%1:%2", [_x] call _esc, _child];
     } forEach _value;
     "{" + (_parts joinString ",") + "}"
@@ -78,13 +81,16 @@ if (_value isEqualType []) exitWith {
         {
             _x params ["_k", "_v"];
             private _child = [_v, _depth + 1, _visited] call comspec_sse_fnc_toJsonApprox;
+            if (isNil "_child" || {!(_child isEqualType "")}) then { _child = "null"; };
             _parts pushBack format ["%1:%2", [_k] call _esc, _child];
         } forEach _value;
         "{" + (_parts joinString ",") + "}"
     } else {
         private _parts = [];
         {
-            _parts pushBack ([_x, _depth + 1, _visited] call comspec_sse_fnc_toJsonApprox);
+            private _item = [_x, _depth + 1, _visited] call comspec_sse_fnc_toJsonApprox;
+            if (isNil "_item" || {!(_item isEqualType "")}) then { _item = "null"; };
+            _parts pushBack _item;
         } forEach _value;
         "[" + (_parts joinString ",") + "]"
     };

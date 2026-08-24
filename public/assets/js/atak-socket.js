@@ -35,15 +35,9 @@ window.ATAKSocket = (function () {
     return /\/api\/atak\/ping(?:\?|$)/.test(s) || /\/api\/health(?:\?|$)/.test(s);
   }
 
-  function isSecondaryPollUrl(url) {
+  function isCoreRosterUrl(url) {
     var s = String(url || '');
-    return /\/api\/atak\/weather(?:\?|$)/.test(s)
-      || /\/api\/atak\/stats(?:\?|$)/.test(s)
-      || /\/api\/atak\/video-feeds(?:\?|$)/.test(s)
-      || /\/api\/atak\/laser-codes(?:\?|$)/.test(s)
-      || /\/api\/cas(?:\?|\/|$)/.test(s)
-      || /\/api\/nine-line(?:\?|\/|$)/.test(s)
-      || /\/api\/recon\//.test(s);
+    return /\/api\/units(?:\?|$)/.test(s);
   }
 
   function requestMethod(input, init) {
@@ -75,9 +69,6 @@ window.ATAKSocket = (function () {
         window.ATAKShowError('Le poste n’atteint pas ses données pour le moment. Les mises à jour reprendront toutes seules.');
       }
     }, 0);
-    window.setTimeout(function () {
-      warnedUnavailable = false;
-    }, sec * 1000);
   }
 
   function onApiUnavailable(fn) {
@@ -91,26 +82,31 @@ window.ATAKSocket = (function () {
       var ours = isOurApiUrl(url);
       var heartbeat = isHeartbeatUrl(url);
       if (ours && method === 'GET' && isApiPaused() && !heartbeat) {
+        var remain = Math.max(1, Math.ceil((pauseUntil - Date.now()) / 1000));
         return Promise.resolve(new Response(JSON.stringify({
-          ok: true,
+          ok: false,
           paused: true,
           error: 'database_unavailable',
           message: 'Service temporairement indisponible. Réessayez dans un instant.'
         }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
+          status: 503,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': String(remain)
+          }
         }));
       }
       return nativeFetch(input, init).then(function (res) {
-        if (ours && res && res.status === 503 && !heartbeat && !isSecondaryPollUrl(url)) {
+        if (ours && method === 'GET' && res && res.status === 503 && isCoreRosterUrl(url)) {
           var retry = 30;
           try {
             var header = res.headers.get('Retry-After');
             if (header) retry = Math.max(8, parseInt(header, 10) || 30);
           } catch (e) {}
           noteUnavailable(retry);
-        } else if (ours && res && res.ok && pauseUntil > 0 && Date.now() >= pauseUntil) {
+        } else if (ours && res && res.ok && isCoreRosterUrl(url)) {
           pauseUntil = 0;
+          warnedUnavailable = false;
         }
         return res;
       });

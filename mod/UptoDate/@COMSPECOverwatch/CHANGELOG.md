@@ -1,3 +1,23 @@
+COMSPEC Overwatch 1.4.73 / Athena ATAK 1.5.47 — 24/08/2026
+
+• Aéronefs occupés remontés vers Appui aérien sans déclaration de vol
+• Charges : mode uniquement depuis ATAK, tout déclencher limité aux charges du joueur
+
+COMSPEC Overwatch 1.4.64 / Athena ATAK 1.0.46 — 24/08/2026
+
+Sons ATAK
+
+• Nouveau pack d’alertes (web et jeu) : bip radio, réception / acceptation d’ordre, renseignement, signal médical (trois fois)
+
+COMSPEC Overwatch 1.4.63 / extension 2.0.12 — 24/08/2026
+
+SPOTREP #00001 · TECHREP #00001
+
+• Relief du sol autour de l’équipe (plus toute la carte d’un coup)
+• Localisation téléphone depuis le poste de situation
+• Overlays de liaison, menus Zeus, moins de bips vanilla
+• Altitude sol (`terrain_z`) en plus de l’altitude opérateur
+
 COMSPEC Overwatch 1.4.50 / extension 2.0.10 — 23/08/2026
 
 Correctifs — lancement et signalement

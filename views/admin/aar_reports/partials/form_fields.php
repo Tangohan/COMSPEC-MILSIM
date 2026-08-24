@@ -56,7 +56,7 @@ $canManageTemplates = !empty($aarCanManageTemplates);
 ?>
 
 <label for="aar-title">Titre</label>
-<input id="aar-title" name="title" value="<?= $h($val('title')) ?>" placeholder="Titre du compte rendu">
+<input id="aar-title" name="title" required value="<?= $h($val('title')) ?>" placeholder="Titre du compte rendu">
 
 <label for="aar-operation">Opération</label>
 <input id="aar-operation" name="operation_label" value="<?= $h($val('operation_label')) ?>" placeholder="Nom de l’opération">
@@ -102,6 +102,8 @@ $canManageTemplates = !empty($aarCanManageTemplates);
     $customAnswers = is_array($report['custom_answers'] ?? null) ? $report['custom_answers'] : [];
     require base_path('views/admin/aar_reports/partials/custom_fields.php');
     ?>
+<?php elseif ($isEdit): ?>
+    <?php require base_path('views/admin/aar_reports/partials/standard_fields.php'); ?>
 <?php else: ?>
 
 <template x-if="isCustom">
@@ -159,32 +161,7 @@ $canManageTemplates = !empty($aarCanManageTemplates);
 
 <template x-if="!isCustom">
 <div>
-<label for="aar-summary-heading">Titre de synthèse</label>
-<input id="aar-summary-heading" name="summary_heading" value="<?= $h($val('summary_heading')) ?>" placeholder="Ex. Mission remplie sans perte">
-
-<label for="aar-summary">Synthèse</label>
-<textarea id="aar-summary" name="summary_text" rows="4" placeholder="Résumé opérationnel"><?= $h($val('summary_text')) ?></textarea>
-
-<label for="aar-strengths">Points forts (une ligne par point)</label>
-<textarea id="aar-strengths" name="strengths" rows="3"><?= $h($strengthsText) ?></textarea>
-
-<label for="aar-weaknesses">Points faibles (une ligne par point)</label>
-<textarea id="aar-weaknesses" name="weaknesses" rows="3"><?= $h($weaknessesText) ?></textarea>
-
-<label for="aar-lessons">Enseignements</label>
-<textarea id="aar-lessons" name="lessons_learned" rows="2"><?= $h($val('lessons_learned')) ?></textarea>
-
-<label for="aar-lessons-ctx">Contexte enseignements</label>
-<input id="aar-lessons-ctx" name="lessons_context" value="<?= $h($val('lessons_context')) ?>" placeholder="Ex. prochaine opération">
-
-<label for="aar-conclusion">Conclusion</label>
-<textarea id="aar-conclusion" name="conclusion_text" rows="2"><?= $h($val('conclusion_text')) ?></textarea>
-
-<label for="aar-open-actions">Actions en cours (une ligne par action)</label>
-<textarea id="aar-open-actions" name="open_actions" rows="2" placeholder="Libellé — responsable"><?= $h($openActionsText) ?></textarea>
-
-<label for="aar-closed-actions">Actions closes (une ligne par action)</label>
-<textarea id="aar-closed-actions" name="closed_actions" rows="2"><?= $h($closedActionsText) ?></textarea>
+    <?php require base_path('views/admin/aar_reports/partials/standard_fields.php'); ?>
 </div>
 </template>
 <?php endif; ?>

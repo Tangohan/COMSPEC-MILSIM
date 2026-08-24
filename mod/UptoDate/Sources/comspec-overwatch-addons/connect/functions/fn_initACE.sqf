@@ -377,4 +377,13 @@ if (_disablePhoneAction isNotEqualTo []) then {
     ["CAManBase", 0, ["ACE_MainActions"], _disablePhoneAction, true] call ace_interact_menu_fnc_addActionToClass;
 };
 
+[] call comspec_overwatch_connect_fnc_initChargeAceActions;
+
 missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
+
+if (!isNil "comspec_overwatch_connect_fnc_getBloodType") then {
+    private _bt = [] call comspec_overwatch_connect_fnc_getBloodType;
+    if (_bt isNotEqualTo "") then {
+        ["COMSPECExtension" callExtension ["SetBloodType", [_bt]]] call comspec_overwatch_connect_fnc_extResult;
+    };
+};

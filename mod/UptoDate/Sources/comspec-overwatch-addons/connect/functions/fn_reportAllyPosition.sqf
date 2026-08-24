@@ -20,8 +20,10 @@ _unit setVariable ["COMSPEC_AllyTrackLastAt", diag_tickTime, false];
 
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };
 private _callSign = [_unit] call comspec_overwatch_connect_fnc_allyTrackCallsign;
-private _heading = getDir _unit;
-private _aslZ = (getPosASL _unit) select 2;
+private _veh = vehicle _unit;
+private _inVeh = _veh isNotEqualTo _unit;
+private _heading = getDir (if (_inVeh) then { _veh } else { _unit });
+private _aslZ = (getPosASL (if (_inVeh) then { _veh } else { _unit })) select 2;
 private _side = side group _unit;
 private _sideStr = switch (_side) do {
     case east: { "EAST" };
@@ -66,12 +68,27 @@ if (_allyId isEqualTo "") then {
 };
 _allyId = (_allyId splitString """" joinString "");
 
+private _platform = [_unit] call comspec_overwatch_connect_fnc_bftPlatform;
+private _vehType = "";
+private _vehName = "";
+if (_inVeh) then {
+    _vehType = typeOf _veh;
+    _vehName = getText (configFile >> "CfgVehicles" >> _vehType >> "displayName");
+    if (_vehName isEqualTo "") then { _vehName = getText (configOf _veh >> "displayName"); };
+    _vehType = (_vehType splitString """" joinString "");
+    _vehName = (_vehName splitString """" joinString "");
+};
+
 private _extra = format [
-    "{""ally_ai"":true,""is_ai"":true,""source"":""ally"",""ally_id"":""%1"",""side"":""%2"",""affiliation"":""%3"",""in_vehicle"":%4,""military_id"":""""}",
+    "{""ally_ai"":true,""is_ai"":true,""source"":""ally"",""ally_id"":""%1"",""display_name"":""%2"",""side"":""%3"",""affiliation"":""%4"",""in_vehicle"":%5,""platform"":""%6"",""vehicle"":""%7"",""vehicle_name"":""%8"",""military_id"":""""}",
     _allyId,
+    _escCs,
     _sideStr,
     _affiliation,
-    if ((vehicle _unit) isNotEqualTo _unit) then { "true" } else { "false" }
+    if (_inVeh) then { "true" } else { "false" },
+    _platform,
+    _vehType,
+    _vehName
 ];
 
 "COMSPECExtension" callExtension ["UpdatePosition", [

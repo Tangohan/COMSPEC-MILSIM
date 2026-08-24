@@ -56,7 +56,7 @@ $expected = [
         'freq', 'radio_main', 'radio_aux', 'laser', 'auth', 'auth_code', 'pilot', 'crew',
         'fuel_pct', 'ordnance', 'station', 'eta_minutes', 'bingo_fuel', 'checklist',
         'pos_x', 'pos_y', 'pos_z', 'alt', 'heading', 'side', 'status', 'pilot_status',
-        'aircraft_count', 'last_update', 'updated_at',
+        'aircraft_count', 'last_update', 'source', 'vehicle_id', 'updated_at',
     ],
     'recon_images' => [
         'id', 'tenant_id', 'mission_id', 'author_callsign', 'unit_name', 'side',

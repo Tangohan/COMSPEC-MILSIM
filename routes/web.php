@@ -263,6 +263,7 @@ return function (Router $router) {
     $router->get('/contact', [SitePagesController::class, 'contact']);
     $router->post('/contact', [SitePagesController::class, 'contactSubmit']);
     $router->get('/nouveautes', [SitePagesController::class, 'changelog']);
+    $router->get('/nouveautes/{kind}/{number}', [SitePagesController::class, 'dispatch']);
     $router->get('/sse', [SitePagesController::class, 'sse']);
     $router->get('/renseignement-sse', fn () => \App\Core\Response::redirect(url('sse')));
 
@@ -1267,10 +1268,12 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/atak/operateurs/export', [AdminAtakOperatorsController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/fiche-operateur', [AdminAtakOperatorsController::class, 'profile'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/realisme', [\App\Controllers\Admin\AdminAtakRealismController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/realisme/terminaux/{id}/journal', [\App\Controllers\Admin\AdminAtakRealismController::class, 'terminalJournal'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/certificats', [\App\Controllers\Admin\AdminAtakRealismController::class, 'certificates'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/realisme/terminaux', [\App\Controllers\Admin\AdminAtakRealismController::class, 'storeTerminal'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/realisme/terminaux/supprimer-selection', [\App\Controllers\Admin\AdminAtakRealismController::class, 'deleteTerminalsSelection'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/realisme/terminaux/sessions-web/supprimer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'deleteWebSessions'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/realisme/terminaux/{id}/dissocier', [\App\Controllers\Admin\AdminAtakRealismController::class, 'dissociateTerminal'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/realisme/terminaux/{id}/supprimer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'deleteTerminal'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/realisme/certificats', [\App\Controllers\Admin\AdminAtakRealismController::class, 'storeCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/certificats', [\App\Controllers\Admin\AdminAtakRealismController::class, 'storeCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1671,6 +1674,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     $router->post('/api/atak/beta-register', [AtakApiController::class, 'betaRegister']);
     $router->post('/api/atak/mod-report', [AtakApiController::class, 'modReport']);
+    $router->post('/api/atak/device-logs', [AtakApiController::class, 'deviceLogsStore']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
     $router->get('/api/atak/roleplay-stats', [AtakApiController::class, 'roleplayStats']);
     $router->get('/api/atak/notifications', [AtakApiController::class, 'notificationsPoll']);
@@ -1785,6 +1789,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/explosive-timers', [AtakApiController::class, 'explosiveTimersIndex']);
     $router->post('/api/atak/explosive-timers', [AtakApiController::class, 'explosiveTimersStore']);
     $router->get('/api/atak/explosive-timers/commands', [AtakApiController::class, 'explosiveTimersCommands']);
+    $router->post('/api/atak/explosive-timers/detonate-all', [AtakApiController::class, 'explosiveTimersDetonateAll']);
     $router->post('/api/atak/explosive-timers/{id}/detonate', [AtakApiController::class, 'explosiveTimersDetonate']);
     $router->get('/api/atak/sse-case-overlay', [AtakApiController::class, 'sseCaseOverlay']);
     $router->post('/api/atak/sse-tracks', [AtakApiController::class, 'sseTrackStore']);
@@ -1943,7 +1948,13 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/assignments/{id}/delete', [\App\Controllers\Api\AtakAssignmentApiController::class, 'detach']);
     $router->get('/api/atak/terrain', [\App\Controllers\Api\AtakTerrainApiController::class, 'show']);
     $router->post('/api/atak/terrain/chunk', [\App\Controllers\Api\AtakTerrainApiController::class, 'chunk']);
+    $router->post('/api/atak/terrain/samples', [\App\Controllers\Api\AtakTerrainApiController::class, 'samples']);
     $router->get('/api/atak/terrain/sample', [\App\Controllers\Api\AtakTerrainApiController::class, 'sample']);
+    $router->post('/api/atak/terrain/profile', [\App\Controllers\Api\AtakTerrainApiController::class, 'profile']);
+    $router->post('/api/atak/terrain/los', [\App\Controllers\Api\AtakTerrainApiController::class, 'los']);
+    $router->get('/api/atak/terrain/hillshade', [\App\Controllers\Api\AtakTerrainApiController::class, 'hillshade']);
+    $router->get('/api/atak/terrain/slope', [\App\Controllers\Api\AtakTerrainApiController::class, 'slope']);
+    $router->get('/api/atak/terrain/contours', [\App\Controllers\Api\AtakTerrainApiController::class, 'contours']);
     $router->get('/api/atak/intel-events', [\App\Controllers\Api\AtakIntelEventApiController::class, 'index']);
 
     // Zones tactiques (LZ, DZ, Objectives, Danger Zones)

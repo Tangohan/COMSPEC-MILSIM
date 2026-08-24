@@ -42,6 +42,11 @@ return static function (PDO $pdo): void {
                 compromise_reason VARCHAR(255) DEFAULT NULL,
                 first_seen_at DATETIME DEFAULT NULL,
                 last_seen_at DATETIME DEFAULT NULL,
+                last_client_ip VARCHAR(45) DEFAULT NULL,
+                mod_version VARCHAR(40) DEFAULT NULL,
+                extension_version VARCHAR(40) DEFAULT NULL,
+                server_host VARCHAR(190) DEFAULT NULL,
+                server_signature VARCHAR(32) DEFAULT NULL,
                 linked_at DATETIME DEFAULT NULL,
                 notes TEXT DEFAULT NULL,
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -71,6 +76,36 @@ return static function (PDO $pdo): void {
             $pdo->exec(
                 'ALTER TABLE atak_terminals
                  ADD COLUMN compromise_reason VARCHAR(255) DEFAULT NULL AFTER compromised_at'
+            );
+        }
+        if (!$hasColumn('atak_terminals', 'last_client_ip')) {
+            $pdo->exec(
+                'ALTER TABLE atak_terminals
+                 ADD COLUMN last_client_ip VARCHAR(45) DEFAULT NULL AFTER last_seen_at'
+            );
+        }
+        if (!$hasColumn('atak_terminals', 'mod_version')) {
+            $pdo->exec(
+                'ALTER TABLE atak_terminals
+                 ADD COLUMN mod_version VARCHAR(40) DEFAULT NULL AFTER last_client_ip'
+            );
+        }
+        if (!$hasColumn('atak_terminals', 'extension_version')) {
+            $pdo->exec(
+                'ALTER TABLE atak_terminals
+                 ADD COLUMN extension_version VARCHAR(40) DEFAULT NULL AFTER mod_version'
+            );
+        }
+        if (!$hasColumn('atak_terminals', 'server_host')) {
+            $pdo->exec(
+                'ALTER TABLE atak_terminals
+                 ADD COLUMN server_host VARCHAR(190) DEFAULT NULL AFTER extension_version'
+            );
+        }
+        if (!$hasColumn('atak_terminals', 'server_signature')) {
+            $pdo->exec(
+                'ALTER TABLE atak_terminals
+                 ADD COLUMN server_signature VARCHAR(32) DEFAULT NULL AFTER server_host'
             );
         }
     }

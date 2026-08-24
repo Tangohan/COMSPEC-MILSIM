@@ -109,12 +109,16 @@ window.MilstdCatalog = (function () {
 
   var ROLE_FUNCTION = {
     infantry: { scheme: 'S', dim: 'G', functionid: 'UCI---' },
+    mechanized: { scheme: 'S', dim: 'G', functionid: 'UCIM--' },
+    motorized: { scheme: 'S', dim: 'G', functionid: 'UCIMO-' },
     armor: { scheme: 'S', dim: 'G', functionid: 'UCA---' },
     artillery: { scheme: 'S', dim: 'G', functionid: 'UCF---' },
+    mortar: { scheme: 'S', dim: 'G', functionid: 'UCFM--' },
     recon: { scheme: 'S', dim: 'G', functionid: 'UCR---' },
     hq: { scheme: 'S', dim: 'G', functionid: 'UH----' },
     medical: { scheme: 'S', dim: 'G', functionid: 'USM---' },
     logistics: { scheme: 'S', dim: 'G', functionid: 'US----' },
+    naval: { scheme: 'S', dim: 'S', functionid: 'CL----' },
     aviation_fixed: { scheme: 'S', dim: 'A', functionid: 'MF----' },
     aviation_rotary: { scheme: 'S', dim: 'A', functionid: 'MH----' },
     uav: { scheme: 'S', dim: 'A', functionid: 'MFQ---' },

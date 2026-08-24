@@ -40,7 +40,20 @@ $e = \App\Core\Session::getFlash('error');
             <p class="ath-aar-template-card__desc"><?= $h((string) $tpl['description']) ?></p>
             <?php endif; ?>
             <p class="ath-aar-template-card__meta">
+                <?php
+                $typeLabels = [];
+                foreach (is_array($tpl['fields'] ?? null) ? $tpl['fields'] : [] as $field) {
+                    if (!is_array($field)) {
+                        continue;
+                    }
+                    $typeLabels[] = \App\Support\AarCustomForm::typeLabel((string) ($field['type'] ?? 'text'));
+                }
+                $typeLabels = array_values(array_unique($typeLabels));
+                ?>
                 <?= $count ?> question<?= $count > 1 ? 's' : '' ?>
+                <?php if ($typeLabels !== []): ?>
+                    · <?= $h(implode(', ', $typeLabels)) ?>
+                <?php endif; ?>
                 <?php if (trim((string) ($tpl['author_name'] ?? '')) !== ''): ?>
                     · <?= $h((string) $tpl['author_name']) ?>
                 <?php endif; ?>

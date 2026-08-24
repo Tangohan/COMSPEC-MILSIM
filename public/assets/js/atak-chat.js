@@ -289,8 +289,8 @@ window.ATAKChat = (function () {
       if (!newestPrio || id > messageId(newestPrio)) newestPrio = m;
     }
     if (!newestPrio) return;
-    if (window.ATAKSounds && typeof window.ATAKSounds.playPriority === 'function') {
-      window.ATAKSounds.playPriority();
+    if (window.ATAKSounds && typeof window.ATAKSounds.playEvent === 'function') {
+      window.ATAKSounds.playEvent('beep', { priority: true });
     }
   }
 
@@ -468,8 +468,10 @@ window.ATAKChat = (function () {
               : r.status === 503
                 ? 'Liaison radio dégradée — nouvel essai…'
                 : 'Impossible de charger le tchat pour le moment.';
-          if (window.ATAKShowError) window.ATAKShowError(msg);
           if (window.ATAKLastChatError) window.ATAKLastChatError(msg);
+          if ((r.status === 401 || r.status === 403) && window.ATAKShowError) {
+            window.ATAKShowError(msg);
+          }
           // Ne pas écraser un cache déjà peuplé (perte de paquet roleplay / 503).
           if (cachedMessages.length) {
             renderList(cachedMessages);

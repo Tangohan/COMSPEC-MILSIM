@@ -39,12 +39,12 @@ private _fnc_paint = {
     _btn ctrlCommit 0;
 };
 
-private _ok = [0.08, 0.42, 0.32, 0.96];
-private _okF = [0.12, 0.52, 0.40, 1];
-private _exec = [0.10, 0.28, 0.36, 0.96];
-private _execF = [0.14, 0.38, 0.48, 1];
-private _warn = [0.48, 0.18, 0.12, 0.96];
-private _warnF = [0.62, 0.24, 0.14, 1];
+private _ok = [0.05, 0.16, 0.09, 0.98];
+private _okF = [0.08, 0.26, 0.13, 1];
+private _exec = [0.145, 0.145, 0.145, 0.98];
+private _execF = [0.22, 0.22, 0.22, 1];
+private _warn = [0.18, 0.05, 0.05, 0.98];
+private _warnF = [0.28, 0.08, 0.08, 1];
 
 private _leftShow = false;
 private _leftTxt = "";

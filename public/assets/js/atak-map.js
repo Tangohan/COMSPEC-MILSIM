@@ -61,8 +61,13 @@ window.ATAKMap = (function () {
     showAssignmentLines: true,
     showMotionTrail: true,
     showEtaLabels: false,
-    terrainLayer: 'off',
-    terrainOpacity: 0.55,
+    terrainLayer: 'hillshade',
+    terrainHillshade: true,
+    terrainContours10: true,
+    terrainContours50: false,
+    terrainAltitudes: false,
+    terrainSlope: false,
+    terrainOpacity: 0.32,
     terrainSunAzimuth: 315
   };
   var displayPrefsCache = null;
@@ -141,6 +146,11 @@ window.ATAKMap = (function () {
       showMotionTrail: src.showMotionTrail !== false,
       showEtaLabels: !!src.showEtaLabels,
       terrainLayer: ['off', 'hillshade', 'hypsometry', 'slope', 'contours', 'ridges', 'depressions'].indexOf(src.terrainLayer) >= 0 ? src.terrainLayer : DISPLAY_PREFS_DEFAULT.terrainLayer,
+      terrainHillshade: src.terrainHillshade != null ? !!src.terrainHillshade : (src.terrainLayer == null || src.terrainLayer === 'hillshade' || src.terrainLayer === 'hypsometry'),
+      terrainContours10: src.terrainContours10 != null ? !!src.terrainContours10 : (src.terrainLayer == null || src.terrainLayer === 'contours' || src.terrainLayer === 'hillshade'),
+      terrainContours50: !!src.terrainContours50,
+      terrainAltitudes: !!src.terrainAltitudes,
+      terrainSlope: src.terrainSlope != null ? !!src.terrainSlope : src.terrainLayer === 'slope',
       terrainOpacity: clampNum(src.terrainOpacity, 0.05, 1, DISPLAY_PREFS_DEFAULT.terrainOpacity),
       terrainSunAzimuth: clampNum(src.terrainSunAzimuth, 0, 360, DISPLAY_PREFS_DEFAULT.terrainSunAzimuth)
     };
@@ -740,14 +750,25 @@ window.ATAKMap = (function () {
     map.setView(config.center, config.defaultZoom);
     L.control.scale({ maxWidth: 160, imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
 
-    var gridEl = L.DomUtil.create('div', 'leaflet-grid-mouseposition atak-map-hud');
-    gridEl.innerHTML =
-      '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Grille</span> <span class="atak-map-hud__v" data-hud-grid>0 0</span></div>'
-      + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Échelle</span> <span class="atak-map-hud__v" data-hud-zoom>Z' + map.getZoom() + '</span></div>'
-      + '<div class="atak-map-hud__row" data-hud-measure-row hidden><span class="atak-map-hud__k">Mesure</span> <span class="atak-map-hud__v atak-map-hud__measure" data-hud-measure>—</span></div>'
-      + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Contacts</span> <span class="atak-map-hud__v" data-hud-contacts>—</span></div>'
-      + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Réseau</span> <span class="atak-map-hud__v atak-map-hud__ok" data-hud-net>En liaison</span></div>';
-    map.getContainer().appendChild(gridEl);
+    var gridEl = document.getElementById('atak-map-hud');
+    if (!gridEl) {
+      gridEl = L.DomUtil.create('div', 'atak-map-hud');
+      gridEl.id = 'atak-map-hud';
+      gridEl.innerHTML =
+        '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Grille</span> <span class="atak-map-hud__v" data-hud-grid>0 0</span></div>'
+        + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Échelle</span> <span class="atak-map-hud__v" data-hud-zoom>Z' + map.getZoom() + '</span></div>'
+        + '<div class="atak-map-hud__row" data-hud-measure-row hidden><span class="atak-map-hud__k">Mesure</span> <span class="atak-map-hud__v atak-map-hud__measure" data-hud-measure>—</span></div>'
+        + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Contacts</span> <span class="atak-map-hud__v" data-hud-contacts>—</span></div>'
+        + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Réseau</span> <span class="atak-map-hud__v atak-map-hud__ok" data-hud-net>En liaison</span></div>';
+    }
+    var zoomHud = gridEl.querySelector('[data-hud-zoom]');
+    if (zoomHud) zoomHud.textContent = 'Z' + map.getZoom();
+    var brStack = document.getElementById('atak-map-br-stack');
+    if (brStack && gridEl.parentNode !== brStack) {
+      brStack.appendChild(gridEl);
+    } else if (!brStack && gridEl.parentNode !== map.getContainer()) {
+      map.getContainer().appendChild(gridEl);
+    }
     map.on('mousemove', function (e) {
       var lat = Math.round(e.latlng.lat);
       var lng = Math.round(e.latlng.lng);
@@ -1819,7 +1840,7 @@ window.ATAKMap = (function () {
       var P = window.ATAKUnitPopup;
       var isPhone = P && P.isPhoneGeoloc ? P.isPhoneGeoloc(extra) : !!(extra.phone_geoloc);
       var rev = (isPhone && P && P.phoneReveal) ? P.phoneReveal(extra) : null;
-      var labelCs = (isPhone && P && P.phoneDisplayName) ? P.phoneDisplayName(u, extra) : (u.call_sign || '');
+      var labelCs = (P && P.unitDisplayName) ? P.unitDisplayName(u, extra) : ((isPhone && P && P.phoneDisplayName) ? P.phoneDisplayName(u, extra) : (u.call_sign || ''));
       var aff = extra.affiliation || extra.affil || u.affiliation || 'friend';
       if (isPhone && (!rev || !rev.affiliation)) aff = 'unknown';
       var health = String(extra.health || u.health || '').toLowerCase();
@@ -1856,6 +1877,9 @@ window.ATAKMap = (function () {
       var ftColor = String(u.fire_team_color || '').trim();
       var safeFt = ftColor.replace(/[^#A-Fa-f0-9]/g, '');
       if (!/^#[0-9A-Fa-f]{6}$/.test(safeFt)) safeFt = '';
+      var plat = extra.platform || extra.vehicle_class || u.vehicle_class || '';
+      var vehName = extra.vehicle || extra.vehicle_type || extra.vehicle_name || extra.model || '';
+      var inVehFlag = extra.in_vehicle === true || extra.in_vehicle === 1 || extra.in_vehicle === '1' || extra.in_vehicle === 'true';
       var iconSig = [
         prefs.styleMode,
         prefs.iconSize,
@@ -1865,6 +1889,9 @@ window.ATAKMap = (function () {
         aff, roleText, health, healthClass, labelCs, headingRounded,
         preferAvatar ? profile.avatarUrl : '',
         extra.sidc || u.sidc || '',
+        plat,
+        vehName,
+        inVehFlag ? '1' : '0',
         emitting ? '1' : '0',
         radioCh,
         onMonNet ? '1' : '0',
@@ -1908,6 +1935,11 @@ window.ATAKMap = (function () {
             affiliation: aff,
             role: roleText,
             sidc: extra.sidc || u.sidc || '',
+            platform: plat,
+            vehicle: vehName,
+            vehicle_class: extra.vehicle_class || '',
+            in_vehicle: extra.in_vehicle,
+            aircraftType: extra.aircraft_type || u.aircraft_type || '',
             callSign: labelCs,
             heading: headingRounded,
             showLabel: false,

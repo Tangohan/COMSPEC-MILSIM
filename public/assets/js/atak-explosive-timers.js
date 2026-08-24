@@ -5,8 +5,10 @@ window.ATAKExplosiveTimers = (function () {
   var fetchedAt = 0;
   var canCommandDetonate = false;
   var pendingConfirmId = 0;
+  var pendingConfirmAll = false;
   var pendingConfirmTimer = null;
   var sendingIds = {};
+  var sendingAll = false;
 
   function getApiBase() {
     return window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : (window.ATAK_API_BASE || '');
@@ -68,6 +70,7 @@ window.ATAKExplosiveTimers = (function () {
   }
   function clearPendingConfirm() {
     pendingConfirmId = 0;
+    pendingConfirmAll = false;
     if (pendingConfirmTimer) {
       clearTimeout(pendingConfirmTimer);
       pendingConfirmTimer = null;
@@ -82,6 +85,58 @@ window.ATAKExplosiveTimers = (function () {
       render();
     }, 5000);
     render();
+  }
+  function armPendingConfirmAll() {
+    clearPendingConfirm();
+    pendingConfirmAll = true;
+    pendingConfirmTimer = setTimeout(function () {
+      pendingConfirmAll = false;
+      pendingConfirmTimer = null;
+      render();
+    }, 5000);
+    render();
+  }
+  function atakArmedCount(items) {
+    return (items || []).filter(function (item) {
+      return item && item.status === 'armed' && item.trigger_kind === 'atak';
+    }).length;
+  }
+  function requestDetonateAll() {
+    var base = getApiBase();
+    if (!base || sendingAll) return;
+    sendingAll = true;
+    clearPendingConfirm();
+    render();
+    fetch(base + '/api/atak/explosive-timers/detonate-all', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mapId: getMapId() })
+    }).then(function (r) {
+      return r.json().then(function (d) { return { ok: r.ok, data: d }; });
+    }).then(function (res) {
+      sendingAll = false;
+      if (!res.ok) {
+        showError((res.data && res.data.message) || 'Impossible de tout déclencher pour le moment.');
+        render();
+        return;
+      }
+      var returned = (res.data && res.data.items) || [];
+      if (returned.length) {
+        var byId = {};
+        returned.forEach(function (row) { byId[Number(row.id)] = row; });
+        lastItems = lastItems.map(function (item) {
+          var next = byId[Number(item.id)];
+          if (!next) return item;
+          return Object.assign({}, item, next, { detonate_pending: true, status_label: 'Déclenchement demandé' });
+        });
+      }
+      render();
+    }).catch(function () {
+      sendingAll = false;
+      showError('Liaison interrompue. Réessayez dans un instant.');
+      render();
+    });
   }
   function requestDetonate(id) {
     var base = getApiBase();
@@ -123,7 +178,7 @@ window.ATAKExplosiveTimers = (function () {
       el.innerHTML = '<div class="atak-empty-state">' +
         '<div class="atak-empty-state-icon" aria-hidden="true">◉</div>' +
         '<p class="atak-empty-state-title">Aucune charge posée</p>' +
-        '<p class="atak-empty-state-text">Les explosifs posés sur le terrain apparaissent ici, avec leurs coordonnées. Une minuterie affiche le temps restant ; les autres se déclenchent à la demande.</p>' +
+        '<p class="atak-empty-state-text">Les explosifs posés sur le terrain apparaissent ici, avec leurs coordonnées. Une minuterie affiche le temps restant ; le mode ATAK se déclenche depuis la tablette ou le poste, pas depuis le déclencheur porté.</p>' +
         '</div>';
       setBadge(0);
       if (window.ATAKMap && typeof window.ATAKMap.setExplosiveTimersOnMap === 'function') {
@@ -132,7 +187,18 @@ window.ATAKExplosiveTimers = (function () {
       return;
     }
     var armedCount = 0;
-    el.innerHTML = items.map(function (item) {
+    var atakCount = atakArmedCount(items);
+    var bulkHtml = '';
+    if (canCommandDetonate && atakCount > 0) {
+      if (sendingAll) {
+        bulkHtml = '<p class="atak-charge-pending">Ordre groupé envoyé — en attente du terrain</p>';
+      } else if (pendingConfirmAll) {
+        bulkHtml = '<button type="button" class="atak-charge-detonate atak-charge-detonate--confirm" id="atak-charge-detonate-all">Confirmer : tout déclencher (' + atakCount + ')</button>';
+      } else {
+        bulkHtml = '<button type="button" class="atak-charge-detonate atak-charge-detonate-all" id="atak-charge-detonate-all">Tout déclencher (' + atakCount + ')</button>';
+      }
+    }
+    el.innerHTML = bulkHtml + items.map(function (item) {
       var remaining = liveRemaining(item);
       var armed = item.status === 'armed';
       if (armed) armedCount += 1;
@@ -154,11 +220,17 @@ window.ATAKExplosiveTimers = (function () {
       } else {
         remainHtml = 'À la demande';
       }
-      var fuseHtml = (item.trigger_kind === 'timer' && Number(item.fuse_seconds) > 0)
-        ? esc(formatDuration(item.fuse_seconds))
-        : 'Aucun — déclenchement manuel';
+      var fuseHtml;
+      if (item.trigger_kind === 'timer' && Number(item.fuse_seconds) > 0) {
+        fuseHtml = esc(formatDuration(item.fuse_seconds));
+      } else if (item.trigger_kind === 'atak') {
+        fuseHtml = 'Aucun — tablette et poste uniquement';
+      } else {
+        fuseHtml = 'Aucun — déclenchement manuel';
+      }
       var actions = '';
-      if (armed && canCommandDetonate) {
+      var remoteOk = item.trigger_kind === 'atak' || item.trigger_kind === 'command';
+      if (armed && canCommandDetonate && remoteOk) {
         var id = Number(item.id) || 0;
         if (item.detonate_pending || sendingIds[id]) {
           actions = '<p class="atak-charge-pending">Ordre envoyé — en attente du terrain</p>';
@@ -195,6 +267,14 @@ window.ATAKExplosiveTimers = (function () {
       btn.addEventListener('click', function (ev) {
         ev.preventDefault();
         ev.stopPropagation();
+        if (btn.id === 'atak-charge-detonate-all') {
+          if (pendingConfirmAll) {
+            requestDetonateAll();
+            return;
+          }
+          armPendingConfirmAll();
+          return;
+        }
         var id = parseInt(btn.getAttribute('data-charge-id'), 10);
         if (!id) return;
         if (pendingConfirmId === id) {

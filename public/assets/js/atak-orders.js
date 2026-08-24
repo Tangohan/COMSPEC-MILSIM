@@ -1544,8 +1544,12 @@ window.ATAKOrders = (function () {
           return;
         }
         if (window.ATAKShowNotification) {
-          if (status === 'ACK') window.ATAKShowNotification('Réception confirmée.');
-          else if (status === 'EXEC') window.ATAKShowNotification('Ordre passé en cours d’exécution.');
+          if (status === 'ACK') {
+            window.ATAKShowNotification('Réception confirmée.');
+            if (window.ATAKSounds && typeof window.ATAKSounds.playEvent === 'function') {
+              window.ATAKSounds.playEvent('order_ack');
+            }
+          } else if (status === 'EXEC') window.ATAKShowNotification('Ordre passé en cours d’exécution.');
           else if (status === 'FAILED') window.ATAKShowNotification('Ordre marqué en échec.');
           else if (status === 'CANCELLED') window.ATAKShowNotification('Ordre annulé.');
           else window.ATAKShowNotification('Statut de l’ordre mis à jour.');

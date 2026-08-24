@@ -43,19 +43,8 @@ _vehicleData set ["vehicle_callsign", [_vehicle] call comspec_overwatch_connect_
 _vehicleData set ["vehicle_name", _pretty];
 _vehicleData set ["vehicle_type", typeOf _vehicle];
 
-// Déterminer classe véhicule
-private _vehicleClass = "LIGHT_VEHICLE";
-if (_vehicle isKindOf "Tank") then {_vehicleClass = "TANK"};
-if (_vehicle isKindOf "Wheeled_APC_F") then {_vehicleClass = "APC"};
-if (_vehicle isKindOf "APC_Tracked_01_base_F") then {_vehicleClass = "APC"};
-if (_vehicle isKindOf "IFV") then {_vehicleClass = "IFV"};
-if (_vehicle isKindOf "Truck_F") then {_vehicleClass = "TRUCK"};
-if (_vehicle isKindOf "Helicopter") then {_vehicleClass = "HELICOPTER"};
-if (_vehicle isKindOf "Plane") then {_vehicleClass = "FIXED_WING"};
-if (_vehicle isKindOf "UAV") then {_vehicleClass = "UAV"};
-if (_vehicle isKindOf "Ship") then {_vehicleClass = "BOAT"};
-if (_vehicle isKindOf "Artillery") then {_vehicleClass = "ARTILLERY"};
-
+private _vehicleClass = [_vehicle] call comspec_overwatch_connect_fnc_bftPlatform;
+if (_vehicleClass isEqualTo "INFANTRY") then { _vehicleClass = "LIGHT_VEHICLE" };
 _vehicleData set ["vehicle_class", _vehicleClass];
 
 // Côté

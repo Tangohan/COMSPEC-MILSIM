@@ -5,6 +5,10 @@ window.ATAKWebLog = (function () {
   var FLUSH_INTERVAL_MS = 4000;
   var FLUSH_MINUTE_CAP = 20;
   var UNITS_THROTTLE_MS = 8000;
+  var INCIDENT_COALESCE_MS = 90000;
+  var REMONTEE_COALESCE_MS = 8000;
+  var EMPTY_ROSTER_CONFIRM_MS = 25000;
+  var emptyRosterSince = 0;
   var entries = [];
   var pendingFlush = [];
   var filterKind = 'all';
@@ -100,6 +104,7 @@ window.ATAKWebLog = (function () {
   function isIgnoredUrl(url) {
     var s = String(url || '');
     return /\/api\/atak\/web-log(?:\?|$)/.test(s)
+      || /\/api\/atak\/device-logs(?:\?|$)/.test(s)
       || /\/api\/atak\/ping(?:\?|$)/.test(s)
       || /\/api\/health(?:\?|$)/.test(s);
   }
@@ -159,13 +164,14 @@ window.ATAKWebLog = (function () {
     var html = filtered.slice().reverse().map(function (e) {
       var kindFr = e.kind === 'incident' ? 'Incident' : 'Remontée';
       var cls = e.kind === 'incident' ? 'atak-weblog-item--incident' : 'atak-weblog-item--remontee';
+      var extra = e.repeat && e.repeat > 1 ? ' (×' + e.repeat + ')' : '';
       var detail = e.detail
         ? '<p class="atak-weblog-detail">' + escapeHtml(e.detail) + '</p>'
         : '';
       return '<li class="atak-weblog-item ' + cls + '">' +
         '<span class="atak-weblog-time">' + escapeHtml(formatTime(e.at)) + '</span>' +
         '<span class="atak-weblog-kind">' + kindFr + '</span>' +
-        '<p class="atak-weblog-label">' + escapeHtml(e.label || '') + '</p>' +
+        '<p class="atak-weblog-label">' + escapeHtml(e.label || '') + extra + '</p>' +
         detail +
         '</li>';
     }).join('');
@@ -220,12 +226,17 @@ window.ATAKWebLog = (function () {
     var detail = String(opts.detail || '').replace(/\s+/g, ' ').trim();
     if (detail.length > 200) detail = detail.slice(0, 200) + '…';
     var fp = kind + '|' + label;
-    var last = entries.length ? entries[entries.length - 1] : null;
-    if (last && last._fp === fp && (Date.now() - (last._ts || 0)) < 8000) {
-      last.repeat = (last.repeat || 1) + 1;
-      persist();
-      render();
-      return last;
+    var coalesceMs = kind === 'incident' ? INCIDENT_COALESCE_MS : REMONTEE_COALESCE_MS;
+    var nowTs = Date.now();
+    for (var i = entries.length - 1; i >= 0; i--) {
+      if (entries[i]._fp !== fp) continue;
+      if ((nowTs - (entries[i]._ts || 0)) < coalesceMs) {
+        entries[i].repeat = (entries[i].repeat || 1) + 1;
+        persist();
+        render();
+        return entries[i];
+      }
+      break;
     }
     var entry = {
       at: nowIso(),
@@ -295,10 +306,14 @@ window.ATAKWebLog = (function () {
         if (skip || !isOurApi(url)) return res;
         var status = res ? res.status : 0;
         if (!res || !res.ok) {
-          incident(incidentLabelForStatus(status), {
-            persist: true,
-            detail: method === 'GET' ? 'Lecture des données' : 'Envoi vers le poste'
-          });
+          // Les lectures en arrière-plan (tchat, pings, effectifs…) échouent souvent
+          // de façon isolée : ce n’est pas un incident de poste à journaliser à chaque poll.
+          if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+            incident(incidentLabelForStatus(status), {
+              persist: true,
+              detail: 'Envoi vers le poste'
+            });
+          }
           return res;
         }
         if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
@@ -309,7 +324,7 @@ window.ATAKWebLog = (function () {
         }
         return res;
       }).catch(function (err) {
-        if (!skip && isOurApi(url)) {
+        if (!skip && isOurApi(url) && method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
           incident('La liaison avec le poste a été interrompue.', { persist: true });
         }
         throw err;
@@ -359,6 +374,14 @@ window.ATAKWebLog = (function () {
     }
     var nextKnown = {};
     for (var j = 0; j < signs.length; j++) nextKnown[signs[j]] = 1;
+    if (signs.length === 0) {
+      if (!emptyRosterSince) emptyRosterSince = now;
+      if (now - emptyRosterSince < EMPTY_ROSTER_CONFIRM_MS) {
+        return;
+      }
+    } else {
+      emptyRosterSince = 0;
+    }
     lastNewCallsigns = nextKnown;
     if (fp === lastUnitsFp && newcomers.length === 0) return;
     if (newcomers.length === 0 && lastUnitsAt && (now - lastUnitsAt) < UNITS_THROTTLE_MS) {
@@ -373,6 +396,7 @@ window.ATAKWebLog = (function () {
     } else if (newcomers.length > 1) {
       label = newcomers.length + ' nouveaux contacts en liaison';
     } else if (count < 1) {
+      lastNewCallsigns = {};
       label = 'Aucun contact en liaison pour le moment';
     } else {
       var preview = signs.slice(0, 4).join(', ');
@@ -387,7 +411,7 @@ window.ATAKWebLog = (function () {
   }
 
   function onRejection() {
-    incident('Une action en cours n’a pas pu se terminer.', { persist: true });
+    incident('Une action en cours n’a pas pu se terminer.', { persist: false });
   }
 
   function copyVisible() {
@@ -454,6 +478,11 @@ window.ATAKWebLog = (function () {
     render();
     if (flushTimer) clearInterval(flushTimer);
     flushTimer = setInterval(flush, FLUSH_INTERVAL_MS);
+    ingest('Session carte ouverte.', { persist: true, ingestKind: 'session' });
+    window.addEventListener('pagehide', function () {
+      ingest('Session carte fermée.', { persist: true, ingestKind: 'session' });
+      flush();
+    });
   }
 
   if (document.readyState === 'loading') {
