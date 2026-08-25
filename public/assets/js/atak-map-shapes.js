@@ -3,6 +3,12 @@ window.ATAKMapShapes = (function () {
   var shapes = [];
   var layer = null;
   var leafletById = {};
+  var drawingsVisible = true;
+  var VISIBILITY_STORAGE_KEY = 'atak_map_drawings_visible_v1';
+
+  try {
+    drawingsVisible = localStorage.getItem(VISIBILITY_STORAGE_KEY) !== '0';
+  } catch (e) {}
 
   function getApiBase() {
     return window.ATAKSocket ? window.ATAKSocket.getApiBase() : '';
@@ -26,8 +32,9 @@ window.ATAKMapShapes = (function () {
     var map = getMap();
     if (!map) return null;
     if (!layer) {
-      layer = L.layerGroup().addTo(map);
-    } else if (!map.hasLayer(layer)) {
+      layer = L.layerGroup();
+      if (drawingsVisible) layer.addTo(map);
+    } else if (drawingsVisible && !map.hasLayer(layer)) {
       layer.addTo(map);
     }
     return layer;
@@ -426,6 +433,21 @@ window.ATAKMapShapes = (function () {
     shapes.forEach(renderShape);
   }
 
+  function setDrawingsVisible(visible) {
+    drawingsVisible = !!visible;
+    var map = getMap();
+    var lg = ensureLayer();
+    if (map && lg) {
+      if (drawingsVisible && !map.hasLayer(lg)) lg.addTo(map);
+      else if (!drawingsVisible && map.hasLayer(lg)) map.removeLayer(lg);
+    }
+    try { localStorage.setItem(VISIBILITY_STORAGE_KEY, drawingsVisible ? '1' : '0'); } catch (e) {}
+    window.dispatchEvent(new CustomEvent('atak:drawings-visibility', {
+      detail: { visible: drawingsVisible }
+    }));
+    return drawingsVisible;
+  }
+
   function fetchShapes() {
     var base = getApiBase();
     if (!base) return;
@@ -564,6 +586,8 @@ window.ATAKMapShapes = (function () {
     deleteShape: deleteShape,
     clearLastDrawing: clearLastDrawing,
     clearAllDrawings: clearAllDrawings,
+    areDrawingsVisible: function () { return drawingsVisible; },
+    setDrawingsVisible: setDrawingsVisible,
     redrawAll: redrawAll
   };
 })();
