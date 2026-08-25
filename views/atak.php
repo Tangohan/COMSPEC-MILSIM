@@ -2356,6 +2356,7 @@ if ($atakMapConfig) {
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="perimeter" data-tool-slot="perimeter" title="Tracer un périmètre de sécurité" aria-pressed="false">Périmètre</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="aoi" data-tool-slot="aoi" title="Délimiter une zone d’intérêt" aria-pressed="false">Intérêt</button>
               <button type="button" class="atak-map-tools__btn" data-tool="line" data-tool-slot="line" title="Tracer un trait" aria-pressed="false">Trait</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="toggle-drawings" data-tool-slot="toggle-drawings" title="Masquer les tracés et zones sans les supprimer" aria-pressed="false">Masquer</button>
               <button type="button" class="atak-map-tools__btn" data-tool="clear-drawings" data-tool-slot="clear-drawings" title="Effacer les tracés et zones">Effacer</button>
             </div>
           </div>

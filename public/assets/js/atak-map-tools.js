@@ -562,6 +562,27 @@ window.ATAKMapTools = (function () {
     });
   }
 
+  function updateDrawingsVisibilityButton(visible) {
+    var btn = document.querySelector('#atak-map-tools [data-tool="toggle-drawings"]');
+    if (!btn) return;
+    btn.textContent = visible ? 'Masquer' : 'Afficher';
+    btn.title = visible ? 'Masquer les tracés et zones sans les supprimer' : 'Afficher les tracés et zones';
+    btn.setAttribute('aria-pressed', visible ? 'false' : 'true');
+    btn.classList.toggle('is-active', !visible);
+  }
+
+  function toggleDrawings() {
+    var shapesApi = window.ATAKMapShapes;
+    if (!shapesApi || !shapesApi.setDrawingsVisible) {
+      toast('Gestion des tracés indisponible.');
+      return;
+    }
+    var visible = shapesApi.areDrawingsVisible ? shapesApi.areDrawingsVisible() : true;
+    visible = shapesApi.setDrawingsVisible(!visible);
+    updateDrawingsVisibilityButton(visible);
+    toast(visible ? 'Tracés affichés.' : 'Tracés masqués sur cet appareil.');
+  }
+
   function startPlaceMode(mode) {
     if (placeMode === mode) {
       clearPlaceMode();
@@ -696,6 +717,7 @@ window.ATAKMapTools = (function () {
       else toast('Outil d’analyse indisponible.');
     }
     else if (tool === 'clear-drawings') clearDrawings();
+    else if (tool === 'toggle-drawings') toggleDrawings();
     else if (tool === 'speed-foot') {
       setToolSpeedKph(5);
       toast('Vitesse à pied : 5 km/h');
@@ -800,6 +822,7 @@ window.ATAKMapTools = (function () {
     { id: 'perimeter', label: 'Périmètre' },
     { id: 'aoi', label: 'Zone d’intérêt' },
     { id: 'line', label: 'Trait' },
+    { id: 'toggle-drawings', label: 'Masquer les tracés' },
     { id: 'clear-drawings', label: 'Effacer' },
     { id: 'route', label: 'Itinéraire' },
     { id: 'los', label: 'Visée' },
@@ -811,7 +834,7 @@ window.ATAKMapTools = (function () {
   var SEP_GROUPS = {
     nav: ['goto', 'follow'],
     mark: ['measure', 'note'],
-    draw: ['search-zone', 'perimeter', 'aoi', 'line', 'clear-drawings'],
+    draw: ['search-zone', 'perimeter', 'aoi', 'line', 'toggle-drawings', 'clear-drawings'],
     analyse: ['route', 'los'],
     view: ['zoom', 'nvg', 'cop']
   };
@@ -860,11 +883,11 @@ window.ATAKMapTools = (function () {
     },
     sl: {
       label: 'Chef d’équipe',
-      ids: ['goto', 'follow', 'measure', 'note', 'search-zone', 'perimeter', 'aoi', 'line', 'clear-drawings', 'route', 'los', 'zoom']
+      ids: ['goto', 'follow', 'measure', 'note', 'search-zone', 'perimeter', 'aoi', 'line', 'toggle-drawings', 'clear-drawings', 'route', 'los', 'zoom']
     },
     medic: {
       label: 'Médecin',
-      ids: ['goto', 'follow', 'measure', 'note', 'aoi', 'line', 'clear-drawings', 'zoom']
+      ids: ['goto', 'follow', 'measure', 'note', 'aoi', 'line', 'toggle-drawings', 'clear-drawings', 'zoom']
     }
   };
 
@@ -1111,10 +1134,16 @@ window.ATAKMapTools = (function () {
     document.addEventListener('keydown', onKey);
     window.addEventListener('atak:draw-ended', onDrawEnded);
     window.addEventListener('atak:zone-radius-preview', onZoneRadiusPreview);
+    window.addEventListener('atak:drawings-visibility', function (event) {
+      updateDrawingsVisibilityButton(!event.detail || event.detail.visible !== false);
+    });
     bindZoneMetricInputs();
     applyVisibleSlots(loadVisibleMap());
     setOpenToolGroup(loadOpenToolGroup(), false);
     setToolbarCollapsed(isToolbarCollapsed());
+    if (window.ATAKMapShapes && window.ATAKMapShapes.areDrawingsVisible) {
+      updateDrawingsVisibilityButton(window.ATAKMapShapes.areDrawingsVisible());
+    }
     try {
       if (localStorage.getItem('atak_map_nvg') === '1') setNvg(true);
     } catch (e) {}
