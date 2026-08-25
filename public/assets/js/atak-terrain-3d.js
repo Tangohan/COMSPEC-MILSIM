@@ -244,6 +244,7 @@ window.ATAKTerrain3D = (function () {
     if (pitchValue) pitchValue.textContent = state.pitch + '°';
     var exaggerationValue = document.getElementById('atak-terrain-exaggeration-val');
     if (exaggerationValue) exaggerationValue.textContent = state.verticalExaggeration.toFixed(1) + '×';
+    window.dispatchEvent(new CustomEvent('atak:terrain3dchange', { detail: { enabled: state.enabled } }));
   }
 
   function setEnabled(enabled) {

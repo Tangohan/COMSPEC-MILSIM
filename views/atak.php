@@ -2452,6 +2452,10 @@ if ($atakMapConfig) {
               <input type="range" id="atak-terrain-opacity" class="atak-sound-pref-slider" min="10" max="100" step="5" value="32" />
             </label>
             <div class="atak-terrain-3d-settings" id="atak-terrain-3d-settings" hidden>
+              <label class="atak-map-look__check" for="atak-scene-buildings">
+                <input type="checkbox" id="atak-scene-buildings" checked />
+                <span>Bâtiments et forêts du jeu</span>
+              </label>
               <label class="atak-map-look__row" for="atak-terrain-exaggeration">
                 <span class="atak-map-look__key">Exagération Z <span class="atak-sound-pref-val" id="atak-terrain-exaggeration-val">2.5×</span></span>
                 <input type="range" id="atak-terrain-exaggeration" class="atak-sound-pref-slider" min="1" max="4" step="0.1" value="2.5" />
@@ -2719,6 +2723,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain-3d.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-scene-3d.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-motion-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-dossier.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
