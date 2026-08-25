@@ -4685,12 +4685,14 @@ body.atak-theme-light .atak-chat-messages {
 .atak-map-stage.atak-map-stage--3d #atak-map .leaflet-tile-pane,
 .atak-map-stage.atak-map-stage--3d #atak-map .leaflet-overlay-pane { filter: drop-shadow(0 14px 11px rgba(0, 0, 0, .42)); }
 .atak-terrain-mesh { position: absolute; inset: 0; z-index: 210; pointer-events: none; }
+.atak-scene-3d { position: absolute; inset: 0; z-index: 215; pointer-events: none; }
 /* Le canevas WebGL se superpose aux PNG drapés. On garde les tuiles Leaflet
    dessous : elles servent de repli pendant un chargement, une tuile CORS
    refusée ou une restauration du contexte WebGL, au lieu d'exposer le gris. */
 .atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 1; }
 .atak-map-stage #atak-map .atakHillshade-pane { mix-blend-mode: multiply; }
 .atak-map-stage:not(.atak-map-stage--3d) .atak-terrain-mesh { display: none; }
+.atak-map-stage:not(.atak-map-stage--3d) .atak-scene-3d { display: none; }
 .atak-map-tools__btn--view3d.is-active { color: #6ee7c4; border-color: rgba(52, 211, 153, .7); background: rgba(16, 185, 129, .16); }
 .atak-map-3d-nav { position: absolute; right: 16px; top: 18px; z-index: 1100; display: grid; justify-items: center; gap: 7px; }
 .atak-map-3d-nav[hidden] { display: none !important; }
