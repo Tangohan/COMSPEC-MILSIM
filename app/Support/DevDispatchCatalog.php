@@ -491,6 +491,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(238, '2026-08-26', 'La fiche de mise à jour s’ouvre à nouveau', 'Ouvrir un bulletin du journal ne tombe plus en incident : le titre de la fiche s’affiche, que l’on vienne du journal ou d’un lien direct', [], [], [
+                'La fiche d’un bulletin (mise à jour, compte rendu) s’ouvrait sur une page d’incident au lieu du texte',
+            ], ['platform'], [
+                'Rechargez Nouveautés, puis ouvrez le bulletin. Pas besoin d’un nouveau pack jeu.',
+            ], 'Portail 1.5.48'),
             $pr(237, '2026-08-26', 'Affichage compte les bâtiments et forêts déjà reçus', 'Dans Affichage, les volumes déjà arrivés au poste se lisent en nombre, au lieu d’un faux « pas encore sur le poste »', [], [
                 'Si le décompte n’est pas lisible un instant, le poste le dit clairement, sans faire croire que le relevé n’est pas arrivé',
             ], [
