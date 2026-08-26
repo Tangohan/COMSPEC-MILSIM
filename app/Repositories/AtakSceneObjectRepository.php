@@ -41,19 +41,40 @@ final class AtakSceneObjectRepository
         }
         try {
             $st = $this->pdo()->prepare(
-                'SELECT kind, COUNT(*) AS n FROM atak_scene_objects WHERE tenant_id = ? AND map_id = ? GROUP BY kind'
+                "SELECT
+                    COALESCE(SUM(CASE WHEN kind IN ('building', 'buildings') THEN 1 ELSE 0 END), 0) AS building,
+                    COALESCE(SUM(CASE WHEN kind IN ('forest', 'forests') THEN 1 ELSE 0 END), 0) AS forest
+                 FROM atak_scene_objects
+                 WHERE tenant_id = ? AND map_id = ?"
             );
             $st->execute([$tenantId, $mapId]);
-            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
-                $kind = (string) ($row['kind'] ?? '');
-                if (isset($out[$kind])) {
-                    $out[$kind] = (int) ($row['n'] ?? 0);
-                }
+            $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
+            $out['building'] = (int) ($row['building'] ?? $row['BUILDING'] ?? 0);
+            $out['forest'] = (int) ($row['forest'] ?? $row['FOREST'] ?? 0);
+        } catch (\Throwable $e) {
+            if (self::isMissingTable($e)) {
+                return $out;
             }
-        } catch (\Throwable) {
+            throw $e;
         }
 
         return $out;
+    }
+
+    private static function isMissingTable(\Throwable $e): bool
+    {
+        if ($e instanceof \PDOException) {
+            $driver = (int) ($e->errorInfo[1] ?? 0);
+            $state = (string) ($e->errorInfo[0] ?? '');
+            if ($driver === 1146 || $state === '42S02') {
+                return true;
+            }
+        }
+        $msg = $e->getMessage();
+
+        return str_contains($msg, '1146')
+            || str_contains($msg, "doesn't exist")
+            || str_contains($msg, 'no such table');
     }
 
     public function lastUpdatedAt(int $tenantId, int $mapId): ?string

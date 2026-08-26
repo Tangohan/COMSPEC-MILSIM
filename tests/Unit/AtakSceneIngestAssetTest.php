@@ -53,6 +53,8 @@ final class AtakSceneIngestAssetTest extends TestCase
 
         $repo = (string) file_get_contents($root . '/app/Repositories/AtakSceneObjectRepository.php');
         self::assertStringContainsString('function countByKind', $repo);
+        self::assertStringContainsString('WHERE tenant_id = ? AND map_id = ?', $repo);
+        self::assertStringContainsString("kind IN ('building', 'buildings')", $repo);
         $terrain = (string) file_get_contents($root . '/app/Repositories/AtakTerrainRepository.php');
         self::assertStringContainsString('function coverageSummary', $terrain);
     }

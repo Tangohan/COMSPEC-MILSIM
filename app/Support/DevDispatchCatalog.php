@@ -491,6 +491,13 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(237, '2026-08-26', 'Affichage compte les bâtiments et forêts déjà reçus', 'Dans Affichage, les volumes déjà arrivés au poste se lisent en nombre, au lieu d’un faux « pas encore sur le poste »', [], [
+                'Si le décompte n’est pas lisible un instant, le poste le dit clairement, sans faire croire que le relevé n’est pas arrivé',
+            ], [
+                'Les bâtiments et les forêts déjà en base s’affichaient comme absents, alors que l’ombrage du relief était bien présent',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Pas besoin d’un nouveau pack jeu. La case Bâtiments et forêts du jeu reste un choix d’affichage, distinct du compteur du relevé.',
+            ], 'Portail 1.5.48'),
             $pr(236, '2026-08-26', 'La carte reste lisible si le poste tousse un instant', 'Une coupure ponctuelle ne vide plus la carte : les lectures reprennent, les pastilles et le relevé restent affichés', [
                 'Les lectures (effectifs, marqueurs, relevé, demandes médicales) continuent d’essayer, même après un refus temporaire',
             ], [

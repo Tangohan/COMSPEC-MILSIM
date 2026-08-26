@@ -121,11 +121,22 @@ window.ATAKTerrain = (function () {
     return 'Présent';
   }
 
+  function knownCount(cov, key) {
+    if (!cov || !Object.prototype.hasOwnProperty.call(cov, key)) return false;
+    var v = cov[key];
+    return v !== null && v !== undefined && v !== '';
+  }
+
   function countPresence(n, singular, plural) {
-    n = Number(n) || 0;
-    if (n < 1) return 'Pas encore sur le poste';
-    var formatted = n.toLocaleString('fr-FR');
+    n = Number(n);
+    if (!isFinite(n) || n < 1) return 'Pas encore sur le poste';
+    var formatted = Math.round(n).toLocaleString('fr-FR');
     return formatted + ' ' + (n === 1 ? singular : plural);
+  }
+
+  function countUnavailable(reason) {
+    if (reason === 'missing') return 'Le décompte n’est pas encore disponible';
+    return 'Compte indisponible, réessayez';
   }
 
   function lastSurveyLabel(stamp) {
@@ -145,7 +156,7 @@ window.ATAKTerrain = (function () {
     }
   }
 
-  function renderInventory(cov) {
+  function renderInventory(cov, countStatus) {
     cov = cov || {};
     var pct = cov.terrain_coverage_pct;
     if (pct == null && meta && meta.coverage_pct != null) pct = meta.coverage_pct;
@@ -154,15 +165,23 @@ window.ATAKTerrain = (function () {
     var overlay = overlayPresence(pct, filled);
     setInventoryValue('atak-terrain-inv-hillshade', overlay);
     setInventoryValue('atak-terrain-inv-survey', overlay);
-    setInventoryValue('atak-terrain-inv-buildings', countPresence(cov.buildings, 'bâtiment', 'bâtiments'));
-    setInventoryValue('atak-terrain-inv-forests', countPresence(cov.forests, 'forêt', 'forêts'));
+    if (countStatus === 'missing') {
+      setInventoryValue('atak-terrain-inv-buildings', countUnavailable('missing'));
+      setInventoryValue('atak-terrain-inv-forests', countUnavailable('missing'));
+    } else if (countStatus === 'retry' || !knownCount(cov, 'buildings') || !knownCount(cov, 'forests')) {
+      setInventoryValue('atak-terrain-inv-buildings', countUnavailable('retry'));
+      setInventoryValue('atak-terrain-inv-forests', countUnavailable('retry'));
+    } else {
+      setInventoryValue('atak-terrain-inv-buildings', countPresence(cov.buildings, 'bâtiment', 'bâtiments'));
+      setInventoryValue('atak-terrain-inv-forests', countPresence(cov.forests, 'forêt', 'forêts'));
+    }
     var last = cov.last_survey_at || (meta && meta.sampled_at) || null;
     setInventoryValue('atak-terrain-inv-last', lastSurveyLabel(last));
   }
 
   function loadCoverage() {
     if (!apiBase()) {
-      renderInventory(lastCoverage);
+      renderInventory(lastCoverage, lastCoverage ? '' : 'retry');
       return Promise.resolve(false);
     }
     return fetch(apiBase() + '/api/atak/theater/coverage?mapId=' + encodeURIComponent(mapId()), {
@@ -170,18 +189,38 @@ window.ATAKTerrain = (function () {
       headers: { Accept: 'application/json' }
     }).then(function (r) {
       return r.text().then(function (raw) {
-        try { return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+        var parsed = null;
+        try { parsed = raw ? JSON.parse(raw) : null; } catch (e) { parsed = null; }
+        return { status: r.status, body: parsed };
       });
-    }).then(function (j) {
-      if (!j || !j.ok) {
-        renderInventory(lastCoverage);
+    }).then(function (res) {
+      var status = res && res.status ? res.status : 0;
+      var j = res && res.body ? res.body : null;
+      if (status === 404) {
+        renderInventory(j || lastCoverage || {}, 'missing');
+        return false;
+      }
+      if (status === 503 || status >= 500 || !j || !j.ok) {
+        if (lastCoverage && knownCount(lastCoverage, 'buildings') && knownCount(lastCoverage, 'forests')) {
+          renderInventory(lastCoverage);
+          return false;
+        }
+        renderInventory(j || {}, 'retry');
+        return false;
+      }
+      if (!knownCount(j, 'buildings') || !knownCount(j, 'forests')) {
+        renderInventory(j, 'retry');
         return false;
       }
       lastCoverage = j;
       renderInventory(j);
       return true;
     }).catch(function () {
-      renderInventory(lastCoverage);
+      if (lastCoverage && knownCount(lastCoverage, 'buildings') && knownCount(lastCoverage, 'forests')) {
+        renderInventory(lastCoverage);
+        return false;
+      }
+      renderInventory({}, 'retry');
       return false;
     });
   }
