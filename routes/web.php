@@ -431,6 +431,7 @@ return function (Router $router) {
     $router->get('/hub', [HubController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/centre-actions', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/aujourdhui', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/aujourdhui/rsvp', [ActionCenterController::class, 'rsvp'], [AuthMiddleware::class]);
     $router->get('/pointage', [PointageController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/pointage/rsvp', [PointageController::class, 'rsvp'], [AuthMiddleware::class]);
     $router->post('/pointage/check-in', [PointageController::class, 'checkIn'], [AuthMiddleware::class]);
@@ -438,6 +439,7 @@ return function (Router $router) {
     $router->get('/boite-reception', [InboxController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/onboarding', [OnboardingController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/onboarding/persona', [OnboardingController::class, 'choosePersona'], [AuthMiddleware::class]);
+    $router->post('/onboarding/step', [OnboardingController::class, 'toggleStep'], [AuthMiddleware::class]);
     $router->post('/onboarding/complete', [OnboardingController::class, 'complete'], [AuthMiddleware::class]);
     $router->get('/c2', [C2Controller::class, 'index'], [AuthMiddleware::class]);
     $router->get('/atak/premiere-liaison', [AtakFirstLinkController::class, 'index'], $mwAtakMemberOnly);

@@ -69,4 +69,73 @@ class UserProfileRepository
             $this->pdo->prepare('INSERT INTO user_profiles (' . implode(',', $cols) . ') VALUES (' . implode(',', $vals) . ')')->execute($params);
         }
     }
+
+    /** @return array{persona: ?string, steps: list<int>, completed_at: ?string}|null */
+    public function getOnboardingState(int $userId): ?array
+    {
+        if ($userId < 1 || !$this->hasOnboardingColumns()) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT onboarding_persona, onboarding_steps_json, onboarding_completed_at FROM user_profiles WHERE user_id = ? LIMIT 1'
+        );
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+        $decoded = json_decode((string) ($row['onboarding_steps_json'] ?? '[]'), true);
+
+        $storedSteps = is_array($decoded)
+            ? array_filter($decoded, static fn (mixed $value): bool => is_int($value) || (is_string($value) && preg_match('/^-?\d+$/', $value) === 1))
+            : [];
+
+        return [
+            'persona' => isset($row['onboarding_persona']) ? (string) $row['onboarding_persona'] : null,
+            'steps' => array_values(array_map('intval', $storedSteps)),
+            'completed_at' => isset($row['onboarding_completed_at']) ? (string) $row['onboarding_completed_at'] : null,
+        ];
+    }
+
+    /** @param list<int> $steps */
+    public function saveOnboardingState(int $userId, string $persona, array $steps, bool $completed): bool
+    {
+        if ($userId < 1 || !$this->hasOnboardingColumns()) {
+            return false;
+        }
+        $this->ensureRow($userId);
+        $stmt = $this->pdo->prepare(
+            'UPDATE user_profiles
+             SET onboarding_persona = ?, onboarding_steps_json = ?, onboarding_completed_at = ?, updated_at = NOW()
+             WHERE user_id = ?'
+        );
+        $stmt->execute([
+            $persona,
+            json_encode(array_values($steps), JSON_THROW_ON_ERROR),
+            $completed ? date('Y-m-d H:i:s') : null,
+            $userId,
+        ]);
+
+        return true;
+    }
+
+    private function hasOnboardingColumns(): bool
+    {
+        static $ready = null;
+        if ($ready !== null) {
+            return $ready;
+        }
+        try {
+            $stmt = $this->pdo->query(
+                "SELECT COUNT(*) FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profiles'
+                   AND COLUMN_NAME IN ('onboarding_persona', 'onboarding_steps_json', 'onboarding_completed_at')"
+            );
+            $ready = (int) $stmt->fetchColumn() === 3;
+        } catch (\Throwable) {
+            $ready = false;
+        }
+
+        return $ready;
+    }
 }

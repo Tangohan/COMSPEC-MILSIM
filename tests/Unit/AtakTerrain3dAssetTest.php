@@ -31,7 +31,10 @@ final class AtakTerrain3dAssetTest extends TestCase
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
 
         self::assertStringContainsString('verticalExaggeration: 2.5', $javascript);
-        self::assertStringContainsString('* state.verticalExaggeration', $javascript);
+        self::assertStringContainsString('function reliefOffset(z)', $javascript);
+        self::assertStringContainsString('(Number(z) - minZ) / (maxZ - minZ)', $javascript);
+        self::assertStringContainsString('normalizedHeight * 110 * state.verticalExaggeration', $javascript);
+        self::assertStringNotContainsString('Math.min(550, displacement)', $javascript);
         self::assertStringContainsString('id="atak-terrain-exaggeration"', $view);
         self::assertStringContainsString('Exagération Z', $view);
     }

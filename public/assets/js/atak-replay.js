@@ -207,9 +207,14 @@ window.ATAKReplay = (function () {
     list.forEach(function (ev) {
       var tone = eventTone(ev.type);
       var lab = escapeHtml(ev.label || ev.type || 'Événement');
-      html += '<li class="atak-replay-event atak-replay-event--' + tone + '" data-x="' + (ev.x != null ? ev.x : '') + '" data-y="' + (ev.y != null ? ev.y : '') + '">' +
+      var x = Number(ev.x);
+      var y = Number(ev.y);
+      var canLocate = Number.isFinite(x) && Number.isFinite(y);
+      html += '<li class="atak-replay-event atak-replay-event--' + tone + '">' +
+        (canLocate ? '<button type="button" class="atak-replay-event-target" data-x="' + x + '" data-y="' + y + '" aria-label="Centrer la carte sur ' + lab + '">' : '<div class="atak-replay-event-target">') +
         '<span class="atak-replay-event-ts">' + formatTs(ev.timestamp) + '</span> ' +
-        '<span class="atak-replay-event-label">' + lab + '</span></li>';
+        '<span class="atak-replay-event-label">' + lab + '</span>' +
+        (canLocate ? '</button>' : '</div>') + '</li>';
     });
     html += '</ul>';
     box.innerHTML = html;
@@ -470,10 +475,10 @@ window.ATAKReplay = (function () {
     var eventsBox = el('atak-replay-events');
     if (eventsBox) {
       eventsBox.addEventListener('click', function (e) {
-        var li = e.target && e.target.closest ? e.target.closest('[data-x]') : null;
-        if (!li) return;
-        var x = parseFloat(li.getAttribute('data-x'));
-        var y = parseFloat(li.getAttribute('data-y'));
+        var target = e.target && e.target.closest ? e.target.closest('[data-x]') : null;
+        if (!target) return;
+        var x = parseFloat(target.getAttribute('data-x'));
+        var y = parseFloat(target.getAttribute('data-y'));
         if (isNaN(x) || isNaN(y)) return;
         if (window.ATAKMap && typeof window.ATAKMap.setView === 'function') {
           window.ATAKMap.setView(y, x, 5);

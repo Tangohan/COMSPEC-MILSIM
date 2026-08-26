@@ -70,7 +70,19 @@ window.ATAKTerrain3D = (function () {
     var row = Math.round((world.y - Number(g.origin_y)) / Number(g.cell_m));
     if (col < 0 || row < 0 || col >= g.cols || row >= g.rows) return 0;
     var z = g.values[row * g.cols + col];
-    return z === -32768 ? 0 : z;
+    return z === -32768 ? Number(g.min_z || 0) : z;
+  }
+
+  /* Convertit toute la plage altimétrique en pixels avant d'appliquer le
+     facteur Z. L'ancien coefficient exprimé en pixels/mètre atteignait presque
+     toujours sa limite de 550 px : plusieurs valeurs du curseur produisaient
+     donc exactement le même maillage, donnant l'impression qu'il ne marchait pas. */
+  function reliefOffset(z) {
+    var minZ = Number(terrainGrid && terrainGrid.min_z);
+    var maxZ = Number(terrainGrid && terrainGrid.max_z);
+    if (!Number.isFinite(minZ) || !Number.isFinite(maxZ) || maxZ <= minZ) return 0;
+    var normalizedHeight = Math.max(0, Math.min(1, (Number(z) - minZ) / (maxZ - minZ)));
+    return normalizedHeight * 110 * state.verticalExaggeration;
   }
 
   function reliefShade(world) {
@@ -199,8 +211,7 @@ window.ATAKTerrain3D = (function () {
         var ll = map.containerPointToLatLng([sx, sy]);
         var world = window.ATAKMap.worldFromLatLng(ll);
         var z = heightAt(world);
-        var displacement = (z - Number(terrainGrid.min_z || 0)) * .32 * state.verticalExaggeration;
-        var relief = Math.max(-300, Math.min(550, displacement));
+        var relief = reliefOffset(z);
         vertices.push(sx, sy - relief); uvs.push(x / steps, y / steps); shades.push(reliefShade(world));
       }
       for (var gy = 0; gy < steps; gy += 1) for (var gx = 0; gx < steps; gx += 1) {
