@@ -1,0 +1,60 @@
+/* ATAK Web V2 — espace cartographique configurable, activé sans remplacer la V1. */
+:root { --atak-v2-left: 320px; --atak-v2-right: 300px; }
+
+.atak-version-switch { display:flex; align-items:center; gap:3px; padding:3px; border:1px solid rgba(148,180,196,.16); background:#080d12; color:#778892; font:700 9px/1 var(--atak-font-secondary,monospace); text-transform:uppercase; letter-spacing:.08em; }
+.atak-version-switch span { padding:0 5px; }
+.atak-version-switch button { border:0; padding:5px 7px; background:transparent; color:#91a2ad; font:inherit; cursor:pointer; }
+.atak-version-switch button.is-active { background:rgba(53,214,161,.12); color:#4ce0ae; box-shadow:inset 0 -1px #35d6a1; }
+
+.atak-v2-layoutbar { height:34px; flex:0 0 34px; align-items:center; gap:2px; padding:0 12px; border-bottom:1px solid rgba(148,180,196,.12); background:#070c11; color:#8fa0aa; font:700 10px/1 var(--atak-font-secondary,monospace); letter-spacing:.1em; text-transform:uppercase; }
+body.atak-ui-v2 .atak-v2-layoutbar { display:flex !important; }
+.atak-v2-layoutbar__label { color:#5f707a; margin-right:6px; }
+.atak-v2-layoutbar button { height:24px; padding:0 12px; border:1px solid transparent; background:transparent; color:#9aaab3; font:inherit; letter-spacing:.07em; cursor:pointer; }
+.atak-v2-layoutbar button:hover { color:#e8eef2; background:rgba(255,255,255,.035); }
+.atak-v2-layoutbar button.is-active { color:#42d9aa; border-color:rgba(53,214,161,.22); background:rgba(53,214,161,.08); }
+.atak-v2-layoutbar__hint { margin-left:auto; color:#667681; letter-spacing:.03em; }
+.atak-v2-layoutbar kbd { color:#aebbc3; border:1px solid #34414a; background:#111920; padding:2px 4px; font:inherit; }
+
+html.atak-v2-boot body, body.atak-ui-v2 { --atak-left-w:var(--atak-v2-left); --atak-right-w:var(--atak-v2-right); }
+body.atak-ui-v2 { --atak-c2-bg:#05090d; }
+body.atak-ui-v2 .atak-main { min-height:0; flex:1 1 auto; }
+body.atak-ui-v2 .atak-panel-left { width:var(--atak-v2-left) !important; min-width:var(--atak-v2-left) !important; max-width:520px; background:rgba(7,15,22,.97); }
+body.atak-ui-v2 .atak-panel-right { width:var(--atak-v2-right) !important; min-width:var(--atak-v2-right) !important; max-width:520px; background:rgba(7,15,22,.97); }
+body.atak-ui-v2 .atak-panel-left.collapsed { width:42px !important; min-width:42px !important; }
+body.atak-ui-v2 .atak-panel-right.collapsed { width:42px !important; min-width:42px !important; }
+body.atak-ui-v2.atak-v2-full-map .atak-panel-left,
+body.atak-ui-v2.atak-v2-full-map .atak-panel-right { width:0 !important; min-width:0 !important; border:0; overflow:hidden; }
+body.atak-ui-v2 .atak-map-wrap { min-width:0; flex:1 1 auto; box-shadow:inset 0 0 0 1px rgba(133,173,190,.08); }
+body.atak-ui-v2 .atak-header { border-bottom-color:rgba(148,180,196,.12); background:linear-gradient(90deg,#070c11,#0b1218 55%,#070c11); }
+body.atak-ui-v2 .atak-header-tagline { text-transform:uppercase; }
+body.atak-ui-v2 .atak-chip--live .dot { animation:atak-v2-status-pulse 2.5s ease-in-out infinite; box-shadow:0 0 7px currentColor; }
+@keyframes atak-v2-status-pulse { 50% { opacity:.45; } }
+body.atak-ui-v2 * { scrollbar-width:thin; scrollbar-color:rgba(124,165,181,.3) transparent; }
+body.atak-ui-v2 *::-webkit-scrollbar { width:5px; height:5px; }
+body.atak-ui-v2 *::-webkit-scrollbar-thumb { background:rgba(124,165,181,.28); border-radius:20px; }
+
+.atak-v2-palette { position:fixed; inset:0; z-index:10050; display:grid; place-items:start center; padding-top:min(16vh,150px); background:rgba(1,5,8,.66); backdrop-filter:blur(4px); }
+.atak-v2-palette[hidden] { display:none; }
+.atak-v2-palette__dialog { width:min(680px,calc(100vw - 32px)); overflow:hidden; border:1px solid rgba(103,190,204,.3); background:#091119; box-shadow:0 30px 90px rgba(0,0,0,.7),0 0 30px rgba(53,214,161,.06); }
+.atak-v2-palette input { box-sizing:border-box; width:100%; height:52px; border:0; border-bottom:1px solid rgba(148,180,196,.15); outline:0; padding:0 18px; background:#0c151d; color:#edf5f7; font:500 15px var(--atak-font-secondary,monospace); }
+.atak-v2-palette__results { max-height:360px; overflow:auto; padding:7px; }
+.atak-v2-command { width:100%; display:grid; grid-template-columns:1fr auto; gap:12px; border:0; padding:11px 12px; background:transparent; color:#d6e0e5; text-align:left; cursor:pointer; font:600 12px var(--atak-font-secondary,monospace); }
+.atak-v2-command:hover,.atak-v2-command.is-selected { background:rgba(53,214,161,.09); color:#4ce0ae; }
+.atak-v2-command small { color:#697b86; text-transform:uppercase; letter-spacing:.08em; }
+
+.atak-v2-context { position:fixed; z-index:10020; width:250px; padding:6px; border:1px solid rgba(133,173,190,.2); background:rgba(6,13,19,.98); box-shadow:0 18px 45px rgba(0,0,0,.55); }
+.atak-v2-context[hidden] { display:none; }
+.atak-v2-context__title { padding:7px 9px 5px; color:#60737e; font:700 9px monospace; letter-spacing:.14em; text-transform:uppercase; }
+.atak-v2-context button { display:block; width:100%; border:0; padding:8px 9px; background:transparent; color:#cbd6db; text-align:left; font:600 11px var(--atak-font-secondary,monospace); cursor:pointer; }
+.atak-v2-context button:hover { background:rgba(104,165,216,.12); color:#8ec5ef; }
+
+.atak-v2-replay { position:absolute; z-index:850; left:50%; bottom:14px; transform:translateX(-50%); width:min(650px,70%); padding:9px 13px; border:1px solid rgba(148,180,196,.18); background:rgba(5,12,18,.91); color:#9aabb5; font:700 9px monospace; letter-spacing:.08em; text-transform:uppercase; box-shadow:0 10px 32px rgba(0,0,0,.35); }
+.atak-v2-replay__head { display:flex; justify-content:space-between; margin-bottom:7px; }
+.atak-v2-replay input { width:100%; accent-color:#35d6a1; }
+.atak-v2-replay.is-replay .atak-v2-replay__state { color:#d3a33c; }
+
+@media (max-width:900px) {
+  .atak-v2-layoutbar__hint,.atak-version-switch span { display:none; }
+  body.atak-ui-v2 .atak-panel-right { position:absolute; right:0; top:0; bottom:0; z-index:900; }
+}
+@media (prefers-reduced-motion:reduce) { body.atak-ui-v2 .atak-chip--live .dot { animation:none; } }

@@ -68,6 +68,7 @@ if ($atakMapConfig) {
   <link rel="stylesheet" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.css" />
   <link href="<?= $base ?>/assets/css/atak.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-c2-shell.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-v2.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-motion.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-cop.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -118,6 +119,7 @@ if ($atakMapConfig) {
     window.APP_VERSION = <?= json_encode($assetVer, JSON_UNESCAPED_UNICODE) ?>;
     window.APP_BASE_URL = <?= json_encode(rtrim((string) $base, '/'), JSON_UNESCAPED_UNICODE) ?>;
   </script>
+  <script>try{if(localStorage.getItem('atak:uiVersion')==='v2'||new URLSearchParams(location.search).get('ui')==='v2'){document.documentElement.classList.add('atak-v2-boot');}}catch(e){}</script>
 </head>
 <body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed atak-page--device' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
   <?php
@@ -169,6 +171,11 @@ if ($atakMapConfig) {
       <div class="atak-zulu" id="atak-zulu" title="Heure Zulu">--:--:-- Z</div>
     </div>
     <div class="atak-header-links">
+      <div class="atak-version-switch" role="group" aria-label="Version de l’interface">
+        <span>Interface</span>
+        <button type="button" data-atak-version="v1">V1</button>
+        <button type="button" data-atak-version="v2">V2</button>
+      </div>
       <?php if (count($atakWorkspaces) > 1 || count($atakMapsList) > 1): ?>
       <div class="atak-header-cluster atak-header-cluster--ctx" role="group" aria-label="Contexte de mission">
         <?php if (count($atakWorkspaces) > 1): ?>
@@ -218,6 +225,16 @@ if ($atakMapConfig) {
       </div>
     </div>
   </header>
+
+  <nav class="atak-v2-layoutbar" id="atak-v2-layoutbar" aria-label="Dispositions opérationnelles" hidden>
+    <span class="atak-v2-layoutbar__label">Vue</span>
+    <button type="button" data-atak-layout="command">Command</button>
+    <button type="button" data-atak-layout="intel">Intel</button>
+    <button type="button" data-atak-layout="jtac">JTAC</button>
+    <button type="button" data-atak-layout="bft">BFT</button>
+    <button type="button" data-atak-layout="map">Full map</button>
+    <span class="atak-v2-layoutbar__hint"><kbd>Ctrl</kbd> + <kbd>K</kbd> Commandes</span>
+  </nav>
 
   <div class="atak-liaison-rail is-collapsed" id="atak-liaison-rail">
     <div class="atak-liaison-rail__summary">
@@ -1186,7 +1203,7 @@ if ($atakMapConfig) {
           <span class="atak-section-btn__label">Appuis</span>
           <span class="atak-section-btn__badge" hidden></span>
         </button>
-        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="qr" title="Accès mobile par QR code">
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="qr" title="Accès mobile par QR code" onclick="if (window.ATAKPanelChrome) { window.ATAKPanelChrome.activateTab('qrcode'); }">
           <span class="atak-section-btn__icon" aria-hidden="true">▦</span>
           <span class="atak-section-btn__label">QR</span>
           <span class="atak-section-btn__badge" hidden></span>
@@ -2339,6 +2356,7 @@ if ($atakMapConfig) {
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="perimeter" data-tool-slot="perimeter" title="Tracer un périmètre de sécurité" aria-pressed="false">Périmètre</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="aoi" data-tool-slot="aoi" title="Délimiter une zone d’intérêt" aria-pressed="false">Intérêt</button>
               <button type="button" class="atak-map-tools__btn" data-tool="line" data-tool-slot="line" title="Tracer un trait" aria-pressed="false">Trait</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="toggle-drawings" data-tool-slot="toggle-drawings" title="Masquer les tracés et zones sans les supprimer" aria-pressed="false">Masquer</button>
               <button type="button" class="atak-map-tools__btn" data-tool="clear-drawings" data-tool-slot="clear-drawings" title="Effacer les tracés et zones">Effacer</button>
             </div>
           </div>
@@ -2435,11 +2453,19 @@ if ($atakMapConfig) {
               <input type="range" id="atak-terrain-opacity" class="atak-sound-pref-slider" min="10" max="100" step="5" value="32" />
             </label>
             <div class="atak-terrain-3d-settings" id="atak-terrain-3d-settings" hidden>
+              <label class="atak-map-look__check" for="atak-scene-buildings">
+                <input type="checkbox" id="atak-scene-buildings" checked />
+                <span>Bâtiments et forêts du jeu</span>
+              </label>
+              <label class="atak-map-look__row" for="atak-terrain-exaggeration">
+                <span class="atak-map-look__key">Exagération Z <span class="atak-sound-pref-val" id="atak-terrain-exaggeration-val">2.5×</span></span>
+                <input type="range" id="atak-terrain-exaggeration" class="atak-sound-pref-slider" min="1" max="4" step="0.1" value="2.5" />
+              </label>
               <label class="atak-map-look__row" for="atak-terrain-pitch">
                 <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
                 <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
               </label>
-              <p class="atak-terrain-3d-hint">Les PNG sont drapés et déformés sur le relevé altimétrique, comme une carte IGN en relief. Glissez sur la rose pour orienter la vue.</p>
+              <p class="atak-terrain-3d-hint">Amplifiez le relief, puis réduisez l'inclinaison pour une vue plus rasante. Glissez sur la rose pour orienter la vue.</p>
             </div>
             <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
           </div>
@@ -2698,6 +2724,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain-3d.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-scene-3d.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-motion-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-dossier.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2754,6 +2781,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-section-nav.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-qr-hub.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-c2-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-v2.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terminals.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-ctab.js"></script>

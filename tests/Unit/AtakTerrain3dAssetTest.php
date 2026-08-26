@@ -24,4 +24,38 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertStringContainsString("bindMapEvent(layer, 'tileload')", $javascript);
         self::assertStringContainsString("bindMapEvent(layer, 'tileunload')", $javascript);
     }
+
+    public function testTerrainMeshOffersPersistentVerticalExaggeration(): void
+    {
+        $javascript = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain-3d.js');
+        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
+
+        self::assertStringContainsString('verticalExaggeration: 2.5', $javascript);
+        self::assertStringContainsString('* state.verticalExaggeration', $javascript);
+        self::assertStringContainsString('id="atak-terrain-exaggeration"', $view);
+        self::assertStringContainsString('Exagération Z', $view);
+    }
+
+    public function testTerrainMeshKeepsTheLeafletTextureAsFallback(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak.css');
+
+        self::assertStringContainsString(
+            '.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 1; }',
+            $css
+        );
+        self::assertStringNotContainsString(
+            '.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 0; }',
+            $css
+        );
+    }
+
+    public function testHillshadeUsesMultiplyBlendingToPreserveTheMapTexture(): void
+    {
+        $javascript = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain.js');
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak.css');
+
+        self::assertStringContainsString("style.mixBlendMode = 'multiply'", $javascript);
+        self::assertStringContainsString('.atakHillshade-pane { mix-blend-mode: multiply; }', $css);
+    }
 }

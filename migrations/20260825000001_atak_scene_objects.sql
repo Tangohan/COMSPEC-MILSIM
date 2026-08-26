@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `atak_scene_objects` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `source_id` varchar(128) NOT NULL,
+  `kind` enum('building','forest') NOT NULL DEFAULT 'building',
+  `model_class` varchar(191) NOT NULL DEFAULT '',
+  `world_x` decimal(15,4) NOT NULL,
+  `world_y` decimal(15,4) NOT NULL,
+  `world_z` decimal(10,3) DEFAULT NULL,
+  `bearing` decimal(7,3) NOT NULL DEFAULT 0,
+  `width_m` decimal(9,3) NOT NULL DEFAULT 4,
+  `depth_m` decimal(9,3) NOT NULL DEFAULT 4,
+  `height_m` decimal(9,3) NOT NULL DEFAULT 3,
+  `density` decimal(5,4) NOT NULL DEFAULT 1,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_atak_scene_source` (`tenant_id`,`map_id`,`source_id`),
+  KEY `idx_atak_scene_view` (`tenant_id`,`map_id`,`world_x`,`world_y`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
