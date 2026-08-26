@@ -187,15 +187,12 @@
 
   function lossIcon() {
     var html = '<span class="atak-trail-loss__x" title="Perte de liaison">✕</span>';
-    var S = window.ATAKMarkerSizes;
-    if (S && S.divIcon) {
-      return S.divIcon(L, html, 'small', { className: 'atak-trail-loss atak-compact-marker' });
-    }
+    // Badge d’angle 8 px, une seule petite croix, sans copie inclinée : le symbole reste lisible.
     return L.divIcon({
       className: 'atak-trail-loss',
       html: html,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9]
+      iconSize: [8, 8],
+      iconAnchor: [-3, 11]
     });
   }
 

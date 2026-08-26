@@ -491,6 +491,13 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(241, '2026-08-26', 'La croix de perte de liaison reste discrète', 'Un contact silencieux se signale par une petite marque en coin : le symbole de l’unité reste lisible', [], [
+                'La croix de perte de liaison est une petite marque d’angle, plus un grand X sur le symbole',
+            ], [
+                'La croix recouvrait tout le symbole de l’unité, jusqu’à le rendre illisible',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Pas besoin d’un nouveau pack jeu.',
+            ], 'Portail 1.5.48'),
             $pr(240, '2026-08-26', 'La carte Kimmirut est disponible au poste', 'Le théâtre Kimmirut peut être choisi sur la carte du poste, comme Altis ou Malden', [
                 'Kimmirut dans la liste des cartes du poste',
             ], [], [], ['atak'], [
