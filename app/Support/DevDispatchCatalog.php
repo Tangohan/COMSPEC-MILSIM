@@ -491,6 +491,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(243, '2026-08-26', 'La barre d’outils et Affichage se lisent à nouveau', 'Les commandes restent sous chaque intitulé, et l’inventaire du relief se lit ligne par ligne', [], [
+                'Position, Annoter, Tracer, Analyse et Vue montrent leurs boutons, sans menu compact',
+                'Affichage, Personnaliser et Masquer restent sur une seule ligne',
+                'Dans Affichage, chaque donnée du poste a son état à droite ; l’ombrage suit la couverture déjà affichée',
+            ], [
+                'On ne voyait que les intitulés, et l’inventaire du relief collait les libellés aux états',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Les boutons Grille, Mesurer, Trait et les autres reviennent sous chaque groupe. Pas besoin d’un nouveau pack jeu.',
+            ], 'Portail 1.5.48'),
             $pr(241, '2026-08-26', 'La croix de perte de liaison reste discrète', 'Un contact silencieux se signale par une petite marque en coin : le symbole de l’unité reste lisible', [], [
                 'La croix de perte de liaison est une petite marque d’angle, plus un grand X sur le symbole',
             ], [
