@@ -13,6 +13,8 @@ declare(strict_types=1);
  * - retire INDEX qui pointaient vers ces colonnes GENERATED
  * - retire triggers DELIMITER
  */
+require_once __DIR__ . '/migration_pdo.php';
+
 return static function (PDO &$pdo): void {
     $root = dirname(__DIR__);
 
@@ -190,28 +192,11 @@ return static function (PDO &$pdo): void {
         return $statements;
     };
 
-    $reconnectPdo = static function () use (&$pdo): void {
-        $host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: '127.0.0.1';
-        $name = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: '';
-        $user = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: '';
-        $pass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: '';
-        $charset = $_ENV['DB_CHARSET'] ?? getenv('DB_CHARSET') ?: 'utf8mb4';
-        if ($name === '' || $user === '') {
-            throw new RuntimeException('Connexion MySQL perdue et identifiants indisponibles pour reconnecter.');
-        }
-        $dsn = "mysql:host={$host};dbname={$name};charset={$charset}";
-        $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        try {
-            $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
-        } catch (Throwable) {
-        }
-    };
-
-    $runStatements = static function (PDO &$pdo, string $label, string $sql) use ($sanitizeSql, $splitStatements, $reconnectPdo): void {
+    $runStatements = static function (PDO &$pdo, string $label, string $sql) use ($sanitizeSql, $splitStatements): void {
         $sql = $sanitizeSql($sql);
         $statements = $splitStatements($sql);
 
-        $execWithRetry = static function (string $trimmed) use (&$pdo, $reconnectPdo, $label): void {
+        $execWithRetry = static function (string $trimmed) use (&$pdo, $label): void {
             $attempts = 0;
             while (true) {
                 $attempts++;
@@ -220,13 +205,13 @@ return static function (PDO &$pdo): void {
                     return;
                 } catch (Throwable $e) {
                     $msg = $e->getMessage();
-                    $gone = str_contains($msg, '2006')
-                        || str_contains($msg, '2013')
-                        || str_contains($msg, 'gone away')
-                        || str_contains($msg, 'Lost connection');
+                    if (migration_is_connect_blocked($msg)) {
+                        throw $e;
+                    }
+                    $gone = migration_is_lost_connection($msg);
                     if ($gone && $attempts < 2) {
-                        echo "  [INFO] {$label} — reconnexion MySQL…\n";
-                        $reconnectPdo();
+                        echo "  [INFO] {$label} — reconnexion MySQL (TCP, session pipeline)…\n";
+                        migration_reconnect_pdo($pdo);
                         continue;
                     }
                     throw $e;
@@ -237,6 +222,7 @@ return static function (PDO &$pdo): void {
         $ok = 0;
         $skip = 0;
         $warn = 0;
+        $connectWarnLogged = false;
         foreach ($statements as $stmt) {
             $trimmed = trim($stmt);
             if ($trimmed === '' || str_starts_with($trimmed, '/*')) {
@@ -270,6 +256,16 @@ return static function (PDO &$pdo): void {
                 ) {
                     $skip++;
                     continue;
+                }
+                if (migration_is_connect_blocked($msg) || migration_is_lost_connection($msg)) {
+                    if (!$connectWarnLogged) {
+                        echo '  [ATTENTION] ' . $label
+                            . " : la session base déjà ouverte n’a pas pu poser cette étape ; on n’ouvre pas une seconde connexion (souvent bloquée sur l’hébergement) et on passe à la suite.\n";
+                        echo '           Détail : ' . $msg . "\n";
+                        $connectWarnLogged = true;
+                    }
+                    $warn++;
+                    break;
                 }
                 $snippet = preg_replace('/\s+/', ' ', $trimmed) ?? $trimmed;
                 if (function_exists('mb_substr')) {

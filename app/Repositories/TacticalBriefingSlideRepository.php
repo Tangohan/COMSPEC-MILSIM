@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
-
-use App\Core\Database;
 use PDO;
 
 /**
@@ -21,9 +19,18 @@ class TacticalBriefingSlideRepository
 
     public function __construct()
     {
-        $this->pdo = Database::getPdo();
-        require_once dirname(__DIR__, 2) . '/bootstrap/tactical_briefing_slide_enrichment_migration.php';
-        ensure_tactical_briefing_slide_enrichment_schema($this->pdo);
+        // PDO + schéma à la première requête (pas au boot Container / mod-report).
+    }
+
+    protected function onDatabaseConnected(PDO $pdo): void
+    {
+        try {
+            require_once dirname(__DIR__, 2) . '/bootstrap/tactical_briefing_slide_enrichment_migration.php';
+            if (function_exists('ensure_tactical_briefing_slide_enrichment_schema')) {
+                ensure_tactical_briefing_slide_enrichment_schema($pdo);
+            }
+        } catch (\Throwable) {
+        }
     }
 
     /** @return list<array<string, mixed>> */

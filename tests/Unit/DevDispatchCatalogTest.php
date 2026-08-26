@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(2, $byKind['spotrep']);
         self::assertSame(2, $byKind['techrep']);
-        self::assertSame(44, $byKind['update']);
-        self::assertCount(48, $all);
+        self::assertSame(49, $byKind['update']);
+        self::assertCount(53, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -60,6 +60,26 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($verify);
         self::assertSame('00228', $verify['number_pad']);
         self::assertStringContainsString('relev', strtolower((string) $verify['title']));
+        $toolbar = DevDispatchCatalog::find('update', '229');
+        self::assertNotNull($toolbar);
+        self::assertSame('00229', $toolbar['number_pad']);
+        self::assertStringContainsString('barre', strtolower((string) $toolbar['title']));
+        $coverage = DevDispatchCatalog::find('update', '230');
+        self::assertNotNull($coverage);
+        self::assertSame('00230', $coverage['number_pad']);
+        self::assertStringContainsString('affichage', strtolower((string) $coverage['title']));
+        $modules = DevDispatchCatalog::find('update', '231');
+        self::assertNotNull($modules);
+        self::assertSame('00231', $modules['number_pad']);
+        self::assertStringContainsString('modules carte', strtolower((string) $modules['title']));
+        $roster = DevDispatchCatalog::find('update', '232');
+        self::assertNotNull($roster);
+        self::assertSame('00232', $roster['number_pad']);
+        self::assertStringContainsString('terminaux', strtolower((string) $roster['title']));
+        $reports = DevDispatchCatalog::find('update', '233');
+        self::assertNotNull($reports);
+        self::assertSame('00233', $reports['number_pad']);
+        self::assertStringContainsString('signalement', strtolower((string) $reports['title']));
         self::assertNull(DevDispatchCatalog::find('spotrep', '999'));
         self::assertNull(DevDispatchCatalog::find('memo', '1'));
     }

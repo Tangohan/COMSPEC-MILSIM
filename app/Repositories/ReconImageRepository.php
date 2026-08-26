@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
-
-use App\Core\Database;
 use PDO;
 
 class ReconImageRepository
@@ -19,11 +17,15 @@ class ReconImageRepository
 
     public function __construct()
     {
-        $this->pdo = Database::getPdo();
-        $this->ensureSchema();
+        // PDO + schéma à la première requête (pas au boot Container / mod-report).
     }
 
-    private function ensureSchema(): void
+    protected function onDatabaseConnected(PDO $pdo): void
+    {
+        $this->ensureSchema($pdo);
+    }
+
+    private function ensureSchema(PDO $pdo): void
     {
         static $done = false;
         if ($done) {
@@ -34,7 +36,7 @@ class ReconImageRepository
             $migrate = require $path;
             if (is_callable($migrate)) {
                 try {
-                    $migrate($this->pdo);
+                    $migrate($pdo);
                 } catch (\Throwable) {
                 }
             }

@@ -286,7 +286,12 @@ try {
 
     $path = \App\Core\Request::normalizePathFromServer();
     $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
-    $wantsJson = str_starts_with($path, '/api/') || str_contains($accept, 'application/json');
+    $tactical = class_exists(\App\Support\TacticalApiErrorRenderer::class)
+        && \App\Support\TacticalApiErrorRenderer::isTacticalPath($path);
+    $wantsJson = $tactical
+        || (class_exists(\App\Support\TacticalApiErrorRenderer::class)
+            ? \App\Support\TacticalApiErrorRenderer::clientWantsJson($path, $accept)
+            : (str_starts_with($path, '/api/') || str_contains($accept, 'application/json')));
     $rawMsg = $e->getMessage();
     $isMissingRoutes = str_contains($rawMsg, 'Fichier de routage manquant')
         || (str_contains($rawMsg, 'routes/web.php') && str_contains($rawMsg, 'No such file'));
@@ -294,7 +299,7 @@ try {
             || str_contains($rawMsg, 'Database connection failed')
             || str_contains($rawMsg, 'SQLSTATE[HY000] [2002]')
             || str_contains($rawMsg, 'SQLSTATE[HY000] [1045]');
-    $httpStatus = ($isMissingRoutes || $isDbDown) ? 503 : 500;
+    $httpStatus = ($tactical || $isMissingRoutes || $isDbDown) ? 503 : 500;
 
     if (!headers_sent()) {
         if ($wantsJson) {
@@ -310,7 +315,13 @@ try {
     $hint = athena_error_hint($rawMsg);
     $rid = $rid ?? (string) (getenv('REQUEST_ID') ?: ($_ENV['REQUEST_ID'] ?? ''));
 
-    if ($wantsJson) {
+    if ($tactical && class_exists(\App\Support\TacticalApiErrorRenderer::class)) {
+        http_response_code(\App\Support\TacticalApiErrorRenderer::httpStatus());
+        echo json_encode(
+            \App\Support\TacticalApiErrorRenderer::payload($e, $rid !== '' ? $rid : null),
+            JSON_UNESCAPED_UNICODE
+        );
+    } elseif ($wantsJson) {
         http_response_code($httpStatus);
         $errorCode = 'server_error';
         if ($isMissingRoutes) {

@@ -1868,7 +1868,12 @@ window.ATAKMap = (function () {
       var live = unitLive(u);
       if (live === 'offline') return;
       if (!prefs.showDelayedUnits && live === 'delayed') return;
-      var id = 'unit_' + (u.id != null ? u.id : (u.call_sign || Math.random()));
+      var id = (u.id != null && String(u.id) !== '')
+        ? ('unit_' + String(u.id))
+        : (String(u.call_sign || u.callsign || '').trim()
+          ? ('unit_cs_' + String(u.call_sign || u.callsign).trim())
+          : '');
+      if (!id) return;
       var x = u.pos_x != null ? parseFloat(u.pos_x) : NaN;
       var y = u.pos_y != null ? parseFloat(u.pos_y) : NaN;
       if (!isValidPos(x, y)) {

@@ -21,6 +21,14 @@ final class ComspecTacticalApiMiddleware
             return $block;
         }
 
-        return $next($request);
+        try {
+            return $next($request);
+        } catch (\Throwable $e) {
+            if (!\App\Support\TacticalApiErrorRenderer::isTacticalPath($path)) {
+                throw $e;
+            }
+
+            return \App\Support\TacticalApiErrorRenderer::toResponse($e);
+        }
     }
 }

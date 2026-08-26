@@ -2345,14 +2345,14 @@ if ($atakMapConfig) {
           </div>
           <div class="atak-map-tools__cluster" data-tool-sep="mark">
             <button type="button" class="atak-map-tools__cluster-label" data-tool-group="mark" aria-expanded="false" aria-controls="atak-tool-group-mark">Annoter <span aria-hidden="true">⌄</span></button>
-            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-mark" hidden>
+            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-mark">
               <button type="button" class="atak-map-tools__btn" data-tool="measure" data-tool-slot="measure" title="Mesurer une distance (M)" aria-pressed="false">Mesurer</button>
               <button type="button" class="atak-map-tools__btn" data-tool="note" data-tool-slot="note" title="Enregistrer une note sur la carte" aria-pressed="false">Note</button>
             </div>
           </div>
           <div class="atak-map-tools__cluster" data-tool-sep="draw">
             <button type="button" class="atak-map-tools__cluster-label" data-tool-group="draw" aria-expanded="false" aria-controls="atak-tool-group-draw">Tracer <span aria-hidden="true">⌄</span></button>
-            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-draw" hidden>
+            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-draw">
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="search-zone" data-tool-slot="search-zone" title="Délimiter une zone de recherche" aria-pressed="false">Recherche</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="perimeter" data-tool-slot="perimeter" title="Tracer un périmètre de sécurité" aria-pressed="false">Périmètre</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="aoi" data-tool-slot="aoi" title="Délimiter une zone d’intérêt" aria-pressed="false">Intérêt</button>
@@ -2363,14 +2363,14 @@ if ($atakMapConfig) {
           </div>
           <div class="atak-map-tools__cluster" data-tool-sep="analyse">
             <button type="button" class="atak-map-tools__cluster-label" data-tool-group="analyse" aria-expanded="false" aria-controls="atak-tool-group-analyse">Analyse <span aria-hidden="true">⌄</span></button>
-            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-analyse" hidden>
+            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-analyse">
               <button type="button" class="atak-map-tools__btn" data-tool="route" data-tool-slot="route" title="Profil du sol le long d’un itinéraire" aria-pressed="false">Itinéraire</button>
               <button type="button" class="atak-map-tools__btn" data-tool="los" data-tool-slot="los" title="Visée observateur vers cible (masque du relief)" aria-pressed="false">Visée</button>
             </div>
           </div>
           <div class="atak-map-tools__cluster" data-tool-sep="view">
             <button type="button" class="atak-map-tools__cluster-label" data-tool-group="view" aria-expanded="false" aria-controls="atak-tool-group-view">Vue <span aria-hidden="true">⌄</span></button>
-            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-view" hidden>
+            <div class="atak-map-tools__cluster-btns" id="atak-tool-group-view">
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-in" data-tool-slot="zoom" title="Zoom avant">+</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-out" data-tool-slot="zoom" title="Zoom arrière">−</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--view3d" id="atak-view-3d" data-tool-slot="view3d" title="Incliner la carte sur le relief" aria-pressed="false">3D</button>
@@ -2476,6 +2476,28 @@ if ($atakMapConfig) {
               <p class="atak-terrain-3d-hint">Choisissez la vue inclinée, amplifiez le relief, puis réduisez l'inclinaison pour une vue plus rasante. Glissez sur la rose pour orienter la vue.</p>
             </div>
             <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
+            <div class="atak-terrain-inventory" id="atak-terrain-inventory" role="status" aria-live="polite" aria-label="Données présentes sur le poste pour cette carte">
+              <div class="atak-terrain-inventory__row">
+                <span class="atak-terrain-inventory__label">Ombrage</span>
+                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-hillshade">Pas encore sur le poste</span>
+              </div>
+              <div class="atak-terrain-inventory__row">
+                <span class="atak-terrain-inventory__label">Relevé divers (pente, courbe…)</span>
+                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-survey">Pas encore sur le poste</span>
+              </div>
+              <div class="atak-terrain-inventory__row">
+                <span class="atak-terrain-inventory__label">Bâtiments</span>
+                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-buildings">Pas encore sur le poste</span>
+              </div>
+              <div class="atak-terrain-inventory__row">
+                <span class="atak-terrain-inventory__label">Forêts</span>
+                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-forests">Pas encore sur le poste</span>
+              </div>
+              <div class="atak-terrain-inventory__row">
+                <span class="atak-terrain-inventory__label">Dernier relevé le</span>
+                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-last">Aucun relevé reçu pour l’instant</span>
+              </div>
+            </div>
           </div>
           <div class="atak-map-tools__prefs-actions">
             <button type="button" class="atak-map-tools__btn" data-tool-ui="look-close">Fermer</button>

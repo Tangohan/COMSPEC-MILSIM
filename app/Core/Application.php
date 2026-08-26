@@ -85,6 +85,11 @@ class Application
         ob_start();
         try {
             $response = $runner($this->request);
+        } catch (\Throwable $e) {
+            if (!\App\Support\TacticalApiErrorRenderer::isTacticalPath($this->request->path())) {
+                throw $e;
+            }
+            $response = \App\Support\TacticalApiErrorRenderer::toResponse($e);
         } finally {
             while (ob_get_level() > $outputGuardLevel) {
                 ob_end_clean();

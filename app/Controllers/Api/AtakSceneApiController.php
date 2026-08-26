@@ -73,8 +73,18 @@ final class AtakSceneApiController
                 'terrain_total' => 0,
                 'terrain_chunks' => 0,
                 'terrain_coverage_pct' => 0,
+                'sampled_at' => null,
             ];
         }
+        try {
+            $sceneAt = $this->objects->lastUpdatedAt($tenantId, $mapId);
+        } catch (\Throwable) {
+            $sceneAt = null;
+        }
+        $lastSurvey = self::laterStamp(
+            isset($terrain['sampled_at']) && is_string($terrain['sampled_at']) ? $terrain['sampled_at'] : null,
+            $sceneAt
+        );
 
         return Response::json([
             'ok' => true,
@@ -84,7 +94,30 @@ final class AtakSceneApiController
             'terrain_total' => (int) ($terrain['terrain_total'] ?? 0),
             'terrain_chunks' => (int) ($terrain['terrain_chunks'] ?? 0),
             'terrain_coverage_pct' => (int) ($terrain['terrain_coverage_pct'] ?? 0),
+            'last_survey_at' => $lastSurvey,
         ]);
+    }
+
+    private static function laterStamp(?string $a, ?string $b): ?string
+    {
+        $a = ($a !== null && $a !== '') ? $a : null;
+        $b = ($b !== null && $b !== '') ? $b : null;
+        if ($a === null) {
+            return $b;
+        }
+        if ($b === null) {
+            return $a;
+        }
+        $ta = strtotime($a);
+        $tb = strtotime($b);
+        if ($ta === false) {
+            return $b;
+        }
+        if ($tb === false) {
+            return $a;
+        }
+
+        return $ta >= $tb ? $a : $b;
     }
 
     private function tenantId(): int

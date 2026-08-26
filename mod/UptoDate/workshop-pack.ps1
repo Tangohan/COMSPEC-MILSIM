@@ -99,10 +99,10 @@ if (Test-Path -LiteralPath $credits) {
     Copy-Item -LiteralPath $credits -Destination (Join-Path $OutDir "CREDITS.md") -Force
 }
 
+# docs/ d'atelier : ne pas les embarquer (le garde-fou refuse ce dossier).
 $docsSrc = Join-Path $ModRoot "docs"
 if (Test-Path -LiteralPath $docsSrc) {
-    Write-Step "Copie documentation joueur (docs/)"
-    Copy-Item -LiteralPath $docsSrc -Destination (Join-Path $OutDir "docs") -Recurse -Force
+    Write-Warn "docs/ d'atelier ignore (non publie sur Steam)."
 }
 $docsIndex = Join-Path $SourceMod "DOCS.md"
 if (Test-Path -LiteralPath $docsIndex) {
@@ -129,6 +129,11 @@ if (Test-Path -LiteralPath $pboMavik) {
     Write-Host "  + mavik_compat.pbo (filet Mavic / settings CBA)"
 } else {
     Write-Host "  (mavik_compat.pbo absent — compat Mavic non packagée)"
+}
+$pboSseAce = Join-Path $SourceMod "addons\sse_ace.pbo"
+if (Test-Path -LiteralPath $pboSseAce) {
+    Copy-Item -LiteralPath $pboSseAce -Destination (Join-Path $OutDir "addons\sse_ace.pbo") -Force
+    Write-Host "  + sse_ace.pbo (interaction ACE SSE)"
 }
 
 # Signatures BI optionnelles (si présentes à côté des PBO)

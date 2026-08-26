@@ -56,6 +56,27 @@ final class AtakSceneObjectRepository
         return $out;
     }
 
+    public function lastUpdatedAt(int $tenantId, int $mapId): ?string
+    {
+        if ($tenantId < 1 || $mapId < 1) {
+            return null;
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                'SELECT MAX(`updated_at`) FROM atak_scene_objects WHERE tenant_id = ? AND map_id = ?'
+            );
+            $st->execute([$tenantId, $mapId]);
+            $value = $st->fetchColumn();
+            if ($value === false || $value === null || $value === '') {
+                return null;
+            }
+
+            return (string) $value;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     /** @param list<array<string, mixed>> $objects */
     public function upsertBatch(int $tenantId, int $mapId, array $objects): int
     {

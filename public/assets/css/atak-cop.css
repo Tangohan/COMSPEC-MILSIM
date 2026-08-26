@@ -284,6 +284,33 @@
   color: #94a3b8;
   margin: 6px 0 0;
 }
+.atak-terrain-inventory {
+  display: block;
+  margin: 8px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+.atak-terrain-inventory__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 3px;
+  font: 600 10px/1.35 var(--atak-font-secondary, ui-sans-serif, system-ui, sans-serif);
+}
+.atak-terrain-inventory__label {
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.atak-terrain-inventory__value {
+  color: #cbd5e1;
+  text-align: right;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
 .atak-contour-label {
   background: rgba(15, 23, 42, 0.72);
   border: none;

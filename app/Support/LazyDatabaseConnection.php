@@ -17,6 +17,16 @@ trait LazyDatabaseConnection
 
     protected function pdo(): PDO
     {
-        return $this->pdo ??= Database::getPdo();
+        if ($this->pdo instanceof PDO) {
+            return $this->pdo;
+        }
+        $this->pdo = Database::getPdo();
+        $this->onDatabaseConnected($this->pdo);
+
+        return $this->pdo;
+    }
+
+    protected function onDatabaseConnected(PDO $pdo): void
+    {
     }
 }

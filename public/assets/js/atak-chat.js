@@ -246,6 +246,8 @@ window.ATAKChat = (function () {
 
   var mentionToastKeys = {};
   var mentionToastLastPrune = 0;
+  var lastIncomingSeenId = 0;
+  var incomingHistorySeeded = false;
 
   function consumeMentionToast(key) {
     var k = String(key || '');
@@ -273,6 +275,68 @@ window.ATAKChat = (function () {
     if (window.ATAKShowNotification) {
       window.ATAKShowNotification(msg, prio ? { priority: true } : undefined);
     }
+  }
+
+  function isOwnChatMessage(m) {
+    if (!m) return true;
+    var author = String(m.author || '').trim().toUpperCase();
+    if (!author) return false;
+    if (getMyCallsigns().indexOf(author) >= 0) return true;
+    var me = String(getAuthor() || '').trim().toUpperCase();
+    return !!(me && author === me);
+  }
+
+  function previewChatText(m) {
+    var body = String((m && m.body) || '');
+    var parsed = parseCommsBody(body);
+    if (parsed) body = parsed.text;
+    if (body.indexOf('GROUPE|') === 0) {
+      var parts = body.split('|');
+      body = parts.length >= 5 ? parts.slice(4).join('|') : body;
+    } else if (body.indexOf('MP|') === 0 || body.indexOf('PRIVÉ|') === 0 || body.indexOf('PRIVE|') === 0) {
+      var mp = body.split('|');
+      body = mp.length >= 3 ? mp.slice(mp.length - 1).join('|') : body;
+    }
+    body = body.replace(/\s+/g, ' ').trim();
+    if (body.length > 80) body = body.slice(0, 77) + '…';
+    return body;
+  }
+
+  function notifyIncomingChat(list, opts) {
+    opts = opts || {};
+    var visible = filterVisible(list);
+    var newestId = lastIncomingSeenId;
+    var incoming = [];
+    visible.forEach(function (m) {
+      var id = messageId(m);
+      if (id > newestId) newestId = id;
+      if (id > 0 && id <= lastIncomingSeenId) return;
+      if (isHiddenSystemMessage(m)) return;
+      if (isOwnChatMessage(m)) return;
+      incoming.push(m);
+    });
+    lastIncomingSeenId = newestId;
+    if (!opts.notify || !incomingHistorySeeded) {
+      incomingHistorySeeded = true;
+      return;
+    }
+    incomingHistorySeeded = true;
+    if (!incoming.length) return;
+    if (!window.ATAKShowNotification) return;
+    var msg;
+    if (incoming.length === 1) {
+      var one = incoming[0];
+      var author = String((one && one.author) || 'Opérateur').trim() || 'Opérateur';
+      var text = previewChatText(one);
+      msg = text ? (author + ' : ' + text) : (author + ' a envoyé un message.');
+    } else {
+      msg = incoming.length + ' nouveaux messages';
+    }
+    var silent = true;
+    if (window.ATAKSounds && typeof window.ATAKSounds.isSilentMode === 'function' && window.ATAKSounds.isSilentMode()) {
+      silent = true;
+    }
+    window.ATAKShowNotification(msg, { silent: silent });
   }
 
   function notifyPriorityComms(list) {
@@ -501,9 +565,10 @@ window.ATAKChat = (function () {
         if (window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.ingestFromChatMessages === 'function') {
           window.ATAKMedicalAlerts.ingestFromChatMessages(list);
         }
-        // Premier chargement : mémoriser sans toast. Ensuite : priorités puis mentions.
+        // Premier chargement : mémoriser sans toast. Ensuite : priorités, mentions, puis toast des nouveaux messages.
         if (prevFp !== '') notifyPriorityComms(list);
         scanMentionsForMe(list, { notify: prevFp !== '' });
+        notifyIncomingChat(list, { notify: prevFp !== '' });
         if (window.ATAKLastChatError) window.ATAKLastChatError(null);
       })
       .catch(function (err) {
@@ -543,6 +608,9 @@ window.ATAKChat = (function () {
       window.ATAKMedicalAlerts.notifyFromChatMessage(msg);
     }
     var id = messageId(msg);
+    if (id > 0 && id > lastIncomingSeenId) {
+      lastIncomingSeenId = id;
+    }
     if (id > 0 && id > getMentionSeenId()) {
       if (messageMentionsMe(msg)) {
         notifyMention(msg);

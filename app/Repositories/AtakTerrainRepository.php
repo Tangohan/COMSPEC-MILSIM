@@ -61,7 +61,7 @@ final class AtakTerrainRepository
         return is_array($row) ? $this->normalizeGridRow($row) : null;
     }
 
-    /** @return array{terrain_filled: int, terrain_total: int, terrain_chunks: int, terrain_coverage_pct: int} */
+    /** @return array{terrain_filled: int, terrain_total: int, terrain_chunks: int, terrain_coverage_pct: int, sampled_at: ?string} */
     public function coverageSummary(int $tenantId, int $mapId): array
     {
         $empty = [
@@ -69,6 +69,7 @@ final class AtakTerrainRepository
             'terrain_total' => 0,
             'terrain_chunks' => 0,
             'terrain_coverage_pct' => 0,
+            'sampled_at' => null,
         ];
         if ($tenantId < 1 || $mapId < 1) {
             return $empty;
@@ -82,21 +83,51 @@ final class AtakTerrainRepository
         $filled = (int) ($grid['filled_cells'] ?? 0);
         $total = max(0, $cols * $rows);
         $chunks = 0;
+        $chunkLast = null;
         try {
             $st = $this->pdo()->prepare(
-                'SELECT COUNT(*) FROM `atak_terrain_chunks` WHERE `tenant_id` = ? AND `map_id` = ?'
+                'SELECT COUNT(*) AS n, MAX(`received_at`) AS last_at FROM `atak_terrain_chunks` WHERE `tenant_id` = ? AND `map_id` = ?'
             );
             $st->execute([$tenantId, $mapId]);
-            $chunks = (int) $st->fetchColumn();
+            $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
+            $chunks = (int) ($row['n'] ?? 0);
+            if (!empty($row['last_at'])) {
+                $chunkLast = (string) $row['last_at'];
+            }
         } catch (Throwable) {
         }
+        $gridLast = $grid['sampled_at'] ?? $grid['updated_at'] ?? null;
+        $gridLast = is_string($gridLast) && $gridLast !== '' ? $gridLast : null;
 
         return [
             'terrain_filled' => $filled,
             'terrain_total' => $total,
             'terrain_chunks' => $chunks,
             'terrain_coverage_pct' => $total > 0 ? (int) round(100 * $filled / $total) : 0,
+            'sampled_at' => self::laterStamp($gridLast, $chunkLast),
         ];
+    }
+
+    private static function laterStamp(?string $a, ?string $b): ?string
+    {
+        $a = ($a !== null && $a !== '') ? $a : null;
+        $b = ($b !== null && $b !== '') ? $b : null;
+        if ($a === null) {
+            return $b;
+        }
+        if ($b === null) {
+            return $a;
+        }
+        $ta = strtotime($a);
+        $tb = strtotime($b);
+        if ($ta === false) {
+            return $b;
+        }
+        if ($tb === false) {
+            return $a;
+        }
+
+        return $ta >= $tb ? $a : $b;
     }
 
     /**

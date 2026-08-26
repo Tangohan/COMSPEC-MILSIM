@@ -892,10 +892,15 @@ window.ATAKMapTools = (function () {
       var id = toggle.getAttribute('data-tool-group');
       var open = id === requested;
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-      toggle.closest('.atak-map-tools__cluster').classList.toggle('is-open', open);
+      var cluster = toggle.closest('.atak-map-tools__cluster');
+      if (cluster) cluster.classList.toggle('is-open', open);
       var panelId = toggle.getAttribute('aria-controls');
       var panel = panelId ? document.getElementById(panelId) : null;
-      if (panel) panel.hidden = !open;
+      /* Toujours visibles : le chrome C2 les aligne sous le libellé. */
+      if (panel) {
+        panel.hidden = false;
+        panel.removeAttribute('hidden');
+      }
     });
     if (persist) {
       try { localStorage.setItem(LS_GROUP, requested); } catch (e) {}
@@ -912,7 +917,12 @@ window.ATAKMapTools = (function () {
   }
 
   function onToolGroupClick(e) {
+    if (e.target.closest('[data-tool], [data-tool-ui]')) return;
     var toggle = e.target.closest('[data-tool-group]');
+    if (!toggle) {
+      var cluster = e.target.closest('.atak-map-tools__cluster');
+      if (cluster) toggle = cluster.querySelector('[data-tool-group]');
+    }
     if (!toggle) return;
     e.preventDefault();
     e.stopPropagation();
