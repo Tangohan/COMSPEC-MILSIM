@@ -20,5 +20,7 @@ final class AtakReplayControlsTest extends TestCase
         self::assertStringContainsString("eventFilter = String(filter.value || 'all')", $script);
         self::assertStringContainsString('eventWindowSeconds * 1000', $script);
         self::assertStringContainsString('function escapeHtml(value)', $script);
+        self::assertStringContainsString('class="atak-replay-event-target"', $script);
+        self::assertStringContainsString('Number.isFinite(x) && Number.isFinite(y)', $script);
     }
 }

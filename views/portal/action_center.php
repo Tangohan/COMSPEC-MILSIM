@@ -28,7 +28,7 @@ $todayLabel = (new DateTimeImmutable('now'))->format('d/m/Y');
         if (! is_array($items) || $items === [] || $st === '') {
             continue;
         }
-        $secDomId = 'action-center-sec-' . (int) $secIdx;
+        $secDomId = $st === 'Agenda et échéances' ? 'agenda-et-echeances' : 'action-center-sec-' . (int) $secIdx;
         ?>
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" aria-labelledby="<?= htmlspecialchars($secDomId, ENT_QUOTES, 'UTF-8') ?>">
             <h2 id="<?= htmlspecialchars($secDomId, ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-bold text-slate-900"><?= htmlspecialchars($st, ENT_QUOTES, 'UTF-8') ?></h2>
@@ -48,19 +48,34 @@ $todayLabel = (new DateTimeImmutable('now'))->format('d/m/Y');
                 $meta = $count !== null && $count > 0 ? (string) $count : '';
                 $priority = (string) ($it['priority'] ?? 'low');
                 $action = (string) ($it['action'] ?? 'Ouvrir');
+                $eventId = max(0, (int) ($it['event_id'] ?? 0));
+                $rsvpStatus = (string) ($it['rsvp_status'] ?? '');
                 ?>
                 <li>
-                    <a href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>" class="group flex h-full items-start gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-white hover:shadow-sm">
+                    <article class="group flex h-full items-start gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-white hover:shadow-sm">
                         <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full <?= $priority === 'high' ? 'bg-amber-500' : ($priority === 'normal' ? 'bg-sky-500' : 'bg-slate-300') ?>" aria-hidden="true"></span>
-                        <span class="min-w-0 flex-1">
+                        <div class="min-w-0 flex-1">
                             <span class="flex items-center justify-between gap-3">
                                 <strong class="text-sm text-slate-950"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></strong>
                                 <?php if ($meta !== ''): ?><span class="rounded-full bg-slate-900 px-2 py-0.5 text-xs font-bold text-white"><?= htmlspecialchars($meta, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                             </span>
                             <span class="mt-1 block text-xs leading-relaxed text-slate-600"><?= htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') ?></span>
-                            <span class="mt-3 block text-xs font-bold text-emerald-700 group-hover:text-emerald-800"><?= htmlspecialchars($action, ENT_QUOTES, 'UTF-8') ?> →</span>
-                        </span>
-                    </a>
+                            <?php if ($eventId > 0): ?>
+                                <div class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Répondre à <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>">
+                                    <?php foreach (['yes' => 'Présent', 'maybe' => 'Peut-être', 'no' => 'Absent'] as $status => $statusLabel): ?>
+                                        <form method="post" action="<?= htmlspecialchars(url('aujourdhui/rsvp'), ENT_QUOTES, 'UTF-8') ?>">
+                                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                                            <input type="hidden" name="event_id" value="<?= $eventId ?>">
+                                            <input type="hidden" name="status" value="<?= $status ?>">
+                                            <button type="submit" class="rounded-lg border px-2.5 py-1.5 text-xs font-bold transition <?= $rsvpStatus === $status ? 'border-emerald-600 bg-emerald-700 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-400 hover:text-emerald-800' ?>" aria-pressed="<?= $rsvpStatus === $status ? 'true' : 'false' ?>"><?= $statusLabel ?></button>
+                                        </form>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <a href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-block text-xs font-bold text-emerald-700 group-hover:text-emerald-800"><?= htmlspecialchars($action, ENT_QUOTES, 'UTF-8') ?> →</a>
+                            <?php endif; ?>
+                        </div>
+                    </article>
                 </li>
                 <?php endforeach; ?>
             </ul>

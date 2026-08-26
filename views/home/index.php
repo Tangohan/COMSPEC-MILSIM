@@ -472,13 +472,13 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     </div>
                     <div class="space-y-8 lg:col-span-8">
                         <?php $homePersonas = \App\Services\Portal\OnboardingPersonaCatalog::all(); ?>
-                        <div class="grid gap-3 sm:grid-cols-2" aria-label="Choisir un parcours Athena">
+                        <div class="grid gap-3 sm:grid-cols-2" aria-label="<?= htmlspecialchars(__('home.persona_choose_aria'), ENT_QUOTES, 'UTF-8') ?>">
                             <?php foreach ($homePersonas as $personaKey => $persona): ?>
                                 <a href="<?= htmlspecialchars(url('onboarding') . '?persona=' . rawurlencode((string) $personaKey), ENT_QUOTES, 'UTF-8') ?>" class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md">
                                     <span class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700"><?= htmlspecialchars((string) $persona['eyebrow'], ENT_QUOTES, 'UTF-8') ?></span>
                                     <strong class="mt-2 block text-base text-slate-950"><?= htmlspecialchars((string) $persona['label'], ENT_QUOTES, 'UTF-8') ?></strong>
                                     <span class="mt-2 block text-sm leading-relaxed text-slate-600"><?= htmlspecialchars((string) $persona['description'], ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="mt-4 block text-xs font-black uppercase tracking-[0.12em] text-emerald-700">Voir mon parcours →</span>
+                                    <span class="mt-4 block text-xs font-black uppercase tracking-[0.12em] text-emerald-700"><?= htmlspecialchars(__('home.persona_cta'), ENT_QUOTES, 'UTF-8') ?> →</span>
                                 </a>
                             <?php endforeach; ?>
                         </div>

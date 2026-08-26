@@ -10191,6 +10191,26 @@ body.atak-theme-light .atak-panel-chrome-btn {
   flex-direction: column;
   gap: 0.25rem;
 }
+
+.atak-replay-event-target {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  font: inherit;
+}
+
+button.atak-replay-event-target {
+  cursor: pointer;
+}
+
+button.atak-replay-event-target:focus-visible {
+  outline: 2px solid var(--atak-accent);
+  outline-offset: 3px;
+}
 .atak-replay-event {
   display: flex;
   flex-wrap: wrap;

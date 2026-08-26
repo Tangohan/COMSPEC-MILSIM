@@ -31,4 +31,12 @@ final class OnboardingPersonaCatalogTest extends TestCase
         self::assertNull(OnboardingPersonaCatalog::normalize('unknown'));
         self::assertNull(OnboardingPersonaCatalog::normalize(null));
     }
+
+    public function testCompletedStepsAreUniqueSortedAndBounded(): void
+    {
+        self::assertSame([0, 1, 2], OnboardingPersonaCatalog::normalizeCompletedSteps([2, '1', 2, 0, 8, -1, 'invalid', ['invalid']]));
+        self::assertSame([0], OnboardingPersonaCatalog::normalizeCompletedSteps([0, 1], 1));
+        self::assertSame([], OnboardingPersonaCatalog::normalizeCompletedSteps('invalid'));
+        self::assertSame([], OnboardingPersonaCatalog::normalizeCompletedSteps([0], 0));
+    }
 }

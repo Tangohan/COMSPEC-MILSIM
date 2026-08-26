@@ -2245,7 +2245,7 @@ if ($atakMapConfig) {
             </label>
             <label class="atak-replay-zoom">
               <span class="atak-replay-speed-label">Fenêtre autour du curseur <output id="atak-replay-zoom-value">± 90 s</output></span>
-              <input type="range" id="atak-replay-zoom" min="30" max="300" step="30" value="90" />
+              <input type="range" id="atak-replay-zoom" min="30" max="300" step="30" value="90" aria-label="Fenêtre temporelle autour du curseur, en secondes" aria-describedby="atak-replay-zoom-value" />
             </label>
           </div>
           <p id="atak-replay-info" class="atak-replay-info" role="status">Ouvrez cet onglet pour charger les positions.</p>

@@ -14,9 +14,9 @@ final class OnboardingPersonaCatalog
     {
         return [
             'member' => [
-                'label' => 'Membre d’unité',
-                'eyebrow' => 'Rejoindre et participer',
-                'description' => 'Retrouvez votre fiche, les rendez-vous et les ressources utiles sans parcourir tout le portail.',
+                'label' => __('home.persona_member_label'),
+                'eyebrow' => __('home.persona_member_eyebrow'),
+                'description' => __('home.persona_member_description'),
                 'steps' => [
                     ['label' => 'Vérifier ma fiche', 'description' => 'Complétez votre identité opérationnelle et vos informations visibles.', 'href' => url('personnel/me')],
                     ['label' => 'Voir ce qui m’attend', 'description' => 'Regroupez messages, dossiers et notifications à traiter aujourd’hui.', 'href' => url('aujourdhui')],
@@ -24,9 +24,9 @@ final class OnboardingPersonaCatalog
                 ],
             ],
             'command' => [
-                'label' => 'Commandement',
-                'eyebrow' => 'Piloter l’unité',
-                'description' => 'Structurez les effectifs, les accès et les priorités quotidiennes de votre organisation.',
+                'label' => __('home.persona_command_label'),
+                'eyebrow' => __('home.persona_command_eyebrow'),
+                'description' => __('home.persona_command_description'),
                 'steps' => [
                     ['label' => 'Ouvrir le briefing du jour', 'description' => 'Identifiez les dossiers et messages qui attendent une décision.', 'href' => url('aujourdhui')],
                     ['label' => 'Contrôler les effectifs', 'description' => 'Consultez l’organisation, les affectations et les disponibilités.', 'href' => url('back-office/ressources/effectifs')],
@@ -34,9 +34,9 @@ final class OnboardingPersonaCatalog
                 ],
             ],
             'operations' => [
-                'label' => 'Opérations & ATAK',
-                'eyebrow' => 'Préparer et débriefer',
-                'description' => 'Passez du briefing à la carte tactique, puis relisez la mission sur une chronologie commune.',
+                'label' => __('home.persona_operations_label'),
+                'eyebrow' => __('home.persona_operations_eyebrow'),
+                'description' => __('home.persona_operations_description'),
                 'steps' => [
                     ['label' => 'Préparer une opération', 'description' => 'Centralisez objectifs, ordres et ressources de mission.', 'href' => url('tableau-operationnel')],
                     ['label' => 'Ouvrir la carte ATAK', 'description' => 'Suivez les unités, rapports et alertes autorisés.', 'href' => url('atak')],
@@ -44,9 +44,9 @@ final class OnboardingPersonaCatalog
                 ],
             ],
             'training' => [
-                'label' => 'Formation',
-                'eyebrow' => 'Transmettre et qualifier',
-                'description' => 'Organisez les parcours, suivez la progression et retrouvez les qualifications à renouveler.',
+                'label' => __('home.persona_training_label'),
+                'eyebrow' => __('home.persona_training_eyebrow'),
+                'description' => __('home.persona_training_description'),
                 'steps' => [
                     ['label' => 'Parcourir les formations', 'description' => 'Découvrez les cursus accessibles dans votre communauté.', 'href' => url('formations')],
                     ['label' => 'Reprendre mon parcours', 'description' => 'Continuez les modules déjà commencés.', 'href' => url('formations/mes-formations')],
@@ -61,5 +61,24 @@ final class OnboardingPersonaCatalog
         $persona = strtolower(trim((string) $persona));
 
         return array_key_exists($persona, self::all()) ? $persona : null;
+    }
+
+    /** @return list<int> */
+    public static function normalizeCompletedSteps(mixed $stored, int $stepCount = 3): array
+    {
+        if (!is_array($stored) || $stepCount < 1) {
+            return [];
+        }
+        $scalarSteps = array_filter(
+            $stored,
+            static fn (mixed $value): bool => is_int($value) || (is_string($value) && preg_match('/^-?\d+$/', $value) === 1)
+        );
+        $steps = array_values(array_unique(array_map('intval', $scalarSteps)));
+        sort($steps);
+
+        return array_values(array_filter(
+            $steps,
+            static fn (int $index): bool => $index >= 0 && $index < $stepCount
+        ));
     }
 }
