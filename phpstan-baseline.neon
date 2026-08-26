@@ -19,18 +19,6 @@ parameters:
 			path: app/Controllers/Admin/Organization/EventRsvpNominativeAdminController.php
 
 		-
-			message: '#^Class App\\Controllers\\Web\\ActivityHubController constructor invoked with 4 parameters, 5 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Core/Container.php
-
-		-
-			message: '#^Class App\\Controllers\\Web\\ActivityHubController constructor invoked with 4 parameters, 5 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Core/ContainerIntegrations.php
-
-		-
 			message: '#^Undefined variable\: \$ageDays$#'
 			identifier: variable.undefined
 			count: 2
