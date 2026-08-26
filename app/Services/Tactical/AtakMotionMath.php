@@ -431,6 +431,10 @@ final class AtakMotionMath
         if ($h < 0) {
             $h += 360.0;
         }
+        // atan2 peut remonter ~360° pour un cap nord : équivalent à 0°.
+        if ($h >= 360.0 - 1e-6) {
+            return 0.0;
+        }
 
         return $h;
     }
