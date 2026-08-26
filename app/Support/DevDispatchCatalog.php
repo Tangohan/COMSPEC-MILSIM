@@ -491,6 +491,20 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(242, '2026-08-26', 'Le menu d’actions ne s’empile plus à l’écran', 'Ouvrir les actions personnelles n’affiche plus la même liste recopiée sur toute la hauteur', [], [], [
+                'Après un retour au combat, chaque action (Overwatch, photo, carte, santé) n’apparaît plus des dizaines de fois les unes sous les autres',
+            ], ['atak'], [
+                'Relancez Arma avec le pack jeu Overwatch à jour. Une simple relance de mission ne suffit pas.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.86'),
+            $pr(240, '2026-08-26', 'La barre d’outils et Affichage se lisent à nouveau', 'Les commandes restent sous chaque intitulé, et l’inventaire du relief se lit ligne par ligne', [], [
+                'Position, Annoter, Tracer, Analyse et Vue montrent leurs boutons, sans menu compact',
+                'Affichage, Personnaliser et Masquer restent sur une seule ligne',
+                'Dans Affichage, chaque donnée du poste a son état à droite ; l’ombrage suit la couverture déjà affichée',
+            ], [
+                'On ne voyait que les intitulés, et l’inventaire du relief collait les libellés aux états',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Les boutons Grille, Mesurer, Trait et les autres reviennent sous chaque groupe. Pas besoin d’un nouveau pack jeu.',
+            ], 'Portail 1.5.48'),
             $pr(239, '2026-08-26', 'La vue inclinée montre enfin le relief', 'Passer en vue inclinée ou 3D actif soulève le sol déjà relevé : les hauteurs se voient, sans case cachée à cocher', [
                 'Le sol suit l’altitude relevée dès que la vue est inclinée, y compris si Relief et profondeur est décoché',
             ], [
