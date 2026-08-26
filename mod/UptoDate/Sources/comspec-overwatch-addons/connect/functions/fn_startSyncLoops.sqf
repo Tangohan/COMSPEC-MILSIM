@@ -340,4 +340,19 @@ private _fnc_addPoll = {
 
 [] spawn comspec_overwatch_connect_fnc_playtimeTracker;
 
+[] spawn {
+    uiSleep 12;
+    while { true } do {
+        if (
+            hasInterface
+            && { missionNamespace getVariable ["comspec_overwatch_enabled", true] }
+            && { missionNamespace getVariable ["COMSPEC_AthenaReady", false] }
+            && { (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isEqualTo "linked" }
+        ) then {
+            [] call comspec_overwatch_connect_fnc_sampleScene;
+        };
+        uiSleep 24;
+    };
+};
+
 ["[Athena] Boucles de synchronisation démarrées."] call comspec_overwatch_connect_fnc_appendLinkLog;

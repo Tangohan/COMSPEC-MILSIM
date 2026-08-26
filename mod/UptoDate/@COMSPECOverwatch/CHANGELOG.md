@@ -1,3 +1,9 @@
+COMSPEC Overwatch 1.4.75 / Athena ATAK 1.5.48 — 26/08/2026
+
+• Bâtiments et forêts autour de l’équipe remontés vers la vue 3D du poste
+• Menu ACE : relever les volumes, comme pour le relief
+• Relier le compte, recharger le pack, relancer Arma complètement
+
 COMSPEC Overwatch 1.4.74 / Athena ATAK 1.5.48 — 26/08/2026
 
 • Relevé du relief uniquement une fois Athena liée (plus d’envois refusés)

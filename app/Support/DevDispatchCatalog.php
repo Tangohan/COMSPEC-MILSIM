@@ -491,6 +491,14 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(213, '2026-08-26', 'Bâtiments et forêts en vue inclinée', 'Autour de l’équipe, les bâtiments et les couverts se dressent sur la carte du poste', [
+                'La vue 3D de la carte montre les bâtiments et les forêts relevés autour des opérateurs, de la carte ouverte et de la caméra Zeus',
+                'Menu ACE : relever les volumes autour de l’équipe, comme pour le relief',
+            ], [
+                'Le relevé suit les déplacements : il n’envoie que ce qui a changé autour de vous',
+            ], [], ['atak'], [
+                'Rechargez le pack jeu Overwatch 1.4.75, puis relancez Arma complètement — pas seulement la mission. Sur la carte web, activez la vue 3D puis « Bâtiments et forêts du jeu ».',
+            ], 'Portail 1.5.48 · Overwatch 1.4.75'),
             $pr(212, '2026-08-26', 'IA alliées distinctes sur la carte', 'Chaque IA garde sa pastille : plus de regroupement sous le même indicatif', [
                 'Les unités alliées sont suivies une par une, même dans le même groupe',
             ], [

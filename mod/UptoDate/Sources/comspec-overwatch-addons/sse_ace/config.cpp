@@ -9,9 +9,9 @@ class CfgPatches {
         // est vérifiée au runtime (fn_initSseAce), et la couche se retire en silence.
         requiredAddons[] = {"comspec_overwatch_connect", "cba_main", "cba_xeh", "cba_settings"};
         author = "COMSPEC";
-        version = 1.415;
-        versionStr = "1.4.15";
-        versionAr[] = {1, 4, 15};
+        version = 1.416;
+        versionStr = "1.4.16";
+        versionAr[] = {1, 4, 16};
     };
 };
 

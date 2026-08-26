@@ -28,7 +28,7 @@ public static class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.17";
+    private const string ExtensionVersion = "1.17.1";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -794,6 +794,23 @@ public static class Extension
         return FormatAtakExtArray("OK", "queued");
     }
 
+    private static string HandleSceneIngest(string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl))
+            return FormatAtakExtArray("ERROR", "not_connected");
+        if (_apiKey.Length == 0)
+            return FormatAtakExtArray("ERROR", "unauthorized");
+        if (args.Length < 1)
+            return FormatAtakExtArray("ERROR", "empty");
+        var json = args[0] ?? "";
+        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
+            return FormatAtakExtArray("ERROR", "empty");
+        if (!TryBuildRequestUri(_baseUrl, "/api/atak/scene/ingest", out var uri, out var err) || uri is null)
+            return FormatAtakExtArray("ERROR", err);
+        EnqueueOrSend(uri.AbsoluteUri, EnrichAtakPayload(json));
+        return FormatAtakExtArray("OK", "queued");
+    }
+
     private static void EnqueueOrSend(string url, string jsonBody)
     {
         // Positions : toujours coalescer (dernière gagne) puis flush périodique.
@@ -1065,7 +1082,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.15");
+            Output(output, outputSize, "COMSPECExtension 2.0.16");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1393,7 +1410,7 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.15";
+            return "OK|COMSPECExtension 2.0.16";
         }
 
         if (function == "SetTelemetryBatch")
@@ -1404,12 +1421,17 @@ public static class Extension
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.15", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.16", "COMSPEC Extension ATAK");
         }
 
         if (function == "Terrain.Chunk")
         {
             return HandleTerrainChunk(args);
+        }
+
+        if (function == "Scene.Ingest")
+        {
+            return HandleSceneIngest(args);
         }
 
         // Captures locales (dossier Screenshots du profil) — hors ligne, sans liaison Athena.
@@ -4602,6 +4624,12 @@ public static class Extension
             if (function == "Terrain.Chunk")
             {
                 // Acquittement synchrone dans TryGetSyncResponse (HandleTerrainChunk).
+                return;
+            }
+
+            if (function == "Scene.Ingest")
+            {
+                // Acquittement synchrone dans TryGetSyncResponse (HandleSceneIngest).
                 return;
             }
 
