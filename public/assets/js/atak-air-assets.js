@@ -12,15 +12,13 @@ window.ATAKAirAssets = (function () {
   function fetchAirAssets() {
     var base = getApiBase();
     var url = (base || '') + '/api/atak/air-assets?mapId=' + getMapId();
-    fetch(url).then(function (r) { return r.json(); }).then(function (data) {
-      assets = Array.isArray(data) ? data : [];
+    fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
+      if (!Array.isArray(data)) return;
+      assets = data;
       render();
       if (window.ATAKMap && window.ATAKMap.setAirAssets) window.ATAKMap.setAirAssets(assets);
       try { window.dispatchEvent(new CustomEvent('atak:units-updated')); } catch (e3) {}
-    }).catch(function () {
-      assets = [];
-      render();
-    });
+    }).catch(function () {});
   }
 
   function getAssets() {

@@ -33,7 +33,8 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertStringContainsString('verticalExaggeration: 2.5', $javascript);
         self::assertStringContainsString('function reliefOffset(z)', $javascript);
         self::assertStringContainsString('(Number(z) - minZ) / (maxZ - minZ)', $javascript);
-        self::assertStringContainsString('normalizedHeight * 110 * state.verticalExaggeration', $javascript);
+        self::assertStringContainsString('normalizedHeight * 180 * state.verticalExaggeration', $javascript);
+        self::assertStringNotContainsString('normalizedHeight * 110 * state.verticalExaggeration', $javascript);
         self::assertStringNotContainsString('Math.min(550, displacement)', $javascript);
         self::assertStringContainsString('id="atak-terrain-exaggeration"', $view);
         self::assertStringContainsString('Exagération Z', $view);
@@ -104,5 +105,33 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertStringContainsString("window.addEventListener('atak:terrain3dchange', refreshInclinedMarkers)", $map);
         self::assertStringContainsString('opts.showLabel = opts.showLabel === true', $nato);
         self::assertStringNotContainsString('Cesium', $map);
+    }
+
+    public function testInclinedViewStartsTheMeshWithoutTheMarkerDepthCheckbox(): void
+    {
+        $javascript = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain-3d.js');
+
+        self::assertStringContainsString("window.addEventListener('atak:mapready'", $javascript);
+        self::assertStringContainsString('if (state.enabled) startTerrain()', $javascript);
+        self::assertStringContainsString('La case « Relief et profondeur » ne concerne que les pastilles', $javascript);
+        self::assertStringNotContainsString('markerDepth', $javascript);
+        self::assertStringNotContainsString('atak-map-look-depth', $javascript);
+        self::assertStringNotContainsString('!data.ready', $javascript);
+        self::assertStringContainsString("if (!data || !data.heights || data.encoding !== 'int16le_b64') return null", $javascript);
+    }
+
+    public function testTerrainMeshKeepsDrawingWhenTileTexturesAreBlocked(): void
+    {
+        $javascript = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain-3d.js');
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak.css');
+        $map = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-map.js');
+
+        self::assertStringContainsString('function bindShadeTexture(gl)', $javascript);
+        self::assertStringContainsString('vertices.push(sx, sy - relief)', $javascript);
+        self::assertStringContainsString('var relief = reliefOffset(z)', $javascript);
+        self::assertStringContainsString('drapedTiles += 1', $javascript);
+        self::assertStringContainsString("terrainCanvas.classList.toggle('atak-terrain-mesh--draped', drapedTiles > 0)", $javascript);
+        self::assertStringContainsString('.atak-terrain-mesh:not(.atak-terrain-mesh--draped) { mix-blend-mode: multiply; }', $css);
+        self::assertStringContainsString('crossOrigin: true', $map);
     }
 }

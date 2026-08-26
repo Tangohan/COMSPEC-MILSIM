@@ -4724,6 +4724,7 @@ body.atak-theme-light .atak-chat-messages {
   white-space: nowrap;
 }
 .atak-terrain-mesh { position: absolute; inset: 0; z-index: 210; pointer-events: none; }
+.atak-terrain-mesh:not(.atak-terrain-mesh--draped) { mix-blend-mode: multiply; }
 .atak-scene-3d { position: absolute; inset: 0; z-index: 215; pointer-events: none; }
 /* Le canevas WebGL se superpose aux PNG drapés. On garde les tuiles Leaflet
    dessous : elles servent de repli pendant un chargement, une tuile CORS
@@ -4800,6 +4801,7 @@ body.atak-theme-light .atak-chat-messages {
 .atak-map-hud__k { color: #c9d4dc; font-weight: 600; text-transform: uppercase; }
 .atak-map-hud__v { color: #e2e8f0; font-weight: 700; }
 .atak-map-hud__ok { color: #34d399 !important; }
+.atak-map-hud__warn { color: #fbbf24 !important; }
 .atak-map-hud__bad { color: #f87171 !important; }
 .atak-map-hud__measure { color: #fbbf24 !important; letter-spacing: 0.02em; }
 .atak-map-hud__row[hidden] { display: none !important; }
@@ -4867,17 +4869,20 @@ body.atak-theme-light .atak-chat-messages {
   justify-content: flex-start;
   gap: 0;
   min-width: 0;
+  overflow: visible;
+  height: auto;
 }
 .atak-map-tools__cluster {
   position: relative;
   display: flex;
-  flex-direction: row;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: center;
   gap: 3px;
   padding: 2px 8px;
   border-right: 1px solid rgba(148, 163, 184, 0.22);
   flex: 0 0 auto;
+  overflow: visible;
 }
 .atak-map-tools__cluster:last-child,
 .atak-map-tools__cluster--chrome {
@@ -4885,6 +4890,8 @@ body.atak-theme-light .atak-chat-messages {
 }
 .atak-map-tools__cluster--chrome {
   margin-left: auto;
+  flex-direction: row;
+  align-items: center;
 }
 .atak-map-tools__cluster-label {
   appearance: none;
@@ -4930,23 +4937,14 @@ body.atak-theme-light .atak-chat-messages {
   gap: 1px 2px;
   min-width: 0;
   pointer-events: auto;
-}
-.atak-map-tools__cluster--chrome {
-  flex-direction: column;
-  align-items: stretch;
+  overflow: visible;
 }
 .atak-map-tools__cluster--chrome .atak-map-tools__cluster-label {
-  display: block;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: #64748b;
-  cursor: default;
+  display: none;
 }
 .atak-map-tools__cluster--chrome .atak-map-tools__cluster-btns {
   position: static;
+  display: flex;
   min-width: 0;
   padding: 0;
   border: 0;
@@ -5482,6 +5480,7 @@ body.atak-theme-light .atak-map-hud {
 body.atak-theme-light .atak-map-hud__k { color: #627d98; }
 body.atak-theme-light .atak-map-hud__v { color: #1f2933; }
 body.atak-theme-light .atak-map-hud__ok { color: #0f766e !important; }
+body.atak-theme-light .atak-map-hud__warn { color: #b45309 !important; }
 body.atak-theme-light .atak-map-hud__measure { color: #b45309 !important; }
 body.atak-theme-light .atak-route-panel {
   background: rgba(255, 255, 255, 0.96);
@@ -6006,20 +6005,21 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   white-space: nowrap;
 }
 
-/* Connection lost */
+/* Connection lost — overlay C2 (un seul panneau, un seul compte à rebours) */
 .atak-connection-lost {
   position: fixed;
-  top: var(--atak-header-h);
-  left: 50%;
-  transform: translateX(-50%);
-  background: #b91c1c;
-  color: #fff;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  inset: 0;
   z-index: 2000;
   display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(7, 10, 14, 0.72);
+  pointer-events: none;
 }
-.atak-connection-lost.show { display: block; }
+.atak-connection-lost.show {
+  display: flex;
+}
 
 /* Chargement initial Tacmap */
 .atak-boot-overlay {
@@ -10945,7 +10945,6 @@ body.atak-page--device .atak-panel-right,
 body.atak-page--device .atak-drawer--fixed,
 body.atak-page--device .atak-map-fab,
 body.atak-page--device .atak-account-panel,
-body.atak-page--device .atak-connection-lost,
 body.atak-device-embed .atak-os-strip,
 body.atak-device-embed .atak-tx-strip,
 body.atak-device-embed .atak-liaison-rail,
@@ -10958,8 +10957,7 @@ body.atak-device-embed .atak-panel-left,
 body.atak-device-embed .atak-panel-right,
 body.atak-device-embed .atak-drawer--fixed,
 body.atak-device-embed .atak-map-fab,
-body.atak-device-embed .atak-account-panel,
-body.atak-device-embed .atak-connection-lost {
+body.atak-device-embed .atak-account-panel {
   display: none !important;
 }
 body.atak-page--device,
@@ -11005,7 +11003,7 @@ body.atak-device-embed .atak-map-stage #atak-map {
 }
 body.atak-page--device .atak-map-tools,
 body.atak-device-embed .atak-map-tools {
-  position: absolute !important;
+  position: relative !important;
   top: 0;
   left: 0;
   right: 0;
@@ -11014,22 +11012,29 @@ body.atak-device-embed .atak-map-tools {
   height: auto;
   min-height: 28px;
   max-width: none;
+  overflow: visible;
   font-size: 0.62rem;
   background: rgba(8, 12, 16, 0.88);
   padding: 2px 6px;
 }
 body.atak-page--device .atak-map-tools__cluster-label,
 body.atak-device-embed .atak-map-tools__cluster-label {
-  display: none;
+  display: block;
 }
 body.atak-page--device button.atak-map-tools__cluster-label,
 body.atak-device-embed button.atak-map-tools__cluster-label {
-  display: inline-flex;
+  display: block;
+  pointer-events: auto;
+}
+body.atak-page--device .atak-map-tools__cluster--chrome .atak-map-tools__cluster-label,
+body.atak-device-embed .atak-map-tools__cluster--chrome .atak-map-tools__cluster-label {
+  display: none;
 }
 body.atak-page--device .atak-map-tools__cluster,
 body.atak-device-embed .atak-map-tools__cluster {
   padding: 0 6px;
-  gap: 0;
+  gap: 2px;
+  flex-direction: column;
 }
 body.atak-page--device .leaflet-container,
 body.atak-device-embed .leaflet-container {

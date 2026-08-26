@@ -56,4 +56,12 @@ final class AtakMarkerIconPathTest extends TestCase
     {
         self::assertNull(atak_marker_icon_relpath('#(argb,8,8,3)color(1,0,0,1)'));
     }
+
+    public function testNumericObjectIdsAreNotTreatedAsPngFilenames(): void
+    {
+        self::assertNull(atak_marker_icon_relpath('1'));
+        self::assertNull(atak_marker_icon_relpath('1.png'));
+        self::assertNull(atak_marker_icon_relpath('4.png'));
+        self::assertNull(atak_marker_icon_relpath('\\2.png'));
+    }
 }

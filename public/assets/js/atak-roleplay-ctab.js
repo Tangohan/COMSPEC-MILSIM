@@ -14,26 +14,38 @@
     return base + pathNorm;
   }
 
+  function formatReconnectLabel(title, message) {
+    var raw = [message, title].filter(Boolean).join(' ');
+    var match = String(raw).match(/(\d+)\s*s\b/i);
+    if (match) {
+      return 'Reconnexion dans ' + match[1] + ' s';
+    }
+    return 'Reconnexion en cours…';
+  }
+
   // Exposition globale pour injection depuis Arma
   window.AtakRoleplayEffects = {
     /**
-     * Affiche overlay de déconnexion plein écran dans l'ATAK
+     * Overlay unique « Liaison perdue » (panneau C2, un seul compte à rebours).
      */
     showConnectionError(title, message) {
-      let overlay = document.querySelector('.atak-disconnect-overlay');
-      
-      if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'atak-disconnect-overlay';
-        document.body.appendChild(overlay);
+      const overlay = document.getElementById('atak-connection-lost')
+        || document.querySelector('.atak-disconnect-overlay');
+      if (!overlay) return;
+
+      const timerText = formatReconnectLabel(title, message);
+      const titleEl = overlay.querySelector('.atak-connection-lost__title');
+      const timerEl = overlay.querySelector('#atak-connection-lost-msg')
+        || overlay.querySelector('.atak-connection-lost__timer');
+      if (titleEl) titleEl.textContent = 'Liaison perdue';
+      if (timerEl) timerEl.textContent = timerText;
+      if (!titleEl && !timerEl) {
+        overlay.innerHTML = '<div class="atak-connection-lost__panel">'
+          + '<p class="atak-connection-lost__title">Liaison perdue</p>'
+          + '<p class="atak-connection-lost__timer" id="atak-connection-lost-msg">' + timerText + '</p>'
+          + '</div>';
       }
-      
-      overlay.innerHTML = `
-        <div class="atak-disconnect-content">
-          <h2>${title}</h2>
-          <p>${message}</p>
-        </div>
-      `;
+      overlay.classList.add('show');
       overlay.style.display = 'flex';
     },
 
@@ -41,10 +53,11 @@
      * Cache l'overlay de déconnexion
      */
     hideConnectionError() {
-      const overlay = document.querySelector('.atak-disconnect-overlay');
-      if (overlay) {
-        overlay.style.display = 'none';
-      }
+      const overlay = document.getElementById('atak-connection-lost')
+        || document.querySelector('.atak-disconnect-overlay');
+      if (!overlay) return;
+      overlay.classList.remove('show');
+      overlay.style.display = 'none';
     },
 
     /**

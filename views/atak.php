@@ -67,7 +67,6 @@ if ($atakMapConfig) {
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.css" />
   <link href="<?= $base ?>/assets/css/atak.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
-  <link href="<?= $base ?>/assets/css/atak-c2-shell.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-v2.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-motion.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -75,6 +74,7 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak-mission-plan.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-c2-shell.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/app-update-modal.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -899,7 +899,12 @@ if ($atakMapConfig) {
   </aside>
 
   <div class="atak-intel-banner" id="atak-intel-banner" role="status" aria-live="polite" hidden></div>
-  <div class="atak-connection-lost" id="atak-connection-lost" role="alert"><span id="atak-connection-lost-msg">Connexion perdue. Reconnexion…</span></div>
+  <div class="atak-connection-lost" id="atak-connection-lost" role="alert" aria-live="assertive">
+    <div class="atak-connection-lost__panel">
+      <p class="atak-connection-lost__title">Liaison perdue</p>
+      <p class="atak-connection-lost__timer" id="atak-connection-lost-msg">Reconnexion en cours…</p>
+    </div>
+  </div>
   <div class="atak-error-toast" id="atak-error-toast" role="alert" aria-live="polite"></div>
   <div class="atak-notification-toast" id="atak-notification-toast" role="status" aria-live="polite"></div>
   <div class="atak-medical-banner" id="atak-medical-banner" role="alert" aria-live="assertive" hidden></div>
@@ -2473,7 +2478,7 @@ if ($atakMapConfig) {
                 <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
                 <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
               </label>
-              <p class="atak-terrain-3d-hint">Choisissez la vue inclinée, amplifiez le relief, puis réduisez l'inclinaison pour une vue plus rasante. Glissez sur la rose pour orienter la vue.</p>
+              <p class="atak-terrain-3d-hint">La vue inclinée soulève le sol déjà relevé. Amplifiez le relief, puis réduisez l’inclinaison pour une vue plus rasante. Glissez sur la rose pour orienter. La case Relief et profondeur n’agit que sur les pastilles, pas sur le terrain.</p>
             </div>
             <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
             <div class="atak-terrain-inventory" id="atak-terrain-inventory" role="status" aria-live="polite" aria-label="Données présentes sur le poste pour cette carte">
@@ -3060,21 +3065,30 @@ if ($atakMapConfig) {
       var statusEl = document.getElementById('atak-status');
       var connectionLostEl = document.getElementById('atak-connection-lost');
       function setNetworkChip(online) {
-        if (!statusEl) return;
-        var label = statusEl.querySelector('.atak-chip-label') || statusEl.querySelector('span:last-child');
-        if (online) {
-          statusEl.classList.remove('offline', 'atak-chip--off');
-          statusEl.classList.add('atak-chip--live');
-          if (label) label.textContent = 'Réseau actif';
-        } else {
-          statusEl.classList.add('offline', 'atak-chip--off');
-          statusEl.classList.remove('atak-chip--live');
-          if (label) label.textContent = 'Hors ligne';
+        var deferred = !!(online && window.ATAKSocket && typeof window.ATAKSocket.isDeferred === 'function' && window.ATAKSocket.isDeferred());
+        var deferredLabel = (window.ATAKSocket && window.ATAKSocket.HUD_DEFERRED_LABEL) || 'Différé · mauvaise connexion';
+        if (deferred && connectionLostEl) {
+          connectionLostEl.classList.remove('show');
+        }
+        if (statusEl) {
+          var label = statusEl.querySelector('.atak-chip-label') || statusEl.querySelector('span:last-child');
+          statusEl.classList.remove('offline', 'atak-chip--off', 'atak-chip--live', 'atak-chip--warn');
+          if (online && deferred) {
+            statusEl.classList.add('atak-chip--warn');
+            if (label) label.textContent = 'Liaison différée';
+          } else if (online) {
+            statusEl.classList.add('atak-chip--live');
+            if (label) label.textContent = 'Réseau actif';
+          } else {
+            statusEl.classList.add('offline', 'atak-chip--off');
+            if (label) label.textContent = 'Hors ligne';
+          }
         }
         var hudNet = document.querySelector('[data-hud-net]');
         if (hudNet) {
-          hudNet.textContent = online ? 'En liaison' : 'Coupée';
-          hudNet.classList.toggle('atak-map-hud__ok', !!online);
+          hudNet.textContent = (online && deferred) ? deferredLabel : (online ? 'En liaison' : 'Coupée');
+          hudNet.classList.toggle('atak-map-hud__ok', !!online && !deferred);
+          hudNet.classList.toggle('atak-map-hud__warn', !!online && !!deferred);
           hudNet.classList.toggle('atak-map-hud__bad', !online);
         }
       }
@@ -3085,13 +3099,23 @@ if ($atakMapConfig) {
           atakLiveConnectedOnce = true;
           dismissAtakBoot();
           setNetworkChip(true);
-          if (connectionLostEl) connectionLostEl.classList.remove('show');
+          if (connectionLostEl) {
+            connectionLostEl.classList.remove('show');
+            connectionLostEl.style.display = '';
+          }
           if (firstBoot && window.ATAKSounds && typeof window.ATAKSounds.playEvent === 'function') {
             window.ATAKSounds.playEvent('start');
           }
         },
         onConnectionLost: function () {
-          if (connectionLostEl) connectionLostEl.classList.add('show');
+          if (window.ATAKSocket && typeof window.ATAKSocket.isApiPaused === 'function' && window.ATAKSocket.isApiPaused()) {
+            return;
+          }
+          if (connectionLostEl) {
+            var timerEl = document.getElementById('atak-connection-lost-msg');
+            if (timerEl) timerEl.textContent = 'Reconnexion en cours…';
+            connectionLostEl.classList.add('show');
+          }
           setNetworkChip(false);
           if (atakLiveConnectedOnce) {
             if (window.ATAKSounds && typeof window.ATAKSounds.playEvent === 'function') {
@@ -3103,7 +3127,12 @@ if ($atakMapConfig) {
       });
       if (window.ATAKSocket && typeof window.ATAKSocket.onApiUnavailable === 'function') {
         window.ATAKSocket.onApiUnavailable(function () {
-          setNetworkChip(false);
+          setNetworkChip(true);
+        });
+      }
+      if (window.ATAKSocket && typeof window.ATAKSocket.onDeferredChange === 'function') {
+        window.ATAKSocket.onDeferredChange(function () {
+          setNetworkChip(true);
         });
       }
       setInterval(function () {
@@ -3217,8 +3246,8 @@ if ($atakMapConfig) {
             lastMeasuredLatencyMs = lastPingOk ? (performance.now() - t0) : null;
             var outageEl = document.getElementById('atak-api-outage');
             if (outageEl) outageEl.hidden = lastPingOk;
-            if (connectionLostEl) {
-              connectionLostEl.classList.toggle('show', !lastPingOk && atakLiveConnectedOnce);
+            if (connectionLostEl && lastPingOk) {
+              connectionLostEl.classList.remove('show');
             }
             if (lastPingOk) setNetworkChip(true);
             return res;
@@ -3229,7 +3258,6 @@ if ($atakMapConfig) {
             lastMeasuredLatencyMs = null;
             var outageEl = document.getElementById('atak-api-outage');
             if (outageEl) outageEl.hidden = false;
-            if (connectionLostEl && atakLiveConnectedOnce) connectionLostEl.classList.add('show');
             setNetworkChip(false);
           });
       }

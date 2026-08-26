@@ -1,5 +1,5 @@
 /* Athena PWA — cache shell uniquement (jamais les pages HTML dynamiques). */
-const CACHE_NAME = 'athena-shell-v5';
+const CACHE_NAME = 'athena-shell-v6';
 const SHELL = [
   './manifest.webmanifest',
   './assets/css/design-system.css',
@@ -65,10 +65,19 @@ function shouldBypassServiceWorker(request) {
     return true;
   }
   var url = request.url || '';
-  if (url.indexOf('/api/') !== -1) {
+  var path = '';
+  try {
+    path = new URL(url).pathname || '';
+  } catch (e) {
+    path = url;
+  }
+  if (url.indexOf('/api/') !== -1 || path.indexOf('/api/') !== -1) {
     return true;
   }
-  if (url.indexOf('/atak') !== -1) {
+  if (url.indexOf('/atak') !== -1 || path.indexOf('/atak') !== -1) {
+    return true;
+  }
+  if (url.indexOf('/public/atak') !== -1 || path === '/public/atak' || path.indexOf('/public/atak/') === 0) {
     return true;
   }
   if (url.indexOf('/uploads/') !== -1) {
@@ -104,7 +113,7 @@ self.addEventListener('fetch', function (event) {
           if (cached) {
             return cached;
           }
-          return fetch(event.request);
+          return new Response('', { status: 504, statusText: 'offline' });
         });
       })
   );
