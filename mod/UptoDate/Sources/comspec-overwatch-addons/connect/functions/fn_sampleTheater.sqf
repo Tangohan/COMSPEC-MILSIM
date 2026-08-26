@@ -1,8 +1,15 @@
 /*
     Relevé complet du théâtre : bâtiments, forêts (Scene.Ingest) et relief (Terrain.Chunk).
     Découpé par secteurs avec pause entre chaque, pour ne pas figer Zeus.
-    Params: aucun. Athena doit être liée.
+    Params: [_mode] "full" | "scene" | "terrain"
 */
+params [["_mode", "full"]];
+if (!(_mode isEqualType "")) then { _mode = "full"; };
+_mode = toLower _mode;
+if (!(_mode in ["full", "scene", "terrain"])) then { _mode = "full"; };
+private _doScene = (_mode isEqualTo "full") || {_mode isEqualTo "scene"};
+private _doTerrain = (_mode isEqualTo "full") || {_mode isEqualTo "terrain"};
+
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
@@ -43,23 +50,30 @@ private _cols = (floor (_world / _cell)) + 1;
 private _chunksN = ceil (_cols / _chunk);
 private _sceneTotal = _tiles * _tiles;
 private _terrainTotal = _chunksN * _chunksN;
-private _grandTotal = _sceneTotal + _terrainTotal;
+private _grandTotal = 0;
+if (_doScene) then { _grandTotal = _grandTotal + _sceneTotal; };
+if (_doTerrain) then { _grandTotal = _grandTotal + _terrainTotal; };
+if (_grandTotal < 1) then { _grandTotal = 1; };
 
 missionNamespace setVariable ["COMSPEC_TheaterAbort", false, false];
 missionNamespace setVariable ["COMSPEC_TerrainAbort", false, false];
 missionNamespace setVariable ["COMSPEC_SceneAbort", false, false];
 missionNamespace setVariable ["COMSPEC_TheaterSampling", true, false];
-missionNamespace setVariable ["COMSPEC_SceneSampling", true, false];
-missionNamespace setVariable ["COMSPEC_TerrainSampling", true, false];
+missionNamespace setVariable ["COMSPEC_SceneSampling", _doScene, false];
+missionNamespace setVariable ["COMSPEC_TerrainSampling", _doTerrain, false];
 missionNamespace setVariable ["COMSPEC_SceneSampleToken", diag_tickTime, false];
 missionNamespace setVariable ["COMSPEC_TheaterStartedAt", diag_tickTime, false];
 missionNamespace setVariable ["COMSPEC_TheaterEndedAt", -1, false];
-missionNamespace setVariable ["COMSPEC_TheaterBuildings", 0, false];
-missionNamespace setVariable ["COMSPEC_TheaterForests", 0, false];
-missionNamespace setVariable ["COMSPEC_TheaterTerrain", 0, false];
+if (_doScene) then {
+    missionNamespace setVariable ["COMSPEC_TheaterBuildings", 0, false];
+    missionNamespace setVariable ["COMSPEC_TheaterForests", 0, false];
+};
+if (_doTerrain) then {
+    missionNamespace setVariable ["COMSPEC_TheaterTerrain", 0, false];
+};
 missionNamespace setVariable ["COMSPEC_TheaterDone", 0, false];
 missionNamespace setVariable ["COMSPEC_TheaterTotal", _grandTotal, false];
-missionNamespace setVariable ["COMSPEC_TheaterPhase", "scene", false];
+missionNamespace setVariable ["COMSPEC_TheaterPhase", if (_doScene) then {"scene"} else {"terrain"}, false];
 missionNamespace setVariable ["COMSPEC_TheaterCurrent", "Préparation du parcours…", false];
 
 private _bootToken = diag_tickTime;
@@ -83,11 +97,11 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
 
 [
     _mapId, _world, _tile, _tiles, _cell, _chunk, _cols, _chunksN,
-    _sceneTotal, _grandTotal
+    _sceneTotal, _grandTotal, _doScene, _doTerrain
 ] spawn {
     params [
         "_mapId", "_world", "_tile", "_tiles", "_cell", "_chunk", "_cols", "_chunksN",
-        "_sceneTotal", "_grandTotal"
+        "_sceneTotal", "_grandTotal", "_doScene", "_doTerrain"
     ];
 
     private _armWatchdog = {
@@ -138,9 +152,9 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
     };
 
     private _worldName = [worldName] call _fnc_esc;
-    private _buildings = 0;
-    private _forests = 0;
-    private _terrainOk = 0;
+    private _buildings = if (_doScene) then { 0 } else { missionNamespace getVariable ["COMSPEC_TheaterBuildings", 0] };
+    private _forests = if (_doScene) then { 0 } else { missionNamespace getVariable ["COMSPEC_TheaterForests", 0] };
+    private _terrainOk = if (_doTerrain) then { 0 } else { missionNamespace getVariable ["COMSPEC_TheaterTerrain", 0] };
     private _done = 0;
     private _aborted = false;
     private _forestCell = 32;
@@ -198,6 +212,7 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
         _sent
     };
 
+    if (_doScene) then {
     for "_ty" from 0 to (_tiles - 1) do {
         if (_aborted) then { break };
         for "_tx" from 0 to (_tiles - 1) do {
@@ -327,8 +342,9 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
             sleep 0.05;
         };
     };
+    };
 
-    if (!_aborted && {!(missionNamespace getVariable ["COMSPEC_TheaterAbort", false])}) then {
+    if (_doTerrain && {!_aborted} && {!(missionNamespace getVariable ["COMSPEC_TheaterAbort", false])}) then {
         missionNamespace setVariable ["COMSPEC_TheaterPhase", "terrain", false];
         for "_cy" from 0 to (_chunksN - 1) do {
             if (_aborted) then { break };
@@ -463,6 +479,8 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
         ];
         private _lastKey = format ["COMSPEC_TheaterSurveyLast_%1", worldName];
         profileNamespace setVariable [_lastKey, _lastTxt];
+        private _countKey = format ["COMSPEC_TheaterSurveyCounts_%1", worldName];
+        profileNamespace setVariable [_countKey, [_buildings, _forests, _terrainOk]];
         saveProfileNamespace;
         missionNamespace setVariable ["COMSPEC_TheaterLastText", _lastTxt, false];
     };

@@ -28,7 +28,7 @@ public static class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.17.5";
+    private const string ExtensionVersion = "1.17.6";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -963,6 +963,57 @@ public static class Extension
         return FormatAtakExtArray("OK", "queued");
     }
 
+    /// <summary>Comptage synchrone de ce que le poste a déjà reçu (bâtiments, forêts, relief).</summary>
+    private static string HandleTheaterCoverage(string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl))
+            return FormatAtakExtArray("ERROR", "not_connected");
+        if (_apiKey.Length == 0)
+            return FormatAtakExtArray("ERROR", "unauthorized");
+        var mapId = 1;
+        if (args.Length > 0 && int.TryParse((args[0] ?? "").Trim(), out var parsed) && parsed > 0)
+            mapId = parsed;
+        if (!TryBuildRequestUri(_baseUrl, "/api/atak/theater/coverage?mapId=" + mapId, out var uri, out var err) || uri is null)
+            return FormatAtakExtArray("ERROR", err);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+        try
+        {
+            using var resp = SendGet(uri, cts.Token);
+            var code = (int)resp.StatusCode;
+            if (code == 401 || code == 403)
+                return FormatAtakExtArray("ERROR", "unauthorized");
+            if (code < 200 || code >= 300)
+                return FormatAtakExtArray("ERROR", "http_" + code);
+            var body = ReadContentUtf8(resp, cts.Token);
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+            int Pick(string name)
+            {
+                if (!root.TryGetProperty(name, out var p))
+                    return 0;
+                if (p.ValueKind == JsonValueKind.Number && p.TryGetInt32(out var n))
+                    return n;
+                if (p.ValueKind == JsonValueKind.String && int.TryParse(p.GetString(), out var fromStr))
+                    return fromStr;
+                return 0;
+            }
+            var detail = string.Format(
+                System.Globalization.CultureInfo.InvariantCulture,
+                "b:{0};f:{1};tf:{2};tt:{3};c:{4};p:{5}",
+                Pick("buildings"),
+                Pick("forests"),
+                Pick("terrain_filled"),
+                Pick("terrain_total"),
+                Pick("terrain_chunks"),
+                Pick("terrain_coverage_pct"));
+            return FormatAtakExtArray("OK", detail);
+        }
+        catch (Exception)
+        {
+            return FormatAtakExtArray("ERROR", "unreachable");
+        }
+    }
+
     private static void EnqueueOrSend(string url, string jsonBody)
     {
         // Positions : toujours coalescer (dernière gagne) puis flush périodique.
@@ -1609,6 +1660,11 @@ public static class Extension
         if (function == "Scene.Ingest")
         {
             return HandleSceneIngest(args);
+        }
+
+        if (function == "Theater.Coverage")
+        {
+            return HandleTheaterCoverage(args);
         }
 
         // Captures locales (dossier Screenshots du profil) — hors ligne, sans liaison Athena.

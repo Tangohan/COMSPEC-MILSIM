@@ -13,7 +13,7 @@ class COMSPEC_TheaterSurvey_Dialog {
             x = 0.705 * safezoneW + safezoneX;
             y = 0.18 * safezoneH + safezoneY;
             w = 0.275 * safezoneW;
-            h = 0.52 * safezoneH;
+            h = 0.62 * safezoneH;
             colorBackground[] = {0.015, 0.04, 0.08, 0.96};
         };
         class AccentBar: RscText {
@@ -135,27 +135,57 @@ class COMSPEC_TheaterSurvey_Dialog {
             h = 0.040 * safezoneH;
         };
 
+        class LabelTx: RscStructuredText {
+            idc = -1;
+            text = "<t size='0.52' color='#5a9e88'>TRANSMISSION AU POSTE</t>";
+            x = 0.715 * safezoneW + safezoneX;
+            y = 0.578 * safezoneH + safezoneY;
+            w = 0.255 * safezoneW;
+            h = 0.018 * safezoneH;
+        };
+        class ValueTx: RscStructuredText {
+            idc = 1108;
+            text = "<t size='0.58' color='#c8ddd6'>Pas encore vérifié. Compare le relevé local avec ce qui est arrivé au poste.</t>";
+            x = 0.715 * safezoneW + safezoneX;
+            y = 0.596 * safezoneH + safezoneY;
+            w = 0.255 * safezoneW;
+            h = 0.044 * safezoneH;
+        };
+
+        class BtnVerify: RscButton {
+            idc = 1111;
+            text = "Vérifier et renvoyer";
+            x = 0.715 * safezoneW + safezoneX;
+            y = 0.644 * safezoneH + safezoneY;
+            w = 0.255 * safezoneW;
+            h = 0.032 * safezoneH;
+            colorBackground[] = {0.10, 0.22, 0.32, 0.95};
+            colorBackgroundActive[] = {0.14, 0.30, 0.42, 1};
+            sizeEx = 0.028;
+            tooltip = "Vérifie si tout est bien arrivé au poste. Ce qui manque est renvoyé.";
+            action = "[] call comspec_overwatch_connect_fnc_theaterSurveyVerify;";
+        };
         class BtnStart: RscButton {
             idc = 1106;
             text = "Lancer le relevé";
             x = 0.715 * safezoneW + safezoneX;
-            y = 0.584 * safezoneH + safezoneY;
+            y = 0.682 * safezoneH + safezoneY;
             w = 0.255 * safezoneW;
-            h = 0.036 * safezoneH;
+            h = 0.032 * safezoneH;
             colorBackground[] = {0.08, 0.32, 0.28, 0.95};
             colorBackgroundActive[] = {0.12, 0.42, 0.36, 1};
-            sizeEx = 0.032;
+            sizeEx = 0.030;
             action = "[] call comspec_overwatch_connect_fnc_theaterSurveyToggle;";
         };
         class BtnClose: RscButton {
             idc = 1107;
             text = "Fermer";
             x = 0.715 * safezoneW + safezoneX;
-            y = 0.628 * safezoneH + safezoneY;
+            y = 0.720 * safezoneH + safezoneY;
             w = 0.255 * safezoneW;
-            h = 0.032 * safezoneH;
+            h = 0.030 * safezoneH;
             colorBackground[] = {0.12, 0.08, 0.08, 0.95};
-            sizeEx = 0.030;
+            sizeEx = 0.028;
             tooltip = "Masque la fenêtre. Un relevé déjà lancé continue en arrière-plan.";
             action = "private _d = uiNamespace getVariable ['COMSPEC_TheaterSurvey_Display', displayNull]; if (!isNull _d) then { _d closeDisplay 1; } else { closeDialog 0; };";
         };

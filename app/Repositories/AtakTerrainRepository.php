@@ -61,6 +61,44 @@ final class AtakTerrainRepository
         return is_array($row) ? $this->normalizeGridRow($row) : null;
     }
 
+    /** @return array{terrain_filled: int, terrain_total: int, terrain_chunks: int, terrain_coverage_pct: int} */
+    public function coverageSummary(int $tenantId, int $mapId): array
+    {
+        $empty = [
+            'terrain_filled' => 0,
+            'terrain_total' => 0,
+            'terrain_chunks' => 0,
+            'terrain_coverage_pct' => 0,
+        ];
+        if ($tenantId < 1 || $mapId < 1) {
+            return $empty;
+        }
+        $grid = $this->getGrid($tenantId, $mapId, false);
+        if (!is_array($grid)) {
+            return $empty;
+        }
+        $cols = (int) ($grid['cols'] ?? 0);
+        $rows = (int) ($grid['rows'] ?? $grid['grid_rows'] ?? 0);
+        $filled = (int) ($grid['filled_cells'] ?? 0);
+        $total = max(0, $cols * $rows);
+        $chunks = 0;
+        try {
+            $st = $this->pdo()->prepare(
+                'SELECT COUNT(*) FROM `atak_terrain_chunks` WHERE `tenant_id` = ? AND `map_id` = ?'
+            );
+            $st->execute([$tenantId, $mapId]);
+            $chunks = (int) $st->fetchColumn();
+        } catch (Throwable) {
+        }
+
+        return [
+            'terrain_filled' => $filled,
+            'terrain_total' => $total,
+            'terrain_chunks' => $chunks,
+            'terrain_coverage_pct' => $total > 0 ? (int) round(100 * $filled / $total) : 0,
+        ];
+    }
+
     /**
      * @param array<string, mixed> $meta
      * @param list<int|float> $heights

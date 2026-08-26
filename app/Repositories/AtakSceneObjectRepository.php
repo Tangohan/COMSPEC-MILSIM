@@ -32,6 +32,30 @@ final class AtakSceneObjectRepository
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /** @return array{building: int, forest: int} */
+    public function countByKind(int $tenantId, int $mapId): array
+    {
+        $out = ['building' => 0, 'forest' => 0];
+        if ($tenantId < 1 || $mapId < 1) {
+            return $out;
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                'SELECT kind, COUNT(*) AS n FROM atak_scene_objects WHERE tenant_id = ? AND map_id = ? GROUP BY kind'
+            );
+            $st->execute([$tenantId, $mapId]);
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $kind = (string) ($row['kind'] ?? '');
+                if (isset($out[$kind])) {
+                    $out[$kind] = (int) ($row['n'] ?? 0);
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        return $out;
+    }
+
     /** @param list<array<string, mixed>> $objects */
     public function upsertBatch(int $tenantId, int $mapId, array $objects): int
     {

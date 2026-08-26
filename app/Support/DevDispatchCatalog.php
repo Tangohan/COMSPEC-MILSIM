@@ -491,6 +491,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(228, '2026-08-26', 'Vérifier que le relevé est bien arrivé au poste', 'Après un relevé de carte, on contrôle ce que le poste a reçu et on renvoie ce qui manque', [
+                'Dans la fenêtre de relevé : Vérifier et renvoyer, pour comparer le jeu et le poste',
+            ], [
+                'Si des bâtiments, forêts ou portions de relief manquent, le renvoi part tout seul',
+            ], [
+                'Un relevé affiché comme terminé en jeu n’était pas forcément tout arrivé au poste',
+            ], ['atak'], [
+                'Pack Overwatch 1.4.83, puis relancez Arma complètement. Ouvrez le relevé de la carte, puis Vérifier et renvoyer.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.83 · liaison 1.17.6'),
             $pr(227, '2026-08-26', 'Vue inclinée dans Affichage, pause après un refus d’accès', 'La vue de la carte se règle dans Affichage, et un refus temporaire ne sature plus le poste ni le jeu', [
                 'Dans Affichage : vue à plat ou inclinée, amplitude du relief et inclinaison, sans passer par le bouton 3D',
                 'Après un refus d’accès, le poste et Overwatch marquent une pause puis reprennent tout seuls',

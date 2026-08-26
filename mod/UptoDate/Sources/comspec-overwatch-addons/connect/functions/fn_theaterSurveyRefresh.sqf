@@ -91,3 +91,24 @@ if (!isNull _btn) then {
         _btn ctrlSetTooltip "Parcourt tout le théâtre et transmet bâtiments, forêts et relief au poste.";
     };
 };
+
+private _tx = missionNamespace getVariable ["COMSPEC_TheaterVerifyText", ""];
+if (!(_tx isEqualType "") || {_tx isEqualTo ""}) then {
+    _tx = "Pas encore vérifié. Compare le relevé local avec ce qui est arrivé au poste.";
+};
+(_disp displayCtrl 1108) ctrlSetStructuredText parseText format [
+    "<t size='0.56' color='#c8ddd6'>%1</t>",
+    _tx
+];
+
+private _btnV = _disp displayCtrl 1111;
+if (!isNull _btnV) then {
+    private _vBusy = missionNamespace getVariable ["COMSPEC_TheaterVerifyBusy", false];
+    if (_busy || {_vBusy}) then {
+        _btnV ctrlEnable false;
+        _btnV ctrlSetTooltip "Attendez la fin du relevé ou de la vérification.";
+    } else {
+        _btnV ctrlEnable true;
+        _btnV ctrlSetTooltip "Vérifie si tout est bien arrivé au poste. Ce qui manque est renvoyé.";
+    };
+};
