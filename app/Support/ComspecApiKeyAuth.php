@@ -19,6 +19,12 @@ final class ComspecApiKeyAuth
     /** @var int|null Tenant résolu via clé de communauté (dernière requête validée). */
     private static ?int $matchedTenantId = null;
 
+    /** @var string|null php://input lu une fois (middleware + contrôleurs). */
+    private static ?string $rawJsonCache = null;
+
+    /** @var array<string, mixed>|null */
+    private static ?array $jsonObjectCache = null;
+
     public static function isAppProduction(): bool
     {
         $e = strtolower(trim((string) (($_ENV['APP_ENV'] ?? getenv('APP_ENV')) ?: '')));
@@ -75,7 +81,63 @@ final class ComspecApiKeyAuth
             return trim(substr($auth, 7));
         }
 
+        return self::keyFromJsonObject(self::peekJsonObject());
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     */
+    public static function keyFromJsonObject(array $body): string
+    {
+        foreach (['api_key', 'access_key', 'x_comspec_key'] as $name) {
+            $v = trim((string) ($body[$name] ?? ''));
+            if ($v !== '') {
+                return $v;
+            }
+        }
+
         return '';
+    }
+
+    /**
+     * Corps JSON de la requête, lisible plusieurs fois (php://input n’est lu qu’une fois).
+     *
+     * @return array<string, mixed>
+     */
+    public static function peekJsonObject(): array
+    {
+        if (self::$jsonObjectCache !== null) {
+            return self::$jsonObjectCache;
+        }
+        $raw = self::$rawJsonCache;
+        if ($raw === null) {
+            $got = file_get_contents('php://input');
+            $raw = is_string($got) ? $got : '';
+            self::$rawJsonCache = $raw;
+        }
+        if (trim($raw) === '') {
+            self::$jsonObjectCache = [];
+
+            return self::$jsonObjectCache;
+        }
+        try {
+            $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\Throwable) {
+            self::$jsonObjectCache = [];
+
+            return self::$jsonObjectCache;
+        }
+        self::$jsonObjectCache = is_array($decoded) ? $decoded : [];
+
+        return self::$jsonObjectCache;
+    }
+
+    /** Remise à zéro des caches de requête (PHPUnit). */
+    public static function resetForTests(): void
+    {
+        self::$matchedTenantId = null;
+        self::$rawJsonCache = null;
+        self::$jsonObjectCache = null;
     }
 
     public static function requestPresentsValidKey(): bool

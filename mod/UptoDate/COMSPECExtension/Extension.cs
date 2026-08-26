@@ -779,6 +779,8 @@ public static class Extension
     {
         if (string.IsNullOrEmpty(_baseUrl))
             return FormatAtakExtArray("ERROR", "not_connected");
+        if (_apiKey.Length == 0)
+            return FormatAtakExtArray("ERROR", "unauthorized");
         if (args.Length < 1)
             return FormatAtakExtArray("ERROR", "empty");
         if (DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _terrainChunkBlockedUntilTicks))
@@ -786,7 +788,9 @@ public static class Extension
         var json = args[0] ?? "";
         if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
             return FormatAtakExtArray("ERROR", "empty");
-        EnqueueOrSend(_baseUrl + "/api/atak/terrain/chunk", EnrichAtakPayload(json));
+        if (!TryBuildRequestUri(_baseUrl, "/api/atak/terrain/chunk", out var uri, out var err) || uri is null)
+            return FormatAtakExtArray("ERROR", err);
+        EnqueueOrSend(uri.AbsoluteUri, EnrichAtakPayload(json));
         return FormatAtakExtArray("OK", "queued");
     }
 
@@ -1061,7 +1065,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.14");
+            Output(output, outputSize, "COMSPECExtension 2.0.15");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1256,6 +1260,8 @@ public static class Extension
         {
             req.Headers.Remove("X-COMSPEC-KEY");
             req.Headers.TryAddWithoutValidation("X-COMSPEC-KEY", key);
+            req.Headers.Remove("Authorization");
+            req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + key);
         }
         var sess = _sessionToken;
         if (sess.Length > 0)
@@ -1387,7 +1393,7 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.14";
+            return "OK|COMSPECExtension 2.0.15";
         }
 
         if (function == "SetTelemetryBatch")
@@ -1398,7 +1404,7 @@ public static class Extension
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.14", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.15", "COMSPEC Extension ATAK");
         }
 
         if (function == "Terrain.Chunk")
@@ -4499,8 +4505,17 @@ public static class Extension
                 // Position2D carte : X/Y hors origine (0,0) = menu / parse raté — ne pas poster
                 if (Math.Abs(posX) < 1.0 && Math.Abs(posY) < 1.0)
                     return;
-                // Mémo pose pour uploads photo déclenchés par FileSystemWatcher (sans SQF).
-                if (callSign.Length > 0)
+                // Contacts relais (téléphone / IA alliée) : ne pas coller l’identité du joueur pont.
+                var isProxyContact = !string.IsNullOrWhiteSpace(vehicleJson)
+                    && (vehicleJson.Contains("\"phone_geoloc\"", StringComparison.Ordinal)
+                        || vehicleJson.Contains("\"ally_ai\"", StringComparison.Ordinal)
+                        || vehicleJson.Contains("\"gps_beacon\"", StringComparison.Ordinal)
+                        || vehicleJson.Contains("\"source\":\"phone\"", StringComparison.Ordinal)
+                        || vehicleJson.Contains("\"source\":\"ally\"", StringComparison.Ordinal)
+                        || vehicleJson.Contains("\"source\":\"gps\"", StringComparison.Ordinal));
+                // Mémo pose pour uploads photo : jamais depuis une IA / un téléphone relais
+                // (sinon l’indicatif opérateur devient ALLY-… ou l’inverse).
+                if (!isProxyContact && callSign.Length > 0)
                 {
                     _lastPhotoAuthor = callSign;
                     if (_callSign.Length == 0) _callSign = callSign;
@@ -4524,14 +4539,6 @@ public static class Extension
                     extra.Append(",\"group\":\"").Append(EscapeJson(groupName)).Append("\"");
                 }
                 // ID BFT lié à l’indicatif (mémorisé à client-init / profil)
-                // Contacts relais (téléphone / IA alliée) : ne pas coller l’identité du joueur pont.
-                var isProxyContact = !string.IsNullOrWhiteSpace(vehicleJson)
-                    && (vehicleJson.Contains("\"phone_geoloc\"", StringComparison.Ordinal)
-                        || vehicleJson.Contains("\"ally_ai\"", StringComparison.Ordinal)
-                        || vehicleJson.Contains("\"gps_beacon\"", StringComparison.Ordinal)
-                        || vehicleJson.Contains("\"source\":\"phone\"", StringComparison.Ordinal)
-                        || vehicleJson.Contains("\"source\":\"ally\"", StringComparison.Ordinal)
-                        || vehicleJson.Contains("\"source\":\"gps\"", StringComparison.Ordinal));
                 if (!isProxyContact && _militaryId.Length > 0
                     && (string.IsNullOrWhiteSpace(vehicleJson)
                         || (!vehicleJson.Contains("\"bft_id\"", StringComparison.Ordinal)
@@ -6698,6 +6705,9 @@ public static class Extension
                     prop.WriteTo(writer);
                 }
                 if (!hasMapId) writer.WriteNumber("mapId", 1);
+                if (_apiKey.Length > 0 && !doc.RootElement.TryGetProperty("api_key", out _)
+                    && !doc.RootElement.TryGetProperty("access_key", out _))
+                    writer.WriteString("api_key", _apiKey);
                 if (_steamUid.Length > 0 && !doc.RootElement.TryGetProperty("steam_uid", out _))
                     writer.WriteString("steam_uid", _steamUid);
                 if (_sessionToken.Length > 0 && !doc.RootElement.TryGetProperty("session_token", out _))

@@ -1,3 +1,9 @@
+COMSPEC Overwatch 1.4.74 / Athena ATAK 1.5.48 — 26/08/2026
+
+• Relevé du relief uniquement une fois Athena liée (plus d’envois refusés)
+• Les IA alliées gardent chacune leur pastille : plus de regroupement sous le même indicatif
+• Relier le compte, recharger le pack, relancer Arma complètement
+
 COMSPEC Overwatch 1.4.73 / Athena ATAK 1.5.47 — 24/08/2026
 
 • Aéronefs occupés remontés vers Appui aérien sans déclaration de vol

@@ -4231,10 +4231,17 @@ class AtakApiController
             }
             $profileCall = trim((string) ($targetUser['callsign'] ?? ''));
             $unitCall = trim((string) ($body['call_sign'] ?? $body['callsign'] ?? ($before['call_sign'] ?? '')));
+            $beforeExtra = AtakDataRepository::decodeExtra($before['extra'] ?? null);
+            $beforeIsAlly = AtakDataRepository::isProxyContactExtra($beforeExtra)
+                || AtakDataRepository::callSignLooksLikeProxy($unitCall);
             $applyProfileCallsign = !empty($body['apply_profile_callsign']) || !empty($body['applyProfileCallsign']);
-            if ($applyProfileCallsign && $profileCall !== '') {
+            // Jamais coller l’indicatif opérateur sur une IA alliée (sinon pastilles fusionnées).
+            if ($applyProfileCallsign && $profileCall !== '' && !$beforeIsAlly) {
                 $body['call_sign'] = $profileCall;
                 $unitCall = $profileCall;
+            } elseif ($applyProfileCallsign && $profileCall !== '' && $beforeIsAlly) {
+                $body['display_name'] = $profileCall;
+                unset($body['call_sign'], $body['callsign']);
             }
             $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
             if ($opIds->tablesReady()) {
@@ -4291,13 +4298,25 @@ class AtakApiController
         }
 
         $prevCall = trim((string) ($before['call_sign'] ?? ''));
+        $prevExtra = AtakDataRepository::decodeExtra($before['extra'] ?? null);
+        $prevLabel = AtakDataRepository::displayCallSign($prevCall, $prevExtra);
+        if (isset($patch['display_name']) && is_string($patch['display_name'])) {
+            $extraPatch = is_array($patch['extra'] ?? null) ? $patch['extra'] : AtakDataRepository::decodeExtra($patch['extra'] ?? null);
+            $extraPatch['display_name'] = trim($patch['display_name']);
+            $patch['extra'] = array_merge($prevExtra, $extraPatch);
+            unset($patch['display_name']);
+        }
         $row = $this->atak->updateUnit($tenantId, $id, $patch);
         if ($row === null) {
             return Response::json(['error' => 'Not found', 'message' => 'Contact introuvable.'], 404);
         }
 
         $newCall = trim((string) ($row['call_sign'] ?? ''));
-        if ($prevCall !== '' && $newCall !== '' && strcasecmp($prevCall, $newCall) !== 0) {
+        $newExtra = AtakDataRepository::decodeExtra($row['extra'] ?? null);
+        $newLabel = AtakDataRepository::displayCallSign($newCall, $newExtra);
+        $labelChanged = $prevLabel !== '' && $newLabel !== '' && strcasecmp($prevLabel, $newLabel) !== 0;
+        $keyChanged = $prevCall !== '' && $newCall !== '' && strcasecmp($prevCall, $newCall) !== 0;
+        if ($labelChanged || $keyChanged) {
             $actor = $sessionUser
                 ? ($sessionUser['callsign'] !== '' ? $sessionUser['callsign'] : $sessionUser['displayName'])
                 : 'Opérateur';
@@ -4306,22 +4325,24 @@ class AtakApiController
                 $tenantId,
                 $mapId,
                 AtakActivityLogService::TYPE_CALLSIGN_CHANGE,
-                'Indicatif mis à jour — ' . $prevCall . ' → ' . $newCall,
+                'Indicatif mis à jour — ' . $prevLabel . ' → ' . $newLabel,
                 $actor !== '' ? $actor : null,
-                ['from' => $prevCall, 'to' => $newCall, 'unit_id' => $id]
+                ['from' => $prevLabel, 'to' => $newLabel, 'unit_id' => $id]
             );
-            $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
-            if ($opIds->tablesReady()) {
-                $linkUid = $linkUserId > 0 ? $linkUserId : null;
-                if ($linkUid === null) {
-                    $byCs = $opIds->findByCallSign($tenantId, $prevCall);
-                    if ($byCs && !empty($byCs['user_id'])) {
-                        $linkUid = (int) $byCs['user_id'];
+            if ($keyChanged) {
+                $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
+                if ($opIds->tablesReady()) {
+                    $linkUid = $linkUserId > 0 ? $linkUserId : null;
+                    if ($linkUid === null) {
+                        $byCs = $opIds->findByCallSign($tenantId, $prevCall);
+                        if ($byCs && !empty($byCs['user_id'])) {
+                            $linkUid = (int) $byCs['user_id'];
+                        }
                     }
-                }
-                $opIds->syncUnitMilitaryId($tenantId, $id, $newCall, $linkUid);
-                if ($linkUid) {
-                    $opIds->ensureForUser($tenantId, $linkUid, $newCall);
+                    $opIds->syncUnitMilitaryId($tenantId, $id, $newCall, $linkUid);
+                    if ($linkUid) {
+                        $opIds->ensureForUser($tenantId, $linkUid, $newCall);
+                    }
                 }
             }
         }

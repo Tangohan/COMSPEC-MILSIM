@@ -491,6 +491,24 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(212, '2026-08-26', 'IA alliées distinctes sur la carte', 'Chaque IA garde sa pastille : plus de regroupement sous le même indicatif', [
+                'Les unités alliées sont suivies une par une, même dans le même groupe',
+            ], [
+                'L’indicatif affiché reste lisible ; il ne sert plus de clé de suivi',
+            ], [
+                'Plusieurs IA du même groupe se superposaient, et l’indicatif de l’opérateur pouvait écraser une IA',
+            ], ['atak'], [
+                'Rechargez le pack jeu Overwatch 1.4.74, puis relancez Arma complètement — pas seulement la mission.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.74'),
+            $pr(211, '2026-08-24', 'Relevé de relief une fois Athena liée', 'Le sol n’est plus relevé tant que le compte n’est pas lié au portail', [
+                'Message clair si le relevé est demandé avant la liaison Athena',
+            ], [
+                'Le relevé attend que le compte soit lié, au lieu de partir trop tôt',
+            ], [
+                'Des blocs de relief partaient alors qu’Athena n’était pas encore liée : le poste les refusait, le journal Overwatch se remplissait',
+            ], ['atak'], [
+                'Reliez Athena (Steam en multijoueur, ou le code fourni par votre administrateur), rechargez le pack jeu Overwatch 1.4.74, puis relancez Arma complètement — pas seulement la mission.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.74'),
             $pr(210, '2026-08-24', 'File SSE, carte et fenêtre de mise à jour', 'La file à exploiter s’ouvre, Traces ne recouvre plus l’état de carte, la fenêtre de mise à jour est centrée', [
                 'Type de support toujours nommé en français dans la file d’exploitation',
                 'Légende Traces empilée au-dessus de Grille / Échelle / Contacts / Réseau',

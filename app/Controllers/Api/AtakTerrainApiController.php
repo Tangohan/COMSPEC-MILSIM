@@ -323,6 +323,12 @@ final class AtakTerrainApiController
         if ($this->jsonBodyCache !== null) {
             return $this->jsonBodyCache;
         }
+        $peeked = ComspecApiKeyAuth::peekJsonObject();
+        if ($peeked !== []) {
+            $this->jsonBodyCache = $peeked;
+
+            return $this->jsonBodyCache;
+        }
         $raw = file_get_contents('php://input');
         if (!is_string($raw) || trim($raw) === '') {
             $this->jsonBodyCache = [];
