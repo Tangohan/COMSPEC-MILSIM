@@ -53,6 +53,71 @@ window.ATAKUnitPopup = (function () {
     };
   }
 
+  function occupantsFrom(u, extra) {
+    extra = extra || parseExtra(u || {});
+    var raw = extra.occupants || extra.passengers_json;
+    if (!raw && u) {
+      raw = u.occupants || u.crew || (u.source_arma && u.source_arma.occupants);
+    }
+    if (typeof raw === 'string') {
+      try { raw = JSON.parse(raw); } catch (e) { raw = []; }
+    }
+    if (!Array.isArray(raw) || !raw.length) {
+      var vehItems = (window.ATAKVehicles && window.ATAKVehicles.getItems) ? window.ATAKVehicles.getItems() : [];
+      var cs = String((u && (u.call_sign || u.callsign)) || '').toLowerCase();
+      var vx = u && u.pos_x != null ? Number(u.pos_x) : NaN;
+      var vy = u && u.pos_y != null ? Number(u.pos_y) : NaN;
+      for (var i = 0; i < vehItems.length; i++) {
+        var item = vehItems[i];
+        if (!item) continue;
+        var vcs = String(item.vehicle_callsign || item.vehicle_name || '').toLowerCase();
+        var hit = cs && vcs && (cs === vcs || cs.indexOf(vcs) >= 0 || vcs.indexOf(cs) >= 0);
+        if (!hit && isFinite(vx) && isFinite(vy) && item.pos_x != null && item.pos_y != null) {
+          var dx = vx - Number(item.pos_x);
+          var dy = vy - Number(item.pos_y);
+          hit = (dx * dx + dy * dy) < (40 * 40);
+        }
+        if (hit && Array.isArray(item.passengers_json) && item.passengers_json.length) {
+          raw = item.passengers_json;
+          break;
+        }
+      }
+    }
+    return Array.isArray(raw) ? raw : [];
+  }
+
+  function seatLabelFr(seat, platform) {
+    var s = String(seat || '').toLowerCase();
+    var plat = String(platform || '').toUpperCase();
+    var air = plat.indexOf('HELI') >= 0 || plat.indexOf('FIXED') >= 0 || plat.indexOf('UAV') >= 0 || plat.indexOf('AIR') >= 0;
+    if (s === 'driver') return air ? 'Pilote' : 'Conducteur';
+    if (s === 'gunner') return air ? 'Copilote / tireur' : 'Tireur';
+    if (s === 'commander') return 'Chef de bord';
+    return 'Passager';
+  }
+
+  function occupantsHtml(u, extra) {
+    extra = extra || parseExtra(u || {});
+    var list = occupantsFrom(u, extra);
+    if (!list.length) return '';
+    var plat = extra.platform || extra.vehicle_class || '';
+    var items = list.map(function (o) {
+      if (!o) return '';
+      var name = String(o.name || o.callsign || o.call_sign || '').trim();
+      if (!name) return '';
+      var seat = seatLabelFr(o.seat, plat);
+      var role = String(o.role || '').trim();
+      var sub = [seat, role].filter(Boolean).join(' · ');
+      return '<li class="atak-occ__item"><span class="atak-occ__name">' + escapeHtml(name) + '</span>' +
+        (sub ? '<span class="atak-occ__seat">' + escapeHtml(sub) + '</span>' : '') + '</li>';
+    }).filter(Boolean).join('');
+    if (!items) return '';
+    var vLabel = String(extra.vehicle_label || extra.vehicle_name || extra.vehicle || '').trim();
+    var title = vLabel ? ('À bord — ' + vLabel) : 'À bord';
+    return '<div class="atak-occ"><div class="atak-occ__title">' + escapeHtml(title) +
+      ' <span class="atak-occ__n">' + list.length + '</span></div><ul class="atak-occ__list">' + items + '</ul></div>';
+  }
+
   function looksLikeAutoAllyId(cs) {
     return /^ALLY-\d+-\d+(-\d+)*$/i.test(String(cs || '').trim());
   }
@@ -375,6 +440,8 @@ window.ATAKUnitPopup = (function () {
       row('Carburant', fuel) +
       row('Munitions', ammo) +
       row('Dernière MAJ', updated);
+    var occBlock = occupantsHtml(u, extra);
+    if (occBlock) rows += occBlock;
 
     var motionHtml = motionSectionHtml(u, extra, false);
     var navHtml = navigationSectionHtml(u, false);
@@ -426,6 +493,12 @@ window.ATAKUnitPopup = (function () {
       row('Code laser', laser) +
       row('Coordonnées', grid) +
       row('Dernière MAJ', updated);
+    var occBlock = occupantsHtml(a, {
+      occupants: a.occupants || a.crew,
+      vehicle_label: a.model,
+      platform: a.aircraft_type || 'HELICOPTER'
+    });
+    if (occBlock) rows += occBlock;
 
     var airMotion = motionSectionHtml(a, {}, true);
     var airNav = navigationSectionHtml(a, true);
@@ -557,6 +630,9 @@ window.ATAKUnitPopup = (function () {
     isPhoneGeoloc: isPhoneGeoloc,
     phoneReveal: phoneReveal,
     phoneDisplayName: phoneDisplayName,
+    occupantsFrom: occupantsFrom,
+    occupantsHtml: occupantsHtml,
+    seatLabelFr: seatLabelFr,
     unitDisplayName: unitDisplayName
   };
 })();

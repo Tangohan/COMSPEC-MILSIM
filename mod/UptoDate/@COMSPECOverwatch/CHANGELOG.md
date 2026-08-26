@@ -1,3 +1,43 @@
+COMSPEC Overwatch 1.4.80 / Athena ATAK 1.5.48 / liaison 1.17.3 — 26/08/2026
+
+• Zeus Enhanced : les catégories COMSPEC apparaissent même si l’outil Zeus arrive un peu tard
+• Relevé de carte : la fenêtre ne bloque plus le curseur Zeus ; clic droit ou ACE Zeus aussi
+• Éditeur : le relevé au début de mission et les contacts ennemis s’appliquent comme choisi
+• Relier le compte, recharger le pack, relancer Arma complètement
+
+COMSPEC Overwatch 1.4.79 / Athena ATAK 1.5.48 / liaison 1.17.3 — 26/08/2026
+
+• Les IA ennemies sont masquées sur le poste, sauf si Zeus ou l’éditeur les affichent
+• Tant que Zeus ne les a pas demandés, les contacts ennemis ne sont pas suivis — la liaison n’est pas saturée
+• Zeus : afficher ou masquer les contacts ennemis en cours de mission
+• Éditeur : module pour les afficher dès le début, ou les laisser masqués
+• Journal d’analyse : départs de coup, échanges de feu, impacts, tentatives de missile
+• Les rafales sont regroupées ; un impact ou un missile remonte plus vite qu’une balle isolée
+• Relier le compte, recharger le pack, relancer Arma complètement
+
+COMSPEC Overwatch 1.4.78 / Athena ATAK 1.5.48 — 26/08/2026
+
+• Zeus et l’éditeur : relevé de toute la carte (bâtiments, forêts, relief)
+• Fenêtre d’avancement : durée, données collectées, secteur en cours, dernier relevé
+• Le parcours est découpé pour ne pas figer Zeus ; on peut l’interrompre
+• Photos casque et drone : le cliché part même s’il n’est pas encore fini d’écrire
+• Une coupure réseau n’est plus annoncée comme une saturation du poste
+• Un flux caméra injoignable n’arrête plus la position ni la fiche de l’appareil
+• Fiche véhicule / hélicoptère : les personnes à bord sont listées (pilote, tireur, passagers)
+• La liste à bord se met à jour en quelques secondes, pas après une longue attente
+
+COMSPEC Overwatch 1.4.76 / Athena ATAK 1.5.48 — 26/08/2026
+
+• Relevé des bâtiments et forêts : plus d’erreur à l’ouverture Zeus / menu ACE
+
+COMSPEC Overwatch 1.4.75 / Athena ATAK 1.5.48 — 26/08/2026
+
+• Bâtiments et forêts autour de l’équipe remontés vers la vue 3D du poste
+• Menu ACE : relever les volumes, comme pour le relief
+• Le journal de session ne se répète plus en boucle au démarrage
+• Menu ACE SSE : plus d’erreur à l’ouverture de l’interaction
+• Relier le compte, recharger le pack, relancer Arma complètement
+
 COMSPEC Overwatch 1.4.74 / Athena ATAK 1.5.48 — 26/08/2026
 
 • Relevé du relief uniquement une fois Athena liée (plus d’envois refusés)

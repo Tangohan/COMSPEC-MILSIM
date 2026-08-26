@@ -8,15 +8,17 @@ class CfgPatches {
             "COMSPEC_Module_Jammer",
             "COMSPEC_Module_SSE_Case",
             "COMSPEC_Module_SSE_Profile",
-            "COMSPEC_Module_SSE_Equip"
+            "COMSPEC_Module_SSE_Equip",
+            "COMSPEC_Module_TheaterSurvey",
+            "COMSPEC_Module_AtakShowEnemyAi"
         };
         weapons[] = {};
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.474;
-        versionStr = "1.4.74";
-        versionAr[] = {1, 4, 74};
+        version = 1.480;
+        versionStr = "1.4.80";
+        versionAr[] = {1, 4, 80};
     };
 };
 
@@ -93,6 +95,15 @@ class CfgFunctions {
             class bftPlatform {};
             class applyNetworkProfile {};
             class sampleTerrain {};
+            class sampleScene {};
+            class sampleTheater {};
+            class theaterSurveyShow {};
+            class theaterSurveyOnLoad {};
+            class theaterSurveyRefresh {};
+            class theaterSurveyCancel {};
+            class theaterSurveyToggle {};
+            class moduleTheaterSurvey {};
+            class registerZenTheaterSurvey {};
             class forceSyncData {};
             class sendIntel {};
             class initACE {};
@@ -255,6 +266,7 @@ class CfgFunctions {
             class requestMEDEVAC {};
             class requestQRF {};
             class updateVehicleTracking {};
+            class collectVehicleOccupants {};
             class requestVehicleService {};
             class initVehicleTracking {};
             class isObjectFlag {};
@@ -265,11 +277,16 @@ class CfgFunctions {
             class phoneTrackConfigure {};
             class allyTrackConfigure {};
             class setAllyTrack {};
+            class setAtakShowEnemyAi {};
+            class shouldSkipEnemyAiTransmit {};
             class vehicleTrackCallsign {};
             class phoneTrackCallsign {};
             class allyTrackCallsign {};
             class reportPhonePosition {};
             class reportAllyPosition {};
+            class reportEnemyPosition {};
+            class reportEnemyAiPositions {};
+            class moduleAtakShowEnemyAi {};
             class reportCrewedAirAssets {};
             class reportGpsBeacon {};
             class curatorSelectedObjects {};
@@ -373,6 +390,9 @@ class CfgFunctions {
             class injectRoleplayEffectsInBrowser {};
             class checkAtakDamage {};
             class attachAtakDamageHandlers {};
+            class initCombatJournal {};
+            class noteCombatEvent {};
+            class combatEventsJson {};
             class isAtakFunctional {};
             class repairAtak {};
             class addAtakRepairAction {};
@@ -431,6 +451,7 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_setGpsBeacon { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_setPhoneTrack { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_setAllyTrack { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_setAtakShowEnemyAi { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_forceSyncData { allowedTargets = 0; };
 
         // Ces cinq-là étaient appelées via remoteExec sans figurer ici. « mode = 1 »
@@ -601,6 +622,12 @@ class CfgFactionClasses
         priority = 2;
         side = 7;
     };
+    class COMSPEC_Outils : NO_CATEGORY
+    {
+        displayName = "COMSPEC Outils";
+        priority = 2;
+        side = 7;
+    };
 };
 
 #include "ui_base.hpp"
@@ -625,6 +652,7 @@ class CfgFactionClasses
 #include "display_device.hpp"
 #include "display_webbrowser.hpp"
 #include "display_pause_manager.hpp"
+#include "display_theater_survey.hpp"
 
 // Bouton menu Échap : injecté en SQF (DisplayLoad), pas via héritage RscDisplayInterrupt
 // — l’héritage config casse le démarrage Arma (Undefined base / Member already defined).
@@ -639,6 +667,12 @@ class CfgVehicles
 
     // Exploitation SSE
     #include "modules\module_sse.hpp"
+
+    // Relevé de carte (Eden)
+    #include "modules\module_theater_survey.hpp"
+
+    // Contacts ennemis sur le poste ATAK (Eden)
+    #include "modules\module_atak_show_enemy_ai.hpp"
 };
 
 // Attributs Eden SSE + EH

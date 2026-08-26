@@ -76,6 +76,31 @@ window.ATAKActivity = (function () {
     return String(meta.profile_callsign || meta.call_sign || meta.callsign || meta.display_name || '').trim();
   }
 
+  function flagOn(v) {
+    return v === true || v === 1 || v === '1' || v === 'true';
+  }
+
+  function isEnemyAiActivityEvent(ev) {
+    var actor = String(eventActor(ev) || '').toUpperCase();
+    var meta = (ev && ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
+    var label = String((ev && ev.label) || '').toUpperCase();
+    if (actor.indexOf('ENY-') === 0 || label.indexOf('ENY-') >= 0) return true;
+    var aff = String(meta.affiliation || meta.affil || '').toLowerCase();
+    var side = String(meta.side || '').toUpperCase();
+    var hostile = aff === 'hostile' || aff === 'enemy' || aff === 'east' || side === 'EAST';
+    if (!hostile) return false;
+    if (flagOn(meta.enemy_ai) || flagOn(meta.is_ai) || String(meta.source || '').toLowerCase() === 'enemy') return true;
+    return actor.indexOf('ALLY-') === 0;
+  }
+
+  function shouldHideEnemyAiActivity(ev) {
+    if (!isEnemyAiActivityEvent(ev)) return false;
+    if (window.ATAKUnits && window.ATAKUnits.showEnemyAiEnabled) {
+      return !window.ATAKUnits.showEnemyAiEnabled();
+    }
+    return true;
+  }
+
   function reportTypeLabelFr(code) {
     var t = String(code || '').toUpperCase();
     var labels = {
@@ -992,18 +1017,22 @@ window.ATAKActivity = (function () {
     }
     if (emptyEl) emptyEl.hidden = true;
     var lastDay = null;
+    var shown = 0;
     var frag = document.createDocumentFragment();
     for (var i = 0; i < eventsCache.length; i++) {
       var ev = eventsCache[i];
+      if (shouldHideEnemyAiActivity(ev)) continue;
       var day = dayKeyFromIso(ev.at);
       if (day !== lastDay) {
         frag.appendChild(renderDayHeader(ev.at));
         lastDay = day;
       }
       frag.appendChild(renderItem(ev));
+      shown++;
     }
     listEl.appendChild(frag);
-    visibleCount = eventsCache.length;
+    visibleCount = shown;
+    if (shown === 0 && emptyEl) emptyEl.hidden = false;
     updateChrome();
   }
 
@@ -1022,6 +1051,7 @@ window.ATAKActivity = (function () {
       var ev = incoming[i];
       // Sync BFT « Position envoyée » : bruit de fond, hors panneau Activité.
       if (ev && String(ev.type || '') === 'position') continue;
+      if (shouldHideEnemyAiActivity(ev)) continue;
       var id = ev && ev.id != null ? Number(ev.id) : 0;
       var key = eventKey(ev);
       if (!id || knownIds[key]) continue;

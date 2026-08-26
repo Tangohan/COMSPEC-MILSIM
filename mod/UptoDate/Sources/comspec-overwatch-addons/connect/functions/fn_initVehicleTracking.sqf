@@ -26,11 +26,11 @@ player addEventHandler ["GetInMan", {
             } else {
                 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
                 private _last = missionNamespace getVariable ["COMSPEC_VehTrackLastAt", -1e9];
-                if ((diag_tickTime - _last) < 8) exitWith {};
+                if ((diag_tickTime - _last) < 2.5) exitWith {};
                 missionNamespace setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
                 [_vehicle] call comspec_overwatch_connect_fnc_updateVehicleTracking;
             };
-        }, 10, [_vehicle]] call CBA_fnc_addPerFrameHandler;
+        }, 3, [_vehicle]] call CBA_fnc_addPerFrameHandler;
 
         _vehicle setVariable ["COMSPEC_TrackingHandle", _handle];
         // Pas de systemChat : le suivi reste silencieux (journal / milsim).

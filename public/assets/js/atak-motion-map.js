@@ -6,6 +6,7 @@ window.ATAKMotionMap = (function () {
   var byId = {};
   var lastUnits = [];
   var lastAir = [];
+  var suppressTrails = false;
 
   function getMap() {
     return window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
@@ -171,7 +172,7 @@ window.ATAKMotionMap = (function () {
       setLine(pack, 'proj', null);
     }
 
-    if (pr.trail && Array.isArray(m.trail) && m.trail.length >= 2) {
+    if (!suppressTrails && pr.trail && Array.isArray(m.trail) && m.trail.length >= 2) {
       if (pack.trail) {
         try { layer.removeLayer(pack.trail); } catch (e) {}
         pack.trail = null;
@@ -280,6 +281,7 @@ window.ATAKMotionMap = (function () {
       sync(lastUnits, list);
     });
     window.addEventListener('atak:display-prefs-changed', function () {
+      suppressTrails = false;
       sync(lastUnits, lastAir);
     });
     window.addEventListener('atak:mapready', function () {
@@ -293,5 +295,29 @@ window.ATAKMotionMap = (function () {
     bind();
   }
 
-  return { sync: sync };
+  function clearTrails() {
+    suppressTrails = true;
+    Object.keys(byId).forEach(function (id) {
+      var pack = byId[id];
+      if (!pack || !layer) return;
+      if (pack.trail) {
+        try { layer.removeLayer(pack.trail); } catch (e) {}
+        pack.trail = null;
+      }
+      if (pack.trailParts) {
+        pack.trailParts.forEach(function (pl) {
+          try { layer.removeLayer(pl); } catch (e2) {}
+        });
+        pack.trailParts = [];
+      }
+      ['reach', 'loss'].forEach(function (k) {
+        if (pack[k]) {
+          try { layer.removeLayer(pack[k]); } catch (e3) {}
+          pack[k] = null;
+        }
+      });
+    });
+  }
+
+  return { sync: sync, clearTrails: clearTrails };
 })();

@@ -94,6 +94,39 @@
   margin-bottom: 6px;
 }
 .atak-dossier__empty { color: #94a3b8; font-size: 0.85rem; padding: 8px 14px; }
+.atak-occ { margin-top: 10px; }
+.atak-occ__title {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.atak-occ__n {
+  display: inline-flex;
+  min-width: 1.25rem;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(125, 211, 252, 0.16);
+  color: #e0f2fe;
+  font-variant-numeric: tabular-nums;
+}
+.atak-occ__list { list-style: none; margin: 0; padding: 0; }
+.atak-occ__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  font-size: 0.82rem;
+}
+.atak-occ__name { color: #f1f5f9; }
+.atak-occ__seat { color: #94a3b8; font-size: 0.75rem; text-align: right; }
+.atak-occ--popup { margin-top: 6px; font-size: 0.78rem; color: #e2e8f0; }
 .atak-dossier--phone {
   width: min(300px, calc(100% - 24px));
 }
@@ -231,6 +264,9 @@
 .atak-timeline__item--warn { border-left-color: #f59e0b; }
 .atak-timeline__item--alert { border-left-color: #ef4444; }
 .atak-timeline__item--info { border-left-color: #38bdf8; }
+.atak-timeline__item--combat { border-left-color: #f97316; }
+.atak-timeline__item--loc { cursor: pointer; }
+.atak-timeline__item--loc:hover { background: rgba(249, 115, 22, 0.12); }
 .atak-timeline__src { color: #64748b; font-size: 0.65rem; }
 .atak-timeline__empty { color: #64748b; font-size: 0.78rem; padding: 0 12px 10px; }
 

@@ -48,7 +48,7 @@ window.ATAKMarkerSizes = (function () {
   }
 
   function wrapGlyph(html, extraClass) {
-    return '<span class="atak-marker-glyph' + (extraClass ? ' ' + extraClass : '') + '">' + html + '</span>';
+    return '<span class="atak-marker-glyph atak-marker-billboard' + (extraClass ? ' ' + extraClass : '') + '">' + html + '</span>';
   }
 
   function escapeTip(s) {

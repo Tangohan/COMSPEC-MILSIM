@@ -216,8 +216,10 @@ private _txUrgent = _radioChanged && {
     _radioSpeaking || _radioTxFlag || ((_lastRadio find "|1|") >= 0) || ((_lastRadio find "|1") >= 0)
 };
 private _medUrgent = _medicalChanged && {_health in ["unconscious", "cardiac_arrest"]};
+private _combatQueue = missionNamespace getVariable ["COMSPEC_CombatQueue", []];
+private _combatUrgent = (_combatQueue isEqualType []) && {count _combatQueue > 0};
 
-private _shouldSend = _force || _txUrgent || _medUrgent;
+private _shouldSend = _force || _txUrgent || _medUrgent || _combatUrgent;
 switch (_policy) do {
     case 0: {
         _shouldSend = _shouldSend || _minOk;
@@ -295,6 +297,14 @@ if (_inVeh && {missionNamespace getVariable ["comspec_overwatch_vehicle_mode", t
         [_vp select 0, 2] call _fnc_num, [_vp select 1, 2] call _fnc_num, [_vp select 2, 3] call _fnc_num
     ];
 };
+if (_inVeh) then {
+    private _vLabel = getText (configOf _veh >> "displayName");
+    if (_vLabel isEqualTo "") then { _vLabel = typeOf _veh; };
+    _vLabel = (_vLabel splitString """" joinString "");
+    private _occ = [_veh] call comspec_overwatch_connect_fnc_collectVehicleOccupants;
+    private _occJson = (_occ apply { [_x] call comspec_overwatch_connect_fnc_hashMapToJson }) joinString ",";
+    _vehJson = _vehJson + format [",""vehicle_label"":""%1"",""occupants"":[%2]", _vLabel, _occJson];
+};
 // Métadonnées radio (pas d’audio serveur) — pastilles Tacmap / tablette
 private _escCh = (_radioChannel splitString """" joinString "");
 private _escNet = (_radioNet splitString """" joinString "");
@@ -344,9 +354,10 @@ private _affiliation = switch (_side) do {
     default { "friend" };
 };
 _vehJson = _vehJson + format [
-    ",""side"":""%1"",""affiliation"":""%2""",
+    ",""side"":""%1"",""affiliation"":""%2"",""show_enemy_ai"":%3",
     _sideStr,
-    _affiliation
+    _affiliation,
+    if (missionNamespace getVariable ["COMSPEC_AtakShowEnemyAi", false]) then { "true" } else { "false" }
 ];
 private _grp = group _unit;
 private _grpCount = { alive _x } count units _grp;
@@ -462,7 +473,7 @@ if (count _medicalParts >= 8) then {
     ];
 };
 private _telKind = "position";
-if (!_force && {!_distanceOk} && {!_headingChanged} && {!_stateChanged} && {!_txUrgent} && {!_medUrgent}) then {
+if (!_force && {!_distanceOk} && {!_headingChanged} && {!_stateChanged} && {!_txUrgent} && {!_medUrgent} && {!_combatUrgent}) then {
     _telKind = "heartbeat";
 };
 private _histMin = missionNamespace getVariable ["COMSPEC_HistorySampleMin", 15];
@@ -472,6 +483,10 @@ _vehJson = _vehJson + format [
     _telKind,
     round _histMin
 ];
+private _combatFrag = [] call comspec_overwatch_connect_fnc_combatEventsJson;
+if (_combatFrag isEqualType "" && {_combatFrag isNotEqualTo ""}) then {
+    _vehJson = _vehJson + _combatFrag;
+};
 _vehJson = _vehJson + "}";
 
 private _steamUid = getPlayerUID player;

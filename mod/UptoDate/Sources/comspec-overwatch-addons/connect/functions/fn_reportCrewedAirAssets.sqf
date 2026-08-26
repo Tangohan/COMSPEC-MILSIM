@@ -24,24 +24,34 @@ private _sent = 0;
 
     private _crew = (crew _x) select { alive _x && {_x isKindOf "CAManBase"} };
     if (_crew isEqualTo []) then { continue };
+    if (
+        !isNil "comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit"
+        && { [_x] call comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit }
+    ) then { continue };
 
     private _last = _x getVariable ["COMSPEC_AirOccLastAt", -1e9];
     private _pos = getPosWorld _x;
     if ((abs (_pos select 0) < 1) && { abs (_pos select 1) < 1 }) then { continue };
     private _heading = getDir _x;
     private _crewN = count _crew;
+    private _crewNames = (_crew apply {
+        private _n = name _x;
+        if (!(_n isEqualType "")) then { _n = str _n };
+        _n
+    }) joinString "|";
     private _sig = format [
-        "%1|%2|%3|%4",
+        "%1|%2|%3|%4|%5",
         round (_pos select 0),
         round (_pos select 1),
         round _heading,
-        _crewN
+        _crewN,
+        _crewNames
     ];
     private _lastSig = _x getVariable ["COMSPEC_AirOccSig", ""];
-    private _heartbeatOk = (_now - _last) >= 18;
+    private _heartbeatOk = (_now - _last) >= 7;
     private _changed = _sig isNotEqualTo _lastSig;
     if (!_heartbeatOk && {!_changed}) then { continue };
-    if ((_now - _last) < 7) then { continue };
+    if ((_now - _last) < 2.5) then { continue };
 
     _x setVariable ["COMSPEC_AirOccLastAt", _now, false];
     _x setVariable ["COMSPEC_AirOccSig", _sig, false];
@@ -97,8 +107,17 @@ private _sent = 0;
     private _posAsl = getPosASL _x;
     private _vehicleId = netId _x;
     private _fuelPct = (round ((fuel _x) * 100)) max 0 min 100;
-    private _pilotName = name (effectiveCommander _x);
-    if (!(_pilotName isEqualType "")) then { _pilotName = ""; };
+    private _occ = [_x] call comspec_overwatch_connect_fnc_collectVehicleOccupants;
+    private _pilotName = "";
+    {
+        if ((_x getOrDefault ["seat", ""]) isEqualTo "driver") exitWith {
+            _pilotName = _x getOrDefault ["name", ""];
+        };
+    } forEach _occ;
+    if (_pilotName isEqualTo "" && {(count _occ) > 0}) then {
+        _pilotName = (_occ select 0) getOrDefault ["name", ""];
+    };
+    if (_pilotName isEqualTo "") then { _pilotName = "Pilote"; };
 
     private _payload = createHashMapFromArray [
         ["mapId", 1],
@@ -120,6 +139,9 @@ private _sent = 0;
         ["status", _status],
         ["fuel_pct", _fuelPct],
         ["pilot", _pilotName],
+        ["crew", _occ],
+        ["occupants", _occ],
+        ["crew_count", count _occ],
         ["lastUpdate", floor time]
     ];
 

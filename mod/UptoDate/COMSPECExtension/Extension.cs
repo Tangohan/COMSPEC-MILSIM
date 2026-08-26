@@ -28,7 +28,7 @@ public static class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.17";
+    private const string ExtensionVersion = "1.17.3";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -57,8 +57,14 @@ public static class Extension
     private static long _rateLimitUntilTicks;
     private static int _rateLimitBackoffSec = 2;
     private static long _lastRateLimitCbTicks;
+    /// <summary>Backoff après timeout / DNS / TLS (−1), distinct du 429 : ne pas crier « saturation ».</summary>
+    private static long _networkBackoffUntilTicks;
+    private static int _networkBackoffSec = 1;
+    private static long _lastNetworkHiccupCbTicks;
     private static long _lastAuth401ReauthTicks;
     private static long _terrainChunkBlockedUntilTicks;
+    /// <summary>Cooldown des flux caméra (best-effort) : ne pas geler position / manifeste.</summary>
+    private static long _bestEffortCoolUntilTicks;
 
     /// <summary>
     /// Dernier échec d'envoi fire-and-forget (position, tchat, marqueurs...) : ces requêtes ne
@@ -480,6 +486,35 @@ public static class Extension
     private static bool IsWeatherEndpoint(string url) =>
         url.Contains("/api/atak/weather", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Relevés volumineux : passer par la file drainée, pas un POST immédiat qui vole la liaison à la position.</summary>
+    private static bool IsHeavyIngestEndpoint(string url) =>
+        url.Contains("/api/atak/scene/ingest", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/terrain/chunk", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsVideoFeedsEndpoint(string url) =>
+        url.Contains("/api/atak/video-feeds", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsFlightManifestEndpoint(string url) =>
+        url.Contains("/api/atak/flight-manifest", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/vehicles", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Caméras / météo : un timeout ne doit pas geler l’occupation ni la position.</summary>
+    private static bool IsBestEffortEndpoint(string url) =>
+        IsVideoFeedsEndpoint(url) || IsWeatherEndpoint(url);
+
+    /// <summary>Occupation aérienne / véhicules : file drainée, prioritaire sur les flux caméra.</summary>
+    private static bool IsTacticalQueuedEndpoint(string url) =>
+        IsFlightManifestEndpoint(url);
+
+    private static bool IsBestEffortCoolingNow() =>
+        DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _bestEffortCoolUntilTicks);
+
+    private static void NoteBestEffortCooldown()
+    {
+        var until = DateTime.UtcNow.AddSeconds(8).Ticks;
+        System.Threading.Interlocked.Exchange(ref _bestEffortCoolUntilTicks, until);
+    }
+
     /// <summary>
     /// Routes ATAK authentifiées où un 401 transitoire (clé / session) justifie un re-client-init.
     /// </summary>
@@ -492,6 +527,7 @@ public static class Extension
             || url.Contains("/api/atak/client-init", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/weather", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/video-feeds", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/flight-manifest", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/explosive-timers", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase);
     }
@@ -550,6 +586,13 @@ public static class Extension
         return DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _rateLimitUntilTicks);
     }
 
+    private static bool IsNetworkBackoffNow()
+    {
+        return DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _networkBackoffUntilTicks);
+    }
+
+    private static bool IsPostPausedNow() => IsRateLimitedNow() || IsNetworkBackoffNow();
+
     private static int ParseRetryAfterSeconds(HttpResponseMessage? response, int fallback)
     {
         if (response == null) return fallback;
@@ -581,6 +624,22 @@ public static class Extension
         return fallback;
     }
 
+    /// <summary>
+    /// Timeout / DNS / TLS : courte pause sans callback « saturé ».
+    /// </summary>
+    private static void NoteNetworkHiccup()
+    {
+        var delaySec = Math.Clamp(_networkBackoffSec, 1, 3);
+        _networkBackoffSec = Math.Min(Math.Max(_networkBackoffSec * 2, 2), 3);
+        var until = DateTime.UtcNow.AddSeconds(delaySec).Ticks;
+        System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, until);
+        var now = DateTime.UtcNow.Ticks;
+        if (now - System.Threading.Interlocked.Read(ref _lastNetworkHiccupCbTicks) <= TimeSpan.FromSeconds(3).Ticks)
+            return;
+        System.Threading.Interlocked.Exchange(ref _lastNetworkHiccupCbTicks, now);
+        InvokeCallback("NetworkHiccup", delaySec.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
     private static void NoteRateLimited(HttpResponseMessage? response = null)
     {
         var next = Math.Min(_rateLimitBackoffSec * 2, 60);
@@ -600,8 +659,15 @@ public static class Extension
 
     private static void NoteRateLimitCleared()
     {
+        var hadNetwork = System.Threading.Interlocked.Read(ref _networkBackoffUntilTicks) > 0;
+        _networkBackoffSec = 1;
+        System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, 0);
         if (_rateLimitBackoffSec <= 2 && System.Threading.Interlocked.Read(ref _rateLimitUntilTicks) == 0)
+        {
+            if (hadNetwork)
+                InvokeCallback("RateLimitClear", "");
             return;
+        }
         _rateLimitBackoffSec = 2;
         System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, 0);
         InvokeCallback("RateLimitClear", "");
@@ -611,7 +677,7 @@ public static class Extension
     {
         if (response == null)
         {
-            NoteRateLimited();
+            NoteBestEffortCooldown();
             return;
         }
         if (response.IsSuccessStatusCode)
@@ -623,7 +689,9 @@ public static class Extension
         var code = (int)response.StatusCode;
         if (code == 401)
             MaybeReauthAfter401(url);
-        if (code == 429 || code == 503 || code <= 0)
+        if (code <= 0)
+            NoteBestEffortCooldown();
+        else if (code == 429 || code == 503)
             NoteRateLimited(response);
     }
 
@@ -636,17 +704,21 @@ public static class Extension
         }
         if (response == null)
         {
-            // Timeout / coupure : code 0. Pause globale, sinon video-feeds / position
-            // se ré-enfilent en boucle et saturent Athena (503 ensuite).
+            // Timeout / DNS / connexion : code 0. Pas un 429.
+            if (IsBestEffortEndpoint(url))
+            {
+                NotePostError(0, url);
+                NoteBestEffortCooldown();
+                return;
+            }
             NoteTransientPostFailure(0, url, jsonBody, response: null);
             return;
         }
         if ((int)response.StatusCode == 429)
         {
             NoteRateLimited(response);
-            // Position : garder la dernière pour flush après backoff. Autres : ne pas
-            // ré-enfiler (évite boucle 429 → lag) — le SQF renverra si besoin.
-            if (IsPositionEndpoint(url))
+            // Position / occupation / relevés : garder pour flush après backoff.
+            if (IsPositionEndpoint(url) || IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url))
                 EnqueueForRetry(url, jsonBody);
             return;
         }
@@ -656,6 +728,17 @@ public static class Extension
             return;
         }
         var code = (int)response.StatusCode;
+        if (code <= 0)
+        {
+            if (IsBestEffortEndpoint(url))
+            {
+                NotePostError(code, url);
+                NoteBestEffortCooldown();
+                return;
+            }
+            NoteTransientPostFailure(code, url, jsonBody, response);
+            return;
+        }
         NotePostError(code, url);
         // 401 : clé / session temporairement incohérente — retenter client-init
         // (position, marqueur, recon… ; le chat synchrone peut encore passer).
@@ -670,7 +753,7 @@ public static class Extension
         if (code == 503)
         {
             NoteRateLimited(response);
-            if (IsPositionEndpoint(url))
+            if (IsPositionEndpoint(url) || IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url))
                 EnqueueForRetry(url, jsonBody);
             return;
         }
@@ -678,12 +761,17 @@ public static class Extension
             EnqueueForRetry(url, jsonBody);
     }
 
-    /// <summary>0 / -1 / timeout : pause comme un 429, ne retente que la position.</summary>
+    /// <summary>0 / -1 / timeout : pause réseau courte, ne pas crier saturation. Retente position et relevés.</summary>
     private static void NoteTransientPostFailure(int code, string url, string jsonBody, HttpResponseMessage? response)
     {
         NotePostError(code, url);
-        NoteRateLimited(response);
-        if (IsPositionEndpoint(url))
+        if (IsBestEffortEndpoint(url))
+        {
+            NoteBestEffortCooldown();
+            return;
+        }
+        NoteNetworkHiccup();
+        if (IsPositionEndpoint(url) || IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url))
             EnqueueForRetry(url, jsonBody);
     }
 
@@ -719,7 +807,7 @@ public static class Extension
                 if (code == 503)
                 {
                     NoteRateLimited(response);
-                    if (IsPositionEndpoint(item.Url))
+                    if (IsPositionEndpoint(item.Url) || IsHeavyIngestEndpoint(item.Url) || IsTacticalQueuedEndpoint(item.Url))
                         EnqueueForRetry(item.Url, item.Body);
                     return false;
                 }
@@ -733,6 +821,12 @@ public static class Extension
         }
         catch
         {
+            if (IsBestEffortEndpoint(item.Url))
+            {
+                NotePostError(-1, item.Url);
+                NoteBestEffortCooldown();
+                return true;
+            }
             NoteTransientPostFailure(-1, item.Url, item.Body, response: null);
             return false;
         }
@@ -742,11 +836,12 @@ public static class Extension
     private static void DrainQueue()
     {
         if (string.IsNullOrEmpty(_baseUrl)) return;
-        if (IsRateLimitedNow()) return;
+        if (IsRateLimitedNow() || IsNetworkBackoffNow()) return;
         lock (QueueDrainLock)
         {
             const int maxPerTick = 3;
             var sent = 0;
+            var networkPause = IsNetworkBackoffNow();
             // Toujours la position coalescée en premier (freshness > ordre FIFO).
             var hadCoalesced = TryTakeCoalescedPosition(out var posItem);
             if (hadCoalesced)
@@ -765,6 +860,8 @@ public static class Extension
                         EnqueueForRetry(item.Url, item.Body);
                     continue;
                 }
+                if (IsBestEffortEndpoint(item.Url) && (networkPause || IsBestEffortCoolingNow()))
+                    continue;
                 if (!TrySendQueuedPost(item))
                     break;
                 sent++;
@@ -794,6 +891,23 @@ public static class Extension
         return FormatAtakExtArray("OK", "queued");
     }
 
+    private static string HandleSceneIngest(string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl))
+            return FormatAtakExtArray("ERROR", "not_connected");
+        if (_apiKey.Length == 0)
+            return FormatAtakExtArray("ERROR", "unauthorized");
+        if (args.Length < 1)
+            return FormatAtakExtArray("ERROR", "empty");
+        var json = args[0] ?? "";
+        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
+            return FormatAtakExtArray("ERROR", "empty");
+        if (!TryBuildRequestUri(_baseUrl, "/api/atak/scene/ingest", out var uri, out var err) || uri is null)
+            return FormatAtakExtArray("ERROR", err);
+        EnqueueOrSend(uri.AbsoluteUri, EnrichAtakPayload(json));
+        return FormatAtakExtArray("OK", "queued");
+    }
+
     private static void EnqueueOrSend(string url, string jsonBody)
     {
         // Positions : toujours coalescer (dernière gagne) puis flush périodique.
@@ -803,10 +917,20 @@ public static class Extension
             EnqueueForRetry(url, jsonBody);
             return;
         }
+        // Relevés terrain / scène : file drainée (position d’abord). Un POST immédiat
+        // pendant un relevé saturait HttpClient → timeout position (−1) puis faux 429.
+        if (IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url))
+        {
+            EnqueueForRetry(url, jsonBody);
+            return;
+        }
+        if (IsBestEffortEndpoint(url)
+            && (IsRateLimitedNow() || IsNetworkBackoffNow() || IsBestEffortCoolingNow()))
+        {
+            return;
+        }
         if (IsRateLimitedNow())
         {
-            // Position déjà coalescée plus haut. Météo / caméras / marqueurs :
-            // ne pas les empiler pendant la pause — le SQF les renverra.
             return;
         }
         try
@@ -827,9 +951,10 @@ public static class Extension
         }
         catch
         {
-            if (IsWeatherEndpoint(url))
+            if (IsBestEffortEndpoint(url))
             {
-                NoteRateLimited();
+                NotePostError(-1, url);
+                NoteBestEffortCooldown();
                 return;
             }
             NoteTransientPostFailure(-1, url, jsonBody, response: null);
@@ -1065,7 +1190,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.15");
+            Output(output, outputSize, "COMSPECExtension 2.0.16");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1393,7 +1518,7 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.15";
+            return "OK|COMSPECExtension 2.0.16";
         }
 
         if (function == "SetTelemetryBatch")
@@ -1404,12 +1529,17 @@ public static class Extension
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.15", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.16", "COMSPEC Extension ATAK");
         }
 
         if (function == "Terrain.Chunk")
         {
             return HandleTerrainChunk(args);
+        }
+
+        if (function == "Scene.Ingest")
+        {
+            return HandleSceneIngest(args);
         }
 
         // Captures locales (dossier Screenshots du profil) — hors ligne, sans liaison Athena.
@@ -4605,6 +4735,12 @@ public static class Extension
                 return;
             }
 
+            if (function == "Scene.Ingest")
+            {
+                // Acquittement synchrone dans TryGetSyncResponse (HandleSceneIngest).
+                return;
+            }
+
             if (function == "ReportPlaytime" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
                 var uid = args[0] ?? "";
@@ -5013,6 +5149,27 @@ public static class Extension
         EnsurePhotoWorker();
     }
 
+    /// <summary>
+    /// PNG Arma encore à 0 octet : ne pas crier file_empty au premier essai.
+    /// </summary>
+    private static void RequeuePhotoWaitingForFlush(ReconPhotoJob job, string cbName, string fileHint)
+    {
+        job.Attempts++;
+        if (job.Attempts >= PhotoRetryMax)
+        {
+            ReleasePhotoDedup(job.DedupKey);
+            InvokeCallback(cbName, $"ERR|file_empty|{fileHint}");
+            return;
+        }
+        _ = Task.Run(async () =>
+        {
+            try { await Task.Delay(800).ConfigureAwait(false); }
+            catch { /* ignore */ }
+            PhotoJobs.Enqueue(job);
+            EnsurePhotoWorker();
+        });
+    }
+
     private static void EnsurePhotoWorker()
     {
         if (Interlocked.CompareExchange(ref _photoWorkerRunning, 1, 0) != 0)
@@ -5115,6 +5272,13 @@ public static class Extension
             return;
         }
 
+        // Arma crée souvent le PNG à 0 octet puis flush plus tard — attendre une taille stable.
+        if (!await WaitFileStableAsync(resolved, TimeSpan.FromSeconds(8)).ConfigureAwait(false))
+        {
+            RequeuePhotoWaitingForFlush(job, cbName, Path.GetFileName(resolved) ?? "");
+            return;
+        }
+
         // Dédup secondaire après résolution (watcher + SQF → même fichier).
         try
         {
@@ -5127,8 +5291,7 @@ public static class Extension
             }
             if (fi.Length < 32)
             {
-                ReleasePhotoDedup(job.DedupKey);
-                InvokeCallback(cbName, "ERR|file_empty|" + Path.GetFileName(resolved));
+                RequeuePhotoWaitingForFlush(job, cbName, Path.GetFileName(resolved) ?? "");
                 return;
             }
             identityKey = $"{fi.FullName.ToLowerInvariant()}|{fi.Length}|{fi.LastWriteTimeUtc.Ticks}";
@@ -5224,7 +5387,7 @@ public static class Extension
         }
         catch
         {
-            NoteRateLimited();
+            NoteNetworkHiccup();
             RequeuePhotoAfterTransient(job, identityKey, "PhotoUpload", "network", Path.GetFileName(resolved) ?? "");
         }
         finally
@@ -5503,7 +5666,7 @@ public static class Extension
         }
         catch
         {
-            NoteRateLimited();
+            NoteNetworkHiccup();
             RequeuePhotoAfterTransient(job, identityKey, "SsePhotoUpload", "network", Path.GetFileName(resolved) ?? "");
         }
         finally
@@ -6078,6 +6241,7 @@ public static class Extension
     /// Cherche un fichier image par nom (et stem .jpg↔.png) dans les dossiers Screenshots.
     /// Scan peu profond uniquement (racine + 1 niveau) — jamais AllDirectories sur l’install Arma
     /// (jonctions Workshop → STATUS_STACK_OVERFLOW / 0xC00000FD).
+    /// Ignore les fichiers encore à 0 octet (PNG Arma non flushé).
     /// </summary>
     private static string? FindScreenshotByFileName(string fileName)
     {
@@ -6094,9 +6258,9 @@ public static class Extension
             {
                 try
                 {
-                    var direct = Path.Combine(dir, name);
-                    if (File.Exists(direct))
-                        return Path.GetFullPath(direct);
+                    var readable = TryReadableImageFile(Path.Combine(dir, name));
+                    if (readable != null)
+                        return readable;
                 }
                 catch { /* ignore */ }
             }
@@ -6109,15 +6273,45 @@ public static class Extension
                     try
                     {
                         if (!IsImageExtension(Path.GetExtension(f))) continue;
-                        if (!File.Exists(f)) continue;
-                        return Path.GetFullPath(f);
+                        var readable = TryReadableImageFile(f);
+                        if (readable != null)
+                            return readable;
                     }
                     catch { /* ignore */ }
                 }
             }
             catch { /* ignore */ }
         }
+
+        // Nom seul : %LOCALAPPDATA%\Arma 3 (hors sous-dossier Screenshots, hors watcher).
+        foreach (var dir in EnumerateLooseScreenshotDirs())
+        {
+            foreach (var name in names)
+            {
+                try
+                {
+                    var readable = TryReadableImageFile(Path.Combine(dir, name));
+                    if (readable != null)
+                        return readable;
+                }
+                catch { /* ignore */ }
+            }
+        }
         return null;
+    }
+
+    /// <summary>
+    /// Dossiers où Arma peut poser un PNG au nom seul, sans en faire une source de watcher.
+    /// </summary>
+    private static IEnumerable<string> EnumerateLooseScreenshotDirs()
+    {
+        string? local = null;
+        try { local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData); }
+        catch { yield break; }
+        if (string.IsNullOrWhiteSpace(local)) yield break;
+        var arma = Path.Combine(local, "Arma 3");
+        if (Directory.Exists(arma))
+            yield return arma;
     }
 
     /// <summary>
@@ -6549,7 +6743,7 @@ public static class Extension
                     try
                     {
                         var fi = new FileInfo(f);
-                        if (!fi.Exists) continue;
+                        if (!fi.Exists || fi.Length < 32) continue;
                         var writeUtc = fi.LastWriteTimeUtc;
                         if (writeUtc < cutoff) continue;
                         if (best == null || writeUtc > best.LastWriteTimeUtc)

@@ -16,6 +16,7 @@ window.ATAKAirAssets = (function () {
       assets = Array.isArray(data) ? data : [];
       render();
       if (window.ATAKMap && window.ATAKMap.setAirAssets) window.ATAKMap.setAirAssets(assets);
+      try { window.dispatchEvent(new CustomEvent('atak:units-updated')); } catch (e3) {}
     }).catch(function () {
       assets = [];
       render();
@@ -53,6 +54,14 @@ window.ATAKAirAssets = (function () {
         '<div class="atak-air-asset-model">' + (a.model || '—') + (a.aircraft_count > 1 ? ' ×' + a.aircraft_count : '') + '</div>' +
         (a.freq ? '<div class="atak-air-asset-freq">FREQ ' + a.freq + '</div>' : '') +
         (a.laser ? '<div class="atak-air-asset-laser">LASER ' + a.laser + '</div>' : '') +
+        (function () {
+          var occ = a.occupants || a.crew;
+          if (typeof occ === 'string') {
+            try { occ = JSON.parse(occ); } catch (e2) { occ = []; }
+          }
+          var n = Array.isArray(occ) ? occ.length : 0;
+          return n ? '<div class="atak-air-asset-crew">' + n + ' à bord</div>' : '';
+        }()) +
         '<span class="atak-air-asset-status ' + statusClass(status) + '">' + (status === 'SUSPECT' ? 'SUSPECT' : status === 'OFFLINE' ? 'OFFLINE' : 'IN-FLIGHT') + '</span>' +
         (pilotStatus ? '<div class="atak-air-asset-pilot">' + pilotStatus + '</div>' : '') +
         '</div>';

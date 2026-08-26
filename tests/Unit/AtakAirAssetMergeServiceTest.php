@@ -144,4 +144,44 @@ final class AtakAirAssetMergeServiceTest extends TestCase
         ]);
         self::assertSame([], $merged);
     }
+
+    public function testOccupancyCrewSurvivesManifestMerge(): void
+    {
+        $crew = [
+            ['name' => 'N-01', 'seat' => 'driver'],
+            ['name' => 'N-02', 'seat' => 'gunner'],
+            ['name' => 'N-03', 'seat' => 'cargo'],
+        ];
+        $merged = AtakAirAssetMergeService::merge([
+            [
+                'callsign' => 'HAWK-1',
+                'model' => 'CH-146 Griffin',
+                'aircraft_type' => 'helicopter',
+                'freq' => '31.0',
+                'pos_x' => 1000.0,
+                'pos_y' => 2000.0,
+                'source' => 'manifest',
+            ],
+            [
+                'callsign' => 'Alpha 1-2',
+                'model' => 'CH-146 Griffin',
+                'aircraft_type' => 'helicopter',
+                'pos_x' => 1008.0,
+                'pos_y' => 2004.0,
+                'vehicle_id' => '2:14',
+                'source' => 'occupancy',
+                'occupants' => $crew,
+                'crew' => $crew,
+                'crew_count' => 3,
+                'pilot' => 'N-01',
+            ],
+        ], []);
+
+        self::assertCount(1, $merged);
+        self::assertSame('HAWK-1', $merged[0]['callsign']);
+        self::assertCount(3, $merged[0]['occupants']);
+        self::assertSame('N-01', $merged[0]['occupants'][0]['name']);
+        self::assertSame(3, $merged[0]['crew_count']);
+        self::assertSame('N-01', $merged[0]['pilot']);
+    }
 }

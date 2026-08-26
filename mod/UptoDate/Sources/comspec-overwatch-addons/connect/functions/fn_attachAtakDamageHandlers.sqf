@@ -14,6 +14,13 @@ if ((_unit getVariable ["COMSPEC_AtakHitEH", -1]) < 0) then {
         if (_damage > 0.1) then {
             private _prev = missionNamespace getVariable ["COMSPEC_LastAtakImpact", 0];
             missionNamespace setVariable ["COMSPEC_LastAtakImpact", _prev max _damage, false];
+            if (!isNull player) then {
+                private _pos = getPosWorld player;
+                ["hit", createHashMapFromArray [
+                    ["x", _pos select 0],
+                    ["y", _pos select 1]
+                ]] call comspec_overwatch_connect_fnc_noteCombatEvent;
+            };
         };
         [] call comspec_overwatch_connect_fnc_checkAtakDamage;
     }];
@@ -28,6 +35,13 @@ if ((_unit getVariable ["COMSPEC_AtakExplosionEH", -1]) < 0) then {
         if (_damage > 0.05) then {
             private _prev = missionNamespace getVariable ["COMSPEC_LastAtakImpact", 0];
             missionNamespace setVariable ["COMSPEC_LastAtakImpact", _prev max (_damage min 1), false];
+            if (!isNull player) then {
+                private _pos = getPosWorld player;
+                ["hit", createHashMapFromArray [
+                    ["x", _pos select 0],
+                    ["y", _pos select 1]
+                ]] call comspec_overwatch_connect_fnc_noteCombatEvent;
+            };
         };
         [] call comspec_overwatch_connect_fnc_checkAtakDamage;
     }];

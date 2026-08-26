@@ -59,7 +59,15 @@ window.ATAKCopBoard = (function () {
   }
   function rows() {
     var g = (window.ATAKUnits && window.ATAKUnits.getUnits) ? (window.ATAKUnits.getUnits() || []) : [];
+    if (window.ATAKUnits && window.ATAKUnits.shouldHideEnemyAi) {
+      g = g.filter(function (u) { return !window.ATAKUnits.shouldHideEnemyAi(u, g); });
+    }
     var a = (window.ATAKAirAssets && window.ATAKAirAssets.getAssets) ? (window.ATAKAirAssets.getAssets() || []) : [];
+    if (window.ATAKUnits && window.ATAKUnits.showEnemyAiEnabled && !window.ATAKUnits.showEnemyAiEnabled(g)) {
+      a = a.filter(function (x) {
+        return String((x && x.side) || 'WEST').toUpperCase() !== 'EAST';
+      });
+    }
     return g.concat(a);
   }
   function matchFilter(u) {

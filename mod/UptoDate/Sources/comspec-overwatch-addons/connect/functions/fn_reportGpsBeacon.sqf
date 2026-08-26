@@ -7,6 +7,10 @@ params [
 ];
 if (!hasInterface) exitWith { false };
 if (isNull _vehicle) exitWith { false };
+if (
+    !isNil "comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit"
+    && { [_vehicle] call comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit }
+) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { false };
 if !([_vehicle, "COMSPEC_GpsBeacon"] call comspec_overwatch_connect_fnc_isObjectFlag) exitWith { false };
@@ -15,7 +19,7 @@ private _pos = getPosWorld _vehicle;
 if ((abs (_pos select 0) < 1) && { abs (_pos select 1) < 1 }) exitWith { false };
 
 private _last = _vehicle getVariable ["COMSPEC_GpsBeaconLastAt", -1e9];
-if ((diag_tickTime - _last) < 6) exitWith { false };
+if ((diag_tickTime - _last) < 3) exitWith { false };
 _vehicle setVariable ["COMSPEC_GpsBeaconLastAt", diag_tickTime, false];
 
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };

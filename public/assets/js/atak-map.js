@@ -72,6 +72,7 @@ window.ATAKMap = (function () {
   };
   var displayPrefsCache = null;
   var lastUnitsListForMap = null;
+  var lastAirListForMap = null;
   var unitPosQueues = {};
   var unitPosDisplayed = {};
   var unitPosLiveSeen = {};
@@ -200,6 +201,20 @@ window.ATAKMap = (function () {
     return next;
   }
 
+  function inclinedView() {
+    try {
+      return !!(window.ATAKTerrain3D && window.ATAKTerrain3D.getState && window.ATAKTerrain3D.getState().enabled);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function unitBillboardLabel(callSign) {
+    var cs = String(callSign || '').trim();
+    if (!cs || !inclinedView()) return '';
+    return '<span class="atak-unit-dot-label">' + cs.replace(/</g, '&lt;') + '</span>';
+  }
+
   function applyDisplayPrefsToMapDom() {
     var p = getDisplayPrefs();
     var mapEl = document.getElementById('atak-map');
@@ -298,7 +313,7 @@ window.ATAKMap = (function () {
   function buildIntelDotIcon(callSign, size, labelPx) {
     var S = window.ATAKMarkerSizes;
     var d = S ? S.px('micro') : 10;
-    var html = '<span class="atak-intel-marker-dot" style="width:' + d + 'px;height:' + d + 'px;"></span>';
+    var html = '<span class="atak-intel-marker-dot" style="width:' + d + 'px;height:' + d + 'px;"></span>' + unitBillboardLabel(callSign);
     if (S && S.divIcon) {
       return S.divIcon(L, html, 'micro', { className: 'atak-unit-intel-dot-marker atak-compact-marker' });
     }
@@ -314,7 +329,7 @@ window.ATAKMap = (function () {
     var S = window.ATAKMarkerSizes;
     var d = S ? S.clampPref(size || S.px('small')) : Math.max(10, Math.round(size || 14));
     var safeColor = color && /^#[0-9A-Fa-f]{6}$/.test(color) ? color : '#22c55e';
-    var html = '<span class="atak-unit-dot" style="width:' + d + 'px;height:' + d + 'px;background:' + safeColor + ';"></span>';
+    var html = '<span class="atak-unit-dot" style="width:' + d + 'px;height:' + d + 'px;background:' + safeColor + ';"></span>' + unitBillboardLabel(callSign);
     if (S && S.divIcon) {
       return S.divIcon(L, html, d, { className: 'atak-unit-dot-marker atak-compact-marker' });
     }
@@ -324,6 +339,15 @@ window.ATAKMap = (function () {
       iconSize: [d, d],
       iconAnchor: [d / 2, d / 2]
     });
+  }
+
+  function refreshInclinedMarkers() {
+    refreshUnitMarkerIcons();
+    if (!lastAirListForMap) return;
+    Object.keys(airAssetsById).forEach(function (k) {
+      if (airAssetsById[k]) airAssetsById[k]._atakIconSig = '';
+    });
+    setAirAssets(lastAirListForMap);
   }
 
   function refreshUnitMarkerIcons() {
@@ -690,6 +714,7 @@ window.ATAKMap = (function () {
     }
     clearPosSimState();
     lastUnitsListForMap = null;
+    lastAirListForMap = null;
   }
 
   function init(mapId) {
@@ -1385,6 +1410,10 @@ window.ATAKMap = (function () {
       if (raw.indexOf('jackpot') >= 0 || raw.indexOf('hvt') >= 0) return { kind: 'jackpot', label: 'JACKPOT', color: '#f59e0b', rest: rest };
       if (raw.indexOf('medical') >= 0 || raw.indexOf('médical') >= 0) return { kind: 'medical', label: 'Médical', color: '#f8fafc', rest: rest };
       if (raw.indexOf('ralli') >= 0 || raw.indexOf('rally') >= 0) return { kind: 'rally', label: 'Ralliement', color: '#22c55e', rest: rest };
+      if (raw.indexOf('tir') >= 0 || raw.indexOf('feu') >= 0) return { kind: 'fire', label: 'Tir', color: '#f97316', rest: rest };
+      if (raw.indexOf('impact') >= 0) return { kind: 'hit', label: 'Impact', color: '#ef4444', rest: rest };
+      if (raw.indexOf('missile') >= 0) return { kind: 'missile', label: 'Missile', color: '#a855f7', rest: rest };
+      if (raw.indexOf('échange') >= 0 || raw.indexOf('echange') >= 0) return { kind: 'exchange', label: 'Échange', color: '#f59e0b', rest: rest };
       if (raw.indexOf('contact') >= 0) return { kind: 'contact', label: 'Contact', color: '#f97316', rest: rest };
       if (raw.indexOf('objectif') >= 0) return { kind: 'objective', label: 'Objectif', color: '#eab308', rest: rest };
       if (raw.indexOf('alerte') >= 0) return { kind: 'warning', label: 'Alerte', color: '#f97316', rest: rest };
@@ -1591,7 +1620,18 @@ window.ATAKMap = (function () {
       var popup = '<div class="atak-gps-popup"><div class="atak-marker-popup__kind">' + kind + '</div><b>' +
         pretty.replace(/</g, '&lt;') +
         '</b><br/>' + vehicleClassLabel(item.vehicle_class) +
-        (item.crew_count != null ? '<br/>Équipage : ' + String(item.crew_count) : '') +
+        (item.crew_count != null ? '<br/>À bord : ' + String(item.crew_count) : '') +
+        (function () {
+          var occ = item.passengers_json;
+          if (typeof occ === 'string') {
+            try { occ = JSON.parse(occ); } catch (e) { occ = []; }
+          }
+          if (!Array.isArray(occ) || !occ.length) return '';
+          return '<div class="atak-occ atak-occ--popup">' + occ.map(function (o) {
+            var n = String((o && (o.name || o.callsign)) || '').replace(/</g, '&lt;');
+            return n ? ('<div>' + n + '</div>') : '';
+          }).join('') + '</div>';
+        }()) +
         '</div>';
       if (gpsVehicleMarkersById[id]) {
         gpsVehicleMarkersById[id].setLatLng(latlng);
@@ -1680,6 +1720,18 @@ window.ATAKMap = (function () {
       return true;
     }
     return false;
+  }
+
+  function clearTemporaryPings() {
+    Object.keys(pingMarkersById).forEach(function (id) {
+      var key = String(id);
+      if (key.indexOf('combat_') === 0 || key.indexOf('live_') === 0) {
+        removeTemporaryPingMarker(id);
+      }
+    });
+    Object.keys(pingTempMarkersById).forEach(function (id) {
+      removeTemporaryPingMarker(id);
+    });
   }
 
   function pollMarkers() {
@@ -1837,6 +1889,9 @@ window.ATAKMap = (function () {
         if (typeof u.extra === 'string') extra = JSON.parse(u.extra || '{}');
         else if (u.extra && typeof u.extra === 'object') extra = u.extra;
       } catch (e) {}
+      if (window.ATAKUnits && window.ATAKUnits.shouldHideEnemyAi && window.ATAKUnits.shouldHideEnemyAi(u, list)) {
+        return;
+      }
       var P = window.ATAKUnitPopup;
       var isPhone = P && P.isPhoneGeoloc ? P.isPhoneGeoloc(extra) : !!(extra.phone_geoloc);
       var rev = (isPhone && P && P.phoneReveal) ? P.phoneReveal(extra) : null;
@@ -1897,7 +1952,8 @@ window.ATAKMap = (function () {
         onMonNet ? '1' : '0',
         u.fire_team_id || '',
         safeFt,
-        isPhone ? JSON.stringify(rev || {}) : ''
+        isPhone ? JSON.stringify(rev || {}) : '',
+        inclinedView() ? '3d' : '2d'
       ].join('|');
       var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
       if (existing && existing._atakIconSig === iconSig && existing._atakPosSig === posSig) {
@@ -1914,6 +1970,7 @@ window.ATAKMap = (function () {
         } else if (preferAvatar) {
           var av = Math.max(12, Math.round(prefs.iconSize));
           var avHtml = '<img src="' + String(profile.avatarUrl).replace(/"/g, '&quot;') + '" alt="" style="width:' + av + 'px;height:' + av + 'px;"/>' +
+            unitBillboardLabel(labelCs) +
             (emitting ? '<span class="atak-unit-emit-badge">Émet</span>' : '') +
             (onMonNet && !emitting ? '<span class="atak-unit-listen-badge">Réseau</span>' : '');
           icon = window.ATAKMarkerSizes && window.ATAKMarkerSizes.divIcon
@@ -1942,7 +1999,7 @@ window.ATAKMap = (function () {
             aircraftType: extra.aircraft_type || u.aircraft_type || '',
             callSign: labelCs,
             heading: headingRounded,
-            showLabel: false,
+            showLabel: inclinedView(),
             size: prefs.iconSize,
             health: health,
             className: healthClass,
@@ -1952,7 +2009,7 @@ window.ATAKMap = (function () {
           icon = nato && nato.leafletDivIcon
             ? nato.leafletDivIcon(L, iconOpts)
             : (window.ATAKMarkerSizes && window.ATAKMarkerSizes.divIcon
-              ? window.ATAKMarkerSizes.divIcon(L, '<span style="display:block;width:8px;height:8px;border-radius:50%;background:#3b82f6;"></span>', 'small', { className: 'atak-unit-fallback atak-compact-marker ' + healthClass })
+              ? window.ATAKMarkerSizes.divIcon(L, '<span style="display:block;width:8px;height:8px;border-radius:50%;background:#3b82f6;"></span>' + unitBillboardLabel(labelCs), 'small', { className: 'atak-unit-fallback atak-compact-marker ' + healthClass })
               : L.divIcon({
                   className: 'atak-unit-fallback atak-compact-marker ' + healthClass,
                   html: '<span style="display:block;width:8px;height:8px;border-radius:50%;background:#3b82f6;"></span>',
@@ -2022,6 +2079,7 @@ window.ATAKMap = (function () {
 
   function setAirAssets(assets) {
     if (!map || !Array.isArray(assets)) return;
+    lastAirListForMap = assets;
     if (!airAssetsLayer) airAssetsLayer = L.layerGroup().addTo(map);
     var nato = window.NatoSidcIcons;
     var seen = {};
@@ -2037,24 +2095,27 @@ window.ATAKMap = (function () {
       var aff = 'friend';
       if (side === 'EAST') aff = 'hostile';
       else if (side === 'GUER' || side === 'CIV' || status === 'SUSPECT') aff = 'unknown';
+      if (aff === 'hostile' && window.ATAKUnits && window.ATAKUnits.showEnemyAiEnabled && !window.ATAKUnits.showEnemyAiEnabled()) {
+        return;
+      }
       var icon = nato && nato.leafletDivIcon
         ? nato.leafletDivIcon(L, {
             affiliation: aff,
             aircraftType: a.aircraft_type || 'plane',
             role: a.model || a.aircraft_type || '',
             callSign: a.callsign || '',
-            showLabel: false,
+            showLabel: inclinedView(),
             size: window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('important') : 22,
           })
         : L.divIcon({
             className: 'atak-air-asset-marker atak-compact-marker',
             html: window.ATAKMarkerSizes && window.ATAKMarkerSizes.wrapGlyph
-              ? window.ATAKMarkerSizes.wrapGlyph('<span style="color:#3b82f6;font-size:12px;font-weight:bold;">▲</span>')
+              ? window.ATAKMarkerSizes.wrapGlyph('<span style="color:#3b82f6;font-size:12px;font-weight:bold;">▲</span>' + unitBillboardLabel(a.callsign || ''))
               : '<span style="color:#3b82f6;font-size:12px;font-weight:bold;">▲</span>',
             iconSize: [16, 16],
             iconAnchor: [8, 8],
           });
-      var iconSig = [aff, a.aircraft_type || '', a.model || '', a.callsign || '', status].join('|');
+      var iconSig = [aff, a.aircraft_type || '', a.model || '', a.callsign || '', status, inclinedView() ? '3d' : '2d'].join('|');
       var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
       if (!airAssetsById[id]) {
         var marker = L.marker(latlng, { icon: icon, zIndexOffset: 500 });
@@ -2103,6 +2164,7 @@ window.ATAKMap = (function () {
   } else {
     bindDisplayPrefsUi();
   }
+  window.addEventListener('atak:terrain3dchange', refreshInclinedMarkers);
 
   return {
     init: init,
@@ -2149,6 +2211,7 @@ window.ATAKMap = (function () {
     centerOn: centerOn,
     addTemporaryPingMarker: addTemporaryPingMarker,
     removeTemporaryPingMarker: removeTemporaryPingMarker,
+    clearTemporaryPings: clearTemporaryPings,
     setPingsOnMap: setPingsOnMap,
     setExplosiveTimersOnMap: setExplosiveTimersOnMap,
     setGpsVehiclesOnMap: setGpsVehiclesOnMap

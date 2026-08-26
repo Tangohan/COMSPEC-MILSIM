@@ -93,7 +93,7 @@ final class AtakAirAssetMergeService
                 }
             }
             $cat = AtakMotionMath::classifyCategory($extra);
-            $vehName = trim((string) ($extra['vehicle_name'] ?? ''));
+            $vehName = trim((string) ($extra['vehicle_name'] ?? $extra['vehicle_label'] ?? ''));
             if (!self::isAirCategory($cat)) {
                 continue;
             }
@@ -128,6 +128,9 @@ final class AtakAirAssetMergeService
                     'updated_at' => $unit['updated_at'] ?? null,
                     'source' => self::SOURCE_UNIT,
                     'vehicle_id' => '',
+                    'occupants' => [],
+                    'crew' => [],
+                    'crew_count' => 0,
                 ];
             }
             $clusters[$key]['aircraft_count'] = 1;
@@ -136,6 +139,23 @@ final class AtakAirAssetMergeService
             }
             if ($group !== '' && trim((string) ($clusters[$key]['callsign'] ?? '')) === '') {
                 $clusters[$key]['callsign'] = $group;
+            }
+            $fromUnit = self::occupantsOf($extra);
+            $inVeh = !empty($extra['in_vehicle']) || $fromUnit !== [];
+            if ($fromUnit === [] && $inVeh) {
+                $name = trim((string) ($unit['call_sign'] ?? $unit['callsign'] ?? ''));
+                if ($name !== '') {
+                    $fromUnit = [['name' => $name, 'seat' => 'cargo']];
+                }
+            }
+            if ($fromUnit !== []) {
+                $mergedOcc = self::mergeOccupants(
+                    is_array($clusters[$key]['occupants'] ?? null) ? $clusters[$key]['occupants'] : [],
+                    $fromUnit
+                );
+                $clusters[$key]['occupants'] = $mergedOcc;
+                $clusters[$key]['crew'] = $mergedOcc;
+                $clusters[$key]['crew_count'] = count($mergedOcc);
             }
         }
 
@@ -271,8 +291,67 @@ final class AtakAirAssetMergeService
                 $out['vehicle_id'] = $vid;
             }
         }
+        $mergedOcc = self::mergeOccupants(self::occupantsOf($primary), self::occupantsOf($secondary));
+        if ($mergedOcc !== []) {
+            $out['occupants'] = $mergedOcc;
+            $out['crew'] = $mergedOcc;
+            $out['crew_count'] = count($mergedOcc);
+        }
         if (self::sourceRank((string) ($primary['source'] ?? '')) >= 2) {
             $out['source'] = $primary['source'];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return list<array<string, mixed>>
+     */
+    private static function occupantsOf(array $row): array
+    {
+        $raw = $row['occupants'] ?? $row['crew'] ?? $row['passengers_json'] ?? null;
+        if (is_string($raw) && $raw !== '') {
+            $decoded = json_decode($raw, true);
+            $raw = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $name = trim((string) ($item['name'] ?? $item['callsign'] ?? $item['call_sign'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            $out[] = $item;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $a
+     * @param list<array<string, mixed>> $b
+     * @return list<array<string, mixed>>
+     */
+    private static function mergeOccupants(array $a, array $b): array
+    {
+        $seen = [];
+        $out = [];
+        foreach (array_merge($a, $b) as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $name = mb_strtolower(trim((string) ($item['name'] ?? $item['callsign'] ?? $item['call_sign'] ?? '')));
+            if ($name === '' || isset($seen[$name])) {
+                continue;
+            }
+            $seen[$name] = true;
+            $out[] = $item;
         }
 
         return $out;

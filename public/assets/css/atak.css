@@ -4632,6 +4632,7 @@ body.atak-theme-light .atak-chat-messages {
 .atak-air-asset-card.atak-air-status-offline { border-left-color: var(--atak-muted); opacity: 0.8; }
 .atak-air-asset-callsign { font-size: 0.7rem; color: var(--atak-accent); text-transform: uppercase; letter-spacing: 0.05em; }
 .atak-air-asset-model { font-weight: 600; font-size: 0.85rem; }
+.atak-air-asset-crew { font-size: 0.72rem; color: #7dd3fc; margin-top: 0.2rem; }
 .atak-air-asset-freq, .atak-air-asset-laser { font-size: 0.7rem; color: var(--atak-muted); }
 .atak-air-asset-status { font-size: 0.6rem; text-transform: uppercase; padding: 0.15rem 0.35rem; border-radius: 999px; background: rgba(52, 211, 153, 0.2); color: var(--atak-success); }
 .atak-air-asset-status.atak-air-status-suspect { background: rgba(249, 115, 22, 0.25); color: #f97316; }
@@ -4684,6 +4685,44 @@ body.atak-theme-light .atak-chat-messages {
 }
 .atak-map-stage.atak-map-stage--3d #atak-map .leaflet-tile-pane,
 .atak-map-stage.atak-map-stage--3d #atak-map .leaflet-overlay-pane { filter: drop-shadow(0 14px 11px rgba(0, 0, 0, .42)); }
+.atak-map-stage.atak-map-stage--3d #atak-map {
+  --atak-billboard: rotateZ(calc(-1 * var(--atak-map-bearing, 0deg))) rotateX(calc(-1 * var(--atak-map-pitch, 48deg)));
+}
+.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-marker-pane,
+.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-popup-pane {
+  transform-style: preserve-3d;
+}
+.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-marker-icon {
+  transform-style: preserve-3d;
+  overflow: visible;
+}
+.atak-map-stage.atak-map-stage--3d #atak-map .atak-marker-billboard,
+.atak-map-stage.atak-map-stage--3d #atak-map .atak-marker-glyph {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  transform: var(--atak-billboard) scale(var(--atak-zoom-scale, 1));
+  transform-origin: center center;
+  backface-visibility: hidden;
+}
+.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-marker-icon:hover .atak-marker-glyph {
+  transform: var(--atak-billboard) scale(calc(var(--atak-zoom-scale, 1) * 1.15));
+}
+.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-marker-icon.atak-marker-selected .atak-marker-glyph {
+  transform: var(--atak-billboard) scale(calc(var(--atak-zoom-scale, 1) * 1.25));
+}
+.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-popup-content-wrapper,
+.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-popup-tip-container {
+  transform: var(--atak-billboard);
+  transform-origin: center bottom;
+  backface-visibility: hidden;
+}
+.atak-map-stage.atak-map-stage--3d #atak-map .nato-sidc-label,
+.atak-map-stage.atak-map-stage--3d #atak-map .atak-unit-dot-label {
+  display: block;
+  margin-top: 2px;
+  white-space: nowrap;
+}
 .atak-terrain-mesh { position: absolute; inset: 0; z-index: 210; pointer-events: none; }
 .atak-scene-3d { position: absolute; inset: 0; z-index: 215; pointer-events: none; }
 /* Le canevas WebGL se superpose aux PNG drapés. On garde les tuiles Leaflet

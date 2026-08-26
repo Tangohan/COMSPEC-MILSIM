@@ -39,8 +39,9 @@ if (!isNull player) then {
 missionNamespace setVariable ["COMSPEC_lastVehSig", "", true];
 missionNamespace setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
 
-// Hit / Explosion sont des EH objet : perdus avec l’ancienne unité
+// Hit / Explosion / combat journal sont des EH objet : perdus avec l’ancienne unité
 [] call comspec_overwatch_connect_fnc_attachAtakDamageHandlers;
+[] call comspec_overwatch_connect_fnc_initCombatJournal;
 
 ["INFO", "Respawn", format ["Grâce %1s — médical / MessageBox / sync gelés", _graceSec]] call comspec_overwatch_connect_fnc_log;
 

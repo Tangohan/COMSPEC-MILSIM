@@ -1,12 +1,12 @@
 /*
-    Menus Zeus : balise GPS véhicule, géolocalisation téléphone, IA alliée ATAK.
+    Menus Zeus : balise GPS véhicule, géolocalisation téléphone, IA alliée ATAK, contacts ennemis.
 */
 if (!hasInterface) exitWith {};
-if (missionNamespace getVariable ["COMSPEC_ZenTrackActionsRegistered", false]) exitWith {};
 
 private _iconGps = "\A3\ui_f\data\igui\cfg\simpletasks\types\move_ca.paa";
 private _iconPhone = "\A3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa";
 private _iconAlly = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
+private _iconEnemy = "\A3\ui_f\data\igui\cfg\simpletasks\types\attack_ca.paa";
 
 private _collectAi = {
     params ["_obj", ["_pool", []]];
@@ -100,14 +100,23 @@ private _toggleAlly = {
     [_obj, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusApplyAllyTrack", {}]);
 };
 
+private _toggleEnemyAi = {
+    private _on = !(missionNamespace getVariable ["COMSPEC_AtakShowEnemyAi", false]);
+    [_on] call comspec_overwatch_connect_fnc_setAtakShowEnemyAi;
+};
+
 missionNamespace setVariable ["COMSPEC_ZeusToggleGpsBeacon", _toggleGps];
 missionNamespace setVariable ["COMSPEC_ZeusTogglePhoneTrack", _configurePhone];
 missionNamespace setVariable ["COMSPEC_ZeusConfigurePhoneTrack", _configurePhone];
 missionNamespace setVariable ["COMSPEC_ZeusApplyAllyTrack", _applyAlly];
 missionNamespace setVariable ["COMSPEC_ZeusToggleAllyTrack", _toggleAlly];
+missionNamespace setVariable ["COMSPEC_ZeusToggleEnemyAi", _toggleEnemyAi];
 missionNamespace setVariable ["COMSPEC_ZeusCollectAllyAi", _collectAi];
 
-if (!isNil "zen_custom_modules_fnc_register") then {
+if (
+    !(missionNamespace getVariable ["COMSPEC_ZenTrackActionsRegistered", false])
+    && {!isNil "zen_custom_modules_fnc_register"}
+) then {
     [
         "COMSPEC Roleplay",
         "Balise GPS véhicule",
@@ -147,9 +156,22 @@ if (!isNil "zen_custom_modules_fnc_register") then {
         },
         _iconAlly
     ] call zen_custom_modules_fnc_register;
+
+    [
+        "COMSPEC Roleplay",
+        "Afficher les IA ennemies sur la carte",
+        {
+            [] call (missionNamespace getVariable ["COMSPEC_ZeusToggleEnemyAi", {}]);
+        },
+        _iconEnemy
+    ] call zen_custom_modules_fnc_register;
 };
 
-if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_addAction"}) then {
+if (
+    !(missionNamespace getVariable ["COMSPEC_ZenTrackActionsRegistered", false])
+    && {!isNil "zen_context_menu_fnc_createAction"}
+    && {!isNil "zen_context_menu_fnc_addAction"}
+) then {
     private _gpsAction = [
         "comspec_gps_beacon",
         "Balise GPS ATAK",
@@ -225,9 +247,48 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
         }
     ] call zen_context_menu_fnc_createAction;
     [_allyOffAction, [], 7] call zen_context_menu_fnc_addAction;
+
+    private _enemyOnAction = [
+        "comspec_enemy_ai_show",
+        "Afficher les IA ennemies sur la carte",
+        _iconEnemy,
+        {
+            [true] call comspec_overwatch_connect_fnc_setAtakShowEnemyAi;
+        },
+        {
+            !(missionNamespace getVariable ["COMSPEC_AtakShowEnemyAi", false])
+        }
+    ] call zen_context_menu_fnc_createAction;
+    [_enemyOnAction, [], 7] call zen_context_menu_fnc_addAction;
+
+    private _enemyOffAction = [
+        "comspec_enemy_ai_hide",
+        "Masquer les contacts ennemis",
+        _iconEnemy,
+        {
+            [false] call comspec_overwatch_connect_fnc_setAtakShowEnemyAi;
+        },
+        {
+            missionNamespace getVariable ["COMSPEC_AtakShowEnemyAi", false]
+        }
+    ] call zen_context_menu_fnc_createAction;
+    [_enemyOffAction, [], 7] call zen_context_menu_fnc_addAction;
+    missionNamespace setVariable ["COMSPEC_ZenTrackContextRegistered", true];
 };
 
-if (!isNil "ace_zeus_fnc_addModule") then {
+if (
+    !(missionNamespace getVariable ["COMSPEC_ZenTrackActionsRegistered", false])
+    && {!isNil "zen_custom_modules_fnc_register"}
+    && {missionNamespace getVariable ["COMSPEC_ZenTrackContextRegistered", false]
+        || {isNil "zen_context_menu_fnc_addAction"}}
+) then {
+    missionNamespace setVariable ["COMSPEC_ZenTrackActionsRegistered", true];
+};
+
+if (
+    !(missionNamespace getVariable ["COMSPEC_AceTrackActionsRegistered", false])
+    && {!isNil "ace_zeus_fnc_addModule"}
+) then {
     ["COMSPEC ATAK", "Balise GPS véhicule", {
         params ["", ["_obj", objNull]];
         if (isNull _obj) then {
@@ -252,7 +313,12 @@ if (!isNil "ace_zeus_fnc_addModule") then {
         };
         [_obj, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusToggleAllyTrack", {}]);
     }, _iconAlly] call ace_zeus_fnc_addModule;
+
+    ["COMSPEC ATAK", "Afficher les IA ennemies sur la carte", {
+        [] call (missionNamespace getVariable ["COMSPEC_ZeusToggleEnemyAi", {}]);
+    }, _iconEnemy] call ace_zeus_fnc_addModule;
+
+    missionNamespace setVariable ["COMSPEC_AceTrackActionsRegistered", true];
 };
 
-missionNamespace setVariable ["COMSPEC_ZenTrackActionsRegistered", true];
-["INFO", "Tracking", "Menus Zeus balise GPS / téléphone / IA alliée enregistrés"] call comspec_overwatch_connect_fnc_log;
+["INFO", "Tracking", "Menus Zeus balise GPS / téléphone / IA alliée / contacts ennemis enregistrés"] call comspec_overwatch_connect_fnc_log;

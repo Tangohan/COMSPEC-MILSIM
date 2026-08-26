@@ -186,9 +186,14 @@
   }
 
   function lossIcon() {
+    var html = '<span class="atak-trail-loss__x" title="Perte de liaison">✕</span>';
+    var S = window.ATAKMarkerSizes;
+    if (S && S.divIcon) {
+      return S.divIcon(L, html, 'small', { className: 'atak-trail-loss atak-compact-marker' });
+    }
     return L.divIcon({
       className: 'atak-trail-loss',
-      html: '<span class="atak-trail-loss__x" title="Perte de liaison">✕</span>',
+      html: html,
       iconSize: [18, 18],
       iconAnchor: [9, 9]
     });
@@ -384,10 +389,17 @@
   }
   setTimeout(hookUnits, 500);
 
+  function clearTrails() {
+    trailBuffers = {};
+    ghostBuffers = {};
+    renderUnitTrails();
+  }
+
   window.ATAKSseLayers = {
     refresh: refresh,
     startPolling: startPolling,
     stopPolling: stopPolling,
-    renderPayload: renderPayload
+    renderPayload: renderPayload,
+    clearTrails: clearTrails
   };
 })();

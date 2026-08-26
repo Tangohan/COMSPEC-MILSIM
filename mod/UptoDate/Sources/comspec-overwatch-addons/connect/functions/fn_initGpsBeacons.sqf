@@ -1,5 +1,5 @@
 /*
-    Relais client : balises GPS, téléphones PNJ, IA alliées ATAK.
+    Relais client : balises GPS, téléphones PNJ, IA alliées ATAK, contacts ennemis si demandés.
     Un seul joueur (indicatif Steam le plus petit) évite les doublons.
 */
 if (!hasInterface) exitWith {};
@@ -115,14 +115,20 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
         };
     };
 
+    if (missionNamespace getVariable ["COMSPEC_AtakShowEnemyAi", false]) then {
+        if (!isNil "comspec_overwatch_connect_fnc_reportEnemyAiPositions") then {
+            [] call comspec_overwatch_connect_fnc_reportEnemyAiPositions;
+        };
+    };
+
     if (!isNil "comspec_overwatch_connect_fnc_reportCrewedAirAssets") then {
         [] call comspec_overwatch_connect_fnc_reportCrewedAirAssets;
     };
-}, 8, []] call CBA_fnc_addPerFrameHandler;
+}, 3, []] call CBA_fnc_addPerFrameHandler;
 
 [{
     if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
     [] call (missionNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]);
 }, 60, []] call CBA_fnc_addPerFrameHandler;
 
-["INFO", "Tracking", "Balises GPS, téléphones et IA alliées ATAK actives"] call comspec_overwatch_connect_fnc_log;
+["INFO", "Tracking", "Balises GPS, téléphones, IA alliées et contacts ennemis ATAK actifs"] call comspec_overwatch_connect_fnc_log;

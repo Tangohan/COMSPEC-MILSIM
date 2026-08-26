@@ -8,6 +8,10 @@ params [
 ];
 if (!hasInterface) exitWith { false };
 if (isNull _unit || {!alive _unit}) exitWith { false };
+if (
+    !isNil "comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit"
+    && { [_unit] call comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit }
+) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { false };
 

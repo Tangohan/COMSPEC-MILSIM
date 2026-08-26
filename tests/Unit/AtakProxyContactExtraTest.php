@@ -29,6 +29,7 @@ final class AtakProxyContactExtraTest extends TestCase
         self::assertTrue(AtakDataRepository::isProxyContactExtra(['phone_geoloc' => true]));
         self::assertTrue(AtakDataRepository::isProxyContactExtra(['gps_beacon' => true]));
         self::assertTrue(AtakDataRepository::isProxyContactExtra(['source' => 'ally']));
+        self::assertTrue(AtakDataRepository::isProxyContactExtra(['enemy_ai' => true]));
         self::assertFalse(AtakDataRepository::isProxyContactExtra(['health' => 'ok', 'role' => 'Breacher']));
     }
 

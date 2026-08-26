@@ -67,6 +67,21 @@ final class AtakCommandIntelService
             $this->emit($tenantId, $mapId, $kind, $unitRef, 'UNIT_ACCELERATING', $unitRef . ' accélère', 'info', 40);
         }
 
+        foreach (AtakCombatEventPresenter::fromExtra($unitRef, $extra) as $combat) {
+            $this->emit(
+                $tenantId,
+                $mapId,
+                $kind,
+                $unitRef,
+                (string) $combat['type'],
+                (string) $combat['message'],
+                (string) $combat['severity'],
+                (int) $combat['debounce'],
+                'arma',
+                is_array($combat['payload'] ?? null) ? $combat['payload'] : null
+            );
+        }
+
         $health = strtolower(trim((string) ($extra['health'] ?? '')));
         if (in_array($health, ['unconscious', 'cardiac_arrest', 'incapacitated', 'down'], true)) {
             $this->emit($tenantId, $mapId, $kind, $unitRef, 'UNIT_INCAPACITATED', $unitRef . ' — personnel hors combat', 'alert', 90, 'arma');

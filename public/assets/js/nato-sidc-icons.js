@@ -301,7 +301,7 @@ window.NatoSidcIcons = (function () {
     var S = window.ATAKMarkerSizes;
     var size = S ? S.clampPref(opts.size || S.px('tactical')) : (opts.size || 19);
     opts.size = size;
-    opts.showLabel = false;
+    opts.showLabel = opts.showLabel === true;
     var mil = milsymbolSvg(opts);
     var iconW = size;
     var iconH = size;
