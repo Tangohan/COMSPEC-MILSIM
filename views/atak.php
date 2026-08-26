@@ -2356,6 +2356,7 @@ if ($atakMapConfig) {
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="perimeter" data-tool-slot="perimeter" title="Tracer un périmètre de sécurité" aria-pressed="false">Périmètre</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--zone" data-tool="aoi" data-tool-slot="aoi" title="Délimiter une zone d’intérêt" aria-pressed="false">Intérêt</button>
               <button type="button" class="atak-map-tools__btn" data-tool="line" data-tool-slot="line" title="Tracer un trait" aria-pressed="false">Trait</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="toggle-drawings" data-tool-slot="toggle-drawings" title="Masquer les tracés et zones sans les supprimer" aria-pressed="false">Masquer</button>
               <button type="button" class="atak-map-tools__btn" data-tool="clear-drawings" data-tool-slot="clear-drawings" title="Effacer les tracés et zones">Effacer</button>
             </div>
           </div>
@@ -2452,6 +2453,10 @@ if ($atakMapConfig) {
               <input type="range" id="atak-terrain-opacity" class="atak-sound-pref-slider" min="10" max="100" step="5" value="32" />
             </label>
             <div class="atak-terrain-3d-settings" id="atak-terrain-3d-settings" hidden>
+              <label class="atak-map-look__check" for="atak-scene-buildings">
+                <input type="checkbox" id="atak-scene-buildings" checked />
+                <span>Bâtiments et forêts du jeu</span>
+              </label>
               <label class="atak-map-look__row" for="atak-terrain-exaggeration">
                 <span class="atak-map-look__key">Exagération Z <span class="atak-sound-pref-val" id="atak-terrain-exaggeration-val">2.5×</span></span>
                 <input type="range" id="atak-terrain-exaggeration" class="atak-sound-pref-slider" min="1" max="4" step="0.1" value="2.5" />
@@ -2719,6 +2724,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain-3d.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-scene-3d.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-motion-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-dossier.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>

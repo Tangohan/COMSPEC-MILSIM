@@ -1965,6 +1965,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/terrain/hillshade', [\App\Controllers\Api\AtakTerrainApiController::class, 'hillshade']);
     $router->get('/api/atak/terrain/slope', [\App\Controllers\Api\AtakTerrainApiController::class, 'slope']);
     $router->get('/api/atak/terrain/contours', [\App\Controllers\Api\AtakTerrainApiController::class, 'contours']);
+    $router->get('/api/atak/scene', [\App\Controllers\Api\AtakSceneApiController::class, 'index']);
+    $router->post('/api/atak/scene/ingest', [\App\Controllers\Api\AtakSceneApiController::class, 'ingest']);
     $router->get('/api/atak/intel-events', [\App\Controllers\Api\AtakIntelEventApiController::class, 'index']);
 
     // Zones tactiques (LZ, DZ, Objectives, Danger Zones)

@@ -174,6 +174,16 @@ window.ATAKTerrain3D = (function () {
     terrainFrame = requestAnimationFrame(function () { terrainFrame = 0; drawTerrain(); });
   }
 
+  function syncHillshade() {
+    var map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
+    var pane = map && map.getPane ? map.getPane('atakHillshadePane') : null;
+    if (!pane) return;
+    /* Le maillage applique déjà l'éclairage du DEM à la texture des tuiles.
+       Le PNG reste disponible comme repli, mais ne doit pas griser une seconde
+       fois la carte lorsque WebGL a effectivement produit une image. */
+    pane.style.opacity = state.enabled && stage.classList.contains('atak-terrain-mesh-ready') ? '0' : '';
+  }
+
   function drawTerrain() {
     if (!terrainGl || !terrainGrid) return;
     var map = window.ATAKMap.getMap();
@@ -221,11 +231,14 @@ window.ATAKTerrain3D = (function () {
       } catch (error) { /* Une tuile distante sans CORS reste rendue par Leaflet. */ }
     });
     stage.classList.toggle('atak-terrain-mesh-ready', renderedTiles > 0);
+    syncHillshade();
   }
 
   function render() {
     if (!stage) return;
     stage.classList.toggle('atak-map-stage--3d', state.enabled);
+    if (!state.enabled) stage.classList.remove('atak-terrain-mesh-ready');
+    syncHillshade();
     stage.style.setProperty('--atak-map-pitch', state.pitch + 'deg');
     stage.style.setProperty('--atak-map-bearing', state.bearing + 'deg');
     stage.style.setProperty('--atak-map-bearing-number', String(state.bearing));
@@ -242,6 +255,7 @@ window.ATAKTerrain3D = (function () {
     if (pitchValue) pitchValue.textContent = state.pitch + '°';
     var exaggerationValue = document.getElementById('atak-terrain-exaggeration-val');
     if (exaggerationValue) exaggerationValue.textContent = state.verticalExaggeration.toFixed(1) + '×';
+    window.dispatchEvent(new CustomEvent('atak:terrain3dchange', { detail: { enabled: state.enabled } }));
   }
 
   function setEnabled(enabled) {
