@@ -2013,10 +2013,9 @@ class AtakDataRepository
             $fields['vehicle_id'] = null;
         }
         if ($existing) {
+            // En mode occupation : ne pas écraser l’indicatif déjà connu du manifeste.
             if (!$occupancy && $keepCallsign !== trim((string) ($existing['callsign'] ?? ''))) {
                 $fields['callsign'] = $keepCallsign;
-            } elseif ($occupancy) {
-                unset($fields['callsign']);
             }
             $set = implode(', ', array_map(fn ($k) => "`$k` = ?", array_keys($fields)));
             $params = array_values($fields);
