@@ -491,6 +491,25 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(227, '2026-08-26', 'Vue inclinée dans Affichage, pause après un refus d’accès', 'La vue de la carte se règle dans Affichage, et un refus temporaire ne sature plus le poste ni le jeu', [
+                'Dans Affichage : vue à plat ou inclinée, amplitude du relief et inclinaison, sans passer par le bouton 3D',
+                'Après un refus d’accès, le poste et Overwatch marquent une pause puis reprennent tout seuls',
+            ], [
+                'Le bouton Vue 3D reste aligné avec le choix Inclinée',
+            ], [
+                'Les réglages de vue disparaissaient d’Affichage',
+                'Un refus d’accès en rafale bloquait le poste et le jeu en même temps',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Pour le jeu : pack Overwatch 1.4.82, puis relancez Arma complètement. Si le poste reste figé, attendez une minute ou reconnectez-vous.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.82 · liaison 1.17.5'),
+            $pr(226, '2026-08-26', 'Les caméras ne saturent plus le journal', 'Une coupure sur les caméras casque ne déclenche plus d’alerte, et la position reste prioritaire', [
+                'Une caméra injoignable n’écrit plus d’avertissement dans le journal de liaison',
+                'Le suivi des unités continue même si le roster caméras n’atteint pas le poste',
+            ], [], [
+                'Un échec caméra relançait tout de suite le même envoi et remplissait le journal',
+            ], ['atak'], [
+                'Rechargez le pack jeu Overwatch 1.4.81, puis relancez Arma complètement — pas seulement la mission.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.81 · liaison 1.17.4'),
             $pr(225, '2026-08-26', 'Le hub se reconnecte si la base a coupé la session', 'Quand la base a fermé la session, le hub la rouvre tout seul au lieu d’afficher un incident technique', [
                 'Le hub reprend silencieusement si la base a coupé la session pendant une pause',
             ], [], [

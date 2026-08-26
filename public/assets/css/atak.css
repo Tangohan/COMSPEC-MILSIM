@@ -4743,8 +4743,9 @@ body.atak-theme-light .atak-chat-messages {
 .atak-map-3d-nav__compass:active { cursor: grabbing; }
 .atak-map-3d-nav__needle { display: block; transform: rotate(calc(-1 * var(--atak-map-bearing-number, 0) * 1deg)); font: 800 12px/44px ui-monospace, monospace; }
 .atak-map-3d-nav__flat { border: 1px solid #334155; border-radius: 5px; padding: 4px 9px; background: rgba(8, 16, 22, .94); color: #cbd5e1; font: 800 10px/1 ui-monospace, monospace; cursor: pointer; }
-.atak-terrain-3d-settings { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(100, 116, 139, .28); }
-.atak-terrain-3d-settings[hidden] { display: none !important; }
+.atak-terrain-3d-settings { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(100, 116, 139, .28); display: block; }
+/* Toujours visibles dans Affichage — même si un vieux HTML pose encore hidden. */
+.atak-terrain-3d-settings[hidden] { display: block !important; }
 .atak-terrain-3d-hint { margin: 6px 0 0; color: #7f9aaa; font-size: 10px; line-height: 1.35; }
 @media (prefers-reduced-motion: reduce) { #atak-map { transition: none; } }
 

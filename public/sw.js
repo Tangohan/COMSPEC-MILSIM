@@ -1,5 +1,5 @@
 /* Athena PWA — cache shell uniquement (jamais les pages HTML dynamiques). */
-const CACHE_NAME = 'athena-shell-v4';
+const CACHE_NAME = 'athena-shell-v5';
 const SHELL = [
   './manifest.webmanifest',
   './assets/css/design-system.css',
@@ -60,13 +60,31 @@ function isCacheableAssetResponse(request, response) {
   return url.indexOf('http') === 0;
 }
 
+function shouldBypassServiceWorker(request) {
+  if (isNavigationRequest(request)) {
+    return true;
+  }
+  var url = request.url || '';
+  if (url.indexOf('/api/') !== -1) {
+    return true;
+  }
+  if (url.indexOf('/atak') !== -1) {
+    return true;
+  }
+  if (url.indexOf('/uploads/') !== -1) {
+    return true;
+  }
+  return false;
+}
+
 self.addEventListener('fetch', function (event) {
   if (event.request.method !== 'GET') {
     return;
   }
 
-  // Navigations HTML : réseau strict, sans faux 503 (laisse le navigateur gérer les erreurs réelles).
-  if (isNavigationRequest(event.request)) {
+  // Carte, lectures tactiques, photos : réseau strict. Un échec ne doit pas
+  // transformer /atak en « network error » (FetchEvent).
+  if (shouldBypassServiceWorker(event.request)) {
     return;
   }
 
@@ -83,7 +101,10 @@ self.addEventListener('fetch', function (event) {
       })
       .catch(function () {
         return caches.match(event.request).then(function (cached) {
-          return cached || Response.error();
+          if (cached) {
+            return cached;
+          }
+          return fetch(event.request);
         });
       })
   );

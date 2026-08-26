@@ -250,6 +250,7 @@ window.ATAKTerrain3D = (function () {
     }
     if (nav) nav.hidden = !state.enabled;
     if (settings) {
+      settings.removeAttribute('hidden');
       settings.hidden = false;
       settings.classList.toggle('is-inclined', state.enabled);
     }

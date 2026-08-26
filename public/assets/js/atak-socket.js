@@ -5,6 +5,7 @@ window.ATAKSocket = (function () {
   var pauseUntil = 0;
   var unavailableListeners = [];
   var warnedUnavailable = false;
+  var lastPauseKind = '';
   var nativeFetch = typeof window.fetch === 'function' ? window.fetch.bind(window) : null;
 
   function getApiBase() {
@@ -56,17 +57,22 @@ window.ATAKSocket = (function () {
     return Date.now() < pauseUntil;
   }
 
-  function noteUnavailable(retrySec) {
-    var sec = Math.max(8, Number(retrySec) || 30);
+  function noteUnavailable(retrySec, kind) {
+    var sec = Math.max(10, Number(retrySec) || 20);
+    if (kind === 'forbidden') sec = Math.max(20, sec);
     pauseUntil = Date.now() + sec * 1000;
+    lastPauseKind = kind || lastPauseKind || 'unavailable';
     unavailableListeners.forEach(function (fn) {
       try { fn(sec); } catch (e) {}
     });
     if (warnedUnavailable) return;
     warnedUnavailable = true;
+    var msg = lastPauseKind === 'forbidden'
+      ? 'Accès au poste momentanément refusé. Les mises à jour reprendront toutes seules.'
+      : 'Le poste n’atteint pas ses données pour le moment. Les mises à jour reprendront toutes seules.';
     window.setTimeout(function () {
       if (window.ATAKShowError) {
-        window.ATAKShowError('Le poste n’atteint pas ses données pour le moment. Les mises à jour reprendront toutes seules.');
+        window.ATAKShowError(msg);
       }
     }, 0);
   }
@@ -78,18 +84,17 @@ window.ATAKSocket = (function () {
   if (nativeFetch) {
     window.fetch = function (input, init) {
       var url = requestUrl(input);
-      var method = requestMethod(input, init);
       var ours = isOurApiUrl(url);
       var heartbeat = isHeartbeatUrl(url);
-      if (ours && method === 'GET' && isApiPaused() && !heartbeat) {
+      if (ours && isApiPaused() && !heartbeat) {
         var remain = Math.max(1, Math.ceil((pauseUntil - Date.now()) / 1000));
         return Promise.resolve(new Response(JSON.stringify({
           ok: false,
           paused: true,
-          error: 'database_unavailable',
+          error: lastPauseKind === 'forbidden' ? 'forbidden' : 'database_unavailable',
           message: 'Service temporairement indisponible. Réessayez dans un instant.'
         }), {
-          status: 503,
+          status: lastPauseKind === 'forbidden' ? 403 : 503,
           headers: {
             'Content-Type': 'application/json',
             'Retry-After': String(remain)
@@ -97,16 +102,17 @@ window.ATAKSocket = (function () {
         }));
       }
       return nativeFetch(input, init).then(function (res) {
-        if (ours && method === 'GET' && res && res.status === 503 && isCoreRosterUrl(url)) {
-          var retry = 30;
+        if (ours && res && !heartbeat && (res.status === 403 || res.status === 429 || res.status === 503)) {
+          var retry = res.status === 403 ? 20 : 30;
           try {
             var header = res.headers.get('Retry-After');
-            if (header) retry = Math.max(8, parseInt(header, 10) || 30);
+            if (header) retry = Math.max(10, parseInt(header, 10) || retry);
           } catch (e) {}
-          noteUnavailable(retry);
+          noteUnavailable(retry, res.status === 403 ? 'forbidden' : 'unavailable');
         } else if (ours && res && res.ok && isCoreRosterUrl(url)) {
           pauseUntil = 0;
           warnedUnavailable = false;
+          lastPauseKind = '';
         }
         return res;
       });

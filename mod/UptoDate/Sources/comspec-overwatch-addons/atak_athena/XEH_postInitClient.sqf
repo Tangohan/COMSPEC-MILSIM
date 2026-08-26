@@ -354,7 +354,7 @@ private _ensureAtakApps = {
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     [] call comspec_overwatch_atak_athena_fnc_athena_bridgeVideoFeeds;
-}, 10, []] call CBA_fnc_addPerFrameHandler;
+}, 20, []] call CBA_fnc_addPerFrameHandler;
 
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};

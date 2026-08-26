@@ -1074,6 +1074,11 @@ window.ATAKMapTools = (function () {
     var panel = document.getElementById('atak-map-look-prefs');
     var btn = document.querySelector('#atak-map-tools [data-tool-ui="look"]');
     if (panel) panel.hidden = !open;
+    var terrain3d = document.getElementById('atak-terrain-3d-settings');
+    if (terrain3d) {
+      terrain3d.removeAttribute('hidden');
+      terrain3d.hidden = false;
+    }
     if (btn) {
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       btn.classList.toggle('is-active', !!open);

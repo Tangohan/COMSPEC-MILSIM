@@ -23,7 +23,7 @@ final class AtakCombatJournalAssetTest extends TestCase
         self::assertStringContainsString('_combatUrgent', $flush);
         self::assertStringContainsString('class initCombatJournal {};', $cfg);
         self::assertStringContainsString('class noteCombatEvent {};', $cfg);
-        self::assertStringContainsString('1.4.80', $cfg);
+        self::assertStringContainsString('1.4.82', $cfg);
     }
 
     public function testAnalysisJournalShowsCombatLinesAndMapHint(): void

@@ -6,6 +6,7 @@ namespace App\Middleware;
 
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\Session;
 use App\Services\Security\FileRateLimiter;
 
 /**
@@ -114,6 +115,12 @@ final class AntiScraperMiddleware
             return $next($request);
         }
 
+        // Jeu (clé / User-Agent) et session portail : pas un miroir. Un burst ATAK
+        // ne doit pas 403 le poste ni Overwatch pendant 1 h.
+        if ($this->isTacticalOrAuthenticated($path, $ua)) {
+            return $next($request);
+        }
+
         $trapKey = 'rl:mirror_trap:' . $ip;
 
         if ($path === self::TRAP_PATH || str_starts_with($path, self::TRAP_PATH . '/')) {
@@ -132,6 +139,38 @@ final class AntiScraperMiddleware
         }
 
         return $next($request);
+    }
+
+    private function isTacticalOrAuthenticated(string $path, string $ua): bool
+    {
+        if (str_starts_with($path, '/api/atak/')) {
+            return true;
+        }
+        foreach (['/api/units', '/api/chat', '/api/pings', '/api/cas', '/api/nine-line', '/api/medical-alerts', '/api/recon/', '/api/map-shapes', '/api/vehicles'] as $pfx) {
+            if ($path === $pfx || str_starts_with($path, $pfx)) {
+                return true;
+            }
+        }
+        if (str_starts_with($path, '/uploads/recon/') || str_starts_with($path, '/uploads/')) {
+            $uid = (int) (Session::get('user_id') ?? 0);
+            if ($uid > 0) {
+                return true;
+            }
+        }
+        if ($ua !== '' && stripos($ua, 'COMSPECExtension') !== false) {
+            return true;
+        }
+        $key = trim((string) ($_SERVER['HTTP_X_COMSPEC_KEY'] ?? $_SERVER['HTTP_X_ATAK_TOKEN'] ?? ''));
+        if ($key !== '') {
+            return true;
+        }
+        $auth = (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? '');
+        if (str_starts_with($auth, 'Bearer ') && trim(substr($auth, 7)) !== '') {
+            return true;
+        }
+        $uid = (int) (Session::get('user_id') ?? 0);
+
+        return $uid > 0;
     }
 
     private function isAllowedBot(string $ua): bool

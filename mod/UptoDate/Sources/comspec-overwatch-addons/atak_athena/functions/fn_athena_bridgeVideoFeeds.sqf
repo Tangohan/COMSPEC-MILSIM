@@ -17,6 +17,9 @@ if (_readyAt > 0 && {(diag_tickTime - _readyAt) < 15}) exitWith {};
 private _backUntil = missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0];
 if ((_backUntil isEqualType 0) && {diag_tickTime < _backUntil}) exitWith {};
 
+private _feedBack = missionNamespace getVariable ["COMSPEC_VideoFeedsBackoffUntil", 0];
+if ((_feedBack isEqualType 0) && {diag_tickTime < _feedBack}) exitWith {};
+
 if (!(["video_feeds"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {};
 
 
@@ -387,11 +390,11 @@ private _sig = format ["%1|%2", count _feeds, _parts joinString ";"];
 
 private _last = missionNamespace getVariable ["COMSPEC_Athena_LastVideoFeedsSig", ""];
 
-// Toujours republier régulièrement pour le TTL « en ligne », même si la liste est identique
-
 private _lastAt = missionNamespace getVariable ["COMSPEC_Athena_LastVideoFeedsAt", 0];
 
-if (_sig isEqualTo _last && {(diag_tickTime - _lastAt) < 25}) exitWith {};
+private _ttl = if ((count _feeds) isEqualTo 0) then { 90 } else { 60 };
+
+if (_sig isEqualTo _last && {(diag_tickTime - _lastAt) < _ttl}) exitWith {};
 
 missionNamespace setVariable ["COMSPEC_Athena_LastVideoFeedsSig", _sig, false];
 

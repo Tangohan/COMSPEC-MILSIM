@@ -44,6 +44,15 @@ switch (_function) do {
         ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
+    case "AccessDenied": {
+        private _sec = parseNumber _data;
+        if (!(_sec isEqualType 0) || {_sec < 10}) then { _sec = 45; };
+        if (_sec > 90) then { _sec = 60; };
+        missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + _sec, false];
+        missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + _sec, false];
+        ["WARN", "Athena", format ["Accès refusé — pause %1 s, nouvelle tentative ensuite", round _sec]] call comspec_overwatch_connect_fnc_log;
+        [format ["[Athena] Accès refusé — pause %1 s", round _sec], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
+    };
     case "RateLimited": {
         // La DLL envoie la pause (Retry-After). Repli : backoff exponentiel.
         private _fromDll = parseNumber _data;
@@ -387,26 +396,16 @@ switch (_function) do {
         if ((_path find "terrain") >= 0) then {
             missionNamespace setVariable ["COMSPEC_TerrainAbort", true, false];
         };
-        // 401 position / marqueur / relief : souvent transitoire (clé / session) — WARN, pas ERROR spam.
-        // 0 / -1 : poste injoignable (timeout), pas une saturation. 503 = vrai trop-plein.
+        // 401 / 403 / 429 / 503 / coupure : WARN, pas ERROR spam.
         private _phase = if (
-            (_code in ["0", "-1", "401", "503"])
-            && {
-                (_path find "position") >= 0
-                || {(_path find "marker") >= 0}
-                || {(_path find "terrain") >= 0}
-                || {(_path find "video-feeds") >= 0}
-                || {(_path find "flight-manifest") >= 0}
-                || {(_path find "recon") >= 0}
-                || {(_path find "weather") >= 0}
-            }
+            (_code in ["0", "-1", "401", "403", "429", "503"])
         ) then { "warn" } else { "fail" };
         ["HTTP POST", _phase, format ["code %1 · %2 (il y a %3 s)", _code, _label, _age], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
         if ((_path find "weather") >= 0) then {
             missionNamespace setVariable ["COMSPEC_Athena_LastWeatherSig", "", false];
         };
         if ((_path find "video-feeds") >= 0) then {
-            missionNamespace setVariable ["COMSPEC_Athena_LastVideoFeedsSig", "", false];
+            missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + 60, false];
         };
     };
     case "NetworkDisconnected": {
