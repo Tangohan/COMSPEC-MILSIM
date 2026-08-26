@@ -1318,6 +1318,24 @@ $atakMapsSeed = [
         'maxZoom' => 5,
         'attribution' => '&copy; Bohemia Interactive, CUP Team',
     ],
+    [
+        // GameMapStorage (successeur Arma3Map) : pas de pyramide sur GitHub Pages.
+        // JS officiel : https://atlas.plan-ops.fr/data/1/maps/sze_kimmirut.js
+        'slug' => 'sze_kimmirut',
+        'label' => 'Kimmirut',
+        'world_name' => 'sze_kimmirut',
+        'display_order' => 7,
+        'factorx' => 0.01575,
+        'factory' => 0.01575,
+        'tileSize' => 323,
+        'worldSize' => 20480,
+        'center' => [10240, 10240],
+        'defaultZoom' => 2,
+        'maxZoom' => 6,
+        'attribution' => '&copy; Bohemia Interactive, szephi',
+        'tile_cdn' => 'https://atlas.plan-ops.fr/data/1',
+        'tile_path' => 'maps/107/107/{z}/{x}/{y}.png',
+    ],
 ];
 try {
     $chkMap = $pdo->prepare('SELECT id, tile_pattern FROM atak_maps WHERE slug = ? LIMIT 1');
@@ -1329,7 +1347,10 @@ try {
         $slug = (string) $row['slug'];
         $ws = (int) $row['worldSize'];
         $ts = (int) $row['tileSize'];
-        $tilePattern = $atakTileCdn . '/maps/' . $slug . '/{z}/{x}/{y}.png';
+        $mapCdn = rtrim((string) ($row['tile_cdn'] ?? $atakTileCdn), '/');
+        $mapPath = ltrim((string) ($row['tile_path'] ?? ('maps/' . $slug . '/{z}/{x}/{y}.png')), '/');
+        $tilePattern = $mapCdn . '/' . $mapPath;
+        $hasCustomTiles = isset($row['tile_cdn']) || isset($row['tile_path']);
         $configPayload = [
             'center' => $row['center'],
             'defaultZoom' => (int) $row['defaultZoom'],
@@ -1367,7 +1388,7 @@ try {
             || str_contains($oldPattern, 'assets/maps/')
             || str_contains($oldPattern, 'ressources/MapViewers/')
             || !str_contains($oldPattern, '/maps/' . $slug . '/');
-        $nextPattern = $forceCdn ? $tilePattern : $oldPattern;
+        $nextPattern = ($forceCdn || $hasCustomTiles) ? $tilePattern : $oldPattern;
         $updMap->execute([
             (string) $row['label'],
             (string) $row['world_name'],

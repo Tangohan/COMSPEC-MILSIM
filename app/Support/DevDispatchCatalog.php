@@ -491,6 +491,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(240, '2026-08-26', 'La carte Kimmirut est disponible au poste', 'Le théâtre Kimmirut peut être choisi sur la carte du poste, comme Altis ou Malden', [
+                'Kimmirut dans la liste des cartes du poste',
+            ], [], [], ['atak'], [
+                'Rechargez la carte du poste, puis choisissez Kimmirut. Pas besoin d’un nouveau pack jeu.',
+            ], 'Portail 1.5.48'),
             $pr(239, '2026-08-26', 'La vue inclinée montre enfin le relief', 'Passer en vue inclinée ou 3D actif soulève le sol déjà relevé : les hauteurs se voient, sans case cachée à cocher', [
                 'Le sol suit l’altitude relevée dès que la vue est inclinée, y compris si Relief et profondeur est décoché',
             ], [
