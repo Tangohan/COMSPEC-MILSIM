@@ -205,6 +205,7 @@ final class SitePagesController
             'meta_description' => $dispatch['activity'] !== '' ? $dispatch['activity'] : $dispatch['title'],
             'marketingActive' => 'changelog',
             'dispatch' => $dispatch,
+            'dispatchHeadingTag' => 'h1',
             'marketingStyles' => [asset_url('assets/css/changelog.css')],
             'jsonLdExtra' => [
                 [

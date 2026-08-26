@@ -4724,6 +4724,7 @@ body.atak-theme-light .atak-chat-messages {
   white-space: nowrap;
 }
 .atak-terrain-mesh { position: absolute; inset: 0; z-index: 210; pointer-events: none; }
+.atak-terrain-mesh:not(.atak-terrain-mesh--draped) { mix-blend-mode: multiply; }
 .atak-scene-3d { position: absolute; inset: 0; z-index: 215; pointer-events: none; }
 /* Le canevas WebGL se superpose aux PNG drapés. On garde les tuiles Leaflet
    dessous : elles servent de repli pendant un chargement, une tuile CORS
@@ -4800,6 +4801,7 @@ body.atak-theme-light .atak-chat-messages {
 .atak-map-hud__k { color: #c9d4dc; font-weight: 600; text-transform: uppercase; }
 .atak-map-hud__v { color: #e2e8f0; font-weight: 700; }
 .atak-map-hud__ok { color: #34d399 !important; }
+.atak-map-hud__warn { color: #fbbf24 !important; }
 .atak-map-hud__bad { color: #f87171 !important; }
 .atak-map-hud__measure { color: #fbbf24 !important; letter-spacing: 0.02em; }
 .atak-map-hud__row[hidden] { display: none !important; }
@@ -5482,6 +5484,7 @@ body.atak-theme-light .atak-map-hud {
 body.atak-theme-light .atak-map-hud__k { color: #627d98; }
 body.atak-theme-light .atak-map-hud__v { color: #1f2933; }
 body.atak-theme-light .atak-map-hud__ok { color: #0f766e !important; }
+body.atak-theme-light .atak-map-hud__warn { color: #b45309 !important; }
 body.atak-theme-light .atak-map-hud__measure { color: #b45309 !important; }
 body.atak-theme-light .atak-route-panel {
   background: rgba(255, 255, 255, 0.96);
@@ -6006,20 +6009,21 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   white-space: nowrap;
 }
 
-/* Connection lost */
+/* Connection lost — overlay C2 (un seul panneau, un seul compte à rebours) */
 .atak-connection-lost {
   position: fixed;
-  top: var(--atak-header-h);
-  left: 50%;
-  transform: translateX(-50%);
-  background: #b91c1c;
-  color: #fff;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  inset: 0;
   z-index: 2000;
   display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(7, 10, 14, 0.72);
+  pointer-events: none;
 }
-.atak-connection-lost.show { display: block; }
+.atak-connection-lost.show {
+  display: flex;
+}
 
 /* Chargement initial Tacmap */
 .atak-boot-overlay {
@@ -10945,7 +10949,6 @@ body.atak-page--device .atak-panel-right,
 body.atak-page--device .atak-drawer--fixed,
 body.atak-page--device .atak-map-fab,
 body.atak-page--device .atak-account-panel,
-body.atak-page--device .atak-connection-lost,
 body.atak-device-embed .atak-os-strip,
 body.atak-device-embed .atak-tx-strip,
 body.atak-device-embed .atak-liaison-rail,
@@ -10958,8 +10961,7 @@ body.atak-device-embed .atak-panel-left,
 body.atak-device-embed .atak-panel-right,
 body.atak-device-embed .atak-drawer--fixed,
 body.atak-device-embed .atak-map-fab,
-body.atak-device-embed .atak-account-panel,
-body.atak-device-embed .atak-connection-lost {
+body.atak-device-embed .atak-account-panel {
   display: none !important;
 }
 body.atak-page--device,

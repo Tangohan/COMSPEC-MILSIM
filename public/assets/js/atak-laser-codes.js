@@ -13,8 +13,10 @@ window.ATAKLaserCodes = (function () {
     var base = getApiBase();
     if (!base) return;
     var url = base + '/api/atak/laser-codes?mapId=' + getMapId();
-    fetch(url).then(function (r) { return r.json(); }).then(function (data) {
-      codes = Array.isArray(data) ? data : [];
+    fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
+      if (data == null) return;
+      if (!Array.isArray(data)) return;
+      codes = data;
       var el = document.getElementById('atak-laser-codes-list');
       if (!el) return;
       if (codes.length === 0) {

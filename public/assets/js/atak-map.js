@@ -747,6 +747,7 @@ window.ATAKMap = (function () {
       attribution: config.attribution,
       tileSize: config.tileSize,
       noWrap: true,
+      crossOrigin: true,
       bounds: L.latLngBounds(L.latLng(0, 0), L.latLng(worldSize, worldSize)),
       errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
     });

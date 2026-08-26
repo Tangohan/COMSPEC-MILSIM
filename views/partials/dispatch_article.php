@@ -3,7 +3,8 @@ declare(strict_types=1);
 /** @var array<string, mixed> $dispatch */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $kind = (string) ($dispatch['kind'] ?? 'spotrep');
-$headingTag = in_array($dispatchHeadingTag ?? 'h1', ['h1', 'h2', 'h3'], true) ? $dispatchHeadingTag : 'h1';
+$dispatchHeadingTag = $dispatchHeadingTag ?? 'h1';
+$headingTag = in_array($dispatchHeadingTag, ['h1', 'h2', 'h3'], true) ? $dispatchHeadingTag : 'h1';
 ?>
 <article class="tr <?= $kind === 'techrep' ? 'tr--tech' : ($kind === 'update' ? 'tr--upd' : 'tr--spot') ?>">
     <header class="tr__head">

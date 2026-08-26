@@ -60,10 +60,11 @@ final class AtakSceneApiController
             return Response::json(['ok' => false, 'error' => 'tenant_context_required'], 403);
         }
         $mapId = max(1, (int) ($request->query('mapId') ?: 1));
+        $counts = null;
         try {
             $counts = $this->objects->countByKind($tenantId, $mapId);
         } catch (\Throwable) {
-            $counts = ['building' => 0, 'forest' => 0];
+            $counts = null;
         }
         try {
             $terrain = $this->terrain->coverageSummary($tenantId, $mapId);
@@ -86,16 +87,20 @@ final class AtakSceneApiController
             $sceneAt
         );
 
-        return Response::json([
+        $payload = [
             'ok' => true,
-            'buildings' => (int) ($counts['building'] ?? 0),
-            'forests' => (int) ($counts['forest'] ?? 0),
             'terrain_filled' => (int) ($terrain['terrain_filled'] ?? 0),
             'terrain_total' => (int) ($terrain['terrain_total'] ?? 0),
             'terrain_chunks' => (int) ($terrain['terrain_chunks'] ?? 0),
             'terrain_coverage_pct' => (int) ($terrain['terrain_coverage_pct'] ?? 0),
             'last_survey_at' => $lastSurvey,
-        ]);
+        ];
+        if (is_array($counts)) {
+            $payload['buildings'] = (int) ($counts['building'] ?? 0);
+            $payload['forests'] = (int) ($counts['forest'] ?? 0);
+        }
+
+        return Response::json($payload);
     }
 
     private static function laterStamp(?string $a, ?string $b): ?string

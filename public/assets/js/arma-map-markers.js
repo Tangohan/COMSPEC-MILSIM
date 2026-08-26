@@ -618,12 +618,18 @@ window.ArmaMapMarkers = (function () {
   /**
    * \A3\ui_f\...\warning_CA.paa → {CDN}/a3/ui_f/.../warning_ca.png
    */
+  function isBareNumericPng(rel) {
+    var s = String(rel || '').replace(/\\/g, '/').replace(/^\/+/, '');
+    return /^\d+\.(png|jpe?g|webp|svg)$/i.test(s);
+  }
+
   function armaTextureToPngUrl(texturePath) {
     var raw = String(texturePath || '').replace(/\\/g, '/').replace(/^\/+/, '');
     if (!raw || raw.charAt(0) === '#') return '';
     raw = raw.replace(/^[a-z]:\//i, '');
     if (/\.paa$/i.test(raw)) raw = raw.replace(/\.paa$/i, '.png');
     else if (!/\.(png|jpe?g|webp|svg)$/i.test(raw)) raw += '.png';
+    if (isBareNumericPng(raw)) return '';
     return relToCdnUrl(raw);
   }
 
@@ -647,8 +653,10 @@ window.ArmaMapMarkers = (function () {
     }
     var direct = data.pngUrl || data.png_url || '';
     if (direct) {
+      if (isBareNumericPng(direct)) return '';
       var rebased = rebaseStoredPngUrl(String(direct));
       if (rebased) return rebased;
+      if (isBareNumericPng(String(direct).split('/').pop())) return '';
       return String(direct);
     }
     return '';

@@ -5091,20 +5091,21 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   white-space: nowrap;
 }
 
-/* Connection lost */
+/* Connection lost — overlay C2 (un seul panneau, un seul compte à rebours) */
 .atak-connection-lost {
   position: fixed;
-  top: var(--atak-header-h);
-  left: 50%;
-  transform: translateX(-50%);
-  background: #b91c1c;
-  color: #fff;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  inset: 0;
   z-index: 2000;
   display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(7, 10, 14, 0.72);
+  pointer-events: none;
 }
-.atak-connection-lost.show { display: block; }
+.atak-connection-lost.show {
+  display: flex;
+}
 
 /* Chargement initial Tacmap */
 .atak-boot-overlay {
