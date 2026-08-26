@@ -261,9 +261,22 @@ window.ATAKUnits = (function () {
     return null;
   }
 
+  function notifyDeferredFromRoster() {
+    var deferred = false;
+    units.forEach(function (u) {
+      if (!isInLiaison(u) && resolveLiveStatus(u) !== 'delayed') return;
+      var ex = parseExtra(u);
+      if (flagOn(ex.deferred) || Number(ex.send_interval_s) >= 45) deferred = true;
+    });
+    if (window.ATAKSocket && typeof window.ATAKSocket.noteRemoteDeferred === 'function') {
+      window.ATAKSocket.noteRemoteDeferred(deferred);
+    }
+  }
+
   function publishRoster() {
     render();
     pushMarkers();
+    notifyDeferredFromRoster();
     if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
       window.ATAKRadio.onUnitsUpdated();
     }

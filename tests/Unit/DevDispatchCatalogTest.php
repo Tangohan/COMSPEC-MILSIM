@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(2, $byKind['spotrep']);
         self::assertSame(2, $byKind['techrep']);
-        self::assertSame(51, $byKind['update']);
-        self::assertCount(55, $all);
+        self::assertSame(54, $byKind['update']);
+        self::assertCount(58, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -88,6 +88,18 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($lostLink);
         self::assertSame('00235', $lostLink['number_pad']);
         self::assertStringContainsString('liaison perdue', strtolower((string) $lostLink['title']));
+        $cascade = DevDispatchCatalog::find('update', '236');
+        self::assertNotNull($cascade);
+        self::assertSame('00236', $cascade['number_pad']);
+        self::assertStringContainsString('carte', strtolower((string) $cascade['title']));
+        $sceneCount = DevDispatchCatalog::find('update', '237');
+        self::assertNotNull($sceneCount);
+        self::assertSame('00237', $sceneCount['number_pad']);
+        self::assertStringContainsString('bâtiment', strtolower((string) $sceneCount['title']));
+        $dispatchSheet = DevDispatchCatalog::find('update', '238');
+        self::assertNotNull($dispatchSheet);
+        self::assertSame('00238', $dispatchSheet['number_pad']);
+        self::assertStringContainsString('fiche de mise à jour', strtolower((string) $dispatchSheet['title']));
         self::assertNull(DevDispatchCatalog::find('spotrep', '999'));
         self::assertNull(DevDispatchCatalog::find('memo', '1'));
     }

@@ -1,33 +1,29 @@
 /* COMSPEC ATAK - Effets roleplay pour tablette cTab ingame */
 
-/* Overlay de déconnexion — visuel tactique (bande hazard, scanlines) */
+/* Overlay de déconnexion — même panneau C2 que .atak-connection-lost (pas d'ancien habillage) */
 .atak-disconnect-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background:
-    linear-gradient(180deg, rgba(5, 8, 14, 0.28) 0%, rgba(5, 8, 14, 0.12) 22%, rgba(5, 8, 14, 0.12) 100%),
-    url('/assets/img/atak-fx/liaison-perdue.png') center / cover no-repeat,
-    #05080e;
-  display: none;
-  align-items: flex-start;
-  justify-content: center;
+  inset: 0;
   z-index: 99999;
-  animation: atak-fade-in 0.3s ease-out;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: max(0.6rem, 4vh) max(0.7rem, 3vw);
+  background: rgba(7, 10, 14, 0.72);
+  pointer-events: none;
 }
 
 .atak-disconnect-content {
+  width: min(92vw, 22rem);
+  max-width: 100%;
+  padding: 0.85rem 1.05rem 0.95rem;
+  background: rgba(11, 16, 22, 0.94);
+  border: 1px solid rgba(53, 214, 161, 0.28);
+  border-radius: 4px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
   text-align: center;
-  color: #f4f7fa;
-  width: min(92vw, 720px);
-  margin-top: 7vh;
-  padding: 0.85rem 1.2rem 1rem;
-  background: rgba(6, 12, 20, 0.55);
-  border: 1px solid rgba(232, 138, 26, 0.45);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
-  letter-spacing: 0.04em;
+  color: var(--atak-c2-text, #e8eef2);
+  font-family: "IBM Plex Sans", var(--atak-font-ui, sans-serif);
 }
 
 .atak-disconnect-icon {
@@ -35,18 +31,18 @@
 }
 
 .atak-disconnect-content h2 {
-  color: #f4f7fa;
+  color: var(--atak-c2-text, #e8eef2);
   font-size: 0.95rem;
-  font-weight: 700;
-  margin: 0 0 0.35rem 0;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0.02em;
 }
 
 .atak-disconnect-content p {
-  font-size: 0.92rem;
-  margin: 0.2rem 0 0;
-  color: #e8eef2;
+  font-size: 0.82rem;
+  margin: 0.35rem 0 0;
+  color: var(--atak-c2-muted, #c2cdd4);
 }
 
 .atak-disconnect-content small {
@@ -288,12 +284,12 @@
 /* Adaptation pour petits écrans (tablette) */
 @media (max-width: 768px) {
   .atak-disconnect-content {
-    max-width: 90%;
-    padding: 20px;
+    width: min(88vw, 20rem);
+    padding: 0.7rem 0.85rem 0.75rem;
   }
   
   .atak-disconnect-content h2 {
-    font-size: 20px;
+    font-size: 0.88rem;
   }
   
   .atak-zone-warning {

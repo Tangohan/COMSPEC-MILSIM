@@ -536,9 +536,16 @@ if (!function_exists('atak_marker_icon_relpath')) {
             $normalized .= '.png';
         }
         $normalized = strtolower($normalized);
+        // Un identifiant numérique n’est pas une texture jeu (évite 1.png, 2.png… en relatif).
+        if (preg_match('/^\d+\.(png|jpg|jpeg|webp|svg)$/', $normalized) === 1) {
+            return null;
+        }
         // Segments sûrs uniquement
         $parts = array_values(array_filter(explode('/', $normalized), static fn ($p) => $p !== '' && $p !== '.' && $p !== '..'));
         if ($parts === []) {
+            return null;
+        }
+        if (count($parts) === 1 && preg_match('/^\d+\.(png|jpg|jpeg|webp|svg)$/', $parts[0]) === 1) {
             return null;
         }
 

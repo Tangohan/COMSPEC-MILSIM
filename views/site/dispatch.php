@@ -3,6 +3,7 @@ declare(strict_types=1);
 /** @var array<string, mixed> $dispatch */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $indexHref = url('nouveautes') . '#journal';
+$dispatchHeadingTag = $dispatchHeadingTag ?? 'h1';
 ?>
 <div class="cl tr-page" data-cl-root>
     <div class="cl-wrap tr-page__nav">

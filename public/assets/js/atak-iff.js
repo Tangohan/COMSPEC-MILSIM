@@ -183,11 +183,11 @@ window.ATAKIFF = (function () {
 
   function loadAssets() {
     return fetch(qs('/api/iff/assets'), { credentials: 'include', cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (assets) {
         var list = document.getElementById('atak-iff-assets-list');
         var select = document.getElementById('atak-iff-respond-asset');
-        if (!Array.isArray(assets)) assets = [];
+        if (!Array.isArray(assets)) return assets;
         renderAlerts(assets);
         if (list) {
           if (assets.length === 0) {

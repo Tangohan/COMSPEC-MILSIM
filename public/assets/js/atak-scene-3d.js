@@ -1,4 +1,5 @@
-/* ATAK — volumes tactiques remontés par le jeu (bâtiments et couverts forestiers). */
+/* ATAK — volumes tactiques remontés par le jeu (bâtiments et couverts forestiers).
+   Dessin canvas uniquement : jamais d’image d’identifiant ni d’aperçu fichier. */
 window.ATAKScene3D = (function () {
   'use strict';
 
@@ -51,7 +52,16 @@ window.ATAKScene3D = (function () {
     var bounds = boundMap.getBounds(), nw = window.ATAKMap.worldFromLatLng(bounds.getNorthWest()), se = window.ATAKMap.worldFromLatLng(bounds.getSouthEast());
     var bbox = [Math.min(nw.x,se.x), Math.min(nw.y,se.y), Math.max(nw.x,se.x), Math.max(nw.y,se.y)].join(',');
     fetch(apiBase() + '/api/atak/scene?mapId=' + encodeURIComponent(mapId()) + '&bbox=' + encodeURIComponent(bbox), { credentials: 'same-origin' })
-      .then(function (r) { return r.ok ? r.json() : null; }).then(function (data) { objects = data && Array.isArray(data.objects) ? data.objects : []; schedule(); }).catch(function () {});
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data || !Array.isArray(data.objects)) {
+          schedule();
+          return;
+        }
+        objects = data.objects;
+        schedule();
+      })
+      .catch(function () { schedule(); });
   }
   function queueLoad() { window.clearTimeout(fetchTimer); fetchTimer = window.setTimeout(loadVisible, 180); schedule(); }
   function init() {

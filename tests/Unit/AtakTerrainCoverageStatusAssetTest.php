@@ -52,11 +52,18 @@ final class AtakTerrainCoverageStatusAssetTest extends TestCase
         self::assertStringContainsString('cov.forests', $javascript);
         self::assertStringContainsString('cov.last_survey_at', $javascript);
         self::assertStringContainsString('function renderInventory', $javascript);
+        self::assertStringContainsString('function knownCount', $javascript);
         self::assertStringContainsString('Présent', $javascript);
         self::assertStringContainsString('Pas encore sur le poste', $javascript);
+        self::assertStringContainsString('Compte indisponible, réessayez', $javascript);
+        self::assertStringContainsString('Le décompte n’est pas encore disponible', $javascript);
         self::assertStringContainsString('Aucun relevé reçu pour l’instant', $javascript);
         self::assertStringContainsString('atak-terrain-inv-hillshade', $javascript);
         self::assertStringContainsString('lookPanelOpen()', $javascript);
+        self::assertStringContainsString('status === 404', $javascript);
+        self::assertStringContainsString('status === 503', $javascript);
+        self::assertStringContainsString("countStatus === 'missing'", $javascript);
+        self::assertStringContainsString("countStatus === 'retry'", $javascript);
         self::assertStringNotContainsString('JSON.stringify', $javascript);
         self::assertStringNotContainsString("textContent = JSON", $javascript);
         self::assertStringNotContainsString('coller du JSON', $javascript);
@@ -73,5 +80,13 @@ final class AtakTerrainCoverageStatusAssetTest extends TestCase
         self::assertStringContainsString("'sampled_at' => self::laterStamp(\$gridLast, \$chunkLast)", $terrain);
         self::assertStringContainsString('MAX(`received_at`)', $terrain);
         self::assertStringContainsString('MAX(`updated_at`)', $scene);
+        self::assertStringContainsString("\$payload['buildings']", $controller);
+        self::assertStringContainsString("\$payload['forests']", $controller);
+        self::assertStringContainsString('$counts = null;', $controller);
+        self::assertStringNotContainsString("\$counts = ['building' => 0, 'forest' => 0]", $controller);
+        self::assertStringContainsString("kind IN ('building', 'buildings')", $scene);
+        self::assertStringContainsString("kind IN ('forest', 'forests')", $scene);
+        self::assertStringContainsString('isMissingTable', $scene);
+        self::assertStringContainsString('1146', $scene);
     }
 }
