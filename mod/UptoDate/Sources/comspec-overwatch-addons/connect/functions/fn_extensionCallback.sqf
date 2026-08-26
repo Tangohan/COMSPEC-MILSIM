@@ -47,16 +47,19 @@ switch (_function) do {
     case "AccessDenied": {
         private _sec = parseNumber _data;
         if (!(_sec isEqualType 0) || {_sec < 10}) then { _sec = 45; };
-        if (_sec > 90) then { _sec = 60; };
+        if (_sec > 600) then { _sec = 600; };
         missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + _sec, false];
         missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + _sec, false];
+        if (_sec >= 45) then {
+            missionNamespace setVariable ["COMSPEC_SendBackoffSec", _sec, false];
+        };
         ["WARN", "Athena", format ["Accès refusé — pause %1 s, nouvelle tentative ensuite", round _sec]] call comspec_overwatch_connect_fnc_log;
         [format ["[Athena] Accès refusé — pause %1 s", round _sec], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
     };
     case "RateLimited": {
         // La DLL envoie la pause (Retry-After). Repli : backoff exponentiel.
         private _fromDll = parseNumber _data;
-        private _next = if (_fromDll > 0 && {_fromDll <= 120}) then {
+        private _next = if (_fromDll > 0 && {_fromDll <= 600}) then {
             _fromDll
         } else {
             private _prev = missionNamespace getVariable ["COMSPEC_ApiBackoffSec", 2];
@@ -65,6 +68,9 @@ switch (_function) do {
         };
         missionNamespace setVariable ["COMSPEC_ApiBackoffSec", _next, false];
         missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + _next, false];
+        if (_next >= 45) then {
+            missionNamespace setVariable ["COMSPEC_SendBackoffSec", _next, false];
+        };
         private _msg = "Athena est saturé — synchronisation ralentie quelques instants.";
         if (!(_data isEqualTo "") && {_fromDll <= 0}) then { _msg = _data; };
         ["WARN", "Tx", format ["Rate limit — pause %1 s", round _next], _msg] call comspec_overwatch_connect_fnc_log;
@@ -76,8 +82,31 @@ switch (_function) do {
     case "RateLimitClear": {
         missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];
         missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
+        missionNamespace setVariable ["COMSPEC_SendBackoffSec", 0, false];
         missionNamespace setVariable ["COMSPEC_Athena_LastWeatherSig", "", false];
         missionNamespace setVariable ["COMSPEC_Athena_LastVideoFeedsSig", "", false];
+    };
+    case "SendBackoff": {
+        // Échelle partagée : 45 s → 1 min 15 → 2 min 30 → 5 min → 10 min. 0 = reprise normale.
+        private _sec = parseNumber _data;
+        if (!(_sec isEqualType 0)) then { _sec = 0; };
+        if (_sec <= 0) then {
+            missionNamespace setVariable ["COMSPEC_SendBackoffSec", 0, false];
+            missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
+            missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", 0, false];
+        } else {
+            if (_sec < 8) then { _sec = 8; };
+            if (_sec > 600) then { _sec = 600; };
+            missionNamespace setVariable ["COMSPEC_SendBackoffSec", _sec, false];
+            missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + _sec, false];
+            missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + _sec, false];
+            [
+                "WARN",
+                "Tx",
+                format ["Liaison différée — nouvel essai dans %1 s", round _sec],
+                "Poste momentanément injoignable — envoi ralenti."
+            ] call comspec_overwatch_connect_fnc_log;
+        };
     };
     case "NetworkHiccup": {
         // Timeout / coupure : pause courte, sans crier saturation du poste.

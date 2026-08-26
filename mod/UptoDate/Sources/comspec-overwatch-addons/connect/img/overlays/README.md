@@ -4,7 +4,7 @@
 
 ## Livrés (23/08/2026 — brouillons IA)
 
-- `comspec_overlay_no_signal_ca` — liaison perdue (bande hazard, tours radio)
+- `comspec_overlay_no_signal_ca` — **ne plus utiliser** pour la perte de liaison (ancien habillage). L’overlay C2 est du texte structuré.
 - `comspec_overlay_screen_off_ca.png` — ATAK éteint
 - `comspec_overlay_static_noise_ca` — brouillage / gel / hors couverture (HUD glitch)
 - `comspec_overlay_low_signal_ca` — liaison dégradée (même famille glitch)

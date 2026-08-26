@@ -29,7 +29,12 @@ if (
 // Debounce / grâce REAPP (évite flood extension pendant spike ACE+MRH)
 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {false};
 private _lastPost = _vehicle getVariable ["COMSPEC_VehTrackLastAt", -1e9];
-if ((diag_tickTime - _lastPost) < 2.5) exitWith {false};
+private _vehGap = 2.5;
+private _sendBack = missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0];
+if (_sendBack isEqualType 0 && {_sendBack > _vehGap}) then { _vehGap = _sendBack; };
+private _backUntil = missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0];
+if ((_backUntil isEqualType 0) && {diag_tickTime < _backUntil}) exitWith {false};
+if ((diag_tickTime - _lastPost) < _vehGap) exitWith {false};
 _vehicle setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
 
 // Préparer données

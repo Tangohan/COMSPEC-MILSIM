@@ -28,7 +28,7 @@ public static class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.17.6";
+    private const string ExtensionVersion = "1.17.7";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -61,6 +61,18 @@ public static class Extension
     private static long _networkBackoffUntilTicks;
     private static int _networkBackoffSec = 1;
     private static long _lastNetworkHiccupCbTicks;
+    /// <summary>
+    /// Échelle unique pour tout le trafic sortant (position, caméras, relevés, occupants, tchat) :
+    /// 45 s → 1 min 15 → 2 min 30 → 5 min → 10 min. Entrée après 3 échecs ; 2 succès baissent d’un cran.
+    /// </summary>
+    private static readonly int[] SendBackoffLadderSec = { 45, 75, 150, 300, 600 };
+    private const int SendFailStreakToEnter = 3;
+    private const int SendOkStreakToStepDown = 2;
+    private const int SendBackoffCapSec = 600;
+    private static int _sendFailStreak;
+    private static int _sendOkStreak;
+    private static int _sendBackoffStep;
+    private static long _lastSendBackoffCbTicks;
     private static long _lastAuth401ReauthTicks;
     private static long _terrainChunkBlockedUntilTicks;
     /// <summary>Cooldown des flux caméra (best-effort) : ne pas geler position / manifeste.</summary>
@@ -537,21 +549,12 @@ public static class Extension
     }
 
     /// <summary>
-    /// 403 site-wide (anti-miroir / WAF) : pause 30–60 s, un WARN, pas de martelage.
+    /// 403 site-wide (anti-miroir / WAF) : compte dans l’échelle partagée, un WARN, pas de martelage.
     /// Position coalescée : un retry après la pause. Caméras : filet best-effort.
     /// </summary>
     private static void NoteAccessDenied(HttpResponseMessage? response, string url)
     {
-        var delaySec = Math.Clamp(ParseRetryAfterSeconds(response, 45), 30, 60);
-        var until = DateTime.UtcNow.AddSeconds(delaySec).Ticks;
-        System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, until);
-        if (IsBestEffortEndpoint(url) || IsVideoFeedsEndpoint(url) || IsHeavyIngestEndpoint(url))
-            NoteBestEffortCooldown(delaySec);
-        var now = DateTime.UtcNow.Ticks;
-        if (now - System.Threading.Interlocked.Read(ref _lastAccessDeniedCbTicks) <= TimeSpan.FromSeconds(60).Ticks)
-            return;
-        System.Threading.Interlocked.Exchange(ref _lastAccessDeniedCbTicks, now);
-        InvokeCallback("AccessDenied", delaySec.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        NoteSendFailure(403, url, response);
     }
 
     /// <summary>
@@ -639,11 +642,11 @@ public static class Extension
         {
             var ra = response.Headers.RetryAfter;
             if (ra?.Delta is { } delta)
-                return Math.Clamp((int)Math.Ceiling(delta.TotalSeconds), 1, 120);
+                return Math.Clamp((int)Math.Ceiling(delta.TotalSeconds), 1, SendBackoffCapSec);
             if (ra?.Date is { } date)
             {
                 var sec = (int)Math.Ceiling((date.UtcDateTime - DateTime.UtcNow).TotalSeconds);
-                if (sec > 0) return Math.Clamp(sec, 1, 120);
+                if (sec > 0) return Math.Clamp(sec, 1, SendBackoffCapSec);
             }
         }
         catch { /* ignore */ }
@@ -656,22 +659,149 @@ public static class Extension
                 if (doc.RootElement.TryGetProperty("retry_after", out var prop)
                     && prop.TryGetInt32(out var n)
                     && n > 0)
-                    return Math.Clamp(n, 1, 120);
+                    return Math.Clamp(n, 1, SendBackoffCapSec);
             }
         }
         catch { /* ignore */ }
         return fallback;
     }
 
+    private static int CurrentSendBackoffSec()
+    {
+        if (_sendBackoffStep <= 0) return 0;
+        var i = Math.Clamp(_sendBackoffStep - 1, 0, SendBackoffLadderSec.Length - 1);
+        return SendBackoffLadderSec[i];
+    }
+
+    private static bool IsSendDeferred() => _sendBackoffStep > 0;
+
+    private static bool CountsTowardSharedBackoff(string url, int code)
+    {
+        // Coupure caméra / météo : trop fréquente pour faire monter l’échelle à elle seule.
+        if (IsBestEffortEndpoint(url) && code <= 0) return false;
+        return true;
+    }
+
+    private static void ApplySendPause(int delaySec)
+    {
+        var until = DateTime.UtcNow.AddSeconds(Math.Clamp(delaySec, 1, SendBackoffCapSec)).Ticks;
+        System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, until);
+        System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, until);
+    }
+
+    private static void NotifySendBackoff(int sec)
+    {
+        var now = DateTime.UtcNow.Ticks;
+        if (now - System.Threading.Interlocked.Read(ref _lastSendBackoffCbTicks) <= TimeSpan.FromSeconds(2).Ticks)
+            return;
+        System.Threading.Interlocked.Exchange(ref _lastSendBackoffCbTicks, now);
+        InvokeCallback("SendBackoff", sec.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    private static void MaybeAccessDeniedCb(int delaySec)
+    {
+        var now = DateTime.UtcNow.Ticks;
+        if (now - System.Threading.Interlocked.Read(ref _lastAccessDeniedCbTicks) <= TimeSpan.FromSeconds(60).Ticks)
+            return;
+        System.Threading.Interlocked.Exchange(ref _lastAccessDeniedCbTicks, now);
+        InvokeCallback("AccessDenied", delaySec.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
     /// <summary>
-    /// Timeout / DNS / TLS : courte pause sans callback « saturé ».
+    /// Timeout / DNS / TLS : avant l’échelle, courte pause sans callback « saturé ».
+    /// Après plusieurs échecs, rejoint l’échelle partagée (45 s et plus).
     /// </summary>
     private static void NoteNetworkHiccup()
     {
-        var delaySec = Math.Clamp(_networkBackoffSec, 1, 3);
+        NoteSendFailure(0, "", null);
+    }
+
+    private static void NoteRateLimited(HttpResponseMessage? response = null)
+    {
+        NoteSendFailure(429, "", response);
+    }
+
+    private static void NoteRateLimitCleared()
+    {
+        NoteSendSuccess();
+    }
+
+    private static void NoteSendFailure(int code, string url, HttpResponseMessage? response)
+    {
+        if (!CountsTowardSharedBackoff(url, code))
+        {
+            if (IsBestEffortEndpoint(url))
+                NoteBestEffortCooldown();
+            return;
+        }
+
+        _sendOkStreak = 0;
+        _sendFailStreak++;
+
+        if (_sendBackoffStep > 0)
+        {
+            if (_sendBackoffStep < SendBackoffLadderSec.Length)
+                _sendBackoffStep++;
+        }
+        else if (_sendFailStreak >= SendFailStreakToEnter)
+        {
+            _sendBackoffStep = 1;
+        }
+
+        int delaySec;
+        if (_sendBackoffStep > 0)
+        {
+            delaySec = CurrentSendBackoffSec();
+            var ra = ParseRetryAfterSeconds(response, delaySec);
+            if (ra > delaySec)
+                delaySec = Math.Min(ra, SendBackoffCapSec);
+            ApplySendPause(delaySec);
+            if (!string.IsNullOrEmpty(url)
+                && (IsBestEffortEndpoint(url) || IsVideoFeedsEndpoint(url) || IsHeavyIngestEndpoint(url)))
+                NoteBestEffortCooldown(Math.Min(delaySec, 90));
+            NotifySendBackoff(delaySec);
+            if (code == 403)
+                MaybeAccessDeniedCb(delaySec);
+            else if (code == 429 || code == 503)
+            {
+                var nowRl = DateTime.UtcNow.Ticks;
+                if (nowRl - System.Threading.Interlocked.Read(ref _lastRateLimitCbTicks) > TimeSpan.FromSeconds(3).Ticks)
+                {
+                    System.Threading.Interlocked.Exchange(ref _lastRateLimitCbTicks, nowRl);
+                    InvokeCallback("RateLimited", delaySec.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                }
+            }
+            return;
+        }
+
+        // Anti-martelage avant l’entrée dans l’échelle (1–2 échecs).
+        if (code == 403)
+        {
+            delaySec = Math.Clamp(ParseRetryAfterSeconds(response, 20), 15, 30);
+            ApplySendPause(delaySec);
+            if (!string.IsNullOrEmpty(url)
+                && (IsBestEffortEndpoint(url) || IsVideoFeedsEndpoint(url) || IsHeavyIngestEndpoint(url)))
+                NoteBestEffortCooldown(delaySec);
+            MaybeAccessDeniedCb(delaySec);
+            return;
+        }
+        if (code == 429 || code == 503)
+        {
+            delaySec = Math.Max(8, ParseRetryAfterSeconds(response, 8));
+            delaySec = Math.Min(delaySec, 30);
+            ApplySendPause(delaySec);
+            var nowRl = DateTime.UtcNow.Ticks;
+            if (nowRl - System.Threading.Interlocked.Read(ref _lastRateLimitCbTicks) > TimeSpan.FromSeconds(3).Ticks)
+            {
+                System.Threading.Interlocked.Exchange(ref _lastRateLimitCbTicks, nowRl);
+                InvokeCallback("RateLimited", delaySec.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+            return;
+        }
+
+        delaySec = Math.Clamp(_networkBackoffSec, 1, 3);
         _networkBackoffSec = Math.Min(Math.Max(_networkBackoffSec * 2, 2), 3);
-        var until = DateTime.UtcNow.AddSeconds(delaySec).Ticks;
-        System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, until);
+        ApplySendPause(delaySec);
         var now = DateTime.UtcNow.Ticks;
         if (now - System.Threading.Interlocked.Read(ref _lastNetworkHiccupCbTicks) <= TimeSpan.FromSeconds(3).Ticks)
             return;
@@ -679,37 +809,48 @@ public static class Extension
         InvokeCallback("NetworkHiccup", delaySec.ToString(System.Globalization.CultureInfo.InvariantCulture));
     }
 
-    private static void NoteRateLimited(HttpResponseMessage? response = null)
+    private static void NoteSendSuccess()
     {
-        var next = Math.Min(_rateLimitBackoffSec * 2, 60);
-        if (_rateLimitBackoffSec < 2) _rateLimitBackoffSec = 2;
-        var delaySec = ParseRetryAfterSeconds(response, _rateLimitBackoffSec);
-        _rateLimitBackoffSec = Math.Max(next, delaySec);
-        var until = DateTime.UtcNow.AddSeconds(delaySec).Ticks;
-        System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, until);
-        var now = DateTime.UtcNow.Ticks;
-        // Évite de spammer le callback SQF (max ~1 / 3 s).
-        if (now - System.Threading.Interlocked.Read(ref _lastRateLimitCbTicks) > TimeSpan.FromSeconds(3).Ticks)
+        _sendFailStreak = 0;
+        _rateLimitBackoffSec = 2;
+        if (_sendBackoffStep <= 0)
         {
-            System.Threading.Interlocked.Exchange(ref _lastRateLimitCbTicks, now);
-            InvokeCallback("RateLimited", delaySec.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        }
-    }
-
-    private static void NoteRateLimitCleared()
-    {
-        var hadNetwork = System.Threading.Interlocked.Read(ref _networkBackoffUntilTicks) > 0;
-        _networkBackoffSec = 1;
-        System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, 0);
-        if (_rateLimitBackoffSec <= 2 && System.Threading.Interlocked.Read(ref _rateLimitUntilTicks) == 0)
-        {
-            if (hadNetwork)
+            _sendOkStreak = 0;
+            _networkBackoffSec = 1;
+            var hadPause = System.Threading.Interlocked.Read(ref _rateLimitUntilTicks) > 0
+                || System.Threading.Interlocked.Read(ref _networkBackoffUntilTicks) > 0;
+            System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, 0);
+            System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, 0);
+            if (hadPause)
                 InvokeCallback("RateLimitClear", "");
             return;
         }
-        _rateLimitBackoffSec = 2;
-        System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, 0);
-        InvokeCallback("RateLimitClear", "");
+
+        _sendOkStreak++;
+        if (_sendOkStreak < SendOkStreakToStepDown)
+        {
+            var keep = CurrentSendBackoffSec();
+            if (keep > 0)
+                ApplySendPause(keep);
+            return;
+        }
+
+        _sendOkStreak = 0;
+        _sendBackoffStep--;
+        if (_sendBackoffStep <= 0)
+        {
+            _sendBackoffStep = 0;
+            _networkBackoffSec = 1;
+            System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, 0);
+            System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, 0);
+            NotifySendBackoff(0);
+            InvokeCallback("RateLimitClear", "");
+            return;
+        }
+
+        var next = CurrentSendBackoffSec();
+        ApplySendPause(next);
+        NotifySendBackoff(next);
     }
 
     private static void HandleWeatherPostResponse(HttpResponseMessage? response, string url)
@@ -721,7 +862,6 @@ public static class Extension
         }
         if (response.IsSuccessStatusCode)
         {
-            NoteRateLimitCleared();
             InvokeCallback("WeatherOk", "");
             return;
         }
@@ -759,14 +899,14 @@ public static class Extension
         {
             NoteRateLimited(response);
             // Position / occupation / relevés : garder pour flush après backoff.
-            if (IsPositionEndpoint(url) || IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url))
+            if (!IsBestEffortEndpoint(url))
                 EnqueueForRetry(url, jsonBody);
             return;
         }
         if ((int)response.StatusCode == 403)
         {
             NoteAccessDenied(response, url);
-            if (IsPositionEndpoint(url) || IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url))
+            if (!IsBestEffortEndpoint(url))
                 EnqueueForRetry(url, jsonBody);
             return;
         }
@@ -801,7 +941,7 @@ public static class Extension
         if (code == 503)
         {
             NoteRateLimited(response);
-            if (IsPositionEndpoint(url) || IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url))
+            if (!IsBestEffortEndpoint(url))
                 EnqueueForRetry(url, jsonBody);
             return;
         }
@@ -819,7 +959,7 @@ public static class Extension
             return;
         }
         NoteNetworkHiccup();
-        if (IsPositionEndpoint(url) || IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url))
+        if (!IsBestEffortEndpoint(url))
             EnqueueForRetry(url, jsonBody);
     }
 
@@ -851,7 +991,7 @@ public static class Extension
             if ((int)response.StatusCode == 403)
             {
                 NoteAccessDenied(response, item.Url);
-                if (IsPositionEndpoint(item.Url) || IsHeavyIngestEndpoint(item.Url) || IsTacticalQueuedEndpoint(item.Url))
+                if (!IsBestEffortEndpoint(item.Url))
                     EnqueueForRetry(item.Url, item.Body);
                 return false;
             }
@@ -862,7 +1002,7 @@ public static class Extension
                 if (code == 503)
                 {
                     NoteRateLimited(response);
-                    if (IsPositionEndpoint(item.Url) || IsHeavyIngestEndpoint(item.Url) || IsTacticalQueuedEndpoint(item.Url))
+                    if (!IsBestEffortEndpoint(item.Url))
                         EnqueueForRetry(item.Url, item.Body);
                     return false;
                 }
@@ -1040,8 +1180,9 @@ public static class Extension
         {
             return;
         }
-        if (IsRateLimitedNow())
+        if (IsRateLimitedNow() || IsNetworkBackoffNow())
         {
+            EnqueueForRetry(url, jsonBody);
             return;
         }
         try
@@ -4848,6 +4989,21 @@ public static class Extension
                         || !vehicleJson.Contains("\"mod_version\"", StringComparison.Ordinal)))
                 {
                     extra.Append(",\"mod_version\":\"").Append(EscapeJson(_modVersion)).Append('"');
+                }
+                var extraNow = extra.ToString();
+                if (!extraNow.Contains("\"deferred\"", StringComparison.Ordinal)
+                    && (string.IsNullOrWhiteSpace(vehicleJson)
+                        || !vehicleJson.Contains("\"deferred\"", StringComparison.Ordinal)))
+                {
+                    if (IsSendDeferred())
+                    {
+                        extra.Append(",\"deferred\":true,\"send_interval_s\":")
+                            .Append(CurrentSendBackoffSec().ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    }
+                    else
+                    {
+                        extra.Append(",\"deferred\":false");
+                    }
                 }
                 var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"pos_y\":{posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}{aslJson},\"heading\":{headingStr},\"role\":\"{EscapeJson(role)}\"{steamJson}{sessJson}{modJson},\"extra\":{{{extra}}}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/position", payload);
