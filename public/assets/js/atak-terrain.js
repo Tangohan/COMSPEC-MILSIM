@@ -20,6 +20,7 @@ window.ATAKTerrain = (function () {
   var solEl = null;
   var sampleTimer = null;
   var lastSol = null;
+  var lastCoverage = null;
 
   function apiBase() {
     return window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : (window.ATAK_API_BASE || '');
@@ -161,7 +162,7 @@ window.ATAKTerrain = (function () {
 
   function loadCoverage() {
     if (!apiBase()) {
-      renderInventory(null);
+      renderInventory(lastCoverage);
       return Promise.resolve(false);
     }
     return fetch(apiBase() + '/api/atak/theater/coverage?mapId=' + encodeURIComponent(mapId()), {
@@ -173,13 +174,14 @@ window.ATAKTerrain = (function () {
       });
     }).then(function (j) {
       if (!j || !j.ok) {
-        renderInventory(null);
+        renderInventory(lastCoverage);
         return false;
       }
+      lastCoverage = j;
       renderInventory(j);
       return true;
     }).catch(function () {
-      renderInventory(null);
+      renderInventory(lastCoverage);
       return false;
     });
   }

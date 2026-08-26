@@ -20,6 +20,36 @@ final class AtakPollBackoffAssetTest extends TestCase
         self::assertStringNotContainsString('method === \'GET\' && isApiPaused()', $js);
     }
 
+    public function testWebClientDoesNotPauseAllGetReadsOnOneUnavailable(): void
+    {
+        $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-socket.js');
+        self::assertStringContainsString('function shouldShortCircuitPaused(url, method)', $js);
+        self::assertStringContainsString('function isMutatingMethod(method)', $js);
+        self::assertStringContainsString('shouldShortCircuitPaused(url, method)', $js);
+        self::assertStringContainsString('isCoreRosterUrl(url) || heartbeat', $js);
+        self::assertStringContainsString('Différé · mauvaise connexion', $js);
+        self::assertStringNotContainsString('if (ours && isApiPaused() && !heartbeat)', $js);
+        self::assertStringNotContainsString('Aucun rendu visuel', $js);
+    }
+
+    public function testLaserCodesAndMarkersDoNotWipeOnReadFailure(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $laser = (string) file_get_contents($root . '/public/assets/js/atak-laser-codes.js');
+        $markers = (string) file_get_contents($root . '/public/assets/js/atak-map.js');
+        $scene = (string) file_get_contents($root . '/public/assets/js/atak-scene-3d.js');
+        $air = (string) file_get_contents($root . '/public/assets/js/atak-air-assets.js');
+
+        self::assertStringContainsString('if (!Array.isArray(data)) return;', $laser);
+        self::assertStringNotContainsString('Aucun rendu visuel', $laser);
+        self::assertStringNotContainsString('Aucun rendu visuel', $markers);
+        self::assertStringContainsString('conserver les marqueurs déjà affichés', $markers);
+        self::assertStringNotContainsString('Aucun rendu visuel', $scene);
+        self::assertStringContainsString('if (!data || !Array.isArray(data.objects))', $scene);
+        self::assertStringContainsString('if (!Array.isArray(data)) return;', $air);
+        self::assertStringContainsString('.catch(function () {});', $air);
+    }
+
     public function testServiceWorkerDoesNotFailAtakNavigation(): void
     {
         $sw = (string) file_get_contents(dirname(__DIR__, 2) . '/public/sw.js');
@@ -27,7 +57,10 @@ final class AtakPollBackoffAssetTest extends TestCase
         self::assertStringContainsString("url.indexOf('/atak')", $sw);
         self::assertStringContainsString("url.indexOf('/api/')", $sw);
         self::assertStringContainsString("url.indexOf('/uploads/')", $sw);
+        self::assertStringContainsString("url.indexOf('/public/atak')", $sw);
+        self::assertStringContainsString("status: 504", $sw);
         self::assertStringNotContainsString('Response.error()', $sw);
+        self::assertStringNotContainsString('return fetch(event.request);', $sw);
     }
 
     public function testApacheDoesNotForbidExtensionOrAtakRoutes(): void

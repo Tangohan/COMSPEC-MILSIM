@@ -491,6 +491,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(236, '2026-08-26', 'La carte reste lisible si le poste tousse un instant', 'Une coupure ponctuelle ne vide plus la carte : les lectures reprennent, les pastilles et le relevé restent affichés', [
+                'Les lectures (effectifs, marqueurs, relevé, demandes médicales) continuent d’essayer, même après un refus temporaire',
+            ], [
+                'Le bandeau Différé · mauvaise connexion reste affiché le temps que la liaison se rétablisse',
+            ], [
+                'Une seule coupure faisait échouer toutes les lectures suivantes, et la carte paraissait vide',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Pas besoin d’un nouveau pack jeu pour ce correctif. Si Zeus indique que le poste n’a pas encore la vérification du relevé, attendez cette mise à jour du site puis relancez Vérifier et renvoyer.',
+            ], 'Portail 1.5.48'),
             $pr(234, '2026-08-26', 'Liaison différée quand la donnée a du mal à passer', 'Si plusieurs envois n’atteignent pas le poste, Overwatch ralentit tout petit à petit, et la carte marque une mauvaise connexion', [
                 'Après plusieurs échecs, les envois (position, caméras, relevés, occupants) passent à 45 s, puis 1 min 15, 2 min 30, jusqu’à 10 min',
                 'Sur la carte du poste : Différé · mauvaise connexion, au lieu d’une coupure',

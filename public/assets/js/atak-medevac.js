@@ -108,9 +108,10 @@ window.ATAKMedevac = (function () {
     var el = document.getElementById('atak-medevac-list');
     if (!el || !apiBase()) return;
     fetch(apiBase() + '/api/atak/medevac?mapId=' + mapId(), { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
-        var list = Array.isArray(data) ? data : [];
+        if (!Array.isArray(data)) return;
+        var list = data;
         var hasNew = false;
         var nextKnown = {};
         for (var i = 0; i < list.length; i++) {

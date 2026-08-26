@@ -63,6 +63,19 @@ window.ATAKSocket = (function () {
     return '';
   }
 
+  function isMutatingMethod(method) {
+    var m = String(method || 'GET').toUpperCase();
+    return m !== 'GET' && m !== 'HEAD' && m !== 'OPTIONS';
+  }
+
+  /* Une pause ne doit jamais couper les lectures (effectifs, marqueurs, couverture…).
+     Sinon un 503 isole le poste : toutes les lectures suivantes deviennent un faux refus. */
+  function shouldShortCircuitPaused(url, method) {
+    if (!isOurApiUrl(url) || isHeartbeatUrl(url)) return false;
+    if (!isApiPaused()) return false;
+    return isMutatingMethod(method);
+  }
+
   function isApiPaused() {
     return Date.now() < pauseUntil;
   }
@@ -173,9 +186,10 @@ window.ATAKSocket = (function () {
   if (nativeFetch) {
     window.fetch = function (input, init) {
       var url = requestUrl(input);
+      var method = requestMethod(input, init);
       var ours = isOurApiUrl(url);
       var heartbeat = isHeartbeatUrl(url);
-      if (ours && isApiPaused() && !heartbeat) {
+      if (shouldShortCircuitPaused(url, method)) {
         var remain = Math.max(1, Math.ceil((pauseUntil - Date.now()) / 1000));
         return Promise.resolve(new Response(JSON.stringify({
           ok: false,
@@ -198,12 +212,12 @@ window.ATAKSocket = (function () {
             if (header) retry = Math.max(10, parseInt(header, 10) || retry);
           } catch (e) {}
           noteUnavailable(retry, res.status === 403 ? 'forbidden' : 'unavailable');
-        } else if (ours && res && res.ok && isCoreRosterUrl(url)) {
+        } else if (ours && res && res.ok && (isCoreRosterUrl(url) || heartbeat)) {
           noteSendSuccess();
         }
         return res;
       }).catch(function (err) {
-        if (ours && !heartbeat) {
+        if (ours && !heartbeat && isMutatingMethod(method)) {
           noteUnavailable(8, 'unavailable');
         }
         throw err;
