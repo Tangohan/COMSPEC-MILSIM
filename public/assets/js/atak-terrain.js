@@ -387,6 +387,9 @@ window.ATAKTerrain = (function () {
       if (prevStamp !== j.sampled_at) lastPaintKey = '';
       if (Number(j.coverage_pct) > 0 || Number(j.filled_cells) > 0) {
         setStatus(coverageLabel());
+        var overlayFromMeta = overlayPresence(j.coverage_pct, j.filled_cells);
+        setInventoryValue('atak-terrain-inv-hillshade', overlayFromMeta);
+        setInventoryValue('atak-terrain-inv-survey', overlayFromMeta);
       } else {
         setStatusFromSurvey(j.message || coverageLabel());
       }
