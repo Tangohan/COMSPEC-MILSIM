@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -50,14 +51,7 @@ final class TenantTypeModuleAccessMiddleware
             $tenant = $this->tenants()->findById($tenantId);
         } catch (Throwable $e) {
             if ($this->isDatabaseUnavailable($e)) {
-                if (str_starts_with($request->path(), '/api/')) {
-                    return Response::json([
-                        'error' => 'database_unavailable',
-                        'message' => 'Service temporairement indisponible. Réessayez dans un instant.',
-                    ], 503)->header('Retry-After', '30');
-                }
-
-                throw $e;
+                return $this->unavailableResponse($request, $e);
             }
             throw $e;
         }
@@ -92,10 +86,33 @@ final class TenantTypeModuleAccessMiddleware
     {
         $msg = $e->getMessage();
 
-        return str_contains($msg, 'Database connection failed')
+        return Database::isLostConnection($e)
+            || str_contains($msg, 'Database connection failed')
             || str_contains($msg, 'SQLSTATE[HY000] [2002]')
-            || str_contains($msg, 'Operation not permitted')
-            || str_contains($msg, 'SQLSTATE[HY000] [2006]')
-            || str_contains($msg, 'server has gone away');
+            || str_contains($msg, 'SQLSTATE[HY000] [1045]')
+            || str_contains($msg, 'Operation not permitted');
+    }
+
+    private function unavailableResponse(Request $request, Throwable $e): Response
+    {
+        $message = function_exists('athena_error_hint') ? athena_error_hint($e->getMessage()) : '';
+        if ($message === '') {
+            $message = 'Le hub n’a pas pu s’afficher pour le moment. Réessayez dans quelques instants.';
+        }
+
+        if (str_starts_with($request->path(), '/api/')) {
+            return Response::json([
+                'error' => 'database_unavailable',
+                'message' => $message,
+            ], 503)->header('Retry-After', '30');
+        }
+
+        $reference = (string) (getenv('REQUEST_ID') ?: ($_ENV['REQUEST_ID'] ?? ''));
+        $response = Response::view('errors.500', [
+            'errorHint' => $message,
+            'errorReference' => $reference,
+        ]);
+
+        return $response->setStatusCode(503)->header('Retry-After', '30');
     }
 }

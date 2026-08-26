@@ -65,7 +65,8 @@ class ExceptionHandler
 
         $wantsJson = self::clientWantsJson();
         $rawMsg = $e->getMessage();
-        $isDbDown = str_contains($rawMsg, 'Database connection failed')
+        $isDbDown = Database::isLostConnection($e)
+            || str_contains($rawMsg, 'Database connection failed')
             || str_contains($rawMsg, 'SQLSTATE[HY000] [2002]')
             || str_contains($rawMsg, 'SQLSTATE[HY000] [1045]');
         $httpStatus = $isDbDown ? 503 : 500;

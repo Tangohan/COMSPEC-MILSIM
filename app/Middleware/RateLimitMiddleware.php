@@ -32,16 +32,18 @@ final class RateLimitMiddleware
         }
         [$max, $window, $rateKey] = $rules;
         if ($this->limiter->tooManyAttempts($rateKey, $max, $window)) {
+            $retry = max(1, min(120, $window));
             if (str_starts_with($path, '/api/')) {
                 return Response::json([
                     'error' => 'too_many_requests',
                     'message' => 'Trop de requêtes. Merci de patienter un instant.',
-                ], 429);
+                    'retry_after' => $retry,
+                ], 429)->header('Retry-After', (string) $retry);
             }
 
             return Response::view('errors.429', [
                 'title' => 'Trop de requêtes',
-            ])->setStatusCode(429);
+            ])->setStatusCode(429)->header('Retry-After', (string) $retry);
         }
 
         return $next($request);
@@ -146,6 +148,9 @@ final class RateLimitMiddleware
             return true;
         }
         if ($path === '/api/sse/v1/health') {
+            return true;
+        }
+        if (str_starts_with($path, '/uploads/')) {
             return true;
         }
         if (str_starts_with($path, '/api/atak/')) {

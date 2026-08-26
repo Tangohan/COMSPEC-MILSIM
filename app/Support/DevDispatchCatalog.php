@@ -491,6 +491,39 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(227, '2026-08-26', 'Vue inclinée dans Affichage, pause après un refus d’accès', 'La vue de la carte se règle dans Affichage, et un refus temporaire ne sature plus le poste ni le jeu', [
+                'Dans Affichage : vue à plat ou inclinée, amplitude du relief et inclinaison, sans passer par le bouton 3D',
+                'Après un refus d’accès, le poste et Overwatch marquent une pause puis reprennent tout seuls',
+            ], [
+                'Le bouton Vue 3D reste aligné avec le choix Inclinée',
+            ], [
+                'Les réglages de vue disparaissaient d’Affichage',
+                'Un refus d’accès en rafale bloquait le poste et le jeu en même temps',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Pour le jeu : pack Overwatch 1.4.82, puis relancez Arma complètement. Si le poste reste figé, attendez une minute ou reconnectez-vous.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.82 · liaison 1.17.5'),
+            $pr(226, '2026-08-26', 'Les caméras ne saturent plus le journal', 'Une coupure sur les caméras casque ne déclenche plus d’alerte, et la position reste prioritaire', [
+                'Une caméra injoignable n’écrit plus d’avertissement dans le journal de liaison',
+                'Le suivi des unités continue même si le roster caméras n’atteint pas le poste',
+            ], [], [
+                'Un échec caméra relançait tout de suite le même envoi et remplissait le journal',
+            ], ['atak'], [
+                'Rechargez le pack jeu Overwatch 1.4.81, puis relancez Arma complètement — pas seulement la mission.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.81 · liaison 1.17.4'),
+            $pr(225, '2026-08-26', 'Le hub se reconnecte si la base a coupé la session', 'Quand la base a fermé la session, le hub la rouvre tout seul au lieu d’afficher un incident technique', [
+                'Le hub reprend silencieusement si la base a coupé la session pendant une pause',
+            ], [], [
+                'Ouverture du hub après une attente : plus de page d’erreur illisible',
+            ], ['platform'], [
+                'Si l’accès reste impossible, un message clair invite à réessayer dans quelques instants, sans détail technique.',
+            ], 'Portail'),
+            $pr(224, '2026-08-26', 'Pack jeu SSE prêt à publier', 'Le pack renseignement SSE s’envoie sur le Workshop comme Overwatch : un dossier propre, sans les fichiers d’atelier', [
+                'Un dossier de publication du pack SSE, prêt à envoyer depuis le Publisher Arma 3',
+            ], [
+                'Même geste que le pack Overwatch : assembler le dossier propre, puis mettre en ligne',
+            ], [], ['intel'], [
+                'Le pack SSE se charge avec CBA et ACE3. Overwatch reste optionnel pour remonter vers Athena. Relancez Arma complètement après abonnement ou mise à jour.',
+            ], 'Pack SSE 0.7.15'),
             $pr(220, '2026-08-26', 'Menus Zeus et éditeur au rendez-vous', 'Les outils COMSPEC réapparaissent dans Zeus Enhanced, et le relevé de carte ne bloque plus le curseur', [
                 'Catégories Zeus Enhanced : COMSPEC Roleplay, COMSPEC Outils, COMSPEC SSE — même si l’outil Zeus arrive un peu après le début de mission',
                 'Relevé de toute la carte : la fenêtre d’avancement se ferme sans laisser Zeus coincé ; on peut aussi l’ouvrir au clic droit',

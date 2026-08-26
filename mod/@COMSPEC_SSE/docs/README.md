@@ -3,6 +3,7 @@
 | Document | Contenu |
 |----------|---------|
 | [INSTALLATION.md](INSTALLATION.md) | Installation et packing PBO |
+| [PUBLICATION.md](PUBLICATION.md) | Mettre le pack en ligne (Workshop, chef de mission) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Structure addons / préfixes |
 | [SSE-DATA-MODEL.md](SSE-DATA-MODEL.md) | Modèle de données |
 | [API-SQF.md](API-SQF.md) | API mission makers |

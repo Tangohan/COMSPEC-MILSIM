@@ -33,7 +33,7 @@ final class AtakSceneIngestAssetTest extends TestCase
         $cfg = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp');
         self::assertStringContainsString('class sampleScene {};', $cfg);
         self::assertStringContainsString('class sampleTheater {};', $cfg);
-        self::assertStringContainsString('1.4.80', $cfg);
+        self::assertStringContainsString('1.4.82', $cfg);
     }
 
     public function testTheaterSurveyModuleAndDialogExist(): void
@@ -135,7 +135,7 @@ final class AtakSceneIngestAssetTest extends TestCase
     public function testExtensionDoesNotTreatHttpZeroAsSaturation(): void
     {
         $cs = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('1.17.3', $cs);
+        self::assertStringContainsString('1.17.5', $cs);
         self::assertStringContainsString('IsBestEffortEndpoint', $cs);
         self::assertStringContainsString('NoteBestEffortCooldown', $cs);
         self::assertStringContainsString('IsTacticalQueuedEndpoint', $cs);
@@ -146,8 +146,16 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringNotContainsString('NoteRateLimited', $chunk);
         self::assertStringContainsString('NoteNetworkHiccup', $chunk);
 
+        self::assertStringContainsString('IsVideoFeedsEndpoint', $cs);
+        self::assertStringContainsString('NoteAccessDenied', $cs);
+        self::assertStringContainsString('COMSPECExtension/', $cs);
+        self::assertStringContainsString('AccessDenied', $cs);
+
         $cb = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_extensionCallback.sqf');
         self::assertStringContainsString('Poste momentanément injoignable', $cb);
         self::assertStringContainsString('if (_sec > 3) then { _sec = 3; }', $cb);
+        self::assertStringContainsString('COMSPEC_VideoFeedsBackoffUntil', $cb);
+        self::assertStringContainsString('case "AccessDenied":', $cb);
+        self::assertStringContainsString('Accès refusé — pause', $cb);
     }
 }

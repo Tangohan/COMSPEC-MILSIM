@@ -28,7 +28,7 @@ public static class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.17.3";
+    private const string ExtensionVersion = "1.17.5";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -37,9 +37,9 @@ public static class Extension
     private static string _callSign = "";
     /// <summary>Identifiant terminal ATAK mémorisé (RegisterTerminal / LogWrite).</summary>
     private static string _terminalUid = "";
-    private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(SyncTimeoutSeconds) };
+    private static readonly HttpClient HttpClient = CreateHttpClient(SyncTimeoutSeconds);
     /// <summary>Client dédié aux photos (PNG volumineux + liaison dégradée).</summary>
-    private static readonly HttpClient UploadHttpClient = new() { Timeout = TimeSpan.FromSeconds(UploadTimeoutSeconds) };
+    private static readonly HttpClient UploadHttpClient = CreateHttpClient(UploadTimeoutSeconds);
     private static readonly ConcurrentQueue<(string Url, string Body)> PendingPosts = new();
     private static readonly int MaxQueueSize = 500;
     private static readonly object QueueDrainLock = new();
@@ -65,6 +65,8 @@ public static class Extension
     private static long _terrainChunkBlockedUntilTicks;
     /// <summary>Cooldown des flux caméra (best-effort) : ne pas geler position / manifeste.</summary>
     private static long _bestEffortCoolUntilTicks;
+    /// <summary>Un seul WARN « accès refusé » par minute (évite le spam ERROR 403).</summary>
+    private static long _lastAccessDeniedCbTicks;
 
     /// <summary>
     /// Dernier échec d'envoi fire-and-forget (position, tchat, marqueurs...) : ces requêtes ne
@@ -83,6 +85,22 @@ public static class Extension
     private static readonly object LogFileLock = new();
 
     private static long _lastPostErrorCbTicks;
+
+    private static HttpClient CreateHttpClient(int timeoutSeconds)
+    {
+        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(timeoutSeconds) };
+        try
+        {
+            client.DefaultRequestHeaders.TryAddWithoutValidation(
+                "User-Agent",
+                "COMSPECExtension/" + ExtensionVersion);
+        }
+        catch
+        {
+            // Construction : pas de course DefaultRequestHeaders.
+        }
+        return client;
+    }
 
     // --- Photo sidecar (queue + watcher) : callExtension ne fait que signaler ---
     private sealed class ReconPhotoJob
@@ -132,8 +150,11 @@ public static class Extension
         _lastPostErrorPath = path.Replace("|", "/");
         System.Threading.Interlocked.Exchange(ref _lastPostErrorAtTicks, DateTime.UtcNow.Ticks);
 
-        // Météo : jamais d’overlay rouge. Le SQF renvoie au prochain cycle.
-        if (IsWeatherEndpoint(url) && (code <= 0 || code == 401 || code == 429 || code == 503))
+        // Météo / caméras / refus temporaire : jamais d’overlay rouge.
+        if ((IsWeatherEndpoint(url) || IsVideoFeedsEndpoint(url))
+            && (code <= 0 || code == 401 || code == 403 || code == 429 || code == 503))
+            return;
+        if (code == 403)
             return;
 
         // Remonte vers le journal SQF (anti-spam : 1 callback / 3 s max).
@@ -509,10 +530,28 @@ public static class Extension
     private static bool IsBestEffortCoolingNow() =>
         DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _bestEffortCoolUntilTicks);
 
-    private static void NoteBestEffortCooldown()
+    private static void NoteBestEffortCooldown(int seconds = 30)
     {
-        var until = DateTime.UtcNow.AddSeconds(8).Ticks;
+        var until = DateTime.UtcNow.AddSeconds(Math.Clamp(seconds, 10, 90)).Ticks;
         System.Threading.Interlocked.Exchange(ref _bestEffortCoolUntilTicks, until);
+    }
+
+    /// <summary>
+    /// 403 site-wide (anti-miroir / WAF) : pause 30–60 s, un WARN, pas de martelage.
+    /// Position coalescée : un retry après la pause. Caméras : filet best-effort.
+    /// </summary>
+    private static void NoteAccessDenied(HttpResponseMessage? response, string url)
+    {
+        var delaySec = Math.Clamp(ParseRetryAfterSeconds(response, 45), 30, 60);
+        var until = DateTime.UtcNow.AddSeconds(delaySec).Ticks;
+        System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, until);
+        if (IsBestEffortEndpoint(url) || IsVideoFeedsEndpoint(url) || IsHeavyIngestEndpoint(url))
+            NoteBestEffortCooldown(delaySec);
+        var now = DateTime.UtcNow.Ticks;
+        if (now - System.Threading.Interlocked.Read(ref _lastAccessDeniedCbTicks) <= TimeSpan.FromSeconds(60).Ticks)
+            return;
+        System.Threading.Interlocked.Exchange(ref _lastAccessDeniedCbTicks, now);
+        InvokeCallback("AccessDenied", delaySec.ToString(System.Globalization.CultureInfo.InvariantCulture));
     }
 
     /// <summary>
@@ -691,6 +730,8 @@ public static class Extension
             MaybeReauthAfter401(url);
         if (code <= 0)
             NoteBestEffortCooldown();
+        else if (code == 403)
+            NoteAccessDenied(response, url);
         else if (code == 429 || code == 503)
             NoteRateLimited(response);
     }
@@ -718,6 +759,13 @@ public static class Extension
         {
             NoteRateLimited(response);
             // Position / occupation / relevés : garder pour flush après backoff.
+            if (IsPositionEndpoint(url) || IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url))
+                EnqueueForRetry(url, jsonBody);
+            return;
+        }
+        if ((int)response.StatusCode == 403)
+        {
+            NoteAccessDenied(response, url);
             if (IsPositionEndpoint(url) || IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url))
                 EnqueueForRetry(url, jsonBody);
             return;
@@ -798,6 +846,13 @@ public static class Extension
             {
                 NoteRateLimited(response);
                 EnqueueForRetry(item.Url, item.Body);
+                return false;
+            }
+            if ((int)response.StatusCode == 403)
+            {
+                NoteAccessDenied(response, item.Url);
+                if (IsPositionEndpoint(item.Url) || IsHeavyIngestEndpoint(item.Url) || IsTacticalQueuedEndpoint(item.Url))
+                    EnqueueForRetry(item.Url, item.Body);
                 return false;
             }
             if (!response.IsSuccessStatusCode)
@@ -919,8 +974,13 @@ public static class Extension
         }
         // Relevés terrain / scène : file drainée (position d’abord). Un POST immédiat
         // pendant un relevé saturait HttpClient → timeout position (−1) puis faux 429.
-        if (IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url))
+        if (IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url) || IsVideoFeedsEndpoint(url))
         {
+            if (IsVideoFeedsEndpoint(url)
+                && (IsRateLimitedNow() || IsNetworkBackoffNow() || IsBestEffortCoolingNow()))
+            {
+                return;
+            }
             EnqueueForRetry(url, jsonBody);
             return;
         }
@@ -942,11 +1002,18 @@ public static class Extension
             AttachApiKeyHeader(req);
             _ = HttpClient.SendAsync(req).ContinueWith(t =>
             {
-                try { req.Dispose(); } catch { /* ignore */ }
                 HttpResponseMessage? resp = null;
-                if (t.Status == TaskStatus.RanToCompletion)
-                    resp = t.Result;
-                HandlePostResponse(resp, url, jsonBody);
+                try
+                {
+                    if (t.Status == TaskStatus.RanToCompletion)
+                        resp = t.Result;
+                    HandlePostResponse(resp, url, jsonBody);
+                }
+                finally
+                {
+                    try { req.Dispose(); } catch { /* ignore */ }
+                    try { resp?.Dispose(); } catch { /* ignore */ }
+                }
             });
         }
         catch
@@ -1387,6 +1454,8 @@ public static class Extension
             req.Headers.TryAddWithoutValidation("X-COMSPEC-KEY", key);
             req.Headers.Remove("Authorization");
             req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + key);
+            req.Headers.Remove("User-Agent");
+            req.Headers.TryAddWithoutValidation("User-Agent", "COMSPECExtension/" + ExtensionVersion);
         }
         var sess = _sessionToken;
         if (sess.Length > 0)

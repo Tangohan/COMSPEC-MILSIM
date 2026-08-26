@@ -7,6 +7,7 @@ namespace App\Core;
 use PDO;
 use PDOException;
 use RuntimeException;
+use Throwable;
 
 final class Database
 {
@@ -99,8 +100,7 @@ final class Database
                 $detail = $e->getMessage();
                 $transient = str_contains($detail, '2002')
                     || str_contains($detail, 'Operation not permitted')
-                    || str_contains($detail, '2006')
-                    || str_contains($detail, 'server has gone away');
+                    || self::messageLooksLikeLostConnection($detail);
                 if (!$transient || $i >= $attempts - 1) {
                     break;
                 }
@@ -125,16 +125,87 @@ final class Database
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_PERSISTENT => false,
         ];
         // Timeout TCP court (évite de bloquer un worker FPM sur une MySQL morte).
         if (defined('PDO::ATTR_TIMEOUT')) {
             $options[PDO::ATTR_TIMEOUT] = 3;
         }
-        $pdo = new PDO($dsn, $username, $password, $options);
-        // Horloge SQL stable (évite expires_at / NOW() incohérents selon le serveur hôte).
-        $pdo->exec("SET time_zone = '+00:00'");
+        if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+            $options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET time_zone = '+00:00'";
+        }
+        $pdo = new ReconnectingPdo($dsn, $username, $password, $options);
+        if (!defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+            $pdo->exec("SET time_zone = '+00:00'");
+        }
 
         return $pdo;
+    }
+
+    /**
+     * Session MySQL coupée (wait_timeout, idle FPM, paquet trop gros) — pas une panne durable.
+     */
+    public static function isLostConnection(Throwable $e): bool
+    {
+        if ($e instanceof PDOException) {
+            $driverCode = (int) ($e->errorInfo[1] ?? 0);
+            if (in_array($driverCode, [2006, 2013], true)) {
+                return true;
+            }
+            $code = $e->getCode();
+            if ($code === 2006 || $code === 2013 || $code === '2006' || $code === '2013') {
+                return true;
+            }
+        }
+
+        return self::messageLooksLikeLostConnection($e->getMessage());
+    }
+
+    public static function messageLooksLikeLostConnection(string $message): bool
+    {
+        $hay = strtolower($message);
+
+        return str_contains($hay, 'server has gone away')
+            || str_contains($hay, 'lost connection')
+            || str_contains($hay, 'general error: 2006')
+            || str_contains($hay, 'general error: 2013')
+            || str_contains($hay, 'sqlstate[hy000] [2006]')
+            || str_contains($hay, 'sqlstate[hy000] [2013]');
+    }
+
+    /**
+     * Recrée la session sur l’instance courante (les dépôts qui la gardent restent valides).
+     * Sans instance : no-op — le prochain getPdo() ouvre une connexion neuve.
+     */
+    public static function reconnect(): void
+    {
+        if (self::$pdo instanceof ReconnectingPdo) {
+            self::$pdo->reconnect();
+
+            return;
+        }
+        self::$pdo = null;
+    }
+
+    /**
+     * Exécute une opération ; si la session MySQL est morte, reconnecte une fois puis relance.
+     *
+     * @template T
+     * @param callable(): T $operation
+     * @return T
+     */
+    public static function withReconnect(callable $operation): mixed
+    {
+        try {
+            return $operation();
+        } catch (Throwable $e) {
+            if (!self::isLostConnection($e)) {
+                throw $e;
+            }
+            self::reconnect();
+
+            return $operation();
+        }
     }
 
     public static function disconnect(): void
@@ -148,10 +219,12 @@ final class Database
      */
     public function insert(string $sql, array $params = []): int
     {
-        $stmt = self::getPdo()->prepare($sql);
-        $stmt->execute($params);
+        return self::withReconnect(function () use ($sql, $params): int {
+            $stmt = self::getPdo()->prepare($sql);
+            $stmt->execute($params);
 
-        return $this->lastInsertId();
+            return $this->lastInsertId();
+        });
     }
 
     /**
@@ -169,11 +242,13 @@ final class Database
      */
     public function fetchAll(string $sql, array $params = []): array
     {
-        $stmt = self::getPdo()->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return self::withReconnect(function () use ($sql, $params): array {
+            $stmt = self::getPdo()->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return is_array($rows) ? $rows : [];
+            return is_array($rows) ? $rows : [];
+        });
     }
 
     /**
@@ -182,11 +257,13 @@ final class Database
      */
     public function fetchOne(string $sql, array $params = []): ?array
     {
-        $stmt = self::getPdo()->prepare($sql);
-        $stmt->execute($params);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return self::withReconnect(function () use ($sql, $params): ?array {
+            $stmt = self::getPdo()->prepare($sql);
+            $stmt->execute($params);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return is_array($row) ? $row : null;
+            return is_array($row) ? $row : null;
+        });
     }
 
     /**
@@ -194,9 +271,11 @@ final class Database
      */
     public function execute(string $sql, array $params = []): int
     {
-        $stmt = self::getPdo()->prepare($sql);
-        $stmt->execute($params);
+        return self::withReconnect(function () use ($sql, $params): int {
+            $stmt = self::getPdo()->prepare($sql);
+            $stmt->execute($params);
 
-        return $stmt->rowCount();
+            return $stmt->rowCount();
+        });
     }
 }

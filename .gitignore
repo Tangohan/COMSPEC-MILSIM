@@ -57,3 +57,9 @@ mod/UptoDate/build_tmp_out.txt
 mod/UptoDate/publisher/
 mod/UptoDate/COMSPECOverwatch-workshop.zip
 
+# Staging Workshop SSE (mod/@COMSPEC_SSE/workshop-pack.ps1)
+mod/@COMSPEC_SSE/build_log.txt
+mod/@COMSPEC_SSE/_build_tmp/
+mod/publisher/
+mod/COMSPEC_SSE-workshop.zip
+

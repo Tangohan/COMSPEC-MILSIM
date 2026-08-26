@@ -46,7 +46,13 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertDoesNotMatchRegularExpression('/id="atak-terrain-3d-settings"[^>]*\bhidden\b/', $view);
         self::assertStringContainsString("modeSelect.value = state.enabled ? 'inclined' : 'flat'", $javascript);
         self::assertStringContainsString('settings.hidden = false', $javascript);
+        self::assertStringContainsString('settings.removeAttribute(\'hidden\')', $javascript);
         self::assertStringNotContainsString('settings.hidden = !state.enabled', $javascript);
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak.css');
+        self::assertStringContainsString('.atak-terrain-3d-settings[hidden] { display: block !important; }', $css);
+        $tools = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-map-tools.js');
+        self::assertStringContainsString("getElementById('atak-terrain-3d-settings')", $tools);
+        self::assertStringContainsString('terrain3d.hidden = false', $tools);
     }
 
     public function testTerrainMeshKeepsTheLeafletTextureAsFallback(): void

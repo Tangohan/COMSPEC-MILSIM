@@ -742,9 +742,12 @@ window.ATAKMap = (function () {
       window.ATAKMarkerSizes.bindZoom(map);
     }
 
+    var worldSize = Number(config.worldSize) || 30720;
     var tileLayer = L.tileLayer(config.tilePattern, {
       attribution: config.attribution,
       tileSize: config.tileSize,
+      noWrap: true,
+      bounds: L.latLngBounds(L.latLng(0, 0), L.latLng(worldSize, worldSize)),
       errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
     });
     tileFailCount = 0;

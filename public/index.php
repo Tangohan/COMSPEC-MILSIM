@@ -290,9 +290,10 @@ try {
     $rawMsg = $e->getMessage();
     $isMissingRoutes = str_contains($rawMsg, 'Fichier de routage manquant')
         || (str_contains($rawMsg, 'routes/web.php') && str_contains($rawMsg, 'No such file'));
-    $isDbDown = str_contains($rawMsg, 'Database connection failed')
-        || str_contains($rawMsg, 'SQLSTATE[HY000] [2002]')
-        || str_contains($rawMsg, 'SQLSTATE[HY000] [1045]');
+    $isDbDown = (class_exists(\App\Core\Database::class) && \App\Core\Database::isLostConnection($e))
+            || str_contains($rawMsg, 'Database connection failed')
+            || str_contains($rawMsg, 'SQLSTATE[HY000] [2002]')
+            || str_contains($rawMsg, 'SQLSTATE[HY000] [1045]');
     $httpStatus = ($isMissingRoutes || $isDbDown) ? 503 : 500;
 
     if (!headers_sent()) {

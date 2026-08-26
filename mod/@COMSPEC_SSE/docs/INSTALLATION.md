@@ -8,6 +8,11 @@
 
 Optionnel : `@COMSPECOverwatch` pour la remontée Athena.
 
+## Publication Steam
+
+Le dossier à envoyer au Publisher Arma 3 est `mod/publisher/@COMSPEC_SSE` (assemblé par `workshop-pack.ps1`).  
+Guide chef de mission : [PUBLICATION.md](PUBLICATION.md). Note d’atelier : [../PACKAGING.md](../PACKAGING.md).
+
 ## Packing
 
 Les sources sont dans `mod/@COMSPEC_SSE/addons/<component>/`.

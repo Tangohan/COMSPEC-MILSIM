@@ -25,6 +25,7 @@ Remonter le choix **Vue de la carte** (À plat / Inclinée) avec **Exagération 
 - `views/atak.php`
 - `public/assets/js/atak-terrain-3d.js`
 - `public/assets/js/atak-map-tools.js`
+- `public/assets/css/atak.css`
 - `tests/Unit/AtakTerrain3dAssetTest.php`
 
 ## Vérification
@@ -33,4 +34,4 @@ Ouvrir ATAK → Position → Affichage : **Vue de la carte**, **Exagération Z**
 
 ## Statut
 
-corrigé
+corrigé (sources, 26/08 soir) — le HTML de prod 1.5.48 posait encore `hidden` sur le bloc. Le bloc est toujours affiché dans Affichage (y compris si un vieux HTML le masque), le bouton Vue 3D reste aligné sur Inclinée.

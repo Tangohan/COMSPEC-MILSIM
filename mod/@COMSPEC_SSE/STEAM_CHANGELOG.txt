@@ -1,0 +1,7 @@
+COMSPEC SSE 0.7.15 — 26/08/2026
+
+Publication Workshop
+
+• Dossier de publication propre, prêt à envoyer depuis le Publisher Arma 3
+• Même principe que le pack Overwatch : les joueurs reçoivent le pack, pas les fichiers d’atelier
+• Prérequis : CBA A3 + ACE3 ; Overwatch optionnel pour Athena

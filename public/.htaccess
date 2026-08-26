@@ -8,7 +8,11 @@
 
     # ——— Anti-miroir (HTTrack et outils similaires) ———
     # Complément Apache ; le middleware PHP AntiScraperMiddleware applique la même logique.
-    # Limite : un User-Agent peut être usurpée — frein pragmatique, pas une protection absolue.
+    # Le jeu (clé / User-Agent COMSPECExtension) et les lectures ATAK ne sont pas des miroirs.
+    RewriteCond %{HTTP:X-COMSPEC-KEY} ^$
+    RewriteCond %{HTTP:Authorization} ^$
+    RewriteCond %{HTTP_USER_AGENT} !COMSPECExtension [NC]
+    RewriteCond %{REQUEST_URI} !/api/atak/ [NC]
     RewriteCond %{HTTP_USER_AGENT} (HTTrack|Offline[\ ]?Explorer|SiteSucker|WebCopier|WebStripper|WebZIP|WebReaper|WebWhacker|Teleport|Xaldon|EmailWolf|WWWOFFLE|Mass[\ ]Downloader|WebSucker|libwww-perl|Wget/|wget/) [NC]
     RewriteRule .* - [F,L]
 

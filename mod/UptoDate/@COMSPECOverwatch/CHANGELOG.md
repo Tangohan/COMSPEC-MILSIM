@@ -1,3 +1,13 @@
+COMSPEC Overwatch 1.4.82 / Athena ATAK 1.5.48 / liaison 1.17.5 — 26/08/2026
+
+• Après un refus d’accès, pause puis reprise : plus de relance en rafale (position, caméras, relief)
+• Un seul avertissement, pas une pluie d’erreurs dans le journal
+
+COMSPEC Overwatch 1.4.81 / Athena ATAK 1.5.48 / liaison 1.17.4 — 26/08/2026
+
+• Flux caméras : une coupure n’affiche plus d’avertissement et ne relance plus tout de suite
+• Les caméras passent après la position : elles ne bloquent plus la fiche d’unité
+
 COMSPEC Overwatch 1.4.80 / Athena ATAK 1.5.48 / liaison 1.17.3 — 26/08/2026
 
 • Zeus Enhanced : les catégories COMSPEC apparaissent même si l’outil Zeus arrive un peu tard
