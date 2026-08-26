@@ -491,6 +491,23 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(234, '2026-08-26', 'Liaison différée quand la donnée a du mal à passer', 'Si plusieurs envois n’atteignent pas le poste, Overwatch ralentit tout petit à petit, et la carte marque une mauvaise connexion', [
+                'Après plusieurs échecs, les envois (position, caméras, relevés, occupants) passent à 45 s, puis 1 min 15, 2 min 30, jusqu’à 10 min',
+                'Sur la carte du poste : Différé · mauvaise connexion, au lieu d’une coupure',
+            ], [
+                'Deux envois réussis baissent d’un cran : on ne reprend pas le rythme normal d’un seul coup',
+            ], [
+                'Une pause du poste faisait croire que tout le monde était hors liaison',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Pour le jeu : pack Overwatch 1.4.84, puis relancez Arma complètement. Si la liaison est difficile, attendez : le rythme reprend tout seul dès que ça passe.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.84 · liaison 1.17.7'),
+            $pr(235, '2026-08-26', 'L’écran « Liaison perdue » reprend le look du poste', 'Quand la liaison tombe, un panneau sobre indique la reconnexion, sans l’ancien habillage ni deux compte à rebours', [], [
+                'Un seul message : Liaison perdue, puis Reconnexion dans quelques secondes',
+            ], [
+                'L’ancien habillage recouvrait le terminal, avec deux durées de reconnexion différentes',
+            ], ['atak'], [
+                'Rechargez la carte du poste. En session, un nouveau pack est nécessaire pour le terminal dans Arma.',
+            ], 'Portail 1.5.48'),
             $pr(233, '2026-08-26', 'Les signalements du jeu restent discrets si le poste est occupé', 'Quand le poste est en mise à jour, Overwatch reçoit un refus temporaire au lieu d’un écran d’incident', [], [], [
                 'Un signalement d’erreur en jeu ouvrait une page technique illisible, au lieu d’un simple refus à réessayer plus tard',
             ], ['atak'], [

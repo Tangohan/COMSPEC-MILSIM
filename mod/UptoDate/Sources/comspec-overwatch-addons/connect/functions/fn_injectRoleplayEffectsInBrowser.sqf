@@ -29,8 +29,7 @@ if (_isDisconnected) then {
     private _remaining = _disconnectInfo get "remaining_seconds";
     _jsCode = _jsCode + format [
         "if (window.AtakRoleplayEffects) { " +
-        "  AtakRoleplayEffects.showConnectionError('Liaison ATAK perdue', 'Reconnexion dans %1s'); " +
-        "  AtakRoleplayEffects.applyMapInterference(0.6); " +
+        "  AtakRoleplayEffects.showConnectionError('Liaison perdue', 'Reconnexion dans %1 s'); " +
         "}",
         _remaining
     ];

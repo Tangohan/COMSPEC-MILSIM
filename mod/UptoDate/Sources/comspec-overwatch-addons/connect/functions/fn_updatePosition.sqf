@@ -164,6 +164,12 @@ private _posMin = missionNamespace getVariable ["COMSPEC_PositionMinInterval", 5
 if (!(_posMin isEqualType 0)) then { _posMin = 5; };
 private _heartbeat = missionNamespace getVariable ["COMSPEC_HeartbeatInterval", 30];
 if (!(_heartbeat isEqualType 0)) then { _heartbeat = 30; };
+private _sendBack = missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0];
+if (!(_sendBack isEqualType 0)) then { _sendBack = 0; };
+if (_sendBack > 0) then {
+    _posMin = _posMin max _sendBack;
+    _heartbeat = _heartbeat max _sendBack;
+};
 private _policy = missionNamespace getVariable ["COMSPEC_NetworkPolicy", 2];
 if (!(_policy isEqualType 0)) then { _policy = 2; };
 _policy = (round _policy) max 0 min 2;
@@ -483,6 +489,13 @@ _vehJson = _vehJson + format [
     _telKind,
     round _histMin
 ];
+private _sendBackFlag = missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0];
+if (!(_sendBackFlag isEqualType 0)) then { _sendBackFlag = 0; };
+if (_sendBackFlag >= 45) then {
+    _vehJson = _vehJson + format [",""deferred"":true,""send_interval_s"":%1", round _sendBackFlag];
+} else {
+    _vehJson = _vehJson + ",""deferred"":false";
+};
 private _combatFrag = [] call comspec_overwatch_connect_fnc_combatEventsJson;
 if (_combatFrag isEqualType "" && {_combatFrag isNotEqualTo ""}) then {
     _vehJson = _vehJson + _combatFrag;

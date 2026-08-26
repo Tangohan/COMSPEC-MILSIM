@@ -600,6 +600,7 @@ if (hasInterface) then {
     missionNamespace setVariable ["COMSPEC_lastVehSig", "", false];
     missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
     missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];
+    missionNamespace setVariable ["COMSPEC_SendBackoffSec", 0, false];
     missionNamespace setVariable ["COMSPEC_PositionTrail", [], false];
     missionNamespace setVariable ["COMSPEC_ImmobileSince", 0, false];
     missionNamespace setVariable ["COMSPEC_ImmobileAlerted", false, false];

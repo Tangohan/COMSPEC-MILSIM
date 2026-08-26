@@ -1,3 +1,9 @@
+COMSPEC Overwatch 1.4.84 / Athena ATAK 1.5.48 / liaison 1.17.7 — 26/08/2026
+
+• Si plusieurs envois n’atteignent pas le poste, tout ralentit petit à petit (45 s, puis 1 min 15, jusqu’à 10 min)
+• Deux envois réussis baissent d’un cran : on ne reprend pas le rythme normal d’un seul coup
+• La carte du poste affiche Différé · mauvaise connexion
+
 COMSPEC Overwatch 1.4.83 / Athena ATAK 1.5.48 / liaison 1.17.6 — 26/08/2026
 
 • Relevé de la carte : Vérifier et renvoyer compare le jeu avec le poste, puis renvoie ce qui manque
