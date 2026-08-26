@@ -411,6 +411,13 @@ final class AtakIcemanReportCatalog
         }
         if ($type === 'BDA') {
             $reattack = mb_strtolower((string) ($fields['reattack'] ?? ''));
+            // « No Reattack Required » contient « required » : ne pas le traiter comme une reprise.
+            if (str_contains($reattack, 'no reattack')
+                || str_contains($reattack, 'pas de reprise')
+                || str_contains($reattack, 'non requise')
+                || str_contains($reattack, 'not required')) {
+                return 'ROUTINE';
+            }
             if (str_contains($reattack, 'required') || str_contains($reattack, 'requise')) {
                 return 'PRIORITY';
             }
