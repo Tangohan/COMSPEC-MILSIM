@@ -20,6 +20,24 @@ private _unit = player;
 private _pos = getPosASL _unit;
 private _dir = getDir _unit;
 private _grid = mapGridPosition _unit;
+private _overlayCam = objNull;
+private _overlayHost = objNull;
+private _overlayRtt = "";
+private _overlayKind = "";
+if (!isNil "comspec_overwatch_connect_fnc_getActiveCaptureCam") then {
+    private _cap = [] call comspec_overwatch_connect_fnc_getActiveCaptureCam;
+    if ((_cap isEqualType []) && {(count _cap) >= 4}) then {
+        _overlayCam = _cap select 0;
+        _overlayHost = _cap select 1;
+        _overlayRtt = _cap select 2;
+        _overlayKind = _cap select 3;
+    };
+};
+if (!isNull _overlayCam) then {
+    _pos = getPosASL _overlayCam;
+    _dir = getDir _overlayCam;
+    _grid = mapGridPosition _overlayCam;
+};
 private _author = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_author isEqualTo "") then { _author = name _unit };
 private _sideStr = "WEST";
@@ -32,8 +50,28 @@ switch (side _unit) do {
 private _missionId = missionNamespace getVariable ["COMSPEC_MissionId", "op_1"];
 private _device = toUpper _deviceType;
 if (_device isEqualTo "") then { _device = "CTAB"; };
+if (!isNull _overlayCam && {_feedId isEqualTo ""}) then {
+    if (_overlayKind in ["hcam", "hcam_pip"]) then {
+        _device = "HELMET";
+        private _uid = "";
+        if (!isNull _overlayHost) then { _uid = getPlayerUID _overlayHost; };
+        if (_uid isEqualTo "") then { _uid = netId _overlayHost; };
+        if (_uid isEqualTo "") then { _uid = str _overlayHost; };
+        _feedId = format ["helmet:%1", _uid];
+    };
+    if (_overlayKind in ["uav_pip", "tgp"]) then {
+        _device = "DRONE";
+        private _netId = if (!isNull _overlayHost) then { netId _overlayHost } else { "" };
+        if (_netId isEqualTo "") then { _netId = str _overlayHost; };
+        _feedId = format ["drone:%1", _netId];
+    };
+};
 private _capturedAt = str (floor time);
 private _unitName = if (_feedId isEqualTo "") then { name _unit } else { _feedId };
+if (!isNull _overlayHost) then {
+    private _hostName = name _overlayHost;
+    if (_hostName isNotEqualTo "") then { _unitName = _hostName; };
+};
 
 private _fxProfile = "";
 private _fxIntensity = 0;
@@ -206,6 +244,67 @@ private _fnc_armaPngCapture = {
     _png
 };
 
+// Overlay ATAK / casque / tourelle : le JPEG BCE peut être la vue soldat si la
+// caméra regardée est en rendu vers texture. Forcer un cliché scène.
+if (
+    !isNull _overlayCam
+    && {_skipArmaShot}
+    && {!(missionNamespace getVariable ["COMSPEC_OverlayCamPromoted", false])}
+) then {
+    _skipArmaShot = false;
+};
+
+if (
+    !_skipArmaShot
+    && {_alignDevicePov}
+    && {!isNull _overlayCam}
+    && {isNull curatorCamera}
+) exitWith {
+    if (missionNamespace getVariable ["COMSPEC_ReconCaptureBusy", false]) exitWith { false };
+    missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", true, false];
+    [_caption, _device, _feedId] spawn {
+        params ["_caption", "_device", "_feedId"];
+
+        if (!isNil "ace_interact_menu_fnc_hideMenu") then {
+            [] call ace_interact_menu_fnc_hideMenu;
+        };
+        showHUD false;
+
+        private _restore = [];
+        if (!isNil "comspec_overwatch_connect_fnc_promoteCaptureCam") then {
+            _restore = [true] call comspec_overwatch_connect_fnc_promoteCaptureCam;
+            if (!(_restore isEqualType [])) then { _restore = []; };
+        };
+
+        uiSleep 0.16;
+
+        private _png = format [
+            "COMSPEC_%1_%2.png",
+            (floor diag_tickTime) toFixed 0,
+            (floor random 99999) toFixed 0
+        ];
+        private _shotOk = screenshot _png;
+        missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
+
+        showHUD true;
+        if ((count _restore) >= 3 && {!isNil "comspec_overwatch_connect_fnc_restoreCaptureCam"}) then {
+            _restore call comspec_overwatch_connect_fnc_restoreCaptureCam;
+        };
+
+        if (_shotOk isEqualType true && {!_shotOk}) then {
+            missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
+            missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
+            ["COMSPEC_Error", ["Capture refusée par le jeu — passez la qualité HDR au moins sur Moyen, puis reprenez la photo."]] call comspec_overwatch_connect_fnc_showNotification;
+            missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
+        } else {
+            uiSleep 1.25;
+            [_png, _caption, _device, _feedId, true, false] call comspec_overwatch_connect_fnc_captureReconImage;
+            missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
+        };
+    };
+    true
+};
+
 // Casque / drone : `screenshot` capture la vue courante (3e personne si le
 // joueur y est). On bascule 2–3 frames en 1re personne / tourelle UAV,
 // on cliche, on restaure. Pas pour les aperçus périodiques (alignDevicePov=false)
@@ -213,6 +312,7 @@ private _fnc_armaPngCapture = {
 if (
     !_skipArmaShot
     && {_alignDevicePov}
+    && {isNull _overlayCam}
     && {_device in ["HELMET", "DRONE"]}
     && {isNull curatorCamera}
 ) exitWith {
