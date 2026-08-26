@@ -491,6 +491,20 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(225, '2026-08-26', 'Le hub se reconnecte si la base a coupé la session', 'Quand la base a fermé la session, le hub la rouvre tout seul au lieu d’afficher un incident technique', [
+                'Le hub reprend silencieusement si la base a coupé la session pendant une pause',
+            ], [], [
+                'Ouverture du hub après une attente : plus de page d’erreur illisible',
+            ], ['platform'], [
+                'Si l’accès reste impossible, un message clair invite à réessayer dans quelques instants, sans détail technique.',
+            ], 'Portail'),
+            $pr(224, '2026-08-26', 'Pack jeu SSE prêt à publier', 'Le pack renseignement SSE s’envoie sur le Workshop comme Overwatch : un dossier propre, sans les fichiers d’atelier', [
+                'Un dossier de publication du pack SSE, prêt à envoyer depuis le Publisher Arma 3',
+            ], [
+                'Même geste que le pack Overwatch : assembler le dossier propre, puis mettre en ligne',
+            ], [], ['intel'], [
+                'Le pack SSE se charge avec CBA et ACE3. Overwatch reste optionnel pour remonter vers Athena. Relancez Arma complètement après abonnement ou mise à jour.',
+            ], 'Pack SSE 0.7.15'),
             $pr(220, '2026-08-26', 'Menus Zeus et éditeur au rendez-vous', 'Les outils COMSPEC réapparaissent dans Zeus Enhanced, et le relevé de carte ne bloque plus le curseur', [
                 'Catégories Zeus Enhanced : COMSPEC Roleplay, COMSPEC Outils, COMSPEC SSE — même si l’outil Zeus arrive un peu après le début de mission',
                 'Relevé de toute la carte : la fenêtre d’avancement se ferme sans laisser Zeus coincé ; on peut aussi l’ouvrir au clic droit',

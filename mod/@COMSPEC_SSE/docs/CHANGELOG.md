@@ -1,5 +1,10 @@
 # Changelog COMSPEC SSE
 
+## 0.7.15 — Pack Workshop prêt à publier
+
+- Dossier de publication `publisher/@COMSPEC_SSE` : même flux que Overwatch (compiler, assembler un pack propre, envoyer)
+- Le téléchargement Steam ne contient pas les fichiers d’atelier
+
 ## 0.7.5 — Compat plaque ACE Medical → SSE
 
 - Addon `compat_ace` : vérification dog tag ACE affiche l'identité SSE (nom, n° ID, groupe sanguin)

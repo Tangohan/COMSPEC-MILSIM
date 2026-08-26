@@ -2,7 +2,7 @@
 
 Addon Arma 3 autonome — **Sensitive Site Exploitation** (CBA + ACE3).
 
-Version actuelle : **V0.7.4**
+Version actuelle : **V0.7.15**
 
 ## Contenu
 
@@ -28,6 +28,13 @@ Version actuelle : **V0.7.4**
 ## Installation
 
 Voir [docs/INSTALLATION.md](docs/INSTALLATION.md)
+
+## Publication Workshop
+
+Le pack à envoyer sur Steam est le dossier **propre** `mod/publisher/@COMSPEC_SSE` (pas le dossier de travail).
+
+- Chef de mission : [docs/PUBLICATION.md](docs/PUBLICATION.md)
+- Atelier (compilation) : [PACKAGING.md](PACKAGING.md)
 
 ## API rapide
 

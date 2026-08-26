@@ -34,6 +34,9 @@ if (!function_exists('athena_error_hint')) {
             || str_contains($raw, 'SQLSTATE[HY000] [1045]')
             || str_contains($raw, 'Connection refused')
             || str_contains($raw, 'server has gone away')
+            || str_contains($raw, 'Lost connection')
+            || str_contains($raw, 'General error: 2006')
+            || str_contains($raw, 'General error: 2013')
             || str_contains($raw, 'Database connection failed')
             || str_contains($raw, 'Operation not permitted');
         if ($dbUnreachable) {
