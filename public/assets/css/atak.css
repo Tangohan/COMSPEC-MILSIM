@@ -2690,7 +2690,8 @@ body.atak-hints-hidden .atak-panel-hint {
 #atak-map .leaflet-div-icon.atak-air-asset-marker,
 #atak-map .leaflet-div-icon.atak-designator-marker,
 #atak-map .leaflet-div-icon.atak-intel-marker,
-#atak-map .leaflet-div-icon.atak-sse-layer-marker {
+#atak-map .leaflet-div-icon.atak-sse-layer-marker,
+#atak-map .leaflet-div-icon.atak-trail-loss {
   background: transparent !important;
   border: none !important;
 }
@@ -4710,6 +4711,10 @@ body.atak-theme-light .atak-chat-messages {
 }
 .atak-map-stage.atak-map-stage--3d #atak-map .leaflet-marker-icon.atak-marker-selected .atak-marker-glyph {
   transform: var(--atak-billboard) scale(calc(var(--atak-zoom-scale, 1) * 1.25));
+}
+.atak-map-stage.atak-map-stage--3d #atak-map .atak-trail-loss .atak-marker-glyph,
+.atak-map-stage.atak-map-stage--3d #atak-map .atak-trail-loss .atak-marker-billboard {
+  transform: none;
 }
 .atak-map-stage.atak-map-stage--3d #atak-map .leaflet-popup-content-wrapper,
 .atak-map-stage.atak-map-stage--3d #atak-map .leaflet-popup-tip-container {

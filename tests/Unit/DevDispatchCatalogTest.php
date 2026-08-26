@@ -21,6 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(2, $byKind['spotrep']);
         self::assertSame(2, $byKind['techrep']);
+        self::assertSame(58, $byKind['update']);
+        self::assertCount(62, $all);
         self::assertSame(57, $byKind['update']);
         self::assertCount(61, $all);
     }
@@ -108,10 +110,14 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($relief3d);
         self::assertSame('00239', $relief3d['number_pad']);
         self::assertStringContainsString('relief', strtolower((string) $relief3d['title']));
-        $aceMenu = DevDispatchCatalog::find('update', '242');
-        self::assertNotNull($aceMenu);
-        self::assertSame('00242', $aceMenu['number_pad']);
-        self::assertStringContainsString('actions', strtolower((string) $aceMenu['title']));
+        $kimmirut = DevDispatchCatalog::find('update', '240');
+        self::assertNotNull($kimmirut);
+        self::assertSame('00240', $kimmirut['number_pad']);
+        self::assertStringContainsString('kimmirut', strtolower((string) $kimmirut['title']));
+        $lossCross = DevDispatchCatalog::find('update', '241');
+        self::assertNotNull($lossCross);
+        self::assertSame('00241', $lossCross['number_pad']);
+        self::assertStringContainsString('croix de perte de liaison', strtolower((string) $lossCross['title']));
         self::assertNull(DevDispatchCatalog::find('spotrep', '999'));
         self::assertNull(DevDispatchCatalog::find('memo', '1'));
     }

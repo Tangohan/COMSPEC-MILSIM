@@ -520,7 +520,7 @@ foreach ($dataSummary as $k => $v) {
                             <?php endforeach; ?>
                         </select>
                         <p class="text-xs text-slate-500 mt-1.5">
-                            Carte proposée en premier sur la Tacmap. Les opérateurs peuvent encore changer de carte ou d’espace mission depuis l’en-tête lorsque plusieurs cartes sont disponibles.
+                            Carte proposée en premier sur la Tacmap (Altis, Malden, Kimmirut, et les autres théâtres de la liste). Les opérateurs peuvent encore changer de carte ou d’espace mission depuis l’en-tête lorsque plusieurs cartes sont disponibles.
                         </p>
                     </div>
                 </div>

@@ -206,21 +206,19 @@
 .atak-trail-loss {
   background: transparent !important;
   border: 0 !important;
+  overflow: visible !important;
 }
 .atak-trail-loss__x {
   display: block;
-  width: 18px;
-  height: 18px;
-  line-height: 18px;
+  width: 8px;
+  height: 8px;
+  line-height: 8px;
   text-align: center;
-  color: #fecaca;
-  font-size: 15px;
-  font-weight: 800;
+  color: #f87171;
+  font-size: 7px;
+  font-weight: 700;
   text-shadow:
-    0 0 2px #7f1d1d,
-    0 1px 0 #111827,
-    1px 0 0 #111827,
-    -1px 0 0 #111827,
-    0 -1px 0 #111827;
+    0 0 1px #111827,
+    0 1px 0 #0b0d12;
   pointer-events: none;
 }

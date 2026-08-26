@@ -120,6 +120,7 @@ class AtakController
                 'minZoom' => (int) ($c['minZoom'] ?? 0),
                 'maxZoom' => (int) ($c['maxZoom'] ?? 6),
                 'tileSize' => (int) ($c['tileSize'] ?? 212),
+                'worldSize' => (int) ($c['worldSize'] ?? 30720),
                 'attribution' => $c['attribution'] ?? '&copy; Bohemia Interactive',
                 'crs' => $c['crs'] ?? ['factorx' => 0.006839, 'factory' => 0.006836, 'tileWidth' => 212],
                 'offsetX' => isset($c['offset_x']) ? (float) $c['offset_x'] : 0,
