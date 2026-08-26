@@ -43,6 +43,10 @@ missionNamespace setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
 [] call comspec_overwatch_connect_fnc_attachAtakDamageHandlers;
 [] call comspec_overwatch_connect_fnc_initCombatJournal;
 
+// ACE recopie parfois les self-actions objet sur la nouvelle unité : retirer, ne pas ré-empiler.
+[] call comspec_overwatch_connect_fnc_aceSweepPlayerSelfActions;
+missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
+
 ["INFO", "Respawn", format ["Grâce %1s — médical / MessageBox / sync gelés", _graceSec]] call comspec_overwatch_connect_fnc_log;
 
 // Une seule ré-armement planifié (dernier respawn gagne)

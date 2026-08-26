@@ -42,7 +42,8 @@ if (
     diag_log "[COMSPEC ATAK] ACE Interact menus skipped";
 };
 
-// Respawn / REAPP : grâce + menus ACE différés — rebind tracking via initVehicleTracking
+// Respawn / REAPP : grâce + tracking. Les menus ACE sont en classe CAManBase :
+// on ne les ré-installe pas (sinon dump vertical). On retire seulement les copies objet.
 if (isNil "COMSPEC_ATAKRespawnEH") then {
     COMSPEC_ATAKRespawnEH = true;
     player addEventHandler ["Respawn", {
@@ -50,27 +51,10 @@ if (isNil "COMSPEC_ATAKRespawnEH") then {
 
         [{
             if (isNull player || {!alive player}) exitWith {};
-            // Rebind si nouvelle unité (idempotent si même objet)
             [] call comspec_overwatch_connect_fnc_initVehicleTracking;
-
-            if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
-
-            private _prevAce = missionNamespace getVariable ["COMSPEC_ACEMenuUnit", objNull];
-            if (!isNull _prevAce && {_prevAce isEqualTo player}) exitWith {};
-            missionNamespace setVariable ["COMSPEC_ATAKMenuReady", false, false];
-            missionNamespace setVariable ["COMSPEC_ACEMenuReady", false, false];
-            missionNamespace setVariable ["COMSPEC_AtakRepairReady", false, false];
-
-            if (
-                (missionNamespace getVariable ["comspec_overwatch_ace_menus", false])
-                && {isClass (configFile >> "CfgPatches" >> "ace_interact_menu")}
-                && {!isNil "ace_interact_menu_fnc_createAction"}
-            ) then {
-                [] call comspec_overwatch_connect_fnc_initACE;
-                [] call comspec_overwatch_connect_fnc_initATAKMenu;
-                [] call comspec_overwatch_connect_fnc_addAtakRepairAction;
-            };
-        }, [], 26] call CBA_fnc_waitAndExecute;
+            [] call comspec_overwatch_connect_fnc_aceSweepPlayerSelfActions;
+            missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
+        }, [], 2] call CBA_fnc_waitAndExecute;
     }];
 };
 
@@ -83,6 +67,8 @@ if (isNil "COMSPEC_EntityRespawnedEH") then {
         [] call comspec_overwatch_connect_fnc_onPlayerRespawn;
         [{
             [] call comspec_overwatch_connect_fnc_initVehicleTracking;
+            [] call comspec_overwatch_connect_fnc_aceSweepPlayerSelfActions;
+            missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
         }, [], 0.5] call CBA_fnc_waitAndExecute;
     }];
 };

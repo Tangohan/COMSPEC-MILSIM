@@ -61,7 +61,7 @@ missionNamespace setVariable ["COMSPEC_ZeusApplyAtakFx", _applyFx];
 
 // --- ZEN : clic droit sur joueur (dossier + actions) ---
 if (
-    !(missionNamespace getVariable ["COMSPEC_ZenAtakPlayerModulesRegistered", false])
+    !(missionNamespace getVariable ["COMSPEC_ZenAtakPlayerContextRegistered", false])
     && {!isNil "zen_context_menu_fnc_createAction"}
     && {!isNil "zen_context_menu_fnc_addAction"}
 ) then {
@@ -115,6 +115,7 @@ if (
         ["capture", "Capturer (illisible)", "capture", 30],
         ["repair", "Réparer / rétablir", "repair", 30]
     ];
+    missionNamespace setVariable ["COMSPEC_ZenAtakPlayerContextRegistered", true];
 };
 
 // --- ZEN : module « poser sur joueur » ---

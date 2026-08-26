@@ -491,6 +491,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(242, '2026-08-26', 'Le menu d’actions ne s’empile plus à l’écran', 'Ouvrir les actions personnelles n’affiche plus la même liste recopiée sur toute la hauteur', [], [], [
+                'Après un retour au combat, chaque action (Overwatch, photo, carte, santé) n’apparaît plus des dizaines de fois les unes sous les autres',
+            ], ['atak'], [
+                'Relancez Arma avec le pack jeu Overwatch à jour. Une simple relance de mission ne suffit pas.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.86'),
             $pr(243, '2026-08-26', 'La barre d’outils et Affichage se lisent à nouveau', 'Les commandes restent sous chaque intitulé, et l’inventaire du relief se lit ligne par ligne', [], [
                 'Position, Annoter, Tracer, Analyse et Vue montrent leurs boutons, sans menu compact',
                 'Affichage, Personnaliser et Masquer restent sur une seule ligne',

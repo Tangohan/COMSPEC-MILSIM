@@ -87,10 +87,30 @@ if (!isNull _drone && {alive _drone}) then {
     if (_fileName isNotEqualTo "") then { _caption = _caption + format [" (%1)", _fileName]; };
 };
 
+private _overlayKind = "";
+if (!isNil "comspec_overwatch_connect_fnc_getActiveCaptureCam") then {
+    private _cap = [] call comspec_overwatch_connect_fnc_getActiveCaptureCam;
+    if ((_cap isEqualType []) && {(count _cap) >= 4} && {!isNull (_cap select 0)}) then {
+        _overlayKind = _cap select 3;
+    };
+};
+if (_overlayKind in ["phone", "hcam", "hcam_pip", "tgp", "uav_pip"]) then {
+    _device = "CTAB";
+    _feedId = "";
+    if (_overlayKind in ["hcam", "hcam_pip"]) then { _device = "HELMET"; };
+    if (_overlayKind in ["uav_pip", "tgp"]) then { _device = "DRONE"; };
+};
+
 private _skipShot = false;
 private _lowPath = toLower _filePath;
 if ((_lowPath find ".jpg") >= 0 || {(_lowPath find ".jpeg") >= 0}) then {
     _skipShot = true;
+};
+if (
+    _overlayKind isNotEqualTo ""
+    && {!(missionNamespace getVariable ["COMSPEC_OverlayCamPromoted", false])}
+) then {
+    _skipShot = false;
 };
 
 private _ok = [_filePath, _caption, _device, _feedId, _skipShot] call comspec_overwatch_connect_fnc_captureReconImage;
