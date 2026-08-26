@@ -100,14 +100,14 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($dispatchSheet);
         self::assertSame('00238', $dispatchSheet['number_pad']);
         self::assertStringContainsString('fiche de mise à jour', strtolower((string) $dispatchSheet['title']));
+        $toolbarCss = DevDispatchCatalog::find('update', '243');
+        self::assertNotNull($toolbarCss);
+        self::assertSame('00243', $toolbarCss['number_pad']);
+        self::assertStringContainsString('barre', strtolower((string) $toolbarCss['title']));
         $relief3d = DevDispatchCatalog::find('update', '239');
         self::assertNotNull($relief3d);
         self::assertSame('00239', $relief3d['number_pad']);
         self::assertStringContainsString('relief', strtolower((string) $relief3d['title']));
-        $toolbarCss = DevDispatchCatalog::find('update', '240');
-        self::assertNotNull($toolbarCss);
-        self::assertSame('00240', $toolbarCss['number_pad']);
-        self::assertStringContainsString('barre', strtolower((string) $toolbarCss['title']));
         $aceMenu = DevDispatchCatalog::find('update', '242');
         self::assertNotNull($aceMenu);
         self::assertSame('00242', $aceMenu['number_pad']);

@@ -4869,17 +4869,20 @@ body.atak-theme-light .atak-chat-messages {
   justify-content: flex-start;
   gap: 0;
   min-width: 0;
+  overflow: visible;
+  height: auto;
 }
 .atak-map-tools__cluster {
   position: relative;
   display: flex;
-  flex-direction: row;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: center;
   gap: 3px;
   padding: 2px 8px;
   border-right: 1px solid rgba(148, 163, 184, 0.22);
   flex: 0 0 auto;
+  overflow: visible;
 }
 .atak-map-tools__cluster:last-child,
 .atak-map-tools__cluster--chrome {
@@ -4887,6 +4890,8 @@ body.atak-theme-light .atak-chat-messages {
 }
 .atak-map-tools__cluster--chrome {
   margin-left: auto;
+  flex-direction: row;
+  align-items: center;
 }
 .atak-map-tools__cluster-label {
   appearance: none;
@@ -4932,23 +4937,14 @@ body.atak-theme-light .atak-chat-messages {
   gap: 1px 2px;
   min-width: 0;
   pointer-events: auto;
-}
-.atak-map-tools__cluster--chrome {
-  flex-direction: column;
-  align-items: stretch;
+  overflow: visible;
 }
 .atak-map-tools__cluster--chrome .atak-map-tools__cluster-label {
-  display: block;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: #64748b;
-  cursor: default;
+  display: none;
 }
 .atak-map-tools__cluster--chrome .atak-map-tools__cluster-btns {
   position: static;
+  display: flex;
   min-width: 0;
   padding: 0;
   border: 0;
@@ -11007,7 +11003,7 @@ body.atak-device-embed .atak-map-stage #atak-map {
 }
 body.atak-page--device .atak-map-tools,
 body.atak-device-embed .atak-map-tools {
-  position: absolute !important;
+  position: relative !important;
   top: 0;
   left: 0;
   right: 0;
@@ -11016,22 +11012,29 @@ body.atak-device-embed .atak-map-tools {
   height: auto;
   min-height: 28px;
   max-width: none;
+  overflow: visible;
   font-size: 0.62rem;
   background: rgba(8, 12, 16, 0.88);
   padding: 2px 6px;
 }
 body.atak-page--device .atak-map-tools__cluster-label,
 body.atak-device-embed .atak-map-tools__cluster-label {
-  display: none;
+  display: block;
 }
 body.atak-page--device button.atak-map-tools__cluster-label,
 body.atak-device-embed button.atak-map-tools__cluster-label {
-  display: inline-flex;
+  display: block;
+  pointer-events: auto;
+}
+body.atak-page--device .atak-map-tools__cluster--chrome .atak-map-tools__cluster-label,
+body.atak-device-embed .atak-map-tools__cluster--chrome .atak-map-tools__cluster-label {
+  display: none;
 }
 body.atak-page--device .atak-map-tools__cluster,
 body.atak-device-embed .atak-map-tools__cluster {
   padding: 0 6px;
-  gap: 0;
+  gap: 2px;
+  flex-direction: column;
 }
 body.atak-page--device .leaflet-container,
 body.atak-device-embed .leaflet-container {

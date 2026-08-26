@@ -496,7 +496,7 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Relancez Arma avec le pack jeu Overwatch à jour. Une simple relance de mission ne suffit pas.',
             ], 'Portail 1.5.48 · Overwatch 1.4.86'),
-            $pr(240, '2026-08-26', 'La barre d’outils et Affichage se lisent à nouveau', 'Les commandes restent sous chaque intitulé, et l’inventaire du relief se lit ligne par ligne', [], [
+            $pr(243, '2026-08-26', 'La barre d’outils et Affichage se lisent à nouveau', 'Les commandes restent sous chaque intitulé, et l’inventaire du relief se lit ligne par ligne', [], [
                 'Position, Annoter, Tracer, Analyse et Vue montrent leurs boutons, sans menu compact',
                 'Affichage, Personnaliser et Masquer restent sur une seule ligne',
                 'Dans Affichage, chaque donnée du poste a son état à droite ; l’ombrage suit la couverture déjà affichée',
