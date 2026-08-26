@@ -129,67 +129,20 @@ if (!(_atakStatus get "can_display")) then {
 if (!(_atakStatus get "can_display")) exitWith {};
 
 // === DECONNEXION ===
-if ((_isDisconnected || _zoneOut) && {!isNull _ctrlDisconnect}) then {
+// Overlay unique : fn_updateDeviceOverlay (panneau C2, sans ancien habillage).
+if (!isNull _ctrlDisconnect) then {
+    _ctrlDisconnect ctrlShow false;
+};
+private _fxDiscHide = uiNamespace getVariable ["COMSPEC_Hub_DisconnectFx", controlNull];
+if (!isNull _fxDiscHide) then { _fxDiscHide ctrlShow false; };
+if (_isDisconnected || _zoneOut) then {
     if (!_wasDisconnected) then {
         missionNamespace setVariable ["COMSPEC_Roleplay_WasDisconnected", true];
     };
-    private _remaining = _disconnectInfo get "remaining_seconds";
-    private _fxDisc = uiNamespace getVariable ["COMSPEC_Hub_DisconnectFx", controlNull];
-    private _noSig = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.paa";
-    if (!(fileExists _noSig)) then {
-        _noSig = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.png";
-    };
-    if (isNull _fxDisc || {ctrlParent _fxDisc isNotEqualTo _display}) then {
-        ctrlDelete _fxDisc;
-        _fxDisc = _display ctrlCreate ["RscPicture", 9206];
-        uiNamespace setVariable ["COMSPEC_Hub_DisconnectFx", _fxDisc];
-    };
-    private _fullPos = if (!isNull _ctrlScreenBroken) then {
-        ctrlPosition _ctrlScreenBroken
-    } else {
-        [0.33 * safezoneW + safezoneX, 0.08 * safezoneH + safezoneY, 0.34 * safezoneW, 0.89 * safezoneH]
-    };
-    if (!isNull _fxDisc) then {
-        _fxDisc ctrlSetPosition _fullPos;
-        _fxDisc ctrlSetText _noSig;
-        _fxDisc ctrlSetFade 0;
-        _fxDisc ctrlEnable false;
-        _fxDisc ctrlShow true;
-        _fxDisc ctrlCommit 0;
-    };
-    _fullPos params ["_hx", "_hy", "_hw", "_hh"];
-    _ctrlDisconnect ctrlSetPosition [_hx, _hy, _hw, (_hh * 0.12) max 0.04];
-    _ctrlDisconnect ctrlSetBackgroundColor [0.02, 0.04, 0.08, 0.55];
-    if (_zoneOut) then {
-        _ctrlDisconnect ctrlSetStructuredText parseText format [
-            "<t align='center' size='0.95' color='#F4F7FA'>AUCUNE COUVERTURE</t><br/>" +
-            "<t align='center' size='0.72' color='#C9D4DC'>%1</t>",
-            _zoneName
-        ];
-        if (!isNull _fxDisc) then {
-            private _jam = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa";
-            if (!(fileExists _jam)) then {
-                _jam = "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.png";
-            };
-            _fxDisc ctrlSetText _jam;
-        };
-    } else {
-        _ctrlDisconnect ctrlSetStructuredText parseText format [
-            "<t align='center' size='0.82' color='#F4F7FA'>Reconnexion estimée dans %1 s</t>",
-            _remaining
-        ];
-    };
-    _ctrlDisconnect ctrlShow true;
 } else {
     if (_wasDisconnected) then {
         missionNamespace setVariable ["COMSPEC_Roleplay_WasDisconnected", false];
     };
-    
-    if (!isNull _ctrlDisconnect) then {
-        _ctrlDisconnect ctrlShow false;
-    };
-    private _fxDiscHide = uiNamespace getVariable ["COMSPEC_Hub_DisconnectFx", controlNull];
-    if (!isNull _fxDiscHide) then { _fxDiscHide ctrlShow false; };
 };
 
 // === AVERTISSEMENT ZONE ===

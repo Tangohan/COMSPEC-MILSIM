@@ -224,17 +224,14 @@ if (_crashed) then {
                     _captionPlace = "bottom";
                 } else {
                     if (_isDisconnected) then {
-                        _title = "";
+                        _title = "Liaison perdue";
                         _detail = if (_remaining > 0) then {
-                            format ["Reconnexion estimée dans %1 s", _remaining]
+                            format ["Reconnexion dans %1 s", _remaining]
                         } else {
-                            "Aucune donnée transmise"
+                            "Reconnexion en cours…"
                         };
-                        _tex = [
-                            "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.paa",
-                            "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.png"
-                        ] call _fncResolveTex;
-                        _captionPlace = "top";
+                        _tex = "";
+                        _captionPlace = "center";
                     } else {
                         if (!_powered) then {
                             _title = "ATAK ÉTEINT";
@@ -266,7 +263,16 @@ if (!isNull _fx) then {
 };
 
 if (!isNull _overlay) then {
-    _overlay ctrlShow false;
+    if (_captionPlace isEqualTo "center") then {
+        _overlay ctrlSetPosition _pos;
+        _overlay ctrlSetBackgroundColor [0.027, 0.039, 0.055, 0.72];
+        _overlay ctrlSetStructuredText parseText "";
+        _overlay ctrlEnable false;
+        _overlay ctrlShow true;
+        _overlay ctrlCommit 0;
+    } else {
+        _overlay ctrlShow false;
+    };
 };
 
 if (!isNull _caption) then {
@@ -274,19 +280,30 @@ if (!isNull _caption) then {
         _caption ctrlShow false;
     } else {
         _pos params ["_px", "_py", "_pw", "_ph"];
-        private _ch = (_ph * 0.16) max 0.035;
-        private _cy = if (_captionPlace isEqualTo "bottom") then { _py + _ph - _ch } else { _py };
         private _line = if (_title isEqualTo "") then {
-            format ["<t align='center' size='0.92' color='#F4F7FA'>%1</t>", _detail]
+            format ["<t align='center' size='0.92' color='#E8EEF2'>%1</t>", _detail]
         } else {
             format [
-                "<t align='center' size='0.88' color='#F4F7FA'>%1</t><br/><t align='center' size='0.72' color='#C9D4DC'>%2</t>",
+                "<t align='center' size='1.0' color='#E8EEF2'>%1</t><br/><t align='center' size='0.78' color='#A3B0B8'>%2</t>",
                 _title,
                 _detail
             ]
         };
-        _caption ctrlSetPosition [_px, _cy, _pw, _ch];
-        _caption ctrlSetBackgroundColor [0.02, 0.04, 0.08, 0.55];
+        if (_captionPlace isEqualTo "center") then {
+            private _panelW = (_pw * 0.78) max 0.16;
+            if (_panelW > (_pw - 0.02)) then { _panelW = (_pw - 0.02) max 0.12; };
+            private _panelH = (_ph * 0.3) max 0.07;
+            if (_panelH > (_ph * 0.5)) then { _panelH = (_ph * 0.42) max 0.06; };
+            private _panelX = _px + ((_pw - _panelW) / 2);
+            private _panelY = _py + ((_ph - _panelH) / 2);
+            _caption ctrlSetPosition [_panelX, _panelY, _panelW, _panelH];
+            _caption ctrlSetBackgroundColor [0.043, 0.063, 0.086, 0.94];
+        } else {
+            private _ch = (_ph * 0.16) max 0.035;
+            private _cy = if (_captionPlace isEqualTo "bottom") then { _py + _ph - _ch } else { _py };
+            _caption ctrlSetPosition [_px, _cy, _pw, _ch];
+            _caption ctrlSetBackgroundColor [0.027, 0.039, 0.055, 0.82];
+        };
         _caption ctrlSetStructuredText parseText _line;
         _caption ctrlEnable false;
         _caption ctrlShow true;

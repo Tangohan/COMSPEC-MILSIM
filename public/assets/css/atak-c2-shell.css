@@ -1519,3 +1519,60 @@ body.atak-page .atak-order-suivi em {
 .atak-qr-result a { display: inline-block; margin-top: 10px; color: #55dab7; font-size: 11px; }
 .atak-qr-error { margin: 0; padding: 10px; border-left: 3px solid #e56565; color: #ffaaaa; background: rgba(119, 30, 30, .2); }
 @media (max-width: 620px) { .atak-qr-result { grid-template-columns: 1fr; } .atak-qr-result__image { max-width: 220px; } }
+
+/* Overlay liaison perdue — panneau verre C2, un seul compte à rebours */
+.atak-connection-lost {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: max(0.6rem, 4vh) max(0.7rem, 3vw);
+  background: rgba(7, 10, 14, 0.72);
+  pointer-events: none;
+}
+.atak-connection-lost.show {
+  display: flex;
+}
+.atak-connection-lost__panel {
+  width: min(92vw, 22rem);
+  max-width: 100%;
+  padding: 0.85rem 1.05rem 0.95rem;
+  background: rgba(11, 16, 22, 0.94);
+  border: 1px solid rgba(53, 214, 161, 0.28);
+  border-radius: 4px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  color: var(--atak-c2-text, #e8eef2);
+  font-family: "IBM Plex Sans", var(--atak-font-ui, sans-serif);
+}
+.atak-connection-lost__title {
+  margin: 0;
+  font: 600 0.95rem/1.25 "IBM Plex Sans", var(--atak-font-ui, sans-serif);
+  letter-spacing: 0.02em;
+  color: var(--atak-c2-text, #e8eef2);
+  text-transform: none;
+}
+.atak-connection-lost__timer {
+  margin: 0.35rem 0 0;
+  font: 500 0.82rem/1.35 "IBM Plex Sans", var(--atak-font-ui, sans-serif);
+  color: var(--atak-c2-muted, #c2cdd4);
+}
+body.atak-page--device .atak-connection-lost.show,
+body.atak-device-embed .atak-connection-lost.show {
+  display: flex !important;
+}
+body.atak-page--device .atak-connection-lost__panel,
+body.atak-device-embed .atak-connection-lost__panel {
+  width: min(88vw, 20rem);
+  padding: 0.7rem 0.85rem 0.75rem;
+}
+body.atak-page--device .atak-connection-lost__title,
+body.atak-device-embed .atak-connection-lost__title {
+  font-size: 0.88rem;
+}
+body.atak-page--device .atak-connection-lost__timer,
+body.atak-device-embed .atak-connection-lost__timer {
+  font-size: 0.76rem;
+}

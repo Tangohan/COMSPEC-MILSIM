@@ -13,6 +13,8 @@ final class AtakPollBackoffAssetTest extends TestCase
         $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-socket.js');
         self::assertStringContainsString('res.status === 403 || res.status === 429 || res.status === 503', $js);
         self::assertStringContainsString("noteUnavailable(retry, res.status === 403 ? 'forbidden' : 'unavailable')", $js);
+        self::assertStringContainsString('SEND_BACKOFF_LADDER_SEC = [45, 75, 150, 300, 600]', $js);
+        self::assertStringContainsString('noteSendSuccess()', $js);
         self::assertStringContainsString('Accès au poste momentanément refusé', $js);
         self::assertStringContainsString('Les mises à jour reprendront toutes seules', $js);
         self::assertStringNotContainsString('method === \'GET\' && isApiPaused()', $js);

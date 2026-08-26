@@ -4,8 +4,18 @@ window.ATAKSocket = (function () {
   var apiBase = null;
   var pauseUntil = 0;
   var unavailableListeners = [];
+  var deferredListeners = [];
   var warnedUnavailable = false;
   var lastPauseKind = '';
+  var lastDeferred = false;
+  var remoteDeferred = false;
+  var failStreak = 0;
+  var okStreak = 0;
+  var backoffStep = 0;
+  var SEND_BACKOFF_LADDER_SEC = [45, 75, 150, 300, 600];
+  var SEND_FAIL_STREAK_TO_ENTER = 3;
+  var SEND_OK_STREAK_TO_STEP_DOWN = 2;
+  var HUD_DEFERRED_LABEL = 'Différé · mauvaise connexion';
   var nativeFetch = typeof window.fetch === 'function' ? window.fetch.bind(window) : null;
 
   function getApiBase() {
@@ -57,14 +67,56 @@ window.ATAKSocket = (function () {
     return Date.now() < pauseUntil;
   }
 
-  function noteUnavailable(retrySec, kind) {
-    var sec = Math.max(10, Number(retrySec) || 20);
-    if (kind === 'forbidden') sec = Math.max(20, sec);
-    pauseUntil = Date.now() + sec * 1000;
-    lastPauseKind = kind || lastPauseKind || 'unavailable';
-    unavailableListeners.forEach(function (fn) {
-      try { fn(sec); } catch (e) {}
+  function currentLadderSec() {
+    if (backoffStep <= 0) return 0;
+    var i = Math.max(0, Math.min(SEND_BACKOFF_LADDER_SEC.length - 1, backoffStep - 1));
+    return SEND_BACKOFF_LADDER_SEC[i];
+  }
+
+  function isDeferred() {
+    return isApiPaused() || remoteDeferred || backoffStep >= 1;
+  }
+
+  function emitDeferred() {
+    var now = isDeferred();
+    if (now === lastDeferred) return;
+    lastDeferred = now;
+    deferredListeners.forEach(function (fn) {
+      try { fn(now); } catch (e) {}
     });
+  }
+
+  function applyPause(sec) {
+    var n = Math.max(1, Number(sec) || 8);
+    pauseUntil = Date.now() + n * 1000;
+    unavailableListeners.forEach(function (fn) {
+      try { fn(n); } catch (e) {}
+    });
+    emitDeferred();
+  }
+
+  function noteUnavailable(retrySec, kind) {
+    lastPauseKind = kind || lastPauseKind || 'unavailable';
+    okStreak = 0;
+    failStreak += 1;
+
+    if (backoffStep > 0) {
+      if (backoffStep < SEND_BACKOFF_LADDER_SEC.length) backoffStep += 1;
+    } else if (failStreak >= SEND_FAIL_STREAK_TO_ENTER) {
+      backoffStep = 1;
+    }
+
+    var sec;
+    if (backoffStep > 0) {
+      sec = currentLadderSec();
+      var hinted = Math.max(10, Number(retrySec) || 0);
+      if (hinted > sec) sec = Math.min(600, hinted);
+    } else {
+      sec = kind === 'forbidden' ? Math.max(15, Number(retrySec) || 20) : Math.max(8, Number(retrySec) || 10);
+      sec = Math.min(sec, 30);
+    }
+    applyPause(sec);
+
     if (warnedUnavailable) return;
     warnedUnavailable = true;
     var msg = lastPauseKind === 'forbidden'
@@ -77,8 +129,45 @@ window.ATAKSocket = (function () {
     }, 0);
   }
 
+  function noteSendSuccess() {
+    failStreak = 0;
+    if (backoffStep <= 0) {
+      okStreak = 0;
+      pauseUntil = 0;
+      warnedUnavailable = false;
+      lastPauseKind = '';
+      emitDeferred();
+      return;
+    }
+    okStreak += 1;
+    if (okStreak < SEND_OK_STREAK_TO_STEP_DOWN) {
+      applyPause(currentLadderSec());
+      return;
+    }
+    okStreak = 0;
+    backoffStep -= 1;
+    if (backoffStep <= 0) {
+      backoffStep = 0;
+      pauseUntil = 0;
+      warnedUnavailable = false;
+      lastPauseKind = '';
+      emitDeferred();
+      return;
+    }
+    applyPause(currentLadderSec());
+  }
+
+  function noteRemoteDeferred(on) {
+    remoteDeferred = !!on;
+    emitDeferred();
+  }
+
   function onApiUnavailable(fn) {
     if (typeof fn === 'function') unavailableListeners.push(fn);
+  }
+
+  function onDeferredChange(fn) {
+    if (typeof fn === 'function') deferredListeners.push(fn);
   }
 
   if (nativeFetch) {
@@ -102,7 +191,7 @@ window.ATAKSocket = (function () {
         }));
       }
       return nativeFetch(input, init).then(function (res) {
-        if (ours && res && !heartbeat && (res.status === 403 || res.status === 429 || res.status === 503)) {
+        if (ours && res && !heartbeat && (res.status === 403 || res.status === 429 || res.status === 503 || res.status === 0)) {
           var retry = res.status === 403 ? 20 : 30;
           try {
             var header = res.headers.get('Retry-After');
@@ -110,11 +199,14 @@ window.ATAKSocket = (function () {
           } catch (e) {}
           noteUnavailable(retry, res.status === 403 ? 'forbidden' : 'unavailable');
         } else if (ours && res && res.ok && isCoreRosterUrl(url)) {
-          pauseUntil = 0;
-          warnedUnavailable = false;
-          lastPauseKind = '';
+          noteSendSuccess();
         }
         return res;
+      }).catch(function (err) {
+        if (ours && !heartbeat) {
+          noteUnavailable(8, 'unavailable');
+        }
+        throw err;
       });
     };
   }
@@ -152,6 +244,11 @@ window.ATAKSocket = (function () {
     getSocket: function () { return null; },
     getApiBase: getApiBase,
     isApiPaused: isApiPaused,
-    onApiUnavailable: onApiUnavailable
+    isDeferred: isDeferred,
+    onApiUnavailable: onApiUnavailable,
+    onDeferredChange: onDeferredChange,
+    noteRemoteDeferred: noteRemoteDeferred,
+    getBackoffSec: currentLadderSec,
+    HUD_DEFERRED_LABEL: HUD_DEFERRED_LABEL
   };
 })();

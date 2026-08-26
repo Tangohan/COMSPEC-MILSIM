@@ -6,9 +6,13 @@ if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { false };
 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith { false };
+private _backUntil = missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0];
+if ((_backUntil isEqualType 0) && {diag_tickTime < _backUntil}) exitWith { false };
 
 private _now = diag_tickTime;
 private _sent = 0;
+private _sendBack = missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0];
+if (!(_sendBack isEqualType 0)) then { _sendBack = 0; };
 
 {
     if (_sent >= 12) then { break };
@@ -48,10 +52,12 @@ private _sent = 0;
         _crewNames
     ];
     private _lastSig = _x getVariable ["COMSPEC_AirOccSig", ""];
-    private _heartbeatOk = (_now - _last) >= 7;
+    private _airGap = 2.5 max _sendBack;
+    private _airHb = 7 max _sendBack;
+    private _heartbeatOk = (_now - _last) >= _airHb;
     private _changed = _sig isNotEqualTo _lastSig;
     if (!_heartbeatOk && {!_changed}) then { continue };
-    if ((_now - _last) < 2.5) then { continue };
+    if ((_now - _last) < _airGap) then { continue };
 
     _x setVariable ["COMSPEC_AirOccLastAt", _now, false];
     _x setVariable ["COMSPEC_AirOccSig", _sig, false];

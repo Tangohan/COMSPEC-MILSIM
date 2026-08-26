@@ -63,7 +63,7 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('class sampleScene {};', $cfg);
         self::assertStringContainsString('class sampleTheater {};', $cfg);
         self::assertStringContainsString('class theaterSurveyVerify {};', $cfg);
-        self::assertStringContainsString('1.4.83', $cfg);
+        self::assertStringContainsString('1.4.84', $cfg);
     }
 
     public function testTheaterSurveyModuleAndDialogExist(): void
@@ -167,7 +167,7 @@ final class AtakSceneIngestAssetTest extends TestCase
     public function testExtensionDoesNotTreatHttpZeroAsSaturation(): void
     {
         $cs = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('1.17.6', $cs);
+        self::assertStringContainsString('1.17.7', $cs);
         self::assertStringContainsString('IsBestEffortEndpoint', $cs);
         self::assertStringContainsString('NoteBestEffortCooldown', $cs);
         self::assertStringContainsString('IsTacticalQueuedEndpoint', $cs);
