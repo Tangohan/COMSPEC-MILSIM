@@ -68,11 +68,15 @@ window.ATAKScene3D = (function () {
     var mapEl = document.getElementById('atak-map'), toggle = document.getElementById('atak-scene-buildings');
     boundMap = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
     if (!mapEl || !boundMap) return;
-    canvas = document.createElement('canvas'); canvas.className = 'atak-scene-3d'; canvas.setAttribute('aria-hidden', 'true'); mapEl.appendChild(canvas); ctx = canvas.getContext('2d');
-    ['move','moveend','zoomend','resize'].forEach(function (name) { boundMap.on(name, name === 'moveend' || name === 'zoomend' ? queueLoad : schedule); });
-    if (toggle) toggle.addEventListener('change', function () { enabled = toggle.checked; if (enabled) loadVisible(); else schedule(); });
-    window.addEventListener('atak:terrain3dchange', schedule); loadVisible();
+    if (!canvas) {
+      canvas = document.createElement('canvas'); canvas.className = 'atak-scene-3d'; canvas.setAttribute('aria-hidden', 'true'); mapEl.appendChild(canvas); ctx = canvas.getContext('2d');
+      ['move','moveend','zoomend','resize'].forEach(function (name) { boundMap.on(name, name === 'moveend' || name === 'zoomend' ? queueLoad : schedule); });
+      if (toggle) toggle.addEventListener('change', function () { enabled = toggle.checked; if (enabled) loadVisible(); else schedule(); });
+      window.addEventListener('atak:terrain3dchange', schedule);
+    }
+    loadVisible();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  window.addEventListener('atak:mapready', init);
   return { reload: loadVisible };
 })();

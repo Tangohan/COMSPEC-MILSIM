@@ -491,6 +491,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(239, '2026-08-26', 'La vue inclinée montre enfin le relief', 'Passer en vue inclinée ou 3D actif soulève le sol déjà relevé : les hauteurs se voient, sans case cachée à cocher', [
+                'Le sol suit l’altitude relevée dès que la vue est inclinée, y compris si Relief et profondeur est décoché',
+            ], [
+                'L’affichage ne dit plus que le théâtre n’est pas relevé quand l’ombrage est déjà là',
+            ], [
+                'La carte s’inclinait, mais le sol restait plat comme une photo',
+            ], ['atak'], [
+                'Rechargez la carte du poste, choisissez Vue inclinée, poussez l’exagération. Pas besoin d’un nouveau pack jeu.',
+            ], 'Portail 1.5.48'),
             $pr(238, '2026-08-26', 'La fiche de mise à jour s’ouvre à nouveau', 'Ouvrir un bulletin du journal ne tombe plus en incident : le titre de la fiche s’affiche, que l’on vienne du journal ou d’un lien direct', [], [], [
                 'La fiche d’un bulletin (mise à jour, compte rendu) s’ouvrait sur une page d’incident au lieu du texte',
             ], ['platform'], [
