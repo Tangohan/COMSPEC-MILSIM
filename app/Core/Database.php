@@ -25,7 +25,7 @@ final class Database
             $cfg = require $localPath;
             if (is_array($cfg) && isset($cfg['username'], $cfg['password'])) {
                 return [
-                    'host'     => $cfg['host'] ?? '127.0.0.1',
+                    'host'     => self::tcpHost((string) ($cfg['host'] ?? '127.0.0.1')),
                     'port'     => (int) ($cfg['port'] ?? 3306),
                     'database' => $cfg['database'] ?? '',
                     'username' => $cfg['username'],
@@ -43,7 +43,7 @@ final class Database
         $charset = $_ENV['DB_CHARSET'] ?? getenv('DB_CHARSET') ?: 'utf8mb4';
 
         return [
-            'host'     => $host ?: '127.0.0.1',
+            'host'     => self::tcpHost((string) ($host ?: '127.0.0.1')),
             'port'     => $port,
             'database' => $name,
             'username' => $user,
@@ -72,12 +72,10 @@ final class Database
         }
 
         // Hostinger / PHP-FPM : « localhost » tente souvent un socket Unix inexistant
-        // → SQLSTATE[HY000] [2002] Operation not permitted. Préférer 127.0.0.1 (TCP).
-        $host = $cfg['host'];
-        if ($host === 'localhost') {
-            $host = '127.0.0.1';
-        }
-
+        // → SQLSTATE[HY000] [2002] Operation not permitted. Forcer TCP 127.0.0.1.
+        // Pas de boucle de retry : une connexion refusée pendant un FTP / trop de
+        // sessions ne doit pas bloquer le worker. Une seule tentative, puis throw.
+        $host = self::tcpHost((string) $cfg['host']);
         $dsn = sprintf(
             'mysql:host=%s;port=%s;dbname=%s;charset=%s',
             $host,
@@ -86,37 +84,31 @@ final class Database
             $cfg['charset']
         );
 
-        // Hostinger : micro-coupures / FTP mid-flight → 2002 « Operation not permitted ».
-        // Plusieurs tentatives espacées absorbent la plupart des polls ATAK sans alerte.
-        $attempts = 3;
-        $delaysUs = [80_000, 200_000, 450_000];
-        $lastException = null;
-        for ($i = 0; $i < $attempts; $i++) {
-            try {
-                self::$pdo = self::connectPdo($dsn, $cfg['username'], $cfg['password']);
-                break;
-            } catch (PDOException $e) {
-                $lastException = $e;
-                $detail = $e->getMessage();
-                $transient = str_contains($detail, '2002')
-                    || str_contains($detail, 'Operation not permitted')
-                    || self::messageLooksLikeLostConnection($detail);
-                if (!$transient || $i >= $attempts - 1) {
-                    break;
-                }
-                usleep($delaysUs[$i] ?? 200_000);
-            }
-        }
-        if (!(self::$pdo instanceof PDO)) {
-            $detail = $lastException?->getMessage() ?? 'unknown';
+        try {
+            self::$pdo = self::connectPdo($dsn, $cfg['username'], $cfg['password']);
+        } catch (PDOException $e) {
+            $detail = $e->getMessage();
             $hint = '';
             if (str_contains($detail, '2002') || str_contains($detail, 'Operation not permitted')) {
                 $hint = ' Vérifiez DB_HOST=127.0.0.1 (pas localhost socket) dans .env / database.local.php, et qu’un déploiement FTP n’est pas en cours.';
             }
-            throw new RuntimeException('Database connection failed: ' . $detail . $hint, 0, $lastException);
+            throw new RuntimeException('Database connection failed: ' . $detail . $hint, 0, $e);
         }
 
         return self::$pdo;
+    }
+
+    /**
+     * Hôte MySQL en TCP. « localhost » / vide / ::1 → 127.0.0.1 (pas de socket Unix).
+     */
+    public static function tcpHost(string $host): string
+    {
+        $host = strtolower(trim($host));
+        if ($host === '' || $host === 'localhost' || $host === '::1') {
+            return '127.0.0.1';
+        }
+
+        return $host;
     }
 
     private static function connectPdo(string $dsn, string $username, string $password): PDO

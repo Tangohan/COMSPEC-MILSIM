@@ -102,6 +102,107 @@ window.ATAKTerrain = (function () {
     return 'Données terrain — couverture ' + pct + ' %' + world;
   }
 
+  function lookPanelOpen() {
+    var panel = document.getElementById('atak-map-look-prefs');
+    return !!(panel && !panel.hidden);
+  }
+
+  function setInventoryValue(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text || '';
+  }
+
+  function overlayPresence(pct, filled) {
+    pct = Number(pct) || 0;
+    filled = Number(filled) || 0;
+    if (pct <= 0 && filled <= 0) return 'Pas encore sur le poste';
+    if (pct > 0 && pct < 100) return 'Présent · couverture ' + Math.round(pct) + ' %';
+    return 'Présent';
+  }
+
+  function countPresence(n, singular, plural) {
+    n = Number(n) || 0;
+    if (n < 1) return 'Pas encore sur le poste';
+    var formatted = n.toLocaleString('fr-FR');
+    return formatted + ' ' + (n === 1 ? singular : plural);
+  }
+
+  function lastSurveyLabel(stamp) {
+    if (!stamp) return 'Aucun relevé reçu pour l’instant';
+    var d = new Date(String(stamp).replace(' ', 'T'));
+    if (isNaN(d.getTime())) return 'Aucun relevé reçu pour l’instant';
+    try {
+      return d.toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return 'Aucun relevé reçu pour l’instant';
+    }
+  }
+
+  function renderInventory(cov) {
+    cov = cov || {};
+    var pct = cov.terrain_coverage_pct;
+    if (pct == null && meta && meta.coverage_pct != null) pct = meta.coverage_pct;
+    var filled = cov.terrain_filled;
+    if (filled == null && meta) filled = meta.filled_cells;
+    var overlay = overlayPresence(pct, filled);
+    setInventoryValue('atak-terrain-inv-hillshade', overlay);
+    setInventoryValue('atak-terrain-inv-survey', overlay);
+    setInventoryValue('atak-terrain-inv-buildings', countPresence(cov.buildings, 'bâtiment', 'bâtiments'));
+    setInventoryValue('atak-terrain-inv-forests', countPresence(cov.forests, 'forêt', 'forêts'));
+    var last = cov.last_survey_at || (meta && meta.sampled_at) || null;
+    setInventoryValue('atak-terrain-inv-last', lastSurveyLabel(last));
+  }
+
+  function loadCoverage() {
+    if (!apiBase()) {
+      renderInventory(null);
+      return Promise.resolve(false);
+    }
+    return fetch(apiBase() + '/api/atak/theater/coverage?mapId=' + encodeURIComponent(mapId()), {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' }
+    }).then(function (r) {
+      return r.text().then(function (raw) {
+        try { return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+      });
+    }).then(function (j) {
+      if (!j || !j.ok) {
+        renderInventory(null);
+        return false;
+      }
+      renderInventory(j);
+      return true;
+    }).catch(function () {
+      renderInventory(null);
+      return false;
+    });
+  }
+
+  function bindLookPanelCoverage() {
+    var btn = document.querySelector('#atak-map-tools [data-tool-ui="look"]');
+    if (btn && !btn._atakCoverageBound) {
+      btn._atakCoverageBound = true;
+      btn.addEventListener('click', function () {
+        setTimeout(function () {
+          if (lookPanelOpen()) loadCoverage();
+        }, 0);
+      });
+    }
+    var panel = document.getElementById('atak-map-look-prefs');
+    if (panel && !panel._atakCoverageObs && window.MutationObserver) {
+      panel._atakCoverageObs = true;
+      new MutationObserver(function () {
+        if (lookPanelOpen()) loadCoverage();
+      }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+    }
+  }
+
   function paintOverlays() {
     var map = leafletMap();
     if (!map || !window.L || !isReady()) {
@@ -220,6 +321,7 @@ window.ATAKTerrain = (function () {
       if (prevStamp !== j.sampled_at) lastPaintKey = '';
       setStatus(coverageLabel());
       paintOverlays();
+      if (lookPanelOpen()) loadCoverage();
       try { window.dispatchEvent(new CustomEvent('atak:terrain-ready', { detail: meta })); } catch (e) {}
       return !!j.ready;
     }).catch(function () {
@@ -312,6 +414,7 @@ window.ATAKTerrain = (function () {
   }
 
   function bindUi() {
+    bindLookPanelCoverage();
     function patch(part) {
       if (window.ATAKMap && window.ATAKMap.patchDisplayPrefs) window.ATAKMap.patchDisplayPrefs(part);
     }
@@ -348,7 +451,11 @@ window.ATAKTerrain = (function () {
     applyPrefs();
     syncUi();
     loadMeta();
-    setInterval(function () { loadMeta(); }, 45000);
+    loadCoverage();
+    setInterval(function () {
+      loadMeta();
+      if (lookPanelOpen()) loadCoverage();
+    }, 45000);
   });
   window.addEventListener('atak:display-prefs-changed', function (ev) {
     applyPrefs(ev.detail || {});
@@ -357,6 +464,7 @@ window.ATAKTerrain = (function () {
 
   return {
     load: loadMeta,
+    loadCoverage: loadCoverage,
     heightAt: heightAt,
     isReady: isReady,
     getGrid: function () { return meta; },

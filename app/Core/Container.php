@@ -2187,7 +2187,7 @@ class Container
             \App\Controllers\Api\AtakApiController::class => new \App\Controllers\Api\AtakApiController(
                 atak: self::get(\App\Repositories\AtakDataRepository::class),
                 casRepo: self::get(\App\Repositories\CasNineLineRepository::class),
-                reconRepo: self::get(\App\Repositories\ReconImageRepository::class),
+                // reconRepo lazy dans AtakApiController (mod-report n’en a pas besoin).
                 mapShapeRepo: self::get(\App\Repositories\MapShapeRepository::class),
                 laserCodeRepo: self::get(\App\Repositories\LaserCodeRepository::class),
                 tenantRepository: self::get(TenantRepository::class),

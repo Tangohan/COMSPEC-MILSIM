@@ -1,3 +1,7 @@
+COMSPEC Overwatch 1.4.83 / Athena ATAK 1.5.48 / liaison 1.17.6 — 26/08/2026
+
+• Relevé de la carte : Vérifier et renvoyer compare le jeu avec le poste, puis renvoie ce qui manque
+
 COMSPEC Overwatch 1.4.82 / Athena ATAK 1.5.48 / liaison 1.17.5 — 26/08/2026
 
 • Après un refus d’accès, pause puis reprise : plus de relance en rafale (position, caméras, relief)

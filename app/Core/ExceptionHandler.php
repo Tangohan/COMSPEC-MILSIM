@@ -63,7 +63,8 @@ class ExceptionHandler
             return;
         }
 
-        $wantsJson = self::clientWantsJson();
+        $path = Request::normalizePathFromServer();
+        $wantsJson = self::clientWantsJson($path);
         $rawMsg = $e->getMessage();
         $isDbDown = Database::isLostConnection($e)
             || str_contains($rawMsg, 'Database connection failed')
@@ -71,13 +72,24 @@ class ExceptionHandler
             || str_contains($rawMsg, 'SQLSTATE[HY000] [1045]');
         $httpStatus = $isDbDown ? 503 : 500;
         $hint = function_exists('athena_error_hint') ? athena_error_hint($rawMsg) : '';
+        $tactical = \App\Support\TacticalApiErrorRenderer::isTacticalPath($path);
 
-        if ($wantsJson) {
+        if ($tactical || $wantsJson) {
             if (!headers_sent()) {
                 header('Content-Type: application/json; charset=utf-8');
-                if ($httpStatus === 503) {
+                if ($tactical || $httpStatus === 503) {
                     header('Retry-After: 30');
                 }
+            }
+            if ($tactical) {
+                $payload = \App\Support\TacticalApiErrorRenderer::payload(
+                    $e,
+                    (string) (getenv('REQUEST_ID') ?: ($_ENV['REQUEST_ID'] ?? ''))
+                );
+                http_response_code(\App\Support\TacticalApiErrorRenderer::httpStatus());
+                echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+
+                return;
             }
             http_response_code($httpStatus);
             $message = $hint !== ''
@@ -137,14 +149,11 @@ class ExceptionHandler
         return false;
     }
 
-    private static function clientWantsJson(): bool
+    private static function clientWantsJson(?string $path = null): bool
     {
-        $path = Request::normalizePathFromServer();
-        if (str_starts_with($path, '/api/')) {
-            return true;
-        }
+        $path ??= Request::normalizePathFromServer();
         $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
 
-        return str_contains($accept, 'application/json');
+        return \App\Support\TacticalApiErrorRenderer::clientWantsJson($path, $accept);
     }
 }

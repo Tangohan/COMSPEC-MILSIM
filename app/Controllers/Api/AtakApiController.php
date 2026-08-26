@@ -67,12 +67,12 @@ class AtakApiController
     public function __construct(
         private AtakDataRepository $atak,
         private CasNineLineRepository $casRepo,
-        private ReconImageRepository $reconRepo,
         private MapShapeRepository $mapShapeRepo,
         private LaserCodeRepository $laserCodeRepo,
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
         private ArmaPlaytimeRepository $armaPlaytimeRepository,
+        private ?ReconImageRepository $reconRepo = null,
         private ?TacticalBriefingSlideRepository $briefingSlideRepository = null,
         private ?TacticalBriefingSlideCommentRepository $briefingSlideCommentRepository = null,
         private ?TacticalPhonePairingRepository $phonePairingRepository = null,
@@ -104,7 +104,7 @@ class AtakApiController
         $this->orderTypeRepository ??= new AtakOrderTypeRepository();
         $this->fireTeamRepository ??= new FireTeamRepository();
         $this->betaRegistrationRepository ??= new AtakBetaRegistrationRepository();
-        // modReportRepository : lazy (évite migration / PDO au boot de toutes les routes ATAK).
+        // reconRepo / modReportRepository : lazy (évite PDO au boot de toutes les routes ATAK).
         $this->operatorIdRepository ??= new AtakOperatorIdRepository();
         $this->medicalTriageRepository ??= new AtakMedicalTriageRepository();
         $this->armaGuard = $armaGuard ?? new AtakArmaWriteGuard($this->userRepository, $this->activityLog);
@@ -115,6 +115,11 @@ class AtakApiController
     private function modReports(): \App\Repositories\AtakModReportRepository
     {
         return $this->modReportRepository ??= new \App\Repositories\AtakModReportRepository();
+    }
+
+    private function reconImages(): ReconImageRepository
+    {
+        return $this->reconRepo ??= new ReconImageRepository();
     }
 
     private ?AtakDeviceLogRepository $deviceLogRepository = null;
@@ -1976,6 +1981,7 @@ class AtakApiController
             ], 400);
         } catch (\Throwable $e) {
             return Response::json([
+                'ok' => false,
                 'error' => 'store_failed',
                 'message' => 'Impossible d’enregistrer le rapport pour le moment.',
             ], 503);
@@ -3868,6 +3874,17 @@ class AtakApiController
             $rows = $this->atak->getUnits($tenantId, $mapId);
             $this->logStaleUnitDisconnects($tenantId, $mapId);
         } catch (\Throwable) {
+            // Ne pas renvoyer une liste vide : le poste prendrait ça pour « plus personne ».
+            $includeGateway = $request->query('include_gateway') === '1'
+                || $request->query('includeGateway') === '1'
+                || $request->query('gateway') === '1';
+            if ($includeGateway) {
+                return Response::json([
+                    'ok' => false,
+                    'unavailable' => true,
+                ]);
+            }
+
             return Response::json([]);
         }
         try {
@@ -5712,7 +5729,7 @@ class AtakApiController
             }
         }
         try {
-            $snap = $this->reconRepo->latestSnapshots($tenantId, $ids, 120);
+            $snap = $this->reconImages()->latestSnapshots($tenantId, $ids, 120);
         } catch (\Throwable $e) {
             error_log('[atak/video-feeds] snapshots: ' . $e->getMessage());
             $snap = ['by_feed' => [], 'by_author_device' => [], 'by_author' => []];
@@ -9445,7 +9462,7 @@ class AtakApiController
             $deviceType = $request->query('device_type') ?? $request->query('device');
             $limit = min((int) ($request->query('limit') ?: 100), 200);
             $night = trim((string) ($request->query('night') ?? $request->query('play_night') ?? ''));
-            $rows = $this->reconRepo->list($tenantId, $missionId, $author, $dateFrom, $dateTo, $limit);
+            $rows = $this->reconImages()->list($tenantId, $missionId, $author, $dateFrom, $dateTo, $limit);
             if (is_string($deviceType) && $deviceType !== '') {
                 $want = strtoupper($deviceType);
                 $rows = array_values(array_filter($rows, static function (array $row) use ($want): bool {
@@ -9572,7 +9589,7 @@ class AtakApiController
             } catch (\Throwable $hudErr) {
                 error_log('[atak/recon-images] photo hud ' . $hudErr->getMessage());
             }
-            $row = $this->reconRepo->create($tenantId, $data);
+            $row = $this->reconImages()->create($tenantId, $data);
             if ($row === []) {
                 @unlink($path);
                 error_log('[atak/recon-images] create failed for ' . $filename);
@@ -9612,7 +9629,7 @@ class AtakApiController
         }
         $tenantId = $r;
         $id = (int) ($params['id'] ?? 0);
-        $row = $this->reconRepo->get($tenantId, $id);
+        $row = $this->reconImages()->get($tenantId, $id);
         if ($row === null) {
             return Response::json(['error' => 'Not found'], 404);
         }
@@ -9665,7 +9682,7 @@ class AtakApiController
         }
 
         $id = (int) ($params['id'] ?? 0);
-        $row = $this->reconRepo->get($tenantId, $id);
+        $row = $this->reconImages()->get($tenantId, $id);
         if ($row === null) {
             return Response::json(['error' => 'not_found', 'message' => 'Photo introuvable.'], 404);
         }
@@ -9681,14 +9698,14 @@ class AtakApiController
 
         if ($action === 'comment') {
             $comment = trim((string) ($body['comment'] ?? ''));
-            $updated = $this->reconRepo->updateOps($tenantId, $id, ['operator_comment' => $comment]);
+            $updated = $this->reconImages()->updateOps($tenantId, $id, ['operator_comment' => $comment]);
             $message = $comment !== '' ? 'Commentaire enregistré.' : 'Commentaire retiré.';
         } elseif ($action === 'blur') {
             $blur = !empty($body['blurred']);
-            $updated = $this->reconRepo->updateOps($tenantId, $id, ['is_blurred' => $blur]);
+            $updated = $this->reconImages()->updateOps($tenantId, $id, ['is_blurred' => $blur]);
             $message = $blur ? 'Flou activé.' : 'Flou retiré.';
         } elseif ($action === 'delete') {
-            $updated = $this->reconRepo->updateOps($tenantId, $id, ['deleted_at' => date('Y-m-d H:i:s')]);
+            $updated = $this->reconImages()->updateOps($tenantId, $id, ['deleted_at' => date('Y-m-d H:i:s')]);
             $message = 'Photo supprimée du panneau tactique.';
         } elseif ($action === 'sse_transfer') {
             $caseId = (int) ($body['case_id'] ?? 0);
@@ -9741,7 +9758,7 @@ class AtakApiController
                 'image_path' => 'uploads/sse/evidence/' . $destName,
                 'author_label' => (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Opérateur'),
             ]);
-            $updated = $this->reconRepo->updateOps($tenantId, $id, [
+            $updated = $this->reconImages()->updateOps($tenantId, $id, [
                 'sse_case_id' => $caseId,
                 'sse_evidence_id' => $evidenceId,
                 'sse_transferred_at' => date('Y-m-d H:i:s'),
@@ -9774,7 +9791,7 @@ class AtakApiController
         if ($casId <= 0) {
             return Response::json(['error' => 'cas_id required'], 400);
         }
-        $row = $this->reconRepo->linkToCas($tenantId, $id, $casId);
+        $row = $this->reconImages()->linkToCas($tenantId, $id, $casId);
         if ($row === null) {
             return Response::json(['error' => 'Not found'], 404);
         }

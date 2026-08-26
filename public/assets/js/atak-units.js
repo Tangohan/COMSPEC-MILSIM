@@ -10,6 +10,10 @@ window.ATAKUnits = (function () {
   /** Aligné sur AtakDataRepository::UNIT_LIVE_TTL_SECONDS (sec). */
   var LIVE_TTL_MS = 120 * 1000;
   var ORIGIN_EPS = 0.5;
+  /** Poll carte ~3 s : garder un terminal encore en liaison s’il manque à 1–3 lectures. */
+  var ROSTER_GRACE_MS = 12000;
+  /** Première absence constatée par clé d’unité (id / indicatif). */
+  var rosterMissingSince = {};
 
   function getApiBase() {
     return window.ATAKSocket ? window.ATAKSocket.getApiBase() : '';
@@ -227,32 +231,37 @@ window.ATAKUnits = (function () {
     }
   }
 
-  function fetchUnits() {
-    if (!isNodeConfigured()) return;
-    var url = getApiBase() + '/api/units?mapId=' + getMapId() + '&include_gateway=1';
-    fetch(url, { credentials: 'include' }).then(function (r) {
-      if (!r.ok) return null;
-      return r.json();
-    }).then(function (data) {
-      if (!data || data.paused) return;
-      var next = Array.isArray(data) ? data : (Array.isArray(data.units) ? data.units : null);
-      if (next == null) return;
-      units = next;
-      render();
-      pushMarkers();
-      if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
-        window.ATAKRadio.onUnitsUpdated();
-      }
-      try {
-        window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { count: units.length } }));
-      } catch (e) {}
-    }).catch(function () {
-      render();
-    });
+  function unitRosterKey(u) {
+    if (!u) return '';
+    if (u.id != null && String(u.id) !== '') return 'id:' + String(u.id);
+    var cs = String(u.call_sign || u.callsign || '').trim().toUpperCase();
+    return cs ? 'cs:' + cs : '';
   }
 
-  function setUnits(list) {
-    units = Array.isArray(list) ? list : [];
+  function unitByRosterKey(key) {
+    if (!key) return null;
+    for (var i = 0; i < units.length; i++) {
+      if (unitRosterKey(units[i]) === key) return units[i];
+    }
+    return null;
+  }
+
+  function isRosterKeepPayload(data) {
+    if (data == null) return true;
+    if (data.paused === true) return true;
+    if (data.ok === false) return true;
+    if (data.unavailable === true) return true;
+    if (data.error && !Array.isArray(data) && !Array.isArray(data.units)) return true;
+    return false;
+  }
+
+  function extractRosterList(data) {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.units)) return data.units;
+    return null;
+  }
+
+  function publishRoster() {
     render();
     pushMarkers();
     if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
@@ -261,6 +270,90 @@ window.ATAKUnits = (function () {
     try {
       window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { count: units.length } }));
     } catch (e) {}
+  }
+
+  /**
+   * Fusionne une lecture d’effectifs sans faire disparaître un terminal encore en liaison
+   * (pause, refus, liste vide d’erreur, absence d’un poll). Keep last good roster.
+   */
+  function commitRoster(next, opts) {
+    opts = opts || {};
+    var incoming = Array.isArray(next) ? next : [];
+    var now = Date.now();
+    var merged = [];
+    var kept = {};
+
+    incoming.forEach(function (u) {
+      var k = unitRosterKey(u);
+      var prev = k ? unitByRosterKey(k) : null;
+      var live = resolveLiveStatus(u);
+      if (
+        !opts.force &&
+        prev &&
+        isInLiaison(prev) &&
+        live === 'offline'
+      ) {
+        if (!rosterMissingSince[k]) rosterMissingSince[k] = now;
+        if (now - rosterMissingSince[k] < ROSTER_GRACE_MS) {
+          merged.push(prev);
+          kept[k] = true;
+          return;
+        }
+      }
+      if (k) delete rosterMissingSince[k];
+      merged.push(u);
+      if (k) kept[k] = true;
+    });
+
+    if (!opts.force) {
+      units.forEach(function (prev) {
+        var k = unitRosterKey(prev);
+        if (!k || kept[k]) return;
+        if (!isInLiaison(prev) && resolveLiveStatus(prev) !== 'delayed') return;
+        if (!rosterMissingSince[k]) rosterMissingSince[k] = now;
+        if (now - rosterMissingSince[k] < ROSTER_GRACE_MS) {
+          merged.push(prev);
+          kept[k] = true;
+        }
+      });
+    }
+
+    Object.keys(rosterMissingSince).forEach(function (k) {
+      if (!kept[k]) delete rosterMissingSince[k];
+    });
+
+    units = merged;
+    publishRoster();
+  }
+
+  function fetchUnits() {
+    if (!isNodeConfigured()) return;
+    var url = getApiBase() + '/api/units?mapId=' + getMapId() + '&include_gateway=1';
+    fetch(url, { credentials: 'include' }).then(function (r) {
+      if (!r.ok) return { _keep: true };
+      return r.json().then(function (data) {
+        return { data: data };
+      });
+    }).then(function (wrap) {
+      if (!wrap || wrap._keep) return;
+      var data = wrap.data;
+      if (isRosterKeepPayload(data)) return;
+      var next = extractRosterList(data);
+      if (next == null) return;
+      commitRoster(next);
+    }).catch(function () {
+      render();
+    });
+  }
+
+  function setUnits(list) {
+    if (!Array.isArray(list)) {
+      if (units.length) return;
+      units = [];
+      publishRoster();
+      return;
+    }
+    commitRoster(list);
   }
 
   function setFireTeamFilter(id) {
@@ -732,18 +825,18 @@ window.ATAKUnits = (function () {
   function removeUnitLocal(id) {
     if (id == null || id === '') return;
     var sid = String(id);
-    var next = units.filter(function (u) { return String(u.id) !== sid; });
+    var dropped = null;
+    var next = units.filter(function (u) {
+      if (String(u.id) !== sid) return true;
+      dropped = u;
+      return false;
+    });
     if (next.length === units.length) return;
+    var k = unitRosterKey(dropped);
+    if (k) delete rosterMissingSince[k];
     units = next;
     lastRenderFp = '';
-    render();
-    pushMarkers();
-    if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
-      window.ATAKRadio.onUnitsUpdated();
-    }
-    try {
-      window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { count: units.length } }));
-    } catch (e) {}
+    publishRoster();
   }
 
   /** Passe un contact en hors liaison côté UI (après Couper la liaison / TTL). */
@@ -751,23 +844,20 @@ window.ATAKUnits = (function () {
     if (id == null || id === '') return;
     var sid = String(id);
     var changed = false;
+    var updated = null;
     for (var i = 0; i < units.length; i++) {
       if (String(units[i].id) === sid) {
         units[i] = Object.assign({}, units[i], { status: 'offline', db_status: 'offline' });
+        updated = units[i];
         changed = true;
         break;
       }
     }
     if (!changed) return;
+    var k = unitRosterKey(updated);
+    if (k) delete rosterMissingSince[k];
     lastRenderFp = '';
-    render();
-    pushMarkers();
-    if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
-      window.ATAKRadio.onUnitsUpdated();
-    }
-    try {
-      window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { count: units.length } }));
-    } catch (e) {}
+    publishRoster();
   }
 
   function getUnits() {

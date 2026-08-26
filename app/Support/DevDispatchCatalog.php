@@ -491,6 +491,46 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(233, '2026-08-26', 'Les signalements du jeu restent discrets si le poste est occupé', 'Quand le poste est en mise à jour, Overwatch reçoit un refus temporaire au lieu d’un écran d’incident', [], [], [
+                'Un signalement d’erreur en jeu ouvrait une page technique illisible, au lieu d’un simple refus à réessayer plus tard',
+            ], ['atak'], [
+                'Mise à jour du portail uniquement : rien à recharger en session. Si un signalement échoue pendant une mise à jour, réessayez quelques instants plus tard.',
+            ], 'Portail 1.5.48'),
+            $pr(232, '2026-08-26', 'Les terminaux restent sur la carte, un bandeau pour le tchat', 'Les opérateurs encore en liaison ne clignotent plus, et un message radio s’annonce à l’écran', [
+                'Un bandeau discret quand un message arrive : indicatif et texte, ou le nombre s’il en arrive plusieurs d’un coup',
+            ], [
+                'Le premier chargement du journal radio ne déclenche plus de bandeau pour l’historique déjà là',
+            ], [
+                'Les pastilles des terminaux encore en liaison disparaissaient un instant puis revenaient',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Les opérateurs en liaison restent visibles même si le poste reprend son souffle. Un message reçu affiche un bandeau ; le mode silencieux coupe le son, pas le bandeau.',
+            ], 'Portail 1.5.48'),
+            $pr(231, '2026-08-26', 'Les modules carte se posent jusqu’au bout', 'La mise à jour du poste installe rapports, points d’intérêt, zones et analyses sans s’arrêter en cours de route', [], [], [
+                'Sur certaines installations, une partie des modules carte n’était pas posée, avec le même avertissement répété des dizaines de fois',
+            ], ['atak', 'platform'], [
+                'Mise à jour du portail uniquement : rien à recharger en session. Relancer une fois la mise à jour du poste suffit ; si elle a déjà tourné, elle ne casse rien.',
+            ], 'Portail 1.5.48'),
+            $pr(230, '2026-08-26', 'Affichage dit ce que le poste a déjà reçu', 'Dans Apparence de la carte, on voit si l’ombrage, le relevé, les bâtiments et les forêts sont bien présents', [
+                'Sous la couverture du relief : présence de l’ombrage, du relevé (pentes, courbes), des bâtiments et des forêts, et la date du dernier relevé',
+            ], [], [], ['atak'], [
+                'Ouvrez Affichage sur la carte du poste. Les cases plus haut restent des choix d’affichage ; le bloc du bas décrit ce qui est réellement arrivé pour cette carte.',
+            ], 'Portail 1.5.48'),
+            $pr(229, '2026-08-26', 'La barre d’outils de la carte se clique à nouveau', 'Position, Annoter, Tracer, Analyse et Vue montrent enfin leurs actions', [], [
+                'Les commandes restent visibles sous chaque intitulé, sans menu fantôme',
+            ], [
+                'On voyait les intitulés mais rien ne se cliquait : les actions étaient hors écran, et les libellés ne répondaient pas',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Les boutons Grille, Mesurer, Trait, Itinéraire et les autres reviennent sous chaque groupe.',
+            ], 'Portail 1.5.48'),
+            $pr(228, '2026-08-26', 'Vérifier que le relevé est bien arrivé au poste', 'Après un relevé de carte, on contrôle ce que le poste a reçu et on renvoie ce qui manque', [
+                'Dans la fenêtre de relevé : Vérifier et renvoyer, pour comparer le jeu et le poste',
+            ], [
+                'Si des bâtiments, forêts ou portions de relief manquent, le renvoi part tout seul',
+            ], [
+                'Un relevé affiché comme terminé en jeu n’était pas forcément tout arrivé au poste',
+            ], ['atak'], [
+                'Pack Overwatch 1.4.83, puis relancez Arma complètement. Ouvrez le relevé de la carte, puis Vérifier et renvoyer.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.83 · liaison 1.17.6'),
             $pr(227, '2026-08-26', 'Vue inclinée dans Affichage, pause après un refus d’accès', 'La vue de la carte se règle dans Affichage, et un refus temporaire ne sature plus le poste ni le jeu', [
                 'Dans Affichage : vue à plat ou inclinée, amplitude du relief et inclinaison, sans passer par le bouton 3D',
                 'Après un refus d’accès, le poste et Overwatch marquent une pause puis reprennent tout seuls',

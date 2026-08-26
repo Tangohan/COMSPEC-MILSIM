@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
-
-use App\Core\Database;
 use PDO;
 
 /**
@@ -19,9 +17,18 @@ final class AtakBetaRegistrationRepository
 
     public function __construct()
     {
-        $this->pdo = Database::getPdo();
-        require_once dirname(__DIR__, 2) . '/bootstrap/atak_beta_registrations_migration.php';
-        run_atak_beta_registrations_migration($this->pdo);
+        // PDO + schéma à la première requête (pas au boot Container / mod-report).
+    }
+
+    protected function onDatabaseConnected(PDO $pdo): void
+    {
+        try {
+            require_once dirname(__DIR__, 2) . '/bootstrap/atak_beta_registrations_migration.php';
+            if (function_exists('run_atak_beta_registrations_migration')) {
+                run_atak_beta_registrations_migration($pdo);
+            }
+        } catch (\Throwable) {
+        }
     }
 
     /**

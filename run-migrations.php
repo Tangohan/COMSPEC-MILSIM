@@ -73,19 +73,18 @@ $migrationFlush = static function (): void {
     @flush();
 };
 
-// Connexion DB
-$host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: '127.0.0.1';
+// Connexion DB — TCP (jamais le socket Unix « localhost », bloqué sur Hostinger).
+require_once $root . '/bootstrap/migration_pdo.php';
 $name = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: '';
 $user = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: '';
 $pass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: '';
-$charset = $_ENV['DB_CHARSET'] ?? getenv('DB_CHARSET') ?: 'utf8mb4';
 
 if ($name === '' || $user === '') {
     echo "Erreur : DB_NAME et DB_USER sont requis. Créez un fichier .env (voir .env.example) ou définissez les variables d'environnement.\n";
     exit(1);
 }
 
-$dsn = "mysql:host=$host;dbname=$name;charset=$charset";
+$dsn = migration_mysql_dsn();
 try {
     $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 } catch (PDOException $e) {
@@ -96,19 +95,18 @@ try {
 echo "[OK] Connexion base : $name\n";
 $migrationFlush();
 
-/** Recrée $pdo si la session MySQL est morte (2006 / gone away). */
-$migrationEnsurePdo = static function () use (&$pdo, $dsn, $user, $pass, $migrationFlush): void {
+/** Recrée $pdo si la session MySQL est morte — TCP uniquement, pas de socket localhost. */
+$migrationEnsurePdo = static function () use (&$pdo, $migrationFlush): void {
+    if (migration_pdo_is_alive($pdo)) {
+        return;
+    }
     try {
-        $pdo->query('SELECT 1');
-    } catch (Throwable) {
-        try {
-            $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-            echo "  [INFO] Reconnexion MySQL OK\n";
-            $migrationFlush();
-        } catch (Throwable $e) {
-            echo '  [ATTENTION] Reconnexion MySQL impossible : ' . $e->getMessage() . "\n";
-            $migrationFlush();
-        }
+        migration_reconnect_pdo($pdo);
+        echo "  [INFO] Reconnexion MySQL OK\n";
+        $migrationFlush();
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] Reconnexion MySQL impossible : ' . $e->getMessage() . "\n";
+        $migrationFlush();
     }
 };
 

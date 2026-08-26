@@ -45,7 +45,7 @@ final class AtakZenEdenAssetTest extends TestCase
         self::assertStringContainsString('class registerZenTrackActions {};', $cfg);
         self::assertStringContainsString('class registerZenTheaterSurvey {};', $cfg);
         self::assertStringContainsString('class moduleAtakShowEnemyAi {};', $cfg);
-        self::assertStringContainsString('1.4.82', $cfg);
+        self::assertStringContainsString('1.4.83', $cfg);
     }
 
     public function testZeusRegistrationWaitsForEnhancedAndKeepsRetrySafe(): void
@@ -96,6 +96,7 @@ final class AtakZenEdenAssetTest extends TestCase
         self::assertStringContainsString('enableSimulation = 1', $dlg);
         self::assertStringContainsString('idd = 9994', $dlg);
         self::assertStringContainsString('Relevé de la carte', $dlg);
+        self::assertStringContainsString('Vérifier et renvoyer', $dlg);
 
         $mod = (string) file_get_contents($this->connectRoot() . '/functions/fn_moduleTheaterSurvey.sqf');
         self::assertStringContainsString('_mode isEqualType 0', $mod);

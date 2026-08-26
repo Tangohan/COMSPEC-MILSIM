@@ -594,7 +594,8 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
   left: auto;
   right: auto;
   transform: none;
-  z-index: 5;
+  z-index: 40;
+  overflow: visible;
   width: 100%;
   max-width: none;
   height: auto;
@@ -610,6 +611,7 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
   -webkit-backdrop-filter: none;
   flex: 0 0 auto;
   justify-content: flex-start;
+  pointer-events: auto;
 }
 .atak-map-tools.is-collapsed {
   display: none !important;
@@ -619,10 +621,9 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
   min-height: 0;
   justify-content: flex-start;
   align-items: stretch;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  gap: 0;
+  flex-wrap: wrap;
+  overflow: visible;
+  gap: 8px 0;
   scrollbar-width: thin;
 }
 .atak-map-tools__cluster {
@@ -655,13 +656,49 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
   line-height: 1;
   white-space: nowrap;
   user-select: none;
-  pointer-events: none;
 }
-.atak-map-tools__cluster-btns {
-  display: flex;
+span.atak-map-tools__cluster-label {
+  pointer-events: none;
+  cursor: default;
+}
+button.atak-map-tools__cluster-label {
+  appearance: none;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 0.2rem 0.15rem;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+button.atak-map-tools__cluster-label:hover,
+button.atak-map-tools__cluster-label:focus-visible,
+button.atak-map-tools__cluster-label[aria-expanded="true"] {
+  color: var(--atak-c2-green);
+  border-color: rgba(53, 214, 161, 0.32);
+  background: var(--atak-c2-green-soft);
+  outline: none;
+}
+.atak-map-tools__cluster-btns,
+.atak-map-tools__cluster-btns[hidden] {
+  position: static !important;
+  top: auto;
+  left: auto;
+  z-index: auto;
+  display: flex !important;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
   min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: auto;
 }
 .atak-map-tools__btn {
   height: 30px;

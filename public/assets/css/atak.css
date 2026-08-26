@@ -4905,6 +4905,7 @@ body.atak-theme-light .atak-chat-messages {
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
+  pointer-events: auto;
 }
 .atak-map-tools__cluster-label:hover,
 .atak-map-tools__cluster-label:focus-visible,
@@ -4922,23 +4923,13 @@ body.atak-theme-light .atak-chat-messages {
   transform: rotate(180deg);
 }
 .atak-map-tools__cluster-btns {
-  position: absolute;
-  top: calc(100% + 7px);
-  left: 0;
-  z-index: 3;
+  position: static;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 1px 2px;
-  min-width: max-content;
-  padding: 0.35rem;
-  border: 1px solid rgba(52, 211, 153, 0.3);
-  border-radius: var(--atak-radius);
-  background: rgba(8, 12, 18, 0.96);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
-}
-.atak-map-tools__cluster-btns[hidden] {
-  display: none !important;
+  min-width: 0;
+  pointer-events: auto;
 }
 .atak-map-tools__cluster--chrome {
   flex-direction: column;
