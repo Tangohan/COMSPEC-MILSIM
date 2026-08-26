@@ -89,4 +89,17 @@ final class AtakTerrainCoverageStatusAssetTest extends TestCase
         self::assertStringContainsString('isMissingTable', $scene);
         self::assertStringContainsString('1146', $scene);
     }
+
+    public function testStatusDoesNotClaimUnsurveyedWhenCoverageExists(): void
+    {
+        $javascript = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain.js');
+        $api = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Api/AtakTerrainApiController.php');
+
+        self::assertStringContainsString('function coverageLabelFromInventory', $javascript);
+        self::assertStringContainsString('function setStatusFromSurvey', $javascript);
+        self::assertStringContainsString('if (surveyed) setStatus(surveyed)', $javascript);
+        self::assertStringContainsString('Number(j.coverage_pct) > 0 || Number(j.filled_cells) > 0', $javascript);
+        self::assertStringContainsString("\$filled > 0 && is_string(\$grid['heights'] ?? null)", $api);
+        self::assertStringNotContainsString("include') === 'heights' && \$ready && is_string", $api);
+    }
 }

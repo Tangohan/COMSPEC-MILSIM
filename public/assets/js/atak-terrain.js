@@ -103,6 +103,29 @@ window.ATAKTerrain = (function () {
     return 'Données terrain — couverture ' + pct + ' %' + world;
   }
 
+  function coverageLabelFromInventory(cov) {
+    cov = cov || lastCoverage || {};
+    var pct = cov.terrain_coverage_pct;
+    if (pct == null && meta && meta.coverage_pct != null) pct = meta.coverage_pct;
+    pct = Number(pct);
+    if (!isFinite(pct) || pct <= 0) return '';
+    var world = (meta && meta.world_name) ? (' · ' + meta.world_name) : '';
+    return 'Données terrain — couverture ' + Math.round(pct) + ' %' + world;
+  }
+
+  function setStatusFromSurvey(fallback) {
+    var fromInv = coverageLabelFromInventory(lastCoverage);
+    if (fromInv) {
+      setStatus(fromInv);
+      return;
+    }
+    if (meta && (Number(meta.coverage_pct) > 0 || Number(meta.filled_cells) > 0)) {
+      setStatus(coverageLabel());
+      return;
+    }
+    setStatus(fallback || 'Relief du théâtre non encore relevé.');
+  }
+
   function lookPanelOpen() {
     var panel = document.getElementById('atak-map-look-prefs');
     return !!(panel && !panel.hidden);
@@ -177,6 +200,8 @@ window.ATAKTerrain = (function () {
     }
     var last = cov.last_survey_at || (meta && meta.sampled_at) || null;
     setInventoryValue('atak-terrain-inv-last', lastSurveyLabel(last));
+    var surveyed = coverageLabelFromInventory(cov);
+    if (surveyed) setStatus(surveyed);
   }
 
   function loadCoverage() {
@@ -353,20 +378,24 @@ window.ATAKTerrain = (function () {
     }).then(function (j) {
       if (!j || !j.ok) {
         meta = null;
-        setStatus('Relief du théâtre non encore relevé.');
+        setStatusFromSurvey('Relief du théâtre non encore relevé.');
         paintOverlays();
         return false;
       }
       var prevStamp = meta && meta.sampled_at;
       meta = j;
       if (prevStamp !== j.sampled_at) lastPaintKey = '';
-      setStatus(coverageLabel());
+      if (Number(j.coverage_pct) > 0 || Number(j.filled_cells) > 0) {
+        setStatus(coverageLabel());
+      } else {
+        setStatusFromSurvey(j.message || coverageLabel());
+      }
       paintOverlays();
       if (lookPanelOpen()) loadCoverage();
       try { window.dispatchEvent(new CustomEvent('atak:terrain-ready', { detail: meta })); } catch (e) {}
       return !!j.ready;
     }).catch(function () {
-      setStatus('Impossible de charger le relief.');
+      setStatusFromSurvey('Impossible de charger le relief.');
       return false;
     });
   }

@@ -4724,6 +4724,7 @@ body.atak-theme-light .atak-chat-messages {
   white-space: nowrap;
 }
 .atak-terrain-mesh { position: absolute; inset: 0; z-index: 210; pointer-events: none; }
+.atak-terrain-mesh:not(.atak-terrain-mesh--draped) { mix-blend-mode: multiply; }
 .atak-scene-3d { position: absolute; inset: 0; z-index: 215; pointer-events: none; }
 /* Le canevas WebGL se superpose aux PNG drapés. On garde les tuiles Leaflet
    dessous : elles servent de repli pendant un chargement, une tuile CORS

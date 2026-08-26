@@ -78,7 +78,7 @@ final class AtakTerrainApiController
             'filled_cells' => $filled,
             'total_cells' => $total,
         ];
-        if ($request->query('include') === 'heights' && $ready && is_string($grid['heights'] ?? null) && $grid['heights'] !== '') {
+        if ($request->query('include') === 'heights' && $filled > 0 && is_string($grid['heights'] ?? null) && $grid['heights'] !== '') {
             $out['encoding'] = 'int16le_b64';
             $out['heights'] = base64_encode((string) $grid['heights']);
         } elseif (!$ready) {

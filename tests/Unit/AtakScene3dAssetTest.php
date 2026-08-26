@@ -30,6 +30,7 @@ final class AtakScene3dAssetTest extends TestCase
         self::assertStringNotContainsString('id+".png"', $js);
         self::assertStringNotContainsString("item.id + '.png'", $js);
         self::assertStringContainsString('jamais d’image d’identifiant', $js);
+        self::assertStringContainsString("window.addEventListener('atak:mapready', init)", $js);
         $markers = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/arma-map-markers.js');
         self::assertStringContainsString('function isBareNumericPng(rel)', $markers);
         self::assertStringContainsString('if (isBareNumericPng(raw)) return \'\';', $markers);

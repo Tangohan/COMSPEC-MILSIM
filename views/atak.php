@@ -2478,7 +2478,7 @@ if ($atakMapConfig) {
                 <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
                 <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
               </label>
-              <p class="atak-terrain-3d-hint">Choisissez la vue inclinée, amplifiez le relief, puis réduisez l'inclinaison pour une vue plus rasante. Glissez sur la rose pour orienter la vue.</p>
+              <p class="atak-terrain-3d-hint">La vue inclinée soulève le sol déjà relevé. Amplifiez le relief, puis réduisez l’inclinaison pour une vue plus rasante. Glissez sur la rose pour orienter. La case Relief et profondeur n’agit que sur les pastilles, pas sur le terrain.</p>
             </div>
             <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
             <div class="atak-terrain-inventory" id="atak-terrain-inventory" role="status" aria-live="polite" aria-label="Données présentes sur le poste pour cette carte">
