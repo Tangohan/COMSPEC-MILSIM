@@ -8,6 +8,11 @@ params [
 if (!hasInterface) exitWith { false };
 if (isNull _unit || {!alive _unit}) exitWith { false };
 if (isPlayer _unit) exitWith { false };
+if (
+    !isNil "comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit"
+    && { [_unit] call comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit }
+) exitWith { false };
+if ((side group _unit) isEqualTo east) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { false };
 
@@ -15,7 +20,7 @@ private _pos = getPosWorld _unit;
 if ((abs (_pos select 0) < 1) && { abs (_pos select 1) < 1 }) exitWith { false };
 
 private _last = _unit getVariable ["COMSPEC_AllyTrackLastAt", -1e9];
-if ((diag_tickTime - _last) < 6) exitWith { false };
+if ((diag_tickTime - _last) < 3) exitWith { false };
 _unit setVariable ["COMSPEC_AllyTrackLastAt", diag_tickTime, false];
 
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };
@@ -79,8 +84,13 @@ if (_inVeh) then {
     _vehName = (_vehName splitString """" joinString "");
 };
 
+private _occJson = "";
+if (_inVeh) then {
+    private _occ = [_veh] call comspec_overwatch_connect_fnc_collectVehicleOccupants;
+    _occJson = (_occ apply { [_x] call comspec_overwatch_connect_fnc_hashMapToJson }) joinString ",";
+};
 private _extra = format [
-    "{""ally_ai"":true,""is_ai"":true,""source"":""ally"",""ally_id"":""%1"",""display_name"":""%2"",""side"":""%3"",""affiliation"":""%4"",""in_vehicle"":%5,""platform"":""%6"",""vehicle"":""%7"",""vehicle_name"":""%8"",""military_id"":""""}",
+    "{""ally_ai"":true,""is_ai"":true,""source"":""ally"",""ally_id"":""%1"",""display_name"":""%2"",""side"":""%3"",""affiliation"":""%4"",""in_vehicle"":%5,""platform"":""%6"",""vehicle"":""%7"",""vehicle_name"":""%8"",""vehicle_label"":""%8"",""occupants"":[%9],""military_id"":""""}",
     _allyId,
     _escCs,
     _sideStr,
@@ -88,7 +98,8 @@ private _extra = format [
     if (_inVeh) then { "true" } else { "false" },
     _platform,
     _vehType,
-    _vehName
+    _vehName,
+    _occJson
 ];
 
 "COMSPECExtension" callExtension ["UpdatePosition", [

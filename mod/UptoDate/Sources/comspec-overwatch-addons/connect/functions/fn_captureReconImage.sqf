@@ -267,7 +267,7 @@ if (
             missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
         } else {
             // Laisser le PNG se flusher (évite file_empty juste après le hitch).
-            uiSleep 0.85;
+            uiSleep 1.25;
             [_png, _caption, _device, _feedId, true, false] call comspec_overwatch_connect_fnc_captureReconImage;
             missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
         };

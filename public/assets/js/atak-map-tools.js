@@ -531,6 +531,54 @@ window.ATAKMapTools = (function () {
     }
   }
 
+  function askConfirm(message) {
+    var confirmFn = window.ATAKContextMenu && window.ATAKContextMenu.confirmAction
+      ? window.ATAKContextMenu.confirmAction
+      : null;
+    return confirmFn
+      ? confirmFn(message)
+      : Promise.resolve(window.confirm(message));
+  }
+
+  function applyClearViewOverlays() {
+    cancelMapDraw();
+    clearPlaceMode();
+    stopMeasure(false);
+    if (window.ATAKTerrainTools && typeof window.ATAKTerrainTools.stop === 'function') {
+      window.ATAKTerrainTools.stop(false);
+    }
+    if (window.ATAKMapShapes && typeof window.ATAKMapShapes.clearAllDrawings === 'function') {
+      window.ATAKMapShapes.clearAllDrawings();
+    }
+    if (window.ATAKSseLayers && typeof window.ATAKSseLayers.clearTrails === 'function') {
+      window.ATAKSseLayers.clearTrails();
+    }
+    if (window.ATAKMotionMap && typeof window.ATAKMotionMap.clearTrails === 'function') {
+      window.ATAKMotionMap.clearTrails();
+    }
+    if (window.ATAKMap && typeof window.ATAKMap.clearTemporaryPings === 'function') {
+      window.ATAKMap.clearTemporaryPings();
+    }
+    if (window.ATAKIntelTimeline && typeof window.ATAKIntelTimeline.clearView === 'function') {
+      window.ATAKIntelTimeline.clearView();
+    }
+    if (window.ATAKUnitDossier && typeof window.ATAKUnitDossier.close === 'function') {
+      window.ATAKUnitDossier.close();
+    }
+    if (window.ATAKWaypoints && typeof window.ATAKWaypoints.closeModal === 'function') {
+      window.ATAKWaypoints.closeModal();
+    }
+    toast('Traces, annotations, journal et fiches hors liaison dégagés.');
+  }
+
+  function clearViewOverlays() {
+    askConfirm('Dégager traces, annotations, journal d’analyse et fiches hors liaison ? Les contacts encore en liaison restent affichés.')
+      .then(function (ok) {
+        if (!ok) return;
+        applyClearViewOverlays();
+      });
+  }
+
   function clearDrawings() {
     cancelMapDraw();
     clearPlaceMode();
@@ -550,13 +598,7 @@ window.ATAKMapTools = (function () {
       toast('Aucun tracé à effacer.');
       return;
     }
-    var confirmFn = window.ATAKContextMenu && window.ATAKContextMenu.confirmAction
-      ? window.ATAKContextMenu.confirmAction
-      : null;
-    var ask = confirmFn
-      ? confirmFn('Effacer tous les tracés et zones de la carte ?')
-      : Promise.resolve(window.confirm('Effacer tous les tracés et zones de la carte ?'));
-    ask.then(function (ok) {
+    askConfirm('Effacer tous les tracés et zones de la carte ?').then(function (ok) {
       if (!ok) return;
       shapesApi.clearAllDrawings();
     });
@@ -716,6 +758,7 @@ window.ATAKMapTools = (function () {
       if (window.ATAKTerrainTools && window.ATAKTerrainTools.start) window.ATAKTerrainTools.start(tool);
       else toast('Outil d’analyse indisponible.');
     }
+    else if (tool === 'clear-view') clearViewOverlays();
     else if (tool === 'clear-drawings') clearDrawings();
     else if (tool === 'toggle-drawings') toggleDrawings();
     else if (tool === 'speed-foot') {
@@ -816,6 +859,7 @@ window.ATAKMapTools = (function () {
   var TOOL_PREF_DEFS = [
     { id: 'goto', label: 'Grille' },
     { id: 'follow', label: 'Suivre' },
+    { id: 'clear-view', label: 'Tout dégager' },
     { id: 'measure', label: 'Mesurer' },
     { id: 'note', label: 'Note' },
     { id: 'search-zone', label: 'Recherche' },
@@ -827,16 +871,17 @@ window.ATAKMapTools = (function () {
     { id: 'route', label: 'Itinéraire' },
     { id: 'los', label: 'Visée' },
     { id: 'zoom', label: 'Zoom' },
+    { id: 'view3d', label: 'Vue 3D' },
     { id: 'nvg', label: 'Vision nocturne' },
     { id: 'cop', label: 'Tableau des unités' }
   ];
 
   var SEP_GROUPS = {
-    nav: ['goto', 'follow'],
+    nav: ['goto', 'follow', 'clear-view'],
     mark: ['measure', 'note'],
     draw: ['search-zone', 'perimeter', 'aoi', 'line', 'toggle-drawings', 'clear-drawings'],
     analyse: ['route', 'los'],
-    view: ['zoom', 'nvg', 'cop']
+    view: ['zoom', 'view3d', 'nvg', 'cop']
   };
 
   function setOpenToolGroup(groupId, persist) {
@@ -883,11 +928,11 @@ window.ATAKMapTools = (function () {
     },
     sl: {
       label: 'Chef d’équipe',
-      ids: ['goto', 'follow', 'measure', 'note', 'search-zone', 'perimeter', 'aoi', 'line', 'toggle-drawings', 'clear-drawings', 'route', 'los', 'zoom']
+      ids: ['goto', 'follow', 'clear-view', 'measure', 'note', 'search-zone', 'perimeter', 'aoi', 'line', 'toggle-drawings', 'clear-drawings', 'route', 'los', 'zoom', 'view3d']
     },
     medic: {
       label: 'Médecin',
-      ids: ['goto', 'follow', 'measure', 'note', 'aoi', 'line', 'toggle-drawings', 'clear-drawings', 'zoom']
+      ids: ['goto', 'follow', 'clear-view', 'measure', 'note', 'aoi', 'line', 'toggle-drawings', 'clear-drawings', 'zoom']
     }
   };
 
@@ -1182,6 +1227,7 @@ window.ATAKMapTools = (function () {
     startMeasure: startMeasure,
     startDrawTool: startDrawTool,
     clearDrawings: clearDrawings,
+    clearViewOverlays: clearViewOverlays,
     setNvg: setNvg,
     updateHudContacts: updateHudContacts,
     getToolRadiusM: getToolRadiusM,

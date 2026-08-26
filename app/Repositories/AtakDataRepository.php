@@ -910,7 +910,7 @@ class AtakDataRepository
      */
     public static function isProxyContactExtra(array $extra): bool
     {
-        foreach (['phone_geoloc', 'ally_ai', 'gps_beacon'] as $flag) {
+        foreach (['phone_geoloc', 'ally_ai', 'enemy_ai', 'gps_beacon'] as $flag) {
             $val = $extra[$flag] ?? false;
             if ($val === true || $val === 1 || $val === '1' || $val === 'true') {
                 return true;
@@ -918,7 +918,76 @@ class AtakDataRepository
         }
         $src = strtolower(trim((string) ($extra['source'] ?? '')));
 
-        return in_array($src, ['phone', 'ally', 'gps', 'gps_beacon'], true);
+        return in_array($src, ['phone', 'ally', 'enemy', 'gps', 'gps_beacon'], true);
+    }
+
+    /**
+     * IA ennemie (losange hostile) : masquée sur le poste tant que Zeus / Eden ne l’a pas demandée.
+     *
+     * @param array<string, mixed> $extra
+     */
+    public static function isHostileAffiliation(array $extra, string $callSign = ''): bool
+    {
+        $aff = strtolower(trim((string) ($extra['affiliation'] ?? $extra['affil'] ?? '')));
+        $side = strtoupper(trim((string) ($extra['side'] ?? '')));
+
+        return in_array($aff, ['hostile', 'enemy', 'east'], true) || $side === 'EAST';
+    }
+
+    /**
+     * @param array<string, mixed> $extra
+     */
+    public static function isAiContactExtra(array $extra, string $callSign = ''): bool
+    {
+        foreach (['phone_geoloc', 'gps_beacon'] as $skip) {
+            $val = $extra[$skip] ?? false;
+            if ($val === true || $val === 1 || $val === '1' || $val === 'true') {
+                return false;
+            }
+        }
+        foreach (['enemy_ai', 'ally_ai', 'is_ai'] as $flag) {
+            $val = $extra[$flag] ?? false;
+            if ($val === true || $val === 1 || $val === '1' || $val === 'true') {
+                return true;
+            }
+        }
+        $src = strtolower(trim((string) ($extra['source'] ?? '')));
+        if (in_array($src, ['ally', 'enemy'], true)) {
+            return true;
+        }
+        $fold = strtoupper(trim($callSign));
+
+        return str_starts_with($fold, 'ALLY-') || str_starts_with($fold, 'ENY-');
+    }
+
+    /**
+     * @param array<string, mixed> $extra
+     */
+    public static function isEnemyAiContact(array $extra, string $callSign = ''): bool
+    {
+        return self::isAiContactExtra($extra, $callSign) && self::isHostileAffiliation($extra, $callSign);
+    }
+
+    /**
+     * @param array<string, mixed> $extra
+     */
+    public static function showEnemyAiEnabled(array $extra): bool
+    {
+        $val = $extra['show_enemy_ai'] ?? false;
+
+        return $val === true || $val === 1 || $val === '1' || $val === 'true';
+    }
+
+    /**
+     * @param array<string, mixed> $extra
+     */
+    public static function shouldHideEnemyAiContact(array $extra, string $callSign = ''): bool
+    {
+        if (!self::isEnemyAiContact($extra, $callSign)) {
+            return false;
+        }
+
+        return !self::showEnemyAiEnabled($extra);
     }
 
     /**
@@ -934,9 +1003,11 @@ class AtakDataRepository
         }
 
         return str_contains($raw, '"ally_ai"')
+            || str_contains($raw, '"enemy_ai"')
             || str_contains($raw, '"phone_geoloc"')
             || str_contains($raw, '"gps_beacon"')
             || str_contains($raw, '"source":"ally"')
+            || str_contains($raw, '"source":"enemy"')
             || str_contains($raw, '"source":"phone"')
             || str_contains($raw, '"source":"gps"');
     }
@@ -953,6 +1024,7 @@ class AtakDataRepository
         $fold = function_exists('mb_strtoupper') ? mb_strtoupper($cs, 'UTF-8') : strtoupper($cs);
 
         return str_starts_with($fold, 'ALLY-')
+            || str_starts_with($fold, 'ENY-')
             || str_starts_with($fold, 'GPS-')
             || str_starts_with($fold, 'TEL-')
             || str_starts_with($fold, 'TEL.')
@@ -1973,7 +2045,14 @@ class AtakDataRepository
             'auth' => $data['auth'] ?? null,
             'auth_code' => $data['auth_code'] ?? $data['authCode'] ?? null,
             'pilot' => $data['pilot'] ?? null,
-            'crew' => isset($data['crew']) ? (is_string($data['crew']) ? $data['crew'] : json_encode($data['crew'])) : null,
+            'crew' => (static function ($data) {
+                $crew = $data['occupants'] ?? $data['crew'] ?? null;
+                if ($crew === null) {
+                    return null;
+                }
+
+                return is_string($crew) ? $crew : json_encode($crew);
+            })($data),
             'fuel_pct' => isset($data['fuelPct']) ? (int) $data['fuelPct'] : (isset($data['fuel_pct']) ? (int) $data['fuel_pct'] : null),
             'ordnance' => isset($data['ordnance']) ? (is_string($data['ordnance']) ? $data['ordnance'] : json_encode($data['ordnance'])) : null,
             'station' => $data['station'] ?? null,
@@ -2120,7 +2199,21 @@ class AtakDataRepository
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$r) {
             $r['status'] = $r['status'] ?? 'IN-FLIGHT';
+            $crew = $r['crew'] ?? null;
+            if (is_string($crew) && $crew !== '') {
+                $decoded = json_decode($crew, true);
+                if (is_array($decoded)) {
+                    $r['crew'] = $decoded;
+                    $r['occupants'] = $decoded;
+                    $r['crew_count'] = count($decoded);
+                }
+            } elseif (is_array($crew)) {
+                $r['occupants'] = $crew;
+                $r['crew_count'] = count($crew);
+            }
         }
+        unset($r);
+
         return $rows;
     }
 

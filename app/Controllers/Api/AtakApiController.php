@@ -5180,6 +5180,9 @@ class AtakApiController
             $steamNorm = null;
             unset($extra['steam_uid'], $extra['steamId'], $extra['player_uid'], $extra['bft_id'], $extra['military_id'], $extra['atak_id']);
         }
+        if (AtakDataRepository::shouldHideEnemyAiContact($extra, (string) $callSign)) {
+            return Response::json(['ok' => true]);
+        }
         try {
             $this->activityLog->touchModDetection($tenantId, $mapId, [
                 'mod_athena' => $this->truthyFlag($extra['mod_athena'] ?? true),
@@ -5255,29 +5258,35 @@ class AtakApiController
         }
         try {
             if (!$isProxyTerrain) {
-                $this->activityLog->recordFromPosition(
-                    $tenantId,
-                    $mapId,
-                    $this->activityLog->clientKeyFromRequest(),
-                    (string) $callSign,
-                    !empty($upsert['created']),
-                    $this->buildActivityMeta(
+                $hideEnemyAi = AtakDataRepository::shouldHideEnemyAiContact(
+                    is_array($extra) ? $extra : [],
+                    (string) $callSign
+                );
+                if (!$hideEnemyAi) {
+                    $this->activityLog->recordFromPosition(
                         $tenantId,
                         $mapId,
-                        $body,
-                        is_array($actor) ? $actor : null,
+                        $this->activityLog->clientKeyFromRequest(),
                         (string) $callSign,
-                        $extra
-                    )
-                );
-                $this->activityLog->recordIngest(
-                    $tenantId,
-                    $mapId,
-                    'position',
-                    'Position reçue — ' . $callSign,
-                    (string) $callSign,
-                    ['source' => 'terrain']
-                );
+                        !empty($upsert['created']),
+                        $this->buildActivityMeta(
+                            $tenantId,
+                            $mapId,
+                            $body,
+                            is_array($actor) ? $actor : null,
+                            (string) $callSign,
+                            $extra
+                        )
+                    );
+                    $this->activityLog->recordIngest(
+                        $tenantId,
+                        $mapId,
+                        'position',
+                        'Position reçue — ' . $callSign,
+                        (string) $callSign,
+                        ['source' => 'terrain']
+                    );
+                }
             }
         } catch (\Throwable) {
         }
@@ -9931,6 +9940,14 @@ class AtakApiController
         foreach ($rows as $r) {
             $updated = $r['updated_at'] ? strtotime($r['updated_at']) : 0;
             $status = $updated < $cutoff ? 'OFFLINE' : ($r['status'] ?? 'IN-FLIGHT');
+            $crew = $r['crew'] ?? $r['occupants'] ?? null;
+            if (is_string($crew) && $crew !== '') {
+                $decoded = json_decode($crew, true);
+                $crew = is_array($decoded) ? $decoded : [];
+            }
+            if (!is_array($crew)) {
+                $crew = [];
+            }
             $out[] = [
                 'callsign' => $r['callsign'],
                 'model' => $r['model'],
@@ -9938,6 +9955,10 @@ class AtakApiController
                 'freq' => $r['freq'],
                 'laser' => $r['laser'],
                 'auth' => $r['auth'],
+                'pilot' => $r['pilot'] ?? null,
+                'crew' => $crew,
+                'occupants' => $crew,
+                'crew_count' => count($crew),
                 'pos_x' => $r['pos_x'] !== null ? (float) $r['pos_x'] : null,
                 'pos_y' => $r['pos_y'] !== null ? (float) $r['pos_y'] : null,
                 'alt' => $r['alt'] !== null ? (float) $r['alt'] : null,

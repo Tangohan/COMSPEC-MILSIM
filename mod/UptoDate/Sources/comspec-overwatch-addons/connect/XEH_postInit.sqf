@@ -72,8 +72,13 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
     };
 };
 
-// Re-applique compat Mavic apres init settings CBA (au cas ou PreInit etait trop tot)
+// Re-applique compat Mavic apres init settings CBA (au cas ou PreInit etait trop tot).
+// CBA_settingsInitialized peut se rejouer (briefing MP, overlay mission, synchro serveur) :
+// sans garde, dump + handshake + PFH s'empilent toutes les secondes.
 ["CBA_settingsInitialized", {
+    if (missionNamespace getVariable ["COMSPEC_CbaSettingsBootDone", false]) exitWith {};
+    missionNamespace setVariable ["COMSPEC_CbaSettingsBootDone", true, false];
+
     if (isNil "mavic_setting_enableConnectionDistance") then {
         missionNamespace setVariable ["mavic_setting_enableConnectionDistance", false];
     };
@@ -103,6 +108,9 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
 };
 
 ["CBA_settingsInitialized", {
+    if (missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false]) exitWith {};
+    missionNamespace setVariable ["COMSPEC_CbaSettingsBootArmed", true, false];
+
     if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {
         ["WARN", "Boot", "Overwatch désactivé — pas de sync / ACE"] call comspec_overwatch_connect_fnc_log;
     };
@@ -249,37 +257,50 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     // (Les outils restent accessibles via le hub / ACE / tablette.)
 
     // Roleplay : PFH pour simuler les déconnexions réseau aléatoires
-    [{
-        [] call comspec_overwatch_connect_fnc_simulateNetworkDisconnect;
-    }, 5, []] call CBA_fnc_addPerFrameHandler; // Vérifier toutes les 5 secondes
-    
-    // Roleplay : PFH pour détecter les zones géographiques (pas d'overlay UI ingame)
-    [{
-        [] call comspec_overwatch_connect_fnc_applyZoneEffects;
-    }, 2, []] call CBA_fnc_addPerFrameHandler; // Vérifier toutes les 2 secondes
+    if (isNil "COMSPEC_NetworkSimPFH") then {
+        COMSPEC_NetworkSimPFH = [{
+            [] call comspec_overwatch_connect_fnc_simulateNetworkDisconnect;
+        }, 5, []] call CBA_fnc_addPerFrameHandler;
+    };
 
-    // Zeus Enhanced : modules roleplay posables (carte / objet / joueur)
+    // Roleplay : PFH pour détecter les zones géographiques (pas d'overlay UI ingame)
+    if (isNil "COMSPEC_ZoneEffectsPFH") then {
+        COMSPEC_ZoneEffectsPFH = [{
+            [] call comspec_overwatch_connect_fnc_applyZoneEffects;
+        }, 2, []] call CBA_fnc_addPerFrameHandler;
+    };
+
+    // Zeus / ACE : première passe tôt (menus ACE Zeus, double-clic, boutons attributs).
+    // Zeus Enhanced peut arriver plus tard : une 2e passe attend vraiment ZEN,
+    // sinon les catégories COMSPEC restent vides (drapeau « déjà enregistré » trop tôt).
     [{
         [] call comspec_overwatch_connect_fnc_registerZenRoleplayModules;
         [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
         [] call comspec_overwatch_connect_fnc_registerZenSseModules;
         [] call comspec_overwatch_connect_fnc_registerZenTrackActions;
+        [] call comspec_overwatch_connect_fnc_registerZenTheaterSurvey;
         [] call comspec_overwatch_connect_fnc_registerZeusAttributeButtons;
     }, [], 2] call CBA_fnc_waitAndExecute;
+    missionNamespace setVariable ["COMSPEC_ZenRegisterDeadline", diag_tickTime + 45, false];
     [{
+        !isNil "zen_custom_modules_fnc_register"
+        || {diag_tickTime > (missionNamespace getVariable ["COMSPEC_ZenRegisterDeadline", 0])}
+    }, {
         [] call comspec_overwatch_connect_fnc_registerZenRoleplayModules;
         [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
         [] call comspec_overwatch_connect_fnc_registerZenSseModules;
         [] call comspec_overwatch_connect_fnc_registerZenTrackActions;
-        [] call comspec_overwatch_connect_fnc_registerZeusAttributeButtons;
-    }, [], 8] call CBA_fnc_waitAndExecute;
+        [] call comspec_overwatch_connect_fnc_registerZenTheaterSurvey;
+    }, [], 60] call CBA_fnc_waitUntilAndExecute;
 
     // Tampon hors ligne : rejeu des transmissions mises en attente. La boucle est
     // lente à dessein — c'est fn_outboxFlush qui porte la temporisation, ici on ne
     // fait que lui donner l'occasion de regarder si la liaison est revenue.
-    [{
-        [] call comspec_overwatch_connect_fnc_outboxFlush;
-    }, 10, []] call CBA_fnc_addPerFrameHandler;
+    if (isNil "COMSPEC_OutboxFlushPFH") then {
+        COMSPEC_OutboxFlushPFH = [{
+            [] call comspec_overwatch_connect_fnc_outboxFlush;
+        }, 10, []] call CBA_fnc_addPerFrameHandler;
+    };
 
     // Identifiants ATAK visibles côté Zeus
     [{
@@ -292,6 +313,7 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     
     // Réalisme ATAK : Hit + Explosion sur l’unité (rebranchés au Respawn)
     [] call comspec_overwatch_connect_fnc_attachAtakDamageHandlers;
+    [] call comspec_overwatch_connect_fnc_initCombatJournal;
 
     if (isNil "COMSPEC_AtakDamagePFH") then {
         COMSPEC_AtakDamagePFH = [{

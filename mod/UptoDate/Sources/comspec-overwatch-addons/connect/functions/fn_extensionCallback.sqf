@@ -70,6 +70,19 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_Athena_LastWeatherSig", "", false];
         missionNamespace setVariable ["COMSPEC_Athena_LastVideoFeedsSig", "", false];
     };
+    case "NetworkHiccup": {
+        // Timeout / coupure : pause courte, sans crier saturation du poste.
+        private _sec = parseNumber _data;
+        if (!(_sec isEqualType 0) || {_sec < 1}) then { _sec = 2; };
+        if (_sec > 3) then { _sec = 3; };
+        missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + _sec, false];
+        [
+            "WARN",
+            "Tx",
+            format ["Liaison instable — nouvel essai dans %1 s", round _sec],
+            "Poste momentanément injoignable — nouvel essai dans un instant."
+        ] call comspec_overwatch_connect_fnc_log;
+    };
     case "WeatherOk": {
         private _pending = missionNamespace getVariable ["COMSPEC_Athena_PendingWeatherSig", ""];
         if (!(_pending isEqualType "")) then { _pending = ""; };
@@ -218,6 +231,9 @@ switch (_function) do {
                     case ((_detail find "file_not_found") == 0): {
                         "La photo du visage n’a pas pu être jointe — passez la qualité HDR au moins sur Moyen, puis refaites PHOTO DU VISAGE."
                     };
+                    case ((_detail find "file_empty") == 0): {
+                        "La capture du visage n’était pas encore prête — refaites PHOTO DU VISAGE."
+                    };
                     case ((_detail find "not_connected") == 0): {
                         "Pas de liaison — reconnectez-vous puis retransmettez la fiche avec une nouvelle photo du visage."
                     };
@@ -333,10 +349,12 @@ switch (_function) do {
                     (_detail find "http_503") == 0
                     || {(_detail find "network") == 0}
                     || {(_detail find "http_429") == 0}
+                    || {(_detail find "file_empty") == 0}
                 ) then { "warn" } else { "fail" };
                 ["PhotoUpload", _txPhase, format ["%1 · %2", _detail, _fileHint], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
                 private _msg = switch (true) do {
                     case ((_detail find "file_not_found") == 0): { "Photo introuvable sur le disque — capturez à nouveau." };
+                    case ((_detail find "file_empty") == 0): { "La capture n’était pas encore prête — reprenez la photo." };
                     case ((_detail find "not_connected") == 0): { "Pas de liaison Athena — reconnectez-vous puis renvoyez." };
                     case ((_detail find "http_503") == 0): { "Le poste est saturé — la photo partira dès qu’il respirera." };
                     case ((_detail find "http_") == 0): { "Le poste de commandement a refusé la photo. Réessayez." };
@@ -370,7 +388,7 @@ switch (_function) do {
             missionNamespace setVariable ["COMSPEC_TerrainAbort", true, false];
         };
         // 401 position / marqueur / relief : souvent transitoire (clé / session) — WARN, pas ERROR spam.
-        // 0 / -1 / 503 : Athena injoignable ou saturé — même traitement, pas un overlay rouge.
+        // 0 / -1 : poste injoignable (timeout), pas une saturation. 503 = vrai trop-plein.
         private _phase = if (
             (_code in ["0", "-1", "401", "503"])
             && {
@@ -378,6 +396,7 @@ switch (_function) do {
                 || {(_path find "marker") >= 0}
                 || {(_path find "terrain") >= 0}
                 || {(_path find "video-feeds") >= 0}
+                || {(_path find "flight-manifest") >= 0}
                 || {(_path find "recon") >= 0}
                 || {(_path find "weather") >= 0}
             }

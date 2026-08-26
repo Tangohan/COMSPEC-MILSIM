@@ -37,7 +37,9 @@
       keyboard: false,
       icon: L.divIcon({
         className: 'atak-mission-overlay-label atak-mission-overlay-label--' + state + ' atak-compact-marker',
-        html: '<span>' + String(code || '').replace(/</g, '') + '</span>',
+        html: (window.ATAKMarkerSizes && window.ATAKMarkerSizes.wrapGlyph)
+          ? window.ATAKMarkerSizes.wrapGlyph('<span>' + String(code || '').replace(/</g, '') + '</span>')
+          : '<span>' + String(code || '').replace(/</g, '') + '</span>',
         iconSize: [88, 20],
         iconAnchor: [44, 10]
       })

@@ -2,7 +2,6 @@
     Menus Zeus : panneau ATAK joueur (ZEN + ACE Zeus + Ctrl+double-clic).
 */
 if (!hasInterface) exitWith {};
-if (missionNamespace getVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", false]) exitWith {};
 
 private _pickPlayer = {
     params [["_pos", []], ["_obj", objNull]];
@@ -61,7 +60,11 @@ private _applyFx = {
 missionNamespace setVariable ["COMSPEC_ZeusApplyAtakFx", _applyFx];
 
 // --- ZEN : clic droit sur joueur (dossier + actions) ---
-if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_addAction"}) then {
+if (
+    !(missionNamespace getVariable ["COMSPEC_ZenAtakPlayerModulesRegistered", false])
+    && {!isNil "zen_context_menu_fnc_createAction"}
+    && {!isNil "zen_context_menu_fnc_addAction"}
+) then {
     private _hasPlayer = {
         params [["_pos", []], ["_obj", objNull]];
         !isNull ([_pos, _obj] call (missionNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]))
@@ -115,7 +118,10 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
 };
 
 // --- ZEN : module « poser sur joueur » ---
-if (!isNil "zen_custom_modules_fnc_register") then {
+if (
+    !(missionNamespace getVariable ["COMSPEC_ZenAtakPlayerModulesRegistered", false])
+    && {!isNil "zen_custom_modules_fnc_register"}
+) then {
     [
         "COMSPEC Roleplay",
         "ATAK — Éditer joueur",
@@ -146,7 +152,10 @@ private _giveSeek = {
 };
 uiNamespace setVariable ["COMSPEC_ZeusGiveSeek", _giveSeek];
 
-if (!isNil "zen_custom_modules_fnc_register") then {
+if (
+    !(missionNamespace getVariable ["COMSPEC_ZenAtakPlayerModulesRegistered", false])
+    && {!isNil "zen_custom_modules_fnc_register"}
+) then {
     [
         "COMSPEC Roleplay",
         "Doter du terminal SEEK",
@@ -162,8 +171,15 @@ if (!isNil "zen_custom_modules_fnc_register") then {
     ] call zen_custom_modules_fnc_register;
 };
 
+if (!isNil "zen_custom_modules_fnc_register") then {
+    missionNamespace setVariable ["COMSPEC_ZenAtakPlayerModulesRegistered", true];
+};
+
 // --- ACE Zeus (modules + menu molette Zeus) ---
-if (!isNil "ace_zeus_fnc_addModule") then {
+if (
+    !(missionNamespace getVariable ["COMSPEC_AceAtakPlayerModulesRegistered", false])
+    && {!isNil "ace_zeus_fnc_addModule"}
+) then {
     ["COMSPEC ATAK", "Doter du terminal SEEK", {
         params ["", ["_unit", objNull]];
         if (isNull _unit) then {
@@ -207,9 +223,15 @@ if (!isNil "ace_zeus_fnc_addModule") then {
         [_unit, "capture", 30] remoteExecCall ["comspec_overwatch_connect_fnc_relayZeusAtakEffect", 2];
         [format ["Zeus → %1 : appareil capturé", name _unit], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
     }] call ace_zeus_fnc_addModule;
+
+    missionNamespace setVariable ["COMSPEC_AceAtakPlayerModulesRegistered", true];
 };
 
-if (!isNil "ace_interact_menu_fnc_createAction" && {!isNil "ace_interact_menu_fnc_addActionToZeus"}) then {
+if (
+    !(missionNamespace getVariable ["COMSPEC_AceAtakZeusInteractRegistered", false])
+    && {!isNil "ace_interact_menu_fnc_createAction"}
+    && {!isNil "ace_interact_menu_fnc_addActionToZeus"}
+) then {
     private _hasPlayer = {
         ({ isPlayer _x && {_x isKindOf "CAManBase"} } count ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects)) > 0
     };
@@ -265,7 +287,10 @@ if (!isNil "ace_interact_menu_fnc_createAction" && {!isNil "ace_interact_menu_fn
         ["clear_compromise", "Lever capture", "clear_compromise", 30],
         ["repair", "Réparer / rétablir", "repair", 30]
     ];
+    missionNamespace setVariable ["COMSPEC_AceAtakZeusInteractRegistered", true];
 };
+
+if (missionNamespace getVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", false]) exitWith {};
 
 // --- Vanilla : Ctrl + double-clic joueur ---
 ["curatorObjectDoubleClicked", {

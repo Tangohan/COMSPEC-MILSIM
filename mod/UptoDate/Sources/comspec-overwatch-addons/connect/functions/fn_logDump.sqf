@@ -4,6 +4,16 @@
 */
 params [["_reason", "manuel", [""]]];
 
+if (
+    _reason isEqualTo "boot"
+    && {
+        (diag_tickTime - (missionNamespace getVariable ["COMSPEC_LogDumpBootAt", -1e9])) < 45
+    }
+) exitWith { true };
+if (_reason isEqualTo "boot") then {
+    missionNamespace setVariable ["COMSPEC_LogDumpBootAt", diag_tickTime, false];
+};
+
 ["INFO", "Diag", format ["=== Dump journal (%1) ===", _reason]] call comspec_overwatch_connect_fnc_log;
 
 private _ext = if (!isNil "comspec_overwatch_connect_fnc_extensionStatus") then {

@@ -106,7 +106,7 @@ class AtakVehicleTrackingRepository
         foreach ($jsonFields as $field) {
             if (isset($data[$field])) {
                 $fields[] = "{$field} = :{$field}";
-                $params[$field] = json_encode($data[$field]);
+                $params[$field] = self::encodeJsonField($data[$field]) ?? json_encode($data[$field]);
             }
         }
 
@@ -148,7 +148,7 @@ class AtakVehicleTrackingRepository
             'crew_max' => $data['crew_max'] ?? null,
             'passenger_count' => $data['passenger_count'] ?? 0,
             'passenger_max' => $data['passenger_max'] ?? null,
-            'passengers_json' => isset($data['passengers_json']) ? json_encode($data['passengers_json']) : null,
+            'passengers_json' => self::encodeJsonField($data['passengers_json'] ?? null),
             'pos_x' => $data['pos_x'] ?? null,
             'pos_y' => $data['pos_y'] ?? null,
             'pos_z' => $data['pos_z'] ?? null,
@@ -299,6 +299,25 @@ class AtakVehicleTrackingRepository
         }
 
         return $vehicle ?: null;
+    }
+
+    /**
+     * Encode un champ JSON sans double-encodage si la valeur est déjà une chaîne JSON.
+     */
+    private static function encodeJsonField(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (is_string($value)) {
+            json_decode($value);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $value;
+            }
+        }
+        $encoded = json_encode($value);
+
+        return $encoded === false ? null : $encoded;
     }
 
     /**

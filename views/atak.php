@@ -2340,6 +2340,7 @@ if ($atakMapConfig) {
             <div class="atak-map-tools__cluster-btns" id="atak-tool-group-nav">
               <button type="button" class="atak-map-tools__btn" data-tool="goto" data-tool-slot="goto" title="Aller à une grille (G)">Grille</button>
               <button type="button" class="atak-map-tools__btn" data-tool="follow" data-tool-slot="follow" title="Suivre ma position (F)" aria-pressed="false">Suivre</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="clear-view" data-tool-slot="clear-view" title="Effacer traces, annotations, journal d’analyse et fiches hors liaison — les contacts encore en liaison restent">Tout dégager</button>
             </div>
           </div>
           <div class="atak-map-tools__cluster" data-tool-sep="mark">
@@ -2452,7 +2453,14 @@ if ($atakMapConfig) {
               <span class="atak-map-look__key">Opacité <span class="atak-sound-pref-val" id="atak-terrain-opacity-val">32 %</span></span>
               <input type="range" id="atak-terrain-opacity" class="atak-sound-pref-slider" min="10" max="100" step="5" value="32" />
             </label>
-            <div class="atak-terrain-3d-settings" id="atak-terrain-3d-settings" hidden>
+            <div class="atak-terrain-3d-settings" id="atak-terrain-3d-settings">
+              <label class="atak-map-look__row" for="atak-terrain-3d-mode">
+                <span class="atak-map-look__key">Vue de la carte</span>
+                <select id="atak-terrain-3d-mode" class="atak-header-select atak-map-look__select" title="Incliner la carte sur le relief">
+                  <option value="flat" selected>À plat</option>
+                  <option value="inclined">Inclinée</option>
+                </select>
+              </label>
               <label class="atak-map-look__check" for="atak-scene-buildings">
                 <input type="checkbox" id="atak-scene-buildings" checked />
                 <span>Bâtiments et forêts du jeu</span>
@@ -2465,7 +2473,7 @@ if ($atakMapConfig) {
                 <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
                 <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
               </label>
-              <p class="atak-terrain-3d-hint">Amplifiez le relief, puis réduisez l'inclinaison pour une vue plus rasante. Glissez sur la rose pour orienter la vue.</p>
+              <p class="atak-terrain-3d-hint">Choisissez la vue inclinée, amplifiez le relief, puis réduisez l'inclinaison pour une vue plus rasante. Glissez sur la rose pour orienter la vue.</p>
             </div>
             <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
           </div>
@@ -2588,7 +2596,7 @@ if ($atakMapConfig) {
       </div>
       <details class="atak-timeline" id="atak-intel-timeline" open>
         <summary>Journal d’analyse</summary>
-        <p class="atak-timeline__empty" id="atak-intel-timeline-empty">Les mouvements, contacts et alertes analysés apparaîtront ici.</p>
+        <p class="atak-timeline__empty" id="atak-intel-timeline-empty">Les mouvements, tirs, impacts et alertes analysés apparaîtront ici.</p>
         <ul class="atak-timeline__list" id="atak-intel-timeline-list"></ul>
       </details>
       <div class="atak-replay-banner" id="atak-replay-banner" hidden role="status">

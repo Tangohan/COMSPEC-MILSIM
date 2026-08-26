@@ -109,6 +109,8 @@ final class AtakOperationalStatusService
             ];
 
         $contact = !empty($extra['radio_speaking'])
+            || !empty($extra['combat_contact'])
+            || (is_array($extra['combat_events'] ?? null) && $extra['combat_events'] !== [])
             || in_array(strtoupper((string) ($extra['behaviour'] ?? '')), ['COMBAT'], true)
             || in_array(strtoupper((string) ($extra['combat_mode'] ?? '')), ['YELLOW', 'RED', 'COMBAT'], true);
         if ($isPhone) {

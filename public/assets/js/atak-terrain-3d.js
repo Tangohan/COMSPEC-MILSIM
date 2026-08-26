@@ -10,6 +10,7 @@ window.ATAKTerrain3D = (function () {
   var settings;
   var pitchInput;
   var exaggerationInput;
+  var modeSelect;
   var dragging = false;
   var dragged = false;
   var startX = 0;
@@ -248,7 +249,11 @@ window.ATAKTerrain3D = (function () {
       button.textContent = state.enabled ? '3D actif' : '3D';
     }
     if (nav) nav.hidden = !state.enabled;
-    if (settings) settings.hidden = !state.enabled;
+    if (settings) {
+      settings.hidden = false;
+      settings.classList.toggle('is-inclined', state.enabled);
+    }
+    if (modeSelect) modeSelect.value = state.enabled ? 'inclined' : 'flat';
     if (pitchInput) pitchInput.value = String(state.pitch);
     if (exaggerationInput) exaggerationInput.value = String(state.verticalExaggeration);
     var pitchValue = document.getElementById('atak-terrain-pitch-val');
@@ -303,11 +308,15 @@ window.ATAKTerrain3D = (function () {
     button = document.getElementById('atak-view-3d');
     nav = document.getElementById('atak-map-3d-nav');
     settings = document.getElementById('atak-terrain-3d-settings');
+    modeSelect = document.getElementById('atak-terrain-3d-mode');
     pitchInput = document.getElementById('atak-terrain-pitch');
     exaggerationInput = document.getElementById('atak-terrain-exaggeration');
-    if (!stage || !button) return;
+    if (!stage) return;
     restore();
-    button.addEventListener('click', function () { setEnabled(!state.enabled); });
+    if (button) button.addEventListener('click', function () { setEnabled(!state.enabled); });
+    if (modeSelect) modeSelect.addEventListener('change', function () {
+      setEnabled(modeSelect.value === 'inclined');
+    });
     var flat = document.getElementById('atak-map-3d-flat');
     if (flat) flat.addEventListener('click', function () { setEnabled(false); });
     if (pitchInput) pitchInput.addEventListener('input', function () {

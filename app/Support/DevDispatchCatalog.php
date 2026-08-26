@@ -491,14 +491,81 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(220, '2026-08-26', 'Menus Zeus et éditeur au rendez-vous', 'Les outils COMSPEC réapparaissent dans Zeus Enhanced, et le relevé de carte ne bloque plus le curseur', [
+                'Catégories Zeus Enhanced : COMSPEC Roleplay, COMSPEC Outils, COMSPEC SSE — même si l’outil Zeus arrive un peu après le début de mission',
+                'Relevé de toute la carte : la fenêtre d’avancement se ferme sans laisser Zeus coincé ; on peut aussi l’ouvrir au clic droit',
+            ], [
+                'Éditeur : « Au début de la mission » et « Afficher les IA ennemies » s’appliquent même si la liste a enregistré un choix numérique',
+            ], [
+                'Les menus COMSPEC pouvaient rester vides si Zeus Enhanced n’était pas encore prêt au premier essai',
+            ], ['atak'], [
+                'Rechargez le pack jeu Overwatch 1.4.80, puis relancez Arma complètement — pas seulement la mission. Athena doit être liée pour le relevé. Zeus : COMSPEC Outils (relevé) et COMSPEC Roleplay (balise, téléphone, IA, contacts ennemis, ATAK joueur). Éditeur : mêmes catégories, plus les cases sur l’unité ou le véhicule.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.80'),
+            $pr(217, '2026-08-26', 'Contacts ennemis masqués par défaut', 'Les IA ennemies n’apparaissent plus sur la carte tant que Zeus ou l’éditeur ne les a pas demandées', [
+                'Les losanges hostiles restent hors de la carte et du journal d’analyse, sauf demande du chef de mission',
+                'Tant que Zeus ne les a pas demandés, les contacts ennemis ne sont pas suivis : rien ne part vers le poste, la liaison n’est pas saturée',
+                'Zeus : « Afficher les IA ennemies sur la carte » allume le suivi et l’affichage ; masquer les coupe tous les deux',
+                'Éditeur : module « Contacts ennemis sur l’ATAK », masqués par défaut ou visibles dès le début',
+            ], [
+                'Les opérateurs et les IA alliées restent affichés et suivis comme avant',
+            ], [], ['atak'], [
+                'Rechargez le pack jeu Overwatch 1.4.79, puis relancez Arma complètement — pas seulement la mission. Sur le poste, rechargez la carte. Dans Zeus : COMSPEC Roleplay ou COMSPEC ATAK. Dans l’éditeur : modules COMSPEC Outils.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.79'),
+            $pr(215, '2026-08-26', 'Photos et position plus fiables', 'Les clichés casque et drone partent, et une coupure réseau n’est plus prise pour une saturation du poste', [
+                'Les photos prises au casque ou au drone attendent que le cliché soit vraiment écrit avant de partir vers le poste',
+            ], [
+                'Le relevé de théâtre et la position de l’équipe ne se marchent plus dessus : la position reste prioritaire',
+                'Un flux caméra injoignable n’arrête plus la position ni la fiche de l’appareil',
+            ], [
+                'Une coupure de liaison faisait croire que le poste était saturé, et les photos partaient trop tôt (cliché encore vide)',
+            ], ['atak'], [
+                'Rechargez le pack jeu Overwatch 1.4.78 (liaison 1.17.3), puis relancez Arma complètement — pas seulement la mission. Une coupure ou une attente réseau n’est plus annoncée comme une saturation du poste.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.78 · liaison 1.17.3'),
+            $pr(221, '2026-08-26', 'Tout dégager, indicatifs lisibles en vue inclinée', 'Le poste vide traces et annotations d’un geste, et les icônes restent face à l’écran quand la carte est inclinée', [
+                'Un bouton « Tout dégager » dans Position retire traces, traits, croix de perte de liaison, journal d’analyse et fiches hors liaison',
+                'Les contacts encore en liaison restent sur la carte',
+                'En vue inclinée, les icônes et indicatifs se tiennent face à l’écran, ancrés à la position',
+            ], [
+                'Les commandes de vue inclinée restent dans Affichage (À plat ou Inclinée, amplitude du relief, inclinaison)',
+            ], [], ['atak'], [
+                'Pas de nouveau pack jeu. Rechargez la carte du poste. Le bouton est dans Position, à côté de Grille et Suivre. Une confirmation courte précède l’effacement.',
+            ], 'Portail 1.5.48'),
+            $pr(218, '2026-08-26', 'Tirs et missiles dans le journal d’analyse', 'Le poste voit les départs de coup, les échanges de feu, les impacts et les tentatives de missile', [
+                'Le journal d’analyse note qui ouvre le feu, un échange, un impact, un verrouillage ou une tentative de missile',
+                'Un clic sur la ligne centre la carte à l’endroit du coup, sans saturer le journal : les rafales sont regroupées',
+            ], [], [], ['atak'], [
+                'Rechargez le pack jeu Overwatch 1.4.79, puis relancez Arma complètement — pas seulement la mission. Les tirs de l’opérateur lié apparaissent ensuite dans le journal d’analyse, en bas de la carte.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.79'),
+            $pr(216, '2026-08-26', 'Qui est à bord du véhicule', 'La fiche de l’appareil liste le pilote, le tireur et les passagers', [
+                'Ouvrir un hélicoptère ou un véhicule sur la carte montre les personnes à bord, avec leur place',
+                'L’onglet Personnel de la fiche indique le nom de l’appareil et le nombre à bord',
+            ], [
+                'La liste des personnes à bord se met à jour en quelques secondes, pas après une longue attente',
+            ], [], ['atak'], [
+                'Rechargez le pack jeu Overwatch 1.4.78, puis relancez Arma complètement — pas seulement la mission. Sur la carte, ouvrez la fiche de l’appareil : l’onglet Personnel s’ouvre si des personnes sont à bord.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.78'),
+            $pr(214, '2026-08-26', 'Relevé de toute la carte depuis Zeus', 'Zeus et l’éditeur parcourent le théâtre : bâtiments, forêts et relief, avec une fenêtre d’avancement', [
+                'Un outil Zeus et un module éditeur « Relever la carte du théâtre » parcourent tout le théâtre, pas seulement le voisinage de l’équipe',
+                'Une fenêtre indique la durée, le nombre de bâtiments, forêts et portions de relief, le secteur en cours, et la date du dernier relevé',
+                'On peut interrompre le parcours ; Zeus reste utilisable pendant le relevé',
+            ], [
+                'Le relevé local autour de l’équipe (menu ACE) reste disponible pour un complément rapide',
+            ], [], ['atak'], [
+                'Rechargez le pack jeu Overwatch 1.4.78, puis relancez Arma complètement — pas seulement la mission. Athena doit être liée. Dans Zeus : catégorie COMSPEC Outils. Dans l’éditeur : modules COMSPEC Outils.',
+            ], 'Portail 1.5.48 · Overwatch 1.4.78'),
             $pr(213, '2026-08-26', 'Bâtiments et forêts en vue inclinée', 'Autour de l’équipe, les bâtiments et les couverts se dressent sur la carte du poste', [
                 'La vue 3D de la carte montre les bâtiments et les forêts relevés autour des opérateurs, de la carte ouverte et de la caméra Zeus',
                 'Menu ACE : relever les volumes autour de l’équipe, comme pour le relief',
             ], [
                 'Le relevé suit les déplacements : il n’envoie que ce qui a changé autour de vous',
-            ], [], ['atak'], [
-                'Rechargez le pack jeu Overwatch 1.4.75, puis relancez Arma complètement — pas seulement la mission. Sur la carte web, activez la vue 3D puis « Bâtiments et forêts du jeu ».',
-            ], 'Portail 1.5.48 · Overwatch 1.4.75'),
+                'Position → Affichage : vue à plat ou inclinée, amplitude du relief et inclinaison, sans passer d’abord par le bouton 3D',
+            ], [
+                'Le journal Overwatch ne se remplissait plus en boucle pendant la prise de liaison',
+                'Le menu molette ACE ne se cassait plus à l’ouverture sur une unité',
+                'Le relevé des bâtiments ne cassait plus le script à l’ouverture d’un panneau Zeus',
+            ], ['atak'], [
+                'Rechargez le pack jeu Overwatch 1.4.76, puis relancez Arma complètement — pas seulement la mission. Sur la carte, ouvrez Position → Affichage : choisissez la vue inclinée et « Bâtiments et forêts du jeu ».',
+            ], 'Portail 1.5.48 · Overwatch 1.4.76'),
             $pr(212, '2026-08-26', 'IA alliées distinctes sur la carte', 'Chaque IA garde sa pastille : plus de regroupement sous le même indicatif', [
                 'Les unités alliées sont suivies une par une, même dans le même groupe',
             ], [

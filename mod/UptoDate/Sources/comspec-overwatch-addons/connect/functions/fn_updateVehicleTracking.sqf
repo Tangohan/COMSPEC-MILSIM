@@ -21,11 +21,15 @@ params [
 // Validation
 if (isNull _vehicle) exitWith {false};
 if (_vehicle isEqualTo player) exitWith {false}; // Pas un véhicule
+if (
+    !isNil "comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit"
+    && { [_vehicle] call comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit }
+) exitWith {false};
 
 // Debounce / grâce REAPP (évite flood extension pendant spike ACE+MRH)
 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {false};
 private _lastPost = _vehicle getVariable ["COMSPEC_VehTrackLastAt", -1e9];
-if ((diag_tickTime - _lastPost) < 5) exitWith {false};
+if ((diag_tickTime - _lastPost) < 2.5) exitWith {false};
 _vehicle setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
 
 // Préparer données
@@ -58,16 +62,38 @@ _vehicleData set ["side", _sideStr];
 // Équipage
 private _crew = crew _vehicle;
 private _commander = commander _vehicle;
+private _occupants = [_vehicle] call comspec_overwatch_connect_fnc_collectVehicleOccupants;
 _vehicleData set ["crew_count", count _crew];
-_vehicleData set ["crew_max", ([_vehicle, true] call bis_fnc_crewCount) select 0];
+private _crewMax = [_vehicle, true] call bis_fnc_crewCount;
+if (_crewMax isEqualType []) then { _crewMax = _crewMax param [0, count _crew]; };
+if (!(_crewMax isEqualType 0)) then { _crewMax = count _crew; };
+_vehicleData set ["crew_max", _crewMax];
 if (!isNull _commander) then {
-    _vehicleData set ["crew_commander_callsign", name _commander];
+    private _cmdName = name _commander;
+    if ((count _occupants) > 0) then {
+        private _cmdRow = _occupants select 0;
+        {
+            if ((_x getOrDefault ["seat", ""]) isEqualTo "commander") exitWith {
+                _cmdName = _x getOrDefault ["name", _cmdName];
+            };
+        } forEach _occupants;
+    };
+    _vehicleData set ["crew_commander_callsign", _cmdName];
 };
 
 // Passagers
-private _cargoCount = {_x in _vehicle && !(_x in [driver _vehicle, gunner _vehicle, commander _vehicle])} count _crew;
+private _cargoCount = {
+    private _s = _x getOrDefault ["seat", "cargo"];
+    _s isEqualTo "cargo"
+} count _occupants;
 _vehicleData set ["passenger_count", _cargoCount];
-_vehicleData set ["passenger_max", ([_vehicle, true] call bis_fnc_crewCount) select 2];
+private _passMax = [_vehicle, true] call bis_fnc_crewCount;
+if (_passMax isEqualType []) then { _passMax = _passMax param [2, _cargoCount]; };
+if (!(_passMax isEqualType 0)) then { _passMax = _cargoCount; };
+_vehicleData set ["passenger_max", _passMax];
+if ((count _occupants) > 0) then {
+    _vehicleData set ["passengers_json", _occupants];
+};
 
 // Position et mouvement
 private _pos = getPosWorld _vehicle;

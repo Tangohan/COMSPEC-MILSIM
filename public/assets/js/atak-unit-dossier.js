@@ -67,11 +67,11 @@ window.ATAKUnitDossier = (function () {
     return 'ground';
   }
   function typeLabel(u, ex) {
-    var cat = String((u.motion && u.motion.category) || ex.platform || '').toUpperCase();
+    var cat = String((u.motion && u.motion.category) || ex.platform || u.aircraft_type || '').toUpperCase();
     if (cat === 'INFANTRY') return 'Infanterie';
     if (cat === 'GROUND_VEHICLE') return 'Véhicule';
-    if (cat === 'HELICOPTER') return 'Hélicoptère';
-    if (cat === 'FIXED_WING') return 'Aérien';
+    if (cat === 'HELICOPTER' || cat === 'HELI') return 'Hélicoptère';
+    if (cat === 'FIXED_WING' || cat === 'PLANE') return 'Aérien';
     if (cat === 'UAV') return 'Drone';
     var aff = window.ATAKUnitPopup && window.ATAKUnitPopup.affiliationLabelFr
       ? window.ATAKUnitPopup.affiliationLabelFr(ex.affiliation || u.affiliation)
@@ -160,6 +160,18 @@ window.ATAKUnitDossier = (function () {
     var st = M ? M.statusLabel((u.motion && u.motion.status) || '') : '';
     var html = row('Position', pos) + row('Altitude', alt) + row('Cap', cap) + row('Vitesse', spd)
       + row('État', st) + row('Dernière MAJ', ago(u.updated_at || u.last_update));
+    var vLab = String(ex.vehicle_label || ex.vehicle_name || u.model || '').trim();
+    if (vLab) html += row('Appareil', vLab);
+    var occN = (window.ATAKUnitPopup && window.ATAKUnitPopup.occupantsFrom)
+      ? window.ATAKUnitPopup.occupantsFrom(u, ex).length : 0;
+    if (occN) html += row('Personnes à bord', String(occN));
+    if (window.ATAKUnitPopup && window.ATAKUnitPopup.occupantsHtml) {
+      var occBlock = window.ATAKUnitPopup.occupantsHtml(u, Object.assign({}, ex, {
+        platform: ex.platform || u.aircraft_type || (u.motion && u.motion.category) || '',
+        vehicle_label: vLab
+      }));
+      if (occBlock) html += occBlock;
+    }
     html += block('Source Arma', row('Vitesse', arma.speed_ms != null ? (arma.speed_ms * 3.6).toFixed(1) + ' km/h' : '') + row('Orientation', arma.heading_deg != null ? Math.round(arma.heading_deg) + '°' : ''));
     html += block('Analyse Athena', row('Statut', M ? M.statusLabel(ath.motion_status) : ath.motion_status)
       + row('Confiance', ath.confidence != null ? Math.round(ath.confidence * 100) + ' %' : '')
@@ -185,11 +197,27 @@ window.ATAKUnitDossier = (function () {
     return html;
   }
   function persHtml(u, ex) {
-    var n = num(ex.group_count || ex.crew_count);
-    var html = row('Effectif', n != null ? String(n) : (u.fire_team_label || ''))
-      + row('Chef', ex.leader || ex.group_leader || u.group_name || u.group || '')
+    var P = window.ATAKUnitPopup;
+    var occ = (P && P.occupantsFrom) ? P.occupantsFrom(u, ex) : [];
+    var vLabel = String(ex.vehicle_label || ex.vehicle_name || ex.vehicle || u.model || '').trim();
+    var n = occ.length || num(ex.group_count || ex.crew_count || u.crew_count);
+    var html = '';
+    if (vLabel) html += row('Véhicule', vLabel);
+    html += row('À bord', occ.length ? String(occ.length) : (n != null ? String(n) : ''))
+      + row('Chef', ex.leader || ex.group_leader || u.pilot || u.group_name || u.group || '')
       + row('Équipe', u.fire_team_label || '')
       + row('Groupe', ex.group_name || u.group || '');
+    if (P && P.occupantsHtml) {
+      var plat = ex.platform || u.aircraft_type || (u.motion && u.motion.category) || '';
+      var list = P.occupantsHtml(u, Object.assign({}, ex, {
+        platform: plat,
+        vehicle_label: vLabel || ex.vehicle_label
+      }));
+      if (list) html += list;
+    }
+    if (!occ.length && !vLabel && n == null) {
+      html += '<p class="atak-dossier__empty">Personne n’est encore listé à bord. Le détail arrive avec le prochain signal du véhicule.</p>';
+    }
     return html;
   }
   function cbtHtml(u, ex, arma, ath, op) {
@@ -273,6 +301,10 @@ window.ATAKUnitDossier = (function () {
     var cs = meta.phone ? meta.name : (u.call_sign || u.callsign || openRef);
     var slot = window.ATAKMissionPlan && window.ATAKMissionPlan.slotFor ? window.ATAKMissionPlan.slotFor(u.call_sign || u.callsign || '') : null;
     var sub = meta.phone ? 'Signal téléphone' : typeLabel(u, ex);
+    if (!meta.phone && u.model) {
+      var kind = typeLabel(u, ex);
+      sub = kind && String(kind) !== String(u.model) ? (u.model + ' · ' + kind) : u.model;
+    }
     if (!meta.phone && slot) {
       var tf = '';
       if (window.ATAKMissionPlan.snapshot) {
@@ -293,7 +325,13 @@ window.ATAKUnitDossier = (function () {
       else if (tab === 'msn') body = msnHtml(u, ex, ath);
       else body = sitHtml(u, ex, arma, ath);
       tabsHtml = '<div class="atak-dossier__tabs">' + TABS.map(function (t) {
-        return '<button type="button" class="atak-dossier__tab' + (t.id === tab ? ' is-active' : '') + '" data-dossier-tab="' + t.id + '">' + esc(t.label) + '</button>';
+        var label = t.label;
+        if (t.id === 'pers') {
+          var occN = (window.ATAKUnitPopup && window.ATAKUnitPopup.occupantsFrom)
+            ? window.ATAKUnitPopup.occupantsFrom(u, ex).length : 0;
+          if (occN) label = 'Personnel (' + occN + ')';
+        }
+        return '<button type="button" class="atak-dossier__tab' + (t.id === tab ? ' is-active' : '') + '" data-dossier-tab="' + t.id + '">' + esc(label) + '</button>';
       }).join('') + '</div>';
     }
     el.hidden = false;
@@ -311,7 +349,10 @@ window.ATAKUnitDossier = (function () {
     if (!u) return;
     openRef = String(u.call_sign || u.callsign || '').trim();
     openKind = kindOf(u);
-    tab = 'sit';
+    var ex0 = extra(u);
+    var occ0 = (window.ATAKUnitPopup && window.ATAKUnitPopup.occupantsFrom)
+      ? window.ATAKUnitPopup.occupantsFrom(u, ex0) : [];
+    tab = occ0.length ? 'pers' : 'sit';
     var el = ensure();
     if (el) el.hidden = false;
     render();

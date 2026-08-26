@@ -31,6 +31,56 @@ window.ATAKUnits = (function () {
     }
   }
 
+  function flagOn(v) {
+    return v === true || v === 1 || v === '1' || v === 'true';
+  }
+
+  function isHostileAffiliation(ex, u) {
+    var a = String((ex && (ex.affiliation || ex.affil)) || (u && u.affiliation) || '').toLowerCase();
+    var side = String((ex && ex.side) || (u && u.side) || '').toUpperCase();
+    return a === 'hostile' || a === 'enemy' || a === 'east' || side === 'EAST';
+  }
+
+  function isAiContact(ex, u) {
+    if (!ex) ex = {};
+    if (flagOn(ex.phone_geoloc) || flagOn(ex.gps_beacon)) return false;
+    if (flagOn(ex.enemy_ai) || flagOn(ex.ally_ai) || flagOn(ex.is_ai)) return true;
+    var src = String(ex.source || '').toLowerCase();
+    if (src === 'ally' || src === 'enemy') return true;
+    var cs = String((u && (u.call_sign || u.callsign)) || '').toUpperCase();
+    return cs.indexOf('ALLY-') === 0 || cs.indexOf('ENY-') === 0;
+  }
+
+  function isEnemyAi(u) {
+    var ex = parseExtra(u || {});
+    return isAiContact(ex, u) && isHostileAffiliation(ex, u);
+  }
+
+  function showEnemyAiEnabled(list) {
+    var arr = list || units || [];
+    var playerOn = null;
+    var enemyOn = false;
+    for (var i = 0; i < arr.length; i++) {
+      var u = arr[i] || {};
+      var ex = parseExtra(u);
+      var ai = isAiContact(ex, u);
+      if (flagOn(ex.show_enemy_ai)) {
+        if (ai) enemyOn = true;
+        else playerOn = true;
+      } else if (ex.show_enemy_ai === false || ex.show_enemy_ai === 0 || ex.show_enemy_ai === '0' || ex.show_enemy_ai === 'false') {
+        if (!ai) playerOn = false;
+      }
+    }
+    var on = playerOn === true || (playerOn === null && enemyOn);
+    window.ATAK_SHOW_ENEMY_AI = on;
+    return on;
+  }
+
+  function shouldHideEnemyAi(u, list) {
+    if (!isEnemyAi(u)) return false;
+    return !showEnemyAiEnabled(list);
+  }
+
   function parseCoords(u) {
     var x = u && u.pos_x != null && u.pos_x !== '' ? parseFloat(u.pos_x) : NaN;
     var y = u && u.pos_y != null && u.pos_y !== '' ? parseFloat(u.pos_y) : NaN;
@@ -166,8 +216,9 @@ window.ATAKUnits = (function () {
   }
 
   function unitsForMap() {
-    if (!filterFireTeamId) return units;
-    return units.filter(matchesFireTeamFilter);
+    var src = filterFireTeamId ? units.filter(matchesFireTeamFilter) : units;
+    if (showEnemyAiEnabled(units)) return src;
+    return src.filter(function (u) { return !isEnemyAi(u); });
   }
 
   function pushMarkers() {
@@ -255,6 +306,7 @@ window.ATAKUnits = (function () {
   function updateSummary() {
     var linked = 0;
     units.forEach(function (u) {
+      if (shouldHideEnemyAi(u, units)) return;
       if (resolveLiveStatus(u) === 'linked') linked++;
     });
     var chipEl = document.getElementById('atak-chip-contacts-value');
@@ -408,6 +460,7 @@ window.ATAKUnits = (function () {
     if (!listEl) return;
     updateSummary();
     var filtered = units.filter(function (u) {
+      if (shouldHideEnemyAi(u, units)) return false;
       if (filterLive && !isInLiaison(u)) return false;
       if (!matchesFireTeamFilter(u)) return false;
       if (filterText) {
@@ -743,6 +796,7 @@ window.ATAKUnits = (function () {
 
   function isAllyAi(u) {
     var ex = parseExtra(u || {});
+    if (isHostileAffiliation(ex, u)) return false;
     if (ex.ally_ai === true || ex.ally_ai === 1 || ex.ally_ai === '1' || ex.ally_ai === 'true') return true;
     if (ex.is_ai === true || ex.is_ai === 1 || ex.is_ai === 'true') return true;
     if (String(ex.source || '').toLowerCase() === 'ally') return true;
@@ -781,6 +835,9 @@ window.ATAKUnits = (function () {
     setFireTeamFilter: setFireTeamFilter,
     getFireTeamFilter: function () { return filterFireTeamId; },
     isAllyAi: isAllyAi,
+    isEnemyAi: isEnemyAi,
+    shouldHideEnemyAi: shouldHideEnemyAi,
+    showEnemyAiEnabled: showEnemyAiEnabled,
     allyIdOf: allyIdOf,
     listAllyUnits: listAllyUnits
   };

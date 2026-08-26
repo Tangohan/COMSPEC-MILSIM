@@ -64,10 +64,28 @@ missionNamespace setVariable ["COMSPEC_SceneSampling", true, false];
 missionNamespace setVariable ["COMSPEC_SceneLastAt", _now, false];
 missionNamespace setVariable ["COMSPEC_SceneLastPos", _origin, false];
 
+private _token = diag_tickTime;
+missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
+[{
+    params ["_token"];
+    if ((missionNamespace getVariable ["COMSPEC_SceneSampleToken", -1]) isEqualTo _token) then {
+        missionNamespace setVariable ["COMSPEC_SceneSampling", false, false];
+    };
+}, [_token], 90] call CBA_fnc_waitAndExecute;
+
 [_centers, _mapId, _force] spawn {
     params ["_centers", "_mapId", "_force"];
-    private _fnc_num = { (_this select 0) toFixed (_this select 1) };
-    private _fnc_esc = { (_this splitString """" joinString "") };
+    private _fnc_num = {
+        params ["_n", ["_digits", 1]];
+        if (!(_n isEqualType 0)) then { _n = parseNumber (str _n); };
+        if (!(_digits isEqualType 0)) then { _digits = 1; };
+        _n toFixed _digits
+    };
+    private _fnc_esc = {
+        params ["_s"];
+        if (!(_s isEqualType "")) then { _s = str _s; };
+        _s splitString """" joinString ""
+    };
 
     private _byId = createHashMap;
     private _forestAcc = createHashMap;
