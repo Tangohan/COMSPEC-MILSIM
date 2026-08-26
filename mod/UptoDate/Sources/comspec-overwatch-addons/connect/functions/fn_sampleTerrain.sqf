@@ -7,6 +7,9 @@
 params [["_fullTheater", false, [true]]];
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+if ((missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isNotEqualTo "linked") exitWith {
+    ["Le relief ne peut être relevé qu’une fois Athena liée. Reliez votre compte, puis réessayez.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
+};
 if (missionNamespace getVariable ["COMSPEC_TerrainSampling", false]) exitWith {
     ["Relevé du relief déjà en cours.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
 };

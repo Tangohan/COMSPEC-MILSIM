@@ -1067,6 +1067,25 @@ class AtakDataRepository
         $allyId = trim((string) ($incomingExtra['ally_id'] ?? ''));
         if ($allyId !== '' && (self::isProxyContactExtra($incomingExtra) || self::looksLikeAutoAllyId($allyId))) {
             $existing = $this->findAllyUnitByStableId($tenantId, $mapId, $allyId, $hasPos);
+            // Clé carte = identifiant stable ALLY-… ; le libellé humain reste dans display_name.
+            $label = trim($callSign);
+            if ($label !== '' && !self::looksLikeAutoAllyId($label) && !str_starts_with(strtoupper($label), 'ALLY-')) {
+                if (trim((string) ($incomingExtra['display_name'] ?? '')) === '') {
+                    $incomingExtra['display_name'] = $label;
+                }
+            }
+            $stableCs = $allyId;
+            if (is_array($existing)) {
+                $prevCs = trim((string) ($existing['call_sign'] ?? ''));
+                if (self::looksLikeAutoAllyId($prevCs) || str_starts_with(strtoupper($prevCs), 'ALLY-')) {
+                    $stableCs = $prevCs;
+                }
+            }
+            $callSign = $stableCs;
+            $extraJson = json_encode($incomingExtra, JSON_UNESCAPED_UNICODE);
+            if ($extraJson === false) {
+                $extraJson = '{}';
+            }
         }
         if (!is_array($existing)) {
             $stmt = $this->pdo()->prepare(
@@ -1289,6 +1308,29 @@ class AtakDataRepository
         $row = $this->getUnitById($tenantId, $id);
         if (!$row) {
             return null;
+        }
+        // IA alliée : l’indicatif saisi au poste est un libellé, pas la clé de suivi.
+        $rowExtra = self::decodeExtra($row['extra'] ?? null);
+        $rowCs = trim((string) ($row['call_sign'] ?? ''));
+        $isAllyRow = self::isProxyContactExtra($rowExtra)
+            || self::callSignLooksLikeProxy($rowCs)
+            || self::looksLikeAutoAllyId($rowCs)
+            || str_starts_with(strtoupper($rowCs), 'ALLY-');
+        if ($isAllyRow && array_key_exists('call_sign', $data)) {
+            $label = trim((string) ($data['call_sign'] ?? ''));
+            unset($data['call_sign']);
+            if ($label !== '' && !self::looksLikeAutoAllyId($label) && !str_starts_with(strtoupper($label), 'ALLY-')) {
+                $merged = $rowExtra;
+                if (array_key_exists('extra', $data)) {
+                    $incoming = is_array($data['extra']) ? $data['extra'] : self::decodeExtra($data['extra']);
+                    $merged = array_merge($merged, $incoming);
+                }
+                $merged['display_name'] = $label;
+                if (trim((string) ($merged['ally_id'] ?? '')) === '' && (self::looksLikeAutoAllyId($rowCs) || str_starts_with(strtoupper($rowCs), 'ALLY-'))) {
+                    $merged['ally_id'] = $rowCs;
+                }
+                $data['extra'] = $merged;
+            }
         }
         // Fusion notes TOC dans extra (sans écraser la télémétrie jeu).
         if (array_key_exists('toc_radio', $data) || array_key_exists('toc_vehicle', $data) || array_key_exists('toc_note', $data)) {

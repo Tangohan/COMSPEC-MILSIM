@@ -95,7 +95,7 @@ private _extra = format [
     [_pos select 0, 2] call _fnc_num,
     [_pos select 1, 2] call _fnc_num,
     [_heading, 2] call _fnc_num,
-    _escCs,
+    _allyId,
     _role,
     _health,
     "",
