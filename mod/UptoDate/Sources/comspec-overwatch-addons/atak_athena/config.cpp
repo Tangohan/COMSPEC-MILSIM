@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.50;
-        versionStr = "1.0.50";
-        versionAr[] = {1, 0, 50};
+        version = 1.0.51;
+        versionStr = "1.0.51";
+        versionAr[] = {1, 0, 51};
     };
 };
 
@@ -118,6 +118,19 @@ class CfgFunctions
             class ATAK_Check_Layout
             {
                 file = "z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_Check_Layout.sqf";
+                recompile = 1;
+            };
+        };
+        class ATAK_CAM
+        {
+            class ATAK_FullScreenCamera
+            {
+                file = "z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_FullScreenCamera.sqf";
+                recompile = 1;
+            };
+            class ATAK_TakePicture
+            {
+                file = "z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_TakePicture.sqf";
                 recompile = 1;
             };
         };

@@ -15,7 +15,11 @@ if (isNull player) exitWith {
     [{ [] call comspec_overwatch_connect_fnc_initACE }, [], 2] call CBA_fnc_waitAndExecute;
 };
 
-if (missionNamespace getVariable ["COMSPEC_ACEMenuReady", false]) exitWith {};
+[] call comspec_overwatch_connect_fnc_aceSweepPlayerSelfActions;
+
+if (missionNamespace getVariable ["COMSPEC_ACEMenuReady", false]) exitWith {
+    missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
+};
 missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
 ["INFO", "ACE", "Installation menus ACE SelfActions"] call comspec_overwatch_connect_fnc_log;
 
@@ -208,17 +212,6 @@ private _sceneAction = [
 ] call ace_interact_menu_fnc_createAction;
 [_sceneAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
-private _noteAction = [
-    "COMSPEC_IntelNote", "Rédiger une fiche de renseignement…", "", {
-        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openNote") then {
-            [""] call comspec_overwatch_atak_athena_fnc_athena_openNote;
-        } else {
-            [""] call comspec_overwatch_connect_fnc_intelNoteShow;
-        };
-    }, _condSync, _noChildren
-] call ace_interact_menu_fnc_createAction;
-[_noteAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
-
 private _helmetSnapAction = [
     "COMSPEC_HelmetSnap", "Envoyer aperçu casque", "", {
         private _uid = getPlayerUID player;
@@ -356,7 +349,10 @@ private _captureAtakAction = [
     _noChildren
 ] call ace_interact_menu_fnc_createAction;
 _captureAtakAction = [_captureAtakAction] call comspec_overwatch_connect_fnc_acePadAction;
-if (_captureAtakAction isNotEqualTo []) then {
+if (
+    _captureAtakAction isNotEqualTo []
+    && {!(missionNamespace getVariable ["COMSPEC_ACEClassActionsReady", false])}
+) then {
     ["CAManBase", 0, ["ACE_MainActions"], _captureAtakAction, true] call ace_interact_menu_fnc_addActionToClass;
 };
 
@@ -380,8 +376,17 @@ private _disablePhoneAction = [
     _noChildren
 ] call ace_interact_menu_fnc_createAction;
 _disablePhoneAction = [_disablePhoneAction] call comspec_overwatch_connect_fnc_acePadAction;
-if (_disablePhoneAction isNotEqualTo []) then {
+if (
+    _disablePhoneAction isNotEqualTo []
+    && {!(missionNamespace getVariable ["COMSPEC_ACEClassActionsReady", false])}
+) then {
     ["CAManBase", 0, ["ACE_MainActions"], _disablePhoneAction, true] call ace_interact_menu_fnc_addActionToClass;
+};
+if (
+    (_captureAtakAction isNotEqualTo [])
+    || {_disablePhoneAction isNotEqualTo []}
+) then {
+    missionNamespace setVariable ["COMSPEC_ACEClassActionsReady", true, false];
 };
 
 [] call comspec_overwatch_connect_fnc_initChargeAceActions;

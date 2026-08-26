@@ -1,3 +1,9 @@
+COMSPEC Overwatch 1.4.86 / Athena ATAK 1.5.48 / liaison 1.17.7 — 26/08/2026
+
+• Le menu d’actions personnelles n’empile plus les mêmes commandes après un retour au combat
+COMSPEC Overwatch 1.4.85 / Athena ATAK 1.5.48 / liaison 1.17.7 — 26/08/2026
+
+• Une photo prise depuis une caméra plein écran (téléphone ou casque) montre bien cette vue, plus le paysage derrière le soldat
 COMSPEC Overwatch 1.4.84 / Athena ATAK 1.5.48 / liaison 1.17.7 — 26/08/2026
 
 • Si plusieurs envois n’atteignent pas le poste, tout ralentit petit à petit (45 s, puis 1 min 15, jusqu’à 10 min)

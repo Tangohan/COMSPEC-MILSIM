@@ -14,6 +14,45 @@ private _forceCheckLayout = {
 call _forceCheckLayout;
 { [_forceCheckLayout, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8];
 
+// Caméra overlay : vue scène (pas de texture rttN) + cliché depuis CETTE caméra.
+private _forceCamCapture = {
+    private _fs = "\z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_FullScreenCamera.sqf";
+    if (fileExists _fs) then {
+        private _code = compile preprocessFileLineNumbers _fs;
+        if (_code isEqualType {}) then {
+            BCE_fnc_ATAK_FullScreenCamera = _code;
+            missionNamespace setVariable ["BCE_fnc_ATAK_FullScreenCamera", _code];
+            uiNamespace setVariable ["BCE_fnc_ATAK_FullScreenCamera", _code];
+        };
+    };
+    private _tp = "\z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_TakePicture.sqf";
+    if (fileExists _tp) then {
+        private _code = compile preprocessFileLineNumbers _tp;
+        if (_code isEqualType {}) then {
+            BCE_fnc_ATAK_TakePicture = _code;
+            missionNamespace setVariable ["BCE_fnc_ATAK_TakePicture", _code];
+            uiNamespace setVariable ["BCE_fnc_ATAK_TakePicture", _code];
+        };
+    };
+};
+call _forceCamCapture;
+{ [_forceCamCapture, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8];
+
+// Photo souris aussi depuis la vue casque plein écran (amont : téléphone seulement).
+[
+    "Better CAS Environment (ScreenShot)", "ScreenShot",
+    localize "STR_BCE_Take_ScreenShot",
+    {
+        private _phone = !isNull (uiNamespace getVariable ["BCE_PhoneCAM_View", displayNull]);
+        private _hcam = !isNull (uiNamespace getVariable ["BCE_HCAM_View", displayNull]);
+        if ((_phone || {_hcam}) && {isNil "ctabifopen"}) then {
+            call BCE_fnc_ATAK_TakePicture;
+        };
+    },
+    "",
+    [0xF0, [false, false, false]]
+] call CBA_fnc_addKeybind;
+
 // Précharger le cache couleurs BCE avant tout updateInterface (sinon Marker_Color_Array
 // vide → index oob → lbSetPictureColor Type Quelconque / Tableau attendu).
 if (!isNil "BCE_fnc_getMarkerColor") then {

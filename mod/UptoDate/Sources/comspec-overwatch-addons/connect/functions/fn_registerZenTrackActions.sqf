@@ -168,7 +168,7 @@ if (
 };
 
 if (
-    !(missionNamespace getVariable ["COMSPEC_ZenTrackActionsRegistered", false])
+    !(missionNamespace getVariable ["COMSPEC_ZenTrackContextRegistered", false])
     && {!isNil "zen_context_menu_fnc_createAction"}
     && {!isNil "zen_context_menu_fnc_addAction"}
 ) then {

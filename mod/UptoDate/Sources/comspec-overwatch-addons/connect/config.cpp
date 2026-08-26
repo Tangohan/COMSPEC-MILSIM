@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.484;
-        versionStr = "1.4.84";
-        versionAr[] = {1, 4, 84};
+        version = 1.486;
+        versionStr = "1.4.86";
+        versionAr[] = {1, 4, 86};
     };
 };
 
@@ -122,6 +122,7 @@ class CfgFunctions {
             class chargeDetonateAll {};
             class chargeConfirmDetonate {};
             class aceAddSelfAction {};
+            class aceSweepPlayerSelfActions {};
             class acePadAction {};
             class pauseManagerShow {};
             class pauseManagerOnLoad {};
@@ -185,6 +186,9 @@ class CfgFunctions {
             class pollMapShapes {};
             class pollAthenaMarkers {};
             class captureReconImage {};
+            class getActiveCaptureCam {};
+            class promoteCaptureCam {};
+            class restoreCaptureCam {};
             class markBcePhotoCapture {};
             class syncLaserCode {};
             class receiveDangerZone {};
