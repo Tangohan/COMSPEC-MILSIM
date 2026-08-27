@@ -1,2 +1,0 @@
-PREP(canUseRangefinder);
-PREP(handleRangeFinderKey);

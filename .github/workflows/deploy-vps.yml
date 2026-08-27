@@ -1,0 +1,57 @@
+name: Deploy VPS
+
+# Push sur main (depuis le PC) → SSH root@VPS → git pull.
+# Le VPS ne pousse jamais. .env, vendor/, storage/uploads restent hors Git.
+#
+# Secret GitHub (Settings → Secrets and variables → Actions) :
+#   VPS_SSH_KEY = clé privée dont la publique est dans /root/.ssh/authorized_keys
+#
+# Sur le VPS, origin en lecture seule (deploy key GitHub, comme STT) :
+#   git remote set-url origin git@github.com:Tangohan/COMSPEC-MILSIM.git
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-athena-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Pull on VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: 72.62.22.55
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 12m
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /var/www/athena.ttrd.fr
+            git fetch origin
+            git checkout main
+            git pull --ff-only origin main
+            if [ -f deploy/vps-sparse-checkout.txt ]; then
+              git sparse-checkout init --cone
+              # shellcheck disable=SC2046
+              git sparse-checkout set $(grep -vE '^\s*(#|$)' deploy/vps-sparse-checkout.txt | tr '\n' ' ')
+            fi
+            PHP_BIN="$(command -v php8.4 || command -v php)"
+            COMPOSER_BIN="/usr/bin/composer"
+            if [ ! -x "$COMPOSER_BIN" ]; then
+              COMPOSER_BIN="$(command -v composer)"
+            fi
+            COMPOSER_ALLOW_SUPERUSER=1 "$PHP_BIN" "$COMPOSER_BIN" install --no-dev --no-interaction --optimize-autoloader
+            chown -R www-data:www-data storage
+            if [ -d public/uploads ]; then
+              chown -R www-data:www-data public/uploads
+            fi
+            if command -v systemctl >/dev/null 2>&1; then
+              systemctl reload php8.4-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
+            fi

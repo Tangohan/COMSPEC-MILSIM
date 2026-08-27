@@ -4,111 +4,65 @@ Checklist de déploiement pour **athena.ttrd.fr** : coque ATHENA (sidebar, topba
 
 ---
 
-## Déploiement production (Git → Hostinger)
+## Déploiement production (GitHub private → VPS)
 
-Le déploiement nominal est assuré par **l’intégration Git Hostinger**, qui suit
-directement `main`. Il ne doit y avoir qu’un seul déploiement automatique par commit :
-le workflow FTP GitHub est conservé uniquement comme solution de secours manuelle.
+Le déploiement nominal est **GitHub Actions → SSH → `git pull`** sur `72.62.22.55`
+(`/var/www/athena.ttrd.fr`). Le dépôt GitHub est **privé**. Le VPS a une *deploy key*
+en lecture seule vers `git@github.com:Tangohan/COMSPEC-MILSIM.git`. On ne pousse
+**jamais** depuis le VPS : uniquement depuis le PC vers GitHub, le VPS tire.
+
+Le FTP Hostinger et l’intégration Git hPanel sont abandonnés.
 
 Flux normal :
 
 1. **Commit** local des changements web.
 2. **`git push origin main`**
-3. **Hostinger** récupère et déploie automatiquement le nouveau commit de `main`.
+3. L’Action **Deploy VPS** se connecte en SSH et exécute `git pull --ff-only` +
+   `composer install --no-dev`.
 
-### Échec Composer avec une archive ZIP vide
+### Secret GitHub (une seule fois)
 
-Le message `is a corrupted zip archive (0 bytes)` émis par
-`vendor/composer/tmp-*.zip` signifie que le téléchargement d'une dépendance a été
-interrompu côté réseau ou cache Hostinger. Ce n'est ni une erreur PHP de
-l'application, ni une archive stockée dans ce dépôt (`vendor/` est ignoré).
+Dépôt → *Settings → Secrets and variables → Actions* :
 
-Procédure de reprise :
-
-1. Relancer une fois le **même déploiement** depuis hPanel. Composer recrée son
-   fichier temporaire lors de la nouvelle tentative ; il est inutile de produire
-   un commit vide ou de modifier les dépendances.
-2. Si la seconde tentative échoue encore, attendre quelques minutes puis relancer,
-   afin de ne pas réutiliser immédiatement un miroir ou un cache défaillant.
-3. Si l'incident persiste, utiliser l'Action GitHub manuelle de secours décrite
-   ci-dessous (`Deploy Athena (secours FTP manuel)`, confirmation `DEPLOY`). Cette
-   voie exclut `vendor/` du transfert, conserve les dépendances déjà présentes en
-   production et ne déclenche donc pas le téléchargement Composer de hPanel. Ne
-   l'utiliser que si les dépendances de `composer.json` n'ont pas changé.
-4. Ne supprimer `composer.json`, ne versionner `vendor/` et ne désactiver TLS sous
-   aucun prétexte : ces contournements rendraient les versions non maîtrisées ou
-   affaibliraient la sécurité du déploiement.
-
-Avant d'attribuer l'échec au dépôt, le contrôle local suivant doit réussir :
-
-```bash
-composer validate --strict
-```
-
-Si hPanel affiche à nouveau une archive de **0 octet** après plusieurs tentatives,
-transmettre au support Hostinger l'heure du déploiement et le chemin
-`vendor/composer/tmp-*.zip` : le fichier vide est la preuve utile d'un échec de
-téléchargement sur leur infrastructure.
-
-> Ne pas activer simultanément le déploiement FTP automatique GitHub : deux
-> synchronisations concurrentes créent une file d’attente, retardent la mise en
-> production et peuvent faire compiler à Hostinger un arbre en cours de modification.
-
-### Secrets GitHub (une seule fois)
-
-Dans le dépôt → *Settings → Secrets and variables → Actions* :
-
-| Secret | Valeur typique |
+| Secret | Valeur |
 |---|---|
-| `FTP_SERVER` | `92.113.24.96` ou hôte FTP hPanel |
-| `FTP_USERNAME` | `u416380327` |
-| `FTP_PASSWORD` | mot de passe FTP Hostinger |
-| `FTP_SERVER_DIR` | optionnel — souvent `./` si le compte FTP ouvre déjà `public_html` |
+| `VPS_SSH_KEY` | Clé **privée** dont la publique est dans `/root/.ssh/authorized_keys` du VPS |
 
-En cas de panne de l’intégration Git Hostinger uniquement, lancer
-*Actions → Deploy Athena (secours FTP manuel) → Run workflow* et saisir `DEPLOY` dans le
-champ de confirmation. Attendre la fin de ce secours avant de relancer un déploiement.
+Le `.env` production, `vendor/` et `storage/uploads` **ne sont pas** dans Git : un
+`git pull` ne les écrase pas.
 
-**Fichiers critiques** : `routes/web.php` doit exister à la racine applicative (`public_html/routes/web.php`). Le workflow le vérifie avant upload et **ne l’exclut pas**. Si un déploiement FTP est annulé en cours de route, le fichier peut manquer → toute l’app plante au boot. Relancer l’Action jusqu’à succès complet.
+### Première fois sur le VPS (sparse-checkout)
 
-### MySQL sur Hostinger
-
-Dans le `.env` **production** (hors Git) :
+Le clone complet pèse ~1,5 Go (mod Arma, archives, worktrees). Le site n’en a pas
+besoin. Après le premier pull qui contient `deploy/vps-sparse-checkout.txt`,
+l’Action réapplique le cone. À la main :
 
 ```bash
-DB_HOST=127.0.0.1
+cd /var/www/athena.ttrd.fr
+git remote set-url origin git@github.com:Tangohan/COMSPEC-MILSIM.git
+git sparse-checkout init --cone
+git sparse-checkout set $(tr '\n' ' ' < deploy/vps-sparse-checkout.txt)
 ```
 
-Éviter `localhost` : sous PHP-FPM Hostinger, cela tente souvent un socket Unix et provoque `SQLSTATE[HY000] [2002] Operation not permitted`. L’app force aussi `localhost` → `127.0.0.1` au moment de la connexion.
+Sans GitHub Actions (secours) : un cron `git fetch && git pull --ff-only` toutes
+les minutes — plus simple, un peu moins propre. Ne pas cumuler cron **et** Action.
 
-### Sessions : ne pas se faire déconnecter à chaque push
+Les migrations SQL ne sont **pas** lancées par l’Action (décision humaine) :
+`php8.4 run-migrations.php` en SSH après un commit qui change le schéma.
 
-Le workflow FTP **exclut** `storage/sessions` (dossier + contenu), ainsi que cache / logs / uploads.
-Les fichiers de session runtime ne doivent jamais être synchronisés.
+### Config locale (PC)
 
-Sur Hostinger, pour être encore plus sûr, ajoutez dans le `.env` **production** (hors Git) :
-
-```bash
-SESSION_SAVE_PATH=/home/u416380327/tmp/athena_sessions
-```
-
-Créez le dossier une fois (SSH ou gestionnaire de fichiers), hors `public_html`.
-Les connexions survivent alors même si un sync FTP touche l’arbre applicatif.
-
-### Config locale
-
-`.deploy.env` (gitignoré) en `DEPLOY_MODE=git` — le hook Cursor rappelle seulement de committer / pousser.
-
-Ancien mode SCP toujours dispo avec `DEPLOY_MODE=scp` + clé SSH (port Hostinger **65002**).
+`.deploy.env` (gitignoré) en `DEPLOY_MODE=git` — le hook Cursor rappelle seulement
+de committer / pousser vers `main`.
 
 ---
 
 ## Action utilisateur
 
 1. Sauvegarder BDD + fichiers sur le serveur.
-2. Pousser via Git (`git push origin main`) — ou laisser l’Action FTP déployer.
-3. Exécuter `php run-migrations.php` (SSH) ou `/run-migrations.php` (UI sécurisée).
-4. Vider le cache opcode PHP si activé.
+2. Pousser via Git (`git push origin main`) — l’Action VPS tire le commit.
+3. Exécuter `php8.4 run-migrations.php` (SSH) si le commit touche le schéma.
+4. Vider le cache opcode PHP si le reload FPM n’a pas suffi.
 5. Tester les URLs de la section 8.
 
 ---

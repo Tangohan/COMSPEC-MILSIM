@@ -29,11 +29,13 @@ Le bootstrap charge **`app/Config/*.php`** (app, database, auth, maintenance, un
 
 1. Cloner le dépôt, installer les dépendances Composer (`composer install --no-dev` en prod si applicable).
 2. Copier `.env.example` vers `.env`, renseigner URL, base, courriel, secrets.
-3. Pointer le **vhost** vers **`public/`** (document root).
+3. Pointer le **vhost** vers **`public/`** (document root). Sur le VPS Athena : `APP_BASE_PATH` **vide** et rewrite interne `/public` → `/` (voir `docs/nginx.example.conf`) pour que les mods Workshop déjà installés (`https://athena.ttrd.fr/public/api/…`) continuent de parler au site sans mise à jour Steam. Ne pas republier le Workshop pour ce seul motif. Ne pas régénérer `X_COMSPEC_KEY` / JWT / secrets recopiés.
 4. Appliquer les migrations et vérifier les droits d’écriture sur **`storage/`** et chemins d’upload configurés.
 5. Construire les assets front si nécessaire (`npm ci` / `npm run build` selon `package.json`).
 6. Vérifier **HTTPS**, cookies sécurisés, et sauvegardes planifiées.
 7. Lancer les smoke tests post-déploiement (`php scripts/post-deploy-smoke-tests.php --base-url=https://votre-domaine.tld`).
+
+Production Athena : chaque `git push` sur `main` déclenche l’Action **Deploy VPS** (`docs` : `DEPLOY.md`, workflow `.github/workflows/deploy-vps.yml`). Le VPS fait `git pull` ; le `.env` et les uploads restent sur le disque.
 
 ### QR codes (pairing téléphone ATAK, courrier)
 

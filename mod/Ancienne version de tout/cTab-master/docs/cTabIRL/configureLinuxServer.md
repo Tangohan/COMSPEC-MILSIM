@@ -1,1 +1,0 @@
-[This documentation has been moved to the wiki](https://github.com/jetelain/cTab/wiki/Host-a-community-cTab-Web-server

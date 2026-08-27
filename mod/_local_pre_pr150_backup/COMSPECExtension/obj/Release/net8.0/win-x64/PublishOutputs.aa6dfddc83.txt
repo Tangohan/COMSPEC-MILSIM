@@ -1,2 +1,0 @@
-E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\bin\native-publish\COMSPECExtension_x64.dll
-E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\bin\native-publish\COMSPECExtension_x64.pdb

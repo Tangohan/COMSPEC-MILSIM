@@ -35,9 +35,16 @@ composer.lock
 
 .idea/
 .vscode/
+.cursor/
+.worktrees/
 *.log
 node_modules/
 ressources/
+
+# Archives locales du mod — le site VPS n’en a pas besoin (sparse-checkout).
+# L’historique GitHub les conserve tant qu’on ne fait pas de filter-repo.
+mod/Ancienne version de tout/
+mod/_local_pre_pr150_backup/
 
 # Copie locale TCPDF : ne pas versionner un dépôt Git imbriqué
 tcpdf/.git/
