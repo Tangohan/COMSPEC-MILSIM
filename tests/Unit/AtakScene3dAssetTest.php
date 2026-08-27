@@ -13,6 +13,7 @@ final class AtakScene3dAssetTest extends TestCase
         $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-scene-3d.js');
         self::assertStringContainsString('/api/atak/scene?mapId=', $js);
         self::assertStringContainsString("item.kind === 'forest'", $js);
+        self::assertStringContainsString('function inflateFootprint', $js);
         self::assertStringContainsString('var top = base.map', $js);
     }
 

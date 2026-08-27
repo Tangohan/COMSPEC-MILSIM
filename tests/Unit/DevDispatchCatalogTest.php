@@ -128,6 +128,10 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($effectifsHints);
         self::assertSame('00246', $effectifsHints['number_pad']);
         self::assertStringContainsString('effectifs', strtolower((string) $effectifsHints['title']));
+        $reliefVisible = DevDispatchCatalog::find('update', '247');
+        self::assertNotNull($reliefVisible);
+        self::assertSame('00247', $reliefVisible['number_pad']);
+        self::assertStringContainsString('relief', strtolower((string) $reliefVisible['title']));
         self::assertNull(DevDispatchCatalog::find('spotrep', '999'));
         self::assertNull(DevDispatchCatalog::find('memo', '1'));
     }

@@ -178,7 +178,13 @@ window.ATAKTerrain3D = (function () {
     /* Leaflet 1.9 ne publie pas de drapeau `loaded` dans ses entrées _tiles.
        L'état de l'élément image est la source fiable, y compris pour une
        tuile déjà présente dans le cache du navigateur. */
-    return image.complete && Number(image.naturalWidth || image.width) > 0;
+    var src = String(image.currentSrc || image.src || '');
+    if (src.indexOf('data:image/gif') === 0) return false;
+    var width = Number(image.naturalWidth || image.width);
+    var height = Number(image.naturalHeight || image.height);
+    /* Le repli 1×1 (tuile CDN absente) drapé sur tout le carré produit un
+       rectangle blanc. On ne texture que de vraies tuiles carto. */
+    return image.complete && width >= 8 && height >= 8;
   }
 
   function startTerrain() {
@@ -401,7 +407,8 @@ window.ATAKTerrain3D = (function () {
     });
     if (exaggerationInput) exaggerationInput.addEventListener('input', function () {
       state.verticalExaggeration = clamp(exaggerationInput.value, 1, 4);
-      scheduleTerrain();
+      if (state.enabled && !terrainGrid) startTerrain();
+      else scheduleTerrain();
       render();
       save();
     });

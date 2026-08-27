@@ -752,7 +752,9 @@ window.ATAKMap = (function () {
       errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
     });
     tileFailCount = 0;
-    tileLayer.on('tileerror', function () {
+    tileLayer.on('tileerror', function (ev) {
+      var img = ev && (ev.tile || (ev.el && ev.el.tagName === 'IMG' ? ev.el : null));
+      if (img && img.style) img.style.visibility = 'hidden';
       tileFailCount += 1;
       if (tileFailCount === 8 && !window._atakTileErrorShown) {
         window._atakTileErrorShown = true;

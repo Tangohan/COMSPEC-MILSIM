@@ -4731,10 +4731,11 @@ body.atak-theme-light .atak-chat-messages {
 .atak-terrain-mesh { position: absolute; inset: 0; z-index: 210; pointer-events: none; }
 .atak-terrain-mesh:not(.atak-terrain-mesh--draped) { mix-blend-mode: multiply; }
 .atak-scene-3d { position: absolute; inset: 0; z-index: 215; pointer-events: none; }
-/* Le canevas WebGL se superpose aux PNG drapés. On garde les tuiles Leaflet
-   dessous : elles servent de repli pendant un chargement, une tuile CORS
-   refusée ou une restauration du contexte WebGL, au lieu d'exposer le gris. */
-.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 1; }
+/* Le canevas est un frère du .leaflet-map-pane (z-index 400). Tant que les
+   tuiles restent opaques, elles recouvrent le relief et les volumes du jeu.
+   Dès que le maillage est prêt, on les rend transparentes : le sol déformé
+   et les bâtiments apparaissent, pastilles et tracés restent au-dessus. */
+.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 0; }
 .atak-map-stage #atak-map .atakHillshade-pane { mix-blend-mode: multiply; }
 .atak-map-stage:not(.atak-map-stage--3d) .atak-terrain-mesh { display: none; }
 .atak-map-stage:not(.atak-map-stage--3d) .atak-scene-3d { display: none; }

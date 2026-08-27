@@ -27,9 +27,31 @@ window.ATAKScene3D = (function () {
     ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
     if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
   }
+  function inflateFootprint(points, minSpan) {
+    if (!points.length) return points;
+    var minX = points[0].x, maxX = points[0].x, minY = points[0].y, maxY = points[0].y, i;
+    for (i = 1; i < points.length; i += 1) {
+      if (points[i].x < minX) minX = points[i].x;
+      if (points[i].x > maxX) maxX = points[i].x;
+      if (points[i].y < minY) minY = points[i].y;
+      if (points[i].y > maxY) maxY = points[i].y;
+    }
+    var spanX = maxX - minX, spanY = maxY - minY;
+    if (spanX >= minSpan && spanY >= minSpan) return points;
+    var cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    var hx = Math.max(minSpan / 2, spanX / 2), hy = Math.max(minSpan / 2, spanY / 2);
+    return points.map(function (p) {
+      return {
+        x: cx + (spanX < 0.5 ? (p.x >= cx ? hx : -hx) : (p.x - cx) * (hx * 2 / Math.max(spanX, 0.5))),
+        y: cy + (spanY < 0.5 ? (p.y >= cy ? hy : -hy) : (p.y - cy) * (hy * 2 / Math.max(spanY, 0.5)))
+      };
+    });
+  }
   function drawObject(item) {
-    var base = corners(item), scale = Math.max(.28, Math.min(1.4, boundMap.getZoom() / 9));
-    var rise = Math.max(2, Number(item.height || 3) * scale);
+    var zoom = boundMap.getZoom();
+    var base = inflateFootprint(corners(item), zoom < 4 ? 6 : 3);
+    var scale = Math.max(.28, Math.min(1.4, zoom / 9));
+    var rise = Math.max(zoom < 4 ? 5 : 2, Number(item.height || 3) * scale);
     var top = base.map(function (p) { return { x: p.x, y: p.y - rise }; });
     var forest = item.kind === 'forest', alpha = forest ? Math.max(.18, Math.min(.58, Number(item.density || 1) * .58)) : .82;
     polygon([base[1], base[2], top[2], top[1]], forest ? 'rgba(20,83,45,' + alpha + ')' : 'rgba(71,85,105,.78)');

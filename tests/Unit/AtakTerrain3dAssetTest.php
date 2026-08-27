@@ -13,7 +13,8 @@ final class AtakTerrain3dAssetTest extends TestCase
         $javascript = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain-3d.js');
 
         self::assertStringContainsString('function tileImageReady(tile)', $javascript);
-        self::assertStringContainsString('image.complete && Number(image.naturalWidth || image.width) > 0', $javascript);
+        self::assertStringContainsString('width >= 8 && height >= 8', $javascript);
+        self::assertStringContainsString("src.indexOf('data:image/gif') === 0", $javascript);
         self::assertStringNotContainsString('!tile.loaded', $javascript);
     }
 
@@ -56,16 +57,16 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertStringContainsString('terrain3d.hidden = false', $tools);
     }
 
-    public function testTerrainMeshKeepsTheLeafletTextureAsFallback(): void
+    public function testReadyTerrainMeshUncoversTheReliefUnderLeafletTiles(): void
     {
         $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak.css');
 
         self::assertStringContainsString(
-            '.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 1; }',
+            '.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 0; }',
             $css
         );
         self::assertStringNotContainsString(
-            '.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 0; }',
+            '.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 1; }',
             $css
         );
     }

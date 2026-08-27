@@ -491,6 +491,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(247, '2026-08-27', 'Relief, bâtiments et mer sans plaques blanches', 'En vue inclinée, le sol se soulève à nouveau, les volumes du jeu se voient, et une tuile manquante n’ouvre plus un rectangle blanc', [], [
+                'L’exagération du relief déforme bien le théâtre déjà relevé',
+                'Bâtiments et forêts déjà reçus se dessinent sur la carte, y compris en vue d’ensemble',
+                'Une case de mer sans fond de carte reste sombre, plus une plaque blanche',
+            ], [
+                'La carte s’inclinait mais restait plate, malgré des milliers de volumes déjà au poste',
+            ], ['atak'], [
+                'Rechargez la carte du poste (vidage du cache du navigateur si l’ancienne vue reste). Pas besoin d’un nouveau pack jeu.',
+            ], 'Portail 1.5.51'),
             $pr(246, '2026-08-27', 'Effectifs : unités expliquées, identité claire', 'Survoler une affectation indique sa place dans l’organigramme ; le nom de compte ne se confond plus avec un personnage', [], [
                 'Info-bulle sur l’affectation : chemin dans l’organigramme, code d’unité et présentation',
                 'Le nom affiché du compte reste principal ; le personnage n’apparaît que s’il est différent',
