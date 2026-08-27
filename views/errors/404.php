@@ -7,13 +7,16 @@ $heroImg = $base . '/assets/images/fog-team.jpg';
 if (empty($GLOBALS['__app_locale']) && class_exists(\App\Services\I18n\LocaleService::class)) {
     (new \App\Services\I18n\LocaleService())->boot();
 }
+$pageTitle = isset($title) && trim((string) $title) !== '' ? (string) $title : __('errors.404_title');
+$pageHeading = isset($heading) && trim((string) $heading) !== '' ? (string) $heading : __('errors.404_heading');
+$pageBody = isset($body) && trim((string) $body) !== '' ? (string) $body : __('errors.404_body');
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars(function_exists('html_lang') ? html_lang() : 'fr', ENT_QUOTES, 'UTF-8') ?>" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars(__('errors.404_title'), ENT_QUOTES, 'UTF-8') ?></title>
+    <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link href="<?= htmlspecialchars($base) ?>/assets/css/styles.css" rel="stylesheet">
@@ -128,11 +131,11 @@ if (empty($GLOBALS['__app_locale']) && class_exists(\App\Services\I18n\LocaleSer
                     <p class="text-[9px] font-black tracking-[0.45em] text-emerald-500 uppercase mb-4"><?= htmlspecialchars(__('errors.404_kicker'), ENT_QUOTES, 'UTF-8') ?></p>
                     <h1 class="text-white text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.95] mb-6">
                         404<br>
-                        <span class="text-white/90"><?= htmlspecialchars(__('errors.404_heading'), ENT_QUOTES, 'UTF-8') ?></span>
+                        <span class="text-white/90"><?= htmlspecialchars($pageHeading, ENT_QUOTES, 'UTF-8') ?></span>
                     </h1>
                     <div class="h-[1px] w-24 bg-white/20 mb-6"></div>
                     <p class="text-white/50 text-[11px] sm:text-xs font-bold tracking-[0.25em] uppercase leading-relaxed max-w-xl">
-                        <?= htmlspecialchars(__('errors.404_body'), ENT_QUOTES, 'UTF-8') ?>
+                        <?= htmlspecialchars($pageBody, ENT_QUOTES, 'UTF-8') ?>
                     </p>
 
                     <div class="mt-8 flex flex-wrap gap-3">

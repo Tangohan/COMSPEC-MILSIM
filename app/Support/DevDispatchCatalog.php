@@ -491,6 +491,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(245, '2026-08-27', 'Messages d’erreur plus clairs', 'Connexion, accès et fiches absentes se comprennent sans jargon', [], [
+                'Un besoin de connexion affiche « Connexion requise », plus un faux refus d’accès',
+                'Une fiche personnel absente ouvre une page claire avec retour à l’annuaire',
+                'Les pages d’erreur du portail indiquent quoi faire ensuite',
+            ], [
+                'Les titres des notifications ne confondent plus session, connexion et refus d’accès',
+            ], ['command', 'personnel'], [
+                'Aucune action côté opérateurs ATAK. Rechargez le portail pour voir les nouveaux libellés.',
+            ], 'Portail 1.5.50'),
             $pr(244, '2026-08-27', 'Portail missions au poste', 'Missions, participants, état des communications et liaisons se lisent depuis le back-office', [
                 'Un portail missions regroupe les plans, le cycle de mission, les effectifs affectés et l’état de liaison ATAK',
                 'Chaque mission ouvre un récapitulatif avec progression, participants, communications et liaisons',

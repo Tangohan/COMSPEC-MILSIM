@@ -200,7 +200,10 @@ $serviceHistoryEventTypeFr = static function (?string $t): string {
 };
 
 if (!$targetUser) {
-    echo '<p>Utilisateur non trouvé.</p>';
+    echo '<div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">';
+    echo '<p class="font-semibold">Fiche introuvable</p>';
+    echo '<p class="mt-1">Cette fiche personnel n’est plus accessible. <a class="underline font-semibold" href="' . htmlspecialchars(url('personnel'), ENT_QUOTES, 'UTF-8') . '">Retour à l’annuaire</a></p>';
+    echo '</div>';
     return;
 }
 

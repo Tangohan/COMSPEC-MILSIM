@@ -169,7 +169,7 @@ final class CooperationCatalogWebController
     private function assertAccess(): bool
     {
         if (! Session::get('user_id')) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
 
             return false;
         }

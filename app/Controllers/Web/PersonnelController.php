@@ -135,6 +135,40 @@ class PersonnelController
         return $this->userRepository->findByProfileSlug($tenantId, $raw);
     }
 
+    /** Fiche absente : page soignée (GET) ou toast + retour annuaire (POST). */
+    private function personnelMissingResponse(bool $asRedirect = false): Response
+    {
+        $flash = (string) __('errors.personnel_missing_flash');
+        if ($asRedirect) {
+            Session::flash('error', $flash);
+
+            return Response::redirect(url('personnel'));
+        }
+
+        return Response::view('errors.404', [
+            'title' => (string) __('errors.personnel_missing_title'),
+            'heading' => (string) __('errors.personnel_missing_heading'),
+            'body' => (string) __('errors.personnel_missing_body'),
+        ])->setStatusCode(404);
+    }
+
+    /** Action ou consultation non autorisée sur une fiche. */
+    private function personnelForbiddenResponse(bool $asRedirect = false, ?string $redirectUrl = null): Response
+    {
+        $message = (string) __('errors.personnel_forbidden_body');
+        if ($asRedirect) {
+            Session::flash('error', $message);
+
+            return Response::redirect($redirectUrl ?? url('personnel'));
+        }
+
+        return Response::view('errors.403', [
+            'title' => (string) __('errors.403_title'),
+            'heading' => (string) __('errors.403_heading'),
+            'body' => $message,
+        ])->setStatusCode(403);
+    }
+
     /** Segment d’URL pour les redirections (slug préféré). */
     private function personPathSegment(array $userRow): string
     {
@@ -378,7 +412,7 @@ class PersonnelController
         $raw = (string) ($params['id'] ?? '');
         $target = $this->resolvePersonnelTarget($raw, (int) $tenantId);
         if (!$target) {
-            return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
+            return $this->personnelMissingResponse(false);
         }
 
         $currentUser = $this->authService->user();
@@ -821,13 +855,13 @@ class PersonnelController
         $raw = (string) ($params['id'] ?? '');
         $target = $this->resolvePersonnelTarget($raw, $tenantId);
         if (!$target) {
-            return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
+            return $this->personnelMissingResponse(true);
         }
         $currentUserId = (int) Session::get('user_id');
         $isSelf = ($currentUserId === (int) $target['id']);
         $gate = Gate::getInstance();
         if (!$isSelf && !$this->canStaffEditPersonnel() && !$gate->allows('personnel.grades.manage')) {
-            return (new Response())->setStatusCode(403)->setBody('Non autorisé.');
+            return $this->personnelForbiddenResponse(true, url('personnel/' . $this->personPathSegment($target)));
         }
         $this->matriculeService->assignNextForUser((int) $target['id'], $tenantId);
         Session::flash('success', 'Matricule attribué.');
@@ -849,12 +883,12 @@ class PersonnelController
         $raw = (string) ($params['id'] ?? '');
         $target = $this->resolvePersonnelTarget($raw, $tenantId);
         if (!$target) {
-            return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
+            return $this->personnelMissingResponse(true);
         }
         $currentUserId = (int) Session::get('user_id');
         $isSelf = ($currentUserId === (int) $target['id']);
         if (!$isSelf && !$this->canStaffEditPersonnel()) {
-            return (new Response())->setStatusCode(403)->setBody('Non autorisé.');
+            return $this->personnelForbiddenResponse(true, url('personnel/' . $this->personPathSegment($target)));
         }
         $notes = trim((string) ($request->input('admin_notes') ?? ''));
         $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
@@ -872,7 +906,7 @@ class PersonnelController
         $raw = (string) ($params['id'] ?? '');
         $target = $this->resolvePersonnelTarget($raw, $tenantId);
         if (!$target) {
-            return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
+            return $this->personnelMissingResponse(true);
         }
         if (!$this->canStaffEditPersonnel()) {
             Session::flash('error', 'Vous n’êtes pas autorisé à enregistrer un bilan sur ce dossier.');
@@ -1006,12 +1040,12 @@ class PersonnelController
         $raw = (string) ($params['id'] ?? '');
         $target = $this->resolvePersonnelTarget($raw, $tenantId, (int) $currentUser['id']);
         if (!$target) {
-            return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
+            return $this->personnelMissingResponse(false);
         }
         $currentUserId = (int) $currentUser['id'];
         $isSelf = ($currentUserId === (int) $target['id']);
         if (!$isSelf && !$this->canStaffEditPersonnel()) {
-            return (new Response())->setStatusCode(403)->setBody('Non autorisé.');
+            return $this->personnelForbiddenResponse(false);
         }
         $uid = (int) $target['id'];
         $personnelProfile = $this->personnelProfileRepository->getByUserId($uid);
@@ -1188,13 +1222,13 @@ class PersonnelController
         $raw = (string) ($params['id'] ?? '');
         $target = $this->resolvePersonnelTarget($raw, $tenantId, (int) $currentUser['id']);
         if (!$target) {
-            return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
+            return $this->personnelMissingResponse(true);
         }
         $currentUserId = (int) $currentUser['id'];
         $isSelf = ($currentUserId === (int) $target['id']);
         $canStaffEdit = $this->canStaffEditPersonnel();
         if (!$isSelf && !$canStaffEdit) {
-            return (new Response())->setStatusCode(403)->setBody('Non autorisé.');
+            return $this->personnelForbiddenResponse(true, url('personnel'));
         }
         $clearanceReview = trim((string) $request->input('clearance_reviewed_at'));
         $readinessRaw = $request->input('readiness_score');
@@ -1715,12 +1749,12 @@ class PersonnelController
         $raw = (string) ($params['id'] ?? '');
         $target = $this->resolvePersonnelTarget($raw, $tenantId);
         if (!$target) {
-            return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
+            return $this->personnelMissingResponse(true);
         }
         $currentUserId = (int) $currentUser['id'];
         $isSelf = $currentUserId === (int) $target['id'];
         if (!$isSelf && !$this->canStaffEditPersonnel()) {
-            Session::flash('error', 'Action non autorisée.');
+            Session::flash('error', 'Vous n’avez pas l’autorisation d’importer le profil Steam sur cette fiche.');
 
             return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
         }
