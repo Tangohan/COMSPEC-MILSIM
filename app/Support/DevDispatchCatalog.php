@@ -491,6 +491,14 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(245, '2026-08-27', 'Effectifs : unités expliquées, identité claire', 'Survoler une affectation indique sa place dans l’organigramme ; le nom de compte ne se confond plus avec un personnage', [], [
+                'Info-bulle sur l’affectation : chemin dans l’organigramme, code d’unité et présentation',
+                'Le nom affiché du compte reste principal ; le personnage n’apparaît que s’il est différent',
+            ], [
+                'Un mauvais nom de scène ne fait plus croire qu’on ouvre le dossier d’un autre membre',
+            ], ['personnel', 'command'], [
+                'Si un dossier a encore un mauvais nom de personnage, corrigez-le sur la fiche d’édition.',
+            ], 'Portail 1.5.50'),
             $pr(244, '2026-08-27', 'Portail missions au poste', 'Missions, participants, état des communications et liaisons se lisent depuis le back-office', [
                 'Un portail missions regroupe les plans, le cycle de mission, les effectifs affectés et l’état de liaison ATAK',
                 'Chaque mission ouvre un récapitulatif avec progression, participants, communications et liaisons',
