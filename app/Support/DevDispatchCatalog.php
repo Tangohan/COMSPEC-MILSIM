@@ -491,6 +491,14 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(244, '2026-08-27', 'Portail missions au poste', 'Missions, participants, état des communications et liaisons se lisent depuis le back-office', [
+                'Un portail missions regroupe les plans, le cycle de mission, les effectifs affectés et l’état de liaison ATAK',
+                'Chaque mission ouvre un récapitulatif avec progression, participants, communications et liaisons',
+            ], [
+                'La navigation Opérations pointe vers ce portail, à côté de la planification',
+            ], [], ['command', 'atak'], [
+                'Ouvrez Administration → Opérations → Portail missions. Pas besoin d’un nouveau pack jeu.',
+            ], 'Portail 1.5.49'),
             $pr(242, '2026-08-26', 'Le menu d’actions ne s’empile plus à l’écran', 'Ouvrir les actions personnelles n’affiche plus la même liste recopiée sur toute la hauteur', [], [], [
                 'Après un retour au combat, chaque action (Overwatch, photo, carte, santé) n’apparaît plus des dizaines de fois les unes sous les autres',
             ], ['atak'], [

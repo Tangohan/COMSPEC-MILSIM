@@ -21,7 +21,7 @@ final class SseWorkshopPackAssetTest extends TestCase
 
         self::assertStringContainsString('Arma 3 Tools\AddonBuilder\AddonBuilder.exe', $build);
         self::assertStringContainsString('COMSPEC_BUILD_NOPAUSE', $build);
-        self::assertStringContainsString('comspec_sse_main.pbo', $build);
+        self::assertStringContainsString('comspec_sse_%%C.pbo', $build);
         self::assertStringContainsString('compat_ace', $build);
         self::assertStringContainsString('compat_bii', $build);
         self::assertStringContainsString('build_pbo.bat', $wrapper);

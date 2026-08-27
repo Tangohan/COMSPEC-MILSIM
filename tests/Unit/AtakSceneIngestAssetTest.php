@@ -65,7 +65,7 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('class sampleScene {};', $cfg);
         self::assertStringContainsString('class sampleTheater {};', $cfg);
         self::assertStringContainsString('class theaterSurveyVerify {};', $cfg);
-        self::assertStringContainsString('1.4.84', $cfg);
+        self::assertStringContainsString('1.4.86', $cfg);
     }
 
     public function testTheaterSurveyModuleAndDialogExist(): void
@@ -148,12 +148,12 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('collectVehicleOccupants', $air);
         self::assertStringContainsString('["occupants", _occ]', $air);
         self::assertStringContainsString('["crew", _occ]', $air);
-        self::assertStringContainsString('>= 7', $air);
-        self::assertStringContainsString('< 2.5', $air);
+        self::assertStringContainsString('7 max', $air);
+        self::assertStringContainsString('2.5 max', $air);
         self::assertStringNotContainsString('>= 18', $air);
 
         $track = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_updateVehicleTracking.sqf');
-        self::assertStringContainsString('< 2.5', $track);
+        self::assertStringContainsString('_vehGap = 2.5', $track);
 
         $gps = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_initGpsBeacons.sqf');
         self::assertStringContainsString('}, 3, []] call CBA_fnc_addPerFrameHandler;', $gps);

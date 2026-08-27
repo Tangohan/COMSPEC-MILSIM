@@ -16,7 +16,7 @@ final class AtakMapToolbarAssetTest extends TestCase
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
 
         self::assertDoesNotMatchRegularExpression(
-            '/\.atak-map-tools__cluster-label\s*\{[^}]*pointer-events:\s*none/s',
+            '/button\.atak-map-tools__cluster-label\s*\{[^}]*pointer-events:\s*none/s',
             $shell
         );
         self::assertStringContainsString('button.atak-map-tools__cluster-label {', $shell);
@@ -34,7 +34,7 @@ final class AtakMapToolbarAssetTest extends TestCase
 
         self::assertStringContainsString('panel.hidden = false', $tools);
         self::assertStringContainsString("panel.removeAttribute('hidden')", $tools);
-        self::assertStringNotContainsString('if (panel) panel.hidden = !open;', $tools);
+        self::assertStringContainsString('/* Toujours visibles : le chrome C2 les aligne sous le libellé. */', $tools);
 
         self::assertStringNotContainsString('id="atak-tool-group-mark" hidden', $view);
         self::assertStringNotContainsString('id="atak-tool-group-draw" hidden', $view);

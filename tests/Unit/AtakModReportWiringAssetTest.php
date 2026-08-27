@@ -13,7 +13,7 @@ final class AtakModReportWiringAssetTest extends TestCase
         $container = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Core/Container.php');
         $start = strpos($container, '\\App\\Controllers\\Api\\AtakApiController::class =>');
         self::assertNotFalse($start);
-        $block = substr($container, $start, 1800);
+        $block = substr($container, $start, 3200);
 
         self::assertStringNotContainsString(
             'reconRepo: self::get(\\App\\Repositories\\ReconImageRepository::class)',
