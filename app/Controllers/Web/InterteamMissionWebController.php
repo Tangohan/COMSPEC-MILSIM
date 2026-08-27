@@ -49,7 +49,7 @@ class InterteamMissionWebController
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
         if ($tenantId <= 0 || $userId <= 0) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
 
             return Response::redirect(url('login'));
         }
@@ -116,7 +116,7 @@ class InterteamMissionWebController
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
         if ($tenantId <= 0 || $userId <= 0) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
 
             return Response::redirect(url('login'));
         }
@@ -1755,7 +1755,7 @@ class InterteamMissionWebController
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
         if ($tenantId <= 0 || $userId <= 0) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
 
             return false;
         }

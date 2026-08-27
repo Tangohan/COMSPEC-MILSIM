@@ -16,23 +16,12 @@ $eyebrowTitle = isset($flash_title) ? (string) $flash_title : null;
 $description = isset($flash_description) ? (string) $flash_description : null;
 
 if ($eyebrowTitle === null || $eyebrowTitle === '') {
-    if ($variant === 'error') {
-        if (preg_match('/confirmez votre adresse|e-mail avant de vous connecter|vérification.*e-mail/i', $message)) {
-            $eyebrowTitle = 'Confirmation requise';
-        } elseif (preg_match('/authentification|session|connecter|connecté/i', $message)) {
-            $eyebrowTitle = 'Accès refusé';
-            if ($description === null || $description === '') {
-                $description = 'Cette action ou cette page nécessite une session valide.';
-            }
-        } else {
-            $eyebrowTitle = 'Erreur';
+    $eyebrowTitle = \App\Support\FlashAlertTitle::for((string) $variant, $message);
+    if (($description === null || $description === '') && $variant === 'error') {
+        $autoDesc = \App\Support\FlashAlertTitle::descriptionFor((string) $variant, $message, $eyebrowTitle);
+        if ($autoDesc !== null) {
+            $description = $autoDesc;
         }
-    } elseif ($variant === 'success') {
-        $eyebrowTitle = 'Succès';
-    } elseif ($variant === 'warning') {
-        $eyebrowTitle = 'Attention';
-    } else {
-        $eyebrowTitle = 'Information';
     }
 }
 

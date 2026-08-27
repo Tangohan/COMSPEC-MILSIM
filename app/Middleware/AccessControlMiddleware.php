@@ -33,7 +33,7 @@ final class AccessControlMiddleware
                 return Response::json(['ok' => false, 'error' => 'Access denied by access policy.'], 403);
             }
 
-            Session::flash('error', 'Accès refusé par les règles de sécurité de la communauté.');
+            Session::flash('error', 'Votre accès à cette page est restreint par les règles de sécurité de la communauté.');
 
             return Response::redirect(url('dashboard'));
         }

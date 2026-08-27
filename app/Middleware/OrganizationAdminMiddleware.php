@@ -14,7 +14,7 @@ class OrganizationAdminMiddleware
     public function __invoke(Request $request, callable $next): Response
     {
         if (!Session::get('user_id')) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
             return Response::redirect(url('login'));
         }
         $gate = \App\Core\Gate::getInstance();
@@ -82,7 +82,7 @@ class OrganizationAdminMiddleware
             }
         }
         if (!$scopedOrgAccess) {
-            Session::flash('error', 'Accès réservé aux administrateurs organisationnels.');
+            Session::flash('error', 'Cette zone est réservée aux personnes habilitées à administrer la communauté. Si vous pensez devoir y accéder, contactez un administrateur.');
             if ($gate->allows('admin.system')) {
                 return Response::redirect(url('admin'));
             }

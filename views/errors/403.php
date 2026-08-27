@@ -7,7 +7,11 @@ $heroImg = $base . '/assets/images/fog-team.jpg';
 if (empty($GLOBALS['__app_locale']) && class_exists(\App\Services\I18n\LocaleService::class)) {
     (new \App\Services\I18n\LocaleService())->boot();
 }
-$pageTitle = $title ?? __('errors.403_title');
+$pageTitle = isset($title) && trim((string) $title) !== '' ? (string) $title : __('errors.403_title');
+$pageHeading = isset($heading) && trim((string) $heading) !== '' ? (string) $heading : __('errors.403_heading');
+$pageBody = isset($body) && trim((string) $body) !== ''
+    ? (string) $body
+    : (isset($message) && trim((string) $message) !== '' ? (string) $message : __('errors.403_body'));
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars(function_exists('html_lang') ? html_lang() : 'fr', ENT_QUOTES, 'UTF-8') ?>" class="scroll-smooth">
@@ -130,11 +134,11 @@ $pageTitle = $title ?? __('errors.403_title');
                     <p class="text-[9px] font-black tracking-[0.45em] text-emerald-500 uppercase mb-4"><?= htmlspecialchars(__('errors.403_kicker'), ENT_QUOTES, 'UTF-8') ?></p>
                     <h1 id="err403-heading" class="text-white text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.95] mb-6">
                         403<br>
-                        <span class="text-white/90"><?= htmlspecialchars(__('errors.403_heading'), ENT_QUOTES, 'UTF-8') ?></span>
+                        <span class="text-white/90"><?= htmlspecialchars($pageHeading, ENT_QUOTES, 'UTF-8') ?></span>
                     </h1>
                     <div class="h-[1px] w-24 bg-white/20 mb-6"></div>
                     <p class="text-white/50 text-[11px] sm:text-xs font-bold tracking-[0.25em] uppercase leading-relaxed max-w-xl">
-                        <?= htmlspecialchars(__('errors.403_body'), ENT_QUOTES, 'UTF-8') ?>
+                        <?= htmlspecialchars($pageBody, ENT_QUOTES, 'UTF-8') ?>
                     </p>
 
                     <div class="mt-8 flex flex-wrap gap-3">

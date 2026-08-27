@@ -82,7 +82,7 @@ class ForumNewTopicController
         $sessionTenantId = (int) Session::get('tenant_id');
         $userId = Session::get('user_id');
         if (!$sessionTenantId || !$userId) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
             return Response::redirect(url('login'));
         }
 
@@ -193,7 +193,7 @@ class ForumNewTopicController
         $sessionTenantId = (int) Session::get('tenant_id');
         $userId = Session::get('user_id');
         if (!$sessionTenantId || !$userId) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
             return Response::redirect(url('login'));
         }
 

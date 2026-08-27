@@ -18,7 +18,7 @@ final class TenantResourceAdminMiddleware
     public function __invoke(Request $request, callable $next): Response
     {
         if (!Session::get('user_id')) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
             return Response::redirect(url('login'));
         }
         $gate = \App\Core\Gate::getInstance();
