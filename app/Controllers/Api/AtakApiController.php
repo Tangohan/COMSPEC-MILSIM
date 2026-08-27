@@ -11196,7 +11196,7 @@ class AtakApiController
         $mapId = $this->mapId($request);
 
         $repo = new \App\Repositories\AtakVehicleTrackingRepository();
-        
+
         $filters = [
             'vehicle_class' => $request->get('vehicle_class'),
             'side' => $request->get('side'),
@@ -11207,8 +11207,12 @@ class AtakApiController
             'offset' => $request->get('offset') ? (int) $request->get('offset') : 0,
         ];
 
-        $vehicles = $repo->listActive($tenantId, $mapId, array_filter($filters, fn($v) => $v !== null));
-        
+        try {
+            $vehicles = $repo->listActive($tenantId, $mapId, array_filter($filters, fn($v) => $v !== null));
+        } catch (\Throwable) {
+            $vehicles = [];
+        }
+
         return Response::json([
             'vehicles' => $vehicles,
             'count' => count($vehicles)

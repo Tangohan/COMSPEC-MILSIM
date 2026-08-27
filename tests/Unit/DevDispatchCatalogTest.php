@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(2, $byKind['spotrep']);
         self::assertSame(2, $byKind['techrep']);
-        self::assertSame(62, $byKind['update']);
-        self::assertCount(66, $all);
+        self::assertSame(63, $byKind['update']);
+        self::assertCount(67, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -132,6 +132,10 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($reliefVisible);
         self::assertSame('00247', $reliefVisible['number_pad']);
         self::assertStringContainsString('relief', strtolower((string) $reliefVisible['title']));
+        $vehiclesBanner = DevDispatchCatalog::find('update', '248');
+        self::assertNotNull($vehiclesBanner);
+        self::assertSame('00248', $vehiclesBanner['number_pad']);
+        self::assertStringContainsString('engin', strtolower((string) $vehiclesBanner['title']));
         self::assertNull(DevDispatchCatalog::find('spotrep', '999'));
         self::assertNull(DevDispatchCatalog::find('memo', '1'));
     }

@@ -244,17 +244,28 @@ class AtakVehicleTrackingRepository
             $params['damaged'] = (bool) $filters['damaged'];
         }
 
+        $where[] = "status <> 'DESTROYED'";
         $whereClause = implode(' AND ', $where);
         $orderBy = $filters['order_by'] ?? 'last_seen_at DESC';
-        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 200;
-        $offset = isset($filters['offset']) ? (int) $filters['offset'] : 0;
+        $allowedOrder = ['last_seen_at DESC', 'last_seen_at ASC', 'vehicle_callsign ASC'];
+        if (!in_array($orderBy, $allowedOrder, true)) {
+            $orderBy = 'last_seen_at DESC';
+        }
+        $limit = isset($filters['limit']) ? max(1, min(500, (int) $filters['limit'])) : 200;
+        $offset = isset($filters['offset']) ? max(0, (int) $filters['offset']) : 0;
 
-        $sql = "SELECT * FROM v_atak_active_vehicles 
-                WHERE {$whereClause} 
-                ORDER BY {$orderBy} 
+        // Table réelle : la vue (sous-requête d’entretien par ligne) casse la
+        // relève carte si elle manque, et saturait MySQL toutes les 3 s.
+        $sql = "SELECT * FROM atak_vehicle_tracking
+                WHERE {$whereClause}
+                ORDER BY {$orderBy}
                 LIMIT {$limit} OFFSET {$offset}";
 
-        $results = $this->db->fetchAll($sql, $params);
+        try {
+            $results = $this->db->fetchAll($sql, $params);
+        } catch (\Throwable) {
+            return [];
+        }
 
         foreach ($results as &$row) {
             $this->decodeJsonFields($row);
@@ -268,16 +279,20 @@ class AtakVehicleTrackingRepository
      */
     public function findByCallsign(int $tenantId, int $contextId, string $callsign): ?array
     {
-        $sql = "SELECT * FROM v_atak_active_vehicles 
-                WHERE tenant_id = :tenant_id 
-                  AND context_id = :context_id 
+        $sql = "SELECT * FROM atak_vehicle_tracking
+                WHERE tenant_id = :tenant_id
+                  AND context_id = :context_id
                   AND vehicle_callsign = :callsign";
 
-        $vehicle = $this->db->fetchOne($sql, [
-            'tenant_id' => $tenantId,
-            'context_id' => $contextId,
-            'callsign' => $callsign
-        ]);
+        try {
+            $vehicle = $this->db->fetchOne($sql, [
+                'tenant_id' => $tenantId,
+                'context_id' => $contextId,
+                'callsign' => $callsign
+            ]);
+        } catch (\Throwable) {
+            return null;
+        }
 
         if ($vehicle) {
             $this->decodeJsonFields($vehicle);
@@ -291,8 +306,12 @@ class AtakVehicleTrackingRepository
      */
     public function findById(int $id): ?array
     {
-        $sql = "SELECT * FROM v_atak_active_vehicles WHERE id = :id";
-        $vehicle = $this->db->fetchOne($sql, ['id' => $id]);
+        $sql = "SELECT * FROM atak_vehicle_tracking WHERE id = :id";
+        try {
+            $vehicle = $this->db->fetchOne($sql, ['id' => $id]);
+        } catch (\Throwable) {
+            return null;
+        }
 
         if ($vehicle) {
             $this->decodeJsonFields($vehicle);

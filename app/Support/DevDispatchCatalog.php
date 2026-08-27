@@ -491,6 +491,14 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(248, '2026-08-27', 'Le poste ne se fige plus pour un engin isolé', 'Un suivi d’engin indisponible ne coupe plus toute la carte : les effectifs et les pastilles continuent de se mettre à jour', [], [
+                'Le bandeau « le poste n’atteint pas ses données » ne revient plus en boucle si seul le suivi des engins est en panne',
+                'Les pastilles d’effectifs et de liaison restent à jour pendant ce temps',
+            ], [
+                'Un refus sur les engins faisait croire que tout le poste était coupé, toutes les quelques secondes',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Pas besoin d’un nouveau pack jeu.',
+            ], 'Portail 1.5.52'),
             $pr(247, '2026-08-27', 'Relief, bâtiments et mer sans plaques blanches', 'En vue inclinée, le sol se soulève à nouveau, les volumes du jeu se voient, et une tuile manquante n’ouvre plus un rectangle blanc', [], [
                 'L’exagération du relief déforme bien le théâtre déjà relevé',
                 'Bâtiments et forêts déjà reçus se dessinent sur la carte, y compris en vue d’ensemble',

@@ -11,8 +11,11 @@ final class AtakPollBackoffAssetTest extends TestCase
     public function testWebClientPausesPollsOnForbiddenAndUnavailable(): void
     {
         $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-socket.js');
+        self::assertStringContainsString('function countsTowardUnavailable(url, method)', $js);
+        self::assertStringContainsString('countsTowardUnavailable(url, method)', $js);
         self::assertStringContainsString('res.status === 403 || res.status === 429 || res.status === 503', $js);
         self::assertStringContainsString("noteUnavailable(retry, res.status === 403 ? 'forbidden' : 'unavailable')", $js);
+        self::assertStringNotContainsString('if (ours && res && !heartbeat && (res.status === 403', $js);
         self::assertStringContainsString('SEND_BACKOFF_LADDER_SEC = [45, 75, 150, 300, 600]', $js);
         self::assertStringContainsString('noteSendSuccess()', $js);
         self::assertStringContainsString('Accès au poste momentanément refusé', $js);
@@ -27,6 +30,7 @@ final class AtakPollBackoffAssetTest extends TestCase
         self::assertStringContainsString('function isMutatingMethod(method)', $js);
         self::assertStringContainsString('shouldShortCircuitPaused(url, method)', $js);
         self::assertStringContainsString('isCoreRosterUrl(url) || heartbeat', $js);
+        self::assertStringContainsString('function countsTowardUnavailable(url, method)', $js);
         self::assertStringContainsString('Différé · mauvaise connexion', $js);
         self::assertStringNotContainsString('if (ours && isApiPaused() && !heartbeat)', $js);
         self::assertStringNotContainsString('Aucun rendu visuel', $js);

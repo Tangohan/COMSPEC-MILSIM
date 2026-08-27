@@ -51,6 +51,15 @@ window.ATAKSocket = (function () {
     return /\/api\/units(?:\?|$)/.test(s);
   }
 
+  /* Engins, météo, caméras… : un refus isolé ne doit pas crier que tout le poste est coupé.
+     Les effectifs qui répondent ensuite réinitialisaient l’avertissement, donc le bandeau
+     revenait toutes les quelques secondes. */
+  function countsTowardUnavailable(url, method) {
+    if (!isOurApiUrl(url) || isHeartbeatUrl(url)) return false;
+    if (isMutatingMethod(method)) return true;
+    return isCoreRosterUrl(url);
+  }
+
   function requestMethod(input, init) {
     if (init && init.method) return String(init.method).toUpperCase();
     if (input && typeof input !== 'string' && input.method) return String(input.method).toUpperCase();
@@ -205,7 +214,7 @@ window.ATAKSocket = (function () {
         }));
       }
       return nativeFetch(input, init).then(function (res) {
-        if (ours && res && !heartbeat && (res.status === 403 || res.status === 429 || res.status === 503 || res.status === 0)) {
+        if (ours && res && countsTowardUnavailable(url, method) && (res.status === 403 || res.status === 429 || res.status === 503 || res.status === 0)) {
           var retry = res.status === 403 ? 20 : 30;
           try {
             var header = res.headers.get('Retry-After');
@@ -217,7 +226,7 @@ window.ATAKSocket = (function () {
         }
         return res;
       }).catch(function (err) {
-        if (ours && !heartbeat && isMutatingMethod(method)) {
+        if (ours && countsTowardUnavailable(url, method)) {
           noteUnavailable(8, 'unavailable');
         }
         throw err;
