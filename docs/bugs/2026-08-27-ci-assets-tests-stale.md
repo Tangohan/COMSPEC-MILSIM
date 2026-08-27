@@ -14,7 +14,7 @@ Les tests figeaient d’anciennes chaînes alors que le code avait évolué (1.4
 
 ## Correctif
 
-Réaligner les assertions sur le comportement actuel ; capitaliser « Les contacts… » dans le `title` du bouton ; élargir le bloc Container lu par le test wiring.
+Réaligner les assertions sur le comportement actuel ; capitaliser « Les contacts… » dans le `title` du bouton ; élargir le bloc Container lu par le test wiring ; retirer 3 ignores PHPStan orphelins du baseline.
 
 ## Fichiers touchés
 
@@ -26,10 +26,12 @@ Réaligner les assertions sur le comportement actuel ; capitaliser « Les contac
 - `tests/Unit/AtakModReportWiringAssetTest.php`
 - `tests/Unit/SseWorkshopPackAssetTest.php`
 - `views/atak.php`
+- `phpstan-baseline.neon`
 
 ## Vérification
 
-`./vendor/bin/phpunit` → 456 tests, 0 failure (10 skipped).
+`./vendor/bin/phpunit` → 456 tests, 0 failure.  
+`vendor/bin/phpstan analyse` → OK.
 
 ## Statut
 
