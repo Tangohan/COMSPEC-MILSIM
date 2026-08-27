@@ -1,0 +1,472 @@
+/**
+ * Portail missions — motifs DSFR (filets, barres de progression, grilles meta)
+ * avec typo et couleurs Athena (Inter, émeraude, slate).
+ */
+
+.bo-mportal {
+  --mp-text: var(--text, #0f172a);
+  --mp-muted: var(--muted, #64748b);
+  --mp-mention: #666;
+  --mp-bg: var(--bg, #f8fafc);
+  --mp-surface: var(--surface, #fff);
+  --mp-border: var(--border, #e2e8f0);
+  --mp-primary: var(--primary-strong, #065f46);
+  --mp-accent: var(--primary, #059669);
+  --mp-accent-soft: var(--primary-soft, #ecfdf5);
+  --mp-section: #e8f5ef;
+  --mp-section-text: #0b3d38;
+  --mp-progress-live: #ca8a04;
+  --mp-progress-done: var(--primary, #059669);
+  --mp-progress-idle: #e2e8f0;
+  --mp-info-bar: #f1f5f9;
+  --mp-font: var(--font-sans, Inter, system-ui, sans-serif);
+  font-family: var(--mp-font);
+  color: var(--mp-text);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bo-mportal a:focus-visible,
+.bo-mportal button:focus-visible,
+.bo-mportal select:focus-visible {
+  outline: 2px solid var(--accent-c2, #0ea5e9);
+  outline-offset: 2px;
+}
+
+/* ——— Hub KPIs ——— */
+.bo-mportal__kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+@media (min-width: 640px) {
+  .bo-mportal__kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .bo-mportal__kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+.bo-mportal__kpi {
+  background: var(--mp-surface);
+  border: 1px solid var(--mp-border);
+  padding: 1rem 1.1rem;
+  min-height: 5.5rem;
+}
+.bo-mportal__kpi-label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mp-muted);
+}
+.bo-mportal__kpi-value {
+  margin: 0.35rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--mp-text);
+  line-height: 1.2;
+}
+.bo-mportal__kpi-note {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--mp-mention);
+}
+
+/* ——— Status / progress card (DSFR-like) ——— */
+.bo-mportal__status {
+  background: var(--mp-surface);
+  border: 1px solid var(--mp-border);
+  border-bottom: 3px solid var(--mp-section);
+  padding: 1.35rem 1.5rem 1.25rem;
+}
+.bo-mportal__status-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--mp-text);
+  line-height: 1.2;
+}
+.bo-mportal__status-step {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: var(--mp-muted);
+}
+.bo-mportal__progress {
+  display: flex;
+  gap: 0.35rem;
+  margin: 1rem 0 0.55rem;
+}
+.bo-mportal__progress-seg {
+  flex: 1 1 0;
+  height: 0.5rem;
+  background: var(--mp-progress-idle);
+  border-radius: 999px;
+}
+.bo-mportal__progress-seg.is-filled {
+  background: var(--mp-progress-live);
+}
+.bo-mportal__progress--done .bo-mportal__progress-seg.is-filled {
+  background: var(--mp-progress-done);
+}
+.bo-mportal__progress--prep .bo-mportal__progress-seg.is-filled {
+  background: #94a3b8;
+}
+.bo-mportal__next {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--mp-muted);
+}
+.bo-mportal__next strong {
+  color: var(--mp-text);
+  font-weight: 700;
+}
+
+.bo-mportal__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+  margin: 1.25rem 0 0;
+  padding: 1rem 0 0;
+  border-top: 1px solid var(--mp-border);
+  background: transparent;
+}
+@media (min-width: 768px) {
+  .bo-mportal__meta { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.bo-mportal__meta-item {
+  min-width: 0;
+}
+.bo-mportal__meta-label {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--mp-muted);
+  line-height: 1.3;
+}
+.bo-mportal__meta-value {
+  margin: 0.2rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--mp-text);
+  word-break: break-word;
+}
+
+/* Info strip under title (finalized declaration style) */
+.bo-mportal__infobar {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.75rem 1.5rem;
+  margin: 0;
+  padding: 0.85rem 1.15rem;
+  background: var(--mp-info-bar);
+  border: 1px solid var(--mp-border);
+}
+@media (min-width: 640px) {
+  .bo-mportal__infobar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.bo-mportal__infobar dt {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--mp-muted);
+}
+.bo-mportal__infobar dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--mp-text);
+}
+
+/* ——— Detail layout with secondary rail ——— */
+.bo-mportal__layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (min-width: 960px) {
+  .bo-mportal__layout {
+    grid-template-columns: 13.5rem minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+.bo-mportal__rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+@media (max-width: 959px) {
+  .bo-mportal__rail {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+.bo-mportal__rail-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--mp-primary);
+  background: var(--mp-surface);
+  color: var(--mp-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  line-height: 1.25;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.bo-mportal__rail-link:hover {
+  background: var(--mp-accent-soft);
+}
+.bo-mportal__rail-link[aria-current="page"] {
+  background: var(--mp-primary);
+  color: #fff;
+  border-color: var(--mp-primary);
+}
+.bo-mportal__rail-link svg {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.bo-mportal__rail-action {
+  margin-top: 0.35rem;
+  background: var(--mp-primary);
+  color: #fff;
+  border-color: var(--mp-primary);
+}
+.bo-mportal__rail-action:hover {
+  background: var(--mp-accent);
+  color: #fff;
+}
+@media (max-width: 959px) {
+  .bo-mportal__rail-action { margin-top: 0; }
+}
+
+.bo-mportal__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Section blocks with soft header bar */
+.bo-mportal__section {
+  background: var(--mp-surface);
+  border: 1px solid var(--mp-border);
+  overflow: hidden;
+}
+.bo-mportal__section-head {
+  margin: 0;
+  padding: 0.7rem 1.15rem;
+  background: var(--mp-section);
+  color: var(--mp-section-text);
+  font-size: 0.9375rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  border-bottom: 1px solid #cfe8dc;
+}
+.bo-mportal__section-body {
+  padding: 1rem 1.15rem 1.15rem;
+}
+.bo-mportal__section-lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.875rem;
+  color: var(--mp-muted);
+}
+
+.bo-mportal__dl {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.bo-mportal__dl > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.bo-mportal__dl > div:last-child { border-bottom: 0; }
+.bo-mportal__dl dt {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--mp-text);
+}
+.bo-mportal__dl dt::after { content: " :"; font-weight: 400; }
+.bo-mportal__dl dd {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--mp-text);
+}
+
+.bo-mportal__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bo-mportal__list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.bo-mportal__list > li:last-child { border-bottom: 0; }
+.bo-mportal__list-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--mp-text);
+}
+.bo-mportal__list-meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--mp-muted);
+}
+.bo-mportal__list a {
+  color: var(--mp-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: #a7f3d0;
+  text-underline-offset: 2px;
+}
+.bo-mportal__list a:hover {
+  text-decoration-color: var(--mp-accent);
+}
+
+.bo-mportal__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--mp-border);
+  background: #fff;
+  color: var(--mp-text);
+  white-space: nowrap;
+}
+.bo-mportal__chip--live {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+.bo-mportal__chip--done {
+  background: var(--mp-accent-soft);
+  border-color: #a7f3d0;
+  color: var(--mp-primary);
+}
+.bo-mportal__chip--prep {
+  background: #f8fafc;
+  color: var(--mp-muted);
+}
+.bo-mportal__chip--warn {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #9a3412;
+}
+
+.bo-mportal__empty {
+  margin: 0;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+  color: var(--mp-muted);
+}
+
+.bo-mportal__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+.bo-mportal__toolbar label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--mp-text);
+}
+.bo-mportal__toolbar select {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--mp-border);
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.bo-mportal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.bo-mportal__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid var(--mp-primary);
+  background: var(--mp-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.bo-mportal__btn:hover {
+  background: var(--mp-accent);
+  border-color: var(--mp-accent);
+  color: #fff;
+}
+.bo-mportal__btn--ghost {
+  background: #fff;
+  color: var(--mp-primary);
+}
+.bo-mportal__btn--ghost:hover {
+  background: var(--mp-accent-soft);
+  color: var(--mp-primary);
+}
+
+.bo-mportal__comms-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  background: #94a3b8;
+}
+.bo-mportal__comms-dot.is-ok { background: var(--mp-accent); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2); }
+.bo-mportal__comms-dot.is-warn { background: #ca8a04; }
+.bo-mportal__comms-dot.is-off { background: #b91c1c; }
+
+.bo-mportal__breadcrumb {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--mp-muted);
+}
+.bo-mportal__breadcrumb a {
+  color: var(--mp-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.bo-mportal__breadcrumb a:hover { text-decoration: underline; }
+
+.bo-mportal__panel-grid {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 900px) {
+  .bo-mportal__panel-grid { grid-template-columns: 1.2fr 1fr; }
+}

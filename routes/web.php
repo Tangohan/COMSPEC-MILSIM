@@ -182,6 +182,7 @@ use App\Controllers\Admin\Organization\OrganizationSeniorityAdminController;
 use App\Controllers\Admin\Organization\RoleplayFollowupAdminController;
 use App\Controllers\Admin\Organization\CommunityEventsAdminController;
 use App\Controllers\Admin\Organization\MissionPlanningController;
+use App\Controllers\Admin\Organization\MissionsPortalController;
 use App\Controllers\Admin\Organization\CommunityMediaAdminController;
 use App\Controllers\Api\TrainingApiController;
 use App\Core\Router;
@@ -992,6 +993,8 @@ return function (Router $router) {
     $router->post('/back-office/events/{id}/slots/{slotId}/supprimer', [CommunityEventsAdminController::class, 'deleteSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/evenements', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/events')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/evenements/insights', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/events/insights')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/missions', [MissionsPortalController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/missions/{id}', [MissionsPortalController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/planification', [MissionPlanningController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/planification', [MissionPlanningController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/planification/{id}', [MissionPlanningController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

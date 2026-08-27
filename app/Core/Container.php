@@ -376,6 +376,17 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\AtakMapRepository::class)
             ),
+            \App\Services\MissionsPortal\MissionsPortalService::class => new \App\Services\MissionsPortal\MissionsPortalService(
+                self::get(\App\Services\MissionPlanning\MissionPlanningService::class),
+                new \App\Repositories\TheatreMissionCycleRepository(),
+                self::get(\App\Repositories\AtakDataRepository::class),
+                self::get(\App\Repositories\AtakMapRepository::class),
+                self::get(\App\Repositories\TenantAtakConfigRepository::class),
+                self::get(\App\Repositories\AtakMapGatewayRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\MissionsPortalController::class => new \App\Controllers\Admin\Organization\MissionsPortalController(
+                self::get(\App\Services\MissionsPortal\MissionsPortalService::class)
+            ),
             \App\Repositories\CommunityEventSlotRepository::class => new \App\Repositories\CommunityEventSlotRepository(),
             \App\Repositories\CommunityEventSlotAssignmentRepository::class => new \App\Repositories\CommunityEventSlotAssignmentRepository(),
             \App\Repositories\CommunityMediaRepository::class => new \App\Repositories\CommunityMediaRepository(),

@@ -118,6 +118,7 @@ $boNavMod = str_starts_with($p, 'back-office/moderation');
 $boNavEventInsights = str_starts_with($p, 'back-office/events/insights');
 $boNavAar = str_starts_with($p, 'back-office/atak/comptes-rendus');
 $boNavPlanning = str_starts_with($p, 'back-office/planification');
+$boNavMissionsPortal = $p === 'back-office/missions' || str_starts_with($p, 'back-office/missions/');
 $boNavEvents = str_starts_with($p, 'back-office/events') && !$boNavEventInsights;
 $boNavJnet = $p === 'jnet' || str_starts_with($p, 'jnet/');
 $boNavJnetHome = $p === 'jnet';
