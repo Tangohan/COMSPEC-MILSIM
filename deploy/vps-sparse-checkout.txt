@@ -1,0 +1,15 @@
+app
+bootstrap
+config
+public
+routes
+views
+lang
+mail
+migrations
+phpqrcode
+tcpdf
+storage
+scripts
+docs
+deploy
