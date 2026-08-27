@@ -138,24 +138,24 @@ class PersonnelController
     /** Fiche absente : page soignée (GET) ou toast + retour annuaire (POST). */
     private function personnelMissingResponse(bool $asRedirect = false): Response
     {
-        $message = 'Cette fiche personnel est introuvable ou n’est plus accessible dans votre communauté.';
+        $flash = (string) __('errors.personnel_missing_flash');
         if ($asRedirect) {
-            Session::flash('error', $message);
+            Session::flash('error', $flash);
 
             return Response::redirect(url('personnel'));
         }
 
         return Response::view('errors.404', [
-            'title' => 'Fiche introuvable — Athena',
-            'heading' => 'Fiche introuvable',
-            'body' => $message . ' Vérifiez le lien ou revenez à l’annuaire du personnel.',
+            'title' => (string) __('errors.personnel_missing_title'),
+            'heading' => (string) __('errors.personnel_missing_heading'),
+            'body' => (string) __('errors.personnel_missing_body'),
         ])->setStatusCode(404);
     }
 
     /** Action ou consultation non autorisée sur une fiche. */
     private function personnelForbiddenResponse(bool $asRedirect = false, ?string $redirectUrl = null): Response
     {
-        $message = 'Vous n’avez pas l’autorisation de consulter ou modifier cette fiche avec votre profil actuel.';
+        $message = (string) __('errors.personnel_forbidden_body');
         if ($asRedirect) {
             Session::flash('error', $message);
 
@@ -163,8 +163,8 @@ class PersonnelController
         }
 
         return Response::view('errors.403', [
-            'title' => 'Accès refusé — Athena',
-            'heading' => 'Accès refusé',
+            'title' => (string) __('errors.403_title'),
+            'heading' => (string) __('errors.403_heading'),
             'body' => $message,
         ])->setStatusCode(403);
     }
