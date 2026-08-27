@@ -2345,7 +2345,7 @@ if ($atakMapConfig) {
             <div class="atak-map-tools__cluster-btns" id="atak-tool-group-nav">
               <button type="button" class="atak-map-tools__btn" data-tool="goto" data-tool-slot="goto" title="Aller à une grille (G)">Grille</button>
               <button type="button" class="atak-map-tools__btn" data-tool="follow" data-tool-slot="follow" title="Suivre ma position (F)" aria-pressed="false">Suivre</button>
-              <button type="button" class="atak-map-tools__btn" data-tool="clear-view" data-tool-slot="clear-view" title="Effacer traces, annotations, journal d’analyse et fiches hors liaison — les contacts encore en liaison restent">Tout dégager</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="clear-view" data-tool-slot="clear-view" title="Effacer traces, annotations, journal d’analyse et fiches hors liaison — Les contacts encore en liaison restent">Tout dégager</button>
             </div>
           </div>
           <div class="atak-map-tools__cluster" data-tool-sep="mark">
