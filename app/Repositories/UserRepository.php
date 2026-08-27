@@ -1266,11 +1266,14 @@ class UserRepository
         $hasExtras = $this->tableExists('personnel_extras');
         $extrasSelect = $hasExtras ? 'pex.service_number, pex.date_of_enlistment' : 'NULL AS service_number, NULL AS date_of_enlistment';
         $extrasJoin = $hasExtras ? 'LEFT JOIN personnel_extras pex ON pex.user_id = u.id' : '';
+        $unitBlurbSelect = $this->unitsHasColumn('public_blurb')
+            ? 'un.public_blurb AS unit_blurb'
+            : 'NULL AS unit_blurb';
 
         $sql = 'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', u.avatar_url, u.status, u.role_id,
                        ' . $legal['select'] . ',
                        ' . $gc['select'] . ',
-                       un.name AS unit_name, un.code AS unit_code,
+                       un.name AS unit_name, un.code AS unit_code, ' . $unitBlurbSelect . ', pp.primary_unit_id,
                        pp.character_name, pp.matricule_internal, pp.enlistment_date, ' . $jobRole['select_as_primary_role'] . ',
                        pp.radio_assigned, pp.readiness_score, pp.rank_display, pp.rank_display_override, ' . $deployableSelect . ',
                        ' . $extrasSelect . '
@@ -1289,7 +1292,10 @@ class UserRepository
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
 
-        return $this->dedupeRowsByUserId($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        return \App\Support\PersonnelDirectoryHints::enrichUnitHints(
+            $tenantId,
+            $this->dedupeRowsByUserId($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [])
+        );
     }
 
     /**
@@ -1405,6 +1411,25 @@ class UserRepository
         }
         $stmt = $this->pdo()->prepare(
             "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = ? LIMIT 1"
+        );
+        $stmt->execute([$column]);
+        $cache[$column] = (bool) $stmt->fetchColumn();
+
+        return $cache[$column];
+    }
+
+    private function unitsHasColumn(string $column): bool
+    {
+        static $cache = [];
+        $column = trim($column);
+        if ($column === '') {
+            return false;
+        }
+        if (array_key_exists($column, $cache)) {
+            return $cache[$column];
+        }
+        $stmt = $this->pdo()->prepare(
+            "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'units' AND COLUMN_NAME = ? LIMIT 1"
         );
         $stmt->execute([$column]);
         $cache[$column] = (bool) $stmt->fetchColumn();

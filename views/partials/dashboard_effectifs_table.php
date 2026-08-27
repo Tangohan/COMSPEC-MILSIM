@@ -122,7 +122,7 @@ $rowCount = count($rows);
                         $displayName = 'Membre';
                     }
                     $callsign = trim((string) ($row['callsign'] ?? ''));
-                    $character = trim((string) ($row['character_name'] ?? ''));
+                    $character = \App\Support\PersonnelDirectoryHints::distinctCharacterLabel($displayName, (string) ($row['character_name'] ?? ''));
                     $slug = trim((string) ($row['profile_slug'] ?? ''));
                     $target = $slug !== '' ? $slug : (string) $uid;
                     $ficheUrl = url('personnel/' . $target);
@@ -134,6 +134,10 @@ $rowCount = count($rows);
                     $unitName = trim((string) ($row['unit_name'] ?? ''));
                     $unitCode = trim((string) ($row['unit_code'] ?? ''));
                     $assignment = $unitName !== '' ? $unitName : ($unitCode !== '' ? $unitCode : '');
+                    $unitTooltip = trim((string) ($row['unit_tooltip'] ?? ''));
+                    if ($unitTooltip === '' && $assignment !== '') {
+                        $unitTooltip = 'Unité : ' . $assignment;
+                    }
                     $primaryRole = trim((string) ($row['primary_role'] ?? ''));
                     $status = trim((string) ($row['status'] ?? ''));
                     $playtimeLabel = trim((string) ($row['arma_playtime_label'] ?? ''));
@@ -162,7 +166,7 @@ $rowCount = count($rows);
                                     <?php if ($cardBits !== []): ?>
                                         <span class="dash-eff-id__meta"><?= htmlspecialchars(implode(' · ', $cardBits), ENT_QUOTES, 'UTF-8') ?></span>
                                     <?php elseif ($character !== ''): ?>
-                                        <span class="dash-eff-id__meta">RP · <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="dash-eff-id__meta">Personnage · <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -172,8 +176,17 @@ $rowCount = count($rows);
                                 </span>
                             <?php endif; ?>
                         </div>
-                        <?php if ($primaryRole !== '' || $playtimeLabel !== ''): ?>
+                        <?php if ($primaryRole !== '' || $playtimeLabel !== '' || $assignment !== ''): ?>
                             <p class="das-cards__step">
+                                <?php if ($assignment !== ''): ?>
+                                    <span class="dash-eff-unit" tabindex="0"
+                                          title="<?= htmlspecialchars($unitTooltip, ENT_QUOTES, 'UTF-8') ?>"
+                                          aria-label="<?= htmlspecialchars($unitTooltip !== '' ? $unitTooltip : $assignment, ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars($assignment, ENT_QUOTES, 'UTF-8') ?>
+                                        <span class="dash-eff-unit__hint" aria-hidden="true">i</span>
+                                    </span>
+                                <?php endif; ?>
+                                <?php if ($assignment !== '' && ($primaryRole !== '' || $playtimeLabel !== '')): ?> · <?php endif; ?>
                                 <?= $primaryRole !== '' ? htmlspecialchars($primaryRole, ENT_QUOTES, 'UTF-8') : '' ?>
                                 <?php if ($primaryRole !== '' && $playtimeLabel !== ''): ?> · <?php endif; ?>
                                 <?php if ($playtimeLabel !== ''): ?>
@@ -217,7 +230,7 @@ $rowCount = count($rows);
                                 $displayName = 'Membre';
                             }
                             $callsign = trim((string) ($row['callsign'] ?? ''));
-                            $character = trim((string) ($row['character_name'] ?? ''));
+                            $character = \App\Support\PersonnelDirectoryHints::distinctCharacterLabel($displayName, (string) ($row['character_name'] ?? ''));
                             $slug = trim((string) ($row['profile_slug'] ?? ''));
                             $target = $slug !== '' ? $slug : (string) $uid;
                             $ficheUrl = url('personnel/' . $target);
@@ -229,6 +242,10 @@ $rowCount = count($rows);
                             $unitName = trim((string) ($row['unit_name'] ?? ''));
                             $unitCode = trim((string) ($row['unit_code'] ?? ''));
                             $assignment = $unitName !== '' ? $unitName : ($unitCode !== '' ? $unitCode : '');
+                            $unitTooltip = trim((string) ($row['unit_tooltip'] ?? ''));
+                            if ($unitTooltip === '' && $assignment !== '') {
+                                $unitTooltip = 'Unité : ' . $assignment;
+                            }
                             $primaryRole = trim((string) ($row['primary_role'] ?? ''));
                             $status = trim((string) ($row['status'] ?? ''));
                             $playtimeLabel = trim((string) ($row['arma_playtime_label'] ?? ''));
@@ -250,7 +267,7 @@ $rowCount = count($rows);
                                         <div class="dash-eff-id__text">
                                             <span class="dash-eff-id__name"><?= htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') ?></span>
                                             <?php if ($character !== ''): ?>
-                                                <span class="dash-eff-id__meta">RP · <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <span class="dash-eff-id__meta">Personnage · <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></span>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -271,7 +288,12 @@ $rowCount = count($rows);
                                 </td>
                                 <td>
                                     <?php if ($assignment !== ''): ?>
-                                        <?= htmlspecialchars($assignment, ENT_QUOTES, 'UTF-8') ?>
+                                        <span class="dash-eff-unit" tabindex="0"
+                                              title="<?= htmlspecialchars($unitTooltip, ENT_QUOTES, 'UTF-8') ?>"
+                                              aria-label="<?= htmlspecialchars($unitTooltip !== '' ? $unitTooltip : $assignment, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars($assignment, ENT_QUOTES, 'UTF-8') ?>
+                                            <span class="dash-eff-unit__hint" aria-hidden="true">i</span>
+                                        </span>
                                     <?php else: ?>
                                         <span class="das-muted">Non affecté</span>
                                     <?php endif; ?>
@@ -607,6 +629,34 @@ $rowCount = count($rows);
     font-weight: 700;
     letter-spacing: 0.04em;
     color: #1e293b;
+}
+.dash-eff-unit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    max-width: 100%;
+    cursor: help;
+    border-bottom: 1px dotted #94a3b8;
+}
+.dash-eff-unit:focus {
+    outline: 2px solid #059669;
+    outline-offset: 2px;
+    border-radius: 0.2rem;
+}
+.dash-eff-unit__hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0.95rem;
+    height: 0.95rem;
+    border-radius: 999px;
+    border: 1px solid #94a3b8;
+    color: #475569;
+    font-size: 0.625rem;
+    font-weight: 800;
+    font-style: normal;
+    line-height: 1;
+    flex-shrink: 0;
 }
 .dash-eff-playtime {
     font-variant-numeric: tabular-nums;
