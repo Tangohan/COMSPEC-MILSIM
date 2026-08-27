@@ -26,7 +26,7 @@ class AuthMiddleware
                 }
             }
             if (!LoginIntendedDestination::rememberFromRequest($request)) {
-                Session::flash('error', 'Authentification requise.');
+                Session::flash('error', 'Connectez-vous pour continuer.');
             }
 
             return Response::redirect(url('login'));

@@ -47,7 +47,7 @@ final class DocumentationController
     public function index(Request $request, array $params = []): Response
     {
         if (!Session::get('user_id')) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
 
             return Response::redirect(url('login'));
         }
@@ -64,7 +64,7 @@ final class DocumentationController
     public function references(Request $request, array $params = []): Response
     {
         if (!Session::get('user_id')) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
 
             return Response::redirect(url('login'));
         }
@@ -83,7 +83,7 @@ final class DocumentationController
     public function markersLibrary(Request $request, array $params = []): Response
     {
         if (!Session::get('user_id')) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
 
             return Response::redirect(url('login'));
         }
@@ -102,7 +102,7 @@ final class DocumentationController
     public function file(Request $request, array $params = []): Response
     {
         if (!Session::get('user_id')) {
-            Session::flash('error', 'Authentification requise.');
+            Session::flash('error', 'Connectez-vous pour continuer.');
 
             return Response::redirect(url('login'));
         }
