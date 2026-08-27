@@ -218,7 +218,7 @@ $totalResults = count($results);
                         $callsign = trim((string) ($row['callsign'] ?? ''));
                         $athenaId = trim((string) ($row['athena_identifier'] ?? ''));
                         $slug = trim((string) ($row['profile_slug'] ?? ''));
-                        $character = trim((string) ($row['character_name'] ?? ''));
+                        $character = \App\Support\PersonnelDirectoryHints::distinctCharacterLabel($displayName, (string) ($row['character_name'] ?? ''));
                         $avatar = function_exists('user_media_public_url')
                             ? (user_media_public_url($row['avatar_url'] ?? null) ?? '')
                             : trim((string) ($row['avatar_url'] ?? ''));
@@ -228,6 +228,10 @@ $totalResults = count($results);
                         $matricule = trim((string) ($row['matricule_internal'] ?? '')) ?: trim((string) ($row['service_number'] ?? ''));
 
                         $unitName = trim((string) ($row['unit_name'] ?? ''));
+                        $unitTooltip = trim((string) ($row['unit_tooltip'] ?? ''));
+                        if ($unitTooltip === '' && $unitName !== '') {
+                            $unitTooltip = 'Unité : ' . $unitName;
+                        }
                         $primaryRole = trim((string) ($row['primary_role'] ?? ''));
 
                         $radioAssigned = trim((string) ($row['radio_assigned'] ?? ''));
@@ -256,7 +260,7 @@ $totalResults = count($results);
                                     <p class="truncate text-xs text-slate-500">Prénom / nom : <?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>
                                     <?php if ($character !== ''): ?>
-                                    <p class="truncate text-xs text-slate-500">RP : <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p class="truncate text-xs text-slate-500">Personnage : <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>
                                     <?php if ($canSeeInactiveDirectory && $athenaId !== ''): ?>
                                     <p class="mt-0.5 truncate text-[10px] font-medium text-slate-300" title="Identifiant interne réservé à l’encadrement">Réf. <?= htmlspecialchars($athenaId, ENT_QUOTES, 'UTF-8') ?></p>
@@ -276,7 +280,13 @@ $totalResults = count($results);
 
                         <td class="px-4 py-3">
                             <?php if ($unitName !== ''): ?>
-                            <p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></p>
+                            <p class="text-sm font-semibold text-slate-900">
+                                <span class="border-b border-dotted border-slate-400 cursor-help" tabindex="0"
+                                      title="<?= htmlspecialchars($unitTooltip, ENT_QUOTES, 'UTF-8') ?>"
+                                      aria-label="<?= htmlspecialchars($unitTooltip !== '' ? $unitTooltip : $unitName, ENT_QUOTES, 'UTF-8') ?>">
+                                    <?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                            </p>
                             <?php else: ?>
                             <span class="inline-flex items-center rounded-full border border-dashed border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-400">Non affecté</span>
                             <?php endif; ?>

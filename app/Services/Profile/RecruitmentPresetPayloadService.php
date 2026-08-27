@@ -242,10 +242,8 @@ final class RecruitmentPresetPayloadService
     {
         $rp = is_array($normalizedPayload['rp'] ?? null) ? $normalizedPayload['rp'] : [];
         $patch = [];
-        $label = self::deriveOperatorDisplayName($rp);
-        if ($label !== '') {
-            $patch['character_name'] = $label;
-        }
+        // Pas d’écriture silencieuse de character_name : le dossier se remplit
+        // explicitement sur la fiche personnel, pour éviter un faux « autre membre ».
         $nat = trim((string) ($rp['nationality'] ?? ''));
         if ($nat !== '') {
             $patch['nationality'] = function_exists('mb_substr') ? mb_substr($nat, 0, 100) : substr($nat, 0, 100);

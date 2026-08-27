@@ -209,7 +209,8 @@ $editValidTabIds = implode(',', array_map(
               <div class="grid gap-4 md:grid-cols-2">
                 <div>
                   <label for="character_name" class="mb-1 block text-xs font-bold text-slate-600">Nom du personnage</label>
-                  <input type="text" name="character_name" id="character_name" value="<?= htmlspecialchars($p['character_name'] ?? $targetUser['display_name'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" maxlength="150">
+                  <input type="text" name="character_name" id="character_name" value="<?= htmlspecialchars($p['character_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="<?= htmlspecialchars((string) ($targetUser['display_name'] ?? 'Nom de scène'), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" maxlength="150">
+                  <p class="mt-1 text-[11px] text-slate-500">Laissez vide si le personnage porte le même nom que le compte. N’indiquez pas le nom d’un autre membre.</p>
                   <p class="mt-1 text-[11px] text-slate-500">Nom affiché sur le dossier et, selon vos réglages, sur le forum.</p>
                 </div>
                 <div>

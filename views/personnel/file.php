@@ -217,9 +217,10 @@ $matricule = $personnelProfile['matricule_internal'] ?? $personnelExtras['servic
 $callsign = $personnelProfile['callsign'] ?? $targetUser['callsign'] ?? null;
 $athenaIdentifier = trim((string) ($targetUser['athena_identifier'] ?? ''));
 $rpCharacterName = trim((string) ($personnelProfile['character_name'] ?? ''));
-if ($rpCharacterName !== '') {
-    $displayName = $rpCharacterName;
-} elseif (!empty($redactPersonalPresentation)) {
+// Le nom de compte reste l’identité principale de la fiche.
+// Le nom de scène (personnage) s’affiche à part — sinon un mauvais RP
+// fait croire qu’on ouvre le dossier d’un autre membre.
+if (!empty($redactPersonalPresentation)) {
     $dn = trim((string) ($targetUser['display_name'] ?? ''));
     if ($privatePersonnelIdentity) {
         $cs = trim((string) ($callsign ?? ''));
