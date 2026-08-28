@@ -1,0 +1,506 @@
+/**
+ * Athena C2 Map — design system cartographique tactique v2
+ * Dense, sobre, professionnel — carte dominante (~85 % surface)
+ */
+:root {
+  --c2-bg: #070b10;
+  --c2-bg2: #0b1118;
+  --c2-panel: rgba(10, 16, 22, 0.82);
+  --c2-panel-solid: #0b1016;
+  --c2-line: rgba(150, 180, 200, 0.12);
+  --c2-line2: rgba(150, 180, 200, 0.2);
+  --c2-text: #dce5eb;
+  --c2-muted: #84929d;
+  --c2-accent: #3ecfb4;
+  --c2-accent-soft: rgba(62, 207, 180, 0.1);
+  --c2-warn: #d3a33c;
+  --c2-danger: #dc5d5d;
+  --c2-radius: 4px;
+  --c2-trans: 140ms ease;
+  --c2-top-h: 46px;
+  --c2-rail-w: 44px;
+  --c2-ctx-h: 72px;
+  --c2-font: 'Inter', system-ui, sans-serif;
+  --c2-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body.tac-c2-body {
+  height: 100%;
+  margin: 0;
+  background: var(--c2-bg);
+  color: var(--c2-text);
+  font-family: var(--c2-font);
+  overflow: hidden;
+}
+
+.mono { font-family: var(--c2-mono); }
+
+/* —— Shell —— */
+.tac-c2-shell {
+  display: grid;
+  grid-template-rows: var(--c2-top-h) 1fr var(--c2-ctx-h);
+  grid-template-columns: var(--c2-rail-w) 1fr;
+  grid-template-areas:
+    "top top"
+    "rail map"
+    "ctx ctx";
+  height: 100dvh;
+  background: var(--c2-bg);
+}
+
+.tac-c2-top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  background: var(--c2-panel-solid);
+  border-bottom: 1px solid var(--c2-line);
+  z-index: 20;
+}
+
+.tac-c2-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tac-c2-brand__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c2-accent);
+}
+
+.tac-c2-top__nav {
+  display: flex;
+  gap: 4px;
+}
+
+.tac-c2-top__link {
+  background: transparent;
+  border: 0;
+  color: var(--c2-muted);
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: var(--c2-radius);
+  cursor: pointer;
+  transition: color var(--c2-trans), background var(--c2-trans);
+}
+
+.tac-c2-top__link.is-active,
+.tac-c2-top__link:hover {
+  color: var(--c2-text);
+  background: var(--c2-accent-soft);
+}
+
+.tac-c2-top__meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--c2-muted);
+}
+
+.tac-net--ok { color: var(--c2-accent); }
+.tac-net--warn { color: var(--c2-warn); }
+
+/* —— Tool rail —— */
+.tac-c2-rail {
+  grid-area: rail;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  background: var(--c2-bg2);
+  border-right: 1px solid var(--c2-line);
+  z-index: 15;
+}
+
+.tac-c2-rail__btn {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: var(--c2-radius);
+  background: transparent;
+  color: var(--c2-muted);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background var(--c2-trans), color var(--c2-trans);
+}
+
+.tac-c2-rail__btn:hover,
+.tac-c2-rail__btn.is-active {
+  background: var(--c2-accent-soft);
+  color: var(--c2-accent);
+}
+
+/* —— Map workspace (~88 % hauteur utile) —— */
+.tac-c2-map {
+  grid-area: map;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: #05080c;
+}
+
+.tac-c2-map--split {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 1px;
+  background: var(--c2-line);
+}
+
+.tac-map-view {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tac-map-view--hidden { display: none !important; }
+
+.tac-map-view__label {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  z-index: 8;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c2-muted);
+  background: var(--c2-panel);
+  padding: 3px 7px;
+  border-radius: var(--c2-radius);
+  border: 1px solid var(--c2-line);
+  pointer-events: none;
+}
+
+.tac-map-root,
+.tac-map-root .leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  background: #0a1018 !important;
+}
+
+/* —— Map controls (droite) —— */
+.tac-map-controls {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 12;
+}
+
+.tac-map-controls__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tac-map-controls__btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--c2-line2);
+  border-radius: var(--c2-radius);
+  background: var(--c2-panel);
+  color: var(--c2-text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--c2-trans), background var(--c2-trans);
+}
+
+.tac-map-controls__btn:hover,
+.tac-map-controls__btn.is-active {
+  border-color: rgba(62, 207, 180, 0.4);
+  background: var(--c2-accent-soft);
+  color: var(--c2-accent);
+}
+
+.tac-ctrl-23d { font-size: 10px !important; letter-spacing: 0.04em; }
+
+/* —— Right panel flottant (unité sélectionnée) —— */
+.tac-c2-side {
+  position: absolute;
+  top: 10px;
+  right: 56px;
+  width: 240px;
+  max-height: calc(100% - 20px);
+  z-index: 11;
+  background: var(--c2-panel);
+  border: 1px solid var(--c2-line);
+  border-radius: var(--c2-radius);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  transition: opacity var(--c2-trans);
+}
+
+.tac-c2-side__head {
+  padding: 8px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c2-muted);
+  border-bottom: 1px solid var(--c2-line);
+}
+
+.tac-c2-side__body {
+  padding: 10px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.tac-c2-side__row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(150, 180, 200, 0.06);
+}
+
+.tac-c2-side__k { color: var(--c2-muted); }
+.tac-c2-side__v { color: var(--c2-text); font-weight: 500; }
+
+.tac-c2-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.tac-c2-log li {
+  padding: 5px 0;
+  font-size: 10px;
+  color: var(--c2-muted);
+  border-bottom: 1px solid var(--c2-line);
+}
+
+.tac-c2-log time { color: var(--c2-accent); margin-right: 5px; }
+
+/* —— Bottom context panel —— */
+.tac-c2-ctx {
+  grid-area: ctx;
+  display: flex;
+  align-items: stretch;
+  background: var(--c2-panel);
+  border-top: 1px solid var(--c2-line);
+  backdrop-filter: blur(6px);
+  z-index: 20;
+}
+
+.tac-ctx {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  padding: 0 14px;
+  font-size: 11px;
+}
+
+.tac-ctx--idle { color: var(--c2-muted); }
+
+.tac-ctx__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 200px;
+}
+
+.tac-ctx__callsign {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c2-text);
+}
+
+.tac-ctx__role { color: var(--c2-muted); }
+
+.tac-ctx__status {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--c2-line);
+}
+
+.tac-ctx__status--online { color: var(--c2-accent); border-color: rgba(62, 207, 180, 0.3); }
+.tac-ctx__status--degraded { color: var(--c2-warn); }
+.tac-ctx__status--stale { color: var(--c2-muted); }
+.tac-ctx__status--lost { color: var(--c2-muted); opacity: 0.6; }
+.tac-ctx__status--kia { color: var(--c2-danger); }
+
+.tac-ctx__grid {
+  display: flex;
+  gap: 18px;
+  flex: 1;
+}
+
+.tac-ctx__cell { display: flex; flex-direction: column; gap: 2px; }
+.tac-ctx__label { font-size: 9px; color: var(--c2-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.tac-ctx__value { font-size: 12px; color: var(--c2-text); }
+.tac-ctx__value--ok { color: var(--c2-accent); }
+.tac-ctx__muted { color: var(--c2-muted); }
+
+.tac-ctx__actions { display: flex; gap: 6px; }
+
+.tac-ctx__action {
+  border: 1px solid var(--c2-line2);
+  background: transparent;
+  color: var(--c2-text);
+  font-size: 10px;
+  padding: 5px 10px;
+  border-radius: var(--c2-radius);
+  cursor: pointer;
+  transition: background var(--c2-trans);
+}
+
+.tac-ctx__action:hover { background: var(--c2-accent-soft); }
+
+/* —— Symboles tactiques 2D —— */
+.tac-leaflet-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.tac-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  transition: opacity var(--c2-trans);
+}
+
+.tac-marker__symbol { line-height: 0; }
+
+.tac-marker__callsign {
+  margin-top: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--c2-text);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+}
+
+.tac-marker__role,
+.tac-marker__status {
+  font-size: 8px;
+  color: var(--c2-muted);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.tac-sym--ghost { filter: saturate(0.4); }
+
+.tac-sym-heading { color: var(--c2-accent); }
+
+/* —— Cluster —— */
+.tac-cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--c2-radius);
+  background: var(--c2-panel);
+  border: 1px solid var(--c2-line2);
+  cursor: pointer;
+}
+
+.tac-cluster__count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c2-accent);
+}
+
+.tac-cluster__detail {
+  font-size: 7px;
+  color: var(--c2-muted);
+}
+
+/* —— Traces —— */
+.tac-track { pointer-events: none !important; }
+
+/* —— Marqueurs 3D —— */
+.tac-marker-3d {
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+}
+
+.tac-marker-3d__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tac-marker-3d__label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--c2-text);
+  background: rgba(7, 11, 16, 0.85);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--c2-line);
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.tac-marker-3d__symbol { line-height: 0; }
+
+.tac-marker-3d__stem {
+  width: 1px;
+  height: 18px;
+  background: linear-gradient(to bottom, rgba(62, 207, 180, 0.5), rgba(62, 207, 180, 0.15));
+}
+
+.tac-marker-3d__ground {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--c2-accent);
+  opacity: 0.7;
+  box-shadow: 0 0 4px rgba(62, 207, 180, 0.4);
+}
+
+/* —— Timeline bas (démo) —— */
+.tac-c2-timeline {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
+  background: var(--c2-panel);
+  border: 1px solid var(--c2-line);
+  border-radius: var(--c2-radius);
+  padding: 4px 12px;
+  font-size: 10px;
+  color: var(--c2-muted);
+}
+
+.tac-c2-timeline input[type="range"] {
+  width: 120px;
+  accent-color: var(--c2-accent);
+}
+
+/* —— Terrain 3D canvas —— */
+.terrain3d-canvas { display: block; width: 100% !important; height: 100% !important; }
+.terrain3d-label-layer { pointer-events: none; }
+
+@media (max-width: 900px) {
+  .tac-c2-side { display: none; }
+  .tac-c2-map--split { grid-template-rows: 1fr; }
+  .tac-map-view--3d { display: none; }
+}

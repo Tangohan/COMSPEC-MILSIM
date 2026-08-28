@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ATHENA ATAK — Carte tactique C2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../public/assets/vendor/leaflet-1.9.4/leaflet.css" />
+  <link rel="stylesheet" href="../public/assets/css/atak-map-c2-v2.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body class="tac-c2-body">
+
+<div class="tac-c2-shell">
+  <!-- TOP BAR -->
+  <header class="tac-c2-top">
+    <div class="tac-c2-brand">
+      <span class="tac-c2-brand__dot"></span>
+      ATHENA ATAK
+    </div>
+    <nav class="tac-c2-top__nav">
+      <button type="button" class="tac-c2-top__link is-active">Carte</button>
+      <button type="button" class="tac-c2-top__link">Profil</button>
+    </nav>
+    <div class="tac-c2-top__meta">
+      <span>Mission <strong class="mono">FALCON 01</strong></span>
+      <span>Réseau <strong data-tac-network class="tac-net--ok">Opérationnel</strong></span>
+      <span class="mono" data-tac-clock>—</span>
+    </div>
+  </header>
+
+  <!-- LEFT TOOL RAIL -->
+  <nav class="tac-c2-rail" aria-label="Outils carte">
+    <button type="button" class="tac-c2-rail__btn is-active" data-tool="select" title="Sélectionner">⊹</button>
+    <button type="button" class="tac-c2-rail__btn" data-tool="pan" title="Déplacer">✥</button>
+    <button type="button" class="tac-c2-rail__btn" data-tool="measure" title="Mesurer">↔</button>
+    <button type="button" class="tac-c2-rail__btn" data-tool="draw" title="Tracer">╱</button>
+    <button type="button" class="tac-c2-rail__btn" data-tool="perimeter" title="Périmètre">⬡</button>
+    <button type="button" class="tac-c2-rail__btn" data-tool="marker" title="Marqueur">＋</button>
+    <button type="button" class="tac-c2-rail__btn" data-tool="search" title="Recherche">⌕</button>
+    <button type="button" class="tac-c2-rail__btn" data-tool="layers" title="Couches">≡</button>
+  </nav>
+
+  <!-- MAP WORKSPACE (split 2D / 3D comme référence) -->
+  <main class="tac-c2-map tac-c2-map--split">
+    <div class="tac-map-view" id="tac-map-2d">
+      <span class="tac-map-view__label">Vue 2D</span>
+    </div>
+    <div class="tac-map-view tac-map-view--3d" id="tac-map-3d">
+      <span class="tac-map-view__label">Vue 3D</span>
+    </div>
+
+    <!-- Contrôles carte (droite) -->
+    <div class="tac-map-controls"></div>
+
+    <!-- Panneau latéral flottant -->
+    <aside class="tac-c2-side">
+      <div class="tac-c2-side__head">Unité sélectionnée</div>
+      <div class="tac-c2-side__body" id="tac-side-unit">
+        <p class="tac-ctx__muted">Cliquez un symbole sur la carte</p>
+      </div>
+      <div class="tac-c2-side__head">Journal d'analyse</div>
+      <ul class="tac-c2-log tac-c2-side__body" id="tac-side-log"></ul>
+    </aside>
+
+    <!-- Timeline (démo) -->
+    <div class="tac-c2-timeline">
+      <span>−2h</span>
+      <input type="range" min="0" max="100" value="50" aria-label="Timeline" />
+      <span class="mono">MAINTENANT</span>
+      <span>+1h</span>
+    </div>
+  </main>
+
+  <!-- BOTTOM CONTEXT -->
+  <footer class="tac-c2-ctx">
+    <div id="tac-context-panel" style="width:100%"></div>
+  </footer>
+</div>
+
+<script src="../public/assets/vendor/leaflet-1.9.4/leaflet.js"></script>
+<script type="module" src="../public/assets/js/map/demo-c2-main.js"></script>
+</body>
+</html>
