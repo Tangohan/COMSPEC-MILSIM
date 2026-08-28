@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Athena / ATAK — Terrain 3D (démo)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../public/assets/css/terrain3d-demo.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="t3d-shell">
+    <header class="t3d-header">
+      <div class="t3d-header__brand">
+        <span class="t3d-header__dot" aria-hidden="true"></span>
+        Athena · Tacmap 3D
+      </div>
+      <div class="t3d-header__actions">
+        <button type="button" class="t3d-btn" id="btn-focus-alpha">Focus ALPHA-1</button>
+        <button type="button" class="t3d-btn" id="btn-toggle-view">Vue 2D</button>
+      </div>
+    </header>
+
+    <nav class="t3d-rail" aria-label="Outils">
+      <button type="button" class="t3d-rail__btn is-active" title="Carte">🗺</button>
+      <button type="button" class="t3d-rail__btn" title="Unités">◆</button>
+      <button type="button" class="t3d-rail__btn" title="Relief">⛰</button>
+    </nav>
+
+    <aside class="t3d-panel t3d-panel--left">
+      <div class="t3d-panel__head">Paramètres relief</div>
+      <div class="t3d-panel__body">
+        <div class="t3d-slider-row">
+          <label for="slider-exaggeration">Exagération verticale <span id="val-exaggeration" class="mono">1.8×</span></label>
+          <input type="range" id="slider-exaggeration" min="0" max="6" step="0.1" value="1.8" />
+        </div>
+        <p style="color: var(--t3d-muted); margin: 0 0 12px;">
+          Le mesh est généré par <strong>PlaneGeometry</strong> subdivisé. Chaque sommet est déplacé sur l'axe Y (altitude) à partir de la heightmap, puis les normales sont recalculées pour l'éclairage directionnel.
+        </p>
+        <div class="t3d-slider-row">
+          <label>Mode</label>
+          <select id="select-mode" class="t3d-btn" style="width:100%; text-transform:none;">
+            <option value="3d" selected>3D incliné (tactique)</option>
+            <option value="2d">2D orthographique</option>
+          </select>
+        </div>
+      </div>
+    </aside>
+
+    <main class="t3d-map-wrap">
+      <div id="terrain3d-container" class="terrain3d--mode-3d" aria-label="Carte terrain 3D"></div>
+
+      <div class="t3d-map-hud t3d-map-hud--tl">
+        <div class="t3d-hud-chip mono"><strong id="hud-grid">048 - 052</strong> · MGRS</div>
+        <div class="t3d-hud-chip">Mode : <strong id="hud-mode">3D</strong></div>
+      </div>
+
+      <div class="t3d-map-hud t3d-map-hud--tr">
+        <div class="t3d-hud-chip">Relief : <strong class="t3d-status-ok">Actif</strong></div>
+        <div class="t3d-hud-chip">Segments : <strong>128²</strong></div>
+      </div>
+
+      <div class="t3d-map-hud t3d-map-hud--bl">
+        <div class="t3d-hud-chip mono">WebGL · Three.js r160</div>
+      </div>
+
+      <div class="t3d-map-controls">
+        <button type="button" class="t3d-btn" id="btn-reset-cam">Réinitialiser caméra</button>
+      </div>
+    </main>
+
+    <aside class="t3d-panel t3d-panel--right">
+      <div class="t3d-panel__head">Journal liaison</div>
+      <div class="t3d-panel__body">
+        <ul class="t3d-log" id="t3d-log">
+          <li><time class="mono">10:42:01</time> Initialisation Terrain3DRenderer…</li>
+        </ul>
+      </div>
+    </aside>
+
+    <footer class="t3d-footer">
+      <div class="t3d-legend">
+        <span><i style="background:#35d6a1"></i> Ami</span>
+        <span><i style="background:#dc5d5d"></i> Hostile</span>
+        <span><i style="background:#68a5d8"></i> Objectif</span>
+      </div>
+      <span class="mono">COMSPEC Overwatch · démo terrain géométrique</span>
+    </footer>
+  </div>
+
+  <script type="module" src="../public/assets/js/terrain3d/demo-main.js"></script>
+</body>
+</html>
