@@ -151,6 +151,139 @@ Pistes d’évolution pour transformer le mod Arma et l’interface ATAK en outi
 
 ---
 
+## Backlog gameplay réaliste — lots à ajouter ou à peaufiner
+
+Cette priorisation privilégie les fonctionnalités qui obligent le commandement à prendre une décision, plutôt que la simple collecte de télémétrie. Chaque donnée doit avoir une **source**, une **fraîcheur**, un **niveau de confiance** et un **effet gameplay** visible. Une valeur inconnue ne doit jamais être remplacée par une valeur rassurante (`100 %`, « OK » ou position exacte).
+
+### Lot G1 — BFT enrichi et honnêteté de l'information (priorité P0)
+
+**À peaufiner**
+
+- Ajouter à chaque contact `observed_at`, `received_at`, `source`, `confidence` et `link_state` (`live`, `delayed`, `lost`).
+- Distinguer la dernière position reçue de la position extrapolée. Une trace extrapolée doit être en pointillés, afficher son âge et disparaître après un TTL configurable.
+- Consolider dans la fiche unité : indicatif, rôle, groupe, état médical synthétique, véhicule embarqué et dernier rapport logistique.
+- Appliquer le fog of war par rôle et par réseau : un opérateur ne voit que les contacts effectivement publiés sur son réseau ou relayés par le C2.
+
+**Critères d'acceptation**
+
+1. Une coupure n'immobilise pas silencieusement l'icône : le badge passe à « retardé », puis « liaison perdue ».
+2. L'âge et la source de chaque contact sont visibles sans ouvrir un écran d'administration.
+3. Le replay conserve la donnée reçue et l'éventuelle extrapolation comme deux états distincts.
+4. Le serveur refuse qu'une télémétrie plus ancienne écrase une observation plus récente.
+
+**Effet gameplay :** le chef choisit s'il agit sur une information fraîche, attend une confirmation ou envoie une reconnaissance.
+
+### Lot G2 — Santé, alertes et chaîne MEDEVAC (priorité P0)
+
+**À ajouter**
+
+- Produire un état médical normalisé indépendant du mod : `green`, `wounded`, `critical`, `unconscious`, `dead`, `unknown`.
+- Avec ACE/KAT, remonter uniquement les vitaux utiles à la décision : conscience, fréquence cardiaque, pression artérielle, SpO2, perte de sang estimée et horodatage de mesure.
+- Déclencher une alerte sur **transition d'état**, pas à chaque poll, avec acquittement et déduplication.
+- Transformer une alerte critique en demande MEDEVAC : position de prise en charge, nombre et priorité des patients, menace/LZ, moyens requis et destination médicale.
+- Suivre les étapes `requested → assigned → en_route → on_scene → evacuated → closed`, avec annulation motivée et temps passé dans chaque étape.
+
+**Critères d'acceptation**
+
+1. Sans ACE/KAT ou sans mesure récente, l'interface affiche « inconnu » et n'invente aucun vital.
+2. Un inconscient génère une seule alerte active ; un changement réel de gravité peut la réouvrir.
+3. Le décès clôt ou requalifie explicitement la demande au lieu de laisser un statut « inconscient ».
+4. Le journal AAR calcule les délais détection–demande, demande–affectation et affectation–évacuation.
+
+**Effet gameplay :** le commandement arbitre entre poursuite de mission, stabilisation sur place et mobilisation d'un vecteur d'évacuation.
+
+### Lot G3 — Logistique véhicules et munitions (priorité P0)
+
+**À ajouter**
+
+- Créer un manifeste par véhicule : carburant, état moteur/roues, équipage, capacité cargo et état de liaison du terminal embarqué.
+- Remonter les munitions par **catégorie tactique** dans le MVP (`rifle`, `mg`, `at`, `aa`, `grenade`, `smoke`, `medical`) afin d'éviter un payload inventaire trop volumineux.
+- Calculer une autonomie estimée à partir de la consommation observée, mais afficher simultanément la quantité brute et l'heure de la dernière mesure.
+- Définir des seuils par type d'unité et mission ; un niveau bas crée une demande logistique, pas un réapprovisionnement automatique.
+- Suivre les demandes `draft → requested → approved → loaded → en_route → delivered → reconciled` et rapprocher quantité chargée, livrée et consommée.
+
+**Critères d'acceptation**
+
+1. Les consommations dans Arma diminuent les stocks visibles ; aucune ressource ne revient à sa valeur initiale après reconnexion.
+2. Deux terminaux ne peuvent pas valider deux fois la même livraison (clé d'idempotence).
+3. Une estimation est clairement distinguée d'un comptage d'inventaire récent.
+4. La destruction ou l'abandon d'un véhicule rend son stock indisponible et laisse une trace dans l'AAR.
+
+**Effet gameplay :** les joueurs doivent anticiper le ravitaillement, sécuriser les convois et adapter leur consommation.
+
+### Lot G4 — Liaison réaliste et terminal dégradé (priorité P1)
+
+**À peaufiner**
+
+- Modéliser une qualité de service par zone et relais : latence, gigue, perte de paquets, débit et coupure complète.
+- Appliquer ces contraintes à la donnée métier : BFT basse priorité regroupé, urgence médicale prioritaire, photo différée ou compressée.
+- Introduire une boîte d'envoi locale bornée, avec identifiant idempotent, tentative suivante, expiration et raison d'abandon.
+- Séparer quatre états dans l'UI : **serveur joignable**, **flux à jour**, **données en attente**, **terminal endommagé**.
+- Pour un écran endommagé, dégrader la lisibilité et certaines interactions sans fabriquer une panne réseau ; prévoir réparation, remplacement ou terminal de secours.
+
+**Critères d'acceptation**
+
+1. Un scénario de zone blanche rejoue les messages prioritaires dans l'ordre après retour de liaison, sans doublon serveur.
+2. Une photo en attente ne bloque jamais un PANIC/MEDEVAC.
+3. L'opérateur voit le nombre et l'âge des éléments en file, ainsi que la dernière synchronisation réussie.
+4. Les paramètres de dégradation sont pilotables par mission et enregistrés dans le replay.
+
+**Effet gameplay :** le terrain et les relais conditionnent réellement le C2 ; les procédures dégradées deviennent utiles.
+
+### Lot G5 — Renseignement structuré SSE / DOMEX (priorité P1)
+
+**À ajouter**
+
+- Utiliser un cycle commun `captured → triaged → exploited → assessed → disseminated → archived` pour notes, photos, documents et matériels saisis.
+- Imposer le triplet **source–fiabilité–crédibilité** et conserver les hypothèses séparément des faits observés.
+- Gérer la provenance : auteur, position/heure de collecte, pièce d'origine, transformations, détenteurs successifs et empreinte du fichier.
+- Relier chaque élément à une entité (personne, véhicule, lieu, unité, événement) et permettre la fusion sans perdre les alias ni les sources contradictoires.
+- Générer des rapports normalisés (SALUTE, SPOTREP, SITREP, exploitation DOMEX) et contrôler leur diffusion par réseau et rôle.
+
+**Critères d'acceptation**
+
+1. Une photo ou une note non triée n'apparaît pas comme renseignement confirmé sur la carte.
+2. Toute modification d'une conclusion conserve son auteur, sa justification et la version précédente.
+3. Deux rapports contradictoires restent consultables ; la consolidation ne détruit aucune source.
+4. Une transmission hors liaison rejoint la file locale et conserve son horodatage de collecte initial.
+
+**Effet gameplay :** fouiller, exploiter, recouper et diffuser devient une boucle de jeu complète au lieu d'un simple dépôt de marqueur GPS.
+
+### Lot G6 — Extensions ACRE, KAT et inventaire détaillé (priorité P2)
+
+Ces intégrations arrivent **après** les modèles génériques précédents : elles doivent enrichir une capacité existante, jamais rendre le cœur ATAK dépendant d'un mod.
+
+| Extension | Incrément conseillé | Mode de repli obligatoire |
+|---|---|---|
+| ACRE2 complet | réseaux réellement accessibles, puissance/antenne, relais, événement PTT et qualité de réception ; le contenu audio reste hors navigateur | métadonnées radio absentes, réseau C2 générique |
+| KAT Medical | vitaux avancés, voies aériennes, pneumothorax, traitements et tendance clinique | état médical ACE ou état Arma normalisé |
+| Inventaire détaillé | comptage chargeurs/munitions, compatibilité arme, lot cargo, masse et transferts joueur–véhicule | catégories tactiques agrégées du lot G3 |
+
+**Garde-fous :** détection explicite de la disponibilité du mod, version de schéma dans chaque payload, champs optionnels, fréquence d'échantillonnage plafonnée et tests avec/sans extension.
+
+### Découpage de livraison recommandé
+
+| Incrément | Contenu démontrable | Indicateur de réussite |
+|---|---|---|
+| **MVP 1 — Décider sous information imparfaite** | fraîcheur BFT, perte de liaison, états santé normalisés | aucune donnée obsolète présentée comme « live » |
+| **MVP 2 — Sauver** | alerte dédupliquée, demande et suivi MEDEVAC | chaîne complète rejouable dans l'AAR |
+| **MVP 3 — Soutenir** | stocks agrégés, seuils, demandes et livraisons | bilan matière cohérent avant/après mission |
+| **MVP 4 — Exploiter** | collecte SSE/DOMEX, qualification, rapports et diffusion | chaque conclusion retourne à ses sources |
+| **Extension 1 — Dégrader** | profils radio/terrain, priorité et file hors ligne | reprise sans perte ni doublon après coupure |
+| **Extension 2 — Spécialiser** | ACRE2, KAT et inventaire fin | même scénario valide avec extension absente |
+
+### Mesures transverses à instrumenter
+
+- **BFT :** âge médian/p95 des positions, taux de contacts `unknown`, nombre de corrections après extrapolation.
+- **Médical :** délais de prise en compte et d'évacuation, alertes dupliquées évitées, patients sans destination.
+- **Logistique :** écart de rapprochement des stocks, ruptures, demandes non honorées et pertes en transit.
+- **Liaison :** taux de perte, profondeur/âge maximal de file, délai de reprise et messages expirés.
+- **Intel :** délai collecte–diffusion, proportion de rapports qualifiés et conclusions sans provenance.
+
+Ces métriques doivent alimenter le débriefing et l'équilibrage ; elles ne doivent pas devenir un classement individuel hors contexte.
+
+---
+
 ## Références techniques
 
 - **DLL actuelle :** `mod/COMSPECExtension/Extension.cs` (Connect, UpdatePosition, SendIntel).
