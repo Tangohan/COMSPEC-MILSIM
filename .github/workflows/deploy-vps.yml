@@ -23,6 +23,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: Verify VPS SSH secret
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          if [ -z "${VPS_SSH_KEY}" ]; then
+            echo "::error::Le secret GitHub VPS_SSH_KEY est absent ou vide. Ajoutez la clé privée SSH du VPS dans Settings → Secrets and variables → Actions (la clé publique doit déjà être dans /root/.ssh/authorized_keys). Ne régénérez pas les clés si une paire existe déjà. Les secrets FTP_* restants ne sont plus utilisés par ce workflow."
+            exit 1
+          fi
+
       - name: Pull on VPS
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -34,9 +43,24 @@ jobs:
           script: |
             set -euo pipefail
             cd /var/www/athena.ttrd.fr
+            echo "=== git before pull ==="
+            git rev-parse --abbrev-ref HEAD || true
+            git status --short --branch
+            echo "HEAD=$(git rev-parse HEAD)"
             git fetch origin
+            echo "origin/main=$(git rev-parse origin/main)"
             git checkout main
-            git pull --ff-only origin main
+            if ! git merge --ff-only origin/main; then
+              echo "=== fast-forward refused (local divergence; no reset) ==="
+              git status --short --branch
+              git log --oneline --decorate -8
+              echo "--- local commits not on origin/main ---"
+              git log --oneline origin/main..HEAD || true
+              echo "--- origin/main commits not in HEAD ---"
+              git log --oneline HEAD..origin/main || true
+              echo "Refusing git reset --hard. Inspect the VPS tree, then merge or stash without force-push."
+              exit 1
+            fi
             if [ -f deploy/vps-sparse-checkout.txt ]; then
               git sparse-checkout init --cone
               # shellcheck disable=SC2046
