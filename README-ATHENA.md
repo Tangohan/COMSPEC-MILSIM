@@ -58,14 +58,17 @@ Si le serveur n’exécute pas Composer (proc_open désactivé, etc.), génère 
 
 ## Structure (résumé)
 
-- `public/` — point d’entrée web (`index.php`, `.htaccess`, assets)
-- `app/` — Config, Core, Controllers (Web, Admin, Auth), Services, Repositories, Middleware
-- `bootstrap/` — chargement env, config, erreurs
-- `views/` — vues PHP (layout, auth, personnel, admin, etc.)
-- `routes/web.php` — définition des routes
-- `migrations/` — `schema.sql`, scripts `.sql` et pipeline PHP (`run-migrations.php`, `bootstrap/core_schema_extensions_migration.php`, etc.)
+Arborescence complète : [docs/technique/structure-du-depot.md](docs/technique/structure-du-depot.md).
+
+- `public/` — point d’entrée web (`index.php`, assets)
+- `app/` — Config, Core, Controllers (Web, Api, Admin, Auth, Courrier), Services, Repositories, Middleware
+- `views/` — templates PHP (portail, ATAK, SSE, formations, back-office)
+- `routes/web.php` — routes HTTP
+- `mod/UptoDate/` — Overwatch (sources, build, PBO) ; `mod/@COMSPEC_SSE/` — SSE
+- `docs/` — technique, utilisateur, bugs, SSE
+- `migrations/` + `bootstrap/` — schéma et conversions
 - `storage/` — logs, cache, sessions, uploads
-- `server/` — service Node ATAK (carte temps réel), inchangé
+- `server/` — service carte ATAK (optionnel)
 
 ## Routes principales
 
