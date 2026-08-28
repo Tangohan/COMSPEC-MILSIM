@@ -89,18 +89,22 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
             <div>
                 <div class="ds-label-row">
                     <label for="password" class="ds-label"><?= htmlspecialchars(__('auth.password'), ENT_QUOTES, 'UTF-8') ?></label>
-                    <button type="button" class="ds-link-muted" @click.prevent="view = 'forgot'">
+                    <a class="ds-link-muted" href="<?= url('forgot-password') ?>">
                         <?= htmlspecialchars(__('auth.forgot_link'), ENT_QUOTES, 'UTF-8') ?>
-                    </button>
+                    </a>
                 </div>
                 <p class="ds-hint" id="password-hint"><?= htmlspecialchars(__('auth.password_hint'), ENT_QUOTES, 'UTF-8') ?></p>
                 <div class="ds-password">
-                    <input :type="showPassword ? 'text' : 'password'" name="password" id="password" required autocomplete="current-password"
+                    <input type="password" name="password" id="password" required autocomplete="current-password"
                            class="ds-password__field"
-                           aria-describedby="password-hint">
-                    <button type="button" class="ds-password__toggle" @click="showPassword = !showPassword"
-                            :aria-label="showPassword ? <?= json_encode(__('auth.hide_password'), JSON_UNESCAPED_UNICODE) ?> : <?= json_encode(__('auth.show_password'), JSON_UNESCAPED_UNICODE) ?>">
-                        <span x-text="showPassword ? <?= json_encode(__('auth.hide_password'), JSON_UNESCAPED_UNICODE) ?> : <?= json_encode(__('auth.show_password'), JSON_UNESCAPED_UNICODE) ?>"></span>
+                           aria-describedby="password-hint"
+                           data-password-input>
+                    <button type="button" class="ds-password__toggle" data-password-toggle="password"
+                            aria-controls="password"
+                            data-label-show="<?= htmlspecialchars(__('auth.show_password'), ENT_QUOTES, 'UTF-8') ?>"
+                            data-label-hide="<?= htmlspecialchars(__('auth.hide_password'), ENT_QUOTES, 'UTF-8') ?>"
+                            aria-label="<?= htmlspecialchars(__('auth.show_password'), ENT_QUOTES, 'UTF-8') ?>">
+                        <span data-password-toggle-label><?= htmlspecialchars(__('auth.show_password'), ENT_QUOTES, 'UTF-8') ?></span>
                     </button>
                 </div>
             </div>

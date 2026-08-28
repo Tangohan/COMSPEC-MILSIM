@@ -69,6 +69,20 @@ final class AtakTerrain3dAssetTest extends TestCase
             '.atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 1; }',
             $css
         );
+        self::assertStringContainsString('.leaflet-atakTerrainMesh-pane', $css);
+        self::assertStringContainsString('.leaflet-atakScene3d-pane', $css);
+    }
+
+    public function testTerrainMeshMountsInsideALeafletPaneAboveTheTiles(): void
+    {
+        $javascript = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain-3d.js');
+
+        self::assertStringContainsString("placeViewportCanvas(terrainCanvas, map, 'atakTerrainMeshPane', 250)", $javascript);
+        self::assertStringContainsString('function placeViewportCanvas', $javascript);
+        self::assertStringContainsString('containerPointToLayerPoint', $javascript);
+        self::assertStringContainsString("mapEl.style.setProperty('--atak-map-pitch'", $javascript);
+        self::assertStringNotContainsString('mapEl.appendChild(terrainCanvas)', $javascript);
+        self::assertStringContainsString('if (state.enabled) scheduleTerrain()', $javascript);
     }
 
     public function testHillshadeUsesMultiplyBlendingToPreserveTheMapTexture(): void

@@ -15,6 +15,10 @@ final class AtakScene3dAssetTest extends TestCase
         self::assertStringContainsString("item.kind === 'forest'", $js);
         self::assertStringContainsString('function inflateFootprint', $js);
         self::assertStringContainsString('var top = base.map', $js);
+        self::assertStringContainsString("placeViewportCanvas(canvas, boundMap, 'atakScene3dPane', 370)", $js);
+        self::assertStringContainsString('zoom < 3 ? 16', $js);
+        self::assertStringNotContainsString('mapEl.appendChild(canvas)', $js);
+        self::assertStringContainsString('atak-scene-3d-ready', $js);
     }
 
     public function testSceneControlsAndAssetArePresent(): void

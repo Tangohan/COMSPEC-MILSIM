@@ -267,7 +267,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
                                 <div>
                                     <label class="login-label" for="password"><?= htmlspecialchars(__('auth.password'), ENT_QUOTES, 'UTF-8') ?></label>
                                     <div class="relative">
-                                        <input :type="showPassword ? 'text' : 'password'" id="password" name="password" required minlength="8"
+                                        <input type="password" :type="showPassword ? 'text' : 'password'" id="password" name="password" required minlength="8"
                                                autocomplete="new-password" placeholder="8 caractères minimum"
                                                class="login-field pr-12">
                                         <button type="button" @click="showPassword = !showPassword"
@@ -281,7 +281,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
                                 <div>
                                     <label class="login-label" for="password_confirmation"><?= htmlspecialchars(__('auth.register_password_confirm'), ENT_QUOTES, 'UTF-8') ?></label>
                                     <div class="relative">
-                                        <input :type="showPassword2 ? 'text' : 'password'" id="password_confirmation" name="password_confirmation" required minlength="8"
+                                        <input type="password" :type="showPassword2 ? 'text' : 'password'" id="password_confirmation" name="password_confirmation" required minlength="8"
                                                autocomplete="new-password" placeholder="Retapez le mot de passe"
                                                class="login-field pr-12"
                                                @input="if ($el.value && document.getElementById('password').value !== $el.value) { $el.setCustomValidity(<?= json_encode(__('auth.flash_passwords_mismatch'), JSON_UNESCAPED_UNICODE) ?>); } else { $el.setCustomValidity(''); }">

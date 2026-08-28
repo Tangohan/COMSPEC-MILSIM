@@ -40,6 +40,38 @@ window.ATAKTerrain3D = (function () {
       : 1;
   }
 
+  /* Le canevas doit vivre dans un calque Leaflet (au-dessus des tuiles, sous les
+     pastilles). En frère du plan de carte (z-index 400), il reste invisible tant
+     que les tuiles sont opaques — d’où des curseurs « morts » sans DEM drapé. */
+  function ensureMapPane(map, name, zIndex) {
+    if (!map || !map.getPane) return null;
+    if (!map.getPane(name)) {
+      map.createPane(name);
+      var pane = map.getPane(name);
+      pane.style.zIndex = String(zIndex);
+      pane.style.pointerEvents = 'none';
+    }
+    return map.getPane(name);
+  }
+
+  function placeViewportCanvas(canvas, map, paneName, zIndex) {
+    if (!canvas || !map) return;
+    var pane = ensureMapPane(map, paneName, zIndex);
+    if (!pane) return;
+    if (canvas.parentNode !== pane) pane.appendChild(canvas);
+    canvas.style.position = 'absolute';
+    canvas.style.inset = 'auto';
+    canvas.style.pointerEvents = 'none';
+    var topLeft = map.containerPointToLayerPoint([0, 0]);
+    if (window.L && L.DomUtil && typeof L.DomUtil.setPosition === 'function') {
+      L.DomUtil.setPosition(canvas, topLeft);
+    } else {
+      canvas.style.left = topLeft.x + 'px';
+      canvas.style.top = topLeft.y + 'px';
+      canvas.style.transform = '';
+    }
+  }
+
   function restore() {
     try {
       var saved = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -131,12 +163,13 @@ window.ATAKTerrain3D = (function () {
 
   function initRenderer() {
     if (terrainGl) return true;
+    var map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
     var mapEl = document.getElementById('atak-map');
-    if (!mapEl) return false;
+    if (!mapEl || !map) return false;
     terrainCanvas = document.createElement('canvas');
     terrainCanvas.className = 'atak-terrain-mesh';
     terrainCanvas.setAttribute('aria-hidden', 'true');
-    mapEl.appendChild(terrainCanvas);
+    placeViewportCanvas(terrainCanvas, map, 'atakTerrainMeshPane', 250);
     terrainGl = terrainCanvas.getContext('webgl', { alpha: true, antialias: true });
     if (!terrainGl) { terrainCanvas.remove(); terrainCanvas = null; return false; }
     var vs = shader(terrainGl, terrainGl.VERTEX_SHADER,
@@ -237,8 +270,13 @@ window.ATAKTerrain3D = (function () {
   }
 
   function drawTerrain() {
-    if (!terrainGl || !terrainGrid) return;
-    var map = window.ATAKMap.getMap();
+    var map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
+    if (terrainCanvas && map) placeViewportCanvas(terrainCanvas, map, 'atakTerrainMeshPane', 250);
+    if (!terrainGl || !terrainGrid) {
+      if (stage) stage.classList.remove('atak-terrain-mesh-ready');
+      syncHillshade();
+      return;
+    }
     var layer = window.ATAKMap.getBaseTileLayer && window.ATAKMap.getBaseTileLayer();
     if (!map || !layer || !layer._tiles) return;
     var size = map.getSize(), ratio = Math.min(2, window.devicePixelRatio || 1);
@@ -321,6 +359,11 @@ window.ATAKTerrain3D = (function () {
     stage.style.setProperty('--atak-map-pitch', state.pitch + 'deg');
     stage.style.setProperty('--atak-map-bearing', state.bearing + 'deg');
     stage.style.setProperty('--atak-map-bearing-number', String(state.bearing));
+    var mapEl = document.getElementById('atak-map');
+    if (mapEl) {
+      mapEl.style.setProperty('--atak-map-pitch', state.pitch + 'deg');
+      mapEl.style.setProperty('--atak-map-bearing', state.bearing + 'deg');
+    }
     if (button) {
       button.classList.toggle('is-active', state.enabled);
       button.setAttribute('aria-pressed', state.enabled ? 'true' : 'false');
@@ -403,6 +446,7 @@ window.ATAKTerrain3D = (function () {
     if (pitchInput) pitchInput.addEventListener('input', function () {
       state.pitch = clamp(pitchInput.value, 25, 65);
       render();
+      if (state.enabled) scheduleTerrain();
       save();
     });
     if (exaggerationInput) exaggerationInput.addEventListener('input', function () {

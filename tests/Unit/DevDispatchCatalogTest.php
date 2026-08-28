@@ -140,6 +140,9 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($zeusIcons);
         self::assertSame('00249', $zeusIcons['number_pad']);
         self::assertStringContainsString('symbole', strtolower((string) $zeusIcons['title']));
+        $update249 = strtolower(DevDispatchCatalog::publicCorpus());
+        self::assertStringContainsString('mot de passe s’affichait en clair', $update249);
+        self::assertStringContainsString('inclinaison, amplification du relief', $update249);
         self::assertNull(DevDispatchCatalog::find('spotrep', '999'));
         self::assertNull(DevDispatchCatalog::find('memo', '1'));
     }

@@ -4761,13 +4761,18 @@ body.atak-theme-light .atak-chat-messages {
   margin-top: 2px;
   white-space: nowrap;
 }
-.atak-terrain-mesh { position: absolute; inset: 0; z-index: 210; pointer-events: none; }
+.atak-terrain-mesh,
+.atak-scene-3d { position: absolute; pointer-events: none; }
 .atak-terrain-mesh:not(.atak-terrain-mesh--draped) { mix-blend-mode: multiply; }
-.atak-scene-3d { position: absolute; inset: 0; z-index: 215; pointer-events: none; }
-/* Le canevas est un frère du .leaflet-map-pane (z-index 400). Tant que les
-   tuiles restent opaques, elles recouvrent le relief et les volumes du jeu.
-   Dès que le maillage est prêt, on les rend transparentes : le sol déformé
-   et les bâtiments apparaissent, pastilles et tracés restent au-dessus. */
+/* Calques dédiés dans le plan Leaflet : au-dessus des tuiles (200), sous les
+   pastilles (600). Sans ça, le canevas frère du plan (z-index 400) reste caché
+   tant que le relevé n’a pas masqué les tuiles — les commandes paraissent mortes. */
+#atak-map .leaflet-atakTerrainMesh-pane,
+#atak-map .leaflet-atakScene3d-pane { pointer-events: none; }
+#atak-map .leaflet-atakTerrainMesh-pane canvas,
+#atak-map .leaflet-atakScene3d-pane canvas { z-index: auto; }
+/* Dès que le maillage drape les tuiles, on les masque pour éviter le double dessin.
+   Les volumes du jeu restent visibles même sans relevé, grâce au calque 370. */
 .atak-map-stage.atak-map-stage--3d.atak-terrain-mesh-ready #atak-map .leaflet-tile-pane { opacity: 0; }
 .atak-map-stage #atak-map .atakHillshade-pane { mix-blend-mode: multiply; }
 .atak-map-stage:not(.atak-map-stage--3d) .atak-terrain-mesh { display: none; }
