@@ -55,7 +55,7 @@ final class OperationalBoardController
         $userId = (int) (Session::get('user_id') ?? 0);
         $this->planningEntries->ensureDefaultPlanningTemplatesIfEmpty($tenantId, $userId);
 
-        $entries = $this->planningEntries->listForBoard($tenantId, $filters);
+        $entries = $this->enrichFlashEntriesWithNotes($this->planningEntries->listForBoard($tenantId, $filters));
         $panels = $this->partitionBoardPanels($entries);
         $memberOptions = $this->memberSelectOptions($tenantId);
 
@@ -178,7 +178,7 @@ final class OperationalBoardController
             'period_start' => date('Y-m-d', strtotime('-7 days')),
             'period_end' => date('Y-m-d', strtotime('+30 days')),
         ];
-        $entries = $this->planningEntries->listForBoard($tenantId, $filters);
+        $entries = $this->enrichFlashEntriesWithNotes($this->planningEntries->listForBoard($tenantId, $filters));
         $panels = $this->partitionBoardPanels($entries);
         $identities = $this->planningEntries->collectBoardIdentities($tenantId, $entries);
         $posture = $this->planningEntries->getPosture($tenantId) ?? ['posture_level' => 'NORMAL'];
@@ -235,7 +235,7 @@ final class OperationalBoardController
         ];
         $viewerUnitIds = $this->units->unitIdsForUser($tenantId, $userId);
         $viewerJobRoleIds = $this->jobRoles->assignedJobRoleIdsForUser($tenantId, $userId);
-        $entries = $this->planningEntries->listForPortal($tenantId, $filters, $userId, $canRestricted, $viewerUnitIds, $viewerJobRoleIds);
+        $entries = $this->enrichFlashEntriesWithNotes($this->planningEntries->listForPortal($tenantId, $filters, $userId, $canRestricted, $viewerUnitIds, $viewerJobRoleIds));
         $panels = $this->partitionBoardPanels($entries);
 
         return Response::view('layout.main', [
@@ -586,7 +586,7 @@ final class OperationalBoardController
             'tenant_id' => $tenantId,
             'title' => $title,
             'description' => trim((string) $request->input('description', '')),
-            'entry_type' => $this->enum($request->input('entry_type', 'task'), ['permanence', 'info', 'mission', 'task', 'formation', 'manifestation', 'flash_info'], 'task'),
+            'entry_type' => $this->enum($request->input('entry_type', 'task'), ['permanence', 'info', 'mission', 'task', 'formation', 'manifestation', 'flash_info', 'flash_info_detailed'], 'task'),
             'category_id' => (int) $request->input('category_id', 0),
             'linked_type' => $this->normalizeLinkedType((string) $request->input('linked_type', 'none')),
             'linked_id' => $this->nullableInt($request->input('linked_id', '')),
@@ -718,7 +718,7 @@ final class OperationalBoardController
         );
         $entryType = $this->enum(
             (string) $request->input('entry_type', 'task'),
-            ['permanence', 'info', 'mission', 'task', 'formation', 'manifestation', 'flash_info'],
+            ['permanence', 'info', 'mission', 'task', 'formation', 'manifestation', 'flash_info', 'flash_info_detailed'],
             'task'
         );
         $title = trim((string) $request->input('default_title', ''));
@@ -909,7 +909,7 @@ final class OperationalBoardController
     /** @return list<string> */
     private function boardEntryTypeSlugs(): array
     {
-        return ['permanence', 'info', 'manifestation', 'mission', 'task', 'formation', 'flash_info'];
+        return ['permanence', 'info', 'manifestation', 'mission', 'task', 'formation', 'flash_info', 'flash_info_detailed'];
     }
 
     private function boardEntryTypeTitle(string $slug): string
@@ -922,6 +922,7 @@ final class OperationalBoardController
             'task' => 'Tâche interne',
             'formation' => 'Activité de formation',
             'flash_info' => 'Flash information',
+            'flash_info_detailed' => 'Flash information détaillé',
             default => 'Fiche tableau opérationnel',
         };
     }
@@ -1070,7 +1071,7 @@ final class OperationalBoardController
                 $panels['infos'][] = $entry;
             } elseif ($type === 'manifestation') {
                 $panels['manifestations'][] = $entry;
-            } elseif ($type === 'flash_info') {
+            } elseif ($type === 'flash_info' || $type === 'flash_info_detailed') {
                 $panels['flash'][] = $entry;
             } else {
                 $panels['activites'][] = $entry;
@@ -1078,6 +1079,24 @@ final class OperationalBoardController
         }
 
         return $panels;
+    }
+
+    /** @param list<array<string, mixed>> $entries @return list<array<string, mixed>> */
+    private function enrichFlashEntriesWithNotes(array $entries): array
+    {
+        foreach ($entries as $idx => $entry) {
+            if ((string) ($entry['entry_type'] ?? '') !== 'flash_info_detailed') {
+                continue;
+            }
+            $entryId = (int) ($entry['id'] ?? 0);
+            if ($entryId < 1) {
+                continue;
+            }
+            $entry['notes'] = $this->planningEntries->listNoteRowsForEntry($entryId);
+            $entries[$idx] = $entry;
+        }
+
+        return $entries;
     }
 
     /** @return list<array{id:int,label:string}> */
@@ -1116,7 +1135,7 @@ final class OperationalBoardController
 
         $typeHint = trim((string) $request->query('type', ''));
         if ($typeHint !== '') {
-            $typeHint = $this->enum($typeHint, ['permanence', 'info', 'mission', 'task', 'formation', 'manifestation', 'flash_info'], '');
+            $typeHint = $this->enum($typeHint, ['permanence', 'info', 'mission', 'task', 'formation', 'manifestation', 'flash_info', 'flash_info_detailed'], '');
             if ($typeHint !== '') {
                 $out['entry_type'] = $typeHint;
             }
@@ -1220,7 +1239,7 @@ final class OperationalBoardController
         return [
             'title' => '',
             'description' => trim((string) $request->input('description', '')),
-            'entry_type' => $this->enum($request->input('entry_type', 'task'), ['permanence', 'info', 'mission', 'task', 'formation', 'manifestation', 'flash_info'], 'task'),
+            'entry_type' => $this->enum($request->input('entry_type', 'task'), ['permanence', 'info', 'mission', 'task', 'formation', 'manifestation', 'flash_info', 'flash_info_detailed'], 'task'),
             'category_id' => (int) $request->input('category_id', 0),
             'linked_type' => $this->normalizeLinkedType((string) $request->input('linked_type', 'none')),
             'linked_id' => $this->nullableInt($request->input('linked_id', '')),

@@ -265,6 +265,33 @@
   margin-top: 6px;
 }
 
+.bo-ta-preview--dsfr .ds-alert {
+  margin-top: 8px;
+}
+
+.bo-ta-preview--dsfr .bo-ta-preview__kind {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ath-subtle, #64748b);
+  margin: 4px 0 0;
+}
+
+.bo-ta-preview--dsfr .ds-alert__body {
+  margin-top: 6px;
+}
+
+.ath-main__flashes {
+  padding: 0 16px 4px;
+}
+
+@media (min-width: 1024px) {
+  .ath-main__flashes {
+    padding: 0 24px 6px;
+  }
+}
+
 .bo-settings-flash--warn {
   border-color: #f59e0b;
   background: #fffbeb;

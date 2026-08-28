@@ -120,8 +120,6 @@ if ($discordLinkMissing) {
 }
 $showPriority = $missingPriority !== [];
 
-$err = \App\Core\Session::getFlash('error');
-$ok = \App\Core\Session::getFlash('success');
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
 $renderToggle = static function (
@@ -152,18 +150,15 @@ $renderToggle = static function (
 ?>
 <div class="bo-setup">
 
-    <?php if ($err): ?>
-        <div class="bo-settings-flash bo-settings-flash--err" role="alert"><?= $h((string) $err) ?></div>
-    <?php endif; ?>
-    <?php if ($ok): ?>
-        <div class="bo-settings-flash bo-settings-flash--ok" role="status"><?= $h((string) $ok) ?></div>
-    <?php endif; ?>
     <?php if ($discordInviteMissing): ?>
-        <div class="bo-settings-flash bo-settings-flash--warn" role="alert">
-            Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné.
-            Les candidats ne pourront pas ouvrir votre serveur depuis le formulaire public.
-            <a href="#contact">Renseigner le lien Discord</a>
-        </div>
+        <?php
+        $notice_tone = 'warning';
+        $notice_title = 'Lien Discord manquant';
+        $notice_body = 'Le recrutement via Discord est actif, mais aucun lien d\'invitation n\'est renseigné. '
+            . 'Les candidats ne pourront pas ouvrir votre serveur depuis le formulaire public. '
+            . '<a href="#contact">Renseigner le lien Discord</a>';
+        include base_path('views/partials/bo_dsfr_notice.php');
+        ?>
     <?php endif; ?>
 
     <div class="bo-setup__overview">
@@ -452,9 +447,12 @@ $renderToggle = static function (
                     <a href="<?= $h(url('back-office/roles/presets')) ?>">ouvrez les modèles de rôles</a>.
                 </p>
             <?php else: ?>
-                <div class="bo-settings-flash bo-settings-flash--warn bo-setup__empty" role="status">
-                    Aucun rôle n’a encore été créé. Passez par la gestion des rôles pour en définir.
-                </div>
+                <?php
+                $notice_tone = 'warning';
+                $notice_title = 'Aucun rôle défini';
+                $notice_body = 'Aucun rôle n’a encore été créé. Passez par la <a href="' . $h(url('back-office/roles')) . '">gestion des rôles</a> pour en définir.';
+                include base_path('views/partials/bo_dsfr_notice.php');
+                ?>
             <?php endif; ?>
         </section>
 

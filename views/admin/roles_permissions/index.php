@@ -25,17 +25,6 @@ $athKpis = [
 require base_path('views/partials/ath_kpis.php');
 ?>
 
-<?php if ($successFlash): ?>
-<div class="ath-banner-warn ath-rise" style="background:#e6f8f0;border-color:#bfe9d8;" role="status">
-    <div class="ath-banner-warn__text" style="color:#0b6b47;"><?= $h((string) $successFlash) ?></div>
-</div>
-<?php endif; ?>
-<?php if ($errorFlash): ?>
-<div class="ath-banner-warn ath-rise" role="alert">
-    <div class="ath-banner-warn__text"><?= $h((string) $errorFlash) ?></div>
-</div>
-<?php endif; ?>
-
 <form method="get" action="<?= $h(url('back-office/roles-permissions')) ?>" class="ath-users-filters ath-rise">
     <div>
         <label class="ath-users-filters__label" for="rp-q">Recherche</label>

@@ -86,8 +86,6 @@ $publicHeroSubtitle = trim((string) ($c['public_hero_subtitle'] ?? ''));
 $publicAboutTitle = trim((string) ($c['public_about_title'] ?? ''));
 $publicAboutBody = trim((string) ($c['public_about_body'] ?? ''));
 
-$err = \App\Core\Session::getFlash('error');
-$ok = \App\Core\Session::getFlash('success');
 $discordInviteMissing = \App\Services\Community\TenantCommunityProfileService::needsDiscordInviteAlert($c);
 
 $registryListed = !array_key_exists('registry_listed', $c) || !empty($c['registry_listed']);
@@ -143,29 +141,27 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
 ?>
 <div class="bo-community-settings">
 
-    <?php if ($err): ?>
-        <div class="bo-settings-flash bo-settings-flash--err" role="alert"><?= $h((string) $err) ?></div>
-    <?php endif; ?>
-    <?php if ($ok): ?>
-        <div class="bo-settings-flash bo-settings-flash--ok" role="status"><?= $h((string) $ok) ?></div>
-    <?php endif; ?>
-
     <?php if ($discordInviteMissing): ?>
-        <div class="bo-settings-flash bo-settings-flash--warn" role="alert">
-            Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné.
-            Les candidats ne pourront pas ouvrir votre serveur depuis le formulaire public.
-            <a href="<?= $h(url('back-office/community/inscription#coordonnees')) ?>">Renseigner le lien Discord</a>
-        </div>
+        <?php
+        $notice_tone = 'warning';
+        $notice_title = 'Lien Discord manquant';
+        $notice_body = 'Le recrutement via Discord est actif, mais aucun lien d\'invitation n\'est renseigné. '
+            . 'Les candidats ne pourront pas ouvrir votre serveur depuis le formulaire public. '
+            . '<a href="' . $h(url('back-office/community/inscription#coordonnees')) . '">Renseigner le lien Discord</a>';
+        include base_path('views/partials/bo_dsfr_notice.php');
+        ?>
     <?php endif; ?>
-    <div class="bo-settings-flash bo-settings-flash--warn" role="status">
-        De nouveaux réglages sont disponibles ici&nbsp;: représentation de la communauté (unité réelle ou fictive),
-        bio du bandeau et texte «&nbsp;Qui sommes-nous&nbsp;?&nbsp;».
-        Les options d’inscription (créneaux, motivation, mode de candidature) ont leur propre page.
-        <a href="#representation-unite">Représentation</a>
-        · <a href="#textes-publics">Textes publics</a>
-        · <a href="<?= $h(url('back-office/community/inscription')) ?>">Inscription</a>
-        · <a href="<?= $h(url('back-office/community/presentation')) ?>">Vitrine complète</a>
-    </div>
+    <?php
+    $notice_tone = 'info';
+    $notice_title = 'Nouveaux réglages';
+    $notice_body = 'De nouveaux réglages sont disponibles ici&nbsp;: représentation de la communauté (unité réelle ou fictive), '
+        . 'bio du bandeau et texte «&nbsp;Qui sommes-nous&nbsp;?&nbsp;». '
+        . 'Les options d\'inscription (créneaux, motivation, mode de candidature) ont leur propre page. '
+        . '<a href="#representation-unite">Représentation</a> · <a href="#textes-publics">Textes publics</a> · '
+        . '<a href="' . $h(url('back-office/community/inscription')) . '">Inscription</a> · '
+        . '<a href="' . $h(url('back-office/community/presentation')) . '">Vitrine complète</a>';
+    include base_path('views/partials/bo_dsfr_notice.php');
+    ?>
 
     <form method="post" enctype="multipart/form-data" action="<?= $h($formAction) ?>" id="bo-community-settings-form">
         <?= \App\Core\Csrf::field() ?>

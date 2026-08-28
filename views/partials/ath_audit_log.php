@@ -98,20 +98,7 @@ $athKpis = [
     ['label' => 'RÉTENTION', 'value' => '24 mois', 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => 'conforme charte'],
 ];
 require base_path('views/partials/ath_kpis.php');
-
-$successFlash = \App\Core\Session::getFlash('success');
-$errorFlash = \App\Core\Session::getFlash('error');
 ?>
-<?php if ($successFlash): ?>
-<div class="ath-banner-warn ath-rise" style="background:#e6f8f0;border-color:#bfe9d8;" role="status">
-    <div class="ath-banner-warn__text" style="color:#0b6b47;"><?= $h((string) $successFlash) ?></div>
-</div>
-<?php endif; ?>
-<?php if ($errorFlash): ?>
-<div class="ath-banner-warn ath-rise" role="alert">
-    <div class="ath-banner-warn__text"><?= $h((string) $errorFlash) ?></div>
-</div>
-<?php endif; ?>
 
 <form method="get" action="<?= $h(url($basePath)) ?>" class="ath-users-filters ath-rise">
     <div>

@@ -115,6 +115,7 @@ use App\Controllers\Admin\System\SystemSubscriptionPlansController;
 use App\Controllers\Admin\Organization\TenantAlertsController;
 use App\Controllers\Api\AlertDismissController;
 use App\Controllers\Api\MePreferencesApiController;
+use App\Controllers\Api\PlatformUxFeedbackApiController;
 use App\Controllers\Api\AccessControlApiController;
 use App\Controllers\Api\TenantAccessRequestApiController;
 use App\Controllers\Admin\System\SystemAuditController;
@@ -174,6 +175,7 @@ use App\Controllers\Admin\Organization\DashboardPinsAdminController;
 use App\Controllers\Admin\Organization\ModerationOrganizationController;
 use App\Controllers\Admin\Organization\OrganizationSecurityIndicatorsController;
 use App\Controllers\Admin\Organization\OrganizationAnalyticsController;
+use App\Controllers\Admin\Organization\OrganizationUxFeedbackController;
 use App\Controllers\Admin\Organization\OrganizationCommunityController;
 use App\Controllers\Admin\Organization\OrganizationSettingsController;
 use App\Controllers\Admin\Organization\TenantInitialSetupController;
@@ -969,6 +971,7 @@ return function (Router $router) {
     $router->post('/back-office/security-indicators/revoke', [OrganizationSecurityIndicatorsController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/analytics', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/analytics/conversion', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/retours-interface', [OrganizationUxFeedbackController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/integrations', [OrganizationIntegrationsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord', [OrganizationIntegrationsController::class, 'saveDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord/essai', [OrganizationIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1654,6 +1657,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->patch('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/me/preferences', [MePreferencesApiController::class, 'handle'], [AuthMiddleware::class]);
+    $router->get('/api/ux-feedback/state', [PlatformUxFeedbackApiController::class, 'state'], [AuthMiddleware::class]);
+    $router->post('/api/ux-feedback/rating', [PlatformUxFeedbackApiController::class, 'saveRating'], [AuthMiddleware::class]);
+    $router->post('/api/ux-feedback/survey', [PlatformUxFeedbackApiController::class, 'saveSurvey'], [AuthMiddleware::class]);
     $router->post('/api/tenant/access-request', [TenantAccessRequestApiController::class, 'store'], [AuthMiddleware::class]);
 
     $router->get('/api/access-control/roles', [AccessControlApiController::class, 'roles'], [AuthMiddleware::class]);

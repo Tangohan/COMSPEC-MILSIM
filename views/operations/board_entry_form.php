@@ -47,13 +47,15 @@ $entryTypes = [
     'task' => 'Tâche interne',
     'formation' => 'Activité de formation',
     'flash_info' => 'Flash information',
+    'flash_info_detailed' => 'Flash information détaillé',
 ];
 
 $boardFormVariant = $boardFormVariant ?? ($isEdit ? $val('entry_type', 'task') : 'task');
 if (!isset($entryTypes[$boardFormVariant])) {
     $boardFormVariant = 'task';
 }
-$isFlashForm = ($boardFormVariant === 'flash_info');
+$isFlashForm = in_array($boardFormVariant, ['flash_info', 'flash_info_detailed'], true);
+$isDetailedFlashForm = ($boardFormVariant === 'flash_info_detailed');
 
 $boardTypeHero = [
     'permanence' => [
@@ -90,6 +92,11 @@ $boardTypeHero = [
         'headline' => 'Flash information',
         'intro' => 'Message court et lisible en quelques secondes. Seuls l’essentiel, la période de validité et le public lecteur sont proposés ici.',
         'wrap' => 'border-orange-200 bg-gradient-to-br from-orange-50/90 to-white ring-orange-100',
+    ],
+    'flash_info_detailed' => [
+        'headline' => 'Flash information détaillé',
+        'intro' => 'Annonce structurée : contexte, actions attendues et contacts. Idéal pour un flash qui dépasse une ligne tout en restant centré sur l’information.',
+        'wrap' => 'border-red-200 bg-gradient-to-br from-red-50/90 to-white ring-red-100',
     ],
 ];
 $hero = $boardTypeHero[$boardFormVariant] ?? $boardTypeHero['task'];
@@ -325,8 +332,8 @@ $visCur = $val('visibility_scope', 'tenant');
                         <?php endforeach; ?>
                     </select>
                 </label>
-                <label class="md:col-span-2 block text-xs font-semibold text-slate-600">Description / consigne générale
-                    <textarea name="description" rows="4" class="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"><?= htmlspecialchars($val('description'), ENT_QUOTES, 'UTF-8') ?></textarea>
+                <label class="md:col-span-2 block text-xs font-semibold text-slate-600"><?= $isDetailedFlashForm ? 'Contexte / situation' : 'Description / consigne générale' ?>
+                    <textarea name="description" rows="<?= $isDetailedFlashForm ? 5 : 4 ?>" class="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm" placeholder="<?= $isDetailedFlashForm ? 'Décrivez la situation, les enjeux et les éléments de contexte…' : '' ?>"><?= htmlspecialchars($val('description'), ENT_QUOTES, 'UTF-8') ?></textarea>
                 </label>
                 <label class="md:col-span-2 block text-xs font-semibold text-slate-600">Mots-clés pour retrouver cette fiche
                     <input name="tags_csv" value="<?= htmlspecialchars($isEdit ? (string) ($boardEntry['tags_list'] ?? '') : '', ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm" autocomplete="off" placeholder="Exemple : logistique, salle Bravo (plusieurs mots séparés par une virgule)">
@@ -482,14 +489,41 @@ $visCur = $val('visibility_scope', 'tenant');
         </section>
         <?php endif; ?>
 
+        <?php if ($isDetailedFlashForm): ?>
+        <section class="rounded-2xl border border-orange-200 bg-orange-50/40 p-5 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-orange-950">Compléments flash détaillé</h2>
+            <div class="grid gap-3 md:grid-cols-2">
+                <label class="block text-xs font-semibold text-slate-600">Zone / lieu concerné
+                    <input name="operation_zone" value="<?= htmlspecialchars($val('operation_zone'), ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm" autocomplete="off">
+                </label>
+                <label class="block text-xs font-semibold text-slate-600">Lien carte ou repère
+                    <input name="map_link" value="<?= htmlspecialchars($val('map_link'), ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm" autocomplete="off" placeholder="https://…">
+                </label>
+                <label class="md:col-span-2 block text-xs font-semibold text-slate-600">Point de contact / relais
+                    <input name="accountability_note" value="<?= htmlspecialchars($val('accountability_note'), ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm" autocomplete="off" placeholder="Nom, canal radio, fil de discussion…">
+                </label>
+            </div>
+        </section>
+        <?php endif; ?>
+
         <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800"><?= $isFlashForm ? 'Précisions ou consigne courte' : 'Consignes structurées' ?></h2>
-            <?php if ($isFlashForm): ?>
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800"><?= $isDetailedFlashForm ? 'Blocs structurés (contexte, actions, consignes)' : ($isFlashForm ? 'Précisions ou consigne courte' : 'Consignes structurées') ?></h2>
+            <?php if ($isFlashForm && !$isDetailedFlashForm): ?>
                 <p class="text-xs text-slate-600">Ajoutez un ou plusieurs blocs si vous souhaitez détailler le message (sinon l’intitulé et la description générale suffisent).</p>
+            <?php elseif ($isDetailedFlashForm): ?>
+                <p class="text-xs text-slate-600">Utilisez les blocs ci-dessous pour détailler le contexte, les actions attendues et les restrictions éventuelles.</p>
             <?php endif; ?>
             <div id="note-rows" class="space-y-3">
                 <?php
-                $nRows = $boardEntryNotes !== [] ? $boardEntryNotes : [['note_type' => 'consigne', 'content' => '', 'is_pinned' => 0]];
+                if ($isDetailedFlashForm && $boardEntryNotes === [] && !$isEdit) {
+                    $nRows = [
+                        ['note_type' => 'info', 'content' => '', 'is_pinned' => 1],
+                        ['note_type' => 'consigne', 'content' => '', 'is_pinned' => 0],
+                        ['note_type' => 'restriction', 'content' => '', 'is_pinned' => 0],
+                    ];
+                } else {
+                    $nRows = $boardEntryNotes !== [] ? $boardEntryNotes : [['note_type' => 'consigne', 'content' => '', 'is_pinned' => 0]];
+                }
                 foreach ($nRows as $ni => $nr):
                     ?>
                 <div class="grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3 md:grid-cols-12 md:items-end">

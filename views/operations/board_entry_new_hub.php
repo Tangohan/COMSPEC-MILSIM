@@ -12,6 +12,7 @@ $typeCards = [
     ['slug' => 'task', 'title' => 'Tâche interne', 'desc' => 'Suivi d’actions internes, coordination ou préparation.', 'tone' => 'border-amber-200 bg-amber-50/70 text-amber-950'],
     ['slug' => 'formation', 'title' => 'Activité de formation', 'desc' => 'Période pédagogique, stage ou module à afficher sur le mur.', 'tone' => 'border-cyan-200 bg-cyan-50/70 text-cyan-950'],
     ['slug' => 'flash_info', 'title' => 'Flash information', 'desc' => 'Message court et urgent, visible en priorité sur le mur.', 'tone' => 'border-orange-200 bg-orange-50/80 text-orange-950'],
+    ['slug' => 'flash_info_detailed', 'title' => 'Flash information détaillé', 'desc' => 'Flash structuré : contexte, actions, zone et contact.', 'tone' => 'border-red-200 bg-red-50/70 text-red-950'],
 ];
 ?>
 <div class="mx-auto max-w-5xl space-y-6 pb-10 px-4">

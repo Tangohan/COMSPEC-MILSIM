@@ -97,22 +97,9 @@ $athKpis = [
     ['label' => 'POINTÉS', 'value' => (string) $nChecked, 'delta' => '', 'tone' => '#0b8a5c', 'pct' => $nYes > 0 ? (int) round($nChecked / max(1, $nYes) * 100) . '%' : '0%', 'note' => 'présence enregistrée'],
 ];
 
-$s = \App\Core\Session::getFlash('success');
-$errFlash = \App\Core\Session::getFlash('error');
 ?>
 
 <div class="ath-event-show ath-rise" x-data="{ addOpen: <?= $addOpen ? 'true' : 'false' ?>, dangerOpen: false }">
-    <?php if ($s): ?>
-    <div class="ath-banner-warn ath-rise" style="background:#e6f8f0;border-color:#bfe9d8;margin-bottom:16px;" role="status">
-        <div class="ath-banner-warn__text" style="color:#0b6b47;"><?= $h((string) $s) ?></div>
-    </div>
-    <?php endif; ?>
-    <?php if ($errFlash): ?>
-    <div class="ath-banner-warn ath-rise" style="margin-bottom:16px;" role="alert">
-        <div class="ath-banner-warn__text"><?= $h((string) $errFlash) ?></div>
-    </div>
-    <?php endif; ?>
-
     <div class="ath-event-show__meta ath-card ath-rise" style="padding:14px 18px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;">
         <span class="ath-cell ath-cell--mono" style="font-size:10px;font-weight:800;letter-spacing:0.12em;color:#8c979b;"><?= $h($ref) ?></span>
         <span class="ath-cell ath-cell--badge" style="color:<?= $h($type['tone']) ?>;background:<?= $h($type['bg']) ?>;border-color:transparent;"><?= $h($type['label']) ?></span>

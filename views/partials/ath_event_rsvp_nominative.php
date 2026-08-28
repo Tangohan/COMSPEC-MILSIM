@@ -22,9 +22,6 @@ $athKpis = [
     ['label' => 'ATAK ACTIFS', 'value' => (string) (int) ($stats['atak_active'] ?? 0), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '—', 'note' => 'terminaux'],
 ];
 require base_path('views/partials/ath_kpis.php');
-
-$successFlash = \App\Core\Session::getFlash('success');
-$errorFlash = \App\Core\Session::getFlash('error');
 $exportUrl = url('back-office/events/' . $eventId . '/reponses-nominatives/export') . '?' . http_build_query(array_filter($filters));
 ?>
 
@@ -34,13 +31,6 @@ $exportUrl = url('back-office/events/' . $eventId . '/reponses-nominatives/expor
         <a href="<?= $h(url('back-office/events')) ?>" class="ath-btn">Liste des créneaux</a>
         <a href="<?= $h($exportUrl) ?>" class="ath-btn ath-btn--solid">Exporter CSV</a>
     </div>
-
-    <?php if ($successFlash): ?>
-    <div class="bo-settings-flash bo-settings-flash--ok ath-rise" role="status"><?= $h((string) $successFlash) ?></div>
-    <?php endif; ?>
-    <?php if ($errorFlash): ?>
-    <div class="bo-settings-flash bo-settings-flash--err ath-rise" role="alert"><?= $h((string) $errorFlash) ?></div>
-    <?php endif; ?>
 
     <form method="get" action="<?= $h(url('back-office/events/' . $eventId . '/reponses-nominatives')) ?>" class="ath-users-filters ath-rise">
         <label class="ath-users-filters__label" for="rsvp-q">Recherche

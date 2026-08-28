@@ -1786,6 +1786,14 @@ class Container
             \App\Repositories\UserNotificationPreferencesRepository::class => new \App\Repositories\UserNotificationPreferencesRepository(),
             \App\Repositories\TenantBrandingRepository::class => new \App\Repositories\TenantBrandingRepository(),
             \App\Services\Profile\UserUiPreferencesValidationService::class => new \App\Services\Profile\UserUiPreferencesValidationService(),
+            \App\Repositories\PlatformUxFeedbackRepository::class => new \App\Repositories\PlatformUxFeedbackRepository(),
+            \App\Controllers\Api\PlatformUxFeedbackApiController::class => new \App\Controllers\Api\PlatformUxFeedbackApiController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\PlatformUxFeedbackRepository::class),
+            ),
+            \App\Controllers\Admin\Organization\OrganizationUxFeedbackController::class => new \App\Controllers\Admin\Organization\OrganizationUxFeedbackController(
+                self::get(\App\Repositories\PlatformUxFeedbackRepository::class),
+            ),
             \App\Controllers\Api\MePreferencesApiController::class => new \App\Controllers\Api\MePreferencesApiController(
                 self::get(AuthService::class),
                 self::get(\App\Repositories\UserUiPreferencesRepository::class),

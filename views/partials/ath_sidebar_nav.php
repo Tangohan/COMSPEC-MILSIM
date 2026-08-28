@@ -201,6 +201,7 @@ $athNavGroups = [
             ['label' => 'Annonces & alertes', 'href' => url('back-office/alerts'), 'icon' => 'mail', 'active' => $boNavAlerts],
             ['label' => 'Onboarding membres', 'href' => url('back-office/onboarding-members'), 'icon' => 'path', 'active' => $boNavOnbMembers],
             ['label' => 'Indicateurs d’usage', 'href' => url('back-office/analytics'), 'icon' => 'chart', 'active' => $boNavAnalytics],
+            ['label' => 'Retours interface', 'href' => url('back-office/retours-interface'), 'icon' => 'feedback', 'active' => !empty($boNavUxFeedback)],
         ], static fn (?array $row): bool => is_array($row))),
     ],
     [

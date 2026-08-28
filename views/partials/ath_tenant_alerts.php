@@ -69,12 +69,7 @@ $athKpis = [
     ['label' => 'INACTIVES', 'value' => (string) $inactiveCount, 'delta' => '', 'tone' => '#8c979b', 'pct' => '—', 'note' => 'désactivées'],
 ];
 require base_path('views/partials/ath_kpis.php');
-
-$s = \App\Core\Session::getFlash('success');
-$e = \App\Core\Session::getFlash('error');
 ?>
-<?php if ($s): ?><div class="bo-settings-flash bo-settings-flash--ok ath-rise" role="status"><?= $h((string) $s) ?></div><?php endif; ?>
-<?php if ($e): ?><div class="bo-settings-flash bo-settings-flash--err ath-rise" role="alert"><?= $h((string) $e) ?></div><?php endif; ?>
 
 <?php
 // Option de diffusion : les membres voient-ils les annonces programmées avant leur date ?

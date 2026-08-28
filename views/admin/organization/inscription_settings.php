@@ -34,8 +34,6 @@ $availabilitySlotsSelected = is_array($em['availability_slots'] ?? null) ? $em['
 $motivationData = is_array($em['motivation'] ?? null) ? $em['motivation'] : [];
 $availabilityQ15 = trim((string) ($em['availability_q15'] ?? ''));
 
-$err = \App\Core\Session::getFlash('error');
-$ok = \App\Core\Session::getFlash('success');
 $discordInviteMissing = \App\Services\Community\TenantCommunityProfileService::needsDiscordInviteAlert($c);
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -68,19 +66,15 @@ $renderToggle = static function (
 ?>
 <div class="bo-community-settings">
 
-    <?php if ($err): ?>
-        <div class="bo-settings-flash bo-settings-flash--err" role="alert"><?= $h((string) $err) ?></div>
-    <?php endif; ?>
-    <?php if ($ok): ?>
-        <div class="bo-settings-flash bo-settings-flash--ok" role="status"><?= $h((string) $ok) ?></div>
-    <?php endif; ?>
-
     <?php if ($discordInviteMissing): ?>
-        <div class="bo-settings-flash bo-settings-flash--warn" role="alert">
-            Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné.
-            Les candidats ne pourront pas ouvrir votre serveur depuis le formulaire public.
-            <a href="#coordonnees">Renseigner le lien Discord</a>
-        </div>
+        <?php
+        $notice_tone = 'warning';
+        $notice_title = 'Lien Discord manquant';
+        $notice_body = 'Le recrutement via Discord est actif, mais aucun lien d\'invitation n\'est renseigné. '
+            . 'Les candidats ne pourront pas ouvrir votre serveur depuis le formulaire public. '
+            . '<a href="#coordonnees">Renseigner le lien Discord</a>';
+        include base_path('views/partials/bo_dsfr_notice.php');
+        ?>
     <?php endif; ?>
 
     <form method="post" action="<?= $h($formAction) ?>" id="bo-inscription-settings-form">

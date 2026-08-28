@@ -176,12 +176,7 @@ $athKpis = [
     ['label' => 'NO-SHOW', 'value' => (string) $noShow, 'delta' => '', 'tone' => $noShow > 0 ? '#c98a12' : '#0b8a5c', 'pct' => $confirmed > 0 ? (int) round($noShow / $confirmed * 100) . '%' : '0%', 'note' => 'absents non pointés'],
 ];
 require base_path('views/partials/ath_kpis.php');
-
-$s = \App\Core\Session::getFlash('success');
-$e = \App\Core\Session::getFlash('error');
 ?>
-<?php if ($s): ?><div class="ath-banner-warn ath-rise" style="background:#e6f8f0;border-color:#bfe9d8;" role="status"><div class="ath-banner-warn__text" style="color:#0b6b47;"><?= $h((string) $s) ?></div></div><?php endif; ?>
-<?php if ($e): ?><div class="ath-banner-warn ath-rise" role="alert"><div class="ath-banner-warn__text"><?= $h((string) $e) ?></div></div><?php endif; ?>
 
 <div class="ath-users-filters ath-rise">
     <a href="<?= $h(url('back-office/events') . '?vue=a_venir') ?>" class="ath-btn<?= $eventsVue === 'a_venir' ? ' ath-btn--solid' : '' ?>">À venir</a>
