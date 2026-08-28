@@ -47,20 +47,23 @@ private _specs = [
     _btn setVariable ["COMSPEC_AttrKind", _kind];
     _btn ctrlAddEventHandler ["ButtonClick", {
         params ["_ctrl"];
+        private _disp = ctrlParent _ctrl;
         private _e = _ctrl getVariable ["COMSPEC_Entity", objNull];
         if (isNull _e) then {
-            _e = [ctrlParent _ctrl] call comspec_overwatch_connect_fnc_zeusAttributesTarget;
+            _e = [_disp] call comspec_overwatch_connect_fnc_zeusAttributesTarget;
         };
         private _kind = _ctrl getVariable ["COMSPEC_AttrKind", "atak"];
+        // Le panneau Éditer bloque zen_dialog : le fermer avant d’ouvrir SSE / ATAK / OVERWATCH.
+        if (!isNull _disp) then { _disp closeDisplay 2; };
         switch (_kind) do {
             case "sse": {
-                [_e, 0.08] call comspec_overwatch_connect_fnc_zeusAttributesSse;
+                [_e, 0.32] call comspec_overwatch_connect_fnc_zeusAttributesSse;
             };
             case "overwatch": {
-                [_e, 0.08] call comspec_overwatch_connect_fnc_zeusAttributesOverwatch;
+                [_e, 0.32] call comspec_overwatch_connect_fnc_zeusAttributesOverwatch;
             };
             default {
-                [_e, 0.08] call comspec_overwatch_connect_fnc_zeusAttributesAtak;
+                [_e, 0.32] call comspec_overwatch_connect_fnc_zeusAttributesAtak;
             };
         };
     }];

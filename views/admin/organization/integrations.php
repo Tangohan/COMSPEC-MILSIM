@@ -11,11 +11,30 @@ declare(strict_types=1);
  * @var list<array<string, mixed>> $integration_keys
  * @var string|null $new_integration_key_plain
  * @var list<string> $available_scopes
+ * @var bool $api_keys_allowed
+ * @var list<array{key:string, group:string, label:string, hint:string, default_mode:string}> $discord_events
+ * @var array{default_url:string, events:array<string, array{mode:string, url:string}>} $discord_state
+ * @var list<array{id:string,label:string,masked:string}> $discord_relays
+ * @var bool $use_community_relay
+ * @var bool $community_relay_ready
  */
 
 $keys = is_array($integration_keys ?? null) ? $integration_keys : [];
 $newKeyPlain = $new_integration_key_plain ?? null;
 $availableScopes = is_array($available_scopes ?? null) && $available_scopes !== [] ? $available_scopes : ['events:read'];
+$apiKeysAllowed = !empty($api_keys_allowed);
+$discordEvents = is_array($discord_events ?? null) ? $discord_events : [];
+$discordState = is_array($discord_state ?? null) ? $discord_state : ['default_url' => '', 'events' => []];
+$sseRelays = is_array($discord_relays ?? null) ? $discord_relays : [];
+$useCommunityRelay = !empty($use_community_relay);
+$communityRelayReady = !empty($community_relay_ready);
+$discordDefaultUrl = (string) ($discordState['default_url'] ?? '');
+$discordEventState = is_array($discordState['events'] ?? null) ? $discordState['events'] : [];
+$discordGroups = [];
+foreach ($discordEvents as $ev) {
+    $g = (string) ($ev['group'] ?? 'Autres');
+    $discordGroups[$g][] = $ev;
+}
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
@@ -88,12 +107,128 @@ $flashSuccess = \App\Core\Session::getFlash('success');
 <div class="ath-note">
     <p class="ath-note__title">Fonctionnement</p>
     <p class="ath-note__text">
-        Chaque outil externe présente son <strong>jeton confidentiel</strong> à chaque requête. Le flux d’événements
-        et la référence détaillée des échanges sont décrits dans la notice d’intégration fournie avec la plateforme.
-        Un jeton révoqué cesse de fonctionner immédiatement et ne peut pas être réactivé.
+        Reliez vos salons Discord ci-dessous : un salon par défaut, puis un relais pour chaque type d’événement
+        (candidatures, effectifs, opérations, formation, modération, renseignement). Les transmissions terrain
+        peuvent viser des salons supplémentaires. Les jetons d’accès servent aux outils qui viennent lire le calendrier.
     </p>
 </div>
 
+<section id="relais-discord" class="ath-card ath-rise" style="padding:18px 20px;margin-bottom:22px;">
+    <h2 class="ath-section-title" style="margin-top:0;">Relais Discord</h2>
+    <p class="ath-item__meta" style="margin:0 0 14px;">
+        Dans Discord : paramètres du salon → Intégrations → créer un relais, puis collez le lien ici.
+        Le salon par défaut reçoit les annonces et les mises à jour du pack, sauf si vous choisissez un salon dédié ou que vous les désactivez.
+    </p>
+    <form method="post" action="<?= $h(url('back-office/integrations/discord')) ?>">
+        <?= \App\Core\Csrf::field() ?>
+        <label class="ath-field">
+            <span class="ath-field__label">Salon par défaut</span>
+            <input type="url" name="discord_webhook_url" maxlength="500" class="ath-field__input" value="<?= $h($discordDefaultUrl) ?>" placeholder="https://discord.com/api/webhooks/…">
+            <span class="ath-field__help">Utilisé dès qu’un événement est réglé sur « Salon par défaut ».</span>
+        </label>
+        <?php foreach ($discordGroups as $groupLabel => $groupEvents): ?>
+            <h3 class="ath-form__title" style="margin:18px 0 8px;"><?= $h((string) $groupLabel) ?></h3>
+            <div class="ath-stack">
+                <?php foreach ($groupEvents as $ev): ?>
+                    <?php
+                    $ek = (string) ($ev['key'] ?? '');
+                    $st = is_array($discordEventState[$ek] ?? null) ? $discordEventState[$ek] : [];
+                    $mode = (string) ($st['mode'] ?? ($ev['default_mode'] ?? 'off'));
+                    $dedicatedUrl = (string) ($st['url'] ?? '');
+                    ?>
+                    <article class="ath-item">
+                        <p class="ath-item__name"><?= $h((string) ($ev['label'] ?? '')) ?></p>
+                        <p class="ath-item__meta"><?= $h((string) ($ev['hint'] ?? '')) ?></p>
+                        <div class="ath-form__grid" style="margin-top:10px;">
+                            <label class="ath-field">
+                                <span class="ath-field__label">Destination</span>
+                                <select name="discord_event[<?= $h($ek) ?>][mode]" class="ath-field__input">
+                                    <option value="off" <?= $mode === 'off' ? 'selected' : '' ?>>Désactivé</option>
+                                    <option value="default" <?= $mode === 'default' ? 'selected' : '' ?>>Salon par défaut</option>
+                                    <option value="custom" <?= $mode === 'custom' ? 'selected' : '' ?>>Salon dédié</option>
+                                </select>
+                            </label>
+                            <label class="ath-field">
+                                <span class="ath-field__label">Lien du salon dédié</span>
+                                <input type="url" name="discord_event[<?= $h($ek) ?>][url]" maxlength="500" class="ath-field__input" value="<?= $h($dedicatedUrl) ?>" placeholder="https://discord.com/api/webhooks/…">
+                            </label>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endforeach; ?>
+        <div class="ath-form__actions" style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;">
+            <button type="submit" class="ath-btn ath-btn--solid">Enregistrer les relais</button>
+        </div>
+    </form>
+    <form method="post" action="<?= $h(url('back-office/integrations/discord/essai')) ?>" style="margin-top:10px;">
+        <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="event_key" value="announcements">
+        <button type="submit" class="ath-btn">Envoyer un essai sur le salon des annonces</button>
+    </form>
+</section>
+
+<section id="relais-transmissions" class="ath-card ath-rise" style="padding:18px 20px;margin-bottom:22px;">
+    <h2 class="ath-section-title" style="margin-top:0;">Transmissions terrain</h2>
+    <p class="ath-item__meta" style="margin:0 0 14px;">
+        Salons supplémentaires pour le journal SSE. Vous pouvez aussi les gérer depuis le bureau renseignement.
+    </p>
+    <form method="post" action="<?= $h(url('back-office/integrations/sse-relais/communaute')) ?>" style="margin-bottom:14px;">
+        <?= \App\Core\Csrf::field() ?>
+        <label class="ath-check">
+            <input type="hidden" name="use_community_relay" value="0">
+            <input type="checkbox" name="use_community_relay" value="1" <?= $useCommunityRelay ? 'checked' : '' ?> <?= $communityRelayReady ? '' : 'disabled' ?>>
+            <span>
+                Publier aussi sur le salon par défaut
+                <?php if (!$communityRelayReady): ?>
+                    <small> — renseignez d’abord le salon par défaut ci-dessus, puis enregistrez.</small>
+                <?php endif; ?>
+            </span>
+        </label>
+        <div class="ath-form__actions" style="margin-top:10px;">
+            <button type="submit" class="ath-btn" <?= $communityRelayReady ? '' : 'disabled' ?>>Enregistrer</button>
+        </div>
+    </form>
+    <?php if ($sseRelays !== []): ?>
+        <div class="ath-stack" style="margin-bottom:14px;">
+            <?php foreach ($sseRelays as $relay): ?>
+                <article class="ath-item">
+                    <p class="ath-item__name"><?= $h((string) ($relay['label'] ?? '')) ?></p>
+                    <p class="ath-item__meta"><?= $h((string) ($relay['masked'] ?? '')) ?></p>
+                    <div class="ath-item__actions">
+                        <form method="post" action="<?= $h(url('back-office/integrations/sse-relais/' . rawurlencode((string) ($relay['id'] ?? '')) . '/essai')) ?>">
+                            <?= \App\Core\Csrf::field() ?>
+                            <button type="submit" class="ath-btn">Essai</button>
+                        </form>
+                        <form method="post" action="<?= $h(url('back-office/integrations/sse-relais/' . rawurlencode((string) ($relay['id'] ?? '')) . '/supprimer')) ?>" onsubmit="return confirm('Retirer ce salon du journal des transmissions ?');">
+                            <?= \App\Core\Csrf::field() ?>
+                            <button type="submit" class="ath-row-action ath-row-action--danger">Retirer</button>
+                        </form>
+                    </div>
+                </article>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+    <form method="post" action="<?= $h(url('back-office/integrations/sse-relais')) ?>" class="ath-form">
+        <?= \App\Core\Csrf::field() ?>
+        <div class="ath-form__grid">
+            <label class="ath-field">
+                <span class="ath-field__label">Intitulé du salon</span>
+                <input type="text" name="label" maxlength="80" class="ath-field__input" placeholder="Renseignement, TOC…">
+            </label>
+            <label class="ath-field">
+                <span class="ath-field__label">Lien du relais Discord</span>
+                <input type="url" name="discord_url" required maxlength="500" class="ath-field__input" placeholder="https://discord.com/api/webhooks/…">
+            </label>
+        </div>
+        <div class="ath-form__actions">
+            <button type="submit" class="ath-btn ath-btn--solid">Ajouter un salon</button>
+        </div>
+    </form>
+</section>
+
+
+<?php if ($apiKeysAllowed): ?>
 <?php
 $athKpis = [
     [
@@ -255,5 +390,14 @@ require base_path('views/partials/ath_kpis.php');
             <?php endif; ?>
         </article>
     <?php endforeach; ?>
+</div>
+<?php endif; ?>
+<?php else: ?>
+<div class="ath-card ath-rise" style="padding:18px 20px;">
+    <h2 class="ath-section-title" style="margin-top:0;">Jetons d’accès</h2>
+    <p class="ath-item__meta" style="margin:0;">
+        Les jetons pour relier un site vitrine ou un outil externe au calendrier sont proposés avec une formule supérieure.
+        Les relais Discord ci-dessus restent disponibles pour votre communauté.
+    </p>
 </div>
 <?php endif; ?>

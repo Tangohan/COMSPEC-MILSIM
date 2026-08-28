@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.486;
-        versionStr = "1.4.86";
-        versionAr[] = {1, 4, 86};
+        version = 1.494;
+        versionStr = "1.4.94";
+        versionAr[] = {1, 4, 94};
     };
 };
 
@@ -161,6 +161,7 @@ class CfgFunctions {
             class onPlayerRespawn {};
             class checkMedicalAlerts {};
             class reportMedicalAlert {};
+            class pushIcemanMedicalAlert {};
             class canTriageMedical {};
             class medicalInboxShow {};
             class medicalInboxOnLoad {};
@@ -289,6 +290,9 @@ class CfgFunctions {
             class allyTrackCallsign {};
             class reportPhonePosition {};
             class reportAllyPosition {};
+            class reportAllySnapshot {};
+            class isNearestAtakReporter {};
+            class initProxyTrackServer {};
             class reportEnemyPosition {};
             class reportEnemyAiPositions {};
             class moduleAtakShowEnemyAi {};

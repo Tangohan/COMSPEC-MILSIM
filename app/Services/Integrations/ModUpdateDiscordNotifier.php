@@ -101,12 +101,8 @@ final class ModUpdateDiscordNotifier
         if ($tenantId <= 0) {
             return null;
         }
-        $url = trim((string) ($this->tenants->getSettings($tenantId)['integrations']['discord_webhook_url'] ?? ''));
-        if ($url === '' || !$this->discord->isValidWebhookUrl($url)) {
-            return null;
-        }
-
-        return $url;
+        return (new DiscordEventRelayService($this->tenants, $this->discord))
+            ->resolveUrl($tenantId, \App\Support\DiscordWebhookCatalog::KEY_OVERWATCH_PACK);
     }
 
     /**

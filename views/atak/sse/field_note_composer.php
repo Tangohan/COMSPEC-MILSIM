@@ -8,8 +8,9 @@ declare(strict_types=1);
  * trait pour que l'opérateur ne réapprenne rien en passant de l'un à l'autre.
  *
  * @var array<string, array{label:string,hint:string}> $kinds
- * @var array<string, array{label:string,tone:string}> $themes
+ * @var array<string, array{label:string,hint:string,tone:string}> $themes
  * @var array<string, array{label:string,hint:string,tone:string}> $urgencies
+ * @var array<string, array{label:string,hint:string}> $sources
  * @var int $bodyMaxLength
  * @var int $attachmentsMax
  * @var int $themesMax
@@ -25,6 +26,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 $kinds = is_array($kinds ?? null) ? $kinds : [];
 $themes = is_array($themes ?? null) ? $themes : [];
 $urgencies = is_array($urgencies ?? null) ? $urgencies : [];
+$sources = is_array($sources ?? null) ? $sources : [];
 $errors = is_array($errors ?? null) ? $errors : [];
 $draft = is_array($draft ?? null) ? $draft : [];
 $bodyMaxLength = (int) ($bodyMaxLength ?? 1000);
@@ -41,6 +43,11 @@ $draftUrgency = (string) ($draft['urgency'] ?? 'routine');
 if (!isset($urgencies[$draftUrgency])) {
     $draftUrgency = 'routine';
 }
+$draftSource = strtoupper((string) ($draft['intel_source'] ?? ''));
+if ($draftSource !== '' && !isset($sources[$draftSource])) {
+    $draftSource = '';
+}
+$draftTitle = (string) ($draft['title'] ?? '');
 $draftBody = (string) ($draft['body'] ?? '');
 $draftPlace = (string) ($draft['place_label'] ?? '');
 $draftObserved = trim((string) ($draft['observed_at'] ?? ''));
@@ -213,6 +220,13 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
                     </p>
                 </div>
 
+                <div class="fn-field">
+                    <label for="fn-title">Objet</label>
+                    <input type="text" id="fn-title" name="title" maxlength="180"
+                           value="<?= $h($draftTitle) ?>" placeholder="Titre court du renseignement">
+                    <p class="fn-field-help">Une ligne pour l’analyste : ce que la fiche annonce, sans le détail.</p>
+                </div>
+
                 <fieldset class="fn-field">
                     <legend>Type de fiche</legend>
                     <div class="fn-choice-grid">
@@ -234,12 +248,12 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
                     <legend>Thèmes <span class="fn-legend-hint">(<?= $themesMax ?> au maximum)</span></legend>
                     <div class="fn-theme-grid" id="fn-theme-grid">
                         <?php foreach ($themes as $code => $theme): ?>
-                            <label class="fn-theme fn-tone-<?= $h($theme['tone']) ?>">
+                            <label class="fn-theme fn-tone-<?= $h($theme['tone']) ?>" title="<?= $h($theme['hint'] ?? '') ?>">
                                 <input type="checkbox" name="themes[]" value="<?= $h($code) ?>"
-                                       data-fn-theme-label="<?= $h(mb_strtoupper($theme['label'])) ?>"
+                                       data-fn-theme-label="<?= $h($code) ?>"
                                        data-fn-theme-tone="<?= $h($theme['tone']) ?>"
                                     <?= in_array($code, $draftThemes, true) ? 'checked' : '' ?>>
-                                <span><?= $h($theme['label']) ?></span>
+                                <span><strong><?= $h($code) ?></strong> <?= $h($theme['label']) ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>
@@ -255,6 +269,30 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
                                 <span class="fn-choice-body">
                                     <strong><?= $h($urgency['label']) ?></strong>
                                     <em><?= $h($urgency['hint']) ?></em>
+                                </span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </fieldset>
+
+                <fieldset class="fn-field">
+                    <legend>Recueil</legend>
+                    <div class="fn-choice-grid fn-choice-grid--tight">
+                        <label class="fn-choice">
+                            <input type="radio" name="intel_source" value=""
+                                <?= $draftSource === '' ? 'checked' : '' ?>>
+                            <span class="fn-choice-body">
+                                <strong>Non précisé</strong>
+                                <em>Le bureau pourra le compléter.</em>
+                            </span>
+                        </label>
+                        <?php foreach ($sources as $code => $source): ?>
+                            <label class="fn-choice">
+                                <input type="radio" name="intel_source" value="<?= $h($code) ?>"
+                                    <?= $code === $draftSource ? 'checked' : '' ?>>
+                                <span class="fn-choice-body">
+                                    <strong><?= $h($code) ?></strong>
+                                    <em><?= $h($source['label']) ?> — <?= $h($source['hint']) ?></em>
                                 </span>
                             </label>
                         <?php endforeach; ?>

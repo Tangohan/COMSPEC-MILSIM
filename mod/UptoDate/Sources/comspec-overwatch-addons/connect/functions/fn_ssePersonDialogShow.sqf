@@ -20,23 +20,29 @@ if (!isNull _existing && {!isNull _live}) exitWith {
 };
 uiNamespace setVariable ["COMSPEC_SsePerson_Display", displayNull];
 
-if (isNull _target) then {
-    // L’exploitation d’un corps est un cas SSE courant : pas de filtre « alive » ici.
-    private _cursor = cursorObject;
-    if (!isNull _cursor && { _cursor isKindOf "CAManBase" } && { _cursor != player }) then {
-        _target = _cursor;
+private _resume = uiNamespace getVariable ["COMSPEC_SsePerson_ResumeCollect", false];
+if (!_resume) then {
+    if (isNull _target) then {
+        // L’exploitation d’un corps est un cas SSE courant : pas de filtre « alive » ici.
+        private _cursor = cursorObject;
+        if (!isNull _cursor && { _cursor isKindOf "CAManBase" } && { _cursor != player }) then {
+            _target = _cursor;
+        };
     };
-};
-
-uiNamespace setVariable ["COMSPEC_SsePerson_Target", _target];
-uiNamespace setVariable ["COMSPEC_SsePerson_BioPending", false];
-uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", false];
-uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", ""];
-if (!isNull _target) then {
-    private _priorStem = _target getVariable ["comspec_sse_facePhotoStem", ""];
-    if (_priorStem isEqualType "" && {_priorStem isNotEqualTo ""}) then {
-        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", true];
-        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _priorStem];
+    uiNamespace setVariable ["COMSPEC_SsePerson_Target", _target];
+    uiNamespace setVariable ["COMSPEC_SsePerson_BioPending", false];
+    uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", false];
+    uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", ""];
+    if (!isNull _target) then {
+        private _priorStem = _target getVariable ["comspec_sse_facePhotoStem", ""];
+        if (_priorStem isEqualType "" && {_priorStem isNotEqualTo ""}) then {
+            uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", true];
+            uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _priorStem];
+        };
+    };
+} else {
+    if (isNull _target) then {
+        _target = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull];
     };
 };
 

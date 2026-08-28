@@ -77,8 +77,6 @@ class AccountController
         $accountProfile = $this->userProfileRepository->getByUserId($uid) ?? [];
         $legalIdentity = $this->userLegalIdentityRepository->getByUserId($uid) ?? [];
         if ($legalIdentity !== []) {
-            $accountProfile['first_name'] = $legalIdentity['first_name'] ?? ($accountProfile['first_name'] ?? '');
-            $accountProfile['last_name'] = $legalIdentity['last_name'] ?? ($accountProfile['last_name'] ?? '');
             $accountProfile['phone'] = $legalIdentity['phone'] ?? ($accountProfile['phone'] ?? '');
             $accountProfile['birth_date'] = $legalIdentity['birth_date'] ?? ($accountProfile['birth_date'] ?? '');
             $accountProfile['nationality'] = $legalIdentity['nationality'] ?? ($accountProfile['nationality'] ?? '');
@@ -294,8 +292,6 @@ class AccountController
         $profile = $this->userProfileRepository->getByUserId($uid) ?? [];
         $legalIdentity = $this->userLegalIdentityRepository->getByUserId($uid) ?? [];
         if ($legalIdentity !== []) {
-            $profile['first_name'] = $legalIdentity['first_name'] ?? ($profile['first_name'] ?? '');
-            $profile['last_name'] = $legalIdentity['last_name'] ?? ($profile['last_name'] ?? '');
             $profile['phone'] = $legalIdentity['phone'] ?? ($profile['phone'] ?? '');
             $profile['birth_date'] = $legalIdentity['birth_date'] ?? ($profile['birth_date'] ?? '');
             $profile['nationality'] = $legalIdentity['nationality'] ?? ($profile['nationality'] ?? '');
@@ -392,10 +388,6 @@ class AccountController
                     'last_name' => $lastName !== '' ? $lastName : null,
                     'timezone' => trim((string) $request->input('timezone')),
                     'language' => $language,
-                ]);
-                $this->userLegalIdentityRepository->upsert($uid, $tenantId, [
-                    'first_name' => $firstName,
-                    'last_name' => $lastName,
                 ]);
                 (new \App\Services\I18n\LocaleService())->setUserLocale($language, false);
                 if (!empty($vUi['normalized'])) {

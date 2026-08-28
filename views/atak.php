@@ -27,6 +27,10 @@ $atakUiPrefs = $atakUiPrefs ?? ['theme' => 'system', 'density' => 'compact'];
 $canAccessAdminAtakConfig = $canAccessAdminAtakConfig ?? false;
 $atakModDownloadUrl = $atakModDownloadUrl ?? null;
 $phoneOperatorSession = $phoneOperatorSession ?? null;
+$atakTenantMarkerIcons = $atakTenantMarkerIcons ?? ['assignments' => [], 'library' => []];
+$atakTenantLabel = trim((string) ($atakTenantLabel ?? ''));
+$atakCommunityMemberships = is_array($atakCommunityMemberships ?? null) ? $atakCommunityMemberships : [];
+$atakMultiCommunity = count($atakCommunityMemberships) > 1;
 $hasGameConfig = $atakConfig && ($atakConfig['arma_server_host'] ?? $atakConfig['arma_mod_credentials'] ?? $atakConfig['instructions'] ?? null);
 $atakPopoutRaw = isset($_GET['popout']) ? strtolower(trim((string) $_GET['popout'])) : '';
 $atakPopout = ($atakPopoutRaw === 'left' || $atakPopoutRaw === 'right') ? $atakPopoutRaw : '';
@@ -83,8 +87,11 @@ if ($atakMapConfig) {
     window.ATAK_API_BASE = <?= json_encode($base) ?>;
     window.ATAK_CSRF_TOKEN = <?= json_encode(\App\Core\Csrf::token(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?>;
     window.ATAK_TENANT_ID = <?= (int) ($atakTenantId ?? ($atakUserForJs['tenantId'] ?? 0)) ?>;
+    window.ATAK_TENANT_LABEL = <?= json_encode($atakTenantLabel, JSON_UNESCAPED_UNICODE) ?>;
+    window.ATAK_MULTI_COMMUNITY = <?= $atakMultiCommunity ? 'true' : 'false' ?>;
     window.NODE_ATAK_URL = '';
     window.ATAK_MARKER_ICONS_CDN = <?= json_encode(function_exists('atak_marker_icons_cdn_base') ? atak_marker_icons_cdn_base() : rtrim($base, '/') . '/assets/markers/arma') ?>;
+    window.ATAK_TENANT_MARKER_ICONS = <?= json_encode($atakTenantMarkerIcons ?? ['assignments' => new stdClass(), 'library' => []], JSON_UNESCAPED_UNICODE) ?>;
     window.ATAK_TEAM_CONFIG = <?= json_encode($atakConfig ?: new stdClass()) ?>;
     window.ATAK_USER = <?= json_encode($atakUserForJs ?: new stdClass()) ?>;
     <?php if ($atakMapConfigForJs): ?>window.ATAK_MAP_CONFIG = <?= json_encode($atakMapConfigForJs) ?>;<?php endif; ?>
@@ -176,6 +183,33 @@ if ($atakMapConfig) {
         <button type="button" data-atak-version="v1">V1</button>
         <button type="button" data-atak-version="v2">V2</button>
       </div>
+      <?php if ($atakTenantLabel !== ''): ?>
+      <div class="atak-header-cluster atak-header-cluster--community" role="group" aria-label="Communauté affichée">
+        <form method="post" action="<?= htmlspecialchars(url('community/switch'), ENT_QUOTES, 'UTF-8') ?>" class="atak-community-switch"<?= $atakMultiCommunity ? '' : ' onsubmit="return false;"' ?>>
+          <?= \App\Core\Csrf::field() ?>
+          <input type="hidden" name="return_to" value="atak">
+          <label class="atak-header-field">
+            <span class="atak-header-field-label">Communauté</span>
+            <?php if ($atakMultiCommunity): ?>
+            <select name="tenant_id" class="atak-header-field-control" title="Changer de communauté" onchange="this.form.submit()">
+              <?php foreach ($atakCommunityMemberships as $m): ?>
+                <?php
+                $mid = (int) ($m['tenant_id'] ?? 0);
+                $mlabel = community_display_name($m);
+                if ($mlabel === '') {
+                    continue;
+                }
+                ?>
+              <option value="<?= $mid ?>"<?= $mid === (int) ($atakTenantId ?? 0) ? ' selected' : '' ?>><?= htmlspecialchars($mlabel, ENT_QUOTES, 'UTF-8') ?></option>
+              <?php endforeach; ?>
+            </select>
+            <?php else: ?>
+            <span class="atak-header-field-value" title="Communauté dont la carte est affichée"><?= htmlspecialchars($atakTenantLabel, ENT_QUOTES, 'UTF-8') ?></span>
+            <?php endif; ?>
+          </label>
+        </form>
+      </div>
+      <?php endif; ?>
       <?php if (count($atakWorkspaces) > 1 || count($atakMapsList) > 1): ?>
       <div class="atak-header-cluster atak-header-cluster--ctx" role="group" aria-label="Contexte de mission">
         <?php if (count($atakWorkspaces) > 1): ?>
@@ -390,6 +424,12 @@ if ($atakMapConfig) {
         <p><strong>E-mail :</strong> <?= htmlspecialchars($currentUser['email'] ?? '') ?></p>
         <p><strong>Nom affiché :</strong> <?= htmlspecialchars($currentUser['display_name'] ?? '') ?></p>
         <p><strong>Indicatif :</strong> <?= htmlspecialchars($currentUser['callsign'] ?? '—') ?></p>
+        <?php if ($atakTenantLabel !== ''): ?>
+        <p><strong>Communauté affichée :</strong> <?= htmlspecialchars($atakTenantLabel, ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endif; ?>
+        <?php if ($atakMultiCommunity): ?>
+        <p class="atak-game-link-hint">La carte ne montre que cette communauté. Pour voir l’autre, changez-la en haut de l’écran.</p>
+        <?php endif; ?>
         <p><a href="<?= url('account') ?>">Gérer mon compte</a></p>
       </section>
       <section class="atak-account-section">
@@ -1250,20 +1290,20 @@ if ($atakMapConfig) {
         <span id="atak-side-meta">3 modules</span>
       </div>
       <nav class="atak-left-aside atak-module-list" role="tablist" aria-label="Modules du domaine">
-        <button type="button" class="atak-tab is-section-visible" role="tab" aria-selected="false" data-tab="frs" data-atak-section="intel" title="Fiches de renseignement simplifiées">
+        <button type="button" class="atak-tab is-section-visible atak-tab--fiches" role="tab" aria-selected="false" data-tab="frs" data-atak-section="intel" title="Fiches de renseignement simplifiées">
           <span class="atak-tab-label">Fiches</span>
           <small class="atak-tab-desc">Rédiger une note datée et située</small>
         </button>
-        <button type="button" class="atak-tab active is-section-visible" role="tab" aria-selected="true" data-tab="photos" data-atak-section="intel" title="Photos terrain">
+        <button type="button" class="atak-tab active is-section-visible atak-tab--photos" role="tab" aria-selected="true" data-tab="photos" data-atak-section="intel" title="Photos terrain">
           <span class="atak-tab-label">Photos</span>
           <small class="atak-tab-desc">Captures et pièces image</small>
         </button>
-        <button type="button" class="atak-tab is-section-visible" role="tab" aria-selected="false" data-tab="personnes" data-atak-section="intel" title="Personnes identifiées (renseignement interpersonnel)">
+        <button type="button" class="atak-tab is-section-visible atak-tab--personnes" role="tab" aria-selected="false" data-tab="personnes" data-atak-section="intel" title="Personnes identifiées (renseignement interpersonnel)">
           <span class="atak-tab-label">Personnes</span>
           <small class="atak-tab-desc">Identités et fiches terrain</small>
           <span class="atak-tab-badge" id="atak-sse-tab-badge" hidden></span>
         </button>
-        <button type="button" class="atak-tab is-section-visible" role="tab" aria-selected="false" data-tab="frs" data-atak-section="intel" title="Fiches de renseignement">
+        <button type="button" class="atak-tab is-section-visible atak-tab--frs" role="tab" aria-selected="false" data-tab="frs" data-atak-section="intel" title="Fiches de renseignement">
           <span class="atak-tab-label">FRS</span>
           <small class="atak-tab-desc">Fiches de renseignement</small>
           <span class="atak-tab-badge" id="atak-frs-tab-badge" hidden></span>
@@ -1527,6 +1567,12 @@ if ($atakMapConfig) {
             </div>
 
             <div class="frs-field">
+              <label class="frs-label" for="frs-title">Objet</label>
+              <input type="text" id="frs-title" class="frs-input" maxlength="180"
+                     placeholder="Titre court : ce que la fiche annonce">
+            </div>
+
+            <div class="frs-field">
               <label class="frs-label" for="frs-place">Lieu</label>
               <input type="text" id="frs-place" class="frs-input" maxlength="180"
                      placeholder="Secteur, axe, village ou point de repère">
@@ -1556,6 +1602,11 @@ if ($atakMapConfig) {
             <fieldset class="frs-field">
               <legend class="frs-label">Urgence</legend>
               <div id="frs-urgency-grid" class="frs-urgency-grid"></div>
+            </fieldset>
+
+            <fieldset class="frs-field">
+              <legend class="frs-label">Recueil</legend>
+              <div id="frs-source-grid" class="frs-kind-grid"></div>
             </fieldset>
 
             <div class="frs-field">
@@ -2750,6 +2801,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/milstd-catalog.js"></script>
   <script src="<?= $base ?>/assets/js/atak-marker-sizes.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/nato-sidc-icons.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-phone-icon.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/arma-marker-catalog.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/arma-marker-library-index.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/arma-map-markers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>

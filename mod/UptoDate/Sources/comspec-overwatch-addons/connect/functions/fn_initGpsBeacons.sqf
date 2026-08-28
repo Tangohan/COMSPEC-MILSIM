@@ -51,11 +51,19 @@ private _scan = {
         };
         if ([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag || {_listed}) then {
             _allies pushBackUnique _x;
+            _x enableDynamicSimulation false;
         };
         if ([_x, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then {
             _phones pushBackUnique _x;
         };
     } forEach allUnits;
+    {
+        if (!(_x isEqualType "")) then { continue };
+        private _obj = objectFromNetId _x;
+        if (isNull _obj || {!alive _obj} || {isPlayer _obj}) then { continue };
+        _allies pushBackUnique _obj;
+        _obj enableDynamicSimulation false;
+    } forEach _allyIds;
     _phones = _phones select { !isNull _x && {alive _x} };
     _allies = _allies select { !isNull _x && {alive _x} };
     missionNamespace setVariable ["COMSPEC_PhoneTrackUnits", _phones, false];
@@ -69,7 +77,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
 [{
     if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
     [] call (missionNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]);
-    if !(call (missionNamespace getVariable ["COMSPEC_GpsBeaconIsBridge", { false }])) exitWith {};
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
 
     private _vehs = missionNamespace getVariable ["COMSPEC_GpsBeaconObjects", []];
     if (_vehs isEqualType []) then {
@@ -77,6 +85,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
         {
             if (isNull _x) then { continue };
             _keep pushBack _x;
+            if !([_x] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
             [_x] call comspec_overwatch_connect_fnc_updateVehicleTracking;
             [_x] call comspec_overwatch_connect_fnc_reportGpsBeacon;
         } forEach _vehs;
@@ -86,6 +95,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
     };
 
     private _allies = missionNamespace getVariable ["COMSPEC_AllyTrackUnits", []];
+    private _seenNids = [];
     if (_allies isEqualType []) then {
         private _keepA = [];
         {
@@ -93,10 +103,24 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
             if (isPlayer _x) then { continue };
             if !([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then { continue };
             _keepA pushBack _x;
+            _seenNids pushBackUnique (netId _x);
+            if !([_x] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
             [_x] call comspec_overwatch_connect_fnc_reportAllyPosition;
         } forEach _allies;
         if ((count _keepA) isNotEqualTo (count _allies)) then {
             missionNamespace setVariable ["COMSPEC_AllyTrackUnits", _keepA, false];
+        };
+    };
+
+    if (call (missionNamespace getVariable ["COMSPEC_GpsBeaconIsBridge", { false }])) then {
+        private _snaps = missionNamespace getVariable ["COMSPEC_AllyTrackSnapshots", []];
+        if (_snaps isEqualType []) then {
+            {
+                if (!(_x isEqualType []) || {(count _x) < 5}) then { continue };
+                _x params ["_nid", "_px", "_py", "_dir", "_asl"];
+                if (_nid in _seenNids) then { continue };
+                [_nid, _px, _py, _dir, _asl] call comspec_overwatch_connect_fnc_reportAllySnapshot;
+            } forEach _snaps;
         };
     };
 
@@ -108,6 +132,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
             if (isPlayer _x) then { continue };
             if ([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then { continue };
             _keepU pushBack _x;
+            if !([_x] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
             [_x] call comspec_overwatch_connect_fnc_reportPhonePosition;
         } forEach _phones;
         if ((count _keepU) isNotEqualTo (count _phones)) then {

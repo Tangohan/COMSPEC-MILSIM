@@ -57,7 +57,7 @@ $canIntegrationsBo = false;
 try {
     $tidNav = (int) \App\Core\Session::get('tenant_id');
     if ($tidNav > 1 && ($gate->allows('admin.organization') || $gate->allows('admin.access'))) {
-        $canIntegrationsBo = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tidNav, 'advanced_integrations');
+        $canIntegrationsBo = true;
     }
 } catch (\Throwable) {
 }
@@ -181,12 +181,16 @@ try {
             $grSide = \App\Core\Container::get(\App\Repositories\GradeRepository::class)
                 ->findById((int) $uSide['grade_id'], $boTidSide);
             if (is_array($grSide)) {
-                $gradeDisplay = \App\Core\Container::get(\App\Services\GradeDisplayService::class);
-                $gradeLong = trim($gradeDisplay->getLong($grSide));
-                if ($gradeLong === '') {
-                    $gradeLong = trim($gradeDisplay->getShort($grSide));
+                $ppSide = null;
+                try {
+                    $ppSide = \App\Core\Container::get(\App\Repositories\PersonnelProfileRepository::class)
+                        ->getByUserId($boUidSide);
+                } catch (\Throwable) {
+                    $ppSide = null;
                 }
-                $gradeOtan = trim((string) ($gradeDisplay->getOtan($grSide) ?? ''));
+                $gradeDisplay = \App\Core\Container::get(\App\Services\GradeDisplayService::class);
+                $gradeLong = trim($gradeDisplay->headerTitle($grSide, is_array($ppSide) ? $ppSide : null));
+                $gradeOtan = trim((string) ($gradeDisplay->headerShortCode($grSide, is_array($ppSide) ? $ppSide : null) ?? ''));
                 if ($gradeLong !== '' && $gradeOtan !== '') {
                     $boUserGradeLine = $gradeLong . ' · ' . $gradeOtan;
                 } elseif ($gradeLong !== '') {
@@ -274,6 +278,11 @@ require __DIR__ . '/ath_sidebar_nav.php';
         <div class="ath-sidebar__tak-host"><?= $h($boTakHost) ?></div>
     </div>
     <?php endif; ?>
+
+    <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__portal" title="Retour au tableau de bord">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path></svg>
+        <span class="ath-sidebar__portal-label">Retour au tableau de bord</span>
+    </a>
 
     <div class="ath-sidebar__foot">
         <div class="ath-sidebar__avatar" aria-hidden="true"><?= $h($boUserInitials) ?></div>

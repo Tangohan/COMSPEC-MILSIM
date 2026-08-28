@@ -40,23 +40,51 @@ final class SseFieldNoteRepository
             $params['kind'] = $kind;
         }
 
-        $urgency = strtolower(trim((string) ($filters['urgency'] ?? '')));
+        $rawUrgency = strtolower(trim((string) ($filters['urgency'] ?? '')));
+        $urgency = SseFieldNoteCatalog::URGENCY_ALIASES[$rawUrgency] ?? $rawUrgency;
         if ($urgency !== '' && isset(SseFieldNoteCatalog::URGENCIES[$urgency])) {
-            $where[] = 'n.urgency = :urgency';
-            $params['urgency'] = $urgency;
+            $legacyUrgencies = array_keys(array_filter(
+                SseFieldNoteCatalog::URGENCY_ALIASES,
+                static fn (string $mapped): bool => $mapped === $urgency
+            ));
+            if ($legacyUrgencies === []) {
+                $where[] = 'n.urgency = :urgency';
+                $params['urgency'] = $urgency;
+            } else {
+                $urgencyParts = ['n.urgency = :urgency'];
+                $params['urgency'] = $urgency;
+                foreach (array_values($legacyUrgencies) as $i => $legacy) {
+                    $key = 'urgency_legacy_' . $i;
+                    $urgencyParts[] = 'n.urgency = :' . $key;
+                    $params[$key] = $legacy;
+                }
+                $where[] = '(' . implode(' OR ', $urgencyParts) . ')';
+            }
         }
 
-        $theme = strtolower(trim((string) ($filters['theme'] ?? '')));
+        $theme = SseFieldNoteCatalog::normalizeThemeCode($filters['theme'] ?? '');
         if ($theme !== '' && isset(SseFieldNoteCatalog::THEMES[$theme])) {
-            $where[] = 'n.themes LIKE :theme';
-            $params['theme'] = '%"' . $theme . '"%';
+            $themeCodes = [$theme];
+            foreach (SseFieldNoteCatalog::LEGACY_THEMES as $legacy => $mapped) {
+                if ($mapped === $theme) {
+                    $themeCodes[] = $legacy;
+                }
+            }
+            $themeParts = [];
+            foreach ($themeCodes as $i => $code) {
+                $key = 'theme_' . $i;
+                $themeParts[] = 'n.themes LIKE :' . $key;
+                $params[$key] = '%"' . $code . '"%';
+            }
+            $where[] = '(' . implode(' OR ', $themeParts) . ')';
         }
 
         $q = trim((string) ($filters['q'] ?? ''));
         if ($q !== '') {
             $like = '%' . $q . '%';
-            $where[] = '(n.reference_code LIKE :q_ref OR n.body LIKE :q_body OR n.place_label LIKE :q_place OR n.author_label LIKE :q_author)';
+            $where[] = '(n.reference_code LIKE :q_ref OR n.title LIKE :q_title OR n.body LIKE :q_body OR n.place_label LIKE :q_place OR n.author_label LIKE :q_author)';
             $params['q_ref'] = $like;
+            $params['q_title'] = $like;
             $params['q_body'] = $like;
             $params['q_place'] = $like;
             $params['q_author'] = $like;
@@ -131,9 +159,9 @@ final class SseFieldNoteRepository
     public function create(int $tenantId, array $data): int
     {
         $fields = [
-            'tenant_id', 'context_id', 'reference_code', 'note_kind', 'themes', 'body', 'observed_at',
+            'tenant_id', 'context_id', 'reference_code', 'note_kind', 'themes', 'title', 'body', 'observed_at',
             'place_label', 'grid_reference', 'pos_x', 'pos_y', 'pos_z', 'lat', 'lng', 'urgency',
-            'classification', 'source_reliability', 'info_credibility', 'status', 'origin',
+            'intel_source', 'classification', 'source_reliability', 'info_credibility', 'status', 'origin',
             'author_label', 'author_user_id', 'author_steam_id', 'author_unit', 'case_id',
             'interest_case_id', 'idempotency_key',
         ];
@@ -154,8 +182,12 @@ final class SseFieldNoteRepository
             JSON_UNESCAPED_UNICODE
         ) ?: '[]';
         $values['body'] = SseFieldNoteCatalog::normalizeBody($values['body']);
+        $title = SseFieldNoteCatalog::normalizeTitle($values['title'] ?? '');
+        $values['title'] = $title !== '' ? $title : null;
         $values['observed_at'] = $this->normalizeDateTime($values['observed_at']) ?? date('Y-m-d H:i:s');
         $values['urgency'] = SseFieldNoteCatalog::normalizeUrgency($values['urgency']);
+        $source = SseFieldNoteCatalog::normalizeSource($values['intel_source'] ?? '');
+        $values['intel_source'] = $source !== '' ? $source : null;
         $values['status'] = SseFieldNoteCatalog::normalizeStatus($values['status']);
         $values['classification'] = trim((string) ($values['classification'] ?? '')) ?: 'interne';
         $values['source_reliability'] = strtoupper(substr(trim((string) ($values['source_reliability'] ?? 'C')), 0, 1)) ?: 'C';
@@ -217,6 +249,16 @@ final class SseFieldNoteRepository
         if (array_key_exists('urgency', $data)) {
             $sets[] = 'urgency = :urgency';
             $params['urgency'] = SseFieldNoteCatalog::normalizeUrgency($data['urgency']);
+        }
+        if (array_key_exists('title', $data)) {
+            $sets[] = 'title = :title';
+            $title = SseFieldNoteCatalog::normalizeTitle($data['title']);
+            $params['title'] = $title !== '' ? $title : null;
+        }
+        if (array_key_exists('intel_source', $data)) {
+            $sets[] = 'intel_source = :intel_source';
+            $source = SseFieldNoteCatalog::normalizeSource($data['intel_source']);
+            $params['intel_source'] = $source !== '' ? $source : null;
         }
         if (array_key_exists('status', $data)) {
             $sets[] = 'status = :status';
@@ -471,13 +513,18 @@ final class SseFieldNoteRepository
         $row['note_kind_label'] = SseFieldNoteCatalog::kindLabel($row['note_kind']);
         $row['urgency'] = SseFieldNoteCatalog::normalizeUrgency($row['urgency'] ?? null);
         $row['urgency_label'] = SseFieldNoteCatalog::urgencyLabel($row['urgency']);
+        $source = SseFieldNoteCatalog::normalizeSource($row['intel_source'] ?? '');
+        $row['intel_source'] = $source !== '' ? $source : null;
+        $row['intel_source_label'] = $source !== '' ? SseFieldNoteCatalog::sourceLabel($source) : '';
+        $row['title'] = SseFieldNoteCatalog::normalizeTitle($row['title'] ?? '');
         $row['status'] = SseFieldNoteCatalog::normalizeStatus($row['status'] ?? null);
         $row['status_label'] = SseFieldNoteCatalog::statusLabel($row['status']);
         $row['origin_label'] = SseFieldNoteCatalog::originLabel((string) ($row['origin'] ?? 'web'));
 
         $body = (string) ($row['body'] ?? '');
         $row['body_length'] = mb_strlen($body);
-        $row['excerpt'] = mb_strlen($body) > 180 ? mb_substr($body, 0, 180) . '…' : $body;
+        $excerptSource = $row['title'] !== '' ? $row['title'] : $body;
+        $row['excerpt'] = mb_strlen($excerptSource) > 180 ? mb_substr($excerptSource, 0, 180) . '…' : $excerptSource;
 
         $observed = (string) ($row['observed_at'] ?? '');
         $ts = $observed !== '' ? strtotime($observed) : false;

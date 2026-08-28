@@ -427,27 +427,32 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
                                     <?php if ($cooldownSec > 0): ?>
                                         <span class="eff-sheets__chip" style="opacity:.55;cursor:default" title="Une demande a déjà été envoyée récemment pour ce membre — patientez avant d’en renvoyer une.">Élévation (patientez <?= htmlspecialchars($cooldownLabel($cooldownSec), ENT_QUOTES, 'UTF-8') ?>)</span>
                                     <?php else: ?>
-                                    <details class="eff-sheets__pop eff-sheets__pop--end">
-                                        <summary class="eff-sheets__chip">Élévation</summary>
-                                        <div class="eff-sheets__pop-panel">
-                                            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/elevation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form">
-                                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
-                                                <?php
-                                                $fieldIdPrefix = 'eff-elev-' . $id;
-                                                $selectedKind = 'grade';
-                                                $includeUnit = true;
-                                                require base_path('views/admin/effectifs_workspace/partials/elevation_request_fields.php');
-                                                ?>
-                                                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" style="height:1.85rem">Envoyer la demande</button>
-                                            </form>
-                                        </div>
-                                    </details>
+                                    <button type="button" class="eff-sheets__chip" data-eff-elev-open="<?= $id ?>">Élévation</button>
                                     <?php endif; ?>
                                 <?php elseif ($elevationNoRecipients): ?>
                                     <span class="eff-sheets__chip" style="opacity:.55;cursor:default" title="Aucun autre membre habilité à traiter une demande d’élévation dans cette communauté (vous êtes le seul, ou personne n’a le droit requis).">Élévation indisponible</span>
                                 <?php endif; ?>
                             </div>
+                            <?php if ($canRequestElevation && (int) ($elevationCooldownByUserId[$id] ?? 0) < 1): ?>
+                            <dialog class="eff-elev-dialog" id="eff-elev-dialog-<?= $id ?>" aria-labelledby="eff-elev-dialog-title-<?= $id ?>">
+                                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/elevation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-elev-dialog__inner eff-sheets__pop-form">
+                                    <h3 id="eff-elev-dialog-title-<?= $id ?>" class="eff-elev-dialog__title">Demander une élévation</h3>
+                                    <p class="eff-elev-dialog__lead"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></p>
+                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                    <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
+                                    <?php
+                                    $fieldIdPrefix = 'eff-elev-' . $id;
+                                    $selectedKind = 'grade';
+                                    $includeUnit = true;
+                                    require base_path('views/admin/effectifs_workspace/partials/elevation_request_fields.php');
+                                    ?>
+                                    <div class="eff-elev-dialog__actions">
+                                        <button type="button" class="eff-catalog__btn" data-eff-elev-close>Annuler</button>
+                                        <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Envoyer la demande</button>
+                                    </div>
+                                </form>
+                            </dialog>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -574,6 +579,34 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
         </script>
     <?php endif; ?>
 </div>
-<?php if ($canBulkAny && $rows !== []): ?>
+        <script>
+        (function () {
+            document.querySelectorAll('[data-eff-elev-open]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var id = btn.getAttribute('data-eff-elev-open');
+                    var dialog = id ? document.getElementById('eff-elev-dialog-' + id) : null;
+                    if (dialog && typeof dialog.showModal === 'function') {
+                        dialog.showModal();
+                    }
+                });
+            });
+            document.querySelectorAll('[data-eff-elev-close]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var dialog = btn.closest('dialog');
+                    if (dialog) {
+                        dialog.close();
+                    }
+                });
+            });
+            document.querySelectorAll('dialog.eff-elev-dialog').forEach(function (dialog) {
+                dialog.addEventListener('click', function (ev) {
+                    if (ev.target === dialog) {
+                        dialog.close();
+                    }
+                });
+            });
+        })();
+        </script>
+        <?php if ($canBulkAny && $rows !== []): ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-bulk-actions.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <?php endif; ?>

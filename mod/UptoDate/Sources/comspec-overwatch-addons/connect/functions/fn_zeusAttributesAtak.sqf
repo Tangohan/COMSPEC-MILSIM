@@ -95,7 +95,11 @@ if (_isVeh) exitWith {
         [_obj]
     ] call zen_dialog_fnc_create;
     if (_opened isEqualTo false && {!_retried}) then {
-        [{ [_this, 0, true] call comspec_overwatch_connect_fnc_zeusAttributesAtak }, _obj, 0.2] call CBA_fnc_waitAndExecute;
+        [{ [_this, 0, true] call comspec_overwatch_connect_fnc_zeusAttributesAtak }, _obj, 0.45] call CBA_fnc_waitAndExecute;
+    };
+    if (_opened isEqualTo false && {_retried}) then {
+        ["Fenêtre ATAK indisponible — fermez l’édition puis réessayez.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+        systemChat "[COMSPEC] ATAK : la fenêtre ne s’est pas ouverte. Fermez l’édition puis recliquez.";
     };
     true
 };
@@ -122,6 +126,14 @@ if (!_isPlayer) then {
         _allyCs = [_obj] call comspec_overwatch_connect_fnc_allyTrackCallsign;
     };
     _fields pushBack ["EDIT", ["Indicatif", "Nom court affiché sur la carte et dans les effectifs (ex. RAVEN). Vide : groupe et nom de l’IA."], _allyCs];
+    private _mateCount = count ((units group _obj) select { alive _x && {!isPlayer _x} && {_x isKindOf "CAManBase"} });
+    if (_mateCount > 1) then {
+        _fields pushBack [
+            "LIST",
+            ["Section", "Cette IA fait partie d’un groupe. Chef seulement, ou toute la section."],
+            [["leader", "group"], ["Chef de section seulement", "Toute la section"], 0]
+        ];
+    };
 };
 
 private _opened = [
@@ -146,11 +158,28 @@ private _opened = [
         };
         if (!_isPlayer && {(count _values) > 8}) then {
             private _allyCs = if ((count _values) > 9) then { trim (_values select 9) } else { "" };
-            [_unit, _values select 8, _allyCs] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 0];
-            if (_values select 8) then {
-                _unit setVariable ["COMSPEC_AllyTrackLastAt", -1e9, false];
-                [_unit] call comspec_overwatch_connect_fnc_reportAllyPosition;
+            private _scope = if ((count _values) > 10) then { _values select 10 } else { "leader" };
+            if (!(_scope isEqualType "")) then { _scope = "leader" };
+            private _allyOnVal = _values select 8;
+            private _allyTargets = [_unit];
+            if (_allyOnVal) then {
+                private _grp = group _unit;
+                private _mates = (units _grp) select { alive _x && {!isPlayer _x} && {_x isKindOf "CAManBase"} };
+                if (_scope isEqualTo "group" && {(count _mates) > 1}) then {
+                    _allyTargets = _mates;
+                };
+                if (_scope isEqualTo "leader" && {(count _mates) > 1}) then {
+                    private _sl = leader _grp;
+                    if (!isNull _sl && {!isPlayer _sl} && {alive _sl}) then { _allyTargets = [_sl]; };
+                };
             };
+            {
+                [_x, _allyOnVal, _allyCs] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 0];
+                if (_allyOnVal) then {
+                    _x setVariable ["COMSPEC_AllyTrackLastAt", -1e9, false];
+                    [_x] call comspec_overwatch_connect_fnc_reportAllyPosition;
+                };
+            } forEach _allyTargets;
         };
         [format ["Suivi ATAK réglé pour %1.", name _unit], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
     },
@@ -160,7 +189,10 @@ private _opened = [
 
 if (_opened isEqualTo false) exitWith {
     if (!_retried && {!isNil "CBA_fnc_waitAndExecute"}) then {
-        [{ [_this, 0, true] call comspec_overwatch_connect_fnc_zeusAttributesAtak }, _obj, 0.2] call CBA_fnc_waitAndExecute;
+        [{ [_this, 0, true] call comspec_overwatch_connect_fnc_zeusAttributesAtak }, _obj, 0.45] call CBA_fnc_waitAndExecute;
+    } else {
+        ["Fenêtre ATAK indisponible — fermez l’édition puis réessayez.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+        systemChat "[COMSPEC] ATAK : la fenêtre ne s’est pas ouverte. Fermez l’édition puis recliquez.";
     };
     true
 };

@@ -74,6 +74,8 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
         self::assertStringContainsString('fn_updateDeviceOverlay', $roleplay);
 
         self::assertStringContainsString("showConnectionError('Liaison perdue', 'Reconnexion dans %1 s')", $inject);
+        self::assertStringContainsString('ctrlWebBrowserAction ["ExecJS"', $inject);
+        self::assertStringContainsString('cTab_Android_dlg', $inject);
         self::assertStringNotContainsString('Liaison ATAK perdue', $inject);
         self::assertStringNotContainsString('applyMapInterference(0.6)', $inject);
     }

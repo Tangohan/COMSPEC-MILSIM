@@ -1579,6 +1579,50 @@ window.ATAKMap = (function () {
     });
   }
 
+  function tenantMarkerUrl(kind) {
+    var cfg = window.ATAK_TENANT_MARKER_ICONS;
+    if (!cfg || !cfg.assignments) return '';
+    var val = String(cfg.assignments[kind] || '').trim();
+    if (!val || val === 'nato') return '';
+    if (val.indexOf('arma:') === 0) {
+      var png = val.slice(5).replace(/^\/+/, '');
+      var cdn = String(window.ATAK_MARKER_ICONS_CDN || '').replace(/\/$/, '');
+      return cdn && png ? (cdn + '/' + png) : '';
+    }
+    if (val.charAt(0) === '/' || val.indexOf('http') === 0) return val;
+    var lib = cfg.library || [];
+    for (var i = 0; i < lib.length; i++) {
+      if (lib[i] && String(lib[i].id) === val) return String(lib[i].url || '');
+    }
+    return '';
+  }
+
+  function unitKindFromExtra(extra) {
+    extra = extra || {};
+    if (extra.phone_geoloc || extra.source === 'phone') return 'phone';
+    if (extra.enemy_ai || extra.source === 'enemy') return 'ai_hostile';
+    if (extra.ally_ai || extra.source === 'ally') return 'ai_friend';
+    if (extra.is_ai) return 'ai_friend';
+    return 'player';
+  }
+
+  function customMarkerDivIcon(url, label, size) {
+    size = Math.max(12, Number(size) || 20);
+    var safe = String(url || '').replace(/"/g, '');
+    var img = '<img src="' + safe + '" alt="" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain;display:block;" />';
+    var html = img;
+    if (label && inclinedView()) {
+      html = '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;">' + img
+        + '<span class="nato-sidc-label">' + String(label).replace(/</g, '&lt;') + '</span></div>';
+    }
+    return L.divIcon({
+      className: 'atak-tenant-icon atak-compact-marker',
+      html: html,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2]
+    });
+  }
+
   function vehicleClassLabel(cls) {
     var k = String(cls || '').toUpperCase();
     if (k === 'TANK') return 'Char';
@@ -1614,15 +1658,21 @@ window.ATAKMap = (function () {
       var color = gps ? '#38bdf8' : '#f59e0b';
       var kind = gps ? 'Balise GPS' : 'Véhicule suivi';
       var S = window.ATAKMarkerSizes;
-      var gpsHtml = '<span style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid ' + color + ';filter:drop-shadow(0 0 1px #000);display:block;"></span>';
-      var icon = S && S.divIcon
-        ? S.divIcon(L, gpsHtml, 'tactical', { className: 'atak-gps-map-icon atak-compact-marker', pin: true })
-        : L.divIcon({
-            className: 'atak-gps-map-icon atak-compact-marker',
-            html: gpsHtml,
-            iconSize: [16, 16],
-            iconAnchor: [8, 16]
-          });
+      var customVeh = tenantMarkerUrl('vehicle');
+      var icon;
+      if (customVeh) {
+        icon = customMarkerDivIcon(customVeh, pretty, S ? S.px('tactical') : 18);
+      } else {
+        var gpsHtml = '<span style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid ' + color + ';filter:drop-shadow(0 0 1px #000);display:block;"></span>';
+        icon = S && S.divIcon
+          ? S.divIcon(L, gpsHtml, 'tactical', { className: 'atak-gps-map-icon atak-compact-marker', pin: true })
+          : L.divIcon({
+              className: 'atak-gps-map-icon atak-compact-marker',
+              html: gpsHtml,
+              iconSize: [16, 16],
+              iconAnchor: [8, 16]
+            });
+      }
       var popup = '<div class="atak-gps-popup"><div class="atak-marker-popup__kind">' + kind + '</div><b>' +
         pretty.replace(/</g, '&lt;') +
         '</b><br/>' + vehicleClassLabel(item.vehicle_class) +
@@ -1867,10 +1917,27 @@ window.ATAKMap = (function () {
       return raw.toUpperCase();
     }
     var ownCallsignKey = currentUserCallsignKey();
+    function extraOf(u) {
+      try {
+        if (typeof u.extra === 'string') return JSON.parse(u.extra || '{}') || {};
+        if (u.extra && typeof u.extra === 'object') return u.extra;
+      } catch (e) {}
+      return {};
+    }
+    function isTrackedAi(u, extra) {
+      extra = extra || {};
+      if (extra.ally_ai || extra.enemy_ai || extra.is_ai) return true;
+      var src = String(extra.source || '').toLowerCase();
+      if (src === 'ally' || src === 'enemy') return true;
+      var cs = String((u && (u.call_sign || u.callsign)) || '').toUpperCase();
+      return cs.indexOf('ALLY-') === 0 || cs.indexOf('ENY-') === 0;
+    }
     (Array.isArray(list) ? list : []).forEach(function (u) {
+      var extra = extraOf(u);
+      var trackedAi = isTrackedAi(u, extra);
       var live = unitLive(u);
-      if (live === 'offline') return;
-      if (!prefs.showDelayedUnits && live === 'delayed') return;
+      if (live === 'offline' && !trackedAi) return;
+      if (!prefs.showDelayedUnits && live === 'delayed' && !trackedAi) return;
       var id = (u.id != null && String(u.id) !== '')
         ? ('unit_' + String(u.id))
         : (String(u.call_sign || u.callsign || '').trim()
@@ -1885,6 +1952,9 @@ window.ATAKMap = (function () {
         y = parseFloat(gridRef[1]);
       }
       if (!isValidPos(x, y)) return;
+      if (window.ATAKUnits && window.ATAKUnits.shouldHideEnemyAi && window.ATAKUnits.shouldHideEnemyAi(u, list)) {
+        return;
+      }
       seen[id] = true;
       var applied = applyOffset(y, x);
       var liveLatlng = L.latLng(applied[0], applied[1]);
@@ -1894,14 +1964,6 @@ window.ATAKMap = (function () {
       if (!selfAutoCentered && prefs.autoCenterSelf && ownCallsignKey !== '' && unitCallsignKey === ownCallsignKey) {
         centerOn(y, x);
         selfAutoCentered = true;
-      }
-      var extra = {};
-      try {
-        if (typeof u.extra === 'string') extra = JSON.parse(u.extra || '{}');
-        else if (u.extra && typeof u.extra === 'object') extra = u.extra;
-      } catch (e) {}
-      if (window.ATAKUnits && window.ATAKUnits.shouldHideEnemyAi && window.ATAKUnits.shouldHideEnemyAi(u, list)) {
-        return;
       }
       var P = window.ATAKUnitPopup;
       var isPhone = P && P.isPhoneGeoloc ? P.isPhoneGeoloc(extra) : !!(extra.phone_geoloc);
@@ -1929,6 +1991,10 @@ window.ATAKMap = (function () {
       }
       if (onMonNet) {
         healthClass = (healthClass ? healthClass + ' ' : '') + 'nato-sidc--radio-listen';
+      }
+      var lastKnown = trackedAi && (live === 'offline' || live === 'delayed');
+      if (lastKnown) {
+        healthClass = (healthClass ? healthClass + ' ' : '') + 'nato-sidc--last-known';
       }
       var roleText = isPhone ? 'Téléphone' : String(u.role || extra.role || '').trim();
       var callsignKey = String(u.call_sign || '').toUpperCase().trim();
@@ -1964,7 +2030,9 @@ window.ATAKMap = (function () {
         u.fire_team_id || '',
         safeFt,
         isPhone ? JSON.stringify(rev || {}) : '',
-        inclinedView() ? '3d' : '2d'
+        inclinedView() ? '3d' : '2d',
+        tenantMarkerUrl(unitKindFromExtra(extra)),
+        lastKnown ? 'lk' : ''
       ].join('|');
       var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
       if (existing && existing._atakIconSig === iconSig && existing._atakPosSig === posSig) {
@@ -1999,6 +2067,12 @@ window.ATAKMap = (function () {
                 iconAnchor: [av / 2, av / 2]
               });
         } else {
+          var customUrl = tenantMarkerUrl(unitKindFromExtra(extra));
+          if (customUrl) {
+            icon = customMarkerDivIcon(customUrl, labelCs, prefs.iconSize);
+          } else if (isPhone && window.ATAKPhoneIcon && window.ATAKPhoneIcon.leafletDivIcon) {
+            icon = window.ATAKPhoneIcon.leafletDivIcon(L, prefs.iconSize, inclinedView() ? labelCs : '');
+          } else {
           var iconOpts = {
             affiliation: aff,
             role: roleText,
@@ -2027,6 +2101,7 @@ window.ATAKMap = (function () {
                   iconSize: [14, 14],
                   iconAnchor: [7, 7]
                 }));
+          }
         }
         if (prefs.showFtFrame && safeFt && prefs.styleMode === 'nato' && icon && icon.options) {
           icon.options.className = (icon.options.className || '') + ' atak-ft-marker';
@@ -2109,7 +2184,10 @@ window.ATAKMap = (function () {
       if (aff === 'hostile' && window.ATAKUnits && window.ATAKUnits.showEnemyAiEnabled && !window.ATAKUnits.showEnemyAiEnabled()) {
         return;
       }
-      var icon = nato && nato.leafletDivIcon
+      var customAir = tenantMarkerUrl('air');
+      var icon = customAir
+        ? customMarkerDivIcon(customAir, a.callsign || '', window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('important') : 22)
+        : (nato && nato.leafletDivIcon
         ? nato.leafletDivIcon(L, {
             affiliation: aff,
             aircraftType: a.aircraft_type || 'plane',
@@ -2125,7 +2203,7 @@ window.ATAKMap = (function () {
               : '<span style="color:#3b82f6;font-size:12px;font-weight:bold;">▲</span>',
             iconSize: [16, 16],
             iconAnchor: [8, 8],
-          });
+          }));
       var iconSig = [aff, a.aircraft_type || '', a.model || '', a.callsign || '', status, inclinedView() ? '3d' : '2d'].join('|');
       var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
       if (!airAssetsById[id]) {

@@ -2146,9 +2146,10 @@ class UserRepository
     public function listTenantsForEmail(string $email): array
     {
         $stmt = $this->pdo()->prepare(
-            'SELECT u.id, u.tenant_id, t.name, t.slug FROM users u INNER JOIN tenants t ON t.id = u.tenant_id WHERE u.email = ? AND u.status = ? ORDER BY t.name ASC'
+            'SELECT u.id, u.tenant_id, t.name, t.slug FROM users u INNER JOIN tenants t ON t.id = u.tenant_id
+             WHERE LOWER(TRIM(u.email)) = ? AND u.status = ? ORDER BY t.name ASC'
         );
-        $stmt->execute([$email, 'active']);
+        $stmt->execute([strtolower(trim($email)), 'active']);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -2283,7 +2284,10 @@ class UserRepository
      *
      * @return int Nouvel id utilisateur
      */
-    public function cloneUserToTenant(int $sourceUserId, int $newTenantId, int $roleId, ?int $gradeId = null): int
+    /**
+     * @param array{display_name?: ?string, callsign?: ?string} $identityOverrides
+     */
+    public function cloneUserToTenant(int $sourceUserId, int $newTenantId, int $roleId, ?int $gradeId = null, array $identityOverrides = []): int
     {
         $u = $this->findById($sourceUserId, null);
         if (!$u) {
@@ -2292,18 +2296,24 @@ class UserRepository
         if ($this->emailExistsInTenant($newTenantId, (string) $u['email'])) {
             throw new \RuntimeException('Cet email est déjà inscrit dans cette communauté.');
         }
+        $displayName = array_key_exists('display_name', $identityOverrides)
+            ? $identityOverrides['display_name']
+            : ($u['display_name'] ?? null);
+        $callsign = array_key_exists('callsign', $identityOverrides)
+            ? $identityOverrides['callsign']
+            : ($u['callsign'] ?? null);
         $cloneData = [
             'email' => $u['email'],
             'password_hash' => $u['password_hash'],
-            'display_name' => $u['display_name'] ?? null,
-            'callsign' => $u['callsign'] ?? null,
+            'display_name' => $displayName,
+            'callsign' => $callsign,
             'role_id' => $roleId,
             'grade_id' => $this->normalizeOptionalGradeId($gradeId),
             'status' => 'active',
         ];
         if ($this->hasProfileSlugColumn()) {
             $cloneData['profile_slug'] = UserProfileSlugService::generateForNewUser(
-                $u['display_name'] ?? null,
+                $displayName,
                 (string) $u['email'],
                 fn (string $s) => $this->isProfileSlugTaken($newTenantId, $s)
             );

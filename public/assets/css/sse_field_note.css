@@ -9,7 +9,9 @@
     --fn-accent-soft: #2a247f;
     --fn-validate: #10b981;
     --fn-critical: #dc2626;
-    --fn-warning: #d97706;
+    --fn-warning: #ea580c;
+    --fn-caution: #ca8a04;
+    --fn-stable: #16a34a;
     --fn-info: #2563eb;
     --fn-neutral: #4b5563;
     --fn-text: #f4f5f6;
@@ -131,6 +133,8 @@
 
 .fn-tag--critical { background: var(--fn-critical); }
 .fn-tag--warning { background: var(--fn-warning); }
+.fn-tag--caution { background: var(--fn-caution); }
+.fn-tag--stable { background: var(--fn-stable); }
 .fn-tag--info { background: var(--fn-info); }
 .fn-tag--neutral { background: var(--fn-neutral); }
 .fn-tag--kind { background: var(--fn-accent-soft); }
@@ -717,6 +721,8 @@
 
 .fn-theme.fn-tone-critical:has(input:checked) { background: var(--fn-critical); }
 .fn-theme.fn-tone-warning:has(input:checked) { background: var(--fn-warning); }
+.fn-theme.fn-tone-caution:has(input:checked) { background: var(--fn-caution); }
+.fn-theme.fn-tone-stable:has(input:checked) { background: var(--fn-stable); }
 .fn-theme.fn-tone-info:has(input:checked) { background: var(--fn-info); }
 .fn-theme.fn-tone-neutral:has(input:checked) { background: var(--fn-neutral); }
 
@@ -756,10 +762,18 @@
 }
 
 .sse-note-badge--critical { background: #dc2626; }
-.sse-note-badge--warning { background: #d97706; }
+.sse-note-badge--warning { background: #ea580c; }
+.sse-note-badge--caution { background: #ca8a04; }
+.sse-note-badge--stable { background: #16a34a; }
 .sse-note-badge--info { background: #2563eb; }
 .sse-note-badge--neutral { background: #4b5563; }
 .sse-note-badge--kind { background: #2a247f; }
+
+.sse-note-title {
+    margin: 0.35rem 0 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
 
 .sse-note-body {
     margin: 0;

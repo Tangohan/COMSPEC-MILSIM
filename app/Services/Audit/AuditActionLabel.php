@@ -73,6 +73,7 @@ final class AuditActionLabel
         'formation_doc_duplicated' => 'Documentation HTML dupliquée',
         // Plateforme — réglages et déploiement
         'platform.settings_updated' => 'Réglage plateforme (brief) mis à jour',
+        'platform.storage_purged' => 'Historique volumineux vidé (administration du site)',
         'platform.subscription_plan_updated' => 'Formule d’accès (palier) modifiée',
         'deployment.module_created' => 'Déploiement — fonctionnalité créée',
         'deployment.module_updated' => 'Déploiement — fonctionnalité modifiée',

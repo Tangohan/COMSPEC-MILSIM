@@ -332,6 +332,107 @@ foreach ($dataSummary as $k => $v) {
         </form>
     </div>
 
+    <?php
+    $markerIcons = is_array($markerIcons ?? null) ? $markerIcons : ['library' => [], 'assignments' => []];
+    $markerIconKinds = is_array($markerIconKinds ?? null) ? $markerIconKinds : \App\Services\Tactical\AtakMarkerIconsService::KINDS;
+    $markerLib = is_array($markerIcons['library'] ?? null) ? $markerIcons['library'] : [];
+    $markerAssign = is_array($markerIcons['assignments'] ?? null) ? $markerIcons['assignments'] : [];
+    $cdnBase = function_exists('atak_marker_icons_cdn_base') ? rtrim(atak_marker_icons_cdn_base(), '/') : '';
+    ?>
+    <div id="marker-icons" class="mb-8 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+        <h2 class="text-sm font-bold text-slate-800 mb-1">Apparence des symboles sur la carte</h2>
+        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+            Choisissez le symbole OTAN, une icône déjà présente dans la bibliothèque de la carte, ou envoyez la vôtre.
+            Ces choix s’appliquent à toute la communauté et restent mémorisés.
+        </p>
+        <form action="<?= $baseUrl ?>/admin/atak-config/marker-icons/upload" method="post" enctype="multipart/form-data" class="mb-6 space-y-3 rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <?= \App\Core\Csrf::field() ?>
+            <p class="text-sm font-medium text-slate-800">Ajouter une icône</p>
+            <div class="grid sm:grid-cols-2 gap-3">
+                <label class="block text-sm text-slate-700">
+                    Nom affiché
+                    <input type="text" name="marker_icon_label" maxlength="80" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Écusson section" />
+                </label>
+                <label class="block text-sm text-slate-700">
+                    Fichier (PNG, JPG ou WebP, 2 Mo max.)
+                    <input type="file" name="marker_icon_file" accept="image/png,image/jpeg,image/webp" class="mt-1 w-full text-sm" />
+                </label>
+            </div>
+            <button type="submit" class="inline-flex px-4 py-2 bg-white border border-slate-300 text-slate-800 text-sm font-semibold rounded-lg hover:bg-slate-50">
+                Ajouter à la bibliothèque
+            </button>
+        </form>
+        <?php if ($markerLib !== []): ?>
+            <div class="mb-6">
+                <p class="text-sm font-medium text-slate-800 mb-2">Vos icônes</p>
+                <ul class="flex flex-wrap gap-3">
+                    <?php foreach ($markerLib as $iconRow): ?>
+                        <?php
+                        $iconUrl = function_exists('user_media_public_url')
+                            ? (user_media_public_url((string) ($iconRow['url'] ?? '')) ?? '')
+                            : (string) ($iconRow['url'] ?? '');
+                        ?>
+                        <li class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5">
+                            <?php if ($iconUrl !== ''): ?>
+                                <img src="<?= htmlspecialchars($iconUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-8 w-8 object-contain" />
+                            <?php endif; ?>
+                            <span class="text-xs text-slate-700"><?= htmlspecialchars((string) ($iconRow['label'] ?? 'Icône'), ENT_QUOTES, 'UTF-8') ?></span>
+                            <form action="<?= $baseUrl ?>/admin/atak-config/marker-icons/delete" method="post" class="inline">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="icon_id" value="<?= htmlspecialchars((string) ($iconRow['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" />
+                                <button type="submit" class="text-xs text-slate-500 hover:text-red-700">Retirer</button>
+                            </form>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+        <form action="<?= $baseUrl ?>/admin/atak-config/marker-icons" method="post" class="space-y-4" id="atak-marker-assign-form">
+            <?= \App\Core\Csrf::field() ?>
+            <?php foreach ($markerIconKinds as $kind => $kindLabel): ?>
+                <?php $cur = (string) ($markerAssign[$kind] ?? 'nato'); ?>
+                <label class="block text-sm text-slate-700">
+                    <?= htmlspecialchars((string) $kindLabel, ENT_QUOTES, 'UTF-8') ?>
+                    <select name="marker_icon_<?= htmlspecialchars((string) $kind, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm atak-marker-kind-select" data-current="<?= htmlspecialchars($cur, ENT_QUOTES, 'UTF-8') ?>">
+                        <option value="nato" <?= $cur === 'nato' ? 'selected' : '' ?>>Symbole prévu (défaut)</option>
+                        <?php foreach ($markerLib as $iconRow): ?>
+                            <?php $opt = 'upload:' . ($iconRow['id'] ?? ''); ?>
+                            <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" <?= $cur === $opt ? 'selected' : '' ?>>
+                                <?= htmlspecialchars((string) ($iconRow['label'] ?? 'Icône'), ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+            <?php endforeach; ?>
+            <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">
+                Enregistrer l’apparence
+            </button>
+        </form>
+        <script src="<?= htmlspecialchars(asset_url('assets/js/arma-marker-library-index.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+        <script>
+        (function () {
+          var cdn = <?= json_encode($cdnBase) ?>;
+          var idx = window.ArmaMarkerLibraryIndex;
+          var items = idx && typeof idx.items === 'function' ? idx.items() : (idx && idx.ITEMS ? idx.ITEMS : []);
+          if (!items || !items.length) return;
+          document.querySelectorAll('.atak-marker-kind-select').forEach(function (sel) {
+            var cur = sel.getAttribute('data-current') || 'nato';
+            var grp = document.createElement('optgroup');
+            grp.label = 'Bibliothèque de la carte';
+            items.slice(0, 400).forEach(function (it) {
+              if (!it || !it.png) return;
+              var opt = document.createElement('option');
+              opt.value = 'arma:' + it.png;
+              opt.textContent = it.label || it.key || it.png;
+              if (cur === opt.value) opt.selected = true;
+              grp.appendChild(opt);
+            });
+            sel.appendChild(grp);
+          });
+        })();
+        </script>
+    </div>
+
     <div class="grid lg:grid-cols-12 gap-8 items-start">
         <div class="lg:col-span-8 space-y-6">
             <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">

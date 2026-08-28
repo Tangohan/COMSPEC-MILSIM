@@ -37,14 +37,20 @@ $pid = (int) ($person['id'] ?? 0);
             · Dernière observation : <?= $h($objectMeta['last_seen'] ?? ($person['updated_at'] ?? $person['created_at'] ?? '—')) ?>
         </p>
         <div class="iw-object-tags">
-            <span class="badge badge--amber">Priorité <?= $h($objectMeta['priority'] ?? 'normale') ?></span>
-            <span class="badge">Confiance <?= (int) ($confidence['global'] ?? 0) ?> %</span>
-            <span class="badge badge--gray"><?= $h($objectMeta['classification'] ?? 'Confidentiel') ?></span>
+            <?php if (($objectMeta['priority'] ?? '—') !== '—' && ($objectMeta['priority'] ?? '') !== ''): ?>
+                <span class="badge badge--amber">Priorité <?= $h((string) $objectMeta['priority']) ?></span>
+            <?php endif; ?>
+            <?php if (($confidence['global'] ?? null) !== null): ?>
+                <span class="badge">Qualité relevés <?= (int) $confidence['global'] ?> %</span>
+            <?php endif; ?>
+            <?php if (($objectMeta['classification'] ?? '—') !== '—' && ($objectMeta['classification'] ?? '') !== ''): ?>
+                <span class="badge badge--gray"><?= $h((string) $objectMeta['classification']) ?></span>
+            <?php endif; ?>
             <?php if (!empty($terrain['identity_tier_label'])): ?>
                 <span class="badge"><?= $h($terrain['identity_tier_label']) ?></span>
             <?php endif; ?>
-            <?php if (!empty($person['biometrics_simulated'])): ?>
-                <span class="badge">Biométrie simulée</span>
+            <?php if (!empty($terrain['biometric_samples'])): ?>
+                <span class="badge">Relevé biométrique</span>
             <?php endif; ?>
         </div>
         <?php if (!empty($terrain['subject_id']) || !empty($terrain['seek_stage_label'])): ?>
@@ -74,10 +80,10 @@ $pid = (int) ($person['id'] ?? 0);
 </div>
 
 <div class="iw-confidence" style="margin-bottom:12px">
-    <div><span>Fiabilité source</span><strong><?= $h($confidence['source'] ?? 'C') ?></strong></div>
-    <div><span>Crédibilité info</span><strong><?= $h($confidence['credibility'] ?? '3') ?></strong></div>
-    <div><span>Qualité technique</span><strong><?= (int) ($confidence['technical'] ?? 0) ?> %</strong></div>
-    <div><span>Corroboration</span><strong><?= (int) ($confidence['corroboration'] ?? 0) ?> %</strong></div>
+    <div><span>Fiabilité source</span><strong><?= $h((string) ($confidence['source'] ?? '—')) ?></strong></div>
+    <div><span>Crédibilité info</span><strong><?= $h((string) ($confidence['credibility'] ?? '—')) ?></strong></div>
+    <div><span>Qualité technique</span><strong><?= ($confidence['technical'] ?? null) !== null ? ((int) $confidence['technical'] . ' %') : '—' ?></strong></div>
+    <div><span>Corroboration</span><strong><?= ($confidence['corroboration'] ?? null) !== null ? ((int) $confidence['corroboration'] . ' %') : '—' ?></strong></div>
 </div>
 
 <div class="iw-panels">
@@ -101,12 +107,23 @@ $pid = (int) ($person['id'] ?? 0);
         <div class="panel-header"><div class="panel-title"><span class="panel-index">I.02</span> Biométrie</div></div>
         <div class="panel-body">
             <dl class="iw-kv">
-                <dt>Photo visage</dt><dd><?= $photoUrl !== '' ? 'Disponible' : 'Absente' ?></dd>
-                <dt>Empreintes</dt><dd><?= $h($objectMeta['bio_prints'] ?? 'Non relevées') ?></dd>
-                <dt>Iris</dt><dd><?= $h($objectMeta['bio_iris'] ?? 'Non relevé') ?></dd>
-                <dt>Qualité capture</dt><dd><?= (int) ($confidence['technical'] ?? 0) ?> %</dd>
-                <dt>Terminal</dt><dd><?= $h($objectMeta['terminal'] ?? 'SEEK / ATAK') ?></dd>
-                <dt>Opérateur</dt><dd><?= $h($person['submitter_callsign'] ?? $objectMeta['collector'] ?? '—') ?></dd>
+                <?php
+                $bioMissing = static fn (string $v): bool => in_array($v, ['—', 'Absente', 'Non relevé', 'Non relevées'], true);
+                $photoLabel = $photoUrl !== '' ? 'Disponible' : 'Absente';
+                $printsLabel = (string) ($objectMeta['bio_prints'] ?? 'Non relevées');
+                $irisLabel = (string) ($objectMeta['bio_iris'] ?? 'Non relevé');
+                $dnaLabel = (string) ($objectMeta['bio_dna'] ?? 'Non relevé');
+                $qualityLabel = ($confidence['technical'] ?? null) !== null ? ((int) $confidence['technical'] . ' %') : '—';
+                $terminalLabel = (string) ($objectMeta['terminal'] ?? '—');
+                $operatorLabel = trim((string) ($person['submitter_callsign'] ?? $objectMeta['collector'] ?? '')) ?: '—';
+                ?>
+                <dt>Photo visage</dt><dd class="<?= $bioMissing($photoLabel) ? 'iw-kv__empty' : 'iw-kv__ok' ?>"><?= $h($photoLabel) ?></dd>
+                <dt>Empreintes</dt><dd class="<?= $bioMissing($printsLabel) ? 'iw-kv__empty' : 'iw-kv__ok' ?>"><?= $h($printsLabel) ?></dd>
+                <dt>Iris</dt><dd class="<?= $bioMissing($irisLabel) ? 'iw-kv__empty' : 'iw-kv__ok' ?>"><?= $h($irisLabel) ?></dd>
+                <dt>ADN</dt><dd class="<?= $bioMissing($dnaLabel) ? 'iw-kv__empty' : 'iw-kv__ok' ?>"><?= $h($dnaLabel) ?></dd>
+                <dt>Qualité capture</dt><dd class="<?= $bioMissing($qualityLabel) ? 'iw-kv__empty' : 'iw-kv__ok' ?>"><?= $h($qualityLabel) ?></dd>
+                <dt>Terminal</dt><dd class="<?= $bioMissing($terminalLabel) ? 'iw-kv__empty' : 'iw-kv__ok' ?>"><?= $h($terminalLabel) ?></dd>
+                <dt>Opérateur</dt><dd class="<?= $bioMissing($operatorLabel) ? 'iw-kv__empty' : 'iw-kv__ok' ?>"><?= $h($operatorLabel) ?></dd>
             </dl>
             <?php
             $bioSamples = is_array($terrain['biometric_samples'] ?? null) ? $terrain['biometric_samples'] : [];
@@ -136,7 +153,7 @@ $pid = (int) ($person['id'] ?? 0);
             <div class="iw-reason">
                 <h3>Conclusion proposée</h3>
                 <p><?= $h($reasoning['conclusion'] ?? 'Identité à confirmer — éléments partiels.') ?></p>
-                <p><strong>Confiance globale :</strong> <?= $h($reasoning['confidence_label'] ?? 'Moyenne') ?> — <?= (int) ($confidence['global'] ?? 0) ?> %</p>
+                <p><strong>Confiance globale :</strong> <?= $h($reasoning['confidence_label'] ?? '—') ?><?php if (($confidence['global'] ?? null) !== null): ?> — <?= (int) $confidence['global'] ?> %<?php endif; ?></p>
                 <ul>
                     <?php foreach (($reasoning['pros'] ?? []) as $p): ?>
                         <li class="plus">+ <?= $h($p) ?></li>
@@ -192,11 +209,11 @@ $pid = (int) ($person['id'] ?? 0);
         <div class="panel-body">
             <div class="iw-provenance">
                 <dl class="iw-kv">
-                    <dt>Source primaire</dt><dd><?= $h($objectMeta['source'] ?? 'Terminal terrain') ?></dd>
+                    <dt>Source primaire</dt><dd><?= $h($objectMeta['source'] ?? '—') ?></dd>
                     <dt>Collecteur</dt><dd><?= $h($objectMeta['collector'] ?? ($person['submitter_callsign'] ?? '—')) ?></dd>
-                    <dt>Import</dt><dd><?= $h($objectMeta['import'] ?? 'Automatique') ?></dd>
-                    <dt>Intégrité</dt><dd><?= $h($objectMeta['integrity'] ?? 'Vérifiée') ?></dd>
-                    <dt>Classification</dt><dd><?= $h($objectMeta['classification'] ?? 'Confidentiel') ?></dd>
+                    <dt>Import</dt><dd><?= $h($objectMeta['import'] ?? '—') ?></dd>
+                    <dt>Intégrité</dt><dd><?= $h($objectMeta['integrity'] ?? '—') ?></dd>
+                    <dt>Classification</dt><dd><?= $h($objectMeta['classification'] ?? '—') ?></dd>
                 </dl>
                 <?php if ($provenance !== []): ?>
                     <hr class="sse-sep">

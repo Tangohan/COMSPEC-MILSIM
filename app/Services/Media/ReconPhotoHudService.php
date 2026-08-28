@@ -105,6 +105,17 @@ final class ReconPhotoHudService
         if ($absolutePath === '' || !is_file($absolutePath) || !is_readable($absolutePath)) {
             return false;
         }
+        $bytes = @filesize($absolutePath);
+        if ($bytes === false || $bytes < 32 || $bytes > 8 * 1024 * 1024) {
+            return false;
+        }
+        $info = @getimagesize($absolutePath);
+        if (!is_array($info) || ($info[0] ?? 0) < 80 || ($info[1] ?? 0) < 80) {
+            return false;
+        }
+        if (((int) $info[0] * (int) $info[1]) > 3_500_000) {
+            return false;
+        }
         if (!function_exists('imagecreatefromstring')) {
             return false;
         }
@@ -113,7 +124,9 @@ final class ReconPhotoHudService
         if ($bin === false || $bin === '') {
             return false;
         }
+        $magic = substr($bin, 0, 3);
         $im = @imagecreatefromstring($bin);
+        unset($bin);
         if ($im === false) {
             return false;
         }
@@ -129,7 +142,7 @@ final class ReconPhotoHudService
         imagealphablending($im, true);
         $this->paint($im, $w, $h, $cfg, $meta);
 
-        $ok = $this->saveSameFormat($im, $absolutePath, $bin);
+        $ok = $this->saveSameFormat($im, $absolutePath, $magic);
         imagedestroy($im);
 
         return $ok;

@@ -143,7 +143,7 @@ $formatDateFr = static function (?string $raw): string {
 
                 <section class="bo-user-edit__panel" aria-labelledby="sec-identity">
                     <h2 id="sec-identity" class="bo-user-edit__panel-title">Identité affichée</h2>
-                    <p class="bo-user-edit__panel-lead">Nom et indicatif visibles sur le portail. L’identité civile détaillée reste sur la fiche personnelle.</p>
+                    <p class="bo-user-edit__panel-lead">Nom et indicatif visibles sur le portail. Le prénom, le nom et la présentation du personnage se règlent sur la fiche personnelle.</p>
                     <div class="bo-user-edit__grid">
                         <div>
                             <label for="display_name" class="bo-user-edit__label">Nom d’affichage</label>

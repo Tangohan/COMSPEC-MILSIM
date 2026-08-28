@@ -22,6 +22,8 @@ use App\Support\AtakArmaWriteGuard;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\SsePersonDedupe;
 use App\Support\SteamId;
+use App\Support\HttpJsonBody;
+use App\Support\TerrainUploadedImage;
 
 /**
  * API SSE — Sensitive Site Exploitation (fiches personnes / photos visage).
@@ -416,13 +418,15 @@ final class SseApiController
             return Response::json(['error' => 'not_found', 'message' => 'Fiche introuvable.'], 404);
         }
 
-        if (empty($_FILES['image']) && empty($_FILES['photo'])) {
+        $file = TerrainUploadedImage::fromGlobals();
+        if ($file === null) {
+            error_log('[sse/photos] missing_image keys=' . implode(',', array_keys($_FILES)));
+
             return Response::json([
                 'error' => 'missing_image',
                 'message' => 'Aucune photo reçue. Reprenez la capture du visage.',
             ], 400);
         }
-        $file = $_FILES['image'] ?? $_FILES['photo'];
         $uploadErr = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
         if ($uploadErr !== UPLOAD_ERR_OK) {
             return Response::json([
@@ -439,14 +443,7 @@ final class SseApiController
         }
 
         $tmp = (string) ($file['tmp_name'] ?? '');
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mime = is_file($tmp) ? (string) $finfo->file($tmp) : '';
-        $ext = match ($mime) {
-            'image/jpeg', 'image/jpg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            default => null,
-        };
+        $ext = TerrainUploadedImage::detectExtension($tmp, (string) ($file['name'] ?? ''));
         if ($ext === null) {
             return Response::json([
                 'error' => 'invalid_image',
@@ -456,7 +453,9 @@ final class SseApiController
 
         $dir = base_path('public/uploads/sse');
         if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
-            return Response::json(['error' => 'storage', 'message' => 'Impossible d’enregistrer la photo.'], 500);
+            error_log('[sse/photos] mkdir failed: ' . $dir);
+
+            return Response::json(['error' => 'storage', 'message' => 'Impossible d’enregistrer la photo.'], 503);
         }
 
         $author = trim((string) (
@@ -465,8 +464,10 @@ final class SseApiController
         $safeAuthor = preg_replace('/[^a-zA-Z0-9_-]+/', '_', $author) ?: 'op';
         $filename = sprintf('sse_%d_%s_%s.%s', $personId, time(), $safeAuthor, $ext);
         $dest = $dir . DIRECTORY_SEPARATOR . $filename;
-        if (!@move_uploaded_file($tmp, $dest)) {
-            return Response::json(['error' => 'storage', 'message' => 'Impossible d’enregistrer la photo.'], 500);
+        if (!TerrainUploadedImage::move($tmp, $dest)) {
+            error_log('[sse/photos] move failed dest=' . $dest);
+
+            return Response::json(['error' => 'storage', 'message' => 'Impossible d’enregistrer la photo.'], 503);
         }
 
         $relative = 'uploads/sse/' . $filename;
@@ -1105,13 +1106,19 @@ final class SseApiController
         if ($this->jsonBodyCache !== null) {
             return $this->jsonBodyCache;
         }
-        $raw = file_get_contents('php://input');
-        if ($raw === false || $raw === '') {
+        if (HttpJsonBody::isMultipart()) {
+            $this->jsonBodyCache = HttpJsonBody::postFields();
+
+            return $this->jsonBodyCache;
+        }
+        $raw = HttpJsonBody::rawJson();
+        if ($raw === '') {
             $this->jsonBodyCache = [];
 
             return $this->jsonBodyCache;
         }
         $decoded = json_decode($raw, true);
+        unset($raw);
         $this->jsonBodyCache = is_array($decoded) ? $decoded : [];
 
         return $this->jsonBodyCache;

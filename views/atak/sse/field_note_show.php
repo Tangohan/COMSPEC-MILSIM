@@ -36,6 +36,9 @@ if ($note['pos_x'] !== null && $note['pos_y'] !== null) {
     <div>
         <div class="page-heading-overline">Pilotage // Fiches</div>
         <h1><?= $h($note['reference_code'] ?? 'Fiche') ?></h1>
+        <?php if (trim((string) ($note['title'] ?? '')) !== ''): ?>
+            <p class="sse-note-title"><?= $h($note['title']) ?></p>
+        <?php endif; ?>
         <p>
             <?= $h($note['note_kind_label'] ?? '') ?> —
             constat du <?= $h($note['observed_date_label'] ?? '') ?> à <?= $h($note['observed_time_label'] ?? '') ?>,
@@ -45,7 +48,7 @@ if ($note['pos_x'] !== null && $note['pos_y'] !== null) {
         <div class="sse-note-badges" style="margin-top:10px">
             <?php foreach (($note['themes'] ?? []) as $themeCode): ?>
                 <span class="sse-note-badge sse-note-badge--<?= $h($tone((string) $themeCode)) ?>">
-                    <?= $h(\App\Support\SseFieldNoteCatalog::themeLabel((string) $themeCode)) ?>
+                    <?= $h((string) $themeCode) ?> · <?= $h(\App\Support\SseFieldNoteCatalog::themeLabel((string) $themeCode)) ?>
                 </span>
             <?php endforeach; ?>
             <span class="sse-note-badge sse-note-badge--kind"><?= $h($note['note_kind'] ?? '') ?></span>
@@ -85,6 +88,16 @@ if ($note['pos_x'] !== null && $note['pos_y'] !== null) {
                 <dd><?= $coords === [] ? 'Aucune position transmise' : $h(implode(' · ', $coords)) ?></dd>
                 <dt>Urgence</dt>
                 <dd><?= $h($note['urgency_label'] ?? '') ?></dd>
+                <dt>Recueil</dt>
+                <dd><?php
+                    $srcCode = (string) ($note['intel_source'] ?? '');
+                    $srcLabel = (string) ($note['intel_source_label'] ?? '');
+                    if ($srcCode === '') {
+                        echo 'Non précisé';
+                    } else {
+                        echo $h($srcCode . ($srcLabel !== '' ? ' — ' . $srcLabel : ''));
+                    }
+                ?></dd>
                 <dt>Origine de la saisie</dt>
                 <dd><?= $h($note['origin_label'] ?? '') ?></dd>
                 <dt>Unité</dt>

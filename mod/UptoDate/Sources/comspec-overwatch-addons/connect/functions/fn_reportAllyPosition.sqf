@@ -89,8 +89,11 @@ if (_inVeh) then {
     private _occ = [_veh] call comspec_overwatch_connect_fnc_collectVehicleOccupants;
     _occJson = (_occ apply { [_x] call comspec_overwatch_connect_fnc_hashMapToJson }) joinString ",";
 };
+private _grpUnits = (units group _unit) select { alive _x && {!isPlayer _x} && {_x isKindOf "CAManBase"} };
+private _isLeader = (leader group _unit) isEqualTo _unit;
+private _grpCount = count _grpUnits;
 private _extra = format [
-    "{""ally_ai"":true,""is_ai"":true,""source"":""ally"",""ally_id"":""%1"",""display_name"":""%2"",""side"":""%3"",""affiliation"":""%4"",""in_vehicle"":%5,""platform"":""%6"",""vehicle"":""%7"",""vehicle_name"":""%8"",""vehicle_label"":""%8"",""occupants"":[%9],""military_id"":""""}",
+    "{""ally_ai"":true,""is_ai"":true,""source"":""ally"",""ally_id"":""%1"",""display_name"":""%2"",""side"":""%3"",""affiliation"":""%4"",""in_vehicle"":%5,""platform"":""%6"",""vehicle"":""%7"",""vehicle_name"":""%8"",""vehicle_label"":""%8"",""occupants"":[%9],""military_id"":"""",""is_leader"":%10,""group_count"":%11,""group_name"":""%12""}",
     _allyId,
     _escCs,
     _sideStr,
@@ -99,7 +102,10 @@ private _extra = format [
     _platform,
     _vehType,
     _vehName,
-    _occJson
+    _occJson,
+    if (_isLeader) then { "true" } else { "false" },
+    _grpCount,
+    _groupName
 ];
 
 "COMSPECExtension" callExtension ["UpdatePosition", [

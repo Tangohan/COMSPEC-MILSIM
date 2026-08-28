@@ -63,6 +63,8 @@ class AdminAtakConfigController
         $photoHudSvc = new \App\Services\Media\ReconPhotoHudService();
         $photoHud = $photoHudSvc->get($tenantId);
         $photoHudPreview = $photoHudSvc->previewDataUri($tenantId, $photoHud);
+        $markerIconsSvc = new \App\Services\Tactical\AtakMarkerIconsService();
+        $markerIcons = $markerIconsSvc->get($tenantId);
 
         return Response::view('layout.main', [
             'content' => 'admin.atak-config.index',
@@ -91,6 +93,8 @@ class AdminAtakConfigController
             'experienceSchemaReady' => $experienceSchemaReady,
             'photoHud' => $photoHud,
             'photoHudPreview' => $photoHudPreview,
+            'markerIcons' => $markerIcons,
+            'markerIconKinds' => \App\Services\Tactical\AtakMarkerIconsService::KINDS,
         ]);
     }
 
@@ -249,6 +253,68 @@ class AdminAtakConfigController
         Session::flash('success', 'Bandeau des photos terrain enregistré. Il s’appliquera aux prochaines captures.');
 
         return Response::redirect(url('admin/atak-config') . '#photo-hud');
+    }
+
+    public function storeMarkerIcons(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('admin/atak-config') . '#marker-icons');
+        }
+        $svc = new \App\Services\Tactical\AtakMarkerIconsService();
+        $assign = [];
+        foreach (array_keys(\App\Services\Tactical\AtakMarkerIconsService::KINDS) as $kind) {
+            $assign[$kind] = trim((string) $request->input('marker_icon_' . $kind, 'nato'));
+        }
+        $svc->saveAssignments((int) $tenantId, $assign);
+        Session::flash('success', 'Apparence des symboles enregistrée. Rechargez la carte pour la voir.');
+
+        return Response::redirect(url('admin/atak-config') . '#marker-icons');
+    }
+
+    public function uploadMarkerIcon(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('admin/atak-config') . '#marker-icons');
+        }
+        $file = $_FILES['marker_icon_file'] ?? [];
+        if (!is_array($file)) {
+            $file = [];
+        }
+        $svc = new \App\Services\Tactical\AtakMarkerIconsService();
+        $res = $svc->addUpload((int) $tenantId, $file, trim((string) $request->input('marker_icon_label', '')));
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect(url('admin/atak-config') . '#marker-icons');
+    }
+
+    public function deleteMarkerIcon(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('admin/atak-config') . '#marker-icons');
+        }
+        $svc = new \App\Services\Tactical\AtakMarkerIconsService();
+        $svc->deleteLibraryItem((int) $tenantId, trim((string) $request->input('icon_id', '')));
+        Session::flash('success', 'Icône retirée de la bibliothèque.');
+
+        return Response::redirect(url('admin/atak-config') . '#marker-icons');
     }
 
     /** Active ou désactive le mode maintenance ATAK / Tacmap. */

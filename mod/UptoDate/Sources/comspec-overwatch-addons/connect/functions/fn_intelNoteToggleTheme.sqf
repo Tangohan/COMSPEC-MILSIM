@@ -1,7 +1,7 @@
 /*
     Retient ou retire un thème de la fiche en cours.
 
-    Args: [_index]  rang du thème dans le référentiel (0 à 11)
+    Args: [_index]  rang du thème dans le référentiel (0 à 16)
 */
 params [["_index", -1, [0]]];
 

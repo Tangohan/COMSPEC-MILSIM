@@ -74,8 +74,9 @@
     card.className = 'frs-note-card';
 
     var urgencyClass = 'frs-urgency--routine';
-    if (note.urgency === 'immediate') urgencyClass = 'frs-urgency--immediate';
-    else if (note.urgency === 'priorite') urgencyClass = 'frs-urgency--priorite';
+    if (note.urgency === 'critique' || note.urgency === 'immediate') urgencyClass = 'frs-urgency--immediate';
+    else if (note.urgency === 'urgent' || note.urgency === 'priorite') urgencyClass = 'frs-urgency--priorite';
+    else if (note.urgency === 'normal') urgencyClass = 'frs-urgency--priorite';
 
     var statusLabel = {
       brouillon: 'Brouillon',
@@ -88,15 +89,22 @@
     var themes = [];
     if (Array.isArray(note.themes)) {
       themes = note.themes.map(function (t) {
+        var tone = 'neutral';
+        var label = t;
         if (catalog && catalog.themes) {
           var found = catalog.themes.find(function (th) { return th.code === t; });
-          return found ? found.label : t;
+          if (found) {
+            label = found.code;
+            tone = found.tone || 'neutral';
+          }
         }
-        return t;
+        return { label: label, tone: tone };
       });
     }
 
     var date = note.observed_at ? note.observed_at.slice(0, 16).replace('T', ' ') : (note.created_at || '').slice(0, 16).replace('T', ' ');
+    var title = (note.title || '').trim();
+    var bodyPreview = title || (note.body || '');
 
     card.innerHTML =
       '<div class="frs-note-card__header">' +
@@ -105,8 +113,10 @@
         '<span class="frs-note-date">' + escHtml(date) + '</span>' +
       '</div>' +
       (note.place_label ? '<div class="frs-note-place">' + escHtml(note.place_label) + '</div>' : '') +
-      '<div class="frs-note-body">' + escHtml((note.body || '').slice(0, 120)) + ((note.body || '').length > 120 ? '…' : '') + '</div>' +
-      (themes.length ? '<div class="frs-note-themes">' + themes.map(function (t) { return '<span class="frs-theme-badge">' + escHtml(t) + '</span>'; }).join('') + '</div>' : '') +
+      '<div class="frs-note-body">' + escHtml(bodyPreview.slice(0, 120)) + (bodyPreview.length > 120 ? '…' : '') + '</div>' +
+      (themes.length ? '<div class="frs-note-themes">' + themes.map(function (t) {
+        return '<span class="frs-theme-badge frs-tone-' + escHtml(t.tone) + '">' + escHtml(t.label) + '</span>';
+      }).join('') + '</div>' : '') +
       '<div class="frs-note-card__footer ' + urgencyClass + '">' +
         urgencyLabel(note.urgency) +
         (note.reference_code ? ' · ' + escHtml(note.reference_code) : '') +
@@ -116,9 +126,14 @@
   }
 
   function urgencyLabel(code) {
-    if (code === 'immediate') return 'Immédiat';
-    if (code === 'priorite') return 'Prioritaire';
-    return 'Courant';
+    if (catalog && catalog.urgencies) {
+      var found = catalog.urgencies.find(function (u) { return u.code === code; });
+      if (found) return found.label;
+    }
+    if (code === 'critique' || code === 'immediate') return 'Critique';
+    if (code === 'urgent' || code === 'priorite') return 'Urgent';
+    if (code === 'normal') return 'Normal';
+    return 'Routine';
   }
 
   function escHtml(str) {
@@ -161,9 +176,10 @@
       catalog.themes.forEach(function (t) {
         var lbl = document.createElement('label');
         lbl.className = 'frs-theme frs-tone-' + escHtml(t.tone);
+        lbl.title = t.hint || t.label;
         lbl.innerHTML =
           '<input type="checkbox" name="frs_themes" value="' + escHtml(t.code) + '">' +
-          '<span>' + escHtml(t.label) + '</span>';
+          '<span><strong>' + escHtml(t.code) + '</strong> ' + escHtml(t.label) + '</span>';
         themeGrid.appendChild(lbl);
       });
     }
@@ -172,13 +188,34 @@
     var urgencyGrid = qs('#frs-urgency-grid');
     if (urgencyGrid) {
       urgencyGrid.innerHTML = '';
-      catalog.urgencies.forEach(function (u, i) {
+      var defaultUrgency = catalog.default_urgency || 'routine';
+      catalog.urgencies.forEach(function (u) {
         var lbl = document.createElement('label');
         lbl.className = 'frs-choice frs-choice--urgency';
         lbl.innerHTML =
-          '<input type="radio" name="frs_urgency" value="' + escHtml(u.code) + '"' + (i === 0 ? ' checked' : '') + '>' +
+          '<input type="radio" name="frs_urgency" value="' + escHtml(u.code) + '"' + (u.code === defaultUrgency ? ' checked' : '') + '>' +
           '<span class="frs-choice-body"><strong>' + escHtml(u.label) + '</strong></span>';
         urgencyGrid.appendChild(lbl);
+      });
+    }
+
+    var sourceGrid = qs('#frs-source-grid');
+    if (sourceGrid && catalog.sources) {
+      sourceGrid.innerHTML = '';
+      var none = document.createElement('label');
+      none.className = 'frs-choice';
+      none.innerHTML =
+        '<input type="radio" name="frs_intel_source" value="" checked>' +
+        '<span class="frs-choice-body"><strong>Non précisé</strong></span>';
+      sourceGrid.appendChild(none);
+      catalog.sources.forEach(function (s) {
+        var lbl = document.createElement('label');
+        lbl.className = 'frs-choice';
+        lbl.title = s.hint || s.label;
+        lbl.innerHTML =
+          '<input type="radio" name="frs_intel_source" value="' + escHtml(s.code) + '">' +
+          '<span class="frs-choice-body"><strong>' + escHtml(s.code) + '</strong> <em>' + escHtml(s.label) + '</em></span>';
+        sourceGrid.appendChild(lbl);
       });
     }
 
@@ -246,6 +283,8 @@
 
     var kindInput = qs('input[name="frs_note_kind"]:checked');
     var urgencyInput = qs('input[name="frs_urgency"]:checked');
+    var sourceInput = qs('input[name="frs_intel_source"]:checked');
+    var titleField = qs('#frs-title');
     var placeField = qs('#frs-place');
     var gridField = qs('#frs-grid');
     var caseField = qs('#frs-case-code');
@@ -256,7 +295,9 @@
       body: body,
       note_kind: kindInput ? kindInput.value : 'FRM',
       themes: themes,
+      title: titleField ? titleField.value.trim() : '',
       urgency: urgencyInput ? urgencyInput.value : 'routine',
+      intel_source: sourceInput ? sourceInput.value : '',
       place_label: placeField ? placeField.value.trim() : '',
       grid_reference: gridField ? gridField.value.trim() : '',
       case_code: caseField ? caseField.value.trim() : '',
@@ -354,11 +395,22 @@
         'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
     }
 
+    var titleField = qs('#frs-title');
+    if (titleField) titleField.value = '';
+
     var kindInputs = panel ? panel.querySelectorAll('input[name="frs_note_kind"]') : [];
     if (kindInputs.length) kindInputs[0].checked = true;
 
+    var defaultUrgency = (catalog && catalog.default_urgency) || 'routine';
     var urgencyInputs = panel ? panel.querySelectorAll('input[name="frs_urgency"]') : [];
-    if (urgencyInputs.length) urgencyInputs[0].checked = true;
+    Array.prototype.forEach.call(urgencyInputs, function (inp) {
+      inp.checked = inp.value === defaultUrgency;
+    });
+
+    var sourceInputs = panel ? panel.querySelectorAll('input[name="frs_intel_source"]') : [];
+    Array.prototype.forEach.call(sourceInputs, function (inp) {
+      inp.checked = inp.value === '';
+    });
 
     var themeGrid = qs('#frs-theme-grid');
     if (themeGrid) {

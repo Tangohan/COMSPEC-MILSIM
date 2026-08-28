@@ -4,10 +4,10 @@
 if !([] call comspec_sse_fnc_biiIsPresent) exitWith { false };
 
 ["seek", ["BII_Identifi_Device"]] call comspec_sse_fnc_registerModClasses;
-["fingerprint", ["BII_Identifi_Device"]] call comspec_sse_fnc_registerModClasses;
+["fingerprint", ["BII_Identifi_Device", "FingerprintCollectionKit", "FingerprintScannerKit"]] call comspec_sse_fnc_registerModClasses;
 ["face", ["BII_Identifi_Device"]] call comspec_sse_fnc_registerModClasses;
-["dna", ["BII_Identifi_Device"]] call comspec_sse_fnc_registerModClasses;
-["iris", ["BII_Identifi_Device"]] call comspec_sse_fnc_registerModClasses;
+["dna", ["BII_Identifi_Device", "DNACollectionKit"]] call comspec_sse_fnc_registerModClasses;
+["iris", ["BII_Identifi_Device", "EyeScannerKit"]] call comspec_sse_fnc_registerModClasses;
 ["terminal", ["BII_Identifi_Device"]] call comspec_sse_fnc_registerModClasses;
 ["camera", ["BII_Identifi_Device"]] call comspec_sse_fnc_registerModClasses;
 

@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\CronJobRunRepository;
 use App\Services\Cron\CronRunner;
+use App\Services\Cron\CronSchedule;
 
 final class SystemCronController
 {
@@ -32,16 +33,23 @@ final class SystemCronController
                 'latest' => $latest[$key] ?? null,
             ];
         }
+        $recentRuns = $this->runs->listRecent(40);
+        $phpBin = 'php';
+        $scriptPath = base_path('scripts/cron-run.php');
+        $logPath = base_path('storage/logs/cron.log');
 
         return Response::view('layout.main', [
             'title' => 'Tâches automatiques',
             'content' => 'admin.system.cron',
             'jobs' => $jobs,
-            'recentRuns' => $this->runs->listRecent(40),
+            'recentRuns' => $recentRuns,
             'tablesReady' => $this->runs->runsTableExists(),
             'secretConfigured' => $secretConfigured,
+            'schedulerActive' => CronSchedule::schedulerLooksActive($recentRuns),
             'cronHttpUrl' => url('cron/run'),
-            'cliCommand' => 'php scripts/cron-run.php',
+            'cliCommand' => $phpBin . ' ' . $scriptPath,
+            'crontabLine' => CronSchedule::crontabLine($phpBin, $scriptPath, $logPath),
+            'installCommand' => 'bash scripts/install-system-cron.sh',
         ]);
     }
 

@@ -34,7 +34,8 @@ private _roleMap = createHashMapFromArray [
     ["sse_terminal", "terminal"],
     ["gloves", "gloves"],
     ["face", "face"],
-    ["radio", "radio"]
+    ["radio", "radio"],
+    ["iris", "iris"]
 ];
 
 private _role = _roleMap getOrDefault [_key, ""];
@@ -46,8 +47,9 @@ if (_role == "" && {_roleOrClass != ""}) then {
 private _native = createHashMapFromArray [
     ["camera", ["COMSPEC_SSE_Camera"]],
     ["evidence_bag", ["COMSPEC_SSE_EvidenceBag"]],
-    ["fingerprint", ["COMSPEC_SSE_FingerprintKit", "COMSPEC_SSE_SEEKII"]],
-    ["dna", ["COMSPEC_SSE_DNKit", "COMSPEC_SSE_SEEKII"]],
+    ["fingerprint", ["COMSPEC_SSE_FingerprintKit", "COMSPEC_SSE_SEEKII", "FingerprintCollectionKit", "FingerprintScannerKit"]],
+    ["dna", ["COMSPEC_SSE_DNKit", "COMSPEC_SSE_SEEKII", "DNACollectionKit"]],
+    ["iris", ["COMSPEC_SSE_SEEKII", "EyeScannerKit"]],
     ["seek", ["COMSPEC_SSE_SEEKII"]],
     ["terminal", ["COMSPEC_SSE_Terminal", "COMSPEC_SSE_SEEKII"]],
     ["gloves", ["COMSPEC_SSE_Gloves"]],
@@ -86,15 +88,23 @@ if (_allowSubs && {_role != "custom"}) then {
             "ACE_microDAGR",
             "ItemMicroDAGR",
             "ItemMicroDAGRMisc",
-            "BII_Identifi_Device"
+            "BII_Identifi_Device",
+            "FingerprintCollectionKit",
+            "FingerprintScannerKit"
         ]],
-        // Kits médicaux ACE / BII-10 pour prélèvement ADN simulé
+        // Kits médicaux ACE / BII-10 / kit [SSE] BII pour prélèvement ADN simulé
         ["dna", [
             "ACE_surgicalKit",
             "ACE_personalAidKit",
             "ACE_plasmaIV_500",
             "ACE_bloodIV_500",
-            "BII_Identifi_Device"
+            "BII_Identifi_Device",
+            "DNACollectionKit"
+        ]],
+        ["iris", [
+            "BII_Identifi_Device",
+            "EyeScannerKit",
+            "COMSPEC_SSE_SEEKII"
         ]],
         // SEEK II ↔ tablettes ATAK / cTab / DAGR / BII-10
         ["seek", [

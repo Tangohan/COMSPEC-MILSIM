@@ -88,7 +88,7 @@ if (!isNull _hint) then { _hint ctrlShow (_target isEqualTo 0); };
 private _title = _disp displayCtrl 9540;
 if (!isNull _title) then {
     _title ctrlSetStructuredText parseText format [
-        "<t size='0.50' align='center' color='#ffffff'>%1</t>",
+        "<t size='0.64' align='center' color='#f2fff8'>%1</t>",
         if (_target isEqualTo 0) then { "SEEK" } else { _label }
     ];
 };

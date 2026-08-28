@@ -14,6 +14,7 @@ if (isNull _unit || {!local _unit}) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
 if (isNull findDisplay 46) exitWith {};
 if (isMultiplayer && {getClientStateNumber >= 11}) exitWith {};
+// Mort / hors combat : géré par l’EH Killed (fn_attachAtakDamageHandlers) — pas ici.
 if (!alive _unit) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_DeathThenRespawn", false]) exitWith {};
 if !([] call comspec_overwatch_connect_fnc_isPlayerSpawnStable) exitWith {};

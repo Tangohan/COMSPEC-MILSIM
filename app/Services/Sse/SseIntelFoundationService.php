@@ -12,6 +12,7 @@ use App\Repositories\SseIntelEventRepository;
 use App\Repositories\SseInterestCaseRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\SseSiteRepository;
+use App\Services\Sse\SseTransmissionDiscordService;
 
 /**
  * Couche fondation LOT 1 : synchronisation index, événements normalisés, audit.
@@ -205,6 +206,16 @@ final class SseIntelFoundationService
                 );
             } catch (\Throwable) {
             }
+        }
+
+        if ($tenantId > 0 && $result['created'] && is_array($result['row'] ?? null)) {
+            $row = $result['row'];
+            register_shutdown_function(static function () use ($tenantId, $row): void {
+                try {
+                    (new SseTransmissionDiscordService())->notifyNewTransmission($tenantId, $row);
+                } catch (\Throwable) {
+                }
+            });
         }
 
         return $result;

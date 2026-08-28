@@ -32,8 +32,31 @@ if (_vol > 0.01) then {
 
 private _msg = format ["Votre terminal vibre — appel de %1", _issuer];
 ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
-["ATHENA", _msg, 6] call comspec_overwatch_connect_fnc_addScreenToast;
+        ["ATHENA", _msg, 6] call comspec_overwatch_connect_fnc_addScreenToast;
 [_msg, "orders"] call comspec_overwatch_connect_fnc_appendLinkLog;
+
+// Le TOC a atteint ce terminal : lever une coupure simulée aléatoire.
+// On ne touche pas au brouillage Zeus.
+private _zoneFx = missionNamespace getVariable ["COMSPEC_ZoneEffects", createHashMap];
+private _zeusJam = (_zoneFx isEqualType createHashMap)
+    && {(_zoneFx getOrDefault ["name", ""]) isEqualTo "Brouillage Zeus"};
+if (!_zeusJam) then {
+    private _net = missionNamespace getVariable ["COMSPEC_NetworkDisconnectState", createHashMap];
+    if (_net isEqualType createHashMap && {_net getOrDefault ["is_disconnected", false]}) then {
+        _net set ["is_disconnected", false];
+        _net set ["disconnect_until", -1];
+        missionNamespace setVariable ["COMSPEC_NetworkDisconnectState", _net, false];
+        if (!isNil "comspec_overwatch_connect_fnc_refreshLinkState") then {
+            [] call comspec_overwatch_connect_fnc_refreshLinkState;
+        };
+        if (!isNil "comspec_overwatch_connect_fnc_updateDeviceOverlay") then {
+            [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
+        };
+        if (!isNil "comspec_overwatch_connect_fnc_injectRoleplayEffectsInBrowser") then {
+            [] call comspec_overwatch_connect_fnc_injectRoleplayEffectsInBrowser;
+        };
+    };
+};
 
 private _detail = format [
     "<t color='#ffcc66'>Vibration</t><br/><t color='#8aa0b4'>Émetteur</t>  %1<br/><t color='#b8c8d4'>L’état-major a demandé l’attention sur votre terminal.</t>",

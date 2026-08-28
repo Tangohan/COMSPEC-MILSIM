@@ -220,7 +220,7 @@ class PersonnelController
     }
 
     /**
-     * Prénom/nom : `user_profiles`, sinon dernière candidature d’enrôlement, sinon découpage prudent du nom d’affichage.
+     * Prénom/nom du personnage : `user_profiles`, sinon dernière candidature d’enrôlement, sinon découpage prudent du nom d’affichage.
      *
      * @return array{first_name: string, last_name: string, source: ?string}
      */
@@ -432,7 +432,7 @@ class PersonnelController
         $latestEnlistment = $this->enlistmentRepository->findLatestBySubmitter((int) $tenantId, $uid);
         $civilIdentity = $this->resolveCivilIdentity($profile, $target, $latestEnlistment);
         $civilSourceLabel = match ($civilIdentity['source'] ?? null) {
-            'profile' => 'Profil compte (préférences)',
+            'profile' => 'Dossier personnage',
             'enlistment' => 'Candidature d’enrôlement',
             'display_name' => 'Nom d’affichage (découpage)',
             default => '',
@@ -578,7 +578,7 @@ class PersonnelController
         if (!in_array($personnelViewMode, ['public', 'rh'], true)) {
             $personnelViewMode = '';
         }
-        /** Lecture identité civile, état civil, dossier recrutement détaillé : titulaire + staff / RH habilités (pas les autres membres). */
+        /** Lecture compte (fuseau, langue, e-mail, dossier recrutement détaillé) : titulaire + staff / RH habilités (pas les autres membres). */
         $privatePersonnelIdentity = $isSelf || $canStaffView || $canStaffEdit || $canSensitive;
         $canEditNotes = $isSelf || $canStaffEdit;
         $canEditProfile = $isSelf || $canStaffEdit;
@@ -1054,8 +1054,6 @@ class PersonnelController
         $userProfile = $this->userProfileRepository->getByUserId($uid) ?? [];
         $legalIdentity = $this->userLegalIdentityRepository->getByUserId($uid) ?? [];
         if ($legalIdentity !== []) {
-            $userProfile['first_name'] = $legalIdentity['first_name'] ?? ($userProfile['first_name'] ?? '');
-            $userProfile['last_name'] = $legalIdentity['last_name'] ?? ($userProfile['last_name'] ?? '');
             $userProfile['phone'] = $legalIdentity['phone'] ?? ($userProfile['phone'] ?? '');
             $userProfile['birth_date'] = $legalIdentity['birth_date'] ?? ($userProfile['birth_date'] ?? '');
             $userProfile['nationality'] = $legalIdentity['nationality'] ?? ($userProfile['nationality'] ?? '');
@@ -1649,21 +1647,20 @@ class PersonnelController
         } catch (\Throwable) {
         }
 
-        if ($isSelf) {
+        if ($isSelf || $canStaffEdit) {
             $this->userProfileRepository->ensureRow((int) $target['id']);
-            $firstName = trim((string) $request->input('civil_first_name'));
-            $lastName = trim((string) $request->input('civil_last_name'));
-            $this->userProfileRepository->upsert((int) $target['id'], [
+            $firstName = trim((string) $request->input('rp_first_name'));
+            $lastName = trim((string) $request->input('rp_last_name'));
+            $profileUpsert = [
                 'first_name' => $firstName !== '' ? $firstName : null,
                 'last_name' => $lastName !== '' ? $lastName : null,
-                'bio' => trim((string) $request->input('civil_bio')) ?: null,
-                'timezone' => trim((string) $request->input('civil_timezone')) ?: null,
-                'language' => trim((string) $request->input('civil_language')) ?: null,
-            ]);
-            $this->userLegalIdentityRepository->upsert((int) $target['id'], $tenantId, [
-                'first_name' => $firstName,
-                'last_name' => $lastName,
-            ]);
+                'bio' => trim((string) $request->input('rp_bio')) ?: null,
+            ];
+            if ($isSelf) {
+                $profileUpsert['timezone'] = trim((string) $request->input('civil_timezone')) ?: null;
+                $profileUpsert['language'] = trim((string) $request->input('civil_language')) ?: null;
+            }
+            $this->userProfileRepository->upsert((int) $target['id'], $profileUpsert);
         }
 
         if ($isSelf || $canStaffEdit) {

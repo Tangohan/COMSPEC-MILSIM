@@ -48,4 +48,16 @@ if ((_unit getVariable ["COMSPEC_AtakExplosionEH", -1]) < 0) then {
     _unit setVariable ["COMSPEC_AtakExplosionEH", _expId];
 };
 
+if ((_unit getVariable ["COMSPEC_AtakKilledEH", -1]) < 0) then {
+    private _kid = _unit addEventHandler ["Killed", {
+        params ["_dead"];
+        if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_DeathThenRespawn", false]) exitWith {};
+        if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
+        if !(missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false]) exitWith {};
+        [_dead, "kia"] call comspec_overwatch_connect_fnc_reportMedicalAlert;
+    }];
+    _unit setVariable ["COMSPEC_AtakKilledEH", _kid];
+};
+
 true

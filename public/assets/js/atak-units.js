@@ -178,6 +178,11 @@ window.ATAKUnits = (function () {
   }
 
   function unitBadgeHtml(u, ex) {
+    var P = window.ATAKUnitPopup;
+    var isPhone = P && P.isPhoneGeoloc ? P.isPhoneGeoloc(ex) : !!(ex && ex.phone_geoloc);
+    if (isPhone && window.ATAKPhoneIcon && window.ATAKPhoneIcon.listBadgeHtml) {
+      return window.ATAKPhoneIcon.listBadgeHtml(20);
+    }
     var callsignKey = (u.call_sign || '').toUpperCase().trim();
     var profile = (window.ATAK_CALLSIGN_TO_USER && callsignKey)
       ? window.ATAK_CALLSIGN_TO_USER[callsignKey]
@@ -407,6 +412,9 @@ window.ATAKUnits = (function () {
     '</div>' +
     '<p class="atak-units-empty-title">Aucun contact en liaison</p>' +
     '<p class="atak-units-empty-text">La liaison du compte Athena ne suffit pas : le jeu doit envoyer une position valide. En mission, déplacez-vous un peu ou utilisez le hub → Transmettre. Vérifiez aussi le journal Liaison côté Athena.</p>' +
+    (window.ATAK_MULTI_COMMUNITY
+      ? '<p class="atak-units-empty-text">Votre compte appartient à plusieurs communautés. Cette carte n’affiche que celle indiquée en haut. Changez-la si ce n’est pas la soirée en cours.</p>'
+      : '') +
     '</div>';
 
   function updateSummary() {

@@ -82,6 +82,7 @@ final class SseFieldNoteController
             'kinds' => SseFieldNoteCatalog::KINDS,
             'themes' => SseFieldNoteCatalog::THEMES,
             'urgencies' => SseFieldNoteCatalog::URGENCIES,
+            'sources' => SseFieldNoteCatalog::SOURCES,
             'bodyMaxLength' => SseFieldNoteCatalog::BODY_MAX_LENGTH,
             'attachmentsMax' => SseFieldNoteCatalog::ATTACHMENTS_MAX,
             'themesMax' => SseFieldNoteCatalog::THEMES_MAX,
@@ -106,6 +107,7 @@ final class SseFieldNoteController
 
         $input = [
             'body' => (string) $request->input('body', ''),
+            'title' => (string) $request->input('title', ''),
             'note_kind' => (string) $request->input('note_kind', SseFieldNoteCatalog::DEFAULT_KIND),
             'themes' => $request->input('themes', []),
             'observed_at' => (string) $request->input('observed_at', ''),
@@ -114,6 +116,7 @@ final class SseFieldNoteController
             'lat' => $request->input('lat', null),
             'lng' => $request->input('lng', null),
             'urgency' => (string) $request->input('urgency', SseFieldNoteCatalog::DEFAULT_URGENCY),
+            'intel_source' => (string) $request->input('intel_source', ''),
             'case_code' => (string) $request->input('case_code', ''),
             'classification' => sse_ui_classification(),
             'origin' => 'web',
@@ -127,11 +130,13 @@ final class SseFieldNoteController
             Session::flash('sse_field_note_errors', $errors);
             Session::flash('sse_field_note_draft', [
                 'body' => $input['body'],
+                'title' => $input['title'],
                 'note_kind' => $input['note_kind'],
                 'themes' => SseFieldNoteCatalog::normalizeThemes($input['themes']),
                 'observed_at' => $input['observed_at'],
                 'place_label' => $input['place_label'],
                 'urgency' => $input['urgency'],
+                'intel_source' => $input['intel_source'],
             ]);
 
             return Response::redirect(url('atak/sse/fiches/nouvelle'));

@@ -45,6 +45,7 @@ return static function (PDO $pdo, ?callable $log = null): void {
             reference_code VARCHAR(32) NOT NULL,
             note_kind VARCHAR(16) NOT NULL DEFAULT 'FRM',
             themes VARCHAR(400) NOT NULL DEFAULT '[]',
+            title VARCHAR(180) DEFAULT NULL,
             body MEDIUMTEXT NOT NULL,
             observed_at DATETIME NOT NULL,
             place_label VARCHAR(180) DEFAULT NULL,
@@ -55,6 +56,7 @@ return static function (PDO $pdo, ?callable $log = null): void {
             lat DECIMAL(10,7) DEFAULT NULL,
             lng DECIMAL(10,7) DEFAULT NULL,
             urgency VARCHAR(16) NOT NULL DEFAULT 'routine',
+            intel_source VARCHAR(16) DEFAULT NULL,
             classification VARCHAR(24) NOT NULL DEFAULT 'interne',
             source_reliability CHAR(1) NOT NULL DEFAULT 'C',
             info_credibility TINYINT UNSIGNED NOT NULL DEFAULT 3,
@@ -87,6 +89,8 @@ return static function (PDO $pdo, ?callable $log = null): void {
             'lat' => 'ALTER TABLE sse_field_notes ADD COLUMN lat DECIMAL(10,7) DEFAULT NULL AFTER pos_z',
             'lng' => 'ALTER TABLE sse_field_notes ADD COLUMN lng DECIMAL(10,7) DEFAULT NULL AFTER lat',
             'interest_case_id' => 'ALTER TABLE sse_field_notes ADD COLUMN interest_case_id INT UNSIGNED DEFAULT NULL AFTER case_id',
+            'title' => 'ALTER TABLE sse_field_notes ADD COLUMN title VARCHAR(180) DEFAULT NULL AFTER themes',
+            'intel_source' => 'ALTER TABLE sse_field_notes ADD COLUMN intel_source VARCHAR(16) DEFAULT NULL AFTER urgency',
         ];
         foreach ($additions as $column => $sql) {
             if (!$columnExists('sse_field_notes', $column)) {

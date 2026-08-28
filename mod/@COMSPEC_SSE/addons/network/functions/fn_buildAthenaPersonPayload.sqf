@@ -15,8 +15,15 @@ if (isNil "_id" || {!(_id isEqualType createHashMap)}) then { _id = createHashMa
 private _first = trim (_id getOrDefault ["first_name", ""]);
 private _last = trim (_id getOrDefault ["last_name", ""]);
 private _alias = trim (_id getOrDefault ["alias", ""]);
-if (_first isEqualTo "") then { _first = trim (_entity getVariable ["COMSPEC_SSE_FirstName", ""]); };
-if (_last isEqualTo "") then { _last = trim (_entity getVariable ["COMSPEC_SSE_LastName", ""]); };
+private _authored = _entity getVariable ["COMSPEC_SSE_NameAuthored", false];
+if (_authored || {_first isEqualTo ""}) then {
+    private _keepFirst = trim (_entity getVariable ["COMSPEC_SSE_FirstName", ""]);
+    if (_keepFirst isNotEqualTo "") then { _first = _keepFirst; };
+};
+if (_authored || {_last isEqualTo ""}) then {
+    private _keepLast = trim (_entity getVariable ["COMSPEC_SSE_LastName", ""]);
+    if (_keepLast isNotEqualTo "") then { _last = _keepLast; };
+};
 if (_alias isEqualTo "") then { _alias = trim (_entity getVariable ["COMSPEC_SSE_Alias", ""]); };
 
 private _name = trim (_id getOrDefault ["name", ""]);

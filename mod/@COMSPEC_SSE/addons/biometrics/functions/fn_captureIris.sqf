@@ -3,8 +3,8 @@ params [
     ["_player", player, [objNull]]
 ];
 
-if !([_player, "seek"] call comspec_sse_fnc_hasEquipment) exitWith {
-    hint "Terminal SEEK II (ou tablette compatible) requis.";
+if !([_player, "iris"] call comspec_sse_fnc_hasEquipment) exitWith {
+    hint "Scanner oculaire, SEEK II ou kit iris compatible requis.";
     false
 };
 

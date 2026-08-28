@@ -38,6 +38,13 @@ private _authored = _entity getVariable ["COMSPEC_SSE_NameAuthored", false];
 if (_authored) then {
     if (_keepFirst isNotEqualTo "") then { _first = _keepFirst; };
     if (_keepLast isNotEqualTo "") then { _last = _keepLast; };
+    private _full = trim (format ["%1 %2", _first, _last]);
+    if (_full isNotEqualTo "") then {
+        _identity set ["first_name", _first];
+        _identity set ["last_name", _last];
+        _identity set ["name", _full];
+        [_entity, "identity", _identity, _public] call comspec_sse_fnc_setSection;
+    };
 };
 if (_keepAlias isNotEqualTo "") then { _alias = _keepAlias; };
 

@@ -96,5 +96,9 @@ class Application
             }
         }
         $response->send();
+        try {
+            \App\Services\Cron\CronWatchdog::maybeKick($this->request->path());
+        } catch (\Throwable) {
+        }
     }
 }

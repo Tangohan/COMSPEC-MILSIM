@@ -1556,8 +1556,20 @@ class CommunityController
         if ($user) {
             $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
-        Session::flash('success', 'Communauté active mise à jour.');
-        return Response::redirect(url('dashboard'));
+        $label = function_exists('community_display_name')
+            ? community_display_name($targetTenant)
+            : trim((string) ($targetTenant['name'] ?? 'cette communauté'));
+        if ($label === '') {
+            $label = 'cette communauté';
+        }
+        Session::flash(
+            'success',
+            'Vous êtes maintenant sur « ' . $label . ' ». Les positions du jeu n’apparaissent que sur le poste de cette communauté.'
+        );
+        $returnTo = strtolower(trim((string) $request->input('return_to')));
+        $redirectPath = $returnTo === 'atak' ? 'atak' : 'dashboard';
+
+        return Response::redirect(url($redirectPath));
     }
 
     /** Assistant post-création (fuseau, finalisation). */

@@ -16,6 +16,7 @@ use App\Services\Admin\AdminAuditService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Platform\FeatureGateService;
+use App\Support\EnlistmentAcceptedIdentity;
 use DateTimeImmutable;
 use Throwable;
 
@@ -179,6 +180,11 @@ final class EnlistmentAcceptanceProvisioningService
             return ['ok' => false, 'message' => $sync['message']];
         }
 
+        $provisionedUserId = (int) ($sync['user_id'] ?? 0);
+        if ($provisionedUserId > 0) {
+            $this->applyAcceptedIdentityFromEnlistment($tenantId, $provisionedUserId, $row, $actorUserId);
+        }
+
         $staffLine = (string) $sync['staff_summary'];
         $candidateScenario = (string) $sync['candidate_scenario'];
 
@@ -201,7 +207,7 @@ final class EnlistmentAcceptanceProvisioningService
     }
 
     /**
-     * @return array{ok: bool, message: ?string, staff_summary: string, candidate_scenario: string, warn: ?string}
+     * @return array{ok: bool, message: ?string, staff_summary: string, candidate_scenario: string, warn: ?string, user_id?: int}
      */
     private function syncUserIntoTenantForAcceptance(int $tenantId, int $enlistmentId, array $row, int $actorUserId): array
     {
@@ -209,7 +215,7 @@ final class EnlistmentAcceptanceProvisioningService
         $existingSubmitter = (int) ($row['submitter_user_id'] ?? 0);
 
         if ($existingSubmitter > 0) {
-            return $this->syncFromSubmitterUserId($tenantId, $enlistmentId, $existingSubmitter, $email, $actorUserId);
+            return $this->syncFromSubmitterUserId($tenantId, $enlistmentId, $existingSubmitter, $row, $actorUserId);
         }
 
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -250,6 +256,7 @@ final class EnlistmentAcceptanceProvisioningService
                 'staff_summary' => 'Compte existant rattaché : le membre dispose désormais du rôle adapté dans la communauté.',
                 'candidate_scenario' => 'existing',
                 'warn' => null,
+                'user_id' => $uid,
             ];
         }
 
@@ -257,10 +264,12 @@ final class EnlistmentAcceptanceProvisioningService
     }
 
     /**
-     * @return array{ok: bool, message: ?string, staff_summary: string, candidate_scenario: string, warn: ?string}
+     * @param array<string, mixed> $row
+     * @return array{ok: bool, message: ?string, staff_summary: string, candidate_scenario: string, warn: ?string, user_id?: int}
      */
-    private function syncFromSubmitterUserId(int $tenantId, int $enlistmentId, int $submitterId, string $enlistmentEmail, int $actorUserId): array
+    private function syncFromSubmitterUserId(int $tenantId, int $enlistmentId, int $submitterId, array $row, int $actorUserId): array
     {
+        $enlistmentEmail = trim((string) ($row['email'] ?? ''));
         $global = $this->userRepository->findById($submitterId, null);
         if (!$global) {
             return [
@@ -289,6 +298,11 @@ final class EnlistmentAcceptanceProvisioningService
             ];
         }
 
+        $wantEmail = strtolower($enlistmentEmail);
+        if ($wantEmail !== '' && filter_var($enlistmentEmail, FILTER_VALIDATE_EMAIL) && $srcEmail !== $wantEmail) {
+            return $this->createFreshTenantUser($tenantId, $enlistmentId, $row, $wantEmail, $actorUserId);
+        }
+
         $srcTenant = (int) ($global['tenant_id'] ?? 0);
         if ($srcTenant === $tenantId) {
             if (!$this->promoteGuestOrInviteToMember($tenantId, $submitterId)) {
@@ -307,6 +321,7 @@ final class EnlistmentAcceptanceProvisioningService
                 'staff_summary' => 'Compte déjà dans la communauté : passage en membre effectué (ou déjà en place).',
                 'candidate_scenario' => 'existing',
                 'warn' => null,
+                'user_id' => $submitterId,
             ];
         }
 
@@ -338,6 +353,7 @@ final class EnlistmentAcceptanceProvisioningService
                 'staff_summary' => 'Le compte était rattaché à un autre espace : la candidature pointe maintenant vers le compte de cette communauté et le rôle membre est appliqué.',
                 'candidate_scenario' => 'existing',
                 'warn' => null,
+                'user_id' => $uid,
             ];
         }
 
@@ -370,6 +386,7 @@ final class EnlistmentAcceptanceProvisioningService
                     'staff_summary' => 'Compte local retrouvé via l’e-mail de la candidature : lien mis à jour et rôle membre appliqué.',
                     'candidate_scenario' => 'existing',
                     'warn' => null,
+                    'user_id' => $uid,
                 ];
             }
         }
@@ -395,8 +412,17 @@ final class EnlistmentAcceptanceProvisioningService
             ];
         }
 
+        $formName = EnlistmentAcceptedIdentity::formDisplayName($row);
+        $formCs = EnlistmentAcceptedIdentity::formCallsign($row);
+        $cloneOverrides = [
+            'callsign' => $formCs !== '' ? $formCs : null,
+        ];
+        if ($formName !== '') {
+            $cloneOverrides['display_name'] = $formName;
+        }
+
         try {
-            $newId = $this->userRepository->cloneUserToTenant($submitterId, $tenantId, $memberRoleId, null);
+            $newId = $this->userRepository->cloneUserToTenant($submitterId, $tenantId, $memberRoleId, null, $cloneOverrides);
         } catch (Throwable $e) {
             return [
                 'ok' => false,
@@ -426,6 +452,7 @@ final class EnlistmentAcceptanceProvisioningService
             'staff_summary' => 'Compte dupliqué depuis un autre espace : le membre peut se connecter avec ses identifiants habituels.',
             'candidate_scenario' => 'existing',
             'warn' => null,
+            'user_id' => $newId,
         ];
     }
 
@@ -466,10 +493,11 @@ final class EnlistmentAcceptanceProvisioningService
                     'staff_summary' => 'Compte déjà présent dans la communauté : candidature liée, rôle membre appliqué.',
                     'candidate_scenario' => 'existing',
                     'warn' => null,
+                    'user_id' => $srcId,
                 ];
             }
             if ($srcId > 0) {
-                return $this->syncFromSubmitterUserId($tenantId, $enlistmentId, $srcId, $email, $actorUserId);
+                return $this->syncFromSubmitterUserId($tenantId, $enlistmentId, $srcId, $row, $actorUserId);
             }
         }
 
@@ -576,7 +604,65 @@ final class EnlistmentAcceptanceProvisioningService
             'staff_summary' => 'Un nouveau compte a été créé pour ce candidat (e-mail avec lien de définition du mot de passe).',
             'candidate_scenario' => 'new_password_pending',
             'warn' => $warn,
+            'user_id' => $userId,
         ];
+    }
+
+    /**
+     * L’identité du nouveau membre vient du dossier, pas de la personne qui a accepté.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function applyAcceptedIdentityFromEnlistment(int $tenantId, int $userId, array $row, int $actorUserId): void
+    {
+        if ($userId < 1) {
+            return;
+        }
+        $memberIsReviewer = $actorUserId > 0 && $userId === $actorUserId;
+        $actor = $actorUserId > 0 ? $this->userRepository->findById($actorUserId, null) : null;
+        $reviewerLabels = EnlistmentAcceptedIdentity::publicLabels($actor);
+        $formName = EnlistmentAcceptedIdentity::formDisplayName($row);
+        $formCs = EnlistmentAcceptedIdentity::formCallsign($row);
+
+        $user = $this->userRepository->findById($userId, $tenantId);
+        if (is_array($user)) {
+            $patch = [];
+            $nextDn = EnlistmentAcceptedIdentity::displayNameForNewMembership(
+                (string) ($user['display_name'] ?? ''),
+                $formName,
+                $reviewerLabels,
+                $memberIsReviewer
+            );
+            if ($nextDn !== null) {
+                $patch['display_name'] = $nextDn !== '' ? $nextDn : null;
+            }
+            $currentCs = trim((string) ($user['callsign'] ?? ''));
+            if ($formCs !== '') {
+                if ($currentCs === '' || EnlistmentAcceptedIdentity::matchesAny($currentCs, $reviewerLabels)) {
+                    $patch['callsign'] = $formCs;
+                }
+            } elseif (!$memberIsReviewer && EnlistmentAcceptedIdentity::matchesAny($currentCs, $reviewerLabels)) {
+                $patch['callsign'] = null;
+            }
+            if ($patch !== []) {
+                $this->userRepository->update($userId, $tenantId, $patch);
+            }
+        }
+
+        $this->personnelProfileRepository->ensureRecord($userId);
+        $pp = $this->personnelProfileRepository->getByUserId($userId) ?? [];
+        $cn = trim((string) ($pp['character_name'] ?? ''));
+        $ppPatch = [];
+        if (EnlistmentAcceptedIdentity::shouldClearCharacterName($cn, $reviewerLabels, $memberIsReviewer)) {
+            $ppPatch['character_name'] = '';
+        }
+        $ppCs = trim((string) ($pp['callsign'] ?? ''));
+        if (!$memberIsReviewer && EnlistmentAcceptedIdentity::matchesAny($ppCs, $reviewerLabels)) {
+            $ppPatch['callsign'] = null;
+        }
+        if ($ppPatch !== []) {
+            $this->personnelProfileRepository->update($userId, $ppPatch);
+        }
     }
 
     private function roleSlugNeedsPromotion(int $tenantId, int $userId): bool

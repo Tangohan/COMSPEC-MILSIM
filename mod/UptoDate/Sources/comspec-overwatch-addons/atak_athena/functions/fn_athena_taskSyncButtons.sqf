@@ -90,6 +90,19 @@ if (_id isNotEqualTo "") then {
         case "CANCELLED";
         case "DONE";
         case "CLOSED": {};
+        case "PENDING";
+        case "DELIVERED": {
+            _leftShow = true;
+            _leftTxt = "Accepter";
+            _leftAct = "ACCEPT";
+            _leftBg = _ok;
+            _leftFg = _okF;
+            _rightShow = true;
+            _rightTxt = "Refuser";
+            _rightAct = "REFUSE";
+            _rightBg = _warn;
+            _rightFg = _warnF;
+        };
         default {
             _leftShow = true;
             _leftTxt = "Accepter";

@@ -61,6 +61,9 @@ final class AuditAction
 
     public const PLATFORM_SETTINGS_UPDATED = 'platform.settings_updated';
 
+    /** Vidage d’un lot d’historiques volumineux (administration du site). */
+    public const PLATFORM_STORAGE_PURGED = 'platform.storage_purged';
+
     public const SUBSCRIPTION_PLAN_UPDATED = 'platform.subscription_plan_updated';
 
     /** Affectation manuelle d’une formule à une communauté (opérateur plateforme). */

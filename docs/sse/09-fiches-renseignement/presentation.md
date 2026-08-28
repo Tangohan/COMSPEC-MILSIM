@@ -56,22 +56,33 @@ Le sigle apparaît en pastille bleue à côté des thèmes.
 
 ## Thèmes
 
-Quatre thèmes au maximum. La couleur de la pastille suit la gravité : rouge pour
-`Sécurité publique`, `Menace armée` et `Engins explosifs` ; orange pour
-`Ordre public`, `Trafics` et `Mouvements et flux` ; bleu pour `Population et
-attitude`, `Infrastructures`, `Communications` et `Logistique adverse` ; gris
-pour `Environnement et terrain` et `Divers`.
+Quatre thèmes au maximum. Le sigle oriente la fiche ; la couleur suit le
+périmètre :
+
+| Couleur | Thèmes |
+|---|---|
+| Rouge | Terrorisme, Insurrection, CBRNE |
+| Orange | Armement, Personnes, Planification |
+| Jaune | Logistique, Communications, Financement, Recrutement |
+| Vert | Infrastructures, Organisation, Mouvements, Sécurité |
+| Bleu | Environnement civil, Météo / Terrain, Général |
 
 L'ordre du référentiel est contractuel : chaque bascule du rédacteur ATAK est
 câblée sur un **rang**, pas sur un code. Réordonner les thèmes côté serveur sans
-mettre à jour `fn_intelNoteCatalog.sqf` décalerait toutes les bascules — un test
-verrouille cette correspondance.
+mettre à jour le pack jeu décalerait toutes les bascules — un test verrouille
+cette correspondance.
+
+## Recueil
+
+Le rédacteur peut indiquer comment le constat a été obtenu : renseignement
+humain, imagerie, signaux, sources ouvertes, technique, mesures, ou géospatial.
 
 ## Degré d'urgence
 
-- **Courant** — à exploiter dans le cours normal du travail.
-- **Prioritaire** — à regarder dans la journée.
-- **Immédiat** — doit remonter tout de suite au poste de commandement.
+- **Critique** — menace imminente, à remonter tout de suite au poste.
+- **Urgent** — à traiter sans délai, dans les prochaines heures.
+- **Normal** — à regarder dans le cours de la journée.
+- **Routine** — à exploiter dans le cours normal du travail.
 
 ## Suivi côté bureau
 

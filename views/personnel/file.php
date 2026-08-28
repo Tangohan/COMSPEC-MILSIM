@@ -217,22 +217,9 @@ $matricule = $personnelProfile['matricule_internal'] ?? $personnelExtras['servic
 $callsign = $personnelProfile['callsign'] ?? $targetUser['callsign'] ?? null;
 $athenaIdentifier = trim((string) ($targetUser['athena_identifier'] ?? ''));
 $rpCharacterName = trim((string) ($personnelProfile['character_name'] ?? ''));
-// Le nom de compte reste l’identité principale de la fiche.
-// Le nom de scène (personnage) s’affiche à part — sinon un mauvais RP
-// fait croire qu’on ouvre le dossier d’un autre membre.
-if (!empty($redactPersonalPresentation)) {
-    $dn = trim((string) ($targetUser['display_name'] ?? ''));
-    if ($privatePersonnelIdentity) {
-        $cs = trim((string) ($callsign ?? ''));
-        $displayName = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Membre');
-        if ($displayName === 'Membre' && !empty($showEmailInContact)) {
-            $displayName = (string) ($targetUser['email'] ?? 'Membre');
-        }
-    } else {
-        $cs = trim((string) ($callsign ?? ''));
-        $displayName = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Membre');
-    }
-} elseif (!$privatePersonnelIdentity) {
+// Le nom de compte reste l’identité principale de la fiche publique.
+// Prénom + nom du personnage s’affichent pour le titulaire et l’encadrement.
+if (!$privatePersonnelIdentity) {
     $dn = trim((string) ($targetUser['display_name'] ?? ''));
     $cs = trim((string) ($callsign ?? ''));
     $displayName = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Membre');
@@ -1210,9 +1197,14 @@ $personnelFileShell = $personnelFileIsRhFull
                     <div class="grid md:grid-cols-2 gap-6">
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom opérateur</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($displayName) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatif radio</p><p class="text-sm font-black text-slate-900"><?= $callsign ? htmlspecialchars($callsign) : '—' ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom (personnage)</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : '—') ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom (personnage)</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Matricule</p><p class="text-sm font-black text-slate-900"><?= !empty($showMatriculePublic) ? ($matricule ? htmlspecialchars($matricule) : '—') : '—' ?></p></div>
                         <?php if ($rpCharacterNameDisplay !== ''): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom de scène (personnage)</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($rpCharacterNameDisplay) ?></p></div>
+                        <?php endif; ?>
+                        <?php if (!empty(trim((string) ($userProfile['bio'] ?? '')))): ?>
+                        <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Présentation du personnage</p><p class="text-sm text-slate-700 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $userProfile['bio']))) ?></p></div>
                         <?php endif; ?>
                         <?php if ($privatePersonnelIdentity && $displayNameAccount !== '' && $displayNameAccount !== $displayName): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom affiché sur le compte</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($displayNameAccount) ?></p></div>
@@ -1903,18 +1895,14 @@ $personnelFileShell = $personnelFileIsRhFull
                         <?php endif; ?>
                     </div>
                 </section>
-                <!-- Identité civile / administrative -->
+                <!-- Compte / administration -->
                 <?php if ($canViewCivilSection): ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Identité civile / administrative</h2>
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Compte</h2>
                     <?php if ($civilSourceLabel): ?>
-                    <p class="text-[10px] text-slate-500 mb-6">Source prénom / nom : <span class="font-semibold text-slate-700"><?= htmlspecialchars($civilSourceLabel) ?></span><?php if (($civilIdentity['source'] ?? null) === 'enlistment' && is_array($latestEnlistment) && $latestEnlistment !== []): ?> · Dossier de recrutement associé : <span class="font-semibold text-slate-700"><?= htmlspecialchars($enlistmentAppStatusFr((string) ($latestEnlistment['status'] ?? ''))) ?></span><?php if (!empty($latestEnlistment['created_at'])): ?> (transmis le <?= htmlspecialchars(date('d/m/Y', strtotime((string) $latestEnlistment['created_at']))) ?>)<?php endif; ?><?php endif; ?>.</p>
-                    <?php else: ?>
-                    <p class="text-[10px] text-slate-500 mb-6">Renseignez le prénom et le nom dans <a href="<?= url('account/preferences') ?>" class="font-semibold text-emerald-700 underline">Compte → Préférences</a> pour alimenter la fiche.</p>
+                    <p class="text-[10px] text-slate-500 mb-6">Source prénom / nom du personnage : <span class="font-semibold text-slate-700"><?= htmlspecialchars($civilSourceLabel) ?></span><?php if (($civilIdentity['source'] ?? null) === 'enlistment' && is_array($latestEnlistment) && $latestEnlistment !== []): ?> · Dossier de recrutement associé : <span class="font-semibold text-slate-700"><?= htmlspecialchars($enlistmentAppStatusFr((string) ($latestEnlistment['status'] ?? ''))) ?></span><?php if (!empty($latestEnlistment['created_at'])): ?> (transmis le <?= htmlspecialchars(date('d/m/Y', strtotime((string) $latestEnlistment['created_at']))) ?>)<?php endif; ?><?php endif; ?>.</p>
                     <?php endif; ?>
                     <div class="grid md:grid-cols-2 gap-6">
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($civilIdentity['first_name'] !== '' ? $civilIdentity['first_name'] : '—') ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($civilIdentity['last_name'] !== '' ? $civilIdentity['last_name'] : '—') ?></p></div>
                         <?php if (!empty($showEmailInContact)): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($targetUser['email'] ?? '')) ?></p></div>
                         <?php else: ?>
@@ -1942,9 +1930,6 @@ $personnelFileShell = $personnelFileIsRhFull
                         <?php endif; ?>
                         <?php if (!empty(trim((string) ($userProfile['language'] ?? '')))): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Langue</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['language'])) ?></p></div>
-                        <?php endif; ?>
-                        <?php if (!empty(trim((string) ($userProfile['bio'] ?? '')))): ?>
-                        <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Bio (compte)</p><p class="text-sm text-slate-700 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $userProfile['bio']))) ?></p></div>
                         <?php endif; ?>
                         <?php if (!empty($targetUser['last_login_at'])): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Dernière connexion</p><p class="text-sm text-slate-700"><?= date('d/m/Y H:i', strtotime($targetUser['last_login_at'])) ?></p></div>
@@ -1977,7 +1962,7 @@ $personnelFileShell = $personnelFileIsRhFull
                 <?php else: ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-3">Informations réservées</h2>
-                    <p class="text-sm text-slate-600 leading-relaxed">L’identité civile, l’état civil administratif et le détail des candidatures de recrutement ne sont pas affichés aux autres membres. Seuls le titulaire du dossier et le personnel habilité (gestion des effectifs ou accès RH sensible) peuvent les consulter.</p>
+                    <p class="text-sm text-slate-600 leading-relaxed">L’adresse e-mail, le fuseau, la langue du compte et le détail des candidatures de recrutement ne sont pas affichés aux autres membres. Seuls le titulaire du dossier et le personnel habilité (gestion des effectifs ou accès RH sensible) peuvent les consulter.</p>
                 </section>
                 <?php endif; ?>
 

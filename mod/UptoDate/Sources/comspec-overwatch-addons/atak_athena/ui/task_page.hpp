@@ -71,6 +71,7 @@ class COMSPEC_ATAK_Task: ATAK_Message
             y = QUOTE(COMSPEC_TASK_H(0.58));
             w = QUOTE(COMSPEC_TASK_W(2.84));
             h = QUOTE(COMSPEC_TASK_H(0.40));
+            size = QUOTE(COMSPEC_TASK_H(0.32));
             text = "";
             colorBackground[] = TASK_BG_STRIP;
             class Attributes
@@ -80,7 +81,7 @@ class COMSPEC_ATAK_Task: ATAK_Message
                 align = "center";
                 valign = "middle";
                 shadow = 1;
-                size = "0.78";
+                size = "1";
             };
         };
 
@@ -96,8 +97,8 @@ class COMSPEC_ATAK_Task: ATAK_Message
             colorSelect2[] = ATAK_LIST_SEL;
             colorSelectBackground[] = ATAK_LIST_SEL_BG;
             colorSelectBackground2[] = ATAK_LIST_SEL_BG;
-            sizeEx = QUOTE(COMSPEC_TASK_H(0.32));
-            rowHeight = QUOTE(COMSPEC_TASK_H(0.50));
+            sizeEx = QUOTE(COMSPEC_TASK_H(0.38));
+            rowHeight = QUOTE(COMSPEC_TASK_H(0.56));
             onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_taskSelect";
         };
 
@@ -107,7 +108,8 @@ class COMSPEC_ATAK_Task: ATAK_Message
             x = QUOTE(COMSPEC_TASK_W(0.08));
             y = QUOTE(COMSPEC_TASK_H(3.82));
             w = QUOTE(COMSPEC_TASK_W(2.84));
-            h = QUOTE(COMSPEC_TASK_H(2.48));
+            h = QUOTE(COMSPEC_TASK_H(2.20));
+            size = QUOTE(COMSPEC_TASK_H(0.32));
             text = "";
             colorBackground[] = TASK_BG_BODY;
             class Attributes
@@ -117,7 +119,7 @@ class COMSPEC_ATAK_Task: ATAK_Message
                 align = "left";
                 valign = "top";
                 shadow = 1;
-                size = "0.82";
+                size = "1";
             };
         };
 
@@ -125,12 +127,11 @@ class COMSPEC_ATAK_Task: ATAK_Message
         {
             idc = 9904;
             x = QUOTE(COMSPEC_TASK_W(0.08));
-            y = QUOTE(COMSPEC_TASK_H(6.38));
+            y = QUOTE(COMSPEC_TASK_H(6.10));
             w = QUOTE(COMSPEC_TASK_W(1.38));
-            h = QUOTE(COMSPEC_TASK_H(0.50));
-            size = QUOTE(COMSPEC_TASK_H(0.28));
+            h = QUOTE(COMSPEC_TASK_H(0.58));
+            size = QUOTE(COMSPEC_TASK_H(0.34));
             text = "Accepter";
-            show = 0;
             colorBackground[] = TASK_OK;
             colorBackground2[] = TASK_OK;
             colorBackgroundFocused[] = TASK_OK_F;
@@ -151,10 +152,10 @@ class COMSPEC_ATAK_Task: ATAK_Message
         {
             idc = 9907;
             x = QUOTE(COMSPEC_TASK_W(0.08));
-            y = QUOTE(COMSPEC_TASK_H(6.94));
+            y = QUOTE(COMSPEC_TASK_H(6.76));
             w = QUOTE(COMSPEC_TASK_W(2.84));
-            h = QUOTE(COMSPEC_TASK_H(0.38));
-            size = QUOTE(COMSPEC_TASK_H(0.24));
+            h = QUOTE(COMSPEC_TASK_H(0.46));
+            size = QUOTE(COMSPEC_TASK_H(0.30));
             text = "Actualiser";
             colorBackground[] = TASK_BTN;
             colorBackground2[] = TASK_BTN;

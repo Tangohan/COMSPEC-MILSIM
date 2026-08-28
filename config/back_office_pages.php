@@ -58,7 +58,7 @@ return [
             ['label' => 'Nouvelle annonce', 'href' => 'back-office/alerts/create'],
         ]],
         ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres avancés'],
-        ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes'],
+        ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Relais Discord par événement, transmissions terrain et jetons d’accès.'],
         ['path' => 'back-office/dashboard-pins', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Raccourcis du portail'],
         ['path' => 'back-office/onboarding-members', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Onboarding membres'],
         ['path' => 'back-office/onboarding-recovery', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · PREMIERS PAS', 'title' => 'Aide après inscription', 'css' => ['back-office-onboarding-recovery.css']],

@@ -35,7 +35,8 @@
 #define ATAK_LIST_SEL {0.04, 0.05, 0.06, 1}
 #define ATAK_LIST_SEL_BG {0.18, 0.42, 0.52, 0.90}
 
-// Bouton tuile plat (sans dégradé menu BI)
+// Bouton tuile : texture blanche opaque × colorBackground.
+// Alpha 0 sur animTexture = boutons invisibles (seul le texte restait).
 class COMSPEC_ATAK_Btn: BCE_RscButtonMenu
 {
     style = 2;
@@ -44,19 +45,22 @@ class COMSPEC_ATAK_Btn: BCE_RscButtonMenu
     periodFocus = 0;
     periodOver = 0;
     colorBackground[] = ATAK_BG_TILE;
-    colorBackground2[] = ATAK_BG_TILE;
+    colorBackground2[] = ATAK_BG_TILE_F;
     colorBackgroundFocused[] = ATAK_BG_TILE_F;
+    colorBackgroundDisabled[] = {0.08, 0.08, 0.08, 0.55};
     color[] = {1, 1, 1, 1};
     color2[] = {1, 1, 1, 1};
     colorText[] = {1, 1, 1, 1};
     colorFocused[] = {1, 1, 1, 1};
     colorFocusedSecondary[] = {1, 1, 1, 1};
-    animTextureNormal = "#(argb,8,8,3)color(1,1,1,0)";
-    animTextureDisabled = "#(argb,8,8,3)color(1,1,1,0)";
-    animTextureOver = "#(argb,8,8,3)color(1,1,1,0.10)";
-    animTextureFocused = "#(argb,8,8,3)color(1,1,1,0.06)";
-    animTexturePressed = "#(argb,8,8,3)color(1,1,1,0.16)";
-    animTextureDefault = "#(argb,8,8,3)color(1,1,1,0)";
+    colorDisabled[] = {0.55, 0.55, 0.55, 1};
+    animTextureNormal = "#(argb,8,8,3)color(1,1,1,1)";
+    animTextureDisabled = "#(argb,8,8,3)color(1,1,1,0.35)";
+    animTextureOver = "#(argb,8,8,3)color(1,1,1,1)";
+    animTextureFocused = "#(argb,8,8,3)color(1,1,1,1)";
+    animTexturePressed = "#(argb,8,8,3)color(1,1,1,1)";
+    animTextureDefault = "#(argb,8,8,3)color(1,1,1,1)";
+    size = 0.04;
     class Attributes
     {
         font = "RobotoCondensed";

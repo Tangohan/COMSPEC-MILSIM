@@ -436,6 +436,34 @@ body.atak-page.atak-theme-light {
   outline: none;
 }
 
+.atak-community-switch {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.atak-header-cluster--community .atak-header-field-control {
+  max-width: 14rem;
+}
+
+.atak-header-field-value {
+  display: inline-flex;
+  align-items: center;
+  min-width: 5.5rem;
+  max-width: 14rem;
+  padding: 0.22rem 0.5rem;
+  color: var(--atak-text);
+  font-family: var(--atak-font-ui);
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .atak-header-action {
   display: inline-flex;
   align-items: center;
@@ -2696,9 +2724,14 @@ body.atak-hints-hidden .atak-panel-hint {
   border: none !important;
 }
 
-#atak-map .nato-sidc--critical .atak-marker-glyph,
-#atak-map .nato-sidc--critical {
-  animation: atak-marker-alert-pulse 1.4s ease-in-out infinite;
+#atak-map .atak-phone-geoloc-icon,
+#atak-map .atak-phone-geoloc-stack {
+  background: transparent !important;
+  border: none !important;
+}
+.atak-phone-geoloc-badge svg,
+.atak-phone-geoloc-icon svg {
+  display: block;
 }
 #atak-map.atak-zoom-theatre .atak-ping-map-icon,
 #atak-map.atak-zoom-theatre .atak-sse-layer-marker,
@@ -11441,7 +11474,9 @@ body.atak-device-embed .leaflet-container {
 .frs-theme input { display: none; }
 
 .frs-tone-critical { color: #ef4444; }
-.frs-tone-warning { color: #f59e0b; }
+.frs-tone-warning { color: #fb923c; }
+.frs-tone-caution { color: #eab308; }
+.frs-tone-stable { color: #4ade80; }
 .frs-tone-info { color: #38bdf8; }
 .frs-tone-neutral { color: var(--atak-muted, #8899aa); }
 

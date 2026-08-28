@@ -53,6 +53,42 @@ class GradeDisplayService
         return $v !== null && $v !== '' ? (string) $v : null;
     }
 
+    /**
+     * Titre de grade pour le bandeau : titre saisi sur le dossier, sinon libellé du grade attribué.
+     *
+     * @param array<string, mixed> $gradeRow
+     * @param array<string, mixed>|null $personnelProfile
+     */
+    public function headerTitle(array $gradeRow, ?array $personnelProfile = null): string
+    {
+        $custom = trim((string) ($personnelProfile['rank_display'] ?? ''));
+        if ($custom !== '') {
+            return $custom;
+        }
+        $long = trim($this->getLong($gradeRow));
+        if ($long !== '') {
+            return $long;
+        }
+
+        return trim($this->getShort($gradeRow));
+    }
+
+    /**
+     * Code court à côté du titre (O-5, OF-4…). Le libellé personnalisé du dossier prime.
+     *
+     * @param array<string, mixed> $gradeRow
+     * @param array<string, mixed>|null $personnelProfile
+     */
+    public function headerShortCode(array $gradeRow, ?array $personnelProfile = null): ?string
+    {
+        $override = trim((string) ($personnelProfile['rank_display_override'] ?? ''));
+        if ($override !== '') {
+            return $override;
+        }
+
+        return $this->getOtan($gradeRow);
+    }
+
     /** Hybride : Capitaine (OF-2). */
     public function getFull(array $gradeRow): string
     {

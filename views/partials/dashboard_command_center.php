@@ -432,8 +432,10 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12M8 12h12M8 17h12"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h.01M4 12h.01M4 17h.01"/>
                             </svg>
-                            Autres communautés
+                            Vous êtes sur
                         </span>
+                        <span class="dash-idstrip__chip dash-idstrip__chip--current" title="Communauté dont le poste affiche les positions"><?= htmlspecialchars($unitLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                        <span class="dash-idstrip__label dash-idstrip__label--with-icon">Autres</span>
                         <div class="dash-idstrip__chips">
                             <?php foreach ($communityMemberships as $m): ?>
                                 <?php if ((int) ($m['tenant_id'] ?? 0) === $currentTid) {
@@ -442,6 +444,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                 <form method="post" action="<?= url('community/switch') ?>" class="inline" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.setAttribute('aria-busy','true');}">
                                     <?= \App\Core\Csrf::field() ?>
                                     <input type="hidden" name="tenant_id" value="<?= (int) $m['tenant_id'] ?>">
+                                    <input type="hidden" name="return_to" value="atak">
                                     <button type="submit" class="dash-idstrip__chip">
                                         <svg class="dash-idstrip__btn-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h3a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2V9a2 2 0 012-2z"/>

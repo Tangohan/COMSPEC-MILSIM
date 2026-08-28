@@ -56,6 +56,8 @@ if (_flag) then {
         }];
         _unit setVariable ["COMSPEC_AllyTrackLocalEH", _eh];
     };
+    _unit enableDynamicSimulation false;
+    (group _unit) enableDynamicSimulation false;
 };
 
 private _ids = missionNamespace getVariable ["COMSPEC_AllyTrackNetIds", []];

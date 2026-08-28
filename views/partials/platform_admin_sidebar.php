@@ -41,6 +41,7 @@ $navNewsletter = $p === 'admin/newsletter';
 $navOps = $p === 'admin/ops-center';
 $navAudit = $p === 'admin/audit' || str_starts_with($p, 'admin/audit/');
 $navMaint = $p === 'admin/maintenance' || str_starts_with($p, 'admin/maintenance/');
+$navStorage = str_starts_with($p, 'admin/system/storage');
 $navRoles = $p === 'admin/roles' || str_starts_with($p, 'admin/roles/');
 $navSiteRoles = $p === 'admin/site-roles' || str_starts_with($p, 'admin/site-roles/');
 $navSettings = $p === 'admin/settings';
@@ -113,6 +114,9 @@ $alertsOpen = $navAlerts;
         <?php endif; ?>
 
         <?php $paSection('Exploitation'); ?>
+        <?php if ($isPlatformAdmin): ?>
+            <?php $paLink('admin/system/storage', 'Espace disque et historiques', $navStorage); ?>
+        <?php endif; ?>
         <?php $paLink('admin/maintenance', 'Maintenance des données', $navMaint); ?>
         <?php $paLink('admin/audit', 'Journal d’audit', $navAudit); ?>
 

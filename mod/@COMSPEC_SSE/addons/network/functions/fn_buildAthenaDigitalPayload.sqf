@@ -61,8 +61,10 @@ private _origin = _fog getOrDefault ["origin", "terrain"];
 if (_origin isEqualTo "") then { _origin = "terrain"; };
 
 private _idem = _fog getOrDefault ["idempotency_key", ""];
+if (!(_idem isEqualType "")) then { _idem = ""; };
 if (_idem isEqualTo "") then {
     _idem = ["DIG", _uid] call comspec_sse_fnc_makeIdempotencyKey;
+    if (!(_idem isEqualType "")) then { _idem = ""; };
     if (_origin isEqualTo "zeus_live" || {(_fog getOrDefault ["mode", ""]) in ["zeus_live", "zeus_map", "zeus_stage"]}) then {
         _idem = format ["%1-L%2", _idem, round (diag_tickTime * 1000)];
     };

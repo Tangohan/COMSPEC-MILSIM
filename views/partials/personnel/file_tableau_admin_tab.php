@@ -24,16 +24,20 @@ $pushRow($sheetRows, 'Identité', 'Indicatif radio', $callsign ? (string) $calls
 if (!empty($showEmailInContact) && $athenaIdentifier !== '') {
     $pushRow($sheetRows, 'Identité', 'Identifiant Athena', $athenaIdentifier);
 }
-if (!empty($rpCharacterNameDisplay)) {
-    $pushRow($sheetRows, 'Identité', 'Nom de personnage', (string) $rpCharacterNameDisplay);
+$rpCharacterDistinct = \App\Support\PersonnelDirectoryHints::distinctCharacterLabel(
+    (string) ($displayName ?? ''),
+    (string) ($rpCharacterNameDisplay ?? '')
+);
+if ($rpCharacterDistinct !== '') {
+    $pushRow($sheetRows, 'Identité', 'Nom de personnage', $rpCharacterDistinct);
 }
 if (!empty($canViewCivilSection)) {
-    $pushRow($sheetRows, 'Identité civile', 'Prénom', (string) (($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : '—'));
-    $pushRow($sheetRows, 'Identité civile', 'Nom', (string) (($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : '—'));
+    $pushRow($sheetRows, 'Personnage', 'Prénom', (string) (($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : '—'));
+    $pushRow($sheetRows, 'Personnage', 'Nom', (string) (($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : '—'));
     if (!empty($showEmailInContact)) {
-        $pushRow($sheetRows, 'Identité civile', 'E-mail', (string) ($targetUser['email'] ?? '—'));
+        $pushRow($sheetRows, 'Compte', 'E-mail', (string) ($targetUser['email'] ?? '—'));
     } else {
-        $pushRow($sheetRows, 'Identité civile', 'E-mail', 'Masqué — réservé à l’administration');
+        $pushRow($sheetRows, 'Compte', 'E-mail', 'Masqué — réservé à l’administration');
     }
 }
 

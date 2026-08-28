@@ -41,6 +41,23 @@ if (_placeText isEqualTo "") then {
     _placeText
 ];
 
+private _fnc_hexToRgba = {
+    params ["_hex"];
+    private _map = toArray "0123456789abcdef";
+    private _digits = (toArray (toLower _hex)) select {_x != 35};
+    if ((count _digits) < 6) exitWith { [0.3, 0.3, 0.3, 1] };
+    private _byte = {
+        params ["_hi", "_lo"];
+        (16 * ((_map find _hi) max 0) + ((_map find _lo) max 0)) / 255
+    };
+    [
+        [_digits select 0, _digits select 1] call _byte,
+        [_digits select 2, _digits select 3] call _byte,
+        [_digits select 4, _digits select 5] call _byte,
+        1
+    ]
+};
+
 // --- Étiquettes : pastilles pleines, thèmes colorés puis sigle du type ---
 // Le texte structuré d'Arma ne peint pas de fond derrière un fragment : chaque
 // étiquette est donc un vrai contrôle, posé à la volée.
@@ -55,7 +72,7 @@ private _chipLabels = [];
     {
         _x params ["_themeCode", "_label", "_color"];
         if (_themeCode isEqualTo _code) exitWith {
-            _chipLabels pushBack [toUpper _label, _color];
+            _chipLabels pushBack [_themeCode, _color];
         };
     } forEach _themes;
 } forEach _selected;
@@ -73,23 +90,6 @@ if (_signature isNotEqualTo (_disp getVariable ["COMSPEC_IntelNote_ChipsKey", ""
     {
         if (!isNull _x) then { ctrlDelete _x; };
     } forEach (_disp getVariable ["COMSPEC_IntelNote_Chips", []]);
-
-    private _fnc_hexToRgba = {
-        params ["_hex"];
-        private _map = toArray "0123456789abcdef";
-        private _digits = (toArray (toLower _hex)) select {_x != 35};
-        if ((count _digits) < 6) exitWith { [0.3, 0.3, 0.3, 1] };
-        private _byte = {
-            params ["_hi", "_lo"];
-            (16 * ((_map find _hi) max 0) + ((_map find _lo) max 0)) / 255
-        };
-        [
-            [_digits select 0, _digits select 1] call _byte,
-            [_digits select 2, _digits select 3] call _byte,
-            [_digits select 4, _digits select 5] call _byte,
-            1
-        ]
-    };
 
     private _frame = uiNamespace getVariable ["COMSPEC_IntelNote_Frame", []];
     if (!(_frame isEqualType []) || {(count _frame) < 4}) then {
@@ -137,20 +137,25 @@ _counter ctrlSetStructuredText parseText format [
 
 // --- Bascules de thème ---
 private _reached = (count _selected) >= _themesMax;
-{
-    _x params ["_code", "_label"];
-    private _ctrl = _disp displayCtrl (9660 + _forEachIndex);
+for "_i" from 0 to 16 do {
+    private _ctrl = _disp displayCtrl (9660 + _i);
     if (isNull _ctrl) then { continue };
+    if (_i >= (count _themes)) then {
+        _ctrl ctrlShow false;
+        continue;
+    };
+    (_themes select _i) params ["_code", "_label", ["_color", "#4b5563"]];
     private _on = _code in _selected;
-    _ctrl ctrlSetText (if (_on) then { "* " + _label } else { _label });
+    _ctrl ctrlSetText _code;
+    _ctrl ctrlSetTooltip _label;
     _ctrl ctrlSetBackgroundColor (
-        if (_on) then { [0.165, 0.141, 0.498, 1] } else { [0.063, 0.067, 0.078, 1] }
+        if (_on) then { [_color] call _fnc_hexToRgba } else { [0.063, 0.067, 0.078, 1] }
     );
     // Plafond atteint : les thèmes non retenus se désactivent plutôt que de
     // refuser silencieusement le clic.
     _ctrl ctrlEnable (_on || {!_reached});
     _ctrl ctrlCommit 0;
-} forEach _themes;
+};
 
 // --- Emplacements de pièces jointes ---
 (_disp displayCtrl 9630) ctrlSetStructuredText parseText format [

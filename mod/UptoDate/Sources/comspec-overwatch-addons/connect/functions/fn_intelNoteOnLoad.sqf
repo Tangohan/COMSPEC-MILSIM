@@ -16,6 +16,7 @@ if (isNull _disp) exitWith {};
 private _catalog = [] call comspec_overwatch_connect_fnc_intelNoteCatalog;
 private _kinds = _catalog getOrDefault ["kinds", []];
 private _urgencies = _catalog getOrDefault ["urgencies", []];
+private _sources = _catalog getOrDefault ["sources", []];
 
 // --- Type de fiche ---
 private _kindCombo = _disp displayCtrl 9656;
@@ -36,14 +37,30 @@ lbClear _urgencyCombo;
     _urgencyCombo lbSetData [_i, _code];
 } forEach _urgencies;
 
-// --- Brouillon : [texte, lieu, type, urgence, thèmes] ---
+// --- Recueil ---
+private _sourceCombo = _disp displayCtrl 9658;
+if (!isNull _sourceCombo) then {
+    lbClear _sourceCombo;
+    private _none = _sourceCombo lbAdd "Non précisé";
+    _sourceCombo lbSetData [_none, ""];
+    {
+        _x params ["_code", "_label"];
+        private _i = _sourceCombo lbAdd (_code + " — " + _label);
+        _sourceCombo lbSetData [_i, _code];
+    } forEach _sources;
+};
+
+// --- Brouillon : [texte, lieu, type, urgence, thèmes, recueil] ---
 private _draft = profileNamespace getVariable ["COMSPEC_IntelNote_Draft", []];
 if (!(_draft isEqualType [])) then { _draft = []; };
 private _draftBody = _draft param [0, "", [""]];
 private _draftPlace = _draft param [1, "", [""]];
 private _draftKind = _draft param [2, "FRM", [""]];
-private _draftUrgency = _draft param [3, "routine", [""]];
+private _draftUrgency = toLower (_draft param [3, "routine", [""]]);
+if (_draftUrgency isEqualTo "immediate") then { _draftUrgency = "critique"; };
+if (_draftUrgency isEqualTo "priorite") then { _draftUrgency = "urgent"; };
 private _draftThemes = _draft param [4, [], [[]]];
+private _draftSource = toUpper (_draft param [5, "", [""]]);
 
 // Type demandé à l’ouverture (menu dédié, action ACE) : prioritaire sur le brouillon.
 private _pendingKind = uiNamespace getVariable ["COMSPEC_IntelNote_PendingKind", ""];
@@ -64,14 +81,40 @@ private _urgencyIndex = 0;
 } forEach _urgencies;
 _urgencyCombo lbSetCurSel _urgencyIndex;
 
+if (!isNull _sourceCombo) then {
+    private _sourceIndex = 0;
+    if (_draftSource isNotEqualTo "") then {
+        for "_i" from 0 to (lbSize _sourceCombo - 1) do {
+            if ((_sourceCombo lbData _i) isEqualTo _draftSource) exitWith { _sourceIndex = _i; };
+        };
+    };
+    _sourceCombo lbSetCurSel _sourceIndex;
+};
+
 // Thèmes valides seulement : un référentiel qui évolue ne doit pas ressortir
-// des codes inconnus d’un vieux brouillon.
+// des codes inconnus d’un vieux brouillon. Les anciens intitulés sont traduits.
 private _themes = _catalog getOrDefault ["themes", []];
 private _themeCodes = _themes apply { _x select 0 };
+private _legacyThemes = createHashMapFromArray [
+    ["securite_publique", "SECUR"],
+    ["menace_armee", "INSURG"],
+    ["engins_explosifs", "CBRNE"],
+    ["ordre_public", "INSURG"],
+    ["trafics", "FINANCE"],
+    ["mouvements", "MOUV"],
+    ["population", "CIVIL"],
+    ["infrastructures", "INFRA"],
+    ["communications", "COMMS"],
+    ["logistique", "LOGIST"],
+    ["environnement", "METEO"],
+    ["divers", "GENERAL"]
+];
 private _selected = [];
 {
-    if ((_x isEqualType "") && {_x in _themeCodes} && {!(_x in _selected)}) then {
-        _selected pushBack _x;
+    if (!(_x isEqualType "")) then { continue };
+    private _code = _legacyThemes getOrDefault [toLower _x, toUpper _x];
+    if ((_code in _themeCodes) && {!(_code in _selected)}) then {
+        _selected pushBack _code;
     };
 } forEach _draftThemes;
 uiNamespace setVariable ["COMSPEC_IntelNote_Themes", _selected];

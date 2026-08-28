@@ -111,8 +111,13 @@ final class ComspecApiKeyAuth
         }
         $raw = self::$rawJsonCache;
         if ($raw === null) {
-            $got = file_get_contents('php://input');
-            $raw = is_string($got) ? $got : '';
+            if (HttpJsonBody::isMultipart()) {
+                self::$rawJsonCache = '';
+                self::$jsonObjectCache = HttpJsonBody::postFields();
+
+                return self::$jsonObjectCache;
+            }
+            $raw = HttpJsonBody::rawJson();
             self::$rawJsonCache = $raw;
         }
         if (trim($raw) === '') {

@@ -585,6 +585,7 @@ if (hasInterface) then {
     missionNamespace setVariable ["COMSPEC_lastMedical", "", false];
     missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
     missionNamespace setVariable ["COMSPEC_lastMedicalAlertAt", -1e9, false];
+    missionNamespace setVariable ["COMSPEC_IcemanMedicalPushed", createHashMap, false];
     missionNamespace setVariable ["COMSPEC_MedicalAlertsSeen", [], false];
     missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", false, false];
     missionNamespace setVariable ["COMSPEC_MedicalAlerts", [], false];

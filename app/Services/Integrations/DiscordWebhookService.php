@@ -23,12 +23,19 @@ final class DiscordWebhookService
             return false;
         }
         $host = strtolower((string) ($parts['host'] ?? ''));
+        if (str_starts_with($host, 'www.')) {
+            $host = substr($host, 4);
+        }
+        $path = (string) ($parts['path'] ?? '');
+        if (!str_contains($path, '/api/webhooks/')) {
+            return false;
+        }
 
         return $host === 'discord.com' || $host === 'discordapp.com';
     }
 
     /** @return array{ok:bool, error?:string} */
-    public function send(string $webhookUrl, string $content, ?string $username = null): array
+    public function send(string $webhookUrl, string $content, ?string $username = null, int $timeoutSeconds = self::TIMEOUT_SECONDS): array
     {
         $payload = [];
         $content = trim($content);
@@ -40,7 +47,7 @@ final class DiscordWebhookService
             $payload['username'] = mb_substr($username, 0, 80);
         }
 
-        return $this->post($webhookUrl, $payload);
+        return $this->post($webhookUrl, $payload, $timeoutSeconds);
     }
 
     /**
@@ -62,7 +69,8 @@ final class DiscordWebhookService
         string $webhookUrl,
         array $embed,
         ?string $content = null,
-        ?string $username = null
+        ?string $username = null,
+        int $timeoutSeconds = self::TIMEOUT_SECONDS
     ): array {
         $payload = [];
         $content = trim((string) $content);
@@ -140,14 +148,14 @@ final class DiscordWebhookService
             $payload['embeds'] = [$clean];
         }
 
-        return $this->post($webhookUrl, $payload);
+        return $this->post($webhookUrl, $payload, $timeoutSeconds);
     }
 
     /**
      * @param array<string, mixed> $payload
      * @return array{ok:bool, error?:string}
      */
-    private function post(string $webhookUrl, array $payload): array
+    private function post(string $webhookUrl, array $payload, int $timeoutSeconds = self::TIMEOUT_SECONDS): array
     {
         if (!$this->isValidWebhookUrl($webhookUrl)) {
             return ['ok' => false, 'error' => 'Lien Discord invalide. Vérifiez le relais configuré dans les réglages de la communauté.'];
@@ -156,14 +164,15 @@ final class DiscordWebhookService
             return ['ok' => false, 'error' => 'Message vide.'];
         }
 
+        $timeout = max(2, min(12, $timeoutSeconds));
         $ch = curl_init($webhookUrl);
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_TIMEOUT => self::TIMEOUT_SECONDS,
-            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => min(4, $timeout),
         ]);
         curl_exec($ch);
         $errno = curl_errno($ch);

@@ -198,6 +198,28 @@ class AtakController
 
         $atakProfileHints = (new AtakSessionProfileHintService())->build($currentUser, $tenantId);
 
+        $atakTenantLabel = '';
+        $atakCommunityMemberships = [];
+        if ($tenantId > 0) {
+            try {
+                $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tenantId);
+                if (is_array($tenantRow)) {
+                    $atakTenantLabel = community_display_name($tenantRow);
+                }
+            } catch (\Throwable) {
+            }
+            $email = trim((string) Session::get('email'));
+            if ($email !== '') {
+                try {
+                    $atakCommunityMemberships = $this->userRepository->filterSwitchableTenantsForUser(
+                        $this->userRepository->listTenantsForEmail($email)
+                    );
+                } catch (\Throwable) {
+                    $atakCommunityMemberships = [];
+                }
+            }
+        }
+
         $phoneOperatorSession = null;
         $phoneToken = trim((string) Session::get('atak_phone_pairing_token', ''));
         if ($phoneToken !== '' && !$currentUser) {
@@ -256,7 +278,13 @@ class AtakController
             'atakMaintenanceActive' => $tenantId > 0 && $this->atakConfigRepository->isMaintenanceEnabled($tenantId),
             'atakMaintenanceMessage' => $tenantId > 0 ? $this->atakConfigRepository->getMaintenanceMessage($tenantId) : '',
             'phoneOperatorSession' => $phoneOperatorSession,
-        ]);
+            'atakTenantMarkerIcons' => ($tenantId > 0)
+                ? (new \App\Services\Tactical\AtakMarkerIconsService())->publicPayload($tenantId)
+                : ['assignments' => [], 'library' => []],
+            'atakTenantLabel' => $atakTenantLabel,
+            'atakCommunityMemberships' => $atakCommunityMemberships,
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+            ->header('Pragma', 'no-cache');
     }
 
     /**

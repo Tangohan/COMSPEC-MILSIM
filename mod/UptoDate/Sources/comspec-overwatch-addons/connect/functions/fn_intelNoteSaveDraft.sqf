@@ -27,6 +27,10 @@ private _urgencyCombo = _disp displayCtrl 9657;
 private _urgencyIdx = lbCurSel _urgencyCombo;
 private _urgency = if (_urgencyIdx >= 0) then { _urgencyCombo lbData _urgencyIdx } else { "routine" };
 
+private _sourceCombo = _disp displayCtrl 9658;
+private _sourceIdx = lbCurSel _sourceCombo;
+private _source = if (_sourceIdx >= 0) then { _sourceCombo lbData _sourceIdx } else { "" };
+
 private _themes = uiNamespace getVariable ["COMSPEC_IntelNote_Themes", []];
 if (!(_themes isEqualType [])) then { _themes = []; };
 
@@ -37,6 +41,7 @@ profileNamespace setVariable ["COMSPEC_IntelNote_Draft", [
     trim (["value", "place"] call comspec_overwatch_connect_fnc_intelNoteCache),
     _kind,
     _urgency,
-    _themes
+    _themes,
+    _source
 ]];
 saveProfileNamespace;

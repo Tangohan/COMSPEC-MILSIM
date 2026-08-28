@@ -41,6 +41,8 @@ use App\Services\Sse\SseMeshService;
 use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseReportService;
 use App\Services\Sse\SseTerrainService;
+use App\Services\Sse\SseTransmissionDiscordService;
+use App\Services\Sse\SseTransmissionPdfService;
 use App\Services\Media\ImageCompressionService;
 use App\Services\Sse\SseWorkspaceService;
 use App\Services\Tactical\AtakActivityLogService;
@@ -408,43 +410,23 @@ final class SsePortalController
      */
     public function transmissionsIndex(Request $request, array $params = []): Response
     {
-        $filtersUi = [
-            'q' => trim((string) $request->query('q', '')),
-            'event_type' => strtoupper(trim((string) $request->query('event_type', ''))),
-            'source' => trim((string) $request->query('source', 'TERRAIN')),
-            'since' => trim((string) $request->query('since', '')),
-        ];
-
-        $listFilters = [
-            'limit' => 100,
-            'q' => $filtersUi['q'] !== '' ? $filtersUi['q'] : null,
-            'event_type' => $filtersUi['event_type'] !== '' ? $filtersUi['event_type'] : null,
-            'since' => $filtersUi['since'] !== '' ? $filtersUi['since'] . ' 00:00:00' : null,
-        ];
-
-        $source = strtoupper($filtersUi['source']);
-        if ($source === 'TERRAIN' || $source === '') {
-            $listFilters['source_systems'] = SseIntelEventRepository::armaTerrainSourceSystems();
-            $filtersUi['source'] = 'TERRAIN';
-        } elseif ($source !== 'ALL') {
-            $listFilters['source_system'] = $source;
-        }
-
-        $events = $this->intelEvents->listForTenant($this->tenantId(), array_filter(
-            $listFilters,
-            static fn (mixed $v): bool => $v !== null && $v !== ''
-        ));
+        $filters = $this->transmissionFilters($request);
+        $events = $this->intelEvents->listForTenant($this->tenantId(), $filters['list']);
+        $discord = new SseTransmissionDiscordService();
 
         return $this->portalView('atak.sse.transmissions', [
             'title' => 'Transmissions terrain',
             'events' => $events,
-            'filters' => $filtersUi,
+            'filters' => $filters['ui'],
             'eventTypes' => SseIntelEventRepository::eventTypeOptions(),
             'sourceOptions' => array_merge(
                 ['TERRAIN' => 'Toutes les sources terrain (Arma)', 'ALL' => 'Toutes les sources'],
                 SseIntelEventRepository::sourceSystemOptions()
             ),
             'canManage' => $this->canManage(),
+            'discordRelays' => $this->canManage() ? $discord->publicRelays($this->tenantId()) : [],
+            'useCommunityRelay' => $discord->usesCommunityRelay($this->tenantId()),
+            'communityRelayReady' => $discord->communityRelayReady($this->tenantId()),
             'activeNav' => 'transmissions',
         ]);
     }
@@ -502,6 +484,152 @@ final class SsePortalController
             'canManage' => $this->canManage(),
             'activeNav' => 'transmissions',
         ]);
+    }
+
+    public function transmissionsPdf(Request $request, array $params = []): Response
+    {
+        $filters = $this->transmissionFilters($request);
+        $events = $this->intelEvents->listForTenant($this->tenantId(), $filters['list']);
+
+        return (new SseTransmissionPdfService())->exportJournal($events);
+    }
+
+    public function transmissionPdf(Request $request, array $params = []): Response
+    {
+        $event = $this->intelEvents->findById($this->tenantId(), (int) ($params['id'] ?? 0));
+        if ($event === null) {
+            Session::flash('error', 'Transmission introuvable.');
+
+            return Response::redirect(url('atak/sse/transmissions'));
+        }
+        $payload = is_array($event['payload'] ?? null) ? $event['payload'] : [];
+        $sections = [];
+        foreach (SseIntelEventRepository::flattenPayloadRows($payload) as $row) {
+            $sec = (string) ($row['section'] ?? 'Compléments');
+            $sections[$sec][] = $row;
+        }
+
+        return (new SseTransmissionPdfService())->exportEvent($event, $sections);
+    }
+
+    public function transmissionDiscordStore(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/transmissions'));
+        }
+        $result = (new SseTransmissionDiscordService())->addRelay(
+            $this->tenantId(),
+            (string) $request->input('label', ''),
+            (string) $request->input('discord_url', '')
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('atak/sse/transmissions'));
+    }
+
+    public function transmissionDiscordCommunity(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/transmissions'));
+        }
+        $enabled = $request->input('use_community_relay') === '1'
+            || $request->input('use_community_relay') === 'on';
+        $result = (new SseTransmissionDiscordService())->setUseCommunityRelay($this->tenantId(), $enabled);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('atak/sse/transmissions'));
+    }
+
+    public function transmissionDiscordDelete(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/transmissions'));
+        }
+        $result = (new SseTransmissionDiscordService())->removeRelay(
+            $this->tenantId(),
+            (string) ($params['relayId'] ?? '')
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('atak/sse/transmissions'));
+    }
+
+    public function transmissionDiscordTest(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/transmissions'));
+        }
+        $result = (new SseTransmissionDiscordService())->sendTest(
+            $this->tenantId(),
+            (string) ($params['relayId'] ?? '')
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('atak/sse/transmissions'));
+    }
+
+    public function transmissionDiscordSend(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/transmissions'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $event = $this->intelEvents->findById($this->tenantId(), $id);
+        if ($event === null) {
+            Session::flash('error', 'Transmission introuvable.');
+
+            return Response::redirect(url('atak/sse/transmissions'));
+        }
+        $result = (new SseTransmissionDiscordService())->publishEvent($this->tenantId(), $event);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('atak/sse/transmissions/' . $id));
+    }
+
+    /**
+     * @return array{ui: array{q:string,event_type:string,source:string,since:string}, list: array<string, mixed>}
+     */
+    private function transmissionFilters(Request $request): array
+    {
+        $filtersUi = [
+            'q' => trim((string) $request->query('q', '')),
+            'event_type' => strtoupper(trim((string) $request->query('event_type', ''))),
+            'source' => trim((string) $request->query('source', 'TERRAIN')),
+            'since' => trim((string) $request->query('since', '')),
+        ];
+
+        $listFilters = [
+            'limit' => 100,
+            'q' => $filtersUi['q'] !== '' ? $filtersUi['q'] : null,
+            'event_type' => $filtersUi['event_type'] !== '' ? $filtersUi['event_type'] : null,
+            'since' => $filtersUi['since'] !== '' ? $filtersUi['since'] . ' 00:00:00' : null,
+        ];
+
+        $source = strtoupper($filtersUi['source']);
+        if ($source === 'TERRAIN' || $source === '') {
+            $listFilters['source_systems'] = SseIntelEventRepository::armaTerrainSourceSystems();
+            $filtersUi['source'] = 'TERRAIN';
+        } elseif ($source !== 'ALL') {
+            $listFilters['source_system'] = $source;
+        }
+
+        return [
+            'ui' => $filtersUi,
+            'list' => array_filter(
+                $listFilters,
+                static fn (mixed $v): bool => $v !== null && $v !== ''
+            ),
+        ];
     }
 
     public function interestCaseCreateForm(Request $request, array $params = []): Response
@@ -3699,18 +3827,16 @@ final class SsePortalController
         $people = $this->clearance->redactPeopleForScreens([$person], $this->tenantId(), null);
         $person = $people[0] ?? $person;
 
-        $tech = !empty($person['biometrics_simulated']) ? 72 : 48;
-        $corro = !empty($person['primary_photo']) ? 55 : 25;
         $terrain = [];
         try {
             $terrain = $this->terrain->personTerrainDossier($this->tenantId(), $person);
-            if (($terrain['acquisition_quality_avg'] ?? null) !== null) {
-                $tech = (int) $terrain['acquisition_quality_avg'];
-            }
         } catch (\Throwable) {
             $terrain = [];
         }
-        $global = (int) min(95, round(($tech + $corro + 40) / 2.2));
+        $samples = is_array($terrain['biometric_samples'] ?? null) ? $terrain['biometric_samples'] : [];
+        $tech = ($terrain['acquisition_quality_avg'] ?? null) !== null
+            ? (int) $terrain['acquisition_quality_avg']
+            : null;
         $stamp = (string) ($person['created_at'] ?? '');
         $timeline = [
             [
@@ -3720,38 +3846,22 @@ final class SsePortalController
                 'kind' => 'fait',
             ],
         ];
-        if (!empty($person['biometrics_simulated'])) {
+        if ($samples !== []) {
             $timeline[] = [
                 'at' => strlen($stamp) >= 16 ? substr($stamp, 11, 5) : date('H:i'),
                 'title' => 'Relevé biométrique',
-                'detail' => 'Biométrie simulée associée à la fiche',
+                'detail' => 'Relevé transmis par le terminal',
                 'kind' => 'observation',
             ];
         }
-
-        $samples = is_array($terrain['biometric_samples'] ?? null) ? $terrain['biometric_samples'] : [];
-        $bioPrints = 'Non relevées';
-        $bioIris = 'Non relevé';
-        foreach ($samples as $s) {
-            if (($s['kind'] ?? '') === 'empreintes') {
-                $q = $s['quality'] ?? null;
-                $bioPrints = $q !== null
-                    ? sprintf('Relevées — %s (%d %%)', $s['quality_label'] ?? '', (int) $q)
-                    : 'Relevées';
-            }
-            if (($s['kind'] ?? '') === 'iris') {
-                $q = $s['quality'] ?? null;
-                $bioIris = $q !== null
-                    ? sprintf('Relevé — %s (%d %%)', $s['quality_label'] ?? '', (int) $q)
-                    : 'Relevé';
-            }
-        }
-        if ($bioPrints === 'Non relevées' && !empty($person['biometrics_simulated'])) {
-            $bioPrints = 'Relevées (sim.)';
-        }
-        if ($bioIris === 'Non relevé' && !empty($person['biometrics_simulated'])) {
-            $bioIris = 'Relevé (sim.)';
-        }
+        $fromArma = !empty($person['from_arma']);
+        $confRaw = strtolower(trim((string) ($person['confidence_level'] ?? '')));
+        $confLabel = match ($confRaw) {
+            'faible' => 'Faible',
+            'moyenne' => 'Moyenne',
+            'elevee', 'élevée' => 'Élevée',
+            default => '—',
+        };
 
         return $this->portalView('atak.sse.person_show', [
             'title' => 'IDN-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT) . ' — ' . (string) ($person['display_name'] ?? ''),
@@ -3759,48 +3869,53 @@ final class SsePortalController
             'terrain' => $terrain,
             'objectMeta' => [
                 'ref' => 'IDN-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT),
-                'priority' => $global >= 70 ? 'élevée' : 'normale',
-                'classification' => 'Confidentiel',
+                'priority' => '—',
+                'classification' => '—',
                 'last_seen' => (string) ($person['updated_at'] ?? $person['created_at'] ?? '—'),
-                'bio_prints' => $bioPrints,
-                'bio_iris' => $bioIris,
-                'terminal' => 'SEEK / ATAK',
-                'collector' => (string) ($person['submitter_callsign'] ?? '—'),
-                'source' => 'Terminal terrain',
-                'import' => 'Automatique',
-                'integrity' => 'Vérifiée',
+                'bio_prints' => SseTerrainService::biometricModalityLabel($samples, 'empreintes'),
+                'bio_iris' => SseTerrainService::biometricModalityLabel($samples, 'iris'),
+                'bio_dna' => SseTerrainService::biometricModalityLabel($samples, 'adn'),
+                'terminal' => SseTerrainService::personTerminalLabel($person),
+                'collector' => trim((string) ($person['submitter_callsign'] ?? '')) !== ''
+                    ? (string) $person['submitter_callsign']
+                    : '—',
+                'source' => $fromArma ? 'Terrain' : '—',
+                'import' => $fromArma ? 'Transmise' : '—',
+                'integrity' => '—',
             ],
             'relationCounts' => [
                 'Personnes' => 0,
                 'Véhicules' => 0,
                 'Sites' => 0,
-                'Terminaux' => 1,
+                'Terminaux' => $fromArma ? 1 : 0,
                 'Organisations' => !empty($person['affiliation']) ? 1 : 0,
                 'Événements' => count($timeline),
             ],
             'confidence' => [
-                'source' => 'C',
-                'credibility' => '3',
+                'source' => '—',
+                'credibility' => '—',
                 'technical' => $tech,
-                'corroboration' => $corro,
-                'global' => $global,
+                'corroboration' => null,
+                'global' => $tech,
             ],
             'reasoning' => [
-                'conclusion' => 'Identité non confirmée — éléments partiels, à croiser.',
-                'confidence_label' => $global >= 70 ? 'Élevée' : ($global >= 45 ? 'Moyenne' : 'Faible'),
+                'conclusion' => $samples !== [] || !empty($person['primary_photo'])
+                    ? 'Éléments transmis par le terrain — à croiser, sans confirmation automatique.'
+                    : 'Aucun relevé biométrique ni photo n’a été transmis pour cette fiche.',
+                'confidence_label' => $confLabel,
                 'pros' => array_values(array_filter([
-                    !empty($person['primary_photo']) ? 'Photographie faciale disponible' : null,
-                    !empty($person['biometrics_simulated']) || $samples !== [] ? 'Relevé biométrique présent' : null,
+                    !empty($person['primary_photo']) ? 'Photographie faciale transmise' : null,
+                    $samples !== [] ? 'Relevé biométrique transmis' : null,
                     !empty($person['affiliation']) ? 'Affiliation déclarée' : null,
-                    !empty($terrain['subject_id']) ? 'Identifiant sujet attribué' : null,
                 ])),
                 'cons' => array_values(array_filter([
-                    empty($person['nationality']) ? 'Nationalité non confirmée' : null,
-                    empty($person['id_document_present']) ? 'Document d’identité absent' : null,
-                    (($terrain['identity_tier'] ?? '') !== 'CONFIRMED') ? 'Identité non confirmée par analyse' : null,
+                    empty($person['nationality']) ? 'Nationalité non renseignée' : null,
+                    empty($person['id_document_present']) ? 'Document d’identité non transmis' : null,
                 ])),
-                'revised_at' => date('d/m/Y H:i') . 'Z',
-                'analyst' => 'Cellule SSE',
+                'revised_at' => (string) ($person['updated_at'] ?? $person['created_at'] ?? '—'),
+                'analyst' => trim((string) ($person['submitter_callsign'] ?? '')) !== ''
+                    ? (string) $person['submitter_callsign']
+                    : '—',
             ],
             'timeline' => $timeline,
             'provenance' => [],

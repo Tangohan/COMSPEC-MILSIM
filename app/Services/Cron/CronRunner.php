@@ -40,8 +40,22 @@ final class CronRunner
     {
         $results = [];
         $allOk = true;
+        $force = $triggerSource === 'admin' || ($onlyKey !== null && $onlyKey !== '');
+        $latest = $force ? [] : $this->runs->latestByJobKey();
         foreach ($this->jobs as $job) {
             if ($onlyKey !== null && $onlyKey !== '' && $job->key() !== $onlyKey) {
+                continue;
+            }
+            $key = $job->key();
+            if (!$force && !CronSchedule::isDue($key, $latest[$key] ?? null)) {
+                $results[] = [
+                    'ok' => true,
+                    'skipped' => true,
+                    'job' => $key,
+                    'label' => $job->label(),
+                    'summary' => 'Reporté : dernier passage trop récent',
+                    'details' => [],
+                ];
                 continue;
             }
             $results[] = $this->runOne($job, $triggerSource);

@@ -1,3 +1,6 @@
+if (isServer) then {
+    [] call comspec_overwatch_connect_fnc_initProxyTrackServer;
+};
 if (!hasInterface) exitWith {};
 
 ["INFO", "Boot", "PostInit client — warmup extension"] call comspec_overwatch_connect_fnc_log;
@@ -234,6 +237,13 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         [false] call comspec_overwatch_connect_fnc_syncCallsignFromAthena;
     };
 
+    // Inconscient / hors combat → liste PANIC IceMan (tous les téléphones ATAK)
+    if (isNil "COMSPEC_IcemanMedicalPanicEH") then {
+        COMSPEC_IcemanMedicalPanicEH = ["COMSPEC_IcemanMedicalPanic", {
+            (_this + [false]) call comspec_overwatch_connect_fnc_pushIcemanMedicalAlert;
+        }] call CBA_fnc_addEventHandler;
+    };
+
     // Alerte immédiate dès le passage KO (ACE) — le PFH position couvre aussi FC=0 / KAT
     if (isNil "COMSPEC_aceUnconsciousEH") then {
         COMSPEC_aceUnconsciousEH = ["ace_unconscious", {
@@ -340,6 +350,7 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     missionNamespace setVariable ["COMSPEC_MedicalAlertBusy", false, false];
     missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
     missionNamespace setVariable ["COMSPEC_lastMedicalAlertAt", -1e9, false];
+    missionNamespace setVariable ["COMSPEC_IcemanMedicalPushed", createHashMap, false];
     missionNamespace setVariable ["COMSPEC_RespawnGraceUntil", -1e9, false];
     missionNamespace setVariable ["COMSPEC_SuppressWinMessageBoxUntil", -1e9, false];
     missionNamespace setVariable ["COMSPEC_CancelPendingAthenaHelp", false, false];

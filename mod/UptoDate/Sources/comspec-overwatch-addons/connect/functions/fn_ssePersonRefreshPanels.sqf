@@ -83,7 +83,7 @@ if (_queryPending) then {
 private _bioTxt = if ((count _lines) > 0) then {
     (_lines joinString "<br/>") + "<br/>" + _verdict
 } else {
-    "<t size='0.48' color='#5f7383'>Aucun prélèvement. Présentez la personne au lecteur.</t>"
+    "<t size='0.62' color='#a8c8bc'>Aucun prélèvement. Présentez la personne au lecteur.</t>"
 };
 (_disp displayCtrl 9522) ctrlSetStructuredText parseText _bioTxt;
 
@@ -91,13 +91,13 @@ private _bioTxt = if ((count _lines) > 0) then {
 private _sig = uiNamespace getVariable ["COMSPEC_SsePerson_Signature", []];
 private _sigTxt = if ((_sig isEqualType []) && {(count _sig) >= 4}) then {
     format [
-        "<t size='0.52' color='#7ee0a0'>Signé  %1</t><br/><t size='0.44' color='#8aa0b0'>%2  ·  %3</t>",
+        "<t size='0.62' color='#7ee0a0'>Signé  %1</t><br/><t size='0.56' color='#c8eadc'>%2  ·  %3</t>",
         _sig select 0,
         _sig select 1,
         _sig select 3
     ]
 } else {
-    "<t size='0.52' color='#e0b07e'>Non signé</t><br/><t size='0.44' color='#8aa0b0'>La fiche partira sans procès-verbal.</t>"
+    "<t size='0.64' color='#f0c070'>Non signé</t><br/><t size='0.56' color='#c8eadc'>La fiche partira sans procès-verbal.</t>"
 };
 (_disp displayCtrl 9520) ctrlSetStructuredText parseText _sigTxt;
 
@@ -157,7 +157,7 @@ _extra pushBack format [
 ];
 
 (_disp displayCtrl 9526) ctrlSetStructuredText parseText format [
-    "<t size='0.46' align='right' color='#c8d4e0'>%1  ·  %2  ·  %3</t>",
+    "<t size='0.56' align='right' color='#d8f0e6'>%1  ·  %2  ·  %3</t>",
     _linkTxt,
     _caseTxt,
     _extra joinString "  ·  "

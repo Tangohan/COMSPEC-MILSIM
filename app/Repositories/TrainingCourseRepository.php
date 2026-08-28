@@ -120,6 +120,60 @@ class TrainingCourseRepository
     }
 
     /**
+     * Un même slug ne doit apparaître qu’une fois : la copie de la communauté
+     * masque le parcours « toute la plateforme ».
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    public static function collapseDuplicateCatalogRows(array $rows, int $viewerTenantId): array
+    {
+        $bySlug = [];
+        $order = [];
+        foreach ($rows as $row) {
+            $slug = strtolower(trim((string) ($row['slug'] ?? '')));
+            if ($slug === '') {
+                $slug = '__id:' . (int) ($row['id'] ?? 0);
+            }
+            if (!isset($bySlug[$slug])) {
+                $bySlug[$slug] = $row;
+                $order[] = $slug;
+                continue;
+            }
+            if (self::catalogRowPreferredOver($row, $bySlug[$slug], $viewerTenantId)) {
+                $bySlug[$slug] = $row;
+            }
+        }
+
+        $out = [];
+        foreach ($order as $slug) {
+            $out[] = $bySlug[$slug];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $candidate
+     * @param array<string, mixed> $current
+     */
+    private static function catalogRowPreferredOver(array $candidate, array $current, int $viewerTenantId): bool
+    {
+        $candMine = (int) ($candidate['tenant_id'] ?? 0) === $viewerTenantId;
+        $currMine = (int) ($current['tenant_id'] ?? 0) === $viewerTenantId;
+        if ($candMine !== $currMine) {
+            return $candMine;
+        }
+        $candCommunity = (($candidate['lms_scope'] ?? self::LMS_SCOPE_TENANT) !== self::LMS_SCOPE_PLATFORM);
+        $currCommunity = (($current['lms_scope'] ?? self::LMS_SCOPE_TENANT) !== self::LMS_SCOPE_PLATFORM);
+        if ($candCommunity !== $currCommunity) {
+            return $candCommunity;
+        }
+
+        return false;
+    }
+
+    /**
      * Formations publiées pour le carrousel dashboard (ordre vitrine, puis date de cycle, puis titre).
      *
      * @return array<int, array<string, mixed>>
@@ -128,13 +182,19 @@ class TrainingCourseRepository
     {
         $limit = max(1, min(50, $limit));
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM training_courses WHERE visibility = 'published' AND ("
-            . '(tenant_id = ? AND COALESCE(lms_scope, \'tenant\') = \'tenant\') OR lms_scope = \'platform\''
-            . ') ORDER BY (showcase_sort_order IS NULL) ASC, showcase_sort_order ASC, (showcase_cycle_date IS NULL) ASC, showcase_cycle_date ASC, title ASC '
-            . 'LIMIT ' . $limit
+            "SELECT * FROM training_courses c WHERE c.visibility = 'published' AND ("
+            . '(c.tenant_id = ? AND COALESCE(c.lms_scope, \'tenant\') = \'tenant\')'
+            . ' OR (c.lms_scope = \'platform\' AND NOT EXISTS ('
+            . 'SELECT 1 FROM training_courses t WHERE t.visibility = \'published\''
+            . ' AND t.tenant_id = ? AND COALESCE(t.lms_scope, \'tenant\') = \'tenant\' AND t.slug = c.slug'
+            . '))'
+            . ') ORDER BY (c.showcase_sort_order IS NULL) ASC, c.showcase_sort_order ASC, (c.showcase_cycle_date IS NULL) ASC, c.showcase_cycle_date ASC, c.title ASC '
+            . 'LIMIT ' . ($limit * 2)
         );
-        $stmt->execute([$tenantId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute([$tenantId, $tenantId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return array_slice(self::collapseDuplicateCatalogRows($rows, $tenantId), 0, $limit);
     }
 
     public function findById(int $id, ?int $tenantId = null): ?array

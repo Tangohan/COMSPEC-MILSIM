@@ -194,6 +194,51 @@ final class SseTerrainService
     }
 
     /**
+     * Libellé d’un relevé tel que transmis (jamais inventé).
+     *
+     * @param list<array<string, mixed>> $samples
+     */
+    public static function biometricModalityLabel(array $samples, string $kind): string
+    {
+        $absent = $kind === 'empreintes' ? 'Non relevées' : 'Non relevé';
+        foreach ($samples as $s) {
+            if (($s['kind'] ?? '') !== $kind) {
+                continue;
+            }
+            $q = $s['quality'] ?? null;
+            if ($q === null || $q === '') {
+                return $kind === 'empreintes' ? 'Relevées' : 'Relevé';
+            }
+            $n = max(0, min(100, (int) $q));
+            $label = trim((string) ($s['quality_label'] ?? self::qualityLabel($n)));
+
+            return $kind === 'empreintes'
+                ? sprintf('Relevées — %s (%d %%)', $label, $n)
+                : sprintf('Relevé — %s (%d %%)', $label, $n);
+        }
+
+        return $absent;
+    }
+
+    /**
+     * Terminal affiché : uniquement s’il a été signé / transmis, sans libellé générique inventé.
+     *
+     * @param array<string, mixed> $person
+     */
+    public static function personTerminalLabel(array $person): string
+    {
+        $sig = is_array($person['signature'] ?? null) ? $person['signature'] : [];
+        if (trim((string) ($sig['callsign'] ?? '')) !== '' || trim((string) ($sig['terminal_uid'] ?? '')) !== '') {
+            return 'Signé depuis le terrain';
+        }
+        if (!empty($person['from_arma'])) {
+            return 'Terminal terrain';
+        }
+
+        return '—';
+    }
+
+    /**
      * Enrichit une fiche personne pour l’UI / API terrain.
      *
      * @return array<string, mixed>

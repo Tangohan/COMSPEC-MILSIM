@@ -54,6 +54,10 @@ private _urgencyIdx = lbCurSel _urgencyCombo;
 private _urgency = if (_urgencyIdx >= 0) then { _urgencyCombo lbData _urgencyIdx } else { "routine" };
 if (_urgency isEqualTo "") then { _urgency = "routine"; };
 
+private _sourceCombo = _disp displayCtrl 9658;
+private _sourceIdx = lbCurSel _sourceCombo;
+private _source = if (_sourceIdx >= 0) then { _sourceCombo lbData _sourceIdx } else { "" };
+
 private _place = trim (["value", "place"] call comspec_overwatch_connect_fnc_intelNoteCache);
 private _grid = trim (["value", "grid"] call comspec_overwatch_connect_fnc_intelNoteCache);
 if (_grid isEqualTo "") then { _grid = mapGridPosition player; };
@@ -138,6 +142,7 @@ private _parts = [
     format ['"note_kind":"%1"', [_kind] call _escape],
     format ['"themes":[%1]', _themeArr joinString ","],
     format ['"urgency":"%1"', [_urgency] call _escape],
+    format ['"intel_source":"%1"', [_source] call _escape],
     format ['"place_label":"%1"', [_place] call _escape],
     format ['"grid_reference":"%1"', [_grid] call _escape],
     format ['"pos_x":%1', (_pos select 0) toFixed 2],

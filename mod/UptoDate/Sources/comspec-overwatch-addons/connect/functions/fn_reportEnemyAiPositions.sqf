@@ -16,6 +16,7 @@ private _sent = 0;
     if (isNull _leader || {!alive _leader}) then { continue };
     if (isPlayer _leader) then { continue };
     if (!(_leader isKindOf "CAManBase")) then { continue };
+    if !([_leader] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
     if ([_leader] call comspec_overwatch_connect_fnc_reportEnemyPosition) then {
         _sent = _sent + 1;
     };

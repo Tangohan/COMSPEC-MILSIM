@@ -138,9 +138,13 @@ if (!isNull _target) then {
     };
 
     private _etat = if (alive _target) then { "" } else { " — personne décédée" };
+    private _cible = trim (format ["%1 %2", _edenFirst, _edenLast]);
+    if (_cible isEqualTo "") then { _cible = _edenAlias; };
+    if (_cible isEqualTo "") then { _cible = name _target; };
+    if (_cible isEqualTo "" || {_cible find "Error:" >= 0}) then { _cible = "personne visée"; };
     (_disp displayCtrl 9500) ctrlSetStructuredText parseText format [
-        "<t align='center' size='0.55' color='#8aa0b4'>Cible : %1%2 — inventaire et statut préremplis si disponibles.</t>",
-        name _target,
+        "<t align='center' size='0.64' color='#c8eadc'>Cible : %1%2 — inventaire et statut préremplis si disponibles.</t>",
+        _cible,
         _etat
     ];
 };
@@ -152,13 +156,13 @@ for "_i" from 0 to (lbSize _status) - 1 do {
 };
 
 private _wTxt = if ((count _weaponsLines) > 0) then {
-    format ["<t size='0.55' color='#e8f4f0'>Armes : %1</t>", _weaponsLines joinString ", "]
+    format ["<t size='0.64' color='#e8f4f0'>Armes : %1</t>", _weaponsLines joinString ", "]
 } else {
-    "<t size='0.55' color='#8aa0b4'>Aucune arme détectée.</t>"
+    "<t size='0.64' color='#c8eadc'>Aucune arme détectée.</t>"
 };
 private _eTxt = if ((count _equipmentLines) > 0) then {
     private _sample = _equipmentLines select [0, (count _equipmentLines) min 8];
-    format ["<br/><t size='0.52' color='#8aa0b4'>Équipement : %1</t>", _sample joinString ", "]
+    format ["<br/><t size='0.62' color='#c8eadc'>Équipement : %1</t>", _sample joinString ", "]
 } else {
     ""
 };
@@ -174,7 +178,7 @@ if (!isNull _target) then {
 };
 uiNamespace setVariable ["COMSPEC_SsePerson_Medical", _med];
 
-private _medTxt = "<t size='0.48' color='#5f7383'>Aucune personne visée — constat indisponible.</t>";
+private _medTxt = "<t size='0.62' color='#a8c8bc'>Aucune personne visée — constat indisponible.</t>";
 if (_med isEqualType createHashMap && {(count _med) > 0}) then {
     private _etat = _med getOrDefault ["etat", "inconnu"];
     private _col = switch (_etat) do {
@@ -186,21 +190,21 @@ if (_med isEqualType createHashMap && {(count _med) > 0}) then {
         default { "#7ee0a0" };
     };
     private _rows = [format [
-        "<t size='0.48' color='#7f95a8'>État</t>  <t size='0.48' color='%1'>%2</t>",
+        "<t size='0.62' color='#b8ddd0'>État</t>  <t size='0.62' color='%1'>%2</t>",
         _col,
         _med getOrDefault ["etat_label", "Inconnu"]
     ]];
     private _pouls = _med getOrDefault ["pouls", -1];
     if (_pouls > 0) then {
-        _rows pushBack format ["<t size='0.48' color='#7f95a8'>Pouls</t>  <t size='0.48' color='#c8e8ff'>%1/min</t>", _pouls];
+        _rows pushBack format ["<t size='0.62' color='#b8ddd0'>Pouls</t>  <t size='0.62' color='#e8fff4'>%1/min</t>", _pouls];
     };
     private _sang = _med getOrDefault ["sang", -1];
     if (_sang >= 0 && {_sang < 100}) then {
-        _rows pushBack format ["<t size='0.48' color='#7f95a8'>Volémie</t>  <t size='0.48' color='#c8e8ff'>≈ %1%2</t>", _sang, "%"];
+        _rows pushBack format ["<t size='0.62' color='#b8ddd0'>Volémie</t>  <t size='0.62' color='#e8fff4'>≈ %1%2</t>", _sang, "%"];
     };
     private _les = _med getOrDefault ["lesions", []];
     if ((_les isEqualType []) && {(count _les) > 0}) then {
-        _rows pushBack format ["<t size='0.48' color='#7f95a8'>Lésions</t>  <t size='0.48' color='#c8e8ff'>%1</t>", _les joinString ", "];
+        _rows pushBack format ["<t size='0.62' color='#b8ddd0'>Lésions</t>  <t size='0.62' color='#e8fff4'>%1</t>", _les joinString ", "];
     };
     _medTxt = _rows joinString "<br/>";
 
@@ -214,11 +218,14 @@ if (_med isEqualType createHashMap && {(count _med) > 0}) then {
 };
 (_disp displayCtrl 9521) ctrlSetStructuredText parseText _medTxt;
 
-// Nouvelle fiche : aucun échantillon, aucune signature.
-uiNamespace setVariable ["COMSPEC_SsePerson_Samples", []];
-uiNamespace setVariable ["COMSPEC_SsePerson_Signature", []];
-uiNamespace setVariable ["COMSPEC_SsePerson_Query", []];
-uiNamespace setVariable ["COMSPEC_SsePerson_QueryPending", false];
+// Nouvelle fiche : aucun échantillon, aucune signature — sauf reprise après un relevé.
+private _resume = uiNamespace getVariable ["COMSPEC_SsePerson_ResumeCollect", false];
+if (!_resume) then {
+    uiNamespace setVariable ["COMSPEC_SsePerson_Samples", []];
+    uiNamespace setVariable ["COMSPEC_SsePerson_Signature", []];
+    uiNamespace setVariable ["COMSPEC_SsePerson_Query", []];
+    uiNamespace setVariable ["COMSPEC_SsePerson_QueryPending", false];
+};
 // Dossier actif de l'élément : hérité sans ressaisie. À défaut, dernier code utilisé.
 private _active = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
 if (_active isEqualTo "") then {
@@ -227,14 +234,28 @@ if (_active isEqualTo "") then {
 (_disp displayCtrl 9518) ctrlSetText _active;
 
 // Snapshot identité dès le préremplissage (avant masquage par l’accueil).
-uiNamespace setVariable ["COMSPEC_SsePerson_IdentityCache", [
-    trim (ctrlText (_disp displayCtrl 9501)),
-    trim (ctrlText (_disp displayCtrl 9502)),
-    trim (ctrlText (_disp displayCtrl 9503)),
-    trim (ctrlText (_disp displayCtrl 9504)),
-    trim (ctrlText (_disp displayCtrl 9507)),
-    trim (ctrlText (_disp displayCtrl 9508))
-]];
+private _idCache = uiNamespace getVariable ["COMSPEC_SsePerson_IdentityCache", []];
+if (_resume && {_idCache isEqualType []} && {(count _idCache) >= 6}) then {
+    {
+        _x params ["_idc", "_idx"];
+        private _ctrl = _disp displayCtrl _idc;
+        if (!isNull _ctrl) then { _ctrl ctrlSetText (_idCache select _idx); };
+    } forEach [[9501, 0], [9502, 1], [9503, 2], [9504, 3], [9507, 4], [9508, 5]];
+} else {
+    uiNamespace setVariable ["COMSPEC_SsePerson_IdentityCache", [
+        trim (ctrlText (_disp displayCtrl 9501)),
+        trim (ctrlText (_disp displayCtrl 9502)),
+        trim (ctrlText (_disp displayCtrl 9503)),
+        trim (ctrlText (_disp displayCtrl 9504)),
+        trim (ctrlText (_disp displayCtrl 9507)),
+        trim (ctrlText (_disp displayCtrl 9508))
+    ]];
+};
 
-// Le terminal s'ouvre sur son accueil ; la page pose aussi la visibilité initiale.
-[0] call comspec_overwatch_connect_fnc_sseTerminalPage;
+// Le terminal s'ouvre sur son accueil ; après un relevé, on revient à la biométrie.
+if (_resume) then {
+    uiNamespace setVariable ["COMSPEC_SsePerson_ResumeCollect", false];
+    [3] call comspec_overwatch_connect_fnc_sseTerminalPage;
+} else {
+    [0] call comspec_overwatch_connect_fnc_sseTerminalPage;
+};

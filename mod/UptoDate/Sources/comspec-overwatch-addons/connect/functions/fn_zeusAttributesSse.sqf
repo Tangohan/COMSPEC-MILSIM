@@ -83,7 +83,10 @@ private _opened = [
 
 if (_opened isEqualTo false) exitWith {
     if (!_retried && {!isNil "CBA_fnc_waitAndExecute"}) then {
-        [{ [_this, 0, true] call comspec_overwatch_connect_fnc_zeusAttributesSse }, _obj, 0.2] call CBA_fnc_waitAndExecute;
+        [{ [_this, 0, true] call comspec_overwatch_connect_fnc_zeusAttributesSse }, _obj, 0.45] call CBA_fnc_waitAndExecute;
+    } else {
+        ["Fenêtre SSE indisponible — fermez l’édition puis réessayez, ou utilisez le menu Zeus clic droit.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+        systemChat "[COMSPEC] SSE : la fenêtre ne s’est pas ouverte. Fermez l’édition puis recliquez.";
     };
     true
 };

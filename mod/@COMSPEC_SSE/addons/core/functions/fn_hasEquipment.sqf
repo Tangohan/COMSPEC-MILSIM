@@ -41,7 +41,7 @@ _gear = _gear select { _x isEqualType "" && {_x isNotEqualTo ""} };
 private _gearLower = _gear apply { toLower _x };
 
 // Pont ATAK Overwatch : S7 reconnu pour la liaison ⇒ photo / SEEK / terminal OK.
-private _owRoles = ["camera", "face", "seek", "terminal", "fingerprint", "sse_terminal", "seekii"];
+private _owRoles = ["camera", "face", "seek", "terminal", "sse_terminal", "seekii"];
 private _needOwBridge = false;
 {
     private _r = toLower (str _x);
@@ -53,7 +53,6 @@ private _needOwBridge = false;
         || {(_r find "seek") >= 0}
         || {(_r find "terminal") >= 0}
         || {(_r find "face") >= 0}
-        || {(_r find "fingerprint") >= 0}
     ) then {
         _needOwBridge = true;
     };

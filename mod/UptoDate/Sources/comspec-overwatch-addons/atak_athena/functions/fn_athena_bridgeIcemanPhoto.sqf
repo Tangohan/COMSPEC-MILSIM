@@ -15,6 +15,8 @@ params [
 if (!hasInterface) exitWith { false };
 if (!(["iceman_photo"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith { false };
 if (_filePath isEqualTo "") exitWith { false };
+if ((toLower _filePath) find "comspec_sse_face" >= 0) exitWith { true };
+if ((toLower _fileName) find "comspec_sse_face" >= 0) exitWith { true };
 
 private _keyEarly = toLower _filePath;
 private _deadEarly = profileNamespace getVariable ["COMSPEC_Athena_PhotoDead", []];
@@ -103,8 +105,22 @@ if (_overlayKind in ["phone", "hcam", "hcam_pip", "tgp", "uav_pip"]) then {
 
 private _skipShot = false;
 private _lowPath = toLower _filePath;
-if ((_lowPath find ".jpg") >= 0 || {(_lowPath find ".jpeg") >= 0}) then {
-    _skipShot = true;
+// Photo Library / BCE : le .jpg annoncé est souvent un chemin mort (srcdir_missing).
+// On prend un PNG Arma hors de la frame du clic, au lieu de notifier le JPEG fantôme.
+if (
+    ((_lowPath find ".jpg") >= 0 || {(_lowPath find ".jpeg") >= 0})
+    && {
+        _overlayKind isEqualTo ""
+        || {missionNamespace getVariable ["COMSPEC_OverlayCamPromoted", false]}
+    }
+) exitWith {
+    [_filePath, _caption, _device, _feedId] spawn {
+        params ["_path", "_caption", "_device", "_feedId"];
+        uiSleep 0.4;
+        [_path, _caption, _device, _feedId, false, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+    };
+    [format ["Photo en file (%1)", _fileName]] call comspec_overwatch_connect_fnc_appendModuleLog;
+    true
 };
 if (
     _overlayKind isNotEqualTo ""

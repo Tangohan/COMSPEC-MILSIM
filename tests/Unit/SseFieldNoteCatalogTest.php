@@ -17,12 +17,13 @@ final class SseFieldNoteCatalogTest extends TestCase
     {
         $themes = SseFieldNoteCatalog::normalizeThemes([
             'securite_publique',
-            'securite_publique',
+            'SECUR',
             'code_inexistant',
             'trafics',
+            'TERROR',
         ]);
 
-        self::assertSame(['securite_publique', 'trafics'], $themes);
+        self::assertSame(['SECUR', 'FINANCE', 'TERROR'], $themes);
     }
 
     public function testNormalizeThemesCapsAtCatalogLimit(): void
@@ -35,11 +36,11 @@ final class SseFieldNoteCatalogTest extends TestCase
     public function testNormalizeThemesAcceptsJsonAndCommaSeparatedInput(): void
     {
         self::assertSame(
-            ['ordre_public', 'divers'],
+            ['INSURG', 'GENERAL'],
             SseFieldNoteCatalog::normalizeThemes('["ordre_public","divers"]')
         );
         self::assertSame(
-            ['ordre_public', 'divers'],
+            ['INSURG', 'GENERAL'],
             SseFieldNoteCatalog::normalizeThemes('ordre_public, divers')
         );
         self::assertSame([], SseFieldNoteCatalog::normalizeThemes('   '));
@@ -67,7 +68,10 @@ final class SseFieldNoteCatalogTest extends TestCase
     public function testKindCodesAreNormalizedCaseInsensitively(): void
     {
         self::assertSame('FRA', SseFieldNoteCatalog::normalizeKind('fra'));
-        self::assertSame('priorite', SseFieldNoteCatalog::normalizeUrgency('PRIORITE'));
+        self::assertSame('urgent', SseFieldNoteCatalog::normalizeUrgency('PRIORITE'));
+        self::assertSame('critique', SseFieldNoteCatalog::normalizeUrgency('immediate'));
+        self::assertSame('HUMINT', SseFieldNoteCatalog::normalizeSource('humint'));
+        self::assertSame('', SseFieldNoteCatalog::normalizeSource('inconnu'));
     }
 
     /**
@@ -83,13 +87,23 @@ final class SseFieldNoteCatalogTest extends TestCase
         }
 
         foreach (SseFieldNoteCatalog::THEMES as $code => $definition) {
+            self::assertMatchesRegularExpression('/^[A-Z]{3,12}$/', $code, 'sigle de thème');
             self::assertStringNotContainsString('_', $definition['label'], $code);
+            self::assertNotSame('', trim($definition['hint'] ?? ''), $code);
             self::assertContains(
                 $definition['tone'],
-                ['critical', 'warning', 'info', 'neutral'],
+                SseFieldNoteCatalog::TONES,
                 $code . ' doit porter une couleur connue'
             );
         }
+
+        self::assertCount(17, SseFieldNoteCatalog::THEMES);
+        self::assertSame('critical', SseFieldNoteCatalog::themeTone('TERROR'));
+        self::assertSame('warning', SseFieldNoteCatalog::themeTone('ARMEMENT'));
+        self::assertSame('caution', SseFieldNoteCatalog::themeTone('LOGIST'));
+        self::assertSame('stable', SseFieldNoteCatalog::themeTone('INFRA'));
+        self::assertSame('info', SseFieldNoteCatalog::themeTone('CIVIL'));
+        self::assertSame('SECUR', SseFieldNoteCatalog::normalizeThemeCode('securite_publique'));
 
         foreach (SseFieldNoteCatalog::STATUSES as $code => $label) {
             self::assertStringNotContainsString('_', $label, $code);
@@ -114,7 +128,12 @@ final class SseFieldNoteCatalogTest extends TestCase
             self::assertArrayHasKey('code', $theme);
             self::assertArrayHasKey('label', $theme);
             self::assertArrayHasKey('tone', $theme);
+            self::assertArrayHasKey('color', $theme);
+            self::assertArrayHasKey('hint', $theme);
         }
+        self::assertArrayHasKey('sources', $catalog);
+        self::assertCount(count(SseFieldNoteCatalog::SOURCES), $catalog['sources']);
+        self::assertSame(SseFieldNoteCatalog::DEFAULT_URGENCY, $catalog['default_urgency']);
     }
 
     /**
@@ -162,7 +181,7 @@ final class SseFieldNoteCatalogTest extends TestCase
         // sur un rang fixe du référentiel, pas sur un code.
         preg_match('/\["themes", \[(.*?)\n    \]\]/s', $contents, $matches);
         self::assertNotEmpty($matches, 'bloc des thèmes introuvable dans le référentiel du mod');
-        preg_match_all('/\["([a-z_]+)",/', $matches[1], $codes);
+        preg_match_all('/\["([A-Z]{3,12})",/', $matches[1], $codes);
         self::assertSame(
             array_keys(SseFieldNoteCatalog::THEMES),
             $codes[1],

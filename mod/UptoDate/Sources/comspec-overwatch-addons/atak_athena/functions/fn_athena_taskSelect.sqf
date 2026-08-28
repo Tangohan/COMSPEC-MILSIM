@@ -1,6 +1,8 @@
 /*
     Sélection d’un ordre dans TASK → détail lisible.
 */
+if (uiNamespace getVariable ["COMSPEC_ATAK_Task_rebuilding", false]) exitWith {};
+
 params ["_ctrl", ["_idx", -1, [0]]];
 
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Task_group", controlNull];

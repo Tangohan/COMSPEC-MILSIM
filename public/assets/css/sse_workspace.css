@@ -843,6 +843,8 @@ body.sse-iw {
 }
 .iw-kv dt { color: var(--text-secondary); }
 .iw-kv dd { margin: 0; color: var(--text-primary); }
+.iw-kv dd.iw-kv__empty { color: #c9a46a; font-weight: 600; }
+.iw-kv dd.iw-kv__ok { color: #5ee8ba; font-weight: 700; }
 
 .iw-rel-grid {
     display: grid;

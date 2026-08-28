@@ -55,6 +55,28 @@ private _setText = {
 ["COMSPEC_SSE_Language",    "language"]    call _setText;
 ["COMSPEC_SSE_RecordRef",   "record_ref"]  call _setText;
 
+// Les variables COMSPEC_SSE_* préremplissent le terminal. Sans ce pont, une
+// identité déjà générée (lazy) garde le nom inventé : SEEK affiche Marc dudule
+// et la fiche / la requête continuent de porter Ali Hassan.
+if (!isNil "comspec_sse_fnc_setIdentity") then {
+    private _first = trim (_unit getVariable ["COMSPEC_SSE_FirstName", ""]);
+    private _last = trim (_unit getVariable ["COMSPEC_SSE_LastName", ""]);
+    private _alias = trim (_unit getVariable ["COMSPEC_SSE_Alias", ""]);
+    private _nat = trim (_unit getVariable ["COMSPEC_SSE_Nationality", ""]);
+    private _lang = trim (_unit getVariable ["COMSPEC_SSE_Language", ""]);
+    private _pairs = [];
+    if (_first isNotEqualTo "") then { _pairs pushBack ["first_name", _first]; };
+    if (_last isNotEqualTo "") then { _pairs pushBack ["last_name", _last]; };
+    if (_alias isNotEqualTo "") then { _pairs pushBack ["alias", _alias]; };
+    if (_nat isNotEqualTo "") then { _pairs pushBack ["nationality", _nat]; };
+    if (_lang isNotEqualTo "") then { _pairs pushBack ["language", _lang]; };
+    private _full = trim (format ["%1 %2", _first, _last]);
+    if (_full isNotEqualTo "") then { _pairs pushBack ["name", _full]; };
+    if (_pairs isNotEqualTo []) then {
+        [_unit, _pairs] call comspec_sse_fnc_setIdentity;
+    };
+};
+
 // Verdict imposé : seules trois valeurs ont un sens, tout le reste rend la main
 // à la génération déterministe plutôt que d'afficher un état inconnu.
 private _match = ["match"] call _get;

@@ -35,7 +35,13 @@ params [
             _alias = trim (_target getVariable ["COMSPEC_SSE_Alias", ""]);
         };
         if (_first isEqualTo "") then {
+            _first = trim (_identity getOrDefault ["first_name", ""]);
+        };
+        if (_first isEqualTo "") then {
             _first = trim (_identity getOrDefault ["firstName", ""]);
+        };
+        if (_last isEqualTo "") then {
+            _last = trim (_identity getOrDefault ["last_name", ""]);
         };
         if (_last isEqualTo "") then {
             _last = trim (_identity getOrDefault ["lastName", ""]);

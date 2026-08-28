@@ -155,22 +155,12 @@ $editValidTabIds = implode(',', array_map(
         <section id="edit-compte" class="scroll-mt-24 overflow-hidden rounded-2xl border border-indigo-200/80 bg-white shadow-sm ring-1 ring-indigo-900/[0.06]">
           <div class="border-b border-indigo-100 bg-indigo-50/80 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-indigo-950">Compte &amp; interface</h2>
-            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-indigo-900/85">Fuseau, langue et présentation courte. Ces données ne remplacent pas le nom de personnage ni l’indicatif en mission.</p>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-indigo-900/85">Fuseau horaire et langue de l’interface. Le prénom, le nom et la présentation du personnage se règlent dans l’onglet Personnage.</p>
           </div>
           <div class="space-y-8 p-6 sm:p-8">
             <div>
-              <h3 class="mb-4 border-b border-indigo-100 pb-2 text-xs font-black uppercase tracking-wider text-indigo-900/70">Identité nominative &amp; préférences</h3>
+              <h3 class="mb-4 border-b border-indigo-100 pb-2 text-xs font-black uppercase tracking-wider text-indigo-900/70">Préférences d’interface</h3>
               <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label for="civil_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom</label>
-                  <input type="text" name="civil_first_name" id="civil_first_name" value="<?= htmlspecialchars((string) ($up['first_name'] ?? '')) ?>" placeholder="Optionnel" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="given-name">
-                  <p class="mt-1 text-[11px] text-slate-500">Non demandé à l’inscription. Sert aux vues nominatives du dossier.</p>
-                </div>
-                <div>
-                  <label for="civil_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom</label>
-                  <input type="text" name="civil_last_name" id="civil_last_name" value="<?= htmlspecialchars((string) ($up['last_name'] ?? '')) ?>" placeholder="Optionnel" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="family-name">
-                  <p class="mt-1 text-[11px] text-slate-500">N’efface pas le nom de personnage ni l’indicatif en mission.</p>
-                </div>
                 <div>
                   <label for="civil_timezone" class="mb-1 block text-xs font-bold text-slate-600">Fuseau horaire</label>
                   <input type="text" name="civil_timezone" id="civil_timezone" value="<?= htmlspecialchars((string) ($up['timezone'] ?? '')) ?>" placeholder="Europe/Paris" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="50">
@@ -180,16 +170,12 @@ $editValidTabIds = implode(',', array_map(
                   <input type="text" name="civil_language" id="civil_language" value="<?= htmlspecialchars((string) ($up['language'] ?? '')) ?>" placeholder="fr" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="10">
                   <p class="mt-1 text-[11px] text-slate-500">Ex. fr ou en. Vous pouvez aussi le régler dans les préférences du compte.</p>
                 </div>
-                <div class="sm:col-span-2">
-                  <label for="civil_bio" class="mb-1 block text-xs font-bold text-slate-600">Présentation courte (hors personnage)</label>
-                  <textarea name="civil_bio" id="civil_bio" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Quelques mots sur vous, en dehors du jeu…"><?= htmlspecialchars((string) ($up['bio'] ?? '')) ?></textarea>
-                </div>
               </div>
             </div>
             <div class="rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3">
               <label class="flex items-start gap-3 text-sm text-slate-800">
                 <input type="checkbox" name="hide_personal_info" value="1" class="mt-1 rounded border-slate-300 text-amber-900" <?= !empty($d['hide_personal_info']) ? 'checked' : '' ?>>
-                <span><strong>Masquer mes informations personnelles</strong> sur la fiche publique (fuseau, langue, présentation du compte). Seuls les <strong>administrateurs</strong> (accès fiche personnel) et les <strong>modérateurs forum</strong> pourront les consulter ; les autres membres ne verront que votre personnage (nom, indicatif, etc.).</span>
+                <span><strong>Masquer le fuseau et la langue</strong> sur la fiche publique. Seuls les <strong>administrateurs</strong> (accès fiche personnel) et les <strong>modérateurs forum</strong> pourront les consulter. Le prénom, le nom et la présentation du personnage restent visibles comme le reste du dossier de jeu.</span>
               </label>
             </div>
           </div>
@@ -201,17 +187,30 @@ $editValidTabIds = implode(',', array_map(
         <section id="edit-identite-rp" class="scroll-mt-24 overflow-hidden rounded-2xl border border-emerald-200/80 bg-white shadow-sm ring-1 ring-emerald-900/[0.06]">
           <div class="border-b border-emerald-100 bg-emerald-50/70 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-emerald-950">Personnage (identité RP)</h2>
-            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-emerald-900/85">Nom de personnage, indicatif et détails de jeu. L’unité et le rôle métier se règlent dans le bloc suivant.</p>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-emerald-900/85">Prénom, nom et présentation du personnage, puis indicatif et détails de jeu. L’unité et le rôle métier se règlent dans le bloc suivant.</p>
           </div>
           <div class="space-y-8 p-6 sm:p-8">
             <div>
               <h3 class="mb-4 border-b border-emerald-100 pb-2 text-xs font-black uppercase tracking-wider text-emerald-900/70">Identité en jeu</h3>
               <div class="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label for="character_name" class="mb-1 block text-xs font-bold text-slate-600">Nom du personnage</label>
+                  <label for="rp_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom (personnage)</label>
+                  <input type="text" name="rp_first_name" id="rp_first_name" value="<?= htmlspecialchars((string) ($up['first_name'] ?? '')) ?>" placeholder="Optionnel" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
+                  <p class="mt-1 text-[11px] text-slate-500">Prénom du personnage, tel qu’il figure sur le dossier.</p>
+                </div>
+                <div>
+                  <label for="rp_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom (personnage)</label>
+                  <input type="text" name="rp_last_name" id="rp_last_name" value="<?= htmlspecialchars((string) ($up['last_name'] ?? '')) ?>" placeholder="Optionnel" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
+                  <p class="mt-1 text-[11px] text-slate-500">Nom de famille du personnage. N’efface pas l’indicatif en mission.</p>
+                </div>
+                <div class="md:col-span-2">
+                  <label for="rp_bio" class="mb-1 block text-xs font-bold text-slate-600">Présentation du personnage</label>
+                  <textarea name="rp_bio" id="rp_bio" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Quelques mots sur le personnage, son parcours, son ton…"><?= htmlspecialchars((string) ($up['bio'] ?? '')) ?></textarea>
+                </div>
+                <div>
+                  <label for="character_name" class="mb-1 block text-xs font-bold text-slate-600">Nom de scène (optionnel)</label>
                   <input type="text" name="character_name" id="character_name" value="<?= htmlspecialchars($p['character_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="<?= htmlspecialchars((string) ($targetUser['display_name'] ?? 'Nom de scène'), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" maxlength="150">
-                  <p class="mt-1 text-[11px] text-slate-500">Laissez vide si le personnage porte le même nom que le compte. N’indiquez pas le nom d’un autre membre.</p>
-                  <p class="mt-1 text-[11px] text-slate-500">Nom affiché sur le dossier et, selon vos réglages, sur le forum.</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Complément au prénom et au nom, si le personnage a un nom de scène. N’indiquez pas le nom d’un autre membre.</p>
                 </div>
                 <div>
                   <label for="callsign" class="mb-1 block text-xs font-bold text-slate-600">Indicatif</label>
@@ -243,10 +242,12 @@ $editValidTabIds = implode(',', array_map(
                   <?php if ($gradeLabel !== ''): ?>
                   <p class="mt-1 text-[11px] text-slate-500">Grade attribué par la communauté : <strong class="text-slate-700"><?= htmlspecialchars($gradeLabel) ?></strong></p>
                   <?php endif; ?>
+                  <p class="mt-1 text-[11px] text-slate-500">Affiché en haut du site à la place du libellé de communauté, s’il est renseigné.</p>
                 </div>
                 <div>
                   <label for="rank_display_override" class="mb-1 block text-xs font-bold text-slate-600">Libellé court personnalisé (optionnel)</label>
-                  <input type="text" name="rank_display_override" id="rank_display_override" value="<?= htmlspecialchars((string) ($p['rank_display_override'] ?? '')) ?>" placeholder="Remplace le libellé court automatique" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+                  <input type="text" name="rank_display_override" id="rank_display_override" value="<?= htmlspecialchars((string) ($p['rank_display_override'] ?? '')) ?>" placeholder="O-5, OF-4…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+                  <p class="mt-1 text-[11px] text-slate-500">Remplace le code affiché à côté du grade en haut du site (par exemple O-5 à la place de OF-4).</p>
                 </div>
                 <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-[11px] leading-relaxed text-emerald-950/90 md:col-span-2 flex items-center">
                   <?= $jobRolesEnabled
@@ -265,7 +266,7 @@ $editValidTabIds = implode(',', array_map(
                 <div>
                   <label for="nationality_rp" class="mb-1 block text-xs font-bold text-slate-600">Nationalité (personnage)</label>
                   <input type="text" name="nationality_rp" id="nationality_rp" value="<?= htmlspecialchars((string) ($p['nationality'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-                  <p class="mt-1 text-[11px] text-slate-500">Indépendante de la nationalité civile ci-dessus.</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Nationalité du personnage en jeu.</p>
                 </div>
                 <div>
                   <label for="public_flag_country_code" class="mb-1 block text-xs font-bold text-slate-600">Drapeau sur la fiche</label>
@@ -767,7 +768,7 @@ $editValidTabIds = implode(',', array_map(
                 <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="show_matricule_forum" value="1" <?= !empty($d['show_matricule_forum']) ? 'checked' : '' ?>> Matricule</label>
                 <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="show_grade_forum" value="1" <?= !empty($d['show_grade_forum']) ? 'checked' : '' ?>> Grade</label>
                 <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="show_unit_forum" value="1" <?= !empty($d['show_unit_forum']) ? 'checked' : '' ?>> Unité / rôle</label>
-                <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="show_bio_forum" value="1" <?= !empty($d['show_bio_forum']) ? 'checked' : '' ?>> Bio</label>
+                <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="show_bio_forum" value="1" <?= !empty($d['show_bio_forum']) ? 'checked' : '' ?>> Présentation du personnage</label>
                 <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="hide_forum_level" id="hide_forum_level" value="1" <?= (!empty($d['hide_forum_level']) || ($forumPreHideLevel && $isMe)) ? 'checked' : '' ?>> Masquer le niveau forum (LVL)</label>
               </div>
             </div>

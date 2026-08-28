@@ -152,7 +152,7 @@ $tone = static fn (string $code): string => \App\Support\SseFieldNoteCatalog::th
                             <div class="sse-note-badges">
                                 <?php foreach (($note['themes'] ?? []) as $themeCode): ?>
                                     <span class="sse-note-badge sse-note-badge--<?= $h($tone((string) $themeCode)) ?>">
-                                        <?= $h(\App\Support\SseFieldNoteCatalog::themeLabel((string) $themeCode)) ?>
+                                        <?= $h((string) $themeCode) ?>
                                     </span>
                                 <?php endforeach; ?>
                                 <span class="sse-note-badge sse-note-badge--kind"><?= $h($note['note_kind'] ?? '') ?></span>

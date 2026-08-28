@@ -24,6 +24,7 @@ if (isNull _list) exitWith {};
 private _prevId = uiNamespace getVariable ["COMSPEC_ATAK_Task_selectedId", ""];
 private _selKeep = -1;
 
+uiNamespace setVariable ["COMSPEC_ATAK_Task_rebuilding", true];
 lbClear _list;
 
 private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
@@ -75,6 +76,8 @@ private _pending = 0;
     _list lbSetData [_idx, _id];
     if (_id isEqualTo _prevId) then { _selKeep = _idx; };
 } forEach _rows;
+
+uiNamespace setVariable ["COMSPEC_ATAK_Task_rebuilding", false];
 
 if (!isNull _sum) then {
     private _n = count _rows;

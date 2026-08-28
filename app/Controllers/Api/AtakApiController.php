@@ -47,6 +47,8 @@ use App\Support\MpMessageParser;
 use App\Support\MedicalAlertParser;
 use App\Support\TacticalAlertParser;
 use App\Support\SteamId;
+use App\Support\HttpJsonBody;
+use App\Support\TerrainUploadedImage;
 use App\Support\AtakDeviceLog;
 use App\Repositories\AtakDeviceLogRepository;
 use App\Repositories\AtakRealismRepository;
@@ -955,8 +957,13 @@ class AtakApiController
         if ($this->jsonBodyCache !== null) {
             return $this->jsonBodyCache;
         }
-        $raw = file_get_contents('php://input');
-        if ($raw === false || $raw === '') {
+        if (HttpJsonBody::isMultipart()) {
+            $this->jsonBodyCache = HttpJsonBody::postFields();
+
+            return $this->jsonBodyCache;
+        }
+        $raw = HttpJsonBody::rawJson();
+        if ($raw === '') {
             $this->jsonBodyCache = [];
 
             return $this->jsonBodyCache;
@@ -975,6 +982,7 @@ class AtakApiController
                 $decoded = json_decode($commaFixed, true);
             }
         }
+        unset($raw);
         $this->jsonBodyCache = is_array($decoded) ? $decoded : [];
 
         return $this->jsonBodyCache;
@@ -3871,7 +3879,7 @@ class AtakApiController
         
         $mapId = $this->mapId($request);
         try {
-            $rows = $this->atak->getUnits($tenantId, $mapId);
+            $rows = $this->unitsForTransmission($tenantId, $mapId);
             $this->logStaleUnitDisconnects($tenantId, $mapId);
         } catch (\Throwable) {
             // Ne pas renvoyer une liste vide : le poste prendrait ça pour « plus personne ».
@@ -9514,13 +9522,20 @@ class AtakApiController
             if ($actor instanceof Response) {
                 return $actor;
             }
-            if (empty($_FILES['image']) && empty($_FILES['photo'])) {
+            $file = TerrainUploadedImage::fromGlobals();
+            if ($file === null) {
                 return Response::json([
                     'error' => 'missing_image',
                     'message' => 'Aucune image reçue. Reprenez la capture depuis le terrain.',
                 ], 400);
             }
-            $file = $_FILES['image'] ?? $_FILES['photo'];
+            if (TerrainUploadedImage::isSseFaceFileName((string) ($file['name'] ?? ''))) {
+                return Response::json([
+                    'ok' => true,
+                    'ignored' => true,
+                    'message' => 'Photo de visage transmise avec la fiche, pas comme cliché de reconnaissance.',
+                ], 200);
+            }
             $uploadErr = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
             if ($uploadErr !== UPLOAD_ERR_OK) {
                 $msg = match ($uploadErr) {
@@ -9548,7 +9563,7 @@ class AtakApiController
             $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'jpg';
             $filename = 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '.' . $ext;
             $path = $dir . DIRECTORY_SEPARATOR . $filename;
-            if (!move_uploaded_file((string) $file['tmp_name'], $path)) {
+            if (!TerrainUploadedImage::move((string) $file['tmp_name'], $path)) {
                 return Response::json([
                     'error' => 'save_failed',
                     'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
@@ -9599,16 +9614,24 @@ class AtakApiController
                     'message' => 'La photo a été reçue mais n’a pas pu être indexée. Réessayez dans un instant.',
                 ], 503);
             }
-            $row['url'] = user_media_public_url('uploads/recon/' . $filename);
+            try {
+                $row['url'] = user_media_public_url('uploads/recon/' . $filename);
+            } catch (\Throwable) {
+                $row['url'] = '/uploads/recon/' . $filename;
+            }
             $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
             $mapId = (int) ($_POST['mapId'] ?? $_POST['map_id'] ?? self::DEFAULT_MAP_ID);
-            $this->activityLog->record(
-                $tenantId,
-                $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
-                AtakActivityLogService::TYPE_INTEL,
-                $row['device_label'] . ' reçue — ' . ($data['author_callsign'] ?? 'Inconnu'),
-                (string) ($data['author_callsign'] ?? '')
-            );
+            try {
+                $this->activityLog->record(
+                    $tenantId,
+                    $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
+                    AtakActivityLogService::TYPE_INTEL,
+                    $row['device_label'] . ' reçue — ' . ($data['author_callsign'] ?? 'Inconnu'),
+                    (string) ($data['author_callsign'] ?? '')
+                );
+            } catch (\Throwable $logErr) {
+                error_log('[atak/recon-images] activity ' . $logErr->getMessage());
+            }
 
             return Response::json($row, 201);
         } catch (\Throwable $e) {

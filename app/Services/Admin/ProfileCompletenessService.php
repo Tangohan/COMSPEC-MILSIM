@@ -71,8 +71,8 @@ class ProfileCompletenessService
         ];
 
         $definitions = [
-            'first_name' => ['label' => 'Prénom manquant', 'level' => self::LEVEL_BLOCKING],
-            'last_name' => ['label' => 'Nom manquant', 'level' => self::LEVEL_BLOCKING],
+            'first_name' => ['label' => 'Prénom du personnage manquant', 'level' => self::LEVEL_BLOCKING],
+            'last_name' => ['label' => 'Nom du personnage manquant', 'level' => self::LEVEL_BLOCKING],
             'email' => ['label' => 'Adresse e-mail absente', 'level' => self::LEVEL_BLOCKING],
             'role_id' => ['label' => 'Rôle non affecté', 'level' => self::LEVEL_BLOCKING],
             'display_name' => ['label' => 'Nom d\'affichage absent', 'level' => self::LEVEL_RECOMMENDED],

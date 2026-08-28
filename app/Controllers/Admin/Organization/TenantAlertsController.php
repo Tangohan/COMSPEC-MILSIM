@@ -143,10 +143,6 @@ final class TenantAlertsController
     /** Relais best-effort vers le webhook Discord de la communauté, si configuré — n'échoue jamais la création de l'annonce. */
     private function notifyDiscord(int $tenantId, string $title, string $body, ?string $ctaUrl): void
     {
-        $webhookUrl = trim((string) ($this->tenants->getSettings($tenantId)['integrations']['discord_webhook_url'] ?? ''));
-        if ($webhookUrl === '') {
-            return;
-        }
         $lines = ['📣 **' . $title . '**'];
         if (trim($body) !== '') {
             $lines[] = trim($body);
@@ -155,9 +151,10 @@ final class TenantAlertsController
             $lines[] = trim($ctaUrl);
         }
         try {
-            $this->discordWebhook->send($webhookUrl, implode("\n", $lines));
+            (new \App\Services\Integrations\DiscordEventRelayService($this->tenants, $this->discordWebhook))
+                ->notify($tenantId, \App\Support\DiscordWebhookCatalog::KEY_ANNOUNCEMENTS, implode("\n", $lines));
         } catch (\Throwable) {
-            // Best-effort : un webhook Discord en échec ne doit jamais bloquer la création de l'annonce.
+            // Best-effort : un relais Discord en échec ne doit jamais bloquer la création de l'annonce.
         }
     }
 

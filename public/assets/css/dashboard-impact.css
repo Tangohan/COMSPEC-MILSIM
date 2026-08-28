@@ -2166,6 +2166,14 @@ body.dashboard-shell main {
   transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
 }
 
+.dash-idstrip__chip--current {
+  max-width: 14rem;
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.18);
+  color: #ecfdf5;
+  cursor: default;
+}
+
 .dash-idstrip__chip .dash-idstrip__btn-icon {
   width: 11px;
   height: 11px;
@@ -2176,6 +2184,12 @@ body.dashboard-shell main {
   border-color: rgba(52, 211, 153, 0.55);
   background: rgba(5, 150, 105, 0.18);
   color: #fff;
+}
+
+.dash-idstrip__chip--current:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.18);
+  color: #ecfdf5;
 }
 
 .dash-idstrip__trial {

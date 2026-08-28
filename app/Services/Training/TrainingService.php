@@ -34,7 +34,7 @@ class TrainingService
         foreach ($tenantCourses as $c) {
             $byId[(int) ($c['id'] ?? 0)] = $c;
         }
-        $courses = array_values($byId);
+        $courses = TrainingCourseRepository::collapseDuplicateCatalogRows(array_values($byId), $tenantId);
         usort($courses, static fn (array $a, array $b): int => strcmp((string) ($a['title'] ?? ''), (string) ($b['title'] ?? '')));
         if ($userId === null) {
             return $courses;

@@ -307,13 +307,13 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
   align-items: flex-start;
   justify-content: center;
   gap: 0;
-  padding: 11px 38px 11px 12px;
+  padding: 12px 38px 12px 14px;
   margin: 0;
   border: 0;
-  border-left: 2px solid transparent;
-  border-radius: 2px;
-  background: transparent;
-  color: #a7b4bc;
+  border-left: 4px solid transparent;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #dce6ec;
   text-align: left;
   font: inherit;
   letter-spacing: 0;
@@ -322,21 +322,22 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
   line-height: 1.25;
 }
 .atak-left-aside .atak-tab:hover {
-  background: rgba(255, 255, 255, 0.025);
-  color: #c8d5dc;
+  background: rgba(255, 255, 255, 0.07);
+  color: #f4faf8;
 }
 .atak-left-aside .atak-tab.active {
   border-left-color: var(--atak-c2-green);
-  background: rgba(53, 214, 161, 0.06);
+  background: rgba(53, 214, 161, 0.14);
   color: #edf7f3;
+  box-shadow: inset 0 0 0 1px rgba(53, 214, 161, 0.28);
 }
 .atak-left-aside .atak-tab-label {
   display: block;
   width: 100%;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   font-family: var(--atak-font-ui);
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   text-transform: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -353,6 +354,71 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
 }
 .atak-left-aside .atak-tab.active .atak-tab-desc {
   color: #d7e2e8;
+}
+
+/* INTEL : chaque module a sa couleur pour se lire d’un coup d’œil. */
+.atak-left-aside .atak-tab--fiches {
+  border-left-color: #e8a84a;
+  background: rgba(232, 168, 74, 0.2);
+  color: #ffe3b0;
+}
+.atak-left-aside .atak-tab--fiches .atak-tab-desc {
+  color: #f0d29a;
+}
+.atak-left-aside .atak-tab--fiches:hover,
+.atak-left-aside .atak-tab--fiches.active {
+  border-left-color: #ffc56a;
+  background: rgba(232, 168, 74, 0.36);
+  color: #fff1d2;
+  box-shadow: inset 0 0 0 1px rgba(232, 168, 74, 0.65);
+}
+
+.atak-left-aside .atak-tab--personnes {
+  border-left-color: #4ec4f0;
+  background: rgba(78, 196, 240, 0.2);
+  color: #c4eefc;
+}
+.atak-left-aside .atak-tab--personnes .atak-tab-desc {
+  color: #9fdcf2;
+}
+.atak-left-aside .atak-tab--personnes:hover,
+.atak-left-aside .atak-tab--personnes.active {
+  border-left-color: #7ad8f8;
+  background: rgba(78, 196, 240, 0.36);
+  color: #e7f8ff;
+  box-shadow: inset 0 0 0 1px rgba(78, 196, 240, 0.65);
+}
+
+.atak-left-aside .atak-tab--photos {
+  border-left-color: #35d6a1;
+  background: rgba(53, 214, 161, 0.16);
+  color: #c8f6e4;
+}
+.atak-left-aside .atak-tab--photos .atak-tab-desc {
+  color: #9ee8cc;
+}
+.atak-left-aside .atak-tab--photos:hover,
+.atak-left-aside .atak-tab--photos.active {
+  border-left-color: #5ee8ba;
+  background: rgba(53, 214, 161, 0.32);
+  color: #e9fff6;
+  box-shadow: inset 0 0 0 1px rgba(53, 214, 161, 0.55);
+}
+
+.atak-left-aside .atak-tab--frs {
+  border-left-color: #c4a0ff;
+  background: rgba(180, 140, 255, 0.18);
+  color: #e4d4ff;
+}
+.atak-left-aside .atak-tab--frs .atak-tab-desc {
+  color: #cbb8f0;
+}
+.atak-left-aside .atak-tab--frs:hover,
+.atak-left-aside .atak-tab--frs.active {
+  border-left-color: #d8bcff;
+  background: rgba(180, 140, 255, 0.34);
+  color: #f4edff;
+  box-shadow: inset 0 0 0 1px rgba(180, 140, 255, 0.6);
 }
 .atak-left-aside .atak-tab-badge,
 .atak-left-aside .atak-medical-tab-badge {

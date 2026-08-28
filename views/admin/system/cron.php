@@ -5,8 +5,11 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $recentRuns */
 /** @var bool $tablesReady */
 /** @var bool $secretConfigured */
+/** @var bool $schedulerActive */
 /** @var string $cronHttpUrl */
 /** @var string $cliCommand */
+/** @var string $crontabLine */
+/** @var string $installCommand */
 
 $statusLabel = static function (?string $status): string {
     return match ($status) {
@@ -31,6 +34,7 @@ $triggerLabel = static function (?string $src): string {
         'cli' => 'Ligne de commande',
         'http' => 'Appel distant',
         'admin' => 'Administration',
+        'watchdog' => 'Relance automatique',
         default => $src !== null && $src !== '' ? $src : '—',
     };
 };
@@ -40,8 +44,9 @@ $triggerLabel = static function (?string $src): string {
         <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Administration plateforme</p>
         <h1 class="text-2xl font-black text-slate-900">Tâches automatiques</h1>
         <p class="mt-2 text-sm text-slate-600 leading-relaxed max-w-3xl">
-            Travaux récurrents du site : expiration des formations, fermeture de contenus en quarantaine,
-            rappels de bilan recrutement après 30 jours. Planifiez-les une fois par jour sur le serveur.
+            Travaux récurrents du site : escalade des rapports tactiques, expiration des formations,
+            fermeture de contenus en quarantaine, rappels de bilan recrutement. Ils partent toutes les
+            cinq minutes dès que le passage automatique est en place, ou dès qu’un opérateur ouvre le portail.
         </p>
         <a href="<?= url('admin') ?>" class="inline-block mt-4 text-sm text-slate-600 hover:underline">Retour au centre opérateur site</a>
     </header>
@@ -56,14 +61,33 @@ $triggerLabel = static function (?string $src): string {
         </section>
     <?php endif; ?>
 
+    <?php if (!empty($schedulerActive)): ?>
+        <section class="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-950">
+            Le passage automatique tourne : les tâches ne dépendent plus d’un clic sur cette page.
+        </section>
+    <?php else: ?>
+        <section class="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 leading-relaxed">
+            Aucun passage automatique récent. Tant que le planificateur du serveur n’est pas installé,
+            les tâches ne partent que si quelqu’un ouvre le site (relance de secours) ou clique ci-dessous.
+        </section>
+    <?php endif; ?>
+
     <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
         <h2 class="text-sm font-bold text-slate-800">Planification</h2>
         <p class="text-sm text-slate-600 leading-relaxed">
-            Sur le serveur, ajoutez une entrée quotidienne qui exécute la commande ci-dessous
-            (recommandé), ou qui appelle l’adresse distante avec la clé secrète définie dans la configuration.
+            Sur le serveur, installez le passage toutes les cinq minutes (recommandé). À défaut,
+            une relance de secours part après une visite du portail. L’appel distant reste optionnel.
         </p>
         <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
-            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Commande (recommandée)</p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Installation sur le serveur</p>
+            <code class="text-sm text-slate-900 break-all"><?= htmlspecialchars($installCommand, ENT_QUOTES, 'UTF-8') ?></code>
+        </div>
+        <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Ligne à coller (si l’installation n’est pas possible)</p>
+            <code class="text-sm text-slate-900 break-all"><?= htmlspecialchars($crontabLine, ENT_QUOTES, 'UTF-8') ?></code>
+        </div>
+        <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Commande (essai manuel)</p>
             <code class="text-sm text-slate-900 break-all"><?= htmlspecialchars($cliCommand, ENT_QUOTES, 'UTF-8') ?></code>
         </div>
         <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 space-y-2">

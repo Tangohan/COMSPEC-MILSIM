@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Repositories\EmailDeliveryRepository;
 use App\Services\Email\EmailEvents;
+use App\Services\Integrations\DiscordEventRelayService;
 
 final class EmailService
 {
@@ -95,6 +96,13 @@ final class EmailService
 
         if (!$result['ok']) {
             $this->lastSendError = $result['error'] ?? 'Échec du transport e-mail.';
+        } elseif ($tenantId !== null && $tenantId >= 2) {
+            DiscordEventRelayService::relayFromEmail(
+                $tenantId,
+                $eventCode,
+                $subject,
+                $textBody
+            );
         }
 
         return $result['ok'];

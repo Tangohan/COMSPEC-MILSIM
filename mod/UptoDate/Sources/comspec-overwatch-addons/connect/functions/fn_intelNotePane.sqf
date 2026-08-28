@@ -8,7 +8,7 @@
     Args: [_pane]
       "redaction"  cadre de rédaction (volet par défaut)
       "pieces"     pièces jointes
-      "contexte"   date, lieu, repère, type, thèmes, urgence
+      "contexte"   date, lieu, repère, type, thèmes, urgence, recueil
 */
 params [["_pane", "redaction", [""]]];
 
@@ -30,9 +30,10 @@ private _pieces = [
     9710, 9711, 9712, 9713, 9715, 9716, 9717, 9718
 ];
 private _contexte = [
-    9650, 9651, 9652, 9653, 9654, 9655, 9656, 9657,
+    9650, 9651, 9652, 9653, 9654, 9655, 9656, 9657, 9658,
     9660, 9661, 9662, 9663, 9664, 9665, 9666, 9667, 9668, 9669, 9670, 9671,
-    9680, 9690, 9691, 9692, 9693, 9694, 9695, 9696, 9697
+    9672, 9673, 9674, 9675, 9676,
+    9680, 9690, 9691, 9692, 9693, 9694, 9695, 9696, 9697, 9698
 ];
 
 {

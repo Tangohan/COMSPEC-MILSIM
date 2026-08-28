@@ -2490,8 +2490,12 @@ body.eff-sheets--resizing iframe {
     border: 0;
     border-radius: 0.75rem;
     padding: 0;
+    width: min(32rem, calc(100vw - 2rem));
     max-width: min(32rem, calc(100vw - 2rem));
+    max-height: min(90vh, 48rem);
     box-shadow: 0 25px 50px rgba(15, 23, 42, 0.25);
+    white-space: normal;
+    color: #0f172a;
 }
 
 .eff-elev-dialog::backdrop {
@@ -2501,6 +2505,13 @@ body.eff-sheets--resizing iframe {
 .eff-elev-dialog__inner {
     padding: 1.25rem 1.35rem 1.15rem;
     background: #fff;
+    max-height: min(90vh, 48rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.eff-elev-dialog .eff-sheets__pop-form > label:first-of-type {
+    margin-top: 0.15rem;
 }
 
 .eff-elev-dialog__title {

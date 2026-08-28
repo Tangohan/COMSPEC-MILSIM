@@ -10,6 +10,7 @@
         "kinds"      liste de [code, libellé, aide]
         "themes"     liste de [code, libellé, couleur HTML]
         "urgencies"  liste de [code, libellé]
+        "sources"    liste de [code, libellé]
         "body_max"   longueur maximale du texte
         "pieces_max" nombre maximal de pièces jointes
         "themes_max" nombre maximal de thèmes
@@ -30,23 +31,38 @@ private _catalog = createHashMapFromArray [
         ["FRT", "Fiche technique", "Matériel, véhicule, installation ou marquage relevé."]
     ]],
     ["themes", [
-        ["securite_publique", "Sécurité publique", "#dc2626"],
-        ["menace_armee", "Menace armée", "#dc2626"],
-        ["engins_explosifs", "Engins explosifs", "#dc2626"],
-        ["ordre_public", "Ordre public", "#d97706"],
-        ["trafics", "Trafics", "#d97706"],
-        ["mouvements", "Mouvements et flux", "#d97706"],
-        ["population", "Population et attitude", "#2563eb"],
-        ["infrastructures", "Infrastructures", "#2563eb"],
-        ["communications", "Communications", "#2563eb"],
-        ["logistique", "Logistique adverse", "#2563eb"],
-        ["environnement", "Environnement et terrain", "#4b5563"],
-        ["divers", "Divers", "#4b5563"]
+        ["TERROR", "Terrorisme", "#dc2626"],
+        ["INSURG", "Insurrection", "#dc2626"],
+        ["CBRNE", "CBRNE", "#dc2626"],
+        ["ARMEMENT", "Armement / Matériel", "#ea580c"],
+        ["PERSON", "Personnes / Cibles", "#ea580c"],
+        ["PLANIF", "Planification", "#ea580c"],
+        ["LOGIST", "Logistique", "#ca8a04"],
+        ["COMMS", "Communications", "#ca8a04"],
+        ["FINANCE", "Financement", "#ca8a04"],
+        ["RECRUT", "Recrutement", "#ca8a04"],
+        ["INFRA", "Infrastructures", "#16a34a"],
+        ["ORGAN", "Organisation", "#16a34a"],
+        ["MOUV", "Mouvements", "#16a34a"],
+        ["SECUR", "Sécurité / Protection", "#16a34a"],
+        ["CIVIL", "Environnement civil", "#2563eb"],
+        ["METEO", "Météo / Terrain", "#2563eb"],
+        ["GENERAL", "Général / Divers", "#2563eb"]
     ]],
     ["urgencies", [
-        ["routine", "Courant"],
-        ["priorite", "Prioritaire"],
-        ["immediate", "Immédiat"]
+        ["critique", "Critique"],
+        ["urgent", "Urgent"],
+        ["normal", "Normal"],
+        ["routine", "Routine"]
+    ]],
+    ["sources", [
+        ["HUMINT", "Renseignement humain"],
+        ["IMINT", "Imagerie"],
+        ["SIGINT", "Signaux"],
+        ["OSINT", "Sources ouvertes"],
+        ["TECHINT", "Technique"],
+        ["MASINT", "Mesures et signatures"],
+        ["GEOINT", "Géospatial"]
     ]]
 ];
 

@@ -33,6 +33,13 @@ $sectionIndex = 2;
 <div class="toolbar">
     <div class="toolbar-actions">
         <a class="btn btn--ghost" href="<?= $h(url('atak/sse/transmissions')) ?>">Retour au journal</a>
+        <a class="btn" href="<?= $h(url('atak/sse/transmissions/' . (int) ($event['id'] ?? 0) . '/pdf')) ?>">Télécharger en PDF</a>
+        <?php if (!empty($canManage)): ?>
+            <form method="post" action="<?= $h(url('atak/sse/transmissions/' . (int) ($event['id'] ?? 0) . '/discord')) ?>" style="display:inline">
+                <?= \App\Core\Csrf::field() ?>
+                <button class="btn btn--ghost" type="submit">Envoyer vers Discord</button>
+            </form>
+        <?php endif; ?>
         <?php if ($relatedHref && $relatedLabel): ?>
             <a class="btn" href="<?= $h($relatedHref) ?>"><?= $h($relatedLabel) ?></a>
         <?php endif; ?>

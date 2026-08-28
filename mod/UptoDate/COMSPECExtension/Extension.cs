@@ -28,7 +28,7 @@ public static class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.17.7";
+    private const string ExtensionVersion = "1.17.8";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -5307,6 +5307,11 @@ public static class Extension
         EnsureScreenshotQuota();
 
         var rawPath = args.Length > 0 ? (args[0] ?? "") : "";
+        // Capture visage SEEK : canal fiche, pas reconnaissance. Avant le dédup
+        // pour ne pas bloquer UploadSsePhoto sur le même fichier.
+        if (IsSseIdentityCaptureName(rawPath))
+            return "OK|ignored";
+
         var author = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1])
             ? args[1]!.Trim()
             : (_lastPhotoAuthor.Length > 0 ? _lastPhotoAuthor : (_callSign.Length > 0 ? _callSign : "Unknown"));
@@ -5599,6 +5604,12 @@ public static class Extension
             return;
         }
 
+        if (IsSseIdentityCaptureName(resolved) || IsSseIdentityCaptureName(job.RawPath))
+        {
+            InvokeCallback(cbName, "OK|ignored|" + (Path.GetFileName(resolved) ?? ""));
+            return;
+        }
+
         MultipartFormDataContent? multipart = null;
         HttpRequestMessage? req = null;
         try
@@ -5742,6 +5753,7 @@ public static class Extension
     {
         if (string.IsNullOrWhiteSpace(fullPath)) return;
         if (!IsImageExtension(Path.GetExtension(fullPath))) return;
+        if (IsSseIdentityCaptureName(fullPath)) return;
         if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0) return;
 
         // Debounce Created+Changed pendant l'écriture.
@@ -6213,6 +6225,22 @@ public static class Extension
     private static bool IsImageExtension(string? ext) =>
         !string.IsNullOrEmpty(ext)
         && ImageExtensions.Any(e => e.Equals(ext, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Screenshot SEEK « COMSPEC_SSE_Face_… » : destinée à la fiche, pas au canal reconnaissance.
+    /// </summary>
+    private static bool IsSseIdentityCaptureName(string? pathOrName)
+    {
+        try
+        {
+            var n = Path.GetFileName(pathOrName ?? "") ?? "";
+            return n.StartsWith("COMSPEC_SSE_Face", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     /// <summary>
     /// Résout un chemin BCE / Photo Library (absolu, relatif, ou nom seul) vers un fichier disque.

@@ -270,4 +270,19 @@ final class Database
             return $stmt->rowCount();
         });
     }
+
+    /**
+     * Compatibilité des dépôts ATAK : `$db->query($sql, $params)->fetch()` / `fetchAll()`.
+     *
+     * @param array<int|string, mixed> $params
+     */
+    public function query(string $sql, array $params = []): \PDOStatement
+    {
+        return self::withReconnect(function () use ($sql, $params): \PDOStatement {
+            $stmt = self::getPdo()->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt;
+        });
+    }
 }

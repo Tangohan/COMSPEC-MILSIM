@@ -11,7 +11,10 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantApiKeyRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Integrations\DiscordEventRelayService;
 use App\Services\Platform\FeatureGateService;
+use App\Services\Sse\SseTransmissionDiscordService;
+use App\Support\DiscordWebhookCatalog;
 
 final class OrganizationIntegrationsController
 {
@@ -37,20 +40,150 @@ final class OrganizationIntegrationsController
         if ($tenantId < 2) {
             return Response::redirect(url('dashboard'));
         }
-        $planDenied = $this->assertAdvancedIntegrationsPlan($tenantId);
-        if ($planDenied !== null) {
-            return $planDenied;
-        }
-        $keys = $this->apiKeys->listForTenant($tenantId);
+        $planAllowed = $this->featureGate->allows($tenantId, 'advanced_integrations');
+        $keys = $planAllowed ? $this->apiKeys->listForTenant($tenantId) : [];
         $flashKey = Session::getFlash('new_integration_key');
+        $discord = new DiscordEventRelayService();
+        $sse = new SseTransmissionDiscordService();
 
         return Response::view('layout.main', [
-            'title' => 'Intégrations — clés d’accès',
+            'title' => 'Intégrations',
             'content' => 'admin.organization.integrations',
             'integration_keys' => $keys,
             'new_integration_key_plain' => is_string($flashKey) ? $flashKey : null,
             'available_scopes' => self::AVAILABLE_SCOPES,
+            'api_keys_allowed' => $planAllowed,
+            'discord_events' => DiscordWebhookCatalog::events(),
+            'discord_state' => $discord->state($tenantId),
+            'discord_relays' => $sse->publicRelays($tenantId),
+            'use_community_relay' => $sse->usesCommunityRelay($tenantId),
+            'community_relay_ready' => $sse->communityRelayReady($tenantId),
         ]);
+    }
+
+    public function saveDiscord(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $events = $request->input('discord_event', []);
+        $events = is_array($events) ? $events : [];
+        $result = (new DiscordEventRelayService())->save(
+            $tenantId,
+            (string) $request->input('discord_webhook_url', ''),
+            $events
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/integrations') . '#relais-discord');
+    }
+
+    public function testDiscord(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $eventKey = trim((string) $request->input('event_key', ''));
+        $result = (new DiscordEventRelayService())->sendTest($tenantId, $eventKey);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/integrations') . '#relais-discord');
+    }
+
+    public function storeSseRelay(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $result = (new SseTransmissionDiscordService())->addRelay(
+            (int) Session::get('tenant_id'),
+            (string) $request->input('label', ''),
+            (string) $request->input('discord_url', '')
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/integrations') . '#relais-transmissions');
+    }
+
+    public function deleteSseRelay(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $result = (new SseTransmissionDiscordService())->removeRelay(
+            (int) Session::get('tenant_id'),
+            (string) ($params['relayId'] ?? '')
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/integrations') . '#relais-transmissions');
+    }
+
+    public function testSseRelay(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $result = (new SseTransmissionDiscordService())->sendTest(
+            (int) Session::get('tenant_id'),
+            (string) ($params['relayId'] ?? '')
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/integrations') . '#relais-transmissions');
+    }
+
+    public function saveSseCommunity(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $enabled = (string) $request->input('use_community_relay', '0') === '1';
+        $result = (new SseTransmissionDiscordService())->setUseCommunityRelay(
+            (int) Session::get('tenant_id'),
+            $enabled
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/integrations') . '#relais-transmissions');
     }
 
     public function create(Request $request, array $params = []): Response
@@ -230,6 +363,24 @@ final class OrganizationIntegrationsController
         Session::flash('success', 'Clé tournée avec succès. Mettez à jour vos services immédiatement.');
 
         return Response::redirect(url('back-office/integrations'));
+    }
+
+    private function guardOrg(): ?Response
+    {
+        $user = $this->auth->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization')) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
+        }
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        if ($tenantId < 2) {
+            return Response::redirect(url('dashboard'));
+        }
+
+        return null;
     }
 
     private function assertAdvancedIntegrationsPlan(int $tenantId): ?Response

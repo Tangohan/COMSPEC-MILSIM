@@ -208,12 +208,6 @@ $gradeLabel = 'Opérateur';
 $gradeLong = 'Opérateur';
 $gradeOtan = null;
 $gr = $grade ?? null;
-if (is_array($gr)) {
-    $gradeLabel = (string) ($gr['label_short'] ?? $gr['short_name'] ?? $gr['label_long'] ?? $gr['name'] ?? 'Opérateur');
-    $gradeLong = (string) ($gr['label_long'] ?? $gr['name'] ?? $gradeLabel);
-    $otanRaw = trim((string) ($gr['label_otan'] ?? $gr['nato_code'] ?? ''));
-    $gradeOtan = $otanRaw !== '' ? $otanRaw : null;
-}
 
 $pe = $personnelExtras ?? null;
 $matricule = is_array($pe) ? ($pe['service_number'] ?? null) : null;
@@ -238,6 +232,23 @@ if (!is_array($pp) && is_array($cu)) {
         $pp = \App\Core\Container::get(\App\Repositories\PersonnelProfileRepository::class)->getByUserId((int) $cu['id']);
     } catch (\Throwable) {
         $pp = null;
+    }
+}
+
+if (is_array($gr)) {
+    try {
+        $gradeDisplay = \App\Core\Container::get(\App\Services\GradeDisplayService::class);
+        $title = trim($gradeDisplay->headerTitle($gr, is_array($pp) ? $pp : null));
+        if ($title !== '') {
+            $gradeLabel = $title;
+            $gradeLong = $title;
+        }
+        $gradeOtan = $gradeDisplay->headerShortCode($gr, is_array($pp) ? $pp : null);
+    } catch (\Throwable) {
+        $gradeLabel = (string) ($gr['label_long'] ?? $gr['label_short'] ?? $gr['name'] ?? 'Opérateur');
+        $gradeLong = $gradeLabel;
+        $otanRaw = trim((string) ($gr['label_otan'] ?? $gr['nato_code'] ?? ''));
+        $gradeOtan = $otanRaw !== '' ? $otanRaw : null;
     }
 }
 

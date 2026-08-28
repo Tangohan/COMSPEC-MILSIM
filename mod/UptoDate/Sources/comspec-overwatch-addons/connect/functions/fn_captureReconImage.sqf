@@ -142,6 +142,7 @@ private _fnc_basename = {
 };
 
 _path = [_path] call _fnc_cleanPath;
+if ((toLower _path) find "comspec_sse_face" >= 0) exitWith { true };
 
 if (_path isEqualTo "") then {
     _path = missionNamespace getVariable ["COMSPEC_LastScreenshotPath", ""];
@@ -164,8 +165,8 @@ private _isQueuedOk = {
     };
     if (_text isEqualTo "") exitWith { false };
     private _u = toUpper _text;
-    // Uniquement une vraie mise en file — pas OK|duplicate.
-    ((_u find "OK|QUEUED") == 0) || {_u isEqualTo "OK"}
+    // Mise en file, ou ignore volontaire (visage SEEK ≠ reconnaissance).
+    ((_u find "OK|QUEUED") == 0) || {(_u find "OK|IGNORED") == 0} || {_u isEqualTo "OK"}
 };
 
 private _fnc_stripExtQuotes = {

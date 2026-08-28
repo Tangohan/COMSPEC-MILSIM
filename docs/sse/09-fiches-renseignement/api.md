@@ -37,8 +37,9 @@ intitulés que le portail.
   "attachments_max": 4,
   "themes_max": 4,
   "kinds": [{ "code": "FRM", "label": "Fiche de renseignement de mission", "hint": "…" }],
-  "themes": [{ "code": "securite_publique", "label": "Sécurité publique", "tone": "critical" }],
-  "urgencies": [{ "code": "routine", "label": "Courant", "hint": "…" }]
+  "themes": [{ "code": "TERROR", "label": "Terrorisme", "tone": "critical", "color": "#dc2626", "hint": "…" }],
+  "urgencies": [{ "code": "routine", "label": "Routine", "hint": "…" }],
+  "sources": [{ "code": "HUMINT", "label": "Renseignement humain", "hint": "…" }]
 }
 ```
 
@@ -49,9 +50,11 @@ Corps JSON. Seuls `body` et `themes` sont obligatoires.
 | Champ | Type | Rôle |
 |---|---|---|
 | `body` | chaîne | Le renseignement. Tronqué à 1000 caractères. |
-| `themes` | liste | Codes de thème. Les codes inconnus sont ignorés, la liste est plafonnée à 4. |
+| `themes` | liste | Codes de thème (`TERROR`, `MOUV`, …). Les codes inconnus sont ignorés, la liste est plafonnée à 4. |
+| `title` | chaîne | Objet, 180 caractères. Facultatif. |
 | `note_kind` | chaîne | `FRM` par défaut. |
-| `urgency` | chaîne | `routine` par défaut. |
+| `urgency` | chaîne | `routine` par défaut (`critique`, `urgent`, `normal`, `routine`). |
+| `intel_source` | chaîne | Discipline de recueil (`HUMINT`, `IMINT`, …). Facultatif. |
 | `observed_at` | chaîne | Date du constat. À défaut, l'instant de réception. |
 | `place_label` | chaîne | Lieu en clair. |
 | `grid_reference` | chaîne | Carroyage. |

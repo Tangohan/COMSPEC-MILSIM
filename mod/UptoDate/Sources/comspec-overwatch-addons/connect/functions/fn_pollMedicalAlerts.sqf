@@ -126,6 +126,39 @@ if (!_bootstrapped) then {
                     [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
                 };
             };
+
+            // Relais local vers le panneau PANIC (si le signal jeu n’est pas passé).
+            if (!isNil "comspec_overwatch_connect_fnc_pushIcemanMedicalAlert") then {
+                private _kindNorm = toLower _kind;
+                if (_kindNorm in ["death", "dead", "kia"]) then { _kindNorm = "kia"; };
+                if (_kindNorm in ["unconscious", "cardiac_arrest", "kia"]) then {
+                    private _sender = objNull;
+                    private _csUp = toUpper _cs;
+                    {
+                        private _n = toUpper (name _x);
+                        private _c = toUpper (trim (_x getVariable ["COMSPEC_Callsign", ""]));
+                        if (_n isEqualTo _csUp || {_c isEqualTo _csUp}) exitWith { _sender = _x; };
+                    } forEach allPlayers;
+                    private _pos = if (!isNull _sender) then { getPos _sender } else { [] };
+                    if ((count _pos) < 2 && {_grid isNotEqualTo ""} && {!isNil "BIS_fnc_gridToPos"}) then {
+                        private _corners = [_grid] call BIS_fnc_gridToPos;
+                        if ((_corners isEqualType []) && {(count _corners) >= 2}) then {
+                            private _a = _corners select 0;
+                            private _b = _corners select 1;
+                            if ((_a isEqualType []) && {(_b isEqualType [])} && {(count _a) >= 2} && {(count _b) >= 2}) then {
+                                _pos = [
+                                    ((_a select 0) + (_b select 0)) / 2,
+                                    ((_a select 1) + (_b select 1)) / 2,
+                                    0
+                                ];
+                            };
+                        };
+                    };
+                    if ((count _pos) >= 2) then {
+                        [_kindNorm, _sender, _pos, _cs, _lb, false] call comspec_overwatch_connect_fnc_pushIcemanMedicalAlert;
+                    };
+                };
+            };
         };
     } forEach _alerts;
 };

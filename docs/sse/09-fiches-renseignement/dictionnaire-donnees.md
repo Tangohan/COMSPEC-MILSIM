@@ -15,13 +15,15 @@ obtient les tables au premier accès.
 | `reference_code` | `VARCHAR(32)` | `FR-<année>-<séquence>`, unique par communauté |
 | `note_kind` | `VARCHAR(16)` | `FRM`, `FRO`, `FRC`, `FRA`, `FRT` |
 | `themes` | `VARCHAR(400)` | Liste JSON de codes de thème, 4 au maximum |
+| `title` | `VARCHAR(180)` | Objet de la fiche, facultatif |
 | `body` | `MEDIUMTEXT` | Le renseignement, 1000 caractères utiles |
 | `observed_at` | `DATETIME` | Date du constat, pas de la saisie |
 | `place_label` | `VARCHAR(180)` | Lieu en clair |
 | `grid_reference` | `VARCHAR(32)` | Carroyage |
 | `pos_x`, `pos_y`, `pos_z` | `DECIMAL(12,2)` | Position jeu |
 | `lat`, `lng` | `DECIMAL(10,7)` | Coordonnées géographiques |
-| `urgency` | `VARCHAR(16)` | `routine`, `priorite`, `immediate` |
+| `urgency` | `VARCHAR(16)` | `critique`, `urgent`, `normal`, `routine` |
+| `intel_source` | `VARCHAR(16)` | Discipline de recueil (`HUMINT`, `IMINT`, …), facultatif |
 | `classification` | `VARCHAR(24)` | Reprend la diffusion active du portail |
 | `source_reliability` | `CHAR(1)` | `A` à `F`, `C` par défaut |
 | `info_credibility` | `TINYINT UNSIGNED` | 1 à 6, 3 par défaut |

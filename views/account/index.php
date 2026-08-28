@@ -115,7 +115,7 @@ $chevron = '<svg class="account-hub__action-chevron" width="18" height="18" fill
                     <?php if ($callsign !== ''): ?>Indicatif : <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?><?php else: ?>Indicatif non renseigné<?php endif; ?>
                 </p>
                 <p class="account-hub__stat-meta">
-                    <?= $fullNameVal !== '' ? 'Prénom et nom : ' . htmlspecialchars($fullNameVal, ENT_QUOTES, 'UTF-8') : 'Prénom et nom non renseignés' ?>
+                    <?= $fullNameVal !== '' ? 'Personnage : ' . htmlspecialchars($fullNameVal, ENT_QUOTES, 'UTF-8') : 'Prénom et nom du personnage non renseignés' ?>
                 </p>
                 <p class="account-hub__stat-meta" style="margin-top:.55rem">
                     <a href="<?= htmlspecialchars($prefUrl, ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline;text-underline-offset:2px">Modifier le profil</a>
@@ -150,7 +150,7 @@ $hubSections = [
             [
                 'href' => $prefUrl,
                 'title' => 'Profil & préférences',
-                'desc' => 'Nom affiché, indicatif, identité civile, fuseau, thème et barre latérale.',
+                'desc' => 'Nom affiché, indicatif, prénom et nom du personnage, fuseau, thème et barre latérale.',
                 'icon' => '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
             ],
             [

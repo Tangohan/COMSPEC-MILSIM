@@ -8,18 +8,34 @@ namespace App\Support;
  * Référentiel des fiches de renseignement simplifiées.
  *
  * Une fiche porte un type (badge bleu), un ou plusieurs thèmes (badges colorés),
- * un degré d'urgence et un état de suivi. Les libellés servent l'affichage —
- * côté terrain comme côté bureau, pour que l'ATAK et le portail parlent pareil.
+ * un degré d'urgence, une discipline de recueil et un état de suivi. Les
+ * libellés servent l'affichage — côté terrain comme côté bureau, pour que
+ * l'ATAK et le portail parlent pareil.
  */
 final class SseFieldNoteCatalog
 {
     public const BODY_MAX_LENGTH = 1000;
+    public const TITLE_MAX_LENGTH = 180;
     public const ATTACHMENTS_MAX = 4;
     public const THEMES_MAX = 4;
 
     public const DEFAULT_KIND = 'FRM';
     public const DEFAULT_URGENCY = 'routine';
     public const DEFAULT_STATUS = 'transmise';
+    public const DEFAULT_SOURCE = '';
+
+    /** @var list<string> */
+    public const TONES = ['critical', 'warning', 'caution', 'stable', 'info', 'neutral'];
+
+    /** @var array<string, string> */
+    public const TONE_COLORS = [
+        'critical' => '#dc2626',
+        'warning' => '#ea580c',
+        'caution' => '#ca8a04',
+        'stable' => '#16a34a',
+        'info' => '#2563eb',
+        'neutral' => '#4b5563',
+    ];
 
     /**
      * Types de fiche. La clé est le sigle affiché en badge.
@@ -50,41 +66,187 @@ final class SseFieldNoteCatalog
     ];
 
     /**
-     * Thèmes. « tone » sert uniquement à colorer le badge.
+     * Thèmes opérationnels. « tone » colore le badge ; « hint » précise le périmètre.
      *
-     * @var array<string, array{label: string, tone: string}>
+     * @var array<string, array{label: string, hint: string, tone: string}>
      */
     public const THEMES = [
-        'securite_publique' => ['label' => 'Sécurité publique', 'tone' => 'critical'],
-        'menace_armee' => ['label' => 'Menace armée', 'tone' => 'critical'],
-        'engins_explosifs' => ['label' => 'Engins explosifs', 'tone' => 'critical'],
-        'ordre_public' => ['label' => 'Ordre public', 'tone' => 'warning'],
-        'trafics' => ['label' => 'Trafics', 'tone' => 'warning'],
-        'mouvements' => ['label' => 'Mouvements et flux', 'tone' => 'warning'],
-        'population' => ['label' => 'Population et attitude', 'tone' => 'info'],
-        'infrastructures' => ['label' => 'Infrastructures', 'tone' => 'info'],
-        'communications' => ['label' => 'Communications', 'tone' => 'info'],
-        'logistique' => ['label' => 'Logistique adverse', 'tone' => 'info'],
-        'environnement' => ['label' => 'Environnement et terrain', 'tone' => 'neutral'],
-        'divers' => ['label' => 'Divers', 'tone' => 'neutral'],
+        'TERROR' => [
+            'label' => 'Terrorisme',
+            'hint' => 'Attentats, cellules terroristes, réseaux, financement, recrutement.',
+            'tone' => 'critical',
+        ],
+        'INSURG' => [
+            'label' => 'Insurrection',
+            'hint' => 'Mouvements insurgés, rébellion, groupes armés non étatiques.',
+            'tone' => 'critical',
+        ],
+        'CBRNE' => [
+            'label' => 'CBRNE',
+            'hint' => 'Armes chimiques, biologiques, radiologiques, nucléaires, explosives.',
+            'tone' => 'critical',
+        ],
+        'ARMEMENT' => [
+            'label' => 'Armement / Matériel',
+            'hint' => 'Armes, munitions, équipements, véhicules, systèmes d’armes.',
+            'tone' => 'warning',
+        ],
+        'PERSON' => [
+            'label' => 'Personnes / Cibles',
+            'hint' => 'Personnalités, cibles de haute valeur, leaders, combattants, personnel clé.',
+            'tone' => 'warning',
+        ],
+        'PLANIF' => [
+            'label' => 'Planification',
+            'hint' => 'Intentions, plans, objectifs, calendriers d’opérations.',
+            'tone' => 'warning',
+        ],
+        'LOGIST' => [
+            'label' => 'Logistique',
+            'hint' => 'Ravitaillement, transport, stockage, chaînes d’approvisionnement.',
+            'tone' => 'caution',
+        ],
+        'COMMS' => [
+            'label' => 'Communications',
+            'hint' => 'Réseaux, transmissions, signaux, cyber, guerre électronique.',
+            'tone' => 'caution',
+        ],
+        'FINANCE' => [
+            'label' => 'Financement',
+            'hint' => 'Flux financiers, blanchiment, ressources, économie illicite.',
+            'tone' => 'caution',
+        ],
+        'RECRUT' => [
+            'label' => 'Recrutement',
+            'hint' => 'Enrôlement, radicalisation, formation, entraînement.',
+            'tone' => 'caution',
+        ],
+        'INFRA' => [
+            'label' => 'Infrastructures',
+            'hint' => 'Bâtiments, installations, sites sensibles, points nodaux.',
+            'tone' => 'stable',
+        ],
+        'ORGAN' => [
+            'label' => 'Organisation',
+            'hint' => 'Structures de commandement, hiérarchie, unités, groupes.',
+            'tone' => 'stable',
+        ],
+        'MOUV' => [
+            'label' => 'Mouvements',
+            'hint' => 'Déplacements, infiltrations, exfiltrations, migrations.',
+            'tone' => 'stable',
+        ],
+        'SECUR' => [
+            'label' => 'Sécurité / Protection',
+            'hint' => 'Mesures de sécurité, protection de forces, contre-ingérence.',
+            'tone' => 'stable',
+        ],
+        'CIVIL' => [
+            'label' => 'Environnement civil',
+            'hint' => 'Population, sentiments, leaders communautaires, humanitaire.',
+            'tone' => 'info',
+        ],
+        'METEO' => [
+            'label' => 'Météo / Terrain',
+            'hint' => 'Conditions météo, terrain, environnement opérationnel.',
+            'tone' => 'info',
+        ],
+        'GENERAL' => [
+            'label' => 'Général / Divers',
+            'hint' => 'Renseignement non catégorisable, informations contextuelles.',
+            'tone' => 'info',
+        ],
     ];
 
-    /** @var array<string, array{label: string, hint: string, tone: string}> */
+    /**
+     * Anciens codes conservés pour relire les fiches déjà transmises.
+     *
+     * @var array<string, string>
+     */
+    public const LEGACY_THEMES = [
+        'securite_publique' => 'SECUR',
+        'menace_armee' => 'INSURG',
+        'engins_explosifs' => 'CBRNE',
+        'ordre_public' => 'INSURG',
+        'trafics' => 'FINANCE',
+        'mouvements' => 'MOUV',
+        'population' => 'CIVIL',
+        'infrastructures' => 'INFRA',
+        'communications' => 'COMMS',
+        'logistique' => 'LOGIST',
+        'environnement' => 'METEO',
+        'divers' => 'GENERAL',
+    ];
+
+    /**
+     * @var array<string, array{label: string, hint: string, tone: string}>
+     */
     public const URGENCIES = [
+        'critique' => [
+            'label' => 'Critique',
+            'hint' => 'Menace imminente : remonter immédiatement au poste de commandement.',
+            'tone' => 'critical',
+        ],
+        'urgent' => [
+            'label' => 'Urgent',
+            'hint' => 'À traiter sans délai, dans les prochaines heures.',
+            'tone' => 'warning',
+        ],
+        'normal' => [
+            'label' => 'Normal',
+            'hint' => 'À regarder dans le cours de la journée.',
+            'tone' => 'caution',
+        ],
         'routine' => [
-            'label' => 'Courant',
+            'label' => 'Routine',
             'hint' => 'À exploiter dans le cours normal du travail.',
             'tone' => 'neutral',
         ],
-        'priorite' => [
-            'label' => 'Prioritaire',
-            'hint' => 'À regarder dans la journée.',
-            'tone' => 'warning',
+    ];
+
+    /**
+     * Anciens degrés d'urgence encore présents en base.
+     *
+     * @var array<string, string>
+     */
+    public const URGENCY_ALIASES = [
+        'immediate' => 'critique',
+        'priorite' => 'urgent',
+    ];
+
+    /**
+     * Discipline de recueil. La clé est le sigle métier affiché.
+     *
+     * @var array<string, array{label: string, hint: string}>
+     */
+    public const SOURCES = [
+        'HUMINT' => [
+            'label' => 'Renseignement humain',
+            'hint' => 'Témoignage, contact, interrogation, source humaine.',
         ],
-        'immediate' => [
-            'label' => 'Immédiat',
-            'hint' => 'Doit remonter tout de suite au poste de commandement.',
-            'tone' => 'critical',
+        'IMINT' => [
+            'label' => 'Imagerie',
+            'hint' => 'Photographie, drone, satellite, observation optique.',
+        ],
+        'SIGINT' => [
+            'label' => 'Signaux',
+            'hint' => 'Écoutes, transmissions, guerre électronique.',
+        ],
+        'OSINT' => [
+            'label' => 'Sources ouvertes',
+            'hint' => 'Presse, réseaux, documents publics, rumeur vérifiable.',
+        ],
+        'TECHINT' => [
+            'label' => 'Technique',
+            'hint' => 'Matériel saisi, analyse d’arme ou d’engin.',
+        ],
+        'MASINT' => [
+            'label' => 'Mesures et signatures',
+            'hint' => 'Détections physiques, chimiques, acoustiques, radiologiques.',
+        ],
+        'GEOINT' => [
+            'label' => 'Géospatial',
+            'hint' => 'Cartographie, relief, occupation du sol, itinéraires.',
         ],
     ];
 
@@ -128,7 +290,7 @@ final class SseFieldNoteCatalog
     {
         $out = [];
         foreach (self::THEMES as $code => $def) {
-            $out[$code] = $def['label'];
+            $out[$code] = $code . ' — ' . $def['label'];
         }
 
         return $out;
@@ -140,6 +302,17 @@ final class SseFieldNoteCatalog
         $out = [];
         foreach (self::URGENCIES as $code => $def) {
             $out[$code] = $def['label'];
+        }
+
+        return $out;
+    }
+
+    /** @return array<string, string> */
+    public static function sourceOptions(): array
+    {
+        $out = [];
+        foreach (self::SOURCES as $code => $def) {
+            $out[$code] = $code . ' — ' . $def['label'];
         }
 
         return $out;
@@ -160,13 +333,16 @@ final class SseFieldNoteCatalog
     public static function normalizeUrgency(mixed $value): string
     {
         $code = strtolower(trim((string) $value));
+        $code = self::URGENCY_ALIASES[$code] ?? $code;
 
         return isset(self::URGENCIES[$code]) ? $code : self::DEFAULT_URGENCY;
     }
 
     public static function urgencyLabel(string $code): string
     {
-        return self::URGENCIES[strtolower($code)]['label'] ?? self::URGENCIES[self::DEFAULT_URGENCY]['label'];
+        $normalized = self::normalizeUrgency($code);
+
+        return self::URGENCIES[$normalized]['label'] ?? self::URGENCIES[self::DEFAULT_URGENCY]['label'];
     }
 
     public static function normalizeStatus(mixed $value): string
@@ -186,14 +362,63 @@ final class SseFieldNoteCatalog
         return self::ORIGINS[strtolower($code)] ?? self::ORIGINS['web'];
     }
 
+    public static function normalizeSource(mixed $value): string
+    {
+        $code = strtoupper(trim((string) $value));
+        if ($code === '' || !isset(self::SOURCES[$code])) {
+            return self::DEFAULT_SOURCE;
+        }
+
+        return $code;
+    }
+
+    public static function sourceLabel(string $code): string
+    {
+        $normalized = self::normalizeSource($code);
+        if ($normalized === '' || !isset(self::SOURCES[$normalized])) {
+            return '';
+        }
+
+        return self::SOURCES[$normalized]['label'];
+    }
+
+    public static function normalizeThemeCode(mixed $value): string
+    {
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return '';
+        }
+        $upper = strtoupper($raw);
+        if (isset(self::THEMES[$upper])) {
+            return $upper;
+        }
+        $lower = strtolower($raw);
+
+        return self::LEGACY_THEMES[$lower] ?? '';
+    }
+
     public static function themeLabel(string $code): string
     {
-        return self::THEMES[strtolower($code)]['label'] ?? $code;
+        $normalized = self::normalizeThemeCode($code);
+        if ($normalized === '' || !isset(self::THEMES[$normalized])) {
+            return $code;
+        }
+
+        return self::THEMES[$normalized]['label'];
     }
 
     public static function themeTone(string $code): string
     {
-        return self::THEMES[strtolower($code)]['tone'] ?? 'neutral';
+        $normalized = self::normalizeThemeCode($code);
+
+        return self::THEMES[$normalized]['tone'] ?? 'neutral';
+    }
+
+    public static function themeColor(string $code): string
+    {
+        $tone = self::themeTone($code);
+
+        return self::TONE_COLORS[$tone] ?? self::TONE_COLORS['neutral'];
     }
 
     public static function attachmentKindLabel(string $code): string
@@ -203,6 +428,7 @@ final class SseFieldNoteCatalog
 
     /**
      * Garde uniquement des thèmes connus, sans doublon, dans la limite fixée.
+     * Les anciens codes sont traduits vers le référentiel courant.
      *
      * @param mixed $value liste, chaîne JSON ou liste séparée par des virgules
      * @return list<string>
@@ -223,8 +449,8 @@ final class SseFieldNoteCatalog
 
         $out = [];
         foreach ($value as $raw) {
-            $code = strtolower(trim((string) $raw));
-            if ($code === '' || !isset(self::THEMES[$code]) || in_array($code, $out, true)) {
+            $code = self::normalizeThemeCode($raw);
+            if ($code === '' || in_array($code, $out, true)) {
                 continue;
             }
             $out[] = $code;
@@ -234,6 +460,17 @@ final class SseFieldNoteCatalog
         }
 
         return $out;
+    }
+
+    public static function normalizeTitle(mixed $value): string
+    {
+        $title = trim((string) $value);
+        $title = preg_replace('/\s+/u', ' ', $title) ?? $title;
+        if (mb_strlen($title) > self::TITLE_MAX_LENGTH) {
+            $title = mb_substr($title, 0, self::TITLE_MAX_LENGTH);
+        }
+
+        return $title;
     }
 
     /**
@@ -264,20 +501,39 @@ final class SseFieldNoteCatalog
         }
         $themes = [];
         foreach (self::THEMES as $code => $def) {
-            $themes[] = ['code' => $code, 'label' => $def['label'], 'tone' => $def['tone']];
+            $themes[] = [
+                'code' => $code,
+                'label' => $def['label'],
+                'hint' => $def['hint'],
+                'tone' => $def['tone'],
+                'color' => self::themeColor($code),
+            ];
         }
         $urgencies = [];
         foreach (self::URGENCIES as $code => $def) {
-            $urgencies[] = ['code' => $code, 'label' => $def['label'], 'hint' => $def['hint']];
+            $urgencies[] = [
+                'code' => $code,
+                'label' => $def['label'],
+                'hint' => $def['hint'],
+                'tone' => $def['tone'],
+            ];
+        }
+        $sources = [];
+        foreach (self::SOURCES as $code => $def) {
+            $sources[] = ['code' => $code, 'label' => $def['label'], 'hint' => $def['hint']];
         }
 
         return [
             'body_max_length' => self::BODY_MAX_LENGTH,
+            'title_max_length' => self::TITLE_MAX_LENGTH,
             'attachments_max' => self::ATTACHMENTS_MAX,
             'themes_max' => self::THEMES_MAX,
+            'default_kind' => self::DEFAULT_KIND,
+            'default_urgency' => self::DEFAULT_URGENCY,
             'kinds' => $kinds,
             'themes' => $themes,
             'urgencies' => $urgencies,
+            'sources' => $sources,
         ];
     }
 }

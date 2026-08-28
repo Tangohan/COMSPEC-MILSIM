@@ -28,10 +28,10 @@
 //   9642 pièce depuis un fichier local   9643 revenir à la rédaction
 //   9650 fond du volet contexte   9651 titre contexte
 //   9652 date saisie   9653 lieu saisie   9654 repère   9655 code dossier
-//   9656 type de fiche  9657 urgence
-//   9660-9671 bascules de thème
+//   9656 type de fiche  9657 urgence  9658 recueil
+//   9660-9676 bascules de thème
 //   9680 fermer le volet contexte
-//   9690-9697 libellés du volet contexte
+//   9690-9698 libellés du volet contexte
 //   9710-9713 aperçus image           9714 liste de choix photo
 //   9715-9718 fonds des emplacements
 
@@ -354,59 +354,79 @@ class COMSPEC_IntelNote_Dialog {
         };
         class LabelUrgency: LabelDate {
             idc = 9694;
-            text = "<t size='0.40' color='#8b929c'>DEGRÉ D’URGENCE</t>";
+            text = "<t size='0.40' color='#8b929c'>URGENCE</t>";
             y = NT_SH_Y(4);
+            w = (NT_SH_IN_W / 2 - 0.003 * NT_W);
         };
         class ComboUrgency: ComboKind {
             idc = 9657;
             y = (NT_SH_Y(4) + 0.018 * NT_H);
+            w = (NT_SH_IN_W / 2 - 0.003 * NT_W);
+        };
+        class LabelSource: LabelDate {
+            idc = 9698;
+            text = "<t size='0.40' color='#8b929c'>RECUEIL</t>";
+            x = (NT_SH_IN_X + NT_SH_IN_W / 2 + 0.003 * NT_W);
+            y = NT_SH_Y(4);
+            w = (NT_SH_IN_W / 2 - 0.003 * NT_W);
+        };
+        class ComboSource: ComboKind {
+            idc = 9658;
+            x = (NT_SH_IN_X + NT_SH_IN_W / 2 + 0.003 * NT_W);
+            y = (NT_SH_Y(4) + 0.018 * NT_H);
+            w = (NT_SH_IN_W / 2 - 0.003 * NT_W);
         };
         class LabelThemes: LabelDate {
             idc = 9695;
             text = "<t size='0.40' color='#8b929c'>THÈMES — 4 AU MAXIMUM</t>";
             y = NT_SH_Y(5);
         };
-        // Bascules de thème : deux colonnes de six.
+        // Bascules de thème : deux colonnes de neuf (17 thèmes + un emplacement libre).
         class Theme0: COMSPEC_RscButton {
             idc = 9660;
             text = "";
             x = NT_SH_IN_X;
             y = (NT_SH_Y(5) + 0.018 * NT_H);
-            w = (NT_SH_IN_W / 2 - 0.003 * NT_W); h = (0.022 * NT_H);
-            sizeEx = 0.020;
+            w = (NT_SH_IN_W / 2 - 0.003 * NT_W); h = (0.014 * NT_H);
+            sizeEx = 0.016;
             colorBackground[] = {0.063, 0.067, 0.078, 1};
             action = "[0] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;";
         };
-        class Theme1: Theme0 { idc = 9661; y = (NT_SH_Y(5) + 0.044 * NT_H); action = "[1] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme2: Theme0 { idc = 9662; y = (NT_SH_Y(5) + 0.070 * NT_H); action = "[2] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme3: Theme0 { idc = 9663; y = (NT_SH_Y(5) + 0.096 * NT_H); action = "[3] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme4: Theme0 { idc = 9664; y = (NT_SH_Y(5) + 0.122 * NT_H); action = "[4] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme5: Theme0 { idc = 9665; y = (NT_SH_Y(5) + 0.148 * NT_H); action = "[5] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme6: Theme0 {
-            idc = 9666;
+        class Theme1: Theme0 { idc = 9661; y = (NT_SH_Y(5) + 0.033 * NT_H); action = "[1] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme2: Theme0 { idc = 9662; y = (NT_SH_Y(5) + 0.048 * NT_H); action = "[2] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme3: Theme0 { idc = 9663; y = (NT_SH_Y(5) + 0.063 * NT_H); action = "[3] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme4: Theme0 { idc = 9664; y = (NT_SH_Y(5) + 0.078 * NT_H); action = "[4] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme5: Theme0 { idc = 9665; y = (NT_SH_Y(5) + 0.093 * NT_H); action = "[5] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme6: Theme0 { idc = 9666; y = (NT_SH_Y(5) + 0.108 * NT_H); action = "[6] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme7: Theme0 { idc = 9667; y = (NT_SH_Y(5) + 0.123 * NT_H); action = "[7] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme8: Theme0 { idc = 9668; y = (NT_SH_Y(5) + 0.138 * NT_H); action = "[8] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme9: Theme0 {
+            idc = 9669;
             x = (NT_SH_IN_X + NT_SH_IN_W / 2 + 0.003 * NT_W);
-            action = "[6] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;";
+            action = "[9] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;";
         };
-        class Theme7: Theme6 { idc = 9667; y = (NT_SH_Y(5) + 0.044 * NT_H); action = "[7] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme8: Theme6 { idc = 9668; y = (NT_SH_Y(5) + 0.070 * NT_H); action = "[8] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme9: Theme6 { idc = 9669; y = (NT_SH_Y(5) + 0.096 * NT_H); action = "[9] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme10: Theme6 { idc = 9670; y = (NT_SH_Y(5) + 0.122 * NT_H); action = "[10] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme11: Theme6 { idc = 9671; y = (NT_SH_Y(5) + 0.148 * NT_H); action = "[11] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme10: Theme9 { idc = 9670; y = (NT_SH_Y(5) + 0.033 * NT_H); action = "[10] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme11: Theme9 { idc = 9671; y = (NT_SH_Y(5) + 0.048 * NT_H); action = "[11] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme12: Theme9 { idc = 9672; y = (NT_SH_Y(5) + 0.063 * NT_H); action = "[12] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme13: Theme9 { idc = 9673; y = (NT_SH_Y(5) + 0.078 * NT_H); action = "[13] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme14: Theme9 { idc = 9674; y = (NT_SH_Y(5) + 0.093 * NT_H); action = "[14] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme15: Theme9 { idc = 9675; y = (NT_SH_Y(5) + 0.108 * NT_H); action = "[15] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme16: Theme9 { idc = 9676; y = (NT_SH_Y(5) + 0.123 * NT_H); action = "[16] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
 
         class LabelCase: LabelDate {
             idc = 9696;
             text = "<t size='0.40' color='#8b929c'>RATTACHER À UN DOSSIER (FACULTATIF)</t>";
-            y = (NT_SH_Y(5) + 0.180 * NT_H);
+            y = (NT_SH_Y(5) + 0.158 * NT_H);
         };
         class EditCase: EditDate {
             idc = 9655;
-            y = (NT_SH_Y(5) + 0.198 * NT_H);
+            y = (NT_SH_Y(5) + 0.176 * NT_H);
             tooltip = "Laissez vide si vous ne connaissez pas la référence : le bureau classera la fiche.";
         };
         class SheetHint: RscStructuredText {
             idc = 9697;
             text = "<t size='0.38' color='#6f7681'>Une fiche n’identifie personne et ne vaut pas preuve : elle consigne un constat daté et situé.</t>";
-            x = NT_SH_IN_X; y = (NT_SH_Y(5) + 0.226 * NT_H); w = NT_SH_IN_W; h = (0.044 * NT_H);
+            x = NT_SH_IN_X; y = (NT_SH_Y(5) + 0.204 * NT_H); w = NT_SH_IN_W; h = (0.044 * NT_H);
         };
         class BtnSheetClose: COMSPEC_RscButtonAccent {
             idc = 9680;
