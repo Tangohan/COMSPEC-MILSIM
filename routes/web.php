@@ -1991,6 +1991,11 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/terrain/contours', [\App\Controllers\Api\AtakTerrainApiController::class, 'contours']);
     $router->get('/api/atak/scene', [\App\Controllers\Api\AtakSceneApiController::class, 'index']);
     $router->post('/api/atak/scene/ingest', [\App\Controllers\Api\AtakSceneApiController::class, 'ingest']);
+    $router->get('/api/atak/geo/places', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'placesIndex']);
+    $router->get('/api/atak/geo/roads', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'roadsIndex']);
+    $router->get('/api/atak/geo/coverage', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'coverage']);
+    $router->post('/api/atak/geo/ingest', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'ingest']);
+    $router->post('/api/atak/route/plan', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'planRoute']);
     $router->get('/api/atak/theater/coverage', [\App\Controllers\Api\AtakSceneApiController::class, 'coverage']);
     $router->get('/api/atak/intel-events', [\App\Controllers\Api\AtakIntelEventApiController::class, 'index']);
 

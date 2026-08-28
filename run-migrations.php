@@ -3470,6 +3470,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakGeoNetworkMigrate = require $root . '/bootstrap/atak_geo_network_migration.php';
+try {
+  echo "Migration atak_geo_network (lieux nommés et segments routiers)...\n";
+  $atakGeoNetworkMigrate($pdo);
+} catch (Throwable $e) {
+  echo '  [ATTENTION] atak_geo_network : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakMedicalTriageMigrate = require $root . '/bootstrap/atak_medical_triage_migration.php';
 try {
     echo "Migration atak_medical_alert_triage (triage alertes médicales)...\n";

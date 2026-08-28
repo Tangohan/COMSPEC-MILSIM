@@ -50,7 +50,9 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-unit-popup.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-medical-alerts.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-terrain-tools.js?v=202607262015"></script>
-  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-route-tools.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-geo-network.js?v=202608282030"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-route-planner.js?v=202608282030"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-route-tools.js?v=202608282030"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-tactical-alerts.js?v=202607282040"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-recon.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-weather.js"></script>
@@ -146,6 +148,8 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             <label><input type="checkbox" id="tacmap-layer-intel" /> Indices</label>
             <label><input type="checkbox" id="tacmap-layer-sse" /> Dossiers SSE</label>
             <label><input type="checkbox" id="tacmap-layer-elevation" checked /> Terrain</label>
+            <label><input type="checkbox" id="tacmap-layer-geo-places" /> Villes</label>
+            <label><input type="checkbox" id="tacmap-layer-geo-roads" /> Routes</label>
             <label><input type="checkbox" id="tacmap-layer-route" checked /> Itinéraire</label>
           </div>
         </div>
@@ -333,6 +337,8 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             layerTactical: 'tacmap-layer-tactical',
             layerRecon: 'tacmap-layer-recon',
             layerElevation: 'tacmap-layer-elevation',
+            layerGeoPlaces: 'tacmap-layer-geo-places',
+            layerGeoRoads: 'tacmap-layer-geo-roads',
             layerRoute: 'tacmap-layer-route',
             tacticalList: 'tacmap-tactical-list',
             reconList: 'tacmap-recon-list',
