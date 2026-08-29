@@ -226,7 +226,10 @@ $athNavGroups = [
                 'children' => $rsvpChildren,
             ],
             ['label' => 'Comptes rendus', 'href' => url('back-office/atak/comptes-rendus'), 'icon' => 'aar', 'active' => $boNavAar, 'warn' => true],
-            [
+            (
+                class_exists(\App\Support\PortalAccessChoice::class)
+                && \App\Support\PortalAccessChoice::isNoOrganizationContext()
+            ) ? null : [
                 'label' => 'Extranet d’unité',
                 'href' => url('jnet'),
                 'icon' => 'orbat',

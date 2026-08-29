@@ -89,6 +89,14 @@ $headerTenantType = function_exists('navigation_current_tenant_type')
     : \App\Services\Community\TenantTypeConfig::TYPE_FULL;
 $headerTypeLabel = \App\Services\Community\TenantTypeConfig::label($headerTenantType);
 $headerAllowsPath = static function (string $path) use ($headerTenantType): bool {
+    if (
+        ($path === 'jnet' || str_starts_with($path, 'jnet/'))
+        && class_exists(\App\Support\PortalAccessChoice::class)
+        && \App\Support\PortalAccessChoice::isNoOrganizationContext()
+    ) {
+        return false;
+    }
+
     return \App\Services\Community\TenantTypeConfig::uriAllowed($headerTenantType, $path);
 };
 

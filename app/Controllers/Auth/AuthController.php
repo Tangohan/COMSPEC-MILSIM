@@ -95,10 +95,15 @@ class AuthController
             return Response::redirect($after);
         }
 
+        // Compte sans organisation : pas de JNET ni de sélecteur d’espace — dashboard classique.
+        if (PortalAccessChoice::isNoOrganizationContext()) {
+            return Response::redirect(url('dashboard'));
+        }
+
         $remembered = PortalAccessChoice::remembered();
         if ($remembered !== null) {
             if ($remembered === PortalAccessChoice::PORTAL_TBA && !PortalAccessChoice::canAccessTba()) {
-                return Response::redirect(url('jnet'));
+                return Response::redirect(PortalAccessChoice::redirectUrlFor(PortalAccessChoice::PORTAL_JNET));
             }
 
             return Response::redirect(PortalAccessChoice::redirectUrlFor($remembered));
@@ -115,6 +120,9 @@ class AuthController
         $user = $this->authService->user();
         if ($user) {
             $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
+        }
+        if (PortalAccessChoice::isNoOrganizationContext()) {
+            return Response::redirect(url('dashboard'));
         }
         $canTba = PortalAccessChoice::canAccessTba();
         $tenantId = (int) Session::get('tenant_id');
@@ -134,6 +142,9 @@ class AuthController
     {
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
+        }
+        if (PortalAccessChoice::isNoOrganizationContext()) {
+            return Response::redirect(url('dashboard'));
         }
         if (!$request->isPost()) {
             return Response::redirect(url('login/choisir-espace'));
@@ -178,6 +189,9 @@ class AuthController
     public function showLogin(Request $request, array $params = []): Response
     {
         if ($this->authService->check()) {
+            if (PortalAccessChoice::isNoOrganizationContext()) {
+                return Response::redirect(url('dashboard'));
+            }
             $remembered = PortalAccessChoice::remembered();
             if ($remembered !== null) {
                 return Response::redirect(PortalAccessChoice::redirectUrlFor($remembered));

@@ -6,9 +6,11 @@ namespace App\Support;
 
 use App\Core\Gate;
 use App\Core\Session;
+use App\Repositories\TenantRepository;
 
 /**
  * Choix d’espace après connexion : TBA (administration) ou JNET Extranet.
+ * Les comptes sans organisation (tenant système `default`) restent sur le dashboard classique.
  */
 final class PortalAccessChoice
 {
@@ -23,6 +25,48 @@ final class PortalAccessChoice
         return $gate->allows('admin.organization')
             || $gate->allows('admin.access')
             || $gate->allows('site.support');
+    }
+
+    /**
+     * Tenant système « pas d’organisation » (slug default / libellés techniques).
+     *
+     * @param array<string, mixed>|null $tenant
+     */
+    public static function isPlaceholderTenant(?array $tenant): bool
+    {
+        if ($tenant === null) {
+            return true;
+        }
+        $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
+        if ($slug === '' || $slug === 'default') {
+            return true;
+        }
+        $name = mb_strtolower(str_replace(["'", '’'], "'", trim((string) ($tenant['name'] ?? ''))));
+        if ($name === '') {
+            return true;
+        }
+
+        return $name === 'aucune organisation'
+            || str_contains($name, 'aucune organisation')
+            || str_contains($name, "pas d'organisation");
+    }
+
+    /** Session courante sur un compte sans organisation réelle. */
+    public static function isNoOrganizationContext(): bool
+    {
+        $tenantId = (int) Session::get('tenant_id', 0);
+        if ($tenantId <= 0) {
+            return true;
+        }
+        try {
+            /** @var TenantRepository $tenants */
+            $tenants = \App\Core\Container::get(TenantRepository::class);
+            $tenant = $tenants->findById($tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return self::isPlaceholderTenant(is_array($tenant) ? $tenant : null);
     }
 
     public static function remember(string $portal, bool $persist): void
@@ -85,6 +129,9 @@ final class PortalAccessChoice
 
     public static function redirectUrlFor(string $portal): string
     {
+        if (self::isNoOrganizationContext()) {
+            return url('dashboard');
+        }
         $portal = self::normalize($portal) ?? self::PORTAL_JNET;
         if ($portal === self::PORTAL_TBA) {
             if (self::canAccessTba()) {

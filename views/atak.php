@@ -1269,10 +1269,12 @@ if ($atakMapConfig) {
           <span class="atak-section-btn__badge" hidden></span>
         </button>
         <span class="atak-section-rail__sep" aria-hidden="true"></span>
+        <?php if (!(class_exists(\App\Support\PortalAccessChoice::class) && \App\Support\PortalAccessChoice::isNoOrganizationContext())): ?>
         <a class="atak-section-btn atak-section-btn--link atak-section-btn--jnet" href="<?= htmlspecialchars(url('jnet'), ENT_QUOTES, 'UTF-8') ?>" title="Ouvrir le portail JNET">
           <span class="atak-section-btn__icon" aria-hidden="true">⬡</span>
           <span class="atak-section-btn__label">JNET</span>
         </a>
+        <?php endif; ?>
         <a class="atak-section-btn atak-section-btn--link atak-section-btn--sse" href="<?= htmlspecialchars(url('atak/sse'), ENT_QUOTES, 'UTF-8') ?>" title="Ouvrir le portail SSE">
           <span class="atak-section-btn__icon" aria-hidden="true">◈</span>
           <span class="atak-section-btn__label">SSE</span>
