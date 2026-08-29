@@ -27,12 +27,17 @@ final class AtakTerrain3dTextureZoomAssetTest extends TestCase
         self::assertStringContainsString('fillColor', $overview);
         self::assertStringContainsString('setCrossOrigin', $loader);
         self::assertStringContainsString('anisotropy', $loader);
+        self::assertStringContainsString('ensurePowerOfTwoSource', $loader);
+        self::assertStringContainsString('generateMipmaps = false', $loader);
+        self::assertStringContainsString('configureDiffuse', $loader);
         self::assertStringContainsString('syncToWorld', $camera);
         self::assertStringContainsString('_dollyTargetDist', $camera);
         self::assertStringContainsString('resetView', $camera);
         self::assertStringContainsString('dolly(factor, opts)', $camera);
         self::assertStringContainsString('syncCameraToWorld', $renderer);
         self::assertStringContainsString('setTextureFromCanvas', $renderer);
+        self::assertMatchesRegularExpression('/\bresize\s*\(\s*\)\s*\{/', $renderer);
+        self::assertStringContainsString("TerrainMaterialFactory.setMap(this.terrainMaterial, this.textureLoader.texture)", $renderer);
         self::assertStringContainsString('ATAKTerrainThree.dolly', $bridge);
         self::assertStringContainsString('dolly(0.9)', $bridge);
 
@@ -47,6 +52,8 @@ final class AtakTerrain3dTextureZoomAssetTest extends TestCase
         self::assertStringContainsString('resetView: false', $premium);
         self::assertStringContainsString('setLoading', $premium);
         self::assertStringContainsString('terrain3d-loader', $premium);
+        self::assertStringContainsString('is-booting', $premium);
+        self::assertStringContainsString('[ATAK Terrain3D] stitch z=2 échoué', $premium);
         self::assertStringContainsString('mapTileSize', $premium);
         self::assertStringContainsString('cropToLand', $renderer);
         self::assertStringContainsString('_syncSeaPlane', $renderer);

@@ -152,7 +152,7 @@ export class Terrain3DRenderer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.22;
+    this.renderer.toneMappingExposure = 1.05;
 
     this.textureLoader = new TerrainTextureLoader(new THREE.TextureLoader(), THREE);
     this.terrainMesh = null;
@@ -356,8 +356,15 @@ export class Terrain3DRenderer {
 
   /** Applique une texture depuis un canvas (overview stitchée). */
   setTextureFromCanvas(canvas) {
-    if (!canvas || !this.terrainMaterial) return;
+    if (!canvas) return;
     const THREE = this.THREE;
+    if (!this.terrainMaterial) {
+      /* Mesh pas encore prêt : stocke pour le prochain _buildTerrainMesh. */
+      const tex = this.textureLoader.fromSource(canvas, THREE);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+      return;
+    }
     const tex = this.textureLoader.fromSource(canvas, THREE);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.needsUpdate = true;
@@ -426,7 +433,16 @@ export class Terrain3DRenderer {
     });
     this.options.heightData = data;
     this._buildTerrainMesh();
+    /* Ré-applique la diffuse si elle a été perdue au rebuild (évite mesh nu + normals « static »). */
+    if (this.textureLoader && this.textureLoader.texture && this.terrainMaterial) {
+      TerrainMaterialFactory.setMap(this.terrainMaterial, this.textureLoader.texture);
+    }
     this._syncOverlayContext();
+  }
+
+  /** Alias public — appelé après affichage du host (évite TypeError resize). */
+  resize() {
+    this._resize();
   }
 
   /** Modifie l'exagération verticale sans recharger les assets. */

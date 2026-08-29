@@ -1,7 +1,51 @@
 /**
  * Chargement de la texture diffuse (carte topo / satellite).
+ * Important : les canvas d’overview Altis font 848×848 (4×212) — NPOT.
+ * Les mipmaps sur NPOT produisent du bruit/static sur de nombreux GPU →
+ * copie vers une taille puissance de 2, ou filtre linéaire sans mipmaps.
  */
 import { loadImage } from 'atak-terrain3d/utils.js';
+
+function nextPowerOfTwo(n) {
+  let v = Math.max(1, n | 0);
+  v -= 1;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  return v + 1;
+}
+
+function isPowerOfTwo(n) {
+  const v = n | 0;
+  return v > 0 && (v & (v - 1)) === 0;
+}
+
+/**
+ * Copie une source canvas/image vers une toile puissance de 2 (mipmaps sûrs).
+ * @param {HTMLCanvasElement|HTMLImageElement} source
+ * @returns {HTMLCanvasElement|HTMLImageElement}
+ */
+export function ensurePowerOfTwoSource(source) {
+  const w = source.width || source.naturalWidth || 0;
+  const h = source.height || source.naturalHeight || 0;
+  if (w < 1 || h < 1) return source;
+  if (isPowerOfTwo(w) && isPowerOfTwo(h) && source instanceof HTMLCanvasElement) {
+    return source;
+  }
+  const tw = Math.min(2048, nextPowerOfTwo(w));
+  const th = Math.min(2048, nextPowerOfTwo(h));
+  const canvas = document.createElement('canvas');
+  canvas.width = tw;
+  canvas.height = th;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return source;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(source, 0, 0, tw, th);
+  return canvas;
+}
 
 export class TerrainTextureLoader {
   /**
@@ -19,13 +63,36 @@ export class TerrainTextureLoader {
   }
 
   /**
+   * Configure filtres / wrap pour une texture diffuse carte.
+   * @param {THREE.Texture} texture
+   * @param {{ pot?: boolean }} [opts]
+   */
+  configureDiffuse(texture, opts) {
+    const THREE = this.THREE;
+    opts = opts || {};
+    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.magFilter = THREE.LinearFilter;
+    texture.flipY = true;
+    texture.anisotropy = 8;
+    if (opts.pot) {
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.generateMipmaps = true;
+    } else {
+      /* NPOT : pas de mipmaps (sinon bruit / static WebGL). */
+      texture.minFilter = THREE.LinearFilter;
+      texture.generateMipmaps = false;
+    }
+    texture.needsUpdate = true;
+    return texture;
+  }
+
+  /**
    * Charge une texture depuis une URL.
    * @param {string} url
    * @returns {Promise<THREE.Texture>}
    */
   load(url) {
     const self = this;
-    const THREE = this.THREE;
     if (!url) return Promise.reject(new Error('textureUrl requis'));
     if (this.currentUrl === url && this.texture) {
       return Promise.resolve(this.texture);
@@ -34,11 +101,18 @@ export class TerrainTextureLoader {
       self.threeLoader.load(
         url,
         function (texture) {
-          texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
-          texture.minFilter = THREE.LinearMipmapLinearFilter;
-          texture.magFilter = THREE.LinearFilter;
-          texture.anisotropy = 8;
-          texture.generateMipmaps = true;
+          const img = texture.image;
+          const w = img && (img.width || img.naturalWidth) ? (img.width || img.naturalWidth) : 0;
+          const h = img && (img.height || img.naturalHeight) ? (img.height || img.naturalHeight) : 0;
+          const pot = isPowerOfTwo(w) && isPowerOfTwo(h);
+          if (!pot && img) {
+            /* Upscale 212² Altis → 256² pour mipmaps propres. */
+            const potSource = ensurePowerOfTwoSource(img);
+            texture.image = potSource;
+            self.configureDiffuse(texture, { pot: true });
+          } else {
+            self.configureDiffuse(texture, { pot: pot });
+          }
           self.texture = texture;
           self.currentUrl = url;
           resolve(texture);
@@ -56,13 +130,9 @@ export class TerrainTextureLoader {
    * @returns {THREE.Texture}
    */
   fromSource(source, THREE) {
-    const texture = new THREE.Texture(source);
-    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
-    texture.minFilter = THREE.LinearMipmapLinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    texture.anisotropy = 8;
-    texture.generateMipmaps = true;
-    texture.needsUpdate = true;
+    const potSource = ensurePowerOfTwoSource(source);
+    const texture = new THREE.Texture(potSource);
+    this.configureDiffuse(texture, { pot: true });
     this.texture = texture;
     this.currentUrl = null;
     return texture;
