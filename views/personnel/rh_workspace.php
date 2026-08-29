@@ -15,6 +15,12 @@ $absencesSchemaReady = !empty($rhAbsencesSchemaReady);
 $personnelAbsences = is_array($rhPersonnelAbsences ?? null) ? $rhPersonnelAbsences : [];
 $activeAbsences = is_array($rhActiveAbsences ?? null) ? $rhActiveAbsences : [];
 $absenceReasonLabels = is_array($rhAbsenceReasonLabels ?? null) ? $rhAbsenceReasonLabels : [];
+$mobilitySchemaReady = !empty($rhMobilitySchemaReady);
+$myMobility = is_array($rhMyMobility ?? null) ? $rhMyMobility : [];
+$mobilityTypeLabels = is_array($rhMobilityTypeLabels ?? null) ? $rhMobilityTypeLabels : [];
+$hrDocsSchemaReady = !empty($rhHrDocsSchemaReady);
+$myHrDocs = is_array($rhMyHrDocs ?? null) ? $rhMyHrDocs : [];
+$hrDocTypeLabels = is_array($rhHrDocTypeLabels ?? null) ? $rhHrDocTypeLabels : [];
 
 $formatAbsenceDate = static function (?string $ymd): string {
     if ($ymd === null || $ymd === '') {
@@ -533,6 +539,67 @@ $cDoss = $statusToneClasses($statusDossierTone);
                 <?php endif; ?>
             </section>
         </section>
+
+        <?php if ($mobilitySchemaReady || $hrDocsSchemaReady): ?>
+        <section id="mobilite" class="space-y-8" aria-labelledby="rh-zone-mobility-heading">
+            <div>
+                <h2 id="rh-zone-mobility-heading" class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Mobilité et dossier</h2>
+                <p class="mt-2 max-w-2xl text-sm text-slate-600">Souhait d’évolution et documents RH partagés avec vous.</p>
+            </div>
+            <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+                <?php if ($mobilitySchemaReady): ?>
+                <form method="post" action="<?= htmlspecialchars(url('personnel/mon-espace-rh/mobilite'), ENT_QUOTES, 'UTF-8') ?>" class="grid gap-3 sm:grid-cols-2">
+                    <input type="hidden" name="_csrf_token" value="<?= $rhWorkspaceCsrf ?>">
+                    <label class="block text-sm">
+                        <span class="font-semibold text-slate-800">Type</span>
+                        <select name="request_type" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                            <?php foreach ($mobilityTypeLabels as $k => $lab): ?>
+                                <option value="<?= htmlspecialchars((string) $k, ENT_QUOTES, 'UTF-8') ?>" <?= $k === 'career_wish' ? 'selected' : '' ?>><?= htmlspecialchars((string) $lab, ENT_QUOTES, 'UTF-8') ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="block text-sm">
+                        <span class="font-semibold text-slate-800">Poste / unité visée</span>
+                        <input type="text" name="target_label" maxlength="200" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Ex. Chef d’équipe, radio…">
+                    </label>
+                    <label class="block text-sm sm:col-span-2">
+                        <span class="font-semibold text-slate-800">Motivation</span>
+                        <textarea name="motivation" rows="2" maxlength="2000" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Pourquoi ce mouvement ?"></textarea>
+                    </label>
+                    <div class="sm:col-span-2">
+                        <button type="submit" class="inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Envoyer à l’encadrement</button>
+                    </div>
+                </form>
+                <?php if ($myMobility !== []): ?>
+                    <ul class="mt-6 space-y-2 text-sm text-slate-700">
+                        <?php foreach ($myMobility as $m): ?>
+                            <li class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                                <?= htmlspecialchars((string) ($mobilityTypeLabels[$m['request_type'] ?? ''] ?? $m['request_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                — <?= htmlspecialchars((string) ($m['status'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                <?php $tl = trim((string) ($m['target_label'] ?? '')); if ($tl !== ''): ?>
+                                    · <?= htmlspecialchars($tl, ENT_QUOTES, 'UTF-8') ?>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+                <?php endif; ?>
+                <?php if ($hrDocsSchemaReady && $myHrDocs !== []): ?>
+                    <div class="<?= $mobilitySchemaReady ? 'mt-8' : '' ?>">
+                        <p class="text-sm font-semibold text-slate-900">Documents partagés avec vous</p>
+                        <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                            <?php foreach ($myHrDocs as $doc): ?>
+                                <li class="rounded-lg border border-slate-100 px-3 py-2">
+                                    <?= htmlspecialchars((string) ($hrDocTypeLabels[$doc['doc_type'] ?? ''] ?? $doc['doc_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                    — <?= htmlspecialchars((string) ($doc['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
+            </section>
+        </section>
+        <?php endif; ?>
 
         <section class="space-y-8" aria-labelledby="rh-zone-programs-heading">
             <div>

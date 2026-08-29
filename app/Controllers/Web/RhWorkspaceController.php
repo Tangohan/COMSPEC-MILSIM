@@ -11,6 +11,8 @@ use App\Core\Session;
 use App\Repositories\HrCharterRepository;
 use App\Repositories\PersonnelAbsenceRepository;
 use App\Repositories\PersonnelAssignmentRepository;
+use App\Repositories\PersonnelHrDocumentRepository;
+use App\Repositories\PersonnelMobilityRequestRepository;
 use App\Repositories\PlatformModuleReleaseRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
@@ -33,7 +35,12 @@ final class RhWorkspaceController
         private SeniorityDossierInferenceSyncService $seniorityDossierInferenceSyncService,
         private UserRepository $userRepository,
         private PersonnelAbsenceRepository $personnelAbsenceRepository,
-    ) {}
+        private ?PersonnelMobilityRequestRepository $mobilityRequests = null,
+        private ?PersonnelHrDocumentRepository $hrDocuments = null,
+    ) {
+        $this->mobilityRequests ??= new PersonnelMobilityRequestRepository();
+        $this->hrDocuments ??= new PersonnelHrDocumentRepository();
+    }
 
     public function index(Request $request, array $params = []): Response
     {
@@ -96,6 +103,15 @@ final class RhWorkspaceController
             ? $this->personnelAbsenceRepository->listActiveForUser($tenantId, $userId)
             : [];
 
+        $mobilitySchemaReady = $this->mobilityRequests->tableExists();
+        $myMobility = $mobilitySchemaReady
+            ? $this->mobilityRequests->listForUser($tenantId, $userId, 20)
+            : [];
+        $hrDocsSchemaReady = $this->hrDocuments->tableExists();
+        $myHrDocs = $hrDocsSchemaReady
+            ? $this->hrDocuments->listForUser($tenantId, $userId, false, true)
+            : [];
+
         return Response::view('layout.main', [
             'title' => 'Espace RH et formations',
             'content' => 'personnel.rh_workspace',
@@ -112,7 +128,59 @@ final class RhWorkspaceController
             'rhPersonnelAbsences' => $personnelAbsences,
             'rhActiveAbsences' => $activeAbsences,
             'rhAbsenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
+            'rhMobilitySchemaReady' => $mobilitySchemaReady,
+            'rhMyMobility' => $myMobility,
+            'rhMobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
+            'rhHrDocsSchemaReady' => $hrDocsSchemaReady,
+            'rhMyHrDocs' => $myHrDocs,
+            'rhHrDocTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
         ]);
+    }
+
+    public function storeCareerWish(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$user || $tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
+
+            return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
+        }
+        if (!$this->mobilityRequests->tableExists()) {
+            Session::flash('error', 'Les souhaits d’évolution ne sont pas encore disponibles.');
+
+            return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
+        }
+        $type = trim((string) $request->input('request_type', 'career_wish'));
+        if (!in_array($type, PersonnelMobilityRequestRepository::TYPES, true)) {
+            $type = 'career_wish';
+        }
+        $targetLabel = trim((string) $request->input('target_label', ''));
+        $motivation = trim((string) $request->input('motivation', ''));
+        if ($targetLabel === '' && $motivation === '') {
+            Session::flash('error', 'Indiquez au moins un poste ou une motivation.');
+
+            return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
+        }
+        $id = $this->mobilityRequests->create(
+            $tenantId,
+            $userId,
+            $type,
+            null,
+            null,
+            $targetLabel !== '' ? $targetLabel : null,
+            $motivation !== '' ? mb_substr($motivation, 0, 2000) : null,
+            $userId
+        );
+        Session::flash($id > 0 ? 'success' : 'error', $id > 0
+            ? 'Votre demande a été transmise à l’encadrement.'
+            : 'La demande n’a pas pu être enregistrée.');
+
+        return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
     }
 
     public function storeAbsence(Request $request, array $params = []): Response
