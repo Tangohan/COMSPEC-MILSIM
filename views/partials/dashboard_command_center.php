@@ -189,9 +189,21 @@ $heroCopy = $heroCopyBits !== []
 $initials = function_exists('user_display_initials')
     ? user_display_initials($displayName)
     : mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $displayName) ?: 'A', 0, 1));
-$avatarSrc = function_exists('user_media_public_url')
-    ? user_media_public_url(is_array($cu) ? ($cu['avatar_url'] ?? null) : null)
-    : null;
+$dashPp = is_array($personnelProfile ?? null) ? $personnelProfile : null;
+$dashDisplaySettings = null;
+if (is_array($cu)) {
+    try {
+        $dashDisplaySettings = \App\Core\Container::get(\App\Repositories\UserProfileDisplaySettingsRepository::class)
+            ->getOrDefaults((int) $cu['id']);
+    } catch (\Throwable) {
+        $dashDisplaySettings = ['site_photo_priority' => 'operator'];
+    }
+}
+$avatarSrc = function_exists('user_site_avatar_url')
+    ? user_site_avatar_url(is_array($cu) ? $cu : null, $dashPp, is_array($dashDisplaySettings) ? $dashDisplaySettings : null)
+    : (function_exists('user_media_public_url')
+        ? user_media_public_url(is_array($cu) ? ($cu['avatar_url'] ?? null) : null)
+        : null);
 $heroImageRel = 'assets/images/hero-explosion.jpg';
 if (!is_file(base_path('public/' . $heroImageRel))) {
     $heroImageRel = 'assets/images/fog-team.jpg';

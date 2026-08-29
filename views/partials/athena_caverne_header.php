@@ -329,9 +329,20 @@ $athenaSessionId = is_array($cu) ? trim((string) ($cu['athena_identifier'] ?? ''
 $initials = function_exists('user_display_initials')
     ? user_display_initials($headerDisplayName)
     : mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $headerDisplayName) ?: 'A', 0, 1));
-$avatarSrc = function_exists('user_media_public_url')
-    ? user_media_public_url(is_array($cu) ? ($cu['avatar_url'] ?? null) : null)
-    : null;
+$headerDisplaySettings = null;
+if (is_array($cu)) {
+    try {
+        $headerDisplaySettings = \App\Core\Container::get(\App\Repositories\UserProfileDisplaySettingsRepository::class)
+            ->getOrDefaults((int) $cu['id']);
+    } catch (\Throwable) {
+        $headerDisplaySettings = ['site_photo_priority' => 'operator'];
+    }
+}
+$avatarSrc = function_exists('user_site_avatar_url')
+    ? user_site_avatar_url(is_array($cu) ? $cu : null, is_array($pp) ? $pp : null, is_array($headerDisplaySettings) ? $headerDisplaySettings : null)
+    : (function_exists('user_media_public_url')
+        ? user_media_public_url(is_array($cu) ? ($cu['avatar_url'] ?? null) : null)
+        : null);
 $bannerSrc = function_exists('user_media_public_url')
     ? user_media_public_url(is_array($cu) ? ($cu['profile_banner_url'] ?? null) : null)
     : null;

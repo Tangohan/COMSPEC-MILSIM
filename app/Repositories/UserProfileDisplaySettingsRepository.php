@@ -66,6 +66,7 @@ class UserProfileDisplaySettingsRepository
             'public_roster_opt_in' => 0,
             'hide_personal_info' => 0,
             'hide_forum_level' => 0,
+            'site_photo_priority' => 'operator',
         ], $row ?? []);
     }
 
@@ -78,8 +79,12 @@ class UserProfileDisplaySettingsRepository
             'forum_alias', 'forum_label_mode', 'forum_visible_role_id',
             'show_matricule_forum', 'show_grade_forum', 'show_unit_forum', 'show_bio_forum', 'hide_forum_level',
             'fiche_show_email_to_others', 'fiche_show_matricule_to_others',
-            'public_roster_opt_in', 'hide_personal_info',
+            'public_roster_opt_in', 'hide_personal_info', 'site_photo_priority',
         ];
+        if (array_key_exists('site_photo_priority', $data)) {
+            $prio = strtolower(trim((string) $data['site_photo_priority']));
+            $data['site_photo_priority'] = in_array($prio, ['operator', 'account'], true) ? $prio : 'operator';
+        }
         $existing = $this->getByUserId($userId);
         $sets = [];
         $params = [];

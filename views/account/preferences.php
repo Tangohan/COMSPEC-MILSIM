@@ -7,6 +7,11 @@ $errors = $errors ?? [];
 $success = $success ?? null;
 $error = $error ?? null;
 $uiPrefs = $uiPrefs ?? ['theme' => 'system', 'density' => 'comfortable', 'sidebar_collapsed' => false];
+$displaySettings = $displaySettings ?? ['site_photo_priority' => 'operator'];
+$sitePhotoPriority = strtolower(trim((string) ($displaySettings['site_photo_priority'] ?? 'operator')));
+if (!in_array($sitePhotoPriority, ['operator', 'account'], true)) {
+    $sitePhotoPriority = 'operator';
+}
 $notifEmailCatalog = $notifEmailCatalog ?? [];
 $notifEmailState = $notifEmailState ?? [];
 $accountSnapshot = $accountSnapshot ?? ['email_masked' => '—', 'email_verified' => false, 'last_login_label' => null];
@@ -33,6 +38,7 @@ require base_path('views/partials/account/shell_open.php');
 
 <nav class="account-hub__subnav" aria-label="Sections des préférences">
     <a href="#section-profil">Profil portail</a>
+    <a href="#section-photo">Photo site</a>
     <a href="#section-locale">Fuseau &amp; langue</a>
     <a href="#section-interface">Interface</a>
     <a href="#connexion-verification">Double vérification</a>
@@ -234,6 +240,41 @@ require base_path('views/partials/account/shell_open.php');
                     <?php endif; ?>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section id="section-photo" class="account-hub__panel account-hub__section-anchor">
+        <div class="account-hub__panel-head">
+            <p class="account-hub__panel-kicker">Identité visuelle</p>
+            <h2 class="account-hub__panel-title">Photo affichée sur le site</h2>
+            <p class="account-hub__panel-desc">Choisissez quelle image apparaît en priorité dans la barre du haut, le tableau de bord et l’espace compte. Si la photo choisie est absente, l’autre est utilisée.</p>
+        </div>
+        <div class="account-hub__panel-body">
+            <fieldset style="border:0;margin:0;padding:0">
+                <legend class="account-hub__label" style="margin-bottom:.75rem">Priorité</legend>
+                <div class="account-hub__form-grid account-hub__form-grid--2">
+                    <label class="account-hub__check" style="cursor:pointer;align-items:flex-start;padding:1rem;border-radius:.85rem;border:1px solid <?= $sitePhotoPriority === 'operator' ? '#94a3b8' : '#e2e8f0' ?>;background:<?= $sitePhotoPriority === 'operator' ? '#f8fafc' : '#fff' ?>">
+                        <input type="radio" name="site_photo_priority" value="operator" <?= $sitePhotoPriority === 'operator' ? 'checked' : '' ?> style="margin-top:.2rem">
+                        <span>
+                            <strong style="font-size:.875rem">Opérateur</strong>
+                            <span class="account-hub__hint" style="display:block">Portrait personnage (fiche opérateur) — recommandé.</span>
+                        </span>
+                    </label>
+                    <label class="account-hub__check" style="cursor:pointer;align-items:flex-start;padding:1rem;border-radius:.85rem;border:1px solid <?= $sitePhotoPriority === 'account' ? '#94a3b8' : '#e2e8f0' ?>;background:<?= $sitePhotoPriority === 'account' ? '#f8fafc' : '#fff' ?>">
+                        <input type="radio" name="site_photo_priority" value="account" <?= $sitePhotoPriority === 'account' ? 'checked' : '' ?> style="margin-top:.2rem">
+                        <span>
+                            <strong style="font-size:.875rem">Compte</strong>
+                            <span class="account-hub__hint" style="display:block">Photo du compte (Steam ou upload personnel).</span>
+                        </span>
+                    </label>
+                </div>
+            </fieldset>
+            <p class="account-hub__hint" style="margin-top:1rem">
+                Gérer les images :
+                <a href="<?= htmlspecialchars(url('account/portrait'), ENT_QUOTES, 'UTF-8') ?>">portrait opérateur</a>
+                ·
+                <a href="<?= htmlspecialchars(url('account/image'), ENT_QUOTES, 'UTF-8') ?>">photo du compte</a>
+            </p>
         </div>
     </section>
 
