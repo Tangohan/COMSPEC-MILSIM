@@ -239,6 +239,17 @@ $showLegacyServiceNumber = $legacyServiceNumber !== '' && $legacyServiceNumber !
 $callsignProfile = trim((string) ($personnelProfile['callsign'] ?? ''));
 $callsignUser = trim((string) ($targetUser['callsign'] ?? ''));
 $callsign = $callsignProfile !== '' ? $callsignProfile : ($callsignUser !== '' ? $callsignUser : null);
+$extraCallsignsList = function_exists('personnel_decode_extra_callsigns')
+    ? personnel_decode_extra_callsigns($personnelProfile['extra_callsigns_json'] ?? null)
+    : [];
+if ($callsign !== null && $callsign !== '') {
+    $extraCallsignsList = array_values(array_filter(
+        $extraCallsignsList,
+        static function (string $alias) use ($callsign): bool {
+            return strcasecmp($alias, $callsign) !== 0;
+        }
+    ));
+}
 $athenaIdentifier = trim((string) ($targetUser['athena_identifier'] ?? ''));
 $canManageMemberNumber = !empty($canManageMemberNumber);
 $tenantMemberNumberEnabled = !empty($tenantMemberNumberEnabled);
@@ -902,6 +913,12 @@ $personnelFileShell = $personnelFileIsRhFull
                             <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($callsign) ?></p>
                         </div>
                         <?php endif; ?>
+                        <?php if ($extraCallsignsList !== []): ?>
+                        <div>
+                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Indicatifs secondaires</p>
+                            <p class="text-sm font-black text-slate-900"><?= htmlspecialchars(implode(' · ', $extraCallsignsList), ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                        <?php endif; ?>
                         <div>
                             <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Identifiant plateforme</p>
                             <p class="text-sm font-semibold text-slate-700 font-mono"><?= $athenaIdentifier !== '' ? htmlspecialchars($athenaIdentifier) : '—' ?></p>
@@ -1267,6 +1284,9 @@ $personnelFileShell = $personnelFileIsRhFull
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : $missingLabel) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : $missingLabel) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatif radio</p><p class="text-sm font-black text-slate-900"><?= $callsign ? htmlspecialchars($callsign) : htmlspecialchars($missingLabel) ?></p></div>
+                        <?php if ($extraCallsignsList !== []): ?>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatifs secondaires</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(implode(' · ', $extraCallsignsList), ENT_QUOTES, 'UTF-8') ?></p></div>
+                        <?php endif; ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1"><?= htmlspecialchars($tenantMemberNumber !== '' ? $tenantMemberNumberLabel : 'Matricule', ENT_QUOTES, 'UTF-8') ?></p><p class="text-sm font-black text-slate-900 font-mono"><?= !empty($showMatriculePublic) ? ($matricule ? htmlspecialchars($matricule) : htmlspecialchars($missingLabel)) : htmlspecialchars($missingLabel) ?></p></div>
                         <?php if (!empty(trim((string) ($userProfile['bio'] ?? '')))): ?>
                         <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Présentation du personnage</p><p class="text-sm text-slate-700 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $userProfile['bio']))) ?></p></div>

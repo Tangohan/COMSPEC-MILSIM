@@ -62,6 +62,12 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
 $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
 $nicknames = is_array($nicknames ?? null) ? $nicknames : [];
 $medalRackItems = is_array($medalRackItems ?? null) ? $medalRackItems : [];
+$extraCallsignSlots = isset($extraCallsignSlots) ? max(5, (int) $extraCallsignSlots) : (function_exists('personnel_extra_callsign_slots') ? personnel_extra_callsign_slots() : 5);
+$extraCallsigns = is_array($extraCallsigns ?? null) ? $extraCallsigns : [];
+while (count($extraCallsigns) < $extraCallsignSlots) {
+    $extraCallsigns[] = '';
+}
+$extraCallsigns = array_slice($extraCallsigns, 0, $extraCallsignSlots);
 $nicknamesText = implode("\n", array_map(static fn ($item) => trim((string) $item), $nicknames));
 $medalRackText = implode("\n", array_map(static fn ($item) => trim((string) $item), $medalRackItems));
 $advancedEditActive = !empty($advancedEditActive);
@@ -230,13 +236,25 @@ $editValidTabIds = implode(',', array_map(
                   <textarea name="rp_bio" id="rp_bio" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Quelques mots sur le personnage, son parcours, son ton…"><?= htmlspecialchars((string) ($up['bio'] ?? '')) ?></textarea>
                 </div>
                 <div>
-                  <label for="callsign" class="mb-1 block text-xs font-bold text-slate-600">Indicatif</label>
+                  <label for="callsign" class="mb-1 block text-xs font-bold text-slate-600">Indicatif principal</label>
                   <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars($p['callsign'] ?? $targetUser['callsign'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-                  <p class="mt-1 text-[11px] text-slate-500">Surnom radio / callsign utilisé en mission.</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Surnom radio / callsign utilisé en mission (ATAK, annuaire).</p>
                 </div>
                 <div>
                   <label for="motto" class="mb-1 block text-xs font-bold text-slate-600">Devise</label>
                   <input type="text" name="motto" id="motto" value="<?= htmlspecialchars((string) ($p['motto'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
+                </div>
+                <div class="md:col-span-2">
+                  <p class="mb-2 text-xs font-bold text-slate-600">Indicatifs supplémentaires</p>
+                  <p class="mb-3 text-[11px] text-slate-500">Jusqu’à <?= (int) $extraCallsignSlots ?> alias radio (variantes d’unité, callsigns secondaires). Laissez vide si inutilisé.</p>
+                  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <?php for ($i = 0; $i < $extraCallsignSlots; $i++): ?>
+                    <div>
+                      <label for="extra_callsign_<?= $i ?>" class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Alias <?= $i + 1 ?></label>
+                      <input type="text" name="extra_callsigns[]" id="extra_callsign_<?= $i ?>" value="<?= htmlspecialchars((string) ($extraCallsigns[$i] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off" placeholder="Indicatif <?= $i + 2 ?>">
+                    </div>
+                    <?php endfor; ?>
+                  </div>
                 </div>
                 <div>
                   <label for="nickname_primary" class="mb-1 block text-xs font-bold text-slate-600">Surnom principal</label>
@@ -246,7 +264,7 @@ $editValidTabIds = implode(',', array_map(
                 <div>
                   <label for="nicknames_text" class="mb-1 block text-xs font-bold text-slate-600">Autres surnoms</label>
                   <textarea name="nicknames_text" id="nicknames_text" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Un surnom par ligne"><?= htmlspecialchars($nicknamesText) ?></textarea>
-                  <p class="mt-1 text-[11px] text-slate-500">Pratique pour les variantes radio, sobriquets d’unité ou noms d’usage.</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Sobriquets d’usage — distincts des indicatifs radio ci-dessus.</p>
                 </div>
               </div>
             </div>

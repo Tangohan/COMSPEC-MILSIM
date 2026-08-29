@@ -1259,6 +1259,16 @@ class PersonnelController
                 }
             }
         }
+        $extraCallsigns = function_exists('personnel_decode_extra_callsigns')
+            ? personnel_decode_extra_callsigns($personnelProfile['extra_callsigns_json'] ?? null)
+            : [];
+        $extraCallsignSlots = function_exists('personnel_extra_callsign_slots') ? personnel_extra_callsign_slots() : 5;
+        while (count($extraCallsigns) < $extraCallsignSlots) {
+            $extraCallsigns[] = '';
+        }
+        if (count($extraCallsigns) > $extraCallsignSlots) {
+            $extraCallsigns = array_slice($extraCallsigns, 0, $extraCallsignSlots);
+        }
         $medalRackItems = [];
         $medalRackJson = $personnelProfile['medal_rack_json'] ?? null;
         if (is_string($medalRackJson) && $medalRackJson !== '') {
@@ -1318,6 +1328,8 @@ class PersonnelController
             'rpTutorChoices' => $rpTutorChoices,
             'roleplayEventTypes' => $roleplayEventTypes,
             'nicknames' => $nicknames,
+            'extraCallsigns' => $extraCallsigns,
+            'extraCallsignSlots' => $extraCallsignSlots,
             'medalRackItems' => $medalRackItems,
             'clearanceLevelOptions' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
             'advancedEditActive' => $isSelf && function_exists('user_has_advanced_fiche_edit') && user_has_advanced_fiche_edit($uid),
@@ -1469,6 +1481,17 @@ class PersonnelController
                 ? $derivedCharacterName
                 : trim((string) $request->input('character_name')),
             'callsign' => trim((string) $request->input('callsign')),
+            'extra_callsigns_json' => json_encode(
+                function_exists('personnel_normalize_extra_callsigns')
+                    ? personnel_normalize_extra_callsigns(
+                        $request->input('extra_callsigns'),
+                        trim((string) $request->input('callsign')),
+                        function_exists('personnel_extra_callsign_slots') ? personnel_extra_callsign_slots() : 5,
+                        100
+                    )
+                    : [],
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            ),
             'nickname_primary' => $this->normalizeReasonLabel((string) $request->input('nickname_primary'), 120),
             'nicknames_json' => json_encode(
                 $this->normalizeMultilineList((string) $request->input('nicknames_text'), 12, 120),
@@ -1810,12 +1833,19 @@ class PersonnelController
             }
             $this->userProfileRepository->upsert((int) $target['id'], $profileUpsert);
             $derivedDn = trim($firstName . ' ' . $lastName);
+            $userPatch = [];
             if ($derivedDn !== '') {
-                $this->userRepository->update((int) $target['id'], $tenantId, [
-                    'display_name' => $derivedDn,
-                ]);
+                $userPatch['display_name'] = $derivedDn;
+            }
+            $primaryCallsign = trim((string) ($data['callsign'] ?? ''));
+            $userPatch['callsign'] = $primaryCallsign !== '' ? $primaryCallsign : null;
+            if ($userPatch !== []) {
+                $this->userRepository->update((int) $target['id'], $tenantId, $userPatch);
                 if ($isSelf) {
-                    Session::set('display_name', $derivedDn);
+                    if (isset($userPatch['display_name'])) {
+                        Session::set('display_name', (string) $userPatch['display_name']);
+                    }
+                    Session::set('callsign', $primaryCallsign);
                 }
             }
         }

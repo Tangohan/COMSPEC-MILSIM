@@ -87,6 +87,95 @@ if (!function_exists('user_media_public_url')) {
     }
 }
 
+if (!function_exists('personnel_extra_callsign_slots')) {
+    /** Nombre d’emplacements d’indicatifs supplémentaires exposés dans les formulaires. */
+    function personnel_extra_callsign_slots(): int
+    {
+        return 5;
+    }
+}
+
+if (!function_exists('personnel_decode_extra_callsigns')) {
+    /**
+     * Décode la liste JSON d’indicatifs supplémentaires.
+     *
+     * @return list<string>
+     */
+    function personnel_decode_extra_callsigns(mixed $jsonOrList): array
+    {
+        if (is_array($jsonOrList)) {
+            $raw = $jsonOrList;
+        } elseif (is_string($jsonOrList) && $jsonOrList !== '') {
+            $decoded = json_decode($jsonOrList, true);
+            $raw = is_array($decoded) ? $decoded : [];
+        } else {
+            $raw = [];
+        }
+        $items = [];
+        foreach ($raw as $item) {
+            $value = trim((string) $item);
+            if ($value === '' || in_array($value, $items, true)) {
+                continue;
+            }
+            $items[] = $value;
+        }
+
+        return $items;
+    }
+}
+
+if (!function_exists('personnel_normalize_extra_callsigns')) {
+    /**
+     * Normalise une liste d’indicatifs supplémentaires (formulaires).
+     *
+     * @param mixed $input Tableau (extra_callsigns[]) ou texte multiligne
+     * @return list<string>
+     */
+    function personnel_normalize_extra_callsigns(mixed $input, ?string $primaryCallsign = null, int $maxItems = 5, int $maxLen = 100): array
+    {
+        if (is_array($input)) {
+            $lines = $input;
+        } else {
+            $lines = preg_split('/\r\n|\r|\n/', (string) $input) ?: [];
+        }
+        $primary = $primaryCallsign !== null ? trim($primaryCallsign) : '';
+        $primaryLower = $primary !== '' ? mb_strtolower($primary) : '';
+        $items = [];
+        foreach ($lines as $line) {
+            $value = trim((string) $line);
+            if ($value === '') {
+                continue;
+            }
+            if (function_exists('mb_strlen') && mb_strlen($value) > $maxLen) {
+                $value = mb_substr($value, 0, $maxLen);
+            } elseif (strlen($value) > $maxLen) {
+                $value = substr($value, 0, $maxLen);
+            }
+            $lower = function_exists('mb_strtolower') ? mb_strtolower($value) : strtolower($value);
+            if ($primaryLower !== '' && $lower === $primaryLower) {
+                continue;
+            }
+            $dup = false;
+            foreach ($items as $existing) {
+                $exLower = function_exists('mb_strtolower') ? mb_strtolower($existing) : strtolower($existing);
+                if ($exLower === $lower) {
+                    $dup = true;
+                    break;
+                }
+            }
+            if ($dup) {
+                continue;
+            }
+            $items[] = $value;
+            if (count($items) >= $maxItems) {
+                break;
+            }
+        }
+
+        return $items;
+    }
+}
+
 if (!function_exists('user_site_avatar_url')) {
     /**
      * Photo prioritaire affichée sur le portail (header, dashboard, etc.).

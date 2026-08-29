@@ -35,6 +35,7 @@ function run_personnel_personal_dossier_enhancements_migration(PDO $pdo): void
             'nickname_primary' => "ALTER TABLE personnel_profiles ADD COLUMN nickname_primary VARCHAR(120) NULL AFTER callsign",
             'nicknames_json' => "ALTER TABLE personnel_profiles ADD COLUMN nicknames_json JSON NULL AFTER nickname_primary",
             'medal_rack_json' => "ALTER TABLE personnel_profiles ADD COLUMN medal_rack_json JSON NULL AFTER nicknames_json",
+            'extra_callsigns_json' => "ALTER TABLE personnel_profiles ADD COLUMN extra_callsigns_json JSON NULL COMMENT 'Indicatifs radio supplémentaires (liste)' AFTER callsign",
         ];
         foreach ($columns as $column => $sql) {
             if (!$columnExists('personnel_profiles', $column)) {
