@@ -18,6 +18,7 @@ use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RecruitmentPresetRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserUiPreferencesRepository;
+use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Services\Email\EmailEvents;
 use App\Support\TenantEmailKind;
 use App\Services\Profile\RecruitmentPresetPayloadService;
@@ -45,6 +46,7 @@ class AccountController
         private UserUiPreferencesRepository $userUiPreferencesRepository,
         private UserNotificationPreferencesRepository $userNotificationPreferencesRepository,
         private UserUiPreferencesValidationService $userUiPreferencesValidationService,
+        private UserProfileDisplaySettingsRepository $userProfileDisplaySettingsRepository,
         private SteamWebApiService $steamWebApiService,
         private LoginSecurityOtpService $loginSecurityOtpService,
         private LeaveCommunityService $leaveCommunityService,
@@ -302,6 +304,7 @@ class AccountController
         $steamSyncReport = Session::getFlash('steam_sync_report');
 
         $uiPrefs = $this->userUiPreferencesRepository->getOrDefaults($uid, $tenantId);
+        $displaySettings = $this->userProfileDisplaySettingsRepository->getOrDefaults($uid);
         $notifRows = $this->userNotificationPreferencesRepository->listForUser($uid);
         $notifEmailCatalog = $this->notificationEmailCatalog();
         $notifEmailState = [];
@@ -335,6 +338,10 @@ class AccountController
                 'sidebar_collapsed' => (string) $request->input('ui_sidebar_collapsed') === '1',
             ];
             $vUi = $this->userUiPreferencesValidationService->validatePatch($uiPatch);
+            $photoPriorityRaw = strtolower(trim((string) $request->input('site_photo_priority')));
+            $sitePhotoPriority = in_array($photoPriorityRaw, ['operator', 'account'], true)
+                ? $photoPriorityRaw
+                : 'operator';
             if (!$v->validate()) {
                 $errors = $v->errors();
             } elseif (!$vUi['ok']) {
@@ -407,6 +414,9 @@ class AccountController
                 if (!empty($vUi['normalized'])) {
                     $this->userUiPreferencesRepository->upsert($uid, $tenantId, $vUi['normalized']);
                 }
+                $this->userProfileDisplaySettingsRepository->upsert($uid, [
+                    'site_photo_priority' => $sitePhotoPriority,
+                ]);
                 $rawNotif = $request->input('notif_email');
                 $notifInput = is_array($rawNotif) ? $rawNotif : [];
                 foreach ($notifEmailCatalog as $item) {
@@ -445,6 +455,7 @@ class AccountController
             'uiPrefs' => $uiPrefs,
             'extraCallsigns' => $extraCallsigns,
             'extraCallsignSlots' => $extraCallsignSlots,
+            'displaySettings' => $displaySettings,
             'notifEmailCatalog' => $notifEmailCatalog,
             'notifEmailState' => $notifEmailState,
             'accountSnapshot' => $accountSnapshot,

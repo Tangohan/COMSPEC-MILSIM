@@ -1,7 +1,7 @@
 /**
  * Fenêtre « mise à jour du portail » — motifs DSFR (overlay, titre, fermer, boutons)
  * sans police Marianne ni bleu France institutionnel.
- * Tokens alignés sur dsfr-service.css (portail clair).
+ * Police alignée sur le portail (Archivo) et ATAK (--atak-font-ui / IBM Plex Sans).
  */
 
 .ds-app-update {
@@ -14,7 +14,7 @@
   --ds-upd-primary-hover: #062824;
   --ds-upd-focus: #0a76a6;
   --ds-upd-radius: 8px;
-  --ds-upd-font: "Source Sans 3", "Source Serif 4", Inter, "Segoe UI", system-ui, sans-serif;
+  --ds-upd-font: Archivo, var(--atak-font-ui, "IBM Plex Sans"), system-ui, -apple-system, "Segoe UI", sans-serif;
   position: fixed;
   inset: 0;
   z-index: 11000;
@@ -22,6 +22,7 @@
   place-items: center;
   padding: 1rem;
   box-sizing: border-box;
+  font-family: var(--ds-upd-font);
 }
 
 .ds-app-update *,
@@ -54,7 +55,7 @@
   box-shadow:
     0 0.5rem 2rem rgba(22, 22, 22, 0.28),
     0 0 0 1px rgba(22, 22, 22, 0.04);
-  font-family: var(--ds-upd-font);
+  font-family: inherit;
   animation: ds-app-update-in 0.18s ease-out;
 }
 

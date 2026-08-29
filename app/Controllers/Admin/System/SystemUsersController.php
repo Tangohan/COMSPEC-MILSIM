@@ -5,10 +5,17 @@ declare(strict_types=1);
 namespace App\Controllers\Admin\System;
 
 use App\Core\Csrf;
+use App\Core\Container;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\GradeRepository;
+use App\Repositories\PersonnelAssignmentRepository;
+use App\Repositories\PersonnelExtrasRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserLegalIdentityRepository;
+use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Account\AccountDeletionService;
 use App\Services\Account\AccountPurgeService;
@@ -74,6 +81,133 @@ final class SystemUsersController
             'platformUsersStatus' => $status,
             'platformUsersTenantId' => $tenantFilter,
             'platformTenants' => $this->tenants->listOverviewForPlatform(),
+        ]);
+    }
+
+    /**
+     * Dossier personne multi-communautés (toutes les fiches users du même e-mail).
+     */
+    public function showPerson(Request $request, array $params = []): Response
+    {
+        $email = strtolower(trim((string) $request->query('email', '')));
+        $userId = (int) $request->query('user_id', 0);
+        if ($email === '' && $userId > 0) {
+            $anchor = $this->users->findById($userId, null);
+            if ($anchor !== null) {
+                $email = strtolower(trim((string) ($anchor['email'] ?? '')));
+            }
+        }
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || str_ends_with($email, '@deleted.invalid')) {
+            Session::flash('error', 'Personne introuvable.');
+
+            return Response::redirect(url('admin/users'));
+        }
+
+        $memberships = $this->users->listAllMembershipsByEmail($email);
+        if ($memberships === []) {
+            Session::flash('error', 'Aucune appartenance trouvée pour cette adresse.');
+
+            return Response::redirect(url('admin/users'));
+        }
+
+        /** @var UserProfileRepository $profiles */
+        $profiles = Container::get(UserProfileRepository::class);
+        /** @var UserLegalIdentityRepository $legalRepo */
+        $legalRepo = Container::get(UserLegalIdentityRepository::class);
+        /** @var PersonnelProfileRepository $personnelProfiles */
+        $personnelProfiles = Container::get(PersonnelProfileRepository::class);
+        /** @var PersonnelExtrasRepository $personnelExtras */
+        $personnelExtras = Container::get(PersonnelExtrasRepository::class);
+        /** @var PersonnelAssignmentRepository $assignments */
+        $assignments = Container::get(PersonnelAssignmentRepository::class);
+        /** @var GradeRepository $grades */
+        $grades = Container::get(GradeRepository::class);
+
+        $dossierMemberships = [];
+        $globalSteam = '';
+        $globalAthena = '';
+        $displayName = '';
+        $callsign = '';
+        foreach ($memberships as $m) {
+            $uid = (int) ($m['id'] ?? 0);
+            $tid = (int) ($m['tenant_id'] ?? 0);
+            if ($uid < 1) {
+                continue;
+            }
+            $steam = trim((string) ($m['steam_id'] ?? ''));
+            if ($steam !== '' && $globalSteam === '') {
+                $globalSteam = $steam;
+            }
+            $athena = trim((string) ($m['athena_identifier'] ?? ''));
+            if ($athena !== '' && $globalAthena === '') {
+                $globalAthena = $athena;
+            }
+            $dn = trim((string) ($m['display_name'] ?? ''));
+            if ($dn !== '' && $dn !== 'Compte supprimé' && $displayName === '') {
+                $displayName = $dn;
+            }
+            $cs = trim((string) ($m['callsign'] ?? ''));
+            if ($cs !== '' && $callsign === '') {
+                $callsign = $cs;
+            }
+
+            $gradeId = (int) ($m['grade_id'] ?? 0);
+            $grade = $gradeId > 0 ? $grades->findById($gradeId, $tid) : null;
+            $pp = $personnelProfiles->getByUserId($uid) ?? [];
+            $extras = $personnelExtras->getByUserId($uid) ?? [];
+            $primaryAssignment = $assignments->getPrimaryAssignment($uid);
+            $roleIds = $this->users->listOrganizationRoleIdsForUser($uid);
+            $roleNames = [];
+            $roleName = trim((string) ($m['role_name'] ?? ''));
+            if ($roleName !== '') {
+                $roleNames[] = $roleName;
+            }
+
+            $dossierMemberships[] = [
+                'user' => $m,
+                'profile' => $profiles->getByUserId($uid) ?? [],
+                'legal' => $legalRepo->getByUserId($uid) ?? [],
+                'personnel_profile' => is_array($pp) ? $pp : [],
+                'personnel_extras' => is_array($extras) ? $extras : [],
+                'grade' => is_array($grade) ? $grade : null,
+                'primary_assignment' => is_array($primaryAssignment) ? $primaryAssignment : null,
+                'role_names' => $roleNames,
+                'org_role_ids' => $roleIds,
+            ];
+        }
+
+        // Identité civile : première fiche légale non vide
+        $civil = ['first_name' => '', 'last_name' => '', 'phone' => '', 'birth_date' => '', 'nationality' => ''];
+        foreach ($dossierMemberships as $pack) {
+            $legal = is_array($pack['legal'] ?? null) ? $pack['legal'] : [];
+            foreach (array_keys($civil) as $k) {
+                $v = trim((string) ($legal[$k] ?? ''));
+                if ($v !== '' && $civil[$k] === '') {
+                    $civil[$k] = $v;
+                }
+            }
+            $prof = is_array($pack['profile'] ?? null) ? $pack['profile'] : [];
+            foreach (['first_name', 'last_name', 'phone'] as $k) {
+                $v = trim((string) ($prof[$k] ?? ''));
+                if ($v !== '' && $civil[$k] === '') {
+                    $civil[$k] = $v;
+                }
+            }
+        }
+
+        $hasLiveOrg = $this->users->emailHasActiveNonDefaultMembership($email);
+
+        return Response::view('layout.main', [
+            'title' => 'Dossier personne',
+            'content' => 'admin.system.user_person',
+            'personEmail' => $email,
+            'personDisplayName' => $displayName,
+            'personCallsign' => $callsign,
+            'personSteamId' => $globalSteam,
+            'personAthenaId' => $globalAthena,
+            'personCivil' => $civil,
+            'personHasLiveOrg' => $hasLiveOrg,
+            'personMemberships' => $dossierMemberships,
         ]);
     }
 

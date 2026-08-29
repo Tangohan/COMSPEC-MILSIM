@@ -109,6 +109,9 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                 Une personne = une ligne (regroupée par e-mail), avec toutes ses appartenances.
                 Actions possibles&nbsp;: désactiver / réactiver une communauté, retirer d’une organisation,
                 ou supprimer sur tout le site (anonymisation ou suppression définitive).
+                Les comptes sans appartenance active à une vraie communauté sont masqués par défaut
+                (filtre « Désactivé » / « Supprimés » pour les retrouver).
+                Ouvrez le <strong>dossier complet</strong> pour voir chaque communauté en détail.
             </p>
         </header>
 
@@ -196,7 +199,11 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                     <article class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                         <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 bg-slate-50">
                             <div>
-                                <h2 class="text-base font-bold text-slate-900"><?= $h($primary) ?></h2>
+                                <h2 class="text-base font-bold text-slate-900">
+                                    <a href="<?= $h(url('admin/users/person') . '?email=' . rawurlencode($email)) ?>" class="hover:text-emerald-800 hover:underline">
+                                        <?= $h($primary) ?>
+                                    </a>
+                                </h2>
                                 <?php if ($display !== '' && strcasecmp($display, $primary) !== 0): ?>
                                     <p class="text-xs text-slate-600"><?= $h($display) ?></p>
                                 <?php endif; ?>
@@ -205,6 +212,7 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                                 <?php endif; ?>
                                 <p class="mt-1 text-xs text-slate-500">
                                     <?= count($memberships) ?> communauté<?= count($memberships) > 1 ? 's' : '' ?>
+                                    · <a href="<?= $h(url('admin/users/person') . '?email=' . rawurlencode($email)) ?>" class="font-semibold text-emerald-800 hover:underline">Dossier complet</a>
                                 </p>
                             </div>
                             <?php if (!$isSelf && $siteUid > 0 && $siteTid > 0 && $alive !== []): ?>

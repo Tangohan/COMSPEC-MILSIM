@@ -269,6 +269,18 @@ $flashWarn = \App\Core\Session::getFlash('warning');
                         <dd><?= $displayValue($callsign) ?></dd>
                     </div>
                     <div class="ath-member-show__data-row">
+                        <dt>Identifiant plateforme</dt>
+                        <dd><span class="font-mono"><?= $displayValue($user['athena_identifier'] ?? null) ?></span></dd>
+                    </div>
+                    <div class="ath-member-show__data-row">
+                        <dt>Steam ID</dt>
+                        <dd><span class="font-mono"><?= $displayValue($user['steam_id'] ?? null) ?></span></dd>
+                    </div>
+                    <div class="ath-member-show__data-row">
+                        <dt>Téléphone</dt>
+                        <dd><?= $displayValue($userProfile['phone'] ?? null) ?></dd>
+                    </div>
+                    <div class="ath-member-show__data-row">
                         <dt>Rôles dans l’unité</dt>
                         <dd>
                             <?php if ($roleNames !== []): ?>
@@ -294,6 +306,38 @@ $flashWarn = \App\Core\Session::getFlash('warning');
                 <p>Personnage, affectation, clearance et qualifications — distinct du compte de connexion.</p>
             </div>
             <div class="ath-member-show__section-body ath-member-show__section-body--stack">
+                <?php
+                $ppShow = is_array($personnelProfile ?? null) ? $personnelProfile : [];
+                $pexShow = is_array($personnelExtras ?? null) ? $personnelExtras : [];
+                $gradeShow = is_array($memberGrade ?? null) ? $memberGrade : null;
+                $assignShow = is_array($primaryAssignment ?? null) ? $primaryAssignment : null;
+                $matriculeShow = trim((string) ($ppShow['matricule_internal'] ?? '')) ?: trim((string) ($pexShow['service_number'] ?? ''));
+                $characterShow = trim((string) ($ppShow['character_name'] ?? ''));
+                $gradeLabelShow = $gradeShow
+                    ? trim((string) ($gradeShow['short_name'] ?? $gradeShow['name'] ?? $gradeShow['label_long'] ?? ''))
+                    : '';
+                $unitShow = trim((string) ($assignShow['unit_name'] ?? ''));
+                ?>
+                <?php if (!$isServiceAccount): ?>
+                <dl class="ath-member-show__data">
+                    <div class="ath-member-show__data-row">
+                        <dt>Personnage</dt>
+                        <dd><?= $displayValue($characterShow) ?></dd>
+                    </div>
+                    <div class="ath-member-show__data-row">
+                        <dt>Matricule dossier</dt>
+                        <dd><span class="font-mono"><?= $displayValue($matriculeShow) ?></span></dd>
+                    </div>
+                    <div class="ath-member-show__data-row">
+                        <dt>Grade</dt>
+                        <dd><?= $displayValue($gradeLabelShow) ?></dd>
+                    </div>
+                    <div class="ath-member-show__data-row">
+                        <dt>Affectation</dt>
+                        <dd><?= $displayValue($unitShow) ?></dd>
+                    </div>
+                </dl>
+                <?php endif; ?>
                 <?php if ($isServiceAccount): ?>
                 <p class="ath-body">Non applicable pour un compte technique.</p>
                 <?php elseif ($completenessPersonnel !== null): ?>
@@ -338,4 +382,41 @@ $flashWarn = \App\Core\Session::getFlash('warning');
             </div>
         </section>
     </div>
+
+    <?php
+    $siblings = is_array($siblingMemberships ?? null) ? $siblingMemberships : [];
+    if ($showPlatformDiagnostics && $siblings !== []):
+    ?>
+    <section class="ath-card ath-member-show__panel" style="margin-top:1.25rem;">
+        <div class="ath-member-show__section-head">
+            <h2>Appartenances multi-communautés</h2>
+            <p>Toutes les fiches liées à la même adresse e-mail (vue plateforme).</p>
+        </div>
+        <div class="ath-member-show__section-body">
+            <ul class="ath-member-show__other-list">
+                <?php foreach ($siblings as $sib): ?>
+                    <?php
+                    $sibTid = (int) ($sib['tenant_id'] ?? 0);
+                    $sibUid = (int) ($sib['id'] ?? 0);
+                    $sibName = (string) ($sib['tenant_name'] ?? '');
+                    $sibStatus = (string) ($sib['status'] ?? '');
+                    $sibDeleted = !empty($sib['deleted_at']);
+                    ?>
+                    <li>
+                        <strong><?= $h($sibName) ?></strong>
+                        — #<?= $sibUid ?> · <?= $h($sibStatus) ?><?= $sibDeleted ? ' · anonymisé' : '' ?>
+                        <?php if ($sibTid === (int) ($user['tenant_id'] ?? 0)): ?>
+                            <span class="ath-tag ath-tag--info">Communauté courante</span>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php if ($email !== ''): ?>
+            <div class="ath-member-show__panel-actions" style="margin-top:0.75rem;">
+                <a href="<?= $h(url('admin/users/person') . '?email=' . rawurlencode($email)) ?>" class="ath-btn ath-btn--solid">Dossier plateforme complet</a>
+            </div>
+            <?php endif; ?>
+        </div>
+    </section>
+    <?php endif; ?>
 </div>

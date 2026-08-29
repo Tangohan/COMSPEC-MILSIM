@@ -176,6 +176,44 @@ if (!function_exists('personnel_normalize_extra_callsigns')) {
     }
 }
 
+if (!function_exists('user_site_avatar_url')) {
+    /**
+     * Photo prioritaire affichée sur le portail (header, dashboard, etc.).
+     * Préférence `site_photo_priority` : operator (portrait) | account (avatar compte).
+     * Défaut : operator, avec repli sur l’autre source si absente.
+     *
+     * @param array<string, mixed>|null $user
+     * @param array<string, mixed>|null $personnelProfile
+     * @param array<string, mixed>|null $displaySettings
+     */
+    function user_site_avatar_url(?array $user, ?array $personnelProfile = null, ?array $displaySettings = null): ?string
+    {
+        if (!is_array($user)) {
+            return null;
+        }
+        $accountPath = trim((string) ($user['avatar_url'] ?? ''));
+        $operatorPath = '';
+        if (is_array($personnelProfile)) {
+            $operatorPath = trim((string) ($personnelProfile['character_portrait_path'] ?? ''));
+        }
+        $priority = 'operator';
+        if (is_array($displaySettings)) {
+            $raw = strtolower(trim((string) ($displaySettings['site_photo_priority'] ?? 'operator')));
+            if (in_array($raw, ['operator', 'account'], true)) {
+                $priority = $raw;
+            }
+        }
+        $primary = $priority === 'account' ? $accountPath : $operatorPath;
+        $fallback = $priority === 'account' ? $operatorPath : $accountPath;
+        $chosen = $primary !== '' ? $primary : $fallback;
+        if ($chosen === '') {
+            return null;
+        }
+
+        return function_exists('user_media_public_url') ? user_media_public_url($chosen) : $chosen;
+    }
+}
+
 if (!function_exists('normalize_public_uploads_url')) {
     /**
      * Corrige les URLs du type https://host/uploads/… (404) → …/public/uploads/….
