@@ -4,6 +4,7 @@ $title = $title ?? 'Recrutement';
 $content = $content ?? 'home';
 $lmsBase = url('');
 $recruitmentLmsTitle = $recruitmentLmsTitle ?? $title;
+$recruitmentAthUi = !empty($recruitmentAthUi);
 ob_start();
 require base_path('views/admin/recruitment_workspace/partials/recruitment_lms_head.php');
 $headHtml = ob_get_clean();
@@ -24,7 +25,7 @@ $headHtml = ob_get_clean();
         <div class="grid lg:grid-cols-[290px_1fr] min-h-screen">
             <?php require base_path('views/admin/recruitment_workspace/partials/recruitment_lms_sidebar.php'); ?>
 
-            <main class="recruitment-lms-main min-w-0 p-5 md:p-8 lg:p-10 space-y-8">
+            <main class="recruitment-lms-main min-w-0 p-5 md:p-8 lg:p-10 space-y-8<?= $recruitmentAthUi ? ' ath-shell recruitment-offers-ath' : '' ?>">
                 <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
                 <?php
                 $contentPath = str_replace('.', '/', (string) $content);

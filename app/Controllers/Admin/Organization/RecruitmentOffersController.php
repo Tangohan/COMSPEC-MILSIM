@@ -68,7 +68,7 @@ class RecruitmentOffersController
             'recruitmentSidebarCounts' => $this->recruitmentSidebarCounts(),
             'recruitmentAdminNav' => 'offers',
             'showPortalFooter' => false,
-            'lmsExtraHead' => '<link rel="stylesheet" href="' . htmlspecialchars(asset_url('assets/css/back-office-shell.css'), ENT_QUOTES, 'UTF-8') . '">',
+            'recruitmentAthUi' => true,
         ]);
     }
 
@@ -262,7 +262,7 @@ class RecruitmentOffersController
             'recruitmentSidebarCounts' => $this->recruitmentSidebarCounts(),
             'recruitmentAdminNav' => 'reference',
             'showPortalFooter' => false,
-            'lmsExtraHead' => '<link rel="stylesheet" href="' . htmlspecialchars(asset_url('assets/css/back-office-shell.css'), ENT_QUOTES, 'UTF-8') . '">',
+            'recruitmentAthUi' => true,
         ]);
     }
 
@@ -389,7 +389,7 @@ class RecruitmentOffersController
             'recruitmentSidebarCounts' => $this->recruitmentSidebarCounts(),
             'recruitmentAdminNav' => 'offers',
             'showPortalFooter' => false,
-            'lmsExtraHead' => '<link rel="stylesheet" href="' . htmlspecialchars(asset_url('assets/css/back-office-shell.css'), ENT_QUOTES, 'UTF-8') . '">',
+            'recruitmentAthUi' => true,
         ]);
     }
 

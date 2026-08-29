@@ -1,0 +1,222 @@
+/**
+ * Charte ATHENA pour Offres / Format des références dans le layout LMS recrutement.
+ * Les tokens --ath-* du shell sont normalement portés par .ath-shell ; on les
+ * reforge ici sur .recruitment-offers-ath pour éviter un rendu « sans CSS »
+ * (variables undefined) si le contexte LMS masque le parent shell.
+ */
+
+.recruitment-lms-main.recruitment-offers-ath,
+.recruitment-offers-ath {
+  --ath-ink: #0c1116;
+  --ath-muted: #6d7a80;
+  --ath-subtle: #8c979b;
+  --ath-line: #e3e8ea;
+  --ath-line-soft: #f1f4f5;
+  --ath-bg: #f6f8f9;
+  --ath-surface: #ffffff;
+  --ath-accent: #0b8a5c;
+  --ath-accent-bright: #12d18e;
+  --ath-accent-dark: #04231a;
+  --ath-void: #000000;
+  --ath-warn: #c98a12;
+  --ath-warn-bg: #fdf3e2;
+  --ath-warn-bd: #f2ddb4;
+  --ath-danger: #c72e2e;
+  --ath-danger-bg: #fdecec;
+  --ath-info: #1e6fbf;
+  --ath-info-bg: #eaf2fb;
+  --ath-font: 'Archivo', system-ui, -apple-system, sans-serif;
+  --ath-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --ath-radius: 0;
+  --ath-ease-rise: cubic-bezier(0.2, 0.7, 0.3, 1);
+  font-family: var(--ath-font);
+  color: var(--ath-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Espace vertical cohérent entre blocs ath-form / panneaux */
+.recruitment-offers-ath > .ath-form,
+.recruitment-offers-ath > .ath-panel,
+.recruitment-offers-ath > form > .ath-form,
+.recruitment-offers-ath > .ath-stack,
+.recruitment-offers-ath > .ath-kpi-grid,
+.recruitment-offers-ath > .ath-section-title,
+.recruitment-offers-ath > .ath-table-panel,
+.recruitment-offers-ath > .ath-note,
+.recruitment-offers-ath > .ath-warn,
+.recruitment-offers-ath > .ath-flash {
+  max-width: 100%;
+}
+
+.recruitment-offers-ath .ath-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ath-line);
+}
+
+.recruitment-offers-ath .ath-btn {
+  border-radius: var(--ath-radius);
+}
+
+.recruitment-offers-ath .ath-field__input,
+.recruitment-offers-ath .ath-field__select,
+.recruitment-offers-ath .ath-field__textarea,
+.recruitment-offers-ath input.ath-field__input,
+.recruitment-offers-ath select.ath-field__select,
+.recruitment-offers-ath textarea.ath-field__textarea {
+  border-radius: var(--ath-radius);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Fallback si back-office-shell.css ne définit pas encore ath-panel / ath-stat */
+.recruitment-offers-ath .ath-panel {
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+  padding: 16px 18px 18px;
+  margin-bottom: 16px;
+}
+.recruitment-offers-ath .ath-panel__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ath-ink);
+}
+.recruitment-offers-ath .ath-panel__lead {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--ath-muted);
+  line-height: 1.45;
+}
+.recruitment-offers-ath .ath-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.recruitment-offers-ath .ath-stat {
+  background: var(--ath-bg);
+  border: 1px solid var(--ath-line);
+  padding: 10px 12px;
+}
+.recruitment-offers-ath .ath-stat__value {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ath-ink);
+  font-family: var(--ath-mono);
+}
+.recruitment-offers-ath .ath-stat__label {
+  margin: 4px 0 0;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ath-subtle);
+}
+.recruitment-offers-ath .ath-section-title {
+  margin: 8px 0 12px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ath-ink);
+}
+.recruitment-offers-ath .ath-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.recruitment-offers-ath .ath-item {
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+  padding: 12px 14px;
+}
+.recruitment-offers-ath .ath-item__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+.recruitment-offers-ath .ath-item__name {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+}
+.recruitment-offers-ath .ath-item__meta {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--ath-muted);
+}
+.recruitment-offers-ath .ath-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 800;
+  border: 1px solid var(--ath-line);
+  background: var(--ath-bg);
+  color: var(--ath-ink);
+  white-space: nowrap;
+}
+.recruitment-offers-ath .ath-tag--warn {
+  background: var(--ath-warn-bg);
+  border-color: var(--ath-warn-bd);
+  color: #8a5a06;
+}
+.recruitment-offers-ath .ath-meter {
+  background: var(--ath-bg);
+  border: 1px solid var(--ath-line);
+}
+.recruitment-offers-ath .ath-check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.recruitment-offers-ath .ath-flash {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--ath-line);
+  font-size: 12px;
+  font-weight: 700;
+}
+.recruitment-offers-ath .ath-flash--err {
+  background: var(--ath-danger-bg);
+  border-color: #f0b4b4;
+  color: var(--ath-danger);
+}
+.recruitment-offers-ath .ath-flash--ok {
+  background: #e8f8f1;
+  border-color: #b7e5d0;
+  color: #0b5c3d;
+}
+.recruitment-offers-ath .ath-note,
+.recruitment-offers-ath .ath-warn {
+  border: 1px solid var(--ath-line);
+  background: var(--ath-surface);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.recruitment-offers-ath .ath-warn {
+  background: var(--ath-warn-bg);
+  border-color: var(--ath-warn-bd);
+}
+.recruitment-offers-ath .ath-note__title,
+.recruitment-offers-ath .ath-warn__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 900;
+}
+.recruitment-offers-ath .ath-note__text,
+.recruitment-offers-ath .ath-warn__text {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ath-muted);
+}
