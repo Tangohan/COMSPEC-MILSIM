@@ -1909,32 +1909,37 @@ class UserRepository
         $athenaFilter = $hasAthena
             ? "OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)"
             : '';
-        $hasNickname = false;
-        try {
-            $chk = $this->pdo()->query(
-                "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'nickname' LIMIT 1"
-            );
-            $hasNickname = $chk && (bool) $chk->fetchColumn();
-        } catch (\Throwable) {
-            $hasNickname = false;
-        }
+        $hasNickname = $this->columnExists('users', 'nickname');
         $nicknameFilter = $hasNickname
             ? "OR (u.nickname IS NOT NULL AND TRIM(u.nickname) <> '' AND u.nickname LIKE ?)"
             : '';
-        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.first_name, u.last_name,
+        $legal = $this->legalIdentityJoinFragments('uli', 'u');
+        $legalFilter = $legal['searchable']
+            ? "OR (uli.first_name IS NOT NULL AND TRIM(uli.first_name) <> '' AND uli.first_name LIKE ?)
+                 OR (uli.last_name IS NOT NULL AND TRIM(uli.last_name) <> '' AND uli.last_name LIKE ?)
+                 OR (CONCAT(TRIM(COALESCE(uli.first_name, '')), ' ', TRIM(COALESCE(uli.last_name, ''))) LIKE ?)"
+            : '';
+        $hasCharacter = $this->tableExists('personnel_profiles') && $this->columnExists('personnel_profiles', 'character_name');
+        $characterJoin = $hasCharacter ? 'LEFT JOIN personnel_profiles pp ON pp.user_id = u.id' : '';
+        $characterFilter = $hasCharacter
+            ? "OR (pp.character_name IS NOT NULL AND TRIM(pp.character_name) <> '' AND pp.character_name LIKE ?)"
+            : '';
+        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign,
+                    {$legal['select']},
                     u.steam_id, {$athenaSelect}, t.name AS tenant_name, t.slug AS tenant_slug, u.status
              FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id
+             {$legal['join']}
+             {$characterJoin}
              WHERE (
                  u.email LIKE ?
                  OR u.display_name LIKE ?
                  OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> '' AND u.callsign LIKE ?)
                  OR (u.steam_id IS NOT NULL AND TRIM(u.steam_id) <> '' AND u.steam_id LIKE ?)
-                 OR (u.first_name IS NOT NULL AND TRIM(u.first_name) <> '' AND u.first_name LIKE ?)
-                 OR (u.last_name IS NOT NULL AND TRIM(u.last_name) <> '' AND u.last_name LIKE ?)
-                 OR CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) LIKE ?
+                 {$legalFilter}
                  {$nicknameFilter}
                  {$athenaFilter}
+                 {$characterFilter}
              ) AND {$pack['sql']}
              {$deletedSelf}
              AND (t.slug <> 'default' OR NOT EXISTS (
@@ -1949,11 +1954,19 @@ class UserRepository
              ORDER BY t.name ASC, u.display_name ASC, u.email ASC
              LIMIT {$limit}";
         $stmt = $this->pdo()->prepare($sql);
-        $params = [$term, $term, $term, $term, $term, $term, $term];
+        $params = [$term, $term, $term, $term];
+        if ($legal['searchable']) {
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+        }
         if ($hasNickname) {
             $params[] = $term;
         }
         if ($hasAthena) {
+            $params[] = $term;
+        }
+        if ($hasCharacter) {
             $params[] = $term;
         }
         $stmt->execute(array_merge($params, $pack['params']));

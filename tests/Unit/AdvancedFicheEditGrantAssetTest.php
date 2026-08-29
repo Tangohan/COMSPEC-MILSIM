@@ -62,8 +62,10 @@ final class AdvancedFicheEditGrantAssetTest extends TestCase
         self::assertStringContainsString('toutes communautés', $view);
         self::assertStringContainsString('UserAdvancedEditGrantRepository::class', $container);
         self::assertStringContainsString('AdvancedFicheEditGrantController::class', $container);
-        self::assertStringContainsString('u.first_name LIKE', $usersRepo);
-        self::assertStringContainsString('u.last_name LIKE', $usersRepo);
+        self::assertStringContainsString('legalIdentityJoinFragments', $usersRepo);
+        self::assertStringContainsString('uli.first_name', $usersRepo);
+        self::assertStringNotContainsString('u.first_name, u.last_name', $usersRepo);
+        self::assertStringContainsString('pp.character_name', $usersRepo);
     }
 
     public function testPersonnelEditUnlocksClearanceAndMatriculeButNotAthena(): void
