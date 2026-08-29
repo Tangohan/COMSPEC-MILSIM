@@ -52,7 +52,7 @@ $active = 'join';
                 <div class="flex items-start gap-4">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white text-lg font-black shadow-sm" aria-hidden="true">1</div>
                     <div>
-                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">Étape unique</p>
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-600">Étape unique</p>
                         <p class="mt-1 text-sm text-slate-600 leading-relaxed">
                             Le code ressemble souvent à un identifiant d’unité, par exemple
                             <span class="inline-flex items-center rounded-lg bg-emerald-50 px-2 py-0.5 font-mono text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200/80">UNIT-ALPHA</span>.
@@ -65,7 +65,7 @@ $active = 'join';
                 <?= \App\Core\Csrf::field() ?>
 
                 <div class="space-y-2">
-                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1" for="community_code">Code communauté</label>
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 ml-1" for="community_code">Code communauté</label>
                     <input
                         id="community_code"
                         type="text"

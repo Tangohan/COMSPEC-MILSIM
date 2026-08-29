@@ -4,15 +4,15 @@
 .ce {
   --ce-emerald: #10b981;
   --ce-emerald-deep: #059669;
-  --ce-ink: #e2e8f0;
-  --ce-muted: #94a3b8;
-  --ce-dim: #64748b;
+  --ce-ink: #e8eef7;
+  --ce-muted: #c5d0de;
+  --ce-dim: #9aa8ba;
   --ce-bg: #020617;
   --ce-panel: rgba(15, 23, 42, 0.78);
   --ce-panel-solid: #0b1220;
-  --ce-line: rgba(255, 255, 255, 0.08);
+  --ce-line: rgba(255, 255, 255, 0.12);
   --ce-primary: var(--ce-tenant-primary, var(--ce-emerald));
-  --ce-accent: var(--ce-tenant-accent, #34d399);
+  --ce-accent: var(--ce-tenant-accent, #6ee7b7);
   --ce-danger: #f87171;
   --ce-warn: #fbbf24;
   --ce-topbar-h: 3.4rem;
@@ -80,8 +80,9 @@
   border-radius: 0.85rem;
   display: grid;
   place-items: center;
-  background: var(--ce-primary);
-  color: #041016;
+  background: color-mix(in srgb, var(--ce-primary) 22%, #0b1220);
+  border: 1px solid color-mix(in srgb, var(--ce-primary) 65%, #fff);
+  color: #ecfdf5;
   font-family: "Barlow Condensed", sans-serif;
   font-weight: 800;
   font-size: 1.45rem;
@@ -101,7 +102,7 @@
 .ce-gate__sub {
   margin: 0.25rem 0 0;
   font-size: 0.78rem;
-  color: var(--ce-muted);
+  color: #dbe4f0;
 }
 
 .ce-gate h1 {
@@ -113,27 +114,29 @@
   letter-spacing: -0.02em;
   text-transform: uppercase;
   color: #fff;
+  text-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
 }
 
 .ce-gate__lead {
   margin: 1rem 0 0;
   font-size: 0.98rem;
   line-height: 1.65;
-  color: var(--ce-muted);
+  color: #d7e0ec;
 }
 
 .ce-gate__hints {
   margin: 1.5rem 0 0;
   padding: 1rem 1.15rem;
-  border-left: 2px solid var(--ce-primary);
-  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--ce-primary);
+  background: rgba(255, 255, 255, 0.08);
   list-style: none;
 }
 
 .ce-gate__hints li {
-  font-size: 0.86rem;
+  font-size: 0.9rem;
   line-height: 1.55;
-  color: color-mix(in srgb, var(--ce-accent) 85%, #fff);
+  /* Ne pas dériver de --ce-accent tenant : un accent sombre rendait le texte illisible. */
+  color: #f1f5f9;
 }
 
 .ce-gate__hints li + li {
@@ -147,8 +150,8 @@
   border: 0;
   border-radius: 999px;
   padding: 1.05rem 1.4rem;
-  background: #fff;
-  color: #041016;
+  background: #f8fafc;
+  color: #0f172a;
   font-family: "Barlow Condensed", sans-serif;
   font-weight: 800;
   font-size: 0.95rem;
@@ -159,7 +162,7 @@
 }
 
 .ce-gate__cta:hover {
-  background: var(--ce-primary);
+  background: #fff;
   color: #041016;
   transform: translateY(-1px);
 }
@@ -167,8 +170,8 @@
 .ce-gate__foot {
   margin: 1rem 0 0;
   text-align: center;
-  font-size: 0.72rem;
-  color: var(--ce-dim);
+  font-size: 0.75rem;
+  color: #b6c2d2;
   line-height: 1.5;
 }
 
@@ -205,7 +208,14 @@
   height: 2.1rem;
   border-radius: 0.55rem;
   object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ce-gate__brand .ce-topbar__logo {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.85rem;
 }
 
 .ce-topbar__name {
@@ -214,7 +224,7 @@
   font-size: 0.95rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--ce-accent);
+  color: #ecfdf5;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
