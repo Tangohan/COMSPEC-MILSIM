@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-/** @var list<array{key: string, label: string, description: string, latest: ?array<string, mixed>}> $jobs */
+/** @var list<array{key: string, label: string, description: string, interval_minutes?: int, latest: ?array<string, mixed>}> $jobs */
 /** @var list<array<string, mixed>> $recentRuns */
 /** @var bool $tablesReady */
 /** @var bool $secretConfigured */
@@ -10,6 +10,14 @@ declare(strict_types=1);
 /** @var string $cliCommand */
 /** @var string $crontabLine */
 /** @var string $installCommand */
+/** @var array<string, mixed> $vpsStatus */
+
+$vpsStatus = is_array($vpsStatus ?? null) ? $vpsStatus : [];
+$vpsSupported = !empty($vpsStatus['supported']);
+$vpsInstalled = !empty($vpsStatus['installed']);
+$vpsReason = trim((string) ($vpsStatus['reason'] ?? ''));
+$vpsLine = trim((string) ($vpsStatus['line'] ?? ''));
+$vpsPreview = trim((string) ($vpsStatus['crontab_preview'] ?? ''));
 
 $statusLabel = static function (?string $status): string {
     return match ($status) {
@@ -38,13 +46,31 @@ $triggerLabel = static function (?string $src): string {
         default => $src !== null && $src !== '' ? $src : '—',
     };
 };
+
+$intervalLabel = static function (int $minutes): string {
+    if ($minutes < 60) {
+        return $minutes . ' min';
+    }
+    if ($minutes % 1440 === 0) {
+        $d = intdiv($minutes, 1440);
+
+        return $d === 1 ? '1 jour' : $d . ' jours';
+    }
+    if ($minutes % 60 === 0) {
+        $h = intdiv($minutes, 60);
+
+        return $h === 1 ? '1 h' : $h . ' h';
+    }
+
+    return $minutes . ' min';
+};
 ?>
 <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-10">
     <header>
         <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Administration plateforme</p>
         <h1 class="text-2xl font-black text-slate-900">Tâches automatiques</h1>
         <p class="mt-2 text-sm text-slate-600 leading-relaxed max-w-3xl">
-            Travaux récurrents du site : escalade des rapports tactiques, expiration des formations,
+            Travaux récurrents du site : ancienneté, escalade des rapports tactiques, expiration des formations,
             fermeture de contenus en quarantaine, rappels de bilan recrutement. Ils partent toutes les
             cinq minutes dès que le passage automatique est en place, ou dès qu’un opérateur ouvre le portail.
         </p>
@@ -73,14 +99,59 @@ $triggerLabel = static function (?string $src): string {
     <?php endif; ?>
 
     <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-        <h2 class="text-sm font-bold text-slate-800">Planification</h2>
+        <h2 class="text-sm font-bold text-slate-800">Installation sur le VPS</h2>
         <p class="text-sm text-slate-600 leading-relaxed">
-            Sur le serveur, installez le passage toutes les cinq minutes avec
-            <code class="text-xs font-mono">install-system-cron.sh</code> (recommandé). À défaut,
-            une relance de secours part après une visite du portail. L’appel distant reste optionnel.
+            Installe la ligne crontab de l’utilisateur PHP (passage toutes les 5 minutes).
+            Réservé aux administrateurs système. Aucune commande libre n’est acceptée : uniquement le script Athena.
         </p>
+
+        <?php if ($vpsInstalled): ?>
+            <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+                <p class="font-bold">Crontab Athena détectée</p>
+                <?php if ($vpsLine !== ''): ?>
+                <code class="mt-2 block text-xs break-all"><?= htmlspecialchars($vpsLine, ENT_QUOTES, 'UTF-8') ?></code>
+                <?php endif; ?>
+            </div>
+        <?php elseif ($vpsSupported): ?>
+            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                Aucune ligne Athena dans la crontab de cet utilisateur PHP. Vous pouvez l’installer ci-dessous.
+            </div>
+        <?php else: ?>
+            <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                Installation depuis l’interface indisponible<?= $vpsReason !== '' ? ' : ' . htmlspecialchars($vpsReason, ENT_QUOTES, 'UTF-8') : '.' ?>
+                Utilisez la commande SSH indiquée plus bas.
+            </div>
+        <?php endif; ?>
+
+        <?php if ($vpsPreview !== '' && $vpsPreview !== '(aucune ligne Athena)'): ?>
         <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
-            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Installation sur le serveur</p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Aperçu crontab Athena</p>
+            <pre class="text-xs text-slate-800 whitespace-pre-wrap break-all m-0"><?= htmlspecialchars($vpsPreview, ENT_QUOTES, 'UTF-8') ?></pre>
+        </div>
+        <?php endif; ?>
+
+        <div class="flex flex-wrap gap-3">
+            <?php if ($vpsSupported && !$vpsInstalled): ?>
+            <form method="post" action="<?= htmlspecialchars(url('admin/system/cron/install-vps'), ENT_QUOTES, 'UTF-8') ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <button type="submit" class="inline-flex items-center rounded-lg bg-emerald-800 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">
+                    Installer le cron sur le VPS
+                </button>
+            </form>
+            <?php endif; ?>
+            <?php if ($vpsSupported && $vpsInstalled): ?>
+            <form method="post" action="<?= htmlspecialchars(url('admin/system/cron/uninstall-vps'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Retirer la ligne Athena de la crontab de cet utilisateur ?');">
+                <?= \App\Core\Csrf::field() ?>
+                <button type="submit" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50">
+                    Retirer le cron VPS
+                </button>
+            </form>
+            <?php endif; ?>
+        </div>
+
+        <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Installation manuelle (SSH)</p>
+            <p class="text-xs text-slate-500 mb-1">À la racine du site : <code class="font-mono">bash scripts/install-system-cron.sh</code></p>
             <code class="text-sm text-slate-900 break-all"><?= htmlspecialchars($installCommand, ENT_QUOTES, 'UTF-8') ?></code>
         </div>
         <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
@@ -120,17 +191,19 @@ $triggerLabel = static function (?string $src): string {
             <?php foreach ($jobs as $job): ?>
                 <?php
                 $latest = is_array($job['latest'] ?? null) ? $job['latest'] : null;
-                $st = $latest !== null ? (string) ($latest['status'] ?? '') : null;
+                $st = $latest['status'] ?? null;
+                $intervalMin = (int) ($job['interval_minutes'] ?? 60);
                 ?>
-                <li class="py-4 first:pt-0 last:pb-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div class="min-w-0 flex-1">
-                        <p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($job['label'], ENT_QUOTES, 'UTF-8') ?></p>
-                        <p class="mt-1 text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($job['description'], ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php if ($latest !== null): ?>
-                            <p class="mt-2 text-xs text-slate-600">
-                                Dernière fois :
+                <li class="py-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-slate-900"><?= htmlspecialchars((string) $job['label'], ENT_QUOTES, 'UTF-8') ?></p>
+                        <p class="mt-1 text-xs text-slate-500 font-mono"><?= htmlspecialchars((string) $job['key'], ENT_QUOTES, 'UTF-8') ?> · toutes les <?= htmlspecialchars($intervalLabel($intervalMin), ENT_QUOTES, 'UTF-8') ?></p>
+                        <p class="mt-1 text-sm text-slate-600 leading-relaxed"><?= htmlspecialchars((string) $job['description'], ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php if ($latest): ?>
+                            <p class="mt-2 text-xs text-slate-500">
+                                Dernier passage :
                                 <?= htmlspecialchars((string) ($latest['finished_at'] ?? $latest['started_at'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
-                                · <?= htmlspecialchars($triggerLabel(isset($latest['trigger_source']) ? (string) $latest['trigger_source'] : null), ENT_QUOTES, 'UTF-8') ?>
+                                · <?= htmlspecialchars($triggerLabel($latest['trigger_source'] ?? null), ENT_QUOTES, 'UTF-8') ?>
                                 <?php if (!empty($latest['summary'])): ?>
                                     — <?= htmlspecialchars((string) $latest['summary'], ENT_QUOTES, 'UTF-8') ?>
                                 <?php endif; ?>
@@ -138,13 +211,13 @@ $triggerLabel = static function (?string $src): string {
                         <?php endif; ?>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 shrink-0">
-                        <span class="inline-flex items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold <?= $statusClass($st) ?>">
-                            <?= htmlspecialchars($statusLabel($st), ENT_QUOTES, 'UTF-8') ?>
+                        <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold <?= $statusClass(is_string($st) ? $st : null) ?>">
+                            <?= htmlspecialchars($statusLabel(is_string($st) ? $st : null), ENT_QUOTES, 'UTF-8') ?>
                         </span>
                         <form method="post" action="<?= htmlspecialchars(url('admin/system/cron/run'), ENT_QUOTES, 'UTF-8') ?>">
                             <?= \App\Core\Csrf::field() ?>
-                            <input type="hidden" name="job_key" value="<?= htmlspecialchars($job['key'], ENT_QUOTES, 'UTF-8') ?>">
-                            <button type="submit" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">
+                            <input type="hidden" name="job_key" value="<?= htmlspecialchars((string) $job['key'], ENT_QUOTES, 'UTF-8') ?>">
+                            <button type="submit" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-800 hover:bg-slate-50">
                                 Exécuter
                             </button>
                         </form>
@@ -160,41 +233,24 @@ $triggerLabel = static function (?string $src): string {
             <p class="text-sm text-slate-500">Aucune exécution enregistrée pour le moment.</p>
         <?php else: ?>
             <div class="overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
-                    <thead>
-                        <tr class="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-500">
-                            <th class="py-2 pr-4 font-semibold">Quand</th>
-                            <th class="py-2 pr-4 font-semibold">Tâche</th>
-                            <th class="py-2 pr-4 font-semibold">Statut</th>
-                            <th class="py-2 pr-4 font-semibold">Déclencheur</th>
-                            <th class="py-2 font-semibold">Résultat</th>
+                <table class="min-w-full text-left text-xs">
+                    <thead class="text-[10px] uppercase tracking-wider text-slate-500 border-b border-slate-100">
+                        <tr>
+                            <th class="py-2 pr-3 font-bold">Tâche</th>
+                            <th class="py-2 pr-3 font-bold">Statut</th>
+                            <th class="py-2 pr-3 font-bold">Source</th>
+                            <th class="py-2 pr-3 font-bold">Fin</th>
+                            <th class="py-2 font-bold">Résumé</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50">
                         <?php foreach ($recentRuns as $run): ?>
-                            <?php
-                            $jobKey = (string) ($run['job_key'] ?? '');
-                            $jobLabel = $jobKey;
-                            foreach ($jobs as $j) {
-                                if ($j['key'] === $jobKey) {
-                                    $jobLabel = $j['label'];
-                                    break;
-                                }
-                            }
-                            $st = (string) ($run['status'] ?? '');
-                            ?>
                             <tr>
-                                <td class="py-2.5 pr-4 text-slate-600 whitespace-nowrap"><?= htmlspecialchars((string) ($run['finished_at'] ?? $run['started_at'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="py-2.5 pr-4 font-medium text-slate-900"><?= htmlspecialchars($jobLabel, ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="py-2.5 pr-4">
-                                    <span class="inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold <?= $statusClass($st) ?>">
-                                        <?= htmlspecialchars($statusLabel($st), ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
-                                </td>
-                                <td class="py-2.5 pr-4 text-slate-600"><?= htmlspecialchars($triggerLabel(isset($run['trigger_source']) ? (string) $run['trigger_source'] : null), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="py-2.5 text-slate-600 max-w-xs truncate" title="<?= htmlspecialchars((string) ($run['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                                    <?= htmlspecialchars((string) ($run['summary'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
-                                </td>
+                                <td class="py-2 pr-3 font-mono text-slate-700"><?= htmlspecialchars((string) ($run['job_key'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="py-2 pr-3"><?= htmlspecialchars($statusLabel(isset($run['status']) ? (string) $run['status'] : null), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="py-2 pr-3"><?= htmlspecialchars($triggerLabel($run['trigger_source'] ?? null), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="py-2 pr-3 whitespace-nowrap"><?= htmlspecialchars((string) ($run['finished_at'] ?? $run['started_at'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="py-2 text-slate-600 max-w-md truncate" title="<?= htmlspecialchars((string) ($run['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($run['summary'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

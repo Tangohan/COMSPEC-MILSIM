@@ -836,6 +836,8 @@ return function (Router $router) {
     $router->post('/admin/system/demo-nda/reset-visit', [SystemDemoNdaController::class, 'resetVisit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/run', [SystemCronController::class, 'runNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/cron/install-vps', [SystemCronController::class, 'installVps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/cron/uninstall-vps', [SystemCronController::class, 'uninstallVps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/recruitment-portal-tools', [SystemRecruitmentPortalToolsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/recruitment-portal-tools/save-mail', [SystemRecruitmentPortalToolsController::class, 'saveAutomodMailSetting'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/recruitment-portal-tools/revoke-indicator', [SystemRecruitmentPortalToolsController::class, 'revokeIndicator'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

@@ -22,6 +22,7 @@ final class CronScheduleAndDatabaseQueryAssetTest extends TestCase
         self::assertSame(5, CronSchedule::intervalMinutes('atak_report_routing_escalations'));
         self::assertSame(1440, CronSchedule::intervalMinutes('sse_analytical_nightly'));
         self::assertSame(1440, CronSchedule::intervalMinutes('sse_analyst_digest'));
+        self::assertSame(1440, CronSchedule::intervalMinutes('seniority_sync_all'));
         self::assertSame(60, CronSchedule::intervalMinutes('unknown_job'));
 
         $now = 1_700_000_000;
@@ -85,8 +86,18 @@ final class CronScheduleAndDatabaseQueryAssetTest extends TestCase
         self::assertStringContainsString('Athena-TachesAutomatiques', $ps1);
         self::assertStringContainsString('cinq minutes', $view);
         self::assertStringContainsString('install-system-cron.sh', $view);
+        self::assertStringContainsString('Installer le cron sur le VPS', $view);
+        self::assertStringContainsString('install-vps', $view);
         self::assertStringContainsString('CronSchedule::isDue', $runner);
         self::assertStringContainsString('maybeKick', $watchdog);
         self::assertStringContainsString('CronWatchdog::maybeKick', $app);
+
+        $job = (string) file_get_contents($root . '/app/Services/Cron/Jobs/SenioritySyncCronJob.php');
+        self::assertStringContainsString('seniority_sync_all', $job);
+        self::assertStringContainsString('syncTenureCommunityForAllActiveMembers', $job);
+
+        $vps = (string) file_get_contents($root . '/app/Services/Cron/CronVpsInstallService.php');
+        self::assertStringContainsString('install-system-cron.sh', $vps);
+        self::assertStringContainsString('athena-cron-run', $vps);
     }
 }
