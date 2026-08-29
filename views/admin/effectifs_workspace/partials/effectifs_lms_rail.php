@@ -62,8 +62,12 @@ $navClass = static function (string $id) use ($active): string {
                 <b>07</b>
                 <span>Qualifications<?= $nQualifExpiring > 0 ? ' <i class="eff-nav-badge">' . $nQualifExpiring . '</i>' : '' ?><em>Validité et recyclages</em></span>
             </a>
-            <a href="<?= htmlspecialchars(effectifs_workspace_url('departs'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('departures'), ENT_QUOTES, 'UTF-8') ?>">
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('doublons'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('duplicates'), ENT_QUOTES, 'UTF-8') ?>">
                 <b>08</b>
+                <span>Doublons<?= !empty($personnelDuplicateScan['group_count']) ? ' <i class="eff-nav-badge">' . (int) $personnelDuplicateScan['group_count'] . '</i>' : '' ?><em>Matricule, nom, callsign…</em></span>
+            </a>
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('departs'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('departures'), ENT_QUOTES, 'UTF-8') ?>">
+                <b>09</b>
                 <span>Anciens membres<em>Historique des départs</em></span>
             </a>
         </nav>

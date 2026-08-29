@@ -25,7 +25,9 @@ use App\Services\Admin\AdminAuditService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
 use App\Services\Effectifs\MemberOffboardingService;
+use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
+use App\Repositories\TenantAdminSettingsRepository;
 use App\Support\EffectifsLmsAccess;
 use App\Support\OrganizationRoleLabels;
 use DateTimeImmutable;
@@ -52,9 +54,13 @@ class EffectifsWorkspaceController
         private PersonnelStructureChangeNotificationService $structureChangeNotification,
         private ?ElevationRequestRepository $elevationRequestRepository = null,
         private ?PersonnelQualificationRepository $personnelQualificationRepository = null,
+        private ?PersonnelDuplicateDetectionService $duplicateDetection = null,
+        private ?TenantAdminSettingsRepository $adminSettings = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
         $this->personnelQualificationRepository ??= new PersonnelQualificationRepository();
+        $this->duplicateDetection ??= new PersonnelDuplicateDetectionService();
+        $this->adminSettings ??= new TenantAdminSettingsRepository();
     }
 
     /**
@@ -243,7 +249,58 @@ class EffectifsWorkspaceController
             'elevationNoRecipients' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients === [],
             'elevationCatalog' => $this->elevationCatalogForTenant($tenantId),
             'csrfToken' => Csrf::token(),
+            'personnelDuplicateScan' => $this->duplicateDetection->scan($tenantId),
+            'personnelDuplicateFieldLabels' => PersonnelDuplicateDetectionService::FIELD_LABELS,
         ]);
+    }
+
+    /** Réglages de détection de doublons (matricule, nom, callsign…). */
+    public function duplicateSettings(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $settings = $this->adminSettings->getForTenant($tenantId);
+        $dup = is_array($settings['personnel_duplicates'] ?? null) ? $settings['personnel_duplicates'] : [];
+
+        return $this->shell('admin.effectifs_workspace.duplicates', [
+            'title' => 'Doublons de fiches',
+            'effectifsNav' => 'duplicates',
+            'duplicateSettings' => $dup,
+            'duplicateFieldLabels' => PersonnelDuplicateDetectionService::FIELD_LABELS,
+            'personnelDuplicateScan' => $this->duplicateDetection->scan($tenantId),
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    public function saveDuplicateSettings(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/ressources/effectifs/doublons'));
+        }
+
+        $fields = $request->input('fields');
+        if (!is_array($fields)) {
+            $fields = [];
+        }
+        $current = $this->adminSettings->getForTenant($tenantId);
+        $current['personnel_duplicates'] = [
+            'enabled' => $request->input('enabled') === '1' || $request->input('enabled') === 'on',
+            'fields' => array_values(array_map('strval', $fields)),
+        ];
+        $this->adminSettings->saveForTenant($tenantId, $current);
+        Session::flash('success', 'Réglages de détection des doublons enregistrés.');
+
+        return Response::redirect(url('back-office/ressources/effectifs/doublons'));
     }
 
     /** Export CSV du tableur, avec les mêmes filtres que roster() mais sans pagination (borné à 5000 lignes). */
@@ -1183,12 +1240,22 @@ class EffectifsWorkspaceController
             }
         }
 
+        $dupScan = $extra['personnelDuplicateScan'] ?? null;
+        if ($dupScan === null) {
+            try {
+                $dupScan = $this->duplicateDetection->scan($tenantId);
+            } catch (\Throwable) {
+                $dupScan = ['enabled' => false, 'fields' => [], 'groups' => [], 'group_count' => 0, 'member_count' => 0];
+            }
+        }
+
         return Response::view('layout.effectifs_lms', array_merge([
             'content' => $content,
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'elevationOpenCount' => $elevationOpen,
             'qualificationsExpiringCount' => $qualifExpiring,
+            'personnelDuplicateScan' => $dupScan,
             'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
         ], $extra));
     }

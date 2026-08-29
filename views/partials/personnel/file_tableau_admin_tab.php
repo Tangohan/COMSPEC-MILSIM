@@ -7,27 +7,34 @@
 $sheetRows = [];
 
 $pushRow = static function (array &$rows, string $section, string $field, string $value, string $detail = '', string $updated = ''): void {
+    $missing = 'Donnée manquante';
+    $valueOut = trim((string) $value);
+    if ($valueOut === '' || $valueOut === '—' || $valueOut === '-') {
+        $valueOut = $missing;
+    }
     $rows[] = [
         'section' => $section,
         'field' => $field,
-        'value' => $value !== '' ? $value : '—',
+        'value' => $valueOut,
         'detail' => $detail,
         'updated' => $updated,
     ];
 };
 
-$pushRow($sheetRows, 'Identité', 'Prénom', (string) (($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : '—'));
-$pushRow($sheetRows, 'Identité', 'Nom', (string) (($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : '—'));
+$missingLabel = $missingLabel ?? 'Donnée manquante';
+
+$pushRow($sheetRows, 'Identité', 'Prénom', (string) (($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : ''));
+$pushRow($sheetRows, 'Identité', 'Nom', (string) (($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : ''));
 if (!empty($showMatriculePublic)) {
-    $pushRow($sheetRows, 'Identité', 'Matricule', $matricule ? (string) $matricule : 'Non attribué');
+    $pushRow($sheetRows, 'Identité', 'Matricule', $matricule ? (string) $matricule : '');
 }
-$pushRow($sheetRows, 'Identité', 'Indicatif radio', $callsign ? (string) $callsign : '—');
+$pushRow($sheetRows, 'Identité', 'Indicatif radio', $callsign ? (string) $callsign : '');
 if (!empty($showEmailInContact) && $athenaIdentifier !== '') {
     $pushRow($sheetRows, 'Identité', 'Identifiant Athena', $athenaIdentifier);
 }
 if (!empty($canViewCivilSection)) {
     if (!empty($showEmailInContact)) {
-        $pushRow($sheetRows, 'Compte', 'E-mail', (string) ($targetUser['email'] ?? '—'));
+        $pushRow($sheetRows, 'Compte', 'E-mail', (string) ($targetUser['email'] ?? ''));
     } else {
         $pushRow($sheetRows, 'Compte', 'E-mail', 'Masqué — réservé à l’administration');
     }
@@ -42,11 +49,25 @@ $fieldLooksEmail = static function (string $key): bool {
     return str_contains($k, 'email') || str_contains($k, 'e-mail') || str_contains($k, 'mail');
 };
 
-$pushRow($sheetRows, 'Affectation', 'Grade / rang', $effectiveRankDisplay !== '' ? (string) $effectiveRankDisplay : '—');
-$pushRow($sheetRows, 'Affectation', 'Unité principale', $unitName ? (string) $unitName : '—');
+// Grade : valeur = code / affichage court ; détail = libellé long quand il diffère.
+$gradeValue = $effectiveRankDisplay !== '' ? (string) $effectiveRankDisplay : '';
+$gradeDetail = '';
+if (!empty($showGradeReferenceBeside) && !empty($gradeReferenceLabel)) {
+    $gradeDetail = (string) $gradeReferenceLabel;
+    if (!empty($gradeOtanCode) && strcasecmp((string) $gradeOtanCode, $gradeValue) !== 0
+        && strcasecmp((string) $gradeOtanCode, (string) $gradeReferenceLabel) !== 0) {
+        $gradeDetail .= ' · ' . (string) $gradeOtanCode;
+    }
+} elseif (!empty($gradeOtanCode) && $gradeValue !== '' && strcasecmp((string) $gradeOtanCode, $gradeValue) !== 0) {
+    $gradeDetail = 'Code OTAN : ' . (string) $gradeOtanCode;
+} elseif (!empty($gradeReferenceLabel) && $gradeValue !== '' && strcasecmp((string) $gradeReferenceLabel, $gradeValue) !== 0) {
+    $gradeDetail = (string) $gradeReferenceLabel;
+}
+$pushRow($sheetRows, 'Affectation', 'Grade / rang', $gradeValue, $gradeDetail);
+$pushRow($sheetRows, 'Affectation', 'Unité principale', $unitName ? (string) $unitName : '');
 if (!empty($commander)) {
     $cmdLabel = trim((string) ($commander['display_name'] ?? '')) ?: trim((string) ($commander['callsign'] ?? ''));
-    $pushRow($sheetRows, 'Affectation', 'Chef d’équipe', $cmdLabel !== '' ? $cmdLabel : '—');
+    $pushRow($sheetRows, 'Affectation', 'Chef d’équipe', $cmdLabel !== '' ? $cmdLabel : '');
 }
 if ($communityRoleLabel !== null) {
     $pushRow($sheetRows, 'Affectation', 'Rôle communauté', (string) $communityRoleLabel);
@@ -96,7 +117,7 @@ foreach (array_slice($personnelAssignmentHistory, 0, 40) as $hx) {
     );
 }
 
-$pushRow($sheetRows, 'Dates', 'Date d’enrôlement', $enlistmentFormatted ? (string) $enlistmentFormatted : '—');
+$pushRow($sheetRows, 'Dates', 'Date d’enrôlement', $enlistmentFormatted ? (string) $enlistmentFormatted : '');
 if ($accountCreatedDisplay !== null) {
     $pushRow($sheetRows, 'Dates', 'Membre depuis', (string) $accountCreatedDisplay);
 }
@@ -105,15 +126,15 @@ if ($seniorityGlobal !== null) {
         $sheetRows,
         'Dates',
         'Ancienneté globale',
-        (string) ($seniorityGlobal['formatted'] ?? '—'),
+        (string) ($seniorityGlobal['formatted'] ?? ''),
         (string) ($seniorityGlobal['basis_label'] ?? '')
     );
 }
 if ($privatePersonnelIdentity) {
     $pushRow($sheetRows, 'Compte', 'Statut du compte', $accountStatusFr((string) ($targetUser['status'] ?? '')));
 }
-$pushRow($sheetRows, 'Opérationnel', 'Habilitation', $clearanceLevel !== '' ? (string) $clearanceLevel : '—');
-$pushRow($sheetRows, 'Opérationnel', 'Préparation', $readiness !== null ? $readiness . ' %' : '—');
+$pushRow($sheetRows, 'Opérationnel', 'Habilitation', $clearanceLevel !== '' ? (string) $clearanceLevel : '');
+$pushRow($sheetRows, 'Opérationnel', 'Préparation', $readiness !== null ? $readiness . ' %' : '');
 $pushRow($sheetRows, 'Opérationnel', 'Déployable', $isDeployableFile ? 'Oui' : 'Non');
 $pushRow($sheetRows, 'Opérationnel', 'Complétude du dossier', $completenessScore . ' %');
 
@@ -279,6 +300,8 @@ $tableauAdminStandalone = !empty($tableauAdminStandalone ?? false);
                     <td class="text-slate-600">
                         <?php if (($row['detail'] ?? '') !== ''): ?>
                         <?= htmlspecialchars((string) $row['detail'], ENT_QUOTES, 'UTF-8') ?>
+                        <?php elseif (($row['field'] ?? '') === 'Grade / rang' && ($row['value'] ?? '') !== 'Donnée manquante'): ?>
+                        <span class="text-slate-400">Donnée manquante</span>
                         <?php else: ?>
                         <span class="text-slate-400">—</span>
                         <?php endif; ?>

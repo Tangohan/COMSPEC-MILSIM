@@ -66,6 +66,37 @@ final class TenantAdminSettingsRepository
                 'certificate_duration_days' => $this->boundedInt($current['atak_defaults']['certificate_duration_days'] ?? 365, 1, 1825),
                 'off_op_position_sharing' => $this->bool($current['atak_defaults']['off_op_position_sharing'] ?? false),
             ],
+            'personnel_duplicates' => $this->sanitizePersonnelDuplicates($current['personnel_duplicates'] ?? []),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @return array{enabled: bool, fields: list<string>}
+     */
+    private function sanitizePersonnelDuplicates(mixed $input): array
+    {
+        $input = is_array($input) ? $input : [];
+        $allowed = array_keys(\App\Services\Personnel\PersonnelDuplicateDetectionService::FIELD_LABELS);
+        $fields = [];
+        $rawFields = $input['fields'] ?? [ 'matricule', 'callsign' ];
+        if (!is_array($rawFields)) {
+            $rawFields = ['matricule', 'callsign'];
+        }
+        foreach ($rawFields as $f) {
+            $f = strtolower(trim((string) $f));
+            if (in_array($f, $allowed, true)) {
+                $fields[] = $f;
+            }
+        }
+        $fields = array_values(array_unique($fields));
+        if ($fields === []) {
+            $fields = ['matricule', 'callsign'];
+        }
+
+        return [
+            'enabled' => $this->bool($input['enabled'] ?? true),
+            'fields' => $fields,
         ];
     }
 
@@ -112,6 +143,10 @@ final class TenantAdminSettingsRepository
                 'minimum_client_version' => '5.1.8',
                 'certificate_duration_days' => 365,
                 'off_op_position_sharing' => false,
+            ],
+            'personnel_duplicates' => [
+                'enabled' => true,
+                'fields' => ['matricule', 'callsign'],
             ],
         ];
     }

@@ -5,12 +5,14 @@ declare(strict_types=1);
  * Navbar Athena (structure HTML proche Caverne) — dashboard / portail sombre.
  * Remplace portal-nav / dash-topnav ; ne remplace PAS l’aside tuiles ni les modals.
  *
- * Variables optionnelles (sinon dérivées du contexte session / dashboard) :
+ * Identité du CONNECTÉ uniquement via $header* (jamais $personnelProfile / $grade de la fiche consultée).
+ *
  * @var string|null $dashboard_tenant_label
- * @var array<string,mixed>|null $currentUser
- * @var array<string,mixed>|null $grade
- * @var array<string,mixed>|null $personnelExtras
- * @var array<string,mixed>|null $personnelProfile Dossier (fonction, unité d’affectation, rôle)
+ * @var array<string,mixed>|null $headerCurrentUser
+ * @var array<string,mixed>|null $headerPersonnelProfile
+ * @var array<string,mixed>|null $headerPersonnelExtras
+ * @var array<string,mixed>|null $headerGrade
+ * @var array<string,mixed>|null $currentUser Alias optionnel
  * @var bool|null $show_staff_enlistments
  * @var string|null $athena_header_section  Sous-ligne brand (ex. Tableau de bord)
  * @var string|null $athena_header_current Clé lien actif (dashboard|hub|forum|formations|effectifs|recrutement|admin|…)
@@ -197,7 +199,7 @@ $quickLinks = array_values(array_filter(
     static fn (array $item): bool => $headerAllowsPath((string) ($item['path'] ?? ''))
 ));
 
-$cu = $currentUser ?? null;
+$cu = $headerCurrentUser ?? $currentUser ?? null;
 if (!is_array($cu)) {
     try {
         $cu = \App\Core\Container::get(\App\Services\Auth\AuthService::class)->user();
@@ -205,21 +207,31 @@ if (!is_array($cu)) {
         $cu = null;
     }
 }
-$displayName = $cu
+$headerDisplayName = $cu
     ? (string) ($cu['display_name'] ?? $cu['email'] ?? 'Opérateur')
     : trim((string) (\App\Core\Session::get('display_name') ?? \App\Core\Session::get('callsign') ?? 'Opérateur'));
-if ($displayName === '') {
-    $displayName = 'Opérateur';
+if ($headerDisplayName === '') {
+    $headerDisplayName = 'Opérateur';
 }
 
-$gradeLabel = 'Opérateur';
-$gradeLong = 'Opérateur';
-$gradeOtan = null;
-$gr = $grade ?? null;
+$headerGradeLabel = 'Opérateur';
+$headerGradeLong = 'Opérateur';
+$headerGradeOtan = null;
+$gr = $headerGrade ?? null;
 
-$pe = $personnelExtras ?? null;
-$matricule = is_array($pe) ? ($pe['service_number'] ?? null) : null;
-$matriculeLabel = $matricule ? ('Matricule ' . (string) $matricule) : 'Matricule non attribué';
+$pe = $headerPersonnelExtras ?? null;
+$headerMatricule = null;
+if (is_array($headerPersonnelProfile ?? null)) {
+    $headerMatricule = trim((string) ($headerPersonnelProfile['matricule_internal'] ?? ''));
+    if ($headerMatricule === '') {
+        $headerMatricule = null;
+    }
+}
+if ($headerMatricule === null && is_array($pe)) {
+    $sn = trim((string) ($pe['service_number'] ?? ''));
+    $headerMatricule = $sn !== '' ? $sn : null;
+}
+$headerMatriculeLabel = $headerMatricule ? ('Matricule ' . (string) $headerMatricule) : 'Matricule non attribué';
 
 $statut = $cu ? (string) ($cu['status'] ?? '') : (string) (\App\Core\Session::get('status') ?? '');
 $statutLabel = match ($statut) {
@@ -232,14 +244,21 @@ $statutLabel = match ($statut) {
 
 $athenaTenantIdForHeader = (int) (\App\Core\Session::get('tenant_id') ?? 0);
 
-// Dossier personnel (fonction, unité d’affectation) : fourni par l’appelant, sinon dérivé pour rester
-// utilisable depuis n’importe quelle page qui inclut ce partial (mêmes garanties que $grade ci-dessus).
-$pp = $personnelProfile ?? null;
+// Dossier du CONNECTÉ uniquement (bandeau) — ne jamais lire $personnelProfile de la page.
+$pp = $headerPersonnelProfile ?? null;
 if (!is_array($pp) && is_array($cu)) {
     try {
         $pp = \App\Core\Container::get(\App\Repositories\PersonnelProfileRepository::class)->getByUserId((int) $cu['id']);
     } catch (\Throwable) {
         $pp = null;
+    }
+}
+if (!is_array($gr) && is_array($cu) && !empty($cu['grade_id']) && $athenaTenantIdForHeader > 0) {
+    try {
+        $gr = \App\Core\Container::get(\App\Repositories\GradeRepository::class)
+            ->findById((int) $cu['grade_id'], $athenaTenantIdForHeader);
+    } catch (\Throwable) {
+        $gr = null;
     }
 }
 
@@ -248,15 +267,15 @@ if (is_array($gr)) {
         $gradeDisplay = \App\Core\Container::get(\App\Services\GradeDisplayService::class);
         $title = trim($gradeDisplay->headerTitle($gr, is_array($pp) ? $pp : null));
         if ($title !== '') {
-            $gradeLabel = $title;
-            $gradeLong = $title;
+            $headerGradeLabel = $title;
+            $headerGradeLong = $title;
         }
-        $gradeOtan = $gradeDisplay->headerShortCode($gr, is_array($pp) ? $pp : null);
+        $headerGradeOtan = $gradeDisplay->headerShortCode($gr, is_array($pp) ? $pp : null);
     } catch (\Throwable) {
-        $gradeLabel = (string) ($gr['label_long'] ?? $gr['label_short'] ?? $gr['name'] ?? 'Opérateur');
-        $gradeLong = $gradeLabel;
+        $headerGradeLabel = (string) ($gr['label_long'] ?? $gr['label_short'] ?? $gr['name'] ?? 'Opérateur');
+        $headerGradeLong = $headerGradeLabel;
         $otanRaw = trim((string) ($gr['label_otan'] ?? $gr['nato_code'] ?? ''));
-        $gradeOtan = $otanRaw !== '' ? $otanRaw : null;
+        $headerGradeOtan = $otanRaw !== '' ? $otanRaw : null;
     }
 }
 
@@ -308,8 +327,8 @@ if ($affectationLabel === null && is_array($pe)) {
 $athenaSessionId = is_array($cu) ? trim((string) ($cu['athena_identifier'] ?? '')) : '';
 
 $initials = function_exists('user_display_initials')
-    ? user_display_initials($displayName)
-    : mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $displayName) ?: 'A', 0, 1));
+    ? user_display_initials($headerDisplayName)
+    : mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $headerDisplayName) ?: 'A', 0, 1));
 $avatarSrc = function_exists('user_media_public_url')
     ? user_media_public_url(is_array($cu) ? ($cu['avatar_url'] ?? null) : null)
     : null;
@@ -329,12 +348,12 @@ if (function_exists('portal_header_context')) {
             'alerts' => is_array($ph['alerts'] ?? null) ? $ph['alerts'] : [],
             'alerts_count' => (int) ($ph['alerts_count'] ?? 0),
             'alerts_severity' => (string) ($ph['alerts_severity'] ?? 'info'),
-            'display_name' => (string) ($ph['display_name'] ?? $displayName),
-            'role_label' => (string) ($ph['role_label'] ?? $gradeLabel),
+            'display_name' => (string) ($ph['display_name'] ?? $headerDisplayName),
+            'role_label' => (string) ($ph['role_label'] ?? $headerGradeLabel),
             'tenant_label' => (string) ($ph['tenant_label'] ?? $unitLabel),
         ];
         if (($alertsCtx['display_name'] ?? '') !== '') {
-            $displayName = (string) $alertsCtx['display_name'];
+            $headerDisplayName = (string) $alertsCtx['display_name'];
         }
     } catch (\Throwable) {
         // ignore
@@ -348,9 +367,9 @@ $alertsSeverity = (string) ($alertsCtx['alerts_severity'] ?? 'info');
  * @var list<array{label:string,value:string,otan?:string|null}>
  */
 $profileFacts = [
-    ['label' => 'Grade', 'value' => $gradeLong, 'otan' => $gradeOtan],
+    ['label' => 'Grade', 'value' => $headerGradeLong, 'otan' => $headerGradeOtan],
     ['label' => 'Fonction', 'value' => $fonctionLabel ?? 'Non renseignée'],
-    ['label' => 'Matricule', 'value' => $matricule ? (string) $matricule : 'Non attribué'],
+    ['label' => 'Matricule', 'value' => $headerMatricule ? (string) $headerMatricule : 'Non attribué'],
     ['label' => 'Statut', 'value' => $statutLabel],
     ['label' => 'Communauté', 'value' => $unitLabel],
 ];
@@ -579,9 +598,9 @@ $profileMenuItems = array_values(array_filter(
                     aria-controls="athena-header-profile"
                 >
                     <span class="athena-header__profile-identity">
-                        <span class="athena-header__profile-name"><?= $h($displayName) ?></span>
+                        <span class="athena-header__profile-name"><?= $h($headerDisplayName) ?></span>
                         <span class="athena-header__profile-title">
-                            <?= $h($gradeLabel) ?><?php if ($gradeOtan !== null): ?> · <?= $h($gradeOtan) ?><?php endif; ?>
+                            <?= $h($headerGradeLabel) ?><?php if ($headerGradeOtan !== null): ?> · <?= $h($headerGradeOtan) ?><?php endif; ?>
                         </span>
                     </span>
                     <?php
@@ -609,7 +628,7 @@ $profileMenuItems = array_values(array_filter(
                             <div class="athena-header__profile-cover-shade"></div>
                             <div class="athena-header__profile-topline">
                                 <span>Session active</span>
-                                <b><?= $h($displayName) ?></b>
+                                <b><?= $h($headerDisplayName) ?></b>
                             </div>
                         </div>
                         <div class="athena-header__profile-body">
@@ -621,10 +640,10 @@ $profileMenuItems = array_values(array_filter(
                                 require base_path('views/partials/ui/user_avatar.php');
                                 ?>
                                 <div class="athena-header__profile-name-block">
-                                    <strong><?= $h($displayName) ?></strong>
+                                    <strong><?= $h($headerDisplayName) ?></strong>
                                     <span>
-                                        <?= $h($gradeLong) ?><?php if ($gradeOtan !== null): ?> · <?= $h($gradeOtan) ?><?php endif; ?>
-                                        · <?= $h($matriculeLabel) ?>
+                                        <?= $h($headerGradeLong) ?><?php if ($headerGradeOtan !== null): ?> · <?= $h($headerGradeOtan) ?><?php endif; ?>
+                                        · <?= $h($headerMatriculeLabel) ?>
                                     </span>
                                 </div>
                                 <span class="athena-header__profile-status"><?= $h($statutLabel) ?></span>
