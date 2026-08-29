@@ -2342,6 +2342,13 @@ try {
     echo '  [ATTENTION] elevation_requests_proposal : ' . $e->getMessage() . "\n";
 }
 
+require_once $root . '/bootstrap/account_purge_requests_migration.php';
+try {
+    run_account_purge_requests_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] account_purge_requests : ' . $e->getMessage() . "\n";
+}
+
 $personnelCorrectionRequestsMigrate = require $root . '/bootstrap/personnel_correction_requests_migration.php';
 try {
     echo "Migration personnel_correction_requests (corrections RH fiche opérateur)...\n";

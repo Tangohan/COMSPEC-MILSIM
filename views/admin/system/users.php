@@ -115,6 +115,87 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
             </p>
         </header>
 
+        <?php
+        $pendingPurgeRequests = is_array($pendingPurgeRequests ?? null) ? $pendingPurgeRequests : [];
+        $pendingPurgeRequestsCount = (int) ($pendingPurgeRequestsCount ?? count($pendingPurgeRequests));
+        ?>
+        <?php if ($pendingPurgeRequests !== []): ?>
+        <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-4" aria-labelledby="purge-requests-title">
+            <div>
+                <h2 id="purge-requests-title" class="text-base font-semibold text-amber-950">
+                    Demandes de suppression définitive
+                    <span class="ml-2 inline-flex rounded-md bg-amber-200 px-2 py-0.5 text-xs font-bold text-amber-950"><?= $pendingPurgeRequestsCount ?></span>
+                </h2>
+                <p class="mt-2 max-w-3xl text-sm text-amber-900">
+                    Émises par des organisateurs pour des fiches déjà anonymisées (« Compte supprimé ») dans leur communauté.
+                    Approuver déclenche une purge définitive limitée à cette communauté.
+                </p>
+            </div>
+            <ul class="space-y-3">
+                <?php foreach ($pendingPurgeRequests as $req): ?>
+                    <?php
+                    $reqId = (int) ($req['id'] ?? 0);
+                    $reqTenant = (string) ($req['tenant_name'] ?? '');
+                    $reqTarget = (string) ($req['target_display_name'] ?? 'Compte supprimé');
+                    $reqEmail = (string) ($req['target_email'] ?? '');
+                    $reqBy = (string) ($req['requester_display_name'] ?? '');
+                    if ($reqBy === '') {
+                        $reqBy = (string) ($req['requester_email'] ?? 'Organisateur');
+                    }
+                    $reqNote = trim((string) ($req['note'] ?? ''));
+                    $reqAt = (string) ($req['created_at'] ?? '');
+                    $reqUid = (int) ($req['target_user_id'] ?? 0);
+                    $reqTid = (int) ($req['tenant_id'] ?? 0);
+                    ?>
+                    <li class="rounded-xl border border-amber-200 bg-white p-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div class="min-w-0 flex-1">
+                                <p class="font-semibold text-slate-900">
+                                    <?= $h($reqTarget) ?>
+                                    <span class="text-xs font-normal text-slate-500">#<?= $reqUid ?></span>
+                                </p>
+                                <p class="text-xs text-slate-600 mt-1">
+                                    Communauté&nbsp;: <strong><?= $h($reqTenant !== '' ? $reqTenant : '—') ?></strong>
+                                    <?php if ($reqTid > 0): ?> · tenant #<?= $reqTid ?><?php endif; ?>
+                                </p>
+                                <?php if ($reqEmail !== ''): ?>
+                                    <p class="text-xs font-mono text-slate-500"><?= $h($reqEmail) ?></p>
+                                <?php endif; ?>
+                                <p class="text-xs text-slate-600 mt-1">
+                                    Demandé par <?= $h($reqBy) ?>
+                                    <?php if ($reqAt !== ''): ?> · <?= $h($reqAt) ?><?php endif; ?>
+                                </p>
+                                <?php if ($reqNote !== ''): ?>
+                                    <p class="mt-2 text-sm text-slate-700 border-l-2 border-amber-300 pl-3"><?= $h($reqNote) ?></p>
+                                <?php endif; ?>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <form method="post" action="<?= $h(url('admin/users/purge-requests/approve')) ?>"
+                                      onsubmit="return confirm('Approuver et purger définitivement cette fiche de la communauté ?');">
+                                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                    <input type="hidden" name="request_id" value="<?= $reqId ?>">
+                                    <?= $hiddenReturns() ?>
+                                    <button type="submit" class="rounded-lg border border-rose-700 bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">
+                                        Approuver &amp; purger
+                                    </button>
+                                </form>
+                                <form method="post" action="<?= $h(url('admin/users/purge-requests/reject')) ?>"
+                                      onsubmit="return confirm('Refuser cette demande ?');">
+                                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                    <input type="hidden" name="request_id" value="<?= $reqId ?>">
+                                    <?= $hiddenReturns() ?>
+                                    <button type="submit" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">
+                                        Refuser
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
+        <?php endif; ?>
+
         <div class="flex flex-wrap gap-3 text-sm">
             <a href="<?= $h(url('admin/system/member-sanctions')) ?>" class="font-semibold text-rose-800 hover:underline">Sanctions à l’échelle du site</a>
             <a href="<?= $h(url('admin/site-roles')) ?>" class="text-slate-600 hover:underline">Affectations rôles site</a>

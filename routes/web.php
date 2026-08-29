@@ -917,6 +917,8 @@ return function (Router $router) {
     $router->post('/admin/users/delete', [SystemUsersController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/purge', [SystemUsersController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/purge-anonymises', [SystemUsersController::class, 'purgeAnonymized'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/purge-requests/approve', [SystemUsersController::class, 'approvePurgeRequest'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/purge-requests/reject', [SystemUsersController::class, 'rejectPurgeRequest'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/site-roles', [SystemSiteRoleAssignmentController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/assign', [SystemSiteRoleAssignmentController::class, 'assign'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -979,6 +981,7 @@ return function (Router $router) {
     $router->get('/back-office/users/{id}/edit', [UserAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/update', [UserAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/deactivate', [UserAdminController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/users/{id}/request-purge', [UserAdminController::class, 'requestPurge'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/invitations', [InvitationAdminController::class, 'index'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->get('/back-office/invitations/envoyees', [InvitationAdminController::class, 'sent'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->post('/back-office/invitations', [InvitationAdminController::class, 'store'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);

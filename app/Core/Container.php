@@ -764,7 +764,10 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Services\Audit\AuditService::class),
                 self::get(\App\Services\Account\AccountDeletionService::class),
+                null,
+                self::get(\App\Repositories\AccountPurgeRequestRepository::class),
             ),
+            \App\Repositories\AccountPurgeRequestRepository::class => new \App\Repositories\AccountPurgeRequestRepository(),
             \App\Repositories\PersonnelJobRoleRepository::class => new \App\Repositories\PersonnelJobRoleRepository(),
             \App\Repositories\PlanningEntryRepository::class => new \App\Repositories\PlanningEntryRepository(),
             \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController::class => new \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController(
@@ -1167,7 +1170,8 @@ class Container
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Services\Personnel\PersonnelOrgHistoryRecorder::class),
                 self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
-                self::get(\App\Services\Steam\SteamWebApiService::class)
+                self::get(\App\Services\Steam\SteamWebApiService::class),
+                self::get(\App\Repositories\AccountPurgeRequestRepository::class)
             ),
             \App\Services\Documents\DocumentTrainingReferencesService::class => new \App\Services\Documents\DocumentTrainingReferencesService(
                 self::get(\App\Repositories\TrainingResourceRepository::class),

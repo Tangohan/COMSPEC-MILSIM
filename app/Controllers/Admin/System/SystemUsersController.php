@@ -21,6 +21,7 @@ use App\Services\Account\AccountDeletionService;
 use App\Services\Account\AccountPurgeService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Repositories\AccountPurgeRequestRepository;
 
 /**
  * Annuaire global des comptes (toutes communautés) — administration plateforme.
@@ -33,8 +34,10 @@ final class SystemUsersController
         private ?AuditService $audit = null,
         private ?AccountDeletionService $accountDeletion = null,
         private ?AccountPurgeService $accountPurge = null,
+        private ?AccountPurgeRequestRepository $purgeRequests = null,
     ) {
         $this->audit ??= new AuditService();
+        $this->purgeRequests ??= new AccountPurgeRequestRepository();
     }
 
     private function deletionService(): AccountDeletionService
@@ -81,6 +84,8 @@ final class SystemUsersController
             'platformUsersStatus' => $status,
             'platformUsersTenantId' => $tenantFilter,
             'platformTenants' => $this->tenants->listOverviewForPlatform(),
+            'pendingPurgeRequests' => $this->purgeRequests->listPending(50),
+            'pendingPurgeRequestsCount' => $this->purgeRequests->countPending(),
         ]);
     }
 
@@ -496,6 +501,156 @@ final class SystemUsersController
             . ' définitivement (' . $result['rows_deleted'] . ' lignes)'
             . ($result['failed'] > 0 ? ' · ' . $result['failed'] . ' en échec, voir le journal serveur.' : '.')
         );
+
+        return Response::redirect($this->backUrl($request));
+    }
+
+    /**
+     * Approuve une demande organisateur : purge définitive de la fiche dans l’orga concernée.
+     */
+    public function approvePurgeRequest(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $actorTenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        $requestId = (int) $request->input('request_id', $params['id'] ?? 0);
+        if ($requestId < 1) {
+            Session::flash('error', 'Demande invalide.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $row = $this->purgeRequests->findById($requestId);
+        if ($row === null || (string) ($row['status'] ?? '') !== 'pending') {
+            Session::flash('error', 'Demande introuvable ou déjà traitée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $targetUserId = (int) ($row['target_user_id'] ?? 0);
+        $tenantId = (int) ($row['tenant_id'] ?? 0);
+        if ($targetUserId < 1 || $tenantId < 1) {
+            Session::flash('error', 'Demande invalide.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        if ($targetUserId === $actorId) {
+            Session::flash('error', 'Vous ne pouvez pas purger votre propre compte.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $target = $this->users->findById($targetUserId, $tenantId);
+        if ($target === null) {
+            $this->purgeRequests->resolve($requestId, 'approved', $actorId, 'Cible déjà absente — demande clôturée.');
+            Session::flash('success', 'La fiche ciblée n’existe plus ; la demande a été clôturée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        if (!AccountDeletionService::isAnonymizedUser($target)) {
+            Session::flash(
+                'error',
+                'La fiche n’est plus anonymisée (« Compte supprimé »). Refusez la demande ou anonymisez d’abord le compte.'
+            );
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $resolutionNote = trim((string) $request->input('resolution_note', ''));
+        if (!$this->purgeRequests->resolve(
+            $requestId,
+            'approved',
+            $actorId,
+            $resolutionNote !== '' ? $resolutionNote : 'Approuvée — purge orga'
+        )) {
+            Session::flash('error', 'Impossible de clôturer la demande (peut-être déjà traitée).');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $this->audit->logChange(
+            AuditAction::USER_PURGED,
+            $actorTenantId > 0 ? $actorTenantId : $tenantId,
+            $actorId,
+            'user',
+            $targetUserId,
+            [
+                'status' => (string) ($target['status'] ?? ''),
+                'email' => (string) ($target['email'] ?? ''),
+                'display_name' => (string) ($target['display_name'] ?? ''),
+                'purge_request_id' => $requestId,
+            ],
+            [
+                'status' => 'purged',
+                'platform_directory' => true,
+                'scope' => 'org',
+                'via' => 'org_purge_request',
+                'purge_request_id' => $requestId,
+            ],
+        );
+
+        $report = $this->purgeService()->purge($targetUserId, []);
+        if (!$report['ok'] && $report['purged_user_ids'] === []) {
+            Session::flash(
+                'error',
+                'Demande approuvée, mais la purge a échoué : ' . ($report['errors'][0] ?? 'erreur inconnue') . '.'
+            );
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $message = 'Demande approuvée — fiche purgée de la communauté ('
+            . $report['rows_deleted'] . ' ligne' . ($report['rows_deleted'] > 1 ? 's' : '')
+            . ' effacée' . ($report['rows_deleted'] > 1 ? 's' : '') . ').';
+        if ($report['errors'] !== []) {
+            $message .= ' ' . count($report['errors']) . ' avertissement'
+                . (count($report['errors']) > 1 ? 's' : '') . ' — voir le journal serveur.';
+            foreach (array_slice($report['errors'], 0, 20) as $error) {
+                error_log('[account_purge_request] request #' . $requestId . ' : ' . $error);
+            }
+        }
+        Session::flash('success', $message);
+
+        return Response::redirect($this->backUrl($request));
+    }
+
+    /**
+     * Refuse une demande organisateur de suppression définitive.
+     */
+    public function rejectPurgeRequest(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $actorId = (int) Session::get('user_id');
+        $requestId = (int) $request->input('request_id', $params['id'] ?? 0);
+        if ($requestId < 1) {
+            Session::flash('error', 'Demande invalide.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $row = $this->purgeRequests->findById($requestId);
+        if ($row === null || (string) ($row['status'] ?? '') !== 'pending') {
+            Session::flash('error', 'Demande introuvable ou déjà traitée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $resolutionNote = trim((string) $request->input('resolution_note', ''));
+        if (!$this->purgeRequests->resolve(
+            $requestId,
+            'rejected',
+            $actorId,
+            $resolutionNote !== '' ? $resolutionNote : 'Refusée par la plateforme'
+        )) {
+            Session::flash('error', 'Impossible de refuser la demande.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        Session::flash('success', 'Demande de suppression définitive refusée.');
 
         return Response::redirect($this->backUrl($request));
     }

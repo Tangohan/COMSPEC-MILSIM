@@ -89,6 +89,7 @@ final class AuditActionLabel
         'user.status_updated' => 'Statut du compte modifié',
         'user.deleted' => 'Compte supprimé (anonymisé)',
         'user.purged' => 'Compte supprimé définitivement',
+        'user_purge_requested' => 'Demande de suppression définitive (orga)',
         'platform.tenant_plan_assigned' => 'Formule d’accès affectée à une communauté',
         'audit.rollback' => 'Restauration d’état depuis le journal',
         'audit.rollback_alert' => 'Alerte envoyée depuis le journal',

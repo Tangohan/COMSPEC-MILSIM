@@ -62,6 +62,19 @@ class AdminAuditService
         );
     }
 
+    public function logUserPurgeRequested(int $tenantId, int $actorUserId, int $targetUserId, int $requestId): void
+    {
+        $this->auditService->log(
+            'user_purge_requested',
+            $tenantId,
+            $actorUserId,
+            'user',
+            $targetUserId,
+            null,
+            'purge_request#' . $requestId
+        );
+    }
+
     public function logUserLeftCommunity(int $tenantId, int $actorUserId, int $targetUserId): void
     {
         $this->auditService->log(
