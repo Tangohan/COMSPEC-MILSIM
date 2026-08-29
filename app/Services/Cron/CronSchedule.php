@@ -23,6 +23,7 @@ final class CronSchedule
         'attendance_reminders' => 30,
         'training_expire' => 60,
         'personnel_progression_evaluate' => 60,
+        'personnel_capability_refresh' => 60,
         'moderation_quarantine_expire' => 60,
         'account_deletion_anonymize' => 60,
         'recruitment_retro_reminders' => 360,

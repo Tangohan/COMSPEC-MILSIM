@@ -127,6 +127,7 @@ $bootstrapFiles = [
     'moderation_granular_sanctions_migration.php',
     'seniority_engine_migration.php',
     'personnel_progression_engine_migration.php',
+    'personnel_capability_axes_migration.php',
     'arma_playtime_migration.php',
     'personnel_org_history_migration.php',
     'personnel_stage_bilans_migration.php',
@@ -262,6 +263,7 @@ run_platform_unit_commander_migration($pdo);
 run_moderation_granular_sanctions_migration($pdo);
 run_seniority_engine_migration($pdo);
 run_personnel_progression_engine_migration($pdo);
+run_personnel_capability_axes_migration($pdo);
 run_arma_playtime_migration($pdo);
 run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);

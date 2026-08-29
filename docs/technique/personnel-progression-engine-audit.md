@@ -71,14 +71,40 @@ Permissions :
 4. **Deux mondes progression** : LMS `user_progress` vs carrière RH — le moteur RH doit consommer le LMS comme *input*, pas le remplacer.
 5. Ne jamais inventer d’équivalence OTAN depuis `sort_order`.
 
+## Créé (lot 2) — quatre axes + currency
+
+Invariant métier : **ne jamais fusionner** grade/niveau, fonction/poste, qualification et capacité opérationnelle.
+
+Tables (`bootstrap/personnel_capability_axes_migration.php`) :
+
+- `personnel_qualification_definitions` (+ `currency_days` ≠ `validity_days`)
+- `personnel_qualification_packs` / `pack_items`
+- Colonnes currency sur `personnel_qualifications` : `last_practiced_at`, `currency_status`, `currency_expires_at`, `definition_id`
+- `personnel_qualification_practice_log`
+- `personnel_mentorships`, `personnel_career_objectives`
+- `personnel_progression_waivers`, `personnel_qualification_equivalences`
+- `personnel_progression_boards` / `board_votes`
+- `personnel_temporary_assignments` (ACTING…, `does_not_change_grade`)
+- `orbat_billets` / `orbat_billet_holders` (effectif théorique / réel)
+- `personnel_operational_capability`, `unit_operational_capability`
+- `personnel_evidence_files`
+
+Services :
+
+- `PersonnelCapabilityAxes` — snapshot structuré + invariants explicites
+- `QualificationCurrencyService` — VALID admin ≠ CURRENT (pratique ≤ currency_days)
+- `OperationalCapabilityService` — readiness / deployable sans toucher au grade
+- Cron `personnel_capability_refresh` — batch par membre, erreur isolée
+
+Exemple crédible : grade Opérateur confirmé + ACTING Team Leader + Medic VALID jusqu’en 2027 mais NON_CURRENT → readiness 82 %, **NON DEPLOYABLE**.
+
 ## Lots suivants (plan)
 
-2. Éditeur de parcours + conditions ALL/ANY + simulation  
-3. Demandes / workflow validation multi-niveaux + notifications  
-4. Branchement conditions sur données réelles (missions, training, seniority, playtime)  
-5. Qualifications catalogue + currency + expiration CRON  
-6. Page membre PROGRESSION + override admin  
-7. Seeds COMSPEC (A-10…) + import CSV
+3. Éditeur de parcours + conditions ALL/ANY + simulation / impact preview  
+4. Demandes / workflow validation multi-niveaux + boards + notifications SLA  
+5. Branchement conditions sur données réelles (missions, training, seniority, playtime)  
+6. Page membre PROGRESSION + objectifs + carnet + evidence  
+7. Seeds COMSPEC (A-10…) + import CSV + API ATAK readiness  
 
 ## Grades OTAN (préparation audit dédié)
 
