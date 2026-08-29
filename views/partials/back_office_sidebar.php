@@ -28,26 +28,26 @@ try {
 }
 
 $boHrefAllowed = static function (string $href) use ($tenantType): bool {
-    $path = $href;
-    if (preg_match('#^https?://#i', $href)) {
-        $parsed = parse_url($href, PHP_URL_PATH);
-        $path = is_string($parsed) ? $parsed : '';
-    }
-    $path = trim((string) $path, '/');
-    foreach (['public/', 'index.php/'] as $strip) {
-        if (str_starts_with($path, $strip)) {
-            $path = substr($path, strlen($strip));
-        }
-    }
+    $path = function_exists('back_office_nav_href_to_path')
+        ? back_office_nav_href_to_path($href)
+        : trim((string) $href, '/');
     if ($path !== '' && !\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)) {
-        foreach (['back-office/', 'admin/', 'formation/', 'formations/', 'documents/', 'forum/', 'atak/', 'personnel/', 'enlistment/'] as $needle) {
+        $tenantOk = false;
+        foreach (['back-office/', 'admin/', 'formation/', 'formations/', 'documents/', 'forum/', 'atak/', 'personnel/', 'enlistment/', 'jnet/'] as $needle) {
             $pos = strpos($path, $needle);
             if ($pos !== false) {
-                return \App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, substr($path, $pos));
+                $tenantOk = \App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, substr($path, $pos));
+                break;
             }
         }
+        if (!$tenantOk) {
+            return false;
+        }
+    }
 
-        return false;
+    // Masquer les entrées sans droit (Gate), pas seulement filtrer par type de communauté.
+    if (function_exists('back_office_nav_href_permission_allowed')) {
+        return back_office_nav_href_permission_allowed($href);
     }
 
     return true;

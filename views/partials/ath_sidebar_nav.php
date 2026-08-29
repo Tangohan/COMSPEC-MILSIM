@@ -290,7 +290,7 @@ $athNavFilterGroup = static function (array $groups) use ($boHrefAllowed): array
     foreach ($groups as $group) {
         $items = [];
         foreach ($group['items'] as $item) {
-            if (!is_array($item) || ($item['href'] ?? '') === '' || !$boHrefAllowed((string) $item['href'])) {
+            if (!is_array($item) || ($item['href'] ?? '') === '') {
                 continue;
             }
             $children = [];
@@ -299,6 +299,14 @@ $athNavFilterGroup = static function (array $groups) use ($boHrefAllowed): array
                     continue;
                 }
                 $children[] = $child;
+            }
+            $parentOk = $boHrefAllowed((string) $item['href']);
+            // Parent sans droit mais enfants autorisés : conserver le bloc, cibler le 1er enfant.
+            if (!$parentOk && $children === []) {
+                continue;
+            }
+            if (!$parentOk && $children !== []) {
+                $item['href'] = (string) ($children[0]['href'] ?? $item['href']);
             }
             $item['children'] = $children;
             $items[] = $item;

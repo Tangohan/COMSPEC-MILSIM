@@ -712,6 +712,10 @@ if (!function_exists('back_office_nav_href_to_path')) {
             $parsed = parse_url($href, PHP_URL_PATH);
             $path = is_string($parsed) ? $parsed : '';
         }
+        $qPos = strpos((string) $path, '?');
+        if ($qPos !== false) {
+            $path = substr((string) $path, 0, $qPos);
+        }
         $path = trim((string) $path, '/');
         foreach (['public/', 'index.php/'] as $strip) {
             if (str_starts_with($path, $strip)) {
@@ -720,6 +724,190 @@ if (!function_exists('back_office_nav_href_to_path')) {
         }
 
         return $path;
+    }
+}
+
+if (!function_exists('back_office_nav_permission_rules')) {
+    /**
+     * Index chemin → règles de permission (navigation.php + compléments sidebar).
+     * Clé la plus longue gagnante au lookup.
+     *
+     * @return array<string, array{permission?: string, any_permissions?: list<string>, all_permissions?: list<string>}>
+     */
+    function back_office_nav_permission_rules(): array
+    {
+        static $index = null;
+        if (is_array($index)) {
+            return $index;
+        }
+
+        $index = [];
+        $walk = static function ($node) use (&$walk, &$index): void {
+            if (!is_array($node)) {
+                return;
+            }
+            if (isset($node['path']) && is_string($node['path']) && $node['path'] !== '') {
+                $path = trim($node['path'], '/');
+                $rule = [];
+                if (!empty($node['permission'])) {
+                    $rule['permission'] = (string) $node['permission'];
+                }
+                if (!empty($node['any_permissions']) && is_array($node['any_permissions'])) {
+                    $rule['any_permissions'] = array_values(array_map('strval', $node['any_permissions']));
+                }
+                if (!empty($node['all_permissions']) && is_array($node['all_permissions'])) {
+                    $rule['all_permissions'] = array_values(array_map('strval', $node['all_permissions']));
+                }
+                if ($rule !== [] && $path !== '') {
+                    // Préférer la règle la plus spécifique déjà présente si collision.
+                    if (!isset($index[$path]) || count($rule) >= count($index[$path])) {
+                        $index[$path] = $rule;
+                    }
+                }
+            }
+            foreach ($node as $child) {
+                if (is_array($child)) {
+                    $walk($child);
+                }
+            }
+        };
+
+        if (function_exists('navigation_raw_config')) {
+            $walk(navigation_raw_config());
+        } else {
+            $file = base_path('config/navigation.php');
+            if (is_file($file)) {
+                $cfg = require $file;
+                if (is_array($cfg)) {
+                    $walk($cfg);
+                }
+            }
+        }
+
+        // Compléments pour entrées sidebar absentes / incomplètes dans navigation.php.
+        $extras = [
+            'back-office/personnel/corrections' => [
+                'any_permissions' => [
+                    'personnel.profile.update', 'admin.organization', 'admin.access',
+                    'personnel.grades.manage', 'personnel.assignments.manage', 'personnel.status.manage',
+                ],
+            ],
+            'back-office/personnel/advanced-edit' => [
+                'any_permissions' => [
+                    'personnel.profile.update', 'admin.organization', 'admin.access',
+                    'personnel.grades.manage', 'personnel.status.manage',
+                ],
+            ],
+            'back-office/alerts' => [
+                'any_permissions' => ['admin.organization', 'admin.access'],
+            ],
+            'back-office/configuration-initiale' => [
+                'any_permissions' => ['admin.organization', 'admin.access'],
+            ],
+            'back-office/retours-interface' => [
+                'any_permissions' => ['admin.organization', 'admin.access'],
+            ],
+            'back-office/missions' => [
+                'any_permissions' => ['admin.organization', 'admin.access'],
+            ],
+            'back-office/personnel-job-roles' => [
+                'any_permissions' => ['admin.organization', 'admin.access', 'admin.roles.manage'],
+            ],
+            'back-office/personnel-job-roles/assignments' => [
+                'any_permissions' => ['admin.organization', 'admin.access', 'personnel.assignments.manage'],
+            ],
+            'back-office/atak/certificats' => [
+                'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'],
+            ],
+            'back-office/atak/fiche-operateur' => [
+                'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'],
+            ],
+            'jnet' => [
+                'any_permissions' => ['admin.organization', 'admin.access', 'organization.orbat.view'],
+            ],
+        ];
+        foreach ($extras as $path => $rule) {
+            if (!isset($index[$path])) {
+                $index[$path] = $rule;
+            }
+        }
+
+        return $index;
+    }
+}
+
+if (!function_exists('back_office_nav_rule_for_path')) {
+    /**
+     * @return array{permission?: string, any_permissions?: list<string>, all_permissions?: list<string>}|null
+     */
+    function back_office_nav_rule_for_path(string $path): ?array
+    {
+        $path = trim($path, '/');
+        if ($path === '') {
+            return ['any_permissions' => ['admin.organization', 'admin.access']];
+        }
+        $rules = back_office_nav_permission_rules();
+        $best = null;
+        $bestLen = -1;
+        foreach ($rules as $candidate => $rule) {
+            $candidate = trim((string) $candidate, '/');
+            if ($candidate === '') {
+                continue;
+            }
+            if ($path === $candidate || str_starts_with($path, $candidate . '/')) {
+                $len = strlen($candidate);
+                if ($len > $bestLen) {
+                    $bestLen = $len;
+                    $best = $rule;
+                }
+            }
+        }
+        if ($best !== null) {
+            return $best;
+        }
+        // Défaut prudent pour tout chemin BO / admin / jnet non cartographié.
+        if (
+            str_starts_with($path, 'back-office')
+            || str_starts_with($path, 'admin/')
+            || $path === 'admin'
+            || str_starts_with($path, 'jnet')
+        ) {
+            return ['any_permissions' => ['admin.organization', 'admin.access', 'admin.system']];
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('back_office_nav_href_permission_allowed')) {
+    /**
+     * True si l’utilisateur courant a le droit d’accéder à cet href de l’aside BO.
+     */
+    function back_office_nav_href_permission_allowed(string $href): bool
+    {
+        $path = back_office_nav_href_to_path($href);
+        $rule = back_office_nav_rule_for_path($path);
+        if ($rule === null) {
+            return true;
+        }
+        if (function_exists('navigation_item_allowed')) {
+            return navigation_item_allowed($rule);
+        }
+        $gate = \App\Core\Gate::getInstance();
+        if (!empty($rule['permission'])) {
+            return $gate->allows((string) $rule['permission']);
+        }
+        if (!empty($rule['any_permissions']) && is_array($rule['any_permissions'])) {
+            foreach ($rule['any_permissions'] as $perm) {
+                if ($gate->allows((string) $perm)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return true;
     }
 }
 
