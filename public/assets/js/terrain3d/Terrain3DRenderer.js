@@ -345,6 +345,20 @@ export class Terrain3DRenderer {
     return this.mode;
   }
 
+  /** Contexte pour MarkerManager3D. */
+  getMarkerContext() {
+    return {
+      scene: this.scene,
+      CSS2DObject: this._CSS2DObject,
+      grid: this.grid,
+      worldWidth: this.options.width,
+      worldDepth: this.options.height,
+      heightScale: this.options.heightScale,
+      minAltitude: this.options.minAltitude,
+      maxAltitude: this.options.maxAltitude,
+    };
+  }
+
   _startLoop() {
     const self = this;
     function tick() {
