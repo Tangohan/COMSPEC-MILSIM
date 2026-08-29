@@ -372,6 +372,37 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                 </section>
                 <?php endif; ?>
 
+                <?php
+                $aiLikelihoodHit = null;
+                foreach ($enlistmentTimeline as $evAi) {
+                    $metaAi = is_array($evAi['metadata'] ?? null) ? $evAi['metadata'] : [];
+                    if ((string) ($metaAi['timeline_family'] ?? '') === 'ai_likelihood') {
+                        $aiLikelihoodHit = $metaAi;
+                        $aiLikelihoodHit['summary'] = (string) ($evAi['summary'] ?? '');
+                        $aiLikelihoodHit['body'] = (string) ($evAi['body'] ?? '');
+                        break;
+                    }
+                }
+                ?>
+                <?php if (is_array($aiLikelihoodHit)): ?>
+                <section class="scroll-mt-28 overflow-hidden rounded-2xl border border-amber-300 bg-amber-50 shadow-sm" role="status">
+                    <div class="px-6 py-4 sm:px-8">
+                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-amber-800">Détection IA (automatique)</p>
+                        <h2 class="mt-1 text-lg font-black tracking-tight text-amber-950">
+                            <?= htmlspecialchars((string) ($aiLikelihoodHit['summary'] ?: 'Suspicion de texte généré par IA'), ENT_QUOTES, 'UTF-8') ?>
+                        </h2>
+                        <p class="mt-2 text-sm leading-relaxed text-amber-950/90">
+                            Score <?= (int) ($aiLikelihoodHit['ai_score'] ?? 0) ?>/100
+                            · niveau <?= htmlspecialchars((string) ($aiLikelihoodHit['ai_level'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>.
+                            Indicateur heuristique local — à croiser avec le dossier, pas une preuve.
+                        </p>
+                        <?php if (trim((string) ($aiLikelihoodHit['body'] ?? '')) !== ''): ?>
+                        <pre class="mt-3 whitespace-pre-wrap rounded-xl border border-amber-200 bg-white/70 px-3 py-2 text-xs leading-relaxed text-amber-950"><?= htmlspecialchars((string) $aiLikelihoodHit['body'], ENT_QUOTES, 'UTF-8') ?></pre>
+                        <?php endif; ?>
+                    </div>
+                </section>
+                <?php endif; ?>
+
                 <section id="recap-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                     <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                         <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500"><?= htmlspecialchars($recapMeta['step'], ENT_QUOTES, 'UTF-8') ?></p>
@@ -1802,6 +1833,10 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                                 $dot = 'bg-violet-500';
                                 $kindLabel = 'Modération';
                                 $kindClass = 'bg-violet-50 text-violet-900 ring-violet-100';
+                            } elseif ($family === 'ai_likelihood') {
+                                $dot = 'bg-amber-500';
+                                $kindLabel = 'Détection IA';
+                                $kindClass = 'bg-amber-50 text-amber-950 ring-amber-100';
                             } elseif ($family === 'email_notify') {
                                 $dot = 'bg-sky-500';
                                 $kindLabel = 'Courriel';

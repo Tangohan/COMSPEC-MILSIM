@@ -39,9 +39,11 @@ $isRequired = !empty($fieldRequired);
     $taH = $fieldName === 'past_milsim_experience' ? 'h-32' : 'h-24';
     $reqAttr = $isRequired ? ' required' : '';
     $tenantReqAttr = $isRequired ? ' data-tenant-required="1"' : ' data-tenant-required="0"';
+    $aiScanFields = ['motivation_why_join', 'motivation_accountability', 'past_milsim_experience', 'notes', 'experience'];
+    $aiScanAttr = in_array($fieldName, $aiScanFields, true) ? ' data-ai-scan="1"' : '';
     ?>
     <?php if ($widget === 'textarea'): ?>
-        <textarea name="<?= htmlspecialchars($fieldName) ?>" class="input-field <?= $taH ?> track-field" placeholder="<?= htmlspecialchars($ph) ?>" style="min-height:<?= $fieldName === 'past_milsim_experience' ? '8rem' : '6rem' ?>"<?= $reqAttr . $tenantReqAttr ?>><?= htmlspecialchars($pv) ?></textarea>
+        <textarea name="<?= htmlspecialchars($fieldName) ?>" class="input-field <?= $taH ?> track-field" placeholder="<?= htmlspecialchars($ph) ?>" style="min-height:<?= $fieldName === 'past_milsim_experience' ? '8rem' : '6rem' ?>"<?= $reqAttr . $tenantReqAttr . $aiScanAttr ?>><?= htmlspecialchars($pv) ?></textarea>
     <?php elseif ($widget === 'select' || $widget === 'yesno'): ?>
         <select name="<?= htmlspecialchars($fieldName) ?>" class="input-field track-field"<?= $reqAttr . $tenantReqAttr ?>>
             <option value="">Sélectionner</option>
