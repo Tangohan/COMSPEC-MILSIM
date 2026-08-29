@@ -3,7 +3,7 @@
  * Remplace le maillage CSS-pitch de atak-terrain-3d.js lorsque
  * window.ATAK_TERRAIN3D_PREMIUM === true.
  */
-import { initTerrain3D } from './terrain3d/initTerrain3D.js';
+import { initTerrain3D } from 'atak-terrain3d/initTerrain3D.js';
 
 if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
   const KEY = 'atak_terrain3d_premium';
@@ -87,19 +87,9 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
   async function applyMapTexture(terrain) {
     if (!terrain) return;
     const pattern = tilePattern();
-    const assetBase = (window.ATAK_C2_ASSET_BASE || '').replace(/\/$/, '')
-      || (function () {
-        try {
-          const scripts = document.querySelectorAll('script[src*="atak-terrain3d-premium"]');
-          if (scripts.length) {
-            return scripts[scripts.length - 1].src.replace(/\/assets\/js\/atak-terrain3d-premium\.js.*$/, '');
-          }
-        } catch (e) { /* ignore */ }
-        return '';
-      })();
-    const overviewMod = await import(
-      (assetBase || '') + '/assets/js/terrain3d/MapOverviewTexture.js'
-    ).catch(function () { return null; });
+    const overviewMod = await import('atak-terrain3d/MapOverviewTexture.js').catch(function () {
+      return null;
+    });
 
     if (pattern && overviewMod && overviewMod.stitchTileOverview) {
       try {

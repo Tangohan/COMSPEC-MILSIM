@@ -36,5 +36,17 @@ final class AtakTerrain3dTextureZoomAssetTest extends TestCase
         self::assertStringContainsString('syncFogToWorld', $renderer);
         self::assertStringContainsString('syncLightingToWorld', $renderer);
         self::assertStringContainsString('syncCameraToWorld(size, size)', $premium);
+        /* Helpers locaux : init OK même si TerrainMaterial.js est encore en cache navigateur. */
+        self::assertMatchesRegularExpression(
+            '/function\s+fogDensityForWorld\s*\(/',
+            $renderer
+        );
+        self::assertStringContainsString(
+            "typeof TerrainMaterialFactory.fogDensityForWorld === 'function'",
+            $renderer
+        );
+        self::assertStringContainsString("from 'atak-terrain3d/TerrainMaterial.js'", $renderer);
+        self::assertStringContainsString("from 'atak-terrain3d/initTerrain3D.js'", $premium);
+        self::assertStringContainsString("import('atak-terrain3d/MapOverviewTexture.js')", $premium);
     }
 }

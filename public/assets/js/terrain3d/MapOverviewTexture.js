@@ -2,7 +2,7 @@
  * Compose une texture d’aperçu carte pour le mesh 3D (tuiles bas zoom, CORS).
  * Évite le repli hillshade (ombrage gris) qui donnait un relief sans carte.
  */
-import { loadImage } from './utils.js';
+import { loadImage } from 'atak-terrain3d/utils.js';
 
 /**
  * @param {string} pattern — URL avec {z}/{x}/{y}

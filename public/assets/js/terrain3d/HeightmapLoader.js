@@ -2,7 +2,7 @@
  * Chargement et conversion des données d'altitude.
  * Sources : image niveaux de gris, tableau 2D, grille 1D.
  */
-import { createFlatGrid, loadImage, normalizeGrid } from './utils.js';
+import { createFlatGrid, loadImage, normalizeGrid } from 'atak-terrain3d/utils.js';
 
 export class HeightmapLoader {
   /**

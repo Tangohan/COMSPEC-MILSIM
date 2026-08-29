@@ -1,7 +1,7 @@
 /**
  * Chargement de la texture diffuse (carte topo / satellite).
  */
-import { loadImage } from './utils.js';
+import { loadImage } from 'atak-terrain3d/utils.js';
 
 export class TerrainTextureLoader {
   /**
