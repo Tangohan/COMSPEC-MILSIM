@@ -79,6 +79,8 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-c2-shell.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-map-c2-v2.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-map-c2-live.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/app-update-modal.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -92,6 +94,9 @@ if ($atakMapConfig) {
     window.NODE_ATAK_URL = '';
     window.ATAK_MARKER_ICONS_CDN = <?= json_encode(function_exists('atak_marker_icons_cdn_base') ? atak_marker_icons_cdn_base() : rtrim($base, '/') . '/assets/markers/arma') ?>;
     window.ATAK_TENANT_MARKER_ICONS = <?= json_encode($atakTenantMarkerIcons ?? ['assignments' => new stdClass(), 'library' => []], JSON_UNESCAPED_UNICODE) ?>;
+    window.ATAK_MAP_C2_V2 = true;
+    window.ATAK_C2_ASSET_BASE = <?= json_encode(rtrim($base, '/'), JSON_UNESCAPED_UNICODE) ?>;
+    document.documentElement.classList.add('atak-map-c2-v2');
     window.ATAK_TEAM_CONFIG = <?= json_encode($atakConfig ?: new stdClass()) ?>;
     window.ATAK_USER = <?= json_encode($atakUserForJs ?: new stdClass()) ?>;
     <?php if ($atakMapConfigForJs): ?>window.ATAK_MAP_CONFIG = <?= json_encode($atakMapConfigForJs) ?>;<?php endif; ?>
@@ -2375,6 +2380,32 @@ if ($atakMapConfig) {
     </aside>
 
     <div class="atak-map-wrap">
+      <div id="atak-c2-live-shell" class="tac-c2-live" aria-label="Interface cartographique C2">
+        <nav class="tac-c2-rail" id="atak-c2-rail" aria-label="Outils carte">
+          <button type="button" class="tac-c2-rail__btn is-active" data-tool="select" title="Sélectionner">⊹</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="goto" title="Aller à une grille">⌖</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="follow" title="Suivre ma position">◎</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="measure" title="Mesurer">↔</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="draw" title="Tracer un trait">╱</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="perimeter" title="Périmètre">⬡</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="search" title="Zone de recherche">⌕</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="marker" title="Note carte">＋</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="route" title="Profil itinéraire">⌀</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="los" title="Visée / LOS">⊡</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="nvg" title="Vision nocturne">☾</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="layers" title="Tableau unités">≡</button>
+        </nav>
+        <div class="tac-map-controls" id="atak-c2-map-controls"></div>
+        <aside class="tac-c2-side" id="atak-c2-side" hidden>
+          <div class="tac-c2-side__head">Unité sélectionnée</div>
+          <div class="tac-c2-side__body" id="atak-c2-side-unit">
+            <p class="tac-ctx__muted">Cliquez un symbole sur la carte</p>
+          </div>
+        </aside>
+        <footer class="tac-c2-ctx">
+          <div id="atak-c2-context-panel" style="width:100%"></div>
+        </footer>
+      </div>
       <div class="atak-mission-c2bar" id="atak-mission-c2bar">
         <div class="atak-mission-c2bar__modes" role="toolbar" aria-label="Vue de conduite">
           <button type="button" class="atak-mission-c2bar__mode is-active" data-mission-mode="map">Carte</button>
@@ -2868,6 +2899,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-section-nav.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-qr-hub.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-c2-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/map/atak-c2-bridge.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-v2.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terminals.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>

@@ -1896,6 +1896,26 @@ window.ATAKMap = (function () {
     if (!unitsLayer) unitsLayer = L.layerGroup().addTo(map);
     lastUnitsListForMap = Array.isArray(list) ? list : [];
     applyDisplayPrefsToMapDom();
+
+    /* Refonte C2 : symbologie tactique via MarkerManager — pas de double rendu legacy. */
+    if (window.ATAK_MAP_C2_V2) {
+      Object.keys(unitsById).forEach(function (k) {
+        if (unitsLayer && unitsById[k]) {
+          try { unitsLayer.removeLayer(unitsById[k]); } catch (e) {}
+        }
+        delete unitsById[k];
+      });
+      try {
+        window.dispatchEvent(new CustomEvent('atak:units-updated', {
+          detail: { units: lastUnitsListForMap, fromReplay: !!opts.fromReplay },
+        }));
+      } catch (e) { /* ignore */ }
+      if (window.ATAKMarkerManagerC2 && typeof window.ATAKMarkerManagerC2.setEntities === 'function') {
+        /* Bridge déjà prêt : le gestionnaire C2 écoute aussi atak:units-updated */
+      }
+      return;
+    }
+
     var prefs = getDisplayPrefs();
     var nato = window.NatoSidcIcons;
     var seen = {};
