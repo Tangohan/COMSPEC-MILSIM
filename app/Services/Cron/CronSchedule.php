@@ -22,6 +22,7 @@ final class CronSchedule
         'sse_sync_maintenance' => 15,
         'attendance_reminders' => 30,
         'training_expire' => 60,
+        'personnel_progression_evaluate' => 60,
         'moderation_quarantine_expire' => 60,
         'account_deletion_anonymize' => 60,
         'recruitment_retro_reminders' => 360,

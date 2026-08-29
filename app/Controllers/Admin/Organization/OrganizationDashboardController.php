@@ -745,6 +745,11 @@ class OrganizationDashboardController
                 || $gate->allows('admin.access')
                 || $gate->allows('site.support'),
             'canSeniorityAdmin' => $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support'),
+            'canProgressionAdmin' => $gate->allows('personnel.progression.view')
+                || $gate->allows('personnel.progression.configure')
+                || $gate->allows('personnel.callsign.manage')
+                || $gate->allows('admin.organization')
+                || $gate->allows('admin.access'),
         ]);
     }
 
