@@ -86,10 +86,14 @@ final class RegisterController
         $confirm = (string) $request->input('password_confirmation');
         $firstName = trim((string) $request->input('first_name'));
         $lastName = trim((string) $request->input('last_name'));
-        $displayName = trim($firstName . ' ' . $lastName);
-        if ($displayName === '') {
-            $displayName = trim((string) $request->input('display_name'));
+        if (function_exists('mb_substr')) {
+            $firstName = mb_substr($firstName, 0, 100);
+            $lastName = mb_substr($lastName, 0, 100);
+        } else {
+            $firstName = substr($firstName, 0, 100);
+            $lastName = substr($lastName, 0, 100);
         }
+        $displayName = trim($firstName . ' ' . $lastName);
         $steamProfile = trim((string) $request->input('steam_profile'));
         $discordHandle = trim((string) $request->input('discord_handle'));
         if (function_exists('mb_substr')) {
@@ -104,7 +108,6 @@ final class RegisterController
             'email' => $email,
             'first_name' => $firstName,
             'last_name' => $lastName,
-            'display_name' => $displayName,
             'steam_profile' => $steamProfile,
             'discord_handle' => $discordHandle,
             'community_code' => $communityCodeInput,
@@ -123,7 +126,6 @@ final class RegisterController
                 'password_confirmation' => $confirm,
                 'first_name' => $firstName,
                 'last_name' => $lastName,
-                'display_name' => $displayName,
                 'steam_profile' => $steamProfile,
                 'discord_handle' => $discordHandle,
             ],
@@ -133,13 +135,12 @@ final class RegisterController
                 'password_confirmation' => 'required',
                 'first_name' => 'required|min:1|max:100',
                 'last_name' => 'required|min:1|max:100',
-                'display_name' => 'required|min:2|max:100',
                 'steam_profile' => 'max:512',
                 'discord_handle' => 'max:120',
             ]
         );
-        if (!$v->validate()) {
-            $flashBack('Vérifiez les informations saisies (champs obligatoires et formats).', 1);
+        if (!$v->validate() || $displayName === '' || (function_exists('mb_strlen') ? mb_strlen($displayName) : strlen($displayName)) < 2) {
+            $flashBack('Vérifiez les informations saisies (prénom, nom, e-mail et mot de passe).', 1);
 
             return Response::redirect(url('register'));
         }
