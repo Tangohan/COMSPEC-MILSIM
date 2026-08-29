@@ -1656,7 +1656,8 @@ body.atak-page .atak-order-suivi em {
 .atak-qr-destination:hover, .atak-qr-destination.is-active { border-color: #43d4ad; background: rgba(40, 118, 99, .25); box-shadow: inset 3px 0 #43d4ad; }
 .atak-qr-generate { min-height: 42px; border: 1px solid #49d9b4; border-radius: 3px; background: #2f9f84; color: #07120f; font: 800 12px/1 var(--atak-font-mono, monospace); letter-spacing: .06em; cursor: pointer; }
 .atak-qr-generate:disabled { opacity: .55; cursor: wait; }
-.atak-qr-result { display: grid; grid-template-columns: minmax(160px, 240px) 1fr; gap: 18px; padding: 16px; border: 1px solid rgba(73, 217, 180, .28); background: rgba(7, 16, 20, .8); }
+.atak-qr-result { display: grid; grid-template-columns: minmax(180px, 260px) 1fr; gap: 18px; padding: 16px; border: 1px solid rgba(73, 217, 180, .28); background: rgba(7, 16, 20, .8); align-items: center; }
+.atak-qr-result__phone { display: flex; justify-content: center; }
 .atak-qr-result__image { padding: 10px; border-radius: 4px; background: #fff; }
 .atak-qr-result__image img { display: block; width: 100%; height: auto; }
 .atak-qr-status { color: #55dab7; font: 700 9px/1 var(--atak-font-mono, monospace); letter-spacing: .12em; }
@@ -1666,7 +1667,101 @@ body.atak-page .atak-order-suivi em {
 .atak-qr-code-row button { border: 1px solid #3e5d58; background: transparent; color: #b9cbc7; cursor: pointer; }
 .atak-qr-result a { display: inline-block; margin-top: 10px; color: #55dab7; font-size: 11px; }
 .atak-qr-error { margin: 0; padding: 10px; border-left: 3px solid #e56565; color: #ffaaaa; background: rgba(119, 30, 30, .2); }
-@media (max-width: 620px) { .atak-qr-result { grid-template-columns: 1fr; } .atak-qr-result__image { max-width: 220px; } }
+
+/* QR = fenêtre détachée dans le téléphone (même coque que connect-device) */
+.atak-qr-phone {
+  --aqp-scr-l: 22.0703125%;
+  --aqp-scr-t: 34.8144531%;
+  --aqp-scr-w: 55.3710938%;
+  --aqp-scr-h: 30.46875%;
+  position: relative;
+  width: min(100%, 260px);
+  aspect-ratio: 1 / 1;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
+}
+.atak-qr-phone--modal { width: min(100%, 220px); }
+.atak-qr-phone__bezel {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.atak-qr-phone__screen {
+  position: absolute;
+  z-index: 2;
+  left: var(--aqp-scr-l);
+  top: var(--aqp-scr-t);
+  width: var(--aqp-scr-w);
+  height: var(--aqp-scr-h);
+  overflow: hidden;
+  background: #03070a;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+}
+.atak-qr-phone__osd {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.35rem;
+  background: linear-gradient(180deg, #0f1a1c, #0a1214);
+  border-bottom: 1px solid rgba(52, 211, 153, 0.22);
+  font: 700 0.45rem/1 var(--atak-font-mono, monospace);
+  letter-spacing: 0.08em;
+  color: #8aa0b4;
+  text-transform: uppercase;
+}
+.atak-qr-phone__osd-brand { color: #34d399; }
+.atak-qr-phone__osd-mode { color: #e8eef4; }
+.atak-qr-phone__panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0b1214;
+}
+.atak-qr-phone__panel-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.2rem 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 150, 105, 0.12);
+  font: 700 0.42rem/1.1 var(--atak-font-mono, monospace);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9fb2b0;
+}
+.atak-qr-phone__panel-bar span:last-child { color: #34d399; }
+.atak-qr-phone__qr {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0.35rem;
+  background: #fff;
+}
+.atak-qr-phone__qr img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 620px) {
+  .atak-qr-result { grid-template-columns: 1fr; }
+  .atak-qr-phone { width: min(100%, 240px); margin-inline: auto; }
+}
 
 /* Overlay liaison perdue — panneau verre C2, un seul compte à rebours */
 .atak-connection-lost {

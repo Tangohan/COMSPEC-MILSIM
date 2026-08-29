@@ -204,13 +204,40 @@
     if (trigger) trigger.focus();
   }
 
+  function destinationFromTab(tab) {
+    var t = String(tab || '');
+    if (t === 'chat') return { destination: 'chat', label: 'Tchat', mode: 'TCHAT' };
+    if (t === 'orders') return { destination: 'orders', label: 'Ordres', mode: 'ORDRES' };
+    if (t === 'charges') return { destination: 'explosives', label: 'Explosifs', mode: 'EXPLOSIFS' };
+    if (t === 'qrcode') return { destination: 'c2', label: 'C2', mode: 'C2' };
+    /* SITAC et autres onglets carte → même panneau détaché côté C2 */
+    if (t === 'markers' || t === 'zones' || t === 'identification' || t === 'situation' || t === 'pings') {
+      return { destination: 'c2', label: 'SITAC', mode: 'SITAC' };
+    }
+    return { destination: 'chat', label: 'Tchat', mode: 'TCHAT' };
+  }
+
+  function paintPhonePreview(scope, label, mode) {
+    if (!scope) return;
+    scope.querySelectorAll('[data-atak-qr-phone-label]').forEach(function (el) {
+      el.textContent = label || 'Module';
+    });
+    scope.querySelectorAll('[data-atak-qr-phone-mode]').forEach(function (el) {
+      el.textContent = mode || 'MODULE';
+    });
+  }
+
   function generateChatQr() {
     var result = document.getElementById('atak-screen-modal-phone-result');
     var status = document.getElementById('atak-screen-modal-status');
     var image = document.getElementById('atak-screen-modal-qr');
     var openLink = document.getElementById('atak-screen-modal-open');
     var button = document.getElementById('atak-screen-modal-phone');
+    var title = document.getElementById('atak-screen-modal-phone-title');
     if (!result || !status || !image || !button) return;
+    var dest = destinationFromTab(activeTabId());
+    paintPhonePreview(result, dest.label, dest.mode);
+    if (title) title.textContent = 'Scannez pour ouvrir « ' + dest.label + ' »';
     result.hidden = false;
     status.textContent = 'Génération du QR code…';
     image.hidden = true;
@@ -218,7 +245,7 @@
     button.disabled = true;
 
     var base = window.ATAK_API_BASE || '';
-    fetch(base + '/api/atak/phone-pairing?destination=chat', {
+    fetch(base + '/api/atak/phone-pairing?destination=' + encodeURIComponent(dest.destination), {
       method: 'GET', credentials: 'include', cache: 'no-store', headers: { 'Accept': 'application/json' }
     }).then(function (response) {
       return response.json().catch(function () { return {}; }).then(function (body) {
@@ -238,7 +265,7 @@
       };
       image.src = qrSrc;
       image.hidden = false;
-      status.textContent = 'Ce QR code est temporaire et à usage unique.';
+      status.textContent = 'Même fenêtre détachée que sur le poste, dans le téléphone. Liaison temporaire.';
       if (openLink) {
         openLink.href = body.pair_url;
         openLink.hidden = false;

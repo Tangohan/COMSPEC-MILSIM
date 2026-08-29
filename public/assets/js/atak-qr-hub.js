@@ -1,9 +1,20 @@
-/* ATAK — QR hub: ouvre directement un module C2 sur un terminal mobile. */
+/* ATAK — QR hub: panneau détaché dans le téléphone. */
 (function () {
   'use strict';
 
   var selected = 'c2';
   var labels = { c2: 'C2', chat: 'Tchat', orders: 'Ordres', explosives: 'Explosifs' };
+  var modes = { c2: 'C2', chat: 'TCHAT', orders: 'ORDRES', explosives: 'EXPLOSIFS' };
+
+  function paintPhone(root, label, mode) {
+    if (!root) return;
+    root.querySelectorAll('[data-atak-qr-phone-label]').forEach(function (el) {
+      el.textContent = label || 'Module';
+    });
+    root.querySelectorAll('[data-atak-qr-phone-mode]').forEach(function (el) {
+      el.textContent = mode || 'MODULE';
+    });
+  }
 
   function init() {
     var generate = document.getElementById('atak-qr-generate');
@@ -25,6 +36,7 @@
           item.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
         generate.textContent = 'Générer le QR ' + labels[selected];
+        paintPhone(result, labels[selected], modes[selected]);
       });
     });
 
@@ -48,6 +60,7 @@
         open.href = body.pair_url || '#';
         title.textContent = 'Accès ' + labels[selected];
         expiry.textContent = body.expires_at ? 'Expiration : ' + new Date(body.expires_at).toLocaleString('fr-FR') : 'Liaison temporaire';
+        paintPhone(result, labels[selected], modes[selected]);
         result.hidden = false;
       }).catch(function (err) {
         error.textContent = err.message || 'Liaison indisponible. Réessayez.';
