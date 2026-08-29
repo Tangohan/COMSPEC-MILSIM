@@ -26,6 +26,7 @@ use App\Repositories\TrainingEnrollmentRepository;
 use App\Services\Training\TrainingService;
 use App\Core\Csrf;
 use App\Services\Personnel\MatriculeService;
+use App\Services\Personnel\TenantMemberNumberService;
 use App\Services\Personnel\PersonnelCompletenessService;
 use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Repositories\UserProfileRepository;
@@ -132,7 +133,12 @@ class PersonnelController
             return $this->userRepository->findById((int) $raw, $tenantId);
         }
 
-        return $this->userRepository->findByProfileSlug($tenantId, $raw);
+        $bySlug = $this->userRepository->findByProfileSlug($tenantId, $raw);
+        if ($bySlug !== null) {
+            return $bySlug;
+        }
+
+        return $this->userRepository->findByTenantMemberNumber($tenantId, $raw);
     }
 
     /** Fiche absente : page soignée (GET) ou toast + retour annuaire (POST). */
@@ -251,6 +257,7 @@ class PersonnelController
         private TrainingEnrollmentRepository $trainingEnrollmentRepository,
         private TrainingService $trainingService,
         private MatriculeService $matriculeService,
+        private TenantMemberNumberService $tenantMemberNumberService,
         private PersonnelCompletenessService $completenessService,
         private UserProfileDisplaySettingsRepository $displaySettingsRepository,
         private UserProfileRepository $userProfileRepository,
@@ -579,6 +586,21 @@ class PersonnelController
         );
         $showEmailInContact = $canViewMemberEmail;
         $showMatriculePublic = $isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_matricule_to_others'] ?? 1) === 1;
+        $memberNumberMeta = [
+            'label' => TenantMemberNumberService::DEFAULT_LABEL,
+            'enabled' => false,
+            'mode' => 'free',
+            'preview' => null,
+        ];
+        if ($this->tenantMemberNumberService->schemaReady()) {
+            $mnCfg = $this->tenantMemberNumberService->getConfig($tenantId);
+            $memberNumberMeta = [
+                'label' => (string) ($mnCfg['label'] ?? TenantMemberNumberService::DEFAULT_LABEL),
+                'enabled' => !empty($mnCfg['enabled']),
+                'mode' => (string) ($mnCfg['mode'] ?? 'free'),
+                'preview' => $this->tenantMemberNumberService->previewNext($tenantId),
+            ];
+        }
         if (!$privatePersonnelIdentity) {
             $adminPanels = array_values(array_filter($adminPanels, static function (array $p): bool {
                 return strtolower(trim((string) ($p['slug'] ?? ''))) !== 'etat-civil';
@@ -793,6 +815,14 @@ class PersonnelController
             'displaySettings' => $displaySettings,
             'showEmailInContact' => $showEmailInContact,
             'showMatriculePublic' => $showMatriculePublic,
+            'tenantMemberNumber' => trim((string) ($target['tenant_member_number'] ?? '')),
+            'tenantMemberNumberLabel' => $memberNumberMeta['label'],
+            'tenantMemberNumberEnabled' => $memberNumberMeta['enabled'],
+            'tenantMemberNumberMode' => $memberNumberMeta['mode'],
+            'tenantMemberNumberPreview' => $memberNumberMeta['preview'],
+            'canManageMemberNumber' => Gate::getInstance()->allows('personnel.member_number.manage')
+                || $canStaffEdit
+                || Gate::getInstance()->allows('admin.organization'),
             'personnelModerationStaffLines' => $personnelModerationStaffLines,
             'personnelModerationMemberBrief' => $personnelModerationMemberBrief,
             'seniorityGlobal' => is_array($seniorityGlobal) ? $seniorityGlobal : null,
@@ -853,6 +883,98 @@ class PersonnelController
             $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
         }
         return Response::redirect($redirect);
+    }
+
+    public function updateMemberNumber(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('personnel'));
+        }
+        $raw = (string) ($params['id'] ?? '');
+        $target = $this->resolvePersonnelTarget($raw, $tenantId);
+        if (!$target) {
+            return $this->personnelMissingResponse(true);
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('personnel.member_number.manage')
+            && !$this->canStaffEditPersonnel()
+            && !$gate->allows('admin.organization')) {
+            return $this->personnelForbiddenResponse(true, url('personnel/' . $this->personPathSegment($target)));
+        }
+        $actorId = (int) Session::get('user_id');
+        $value = trim((string) $request->input('tenant_member_number', ''));
+        $reason = trim((string) $request->input('member_number_reason', ''));
+        $result = $this->tenantMemberNumberService->assignManual(
+            $tenantId,
+            (int) $target['id'],
+            $value !== '' ? $value : null,
+            $actorId,
+            $reason !== '' ? $reason : null,
+            'manual'
+        );
+        Session::flash(
+            !empty($result['ok']) ? 'success' : 'error',
+            !empty($result['ok']) ? 'Matricule d’organisation mis à jour.' : ($result['error'] ?? 'Échec.')
+        );
+        $returnTo = trim((string) ($request->input('return_to') ?? ''));
+        if ($returnTo === 'edit') {
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+        }
+
+        return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+    }
+
+    public function regenerateMemberNumber(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('personnel'));
+        }
+        $raw = (string) ($params['id'] ?? '');
+        $target = $this->resolvePersonnelTarget($raw, $tenantId);
+        if (!$target) {
+            return $this->personnelMissingResponse(true);
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('personnel.member_number.manage')
+            && !$this->canStaffEditPersonnel()
+            && !$gate->allows('admin.organization')) {
+            return $this->personnelForbiddenResponse(true, url('personnel/' . $this->personPathSegment($target)));
+        }
+        $confirm = (string) $request->input('confirm_regenerate', '');
+        if ($confirm !== '1') {
+            Session::flash('error', 'Confirmation requise pour régénérer le matricule.');
+
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+        }
+        $actorId = (int) Session::get('user_id');
+        $reason = trim((string) $request->input('member_number_reason', 'Régénération'));
+        $result = $this->tenantMemberNumberService->assignNext(
+            $tenantId,
+            (int) $target['id'],
+            $actorId,
+            $reason !== '' ? $reason : 'Régénération',
+            'regenerate'
+        );
+        Session::flash(
+            !empty($result['ok']) ? 'success' : 'error',
+            !empty($result['ok'])
+                ? ('Nouveau matricule : ' . ($result['value'] ?? ''))
+                : ($result['error'] ?? 'Échec de régénération.')
+        );
+
+        return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
     }
 
     public function updateNotes(Request $request, array $params = []): Response
@@ -1176,6 +1298,21 @@ class PersonnelController
             'currentGrade' => $currentGrade,
             'completeness' => $completeness,
             'matriculeDisplay' => $matricule,
+            'tenantMemberNumber' => trim((string) ($target['tenant_member_number'] ?? '')),
+            'tenantMemberNumberLabel' => $this->tenantMemberNumberService->schemaReady()
+                ? (string) ($this->tenantMemberNumberService->getConfig($tenantId)['label'] ?? TenantMemberNumberService::DEFAULT_LABEL)
+                : TenantMemberNumberService::DEFAULT_LABEL,
+            'tenantMemberNumberEnabled' => $this->tenantMemberNumberService->schemaReady()
+                && !empty($this->tenantMemberNumberService->getConfig($tenantId)['enabled']),
+            'tenantMemberNumberMode' => $this->tenantMemberNumberService->schemaReady()
+                ? (string) ($this->tenantMemberNumberService->getConfig($tenantId)['mode'] ?? 'free')
+                : 'free',
+            'tenantMemberNumberPreview' => $this->tenantMemberNumberService->schemaReady()
+                ? $this->tenantMemberNumberService->previewNext($tenantId)
+                : null,
+            'canManageMemberNumber' => Gate::getInstance()->allows('personnel.member_number.manage')
+                || $this->canStaffEditPersonnel()
+                || Gate::getInstance()->allows('admin.organization'),
             'personnelAssignments' => $personnelAssignments,
             'currentUnitAssignments' => $personnelAssignments,
             'dossierPresets' => $dossierPresets,

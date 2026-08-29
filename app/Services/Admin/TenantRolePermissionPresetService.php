@@ -325,7 +325,7 @@ final class TenantRolePermissionPresetService
                 'dashboard.pins.manage',
                 'personnel.profile.view', 'personnel.profile.update', 'personnel.sensitive.view',
                 'personnel.grades.manage', 'personnel.assignments.manage', 'personnel.status.manage',
-                'personnel.badges.manage', 'personnel.directory.export',
+                'personnel.badges.manage', 'personnel.directory.export', 'personnel.member_number.manage',
                 'organization.recruitment.manage', 'organization.recruitment.openings.manage',
                 'organization.effectifs.hub.view', 'organization.job_roles.referential.manage',
                 'organization.orbat.view',

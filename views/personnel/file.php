@@ -224,10 +224,16 @@ if ($personnelExtras !== [] && (int) ($personnelExtras['user_id'] ?? 0) !== $sub
 }
 
 $missingLabel = 'Donnée manquante';
-// Pas de substitution silencieuse : matricule = uniquement le champ dédié de CETTE fiche.
+// Pas de substitution silencieuse : matricule dossier = uniquement le champ dédié de CETTE fiche.
 $matriculeInternalOnly = trim((string) ($personnelProfile['matricule_internal'] ?? ''));
 $legacyServiceNumber = trim((string) ($personnelExtras['service_number'] ?? ''));
-$matricule = $matriculeInternalOnly !== '' ? $matriculeInternalOnly : null;
+$tenantMemberNumber = trim((string) ($tenantMemberNumber ?? ($targetUser['tenant_member_number'] ?? '')));
+$tenantMemberNumberLabel = trim((string) ($tenantMemberNumberLabel ?? "Matricule d'organisation"));
+if ($tenantMemberNumberLabel === '') {
+    $tenantMemberNumberLabel = "Matricule d'organisation";
+}
+// Priorité affichage : matricule d’organisation > matricule dossier.
+$matricule = $tenantMemberNumber !== '' ? $tenantMemberNumber : ($matriculeInternalOnly !== '' ? $matriculeInternalOnly : null);
 $showLegacyServiceNumber = $legacyServiceNumber !== '' && $legacyServiceNumber !== (string) ($matricule ?? '');
 // Callsign : profil fiche, sinon users.callsign du sujet (même ligne identité), jamais un autre membre.
 $callsignProfile = trim((string) ($personnelProfile['callsign'] ?? ''));
@@ -245,6 +251,10 @@ if ($callsign !== null && $callsign !== '') {
     ));
 }
 $athenaIdentifier = trim((string) ($targetUser['athena_identifier'] ?? ''));
+$canManageMemberNumber = !empty($canManageMemberNumber);
+$tenantMemberNumberEnabled = !empty($tenantMemberNumberEnabled);
+$tenantMemberNumberMode = (string) ($tenantMemberNumberMode ?? 'free');
+$tenantMemberNumberPreview = isset($tenantMemberNumberPreview) ? (string) $tenantMemberNumberPreview : '';
 // Prénom + nom du personnage = identité unique affichée partout.
 if (!$privatePersonnelIdentity) {
     $dn = trim((string) ($targetUser['display_name'] ?? ''));
@@ -667,7 +677,7 @@ $personnelFileShell = $personnelFileIsRhFull
                         <span class="text-[11px] font-black uppercase tracking-[0.24em] text-amber-200/90">Surnom <?= htmlspecialchars($nicknamePrimary, ENT_QUOTES, 'UTF-8') ?></span>
                         <?php endif; ?>
                         <?php if ($matricule && !empty($showMatriculePublic)): ?>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Matricule <?= htmlspecialchars($matricule) ?></span>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-500"><?= htmlspecialchars($tenantMemberNumber !== '' ? $tenantMemberNumberLabel : 'Matricule', ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($matricule) ?></span>
                         <?php endif; ?>
                     </div>
                     <?php if ($unitName): ?>
@@ -865,13 +875,35 @@ $personnelFileShell = $personnelFileIsRhFull
                     <div class="space-y-3">
                         <?php if (!empty($showMatriculePublic)): ?>
                         <div>
-                            <p class="text-[7px] font-black text-slate-400 tracking-[0.3em] mb-0.5 uppercase">Matricule</p>
-                            <?php if ($matricule): ?>
-                            <p class="text-base font-black text-slate-900"><?= htmlspecialchars($matricule) ?></p>
-                            <?php elseif ($canEditProfile): ?>
-                            <form method="post" action="<?= url('personnel/' . (int)$targetUser['id'] . '/generate-matricule') ?>"><?= \App\Core\Csrf::field() ?><button type="submit" class="text-[9px] font-black uppercase text-emerald-600 hover:text-emerald-700">Générer</button></form>
+                            <p class="text-[7px] font-black text-slate-400 tracking-[0.3em] mb-0.5 uppercase"><?= htmlspecialchars($tenantMemberNumberLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php if ($tenantMemberNumber !== ''): ?>
+                            <p class="text-base font-black text-slate-900 font-mono"><?= htmlspecialchars($tenantMemberNumber, ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php elseif ($matriculeInternal !== ''): ?>
+                            <p class="text-base font-black text-slate-900 font-mono"><?= htmlspecialchars($matriculeInternal, ENT_QUOTES, 'UTF-8') ?></p>
                             <?php else: ?>
                             <p class="text-xs text-slate-400 italic">Non attribué</p>
+                            <?php endif; ?>
+                            <?php if ($canManageMemberNumber && $tenantMemberNumberEnabled): ?>
+                            <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/member-number'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 space-y-1">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="text" name="tenant_member_number" maxlength="100"
+                                       value="<?= htmlspecialchars($tenantMemberNumber, ENT_QUOTES, 'UTF-8') ?>"
+                                       placeholder="<?= $tenantMemberNumberPreview !== '' ? htmlspecialchars($tenantMemberNumberPreview, ENT_QUOTES, 'UTF-8') : 'Ex. OPS-0048' ?>"
+                                       class="w-full rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-xs">
+                                <input type="text" name="member_number_reason" maxlength="255" placeholder="Motif (facultatif)"
+                                       class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs">
+                                <button type="submit" class="text-[9px] font-black uppercase text-emerald-700 hover:text-emerald-800">Enregistrer</button>
+                            </form>
+                            <?php if (in_array($tenantMemberNumberMode, ['automatic', 'assisted'], true)): ?>
+                            <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/member-number/regenerate'), ENT_QUOTES, 'UTF-8') ?>"
+                                  class="mt-1"
+                                  onsubmit="return confirm('Régénérer le matricule d\'organisation ? L\'ancien sera remplacé.');">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="confirm_regenerate" value="1">
+                                <input type="hidden" name="member_number_reason" value="Régénération">
+                                <button type="submit" class="text-[9px] font-black uppercase text-amber-700 hover:text-amber-800">Régénérer le matricule</button>
+                            </form>
+                            <?php endif; ?>
                             <?php endif; ?>
                         </div>
                         <?php endif; ?>
@@ -888,8 +920,9 @@ $personnelFileShell = $personnelFileIsRhFull
                         </div>
                         <?php endif; ?>
                         <div>
-                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Athena ID</p>
-                            <p class="text-sm font-black text-slate-900"><?= $athenaIdentifier !== '' ? htmlspecialchars($athenaIdentifier) : '—' ?></p>
+                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Identifiant plateforme</p>
+                            <p class="text-sm font-semibold text-slate-700 font-mono"><?= $athenaIdentifier !== '' ? htmlspecialchars($athenaIdentifier) : '—' ?></p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Identifiant permanent attribué par la plateforme</p>
                         </div>
                         <?php if ($unitName): ?>
                         <div>
@@ -1254,7 +1287,7 @@ $personnelFileShell = $personnelFileIsRhFull
                         <?php if ($extraCallsignsList !== []): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatifs secondaires</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(implode(' · ', $extraCallsignsList), ENT_QUOTES, 'UTF-8') ?></p></div>
                         <?php endif; ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Matricule</p><p class="text-sm font-black text-slate-900"><?= !empty($showMatriculePublic) ? ($matricule ? htmlspecialchars($matricule) : htmlspecialchars($missingLabel)) : htmlspecialchars($missingLabel) ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1"><?= htmlspecialchars($tenantMemberNumber !== '' ? $tenantMemberNumberLabel : 'Matricule', ENT_QUOTES, 'UTF-8') ?></p><p class="text-sm font-black text-slate-900 font-mono"><?= !empty($showMatriculePublic) ? ($matricule ? htmlspecialchars($matricule) : htmlspecialchars($missingLabel)) : htmlspecialchars($missingLabel) ?></p></div>
                         <?php if (!empty(trim((string) ($userProfile['bio'] ?? '')))): ?>
                         <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Présentation du personnage</p><p class="text-sm text-slate-700 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $userProfile['bio']))) ?></p></div>
                         <?php endif; ?>

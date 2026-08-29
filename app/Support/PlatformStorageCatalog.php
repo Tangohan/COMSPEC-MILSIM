@@ -30,6 +30,8 @@ final class PlatformStorageCatalog
             'settings',
             'subscription_plans',
             'tenant_matricule_config',
+            'tenant_member_number_config',
+            'tenant_member_number_audit',
             'organization_callsign_sequences',
             'personnel_progression_tracks',
             'audit_logs',

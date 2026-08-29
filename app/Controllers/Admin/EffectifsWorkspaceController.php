@@ -362,6 +362,7 @@ class EffectifsWorkspaceController
         fputcsv($fh, [
             'Nom affiché', 'Indicatif', 'E-mail', 'Grade', 'Fonction', 'Affectation', 'Statut',
             'Ancienneté', 'Disponibilité (%)', 'Présence (%)', 'Complétion du dossier (%)',
+            'platform_number', 'tenant_member_number',
         ], $sep);
         foreach ($rows as $r) {
             $rStatus = (string) ($r['status'] ?? '');
@@ -377,6 +378,8 @@ class EffectifsWorkspaceController
                 (string) ($r['availability_score'] ?? ''),
                 (string) ($r['presence_score'] ?? ''),
                 (string) ($r['completion_score'] ?? ''),
+                (string) ($r['athena_identifier'] ?? ''),
+                (string) ($r['tenant_member_number'] ?? ''),
             ], $sep);
         }
         rewind($fh);

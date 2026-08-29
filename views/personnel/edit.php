@@ -598,12 +598,52 @@ $editValidTabIds = implode(',', array_map(
               <p class="mt-1 text-[11px] text-slate-500">Compte pour la complétude si &gt; 0 (sinon une formation certifiante peut suffire).</p>
             </div>
             <div class="md:col-span-2 rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
-              <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Identifiant Athena</p>
+              <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Identifiant plateforme</p>
               <p class="mt-1 font-mono text-sm font-bold text-slate-900"><?= $athenaIdDisplay !== '' ? htmlspecialchars($athenaIdDisplay) : '—' ?></p>
-              <p class="mt-1 text-[11px] text-slate-500">Non modifiable<?= $advancedEditActive ? ' (même en mode édition avancée)' : '' ?>.</p>
+              <p class="mt-1 text-[11px] text-slate-500">Identifiant permanent attribué par la plateforme — non modifiable<?= !empty($advancedEditActive) ? ' (même en mode édition avancée)' : '' ?>.</p>
             </div>
+            <?php
+            $tmnLabel = trim((string) ($tenantMemberNumberLabel ?? "Matricule d'organisation"));
+            $tmnValue = trim((string) ($tenantMemberNumber ?? ''));
+            $tmnCanManage = !empty($canManageMemberNumber);
+            $tmnEnabled = !empty($tenantMemberNumberEnabled);
+            $tmnMode = (string) ($tenantMemberNumberMode ?? 'free');
+            $tmnPreview = trim((string) ($tenantMemberNumberPreview ?? ''));
+            ?>
+            <?php if ($tmnEnabled || $tmnValue !== '' || $tmnCanManage): ?>
+            <div class="md:col-span-2 rounded-xl border border-emerald-100 bg-emerald-50/40 px-4 py-3">
+              <p class="text-[10px] font-black uppercase tracking-wider text-emerald-800"><?= htmlspecialchars($tmnLabel !== '' ? $tmnLabel : "Matricule d'organisation", ENT_QUOTES, 'UTF-8') ?></p>
+              <?php if ($tmnCanManage): ?>
+              <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/member-number'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 space-y-2">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="return_to" value="edit">
+                <input type="text" name="tenant_member_number" maxlength="100"
+                       value="<?= htmlspecialchars($tmnValue, ENT_QUOTES, 'UTF-8') ?>"
+                       placeholder="<?= $tmnPreview !== '' ? htmlspecialchars($tmnPreview, ENT_QUOTES, 'UTF-8') : 'Ex. GEND-0458' ?>"
+                       class="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 font-mono text-sm">
+                <input type="text" name="member_number_reason" maxlength="255" placeholder="Motif (facultatif)"
+                       class="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm">
+                <div class="flex flex-wrap gap-2">
+                  <button type="submit" class="rounded-xl bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800">Enregistrer le matricule</button>
+                </div>
+              </form>
+              <?php if (in_array($tmnMode, ['automatic', 'assisted'], true)): ?>
+              <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/member-number/regenerate'), ENT_QUOTES, 'UTF-8') ?>"
+                    class="mt-2"
+                    onsubmit="return confirm('Régénérer le matricule d\'organisation ?');">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="confirm_regenerate" value="1">
+                <input type="hidden" name="member_number_reason" value="Régénération">
+                <button type="submit" class="text-xs font-bold text-amber-800 hover:underline">Régénérer le matricule</button>
+              </form>
+              <?php endif; ?>
+              <?php else: ?>
+              <p class="mt-1 font-mono text-sm font-bold text-slate-900"><?= $tmnValue !== '' ? htmlspecialchars($tmnValue, ENT_QUOTES, 'UTF-8') : '— non attribué —' ?></p>
+              <?php endif; ?>
+            </div>
+            <?php endif; ?>
             <div class="md:col-span-2 rounded-xl border <?= $advancedEditActive ? 'border-violet-200 bg-violet-50/50' : 'border-slate-100 bg-slate-50/80' ?> px-4 py-3">
-              <p class="text-[10px] font-black uppercase tracking-wider <?= $advancedEditActive ? 'text-violet-700' : 'text-slate-500' ?>">Matricule dossier</p>
+              <p class="text-[10px] font-black uppercase tracking-wider <?= $advancedEditActive ? 'text-violet-700' : 'text-slate-500' ?>">Matricule dossier (système)</p>
               <?php if ($advancedEditActive): ?>
               <input type="text" name="matricule_internal" id="matricule_internal" maxlength="64"
                      value="<?= htmlspecialchars((string) ($matriculeDisplay ?? '')) ?>"
@@ -613,7 +653,7 @@ $editValidTabIds = implode(',', array_map(
               <?php else: ?>
               <p class="mt-1 font-mono text-sm font-bold text-slate-900"><?= $matriculeDisplay ? htmlspecialchars((string) $matriculeDisplay) : '— non attribué —' ?></p>
               <?php if (!$matriculeDisplay): ?>
-              <p class="mt-2 text-[11px] text-slate-600">Aucun matricule : utilisez le bouton sous le formulaire pour en générer un (reste sur cette page).</p>
+              <p class="mt-2 text-[11px] text-slate-600">Aucun matricule dossier : utilisez le bouton sous le formulaire pour en générer un (reste sur cette page).</p>
               <?php endif; ?>
               <?php endif; ?>
             </div>

@@ -809,6 +809,7 @@ class Container
                 self::get(\App\Repositories\TrainingEnrollmentRepository::class),
                 self::get(\App\Services\Training\TrainingService::class),
                 self::get(\App\Services\Personnel\MatriculeService::class),
+                self::get(\App\Services\Personnel\TenantMemberNumberService::class),
                 self::get(\App\Services\Personnel\PersonnelCompletenessService::class),
                 self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
@@ -887,6 +888,13 @@ class Container
                 self::get(\App\Repositories\TenantMatriculeConfigRepository::class),
                 self::get(\App\Repositories\PersonnelExtrasRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class)
+            ),
+            \App\Repositories\TenantMemberNumberConfigRepository::class => new \App\Repositories\TenantMemberNumberConfigRepository(),
+            \App\Services\Personnel\TenantMemberNumberService::class => new \App\Services\Personnel\TenantMemberNumberService(
+                self::get(\App\Repositories\TenantMemberNumberConfigRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\TenantRepository::class),
+                self::get(\App\Services\Admin\AdminAuditService::class),
             ),
             \App\Repositories\CallsignSequenceRepository::class => new \App\Repositories\CallsignSequenceRepository(),
             \App\Repositories\PersonnelCareerEventRepository::class => new \App\Repositories\PersonnelCareerEventRepository(),
@@ -1662,7 +1670,8 @@ class Container
                 self::get(\App\Services\Personnel\SeniorityEnrollmentBootstrapService::class),
                 self::get(\App\Services\Personnel\SeniorityDossierInferenceSyncService::class),
                 self::get(\App\Services\Personnel\MatriculeService::class),
-                self::get(\App\Repositories\RecruitmentOpeningRepository::class)
+                self::get(\App\Repositories\RecruitmentOpeningRepository::class),
+                self::get(\App\Services\Personnel\TenantMemberNumberService::class)
             ),
             \App\Services\Recruitment\EnlistmentPortalAttachmentService::class => new \App\Services\Recruitment\EnlistmentPortalAttachmentService(
                 self::get(\App\Repositories\EnlistmentRepository::class)

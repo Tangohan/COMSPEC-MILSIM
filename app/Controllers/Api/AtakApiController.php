@@ -781,6 +781,8 @@ class AtakApiController
             'tenant_id' => (string) $tenantId,
             'display_name' => (string) ($user['display_name'] ?? ''),
             'callsign' => (string) ($user['callsign'] ?? ''),
+            'member_number' => trim((string) ($user['tenant_member_number'] ?? '')) ?: null,
+            'platform_number' => trim((string) ($user['athena_identifier'] ?? '')) ?: null,
         ]);
     }
 
@@ -4277,6 +4279,7 @@ class AtakApiController
                 'userId' => $linkUserId,
                 'url' => url('personnel/' . $linkUserId),
                 'callsign' => $profileCall,
+                'member_number' => trim((string) ($targetUser['tenant_member_number'] ?? '')) ?: null,
                 'label' => $this->personnelLabelFromUser($targetUser),
             ];
         }
