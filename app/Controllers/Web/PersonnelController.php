@@ -1202,6 +1202,8 @@ class PersonnelController
             'nicknames' => $nicknames,
             'medalRackItems' => $medalRackItems,
             'clearanceLevelOptions' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
+            'advancedEditActive' => $isSelf && function_exists('user_has_advanced_fiche_edit') && user_has_advanced_fiche_edit($uid),
+            'advancedEditGrant' => ($isSelf && function_exists('user_advanced_fiche_edit_grant')) ? user_advanced_fiche_edit_grant($uid) : null,
             'backOfficePageCss' => ['personnel-dossier.css'],
         ]);
     }
@@ -1228,6 +1230,9 @@ class PersonnelController
         if (!$isSelf && !$canStaffEdit) {
             return $this->personnelForbiddenResponse(true, url('personnel'));
         }
+        $advancedEditActive = $isSelf
+            && function_exists('user_has_advanced_fiche_edit')
+            && user_has_advanced_fiche_edit((int) $target['id']);
         $clearanceReview = trim((string) $request->input('clearance_reviewed_at'));
         $readinessRaw = $request->input('readiness_score');
         $readinessScore = ($readinessRaw === null || $readinessRaw === '') ? null : max(0, min(100, (int) $readinessRaw));
@@ -1354,9 +1359,7 @@ class PersonnelController
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
             ),
             'primary_unit_id' => $primaryUnitId,
-            // clearance_level volontairement absent : se modifie uniquement via une demande d'élévation
-            // (EffectifsWorkspaceController + ElevationApprovalService), pas par cette route directe,
-            // ce niveau conditionnant l'accès aux documents classifiés (DocumentAccessService).
+            // clearance_level : hors élévation, sauf mode édition avancée 24 h (grant admin).
             'clearance_reviewed_at' => $clearanceReview !== '' ? $clearanceReview : null,
             'readiness_score' => $readinessScore !== null ? $readinessScore : 0,
             'enlistment_date' => trim((string) $request->input('enlistment_date')) ?: null,
@@ -1436,6 +1439,25 @@ class PersonnelController
             $notes = trim((string) $request->input('command_notes'));
             $data['command_notes'] = $notes;
             $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
+        }
+        if ($advancedEditActive) {
+            $clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels();
+            $clearanceIn = trim((string) $request->input('clearance_level'));
+            if ($clearanceIn === '') {
+                $data['clearance_level'] = null;
+            } elseif (isset($clearanceLabels[$clearanceIn])) {
+                $data['clearance_level'] = $clearanceIn;
+            }
+            $matriculeIn = trim((string) $request->input('matricule_internal'));
+            if ($matriculeIn !== '') {
+                if (function_exists('mb_substr')) {
+                    $matriculeIn = mb_substr($matriculeIn, 0, 64);
+                } else {
+                    $matriculeIn = substr($matriculeIn, 0, 64);
+                }
+                $data['matricule_internal'] = $matriculeIn;
+            }
+            /* athena_identifier volontairement ignoré — jamais modifiable via ce grant. */
         }
         $structureBefore = $this->structureChangeNotification->snapshot($tenantId, (int) $target['id']);
         $this->personnelProfileRepository->update((int) $target['id'], $data);

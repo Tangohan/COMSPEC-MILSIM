@@ -60,6 +60,8 @@ $nicknames = is_array($nicknames ?? null) ? $nicknames : [];
 $medalRackItems = is_array($medalRackItems ?? null) ? $medalRackItems : [];
 $nicknamesText = implode("\n", array_map(static fn ($item) => trim((string) $item), $nicknames));
 $medalRackText = implode("\n", array_map(static fn ($item) => trim((string) $item), $medalRackItems));
+$advancedEditActive = !empty($advancedEditActive);
+$athenaIdDisplay = trim((string) ($targetUser['athena_identifier'] ?? ''));
 
 $editNavGroups = [
     [
@@ -145,6 +147,22 @@ $editValidTabIds = implode(',', array_map(
         ><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?></button>
         <?php endforeach; ?>
       </nav>
+
+      <?php if ($advancedEditActive): ?>
+      <div class="mb-4 rounded-xl border border-violet-300 bg-violet-50 px-4 py-3 text-sm text-violet-950">
+        <p class="font-bold">Mode édition avancée actif</p>
+        <p class="mt-1 text-xs leading-relaxed text-violet-900/90">
+          Vous pouvez modifier l’ensemble de la fiche (y compris habilitation et matricule).
+          L’identifiant Athena reste verrouillé.
+          <?php
+            $afeEnds = is_array($advancedEditGrant ?? null) ? (string) ($advancedEditGrant['ends_at'] ?? '') : '';
+            if ($afeEnds !== '') {
+                echo ' Expire le ' . htmlspecialchars(date('d/m/Y à H:i', strtotime($afeEnds)), ENT_QUOTES, 'UTF-8') . '.';
+            }
+          ?>
+        </p>
+      </div>
+      <?php endif; ?>
 
       <form method="post" action="<?= htmlspecialchars($formAction) ?>">
         <?= \App\Core\Csrf::field() ?>
@@ -518,6 +536,15 @@ $editValidTabIds = implode(',', array_map(
           <div class="grid gap-4 p-6 md:grid-cols-2">
             <div>
               <label class="mb-1 block text-xs font-bold text-slate-600">Niveau de clearance</label>
+              <?php if ($advancedEditActive): ?>
+              <select name="clearance_level" id="clearance_level" class="w-full rounded-xl border border-violet-200 bg-violet-50/40 px-3 py-2.5 text-sm">
+                <option value="">— Non défini —</option>
+                <?php foreach ($clearanceOptions as $ck => $clabel): ?>
+                <option value="<?= htmlspecialchars((string) $ck) ?>" <?= $currentClearance === (string) $ck ? 'selected' : '' ?>><?= htmlspecialchars((string) $clabel) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <p class="mt-1 text-[11px] text-violet-700">Déverrouillé par le mode édition avancée (24 h). L’ID Athena reste inchangé.</p>
+              <?php else: ?>
               <p class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
                 <?= $currentClearance !== '' ? htmlspecialchars($clearanceOptions[$currentClearance] ?? ($currentClearance . ' (valeur héritée)')) : '— Non défini —' ?>
               </p>
@@ -527,6 +554,7 @@ $editValidTabIds = implode(',', array_map(
                 <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) $targetUser['id']), ENT_QUOTES, 'UTF-8') ?>" class="font-bold text-emerald-700 hover:underline">Ouvrir la fiche effectifs →</a>
                 <?php endif; ?>
               </p>
+              <?php endif; ?>
             </div>
             <div>
               <label for="enlistment_date" class="mb-1 block text-xs font-bold text-slate-600">Date d’incorporation</label>
@@ -542,10 +570,23 @@ $editValidTabIds = implode(',', array_map(
               <p class="mt-1 text-[11px] text-slate-500">Compte pour la complétude si &gt; 0 (sinon une formation certifiante peut suffire).</p>
             </div>
             <div class="md:col-span-2 rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
-              <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Matricule dossier</p>
+              <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Identifiant Athena</p>
+              <p class="mt-1 font-mono text-sm font-bold text-slate-900"><?= $athenaIdDisplay !== '' ? htmlspecialchars($athenaIdDisplay) : '—' ?></p>
+              <p class="mt-1 text-[11px] text-slate-500">Non modifiable<?= $advancedEditActive ? ' (même en mode édition avancée)' : '' ?>.</p>
+            </div>
+            <div class="md:col-span-2 rounded-xl border <?= $advancedEditActive ? 'border-violet-200 bg-violet-50/50' : 'border-slate-100 bg-slate-50/80' ?> px-4 py-3">
+              <p class="text-[10px] font-black uppercase tracking-wider <?= $advancedEditActive ? 'text-violet-700' : 'text-slate-500' ?>">Matricule dossier</p>
+              <?php if ($advancedEditActive): ?>
+              <input type="text" name="matricule_internal" id="matricule_internal" maxlength="64"
+                     value="<?= htmlspecialchars((string) ($matriculeDisplay ?? '')) ?>"
+                     class="mt-2 w-full rounded-xl border border-violet-200 bg-white px-3 py-2.5 font-mono text-sm"
+                     placeholder="Matricule interne">
+              <p class="mt-1 text-[11px] text-violet-700">Saisie libre autorisée pendant le mode avancé.</p>
+              <?php else: ?>
               <p class="mt-1 font-mono text-sm font-bold text-slate-900"><?= $matriculeDisplay ? htmlspecialchars((string) $matriculeDisplay) : '— non attribué —' ?></p>
               <?php if (!$matriculeDisplay): ?>
               <p class="mt-2 text-[11px] text-slate-600">Aucun matricule : utilisez le bouton sous le formulaire pour en générer un (reste sur cette page).</p>
+              <?php endif; ?>
               <?php endif; ?>
             </div>
           </div>

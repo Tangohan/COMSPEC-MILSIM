@@ -1180,6 +1180,38 @@ if (!function_exists('can')) {
     }
 }
 
+if (!function_exists('user_advanced_fiche_edit_grant')) {
+    /**
+     * Grant actif d’édition avancée de fiche (24 h), ou null.
+     *
+     * @return array<string, mixed>|null
+     */
+    function user_advanced_fiche_edit_grant(?int $userId = null): ?array
+    {
+        $uid = $userId ?? (int) \App\Core\Session::get('user_id');
+        $tenantId = (int) \App\Core\Session::get('tenant_id');
+        if ($uid < 1 || $tenantId < 1) {
+            return null;
+        }
+        try {
+            /** @var \App\Repositories\UserAdvancedEditGrantRepository $repo */
+            $repo = \App\Core\Container::get(\App\Repositories\UserAdvancedEditGrantRepository::class);
+
+            return $repo->findActiveForUser($tenantId, $uid);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+}
+
+if (!function_exists('user_has_advanced_fiche_edit')) {
+    /** True si l’utilisateur a un mode édition avancée de fiche actif. */
+    function user_has_advanced_fiche_edit(?int $userId = null): bool
+    {
+        return user_advanced_fiche_edit_grant($userId) !== null;
+    }
+}
+
 if (!function_exists('training_course_default_cover_url')) {
     /**
      * Visuel par défaut catalogue / fiche formation lorsqu’aucune miniature ni bannière n’est définie.
