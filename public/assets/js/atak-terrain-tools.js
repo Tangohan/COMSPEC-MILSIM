@@ -506,10 +506,47 @@ window.ATAKTerrainTools = (function () {
         var prev = vertices[vertices.length - 2];
         if (prev && last.distanceTo(prev) < 3) vertices.pop();
       }
-      setHint('Profil calculé. Cliquez pour prolonger, ou fermez le panneau.');
-      requestProfile();
-      toast('Profil d’itinéraire calculé.');
+      maybeSnapRoadRoute().then(function () {
+        setHint('Profil calculé. Cliquez pour prolonger, ou fermez le panneau.');
+        requestProfile();
+        toast('Profil d’itinéraire calculé.');
+      });
     }
+  }
+
+  function maybeSnapRoadRoute() {
+    if (!window.ATAKGeoLive || typeof window.ATAKGeoLive.planRoadRoute !== 'function') {
+      return Promise.resolve(false);
+    }
+    if (typeof window.ATAKGeoLive.isReady === 'function' && !window.ATAKGeoLive.isReady()) {
+      return Promise.resolve(false);
+    }
+    var pts = pointsWorld();
+    if (pts.length < 2) return Promise.resolve(false);
+    var start = [pts[0].x, pts[0].y];
+    var end = [pts[pts.length - 1].x, pts[pts.length - 1].y];
+    var via = pts.length > 2
+      ? pts.slice(1, -1).map(function (p) { return [p.x, p.y]; })
+      : [];
+    setHint('Planification sur le réseau routier…');
+    return window.ATAKGeoLive.planRoadRoute(start, end, via, 'foot').then(function (planned) {
+      if (!planned || !planned.ok || !planned.points || planned.points.length < 2) return false;
+      var next = [];
+      planned.points.forEach(function (p) {
+        var x = Array.isArray(p) ? p[0] : p.x;
+        var y = Array.isArray(p) ? p[1] : p.y;
+        var ll = latLngFromWorld(x, y);
+        if (ll) next.push(ll);
+      });
+      if (next.length >= 2) {
+        vertices = next;
+        redraw();
+        if (planned.plan_mode === 'ROAD') {
+          toast('Itinéraire routier appliqué.');
+        }
+      }
+      return true;
+    }).catch(function () { return false; });
   }
 
   function bindMap(map) {

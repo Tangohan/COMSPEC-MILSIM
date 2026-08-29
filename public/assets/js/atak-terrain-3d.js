@@ -2,6 +2,15 @@
 window.ATAKTerrain3D = (function () {
   'use strict';
 
+  /* Vue topo premium (Three.js) : ne pas monter le maillage CSS-pitch legacy. */
+  if (window.ATAK_TERRAIN3D_PREMIUM) {
+    return {
+      setEnabled: function () {},
+      getState: function () { return { enabled: false, premiumDelegated: true }; },
+      premiumDelegated: true,
+    };
+  }
+
   var KEY = 'atak_terrain_3d_view';
   var state = { enabled: false, pitch: 48, bearing: 0, verticalExaggeration: 2.5 };
   var stage;

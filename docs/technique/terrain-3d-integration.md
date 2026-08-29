@@ -64,39 +64,34 @@ const terrain = await initTerrain3D(document.getElementById('atak-map-host'), {
 
 ## Intégration dans `/public/atak`
 
-1. **Conteneur** — remplacer ou superposer `#atak-map` :
+**Statut : activé** via `window.ATAK_TERRAIN3D_PREMIUM = true` dans `views/atak.php`.
+
+| Fichier | Rôle |
+|---------|------|
+| `public/assets/js/atak-terrain3d-premium.js` | Pont live : bouton `#atak-view-3d`, API heights, marqueurs BFT |
+| `public/assets/css/atak-terrain3d-premium.css` | Hôte canvas + marqueurs CSS2D |
+| `public/assets/js/atak-terrain-3d.js` | Early-exit si premium (pas de maillage CSS-pitch) |
+
+1. **Conteneur** dans `.atak-map-stage` :
 
 ```html
 <div class="atak-map-stage">
-  <div id="terrain3d-container" class="terrain3d-host"></div>
-  <!-- Leaflet 2D en fallback ou mode toggle -->
-  <div id="atak-map" class="atak-map-2d-fallback" hidden></div>
+  <div id="terrain3d-container" class="terrain3d-host" hidden></div>
+  <div id="atak-map"></div>
 </div>
 ```
 
-2. **Chargement module** (dans la vue PHP ou un bundle) :
+2. **Chargement** (déjà dans `views/atak.php`) :
 
 ```html
-<script type="module">
-  import { initTerrain3D } from '/public/assets/js/terrain3d/initTerrain3D.js';
-
-  window.ATAKTerrainThree = await initTerrain3D(
-    document.getElementById('terrain3d-container'),
-    {
-      textureUrl: window.Arma3Map.Maps.altis.tilePattern.replace('{z}/{x}/{y}', '3/4/4'),
-      heightmapUrl: '/public/api/atak/terrain/hillshade?mapId=' + mapId,
-      width: 30720,
-      height: 30720,
-      heightScale: 1.6,
-      minAltitude: 0,
-      maxAltitude: 900,
-      segments: 160,
-    }
-  );
-</script>
+<script>window.ATAK_TERRAIN3D_PREMIUM = true;</script>
+<script src="…/atak-terrain-3d.js"></script>
+<script type="module" src="…/atak-terrain3d-premium.js"></script>
 ```
 
-3. **Données Arma existantes** — le portail expose déjà une grille via `GET /api/atak/terrain?include=heights` (format `int16le_b64`, voir `atak-terrain-3d.js`). Pour Three.js, convertir côté JS :
+Le pont décode `GET /api/atak/terrain?include=heights` (`int16le_b64`), appelle `setHeightData`, bascule Leaflet ↔ Three.js sur `#atak-view-3d`, et synchronise les unités via `atak:units-updated`.
+
+3. **Données Arma** — conversion côté JS (implémentée dans le pont) :
 
 ```javascript
 function decodeHeights(apiResponse) {
