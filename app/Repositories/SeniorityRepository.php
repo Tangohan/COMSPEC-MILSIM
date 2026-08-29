@@ -275,6 +275,47 @@ class SeniorityRepository
         return $id > 0 ? $id : null;
     }
 
+    public function findPeriodStartDateById(int $periodId, int $tenantId, int $userId): ?string
+    {
+        if (!$this->schemaReady() || $periodId < 1 || $tenantId < 1 || $userId < 1) {
+            return null;
+        }
+        $st = $this->pdo()->prepare(
+            'SELECT start_date FROM seniority_periods
+             WHERE id = ? AND tenant_id = ? AND user_id = ?
+             LIMIT 1'
+        );
+        $st->execute([$periodId, $tenantId, $userId]);
+        $v = $st->fetchColumn();
+        if ($v === false || $v === null) {
+            return null;
+        }
+        $start = trim((string) $v);
+
+        return $start !== '' && !str_starts_with($start, '0000-00-00') ? $start : null;
+    }
+
+    public function earliestStartForDefinitionTenant(int $tenantId, int $definitionId): ?string
+    {
+        if (!$this->schemaReady() || $tenantId < 1 || $definitionId < 1) {
+            return null;
+        }
+        $st = $this->pdo()->prepare(
+            "SELECT MIN(start_date) AS earliest_start
+             FROM seniority_periods
+             WHERE tenant_id = ? AND definition_id = ?
+               AND start_date IS NOT NULL AND start_date <> '' AND start_date <> '0000-00-00'"
+        );
+        $st->execute([$tenantId, $definitionId]);
+        $v = $st->fetchColumn();
+        if ($v === false || $v === null) {
+            return null;
+        }
+        $start = trim((string) $v);
+
+        return $start !== '' ? $start : null;
+    }
+
     /**
      * @return positive-int|null id créé
      */

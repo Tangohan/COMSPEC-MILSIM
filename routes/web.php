@@ -923,6 +923,7 @@ return function (Router $router) {
     $router->post('/back-office/organisation/anciennete/initialiser', [OrganizationSeniorityAdminController::class, 'seedDefaults'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete/synchroniser-effectifs', [OrganizationSeniorityAdminController::class, 'syncAllPersonnel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete/completer-depuis-dossier', [OrganizationSeniorityAdminController::class, 'syncDossierInference'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/anciennete/date-creation-entite', [OrganizationSeniorityAdminController::class, 'syncOrgFounding'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/progression', [OrganizationProgressionHubController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/indicatifs', [OrganizationCallsignSequencesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/indicatifs', [OrganizationCallsignSequencesController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

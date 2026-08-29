@@ -1204,6 +1204,8 @@ class PersonnelController
             'clearanceLevelOptions' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
             'advancedEditActive' => $isSelf && function_exists('user_has_advanced_fiche_edit') && user_has_advanced_fiche_edit($uid),
             'advancedEditGrant' => ($isSelf && function_exists('user_advanced_fiche_edit_grant')) ? user_advanced_fiche_edit_grant($uid) : null,
+            'seniorityPrePlatformDate' => Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class)
+                ->getPersonStartDate($tenantId, $uid),
             'backOfficePageCss' => ['personnel-dossier.css'],
         ]);
     }
@@ -1758,6 +1760,17 @@ class PersonnelController
             $this->userProfileRepository->upsert((int) $target['id'], [
                 'public_flag_country_code' => PublicFlagCountryCatalog::normalize((string) $request->input('public_flag_country_code')),
             ]);
+        }
+
+        if ($isSelf || $canStaffEdit) {
+            $preRaw = trim((string) $request->input('pre_platform_start_date', ''));
+            $preResult = Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class)
+                ->upsertPersonStartDate($tenantId, (int) $target['id'], $preRaw !== '' ? $preRaw : null);
+            if ($preResult === 'invalid_date') {
+                Session::flash('error', 'La date d’ancienneté antérieure à la plateforme n’est pas valide.');
+
+                return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+            }
         }
 
         Session::flash('success', 'Dossier mis à jour.');

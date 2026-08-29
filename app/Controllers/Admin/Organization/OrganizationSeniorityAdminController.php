@@ -13,6 +13,7 @@ use App\Repositories\SeniorityRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Personnel\SeniorityDossierInferenceSyncService;
 use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
+use App\Services\Personnel\SeniorityPrePlatformService;
 use App\Services\Personnel\SeniorityTenantDefaultsService;
 
 final class OrganizationSeniorityAdminController
@@ -21,10 +22,12 @@ final class OrganizationSeniorityAdminController
         private ?AuthService $authService = null,
         private ?SeniorityRepository $seniorityRepository = null,
         private ?SeniorityTenantDefaultsService $defaultsService = null,
+        private ?SeniorityPrePlatformService $prePlatformService = null,
     ) {
         $this->authService ??= Container::get(AuthService::class);
         $this->seniorityRepository ??= Container::get(SeniorityRepository::class);
         $this->defaultsService ??= new SeniorityTenantDefaultsService($this->seniorityRepository);
+        $this->prePlatformService ??= Container::get(SeniorityPrePlatformService::class);
     }
 
     public function index(Request $request, array $params = []): Response
@@ -38,6 +41,9 @@ final class OrganizationSeniorityAdminController
         }
 
         $schemaReady = $this->seniorityRepository->schemaReady();
+        if ($schemaReady) {
+            $this->defaultsService->ensureStandardPack($tenantId);
+        }
         $definitions = $schemaReady ? $this->seniorityRepository->listAllDefinitionsForTenant($tenantId) : [];
         $stats = $this->buildDefinitionStats($definitions);
 
@@ -47,6 +53,7 @@ final class OrganizationSeniorityAdminController
         $activeMembers = $schemaReady
             ? count(Container::get(\App\Repositories\UserRepository::class)->listActiveUserIdsForTenant($tenantId))
             : 0;
+        $orgFoundingDate = $schemaReady ? $this->prePlatformService->getOrgFoundingDate($tenantId) : null;
 
         return Response::view('layout.main', [
             'title' => 'Ancienneté',
@@ -56,6 +63,7 @@ final class OrganizationSeniorityAdminController
             'seniorityDefinitionStats' => $stats,
             'seniorityCoverage' => $coverage,
             'seniorityActiveMembers' => $activeMembers,
+            'seniorityOrgFoundingDate' => $orgFoundingDate,
             'seniorityCsrf' => Csrf::token(),
         ]);
     }
@@ -178,6 +186,68 @@ final class OrganizationSeniorityAdminController
             $msg .= sprintf(' Dates déjà alignées pour %d ligne(s).', $stats['unchanged']);
         }
         Session::flash('success', $msg);
+
+        return Response::redirect(url('back-office/organisation/anciennete'));
+    }
+
+    public function syncOrgFounding(Request $request, array $params = []): Response
+    {
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez depuis le formulaire.');
+
+            return Response::redirect(url('back-office/organisation/anciennete'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!$this->seniorityRepository->schemaReady()) {
+            Session::flash('error', 'Le module d’ancienneté n’est pas encore disponible sur cette communauté.');
+
+            return Response::redirect(url('back-office/organisation/anciennete'));
+        }
+
+        $raw = trim((string) $request->input('org_founded_on', ''));
+        $stats = $this->prePlatformService->syncOrgFoundingForAllActiveMembers(
+            $tenantId,
+            $raw !== '' ? $raw : null
+        );
+
+        if (($stats['invalid_date'] ?? 0) > 0 && ($stats['members'] ?? 0) === 0) {
+            Session::flash('error', 'La date de création de l’entité n’est pas valide. Utilisez le format AAAA-MM-JJ.');
+
+            return Response::redirect(url('back-office/organisation/anciennete'));
+        }
+
+        if ($raw === '') {
+            Session::flash(
+                'success',
+                sprintf(
+                    'Date de création de l’entité effacée pour %d membre(s) (%d période(s) retirée(s)).',
+                    (int) $stats['members'],
+                    (int) $stats['cleared']
+                )
+            );
+        } else {
+            $touched = (int) $stats['inserted'] + (int) $stats['updated'];
+            Session::flash(
+                'success',
+                sprintf(
+                    'Date de création de l’entité enregistrée (%s) pour %d membre(s) actif(s) : %d créée(s), %d mise(s) à jour, %d déjà alignée(s).',
+                    $raw,
+                    (int) $stats['members'],
+                    (int) $stats['inserted'],
+                    (int) $stats['updated'],
+                    (int) $stats['unchanged']
+                )
+            );
+            if ($touched === 0 && (int) $stats['members'] === 0) {
+                Session::flash('success', 'Aucun membre actif à mettre à jour pour la date de création de l’entité.');
+            }
+        }
 
         return Response::redirect(url('back-office/organisation/anciennete'));
     }
