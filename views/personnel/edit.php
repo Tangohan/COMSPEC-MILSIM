@@ -48,6 +48,10 @@ $enlistmentDateVal = '';
 if (!empty($p['enlistment_date'])) {
     $enlistmentDateVal = substr((string) $p['enlistment_date'], 0, 10);
 }
+$prePlatformDateVal = '';
+if (!empty($seniorityPrePlatformDate)) {
+    $prePlatformDateVal = substr((string) $seniorityPrePlatformDate, 0, 10);
+}
 $gradeLabel = '';
 if ($currentGrade) {
     $gradeLabel = trim((string) ($currentGrade['label_short'] ?? $currentGrade['short_name'] ?? $currentGrade['label_long'] ?? $currentGrade['name'] ?? ''));
@@ -559,6 +563,12 @@ $editValidTabIds = implode(',', array_map(
             <div>
               <label for="enlistment_date" class="mb-1 block text-xs font-bold text-slate-600">Date d’incorporation</label>
               <input type="date" name="enlistment_date" id="enlistment_date" value="<?= htmlspecialchars($enlistmentDateVal) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+              <p class="mt-1 text-[11px] text-slate-500">Entrée dans la communauté sur la plateforme (ou date d’enrôlement retenue pour le dossier).</p>
+            </div>
+            <div>
+              <label for="pre_platform_start_date" class="mb-1 block text-xs font-bold text-slate-600">Ancienneté antérieure à la plateforme</label>
+              <input type="date" name="pre_platform_start_date" id="pre_platform_start_date" value="<?= htmlspecialchars($prePlatformDateVal) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+              <p class="mt-1 text-[11px] text-slate-500">Date à laquelle la personne a rejoint l’entité <em>avant</em> l’ouverture du site. Laisser vide si non applicable.</p>
             </div>
             <div>
               <label for="clearance_reviewed_at" class="mb-1 block text-xs font-bold text-slate-600">Dernière revue d’habilitation</label>

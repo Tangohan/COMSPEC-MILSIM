@@ -12,6 +12,17 @@ use App\Repositories\SeniorityRepository;
 final class SeniorityTenantDefaultsService
 {
     /**
+     * Indicateurs saisis manuellement (historique antérieur à la plateforme) :
+     * jamais auto-remplis à l’acceptation ni par inférence dossier.
+     *
+     * @var list<string>
+     */
+    public const PRE_PLATFORM_CODES = [
+        'tenure_org_pre_platform',
+        'tenure_pre_platform',
+    ];
+
+    /**
      * Lot catalogue : les deux premiers sont visibles sur les fiches par défaut ;
      * les autres sont prêts à l’emploi (actifs mais masqués) pour limiter le bruit jusqu’à publication par l’encadrement.
      *
@@ -19,12 +30,30 @@ final class SeniorityTenantDefaultsService
      */
     private const STANDARD_PACK = [
         [
+            'code' => 'tenure_org_pre_platform',
+            'label' => 'Création de l’entité (avant la plateforme)',
+            'scope' => 'tenant',
+            'calc_mode' => 'from_start',
+            'source_type' => 'manual',
+            'sort_order' => 5,
+            'is_visible' => true,
+        ],
+        [
             'code' => 'tenure_community',
             'label' => 'Ancienneté dans la communauté',
             'scope' => 'user',
             'calc_mode' => 'from_start',
             'source_type' => 'manual',
             'sort_order' => 10,
+            'is_visible' => true,
+        ],
+        [
+            'code' => 'tenure_pre_platform',
+            'label' => 'Ancienneté antérieure à la plateforme',
+            'scope' => 'user',
+            'calc_mode' => 'from_start',
+            'source_type' => 'manual',
+            'sort_order' => 15,
             'is_visible' => true,
         ],
         [
@@ -202,6 +231,11 @@ final class SeniorityTenantDefaultsService
         }
 
         return $codes;
+    }
+
+    public static function isPrePlatformManualCode(string $code): bool
+    {
+        return in_array(trim($code), self::PRE_PLATFORM_CODES, true);
     }
 
     /**

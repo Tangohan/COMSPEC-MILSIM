@@ -921,6 +921,7 @@ return function (Router $router) {
     $router->post('/back-office/organisation/anciennete/initialiser', [OrganizationSeniorityAdminController::class, 'seedDefaults'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete/synchroniser-effectifs', [OrganizationSeniorityAdminController::class, 'syncAllPersonnel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete/completer-depuis-dossier', [OrganizationSeniorityAdminController::class, 'syncDossierInference'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/anciennete/date-creation-entite', [OrganizationSeniorityAdminController::class, 'syncOrgFounding'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/structure', [OrganizationDashboardController::class, 'structureRecruitmentHub'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

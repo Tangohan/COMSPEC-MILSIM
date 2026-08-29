@@ -73,6 +73,11 @@ class Container
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
             ),
+            \App\Services\Personnel\SeniorityPrePlatformService::class => new \App\Services\Personnel\SeniorityPrePlatformService(
+                self::get(\App\Repositories\SeniorityRepository::class),
+                new \App\Services\Personnel\SeniorityTenantDefaultsService(self::get(\App\Repositories\SeniorityRepository::class)),
+                self::get(UserRepository::class),
+            ),
             \App\Services\Platform\FeatureGateService::class => new \App\Services\Platform\FeatureGateService(
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),

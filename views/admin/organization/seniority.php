@@ -64,6 +64,10 @@ asort($calcOptions, SORT_NATURAL | SORT_FLAG_CASE);
 
 $coverage = is_array($seniorityCoverage ?? null) ? $seniorityCoverage : [];
 $activeMembers = max(0, (int) ($seniorityActiveMembers ?? 0));
+$orgFoundingDateVal = '';
+if (!empty($seniorityOrgFoundingDate)) {
+    $orgFoundingDateVal = substr((string) $seniorityOrgFoundingDate, 0, 10);
+}
 
 /**
  * Un indicateur peut être actif, visible, et pourtant n’afficher « — » sur toutes les
@@ -197,6 +201,18 @@ if ($rowsJson === false) {
                 Une mise à jour de la plateforme est nécessaire avant de publier les indicateurs.
             </div>
         <?php else: ?>
+            <?php
+            $notice_tone = 'info';
+            $notice_title = 'Ancienneté avant la plateforme';
+            $notice_body = 'Deux indicateurs dédiés permettent de conserver l’historique antérieur à l’arrivée sur Athena&nbsp;:'
+                . '<ul class="mt-2 list-disc pl-5 space-y-1">'
+                . '<li><strong>Création de l’entité (avant la plateforme)</strong> — date de fondation de votre organisation / unité réelle, même si elle précède l’ouverture du site. Saisissez-la ci-dessous&nbsp;: elle est propagée à tous les membres actifs.</li>'
+                . '<li><strong>Ancienneté antérieure à la plateforme</strong> — pour chaque personne, la date à laquelle elle a rejoint l’entité <em>avant</em> de disposer d’un compte ici. À renseigner sur la <a href="' . htmlspecialchars(url('personnel'), ENT_QUOTES, 'UTF-8') . '">fiche personnel</a> (onglet Habilitation &amp; disponibilité).</li>'
+                . '</ul>'
+                . '<p class="mt-2 mb-0">Ces dates ne sont <strong>jamais</strong> déduites automatiquement à l’acceptation d’une candidature&nbsp;: elles restent une saisie RH volontaire.</p>';
+            include base_path('views/partials/bo_dsfr_notice.php');
+            ?>
+
             <div class="bo-seniority__kpi-grid" aria-label="Synthèse des indicateurs">
                 <div class="bo-seniority__kpi">
                     <p class="bo-seniority__kpi-label">Indicateurs</p>
@@ -231,9 +247,39 @@ if ($rowsJson === false) {
                 <div class="bo-seniority__tools">
                     <div class="bo-seniority__tool">
                         <div class="bo-seniority__tool-body">
+                            <p class="bo-seniority__tool-title">Date de création de l’entité</p>
+                            <p class="bo-seniority__tool-desc">
+                                Enregistrez la fondation de votre organisation avant l’arrivée du site.
+                                La date est appliquée à l’indicateur « Création de l’entité (avant la plateforme) » pour chaque membre actif.
+                                Laissez vide puis enregistrez pour effacer.
+                            </p>
+                            <form
+                                method="post"
+                                action="<?= htmlspecialchars(url('back-office/organisation/anciennete/date-creation-entite'), ENT_QUOTES, 'UTF-8') ?>"
+                                class="bo-seniority__org-founding"
+                                style="margin-top:0.75rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:end;"
+                            >
+                                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                <div>
+                                    <label for="org_founded_on" class="bo-seniority__filter-label" style="display:block;margin-bottom:0.35rem;">Date de fondation</label>
+                                    <input
+                                        type="date"
+                                        id="org_founded_on"
+                                        name="org_founded_on"
+                                        value="<?= htmlspecialchars($orgFoundingDateVal, ENT_QUOTES, 'UTF-8') ?>"
+                                        class="bo-seniority__sort"
+                                        style="min-width:11rem;width:auto;padding:0.45rem 0.65rem;"
+                                    >
+                                </div>
+                                <button type="submit" class="bo-seniority__btn bo-seniority__btn--indigo">Enregistrer pour tous les membres</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="bo-seniority__tool">
+                        <div class="bo-seniority__tool-body">
                             <p class="bo-seniority__tool-title">Installer les indicateurs standards</p>
                             <p class="bo-seniority__tool-desc">
-                                Ajoute le catalogue prêt à l’emploi (communauté, service, unité, grade, rôles, etc.).
+                                Ajoute le catalogue prêt à l’emploi (communauté, service, unité, grade, rôles, historique avant plateforme, etc.).
                                 Les indicateurs déjà présents ne sont pas dupliqués.
                             </p>
                         </div>
