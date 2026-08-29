@@ -97,6 +97,7 @@ class CfgFunctions {
             class sampleTerrain {};
             class sampleScene {};
             class sampleTheater {};
+            class sampleGeoNetwork {};
             class theaterSurveyShow {};
             class theaterSurveyOnLoad {};
             class theaterSurveyRefresh {};

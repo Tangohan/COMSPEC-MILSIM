@@ -522,7 +522,8 @@ public static class Extension
     /// <summary>Relevés volumineux : passer par la file drainée, pas un POST immédiat qui vole la liaison à la position.</summary>
     private static bool IsHeavyIngestEndpoint(string url) =>
         url.Contains("/api/atak/scene/ingest", StringComparison.OrdinalIgnoreCase)
-        || url.Contains("/api/atak/terrain/chunk", StringComparison.OrdinalIgnoreCase);
+        || url.Contains("/api/atak/terrain/chunk", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/geo/ingest", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsVideoFeedsEndpoint(string url) =>
         url.Contains("/api/atak/video-feeds", StringComparison.OrdinalIgnoreCase);
@@ -1098,6 +1099,23 @@ public static class Extension
         if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
             return FormatAtakExtArray("ERROR", "empty");
         if (!TryBuildRequestUri(_baseUrl, "/api/atak/scene/ingest", out var uri, out var err) || uri is null)
+            return FormatAtakExtArray("ERROR", err);
+        EnqueueOrSend(uri.AbsoluteUri, EnrichAtakPayload(json));
+        return FormatAtakExtArray("OK", "queued");
+    }
+
+    private static string HandleGeoIngest(string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl))
+            return FormatAtakExtArray("ERROR", "not_connected");
+        if (_apiKey.Length == 0)
+            return FormatAtakExtArray("ERROR", "unauthorized");
+        if (args.Length < 1)
+            return FormatAtakExtArray("ERROR", "empty");
+        var json = args[0] ?? "";
+        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
+            return FormatAtakExtArray("ERROR", "empty");
+        if (!TryBuildRequestUri(_baseUrl, "/api/atak/geo/ingest", out var uri, out var err) || uri is null)
             return FormatAtakExtArray("ERROR", err);
         EnqueueOrSend(uri.AbsoluteUri, EnrichAtakPayload(json));
         return FormatAtakExtArray("OK", "queued");
@@ -1801,6 +1819,11 @@ public static class Extension
         if (function == "Scene.Ingest")
         {
             return HandleSceneIngest(args);
+        }
+
+        if (function == "Geo.Ingest")
+        {
+            return HandleGeoIngest(args);
         }
 
         if (function == "Theater.Coverage")
@@ -5019,6 +5042,12 @@ public static class Extension
             if (function == "Scene.Ingest")
             {
                 // Acquittement synchrone dans TryGetSyncResponse (HandleSceneIngest).
+                return;
+            }
+
+            if (function == "Geo.Ingest")
+            {
+                // Acquittement synchrone dans TryGetSyncResponse (HandleGeoIngest).
                 return;
             }
 

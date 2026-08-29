@@ -580,6 +580,8 @@
         sse: false,
         elevation: true,
         route: true,
+        geoPlaces: false,
+        geoRoads: false,
         tactical: true,
         recon: true,
       },
@@ -603,6 +605,9 @@
     var trailTracker = createUnitTrailTracker({ maxPoints: TRAIL_MAX_POINTS });
     var terrainTools = null;
     var routeTools = null;
+    var geoNetwork = null;
+    var routePlanner = null;
+    var lastGeoBboxKey = '';
 
     function getEl(id) {
       return typeof id === 'string' ? document.getElementById(id) : id;
@@ -633,6 +638,33 @@
           if (Ls[key]) map.addLayer(lg);
           else map.removeLayer(lg);
         } catch (e) {}
+      });
+      if (layerGroups.geo) {
+        try {
+          if (Ls.geoPlaces || Ls.geoRoads) map.addLayer(layerGroups.geo);
+          else map.removeLayer(layerGroups.geo);
+        } catch (e2) {}
+      }
+    }
+
+    function refreshGeoLayers() {
+      if (!geoNetwork || !map) return;
+      geoNetwork.setVisible('places', !!state.layers.geoPlaces);
+      geoNetwork.setVisible('roads', !!state.layers.geoRoads);
+      applyLayerVisibility();
+      if (!state.layers.geoPlaces && !state.layers.geoRoads) {
+        geoNetwork.render({ places: [], roads: [] });
+        return;
+      }
+      var b = map.getBounds();
+      var sw = b.getSouthWest();
+      var ne = b.getNorthEast();
+      var bbox = [sw.lng, sw.lat, ne.lng, ne.lat];
+      var key = bbox.map(function (n) { return n.toFixed(0); }).join(',');
+      if (key === lastGeoBboxKey) return;
+      lastGeoBboxKey = key;
+      geoNetwork.loadBbox(bbox).then(function (data) {
+        geoNetwork.render(data || { places: [], roads: [] });
       });
     }
 
@@ -1415,6 +1447,7 @@
         layerGroups.sse = L.layerGroup();
         layerGroups.elevation = L.layerGroup();
         layerGroups.route = L.layerGroup();
+        layerGroups.geo = L.layerGroup();
         layerGroups.tactical = L.layerGroup();
         layerGroups.recon = L.layerGroup();
         map.on('contextmenu', function (e) {
@@ -1528,6 +1561,10 @@
           renderTrails();
           return;
         }
+        if (key === 'geoPlaces' || key === 'geoRoads') {
+          refreshGeoLayers();
+          return;
+        }
         if (state.currentMapType === 'arma' || state.currentMapType === 'image') {
           if (key === 'units') syncUnits();
           else refreshSecondaryLayers();
@@ -1566,6 +1603,8 @@
     bindLayerCheckbox(els.layerAir, 'air');
     bindLayerCheckbox(els.layerElevation, 'elevation');
     bindLayerCheckbox(els.layerRoute, 'route');
+    bindLayerCheckbox(els.layerGeoPlaces, 'geoPlaces');
+    bindLayerCheckbox(els.layerGeoRoads, 'geoRoads');
     bindLayerCheckbox(els.layerTactical, 'tactical');
     bindLayerCheckbox(els.layerRecon, 'recon');
 
@@ -1596,9 +1635,33 @@
       if (window.TacmapTerrainTools && typeof window.TacmapTerrainTools.bind === 'function') {
         terrainTools = window.TacmapTerrainTools.bind(map, layerGroups, { hintEl: hintEl });
       }
-      if (window.TacmapRouteTools && typeof window.TacmapRouteTools.bind === 'function') {
-        routeTools = window.TacmapRouteTools.bind(map, layerGroups, { hintEl: hintEl, etaEl: etaEl });
+      if (window.AtakGeoNetwork && typeof window.AtakGeoNetwork.create === 'function') {
+        geoNetwork = window.AtakGeoNetwork.create(apiBase, state.currentMapId, layerGroups.geo);
+        geoNetwork.loadCoverage();
       }
+      if (window.AtakRoutePlanner && typeof window.AtakRoutePlanner.create === 'function') {
+        routePlanner = window.AtakRoutePlanner.create(apiBase, state.currentMapId);
+      }
+      if (window.TacmapRouteTools && typeof window.TacmapRouteTools.bind === 'function') {
+        routeTools = window.TacmapRouteTools.bind(map, layerGroups, {
+          hintEl: hintEl,
+          etaEl: etaEl,
+          planRoadRoute: function (start, end, via, mode) {
+            if (!routePlanner) return Promise.resolve({ ok: false });
+            if (geoNetwork && !geoNetwork.isGeoReady()) {
+              return geoNetwork.loadCoverage().then(function () {
+                if (!geoNetwork.isGeoReady()) return { ok: false };
+                return routePlanner.planRoute(start, end, via, mode);
+              });
+            }
+            return routePlanner.planRoute(start, end, via, mode);
+          },
+        });
+      }
+      map.on('moveend', function () {
+        lastGeoBboxKey = '';
+        refreshGeoLayers();
+      });
     }
 
     function wireToolButtons() {

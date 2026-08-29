@@ -149,6 +149,32 @@
         setHint('Itinéraire incomplet — ajoutez au moins deux points.');
         return;
       }
+      if (typeof opts.planRoadRoute === 'function') {
+        setHint('Planification sur le réseau routier…');
+        var start = state.points[0];
+        var end = state.points[state.points.length - 1];
+        var via = state.points.length > 2 ? state.points.slice(1, -1) : [];
+        opts.planRoadRoute(start, end, via, state.mode).then(function (planned) {
+          if (planned && planned.ok && planned.points && planned.points.length >= 2) {
+            state.points = planned.points.map(function (p) {
+              return Array.isArray(p) ? p : [p.x, p.y];
+            });
+            var warn = (planned.warnings && planned.warnings[0]) || '';
+            if (planned.plan_mode === 'ROAD') {
+              setHint('Itinéraire routier prêt.' + (warn ? ' ' + warn : ''));
+            } else {
+              setHint('Tracé direct (réseau routier indisponible).' + (warn ? ' ' + warn : ''));
+            }
+          } else {
+            setHint('Planification routière impossible — tracé manuel conservé.');
+          }
+          redraw();
+        }).catch(function () {
+          setHint('Erreur planification — tracé manuel conservé.');
+          redraw();
+        });
+        return;
+      }
       setHint('Itinéraire prêt. Ajustez la vitesse si besoin.');
       redraw();
     }

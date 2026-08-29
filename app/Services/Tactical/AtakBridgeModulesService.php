@@ -44,6 +44,26 @@ final class AtakBridgeModulesService
                 'description' => 'Affiche l’itinéraire actif (Route) comme tracé sur la carte.',
             ],
             [
+                'id' => 'geo_places',
+                'label' => 'Lieux et villes',
+                'description' => 'Remonte les localités Arma (villes, villages, repères) pour la recherche et la prédiction sur la carte.',
+            ],
+            [
+                'id' => 'geo_roads',
+                'label' => 'Réseau routier',
+                'description' => 'Échantillonne les routes du théâtre (nearRoads) pour alimenter la planification d’itinéraires web.',
+            ],
+            [
+                'id' => 'route_planning',
+                'label' => 'Planification d’itinéraire',
+                'description' => 'Active la planification road-aware côté Athena (graphe routier + waypoints via /api/atak/route/plan).',
+            ],
+            [
+                'id' => 'gps_navigation',
+                'label' => 'Navigation GPS',
+                'description' => 'Enrichit la position opérateur (cap, vitesse, ETA restant) pour les modules JS de navigation terrain.',
+            ],
+            [
                 'id' => 'jump',
                 'label' => 'Plans de saut HAHO / HALO',
                 'description' => 'Partage le plan de saut (point de largage, zone, trajet) vers la carte.',
