@@ -528,10 +528,32 @@
 .ds-alert-banners .ds-alert + .ds-alert {
   border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
-.ds-alert--on-dark.ds-alert--error { background: #3b0705; }
-.ds-alert--on-dark.ds-alert--success { background: #0d2b18; }
-.ds-alert--on-dark.ds-alert--warning { background: #3b2c08; }
-.ds-alert--on-dark.ds-alert--info { background: #071a33; }
+.ds-alert--on-dark.ds-alert--error {
+  background: #3b0705;
+  color: #fecaca;
+  box-shadow: inset 4px 0 0 0 #f87171;
+}
+.ds-alert--on-dark.ds-alert--success {
+  background: #0d2b18;
+  color: #bbf7d0;
+  box-shadow: inset 4px 0 0 0 #34d399;
+}
+.ds-alert--on-dark.ds-alert--warning {
+  background: #3b2c08;
+  color: #fde68a;
+  box-shadow: inset 4px 0 0 0 #fbbf24;
+}
+.ds-alert--on-dark.ds-alert--info {
+  background: #071a33;
+  color: #bfdbfe;
+  box-shadow: inset 4px 0 0 0 #60a5fa;
+}
+.ds-alert--on-dark .ds-alert__title {
+  color: #fff;
+}
+.ds-alert--on-dark p {
+  color: inherit;
+}
 
 /* Connexion : volet photo (inspiration split GD / DSFR) */
 .ds-page--split .athena-header {
