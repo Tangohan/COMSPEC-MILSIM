@@ -31,12 +31,6 @@ parameters:
 			path: app/Repositories/AtakAdvancedIntelligenceRepository.php
 
 		-
-			message: '#^Function run_atak_beta_registrations_migration not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Repositories/AtakBetaRegistrationRepository.php
-
-		-
 			message: '#^Function ensure_moderation_granular_sanctions_schema not found\.$#'
 			identifier: function.notFound
 			count: 1
@@ -71,18 +65,6 @@ parameters:
 			identifier: function.notFound
 			count: 1
 			path: app/Repositories/ReferralRepository.php
-
-		-
-			message: '#^Function ensure_tactical_briefing_slide_enrichment_schema not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Repositories/TacticalBriefingSlideCommentRepository.php
-
-		-
-			message: '#^Function ensure_tactical_briefing_slide_enrichment_schema not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Repositories/TacticalBriefingSlideRepository.php
 
 		-
 			message: '#^Function run_training_atak_course_for_tenant not found\.$#'

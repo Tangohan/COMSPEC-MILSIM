@@ -10,7 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\PersonnelCorrectionRequestRepository;
 use App\Repositories\UserRepository;
-use App\Services\AuthService;
+use App\Services\Auth\AuthService;
 use App\Services\Personnel\PersonnelCorrectionRequestService;
 use App\Services\Rbac\RbacService;
 
