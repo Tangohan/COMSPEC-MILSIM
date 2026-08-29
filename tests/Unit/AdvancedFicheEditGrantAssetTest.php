@@ -37,7 +37,8 @@ final class AdvancedFicheEditGrantAssetTest extends TestCase
         self::assertStringContainsString('advanced-fiche-edit-modal', $banner);
         self::assertStringContainsString('Ouvrir l’édition de ma fiche', $banner);
         self::assertStringContainsString("advanced_fiche_edit_banner.php", $layout);
-        self::assertGreaterThanOrEqual(2, substr_count($layout, 'advanced_fiche_edit_banner.php'));
+        self::assertSame(2, substr_count($layout, 'advanced_fiche_edit_banner.php'));
+        self::assertStringContainsString('empty($usesAdminSidebarShell)', $layout);
     }
 
     public function testAdminRoutesSidebarAndController(): void
