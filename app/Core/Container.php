@@ -73,6 +73,11 @@ class Container
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
             ),
+            \App\Services\Personnel\SeniorityPrePlatformService::class => new \App\Services\Personnel\SeniorityPrePlatformService(
+                self::get(\App\Repositories\SeniorityRepository::class),
+                new \App\Services\Personnel\SeniorityTenantDefaultsService(self::get(\App\Repositories\SeniorityRepository::class)),
+                self::get(UserRepository::class),
+            ),
             \App\Services\Platform\FeatureGateService::class => new \App\Services\Platform\FeatureGateService(
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),
@@ -566,6 +571,8 @@ class Container
             \App\Services\Cron\CronRunner::class => new \App\Services\Cron\CronRunner(
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\PersonnelProgressionCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\PersonnelCapabilityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\ModerationQuarantineExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RecruitmentRetroRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\HrWeeklyDigestCronJob::class),
@@ -874,6 +881,34 @@ class Container
                 self::get(\App\Repositories\TenantMatriculeConfigRepository::class),
                 self::get(\App\Repositories\PersonnelExtrasRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class)
+            ),
+            \App\Repositories\CallsignSequenceRepository::class => new \App\Repositories\CallsignSequenceRepository(),
+            \App\Repositories\PersonnelCareerEventRepository::class => new \App\Repositories\PersonnelCareerEventRepository(),
+            \App\Services\Personnel\CallsignSequenceService::class => new \App\Services\Personnel\CallsignSequenceService(
+                self::get(\App\Repositories\CallsignSequenceRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PersonnelCareerEventRepository::class),
+            ),
+            \App\Services\Personnel\PersonnelProgressionEvaluator::class => new \App\Services\Personnel\PersonnelProgressionEvaluator(
+                self::get(\App\Repositories\PersonnelCareerEventRepository::class),
+            ),
+            \App\Services\Personnel\QualificationCurrencyService::class => new \App\Services\Personnel\QualificationCurrencyService(
+                self::get(\App\Repositories\PersonnelQualificationRepository::class),
+                self::get(\App\Repositories\PersonnelCareerEventRepository::class),
+            ),
+            \App\Services\Personnel\OperationalCapabilityService::class => new \App\Services\Personnel\OperationalCapabilityService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Services\Personnel\QualificationCurrencyService::class),
+                self::get(\App\Repositories\PersonnelCareerEventRepository::class),
+            ),
+            \App\Services\Cron\Jobs\PersonnelProgressionCronJob::class => new \App\Services\Cron\Jobs\PersonnelProgressionCronJob(
+                self::get(\App\Services\Personnel\PersonnelProgressionEvaluator::class),
+            ),
+            \App\Services\Cron\Jobs\PersonnelCapabilityCronJob::class => new \App\Services\Cron\Jobs\PersonnelCapabilityCronJob(
+                self::get(\App\Services\Personnel\OperationalCapabilityService::class),
             ),
             \App\Services\Personnel\PersonnelCompletenessService::class => new \App\Services\Personnel\PersonnelCompletenessService(
                 self::get(\App\Repositories\PersonnelProfileRepository::class),

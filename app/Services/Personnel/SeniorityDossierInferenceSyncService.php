@@ -195,14 +195,21 @@ final class SeniorityDossierInferenceSyncService
             self::ACCEPTANCE_SEED_CODES,
             ['tenure_community'],
         )));
-        /* Couvrir aussi tout code catalogue ajouté au pack sans être listé ci-dessus. */
+        /* Couvrir aussi tout code catalogue ajouté au pack sans être listé ci-dessus.
+         * Les indicateurs « avant la plateforme » restent hors seed : saisie RH uniquement. */
         foreach (SeniorityTenantDefaultsService::listStandardPackCodes() as $packCode) {
+            if (SeniorityTenantDefaultsService::isPrePlatformManualCode($packCode)) {
+                continue;
+            }
             if (!in_array($packCode, $seedCodes, true)) {
                 $seedCodes[] = $packCode;
             }
         }
 
         foreach ($seedCodes as $code) {
+            if (SeniorityTenantDefaultsService::isPrePlatformManualCode($code)) {
+                continue;
+            }
             $defId = $this->seniorityRepository->findDefinitionIdByTenantAndCode($tenantId, $code);
             if ($defId === null) {
                 ++$stats['skipped_no_definition'];
