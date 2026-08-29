@@ -1335,8 +1335,14 @@ class PersonnelController
             }
         }
 
+        $rpFirstForIdentity = trim((string) $request->input('rp_first_name'));
+        $rpLastForIdentity = trim((string) $request->input('rp_last_name'));
+        $derivedCharacterName = trim($rpFirstForIdentity . ' ' . $rpLastForIdentity);
+
         $data = [
-            'character_name' => trim((string) $request->input('character_name')),
+            'character_name' => $derivedCharacterName !== ''
+                ? $derivedCharacterName
+                : trim((string) $request->input('character_name')),
             'callsign' => trim((string) $request->input('callsign')),
             'nickname_primary' => $this->normalizeReasonLabel((string) $request->input('nickname_primary'), 120),
             'nicknames_json' => json_encode(
@@ -1661,15 +1667,21 @@ class PersonnelController
                 $profileUpsert['language'] = trim((string) $request->input('civil_language')) ?: null;
             }
             $this->userProfileRepository->upsert((int) $target['id'], $profileUpsert);
+            $derivedDn = trim($firstName . ' ' . $lastName);
+            if ($derivedDn !== '') {
+                $this->userRepository->update((int) $target['id'], $tenantId, [
+                    'display_name' => $derivedDn,
+                ]);
+                if ($isSelf) {
+                    Session::set('display_name', $derivedDn);
+                }
+            }
         }
 
         if ($isSelf || $canStaffEdit) {
-            $mode = trim((string) $request->input('forum_label_mode')) ?: 'display_name';
-            if (!in_array($mode, ['display_name', 'callsign', 'character_name', 'forum_alias'], true)) {
-                $mode = 'display_name';
-            }
+            $mode = 'character_name';
             $displayUpsert = [
-                'forum_alias' => trim((string) $request->input('forum_alias')) ?: null,
+                'forum_alias' => null,
                 'forum_label_mode' => $mode,
                 'show_matricule_forum' => $request->input('show_matricule_forum') ? 1 : 0,
                 'show_grade_forum' => $request->input('show_grade_forum') ? 1 : 0,

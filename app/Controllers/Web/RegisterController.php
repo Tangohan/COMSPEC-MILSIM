@@ -84,7 +84,12 @@ final class RegisterController
         $email = strtolower(trim((string) $request->input('email')));
         $password = (string) $request->input('password');
         $confirm = (string) $request->input('password_confirmation');
-        $displayName = trim((string) $request->input('display_name'));
+        $firstName = trim((string) $request->input('first_name'));
+        $lastName = trim((string) $request->input('last_name'));
+        $displayName = trim($firstName . ' ' . $lastName);
+        if ($displayName === '') {
+            $displayName = trim((string) $request->input('display_name'));
+        }
         $steamProfile = trim((string) $request->input('steam_profile'));
         $discordHandle = trim((string) $request->input('discord_handle'));
         if (function_exists('mb_substr')) {
@@ -97,6 +102,8 @@ final class RegisterController
 
         $oldPayload = [
             'email' => $email,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'display_name' => $displayName,
             'steam_profile' => $steamProfile,
             'discord_handle' => $discordHandle,
@@ -114,6 +121,8 @@ final class RegisterController
                 'email' => $email,
                 'password' => $password,
                 'password_confirmation' => $confirm,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
                 'display_name' => $displayName,
                 'steam_profile' => $steamProfile,
                 'discord_handle' => $discordHandle,
@@ -122,6 +131,8 @@ final class RegisterController
                 'email' => 'required|email',
                 'password' => 'required|min:8',
                 'password_confirmation' => 'required',
+                'first_name' => 'required|min:1|max:100',
+                'last_name' => 'required|min:1|max:100',
                 'display_name' => 'required|min:2|max:100',
                 'steam_profile' => 'max:512',
                 'discord_handle' => 'max:120',
@@ -226,10 +237,19 @@ final class RegisterController
             }
             $this->personnelProfileRepository->ensureRecord($userId);
             $this->userProfileRepository->ensureRow($userId);
+            $profilePatch = [
+                'first_name' => $firstName !== '' ? $firstName : null,
+                'last_name' => $lastName !== '' ? $lastName : null,
+            ];
             if ($discordHandle !== '') {
-                $this->userProfileRepository->upsert($userId, [
-                    'discord_handle' => $discordHandle,
+                $profilePatch['discord_handle'] = $discordHandle;
+            }
+            $this->userProfileRepository->upsert($userId, $profilePatch);
+            try {
+                $this->personnelProfileRepository->update($userId, [
+                    'character_name' => $displayName,
                 ]);
+            } catch (Throwable) {
             }
             if ($resolvedSteamId !== null) {
                 $steamPatch = ['steam_id' => $resolvedSteamId];

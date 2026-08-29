@@ -194,30 +194,25 @@ $editValidTabIds = implode(',', array_map(
               <h3 class="mb-4 border-b border-emerald-100 pb-2 text-xs font-black uppercase tracking-wider text-emerald-900/70">Identité en jeu</h3>
               <div class="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label for="rp_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom (personnage)</label>
-                  <input type="text" name="rp_first_name" id="rp_first_name" value="<?= htmlspecialchars((string) ($up['first_name'] ?? '')) ?>" placeholder="Optionnel" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
-                  <p class="mt-1 text-[11px] text-slate-500">Prénom du personnage, tel qu’il figure sur le dossier.</p>
+                  <label for="rp_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom</label>
+                  <input type="text" name="rp_first_name" id="rp_first_name" value="<?= htmlspecialchars((string) ($up['first_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
+                  <p class="mt-1 text-[11px] text-slate-500">Prénom du personnage — identité unique (dossier, annuaire, forum).</p>
                 </div>
                 <div>
-                  <label for="rp_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom (personnage)</label>
-                  <input type="text" name="rp_last_name" id="rp_last_name" value="<?= htmlspecialchars((string) ($up['last_name'] ?? '')) ?>" placeholder="Optionnel" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
-                  <p class="mt-1 text-[11px] text-slate-500">Nom de famille du personnage. N’efface pas l’indicatif en mission.</p>
+                  <label for="rp_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom</label>
+                  <input type="text" name="rp_last_name" id="rp_last_name" value="<?= htmlspecialchars((string) ($up['last_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
+                  <p class="mt-1 text-[11px] text-slate-500">Nom du personnage. Remplace l’ancien « nom affiché » / « nom de scène ».</p>
                 </div>
                 <div class="md:col-span-2">
                   <label for="rp_bio" class="mb-1 block text-xs font-bold text-slate-600">Présentation du personnage</label>
                   <textarea name="rp_bio" id="rp_bio" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Quelques mots sur le personnage, son parcours, son ton…"><?= htmlspecialchars((string) ($up['bio'] ?? '')) ?></textarea>
                 </div>
                 <div>
-                  <label for="character_name" class="mb-1 block text-xs font-bold text-slate-600">Nom de scène (optionnel)</label>
-                  <input type="text" name="character_name" id="character_name" value="<?= htmlspecialchars($p['character_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="<?= htmlspecialchars((string) ($targetUser['display_name'] ?? 'Nom de scène'), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" maxlength="150">
-                  <p class="mt-1 text-[11px] text-slate-500">Complément au prénom et au nom, si le personnage a un nom de scène. N’indiquez pas le nom d’un autre membre.</p>
-                </div>
-                <div>
                   <label for="callsign" class="mb-1 block text-xs font-bold text-slate-600">Indicatif</label>
                   <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars($p['callsign'] ?? $targetUser['callsign'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
                   <p class="mt-1 text-[11px] text-slate-500">Surnom radio / callsign utilisé en mission.</p>
                 </div>
-                <div class="md:col-span-2">
+                <div>
                   <label for="motto" class="mb-1 block text-xs font-bold text-slate-600">Devise</label>
                   <input type="text" name="motto" id="motto" value="<?= htmlspecialchars((string) ($p['motto'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
                 </div>
@@ -702,25 +697,10 @@ $editValidTabIds = implode(',', array_map(
           <div class="space-y-6 p-6">
             <div class="grid gap-4 md:grid-cols-2">
               <div>
-                <label for="forum_alias" class="mb-1 block text-xs font-bold text-slate-600">Pseudo forum (optionnel)</label>
-                <input type="text" name="forum_alias" id="forum_alias" value="<?= htmlspecialchars((string) ($d['forum_alias'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="80" placeholder="Si vide : selon le mode ci-dessous">
-              </div>
-              <div>
-                <label for="forum_label_mode" class="mb-1 block text-xs font-bold text-slate-600">Mode d’étiquette forum (si pseudo vide)</label>
-                <select name="forum_label_mode" id="forum_label_mode" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                  <?php
-                  $mode = (string) ($d['forum_label_mode'] ?? 'display_name');
-                  $modes = [
-                      'display_name' => 'Nom d’affichage du compte',
-                      'callsign' => 'Indicatif',
-                      'character_name' => 'Nom du personnage',
-                      'forum_alias' => 'Pseudo forum uniquement (si vide : nom du compte)',
-                  ];
-                  foreach ($modes as $k => $label) {
-                      echo '<option value="' . htmlspecialchars($k) . '"' . ($mode === $k ? ' selected' : '') . '>' . htmlspecialchars($label) . '</option>';
-                  }
-                  ?>
-                </select>
+                <label class="mb-1 block text-xs font-bold text-slate-600">Identité forum</label>
+                <input type="hidden" name="forum_alias" value="">
+                <input type="hidden" name="forum_label_mode" value="character_name">
+                <p class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">Le forum affiche le <strong>prénom + nom</strong> du personnage. Plus de pseudo séparé.</p>
               </div>
             </div>
             <?php if (!empty($forumOrgRoleChoices)): ?>

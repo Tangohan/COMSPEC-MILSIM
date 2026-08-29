@@ -1188,6 +1188,8 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/discord-questions/{id}/delete', [AdminRecruitmentDiscordQuestionsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/suivi', [AdminRecruitmentsController::class, 'redirectCandidatePortalSuivi'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboarding'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboardingSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/portal-options', [AdminRecruitmentsController::class, 'portalOptionsSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/piece/{attachmentId}', [AdminRecruitmentsController::class, 'portalAttachmentDownload'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/decision', [AdminRecruitmentsController::class, 'decision'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

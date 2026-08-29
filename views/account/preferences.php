@@ -177,14 +177,23 @@ require base_path('views/partials/account/shell_open.php');
         <div class="account-hub__panel-head">
             <p class="account-hub__panel-kicker">Profil</p>
             <h2 class="account-hub__panel-title">Profil portail &amp; liaisons</h2>
-            <p class="account-hub__panel-desc">Nom affiché, prénom et nom du personnage, indicatif et liens utiles.</p>
+            <p class="account-hub__panel-desc">Prénom et nom du personnage (une seule identité), indicatif et liens utiles.</p>
         </div>
         <div class="account-hub__panel-body">
             <div class="account-hub__form-grid">
                 <div>
-                    <label class="account-hub__label" for="display_name">Nom d’affichage</label>
-                    <input type="text" name="display_name" id="display_name" value="<?= htmlspecialchars((string) ($user['display_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100">
-                    <?php if (!empty($errors['display_name'])): foreach ($errors['display_name'] as $e): ?>
+                    <label class="account-hub__label" for="first_name">Prénom</label>
+                    <input type="text" name="first_name" id="first_name" value="<?= htmlspecialchars((string) ($profile['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off" required>
+                    <p class="account-hub__hint">Prénom du personnage — utilisé partout (dossier, annuaire, forum).</p>
+                    <?php if (!empty($errors['first_name'])): foreach ($errors['first_name'] as $e): ?>
+                    <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endforeach; endif; ?>
+                </div>
+                <div>
+                    <label class="account-hub__label" for="last_name">Nom</label>
+                    <input type="text" name="last_name" id="last_name" value="<?= htmlspecialchars((string) ($profile['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off" required>
+                    <p class="account-hub__hint">Nom du personnage. Remplace l’ancien « nom affiché » / « nom de scène ».</p>
+                    <?php if (!empty($errors['last_name'])): foreach ($errors['last_name'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
                 </div>
@@ -193,22 +202,6 @@ require base_path('views/partials/account/shell_open.php');
                     <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars((string) ($user['callsign'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="50">
                     <p class="account-hub__hint">Utilisé sur le portail et pour les outils cartographiques.</p>
                     <?php if (!empty($errors['callsign'])): foreach ($errors['callsign'] as $e): ?>
-                    <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php endforeach; endif; ?>
-                </div>
-                <div>
-                    <label class="account-hub__label" for="first_name">Prénom (personnage)</label>
-                    <input type="text" name="first_name" id="first_name" value="<?= htmlspecialchars((string) ($profile['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off">
-                    <p class="account-hub__hint">Prénom du personnage, tel qu’il figure sur le dossier.</p>
-                    <?php if (!empty($errors['first_name'])): foreach ($errors['first_name'] as $e): ?>
-                    <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php endforeach; endif; ?>
-                </div>
-                <div>
-                    <label class="account-hub__label" for="last_name">Nom (personnage)</label>
-                    <input type="text" name="last_name" id="last_name" value="<?= htmlspecialchars((string) ($profile['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off">
-                    <p class="account-hub__hint">Nom de famille du personnage. N’efface pas l’indicatif en mission.</p>
-                    <?php if (!empty($errors['last_name'])): foreach ($errors['last_name'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
                 </div>
@@ -232,13 +225,9 @@ require base_path('views/partials/account/shell_open.php');
                     <?php if ($steamWebConfigured): ?>
                     <div style="margin-top:1rem;padding:1rem;border-radius:.75rem;border:1px solid #e2e8f0;background:#fff">
                         <p class="account-hub__stat-label">Synchronisation du profil public</p>
-                        <p class="account-hub__hint">Met à jour la photo (et éventuellement le nom d’affichage). Les autres champs de cette page ne sont enregistrés qu’avec « Enregistrer tout ».</p>
-                        <label class="account-hub__check" style="margin-top:.85rem;cursor:pointer">
-                            <input type="checkbox" name="apply_steam_display_name" value="1">
-                            <span style="font-size:.8125rem;line-height:1.45"><strong>Aligner le nom d’affichage</strong> sur le pseudo public Steam.</span>
-                        </label>
+                        <p class="account-hub__hint">Met à jour la photo. Les autres champs de cette page ne sont enregistrés qu’avec « Enregistrer tout ».</p>
                         <button type="submit" formaction="<?= htmlspecialchars(url('account/steam-sync'), ENT_QUOTES, 'UTF-8') ?>" formmethod="post" formnovalidate class="account-hub__btn account-hub__btn--ink" style="margin-top:.85rem">
-                            Synchroniser photo &amp; profil Steam
+                            Synchroniser photo Steam
                         </button>
                     </div>
                     <?php else: ?>

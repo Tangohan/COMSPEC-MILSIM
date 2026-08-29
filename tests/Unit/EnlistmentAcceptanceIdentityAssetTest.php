@@ -22,10 +22,10 @@ final class EnlistmentAcceptanceIdentityAssetTest extends TestCase
 
         self::assertStringContainsString('applyAcceptedIdentityFromEnlistment', $src);
         self::assertStringContainsString('EnlistmentAcceptedIdentity', $src);
+        self::assertStringContainsString('completeAcceptanceOnboarding', $src);
         self::assertStringContainsString('$srcEmail !== $wantEmail', $src);
         self::assertStringContainsString('$cloneOverrides', $src);
         self::assertStringContainsString('identityOverrides', $clone);
         self::assertStringContainsString('distinctCharacterLabel', $tableau);
-        self::assertStringContainsString('Nom de personnage', $tableau);
     }
 }

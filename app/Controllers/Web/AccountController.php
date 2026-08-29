@@ -315,14 +315,13 @@ class AccountController
                 return Response::redirect(url('account/preferences'));
             }
             $v = new Validator($request->all(), [
-                'display_name' => 'max:100',
                 'callsign' => 'max:50',
                 'steam_id' => 'max:512',
                 'timezone' => 'max:50',
                 'language' => 'max:10',
                 'profile_slug' => 'max:40',
-                'first_name' => 'max:100',
-                'last_name' => 'max:100',
+                'first_name' => 'required|max:100',
+                'last_name' => 'required|max:100',
             ]);
             $themeIn = $request->input('ui_theme');
             $densityIn = $request->input('ui_density');
@@ -352,8 +351,11 @@ class AccountController
 
                     return Response::redirect(url('account/preferences'));
                 }
+                $firstName = trim((string) $request->input('first_name'));
+                $lastName = trim((string) $request->input('last_name'));
+                $derivedDisplay = trim($firstName . ' ' . $lastName);
                 $updateUser = [
-                    'display_name' => trim((string) $request->input('display_name')),
+                    'display_name' => $derivedDisplay !== '' ? $derivedDisplay : null,
                     'callsign' => trim((string) $request->input('callsign')),
                     'steam_id' => $resolvedSteam,
                 ];
@@ -381,14 +383,19 @@ class AccountController
                 if (!\App\Services\I18n\LocaleService::isSupported($language)) {
                     $language = 'fr';
                 }
-                $firstName = trim((string) $request->input('first_name'));
-                $lastName = trim((string) $request->input('last_name'));
                 $this->userProfileRepository->upsert($uid, [
                     'first_name' => $firstName !== '' ? $firstName : null,
                     'last_name' => $lastName !== '' ? $lastName : null,
                     'timezone' => trim((string) $request->input('timezone')),
                     'language' => $language,
                 ]);
+                try {
+                    $this->personnelProfileRepository->ensureRecord($uid);
+                    $this->personnelProfileRepository->update($uid, [
+                        'character_name' => $derivedDisplay !== '' ? $derivedDisplay : '',
+                    ]);
+                } catch (\Throwable) {
+                }
                 (new \App\Services\I18n\LocaleService())->setUserLocale($language, false);
                 if (!empty($vUi['normalized'])) {
                     $this->userUiPreferencesRepository->upsert($uid, $tenantId, $vUi['normalized']);
@@ -400,7 +407,7 @@ class AccountController
                     $enabled = isset($notifInput[$key]);
                     $this->userNotificationPreferencesRepository->setEnabled($uid, $tenantId, 'email', $key, $enabled);
                 }
-                Session::set('display_name', trim((string) $request->input('display_name')));
+                Session::set('display_name', $derivedDisplay);
                 Session::set('callsign', trim((string) $request->input('callsign')));
                 Session::flash('success', 'Préférences enregistrées.');
                 return Response::redirect(url('account/preferences'));

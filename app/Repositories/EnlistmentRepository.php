@@ -585,7 +585,16 @@ class EnlistmentRepository
     }
 
     /** @var list<string> */
-    private const PIPELINE_STAGES = ['submitted', 'interview_scheduled', 'on_hold', 'accepted', 'rejected', 'blocked', 'cancelled'];
+    private const PIPELINE_STAGES = [
+        'submitted',
+        'interview_scheduled',
+        'on_hold',
+        'acceptance_onboarding',
+        'accepted',
+        'rejected',
+        'blocked',
+        'cancelled',
+    ];
 
     /**
      * Étape de pipeline explicite (visibilité recrutement), en complément de `status`.
@@ -600,6 +609,34 @@ class EnlistmentRepository
             'UPDATE enlistments SET pipeline_stage = ? WHERE tenant_id = ? AND id = ?'
         );
         $stmt->execute([$stage, $tenantId, $id]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Met à jour l’identité du dossier (prénom / nom / indicatif) avant provisionnement.
+     */
+    public function updateCandidateIdentity(
+        int $tenantId,
+        int $id,
+        string $firstName,
+        string $lastName,
+        ?string $callsign = null
+    ): bool {
+        $firstName = mb_substr(trim($firstName), 0, 100);
+        $lastName = mb_substr(trim($lastName), 0, 100);
+        if ($firstName === '' || $lastName === '') {
+            return false;
+        }
+        $callsign = $callsign !== null ? mb_substr(trim($callsign), 0, 64) : null;
+        if ($callsign === '') {
+            $callsign = null;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE enlistments SET first_name = ?, last_name = ?, callsign = ?, updated_at = NOW()
+             WHERE tenant_id = ? AND id = ?'
+        );
+        $stmt->execute([$firstName, $lastName, $callsign, $tenantId, $id]);
 
         return $stmt->rowCount() > 0;
     }

@@ -1561,7 +1561,11 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Services\Admin\AdminAuditService::class),
-                self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Services\Steam\SteamWebApiService::class),
+                self::get(\App\Repositories\PersonnelAssignmentRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Repositories\UnitRepository::class)
             ),
             \App\Services\Recruitment\EnlistmentPortalAttachmentService::class => new \App\Services\Recruitment\EnlistmentPortalAttachmentService(
                 self::get(\App\Repositories\EnlistmentRepository::class)
@@ -1591,7 +1595,10 @@ class Container
                 self::get(\App\Repositories\EnlistmentRecruitmentEngagementRepository::class),
                 self::get(\App\Services\Analytics\AnalyticsEventService::class),
                 self::get(\App\Repositories\RecruitmentTeamWallRepository::class),
-                self::get(\App\Services\Recruitment\EnlistmentCandidatePortalJourneyService::class)
+                self::get(\App\Services\Recruitment\EnlistmentCandidatePortalJourneyService::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class)
             ),
             \App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController::class => new \App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController(
                 self::get(\App\Repositories\RecruitmentDiscordQuestionRepository::class),

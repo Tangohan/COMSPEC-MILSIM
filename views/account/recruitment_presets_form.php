@@ -70,16 +70,16 @@ require base_path('views/partials/account/shell_open.php');
             <div class="account-hub__panel-head">
                 <p class="account-hub__panel-kicker">Personnage</p>
                 <h2 class="account-hub__panel-title">Personnage &amp; rôle-play</h2>
-                <p class="account-hub__panel-desc">L’identité personnage est surtout prénom + nom (et naissance / nationalité). Le nom de scène est optionnel.</p>
+                <p class="account-hub__panel-desc">L’identité personnage se limite au prénom et au nom (plus de nom de scène séparé).</p>
             </div>
             <div class="account-hub__panel-body space-y-4">
             <div class="account-hub__form-grid account-hub__form-grid--2">
                 <div>
-                    <label class="account-hub__label">Prénom (personnage)</label>
+                    <label class="account-hub__label">Prénom</label>
                     <input type="text" name="rp_first_name" maxlength="100" value="<?= htmlspecialchars((string) ($rp['first_name'] ?? '')) ?>" autocomplete="off">
                 </div>
                 <div>
-                    <label class="account-hub__label">Nom (personnage)</label>
+                    <label class="account-hub__label">Nom</label>
                     <input type="text" name="rp_last_name" maxlength="100" value="<?= htmlspecialchars((string) ($rp['last_name'] ?? '')) ?>" autocomplete="off">
                 </div>
                 <div>
@@ -89,10 +89,6 @@ require base_path('views/partials/account/shell_open.php');
                 <div>
                     <label class="account-hub__label">Nationalité (personnage)</label>
                     <input type="text" name="rp_nationality" maxlength="100" value="<?= htmlspecialchars((string) ($rp['nationality'] ?? '')) ?>" autocomplete="off">
-                </div>
-                <div style="grid-column:1/-1">
-                    <label class="account-hub__label">Nom de scène (optionnel)</label>
-                    <input type="text" name="rp_character_name" maxlength="200" value="<?= htmlspecialchars((string) ($rp['character_name'] ?? '')) ?>" placeholder="Prioritaire sur prénom + nom si renseigné">
                 </div>
             </div>
             <div>

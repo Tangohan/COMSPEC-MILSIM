@@ -122,7 +122,14 @@ $val = static function (array $old, string $key, string $default = '') : string 
             }
             return true;
         },
+        syncDisplayName() {
+            const first = (document.getElementById('first_name')?.value || '').trim();
+            const last = (document.getElementById('last_name')?.value || '').trim();
+            const dn = document.getElementById('display_name');
+            if (dn) dn.value = (first + ' ' + last).trim();
+        },
         next() {
+            this.syncDisplayName();
             if (!this.validateStep(this.step)) return;
             this.step = Math.min(2, this.step + 1);
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -132,6 +139,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         onSubmit(e) {
+            this.syncDisplayName();
             if (this.step !== 2) {
                 e.preventDefault();
                 this.next();
@@ -218,7 +226,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
                     <div x-show="step === 1" x-ref="step1" x-transition.opacity.duration.200ms>
                         <p class="mb-1 text-sm font-bold text-white"><?= htmlspecialchars(__('auth.register_access'), ENT_QUOTES, 'UTF-8') ?></p>
                         <p class="mb-5 text-xs leading-relaxed text-white/45">
-                            E-mail de connexion, pseudo visible et mot de passe.
+                            E-mail de connexion, prénom et nom du personnage, mot de passe.
                             <?php if ($prefillSlug !== ''): ?>
                                 Espace ciblé : <span class="font-semibold text-emerald-400"><?= htmlspecialchars($prefillSlug, ENT_QUOTES, 'UTF-8') ?></span>.
                             <?php else: ?>
@@ -241,13 +249,24 @@ $val = static function (array $old, string $key, string $default = '') : string 
                                        value="<?= $val($old, 'email') ?>"
                                        class="login-field">
                             </div>
-                            <div>
-                                <label class="login-label" for="display_name"><?= htmlspecialchars(__('auth.register_display_name'), ENT_QUOTES, 'UTF-8') ?></label>
-                                <input id="display_name" type="text" name="display_name" required minlength="2" maxlength="100"
-                                       autocomplete="nickname" placeholder="Visible par les autres membres"
-                                       value="<?= $val($old, 'display_name') ?>"
-                                       class="login-field">
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label class="login-label" for="first_name">Prénom</label>
+                                    <input id="first_name" type="text" name="first_name" required minlength="1" maxlength="100"
+                                           autocomplete="given-name" placeholder="Prénom du personnage"
+                                           value="<?= $val($old, 'first_name') ?>"
+                                           class="login-field">
+                                </div>
+                                <div>
+                                    <label class="login-label" for="last_name">Nom</label>
+                                    <input id="last_name" type="text" name="last_name" required minlength="1" maxlength="100"
+                                           autocomplete="family-name" placeholder="Nom du personnage"
+                                           value="<?= $val($old, 'last_name') ?>"
+                                           class="login-field">
+                                </div>
                             </div>
+                            <p class="text-xs text-white/35">Prénom et nom du personnage — une seule identité (plus de « nom affiché » séparé).</p>
+                            <input type="hidden" name="display_name" id="display_name" value="<?= $val($old, 'display_name') ?>">
                             <div>
                                 <label class="login-label" for="discord_handle">Discord <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
                                 <input id="discord_handle" type="text" name="discord_handle" maxlength="120" autocomplete="off"

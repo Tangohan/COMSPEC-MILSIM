@@ -12,14 +12,18 @@ use App\Repositories\EnlistmentCannedMessageRepository;
 use App\Repositories\EnlistmentRecruitmentEngagementRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\EnlistmentTimelineRepository;
+use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\RecruitmentTeamWallRepository;
+use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
 use App\Services\Analytics\AnalyticsEventService;
 use App\Services\Analytics\AnalyticsSubjectType;
+use App\Services\Documents\DocumentAccessService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Recruitment\EnlistmentAcceptanceProvisioningService;
@@ -27,6 +31,7 @@ use App\Services\Recruitment\EnlistmentCandidatePortalJourneyService;
 use App\Services\Recruitment\EnlistmentPortalAttachmentService;
 use App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator;
 use App\Services\Recruitment\TenantRecruitmentSettings;
+use App\Support\EnlistmentAcceptedIdentity;
 
 class AdminRecruitmentsController
 {
@@ -45,6 +50,9 @@ class AdminRecruitmentsController
         private AnalyticsEventService $analyticsEventService,
         private RecruitmentTeamWallRepository $recruitmentTeamWallRepository,
         private EnlistmentCandidatePortalJourneyService $candidatePortalJourneyService,
+        private RoleRepository $roleRepository = new RoleRepository(),
+        private UnitRepository $unitRepository = new UnitRepository(),
+        private PersonnelJobRoleRepository $personnelJobRoleRepository = new PersonnelJobRoleRepository(),
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -427,6 +435,7 @@ class AdminRecruitmentsController
             'enlistmentTimelineActorLabels' => $timelineActorLabels,
             'enlistmentTimelineTableMissing' => !$this->enlistmentTimelineRepository->tableExists(),
             'membershipRepairHint' => $this->enlistmentAcceptanceProvisioningService->membershipRepairHint((int) $tenantId, $row),
+            'needsAcceptanceOnboarding' => $this->enlistmentAcceptanceProvisioningService->needsAcceptanceOnboarding($row),
             'linkedRecruitmentOpening' => $linkedOpening,
             'communitySlug' => $communitySlug,
             'enlistmentSlaHours' => $slaHours,
@@ -994,6 +1003,13 @@ class AdminRecruitmentsController
             return Response::redirect(url('back-office/recruitments'));
         }
 
+        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+        if ($row && $this->enlistmentAcceptanceProvisioningService->needsAcceptanceOnboarding($row)) {
+            Session::flash('info', 'Complétez d’abord le parcours d’intégration (rôles, unité, Steam).');
+
+            return Response::redirect(url('back-office/recruitments/' . $id . '/onboarding'));
+        }
+
         $result = $this->enlistmentAcceptanceProvisioningService->repairAcceptedMembership((int) $tenantId, $id, $actorId);
         if (!$result['ok']) {
             Session::flash('error', $result['message'] ?? 'Finalisation impossible.');
@@ -1013,6 +1029,192 @@ class AdminRecruitmentsController
                 $extra !== '' ? $extra : 'Action « forcer le rattachement » enregistrée pour ce dossier.'
             );
         }
+
+        return Response::redirect($this->recruitmentDossierShowUrl($id));
+    }
+
+    public function onboarding(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+        if (!$row || (string) ($row['status'] ?? '') !== 'reviewed') {
+            Session::flash('error', 'Le parcours d’intégration n’est disponible qu’après acceptation.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+
+        $linkedOpening = null;
+        $roid = (int) ($row['recruitment_opening_id'] ?? 0);
+        if ($roid > 0 && $this->recruitmentOpeningRepository->tablesExist()) {
+            $linkedOpening = $this->recruitmentOpeningRepository->findByIdForTenant($roid, (int) $tenantId);
+        }
+
+        $submitterId = (int) ($row['submitter_user_id'] ?? 0);
+        $linkedUser = $submitterId > 0 ? $this->userRepository->findById($submitterId, (int) $tenantId) : null;
+        $existingSteam = is_array($linkedUser) ? trim((string) ($linkedUser['steam_id'] ?? '')) : '';
+        $steamProfilePrefill = $existingSteam !== ''
+            ? ('https://steamcommunity.com/profiles/' . rawurlencode($existingSteam))
+            : '';
+
+        $rp = is_array($row['recruitment_rp_json'] ?? null) ? $row['recruitment_rp_json'] : [];
+        $first = trim((string) ($row['first_name'] ?? ''));
+        $last = trim((string) ($row['last_name'] ?? ''));
+        if (($first === '' || $first === '—') && trim((string) ($rp['first_name'] ?? '')) !== '') {
+            $first = trim((string) $rp['first_name']);
+        }
+        if (($last === '' || $last === '—') && trim((string) ($rp['last_name'] ?? '')) !== '') {
+            $last = trim((string) $rp['last_name']);
+        }
+        $characterName = trim((string) ($rp['character_name'] ?? ''));
+        if ($characterName !== '' && ($first === '' || $first === '—' || $last === '' || $last === '—')) {
+            $parts = preg_split('/\s+/u', $characterName, 2) ?: [];
+            if (($first === '' || $first === '—') && isset($parts[0])) {
+                $first = (string) $parts[0];
+            }
+            if (($last === '' || $last === '—') && isset($parts[1])) {
+                $last = (string) $parts[1];
+            }
+        }
+        if ($first === '—') {
+            $first = '';
+        }
+        if ($last === '—') {
+            $last = '';
+        }
+
+        $defaultUnitId = (int) ($linkedOpening['unit_id'] ?? 0);
+        $defaultJobRoleId = (int) ($linkedOpening['personnel_job_role_id'] ?? 0);
+        $memberRoleId = $this->roleRepository->getIdBySlug((int) $tenantId, 'member');
+        $selectedRoleIds = [];
+        if ($submitterId > 0) {
+            $selectedRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($submitterId);
+        }
+        if ($selectedRoleIds === [] && $memberRoleId) {
+            $selectedRoleIds = [$memberRoleId];
+        }
+
+        $jobRoleOptions = [];
+        try {
+            if ($this->personnelJobRoleRepository->tablesExist()) {
+                $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForSelect((int) $tenantId);
+            }
+        } catch (\Throwable) {
+            $jobRoleOptions = [];
+        }
+
+        $navCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
+        $needsOnboarding = $this->enlistmentAcceptanceProvisioningService->needsAcceptanceOnboarding($row);
+
+        return Response::view('layout.recruitment_lms', [
+            'content' => 'admin.recruitments.onboarding',
+            'title' => 'Intégration — candidature #' . $id,
+            'recruitmentLmsTitle' => 'Intégration #' . $id,
+            'enlistment' => $row,
+            'onboardingPrefill' => [
+                'first_name' => $first,
+                'last_name' => $last,
+                'callsign' => trim((string) ($row['callsign'] ?? '')),
+                'steam_profile' => $steamProfilePrefill,
+                'unit_id' => $defaultUnitId,
+                'personnel_job_role_id' => $defaultJobRoleId,
+                'role_ids' => $selectedRoleIds,
+                'clearance_level' => '',
+            ],
+            'orgRoles' => $this->roleRepository->forTenantOrganization((int) $tenantId),
+            'units' => $this->unitRepository->allForTenant((int) $tenantId),
+            'jobRoleOptions' => $jobRoleOptions,
+            'clearanceLevels' => DocumentAccessService::getClassificationLevelLabels(),
+            'linkedRecruitmentOpening' => $linkedOpening,
+            'linkedUser' => $linkedUser,
+            'needsAcceptanceOnboarding' => $needsOnboarding,
+            'formDisplayNameHint' => EnlistmentAcceptedIdentity::formDisplayName($row),
+            'recruitmentSidebarCounts' => $navCounts,
+            'recruitmentAdminNav' => 'queue',
+            'showPortalFooter' => false,
+            'lmsExtraHead' => '<link rel="stylesheet" href="' . htmlspecialchars(asset_url('assets/css/recruitment_onboarding.css'), ENT_QUOTES, 'UTF-8') . '">',
+        ]);
+    }
+
+    public function onboardingSave(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost()) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $actorId = (int) Session::get('user_id');
+        if ($id < 1 || $actorId < 1) {
+            Session::flash('error', 'Action impossible.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+
+        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+        if (!$row || (string) ($row['status'] ?? '') !== 'reviewed') {
+            Session::flash('error', 'Dossier introuvable ou non accepté.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+
+        $roleIdsRaw = $request->input('role_ids', []);
+        if (!is_array($roleIdsRaw)) {
+            $roleIdsRaw = [];
+        }
+
+        $options = [
+            'first_name' => trim((string) $request->input('first_name', '')),
+            'last_name' => trim((string) $request->input('last_name', '')),
+            'callsign' => trim((string) $request->input('callsign', '')),
+            'steam_profile' => trim((string) $request->input('steam_profile', '')),
+            'unit_id' => (int) $request->input('unit_id', 0),
+            'personnel_job_role_id' => (int) $request->input('personnel_job_role_id', 0),
+            'role_ids' => $roleIdsRaw,
+            'clearance_level' => trim((string) $request->input('clearance_level', '')),
+            'assignment_label' => trim((string) $request->input('assignment_label', '')),
+        ];
+
+        $result = $this->enlistmentAcceptanceProvisioningService->completeAcceptanceOnboarding(
+            (int) $tenantId,
+            $id,
+            $actorId,
+            $options
+        );
+
+        if (!$result['ok']) {
+            Session::flash('error', $result['message'] ?? 'Intégration impossible.');
+
+            return Response::redirect(url('back-office/recruitments/' . $id . '/onboarding'));
+        }
+
+        $extra = trim((string) ($result['message'] ?? ''));
+        $steamNote = !empty($result['steam_id'])
+            ? ' Profil Steam lié' . (!empty($result['steam_synced']) ? ' (avatar synchronisé)' : '') . '.'
+            : '';
+        Session::flash(
+            'success',
+            'Intégration terminée : compte membre prêt.' . $steamNote . ($extra !== '' ? ' ' . $extra : '')
+        );
+        $this->enlistmentTimelineRepository->logAdhesionStep(
+            (int) $tenantId,
+            $id,
+            $actorId,
+            'Parcours d’intégration terminé',
+            'Identité, rôles d’accès, affectation et profil Steam enregistrés.'
+            . ($extra !== '' ? "\n" . $extra : '')
+            . (!empty($result['steam_id']) ? "\nSteamID : " . (string) $result['steam_id'] : '')
+        );
 
         return Response::redirect($this->recruitmentDossierShowUrl($id));
     }
@@ -1342,10 +1544,10 @@ class AdminRecruitmentsController
         $this->enlistmentRepository->updatePipelineStage(
             (int) $tenantId,
             $id,
-            $map[$action] === 'reviewed' ? 'accepted' : $map[$action]
+            $map[$action] === 'reviewed' ? 'acceptance_onboarding' : $map[$action]
         );
         $messages = [
-            'reviewed' => 'Candidature acceptée.',
+            'reviewed' => 'Candidature acceptée. Complétez maintenant l’intégration du nouveau membre.',
             'rejected' => 'Candidature refusée.',
             'blocked' => 'Candidature refusée — personne marquée comme non admise (interdit).',
         ];
@@ -1362,40 +1564,15 @@ class AdminRecruitmentsController
         }
 
         if ($ok && $map[$action] === 'reviewed') {
-            $provision = $this->enlistmentAcceptanceProvisioningService->provisionAfterAccept(
+            $this->enlistmentTimelineRepository->logAdhesionStep(
                 (int) $tenantId,
                 $id,
                 $userId,
-                $comment
+                'Parcours d’intégration ouvert',
+                'Le recruteur doit choisir l’identité, le profil Steam, les rôles d’accès et l’affectation avant de finaliser le compte membre.'
             );
-            if (!$provision['ok'] && $provision['message'] !== null && $provision['message'] !== '') {
-                Session::flash('error', $provision['message']);
-                $this->enlistmentTimelineRepository->logAdhesionStep(
-                    (int) $tenantId,
-                    $id,
-                    $userId,
-                    'Synchronisation du compte : point d’attention',
-                    (string) $provision['message']
-                );
-            } elseif ($provision['message'] !== null && $provision['message'] !== '') {
-                $modSuffix = $decisionCommentModerated ? ' Le commentaire n’a pas été conservé (filtre portail).' : '';
-                Session::flash('success', 'Candidature acceptée. ' . (string) $provision['message'] . $modSuffix);
-                $this->enlistmentTimelineRepository->logAdhesionStep(
-                    (int) $tenantId,
-                    $id,
-                    $userId,
-                    'Synchronisation du compte membre',
-                    (string) $provision['message']
-                );
-            } else {
-                $this->enlistmentTimelineRepository->logAdhesionStep(
-                    (int) $tenantId,
-                    $id,
-                    $userId,
-                    'Synchronisation du compte membre',
-                    'Les étapes automatiques (compte, rôle, messages) se sont déroulées sans message d’alerte particulier.'
-                );
-            }
+
+            return Response::redirect(url('back-office/recruitments/' . $id . '/onboarding'));
         }
 
         return Response::redirect($this->recruitmentDossierShowUrl($id));
