@@ -187,6 +187,24 @@ final class SeniorityTenantDefaultsService
     ) {}
 
     /**
+     * Codes du lot catalogue standard (ordre métier).
+     *
+     * @return list<string>
+     */
+    public static function listStandardPackCodes(): array
+    {
+        $codes = [];
+        foreach (self::STANDARD_PACK as $row) {
+            $code = trim((string) ($row['code'] ?? ''));
+            if ($code !== '') {
+                $codes[] = $code;
+            }
+        }
+
+        return $codes;
+    }
+
+    /**
      * Crée les indicateurs manquants du lot standard (sans supprimer l’existant).
      *
      * @return array{created: int, skipped: int}

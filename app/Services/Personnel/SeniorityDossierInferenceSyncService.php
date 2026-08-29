@@ -17,6 +17,7 @@ use App\Repositories\UserRepository;
 /**
  * Crée ou met à jour des périodes d’ancienneté dérivées du dossier (marqueur {@see inferenceMarker}),
  * uniquement lorsqu’aucune période « saisie » n’existe pour l’indicateur.
+ * À l’acceptation, {@see seedMissingPackPeriodsAfterAcceptance} complète le lot catalogue restant.
  */
 final class SeniorityDossierInferenceSyncService
 {
@@ -33,6 +34,21 @@ final class SeniorityDossierInferenceSyncService
         'tenure_operational_commitment',
         'tenure_staff_assignment',
         'tenure_reserve_status',
+    ];
+
+    /**
+     * Indicateurs épisodiques / personnalisés : pas d’inférence dossier fiable ;
+     * à l’acceptation on pose une période active depuis la date d’enrôlement.
+     *
+     * @var list<string>
+     */
+    public const ACCEPTANCE_SEED_CODES = [
+        'tenure_field_deployment',
+        'tenure_instructor_capacity',
+        'tenure_campaign_participation',
+        'tenure_joint_interop',
+        'tenure_custom_engagement',
+        'tenure_tenant_wide_recognition',
     ];
 
     /** @var list<string> */
@@ -57,6 +73,11 @@ final class SeniorityDossierInferenceSyncService
     public static function inferenceMarker(string $code): string
     {
         return 'system:dossier_inference:' . trim($code);
+    }
+
+    public static function acceptanceSeedMarker(string $code): string
+    {
+        return 'system:acceptance_seed:' . trim($code);
     }
 
     /**
@@ -129,6 +150,99 @@ final class SeniorityDossierInferenceSyncService
     }
 
     /**
+     * Complète le lot standard : toute définition encore sans période reçoit une ligne active
+     * datée à l’enrôlement (ou à aujourd’hui en dernier recours). Idempotent.
+     *
+     * @return array{
+     *   members: int,
+     *   inserted: int,
+     *   skipped_existing: int,
+     *   skipped_no_definition: int,
+     *   skipped_no_date: int,
+     *   insert_failed: int,
+     *   skipped_schema: int
+     * }
+     */
+    public function seedMissingPackPeriodsAfterAcceptance(
+        int $tenantId,
+        int $userId,
+        bool $tenantPackAlreadyEnsured = false
+    ): array {
+        $stats = [
+            'members' => 1,
+            'inserted' => 0,
+            'skipped_existing' => 0,
+            'skipped_no_definition' => 0,
+            'skipped_no_date' => 0,
+            'insert_failed' => 0,
+            'skipped_schema' => 0,
+        ];
+        if (!$this->seniorityRepository->schemaReady() || $tenantId < 1 || $userId < 1) {
+            $stats['skipped_schema'] = 1;
+
+            return $stats;
+        }
+        if (!$tenantPackAlreadyEnsured) {
+            $this->tenantDefaultsService->ensureStandardPack($tenantId);
+        }
+        $startYmd = $this->resolveEnlistmentOrServiceStartYmd($tenantId, $userId);
+        if ($startYmd === null) {
+            $startYmd = (new \DateTimeImmutable('today'))->format('Y-m-d');
+        }
+
+        $seedCodes = array_values(array_unique(array_merge(
+            self::INFERENCE_CODES,
+            self::ACCEPTANCE_SEED_CODES,
+            ['tenure_community'],
+        )));
+        /* Couvrir aussi tout code catalogue ajouté au pack sans être listé ci-dessus. */
+        foreach (SeniorityTenantDefaultsService::listStandardPackCodes() as $packCode) {
+            if (!in_array($packCode, $seedCodes, true)) {
+                $seedCodes[] = $packCode;
+            }
+        }
+
+        foreach ($seedCodes as $code) {
+            $defId = $this->seniorityRepository->findDefinitionIdByTenantAndCode($tenantId, $code);
+            if ($defId === null) {
+                ++$stats['skipped_no_definition'];
+                continue;
+            }
+            $existing = $this->seniorityRepository->listPeriodsForUserAndDefinition($userId, $defId);
+            if ($existing !== []) {
+                ++$stats['skipped_existing'];
+                continue;
+            }
+            $marker = in_array($code, self::INFERENCE_CODES, true)
+                ? self::inferenceMarker($code)
+                : ($code === 'tenure_community'
+                    ? SeniorityEnrollmentBootstrapService::BOOTSTRAP_RELATED_TYPE
+                    : self::acceptanceSeedMarker($code));
+            $meta = json_encode(
+                ['source' => 'acceptance_seed', 'code' => $code],
+                JSON_UNESCAPED_UNICODE
+            );
+            $newId = $this->seniorityRepository->insertPeriod(
+                $tenantId,
+                $userId,
+                $defId,
+                $startYmd,
+                $marker,
+                null,
+                'active',
+                $meta !== false ? $meta : null,
+            );
+            if ($newId !== null) {
+                ++$stats['inserted'];
+            } else {
+                ++$stats['insert_failed'];
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
      * @param array<string, int> $stats
      */
     private function syncOneIndicator(int $tenantId, int $userId, string $code, array &$stats): void
@@ -186,7 +300,7 @@ final class SeniorityDossierInferenceSyncService
 
     private function resolveStartYmd(int $tenantId, int $userId, string $code): ?string
     {
-        return match ($code) {
+        $specific = match ($code) {
             'tenure_service' => $this->resolveServiceStartYmd($tenantId, $userId),
             'tenure_unit_primary' => $this->personnelAssignmentRepository->inferCurrentAttachmentStartYmd($tenantId, $userId, false),
             'tenure_group_attachment' => $this->personnelAssignmentRepository->inferCurrentAttachmentStartYmd($tenantId, $userId, true),
@@ -200,6 +314,12 @@ final class SeniorityDossierInferenceSyncService
             'tenure_reserve_status' => $this->resolveReserveStatusStartYmd($tenantId, $userId),
             default => null,
         };
+        if ($specific !== null) {
+            return $specific;
+        }
+
+        /* Complétion autonome : sans signal métier, bascule sur la date d’enrôlement / compte. */
+        return $this->resolveEnlistmentOrServiceStartYmd($tenantId, $userId);
     }
 
     private function resolveGarrisonStartYmd(int $tenantId, int $userId): ?string

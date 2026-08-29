@@ -1013,11 +1013,21 @@ final class EnlistmentAcceptanceProvisioningService
         $cn = trim((string) ($pp['character_name'] ?? ''));
         $ppPatch = [];
         if (EnlistmentAcceptedIdentity::shouldClearCharacterName($cn, $reviewerLabels, $memberIsReviewer)) {
-            $ppPatch['character_name'] = '';
+            $ppPatch['character_name'] = $formName !== '' ? $formName : '';
+        } elseif ($cn === '' && $formName !== '') {
+            $ppPatch['character_name'] = $formName;
         }
         $ppCs = trim((string) ($pp['callsign'] ?? ''));
-        if (!$memberIsReviewer && EnlistmentAcceptedIdentity::matchesAny($ppCs, $reviewerLabels)) {
+        if ($formCs !== '' && ($ppCs === '' || EnlistmentAcceptedIdentity::matchesAny($ppCs, $reviewerLabels))) {
+            $ppPatch['callsign'] = $formCs;
+        } elseif (!$memberIsReviewer && EnlistmentAcceptedIdentity::matchesAny($ppCs, $reviewerLabels)) {
             $ppPatch['callsign'] = null;
+        }
+        if (trim((string) ($pp['operator_status'] ?? '')) === '') {
+            $ppPatch['operator_status'] = 'actif';
+        }
+        if (trim((string) ($pp['service_status'] ?? '')) === '') {
+            $ppPatch['service_status'] = 'actif';
         }
         if ($ppPatch !== []) {
             $this->personnelProfileRepository->update($userId, $ppPatch);
@@ -1025,7 +1035,7 @@ final class EnlistmentAcceptanceProvisioningService
     }
 
     /**
-     * Initialise le catalogue d’ancienneté + périodes dérivées (communauté + inférences dossier).
+     * Initialise le catalogue d’ancienneté + périodes (communauté, inférences dossier, lot standard).
      *
      * @param array<string, mixed> $row
      */
@@ -1046,14 +1056,26 @@ final class EnlistmentAcceptanceProvisioningService
             }
             if ($this->seniorityDossierInferenceSyncService !== null) {
                 $stats = $this->seniorityDossierInferenceSyncService->syncForUser($tenantId, $userId, false);
-                if (($stats['skipped_schema'] ?? 0) > 0 || ($stats['insert_failed'] ?? 0) > 0) {
+                $seed = $this->seniorityDossierInferenceSyncService->seedMissingPackPeriodsAfterAcceptance(
+                    $tenantId,
+                    $userId,
+                    true
+                );
+                if (
+                    ($stats['skipped_schema'] ?? 0) > 0
+                    || ($stats['insert_failed'] ?? 0) > 0
+                    || ($seed['insert_failed'] ?? 0) > 0
+                    || ($seed['skipped_schema'] ?? 0) > 0
+                ) {
                     error_log(sprintf(
-                        '[seniority-accept] tenant=%d user=%d schema=%d insert_failed=%d inserted=%d',
+                        '[seniority-accept] tenant=%d user=%d schema=%d insert_failed=%d inserted=%d seed_inserted=%d seed_failed=%d',
                         $tenantId,
                         $userId,
                         (int) ($stats['skipped_schema'] ?? 0),
                         (int) ($stats['insert_failed'] ?? 0),
-                        (int) ($stats['inserted'] ?? 0)
+                        (int) ($stats['inserted'] ?? 0),
+                        (int) ($seed['inserted'] ?? 0),
+                        (int) ($seed['insert_failed'] ?? 0)
                     ));
                 }
             }
