@@ -1951,7 +1951,6 @@ class UserRepository
                   AND u2.id <> u.id
                   {$siblingAlive}
              ))
-             AND " . $this->hasActiveNonDefaultMembershipPredicate('u')['sql'] . "
              ORDER BY t.name ASC, u.display_name ASC, u.email ASC
              LIMIT {$limit}";
         $stmt = $this->pdo()->prepare($sql);
@@ -2075,10 +2074,6 @@ class UserRepository
                   {$siblingAlive}
             ))";
         }
-        if ($this->shouldHideOrphanedPlatformAccounts($status, $tenantId)) {
-            $orphan = $this->hasActiveNonDefaultMembershipPredicate('u');
-            $parts[] = $orphan['sql'];
-        }
 
         $where = implode(' AND ', $parts);
         $countStmt = $this->pdo()->prepare(
@@ -2170,10 +2165,6 @@ class UserRepository
                   AND u2.id <> u.id
                   {$siblingAlive}
             ))";
-        }
-        if ($this->shouldHideOrphanedPlatformAccounts($status, $tenantId)) {
-            $orphan = $this->hasActiveNonDefaultMembershipPredicate('u');
-            $parts[] = $orphan['sql'];
         }
 
         $where = implode(' AND ', $parts);
@@ -2369,48 +2360,6 @@ class UserRepository
         $stmt = $this->pdo()->prepare("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'");
         $stmt->execute([$tenantId]);
         return (int) $stmt->fetchColumn();
-    }
-
-    /**
-     * Prédicat SQL : l’e-mail a au moins une appartenance active à une vraie communauté
-     * (hors tenant système `default`, hors anonymisés).
-     * Utilisé pour masquer les comptes « orphelins » de l’annuaire / recherche plateforme.
-     *
-     * @return array{sql: string, params: list<mixed>}
-     */
-    private function hasActiveNonDefaultMembershipPredicate(string $userAlias = 'u'): array
-    {
-        $a = $userAlias;
-        $hasDeletedAt = $this->hasDeletedAtColumn();
-        $liveDeleted = $hasDeletedAt ? 'AND u_live.deleted_at IS NULL' : '';
-
-        return [
-            'sql' => "EXISTS (
-                SELECT 1 FROM users u_live
-                INNER JOIN tenants t_live ON t_live.id = u_live.tenant_id AND t_live.slug <> 'default'
-                WHERE LOWER(TRIM(u_live.email)) = LOWER(TRIM({$a}.email))
-                  AND TRIM({$a}.email) <> ''
-                  AND LOWER(TRIM({$a}.email)) NOT LIKE '%@deleted.invalid'
-                  AND u_live.status = 'active'
-                  {$liveDeleted}
-            )",
-            'params' => [],
-        ];
-    }
-
-    /**
-     * Masquer les orphelins sauf consultation explicite (inactive / deleted / filtre tenant).
-     */
-    private function shouldHideOrphanedPlatformAccounts(?string $status, ?int $tenantId): bool
-    {
-        if ($tenantId !== null && $tenantId > 0) {
-            return false;
-        }
-        if ($status === null || $status === '' || $status === 'active') {
-            return true;
-        }
-
-        return false;
     }
 
     /**

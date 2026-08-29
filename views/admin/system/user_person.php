@@ -76,9 +76,8 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
 
         <?php if (!$hasLiveOrg): ?>
             <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                Cette personne n’a plus d’appartenance active à une communauté réelle.
-                Elle est masquée de l’annuaire et de la recherche plateforme par défaut
-                (filtre « Compte désactivé » ou « Comptes supprimés » pour la retrouver).
+                Cette personne n’a plus d’appartenance active à une communauté réelle
+                (compte orphelin). Elle reste visible dans l’annuaire et la recherche plateforme.
             </div>
         <?php endif; ?>
 
