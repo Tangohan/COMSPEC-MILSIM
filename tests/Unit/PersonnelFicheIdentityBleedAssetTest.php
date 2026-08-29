@@ -23,6 +23,12 @@ final class PersonnelFicheIdentityBleedAssetTest extends TestCase
         self::assertStringContainsString('Garde anti-contamination', $file);
         self::assertStringContainsString('Donnée manquante', $file);
         self::assertStringContainsString('$showGradeReferenceBeside', $file);
+
+        $tableau = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/personnel/file_tableau_admin_tab.php');
+        self::assertStringContainsString('Donnée manquante', $tableau);
+        self::assertStringContainsString('Grade / rang', $tableau);
+        self::assertStringContainsString('$gradeDetail', $tableau);
+        self::assertStringContainsString('$gradeReferenceLabel', $tableau);
     }
 
     public function testCivilIdentityNoLongerFillsFromDisplayName(): void

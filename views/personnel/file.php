@@ -413,17 +413,22 @@ if (is_array($grade)) {
         if ($gradeLabel === '') {
             $gradeLabel = $gradeShortLabel;
         }
+        if ($gradeShortLabel === '' && $gradeLabel !== '') {
+            $gradeShortLabel = $gradeLabel;
+        }
         $gradeOtanCode = trim((string) ($grade['label_otan'] ?? $grade['nato_code'] ?? ''));
     }
 }
 $rankOverride = trim((string) ($personnelProfile['rank_display_override'] ?? ''));
 $rankDisplayRp = trim((string) ($personnelProfile['rank_display'] ?? ''));
-$effectiveRankDisplay = $rankOverride !== '' ? $rankOverride : ($rankDisplayRp !== '' ? $rankDisplayRp : $gradeLabel);
-// Libellé de référence à afficher à côté d’un code (override / OTAN) dans le détail.
-$gradeReferenceLabel = $gradeLabel;
-if ($gradeReferenceLabel === '' && $gradeShortLabel !== '') {
-    $gradeReferenceLabel = $gradeShortLabel;
-}
+// Affichage principal : override dossier → titre RP → libellé court / long du grade.
+$effectiveRankDisplay = $rankOverride !== ''
+    ? $rankOverride
+    : ($rankDisplayRp !== ''
+        ? $rankDisplayRp
+        : ($gradeShortLabel !== '' ? $gradeShortLabel : $gradeLabel));
+// Libellé de référence (toujours le long si dispo) pour la colonne Détail.
+$gradeReferenceLabel = $gradeLabel !== '' ? $gradeLabel : $gradeShortLabel;
 $showGradeReferenceBeside = $gradeReferenceLabel !== ''
     && $effectiveRankDisplay !== ''
     && strcasecmp($gradeReferenceLabel, $effectiveRankDisplay) !== 0;
