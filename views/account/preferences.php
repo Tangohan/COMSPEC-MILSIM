@@ -7,6 +7,12 @@ $errors = $errors ?? [];
 $success = $success ?? null;
 $error = $error ?? null;
 $uiPrefs = $uiPrefs ?? ['theme' => 'system', 'density' => 'comfortable', 'sidebar_collapsed' => false];
+$extraCallsignSlots = isset($extraCallsignSlots) ? max(5, (int) $extraCallsignSlots) : (function_exists('personnel_extra_callsign_slots') ? personnel_extra_callsign_slots() : 5);
+$extraCallsigns = is_array($extraCallsigns ?? null) ? $extraCallsigns : [];
+while (count($extraCallsigns) < $extraCallsignSlots) {
+    $extraCallsigns[] = '';
+}
+$extraCallsigns = array_slice($extraCallsigns, 0, $extraCallsignSlots);
 $displaySettings = $displaySettings ?? ['site_photo_priority' => 'operator'];
 $sitePhotoPriority = strtolower(trim((string) ($displaySettings['site_photo_priority'] ?? 'operator')));
 if (!in_array($sitePhotoPriority, ['operator', 'account'], true)) {
@@ -203,12 +209,24 @@ require base_path('views/partials/account/shell_open.php');
                     <?php endforeach; endif; ?>
                 </div>
                 <div>
-                    <label class="account-hub__label" for="callsign">Indicatif</label>
+                    <label class="account-hub__label" for="callsign">Indicatif principal</label>
                     <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars((string) ($user['callsign'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="50">
                     <p class="account-hub__hint">Utilisé sur le portail et pour les outils cartographiques.</p>
                     <?php if (!empty($errors['callsign'])): foreach ($errors['callsign'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
+                </div>
+                <div class="account-hub__form-grid" style="grid-column:1/-1">
+                    <p class="account-hub__label" style="margin-bottom:.35rem">Indicatifs supplémentaires</p>
+                    <p class="account-hub__hint" style="margin-bottom:.75rem">Jusqu’à <?= (int) $extraCallsignSlots ?> alias radio (variantes d’unité, callsigns secondaires).</p>
+                    <div class="account-hub__form-grid account-hub__form-grid--2">
+                        <?php for ($i = 0; $i < $extraCallsignSlots; $i++): ?>
+                        <div>
+                            <label class="account-hub__label" for="extra_callsign_<?= $i ?>" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em">Alias <?= $i + 1 ?></label>
+                            <input type="text" name="extra_callsigns[]" id="extra_callsign_<?= $i ?>" value="<?= htmlspecialchars((string) ($extraCallsigns[$i] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off" placeholder="Indicatif <?= $i + 2 ?>">
+                        </div>
+                        <?php endfor; ?>
+                    </div>
                 </div>
                 <div>
                     <label class="account-hub__label" for="profile_slug">Adresse courte de votre fiche (optionnel)</label>
