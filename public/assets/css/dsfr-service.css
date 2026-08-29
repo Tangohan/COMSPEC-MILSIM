@@ -643,3 +643,62 @@
     padding-right: 4rem;
   }
 }
+
+/* Inscription : formulaire unifié (plus large que la connexion) */
+.ds-main__inner--register {
+  max-width: 36rem;
+}
+.ds-legend {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.35rem;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ds-text);
+}
+.ds-label-optional {
+  font-weight: 500;
+  color: var(--ds-text-mention);
+  margin-left: 0.25rem;
+}
+.ds-grid-2 {
+  display: grid;
+  gap: 1.25rem;
+}
+@media (min-width: 640px) {
+  .ds-grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.ds-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  box-shadow: inset 4px 0 0 0 var(--ds-primary);
+}
+.ds-check input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.15rem;
+  accent-color: var(--ds-primary);
+  cursor: pointer;
+}
+.ds-check label {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--ds-text-alt);
+  cursor: pointer;
+}
+.ds-check a {
+  color: var(--ds-primary);
+  font-weight: 600;
+}
+.ds-fieldset + .ds-grid-2,
+.ds-grid-2 + .ds-grid-2 {
+  margin-top: 0;
+}
+

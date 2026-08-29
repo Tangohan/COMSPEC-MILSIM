@@ -25,6 +25,8 @@ final class LoginPasswordMaskAssetTest extends TestCase
 
         self::assertStringContainsString('[data-password-toggle]', $javascript);
         self::assertStringContainsString("setAttribute('type', hide ? 'password' : 'text')", $javascript);
+        self::assertStringContainsString('data-password-confirm-of', $javascript);
+        self::assertStringContainsString('data-register-form', $javascript);
         self::assertStringNotContainsString('Alpine', $javascript);
     }
 
@@ -32,7 +34,19 @@ final class LoginPasswordMaskAssetTest extends TestCase
     {
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/auth/register.php');
 
-        self::assertStringContainsString('type="password" :type="showPassword ? \'text\' : \'password\'"', $view);
-        self::assertStringContainsString('type="password" :type="showPassword2 ? \'text\' : \'password\'"', $view);
+        self::assertStringContainsString('type="password" id="password" name="password"', $view);
+        self::assertStringContainsString('type="password" id="password_confirmation" name="password_confirmation"', $view);
+        self::assertStringNotContainsString(':type="showPassword', $view);
+        self::assertStringContainsString('data-password-toggle="password"', $view);
+        self::assertStringContainsString('data-password-toggle="password_confirmation"', $view);
+        self::assertStringContainsString('data-register-form', $view);
+        self::assertStringContainsString('name="accept_terms"', $view);
+        self::assertStringContainsString('name="first_name"', $view);
+        self::assertStringContainsString('name="last_name"', $view);
+        self::assertStringNotContainsString('x-data=', $view);
+        self::assertStringNotContainsString('x-show="step', $view);
+        self::assertStringNotContainsString('alpinejs', $view);
+        self::assertStringContainsString('assets/js/auth_forms.js', $view);
+        self::assertStringContainsString('dsfr-service.css', $view);
     }
 }
