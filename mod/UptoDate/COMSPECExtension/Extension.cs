@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Http;
 using System.Reflection;
@@ -2581,6 +2582,88 @@ public static class Extension
                 var simplified = SimplifySessionRestoreJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
+            // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
+            // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated
+            if (function == "ListWardrobes")
+            {
+                var url = _baseUrl + "/api/atak/wardrobes";
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 503) return "ERR|migration_required";
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyWardrobesListJson(respBody);
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            // Une wardrobe complète. Args : [id] → OK|id\tname\tpayload
+            if (function == "GetWardrobe" && args.Length >= 1)
+            {
+                var wid = (args[0] ?? "").Trim();
+                if (wid.Length < 1) return "ERR|invalid_id";
+                var url = _baseUrl + "/api/atak/wardrobes/" + Uri.EscapeDataString(wid);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 503) return "ERR|migration_required";
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyWardrobeDetailJson(respBody);
+                if (simplified.Length > MaxOutputBytes - 4)
+                    return "ERR|too_large";
+                return "OK|" + simplified;
+            }
+            // Sync une wardrobe. Args : [name, payload, collectionSlug?, notes?]
+            if (function == "SyncWardrobe" && args.Length >= 2)
+            {
+                var wName = (args[0] ?? "").Trim();
+                var wPayload = args[1] ?? "";
+                var wColl = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                var wNotes = args.Length > 3 ? (args[3] ?? "").Trim() : "";
+                if (wName.Length < 1 || string.IsNullOrWhiteSpace(wPayload))
+                    return FormatAtakExtArray("ERROR", "payload empty");
+                var syncObj = new Dictionary<string, object?>
+                {
+                    ["name"] = wName,
+                    ["payload_text"] = wPayload,
+                    ["source"] = "ace_arsenal",
+                    ["payload_format"] = "arma_loadout_str",
+                };
+                if (wColl.Length > 0) syncObj["collection_slug"] = wColl;
+                if (wNotes.Length > 0) syncObj["notes"] = wNotes;
+                var syncJson = JsonSerializer.Serialize(syncObj);
+                return PostAtakJsonSync("/api/atak/wardrobes/sync", syncJson, token);
+            }
+            // Sync lot (JSON déjà formé côté SQF/extension helper). Args : [json]
+            if (function == "SyncWardrobesBatch" && args.Length >= 1)
+            {
+                var batchJson = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(batchJson)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostAtakJsonSync("/api/atak/wardrobes/sync", batchJson, token);
+            }
+            // Collections d’équipement. Lignes : id\tname\tslug\tvisibility\tcount
+            if (function == "ListWardrobeCollections")
+            {
+                var url = _baseUrl + "/api/atak/wardrobe-collections";
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 503) return "ERR|migration_required";
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyWardrobeCollectionsJson(respBody);
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
             if (function == "GetLaserCodes")
             {
                 var mapId = args.Length > 0 ? (args[0] ?? "1") : "1";
@@ -4094,6 +4177,85 @@ public static class Extension
             if (doc.RootElement.TryGetProperty("link_state", out var l) && l.ValueKind == JsonValueKind.String)
                 link = Clean(l.GetString() ?? "linked");
             return Clean(cs) + "\t" + link;
+        }
+        catch { return ""; }
+    }
+
+    private static string SimplifyWardrobesListJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+
+            if (!doc.RootElement.TryGetProperty("wardrobes", out var arr) || arr.ValueKind != JsonValueKind.Array)
+                return "";
+            foreach (var el in arr.EnumerateArray())
+            {
+                var id = el.TryGetProperty("id", out var i) ? i.ToString() : "";
+                var name = el.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String ? Clean(n.GetString() ?? "") : "";
+                var slug = el.TryGetProperty("slug", out var s) && s.ValueKind == JsonValueKind.String ? Clean(s.GetString() ?? "") : "";
+                var coll = el.TryGetProperty("collection_name", out var c) && c.ValueKind == JsonValueKind.String ? Clean(c.GetString() ?? "") : "";
+                var fav = el.TryGetProperty("is_favorite", out var f) && (f.ValueKind == JsonValueKind.True || (f.ValueKind == JsonValueKind.Number && f.GetInt32() != 0)) ? "1" : "0";
+                var bytes = el.TryGetProperty("payload_bytes", out var b) ? b.ToString() : "0";
+                var upd = el.TryGetProperty("updated_at", out var u) && u.ValueKind == JsonValueKind.String ? Clean(u.GetString() ?? "") : "";
+                if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name)) continue;
+                if (sb.Length > 0) sb.Append('\n');
+                sb.Append(id).Append('\t').Append(name).Append('\t').Append(slug).Append('\t')
+                    .Append(coll).Append('\t').Append(fav).Append('\t').Append(bytes).Append('\t').Append(upd);
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    private static string SimplifyWardrobeDetailJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\r", " ").Replace("\n", " ").Replace("|", "-");
+
+            if (!doc.RootElement.TryGetProperty("wardrobe", out var w))
+                return "";
+            var id = w.TryGetProperty("id", out var i) ? i.ToString() : "";
+            var name = w.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String ? Clean(n.GetString() ?? "") : "";
+            var payload = w.TryGetProperty("payload_text", out var p) && p.ValueKind == JsonValueKind.String
+                ? (p.GetString() ?? "").Replace("\t", " ").Replace("\r", "").Replace("\n", "").Replace("|", "/")
+                : "";
+            if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(payload)) return "";
+            return id + "\t" + name + "\t" + payload;
+        }
+        catch { return ""; }
+    }
+
+    private static string SimplifyWardrobeCollectionsJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+
+            if (!doc.RootElement.TryGetProperty("collections", out var arr) || arr.ValueKind != JsonValueKind.Array)
+                return "";
+            foreach (var el in arr.EnumerateArray())
+            {
+                var id = el.TryGetProperty("id", out var i) ? i.ToString() : "";
+                var name = el.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String ? Clean(n.GetString() ?? "") : "";
+                var slug = el.TryGetProperty("slug", out var s) && s.ValueKind == JsonValueKind.String ? Clean(s.GetString() ?? "") : "";
+                var vis = el.TryGetProperty("visibility", out var v) && v.ValueKind == JsonValueKind.String ? Clean(v.GetString() ?? "") : "personal";
+                var count = el.TryGetProperty("wardrobe_count", out var c) ? c.ToString() : "0";
+                if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name)) continue;
+                if (sb.Length > 0) sb.Append('\n');
+                sb.Append(id).Append('\t').Append(name).Append('\t').Append(slug).Append('\t')
+                    .Append(vis).Append('\t').Append(count);
+            }
+            return sb.ToString();
         }
         catch { return ""; }
     }

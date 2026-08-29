@@ -55,6 +55,20 @@ private _resynchAction = [
 ] call ace_interact_menu_fnc_createAction;
 [_resynchAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+private _wardrobePushAction = [
+    "COMSPEC_WardrobePush", "Wardrobes ACE → Athena", "", {
+        [] spawn { [] call comspec_overwatch_connect_fnc_arsenalPushAll; };
+    }, _condSync, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_wardrobePushAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _wardrobePullAction = [
+    "COMSPEC_WardrobePull", "Wardrobes Athena → ACE", "", {
+        [] spawn { [] call comspec_overwatch_connect_fnc_arsenalPullAll; };
+    }, _condSync, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_wardrobePullAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
 private _noteAction = [
     "COMSPEC_IntelNote", "Rédiger une fiche de renseignement…", "", {
         if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openNote") then {

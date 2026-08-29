@@ -7,6 +7,20 @@ La section **Équipement** présente des **fiches** par type de matériel (armem
 - Navigation par **liste** ou **catégories**.
 - Chaque fiche peut inclure descriptions, tableaux de données, liens vers des **documents** associés.
 
+### Wardrobes ACE Arsenal (sync cloud)
+
+Depuis **Équipement → Wardrobes ACE Arsenal** (`/equipment/wardrobes`) vous consultez les loadouts remontés depuis le jeu et organisez des **collections d’équipement** (perso / unité / communauté).
+
+In-game (mod Overwatch, liaison Athena active) :
+
+1. Ouvrez **ACE Arsenal** : un panneau **Athena · Wardrobes** apparaît à droite.
+2. **Sauvegarder tout → Athena** remonte l’ensemble des wardrobes locales (`ace_arsenal_saved_loadouts`).
+3. **Récupérer ← Athena** fusionne les loadouts cloud dans votre profil ACE.
+4. Double-clic sur une entrée cloud pour **équiper** immédiatement.
+5. Menu ACE Self → COMSPEC Overwatch : raccourcis push / pull sans ouvrir l’arsenal.
+
+API jeu (clé ATAK) : `GET/POST /api/atak/wardrobes`, `POST /api/atak/wardrobes/sync`, `GET/POST /api/atak/wardrobe-collections`.
+
 ## Modpacks
 
 Les **modpacks** regroupent les **extensions** ou **collections de mods** validées par l’organisation pour les sessions de jeu.
