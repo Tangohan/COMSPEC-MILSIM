@@ -137,6 +137,7 @@ use App\Controllers\Admin\Organization\RolesFunctionsAdminController;
 use App\Controllers\Admin\Organization\CategoryAdminController;
 use App\Controllers\Admin\Organization\CompetencyMatrixController;
 use App\Controllers\Admin\Organization\GradeReferentielController;
+use App\Controllers\Admin\Organization\RankCatalogAdminController;
 use App\Controllers\Admin\Organization\PersonnelJobRoleAdminController;
 use App\Controllers\Admin\Organization\HrCharterDocumentAdminController;
 use App\Controllers\Admin\Organization\RecruitmentOffersController;
@@ -1087,6 +1088,8 @@ return function (Router $router) {
     $router->get('/back-office/categories/{id}/edit', [CategoryAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/categories/{id}/update', [CategoryAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/grades', [GradeReferentielController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/referentiels/grades/catalogue', [RankCatalogAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/catalogue/audit', [RankCatalogAdminController::class, 'runAudit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/grades/create', [GradeReferentielController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/store', [GradeReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/grades/{id}/edit', [GradeReferentielController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

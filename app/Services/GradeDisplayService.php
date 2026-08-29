@@ -89,6 +89,33 @@ class GradeDisplayService
         return $this->getOtan($gradeRow);
     }
 
+    /**
+     * Détecte un bandeau incohérent : titre « Colonel » + grade communauté LCL/OF-4.
+     *
+     * @param array<string, mixed> $gradeRow
+     * @param array<string, mixed>|null $personnelProfile
+     * @return array{mismatch: bool, code: ?string, message: ?string}
+     */
+    public function detectTitleGradeMismatch(array $gradeRow, ?array $personnelProfile = null): array
+    {
+        $title = mb_strtolower(trim($this->headerTitle($gradeRow, $personnelProfile)));
+        $gradeName = mb_strtolower(trim($this->getLong($gradeRow)));
+        $otan = $this->getOtan($gradeRow);
+        $code = strtoupper((string) ($gradeRow['code'] ?? ''));
+
+        $titleLooksColonel = str_contains($title, 'colonel') && !str_contains($title, 'lieutenant');
+        $gradeIsLcl = $code === 'LCL' || str_contains($gradeName, 'lieutenant-colonel') || $otan === 'OF-4';
+        if ($titleLooksColonel && $gradeIsLcl) {
+            return [
+                'mismatch' => true,
+                'code' => 'TITLE_COLONEL_GRADE_LCL_OF4',
+                'message' => 'Titre « Colonel » avec grade communauté Lieutenant-colonel (OF-4). Le grade canonique Colonel FR est OF-5.',
+            ];
+        }
+
+        return ['mismatch' => false, 'code' => null, 'message' => null];
+    }
+
     /** Hybride : Capitaine (OF-2). */
     public function getFull(array $gradeRow): string
     {
