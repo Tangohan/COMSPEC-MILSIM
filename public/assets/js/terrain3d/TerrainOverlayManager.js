@@ -1,7 +1,7 @@
 /**
  * Overlays tactiques HTML/CSS2D — marqueurs au-dessus du relief.
  */
-import { heightAtWorld } from './utils.js';
+import { heightAtWorld } from 'atak-terrain3d/utils.js';
 
 export class TerrainOverlayManager {
   /**

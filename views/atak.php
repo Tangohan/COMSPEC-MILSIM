@@ -140,7 +140,17 @@ if ($atakMapConfig) {
   <script type="importmap">
   {
     "imports": {
-      "three": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/vendor/three/build/three.module.js"
+      "three": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/vendor/three/build/three.module.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
+      "atak-terrain3d/utils.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/utils.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
+      "atak-terrain3d/HeightmapLoader.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/HeightmapLoader.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
+      "atak-terrain3d/TextureLoader.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/TextureLoader.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
+      "atak-terrain3d/TerrainGeometryBuilder.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/TerrainGeometryBuilder.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
+      "atak-terrain3d/TerrainMaterial.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/TerrainMaterial.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
+      "atak-terrain3d/TerrainCameraControls.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/TerrainCameraControls.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
+      "atak-terrain3d/TerrainOverlayManager.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/TerrainOverlayManager.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
+      "atak-terrain3d/Terrain3DRenderer.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/Terrain3DRenderer.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
+      "atak-terrain3d/initTerrain3D.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/initTerrain3D.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
+      "atak-terrain3d/MapOverviewTexture.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/MapOverviewTexture.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"
     }
   }
   </script>

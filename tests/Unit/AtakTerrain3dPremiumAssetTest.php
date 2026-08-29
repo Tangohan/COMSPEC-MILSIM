@@ -17,6 +17,9 @@ final class AtakTerrain3dPremiumAssetTest extends TestCase
         self::assertStringContainsString('atak-terrain3d-premium.css', $view);
         self::assertStringContainsString('type="module" src="<?= $base ?>/assets/js/atak-terrain3d-premium.js', $view);
         self::assertStringContainsString('Topo premium 3D', $view);
+        self::assertStringContainsString('"atak-terrain3d/initTerrain3D.js"', $view);
+        self::assertStringContainsString('"atak-terrain3d/TerrainMaterial.js"', $view);
+        self::assertStringContainsString('terrain3d/TerrainMaterial.js?v=', $view);
         self::assertStringContainsString('atak-geo-network.js', $view);
         self::assertStringContainsString('atak-geo-live.js', $view);
         self::assertStringContainsString('atak-route-planner.js', $view);
@@ -26,7 +29,7 @@ final class AtakTerrain3dPremiumAssetTest extends TestCase
     {
         $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain3d-premium.js');
 
-        self::assertStringContainsString("import { initTerrain3D } from './terrain3d/initTerrain3D.js'", $js);
+        self::assertStringContainsString("import { initTerrain3D } from 'atak-terrain3d/initTerrain3D.js'", $js);
         self::assertStringContainsString('include=heights', $js);
         self::assertStringContainsString("encoding !== 'int16le_b64'", $js);
         self::assertStringContainsString('setHeightData', $js);

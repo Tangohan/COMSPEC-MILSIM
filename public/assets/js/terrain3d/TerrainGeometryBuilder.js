@@ -1,7 +1,7 @@
 /**
  * Génération du mesh terrain : PlaneGeometry subdivisé + déplacement vertical.
  */
-import { sampleHeightGrid } from './utils.js';
+import { sampleHeightGrid } from 'atak-terrain3d/utils.js';
 
 export class TerrainGeometryBuilder {
   /**

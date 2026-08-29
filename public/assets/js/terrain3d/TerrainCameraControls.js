@@ -1,7 +1,7 @@
 /**
  * Contrôles caméra tactiques — vue inclinée, zoom, rotation limitée, pan.
  */
-import { clamp } from './utils.js';
+import { clamp } from 'atak-terrain3d/utils.js';
 
 export class TerrainCameraControls {
   /**

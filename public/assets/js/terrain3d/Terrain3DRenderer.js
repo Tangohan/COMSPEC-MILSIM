@@ -2,13 +2,13 @@
  * Terrain3DRenderer — orchestrateur principal.
  * Drape une texture cartographique sur un mesh altimétrique Three.js.
  */
-import { HeightmapLoader } from './HeightmapLoader.js';
-import { TerrainTextureLoader } from './TextureLoader.js';
-import { TerrainGeometryBuilder } from './TerrainGeometryBuilder.js';
-import { TerrainMaterialFactory } from './TerrainMaterial.js';
-import { TerrainCameraControls } from './TerrainCameraControls.js';
-import { TerrainOverlayManager } from './TerrainOverlayManager.js';
-import { defaults, clamp, normalizeGrid } from './utils.js';
+import { HeightmapLoader } from 'atak-terrain3d/HeightmapLoader.js';
+import { TerrainTextureLoader } from 'atak-terrain3d/TextureLoader.js';
+import { TerrainGeometryBuilder } from 'atak-terrain3d/TerrainGeometryBuilder.js';
+import { TerrainMaterialFactory } from 'atak-terrain3d/TerrainMaterial.js';
+import { TerrainCameraControls } from 'atak-terrain3d/TerrainCameraControls.js';
+import { TerrainOverlayManager } from 'atak-terrain3d/TerrainOverlayManager.js';
+import { defaults, clamp, normalizeGrid } from 'atak-terrain3d/utils.js';
 
 const DEFAULT_OPTIONS = {
   textureUrl: null,
@@ -25,6 +25,61 @@ const DEFAULT_OPTIONS = {
   fogDensity: 0.00045,
   backgroundColor: 0x0b1220,
 };
+
+/**
+ * Densité FogExp2 locale (indépendante du cache de TerrainMaterial.js).
+ * Évite le crash si un vieux module Material est encore en cache navigateur.
+ */
+function fogDensityForWorld(worldWidth, worldDepth, baseDensity) {
+  if (typeof TerrainMaterialFactory.fogDensityForWorld === 'function') {
+    return TerrainMaterialFactory.fogDensityForWorld(worldWidth, worldDepth, baseDensity);
+  }
+  const w = Math.max(256, Number(worldWidth) || 1024);
+  const d = Math.max(256, Number(worldDepth) || 1024);
+  const diag = Math.sqrt(w * w + d * d);
+  const maxDist = Math.max(2800, diag * 1.35);
+  const targetDist = Math.max(1200, maxDist * 0.7);
+  const density = 0.8 / targetDist;
+  const base = baseDensity != null && Number.isFinite(baseDensity) ? Number(baseDensity) : 0.00045;
+  return Math.min(base, Math.max(0.000012, density));
+}
+
+function syncLightingToWorld(lights, worldWidth, worldDepth) {
+  if (typeof TerrainMaterialFactory.syncLightingToWorld === 'function') {
+    TerrainMaterialFactory.syncLightingToWorld(lights, worldWidth, worldDepth);
+    return;
+  }
+  if (!lights) return;
+  const w = Math.max(256, Number(worldWidth) || 1024);
+  const d = Math.max(256, Number(worldDepth) || 1024);
+  const span = Math.max(w, d);
+  const elev = Math.max(180, span * 0.55);
+  const arm = Math.max(120, span * 0.45);
+  if (lights.sun) lights.sun.position.set(-arm, elev, -arm * 0.75);
+  if (lights.fill) lights.fill.position.set(arm * 0.7, elev * 0.35, arm);
+}
+
+function syncFogToWorld(scene, THREE, opts) {
+  opts = opts || {};
+  if (typeof TerrainMaterialFactory.syncFogToWorld === 'function') {
+    TerrainMaterialFactory.syncFogToWorld(scene, THREE, opts);
+    return;
+  }
+  if (opts.enabled === false) {
+    scene.fog = null;
+    return;
+  }
+  const density = fogDensityForWorld(opts.worldWidth, opts.worldDepth, opts.density);
+  const color = opts.color != null ? opts.color : 0x0b1220;
+  if (scene.fog && scene.fog.isFogExp2) {
+    scene.fog.density = density;
+    if (scene.fog.color && typeof scene.fog.color.setHex === 'function') {
+      scene.fog.color.setHex(color);
+    }
+    return;
+  }
+  TerrainMaterialFactory.setupFog(scene, THREE, { enabled: true, density: density, color: color });
+}
 
 export class Terrain3DRenderer {
   /**
@@ -64,7 +119,7 @@ export class Terrain3DRenderer {
     const THREE = this.THREE;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(this.options.backgroundColor);
-    const fogDensity = TerrainMaterialFactory.fogDensityForWorld(
+    const fogDensity = fogDensityForWorld(
       this.options.width,
       this.options.height,
       this.options.fogDensity
@@ -75,7 +130,7 @@ export class Terrain3DRenderer {
       color: this.options.backgroundColor,
     });
     this.lights = TerrainMaterialFactory.setupLighting(this.scene, THREE);
-    TerrainMaterialFactory.syncLightingToWorld(this.lights, this.options.width, this.options.height);
+    syncLightingToWorld(this.lights, this.options.width, this.options.height);
   }
 
   _buildRenderer() {
@@ -247,7 +302,7 @@ export class Terrain3DRenderer {
       TerrainMaterialFactory.setMap(this.terrainMaterial, tex);
     } catch (err) {
       /* Tentative via canvas/image pour data URLs locales. */
-      const { loadMapImage } = await import('./TextureLoader.js');
+      const { loadMapImage } = await import('atak-terrain3d/TextureLoader.js');
       const img = await loadMapImage(url);
       const tex = this.textureLoader.fromSource(img, THREE);
       tex.colorSpace = THREE.SRGBColorSpace;
@@ -272,14 +327,14 @@ export class Terrain3DRenderer {
     if (this.cameraControls && typeof this.cameraControls.syncToWorld === 'function') {
       this.cameraControls.syncToWorld(w, d);
     }
-    TerrainMaterialFactory.syncFogToWorld(this.scene, this.THREE, {
+    syncFogToWorld(this.scene, this.THREE, {
       enabled: this.options.fog !== false,
       density: this.options.fogDensity,
       color: this.options.backgroundColor,
       worldWidth: w,
       worldDepth: d,
     });
-    TerrainMaterialFactory.syncLightingToWorld(this.lights, w, d);
+    syncLightingToWorld(this.lights, w, d);
     if (this.scene && this.scene.background && typeof this.scene.background.setHex === 'function') {
       this.scene.background.setHex(this.options.backgroundColor != null ? this.options.backgroundColor : 0x0b1220);
     }

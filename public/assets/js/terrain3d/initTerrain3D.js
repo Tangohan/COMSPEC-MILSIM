@@ -8,7 +8,7 @@
  * Usage (global, après import map) :
  *   const terrain = await window.initTerrain3D(container, options);
  */
-import { Terrain3DRenderer } from './Terrain3DRenderer.js';
+import { Terrain3DRenderer } from 'atak-terrain3d/Terrain3DRenderer.js';
 
 let _depsPromise = null;
 
@@ -84,11 +84,11 @@ export async function initTerrain3D(container, options, threeDeps) {
 }
 
 export { Terrain3DRenderer };
-export { HeightmapLoader } from './HeightmapLoader.js';
-export { TerrainGeometryBuilder } from './TerrainGeometryBuilder.js';
-export { TerrainMaterialFactory } from './TerrainMaterial.js';
-export { TerrainCameraControls } from './TerrainCameraControls.js';
-export { TerrainOverlayManager } from './TerrainOverlayManager.js';
+export { HeightmapLoader } from 'atak-terrain3d/HeightmapLoader.js';
+export { TerrainGeometryBuilder } from 'atak-terrain3d/TerrainGeometryBuilder.js';
+export { TerrainMaterialFactory } from 'atak-terrain3d/TerrainMaterial.js';
+export { TerrainCameraControls } from 'atak-terrain3d/TerrainCameraControls.js';
+export { TerrainOverlayManager } from 'atak-terrain3d/TerrainOverlayManager.js';
 
 /* Exposition globale pour intégration legacy (pages non-module). */
 if (typeof window !== 'undefined') {
