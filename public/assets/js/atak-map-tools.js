@@ -1080,21 +1080,55 @@ window.ATAKMapTools = (function () {
     syncPresetButtons(loadPresetId());
   }
 
-  function setLookOpen(open) {
-    var panel = document.getElementById('atak-map-look-prefs');
-    var btn = document.querySelector('#atak-map-tools [data-tool-ui="look"]');
-    if (panel) panel.hidden = !open;
+  function openMapSettings() {
+    if (window.ATAKC2Workspace && typeof window.ATAKC2Workspace.setSettingsOpen === 'function') {
+      window.ATAKC2Workspace.setSettingsOpen(true);
+    } else {
+      var aside = document.getElementById('atak-settings-aside');
+      if (aside) {
+        aside.hidden = false;
+        document.body.classList.add('atak-settings-open');
+        document.querySelectorAll('.js-atak-settings-toggle').forEach(function (toggle) {
+          toggle.setAttribute('aria-expanded', 'true');
+          toggle.classList.add('is-active');
+        });
+      }
+    }
+    var target = document.getElementById('atak-settings-map') || document.getElementById('atak-settings-look');
+    if (target && typeof target.scrollIntoView === 'function') {
+      window.setTimeout(function () {
+        try { target.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {
+          try { target.scrollIntoView(true); } catch (e2) {}
+        }
+      }, 40);
+    }
     var terrain3d = document.getElementById('atak-terrain-3d-settings');
     if (terrain3d) {
       terrain3d.removeAttribute('hidden');
       terrain3d.hidden = false;
     }
-    if (btn) {
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      btn.classList.toggle('is-active', !!open);
-    }
-    if (open && window.ATAKMap && typeof window.ATAKMap.syncDisplayPrefsUi === 'function') {
+    if (window.ATAKMap && typeof window.ATAKMap.syncDisplayPrefsUi === 'function') {
       try { window.ATAKMap.syncDisplayPrefsUi(); } catch (e) {}
+    }
+  }
+
+  function setLookOpen(open) {
+    var panel = document.getElementById('atak-map-look-prefs');
+    var btn = document.querySelector('#atak-map-tools [data-tool-ui="look"]');
+    if (open) {
+      /* Sous C2 V2 la barre Affichage est pointer-events:none — on ouvre Réglages. */
+      openMapSettings();
+      if (panel) panel.hidden = true;
+      if (btn) {
+        btn.setAttribute('aria-expanded', 'true');
+        btn.classList.add('is-active');
+      }
+      return;
+    }
+    if (panel) panel.hidden = true;
+    if (btn) {
+      btn.setAttribute('aria-expanded', 'false');
+      btn.classList.remove('is-active');
     }
   }
 
@@ -1148,10 +1182,10 @@ window.ATAKMapTools = (function () {
       var panel = document.getElementById('atak-map-tools-prefs');
       setPrefsOpen(!(panel && !panel.hidden));
     } else if (action === 'look') {
-      var look = document.getElementById('atak-map-look-prefs');
-      var nextOpen = !(look && !look.hidden);
-      if (nextOpen) setPrefsOpen(false);
-      setLookOpen(nextOpen);
+      setPrefsOpen(false);
+      setLookOpen(true);
+    } else if (action === 'look-open-settings') {
+      setLookOpen(true);
     } else if (action === 'look-close') setLookOpen(false);
     else if (action === 'prefs-close') setPrefsOpen(false);
     else if (action === 'preset') {
@@ -1255,6 +1289,8 @@ window.ATAKMapTools = (function () {
     formatDelayFr: formatDelayFr,
     circleMetrics: circleMetrics,
     refreshZoneMetrics: refreshZoneMetrics,
-    setToolbarCollapsed: setToolbarCollapsed
+    setToolbarCollapsed: setToolbarCollapsed,
+    openMapSettings: openMapSettings,
+    setLookOpen: setLookOpen
   };
 })();

@@ -1433,7 +1433,7 @@ if ($atakMapConfig) {
           </label>
           <label class="atak-map-look__check" for="atak-settings-look-depth">
             <input type="checkbox" id="atak-settings-look-depth" checked />
-            <span>Relief et profondeur</span>
+            <span>Relief et profondeur des symboles</span>
           </label>
           <label class="atak-map-look__check" for="atak-settings-look-motion">
             <input type="checkbox" id="atak-settings-look-motion" checked />
@@ -1443,7 +1443,100 @@ if ($atakMapConfig) {
             <input type="checkbox" id="atak-settings-look-ft-frame" checked />
             <span>Cadre d’équipe</span>
           </label>
+          <label class="atak-map-look__check" for="atak-map-look-motion-arrows">
+            <input type="checkbox" id="atak-map-look-motion-arrows" checked />
+            <span>Flèche de direction</span>
+          </label>
+          <label class="atak-map-look__check" for="atak-map-look-assignment-lines">
+            <input type="checkbox" id="atak-map-look-assignment-lines" checked />
+            <span>Ligne vers destination</span>
+          </label>
         </section>
+
+        <section class="atak-settings-block" id="atak-settings-map" aria-label="Carte, relief et calques">
+          <h3 class="atak-rail-audio-title">Carte — relief et calques</h3>
+          <p class="atak-settings-copy">Ombrage, courbes, vue 3D et inventaire des données terrain chargées sur ce poste. Le bouton <strong>3D</strong> sur la carte reste le raccourci rapide.</p>
+
+          <div class="atak-map-look__terrain" id="atak-settings-relief">
+            <p class="atak-map-look__key">Relief 2D</p>
+            <label class="atak-map-look__check" for="atak-terrain-hillshade">
+              <input type="checkbox" id="atak-terrain-hillshade" checked />
+              <span>Ombrage</span>
+            </label>
+            <label class="atak-map-look__check" for="atak-terrain-contours10">
+              <input type="checkbox" id="atak-terrain-contours10" checked />
+              <span>Courbes 10 m</span>
+            </label>
+            <label class="atak-map-look__check" for="atak-terrain-contours50">
+              <input type="checkbox" id="atak-terrain-contours50" />
+              <span>Courbes 50 m</span>
+            </label>
+            <label class="atak-map-look__check" for="atak-terrain-altitudes">
+              <input type="checkbox" id="atak-terrain-altitudes" />
+              <span>Altitudes</span>
+            </label>
+            <label class="atak-map-look__check" for="atak-terrain-slope">
+              <input type="checkbox" id="atak-terrain-slope" />
+              <span>Pentes</span>
+            </label>
+            <label class="atak-map-look__row" for="atak-terrain-opacity">
+              <span class="atak-map-look__key">Opacité <span class="atak-sound-pref-val" id="atak-terrain-opacity-val">32 %</span></span>
+              <input type="range" id="atak-terrain-opacity" class="atak-sound-pref-slider" min="10" max="100" step="5" value="32" />
+            </label>
+          </div>
+
+          <div class="atak-terrain-3d-settings" id="atak-terrain-3d-settings">
+            <p class="atak-map-look__key">Vue 3D / topo</p>
+            <label class="atak-map-look__row" for="atak-terrain-3d-mode">
+                <span class="atak-map-look__key">Vue de la carte</span>
+                <select id="atak-terrain-3d-mode" class="atak-header-select atak-map-look__select" title="Vue topo premium Three.js">
+                  <option value="flat" selected>À plat (2D)</option>
+                  <option value="inclined">Topo premium 3D</option>
+                </select>
+              </label>
+            <label class="atak-map-look__check" for="atak-scene-buildings">
+              <input type="checkbox" id="atak-scene-buildings" checked />
+              <span>Bâtiments et forêts du jeu</span>
+            </label>
+            <label class="atak-map-look__row" for="atak-terrain-exaggeration">
+              <span class="atak-map-look__key">Exagération Z <span class="atak-sound-pref-val" id="atak-terrain-exaggeration-val">2.5×</span></span>
+              <input type="range" id="atak-terrain-exaggeration" class="atak-sound-pref-slider" min="1" max="4" step="0.1" value="2.5" />
+            </label>
+            <label class="atak-map-look__row" for="atak-terrain-pitch">
+              <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
+              <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
+            </label>
+            <p class="atak-terrain-3d-hint">Vue topo premium : mesh Three.js drapé sur le relevé d’altitudes. Amplifiez le relief, ajustez l’inclinaison, orientez avec la souris. Sans relevé d’altitude, le Z n’a pas d’effet.</p>
+          </div>
+
+          <div class="atak-settings-map-data" id="atak-settings-map-data">
+            <p class="atak-map-look__key">Données carte sur ce poste</p>
+            <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
+            <div class="atak-terrain-inventory" id="atak-terrain-inventory" role="status" aria-live="polite" aria-label="Données présentes sur le poste pour cette carte">
+              <div class="atak-terrain-inventory__row">
+                <span class="atak-terrain-inventory__label">Ombrage</span>
+                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-hillshade">Pas encore sur le poste</span>
+              </div>
+              <div class="atak-terrain-inventory__row">
+                <span class="atak-terrain-inventory__label">Relevé divers (pente, courbe…)</span>
+                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-survey">Pas encore sur le poste</span>
+              </div>
+              <div class="atak-terrain-inventory__row">
+                <span class="atak-terrain-inventory__label">Bâtiments</span>
+                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-buildings">Pas encore sur le poste</span>
+              </div>
+              <div class="atak-terrain-inventory__row">
+                <span class="atak-terrain-inventory__label">Forêts</span>
+                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-forests">Pas encore sur le poste</span>
+              </div>
+              <div class="atak-terrain-inventory__row">
+                <span class="atak-terrain-inventory__label">Dernier relevé le</span>
+                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-last">Aucun relevé reçu pour l’instant</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section class="atak-rail-audio" id="atak-rail-audio" aria-label="Réglages des alertes">
           <h3 class="atak-rail-audio-title">Alertes sonores</h3>
           <label class="atak-rail-audio-vol" for="atak-alert-volume">
@@ -2516,7 +2609,7 @@ if ($atakMapConfig) {
           <div class="atak-map-tools__cluster atak-map-tools__cluster--chrome" data-tool-sep="chrome">
             <span class="atak-map-tools__cluster-label">Barre</span>
             <div class="atak-map-tools__cluster-btns">
-              <button type="button" class="atak-map-tools__btn" data-tool-ui="look" title="Apparence de la carte (taille, relief, animation)" aria-expanded="false" aria-controls="atak-map-look-prefs">Affichage</button>
+              <button type="button" class="atak-map-tools__btn" data-tool-ui="look" title="Ouvre les réglages carte (relief, ombre, 3D, données)" aria-expanded="false" aria-controls="atak-settings-aside">Affichage</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-tool-ui="customize" title="Choisir les outils affichés" aria-expanded="false" aria-controls="atak-map-tools-prefs">Personnaliser</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-tool-ui="collapse" title="Masquer la barre d’outils">Masquer</button>
             </div>
@@ -2524,117 +2617,20 @@ if ($atakMapConfig) {
         </div>
         <div class="atak-map-tools__prefs atak-map-tools__prefs--look" id="atak-map-look-prefs" hidden role="dialog" aria-label="Apparence de la carte">
           <p class="atak-map-tools__prefs-title">Apparence de la carte</p>
-          <p class="atak-map-tools__prefs-hint">Réglages instantanés, mémorisés sur cet appareil.</p>
-          <label class="atak-map-look__row" for="atak-map-look-style">
-            <span class="atak-map-look__key">Positions</span>
-            <select id="atak-map-look-style" class="atak-header-select atak-map-look__select" title="Style des marqueurs d’unités">
-              <option value="nato" selected>Symbole OTAN ou photo</option>
-              <option value="intel_dot">Point discret</option>
-              <option value="dot">Point simple</option>
-              <option value="team_dot">Point couleur d’équipe</option>
-            </select>
-          </label>
-          <label class="atak-map-look__row" for="atak-map-look-icon-size">
-            <span class="atak-map-look__key">Icônes <span class="atak-sound-pref-val" id="atak-map-look-icon-size-val">17</span></span>
-            <input type="range" id="atak-map-look-icon-size" class="atak-sound-pref-slider" min="10" max="22" step="1" value="17" aria-valuemin="10" aria-valuemax="22" aria-valuenow="17" />
-          </label>
-          <label class="atak-map-look__row" for="atak-map-look-label-size">
-            <span class="atak-map-look__key">Libellés <span class="atak-sound-pref-val" id="atak-map-look-label-size-val">7</span></span>
-            <input type="range" id="atak-map-look-label-size" class="atak-sound-pref-slider" min="6" max="16" step="1" value="7" aria-valuemin="6" aria-valuemax="16" aria-valuenow="7" />
-          </label>
-          <label class="atak-map-look__check" for="atak-map-look-depth">
+          <p class="atak-map-tools__prefs-hint">Les réglages carte (symboles, ombrage, vue 3D, inventaire terrain) sont regroupés dans <strong>Réglages</strong>.</p>
+          <!-- Miroirs legacy pour sync UI (cachés) — les contrôles actifs sont dans #atak-settings-aside -->
+          <div class="atak-map-look-legacy-mirrors" hidden aria-hidden="true">
+            <select id="atak-map-look-style"><option value="nato" selected>nato</option><option value="intel_dot">intel_dot</option><option value="dot">dot</option><option value="team_dot">team_dot</option></select>
+            <input type="range" id="atak-map-look-icon-size" min="10" max="22" value="17" />
+            <span id="atak-map-look-icon-size-val">17</span>
+            <input type="range" id="atak-map-look-label-size" min="6" max="16" value="7" />
+            <span id="atak-map-look-label-size-val">7</span>
             <input type="checkbox" id="atak-map-look-depth" checked />
-            <span>Relief et profondeur</span>
-          </label>
-          <label class="atak-map-look__check" for="atak-map-look-motion">
             <input type="checkbox" id="atak-map-look-motion" checked />
-            <span>Animation des contacts</span>
-          </label>
-          <label class="atak-map-look__check" for="atak-map-look-ft-frame">
             <input type="checkbox" id="atak-map-look-ft-frame" checked />
-            <span>Cadre d’équipe</span>
-          </label>
-          <label class="atak-map-look__check" for="atak-map-look-motion-arrows">
-            <input type="checkbox" id="atak-map-look-motion-arrows" checked />
-            <span>Flèche de direction</span>
-          </label>
-          <label class="atak-map-look__check" for="atak-map-look-assignment-lines">
-            <input type="checkbox" id="atak-map-look-assignment-lines" checked />
-            <span>Ligne vers destination</span>
-          </label>
-          <div class="atak-map-look__terrain">
-            <p class="atak-map-look__key">Relief</p>
-            <label class="atak-map-look__check" for="atak-terrain-hillshade">
-              <input type="checkbox" id="atak-terrain-hillshade" checked />
-              <span>Ombrage</span>
-            </label>
-            <label class="atak-map-look__check" for="atak-terrain-contours10">
-              <input type="checkbox" id="atak-terrain-contours10" checked />
-              <span>Courbes 10 m</span>
-            </label>
-            <label class="atak-map-look__check" for="atak-terrain-contours50">
-              <input type="checkbox" id="atak-terrain-contours50" />
-              <span>Courbes 50 m</span>
-            </label>
-            <label class="atak-map-look__check" for="atak-terrain-altitudes">
-              <input type="checkbox" id="atak-terrain-altitudes" />
-              <span>Altitudes</span>
-            </label>
-            <label class="atak-map-look__check" for="atak-terrain-slope">
-              <input type="checkbox" id="atak-terrain-slope" />
-              <span>Pentes</span>
-            </label>
-            <label class="atak-map-look__row" for="atak-terrain-opacity">
-              <span class="atak-map-look__key">Opacité <span class="atak-sound-pref-val" id="atak-terrain-opacity-val">32 %</span></span>
-              <input type="range" id="atak-terrain-opacity" class="atak-sound-pref-slider" min="10" max="100" step="5" value="32" />
-            </label>
-            <div class="atak-terrain-3d-settings" id="atak-terrain-3d-settings">
-              <label class="atak-map-look__row" for="atak-terrain-3d-mode">
-                <span class="atak-map-look__key">Vue de la carte</span>
-                <select id="atak-terrain-3d-mode" class="atak-header-select atak-map-look__select" title="Vue topo premium Three.js">
-                  <option value="flat" selected>À plat (2D)</option>
-                  <option value="inclined">Topo premium 3D</option>
-                </select>
-              </label>
-              <label class="atak-map-look__check" for="atak-scene-buildings">
-                <input type="checkbox" id="atak-scene-buildings" checked />
-                <span>Bâtiments et forêts du jeu</span>
-              </label>
-              <label class="atak-map-look__row" for="atak-terrain-exaggeration">
-                <span class="atak-map-look__key">Exagération Z <span class="atak-sound-pref-val" id="atak-terrain-exaggeration-val">2.5×</span></span>
-                <input type="range" id="atak-terrain-exaggeration" class="atak-sound-pref-slider" min="1" max="4" step="0.1" value="2.5" />
-              </label>
-              <label class="atak-map-look__row" for="atak-terrain-pitch">
-                <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
-                <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
-              </label>
-              <p class="atak-terrain-3d-hint">Vue topo premium : mesh Three.js drapé sur le relevé d’altitudes. Amplifiez le relief, ajustez l’inclinaison, orientez avec la souris. Le rendu CSS-pitch legacy est désactivé.</p>
-            </div>
-            <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
-            <div class="atak-terrain-inventory" id="atak-terrain-inventory" role="status" aria-live="polite" aria-label="Données présentes sur le poste pour cette carte">
-              <div class="atak-terrain-inventory__row">
-                <span class="atak-terrain-inventory__label">Ombrage</span>
-                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-hillshade">Pas encore sur le poste</span>
-              </div>
-              <div class="atak-terrain-inventory__row">
-                <span class="atak-terrain-inventory__label">Relevé divers (pente, courbe…)</span>
-                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-survey">Pas encore sur le poste</span>
-              </div>
-              <div class="atak-terrain-inventory__row">
-                <span class="atak-terrain-inventory__label">Bâtiments</span>
-                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-buildings">Pas encore sur le poste</span>
-              </div>
-              <div class="atak-terrain-inventory__row">
-                <span class="atak-terrain-inventory__label">Forêts</span>
-                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-forests">Pas encore sur le poste</span>
-              </div>
-              <div class="atak-terrain-inventory__row">
-                <span class="atak-terrain-inventory__label">Dernier relevé le</span>
-                <span class="atak-terrain-inventory__value" id="atak-terrain-inv-last">Aucun relevé reçu pour l’instant</span>
-              </div>
-            </div>
           </div>
           <div class="atak-map-tools__prefs-actions">
+            <button type="button" class="atak-map-tools__btn" data-tool-ui="look-open-settings">Ouvrir Réglages</button>
             <button type="button" class="atak-map-tools__btn" data-tool-ui="look-close">Fermer</button>
           </div>
         </div>

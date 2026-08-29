@@ -127,6 +127,8 @@ window.ATAKTerrain = (function () {
   }
 
   function lookPanelOpen() {
+    var settings = document.getElementById('atak-settings-aside');
+    if (settings && !settings.hidden) return true;
     var panel = document.getElementById('atak-map-look-prefs');
     return !!(panel && !panel.hidden);
   }
@@ -260,7 +262,16 @@ window.ATAKTerrain = (function () {
         }, 0);
       });
     }
-    var panel = document.getElementById('atak-map-look-prefs');
+    document.querySelectorAll('.js-atak-settings-toggle').forEach(function (toggle) {
+      if (toggle._atakCoverageBound) return;
+      toggle._atakCoverageBound = true;
+      toggle.addEventListener('click', function () {
+        setTimeout(function () {
+          if (lookPanelOpen()) loadCoverage();
+        }, 40);
+      });
+    });
+    var panel = document.getElementById('atak-settings-aside') || document.getElementById('atak-map-look-prefs');
     if (panel && !panel._atakCoverageObs && window.MutationObserver) {
       panel._atakCoverageObs = true;
       new MutationObserver(function () {
