@@ -315,14 +315,13 @@ class AccountController
                 return Response::redirect(url('account/preferences'));
             }
             $v = new Validator($request->all(), [
-                'display_name' => 'max:100',
                 'callsign' => 'max:50',
                 'steam_id' => 'max:512',
                 'timezone' => 'max:50',
                 'language' => 'max:10',
                 'profile_slug' => 'max:40',
-                'first_name' => 'max:100',
-                'last_name' => 'max:100',
+                'first_name' => 'required|max:100',
+                'last_name' => 'required|max:100',
             ]);
             $themeIn = $request->input('ui_theme');
             $densityIn = $request->input('ui_density');
@@ -352,8 +351,11 @@ class AccountController
 
                     return Response::redirect(url('account/preferences'));
                 }
+                $firstName = trim((string) $request->input('first_name'));
+                $lastName = trim((string) $request->input('last_name'));
+                $derivedDisplay = trim($firstName . ' ' . $lastName);
                 $updateUser = [
-                    'display_name' => trim((string) $request->input('display_name')),
+                    'display_name' => $derivedDisplay !== '' ? $derivedDisplay : null,
                     'callsign' => trim((string) $request->input('callsign')),
                     'steam_id' => $resolvedSteam,
                 ];
@@ -381,14 +383,19 @@ class AccountController
                 if (!\App\Services\I18n\LocaleService::isSupported($language)) {
                     $language = 'fr';
                 }
-                $firstName = trim((string) $request->input('first_name'));
-                $lastName = trim((string) $request->input('last_name'));
                 $this->userProfileRepository->upsert($uid, [
                     'first_name' => $firstName !== '' ? $firstName : null,
                     'last_name' => $lastName !== '' ? $lastName : null,
                     'timezone' => trim((string) $request->input('timezone')),
                     'language' => $language,
                 ]);
+                try {
+                    $this->personnelProfileRepository->ensureRecord($uid);
+                    $this->personnelProfileRepository->update($uid, [
+                        'character_name' => $derivedDisplay !== '' ? $derivedDisplay : '',
+                    ]);
+                } catch (\Throwable) {
+                }
                 (new \App\Services\I18n\LocaleService())->setUserLocale($language, false);
                 if (!empty($vUi['normalized'])) {
                     $this->userUiPreferencesRepository->upsert($uid, $tenantId, $vUi['normalized']);
@@ -400,7 +407,7 @@ class AccountController
                     $enabled = isset($notifInput[$key]);
                     $this->userNotificationPreferencesRepository->setEnabled($uid, $tenantId, 'email', $key, $enabled);
                 }
-                Session::set('display_name', trim((string) $request->input('display_name')));
+                Session::set('display_name', $derivedDisplay);
                 Session::set('callsign', trim((string) $request->input('callsign')));
                 Session::flash('success', 'Préférences enregistrées.');
                 return Response::redirect(url('account/preferences'));
@@ -503,7 +510,6 @@ class AccountController
 
             return Response::redirect(url('account/preferences'));
         }
-        $applyName = $request->input('apply_steam_display_name') === '1';
         $steps = [];
         if ($steamIdJustSavedFromForm) {
             $steps[] = [
@@ -551,17 +557,12 @@ class AccountController
                 ? mb_substr($summary['avatar_url'], 0, 500)
                 : substr($summary['avatar_url'], 0, 500);
         }
-        if ($applyName && $summary['personaname'] !== '') {
-            $patch['display_name'] = function_exists('mb_substr')
-                ? mb_substr($summary['personaname'], 0, 100)
-                : substr($summary['personaname'], 0, 100);
-        }
         if ($patch === []) {
             $steps[] = [
                 'key' => 'apply',
                 'label' => 'Mise à jour du dossier',
                 'ok' => false,
-                'detail' => 'Aucune photo ni nom exploitable n’a été renvoyé pour ce profil.',
+                'detail' => 'Aucune photo exploitable n’a été renvoyée pour ce profil.',
             ];
             Session::flash('steam_sync_report', [
                 'ok' => false,
@@ -571,7 +572,7 @@ class AccountController
                     'public_pseudo' => $summary['personaname'],
                 ],
             ]);
-            Session::flash('error', 'Aucune donnée exploitable n’a été renvoyée pour ce profil.');
+            Session::flash('error', 'Aucune photo exploitable n’a été renvoyée pour ce profil.');
 
             return Response::redirect(url('account/preferences'));
         }
@@ -585,7 +586,7 @@ class AccountController
             'key' => 'apply',
             'label' => 'Mise à jour du dossier',
             'ok' => true,
-            'detail' => isset($patch['avatar_url']) ? 'Photo du compte actualisée.' : 'Nom d’affichage actualisé.',
+            'detail' => 'Photo du compte actualisée.',
         ];
         Session::flash('steam_sync_report', [
             'ok' => true,
@@ -594,16 +595,11 @@ class AccountController
             'data' => [
                 'public_pseudo' => $summary['personaname'],
                 'avatar_updated' => isset($patch['avatar_url']),
-                'display_name_updated' => isset($patch['display_name']),
+                'display_name_updated' => false,
                 'steam_id' => $summary['steam_id'],
             ],
         ]);
-        Session::flash(
-            'success',
-            $applyName
-                ? 'Photo et nom d’affichage mis à jour depuis le profil public Steam.'
-                : 'Photo du compte mise à jour depuis le profil public Steam.'
-        );
+        Session::flash('success', 'Photo du compte mise à jour depuis le profil public Steam.');
 
         return Response::redirect(url('account/preferences'));
     }

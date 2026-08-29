@@ -7,21 +7,27 @@ namespace App\Services\Recruitment;
 use App\Core\Database;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\PasswordResetRepository;
+use App\Repositories\PersonnelAssignmentRepository;
+use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UnitRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
 use App\Services\Admin\AdminAuditService;
+use App\Services\Documents\DocumentAccessService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Platform\FeatureGateService;
+use App\Services\Steam\SteamWebApiService;
 use App\Support\EnlistmentAcceptedIdentity;
 use DateTimeImmutable;
 use Throwable;
 
 /**
  * Après acceptation d’une candidature (statut reviewed) : rattachement ou création de compte tenant + e-mails.
+ * Le parcours guidé post-acceptation (rôles, unité, Steam, habilitation) passe par completeAcceptanceOnboarding().
  */
 final class EnlistmentAcceptanceProvisioningService
 {
@@ -40,7 +46,11 @@ final class EnlistmentAcceptanceProvisioningService
         private EmailService $emailService,
         private FeatureGateService $featureGateService,
         private AdminAuditService $adminAuditService,
-        private UserNotificationPreferencesRepository $notificationPreferencesRepository
+        private UserNotificationPreferencesRepository $notificationPreferencesRepository,
+        private ?SteamWebApiService $steamWebApiService = null,
+        private ?PersonnelAssignmentRepository $personnelAssignmentRepository = null,
+        private ?PersonnelJobRoleRepository $personnelJobRoleRepository = null,
+        private ?UnitRepository $unitRepository = null,
     ) {}
 
     /**
@@ -87,12 +97,29 @@ final class EnlistmentAcceptanceProvisioningService
     }
 
     /**
+     * True si le dossier accepté attend encore le parcours d’intégration recruteur.
+     *
+     * @param array<string, mixed> $enlistmentRow
+     */
+    public function needsAcceptanceOnboarding(array $enlistmentRow): bool
+    {
+        if ((string) ($enlistmentRow['status'] ?? '') !== 'reviewed') {
+            return false;
+        }
+
+        return EnlistmentRepository::effectivePipelineStage($enlistmentRow) === 'acceptance_onboarding';
+    }
+
+    /**
      * Texte court pour proposer une action manuelle (candidature déjà acceptée).
      */
     public function membershipRepairHint(int $tenantId, array $enlistmentRow): ?string
     {
         if ((string) ($enlistmentRow['status'] ?? '') !== 'reviewed') {
             return null;
+        }
+        if ($this->needsAcceptanceOnboarding($enlistmentRow)) {
+            return 'Le parcours d’intégration n’est pas terminé : choisissez les rôles, l’unité et le profil Steam avant de finaliser.';
         }
         $submitter = (int) ($enlistmentRow['submitter_user_id'] ?? 0);
         $email = trim((string) ($enlistmentRow['email'] ?? ''));
@@ -152,6 +179,299 @@ final class EnlistmentAcceptanceProvisioningService
         }
 
         return $this->runMembershipSync($tenantId, $enlistmentId, $row, $actorUserId, $reviewerComment, true);
+    }
+
+    /**
+     * Parcours guidé post-acceptation : identité, Steam, rôles, unité / fonction, habilitation.
+     *
+     * @param array{
+     *   first_name?: string,
+     *   last_name?: string,
+     *   callsign?: string,
+     *   steam_profile?: string,
+     *   unit_id?: int,
+     *   personnel_job_role_id?: int,
+     *   role_ids?: list<int>,
+     *   clearance_level?: string,
+     *   assignment_label?: string,
+     *   send_notifications?: bool
+     * } $options
+     * @return array{ok: bool, message: string|null, user_id?: int, steam_id?: string|null, steam_synced?: bool}
+     */
+    public function completeAcceptanceOnboarding(
+        int $tenantId,
+        int $enlistmentId,
+        int $actorUserId,
+        array $options
+    ): array {
+        $row = $this->enlistmentRepository->findForTenant($tenantId, $enlistmentId);
+        if (!$row || (string) ($row['status'] ?? '') !== 'reviewed') {
+            return ['ok' => false, 'message' => 'Seules les candidatures acceptées peuvent être intégrées.'];
+        }
+
+        $first = trim((string) ($options['first_name'] ?? $row['first_name'] ?? ''));
+        $last = trim((string) ($options['last_name'] ?? $row['last_name'] ?? ''));
+        if ($first === '' || $last === '') {
+            return ['ok' => false, 'message' => 'Indiquez le prénom et le nom du personnage (identité RP).'];
+        }
+        $callsignRaw = array_key_exists('callsign', $options)
+            ? trim((string) $options['callsign'])
+            : trim((string) ($row['callsign'] ?? ''));
+        $this->enlistmentRepository->updateCandidateIdentity(
+            $tenantId,
+            $enlistmentId,
+            $first,
+            $last,
+            $callsignRaw !== '' ? $callsignRaw : null
+        );
+        $row = $this->enlistmentRepository->findForTenant($tenantId, $enlistmentId) ?? $row;
+
+        $sendNotifications = !array_key_exists('send_notifications', $options)
+            || (bool) $options['send_notifications'];
+        $alreadyLinked = (int) ($row['submitter_user_id'] ?? 0) > 0
+            && $this->userRepository->findById((int) $row['submitter_user_id'], $tenantId) !== null
+            && !$this->roleSlugNeedsPromotion($tenantId, (int) $row['submitter_user_id']);
+        if ($alreadyLinked) {
+            $sendNotifications = false;
+        }
+
+        $reviewerComment = trim((string) ($row['reviewer_comment'] ?? ''));
+        $sync = $this->runMembershipSync(
+            $tenantId,
+            $enlistmentId,
+            $row,
+            $actorUserId,
+            $reviewerComment !== '' ? $reviewerComment : null,
+            $sendNotifications
+        );
+        if (!$sync['ok']) {
+            return ['ok' => false, 'message' => $sync['message']];
+        }
+
+        $fresh = $this->enlistmentRepository->findForTenant($tenantId, $enlistmentId) ?? $row;
+        $userId = (int) ($fresh['submitter_user_id'] ?? 0);
+        if ($userId < 1) {
+            return [
+                'ok' => false,
+                'message' => $sync['message'] ?? 'Le compte membre n’a pas pu être créé ou lié. Réessayez ou utilisez le rattachement manuel.',
+            ];
+        }
+
+        $extras = $this->applyOnboardingExtras($tenantId, $userId, $options, $actorUserId);
+        if (!$extras['ok']) {
+            return [
+                'ok' => false,
+                'message' => $extras['message'],
+                'user_id' => $userId,
+            ];
+        }
+
+        $this->enlistmentRepository->updatePipelineStage($tenantId, $enlistmentId, 'accepted');
+
+        $warn = trim((string) ($sync['message'] ?? ''));
+        $extraWarn = trim((string) ($extras['message'] ?? ''));
+        $combined = trim($warn . ($warn !== '' && $extraWarn !== '' ? ' ' : '') . $extraWarn);
+
+        return [
+            'ok' => true,
+            'message' => $combined !== '' ? $combined : null,
+            'user_id' => $userId,
+            'steam_id' => $extras['steam_id'] ?? null,
+            'steam_synced' => (bool) ($extras['steam_synced'] ?? false),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     * @return array{ok: bool, message: ?string, steam_id?: ?string, steam_synced?: bool}
+     */
+    private function applyOnboardingExtras(int $tenantId, int $userId, array $options, int $actorUserId): array
+    {
+        $warnings = [];
+        $steamId = null;
+        $steamSynced = false;
+
+        $first = trim((string) ($options['first_name'] ?? ''));
+        $last = trim((string) ($options['last_name'] ?? ''));
+        $displayName = trim($first . ' ' . $last);
+        $callsign = array_key_exists('callsign', $options)
+            ? trim((string) $options['callsign'])
+            : null;
+
+        $userPatch = [];
+        if ($displayName !== '') {
+            $userPatch['display_name'] = $displayName;
+        }
+        if ($callsign !== null) {
+            $userPatch['callsign'] = $callsign !== '' ? $callsign : null;
+        }
+
+        $steamRaw = trim((string) ($options['steam_profile'] ?? ''));
+        if ($steamRaw !== '') {
+            $resolved = $this->resolveSteamId($steamRaw);
+            if ($resolved === null) {
+                return [
+                    'ok' => false,
+                    'message' => 'Profil Steam introuvable. Collez l’URL steamcommunity.com/profiles/… ou /id/…, ou le SteamID64.',
+                ];
+            }
+            $steamId = $resolved;
+            $userPatch['steam_id'] = $resolved;
+            if ($this->steamWebApiService !== null) {
+                try {
+                    $player = $this->steamWebApiService->fetchPublicPlayer($resolved);
+                    if (is_array($player) && trim((string) ($player['avatar_url'] ?? '')) !== '') {
+                        $userPatch['avatar_url'] = trim((string) $player['avatar_url']);
+                        $steamSynced = true;
+                    }
+                } catch (Throwable) {
+                    $warnings[] = 'Steam lié, mais le profil public n’a pas pu être synchronisé (avatar).';
+                }
+            }
+        }
+
+        if ($userPatch !== []) {
+            $this->userRepository->update($userId, $tenantId, $userPatch);
+        }
+
+        $this->personnelProfileRepository->ensureRecord($userId);
+        $ppPatch = [];
+        if ($displayName !== '') {
+            $ppPatch['character_name'] = $displayName;
+        }
+        if ($callsign !== null) {
+            $ppPatch['callsign'] = $callsign !== '' ? $callsign : null;
+        }
+
+        $roleIds = $this->normalizeAssignableRoleIds($tenantId, $options['role_ids'] ?? null);
+        if ($roleIds === []) {
+            $memberRoleId = $this->roleRepository->getIdBySlug($tenantId, 'member');
+            if ($memberRoleId) {
+                $roleIds = [$memberRoleId];
+            }
+        }
+        if ($roleIds !== []) {
+            try {
+                $this->userRepository->syncOrganizationRoles($userId, $tenantId, $roleIds, $actorUserId, true);
+            } catch (Throwable $e) {
+                return [
+                    'ok' => false,
+                    'message' => 'Impossible d’appliquer les rôles d’accès : ' . $this->shortExceptionMessage($e),
+                ];
+            }
+        }
+
+        $jobRoleId = isset($options['personnel_job_role_id']) ? (int) $options['personnel_job_role_id'] : 0;
+        $unitId = isset($options['unit_id']) ? (int) $options['unit_id'] : 0;
+        $assignmentLabel = trim((string) ($options['assignment_label'] ?? ''));
+        if ($assignmentLabel === '') {
+            $assignmentLabel = 'Membre';
+        }
+
+        if ($jobRoleId > 0 && $this->personnelJobRoleRepository !== null) {
+            try {
+                if (
+                    $this->personnelJobRoleRepository->tablesExist()
+                    && $this->personnelJobRoleRepository->findRoleById($jobRoleId, $tenantId)
+                ) {
+                    if ($this->personnelJobRoleRepository->pivotTableExists()) {
+                        $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, $userId, [[
+                            'personnel_job_role_id' => $jobRoleId,
+                            'role_detail' => '',
+                            'is_primary' => true,
+                        ]]);
+                    }
+                    $jr = $this->personnelJobRoleRepository->findRoleById($jobRoleId, $tenantId);
+                    if ($jr && $assignmentLabel === 'Membre') {
+                        $jn = trim((string) ($jr['name'] ?? ''));
+                        if ($jn !== '') {
+                            $assignmentLabel = $jn;
+                        }
+                    }
+                }
+            } catch (Throwable $e) {
+                $warnings[] = 'Fonction RH non appliquée : ' . $this->shortExceptionMessage($e);
+            }
+        }
+
+        if ($unitId > 0 && $this->personnelAssignmentRepository !== null && $this->unitRepository !== null) {
+            try {
+                $unit = $this->unitRepository->findById($unitId, $tenantId);
+                if (!$unit) {
+                    return ['ok' => false, 'message' => 'L’unité sélectionnée est introuvable.'];
+                }
+                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier(
+                    $userId,
+                    $unitId,
+                    mb_substr($assignmentLabel, 0, 120)
+                );
+            } catch (Throwable $e) {
+                return [
+                    'ok' => false,
+                    'message' => 'Impossible d’affecter l’unité : ' . $this->shortExceptionMessage($e),
+                ];
+            }
+        }
+
+        $clearance = strtolower(trim((string) ($options['clearance_level'] ?? '')));
+        if ($clearance !== '') {
+            $labels = DocumentAccessService::getClassificationLevelLabels();
+            if (!array_key_exists($clearance, $labels)) {
+                return ['ok' => false, 'message' => 'Niveau d’habilitation non reconnu.'];
+            }
+            $ppPatch['clearance_level'] = $clearance;
+            $ppPatch['clearance_reviewed_at'] = date('Y-m-d H:i:s');
+        }
+
+        if ($ppPatch !== []) {
+            $this->personnelProfileRepository->update($userId, $ppPatch);
+        }
+
+        return [
+            'ok' => true,
+            'message' => $warnings !== [] ? implode(' ', $warnings) : null,
+            'steam_id' => $steamId,
+            'steam_synced' => $steamSynced,
+        ];
+    }
+
+    /**
+     * @param mixed $raw
+     * @return list<int>
+     */
+    private function normalizeAssignableRoleIds(int $tenantId, mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $ids = [];
+        foreach ($raw as $v) {
+            $id = (int) $v;
+            if ($id < 1) {
+                continue;
+            }
+            if (!$this->roleRepository->canAssignInTenantAdminContext($id, $tenantId)) {
+                continue;
+            }
+            $ids[$id] = $id;
+        }
+
+        return array_values($ids);
+    }
+
+    private function resolveSteamId(string $raw): ?string
+    {
+        if ($this->steamWebApiService !== null) {
+            try {
+                $resolved = $this->steamWebApiService->resolveSteamIdFromUserInput($raw);
+                if ($resolved !== null && $resolved !== '') {
+                    return $resolved;
+                }
+            } catch (Throwable) {
+            }
+        }
+
+        return \App\Support\SteamId::normalize($raw);
     }
 
     /**

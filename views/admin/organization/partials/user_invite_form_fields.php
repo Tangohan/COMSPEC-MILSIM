@@ -22,10 +22,17 @@ $fid = static function (string $suffix) use ($fieldIdPrefix): string {
     <label for="<?= htmlspecialchars($fid('email'), ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-medium text-slate-700">E-mail *</label>
     <input type="email" id="<?= htmlspecialchars($fid('email'), ENT_QUOTES, 'UTF-8') ?>" name="email" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" value="">
 </div>
-<div>
-    <label for="<?= htmlspecialchars($fid('display_name'), ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-medium text-slate-700">Nom d'affichage</label>
-    <input type="text" id="<?= htmlspecialchars($fid('display_name'), ENT_QUOTES, 'UTF-8') ?>" name="display_name" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
+<div class="grid gap-4 sm:grid-cols-2">
+    <div>
+        <label for="<?= htmlspecialchars($fid('first_name'), ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-medium text-slate-700">Prénom *</label>
+        <input type="text" id="<?= htmlspecialchars($fid('first_name'), ENT_QUOTES, 'UTF-8') ?>" name="first_name" required maxlength="100" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" autocomplete="off">
+    </div>
+    <div>
+        <label for="<?= htmlspecialchars($fid('last_name'), ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-medium text-slate-700">Nom *</label>
+        <input type="text" id="<?= htmlspecialchars($fid('last_name'), ENT_QUOTES, 'UTF-8') ?>" name="last_name" required maxlength="100" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" autocomplete="off">
+    </div>
 </div>
+<p class="text-xs text-slate-500 -mt-2">Prénom et nom du personnage — une seule identité partout.</p>
 <div>
     <label for="<?= htmlspecialchars($fid('callsign'), ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-medium text-slate-700">Indicatif</label>
     <input type="text" id="<?= htmlspecialchars($fid('callsign'), ENT_QUOTES, 'UTF-8') ?>" name="callsign" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
@@ -38,11 +45,7 @@ $fid = static function (string $suffix) use ($fieldIdPrefix): string {
     </div>
     <label class="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
         <input type="checkbox" name="sync_steam_profile" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-700" <?= !empty($steamWebConfigured) ? '' : 'disabled' ?>>
-        <span>Synchroniser photo (et éventuellement le nom) depuis le profil public Steam après création.</span>
-    </label>
-    <label class="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
-        <input type="checkbox" name="apply_steam_display_name" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-700" <?= !empty($steamWebConfigured) ? '' : 'disabled' ?>>
-        <span>Utiliser le pseudo Steam comme nom d’affichage.</span>
+        <span>Synchroniser la photo depuis le profil public Steam après création.</span>
     </label>
     <?php if (empty($steamWebConfigured)): ?>
     <p class="text-xs text-amber-800">La synchronisation automatique n’est pas configurée sur ce serveur : l’identifiant peut tout de même être enregistré.</p>

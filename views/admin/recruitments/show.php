@@ -114,6 +114,7 @@ $analyticsGroupByDayOrder = static function (array $mergedRows): array {
     return [$dayOrder, $byDay];
 };
 $membershipRepairHint = $membershipRepairHint ?? null;
+$needsAcceptanceOnboarding = !empty($needsAcceptanceOnboarding);
 $enlistmentSlaHours = max(1, (int) ($enlistmentSlaHours ?? \App\Services\Recruitment\TenantRecruitmentSettings::defaultEnlistmentSlaHours()));
 $submissionAgeHours = \App\Services\Recruitment\TenantRecruitmentSettings::hoursElapsedSince(
     trim((string) ($e['created_at'] ?? '')) !== '' ? (string) $e['created_at'] : null
@@ -199,7 +200,7 @@ if ($sharedFields !== []) {
     if (is_array($rpS)) {
         $rpShareLabels = [
             'identity' => 'Identité personnage (prénom, nom, naissance, nationalité)',
-            'character_name' => 'Nom de scène (optionnel)',
+            'character_name' => 'Prénom et nom (dérivé)',
             'bio' => 'Biographie',
             'cv' => 'Parcours (CV)',
             'image_url' => 'Portrait (fichier)',
@@ -298,9 +299,10 @@ $dossierNavItems = [
     ['id' => 'portail-candidat', 'label' => 'Portail candidat', 'num' => '06', 'show' => !$isDossierClos],
     ['id' => 'identite-reception', 'label' => 'Identité & réception', 'num' => '07', 'show' => true],
     // Acceptée = dossier clos pour l’instruction, mais le rattachement membre reste actionnable.
-    ['id' => 'rattachement-membre', 'label' => 'Rattachement', 'num' => '08', 'show' => $statusRaw === 'reviewed'],
-    ['id' => 'instruction-dossier', 'label' => 'Décision', 'num' => '09', 'show' => $statusRaw === 'submitted' && !$isDossierClos],
-    ['id' => 'journal-dossier', 'label' => 'Journal', 'num' => '10', 'show' => !$isDossierClos],
+    ['id' => 'integration-membre', 'label' => 'Intégration', 'num' => '08', 'show' => $statusRaw === 'reviewed' && !empty($needsAcceptanceOnboarding)],
+    ['id' => 'rattachement-membre', 'label' => 'Rattachement', 'num' => '09', 'show' => $statusRaw === 'reviewed'],
+    ['id' => 'instruction-dossier', 'label' => 'Décision', 'num' => '10', 'show' => $statusRaw === 'submitted' && !$isDossierClos],
+    ['id' => 'journal-dossier', 'label' => 'Journal', 'num' => '11', 'show' => !$isDossierClos],
 ];
 $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
 ?>
@@ -330,7 +332,11 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                     </div>
                     <p class="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">
                         <?php if ($statusRaw === 'reviewed'): ?>
-                            La candidature est acceptée. Cette fiche est allégée : identité, décision, suivi candidat, et le rattachement au compte membre si besoin.
+                            <?php if (!empty($needsAcceptanceOnboarding)): ?>
+                                La candidature est acceptée. Complétez le parcours d’intégration (identité, Steam, rôles, affectation) pour finaliser le compte membre.
+                            <?php else: ?>
+                                La candidature est acceptée. Cette fiche est allégée : identité, décision, suivi candidat, et le rattachement au compte membre si besoin.
+                            <?php endif; ?>
                         <?php else: ?>
                             La décision est rendue et a été transmise au candidat. Pour l’alléger, cette fiche n’affiche plus que l’essentiel : identité, dates, décision et lien de suivi.
                         <?php endif; ?>
@@ -1172,23 +1178,50 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
             </section>
 
             <?php if ($statusRaw === 'reviewed'): ?>
+            <?php if (!empty($needsAcceptanceOnboarding)): ?>
+            <section id="integration-membre" class="scroll-mt-28 overflow-hidden rounded-2xl border border-emerald-200/90 bg-white shadow-sm">
+                <div class="border-b border-emerald-100 bg-emerald-50/90 px-6 py-4">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-800/80">Action requise</p>
+                    <h2 class="mt-1 text-base font-black tracking-tight text-emerald-950">Parcours d’intégration</h2>
+                </div>
+                <div class="p-6">
+                    <p class="text-sm leading-relaxed text-emerald-950">
+                        La candidature est acceptée. Pour créer le compte membre, choisissez l’identité du personnage,
+                        le profil Steam (remontée Arma), les rôles d’accès et l’affectation — en quelques étapes guidées.
+                    </p>
+                    <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/onboarding'), ENT_QUOTES, 'UTF-8') ?>"
+                       class="mt-5 inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-emerald-700 px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-emerald-800">
+                        Continuer l’intégration
+                    </a>
+                </div>
+            </section>
+            <?php endif; ?>
             <section id="rattachement-membre" class="scroll-mt-28 overflow-hidden rounded-2xl border border-sky-200/90 bg-white shadow-sm">
                 <div class="border-b border-sky-100 bg-sky-50/90 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-sky-800/80">Après décision</p>
                     <h2 class="mt-1 text-base font-black tracking-tight text-sky-950">Rattachement au compte membre</h2>
                 </div>
                 <div class="p-6">
-                    <?php if (!empty($membershipRepairHint)): ?>
+                    <?php if (!empty($needsAcceptanceOnboarding)): ?>
+                        <p class="text-sm leading-relaxed text-sky-950">
+                            Terminez d’abord le <a class="font-semibold text-emerald-800 underline" href="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/onboarding'), ENT_QUOTES, 'UTF-8') ?>">parcours d’intégration</a>
+                            (rôles, unité, Steam). Le rattachement manuel reste disponible ensuite en secours.
+                        </p>
+                    <?php elseif (!empty($membershipRepairHint)): ?>
                         <p class="text-sm leading-relaxed text-sky-950"><?= htmlspecialchars((string) $membershipRepairHint) ?></p>
                     <?php elseif ($submitterId > 0): ?>
                         <p class="text-sm leading-relaxed text-sky-900/90">
                             Un compte est déjà lié à ce dossier. Si le membre ne voit pas encore votre communauté comme prévu, vous pouvez relancer l’alignement.
+                        </p>
+                        <p class="mt-3 text-sm text-sky-800/90">
+                            <a class="font-semibold text-sky-900 underline" href="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/onboarding'), ENT_QUOTES, 'UTF-8') ?>">Revoir rôles, Steam et affectation</a>
                         </p>
                     <?php else: ?>
                         <p class="text-sm leading-relaxed text-sky-900/90">
                             Aucun compte n’est encore lié à cette candidature. Relancez le rattachement pour créer le compte ou le connecter à un compte existant avec la même adresse e-mail.
                         </p>
                     <?php endif; ?>
+                    <?php if (empty($needsAcceptanceOnboarding)): ?>
                     <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/finalize-membership')) ?>" class="mt-5">
                         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
                         <button type="submit" class="enlist-membership-repair-btn inline-flex min-h-[2.75rem] items-center justify-center rounded-xl px-6 py-2.5 text-sm font-bold shadow-md transition">
@@ -1200,6 +1233,7 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                             ? 'Aucun nouvel e-mail automatique. Le membre peut se connecter s’il avait déjà un accès.'
                             : 'Si un nouveau compte est créé, un e-mail d’activation du mot de passe pourra être envoyé selon la configuration.' ?>
                     </p>
+                    <?php endif; ?>
                 </div>
             </section>
             <?php endif; ?>
@@ -1214,7 +1248,7 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                     'value' => 'accept',
                     'title' => 'Accepter',
                     'hint' => 'La candidature est retenue.',
-                    'effect' => 'Le dossier passe en accepté. Le candidat reçoit une confirmation et le lien de suivi.',
+                    'effect' => 'Le dossier passe en accepté. Vous enchaînez sur le parcours d’intégration (rôles, Steam, affectation).',
                     'tone' => 'Ton chaleureux : bienvenue, prochaines étapes.',
                     'btn' => 'Accepter et prévenir',
                     'icon' => 'check',
@@ -1662,13 +1696,17 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                             <?php if ($rpLn !== ''): ?><div><span class="text-[10px] font-bold uppercase text-emerald-900">Nom</span><p class="mt-0.5 text-stone-900"><?= htmlspecialchars($rpLn) ?></p></div><?php endif; ?>
                             <?php if ($rpBd !== ''): ?><div><span class="text-[10px] font-bold uppercase text-emerald-900">Naissance</span><p class="mt-0.5 text-stone-900"><?= htmlspecialchars($rpBd) ?></p></div><?php endif; ?>
                             <?php if ($rpNat !== ''): ?><div><span class="text-[10px] font-bold uppercase text-emerald-900">Nationalité</span><p class="mt-0.5 text-stone-900"><?= htmlspecialchars($rpNat) ?></p></div><?php endif; ?>
-                            <?php if ($rpScene !== ''): ?><div class="sm:col-span-2"><span class="text-[10px] font-bold uppercase text-emerald-900">Nom de scène</span><p class="mt-0.5 text-stone-900"><?= htmlspecialchars($rpScene) ?></p></div><?php endif; ?>
+                            <?php if ($rpScene !== '' && $rpScene !== trim($rpFn . ' ' . $rpLn)): ?><div class="sm:col-span-2"><span class="text-[10px] font-bold uppercase text-emerald-900">Libellé alternatif (ancien)</span><p class="mt-0.5 text-stone-900"><?= htmlspecialchars($rpScene) ?></p></div><?php endif; ?>
                         </div>
                     <?php endif; ?>
-                    <?php if (trim((string) ($rpSnap['character_name'] ?? '')) !== ''): ?>
+                    <?php
+                    $snapChar = trim((string) ($rpSnap['character_name'] ?? ''));
+                    $snapFull = trim($rpFn . ' ' . $rpLn);
+                    if ($snapChar !== '' && $snapChar !== $snapFull && $snapChar !== $rpScene):
+                    ?>
                         <div>
-                            <p class="text-xs font-bold uppercase tracking-wide text-emerald-900">Libellé dossier (affichage)</p>
-                            <p class="mt-1 text-stone-900"><?= htmlspecialchars((string) $rpSnap['character_name']) ?></p>
+                            <p class="text-xs font-bold uppercase tracking-wide text-emerald-900">Libellé dossier (historique)</p>
+                            <p class="mt-1 text-stone-900"><?= htmlspecialchars($snapChar) ?></p>
                         </div>
                     <?php endif; ?>
                     <?php if (trim((string) ($rpSnap['bio'] ?? '')) !== ''): ?>

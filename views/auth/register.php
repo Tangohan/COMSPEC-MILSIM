@@ -218,11 +218,12 @@ $val = static function (array $old, string $key, string $default = '') : string 
                     <div x-show="step === 1" x-ref="step1" x-transition.opacity.duration.200ms>
                         <p class="mb-1 text-sm font-bold text-white"><?= htmlspecialchars(__('auth.register_access'), ENT_QUOTES, 'UTF-8') ?></p>
                         <p class="mb-5 text-xs leading-relaxed text-white/45">
-                            E-mail de connexion, pseudo visible et mot de passe.
+                            <?= htmlspecialchars(__('auth.register_access_hint'), ENT_QUOTES, 'UTF-8') ?>
                             <?php if ($prefillSlug !== ''): ?>
-                                Espace ciblé : <span class="font-semibold text-emerald-400"><?= htmlspecialchars($prefillSlug, ENT_QUOTES, 'UTF-8') ?></span>.
+                                <?= htmlspecialchars(__('auth.register_space_targeted'), ENT_QUOTES, 'UTF-8') ?>
+                                <span class="font-semibold text-emerald-400"><?= htmlspecialchars($prefillSlug, ENT_QUOTES, 'UTF-8') ?></span>.
                             <?php else: ?>
-                                Un code d’invitation n’est pas obligatoire.
+                                <?= htmlspecialchars(__('auth.register_invite_optional_hint'), ENT_QUOTES, 'UTF-8') ?>
                             <?php endif; ?>
                         </p>
 
@@ -230,7 +231,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
                             <div>
                                 <label class="login-label" for="community_code"><?= htmlspecialchars(__('auth.register_invite'), ENT_QUOTES, 'UTF-8') ?> <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
                                 <input id="community_code" type="text" name="community_code" maxlength="64" autocomplete="off"
-                                       placeholder="Si vous en avez reçu un"
+                                       placeholder="<?= htmlspecialchars(__('auth.register_invite_ph'), ENT_QUOTES, 'UTF-8') ?>"
                                        value="<?= htmlspecialchars($prefillCc, ENT_QUOTES, 'UTF-8') ?>"
                                        class="login-field uppercase tracking-wide placeholder:normal-case placeholder:tracking-normal">
                             </div>
@@ -241,24 +242,41 @@ $val = static function (array $old, string $key, string $default = '') : string 
                                        value="<?= $val($old, 'email') ?>"
                                        class="login-field">
                             </div>
+
+                            <fieldset class="space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                                <legend class="px-1 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-white/45">
+                                    <?= htmlspecialchars(__('auth.register_identity'), ENT_QUOTES, 'UTF-8') ?>
+                                </legend>
+                                <div class="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label class="login-label" for="first_name"><?= htmlspecialchars(__('auth.register_first_name'), ENT_QUOTES, 'UTF-8') ?></label>
+                                        <input id="first_name" type="text" name="first_name" required minlength="1" maxlength="100"
+                                               autocomplete="off" placeholder="<?= htmlspecialchars(__('auth.register_first_name_ph'), ENT_QUOTES, 'UTF-8') ?>"
+                                               value="<?= $val($old, 'first_name') ?>"
+                                               class="login-field">
+                                    </div>
+                                    <div>
+                                        <label class="login-label" for="last_name"><?= htmlspecialchars(__('auth.register_last_name'), ENT_QUOTES, 'UTF-8') ?></label>
+                                        <input id="last_name" type="text" name="last_name" required minlength="1" maxlength="100"
+                                               autocomplete="off" placeholder="<?= htmlspecialchars(__('auth.register_last_name_ph'), ENT_QUOTES, 'UTF-8') ?>"
+                                               value="<?= $val($old, 'last_name') ?>"
+                                               class="login-field">
+                                    </div>
+                                </div>
+                                <p class="text-xs text-white/35"><?= htmlspecialchars(__('auth.register_identity_hint'), ENT_QUOTES, 'UTF-8') ?></p>
+                            </fieldset>
+
                             <div>
-                                <label class="login-label" for="display_name"><?= htmlspecialchars(__('auth.register_display_name'), ENT_QUOTES, 'UTF-8') ?></label>
-                                <input id="display_name" type="text" name="display_name" required minlength="2" maxlength="100"
-                                       autocomplete="nickname" placeholder="Visible par les autres membres"
-                                       value="<?= $val($old, 'display_name') ?>"
-                                       class="login-field">
-                            </div>
-                            <div>
-                                <label class="login-label" for="discord_handle">Discord <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
+                                <label class="login-label" for="discord_handle"><?= htmlspecialchars(__('auth.register_discord'), ENT_QUOTES, 'UTF-8') ?> <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
                                 <input id="discord_handle" type="text" name="discord_handle" maxlength="120" autocomplete="off"
-                                       placeholder="Votre pseudo Discord"
+                                       placeholder="<?= htmlspecialchars(__('auth.register_discord_ph'), ENT_QUOTES, 'UTF-8') ?>"
                                        value="<?= $val($old, 'discord_handle') ?>"
                                        class="login-field">
                             </div>
                             <div>
                                 <label class="login-label" for="steam_profile"><?= htmlspecialchars(__('auth.register_steam'), ENT_QUOTES, 'UTF-8') ?> <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
                                 <input id="steam_profile" type="text" name="steam_profile" maxlength="512" autocomplete="off"
-                                       placeholder="Lien de votre profil Steam"
+                                       placeholder="<?= htmlspecialchars(__('auth.register_steam'), ENT_QUOTES, 'UTF-8') ?>"
                                        value="<?= $val($old, 'steam_profile') ?>"
                                        class="login-field">
                                 <p class="mt-1.5 text-xs text-white/35"><?= htmlspecialchars(__('auth.register_steam_hint'), ENT_QUOTES, 'UTF-8') ?></p>
@@ -268,7 +286,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
                                     <label class="login-label" for="password"><?= htmlspecialchars(__('auth.password'), ENT_QUOTES, 'UTF-8') ?></label>
                                     <div class="relative">
                                         <input type="password" :type="showPassword ? 'text' : 'password'" id="password" name="password" required minlength="8"
-                                               autocomplete="new-password" placeholder="8 caractères minimum"
+                                               autocomplete="new-password" placeholder="<?= htmlspecialchars(__('auth.register_password_ph'), ENT_QUOTES, 'UTF-8') ?>"
                                                class="login-field pr-12">
                                         <button type="button" @click="showPassword = !showPassword"
                                                 class="absolute inset-y-0 right-0 flex items-center px-3 text-white/40 hover:text-white/80"
@@ -282,7 +300,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
                                     <label class="login-label" for="password_confirmation"><?= htmlspecialchars(__('auth.register_password_confirm'), ENT_QUOTES, 'UTF-8') ?></label>
                                     <div class="relative">
                                         <input type="password" :type="showPassword2 ? 'text' : 'password'" id="password_confirmation" name="password_confirmation" required minlength="8"
-                                               autocomplete="new-password" placeholder="Retapez le mot de passe"
+                                               autocomplete="new-password" placeholder="<?= htmlspecialchars(__('auth.register_password_confirm_ph'), ENT_QUOTES, 'UTF-8') ?>"
                                                class="login-field pr-12"
                                                @input="if ($el.value && document.getElementById('password').value !== $el.value) { $el.setCustomValidity(<?= json_encode(__('auth.flash_passwords_mismatch'), JSON_UNESCAPED_UNICODE) ?>); } else { $el.setCustomValidity(''); }">
                                         <button type="button" @click="showPassword2 = !showPassword2"
@@ -302,7 +320,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
                     <div x-show="step === 2" x-ref="step2" x-cloak x-transition.opacity.duration.200ms>
                         <p class="mb-1 text-sm font-bold text-white"><?= htmlspecialchars(__('auth.register_last_step'), ENT_QUOTES, 'UTF-8') ?></p>
                         <p class="mb-5 text-xs leading-relaxed text-white/45">
-                            Confirmez les règles du compte, puis validez. Vous pourrez ensuite confirmer votre e-mail.
+                            <?= htmlspecialchars(__('auth.register_last_step_hint'), ENT_QUOTES, 'UTF-8') ?>
                         </p>
 
                         <div class="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">

@@ -68,6 +68,7 @@ class RecruitmentOffersController
             'recruitmentSidebarCounts' => $this->recruitmentSidebarCounts(),
             'recruitmentAdminNav' => 'offers',
             'showPortalFooter' => false,
+            'recruitmentAthUi' => true,
         ]);
     }
 
@@ -261,6 +262,7 @@ class RecruitmentOffersController
             'recruitmentSidebarCounts' => $this->recruitmentSidebarCounts(),
             'recruitmentAdminNav' => 'reference',
             'showPortalFooter' => false,
+            'recruitmentAthUi' => true,
         ]);
     }
 
@@ -387,6 +389,7 @@ class RecruitmentOffersController
             'recruitmentSidebarCounts' => $this->recruitmentSidebarCounts(),
             'recruitmentAdminNav' => 'offers',
             'showPortalFooter' => false,
+            'recruitmentAthUi' => true,
         ]);
     }
 

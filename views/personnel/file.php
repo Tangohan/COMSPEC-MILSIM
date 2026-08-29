@@ -216,9 +216,7 @@ $personnelExtras = is_array($personnelExtras ?? null) ? $personnelExtras : [];
 $matricule = $personnelProfile['matricule_internal'] ?? $personnelExtras['service_number'] ?? null;
 $callsign = $personnelProfile['callsign'] ?? $targetUser['callsign'] ?? null;
 $athenaIdentifier = trim((string) ($targetUser['athena_identifier'] ?? ''));
-$rpCharacterName = trim((string) ($personnelProfile['character_name'] ?? ''));
-// Le nom de compte reste l’identité principale de la fiche publique.
-// Prénom + nom du personnage s’affichent pour le titulaire et l’encadrement.
+// Prénom + nom du personnage = identité unique affichée partout.
 if (!$privatePersonnelIdentity) {
     $dn = trim((string) ($targetUser['display_name'] ?? ''));
     $cs = trim((string) ($callsign ?? ''));
@@ -410,7 +408,7 @@ $steamProfileSyncOffered = !empty($steamProfileSyncOffered ?? false);
 
 $completenessDetails = is_array($completeness['details'] ?? null) ? $completeness['details'] : [];
 $completenessCheckLabels = [
-    'identity_name' => 'Nom affiché dossier personnage',
+    'identity_name' => 'Prénom et nom du personnage',
     'identity_callsign' => 'Indicatif radio',
     'identity_matricule' => 'Matricule',
     'identity_role' => 'Rôle principal (dossier)',
@@ -422,7 +420,7 @@ $completenessCheckLabels = [
     'qualifications' => 'Qualification ou formation certifiée',
     'readiness' => 'Indicateur de disponibilité',
     'contact_email' => 'Adresse e-mail de contact',
-    'civil_identity' => 'Prénom et nom (compte ou candidature)',
+    'civil_identity' => 'Prénom et nom',
 ];
 $bannerPath = trim((string) ($personnelProfile['character_banner_path'] ?? ''));
 $bannerUrl = $bannerPath !== '' ? $baseUrl . '/' . ltrim($bannerPath, '/') : null;
@@ -439,8 +437,6 @@ if (!empty($targetUser['created_at'])) {
 }
 $profilePublicSegment = trim((string) ($targetUser['profile_slug'] ?? ''));
 $profilePublicSegment = $profilePublicSegment !== '' ? $profilePublicSegment : null;
-$displayNameAccount = trim((string) ($targetUser['display_name'] ?? ''));
-$rpCharacterNameDisplay = trim((string) ($personnelProfile['character_name'] ?? ''));
 $squadronExtra = trim((string) ($personnelExtras['squadron'] ?? ''));
 
 $enlistmentAppStatusFr = static function (?string $s): string {
@@ -1068,12 +1064,8 @@ $personnelFileShell = $personnelFileIsRhFull
                                 <?php if ($steamProfileSyncOffered): ?>
                                 <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/sync-steam'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 space-y-3 border-t border-slate-200/80 pt-4">
                                     <?= \App\Core\Csrf::field() ?>
-                                    <label class="flex cursor-pointer items-start gap-2 text-xs text-slate-700">
-                                        <input type="checkbox" name="apply_steam_display_name" value="1" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
-                                        <span>Mettre aussi à jour le <strong>nom d’affichage</strong> du compte pour qu’il corresponde au profil public Steam (en plus de la photo).</span>
-                                    </label>
                                     <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 sm:w-auto">Importer photo depuis Steam</button>
-                                    <p class="text-[10px] text-slate-500">Utilise les informations publiques associées à l’identifiant ci-dessus. Le membre peut modifier l’identifiant dans les préférences du compte.</p>
+                                    <p class="text-[10px] text-slate-500">Met à jour la photo uniquement. Le prénom et le nom du personnage se règlent dans le dossier ou les préférences.</p>
                                 </form>
                                 <?php endif; ?>
                             </div>
@@ -1119,11 +1111,6 @@ $personnelFileShell = $personnelFileIsRhFull
                                 </ul>
                             </div>
                         </div>
-                        <?php if ($privatePersonnelIdentity && $displayNameAccount !== '' && $displayNameAccount !== $displayName): ?>
-                        <p class="mt-5 text-xs text-slate-600">Nom affiché sur le compte : <span class="font-semibold text-slate-800"><?= htmlspecialchars($displayNameAccount) ?></span><?php if ($rpCharacterNameDisplay !== '' && $rpCharacterNameDisplay !== $displayName): ?> · Nom de scène dossier : <span class="font-semibold text-slate-800"><?= htmlspecialchars($rpCharacterNameDisplay) ?></span><?php endif; ?>.</p>
-                        <?php elseif ($rpCharacterNameDisplay !== '' && $rpCharacterNameDisplay !== $displayName): ?>
-                        <p class="mt-5 text-xs text-slate-600">Nom de scène dossier : <span class="font-semibold text-slate-800"><?= htmlspecialchars($rpCharacterNameDisplay) ?></span>.</p>
-                        <?php endif; ?>
                     </section>
                     <?php if ($privatePersonnelIdentity && is_array($latestEnlistment) && $latestEnlistment !== []): ?>
                     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
@@ -1209,19 +1196,12 @@ $personnelFileShell = $personnelFileIsRhFull
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Identité opérationnelle</h2>
                     <div class="grid md:grid-cols-2 gap-6">
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom opérateur</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($displayName) ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : '—') ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatif radio</p><p class="text-sm font-black text-slate-900"><?= $callsign ? htmlspecialchars($callsign) : '—' ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom (personnage)</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : '—') ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom (personnage)</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Matricule</p><p class="text-sm font-black text-slate-900"><?= !empty($showMatriculePublic) ? ($matricule ? htmlspecialchars($matricule) : '—') : '—' ?></p></div>
-                        <?php if ($rpCharacterNameDisplay !== ''): ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom de scène (personnage)</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($rpCharacterNameDisplay) ?></p></div>
-                        <?php endif; ?>
                         <?php if (!empty(trim((string) ($userProfile['bio'] ?? '')))): ?>
                         <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Présentation du personnage</p><p class="text-sm text-slate-700 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $userProfile['bio']))) ?></p></div>
-                        <?php endif; ?>
-                        <?php if ($privatePersonnelIdentity && $displayNameAccount !== '' && $displayNameAccount !== $displayName): ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom affiché sur le compte</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($displayNameAccount) ?></p></div>
                         <?php endif; ?>
                         <?php if ($gradeLabel !== '' && $gradeLabel !== $effectiveRankDisplay): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Grade de référence</p><p class="text-sm text-slate-700"><?= htmlspecialchars($gradeLabel) ?></p></div>

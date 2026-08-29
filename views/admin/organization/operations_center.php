@@ -468,6 +468,7 @@ $anomalyRows = [
     ['Membres sans unité', (int) ($anomalies['membres_sans_unite'] ?? 0), url('back-office/users') . '?filter_incomplete=1', 'Affecter'],
     ['Membres sans rôle', (int) ($anomalies['membres_sans_role'] ?? 0), url('back-office/users') . '?filter_no_role=1', 'Traiter'],
     ['Invitations expirées', (int) ($anomalies['invitations_expirees'] ?? 0), url('back-office/invitations'), 'Relancer'],
+    ['Photos manquantes (disque)', (int) ($anomalies['medias_manquants'] ?? 0), url('back-office/centre-operations') . '#anomalies-medias', 'Voir'],
 ];
 $anomalyTotal = 0;
 foreach ($anomalyRows as $a) {
@@ -493,9 +494,71 @@ foreach ($anomalyRows as [$label, $count, $href, $cta]) {
 $athTableActionsLabel = 'CORRECTION';
 $athTableMinWidth = '900px';
 $athTableFoot = $anomalyTotal === 0
-    ? 'Aucune anomalie : profils, affectations, rôles et invitations sont à jour.'
-    : 'Chaque ligne renvoie vers l’écran qui permet de corriger.';
+    ? 'Aucune anomalie : profils, affectations, rôles, invitations et médias locaux sont à jour.'
+    : 'Chaque ligne renvoie vers l’écran qui permet de corriger. Les photos manquantes signalent des chemins encore en base après migration.';
 require base_path('views/partials/ath_table.php');
+
+$missingMediaUsers = is_array($operationsMissingMediaUsers ?? null) ? $operationsMissingMediaUsers : [];
+if ($missingMediaUsers !== []):
+?>
+<section id="anomalies-medias" class="ath-form ath-rise" style="margin-top:1.25rem">
+    <div class="ath-form__head">
+        <span class="ath-form__title">Photos / portraits à re-téléverser</span>
+        <span class="ath-form__hint">
+            Après la migration, certains fichiers d’uploads ne sont plus sur le serveur alors que le chemin reste en base.
+            Demandez aux membres de recharger leur photo via Mon compte → Image / Portrait.
+        </span>
+    </div>
+    <div class="ath-note" style="background:#fff7ed;border-color:#fed7aa;margin-bottom:12px">
+        <p class="ath-note__title" style="color:#9a3412"><?= (int) count($missingMediaUsers) ?> compte(s) concerné(s)</p>
+        <p class="ath-note__text" style="color:#9a3412">
+            Une alerte apparaît aussi dans la cloche du membre pour l’inviter à re-téléverser. Les URLs externes (ex. Steam) ne sont pas signalées.
+        </p>
+    </div>
+    <div class="ath-table-panel">
+        <table class="ath-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Membre</th>
+                    <th>Manque</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach (array_slice($missingMediaUsers, 0, 40) as $mu): ?>
+                <?php
+                $mid = (int) ($mu['id'] ?? 0);
+                $kinds = is_array($mu['missing'] ?? null) ? $mu['missing'] : [];
+                $kindLabels = [
+                    'avatar' => 'Photo de compte',
+                    'portrait' => 'Portrait personnage',
+                    'banner' => 'Bannière',
+                ];
+                $kindTxt = [];
+                foreach ($kinds as $k) {
+                    $kindTxt[] = $kindLabels[(string) $k] ?? (string) $k;
+                }
+                ?>
+                <tr>
+                    <td>
+                        <strong><?= $h((string) ($mu['display_name'] ?? '')) ?></strong>
+                        <div style="font-size:12px;color:#64748b"><?= $h((string) ($mu['email'] ?? '')) ?></div>
+                    </td>
+                    <td><?= $h(implode(' · ', $kindTxt)) ?></td>
+                    <td style="text-align:right">
+                        <?php if ($mid > 0): ?>
+                        <a class="ath-btn" href="<?= $h(url('back-office/users/' . $mid . '/edit')) ?>">Fiche</a>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</section>
+<?php
+endif;
+?>
 
 // ---- Alertes locales ----
 $athTableTitle = 'Alertes locales actives';

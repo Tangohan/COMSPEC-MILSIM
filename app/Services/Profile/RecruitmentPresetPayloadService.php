@@ -298,9 +298,11 @@ final class RecruitmentPresetPayloadService
         if (!isset($p['rp']) || !is_array($p['rp'])) {
             $p['rp'] = [];
         }
-        $p['rp']['character_name'] = trim((string) $request->input('rp_character_name'));
         $p['rp']['first_name'] = trim((string) $request->input('rp_first_name'));
         $p['rp']['last_name'] = trim((string) $request->input('rp_last_name'));
+        $derivedScene = trim($p['rp']['first_name'] . ' ' . $p['rp']['last_name']);
+        $postedScene = trim((string) $request->input('rp_character_name'));
+        $p['rp']['character_name'] = $derivedScene !== '' ? $derivedScene : $postedScene;
         $p['rp']['birth_date'] = self::normalizeRpBirthDate((string) $request->input('rp_birth_date'));
         $p['rp']['nationality'] = trim((string) $request->input('rp_nationality'));
         $p['rp']['bio'] = trim((string) $request->input('rp_bio'));

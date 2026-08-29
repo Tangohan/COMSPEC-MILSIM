@@ -172,6 +172,23 @@ class OrganizationDashboardController
         } catch (\Throwable) {
             $discordInviteMissing = false;
         }
+        $missingMediaCount = 0;
+        try {
+            $mediaScan = (new \App\Services\Media\MissingUserMediaScanner())->scanTenant($tenantId, 300);
+            $missingMediaCount = (int) ($mediaScan['total_users'] ?? 0);
+            if ($missingMediaCount > 0) {
+                $orgAnnounceItems[] = [
+                    'kind' => 'urgent',
+                    'category' => 'Médias',
+                    'title' => 'Photos perdues après migration',
+                    'body' => $missingMediaCount . ' compte(s) ont encore un chemin d’image en base alors que le fichier n’est plus sur le serveur. Demandez un re-téléversement.',
+                    'cta_label' => 'Voir les comptes',
+                    'cta_url' => url('back-office/centre-operations') . '#anomalies-medias',
+                ];
+            }
+        } catch (\Throwable) {
+            $missingMediaCount = 0;
+        }
         try {
             foreach ($this->tenantAlertRepository->listActiveForTenantDisplay($tenantId) as $alert) {
                 $style = \App\Support\AlertDisplayStyle::sanitizeTenant(
@@ -391,6 +408,7 @@ class OrganizationDashboardController
             'initialSetupBanner' => $initialSetupBanner,
             'configurationUpdateBadge' => $configurationUpdateBadge,
             'discordInviteMissing' => $discordInviteMissing,
+            'missingMediaCount' => $missingMediaCount,
             'orgActivityChart' => $orgActivityChart,
             'orgNextOperation' => $orgNextOperation,
             'orgElevationOpen' => $orgElevationOpen,
@@ -498,12 +516,15 @@ class OrganizationDashboardController
             $opsByType[$type][] = $item;
         }
 
+        $mediaScan = (new \App\Services\Media\MissingUserMediaScanner())->scanTenant((int) $tenantId, 300);
         $onboardingAnomalies = [
             'profils_incomplets' => count($workQueue['incomplete_profiles'] ?? []),
             'membres_sans_unite' => count($workQueue['users_without_unit'] ?? []),
             'membres_sans_role' => count($workQueue['users_without_role'] ?? []),
             'invitations_expirees' => count($workQueue['expired_invitations'] ?? []),
+            'medias_manquants' => (int) ($mediaScan['total_users'] ?? 0),
         ];
+        $missingMediaUsers = is_array($mediaScan['users'] ?? null) ? $mediaScan['users'] : [];
 
         $actionableAlerts = [
             [
@@ -547,13 +568,23 @@ class OrganizationDashboardController
                 'cta' => 'Préparer les événements',
             ],
             [
+                'id' => 'missing_media',
+                'type' => 'RH',
+                'title' => 'Photos perdues — demander un re-téléversement',
+                'impact_score' => min(100, 22 + ((int) ($onboardingAnomalies['medias_manquants'] ?? 0) * 5)),
+                'sla_label' => 'Après migration',
+                'count' => (int) ($onboardingAnomalies['medias_manquants'] ?? 0),
+                'link' => url('back-office/centre-operations') . '#anomalies-medias',
+                'cta' => 'Voir les comptes',
+            ],
+            [
                 'id' => 'onboarding_anomalies',
                 'type' => 'Administration',
                 'title' => 'Anomalies onboarding / droits',
                 'impact_score' => min(100, 15 + (array_sum($onboardingAnomalies) * 3)),
                 'sla_label' => 'SLA: 48h',
                 'count' => array_sum($onboardingAnomalies),
-                'link' => url('back-office/users'),
+                'link' => url('back-office/centre-operations'),
                 'cta' => 'Corriger les anomalies',
             ],
         ];
@@ -643,6 +674,7 @@ class OrganizationDashboardController
             'operationsActiveAlerts' => $alerts,
             'operationsAlertsError' => $alertsError,
             'operationsOnboardingAnomalies' => $onboardingAnomalies,
+            'operationsMissingMediaUsers' => $missingMediaUsers,
             'operationsWorkQueue' => $workQueue,
             'operationsOpsBoardItemsByType' => $opsByType,
             'operationsOpsBoardFilters' => $opsBoardFilters,

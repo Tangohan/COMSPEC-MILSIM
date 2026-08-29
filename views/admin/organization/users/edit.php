@@ -142,18 +142,21 @@ $formatDateFr = static function (?string $raw): string {
                 <input type="hidden" name="user_roles_form" value="1">
 
                 <section class="bo-user-edit__panel" aria-labelledby="sec-identity">
-                    <h2 id="sec-identity" class="bo-user-edit__panel-title">Identité affichée</h2>
-                    <p class="bo-user-edit__panel-lead">Nom et indicatif visibles sur le portail. Le prénom, le nom et la présentation du personnage se règlent sur la fiche personnelle.</p>
+                    <h2 id="sec-identity" class="bo-user-edit__panel-title">Identité personnage</h2>
+                    <p class="bo-user-edit__panel-lead">Prénom et nom du personnage uniquement — utilisés partout (listes, forum, dossier). L’indicatif reste optionnel.</p>
                     <div class="bo-user-edit__grid">
                         <div>
-                            <label for="display_name" class="bo-user-edit__label">Nom d’affichage</label>
-                            <input type="text" id="display_name" name="display_name" class="bo-user-edit__input" value="<?= htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') ?>" autocomplete="nickname" maxlength="160">
-                            <p class="bo-user-edit__hint">Tel qu’il apparaît dans les listes et le forum.</p>
+                            <label for="first_name" class="bo-user-edit__label">Prénom</label>
+                            <input type="text" id="first_name" name="first_name" class="bo-user-edit__input" value="<?= htmlspecialchars(trim((string) ($userProfile['first_name'] ?? '')), ENT_QUOTES, 'UTF-8') ?>" autocomplete="off" maxlength="100" required>
                         </div>
                         <div>
-                            <label for="callsign" class="bo-user-edit__label">Indicatif (compte)</label>
+                            <label for="last_name" class="bo-user-edit__label">Nom</label>
+                            <input type="text" id="last_name" name="last_name" class="bo-user-edit__input" value="<?= htmlspecialchars(trim((string) ($userProfile['last_name'] ?? '')), ENT_QUOTES, 'UTF-8') ?>" autocomplete="off" maxlength="100" required>
+                        </div>
+                        <div>
+                            <label for="callsign" class="bo-user-edit__label">Indicatif (optionnel)</label>
                             <input type="text" id="callsign" name="callsign" class="bo-user-edit__input" value="<?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?>" maxlength="80">
-                            <p class="bo-user-edit__hint">Indicatif lié au compte — distinct de l’indicatif de personnage.</p>
+                            <p class="bo-user-edit__hint">Surnom radio / callsign en mission.</p>
                         </div>
                     </div>
                 </section>
@@ -196,12 +199,6 @@ $formatDateFr = static function (?string $raw): string {
                             <label class="bo-user-edit__label" style="display:flex;align-items:flex-start;gap:.55rem;font-weight:600;text-transform:none;letter-spacing:0;">
                                 <input type="checkbox" name="sync_steam_profile" value="1" style="margin-top:.2rem" <?= $steamWebConfigured ? '' : 'disabled' ?>>
                                 <span>Synchroniser photo / profil public à l’enregistrement</span>
-                            </label>
-                        </div>
-                        <div>
-                            <label class="bo-user-edit__label" style="display:flex;align-items:flex-start;gap:.55rem;font-weight:600;text-transform:none;letter-spacing:0;">
-                                <input type="checkbox" name="apply_steam_display_name" value="1" style="margin-top:.2rem" <?= $steamWebConfigured ? '' : 'disabled' ?>>
-                                <span>Appliquer le pseudo Steam comme nom d’affichage</span>
                             </label>
                         </div>
                     </div>

@@ -437,7 +437,7 @@ if ($atakMapConfig) {
       <section class="atak-account-section">
         <h3 class="atak-account-section-title">Compte</h3>
         <p><strong>E-mail :</strong> <?= htmlspecialchars($currentUser['email'] ?? '') ?></p>
-        <p><strong>Nom affiché :</strong> <?= htmlspecialchars($currentUser['display_name'] ?? '') ?></p>
+        <p><strong>Prénom et nom :</strong> <?= htmlspecialchars($currentUser['display_name'] ?? '') ?></p>
         <p><strong>Indicatif :</strong> <?= htmlspecialchars($currentUser['callsign'] ?? '—') ?></p>
         <?php if ($atakTenantLabel !== ''): ?>
         <p><strong>Communauté affichée :</strong> <?= htmlspecialchars($atakTenantLabel, ENT_QUOTES, 'UTF-8') ?></p>

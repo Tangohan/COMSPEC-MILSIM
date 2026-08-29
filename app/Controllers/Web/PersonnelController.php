@@ -434,7 +434,7 @@ class PersonnelController
         $civilSourceLabel = match ($civilIdentity['source'] ?? null) {
             'profile' => 'Dossier personnage',
             'enlistment' => 'Candidature d’enrôlement',
-            'display_name' => 'Nom d’affichage (découpage)',
+            'display_name' => 'Prénom et nom (découpage)',
             default => '',
         };
 
@@ -1335,8 +1335,14 @@ class PersonnelController
             }
         }
 
+        $rpFirstForIdentity = trim((string) $request->input('rp_first_name'));
+        $rpLastForIdentity = trim((string) $request->input('rp_last_name'));
+        $derivedCharacterName = trim($rpFirstForIdentity . ' ' . $rpLastForIdentity);
+
         $data = [
-            'character_name' => trim((string) $request->input('character_name')),
+            'character_name' => $derivedCharacterName !== ''
+                ? $derivedCharacterName
+                : trim((string) $request->input('character_name')),
             'callsign' => trim((string) $request->input('callsign')),
             'nickname_primary' => $this->normalizeReasonLabel((string) $request->input('nickname_primary'), 120),
             'nicknames_json' => json_encode(
@@ -1661,15 +1667,21 @@ class PersonnelController
                 $profileUpsert['language'] = trim((string) $request->input('civil_language')) ?: null;
             }
             $this->userProfileRepository->upsert((int) $target['id'], $profileUpsert);
+            $derivedDn = trim($firstName . ' ' . $lastName);
+            if ($derivedDn !== '') {
+                $this->userRepository->update((int) $target['id'], $tenantId, [
+                    'display_name' => $derivedDn,
+                ]);
+                if ($isSelf) {
+                    Session::set('display_name', $derivedDn);
+                }
+            }
         }
 
         if ($isSelf || $canStaffEdit) {
-            $mode = trim((string) $request->input('forum_label_mode')) ?: 'display_name';
-            if (!in_array($mode, ['display_name', 'callsign', 'character_name', 'forum_alias'], true)) {
-                $mode = 'display_name';
-            }
+            $mode = 'character_name';
             $displayUpsert = [
-                'forum_alias' => trim((string) $request->input('forum_alias')) ?: null,
+                'forum_alias' => null,
                 'forum_label_mode' => $mode,
                 'show_matricule_forum' => $request->input('show_matricule_forum') ? 1 : 0,
                 'show_grade_forum' => $request->input('show_grade_forum') ? 1 : 0,
@@ -1766,7 +1778,6 @@ class PersonnelController
 
             return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
         }
-        $applyName = $request->input('apply_steam_display_name') === '1';
         $summary = $this->steamWebApiService->fetchPublicPlayer($steamId);
         if ($summary === null) {
             Session::flash('error', 'Impossible de récupérer le profil public pour cet identifiant. Vérifiez l’identifiant ou réessayez plus tard.');
@@ -1779,13 +1790,8 @@ class PersonnelController
                 ? mb_substr($summary['avatar_url'], 0, 500)
                 : substr($summary['avatar_url'], 0, 500);
         }
-        if ($applyName && $summary['personaname'] !== '') {
-            $patch['display_name'] = function_exists('mb_substr')
-                ? mb_substr($summary['personaname'], 0, 100)
-                : substr($summary['personaname'], 0, 100);
-        }
         if ($patch === []) {
-            Session::flash('error', 'Aucune donnée exploitable n’a été renvoyée pour ce profil.');
+            Session::flash('error', 'Aucune photo exploitable n’a été renvoyée pour ce profil.');
 
             return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
         }
@@ -1798,12 +1804,7 @@ class PersonnelController
                 Session::set('callsign', (string) ($fresh['callsign'] ?? ''));
             }
         }
-        Session::flash(
-            'success',
-            $applyName
-                ? 'Photo et nom d’affichage mis à jour depuis le profil public Steam.'
-                : 'Photo du compte mise à jour depuis le profil public Steam.'
-        );
+        Session::flash('success', 'Photo du compte mise à jour depuis le profil public Steam.');
 
         return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
     }
