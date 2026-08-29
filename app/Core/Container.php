@@ -71,6 +71,7 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\PersonnelQualificationRepository::class),
                 self::get(\App\Repositories\TrainingCertificateRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
             ),
             \App\Services\Platform\FeatureGateService::class => new \App\Services\Platform\FeatureGateService(
                 self::get(TenantRepository::class),
@@ -1569,7 +1570,9 @@ class Container
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Services\Personnel\SeniorityEnrollmentBootstrapService::class),
-                self::get(\App\Services\Personnel\SeniorityDossierInferenceSyncService::class)
+                self::get(\App\Services\Personnel\SeniorityDossierInferenceSyncService::class),
+                self::get(\App\Services\Personnel\MatriculeService::class),
+                self::get(\App\Repositories\RecruitmentOpeningRepository::class)
             ),
             \App\Services\Recruitment\EnlistmentPortalAttachmentService::class => new \App\Services\Recruitment\EnlistmentPortalAttachmentService(
                 self::get(\App\Repositories\EnlistmentRepository::class)
