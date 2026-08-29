@@ -21,6 +21,7 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Référentiel des grades</h1>
         <div class="flex items-center gap-3">
+            <a href="<?= url('back-office/referentiels/grades/catalogue') ?>" class="text-sm font-medium text-emerald-800 underline hover:text-emerald-950">Catalogue OTAN / audit →</a>
             <a href="<?= url('back-office/referentiels/competences') ?>" class="text-sm font-medium text-slate-600 underline hover:text-slate-900">Matrice de compétences →</a>
             <a href="<?= url('back-office/referentiels/grades/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouveau grade</a>
         </div>

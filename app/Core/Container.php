@@ -1051,6 +1051,14 @@ class Container
                 self::get(\App\Repositories\GradeSystemRepository::class),
                 self::get(\App\Services\GradeDisplayService::class)
             ),
+            \App\Services\Rank\RankReferenceValidator::class => new \App\Services\Rank\RankReferenceValidator(),
+            \App\Services\Rank\RankCatalogService::class => new \App\Services\Rank\RankCatalogService(
+                self::get(\App\Services\Rank\RankReferenceValidator::class),
+            ),
+            \App\Controllers\Admin\Organization\RankCatalogAdminController::class => new \App\Controllers\Admin\Organization\RankCatalogAdminController(
+                self::get(\App\Services\Rank\RankCatalogService::class),
+                self::get(\App\Services\Rank\RankReferenceValidator::class),
+            ),
             \App\Repositories\CompetencyGradeRequirementRepository::class => new \App\Repositories\CompetencyGradeRequirementRepository(),
             \App\Controllers\Admin\Organization\CompetencyMatrixController::class => new \App\Controllers\Admin\Organization\CompetencyMatrixController(
                 self::get(\App\Repositories\CompetencyGradeRequirementRepository::class),
