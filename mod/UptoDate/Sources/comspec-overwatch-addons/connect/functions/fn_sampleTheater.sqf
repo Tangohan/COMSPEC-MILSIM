@@ -489,7 +489,8 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
     [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
 
     /* Après scène+relief : peupler le graphe villes/routes pour l’itinéraire A* Athena. */
-    if (_doScene && {_doTerrain}) then {
+    /* Geo network indépendant du mode scène/relief : après un relevé théâtre réussi. */
+    if (!_aborted) then {
         [] call comspec_overwatch_connect_fnc_sampleGeoNetwork;
     };
 };

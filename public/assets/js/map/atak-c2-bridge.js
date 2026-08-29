@@ -167,7 +167,7 @@
       id: id,
       callsign: u.call_sign || u.callsign || extra.callsign || id,
       role: u.role || extra.role || u.roleDescription || '',
-      affiliation: extra.affiliation || extra.affil || u.affiliation || u.side || 'FRIENDLY',
+      affiliation: normalizeAffiliation(extra.affiliation || extra.affil || u.affiliation || u.side || 'friend'),
       type: mapPlatformType(u, extra),
       status: live,
       heading: u.heading != null ? u.heading : (u.movement_heading != null ? u.movement_heading : extra.heading),
@@ -179,10 +179,25 @@
     };
   }
 
+  function normalizeAffiliation(raw) {
+    var a = String(raw || '').toLowerCase();
+    if (a === 'friend' || a === 'friendly' || a === 'f' || a === 'blue' || a === 'west' || a === 'blufor') return 'friend';
+    if (a === 'hostile' || a === 'enemy' || a === 'h' || a === 'red' || a === 'east' || a === 'opfor') return 'hostile';
+    if (a === 'neutral' || a === 'n' || a === 'civ' || a === 'civilian') return 'neutral';
+    if (a === 'unknown' || a === 'u' || a === 'guer' || a === 'indep' || a === 'resistance') return 'unknown';
+    return 'friend';
+  }
+
   function mapPlatformType(u, extra) {
     var raw = String(u.platform || u.unitType || extra.platform || extra.vehicle_type || '').toUpperCase();
     if (raw.indexOf('UAV') >= 0 || raw.indexOf('DRONE') >= 0) return 'UAV';
-    if (raw.indexOf('AIR') >= 0 || raw.indexOf('HELI') >= 0 || raw.indexOf('PLANE') >= 0 || raw.indexOf('JET') >= 0) return 'AIR';
+    if (
+      raw.indexOf('FIXED_WING') >= 0
+      || raw.indexOf('AIR') >= 0
+      || raw.indexOf('HELI') >= 0
+      || raw.indexOf('PLANE') >= 0
+      || raw.indexOf('JET') >= 0
+    ) return 'AIR';
     if (raw.indexOf('TANK') >= 0 || raw.indexOf('MBT') >= 0) return 'VEHICLE';
     if (raw.indexOf('APC') >= 0 || raw.indexOf('IFV') >= 0 || raw.indexOf('AFV') >= 0) return 'VEHICLE';
     if (raw.indexOf('TRUCK') >= 0 || raw.indexOf('MRAP') >= 0 || raw.indexOf('CAR') >= 0 || raw.indexOf('VEH') >= 0) return 'VEHICLE';
