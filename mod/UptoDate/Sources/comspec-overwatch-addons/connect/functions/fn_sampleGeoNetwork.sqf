@@ -45,11 +45,26 @@ private _placeType = {
     };
 };
 
+private _roadClass = {
+    params ["_road"];
+    if (isNull _road) exitWith { "OTHER" };
+    private _info = getRoadInfo _road;
+    if (!(_info isEqualType []) || {(count _info) < 1}) exitWith { "OTHER" };
+    private _w = 0;
+    if ((count _info) > 1 && {(_info select 1) isEqualType 0}) then { _w = _info select 1; };
+    private _t = toUpper (str (_info select 0));
+    if (_t find "MAIN" >= 0 || {_t find "HIGHWAY" >= 0} || {_w >= 12}) exitWith { "HIGHWAY" };
+    if (_t find "ROAD" >= 0 || {_w >= 8}) exitWith { "PRIMARY" };
+    if (_t find "TRACK" >= 0 || {_t find "TRAIL" >= 0} || {_w > 0 && {_w < 4}}) exitWith { "TRACK" };
+    if (_w >= 4) exitWith { "SECONDARY" };
+    "OTHER"
+};
+
 missionNamespace setVariable ["COMSPEC_GeoSampling", true, false];
 ["Relevé géographique (villes + routes) en cours…", "system", "info"] call comspec_overwatch_connect_fnc_announce;
 
-[_mapId, _world, _doPlaces, _doRoads] spawn {
-    params ["_mapId", "_world", "_doPlaces", "_doRoads"];
+[_mapId, _world, _doPlaces, _doRoads, _fncEsc, _placeType, _roadClass] spawn {
+    params ["_mapId", "_world", "_doPlaces", "_doRoads", "_fncEsc", "_placeType", "_roadClass"];
 
     private _places = [];
     private _roads = [];
@@ -65,11 +80,12 @@ missionNamespace setVariable ["COMSPEC_GeoSampling", true, false];
             private _name = text _x;
             if (_name isEqualTo "") then { continue };
             private _type = [type _x] call _placeType;
+            private _z = if ((count _pos) > 2) then { _pos select 2 } else { 0 };
             private _id = format ["loc:%1:%2:%3", _worldName, floor (_pos select 0), floor (_pos select 1)];
             _places pushBack format [
-                "{""id"":""%1"",""type"":""%2"",""name"":""%3"",""x"":%4,""y"":%5}",
+                "{""id"":""%1"",""type"":""%2"",""name"":""%3"",""x"":%4,""y"":%5,""z"":%6}",
                 _id, _type, [_name] call _fncEsc,
-                _pos select 0, _pos select 1
+                _pos select 0, _pos select 1, _z
             ];
         } forEach _locs;
     };
@@ -85,6 +101,7 @@ missionNamespace setVariable ["COMSPEC_GeoSampling", true, false];
                 {
                     if (isNull _x) then { continue };
                     private _pos = getPosATL _x;
+                    private _cls = [_x] call _roadClass;
                     private _neighbors = roadsConnectedTo [_x, true];
                     if (_neighbors isEqualTo []) then {
                         private _near = _pos nearRoads 20;
@@ -100,8 +117,8 @@ missionNamespace setVariable ["COMSPEC_GeoSampling", true, false];
                         _roadSeen set [_key, true];
                         private _id = format ["rd:%1:%2", _worldName, _key];
                         _roads pushBack format [
-                            "{""id"":""%1"",""ax"":%2,""ay"":%3,""bx"":%4,""by"":%5,""class"":""OTHER""}",
-                            _id, _pos select 0, _pos select 1, _p2 select 0, _p2 select 1
+                            "{""id"":""%1"",""ax"":%2,""ay"":%3,""bx"":%4,""by"":%5,""class"":""%6""}",
+                            _id, _pos select 0, _pos select 1, _p2 select 0, _p2 select 1, _cls
                         ];
                     } forEach _neighbors;
                 } forEach _roadsHere;

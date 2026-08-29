@@ -219,6 +219,7 @@ class CfgFunctions {
             class orderConcernsPlayer {};
             class orderTypeLabel {};
             class pollOrders {};
+            class pollGpsNavigation {};
             class pollAiOrders {};
             class findAllyTrackUnit {};
             class applyAiMoveOrder {};

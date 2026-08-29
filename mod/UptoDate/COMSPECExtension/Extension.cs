@@ -2747,6 +2747,49 @@ public static class Extension
                     return PollOkClipped(SimplifyOrdersJson(body));
                 });
             }
+            // Waypoints GPS (itinéraires Athena). Args : [mapId, limit?, reached=0|1|all?]
+            // Lignes : id\troute_id\tlabel\tpos_x\tpos_y\tradius_m\treached\tsequence
+            if (function == "GetWaypoints")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var limit = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]!.Trim() : "40";
+                var reachedFilter = args.Length > 2 ? (args[2] ?? "").Trim().ToLowerInvariant() : "0";
+                var url = _baseUrl + "/api/atak/waypoints?mapId=" + Uri.EscapeDataString(mapId)
+                    + "&limit=" + Uri.EscapeDataString(limit);
+                if (reachedFilter == "0" || reachedFilter == "false" || reachedFilter == "pending")
+                    url += "&reached=0";
+                else if (reachedFilter == "1" || reachedFilter == "true" || reachedFilter == "reached")
+                    url += "&reached=1";
+                return ServePollGet("GetWaypoints:" + mapId + ":" + reachedFilter, url, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return PollOkClipped(SimplifyWaypointsJson(body));
+                });
+            }
+            // Point GPS franchi. Args : [waypointId, callsign?, reached=1?]
+            if (function == "MarkWaypointReached" && args.Length >= 1)
+            {
+                var waypointId = (args[0] ?? "").Trim();
+                var byCs = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+                var reachedFlag = args.Length > 2 ? (args[2] ?? "1").Trim() : "1";
+                if (waypointId.Length == 0) return "ERR|invalid";
+                var reachedBool = !(reachedFlag == "0" || reachedFlag.Equals("false", StringComparison.OrdinalIgnoreCase));
+                var steamJson = _steamUid.Length > 0
+                    ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
+                    : "";
+                var sessJson = _sessionToken.Length > 0
+                    ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
+                    : "";
+                var csJson = byCs.Length > 0
+                    ? $",\"reached_by_callsign\":\"{EscapeJson(byCs)}\""
+                    : "";
+                var payload = $"{{\"reached\":{(reachedBool ? "true" : "false")}{csJson}{steamJson}{sessJson}}}";
+                return PostAtakJsonSync(
+                    "/api/atak/waypoints/" + Uri.EscapeDataString(waypointId) + "/reached",
+                    payload,
+                    token
+                );
+            }
             // Ordre de mission (objectifs, LD, H). Lecture seule. Args : [mapId]
             // Lignes : P\tcode\ttitle\tstatus\th_hour\tsentence\tphase\tclock
             //          G\tid\tcode\tlabel\tkind\tx\ty\tstate
@@ -4290,6 +4333,82 @@ public static class Extension
                   .Append(Cell(targetRef)).Append('\t')
                   .Append(Cell(aliases)).Append('\t')
                   .Append(Cell(typeLabel)).Append('\n');
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
+    /// Simplifie GET /api/atak/waypoints pour SQF.
+    /// Lignes : id\troute_id\tlabel\tpos_x\tpos_y\tradius_m\treached\tsequence
+    /// </summary>
+    private static string SimplifyWaypointsJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("waypoints", out var wps) || wps.ValueKind != JsonValueKind.Array)
+                return "";
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+            static string Cell(string s)
+            {
+                var c = Clean(s);
+                return c.Length == 0 ? "-" : c;
+            }
+            static string Num(JsonElement el, string name)
+            {
+                if (!el.TryGetProperty(name, out var p)) return "0";
+                if (p.ValueKind == JsonValueKind.Number)
+                    return p.GetDouble().ToString(System.Globalization.CultureInfo.InvariantCulture);
+                if (p.ValueKind == JsonValueKind.String)
+                {
+                    var s = p.GetString() ?? "0";
+                    return s.Length == 0 ? "0" : s.Replace(',', '.');
+                }
+                return "0";
+            }
+            static string IdCell(JsonElement el)
+            {
+                if (!el.TryGetProperty("id", out var i)) return "";
+                if (i.ValueKind == JsonValueKind.Number) return i.GetInt64().ToString(System.Globalization.CultureInfo.InvariantCulture);
+                return i.GetString() ?? "";
+            }
+            foreach (var el in wps.EnumerateArray())
+            {
+                var id = IdCell(el);
+                if (string.IsNullOrEmpty(id)) continue;
+                var routeId = "0";
+                if (el.TryGetProperty("route_id", out var rid))
+                {
+                    if (rid.ValueKind == JsonValueKind.Number)
+                        routeId = rid.GetInt64().ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    else if (rid.ValueKind == JsonValueKind.String)
+                        routeId = rid.GetString() ?? "0";
+                }
+                var label = el.TryGetProperty("label", out var lb) ? (lb.GetString() ?? "") : "";
+                var reached = "0";
+                if (el.TryGetProperty("reached", out var rc))
+                {
+                    if (rc.ValueKind == JsonValueKind.True) reached = "1";
+                    else if (rc.ValueKind == JsonValueKind.False) reached = "0";
+                    else if (rc.ValueKind == JsonValueKind.Number) reached = rc.GetInt32() != 0 ? "1" : "0";
+                    else if (rc.ValueKind == JsonValueKind.String)
+                        reached = (rc.GetString() == "1" || string.Equals(rc.GetString(), "true", StringComparison.OrdinalIgnoreCase)) ? "1" : "0";
+                }
+                var seq = Num(el, "sequence_number");
+                if (seq == "0" && el.TryGetProperty("sequence", out _))
+                    seq = Num(el, "sequence");
+                sb.Append(Cell(id)).Append('\t')
+                  .Append(Cell(routeId)).Append('\t')
+                  .Append(Cell(label)).Append('\t')
+                  .Append(Cell(Num(el, "pos_x"))).Append('\t')
+                  .Append(Cell(Num(el, "pos_y"))).Append('\t')
+                  .Append(Cell(Num(el, "radius_m"))).Append('\t')
+                  .Append(Cell(reached)).Append('\t')
+                  .Append(Cell(seq)).Append('\n');
             }
             return sb.ToString();
         }

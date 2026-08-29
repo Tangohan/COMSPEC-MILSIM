@@ -365,6 +365,30 @@ _vehJson = _vehJson + format [
     _affiliation,
     if (missionNamespace getVariable ["COMSPEC_AtakShowEnemyAi", false]) then { "true" } else { "false" }
 ];
+/* Navigation GPS (module gps_navigation) — ETA / distance / route active pour Athena */
+if (
+    (["gps_navigation"] call comspec_overwatch_connect_fnc_isModModuleEnabled)
+    && {missionNamespace getVariable ["COMSPEC_GpsNavActive", false]}
+) then {
+    private _gpsDist = missionNamespace getVariable ["COMSPEC_GpsNavDistanceM", -1];
+    private _gpsEta = missionNamespace getVariable ["COMSPEC_GpsNavEtaSeconds", -1];
+    private _gpsRoute = str (missionNamespace getVariable ["COMSPEC_GpsNavRouteId", ""]);
+    private _gpsWp = str (missionNamespace getVariable ["COMSPEC_GpsNavWaypointId", ""]);
+    _gpsRoute = (_gpsRoute splitString """" joinString "");
+    _gpsWp = (_gpsWp splitString """" joinString "");
+    if (_gpsDist isEqualType 0 && {_gpsDist >= 0}) then {
+        _vehJson = _vehJson + format [",""distance_to_destination_m"":%1", round _gpsDist];
+    };
+    if (_gpsEta isEqualType 0 && {_gpsEta >= 0}) then {
+        _vehJson = _vehJson + format [",""eta_seconds"":%1", round _gpsEta];
+    };
+    if (!(_gpsRoute isEqualTo "") && {!(_gpsRoute in ["-", "0"])}) then {
+        _vehJson = _vehJson + format [",""active_route_id"":""%1""", _gpsRoute];
+    };
+    if (!(_gpsWp isEqualTo "") && {!(_gpsWp in ["-", "0"])}) then {
+        _vehJson = _vehJson + format [",""active_waypoint_id"":""%1""", _gpsWp];
+    };
+};
 private _grp = group _unit;
 private _grpCount = { alive _x } count units _grp;
 private _crewCount = if (_inVeh) then { { alive _x } count crew _veh } else { _grpCount };
