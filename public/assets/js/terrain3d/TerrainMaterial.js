@@ -13,8 +13,8 @@ export class TerrainMaterialFactory {
     return new THREE.MeshStandardMaterial({
       map: mapTexture || null,
       color: mapTexture ? 0xffffff : 0x4a6b45,
-      roughness: 0.76,
-      metalness: 0.04,
+      roughness: 0.88,
+      metalness: 0.02,
       flatShading: false,
       wireframe: !!opts.wireframe,
     });
@@ -32,12 +32,12 @@ export class TerrainMaterialFactory {
     scene.add(ambient);
 
     /* Soleil NW — relief lisible sans laver la diffuse. */
-    const sun = new THREE.DirectionalLight(0xfff2d6, 1.15);
+    const sun = new THREE.DirectionalLight(0xfff2d6, 0.95);
     sun.position.set(-120, 180, -90);
     sun.castShadow = false;
     scene.add(sun);
 
-    const fill = new THREE.DirectionalLight(0xa8c4b0, 0.22);
+    const fill = new THREE.DirectionalLight(0xa8c4b0, 0.28);
     fill.position.set(80, 60, 120);
     scene.add(fill);
 
