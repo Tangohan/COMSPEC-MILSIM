@@ -263,12 +263,9 @@ run_community_platform_migration($pdo);
 run_platform_unit_commander_migration($pdo);
 run_moderation_granular_sanctions_migration($pdo);
 run_seniority_engine_migration($pdo);
-<<<<<<< HEAD
-run_rank_catalog_migration($pdo);
-=======
 run_personnel_progression_engine_migration($pdo);
 run_personnel_capability_axes_migration($pdo);
->>>>>>> origin/main
+run_rank_catalog_migration($pdo);
 run_arma_playtime_migration($pdo);
 run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
