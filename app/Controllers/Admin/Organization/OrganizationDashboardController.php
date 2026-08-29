@@ -556,7 +556,7 @@ class OrganizationDashboardController
                 'impact_score' => min(100, 22 + ((int) ($onboardingAnomalies['medias_manquants'] ?? 0) * 5)),
                 'sla_label' => 'Après migration',
                 'count' => (int) ($onboardingAnomalies['medias_manquants'] ?? 0),
-                'link' => url('back-office/operations') . '#anomalies-medias',
+                'link' => url('back-office/centre-operations') . '#anomalies-medias',
                 'cta' => 'Voir les comptes',
             ],
             [
@@ -566,7 +566,7 @@ class OrganizationDashboardController
                 'impact_score' => min(100, 15 + (array_sum($onboardingAnomalies) * 3)),
                 'sla_label' => 'SLA: 48h',
                 'count' => array_sum($onboardingAnomalies),
-                'link' => url('back-office/users'),
+                'link' => url('back-office/centre-operations'),
                 'cta' => 'Corriger les anomalies',
             ],
         ];

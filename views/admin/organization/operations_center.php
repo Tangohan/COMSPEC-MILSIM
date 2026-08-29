@@ -468,7 +468,7 @@ $anomalyRows = [
     ['Membres sans unité', (int) ($anomalies['membres_sans_unite'] ?? 0), url('back-office/users') . '?filter_incomplete=1', 'Affecter'],
     ['Membres sans rôle', (int) ($anomalies['membres_sans_role'] ?? 0), url('back-office/users') . '?filter_no_role=1', 'Traiter'],
     ['Invitations expirées', (int) ($anomalies['invitations_expirees'] ?? 0), url('back-office/invitations'), 'Relancer'],
-    ['Photos manquantes (disque)', (int) ($anomalies['medias_manquants'] ?? 0), url('back-office/operations') . '#anomalies-medias', 'Voir'],
+    ['Photos manquantes (disque)', (int) ($anomalies['medias_manquants'] ?? 0), url('back-office/centre-operations') . '#anomalies-medias', 'Voir'],
 ];
 $anomalyTotal = 0;
 foreach ($anomalyRows as $a) {
