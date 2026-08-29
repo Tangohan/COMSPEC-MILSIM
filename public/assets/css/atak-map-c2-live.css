@@ -26,7 +26,7 @@ body.atak-map-c2-v2 .atak-map-tools--c2-legacy {
   z-index: 12;
   pointer-events: none;
   display: grid;
-  grid-template-columns: var(--c2-rail-w, 44px) 1fr;
+  grid-template-columns: var(--c2-rail-w, 72px) 1fr;
   grid-template-rows: 1fr auto;
   grid-template-areas:
     "rail map"
@@ -56,7 +56,11 @@ body.atak-map-c2-v2 .atak-map-tools--c2-legacy {
   position: absolute;
   right: 10px;
   top: 56px;
+  transform: none;
   z-index: 13;
+  max-height: calc(100% - 120px);
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 #atak-c2-live-shell .tac-c2-ctx {
@@ -70,19 +74,19 @@ body.atak-map-c2-v2 .atak-map-tools--c2-legacy {
 
 #atak-c2-live-shell .tac-c2-side {
   top: 56px;
-  right: 56px;
+  right: 76px;
   max-height: calc(100% - 140px);
 }
 
 html.atak-map-c2-v2 .atak-map-stage,
 body.atak-map-c2-v2 .atak-map-stage {
-  margin-left: var(--c2-rail-w, 44px);
+  margin-left: var(--c2-rail-w, 72px);
   margin-bottom: 64px;
 }
 
 html.atak-map-c2-v2 .atak-mission-c2bar,
 body.atak-map-c2-v2 .atak-mission-c2bar {
-  margin-left: var(--c2-rail-w, 44px);
+  margin-left: var(--c2-rail-w, 72px);
 }
 
 @media (max-width: 900px) {

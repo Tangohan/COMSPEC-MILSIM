@@ -221,10 +221,23 @@
         var pressed = btn3d.getAttribute('aria-pressed') === 'true';
         if (mode === '3d' && !pressed) btn3d.click();
         if (mode === '2d' && pressed) btn3d.click();
+        /* Resync si l’init 3D échoue (CSP / vendor) — le bouton legacy peut rester à plat. */
+        window.setTimeout(function () {
+          if (!state.controls || typeof state.controls.setMode !== 'function') return;
+          var still = document.getElementById('atak-view-3d');
+          var on = still && still.getAttribute('aria-pressed') === 'true';
+          state.controls.setMode(on ? '3d' : '2d');
+        }, 400);
       },
       onFollow: function (on) {
         triggerLegacyTool('follow', on);
       },
+    });
+
+    window.addEventListener('atak:terrain3dchange', function (ev) {
+      if (!state.controls || typeof state.controls.setMode !== 'function') return;
+      var enabled = !!(ev.detail && ev.detail.enabled);
+      state.controls.setMode(enabled ? '3d' : '2d');
     });
   }
 

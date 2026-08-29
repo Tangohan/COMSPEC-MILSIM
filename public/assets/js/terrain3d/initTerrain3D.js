@@ -13,14 +13,31 @@ import { Terrain3DRenderer } from './Terrain3DRenderer.js';
 let _depsPromise = null;
 
 /**
- * Charge Three.js et les dépendances depuis le CDN jsDelivr (ou deps injectés).
+ * Base Three.js : vendor local (CSP 'self') ou override.
+ * @param {{ threeBase?: string }} [config]
+ */
+export function resolveThreeBase(config) {
+  if (config && config.threeBase) return String(config.threeBase).replace(/\/$/, '');
+  if (typeof window !== 'undefined' && window.ATAK_THREE_BASE) {
+    return String(window.ATAK_THREE_BASE).replace(/\/$/, '');
+  }
+  try {
+    const here = new URL(import.meta.url);
+    return new URL('../../vendor/three', here).pathname.replace(/\/$/, '');
+  } catch (e) {
+    return '/public/assets/vendor/three';
+  }
+}
+
+/**
+ * Charge Three.js et les addons (OrbitControls, CSS2D) depuis le vendor local.
+ * Nécessite un import map `three` → vendor/three/build/three.module.js (voir atak.php).
  * @param {{ threeBase?: string }} [config]
  */
 export async function loadThreeDeps(config) {
   if (_depsPromise) return _depsPromise;
 
-  config = config || {};
-  const base = config.threeBase || 'https://cdn.jsdelivr.net/npm/three@0.160.0';
+  const base = resolveThreeBase(config);
 
   _depsPromise = Promise.all([
     import(/* @vite-ignore */ base + '/build/three.module.js'),
@@ -33,6 +50,9 @@ export async function loadThreeDeps(config) {
       CSS2DRenderer: mods[2].CSS2DRenderer,
       CSS2DObject: mods[2].CSS2DObject,
     };
+  }).catch(function (err) {
+    _depsPromise = null;
+    throw err;
   });
 
   return _depsPromise;

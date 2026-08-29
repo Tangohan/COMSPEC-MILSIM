@@ -98,6 +98,7 @@ if ($atakMapConfig) {
     window.ATAK_MAP_C2_V2 = true;
     window.ATAK_TERRAIN3D_PREMIUM = true;
     window.ATAK_C2_ASSET_BASE = <?= json_encode(rtrim($base, '/'), JSON_UNESCAPED_UNICODE) ?>;
+    window.ATAK_THREE_BASE = <?= json_encode(rtrim($base, '/') . '/assets/vendor/three', JSON_UNESCAPED_UNICODE) ?>;
     document.documentElement.classList.add('atak-map-c2-v2');
     window.ATAK_TEAM_CONFIG = <?= json_encode($atakConfig ?: new stdClass()) ?>;
     window.ATAK_USER = <?= json_encode($atakUserForJs ?: new stdClass()) ?>;
@@ -134,6 +135,13 @@ if ($atakMapConfig) {
     window.APP_BASE_URL = <?= json_encode(rtrim((string) $base, '/'), JSON_UNESCAPED_UNICODE) ?>;
   </script>
   <script>try{if(localStorage.getItem('atak:uiVersion')==='v2'||new URLSearchParams(location.search).get('ui')==='v2'){document.documentElement.classList.add('atak-v2-boot');}}catch(e){}</script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/vendor/three/build/three.module.js"
+    }
+  }
+  </script>
 </head>
 <body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed atak-page--device' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
   <?php
@@ -2384,18 +2392,54 @@ if ($atakMapConfig) {
     <div class="atak-map-wrap">
       <div id="atak-c2-live-shell" class="tac-c2-live" aria-label="Interface cartographique C2">
         <nav class="tac-c2-rail" id="atak-c2-rail" aria-label="Outils carte">
-          <button type="button" class="tac-c2-rail__btn is-active" data-tool="select" title="Sélectionner">⊹</button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="goto" title="Aller à une grille">⌖</button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="follow" title="Suivre ma position">◎</button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="measure" title="Mesurer">↔</button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="draw" title="Tracer un trait">╱</button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="perimeter" title="Périmètre">⬡</button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="search" title="Zone de recherche">⌕</button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="marker" title="Note carte">＋</button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="route" title="Profil itinéraire">⌀</button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="los" title="Visée / LOS">⊡</button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="nvg" title="Vision nocturne">☾</button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="layers" title="Tableau unités">≡</button>
+          <button type="button" class="tac-c2-rail__btn is-active" data-tool="select" title="Sélectionner">
+            <span class="tac-c2-rail__icon" aria-hidden="true">⊹</span>
+            <span class="tac-c2-rail__label">Sélect.</span>
+          </button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="goto" title="Aller à une grille">
+            <span class="tac-c2-rail__icon" aria-hidden="true">⌖</span>
+            <span class="tac-c2-rail__label">Grille</span>
+          </button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="follow" title="Suivre ma position">
+            <span class="tac-c2-rail__icon" aria-hidden="true">◎</span>
+            <span class="tac-c2-rail__label">Suivi</span>
+          </button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="measure" title="Mesurer">
+            <span class="tac-c2-rail__icon" aria-hidden="true">↔</span>
+            <span class="tac-c2-rail__label">Mesure</span>
+          </button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="draw" title="Tracer un trait">
+            <span class="tac-c2-rail__icon" aria-hidden="true">╱</span>
+            <span class="tac-c2-rail__label">Trait</span>
+          </button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="perimeter" title="Périmètre">
+            <span class="tac-c2-rail__icon" aria-hidden="true">⬡</span>
+            <span class="tac-c2-rail__label">Périm.</span>
+          </button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="search" title="Zone de recherche">
+            <span class="tac-c2-rail__icon" aria-hidden="true">⌕</span>
+            <span class="tac-c2-rail__label">Zone</span>
+          </button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="marker" title="Note carte">
+            <span class="tac-c2-rail__icon" aria-hidden="true">＋</span>
+            <span class="tac-c2-rail__label">Note</span>
+          </button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="route" title="Profil itinéraire">
+            <span class="tac-c2-rail__icon" aria-hidden="true">⌀</span>
+            <span class="tac-c2-rail__label">Route</span>
+          </button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="los" title="Visée / LOS">
+            <span class="tac-c2-rail__icon" aria-hidden="true">⊡</span>
+            <span class="tac-c2-rail__label">Visée</span>
+          </button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="nvg" title="Vision nocturne">
+            <span class="tac-c2-rail__icon" aria-hidden="true">☾</span>
+            <span class="tac-c2-rail__label">NVG</span>
+          </button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="layers" title="Tableau unités">
+            <span class="tac-c2-rail__icon" aria-hidden="true">≡</span>
+            <span class="tac-c2-rail__label">Unités</span>
+          </button>
         </nav>
         <div class="tac-map-controls" id="atak-c2-map-controls"></div>
         <aside class="tac-c2-side" id="atak-c2-side" hidden>
