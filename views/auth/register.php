@@ -102,6 +102,38 @@ $val = static function (array $old, string $key, string $default = '') : string 
             background: rgba(244, 244, 240, 0.12);
         }
         .reg-step-line.is-done { background: rgba(52, 211, 153, 0.45); }
+        .reg-flash.ds-alert--on-dark {
+            border: 1px solid rgba(248, 113, 113, 0.45);
+            border-radius: 0.85rem;
+            padding: 1rem 1rem 1rem 2.75rem;
+        }
+        .reg-terms {
+            border: 1px solid rgba(52, 211, 153, 0.35);
+            background: rgba(52, 211, 153, 0.08);
+            border-radius: 0.85rem;
+            padding: 1rem 1.1rem;
+        }
+        .reg-terms input[type="checkbox"] {
+            width: 1.15rem;
+            height: 1.15rem;
+            margin-top: 0.15rem;
+            flex-shrink: 0;
+            accent-color: #34d399;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        .reg-terms__label {
+            color: rgba(244, 244, 240, 0.88);
+            font-size: 0.9375rem;
+            line-height: 1.55;
+            cursor: pointer;
+        }
+        .reg-terms__label a {
+            color: #6ee7b7;
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
     </style>
 </head>
 <body
@@ -205,17 +237,34 @@ $val = static function (array $old, string $key, string $default = '') : string 
 
             <?php $err = \App\Core\Session::getFlash('error'); $ok = \App\Core\Session::getFlash('success'); ?>
             <?php if ($err): ?>
-                <?php $flash_variant = 'error'; $flash_message = $err; $flash_surface = 'dark'; require base_path('views/partials/flash_message.php'); ?>
+                <?php
+                $flash_variant = 'error';
+                $flash_message = $err;
+                $flash_surface = 'dark';
+                $flash_margin_class = 'mb-6 reg-flash';
+                require base_path('views/partials/flash_message.php');
+                ?>
             <?php endif; ?>
             <?php if ($ok): ?>
-                <?php $flash_variant = 'success'; $flash_message = $ok; $flash_surface = 'dark'; require base_path('views/partials/flash_message.php'); ?>
+                <?php
+                $flash_variant = 'success';
+                $flash_message = $ok;
+                $flash_surface = 'dark';
+                $flash_margin_class = 'mb-6 reg-flash';
+                require base_path('views/partials/flash_message.php');
+                ?>
             <?php endif; ?>
 
             <div class="login-panel p-6 sm:p-8">
                 <form method="post" action="<?= htmlspecialchars(url('register'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-5" novalidate @submit="onSubmit($event)">
                     <?= \App\Core\Csrf::field() ?>
 
-                    <div x-show="step === 1" x-ref="step1" x-transition.opacity.duration.200ms>
+                    <div
+                        x-show="step === 1"
+                        x-ref="step1"
+                        x-transition.opacity.duration.200ms
+                        style="<?= $startStep === 1 ? '' : 'display:none' ?>"
+                    >
                         <p class="mb-1 text-sm font-bold text-white"><?= htmlspecialchars(__('auth.register_access'), ENT_QUOTES, 'UTF-8') ?></p>
                         <p class="mb-5 text-xs leading-relaxed text-white/45">
                             <?= htmlspecialchars(__('auth.register_access_hint'), ENT_QUOTES, 'UTF-8') ?>
@@ -317,29 +366,39 @@ $val = static function (array $old, string $key, string $default = '') : string 
                         <button type="button" @click="next()" class="hi-cta hi-cta-solid mt-6 w-full justify-center"><?= htmlspecialchars(__('auth.register_continue'), ENT_QUOTES, 'UTF-8') ?></button>
                     </div>
 
-                    <div x-show="step === 2" x-ref="step2" x-cloak x-transition.opacity.duration.200ms>
+                    <div
+                        x-show="step === 2"
+                        x-ref="step2"
+                        x-transition.opacity.duration.200ms
+                        style="<?= $startStep === 2 ? '' : 'display:none' ?>"
+                    >
                         <p class="mb-1 text-sm font-bold text-white"><?= htmlspecialchars(__('auth.register_last_step'), ENT_QUOTES, 'UTF-8') ?></p>
                         <p class="mb-5 text-xs leading-relaxed text-white/45">
                             <?= htmlspecialchars(__('auth.register_last_step_hint'), ENT_QUOTES, 'UTF-8') ?>
                         </p>
 
-                        <div class="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                            <label class="flex items-start gap-3 text-sm leading-relaxed text-white/70">
-                                <input type="checkbox" name="accept_terms" value="1" required
-                                       class="mt-1 h-4 w-4 rounded border-white/20 bg-transparent text-emerald-500 focus:ring-emerald-500/40"
+                        <div class="reg-terms">
+                            <label class="flex items-start gap-3 reg-terms__label" for="accept_terms">
+                                <input id="accept_terms" type="checkbox" name="accept_terms" value="1"
+                                       :required="step === 2"
                                        <?= !empty($old['accept_terms']) ? 'checked' : '' ?>>
                                 <span>
                                     <?= htmlspecialchars(__('auth.register_accept_prefix'), ENT_QUOTES, 'UTF-8') ?>
-                                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#cgu" class="font-semibold text-emerald-400 hover:underline" target="_blank" rel="noopener"><?= htmlspecialchars(__('auth.register_terms'), ENT_QUOTES, 'UTF-8') ?></a>
+                                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#cgu" target="_blank" rel="noopener"><?= htmlspecialchars(__('auth.register_terms'), ENT_QUOTES, 'UTF-8') ?></a>
                                     <?= htmlspecialchars(__('auth.register_accept_and'), ENT_QUOTES, 'UTF-8') ?>
-                                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#rgpd" class="font-semibold text-emerald-400 hover:underline" target="_blank" rel="noopener"><?= htmlspecialchars(__('auth.register_privacy'), ENT_QUOTES, 'UTF-8') ?></a>.
+                                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#rgpd" target="_blank" rel="noopener"><?= htmlspecialchars(__('auth.register_privacy'), ENT_QUOTES, 'UTF-8') ?></a>.
                                 </span>
                             </label>
+                            <p class="mt-3 text-xs text-white/45">Cochez la case, puis cliquez sur « <?= htmlspecialchars(__('auth.register_submit'), ENT_QUOTES, 'UTF-8') ?> ».</p>
                         </div>
 
-                        <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
-                            <button type="button" @click="prev()" class="hi-cta hi-cta-ghost w-full justify-center sm:w-auto sm:min-w-[8rem]"><?= htmlspecialchars(__('common.back'), ENT_QUOTES, 'UTF-8') ?></button>
-                            <button type="submit" class="hi-cta hi-cta-solid w-full flex-1 justify-center"><?= htmlspecialchars(__('auth.register_submit'), ENT_QUOTES, 'UTF-8') ?></button>
+                        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch">
+                            <button type="submit" class="hi-cta hi-cta-solid w-full flex-1 justify-center order-1 sm:order-2">
+                                <?= htmlspecialchars(__('auth.register_submit'), ENT_QUOTES, 'UTF-8') ?>
+                            </button>
+                            <button type="button" @click="prev()" class="hi-cta hi-cta-ghost w-full justify-center sm:w-auto sm:min-w-[8rem] order-2 sm:order-1">
+                                <?= htmlspecialchars(__('common.back'), ENT_QUOTES, 'UTF-8') ?>
+                            </button>
                         </div>
                     </div>
                 </form>
