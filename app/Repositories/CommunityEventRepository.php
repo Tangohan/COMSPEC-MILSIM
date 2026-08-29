@@ -834,23 +834,44 @@ class CommunityEventRepository
     /**
      * Registre opérations — créneaux enrichis (commandant, effectifs, postes).
      *
-     * Filtres acceptés : vue (a_venir|passes|annules), annee, type, statut (planifie|en_cours|clos|annule), q.
+     * Filtres acceptés : vue (calendrier|a_venir|passes|annules), mois (YYYY-MM),
+     * annee, type, statut (planifie|en_cours|clos|annule), q.
      *
      * @param array<string, mixed> $filters
      * @return list<array<string, mixed>>
      */
     public function registryForTenant(int $tenantId, array $filters = [], int $limit = 150): array
     {
-        $lim = max(1, min(200, $limit));
+        $lim = max(1, min(500, $limit));
         $vue = trim((string) ($filters['vue'] ?? 'a_venir'));
-        if (!in_array($vue, ['a_venir', 'passes', 'annules'], true)) {
+        if (!in_array($vue, ['calendrier', 'a_venir', 'passes', 'annules'], true)) {
             $vue = 'a_venir';
         }
 
         $where = ['ce.tenant_id = ?'];
         $params = [$tenantId];
 
-        if ($vue === 'annules') {
+        if ($vue === 'calendrier') {
+            $mois = trim((string) ($filters['mois'] ?? ''));
+            if (!preg_match('/^\d{4}-\d{2}$/', $mois)) {
+                $mois = date('Y-m');
+            }
+            $monthStart = $mois . '-01 00:00:00';
+            $monthEndTs = strtotime($mois . '-01 +1 month');
+            $monthEnd = $monthEndTs !== false
+                ? date('Y-m-d H:i:s', $monthEndTs)
+                : ($mois . '-28 23:59:59');
+            /* Chevauchement du mois (début avant fin de mois, fin après début). */
+            $where[] = 'ce.starts_at < ?';
+            $params[] = $monthEnd;
+            $where[] = 'COALESCE(ce.ends_at, ce.starts_at) >= ?';
+            $params[] = $monthStart;
+            $statutCal = trim((string) ($filters['statut'] ?? ''));
+            if ($statutCal !== 'annule') {
+                /* Par défaut on garde les annulés visibles mais grisés côté UI ;
+                   sauf filtre statut explicite « annule » qui ne montre qu’eux. */
+            }
+        } elseif ($vue === 'annules') {
             $where[] = 'ce.cancelled_at IS NOT NULL';
         } else {
             $where[] = 'ce.cancelled_at IS NULL';
@@ -862,7 +883,7 @@ class CommunityEventRepository
         }
 
         $annee = (int) ($filters['annee'] ?? 0);
-        if ($annee >= 2000 && $annee <= 2100) {
+        if ($vue !== 'calendrier' && $annee >= 2000 && $annee <= 2100) {
             $where[] = 'YEAR(ce.starts_at) = ?';
             $params[] = $annee;
         }

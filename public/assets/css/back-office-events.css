@@ -1441,3 +1441,163 @@
   min-width: 9rem;
   max-width: 100%;
 }
+
+/* ——— Agenda BO : vue calendrier mensuel ——— */
+.ath-cal {
+  background: var(--ath-surface, #fff);
+  border: 1px solid var(--ath-line, #e3e8ea);
+  padding: 14px 16px 18px;
+  margin-bottom: 8px;
+}
+.ath-cal__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.ath-cal__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ath-cal__title {
+  margin: 0;
+  min-width: 10rem;
+  text-align: center;
+  font-family: var(--ath-font, Archivo, system-ui, sans-serif);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ath-ink, #0c1116);
+  text-transform: capitalize;
+}
+.ath-cal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.ath-cal__jump {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ath-cal__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ath-subtle, #8c979b);
+}
+.ath-cal__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ath-cal__dot {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  border-radius: 1px;
+}
+.ath-cal__dot--op { background: #c72e2e; }
+.ath-cal__dot--evt { background: #0b8a5c; }
+.ath-cal__dot--form { background: #1e6fbf; }
+.ath-cal__dot--annule { background: #94a3b8; }
+.ath-cal__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--ath-line, #e3e8ea);
+  border: 1px solid var(--ath-line, #e3e8ea);
+}
+.ath-cal__head,
+.ath-cal__week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+}
+.ath-cal__dow {
+  background: var(--ath-table-head, #fafcfc);
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ath-subtle, #8c979b);
+}
+.ath-cal__day {
+  min-height: 108px;
+  background: #fff;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ath-cal__day--out {
+  background: #f7f9fa;
+  color: #a0a8ad;
+}
+.ath-cal__day--today {
+  box-shadow: inset 0 0 0 2px #0b8a5c;
+}
+.ath-cal__daynum {
+  font-family: var(--ath-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ath-ink, #0c1116);
+}
+.ath-cal__day--out .ath-cal__daynum { color: #a0a8ad; }
+.ath-cal__chips {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+}
+.ath-cal__chip {
+  display: block;
+  padding: 3px 5px;
+  border-left: 3px solid #0b8a5c;
+  background: #edf8f3;
+  color: #04231a;
+  text-decoration: none;
+  font-size: 11px;
+  line-height: 1.25;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ath-cal__chip:hover { filter: brightness(0.97); }
+.ath-cal__chip--op { border-left-color: #c72e2e; background: #fdecec; color: #5c1212; }
+.ath-cal__chip--form { border-left-color: #1e6fbf; background: #eaf2fb; color: #0f3a66; }
+.ath-cal__chip--autre { border-left-color: #7c3aed; background: #f3eefc; color: #3b1d6e; }
+.ath-cal__chip--annule {
+  border-left-color: #94a3b8;
+  background: #f1f5f9;
+  color: #64748b;
+  text-decoration: line-through;
+}
+.ath-cal__time {
+  font-family: var(--ath-mono, ui-monospace, monospace);
+  font-weight: 700;
+  margin-right: 4px;
+}
+.ath-cal__name { font-weight: 600; }
+.ath-cal__more {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ath-muted, #6d7a80);
+  padding: 0 2px;
+}
+@media (max-width: 900px) {
+  .ath-cal__day { min-height: 84px; }
+  .ath-cal__chip .ath-cal__name { display: none; }
+  .ath-cal__chip { text-align: center; }
+}

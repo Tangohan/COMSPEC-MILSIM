@@ -83,12 +83,17 @@ final class CommunityEventsAdminController
             $user ? (int) $user['id'] : null,
             'events'
         );
-        $vue = trim((string) $request->query('vue', 'a_venir'));
-        if (!in_array($vue, ['a_venir', 'passes', 'annules'], true)) {
-            $vue = 'a_venir';
+        $vue = trim((string) $request->query('vue', 'calendrier'));
+        if (!in_array($vue, ['calendrier', 'a_venir', 'passes', 'annules'], true)) {
+            $vue = 'calendrier';
+        }
+        $mois = trim((string) $request->query('mois', ''));
+        if (!preg_match('/^\d{4}-\d{2}$/', $mois)) {
+            $mois = date('Y-m');
         }
         $registryFilters = [
             'vue' => $vue,
+            'mois' => $mois,
             'annee' => (int) $request->query('annee', 0),
             'type' => trim((string) $request->query('type', '')),
             'statut' => trim((string) $request->query('statut', '')),
@@ -97,22 +102,27 @@ final class CommunityEventsAdminController
         if ($request->query('export') === 'csv') {
             return $this->exportRegistry($tenantId, $registryFilters);
         }
-        $rows = $this->events->registryForTenant($tenantId, $registryFilters, 150);
+        $rowLimit = $vue === 'calendrier' ? 400 : 150;
+        $rows = $this->events->registryForTenant($tenantId, $registryFilters, $rowLimit);
         $insights = $this->buildAttendanceInsights($tenantId);
         $quota = $this->featureGate->quotaStatusForFeature($tenantId, 'events');
         $aarCrIndex = $this->aarReports->operationStatusIndexForTenant($tenantId);
+        $calendarMonth = $vue === 'calendrier' ? $this->buildCalendarMonth($mois, $rows) : null;
 
         return Response::view('layout.main', [
-            'title' => 'Opérations',
+            'title' => 'Agenda',
             'content' => 'admin.organization.events',
             'isBackOfficeShell' => true,
             'boPageGroup' => 'Opérations',
-            'boPageTitle' => 'Opérations',
-            'boPageKicker' => 'OPÉRATIONS · REGISTRE',
-            'boPageSubtitle' => 'Registre des opérations passées et à venir : effectifs engagés, durée et état des comptes rendus.',
+            'boPageTitle' => 'Agenda',
+            'boPageKicker' => 'OPÉRATIONS · AGENDA',
+            'boPageSubtitle' => $vue === 'calendrier'
+                ? 'Calendrier des opérations et créneaux — cliquez un jour ou un événement pour ouvrir la fiche.'
+                : 'Registre des opérations passées et à venir : effectifs engagés, durée et état des comptes rendus.',
             'boPageAction' => 'Planifier une opération',
-            'boPageActionUrl' => url('back-office/events') . '#nouveau',
+            'boPageActionUrl' => url('back-office/events') . '?vue=calendrier#nouveau',
             'boPageQuick' => [
+                ['label' => 'Calendrier', 'href' => url('back-office/events') . '?vue=calendrier'],
                 ['label' => 'À venir', 'href' => url('back-office/events') . '?vue=a_venir'],
                 ['label' => 'Passées', 'href' => url('back-office/events') . '?vue=passes'],
                 ['label' => 'Annulées', 'href' => url('back-office/events') . '?vue=annules'],
@@ -121,6 +131,7 @@ final class CommunityEventsAdminController
             'events' => $rows,
             'eventsVue' => $vue,
             'eventsRegistryFilters' => $registryFilters,
+            'eventsCalendarMonth' => $calendarMonth,
             'eventsAarIndex' => $aarCrIndex,
             'eventsQuota' => $quota,
             'canCreateEvent' => $this->featureGate->allows($tenantId, 'events'),
@@ -130,6 +141,103 @@ final class CommunityEventsAdminController
             'eventsRegularityScores' => $insights['regularityScores'],
             'eventsNewMemberParticipationDelta' => $insights['newMemberParticipationDelta'],
         ]);
+    }
+
+    /**
+     * Grille mensuelle (lundi → dimanche) pour la vue calendrier BO.
+     *
+     * @param list<array<string, mixed>> $events
+     * @return array{
+     *   mois: string,
+     *   label: string,
+     *   prev: string,
+     *   next: string,
+     *   today: string,
+     *   weeks: list<list<array{ymd: string, in_month: bool, is_today: bool, day: int, events: list<array<string, mixed>>}>>
+     * }
+     */
+    private function buildCalendarMonth(string $mois, array $events): array
+    {
+        if (!preg_match('/^\d{4}-\d{2}$/', $mois)) {
+            $mois = date('Y-m');
+        }
+        $firstTs = strtotime($mois . '-01 12:00:00');
+        if ($firstTs === false) {
+            $firstTs = strtotime(date('Y-m-01') . ' 12:00:00') ?: time();
+            $mois = date('Y-m', $firstTs);
+        }
+        $monthsFr = [
+            1 => 'janvier', 2 => 'février', 3 => 'mars', 4 => 'avril', 5 => 'mai', 6 => 'juin',
+            7 => 'juillet', 8 => 'août', 9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'décembre',
+        ];
+        $monthNum = (int) date('n', $firstTs);
+        $label = ($monthsFr[$monthNum] ?? date('F', $firstTs)) . ' ' . date('Y', $firstTs);
+
+        $prevTs = strtotime($mois . '-01 -1 month');
+        $nextTs = strtotime($mois . '-01 +1 month');
+        $prev = $prevTs !== false ? date('Y-m', $prevTs) : $mois;
+        $next = $nextTs !== false ? date('Y-m', $nextTs) : $mois;
+        $today = date('Y-m-d');
+
+        $byDay = [];
+        foreach ($events as $ev) {
+            $startsRaw = isset($ev['starts_at']) ? (string) $ev['starts_at'] : '';
+            $ts = $startsRaw !== '' ? strtotime($startsRaw) : false;
+            if ($ts === false) {
+                continue;
+            }
+            $ymd = date('Y-m-d', $ts);
+            if (!isset($byDay[$ymd])) {
+                $byDay[$ymd] = [];
+            }
+            $byDay[$ymd][] = $ev;
+        }
+
+        /* Lundi = début de grille (N = 1..7 lundi..dimanche en PHP avec format 'N'). */
+        $startDow = (int) date('N', $firstTs);
+        $gridStartTs = strtotime('-' . ($startDow - 1) . ' days', $firstTs);
+        if ($gridStartTs === false) {
+            $gridStartTs = $firstTs;
+        }
+        $daysInMonth = (int) date('t', $firstTs);
+        $lastTs = strtotime($mois . '-' . str_pad((string) $daysInMonth, 2, '0', STR_PAD_LEFT) . ' 12:00:00');
+        if ($lastTs === false) {
+            $lastTs = $firstTs;
+        }
+        $endDow = (int) date('N', $lastTs);
+        $gridEndTs = strtotime('+' . (7 - $endDow) . ' days', $lastTs);
+        if ($gridEndTs === false) {
+            $gridEndTs = $lastTs;
+        }
+
+        $weeks = [];
+        $cursor = $gridStartTs;
+        while ($cursor <= $gridEndTs) {
+            $week = [];
+            for ($i = 0; $i < 7; $i++) {
+                $ymd = date('Y-m-d', $cursor);
+                $inMonth = date('Y-m', $cursor) === $mois;
+                $week[] = [
+                    'ymd' => $ymd,
+                    'in_month' => $inMonth,
+                    'is_today' => $ymd === $today,
+                    'day' => (int) date('j', $cursor),
+                    'events' => $byDay[$ymd] ?? [],
+                ];
+                $nextDay = strtotime('+1 day', $cursor);
+                $cursor = $nextDay !== false ? $nextDay : ($cursor + 86400);
+            }
+            $weeks[] = $week;
+        }
+
+        return [
+            'mois' => $mois,
+            'label' => $label,
+            'prev' => $prev,
+            'next' => $next,
+            'today' => $today,
+            'weeks' => $weeks,
+        ];
     }
 
     /**
@@ -350,9 +458,9 @@ final class CommunityEventsAdminController
 
     public function store(Request $request, array $params = []): Response
     {
-        $listVue = trim((string) $request->input('return_vue', 'a_venir'));
-        if (!in_array($listVue, ['a_venir', 'passes', 'annules'], true)) {
-            $listVue = 'a_venir';
+        $listVue = trim((string) $request->input('return_vue', 'calendrier'));
+        if (!in_array($listVue, ['calendrier', 'a_venir', 'passes', 'annules'], true)) {
+            $listVue = 'calendrier';
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
@@ -972,8 +1080,8 @@ final class CommunityEventsAdminController
 
     private function redirectEventsIndex(string $vue): Response
     {
-        if (!in_array($vue, ['a_venir', 'passes', 'annules'], true)) {
-            $vue = 'a_venir';
+        if (!in_array($vue, ['calendrier', 'a_venir', 'passes', 'annules'], true)) {
+            $vue = 'calendrier';
         }
 
         return Response::redirect(url('back-office/events') . '?vue=' . rawurlencode($vue));
