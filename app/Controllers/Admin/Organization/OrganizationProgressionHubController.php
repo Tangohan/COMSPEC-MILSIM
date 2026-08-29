@@ -9,7 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Services\Auth\AuthService;
-use App\Services\Rbac\Gate;
+use App\Core\Gate;
 use PDO;
 
 /**
