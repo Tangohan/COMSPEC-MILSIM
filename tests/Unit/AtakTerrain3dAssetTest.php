@@ -43,8 +43,8 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertStringContainsString('Inclinaison', $view);
         self::assertStringContainsString('id="atak-terrain-3d-mode"', $view);
         self::assertStringContainsString('Vue de la carte', $view);
-        self::assertStringContainsString('<option value="flat" selected>À plat</option>', $view);
-        self::assertStringContainsString('<option value="inclined">Inclinée</option>', $view);
+        self::assertStringContainsString('<option value="flat" selected>À plat (2D)</option>', $view);
+        self::assertStringContainsString('<option value="inclined">Topo premium 3D</option>', $view);
         self::assertDoesNotMatchRegularExpression('/id="atak-terrain-3d-settings"[^>]*\bhidden\b/', $view);
         self::assertStringContainsString("modeSelect.value = state.enabled ? 'inclined' : 'flat'", $javascript);
         self::assertStringContainsString('settings.hidden = false', $javascript);
