@@ -495,6 +495,10 @@ return function (Router $router) {
     $router->get('/personnel', [PersonnelController::class, 'personnelIndex'], [AuthMiddleware::class]);
     $router->get('/personnel/me', [PersonnelController::class, 'me'], [AuthMiddleware::class]);
     $router->get('/personnel/me/edit', [PersonnelController::class, 'edit'], [AuthMiddleware::class]);
+    $router->get('/personnel/{id}/correction', [\App\Controllers\Web\PersonnelCorrectionController::class, 'form'], [AuthMiddleware::class]);
+    $router->post('/personnel/{id}/correction', [\App\Controllers\Web\PersonnelCorrectionController::class, 'submit'], [AuthMiddleware::class]);
+    $router->get('/back-office/personnel/corrections', [\App\Controllers\Web\PersonnelCorrectionController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/back-office/personnel/corrections/{id}/decide', [\App\Controllers\Web\PersonnelCorrectionController::class, 'decide'], [AuthMiddleware::class]);
     $router->get('/personnel/tutorials', [PersonnelController::class, 'tutorials'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/actualiser', [RhWorkspaceController::class, 'refreshFromDossier'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/absences', [RhWorkspaceController::class, 'storeAbsence'], [AuthMiddleware::class]);

@@ -168,6 +168,12 @@ $athNavGroups = [
                 'active' => $navOrbatActive || $navDoctrineActive || $navAttributionsActive,
                 'children' => $orbatChildren,
             ],
+            [
+                'label' => 'Corrections RH',
+                'href' => url('back-office/personnel/corrections'),
+                'icon' => 'users',
+                'active' => str_contains((string) ($_SERVER['REQUEST_URI'] ?? ''), '/back-office/personnel/corrections'),
+            ],
             $canTraining
                 ? ['label' => 'Formations', 'href' => url($lmsResPath), 'icon' => 'book', 'active' => $navFormationsActive]
                 : null,

@@ -817,6 +817,21 @@ class Container
                 self::get(\App\Repositories\BadgeRepository::class),
                 self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
             ),
+            \App\Repositories\PersonnelCorrectionRequestRepository::class => new \App\Repositories\PersonnelCorrectionRequestRepository(),
+            \App\Services\Personnel\PersonnelCorrectionRequestService::class => new \App\Services\Personnel\PersonnelCorrectionRequestService(
+                self::get(\App\Repositories\PersonnelCorrectionRequestRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+            ),
+            \App\Controllers\Web\PersonnelCorrectionController::class => new \App\Controllers\Web\PersonnelCorrectionController(
+                self::get(AuthService::class),
+                self::get(UserRepository::class),
+                self::get(\App\Services\Personnel\PersonnelCorrectionRequestService::class),
+                self::get(\App\Repositories\PersonnelCorrectionRequestRepository::class),
+            ),
             \App\Repositories\BadgeRepository::class => new \App\Repositories\BadgeRepository(),
             \App\Repositories\PersonnelStageBilanRepository::class => new \App\Repositories\PersonnelStageBilanRepository(),
             \App\Controllers\Admin\Organization\RoleplayFollowupAdminController::class => new \App\Controllers\Admin\Organization\RoleplayFollowupAdminController(

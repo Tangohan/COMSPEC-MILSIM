@@ -2325,6 +2325,14 @@ try {
     echo '  [ATTENTION] elevation_requests_proposal : ' . $e->getMessage() . "\n";
 }
 
+$personnelCorrectionRequestsMigrate = require $root . '/bootstrap/personnel_correction_requests_migration.php';
+try {
+    echo "Migration personnel_correction_requests (corrections RH fiche opérateur)...\n";
+    $personnelCorrectionRequestsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] personnel_correction_requests : ' . $e->getMessage() . "\n";
+}
+
 $memberDeparturesMigrate = require $root . '/bootstrap/member_departures_migration.php';
 try {
     $memberDeparturesMigrate($pdo);

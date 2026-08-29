@@ -664,6 +664,20 @@ $personnelFileShell = $personnelFileIsRhFull
                                 <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
                                 La fiche affichée
                             </button>
+                            <?php
+                            $viewerIdForCorrection = (int) (\App\Core\Session::get('user_id') ?? 0);
+                            $canProposeCorrection = $viewerIdForCorrection > 0 && (
+                                $viewerIdForCorrection === $reportUid
+                                || !empty($canEditProfile)
+                                || !empty($canAccessRhView)
+                            );
+                            ?>
+                            <?php if ($canProposeCorrection): ?>
+                            <a role="menuitem" href="<?= htmlspecialchars(url('personnel/' . $reportUid . '/correction'), ENT_QUOTES, 'UTF-8') ?>" class="flex w-full items-center gap-2 border-b border-white/10 px-4 py-3 text-left text-xs font-semibold text-emerald-200 transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/60">
+                                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true"></span>
+                                Anomalie / correction RH
+                            </a>
+                            <?php endif; ?>
                             <?php if (!empty($avatarUrl)): ?>
                             <button type="button" role="menuitem" data-community-report data-cr-type="profile_picture" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant la photo de compte affichée." class="flex w-full items-center gap-2 border-b border-white/10 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
                                 <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>

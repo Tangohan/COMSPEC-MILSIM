@@ -1274,6 +1274,110 @@ final class EmailService
     }
 
     /**
+     * @param list<string> $diffLines
+     */
+    public function sendPersonnelCorrectionRequestStaff(
+        string $to,
+        string $staffDisplayName,
+        string $requesterDisplayName,
+        string $requesterEmail,
+        string $tenantName,
+        string $targetDisplayName,
+        array $diffLines,
+        string $note,
+        string $queueUrl,
+        string $ficheUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::PERSONNEL_CORRECTION_REQUEST_STAFF,
+            'personnel_correction_request_staff',
+            $to,
+            'Correction RH à valider — ' . $targetDisplayName,
+            [
+                'staffDisplayName' => $staffDisplayName,
+                'requesterDisplayName' => $requesterDisplayName,
+                'requesterEmail' => $requesterEmail,
+                'tenantName' => $tenantName,
+                'targetDisplayName' => $targetDisplayName,
+                'diffLines' => $diffLines,
+                'note' => $note,
+                'queueUrl' => $queueUrl,
+                'ficheUrl' => $ficheUrl,
+            ],
+            $tenantId,
+            $requesterEmail !== '' ? $requesterEmail : null,
+            ['purpose' => 'personnel_correction_staff', 'target_name' => $targetDisplayName]
+        );
+    }
+
+    /**
+     * @param list<string> $diffLines
+     */
+    public function sendPersonnelCorrectionRequestMember(
+        string $to,
+        string $memberDisplayName,
+        string $tenantName,
+        array $diffLines,
+        string $note,
+        string $ficheUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::PERSONNEL_CORRECTION_REQUEST_MEMBER,
+            'personnel_correction_request_member',
+            $to,
+            'Demande de correction RH envoyée',
+            [
+                'memberDisplayName' => $memberDisplayName,
+                'tenantName' => $tenantName,
+                'diffLines' => $diffLines,
+                'note' => $note,
+                'ficheUrl' => $ficheUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'personnel_correction_member']
+        );
+    }
+
+    /**
+     * @param list<string> $diffLines
+     */
+    public function sendPersonnelCorrectionDecision(
+        string $to,
+        string $recipientDisplayName,
+        string $tenantName,
+        string $targetDisplayName,
+        string $decisionLabel,
+        string $resolverDisplayName,
+        array $diffLines,
+        string $resolutionNote,
+        string $ficheUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::PERSONNEL_CORRECTION_DECISION,
+            'personnel_correction_decision',
+            $to,
+            'Correction RH ' . $decisionLabel . ' — ' . $targetDisplayName,
+            [
+                'recipientDisplayName' => $recipientDisplayName,
+                'tenantName' => $tenantName,
+                'targetDisplayName' => $targetDisplayName,
+                'decisionLabel' => $decisionLabel,
+                'resolverDisplayName' => $resolverDisplayName,
+                'diffLines' => $diffLines,
+                'resolutionNote' => $resolutionNote,
+                'ficheUrl' => $ficheUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'personnel_correction_decision', 'decision' => $decisionLabel]
+        );
+    }
+
+    /**
      * Résumé hebdomadaire au staff RH : dossiers incomplets, membres sans unité/rôle, élévations en attente.
      */
     public function sendEffectifsHrWeeklyDigest(
