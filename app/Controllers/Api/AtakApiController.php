@@ -553,7 +553,7 @@ class AtakApiController
         // Adresse courte affichée en jeu / sur le TOC ; le QR encode le lien direct (jeton).
         $entryUrl = $this->phoneConnectPublicUrl('connect');
         $destination = strtolower(trim((string) $request->query('destination', '')));
-        $destinationPaths = ['chat' => 'tchat', 'orders' => 'ordres', 'explosives' => 'explosifs', 'c2' => 'c2'];
+        $destinationPaths = ['chat' => 'tchat', 'orders' => 'ordres', 'explosives' => 'explosifs', 'c2' => 'c2', 'sitac' => 'sitac'];
         $destinationPath = $destinationPaths[$destination] ?? '';
         $pairPath = 'connect/' . $token . ($destinationPath !== '' ? '/' . $destinationPath : '');
         $pairUrl = $this->phoneConnectPublicUrl($pairPath);
@@ -797,7 +797,7 @@ class AtakApiController
                 ->setBody('Not found');
         }
         $destination = strtolower(trim((string) $request->query('destination', '')));
-        $destinationPaths = ['chat' => 'tchat', 'orders' => 'ordres', 'explosives' => 'explosifs', 'c2' => 'c2'];
+        $destinationPaths = ['chat' => 'tchat', 'orders' => 'ordres', 'explosives' => 'explosifs', 'c2' => 'c2', 'sitac' => 'sitac'];
         $destinationPath = $destinationPaths[$destination] ?? '';
         $pairUrl = $this->phoneConnectPublicUrl(
             'connect/' . $token . ($destinationPath !== '' ? '/' . $destinationPath : '')

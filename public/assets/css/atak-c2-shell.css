@@ -1648,7 +1648,7 @@ body.atak-page .atak-order-suivi em {
 .atak-qr-hub__kicker { color: #59ddbc; font: 700 10px/1.2 var(--atak-font-mono, monospace); letter-spacing: .14em; }
 .atak-qr-hub__hero h3 { margin: 8px 0 6px; font: 700 22px/1.1 var(--atak-font-condensed, sans-serif); color: #f0f7f5; }
 .atak-qr-hub__hero p, .atak-qr-result__details p { margin: 0; color: #9fb2b0; font-size: 12px; line-height: 1.5; }
-.atak-qr-destinations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.atak-qr-destinations { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .atak-qr-destination { padding: 12px; border: 1px solid rgba(142, 168, 164, .2); border-radius: 3px; background: rgba(12, 23, 27, .72); color: #d9e6e3; text-align: left; cursor: pointer; }
 .atak-qr-destination strong, .atak-qr-destination span { display: block; }
 .atak-qr-destination strong { font: 700 15px/1.2 var(--atak-font-condensed, sans-serif); }
@@ -1656,7 +1656,8 @@ body.atak-page .atak-order-suivi em {
 .atak-qr-destination:hover, .atak-qr-destination.is-active { border-color: #43d4ad; background: rgba(40, 118, 99, .25); box-shadow: inset 3px 0 #43d4ad; }
 .atak-qr-generate { min-height: 42px; border: 1px solid #49d9b4; border-radius: 3px; background: #2f9f84; color: #07120f; font: 800 12px/1 var(--atak-font-mono, monospace); letter-spacing: .06em; cursor: pointer; }
 .atak-qr-generate:disabled { opacity: .55; cursor: wait; }
-.atak-qr-result { display: grid; grid-template-columns: minmax(160px, 240px) 1fr; gap: 18px; padding: 16px; border: 1px solid rgba(73, 217, 180, .28); background: rgba(7, 16, 20, .8); }
+.atak-qr-result { display: grid; grid-template-columns: minmax(180px, 260px) 1fr; gap: 18px; padding: 16px; border: 1px solid rgba(73, 217, 180, .28); background: rgba(7, 16, 20, .8); align-items: center; }
+.atak-qr-result__phone { display: flex; justify-content: center; }
 .atak-qr-result__image { padding: 10px; border-radius: 4px; background: #fff; }
 .atak-qr-result__image img { display: block; width: 100%; height: auto; }
 .atak-qr-status { color: #55dab7; font: 700 9px/1 var(--atak-font-mono, monospace); letter-spacing: .12em; }
@@ -1666,7 +1667,304 @@ body.atak-page .atak-order-suivi em {
 .atak-qr-code-row button { border: 1px solid #3e5d58; background: transparent; color: #b9cbc7; cursor: pointer; }
 .atak-qr-result a { display: inline-block; margin-top: 10px; color: #55dab7; font-size: 11px; }
 .atak-qr-error { margin: 0; padding: 10px; border-left: 3px solid #e56565; color: #ffaaaa; background: rgba(119, 30, 30, .2); }
-@media (max-width: 620px) { .atak-qr-result { grid-template-columns: 1fr; } .atak-qr-result__image { max-width: 220px; } }
+
+/* QR = fenêtre détachée mobile dans le téléphone (démo COMSPEC ATAK) */
+.atak-qr-phone {
+  --aqp-scr-l: 22.0703125%;
+  --aqp-scr-t: 34.8144531%;
+  --aqp-scr-w: 55.3710938%;
+  --aqp-scr-h: 30.46875%;
+  position: relative;
+  width: min(100%, 280px);
+  aspect-ratio: 1 / 1;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
+}
+.atak-qr-phone--modal { width: min(100%, 240px); }
+.atak-qr-phone__bezel {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.atak-qr-phone__screen {
+  position: absolute;
+  z-index: 2;
+  left: var(--aqp-scr-l);
+  top: var(--aqp-scr-t);
+  width: var(--aqp-scr-w);
+  height: var(--aqp-scr-h);
+  overflow: hidden;
+  background: #080b0e;
+  border-radius: 3px;
+}
+.atak-qr-phone__mobile {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: #edf3f7;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+}
+.atak-qr-phone__topbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  padding: 0.18rem 0.3rem;
+  background: rgba(8, 11, 14, 0.96);
+  border-bottom: 1px solid #202a33;
+}
+.atak-qr-phone__kicker {
+  display: block;
+  font-size: 0.35rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #7e8b96;
+}
+.atak-qr-phone__title {
+  display: block;
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #edf3f7;
+  line-height: 1.1;
+}
+.atak-qr-phone__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font: 700 0.35rem/1 ui-monospace, Consolas, monospace;
+  color: #72d7a2;
+}
+.atak-qr-phone__live i {
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 50%;
+  background: #72d7a2;
+  box-shadow: 0 0 0 2px rgba(114, 215, 162, 0.2);
+}
+.atak-qr-phone__stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: #0e1318;
+}
+.atak-qr-phone__skin {
+  display: none;
+  position: absolute;
+  inset: 0;
+  padding: 0.28rem;
+}
+.atak-qr-phone__skin.is-active { display: block; }
+.atak-qr-phone__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.18rem;
+  margin-bottom: 0.22rem;
+}
+.atak-qr-phone__metrics span {
+  border: 1px solid #202a33;
+  background: #121920;
+  border-radius: 0.2rem;
+  padding: 0.18rem 0.15rem;
+  text-align: left;
+}
+.atak-qr-phone__metrics b {
+  display: block;
+  font: 700 0.55rem/1 ui-monospace, Consolas, monospace;
+}
+.atak-qr-phone__metrics small {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.32rem;
+  color: #7e8b96;
+}
+.atak-qr-phone__metrics .warn b { color: #f0bf68; }
+.atak-qr-phone__mini-map,
+.atak-qr-phone__full-map {
+  position: relative;
+  height: calc(100% - 1.5rem);
+  min-height: 1.8rem;
+  border: 1px solid #202a33;
+  border-radius: 0.25rem;
+  background:
+    linear-gradient(145deg, #131b1c, #0a1013),
+    repeating-linear-gradient(0deg, rgba(159, 193, 210, 0.06) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(90deg, rgba(159, 193, 210, 0.06) 0 1px, transparent 1px 8px);
+  overflow: hidden;
+}
+.atak-qr-phone__full-map { height: 100%; min-height: 0; }
+.atak-qr-phone__mini-map .u,
+.atak-qr-phone__full-map .u {
+  position: absolute;
+  width: 0.45rem;
+  height: 0.38rem;
+  border: 1px solid #71d7ef;
+  background: #10181b;
+  border-radius: 1px;
+}
+.atak-qr-phone__mini-map .u1,
+.atak-qr-phone__full-map .u1 { left: 28%; top: 48%; }
+.atak-qr-phone__mini-map .u2,
+.atak-qr-phone__full-map .u2 { left: 52%; top: 30%; border-color: #71d7ef; }
+.atak-qr-phone__mini-map .u3 { left: 42%; top: 68%; }
+.atak-qr-phone__full-map .hostile {
+  left: 68%;
+  top: 44%;
+  border-color: #f07178;
+  transform: rotate(45deg);
+}
+.atak-qr-phone__grid {
+  position: absolute;
+  left: 0.25rem;
+  bottom: 0.25rem;
+  font: 600 0.32rem/1 ui-monospace, Consolas, monospace;
+  color: #a5b1b8;
+  background: rgba(5, 8, 10, 0.72);
+  padding: 0.12rem 0.2rem;
+  border: 1px solid #23303a;
+}
+.atak-qr-phone__bubbles {
+  display: grid;
+  gap: 0.22rem;
+  height: 100%;
+  align-content: start;
+}
+.atak-qr-phone__bubbles .b {
+  display: grid;
+  grid-template-columns: 0.85rem 1fr;
+  gap: 0.2rem;
+  align-items: start;
+}
+.atak-qr-phone__bubbles .b.me { direction: rtl; }
+.atak-qr-phone__bubbles .b.me > * { direction: ltr; }
+.atak-qr-phone__bubbles em {
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1px solid #35444f;
+  border-radius: 0.15rem;
+  display: grid;
+  place-items: center;
+  font: 700 0.28rem/1 ui-monospace, Consolas, monospace;
+  color: #b7c6cf;
+  background: #11171c;
+  font-style: normal;
+}
+.atak-qr-phone__bubbles p {
+  margin: 0;
+  padding: 0.2rem 0.28rem;
+  border: 1px solid #202a33;
+  background: #0e1318;
+  border-radius: 0.08rem 0.28rem 0.28rem 0.28rem;
+  font-size: 0.38rem;
+  line-height: 1.3;
+  color: #c9d4db;
+}
+.atak-qr-phone__bubbles .me p {
+  background: #101d25;
+  border-color: #294253;
+  border-radius: 0.28rem 0.08rem 0.28rem 0.28rem;
+}
+.atak-qr-phone__order-card,
+.atak-qr-phone__charge {
+  height: 100%;
+  border: 1px solid #202a33;
+  background: linear-gradient(135deg, #121922, #0b1015 70%);
+  border-radius: 0.3rem;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
+}
+.atak-qr-phone__order-card span,
+.atak-qr-phone__charge span {
+  font: 800 0.32rem/1 ui-monospace, Consolas, monospace;
+  letter-spacing: 0.1em;
+  color: #8ec8ff;
+}
+.atak-qr-phone__charge span { color: #f0bf68; }
+.atak-qr-phone__order-card strong,
+.atak-qr-phone__charge strong {
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+}
+.atak-qr-phone__charge strong {
+  font-family: ui-monospace, Consolas, monospace;
+  color: #f0bf68;
+}
+.atak-qr-phone__order-card small,
+.atak-qr-phone__charge small {
+  font-size: 0.35rem;
+  color: #7e8b96;
+}
+.atak-qr-phone__qr-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  background: rgba(3, 5, 6, 0.55);
+  backdrop-filter: blur(1px);
+}
+.atak-qr-phone__qr {
+  width: 58%;
+  aspect-ratio: 1;
+  background: #fff;
+  border-radius: 0.2rem;
+  padding: 0.2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  display: grid;
+  place-items: center;
+}
+.atak-qr-phone__qr img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.atak-qr-phone__scan-hint {
+  font: 800 0.34rem/1 ui-monospace, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #dcecf6;
+  background: rgba(8, 12, 15, 0.85);
+  border: 1px solid #2b3944;
+  border-radius: 999px;
+  padding: 0.18rem 0.4rem;
+}
+.atak-qr-phone__nav {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid #202a33;
+  background: rgba(8, 11, 14, 0.98);
+}
+.atak-qr-phone__nav span {
+  text-align: center;
+  font: 800 0.3rem/1.1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  color: #66747e;
+  padding: 0.22rem 0.1rem;
+}
+.atak-qr-phone__nav span.is-on {
+  color: #edf3f7;
+  background: #11171c;
+}
+
+@media (max-width: 620px) {
+  .atak-qr-result { grid-template-columns: 1fr; }
+  .atak-qr-phone { width: min(100%, 260px); margin-inline: auto; }
+}
 
 /* Overlay liaison perdue — panneau verre C2, un seul compte à rebours */
 .atak-connection-lost {

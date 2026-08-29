@@ -1,9 +1,45 @@
-/* ATAK — QR hub: ouvre directement un module C2 sur un terminal mobile. */
+/* ATAK — QR hub: fenêtre détachée mobile dans le téléphone. */
 (function () {
   'use strict';
 
   var selected = 'c2';
-  var labels = { c2: 'C2', chat: 'Tchat', orders: 'Ordres', explosives: 'Explosifs' };
+  var labels = {
+    c2: 'C2',
+    sitac: 'SITAC',
+    chat: 'Tchat',
+    orders: 'Ordres',
+    explosives: 'Explosifs'
+  };
+  var titles = {
+    c2: 'C2 OVERVIEW',
+    sitac: 'SITAC',
+    chat: 'TCHAT C2',
+    orders: 'ORDRES',
+    explosives: 'EXPLOSIFS'
+  };
+
+  function paintPhone(root, moduleKey) {
+    if (!root) return;
+    var key = moduleKey || 'c2';
+    var title = titles[key] || titles.c2;
+    root.querySelectorAll('[data-atak-qr-phone]').forEach(function (phone) {
+      phone.setAttribute('data-module', key);
+      phone.querySelectorAll('[data-atak-qr-phone-mode]').forEach(function (el) {
+        el.textContent = title;
+      });
+      phone.querySelectorAll('[data-atak-qr-phone-label]').forEach(function (el) {
+        el.textContent = labels[key] || title;
+      });
+      phone.querySelectorAll('[data-skin]').forEach(function (skin) {
+        var on = skin.getAttribute('data-skin') === key;
+        skin.classList.toggle('is-active', on);
+        skin.setAttribute('aria-hidden', on ? 'false' : 'true');
+      });
+      phone.querySelectorAll('[data-nav-mod]').forEach(function (nav) {
+        nav.classList.toggle('is-on', nav.getAttribute('data-nav-mod') === key);
+      });
+    });
+  }
 
   function init() {
     var generate = document.getElementById('atak-qr-generate');
@@ -25,6 +61,7 @@
           item.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
         generate.textContent = 'Générer le QR ' + labels[selected];
+        paintPhone(result, selected);
       });
     });
 
@@ -48,6 +85,7 @@
         open.href = body.pair_url || '#';
         title.textContent = 'Accès ' + labels[selected];
         expiry.textContent = body.expires_at ? 'Expiration : ' + new Date(body.expires_at).toLocaleString('fr-FR') : 'Liaison temporaire';
+        paintPhone(result, selected);
         result.hidden = false;
       }).catch(function (err) {
         error.textContent = err.message || 'Liaison indisponible. Réessayez.';
