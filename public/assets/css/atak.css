@@ -4627,6 +4627,11 @@ body.atak-theme-light .atak-chat-messages {
   filter: drop-shadow(0 0 3px rgba(220, 38, 38, 1));
   animation: atak-bft-blink 1s ease-in-out infinite;
 }
+.nato-sidc-stack.nato-sidc--last-known,
+.nato-sidc-wrap.nato-sidc--last-known {
+  opacity: 0.72;
+  filter: grayscale(0.35) drop-shadow(0 0 2px rgba(148, 163, 184, 0.55));
+}
 
 /* Air Support Assets (Flight Manifest) */
 .atak-air-assets-header {

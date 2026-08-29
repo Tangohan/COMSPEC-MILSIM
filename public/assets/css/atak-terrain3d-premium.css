@@ -1,0 +1,71 @@
+/* ATAK — hôte Terrain3D premium (Three.js) */
+.terrain3d-host {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: #070a0e;
+  overflow: hidden;
+}
+.terrain3d-host[hidden] {
+  display: none !important;
+}
+.terrain3d-host.is-active {
+  pointer-events: auto;
+}
+.terrain3d-host .terrain3d-canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+.terrain3d-host .terrain3d-label-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  overflow: hidden;
+}
+
+.terrain3d-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  --marker-color: #35d6a1;
+}
+.terrain3d-marker__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--marker-color);
+  border: 2px solid #070a0e;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--marker-color) 55%, transparent);
+}
+.terrain3d-marker__label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #e8eef4;
+  background: rgba(7, 10, 14, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 2px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.terrain3d-marker--hostile { --marker-color: #dc5d5d; }
+.terrain3d-marker--neutral { --marker-color: #d4a017; }
+.terrain3d-marker--objective { --marker-color: #68a5d8; }
+
+.atak-map-stage--premium-3d #atak-map.atak-map-2d-fallback[hidden] {
+  display: none !important;
+}
+.atak-map-stage--premium-3d .atak-map-3d-nav {
+  z-index: 6;
+}
+.atak-geo-live-prefs {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+}

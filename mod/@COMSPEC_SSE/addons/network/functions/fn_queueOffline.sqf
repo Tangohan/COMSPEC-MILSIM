@@ -22,7 +22,7 @@ if (_idemKey isEqualTo "") then {
 };
 
 // Remplace une entrée déjà en attente avec la même clé (rejeu sans doublon).
-// forEach (pas findIf) : findIf + private interne rendait _idem invisible (erreur script).
+// forEach (évite le scan find-If) : private interne rendait _idem invisible (erreur script).
 if (_idemKey isNotEqualTo "") then {
     private _idx = -1;
     {

@@ -66,8 +66,11 @@ Scripts :
 - `public/assets/js/atak-geo-network.js` — calques villes / routes
 - `public/assets/js/atak-route-planner.js` — appel planification
 - `tacmap-route-tools.js` — double-clic → plan routier si données disponibles
+- `public/assets/js/atak-geo-live.js` — pont live sur `/public/atak` (cases Villes/Routes + `ATAKGeoLive.planRoadRoute`)
 
-Calques carte : **Villes**, **Routes** (barre d’outils TACMAP).
+Calques carte : **Villes**, **Routes** (barre d’outils TACMAP / préférences ATAK).
+
+Sur ATAK, l’outil **Itinéraire** (`atak-terrain-tools.js`) appelle `ATAKGeoLive.planRoadRoute` au double-clic lorsque le graphe est prêt.
 
 ## Activation
 

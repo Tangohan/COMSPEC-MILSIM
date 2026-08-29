@@ -1,0 +1,106 @@
+/* —— Intégration live dans .atak-map-wrap (pas le shell plein écran démo) —— */
+html.atak-map-c2-v2 .atak-map-wrap,
+body.atak-map-c2-v2 .atak-map-wrap {
+  position: relative;
+}
+
+html.atak-map-c2-v2 .atak-map-tools--c2-legacy,
+body.atak-map-c2-v2 .atak-map-tools--c2-legacy {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+#atak-c2-live-shell {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: var(--c2-rail-w, 44px) 1fr;
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "rail map"
+    "ctx ctx";
+}
+
+#atak-c2-live-shell .tac-c2-rail,
+#atak-c2-live-shell .tac-map-controls,
+#atak-c2-live-shell .tac-c2-ctx,
+#atak-c2-live-shell .tac-c2-side {
+  pointer-events: auto;
+}
+
+#atak-c2-live-shell .tac-c2-rail {
+  grid-area: rail;
+  position: relative;
+  top: auto;
+  left: auto;
+  height: 100%;
+  align-self: stretch;
+  background: var(--c2-panel, rgba(10, 16, 22, 0.88));
+  border-right: 1px solid var(--c2-line, rgba(150, 180, 200, 0.12));
+  padding-top: 52px;
+}
+
+#atak-c2-live-shell .tac-map-controls {
+  position: absolute;
+  right: 10px;
+  top: 56px;
+  z-index: 13;
+}
+
+#atak-c2-live-shell .tac-c2-ctx {
+  grid-area: ctx;
+  position: relative;
+  min-height: 64px;
+  max-height: 88px;
+  background: var(--c2-panel, rgba(10, 16, 22, 0.9));
+  border-top: 1px solid var(--c2-line, rgba(150, 180, 200, 0.12));
+}
+
+#atak-c2-live-shell .tac-c2-side {
+  top: 56px;
+  right: 56px;
+  max-height: calc(100% - 140px);
+}
+
+html.atak-map-c2-v2 .atak-map-stage,
+body.atak-map-c2-v2 .atak-map-stage {
+  margin-left: var(--c2-rail-w, 44px);
+  margin-bottom: 64px;
+}
+
+html.atak-map-c2-v2 .atak-mission-c2bar,
+body.atak-map-c2-v2 .atak-mission-c2bar {
+  margin-left: var(--c2-rail-w, 44px);
+}
+
+@media (max-width: 900px) {
+  #atak-c2-live-shell .tac-c2-rail {
+    padding-top: 44px;
+  }
+  html.atak-map-c2-v2 .atak-map-stage,
+  body.atak-map-c2-v2 .atak-map-stage {
+    margin-left: 0;
+    margin-bottom: 56px;
+  }
+  #atak-c2-live-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "map"
+      "ctx";
+  }
+  #atak-c2-live-shell .tac-c2-rail {
+    display: none;
+  }
+}

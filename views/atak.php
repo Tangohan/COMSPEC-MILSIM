@@ -79,6 +79,9 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-c2-shell.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-map-c2-v2.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-map-c2-live.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-terrain3d-premium.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/app-update-modal.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -92,6 +95,10 @@ if ($atakMapConfig) {
     window.NODE_ATAK_URL = '';
     window.ATAK_MARKER_ICONS_CDN = <?= json_encode(function_exists('atak_marker_icons_cdn_base') ? atak_marker_icons_cdn_base() : rtrim($base, '/') . '/assets/markers/arma') ?>;
     window.ATAK_TENANT_MARKER_ICONS = <?= json_encode($atakTenantMarkerIcons ?? ['assignments' => new stdClass(), 'library' => []], JSON_UNESCAPED_UNICODE) ?>;
+    window.ATAK_MAP_C2_V2 = true;
+    window.ATAK_TERRAIN3D_PREMIUM = true;
+    window.ATAK_C2_ASSET_BASE = <?= json_encode(rtrim($base, '/'), JSON_UNESCAPED_UNICODE) ?>;
+    document.documentElement.classList.add('atak-map-c2-v2');
     window.ATAK_TEAM_CONFIG = <?= json_encode($atakConfig ?: new stdClass()) ?>;
     window.ATAK_USER = <?= json_encode($atakUserForJs ?: new stdClass()) ?>;
     <?php if ($atakMapConfigForJs): ?>window.ATAK_MAP_CONFIG = <?= json_encode($atakMapConfigForJs) ?>;<?php endif; ?>
@@ -191,7 +198,7 @@ if ($atakMapConfig) {
           <label class="atak-header-field">
             <span class="atak-header-field-label">Communauté</span>
             <?php if ($atakMultiCommunity): ?>
-            <select name="tenant_id" class="atak-header-field-control" title="Changer de communauté" onchange="this.form.submit()">
+            <select name="tenant_id" class="atak-header-field-control" title="Changer de communauté (plusieurs communautés disponibles)" onchange="this.form.submit()">
               <?php foreach ($atakCommunityMemberships as $m): ?>
                 <?php
                 $mid = (int) ($m['tenant_id'] ?? 0);
@@ -2375,6 +2382,32 @@ if ($atakMapConfig) {
     </aside>
 
     <div class="atak-map-wrap">
+      <div id="atak-c2-live-shell" class="tac-c2-live" aria-label="Interface cartographique C2">
+        <nav class="tac-c2-rail" id="atak-c2-rail" aria-label="Outils carte">
+          <button type="button" class="tac-c2-rail__btn is-active" data-tool="select" title="Sélectionner">⊹</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="goto" title="Aller à une grille">⌖</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="follow" title="Suivre ma position">◎</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="measure" title="Mesurer">↔</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="draw" title="Tracer un trait">╱</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="perimeter" title="Périmètre">⬡</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="search" title="Zone de recherche">⌕</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="marker" title="Note carte">＋</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="route" title="Profil itinéraire">⌀</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="los" title="Visée / LOS">⊡</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="nvg" title="Vision nocturne">☾</button>
+          <button type="button" class="tac-c2-rail__btn" data-tool="layers" title="Tableau unités">≡</button>
+        </nav>
+        <div class="tac-map-controls" id="atak-c2-map-controls"></div>
+        <aside class="tac-c2-side" id="atak-c2-side" hidden>
+          <div class="tac-c2-side__head">Unité sélectionnée</div>
+          <div class="tac-c2-side__body" id="atak-c2-side-unit">
+            <p class="tac-ctx__muted">Cliquez un symbole sur la carte</p>
+          </div>
+        </aside>
+        <footer class="tac-c2-ctx">
+          <div id="atak-c2-context-panel" style="width:100%"></div>
+        </footer>
+      </div>
       <div class="atak-mission-c2bar" id="atak-mission-c2bar">
         <div class="atak-mission-c2bar__modes" role="toolbar" aria-label="Vue de conduite">
           <button type="button" class="atak-mission-c2bar__mode is-active" data-mission-mode="map">Carte</button>
@@ -2429,7 +2462,7 @@ if ($atakMapConfig) {
             <div class="atak-map-tools__cluster-btns" id="atak-tool-group-view">
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-in" data-tool-slot="zoom" title="Zoom avant">+</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-out" data-tool-slot="zoom" title="Zoom arrière">−</button>
-              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--view3d" id="atak-view-3d" data-tool-slot="view3d" title="Incliner la carte sur le relief" aria-pressed="false">3D</button>
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--view3d" id="atak-view-3d" data-tool-slot="view3d" title="Vue topo premium (relief Three.js)" aria-pressed="false">3D</button>
               <button type="button" class="atak-map-tools__btn" data-tool="nvg" data-tool-slot="nvg" title="Vision nocturne (N)" aria-pressed="false">NVG</button>
               <button type="button" class="atak-map-tools__btn" data-tool="cop" data-tool-slot="cop" title="Tableau tactique des unités">Unités</button>
             </div>
@@ -2512,9 +2545,9 @@ if ($atakMapConfig) {
             <div class="atak-terrain-3d-settings" id="atak-terrain-3d-settings">
               <label class="atak-map-look__row" for="atak-terrain-3d-mode">
                 <span class="atak-map-look__key">Vue de la carte</span>
-                <select id="atak-terrain-3d-mode" class="atak-header-select atak-map-look__select" title="Incliner la carte sur le relief">
-                  <option value="flat" selected>À plat</option>
-                  <option value="inclined">Inclinée</option>
+                <select id="atak-terrain-3d-mode" class="atak-header-select atak-map-look__select" title="Vue topo premium Three.js">
+                  <option value="flat" selected>À plat (2D)</option>
+                  <option value="inclined">Topo premium 3D</option>
                 </select>
               </label>
               <label class="atak-map-look__check" for="atak-scene-buildings">
@@ -2529,7 +2562,7 @@ if ($atakMapConfig) {
                 <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
                 <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
               </label>
-              <p class="atak-terrain-3d-hint">La vue inclinée soulève le sol déjà relevé. Amplifiez le relief, puis réduisez l’inclinaison pour une vue plus rasante. Glissez sur la rose pour orienter. La case Relief et profondeur n’agit que sur les pastilles, pas sur le terrain.</p>
+              <p class="atak-terrain-3d-hint">Vue topo premium : mesh Three.js drapé sur le relevé d’altitudes. Amplifiez le relief, ajustez l’inclinaison, orientez avec la souris. Le rendu CSS-pitch legacy est désactivé.</p>
             </div>
             <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
             <div class="atak-terrain-inventory" id="atak-terrain-inventory" role="status" aria-live="polite" aria-label="Données présentes sur le poste pour cette carte">
@@ -2602,6 +2635,7 @@ if ($atakMapConfig) {
         <p class="atak-route-panel__gap" id="atak-route-gap" hidden></p>
       </aside>
       <div class="atak-map-stage">
+      <div id="terrain3d-container" class="terrain3d-host" hidden aria-label="Carte terrain 3D premium"></div>
       <div id="atak-map"></div>
       <div class="atak-map-3d-nav" id="atak-map-3d-nav" hidden aria-label="Orientation de la vue 3D">
         <button type="button" class="atak-map-3d-nav__compass" id="atak-map-3d-compass" title="Glisser pour orienter · cliquer pour remettre le nord en haut" aria-label="Orienter la carte, nord en haut">
@@ -2811,8 +2845,12 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain-3d.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script type="module" src="<?= $base ?>/assets/js/atak-terrain3d-premium.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-scene-3d.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-geo-network.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-route-planner.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-geo-live.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-motion-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-dossier.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-cop.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2868,6 +2906,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-section-nav.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-qr-hub.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-c2-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/map/atak-c2-bridge.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-v2.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terminals.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
