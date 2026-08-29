@@ -29,6 +29,7 @@ export class TerrainCameraControls {
     c.dampingFactor = 0.06;
     c.enablePan = true;
     c.screenSpacePanning = true;
+    /* Distances recalées via syncToWorld() selon la taille du théâtre. */
     c.minDistance = 80;
     c.maxDistance = 2800;
     /* Vue tactique inclinée : empêcher le regard vertical pur en 3D. */
@@ -37,14 +38,50 @@ export class TerrainCameraControls {
     c.maxAzimuthAngle = THREE_ORBIT_DEG(45);
     c.minAzimuthAngle = THREE_ORBIT_DEG(-45);
     c.rotateSpeed = 0.45;
-    c.zoomSpeed = 0.85;
-    c.panSpeed = 0.7;
+    c.zoomSpeed = 1.15;
+    c.panSpeed = 0.85;
     c.target.set(0, 0, 0);
   }
 
-  /** Position initiale type C2 incliné. */
+  /**
+   * Adapte near/far, distances orbit et cadrage au monde réel (ex. Altis ~30 km).
+   * Permet un dézoom total pour voir tout le théâtre.
+   */
+  syncToWorld(worldWidth, worldDepth) {
+    const w = Math.max(256, Number(worldWidth) || this.bounds.worldWidth || 1024);
+    const d = Math.max(256, Number(worldDepth) || this.bounds.worldDepth || 1024);
+    this.bounds.worldWidth = w;
+    this.bounds.worldDepth = d;
+    const diag = Math.sqrt(w * w + d * d);
+    const far = Math.max(8000, diag * 2.4);
+    const maxDist = Math.max(2800, diag * 1.35);
+    const minDist = Math.max(40, Math.min(400, diag * 0.008));
+
+    this.perspectiveCamera.near = Math.max(1, minDist * 0.05);
+    this.perspectiveCamera.far = far;
+    this.perspectiveCamera.updateProjectionMatrix();
+    this.orthoCamera.near = 1;
+    this.orthoCamera.far = far;
+    this.orthoCamera.updateProjectionMatrix();
+
+    const c = this.controls;
+    c.minDistance = minDist;
+    c.maxDistance = maxDist;
+    if (this.mode === '3d') {
+      this.setDefault3DView();
+    } else {
+      this.onResize(this.domElement.clientWidth, this.domElement.clientHeight);
+    }
+  }
+
+  /** Position initiale type C2 incliné — cadrée sur la taille monde. */
   setDefault3DView() {
-    this.perspectiveCamera.position.set(0, 420, 680);
+    const w = Math.max(256, this.bounds.worldWidth || 1024);
+    const d = Math.max(256, this.bounds.worldDepth || 1024);
+    const diag = Math.sqrt(w * w + d * d);
+    const dist = Math.min(this.controls.maxDistance * 0.92, Math.max(this.controls.minDistance * 8, diag * 0.72));
+    const elev = dist * 0.55;
+    this.perspectiveCamera.position.set(0, elev, dist * 0.85);
     this.controls.object = this.perspectiveCamera;
     this.controls.minPolarAngle = THREE_ORBIT_DEG(28);
     this.controls.maxPolarAngle = THREE_ORBIT_DEG(72);
@@ -52,6 +89,30 @@ export class TerrainCameraControls {
     this.controls.minAzimuthAngle = THREE_ORBIT_DEG(-45);
     this.controls.enableRotate = true;
     this.controls.target.set(0, 0, 0);
+    this.controls.update();
+  }
+
+  /** Recul caméra (dézoom) — facteur > 1 = plus loin. */
+  dolly(factor) {
+    const f = Number(factor);
+    if (!Number.isFinite(f) || f <= 0) return;
+    const cam = this.getActiveCamera();
+    if (this.mode === '2d' && this.orthoCamera) {
+      this.orthoCamera.zoom = clamp(this.orthoCamera.zoom / f, 0.15, 12);
+      this.orthoCamera.updateProjectionMatrix();
+      this.controls.update();
+      return;
+    }
+    const target = this.controls.target;
+    const offset = cam.position.clone().sub(target);
+    offset.multiplyScalar(f);
+    const nextLen = offset.length();
+    const minD = this.controls.minDistance || 80;
+    const maxD = this.controls.maxDistance || 2800;
+    if (nextLen < minD || nextLen > maxD) {
+      offset.setLength(clamp(nextLen, minD, maxD));
+    }
+    cam.position.copy(target).add(offset);
     this.controls.update();
   }
 

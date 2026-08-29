@@ -13,6 +13,9 @@ export class TerrainTextureLoader {
     this.THREE = THREE;
     this.currentUrl = null;
     this.texture = null;
+    if (this.threeLoader && typeof this.threeLoader.setCrossOrigin === 'function') {
+      this.threeLoader.setCrossOrigin('anonymous');
+    }
   }
 
   /**

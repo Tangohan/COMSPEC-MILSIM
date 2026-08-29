@@ -69,8 +69,63 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
 
   function overviewTextureUrl() {
     const pattern = tilePattern();
+    /* Une seule tuile z=0 suffit rarement ; le stitch est préféré. Ne jamais utiliser
+       le hillshade comme diffuse (ombrage gris = « texture cassée »). */
     if (pattern) return pattern.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0');
-    return apiBase() + '/api/atak/terrain/hillshade?mapId=' + encodeURIComponent(mapId());
+    return '';
+  }
+
+  function mapTitle() {
+    try {
+      const cfg = window.ATAK_MAP_CONFIG || {};
+      if (cfg.title) return String(cfg.title);
+      if (cfg.slug) return String(cfg.slug).toUpperCase();
+    } catch (e) { /* ignore */ }
+    return 'CARTE';
+  }
+
+  async function applyMapTexture(terrain) {
+    if (!terrain) return;
+    const pattern = tilePattern();
+    const assetBase = (window.ATAK_C2_ASSET_BASE || '').replace(/\/$/, '')
+      || (function () {
+        try {
+          const scripts = document.querySelectorAll('script[src*="atak-terrain3d-premium"]');
+          if (scripts.length) {
+            return scripts[scripts.length - 1].src.replace(/\/assets\/js\/atak-terrain3d-premium\.js.*$/, '');
+          }
+        } catch (e) { /* ignore */ }
+        return '';
+      })();
+    const overviewMod = await import(
+      (assetBase || '') + '/assets/js/terrain3d/MapOverviewTexture.js'
+    ).catch(function () { return null; });
+
+    if (pattern && overviewMod && overviewMod.stitchTileOverview) {
+      try {
+        const canvas = await overviewMod.stitchTileOverview(pattern, 2);
+        terrain.setTextureFromCanvas(canvas);
+        return;
+      } catch (e1) {
+        try {
+          const canvas1 = await overviewMod.stitchTileOverview(pattern, 1);
+          terrain.setTextureFromCanvas(canvas1);
+          return;
+        } catch (e2) { /* suite */ }
+      }
+    }
+
+    const url = overviewTextureUrl();
+    if (url) {
+      try {
+        await terrain.setTexture(url);
+        return;
+      } catch (e3) { /* suite */ }
+    }
+
+    if (overviewMod && overviewMod.createFallbackMapCanvas) {
+      terrain.setTextureFromCanvas(overviewMod.createFallbackMapCanvas(1024, mapTitle()));
+    }
   }
 
   function restore() {
@@ -167,6 +222,9 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
       renderer.cameraControls.bounds.worldDepth = d;
     }
     renderer.setHeightData(decoded.data);
+    if (typeof renderer.syncCameraToWorld === 'function') {
+      renderer.syncCameraToWorld(w, d);
+    }
     syncMarkersFromCache();
   }
 
@@ -230,7 +288,7 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
     meshOrigin = { x: 0, y: 0, width: size, depth: size };
 
     initPromise = initTerrain3D(container, {
-      textureUrl: overviewTextureUrl(),
+      textureUrl: null,
       width: size,
       height: size,
       heightScale: state.verticalExaggeration,
@@ -242,10 +300,12 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
     }).then(function (terrain) {
       renderer = terrain;
       window.ATAKTerrainThree = terrain;
-      loadHeights();
-      syncMarkersFromCache();
-      applyPitchToCamera();
-      return terrain;
+      return applyMapTexture(terrain).then(function () {
+        loadHeights();
+        syncMarkersFromCache();
+        applyPitchToCamera();
+        return terrain;
+      });
     }).catch(function (err) {
       initPromise = null;
       console.warn('[ATAK Terrain3D premium] init échoué', err);
