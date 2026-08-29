@@ -1456,6 +1456,15 @@ class Container
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Repositories\TacticalGameLinkRepository::class)
             ),
+            \App\Controllers\Web\AtakMobileController::class => new \App\Controllers\Web\AtakMobileController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\AtakMapRepository::class),
+                self::get(\App\Repositories\TenantAtakConfigRepository::class),
+                self::get(TenantRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Repositories\TacticalPhonePairingRepository::class)
+            ),
             \App\Controllers\Admin\AdminUnitsController::class => new \App\Controllers\Admin\AdminUnitsController(
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(UserRepository::class)
