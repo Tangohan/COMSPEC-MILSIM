@@ -109,8 +109,8 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                 Une personne = une ligne (regroupée par e-mail), avec toutes ses appartenances.
                 Actions possibles&nbsp;: désactiver / réactiver une communauté, retirer d’une organisation,
                 ou supprimer sur tout le site (anonymisation ou suppression définitive).
-                Les comptes sans appartenance active à une vraie communauté sont masqués par défaut
-                (filtre « Désactivé » / « Supprimés » pour les retrouver).
+                Les comptes sans appartenance active à une vraie communauté restent visibles
+                (badge « Orphelin » sur le dossier complet).
                 Ouvrez le <strong>dossier complet</strong> pour voir chaque communauté en détail.
             </p>
         </header>
