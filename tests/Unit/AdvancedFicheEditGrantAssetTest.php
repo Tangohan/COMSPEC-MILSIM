@@ -76,8 +76,8 @@ final class AdvancedFicheEditGrantAssetTest extends TestCase
         self::assertStringContainsString('advancedEditActive', $edit);
         self::assertStringContainsString('name="clearance_level"', $edit);
         self::assertStringContainsString('name="matricule_internal"', $edit);
-        self::assertStringContainsString('Identifiant Athena', $edit);
-        self::assertStringContainsString('Non modifiable', $edit);
+        self::assertStringContainsString('Identifiant plateforme', $edit);
+        self::assertStringContainsString('non modifiable', $edit);
         self::assertStringContainsString('advancedEditActive', $controller);
         self::assertStringContainsString("data['clearance_level']", $controller);
         self::assertStringContainsString("data['matricule_internal']", $controller);
