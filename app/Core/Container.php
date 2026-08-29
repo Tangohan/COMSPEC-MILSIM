@@ -573,6 +573,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelProgressionCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelCapabilityCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\SenioritySyncCronJob::class),
                     self::get(\App\Services\Cron\Jobs\ModerationQuarantineExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RecruitmentRetroRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\HrWeeklyDigestCronJob::class),
@@ -593,7 +594,8 @@ class Container
             ),
             \App\Controllers\Admin\System\SystemCronController::class => new \App\Controllers\Admin\System\SystemCronController(
                 self::get(\App\Services\Cron\CronRunner::class),
-                self::get(\App\Repositories\CronJobRunRepository::class)
+                self::get(\App\Repositories\CronJobRunRepository::class),
+                self::get(\App\Services\Cron\CronVpsInstallService::class)
             ),
             \App\Controllers\Admin\System\SystemMemberSanctionsController::class => new \App\Controllers\Admin\System\SystemMemberSanctionsController(
                 self::get(AuthService::class),
@@ -911,6 +913,13 @@ class Container
             \App\Services\Cron\Jobs\PersonnelCapabilityCronJob::class => new \App\Services\Cron\Jobs\PersonnelCapabilityCronJob(
                 self::get(\App\Services\Personnel\OperationalCapabilityService::class),
             ),
+            \App\Services\Cron\Jobs\SenioritySyncCronJob::class => new \App\Services\Cron\Jobs\SenioritySyncCronJob(
+                self::get(TenantRepository::class),
+                new \App\Services\Personnel\SeniorityTenantDefaultsService(self::get(\App\Repositories\SeniorityRepository::class)),
+                self::get(\App\Services\Personnel\SeniorityEnrollmentBootstrapService::class),
+                self::get(\App\Services\Personnel\SeniorityDossierInferenceSyncService::class),
+            ),
+            \App\Services\Cron\CronVpsInstallService::class => new \App\Services\Cron\CronVpsInstallService(),
             \App\Services\Personnel\PersonnelCompletenessService::class => new \App\Services\Personnel\PersonnelCompletenessService(
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),

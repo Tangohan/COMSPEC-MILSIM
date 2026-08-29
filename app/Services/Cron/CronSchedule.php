@@ -24,6 +24,7 @@ final class CronSchedule
         'training_expire' => 60,
         'personnel_progression_evaluate' => 60,
         'personnel_capability_refresh' => 60,
+        'seniority_sync_all' => 1440,
         'moderation_quarantine_expire' => 60,
         'account_deletion_anonymize' => 60,
         'recruitment_retro_reminders' => 360,
