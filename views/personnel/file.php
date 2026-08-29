@@ -213,28 +213,39 @@ $userProfile = is_array($userProfile ?? null) ? $userProfile : [];
 $personnelProfile = is_array($personnelProfile ?? null) ? $personnelProfile : [];
 $personnelExtras = is_array($personnelExtras ?? null) ? $personnelExtras : [];
 
-$matricule = $personnelProfile['matricule_internal'] ?? $personnelExtras['service_number'] ?? null;
-$callsign = $personnelProfile['callsign'] ?? $targetUser['callsign'] ?? null;
+// Garde anti-contamination : si le header (ou un autre include) a injecté le dossier
+// du connecté, on ignore ces lignes plutôt que d’afficher le mauvais matricule.
+$subjectUserId = (int) ($targetUser['id'] ?? 0);
+if ($personnelProfile !== [] && (int) ($personnelProfile['user_id'] ?? 0) !== $subjectUserId) {
+    $personnelProfile = [];
+}
+if ($personnelExtras !== [] && (int) ($personnelExtras['user_id'] ?? 0) !== $subjectUserId && isset($personnelExtras['user_id'])) {
+    $personnelExtras = [];
+}
+
+$missingLabel = 'Donnée manquante';
+// Pas de substitution silencieuse : matricule = uniquement le champ dédié de CETTE fiche.
+$matriculeInternalOnly = trim((string) ($personnelProfile['matricule_internal'] ?? ''));
+$legacyServiceNumber = trim((string) ($personnelExtras['service_number'] ?? ''));
+$matricule = $matriculeInternalOnly !== '' ? $matriculeInternalOnly : null;
+$showLegacyServiceNumber = $legacyServiceNumber !== '' && $legacyServiceNumber !== (string) ($matricule ?? '');
+// Callsign : profil fiche, sinon users.callsign du sujet (même ligne identité), jamais un autre membre.
+$callsignProfile = trim((string) ($personnelProfile['callsign'] ?? ''));
+$callsignUser = trim((string) ($targetUser['callsign'] ?? ''));
+$callsign = $callsignProfile !== '' ? $callsignProfile : ($callsignUser !== '' ? $callsignUser : null);
 $athenaIdentifier = trim((string) ($targetUser['athena_identifier'] ?? ''));
 // Prénom + nom du personnage = identité unique affichée partout.
 if (!$privatePersonnelIdentity) {
     $dn = trim((string) ($targetUser['display_name'] ?? ''));
     $cs = trim((string) ($callsign ?? ''));
-    $displayName = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Membre');
+    $displayName = $dn !== '' ? $dn : ($cs !== '' ? $cs : $missingLabel);
 } else {
     $civilFull = trim(($civilIdentity['first_name'] ?? '') . ' ' . ($civilIdentity['last_name'] ?? ''));
     if ($civilFull !== '') {
         $displayName = $civilFull;
     } else {
         $dn = trim((string) ($targetUser['display_name'] ?? ''));
-        if ($dn !== '') {
-            $displayName = $dn;
-        } elseif (!empty($showEmailInContact)) {
-            $displayName = (string) ($targetUser['email'] ?? 'Membre');
-        } else {
-            $cs = trim((string) ($callsign ?? ''));
-            $displayName = $cs !== '' ? $cs : 'Membre';
-        }
+        $displayName = $dn !== '' ? $dn : $missingLabel;
     }
 }
 $rScore = (int) ($personnelProfile['readiness_score'] ?? 0);
@@ -388,15 +399,34 @@ $completenessScore = (int)($completeness['score'] ?? 0);
 $sectionsCritiques = $completeness['sections_critiques'] ?? [];
 
 $gradeLabel = '';
+$gradeShortLabel = '';
+$gradeOtanCode = '';
 if (is_array($grade)) {
-    $gradeLabel = trim((string) ($grade['label_long'] ?? ''));
-    if ($gradeLabel === '') {
-        $gradeLabel = trim((string) ($grade['label_short'] ?? ''));
+    // Si le $grade injecté ne correspond pas au sujet (contamination header), ignorer.
+    $gradeOwnerOk = true;
+    if (!empty($targetUser['grade_id']) && isset($grade['id']) && (int) $grade['id'] !== (int) $targetUser['grade_id']) {
+        $gradeOwnerOk = false;
+    }
+    if ($gradeOwnerOk) {
+        $gradeLabel = trim((string) ($grade['label_long'] ?? ''));
+        $gradeShortLabel = trim((string) ($grade['label_short'] ?? ''));
+        if ($gradeLabel === '') {
+            $gradeLabel = $gradeShortLabel;
+        }
+        $gradeOtanCode = trim((string) ($grade['label_otan'] ?? $grade['nato_code'] ?? ''));
     }
 }
 $rankOverride = trim((string) ($personnelProfile['rank_display_override'] ?? ''));
 $rankDisplayRp = trim((string) ($personnelProfile['rank_display'] ?? ''));
 $effectiveRankDisplay = $rankOverride !== '' ? $rankOverride : ($rankDisplayRp !== '' ? $rankDisplayRp : $gradeLabel);
+// Libellé de référence à afficher à côté d’un code (override / OTAN) dans le détail.
+$gradeReferenceLabel = $gradeLabel;
+if ($gradeReferenceLabel === '' && $gradeShortLabel !== '') {
+    $gradeReferenceLabel = $gradeShortLabel;
+}
+$showGradeReferenceBeside = $gradeReferenceLabel !== ''
+    && $effectiveRankDisplay !== ''
+    && strcasecmp($gradeReferenceLabel, $effectiveRankDisplay) !== 0;
 $personnelModerationStaffLines = is_array($personnelModerationStaffLines ?? null) ? $personnelModerationStaffLines : [];
 $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_string($personnelModerationMemberBrief) && trim($personnelModerationMemberBrief) !== ''
     ? trim($personnelModerationMemberBrief)
@@ -425,9 +455,6 @@ $completenessCheckLabels = [
 $bannerPath = trim((string) ($personnelProfile['character_banner_path'] ?? ''));
 $bannerUrl = $bannerPath !== '' ? $baseUrl . '/' . ltrim($bannerPath, '/') : null;
 $isDeployableFile = ((int) ($personnelProfile['deployable'] ?? 1)) === 1;
-$legacyServiceNumber = trim((string) ($personnelExtras['service_number'] ?? ''));
-$matriculeInternalOnly = trim((string) ($personnelProfile['matricule_internal'] ?? ''));
-$showLegacyServiceNumber = $legacyServiceNumber !== '' && ($matriculeInternalOnly === '' || strcasecmp($legacyServiceNumber, $matriculeInternalOnly) !== 0);
 $steamId = trim((string) ($targetUser['steam_id'] ?? ''));
 $steamId = $steamId !== '' ? $steamId : null;
 $accountCreatedDisplay = null;
@@ -750,7 +777,10 @@ $personnelFileShell = $personnelFileIsRhFull
             <div class="flex flex-wrap gap-5 md:gap-8">
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Rang</p>
-                    <p class="text-sm font-black text-slate-900 italic"><?= $effectiveRankDisplay !== '' ? htmlspecialchars($effectiveRankDisplay) : '—' ?></p>
+                    <p class="text-sm font-black text-slate-900 italic"><?= $effectiveRankDisplay !== '' ? htmlspecialchars($effectiveRankDisplay) : htmlspecialchars($missingLabel ?? 'Donnée manquante') ?></p>
+                    <?php if (!empty($showGradeReferenceBeside)): ?>
+                    <p class="text-[11px] text-slate-600 mt-0.5"><?= htmlspecialchars($gradeReferenceLabel) ?></p>
+                    <?php endif; ?>
                 </div>
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Unité</p>
@@ -1196,17 +1226,23 @@ $personnelFileShell = $personnelFileIsRhFull
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Identité opérationnelle</h2>
                     <div class="grid md:grid-cols-2 gap-6">
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : '—') ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : '—') ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatif radio</p><p class="text-sm font-black text-slate-900"><?= $callsign ? htmlspecialchars($callsign) : '—' ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Matricule</p><p class="text-sm font-black text-slate-900"><?= !empty($showMatriculePublic) ? ($matricule ? htmlspecialchars($matricule) : '—') : '—' ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : $missingLabel) ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : $missingLabel) ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatif radio</p><p class="text-sm font-black text-slate-900"><?= $callsign ? htmlspecialchars($callsign) : htmlspecialchars($missingLabel) ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Matricule</p><p class="text-sm font-black text-slate-900"><?= !empty($showMatriculePublic) ? ($matricule ? htmlspecialchars($matricule) : htmlspecialchars($missingLabel)) : htmlspecialchars($missingLabel) ?></p></div>
                         <?php if (!empty(trim((string) ($userProfile['bio'] ?? '')))): ?>
                         <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Présentation du personnage</p><p class="text-sm text-slate-700 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $userProfile['bio']))) ?></p></div>
                         <?php endif; ?>
-                        <?php if ($gradeLabel !== '' && $gradeLabel !== $effectiveRankDisplay): ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Grade de référence</p><p class="text-sm text-slate-700"><?= htmlspecialchars($gradeLabel) ?></p></div>
-                        <?php endif; ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : '—' ?></p></div>
+                        <div>
+                            <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Grade</p>
+                            <p class="text-sm font-black text-slate-900"><?= $effectiveRankDisplay !== '' ? htmlspecialchars($effectiveRankDisplay) : htmlspecialchars($missingLabel) ?></p>
+                            <?php if ($showGradeReferenceBeside): ?>
+                            <p class="mt-0.5 text-[11px] text-slate-600">Libellé : <?= htmlspecialchars($gradeReferenceLabel) ?><?php if ($gradeOtanCode !== '' && strcasecmp($gradeOtanCode, $effectiveRankDisplay) !== 0): ?> · <?= htmlspecialchars($gradeOtanCode) ?><?php endif; ?></p>
+                            <?php elseif ($gradeOtanCode !== '' && $effectiveRankDisplay !== '' && strcasecmp($gradeOtanCode, $effectiveRankDisplay) !== 0): ?>
+                            <p class="mt-0.5 text-[11px] text-slate-600">Code : <?= htmlspecialchars($gradeOtanCode) ?></p>
+                            <?php endif; ?>
+                        </div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : htmlspecialchars($missingLabel) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef direct</p><p class="text-sm font-black text-slate-900"><?= $commander ? htmlspecialchars($commander['display_name'] ?? $commander['callsign'] ?? '') : '—' ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date d'incorporation</p><p class="text-sm font-black text-slate-900"><?= $enlistmentFormatted ?? '—' ?></p></div>
                         <?php if ($showLegacyServiceNumber): ?>

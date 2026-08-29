@@ -220,7 +220,8 @@ class PersonnelController
     }
 
     /**
-     * Prénom/nom du personnage : `user_profiles`, sinon dernière candidature d’enrôlement, sinon découpage prudent du nom d’affichage.
+     * Prénom/nom du personnage : uniquement `user_profiles` (pas de substitution depuis
+     * candidature ou découpage du display_name — sinon deux fiches semblent identiques).
      *
      * @return array{first_name: string, last_name: string, source: ?string}
      */
@@ -230,26 +231,6 @@ class PersonnelController
         $fn = trim((string) ($up['first_name'] ?? ''));
         $ln = trim((string) ($up['last_name'] ?? ''));
         $source = ($fn !== '' || $ln !== '') ? 'profile' : null;
-
-        if ($fn === '' && $ln === '' && $enlistment !== null) {
-            $fn = trim((string) ($enlistment['first_name'] ?? ''));
-            $ln = trim((string) ($enlistment['last_name'] ?? ''));
-            if ($fn !== '' || $ln !== '') {
-                $source = 'enlistment';
-            }
-        }
-
-        if ($fn === '' && $ln === '') {
-            $dn = trim((string) ($targetUser['display_name'] ?? ''));
-            if ($dn !== '') {
-                $parts = preg_split('/\s+/u', $dn, 2, PREG_SPLIT_NO_EMPTY);
-                if ($parts !== false && $parts !== []) {
-                    $fn = $parts[0];
-                    $ln = isset($parts[1]) ? trim($parts[1]) : '';
-                    $source = 'display_name';
-                }
-            }
-        }
 
         return ['first_name' => $fn, 'last_name' => $ln, 'source' => $source];
     }

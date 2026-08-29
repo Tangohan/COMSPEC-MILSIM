@@ -29,37 +29,41 @@ $defaultAccent = 'slate';
 $useAthenaHeader = $loggedIn;
 if ($useAthenaHeader) {
     $athenaTenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
-    $currentUser = null;
-    $grade = null;
-    $personnelExtras = null;
-    $personnelProfile = null;
+    // Variables préfixées : ne jamais écraser $personnelProfile / $personnelExtras / $grade
+    // fournis par les vues fiche (sinon la fiche d’un tiers affiche le dossier du connecté).
+    $headerCurrentUser = null;
+    $headerGrade = null;
+    $headerPersonnelExtras = null;
+    $headerPersonnelProfile = null;
     try {
-        $currentUser = \App\Core\Container::get(\App\Services\Auth\AuthService::class)->user();
+        $headerCurrentUser = \App\Core\Container::get(\App\Services\Auth\AuthService::class)->user();
     } catch (\Throwable) {
-        $currentUser = null;
+        $headerCurrentUser = null;
     }
-    if (is_array($currentUser) && $athenaTenantId > 0) {
+    if (is_array($headerCurrentUser) && $athenaTenantId > 0) {
         try {
-            $personnelExtras = \App\Core\Container::get(\App\Repositories\PersonnelExtrasRepository::class)
-                ->getByUserId((int) $currentUser['id']);
+            $headerPersonnelExtras = \App\Core\Container::get(\App\Repositories\PersonnelExtrasRepository::class)
+                ->getByUserId((int) $headerCurrentUser['id']);
         } catch (\Throwable) {
-            $personnelExtras = null;
+            $headerPersonnelExtras = null;
         }
         try {
-            $personnelProfile = \App\Core\Container::get(\App\Repositories\PersonnelProfileRepository::class)
-                ->getByUserId((int) $currentUser['id']);
+            $headerPersonnelProfile = \App\Core\Container::get(\App\Repositories\PersonnelProfileRepository::class)
+                ->getByUserId((int) $headerCurrentUser['id']);
         } catch (\Throwable) {
-            $personnelProfile = null;
+            $headerPersonnelProfile = null;
         }
-        if (!empty($currentUser['grade_id'])) {
+        if (!empty($headerCurrentUser['grade_id'])) {
             try {
-                $grade = \App\Core\Container::get(\App\Repositories\GradeRepository::class)
-                    ->findById((int) $currentUser['grade_id'], $athenaTenantId);
+                $headerGrade = \App\Core\Container::get(\App\Repositories\GradeRepository::class)
+                    ->findById((int) $headerCurrentUser['grade_id'], $athenaTenantId);
             } catch (\Throwable) {
-                $grade = null;
+                $headerGrade = null;
             }
         }
     }
+    // Alias locaux pour le partial bandeau (jamais les noms métier de fiche).
+    $currentUser = $headerCurrentUser;
 }
 ?>
 
