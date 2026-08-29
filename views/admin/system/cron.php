@@ -75,7 +75,8 @@ $triggerLabel = static function (?string $src): string {
     <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
         <h2 class="text-sm font-bold text-slate-800">Planification</h2>
         <p class="text-sm text-slate-600 leading-relaxed">
-            Sur le serveur, installez le passage toutes les cinq minutes (recommandé). À défaut,
+            Sur le serveur, installez le passage toutes les cinq minutes avec
+            <code class="text-xs font-mono">install-system-cron.sh</code> (recommandé). À défaut,
             une relance de secours part après une visite du portail. L’appel distant reste optionnel.
         </p>
         <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">

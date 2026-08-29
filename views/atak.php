@@ -198,7 +198,7 @@ if ($atakMapConfig) {
           <label class="atak-header-field">
             <span class="atak-header-field-label">Communauté</span>
             <?php if ($atakMultiCommunity): ?>
-            <select name="tenant_id" class="atak-header-field-control" title="Changer de communauté" onchange="this.form.submit()">
+            <select name="tenant_id" class="atak-header-field-control" title="Plusieurs communautés — choisir celle affichée sur la carte" onchange="this.form.submit()">
               <?php foreach ($atakCommunityMemberships as $m): ?>
                 <?php
                 $mid = (int) ($m['tenant_id'] ?? 0);
