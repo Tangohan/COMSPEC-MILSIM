@@ -348,6 +348,7 @@ final class TenantPermissionCatalog
             ['slug' => 'personnel.progression.configure', 'module' => 'personnel', 'action' => 'configure', 'name' => 'Configurer parcours et conditions'],
             ['slug' => 'personnel.qualification.grant', 'module' => 'personnel', 'action' => 'grant', 'name' => 'Attribuer une qualification'],
             ['slug' => 'personnel.callsign.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer les indicatifs / séquences'],
+            ['slug' => 'personnel.member_number.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer les matricules d’organisation'],
         ];
     }
 

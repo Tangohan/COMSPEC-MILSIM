@@ -20,6 +20,7 @@ use App\Services\Documents\DocumentAccessService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Personnel\MatriculeService;
+use App\Services\Personnel\TenantMemberNumberService;
 use App\Services\Personnel\SeniorityDossierInferenceSyncService;
 use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 use App\Services\Platform\FeatureGateService;
@@ -59,6 +60,7 @@ final class EnlistmentAcceptanceProvisioningService
         private ?SeniorityDossierInferenceSyncService $seniorityDossierInferenceSyncService = null,
         private ?MatriculeService $matriculeService = null,
         private ?RecruitmentOpeningRepository $recruitmentOpeningRepository = null,
+        private ?TenantMemberNumberService $tenantMemberNumberService = null,
     ) {}
 
     /**
@@ -462,6 +464,20 @@ final class EnlistmentAcceptanceProvisioningService
                 $this->matriculeService->assignNextForUser($userId, $tenantId);
             } catch (Throwable $e) {
                 $warnings[] = 'Matricule non attribué automatiquement : ' . $this->shortExceptionMessage($e);
+            }
+        }
+
+        if ($this->tenantMemberNumberService !== null && $this->tenantMemberNumberService->schemaReady()) {
+            try {
+                $cfg = $this->tenantMemberNumberService->getConfig($tenantId);
+                if (!empty($cfg['enabled']) && in_array((string) ($cfg['mode'] ?? ''), ['automatic', 'assisted'], true)) {
+                    $mn = $this->tenantMemberNumberService->assignNext($tenantId, $userId, null, 'Intégration recrutement', 'enlistment');
+                    if (empty($mn['ok'])) {
+                        $warnings[] = 'Matricule d’organisation non attribué : ' . ($mn['error'] ?? 'échec');
+                    }
+                }
+            } catch (Throwable $e) {
+                $warnings[] = 'Matricule d’organisation non attribué : ' . $this->shortExceptionMessage($e);
             }
         }
 

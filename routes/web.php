@@ -184,6 +184,7 @@ use App\Controllers\Admin\Organization\ConfigurationUpdateController;
 use App\Middleware\ConfigurationUpdateIntroMiddleware;
 use App\Controllers\Admin\Organization\OrganizationSeniorityAdminController;
 use App\Controllers\Admin\Organization\OrganizationCallsignSequencesController;
+use App\Controllers\Admin\Organization\OrganizationMemberNumberController;
 use App\Controllers\Admin\Organization\OrganizationProgressionHubController;
 use App\Controllers\Admin\Organization\RoleplayFollowupAdminController;
 use App\Controllers\Admin\Organization\CommunityEventsAdminController;
@@ -518,6 +519,8 @@ return function (Router $router) {
     $router->get('/personnel/{id}/edit', [PersonnelController::class, 'edit'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/update', [PersonnelController::class, 'update'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/generate-matricule', [PersonnelController::class, 'generateMatricule'], [AuthMiddleware::class]);
+    $router->post('/personnel/{id}/member-number', [PersonnelController::class, 'updateMemberNumber'], [AuthMiddleware::class]);
+    $router->post('/personnel/{id}/member-number/regenerate', [PersonnelController::class, 'regenerateMemberNumber'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/sync-steam', [PersonnelController::class, 'syncSteamProfile'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/notes', [PersonnelController::class, 'updateNotes'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/bilans', [PersonnelController::class, 'storeStageBilan'], [AuthMiddleware::class]);
@@ -933,6 +936,9 @@ return function (Router $router) {
     $router->get('/back-office/organisation/indicatifs', [OrganizationCallsignSequencesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/indicatifs', [OrganizationCallsignSequencesController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/indicatifs/{id}', [OrganizationCallsignSequencesController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/import', [OrganizationMemberNumberController::class, 'importCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/structure', [OrganizationDashboardController::class, 'structureRecruitmentHub'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

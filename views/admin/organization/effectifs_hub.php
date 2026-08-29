@@ -174,6 +174,18 @@ $hubRows = [
         'primary' => false,
         'ok' => $canProgressionAdmin,
     ],
+    [
+        'id' => 'member_numbers',
+        'title' => 'Matricules d’organisation',
+        'desc' => 'Configurer le matricule métier de la communauté (saisie libre, génération automatique ou assistée).',
+        'domain' => 'Carrière',
+        'domainKey' => 'carriere',
+        'href' => url('back-office/organisation/matricules'),
+        'volume' => 'Identifiants métier',
+        'cta' => 'Configurer',
+        'primary' => false,
+        'ok' => $canProgressionAdmin || $canSeniorityAdmin,
+    ],
 ];
 
 $visibleRows = array_values(array_filter($hubRows, static fn (array $r): bool => !empty($r['ok'])));

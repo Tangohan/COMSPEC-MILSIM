@@ -22,6 +22,8 @@ class UserRepository
     private static ?bool $hasServiceAccountColumn = null;
     private static ?bool $hasAthenaIdentifierColumn = null;
 
+    private static ?bool $hasTenantMemberNumberColumn = null;
+
     private static ?bool $hasUserUnitsTable = null;
 
     private static ?bool $hasUserRolesTable = null;
@@ -94,6 +96,88 @@ class UserRepository
         }
 
         return self::$hasAthenaIdentifierColumn;
+    }
+
+    public function hasTenantMemberNumberColumn(): bool
+    {
+        if (self::$hasTenantMemberNumberColumn === null) {
+            $stmt = $this->pdo()->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'tenant_member_number' LIMIT 1"
+            );
+            self::$hasTenantMemberNumberColumn = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasTenantMemberNumberColumn;
+    }
+
+    /**
+     * Mise à jour du matricule d’organisation — toujours scopée tenant_id + user_id.
+     */
+    public function updateTenantMemberNumber(int $userId, int $tenantId, ?string $value): bool
+    {
+        if (!$this->hasTenantMemberNumberColumn() || $userId < 1 || $tenantId < 1) {
+            return false;
+        }
+        $normalized = $value !== null ? trim($value) : null;
+        if ($normalized === '') {
+            $normalized = null;
+        }
+        $stmt = $this->pdo()->prepare(
+            'UPDATE users SET tenant_member_number = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?'
+        );
+
+        return $stmt->execute([$normalized, $userId, $tenantId]);
+    }
+
+    public function tenantMemberNumberExists(int $tenantId, string $number, ?int $excludeUserId = null): bool
+    {
+        if (!$this->hasTenantMemberNumberColumn() || $tenantId < 1) {
+            return false;
+        }
+        $number = trim($number);
+        if ($number === '') {
+            return false;
+        }
+        $sql = 'SELECT 1 FROM users
+                WHERE tenant_id = ?
+                  AND tenant_member_number IS NOT NULL
+                  AND TRIM(tenant_member_number) <> \'\'
+                  AND LOWER(TRIM(tenant_member_number)) = LOWER(?)';
+        $params = [$tenantId, $number];
+        if ($excludeUserId !== null && $excludeUserId > 0) {
+            $sql .= ' AND id <> ?';
+            $params[] = $excludeUserId;
+        }
+        $sql .= ' LIMIT 1';
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute($params);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findByTenantMemberNumber(int $tenantId, string $number): ?array
+    {
+        if (!$this->hasTenantMemberNumberColumn() || $tenantId < 1) {
+            return null;
+        }
+        $number = trim($number);
+        if ($number === '') {
+            return null;
+        }
+        $stmt = $this->pdo()->prepare(
+            'SELECT * FROM users
+             WHERE tenant_id = ?
+               AND tenant_member_number IS NOT NULL
+               AND TRIM(tenant_member_number) <> \'\'
+               AND LOWER(TRIM(tenant_member_number)) = LOWER(?)
+             LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $number]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
     }
 
     public function hasEmailLoginOtpEnabledColumn(): bool
@@ -1216,8 +1300,10 @@ class UserRepository
     {
         $limit = max(10, min(300, $limit));
         $hasAthenaIdentifier = $this->hasAthenaIdentifierColumn();
+        $hasTenantMemberNumber = $this->hasTenantMemberNumberColumn();
         $pack = $this->technicalAccountExclusionPredicate('u');
         $athenaSelect = $hasAthenaIdentifier ? 'u.athena_identifier' : "'' AS athena_identifier";
+        $tmnSelect = $hasTenantMemberNumber ? 'u.tenant_member_number' : 'NULL AS tenant_member_number';
         $gc = $this->getGradesConfigForDirectory();
         $legal = $this->legalIdentityJoinFragments('uli', 'u');
 
@@ -1238,6 +1324,9 @@ class UserRepository
             $athenaFilter = $hasAthenaIdentifier
                 ? " OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)"
                 : '';
+            $tmnFilter = $hasTenantMemberNumber
+                ? " OR (u.tenant_member_number IS NOT NULL AND TRIM(u.tenant_member_number) <> '' AND u.tenant_member_number LIKE ?)"
+                : '';
             $legalFilter = $legal['searchable']
                 ? ' OR (uli.first_name IS NOT NULL AND uli.first_name LIKE ?)
                  OR (uli.last_name IS NOT NULL AND uli.last_name LIKE ?)
@@ -1246,7 +1335,7 @@ class UserRepository
             $where[] = '(u.display_name LIKE ?' . $legalFilter . '
                  OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
                  OR (u.profile_slug IS NOT NULL AND TRIM(u.profile_slug) <> \'\' AND u.profile_slug LIKE ?)
-                 OR (pp.character_name IS NOT NULL AND pp.character_name LIKE ?)' . $athenaFilter . ')';
+                 OR (pp.character_name IS NOT NULL AND pp.character_name LIKE ?)' . $athenaFilter . $tmnFilter . ')';
             $params[] = $term;
             if ($legal['searchable']) {
                 $params[] = $term;
@@ -1257,6 +1346,9 @@ class UserRepository
             $params[] = $term;
             $params[] = $term;
             if ($hasAthenaIdentifier) {
+                $params[] = $term;
+            }
+            if ($hasTenantMemberNumber) {
                 $params[] = $term;
             }
         }
@@ -1270,7 +1362,7 @@ class UserRepository
             ? 'un.public_blurb AS unit_blurb'
             : 'NULL AS unit_blurb';
 
-        $sql = 'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', u.avatar_url, u.status, u.role_id,
+        $sql = 'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', ' . $tmnSelect . ', u.avatar_url, u.status, u.role_id,
                        ' . $legal['select'] . ',
                        ' . $gc['select'] . ',
                        un.name AS unit_name, un.code AS unit_code, ' . $unitBlurbSelect . ', pp.primary_unit_id,
@@ -1520,10 +1612,19 @@ class UserRepository
         $params = [$tenantId];
         if ($search !== null && $search !== '') {
             $term = '%' . trim($search) . '%';
-            $parts[] = '(u.email LIKE ? OR u.display_name LIKE ? OR u.callsign LIKE ?)';
+            $searchBits = 'u.email LIKE ? OR u.display_name LIKE ? OR u.callsign LIKE ?';
             $params[] = $term;
             $params[] = $term;
             $params[] = $term;
+            if ($this->hasAthenaIdentifierColumn()) {
+                $searchBits .= " OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)";
+                $params[] = $term;
+            }
+            if ($this->hasTenantMemberNumberColumn()) {
+                $searchBits .= " OR (u.tenant_member_number IS NOT NULL AND TRIM(u.tenant_member_number) <> '' AND u.tenant_member_number LIKE ?)";
+                $params[] = $term;
+            }
+            $parts[] = '(' . $searchBits . ')';
         }
         if ($status !== null && $status !== '') {
             $parts[] = 'u.status = ?';
@@ -1855,14 +1956,19 @@ class UserRepository
             return [];
         }
         $hasAthenaIdentifier = $this->hasAthenaIdentifierColumn();
+        $hasTenantMemberNumber = $this->hasTenantMemberNumberColumn();
         $term = '%' . $q . '%';
         $pack = $this->technicalAccountExclusionPredicate('u');
         $athenaSelect = $hasAthenaIdentifier ? 'u.athena_identifier' : "'' AS athena_identifier";
+        $tmnSelect = $hasTenantMemberNumber ? 'u.tenant_member_number' : 'NULL AS tenant_member_number';
         $athenaFilter = $hasAthenaIdentifier
             ? "OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)"
             : '';
+        $tmnFilter = $hasTenantMemberNumber
+            ? "OR (u.tenant_member_number IS NOT NULL AND TRIM(u.tenant_member_number) <> '' AND u.tenant_member_number LIKE ?)"
+            : '';
         $stmt = $this->pdo()->prepare(
-            'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', u.avatar_url FROM users u
+            'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', ' . $tmnSelect . ', u.avatar_url FROM users u
              WHERE u.tenant_id = ?
              AND ' . $pack['sql'] . '
              AND (
@@ -1870,12 +1976,16 @@ class UserRepository
                  OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
                  OR (u.profile_slug IS NOT NULL AND TRIM(u.profile_slug) <> \'\' AND u.profile_slug LIKE ?)
                  ' . $athenaFilter . '
+                 ' . $tmnFilter . '
              )
              ORDER BY u.display_name ASC
              LIMIT ?'
         );
         $params = array_merge([$tenantId], $pack['params'], [$term, $term, $term]);
         if ($hasAthenaIdentifier) {
+            $params[] = $term;
+        }
+        if ($hasTenantMemberNumber) {
             $params[] = $term;
         }
         $params[] = $limit;

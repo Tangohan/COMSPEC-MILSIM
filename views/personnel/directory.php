@@ -225,7 +225,10 @@ $totalResults = count($results);
                         $target = $slug !== '' ? $slug : (string) $uid;
 
                         $gradeLabel = $gradeLabelFor($row);
-                        $matricule = trim((string) ($row['matricule_internal'] ?? '')) ?: trim((string) ($row['service_number'] ?? ''));
+                        $orgNumber = trim((string) ($row['tenant_member_number'] ?? ''));
+                        $matricule = $orgNumber !== ''
+                            ? $orgNumber
+                            : (trim((string) ($row['matricule_internal'] ?? '')) ?: trim((string) ($row['service_number'] ?? '')));
 
                         $unitName = trim((string) ($row['unit_name'] ?? ''));
                         $unitTooltip = trim((string) ($row['unit_tooltip'] ?? ''));

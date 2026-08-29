@@ -148,7 +148,7 @@ final class RolePermissionMatrixCatalog
                 self::LEVEL_COMPLET => [
                     'personnel.profile.view', 'personnel.profile.update', 'personnel.sensitive.view',
                     'personnel.grades.manage', 'personnel.assignments.manage', 'personnel.status.manage',
-                    'personnel.badges.manage', 'personnel.directory.export',
+                    'personnel.badges.manage', 'personnel.directory.export', 'personnel.member_number.manage',
                     'admin.members.view', 'admin.members.manage', 'admin.members.invite', 'admin.members.moderate',
                     'organization.effectifs.hub.view', 'organization.recruitment.manage',
                     'organization.recruitment.openings.manage', 'invitations.send',

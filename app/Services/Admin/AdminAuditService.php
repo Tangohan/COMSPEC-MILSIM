@@ -98,4 +98,25 @@ class AdminAuditService
             null
         );
     }
+
+    public function logMemberNumberChanged(
+        int $tenantId,
+        int $actorUserId,
+        int $targetUserId,
+        ?string $oldValue,
+        ?string $newValue,
+        ?string $reason = null
+    ): void {
+        $oldPayload = $oldValue ?? '';
+        $newPayload = ($newValue ?? '') . ($reason !== null && trim($reason) !== '' ? ' | motif: ' . trim($reason) : '');
+        $this->auditService->log(
+            'member_number_changed',
+            $tenantId,
+            $actorUserId,
+            'user',
+            $targetUserId,
+            $oldPayload !== '' ? $oldPayload : null,
+            $newPayload !== '' ? $newPayload : null
+        );
+    }
 }
