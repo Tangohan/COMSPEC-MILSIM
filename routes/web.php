@@ -502,9 +502,13 @@ return function (Router $router) {
     $router->post('/personnel/{id}/correction', [\App\Controllers\Web\PersonnelCorrectionController::class, 'submit'], [AuthMiddleware::class]);
     $router->get('/back-office/personnel/corrections', [\App\Controllers\Web\PersonnelCorrectionController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/back-office/personnel/corrections/{id}/decide', [\App\Controllers\Web\PersonnelCorrectionController::class, 'decide'], [AuthMiddleware::class]);
-    $router->get('/back-office/personnel/advanced-edit', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'index'], [AuthMiddleware::class]);
-    $router->post('/back-office/personnel/advanced-edit/grant', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'grant'], [AuthMiddleware::class]);
-    $router->post('/back-office/personnel/advanced-edit/{id}/revoke', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'revoke'], [AuthMiddleware::class]);
+    $router->get('/admin/system/advanced-fiche-edit', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/advanced-fiche-edit/grant', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'grant'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/advanced-fiche-edit/{id}/revoke', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    /* Ancienne URL back-office → admin plateforme */
+    $router->get('/back-office/personnel/advanced-edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/advanced-fiche-edit')), [AuthMiddleware::class]);
+    $router->post('/back-office/personnel/advanced-edit/grant', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/advanced-fiche-edit')), [AuthMiddleware::class]);
+    $router->post('/back-office/personnel/advanced-edit/{id}/revoke', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/advanced-fiche-edit')), [AuthMiddleware::class]);
     $router->get('/personnel/tutorials', [PersonnelController::class, 'tutorials'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/actualiser', [RhWorkspaceController::class, 'refreshFromDossier'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/absences', [RhWorkspaceController::class, 'storeAbsence'], [AuthMiddleware::class]);

@@ -197,6 +197,86 @@ final class UserAdvancedEditGrantRepository
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listActiveGlobal(int $limit = 100): array
+    {
+        if (!$this->tableExists()) {
+            return [];
+        }
+        $limit = max(1, min(200, $limit));
+        $st = $this->pdo()->prepare(
+            "SELECT g.*,
+                    tu.display_name AS target_display_name,
+                    tu.email AS target_email,
+                    tu.callsign AS target_callsign,
+                    tu.athena_identifier AS target_athena_identifier,
+                    gu.display_name AS granter_display_name,
+                    t.name AS tenant_name,
+                    t.slug AS tenant_slug
+             FROM user_advanced_edit_grants g
+             LEFT JOIN users tu ON tu.id = g.user_id
+             LEFT JOIN users gu ON gu.id = g.granted_by
+             LEFT JOIN tenants t ON t.id = g.tenant_id
+             WHERE g.revoked_at IS NULL
+               AND g.starts_at <= NOW()
+               AND g.ends_at > NOW()
+             ORDER BY g.ends_at ASC
+             LIMIT {$limit}"
+        );
+        $st->execute();
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listRecentGlobal(int $limit = 80): array
+    {
+        if (!$this->tableExists()) {
+            return [];
+        }
+        $limit = max(1, min(200, $limit));
+        $st = $this->pdo()->prepare(
+            "SELECT g.*,
+                    tu.display_name AS target_display_name,
+                    tu.email AS target_email,
+                    tu.callsign AS target_callsign,
+                    tu.athena_identifier AS target_athena_identifier,
+                    gu.display_name AS granter_display_name,
+                    ru.display_name AS revoker_display_name,
+                    t.name AS tenant_name,
+                    t.slug AS tenant_slug
+             FROM user_advanced_edit_grants g
+             LEFT JOIN users tu ON tu.id = g.user_id
+             LEFT JOIN users gu ON gu.id = g.granted_by
+             LEFT JOIN users ru ON ru.id = g.revoked_by
+             LEFT JOIN tenants t ON t.id = g.tenant_id
+             ORDER BY g.created_at DESC
+             LIMIT {$limit}"
+        );
+        $st->execute();
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function revokeById(int $grantId, int $revokedBy): bool
+    {
+        if (!$this->tableExists() || $grantId < 1) {
+            return false;
+        }
+        $st = $this->pdo()->prepare(
+            'UPDATE user_advanced_edit_grants
+             SET revoked_at = NOW(), revoked_by = ?
+             WHERE id = ? AND revoked_at IS NULL'
+        );
+        $st->execute([$revokedBy, $grantId]);
+
+        return $st->rowCount() > 0;
+    }
+
     public static function durationHours(): int
     {
         return self::DURATION_HOURS;

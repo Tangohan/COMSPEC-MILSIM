@@ -18,7 +18,7 @@ final class AdvancedEditRbacGateFixTest extends TestCase
         self::assertStringNotContainsString('userHasPermission', $correction);
         self::assertStringContainsString('Gate::getInstance()', $advanced);
         self::assertStringContainsString('Gate::getInstance()', $correction);
-        self::assertStringContainsString('$gate->allows($slug)', $advanced);
+        self::assertStringContainsString("allows('admin.system')", $advanced);
         self::assertStringContainsString('$gate->allows($slug)', $correction);
 
         // Container ne doit plus injecter RbacService dans ces deux contrôleurs.

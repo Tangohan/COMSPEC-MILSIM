@@ -1899,12 +1899,30 @@ class UserRepository
         }
         $q = function_exists('mb_substr') ? mb_substr($q, 0, 120) : substr($q, 0, 120);
         $term = '%' . $q . '%';
-        $limit = max(1, min(30, $limit));
+        $limit = max(1, min(50, $limit));
         $pack = $this->technicalAccountExclusionPredicate('u');
         $hasDeletedAt = $this->hasDeletedAtColumn();
         $deletedSelf = $hasDeletedAt ? 'AND u.deleted_at IS NULL' : '';
         $siblingAlive = $hasDeletedAt ? 'AND u2.deleted_at IS NULL' : '';
-        $sql = "SELECT u.id, u.email, u.display_name, u.callsign, u.steam_id, t.name AS tenant_name, t.slug AS tenant_slug, u.status
+        $hasAthena = $this->hasAthenaIdentifierColumn();
+        $athenaSelect = $hasAthena ? 'u.athena_identifier' : "'' AS athena_identifier";
+        $athenaFilter = $hasAthena
+            ? "OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)"
+            : '';
+        $hasNickname = false;
+        try {
+            $chk = $this->pdo()->query(
+                "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'nickname' LIMIT 1"
+            );
+            $hasNickname = $chk && (bool) $chk->fetchColumn();
+        } catch (\Throwable) {
+            $hasNickname = false;
+        }
+        $nicknameFilter = $hasNickname
+            ? "OR (u.nickname IS NOT NULL AND TRIM(u.nickname) <> '' AND u.nickname LIKE ?)"
+            : '';
+        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.first_name, u.last_name,
+                    u.steam_id, {$athenaSelect}, t.name AS tenant_name, t.slug AS tenant_slug, u.status
              FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id
              WHERE (
@@ -1912,6 +1930,11 @@ class UserRepository
                  OR u.display_name LIKE ?
                  OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> '' AND u.callsign LIKE ?)
                  OR (u.steam_id IS NOT NULL AND TRIM(u.steam_id) <> '' AND u.steam_id LIKE ?)
+                 OR (u.first_name IS NOT NULL AND TRIM(u.first_name) <> '' AND u.first_name LIKE ?)
+                 OR (u.last_name IS NOT NULL AND TRIM(u.last_name) <> '' AND u.last_name LIKE ?)
+                 OR CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) LIKE ?
+                 {$nicknameFilter}
+                 {$athenaFilter}
              ) AND {$pack['sql']}
              {$deletedSelf}
              AND (t.slug <> 'default' OR NOT EXISTS (
@@ -1923,10 +1946,17 @@ class UserRepository
                   AND u2.id <> u.id
                   {$siblingAlive}
              ))
-             ORDER BY t.name ASC, u.email ASC
+             ORDER BY t.name ASC, u.display_name ASC, u.email ASC
              LIMIT {$limit}";
         $stmt = $this->pdo()->prepare($sql);
-        $stmt->execute(array_merge([$term, $term, $term, $term], $pack['params']));
+        $params = [$term, $term, $term, $term, $term, $term, $term];
+        if ($hasNickname) {
+            $params[] = $term;
+        }
+        if ($hasAthena) {
+            $params[] = $term;
+        }
+        $stmt->execute(array_merge($params, $pack['params']));
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         foreach ($rows as &$row) {
             if (function_exists('community_display_name')) {
