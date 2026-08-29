@@ -342,11 +342,6 @@ class EnlistmentController
 
                 return Response::redirect(url('enlistment/error'));
             }
-            if (!$request->input('share_email')) {
-                Session::flash('enlistment_error', 'Une adresse email de contact est requise (partage email).');
-
-                return Response::redirect(url('enlistment/error'));
-            }
 
             // Compte Athena connecté (n’importe quelle communauté) : on rattache le dépôt à
             // l’utilisateur de session. L’acceptation recrée / relie le membre local si besoin.
@@ -359,10 +354,11 @@ class EnlistmentController
 
             $uid = (int) $user['id'];
             $shareName = (bool) $request->input('share_name');
-            $shareEmail = (bool) $request->input('share_email');
+            // L’e-mail du compte remonte toujours au staff ; la case ne fait que demander un affichage masqué.
+            $maskEmail = (bool) $request->input('mask_email');
             $profile = $this->userProfileRepository->getByUserId($uid);
 
-            $email = $shareEmail ? trim((string) ($user['email'] ?? '')) : '';
+            $email = trim((string) ($user['email'] ?? ''));
             if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 Session::flash('enlistment_error', 'Adresse email du compte invalide. Mettez-la à jour dans les paramètres.');
 
@@ -450,7 +446,8 @@ class EnlistmentController
             $payload['consent_sharing_at'] = date('Y-m-d H:i:s');
             $payload['shared_fields'] = [
                 'share_name' => $shareName,
-                'share_email' => $shareEmail,
+                'share_email' => true,
+                'mask_email' => $maskEmail,
                 'share_callsign' => false,
                 'rp_shares' => $presetRow ? $rpShares : null,
                 'include_milsim_from_preset' => $presetRow ? $includeMilsimFromPreset : null,

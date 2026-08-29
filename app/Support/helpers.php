@@ -1595,4 +1595,26 @@ if (!function_exists('sse_normalize_ref_display')) {
     }
 }
 
+if (!function_exists('mask_email_for_display')) {
+    /**
+     * Masque la partie locale d’un e-mail (ex. jean.dupont@ex.fr → je***@ex.fr).
+     * L’adresse complète reste disponible côté serveur / staff.
+     */
+    function mask_email_for_display(string $email): string
+    {
+        $email = trim($email);
+        $at = strpos($email, '@');
+        if ($at === false || $at < 1) {
+            return $email === '' ? '—' : $email;
+        }
+        $local = substr($email, 0, $at);
+        $domain = substr($email, $at + 1);
+        $n = strlen($local);
+        $keep = min(2, $n);
+        $prefix = $keep > 0 ? substr($local, 0, $keep) : '';
+
+        return $prefix . '***@' . $domain;
+    }
+}
+
 require __DIR__ . '/forum_helpers.php';
