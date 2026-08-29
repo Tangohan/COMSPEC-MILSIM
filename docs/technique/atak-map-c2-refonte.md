@@ -49,29 +49,26 @@ Statuts : `ONLINE`, `DEGRADED` (opacité), `STALE` (contour pointillé), `LOST` 
 
 ## Intégration ATAK live
 
-1. Inclure CSS + modules dans `views/atak.php`
-2. Remplacer la toolbar `#atak-map-tools` par `.tac-c2-rail` + `.tac-map-controls`
-3. Brancher le flux unités existant :
+**Activée par défaut** sur `views/atak.php` (`window.ATAK_MAP_C2_V2 = true`).
+
+1. CSS : `atak-map-c2-v2.css` + `atak-map-c2-live.css` (overlay dans `.atak-map-wrap`)
+2. Shell live : `#atak-c2-live-shell` — rail gauche (`.tac-c2-rail`), contrôles (`.tac-map-controls`), panneau contexte bas
+3. Pont : `public/assets/js/map/atak-c2-bridge.js`
+   - Réutilise la carte Leaflet `ATAKMap` (pas de second init)
+   - Intercepte / écoute `setUnitsMarkers` + événement `atak:units-updated` (WebSocket / polling via `atak-units.js` → `atak-socket.js`)
+   - Affiche les unités via `MarkerManager` (symbologie C2) ; le rendu legacy est désactivé
+   - Relie le rail aux outils existants (`#atak-map-tools`, masqué mais actif)
+
+Désactiver temporairement : `window.ATAK_MAP_C2_V2 = false` avant le chargement du bridge.
 
 ```javascript
-import { initMapC2 } from '/public/assets/js/map/initMapC2.js';
-
-const c2 = await initMapC2({
-  map2dEl: document.getElementById('atak-map'),
-  map3dEl: document.getElementById('terrain3d-container'),
-  config: window.Arma3Map.Maps.altis,
-  terrain: { /* heightmap API */ },
-});
-
-// Depuis atak-units.js / socket :
-c2.setEntities(unitsFromBft);
-c2.setTracks(trailsFromBft);
+// API exposée après atak:c2-ready
+window.ATAKMapC2.setEntities(units);
+window.ATAKMapC2.setTracks(trails);
 ```
-
-4. Feature flag recommandé : `window.ATAK_MAP_C2_V2 = true`
 
 ## Relation avec modules existants
 
-- **Remplace visuellement** les gros `divIcon` / pictogrammes web
-- **Conserve** milsymbol en option via extension future de `TacticalSymbol`
-- **Complète** `atak-terrain-3d.js` (WebGL 2D Leaflet) par `terrain3d/` + `MarkerManager3D`
+- **Remplace visuellement** les gros `divIcon` / pictogrammes web pour les unités BFT
+- **Conserve** les outils mesure / zones / 3D / NVG (déclenchés depuis le rail)
+- **Complète** `atak-terrain-3d.js` ; la bascule 2D/3D des contrôles C2 clique `#atak-view-3d`
