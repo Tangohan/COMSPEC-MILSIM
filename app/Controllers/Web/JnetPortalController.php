@@ -616,6 +616,10 @@ final class JnetPortalController
         if ($user) {
             $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
+        // Compte sans organisation : JNET n’a pas de sens — dashboard classique uniquement.
+        if (PortalAccessChoice::isNoOrganizationContext()) {
+            return Response::redirect(url('dashboard'));
+        }
 
         return $ctx;
     }
