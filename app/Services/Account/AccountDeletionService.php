@@ -28,6 +28,31 @@ final class AccountDeletionService
 
     public const DELETED_DISPLAY_NAME = 'Compte supprimé';
 
+    /**
+     * Compte déjà anonymisé (« Compte supprimé » / @deleted.invalid).
+     *
+     * @param array<string, mixed>|null $user
+     */
+    public static function isAnonymizedUser(?array $user): bool
+    {
+        if (!is_array($user) || $user === []) {
+            return false;
+        }
+        $email = strtolower(trim((string) ($user['email'] ?? '')));
+        if ($email !== '' && str_ends_with($email, '@deleted.invalid')) {
+            return true;
+        }
+        $name = trim((string) ($user['display_name'] ?? ''));
+        if ($name !== '' && strcasecmp($name, self::DELETED_DISPLAY_NAME) === 0) {
+            return true;
+        }
+        if (!empty($user['deleted_at'])) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function __construct(
         private UserRepository $users,
         private UserProfileRepository $userProfiles,

@@ -37,6 +37,8 @@ use App\Support\Audit\AuditFieldSnapshot;
 use App\Support\OrganizationRoleLabels;
 use App\Services\Community\TenantTypeConfig;
 use App\Services\Steam\SteamWebApiService;
+use App\Services\Account\AccountDeletionService;
+use App\Repositories\AccountPurgeRequestRepository;
 
 class UserAdminController
 {
@@ -153,7 +155,10 @@ class UserAdminController
         private PersonnelOrgHistoryRecorder $personnelOrgHistoryRecorder,
         private PersonnelStructureChangeNotificationService $structureChangeNotification,
         private SteamWebApiService $steamWebApiService,
-    ) {}
+        private ?AccountPurgeRequestRepository $accountPurgeRequests = null,
+    ) {
+        $this->accountPurgeRequests ??= new AccountPurgeRequestRepository();
+    }
 
     public function index(Request $request, array $params = []): Response
     {
@@ -345,6 +350,10 @@ class UserAdminController
         if ($forPlatformOperator && $headEmail !== '') {
             $siblingMemberships = $this->userRepository->listAllMembershipsByEmail($headEmail);
         }
+        $isAnonymized = AccountDeletionService::isAnonymizedUser($user);
+        $pendingPurgeRequest = $isAnonymized
+            ? $this->accountPurgeRequests->findPendingForTarget($tenantId, $id)
+            : null;
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.show',
@@ -370,6 +379,8 @@ class UserAdminController
             'completenessAccount' => $completenessAccount,
             'completenessPersonnel' => $completenessPersonnel,
             'isServiceAccount' => $isService,
+            'isAnonymizedAccount' => $isAnonymized,
+            'pendingPurgeRequest' => $pendingPurgeRequest,
             'roles' => $roles,
             'showPlatformDiagnostics' => $forPlatformOperator,
             'backOfficePageCss' => ['back-office-users.css'],
@@ -1259,6 +1270,11 @@ class UserAdminController
             Session::flash('error', 'Utilisateur introuvable.');
             return Response::redirect(url('back-office/users'));
         }
+        if (AccountDeletionService::isAnonymizedUser($user)) {
+            Session::flash('error', 'Ce compte est déjà anonymisé (« Compte supprimé »). Demandez plutôt sa suppression définitive.');
+
+            return Response::redirect(url('back-office/users/' . $id));
+        }
         $ownerRoleId = $this->roleRepository->getIdBySlug($tenantId, 'community_owner');
         if ($ownerRoleId !== null && $this->userRepository->userHasTenantRole($id, $ownerRoleId)) {
             $count = $this->userRepository->countUsersWithRole($ownerRoleId);
@@ -1293,6 +1309,82 @@ class UserAdminController
         Session::flash('success', $successMsg);
 
         return Response::redirect(url('back-office/users'));
+    }
+
+    /**
+     * Demande organisateur : purge définitive d’un compte déjà anonymisé (« Compte supprimé »).
+     * Traitée ensuite par un opérateur plateforme.
+     */
+    public function requestPurge(Request $request, array $params = []): Response
+    {
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/users'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $actorUserId = (int) Session::get('user_id');
+        $id = (int) ($params['id'] ?? 0);
+        $back = $id > 0 ? url('back-office/users/' . $id) : url('back-office/users');
+        if (!$tenantId || !$actorUserId || !$id) {
+            return Response::redirect(url('back-office/users'));
+        }
+        $user = $this->userRepository->findById($id, $tenantId);
+        if (!$user) {
+            Session::flash('error', 'Utilisateur introuvable.');
+
+            return Response::redirect(url('back-office/users'));
+        }
+        if ($id === $actorUserId) {
+            Session::flash('error', 'Vous ne pouvez pas demander la suppression définitive de votre propre compte.');
+
+            return Response::redirect($back);
+        }
+        if ($this->userRepository->isServiceAccount($id)) {
+            Session::flash('error', 'Les comptes techniques ne peuvent pas être purgés via cette demande.');
+
+            return Response::redirect($back);
+        }
+        if (!AccountDeletionService::isAnonymizedUser($user)) {
+            Session::flash(
+                'error',
+                'Seuls les comptes déjà anonymisés (« Compte supprimé ») peuvent faire l’objet d’une demande de suppression définitive.'
+            );
+
+            return Response::redirect($back);
+        }
+        if (!$this->accountPurgeRequests->tableExists()) {
+            Session::flash('error', 'La file de demandes n’est pas encore disponible. Relancez les migrations.');
+
+            return Response::redirect($back);
+        }
+        if ($this->accountPurgeRequests->findPendingForTarget($tenantId, $id) !== null) {
+            Session::flash('error', 'Une demande de suppression définitive est déjà en attente pour ce compte.');
+
+            return Response::redirect($back);
+        }
+        $note = trim((string) $request->input('note', ''));
+        if (mb_strlen($note) > 2000) {
+            $note = mb_substr($note, 0, 2000);
+        }
+        $requestId = $this->accountPurgeRequests->create(
+            $tenantId,
+            $id,
+            $actorUserId,
+            $note !== '' ? $note : null
+        );
+        if ($requestId < 1) {
+            Session::flash('error', 'Impossible d’enregistrer la demande.');
+
+            return Response::redirect($back);
+        }
+        $this->adminAuditService->logUserPurgeRequested($tenantId, $actorUserId, $id, $requestId);
+        Session::flash(
+            'success',
+            'Demande de suppression définitive envoyée à la plateforme. Elle sera traitée par un opérateur.'
+        );
+
+        return Response::redirect($back);
     }
 
     public function resendVerificationEmail(Request $request, array $params = []): Response

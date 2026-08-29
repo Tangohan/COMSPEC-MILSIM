@@ -9,6 +9,8 @@ $completenessAccount = $completenessAccount ?? ($completeness ?? ['score' => 0, 
 $completenessPersonnel = $completenessPersonnel ?? null;
 $isServiceAccount = $isServiceAccount ?? false;
 $showPlatformDiagnostics = $showPlatformDiagnostics ?? false;
+$isAnonymizedAccount = (bool) ($isAnonymizedAccount ?? false);
+$pendingPurgeRequest = is_array($pendingPurgeRequest ?? null) ? $pendingPurgeRequest : null;
 
 if (!$user) {
     echo '<p>Utilisateur introuvable.</p>';
@@ -30,17 +32,22 @@ $initials = function_exists('user_display_initials')
     ? user_display_initials($initialsSource, 2)
     : mb_strtoupper(mb_substr($initialsSource, 0, 2, 'UTF-8'), 'UTF-8');
 $ust = (string) ($user['status'] ?? '');
-$statusLabel = match ($ust) {
-    'active' => 'Compte actif',
-    'inactive' => 'Compte inactif',
-    'pending_verification' => 'En attente de vérification de l’e-mail',
-    default => $ust !== '' ? 'Statut à clarifier' : 'Statut inconnu',
-};
-$statusTagClass = match ($ust) {
-    'active' => 'ath-tag--ok',
-    'inactive' => 'ath-tag--neut',
-    default => 'ath-tag--warn',
-};
+if ($isAnonymizedAccount) {
+    $statusLabel = 'Compte supprimé';
+    $statusTagClass = 'ath-tag--neut';
+} else {
+    $statusLabel = match ($ust) {
+        'active' => 'Compte actif',
+        'inactive' => 'Compte inactif',
+        'pending_verification' => 'En attente de vérification de l’e-mail',
+        default => $ust !== '' ? 'Statut à clarifier' : 'Statut inconnu',
+    };
+    $statusTagClass = match ($ust) {
+        'active' => 'ath-tag--ok',
+        'inactive' => 'ath-tag--neut',
+        default => 'ath-tag--warn',
+    };
+}
 
 $displayValue = static function (?string $value, string $emptyLabel = 'Non renseigné') use ($h): string {
     $trimmed = trim((string) $value);
@@ -173,7 +180,35 @@ $flashWarn = \App\Core\Session::getFlash('warning');
     </div>
     <?php endif; ?>
 
-    <?php if (($user['status'] ?? '') !== 'inactive' && !$isServiceAccount): ?>
+    <?php if ($isAnonymizedAccount && !$isServiceAccount): ?>
+    <section class="ath-card ath-member-show__danger-card" aria-labelledby="member-purge-request">
+        <div class="ath-member-show__section-head">
+            <h2 id="member-purge-request">Suppression définitive</h2>
+            <p>Ce membre est déjà anonymisé (« Compte supprimé »). Vous pouvez demander à la plateforme d’effacer définitivement cette fiche de votre communauté.</p>
+        </div>
+        <?php if ($pendingPurgeRequest !== null): ?>
+        <div class="ath-banner-warn ath-member-show__callout" role="status">
+            <p class="ath-banner-warn__kicker">Demande en cours</p>
+            <p class="ath-banner-warn__text">
+                Une demande de suppression définitive a été transmise
+                <?php
+                $reqAt = trim((string) ($pendingPurgeRequest['created_at'] ?? ''));
+                echo $reqAt !== '' ? ' le ' . $h($reqAt) : '';
+                ?>. Un opérateur plateforme la traitera prochainement.
+            </p>
+        </div>
+        <?php else: ?>
+        <form method="post" action="<?= $h(url('back-office/users/' . $uid . '/request-purge')) ?>" class="ath-member-show__danger-form" onsubmit="return confirm('Demander la suppression définitive de cette fiche « Compte supprimé » ?\n\nUn opérateur plateforme devra valider la demande.');">
+            <?= \App\Core\Csrf::field() ?>
+            <label class="ath-member-show__check" style="display:block;margin-bottom:0.75rem;">
+                <span style="display:block;font-weight:600;margin-bottom:0.35rem;">Motif (optionnel)</span>
+                <textarea name="note" rows="3" maxlength="2000" class="ath-input" style="width:100%;" placeholder="Contexte pour l’opérateur plateforme…"></textarea>
+            </label>
+            <button type="submit" class="ath-btn ath-member-show__danger-btn">Demander la suppression définitive</button>
+        </form>
+        <?php endif; ?>
+    </section>
+    <?php elseif (($user['status'] ?? '') !== 'inactive' && !$isServiceAccount): ?>
     <section class="ath-card ath-member-show__danger-card" aria-labelledby="member-deactivate">
         <div class="ath-member-show__section-head">
             <h2 id="member-deactivate">Désactiver l’accès</h2>
