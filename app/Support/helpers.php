@@ -922,13 +922,13 @@ if (!function_exists('back_office_nav_permission_rules')) {
             'admin/system/advanced-fiche-edit' => [
                 'any_permissions' => ['admin.system'],
             ],
+            'admin/system/retours-interface' => [
+                'any_permissions' => ['admin.system'],
+            ],
             'back-office/alerts' => [
                 'any_permissions' => ['admin.organization', 'admin.access'],
             ],
             'back-office/configuration-initiale' => [
-                'any_permissions' => ['admin.organization', 'admin.access'],
-            ],
-            'back-office/retours-interface' => [
                 'any_permissions' => ['admin.organization', 'admin.access'],
             ],
             'back-office/missions' => [

@@ -1920,8 +1920,9 @@ class Container
                 self::get(AuthService::class),
                 self::get(\App\Repositories\PlatformUxFeedbackRepository::class),
             ),
-            \App\Controllers\Admin\Organization\OrganizationUxFeedbackController::class => new \App\Controllers\Admin\Organization\OrganizationUxFeedbackController(
+            \App\Controllers\Admin\System\SystemUxFeedbackController::class => new \App\Controllers\Admin\System\SystemUxFeedbackController(
                 self::get(\App\Repositories\PlatformUxFeedbackRepository::class),
+                self::get(\App\Repositories\TenantRepository::class),
             ),
             \App\Controllers\Api\MePreferencesApiController::class => new \App\Controllers\Api\MePreferencesApiController(
                 self::get(AuthService::class),

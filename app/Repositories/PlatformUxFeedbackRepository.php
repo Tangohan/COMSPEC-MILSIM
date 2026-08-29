@@ -229,4 +229,78 @@ class PlatformUxFeedbackRepository
 
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
+
+    /** @return list<array<string, mixed>> */
+    public function listPageAggregatesPlatform(int $limit = 100): array
+    {
+        if (!$this->hasTable('platform_page_ratings')) {
+            return [];
+        }
+        $limit = max(1, min(200, $limit));
+        $st = $this->pdo->prepare(
+            'SELECT page_key, MAX(page_title) AS page_title, MAX(page_path) AS page_path,
+                    COUNT(*) AS votes, ROUND(AVG(rating), 2) AS avg_rating
+             FROM platform_page_ratings
+             GROUP BY page_key
+             ORDER BY votes DESC, avg_rating DESC
+             LIMIT ' . $limit
+        );
+        $st->execute();
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listRecentSurveysPlatform(?int $tenantId = null, int $limit = 50): array
+    {
+        if (!$this->hasTable('platform_ux_survey_responses')) {
+            return [];
+        }
+        $limit = max(1, min(200, $limit));
+        $where = '';
+        $params = [];
+        if ($tenantId !== null && $tenantId > 0) {
+            $where = 'WHERE s.tenant_id = ?';
+            $params[] = $tenantId;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT s.*, u.display_name AS author_name, t.name AS tenant_name
+             FROM platform_ux_survey_responses s
+             LEFT JOIN users u ON u.id = s.user_id
+             LEFT JOIN tenants t ON t.id = s.tenant_id
+             ' . $where . '
+             ORDER BY COALESCE(s.updated_at, s.created_at) DESC
+             LIMIT ' . $limit
+        );
+        $st->execute($params);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listRecentRatingsPlatform(?int $tenantId = null, int $limit = 50): array
+    {
+        if (!$this->hasTable('platform_page_ratings')) {
+            return [];
+        }
+        $limit = max(1, min(200, $limit));
+        $where = '';
+        $params = [];
+        if ($tenantId !== null && $tenantId > 0) {
+            $where = 'WHERE r.tenant_id = ?';
+            $params[] = $tenantId;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT r.*, u.display_name AS author_name, t.name AS tenant_name
+             FROM platform_page_ratings r
+             LEFT JOIN users u ON u.id = r.user_id
+             LEFT JOIN tenants t ON t.id = r.tenant_id
+             ' . $where . '
+             ORDER BY COALESCE(r.updated_at, r.created_at) DESC
+             LIMIT ' . $limit
+        );
+        $st->execute($params);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }
