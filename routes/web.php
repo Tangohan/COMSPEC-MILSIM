@@ -794,6 +794,8 @@ return function (Router $router) {
     $router->get('/atak/sse/guide', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak/sse/documentation', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak', [AtakController::class, 'index'], $mwAtakWeb);
+    $router->get('/atak/mobile', [\App\Controllers\Web\AtakMobileController::class, 'index'], $mwAtakWeb);
+    $router->get('/atak/mobile/{module}', [\App\Controllers\Web\AtakMobileController::class, 'module'], $mwAtakWeb);
     $router->get('/atak/liaison', [AtakController::class, 'liaison'], $mwAtakMemberOnly);
     $router->get('/atak/setup', [AtakController::class, 'setup'], $mwAtakMemberOnly);
     $router->get('/atak/mod', [AtakController::class, 'modPage'], $mwAtakMemberOnly);
