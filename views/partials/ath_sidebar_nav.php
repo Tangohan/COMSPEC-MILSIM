@@ -174,12 +174,6 @@ $athNavGroups = [
                 'icon' => 'users',
                 'active' => str_contains((string) ($_SERVER['REQUEST_URI'] ?? ''), '/back-office/personnel/corrections'),
             ],
-            [
-                'label' => 'Édition avancée fiche',
-                'href' => url('back-office/personnel/advanced-edit'),
-                'icon' => 'users',
-                'active' => str_contains((string) ($_SERVER['REQUEST_URI'] ?? ''), '/back-office/personnel/advanced-edit'),
-            ],
             $canTraining
                 ? ['label' => 'Formations', 'href' => url($lmsResPath), 'icon' => 'book', 'active' => $navFormationsActive]
                 : null,

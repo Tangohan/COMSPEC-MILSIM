@@ -792,11 +792,8 @@ if (!function_exists('back_office_nav_permission_rules')) {
                     'personnel.grades.manage', 'personnel.assignments.manage', 'personnel.status.manage',
                 ],
             ],
-            'back-office/personnel/advanced-edit' => [
-                'any_permissions' => [
-                    'personnel.profile.update', 'admin.organization', 'admin.access',
-                    'personnel.grades.manage', 'personnel.status.manage',
-                ],
+            'admin/system/advanced-fiche-edit' => [
+                'any_permissions' => ['admin.system'],
             ],
             'back-office/alerts' => [
                 'any_permissions' => ['admin.organization', 'admin.access'],

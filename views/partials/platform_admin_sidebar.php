@@ -47,6 +47,7 @@ $navSiteRoles = $p === 'admin/site-roles' || str_starts_with($p, 'admin/site-rol
 $navSettings = $p === 'admin/settings';
 $navBlocklist = str_starts_with($p, 'admin/system/blocklist');
 $navSanctions = str_starts_with($p, 'admin/system/member-sanctions');
+$navAdvancedFiche = str_starts_with($p, 'admin/system/advanced-fiche-edit');
 $navPlatformUsers = $p === 'admin/users' || str_starts_with($p, 'admin/users/');
 $navBrief = str_starts_with($p, 'admin/system/brief');
 $navCron = str_starts_with($p, 'admin/system/cron');
@@ -81,6 +82,7 @@ $alertsOpen = $navAlerts;
         <?php if ($isPlatformAdmin): ?>
             <?php $paSection('Sécurité & accès'); ?>
             <?php $paLink('admin/users', 'Comptes utilisateurs', $navPlatformUsers); ?>
+            <?php $paLink('admin/system/advanced-fiche-edit', 'Édition avancée de fiche', $navAdvancedFiche); ?>
             <?php $paLink('admin/roles', 'Rôles système', $navRoles); ?>
             <?php $paLink('admin/site-roles', 'Affectations rôles site', $navSiteRoles); ?>
             <?php $paLink('admin/system/blocklist', 'Liste de restriction (site entier)', $navBlocklist); ?>

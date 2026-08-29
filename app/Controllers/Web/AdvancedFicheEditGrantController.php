@@ -13,8 +13,13 @@ use App\Repositories\UserAdvancedEditGrantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 
+/**
+ * Administration plateforme : accorder le mode édition avancée de fiche à n’importe quel compte.
+ */
 final class AdvancedFicheEditGrantController
 {
+    private const PAGE_PATH = 'admin/system/advanced-fiche-edit';
+
     public function __construct(
         private AuthService $authService,
         private UserRepository $userRepository,
@@ -22,63 +27,62 @@ final class AdvancedFicheEditGrantController
     ) {
     }
 
-    /** GET /back-office/personnel/advanced-edit */
+    /** GET /admin/system/advanced-fiche-edit */
     public function index(Request $request, array $params = []): Response
     {
-        $ctx = $this->authContext();
-        if ($ctx === null) {
+        if ($deny = $this->denyUnlessPlatformAdmin()) {
+            return $deny;
+        }
+        $viewer = $this->authService->user();
+        if ($viewer === null) {
             return Response::redirect(url('login'));
         }
-        if (!$this->canManage()) {
-            Session::flash('error', 'Droits insuffisants pour gérer le mode édition avancée.');
-
-            return Response::redirect(url('dashboard'));
-        }
-        [$tenantId] = $ctx;
         $q = trim((string) $request->query('q', ''));
         $searchResults = [];
         if ($q !== '' && mb_strlen($q) >= 2) {
-            $searchResults = $this->userRepository->searchForPortal($tenantId, $q, 25);
+            $searchResults = $this->userRepository->searchAccountsForPlatformOperator($q, 40);
         }
 
         return Response::view('layout.main', [
             'title' => 'Édition avancée de fiche',
-            'content' => 'personnel.advanced_edit_grants',
-            'activeGrants' => $this->grantRepository->listActiveForTenant($tenantId),
-            'recentGrants' => $this->grantRepository->listRecentForTenant($tenantId),
+            'content' => 'admin.system.advanced_fiche_edit',
+            'activeGrants' => $this->grantRepository->listActiveGlobal(),
+            'recentGrants' => $this->grantRepository->listRecentGlobal(),
             'searchQuery' => $q,
             'searchResults' => $searchResults,
             'durationHours' => UserAdvancedEditGrantRepository::durationHours(),
             'csrf' => Csrf::token(),
-            'isBackOfficeShell' => true,
-            'usesAdminSidebarShell' => true,
+            'isPlatformAdminShell' => true,
         ]);
     }
 
-    /** POST /back-office/personnel/advanced-edit/grant */
+    /** POST /admin/system/advanced-fiche-edit/grant */
     public function grant(Request $request, array $params = []): Response
     {
-        $ctx = $this->authContext();
-        if ($ctx === null) {
+        if ($deny = $this->denyUnlessPlatformAdmin()) {
+            return $deny;
+        }
+        $viewer = $this->authService->user();
+        if ($viewer === null) {
             return Response::redirect(url('login'));
         }
-        if (!$this->canManage()) {
-            Session::flash('error', 'Droits insuffisants.');
-
-            return Response::redirect(url('dashboard'));
-        }
-        [$tenantId, $viewer] = $ctx;
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/personnel/advanced-edit'));
+            return Response::redirect(url(self::PAGE_PATH));
         }
         $userId = (int) $request->input('user_id', 0);
-        $target = $this->userRepository->findById($userId, $tenantId);
+        $target = $this->userRepository->findById($userId);
         if (!$target) {
-            Session::flash('error', 'Membre introuvable.');
+            Session::flash('error', 'Compte introuvable.');
 
-            return Response::redirect(url('back-office/personnel/advanced-edit'));
+            return Response::redirect(url(self::PAGE_PATH));
+        }
+        $tenantId = (int) ($target['tenant_id'] ?? 0);
+        if ($tenantId < 1) {
+            Session::flash('error', 'Communauté du compte introuvable.');
+
+            return Response::redirect(url(self::PAGE_PATH));
         }
         $result = $this->grantRepository->grant(
             $tenantId,
@@ -95,58 +99,45 @@ final class AdvancedFicheEditGrantController
             );
         }
 
-        return Response::redirect(url('back-office/personnel/advanced-edit'));
+        return Response::redirect(url(self::PAGE_PATH));
     }
 
-    /** POST /back-office/personnel/advanced-edit/{id}/revoke */
+    /** POST /admin/system/advanced-fiche-edit/{id}/revoke */
     public function revoke(Request $request, array $params = []): Response
     {
-        $ctx = $this->authContext();
-        if ($ctx === null) {
+        if ($deny = $this->denyUnlessPlatformAdmin()) {
+            return $deny;
+        }
+        $viewer = $this->authService->user();
+        if ($viewer === null) {
             return Response::redirect(url('login'));
         }
-        if (!$this->canManage()) {
-            Session::flash('error', 'Droits insuffisants.');
-
-            return Response::redirect(url('dashboard'));
-        }
-        [$tenantId, $viewer] = $ctx;
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/personnel/advanced-edit'));
+            return Response::redirect(url(self::PAGE_PATH));
         }
         $grantId = (int) ($params['id'] ?? 0);
-        $ok = $this->grantRepository->revoke($tenantId, $grantId, (int) $viewer['id']);
+        $ok = $this->grantRepository->revokeById($grantId, (int) $viewer['id']);
         Session::flash($ok ? 'success' : 'error', $ok ? 'Autorisation révoquée.' : 'Impossible de révoquer cette autorisation.');
 
-        return Response::redirect(url('back-office/personnel/advanced-edit'));
+        return Response::redirect(url(self::PAGE_PATH));
     }
 
-    /** @return array{0: int, 1: array<string, mixed>}|null */
-    private function authContext(): ?array
-    {
-        $user = $this->authService->user();
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$user || $tenantId < 1) {
-            return null;
-        }
-
-        return [$tenantId, $user];
-    }
-
-    private function canManage(): bool
+    private function denyUnlessPlatformAdmin(): ?Response
     {
         if ($this->authService->user() === null) {
-            return false;
+            return Response::redirect(url('login'));
         }
         $gate = Gate::getInstance();
-        foreach (['personnel.profile.update', 'admin.organization', 'admin.access', 'personnel.grades.manage', 'personnel.status.manage'] as $slug) {
-            if ($gate->allows($slug)) {
-                return true;
-            }
+        if ($gate->allows('admin.system')) {
+            return null;
+        }
+        Session::flash('error', 'Accès réservé à l’administration plateforme.');
+        if ($gate->allows('admin.organization') || $gate->allows('admin.access')) {
+            return Response::redirect(url('back-office'));
         }
 
-        return false;
+        return Response::redirect(url('dashboard'));
     }
 }
