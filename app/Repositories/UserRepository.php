@@ -2061,6 +2061,7 @@ class UserRepository
                   AND u2.id <> u.id
                   {$siblingAlive}
              ))
+             AND " . $this->hasActiveNonDefaultMembershipPredicate('u')['sql'] . "
              ORDER BY t.name ASC, u.display_name ASC, u.email ASC
              LIMIT {$limit}";
         $stmt = $this->pdo()->prepare($sql);
@@ -2184,6 +2185,10 @@ class UserRepository
                   {$siblingAlive}
             ))";
         }
+        if ($this->shouldHideOrphanedPlatformAccounts($status, $tenantId)) {
+            $orphan = $this->hasActiveNonDefaultMembershipPredicate('u');
+            $parts[] = $orphan['sql'];
+        }
 
         $where = implode(' AND ', $parts);
         $countStmt = $this->pdo()->prepare(
@@ -2275,6 +2280,10 @@ class UserRepository
                   AND u2.id <> u.id
                   {$siblingAlive}
             ))";
+        }
+        if ($this->shouldHideOrphanedPlatformAccounts($status, $tenantId)) {
+            $orphan = $this->hasActiveNonDefaultMembershipPredicate('u');
+            $parts[] = $orphan['sql'];
         }
 
         $where = implode(' AND ', $parts);
@@ -2470,6 +2479,118 @@ class UserRepository
         $stmt = $this->pdo()->prepare("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'");
         $stmt->execute([$tenantId]);
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Prédicat SQL : l’e-mail a au moins une appartenance active à une vraie communauté
+     * (hors tenant système `default`, hors anonymisés).
+     * Utilisé pour masquer les comptes « orphelins » de l’annuaire / recherche plateforme.
+     *
+     * @return array{sql: string, params: list<mixed>}
+     */
+    private function hasActiveNonDefaultMembershipPredicate(string $userAlias = 'u'): array
+    {
+        $a = $userAlias;
+        $hasDeletedAt = $this->hasDeletedAtColumn();
+        $liveDeleted = $hasDeletedAt ? 'AND u_live.deleted_at IS NULL' : '';
+
+        return [
+            'sql' => "EXISTS (
+                SELECT 1 FROM users u_live
+                INNER JOIN tenants t_live ON t_live.id = u_live.tenant_id AND t_live.slug <> 'default'
+                WHERE LOWER(TRIM(u_live.email)) = LOWER(TRIM({$a}.email))
+                  AND TRIM({$a}.email) <> ''
+                  AND LOWER(TRIM({$a}.email)) NOT LIKE '%@deleted.invalid'
+                  AND u_live.status = 'active'
+                  {$liveDeleted}
+            )",
+            'params' => [],
+        ];
+    }
+
+    /**
+     * Masquer les orphelins sauf consultation explicite (inactive / deleted / filtre tenant).
+     */
+    private function shouldHideOrphanedPlatformAccounts(?string $status, ?int $tenantId): bool
+    {
+        if ($tenantId !== null && $tenantId > 0) {
+            return false;
+        }
+        if ($status === null || $status === '' || $status === 'active') {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Toutes les fiches users partageant un e-mail (toutes communautés, y compris inactives / soft-deleted).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listAllMembershipsByEmail(string $email): array
+    {
+        $email = strtolower(trim($email));
+        if ($email === '' || str_ends_with($email, '@deleted.invalid')) {
+            return [];
+        }
+        $hasDeletedAt = $this->hasDeletedAtColumn();
+        $hasAthena = $this->hasAthenaIdentifierColumn();
+        $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
+        $athenaSelect = $hasAthena ? 'u.athena_identifier' : "'' AS athena_identifier";
+        $stmt = $this->pdo()->prepare(
+            "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.steam_id,
+                    u.avatar_url, u.grade_id, u.role_id, u.created_at, u.updated_at, u.profile_slug,
+                    {$deletedSelect}, {$athenaSelect},
+                    t.name AS tenant_name, t.slug AS tenant_slug,
+                    r.name AS role_name
+             FROM users u
+             INNER JOIN tenants t ON t.id = u.tenant_id
+             LEFT JOIN roles r ON r.id = u.role_id
+             WHERE LOWER(TRIM(u.email)) = ?
+             ORDER BY
+                CASE WHEN t.slug = 'default' THEN 1 ELSE 0 END ASC,
+                CASE WHEN u.status = 'active' THEN 0 WHEN u.status = 'pending_verification' THEN 1 ELSE 2 END ASC,
+                t.name ASC,
+                u.id ASC"
+        );
+        $stmt->execute([$email]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($rows as &$row) {
+            if (function_exists('community_display_name')) {
+                $row['tenant_name'] = community_display_name([
+                    'name' => (string) ($row['tenant_name'] ?? ''),
+                    'slug' => (string) ($row['tenant_slug'] ?? ''),
+                ]);
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
+     * Indique si un e-mail a encore une appartenance active à une vraie communauté.
+     */
+    public function emailHasActiveNonDefaultMembership(string $email): bool
+    {
+        $email = strtolower(trim($email));
+        if ($email === '' || str_ends_with($email, '@deleted.invalid')) {
+            return false;
+        }
+        $hasDeletedAt = $this->hasDeletedAtColumn();
+        $liveDeleted = $hasDeletedAt ? 'AND u.deleted_at IS NULL' : '';
+        $stmt = $this->pdo()->prepare(
+            "SELECT 1 FROM users u
+             INNER JOIN tenants t ON t.id = u.tenant_id AND t.slug <> 'default'
+             WHERE LOWER(TRIM(u.email)) = ?
+               AND u.status = 'active'
+               {$liveDeleted}
+             LIMIT 1"
+        );
+        $stmt->execute([$email]);
+
+        return (bool) $stmt->fetchColumn();
     }
 
     /**

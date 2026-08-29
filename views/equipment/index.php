@@ -12,7 +12,12 @@ ksort($byCategory);
 ?>
 <div class="max-w-5xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 mb-2">Équipement</h1>
-    <p class="text-slate-600 mb-8">Classes d'équipement et documentation associée.</p>
+    <p class="text-slate-600 mb-4">Classes d'équipement et documentation associée.</p>
+    <p class="mb-8">
+        <a href="<?= url('equipment/wardrobes') ?>" class="inline-flex items-center text-sm font-semibold text-slate-800 underline hover:text-slate-600">
+            Wardrobes ACE Arsenal (sync cloud)
+        </a>
+    </p>
     <?php if (empty($equipmentClasses)): ?>
     <p class="text-slate-500">Aucune classe d'équipement pour le moment.</p>
     <?php else: ?>

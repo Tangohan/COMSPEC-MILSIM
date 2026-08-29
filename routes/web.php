@@ -9,6 +9,7 @@ use App\Controllers\Web\EnlistmentController;
 use App\Controllers\Web\EnlistmentCandidatePortalController;
 use App\Controllers\Web\DocumentsController;
 use App\Controllers\Web\EquipmentController;
+use App\Controllers\Web\ArsenalWardrobeController;
 use App\Controllers\Web\TrainingController;
 use App\Controllers\Web\TrainingCompetencyController;
 use App\Controllers\Web\AtakController;
@@ -590,6 +591,10 @@ return function (Router $router) {
     $router->get('/documents/{id}/download', [DocumentsController::class, 'download'], $mwDocuments);
     $router->get('/documents/{slug}', [DocumentsController::class, 'show'], $mwDocuments);
     $router->get('/equipment', [EquipmentController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/equipment/wardrobes', [ArsenalWardrobeController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/equipment/wardrobes/collections', [ArsenalWardrobeController::class, 'storeCollection'], [AuthMiddleware::class]);
+    $router->post('/equipment/wardrobes/collections/{id}/delete', [ArsenalWardrobeController::class, 'destroyCollection'], [AuthMiddleware::class]);
+    $router->post('/equipment/wardrobes/{id}/delete', [ArsenalWardrobeController::class, 'destroyWardrobe'], [AuthMiddleware::class]);
     $router->get('/equipment/{slug}', [EquipmentController::class, 'show'], [AuthMiddleware::class]);
     $router->get('/modpacks', [ModpackController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/modpacks/images/{id}', [ModpackController::class, 'image'], [AuthMiddleware::class]);
@@ -910,6 +915,7 @@ return function (Router $router) {
     $router->post('/admin/system/storage/purge', [SystemStorageController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/api/admin/user-search', [SystemUserLookupApiController::class, 'search'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users', [SystemUsersController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/users/person', [SystemUsersController::class, 'showPerson'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/set-status', [SystemUsersController::class, 'setStatus'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/delete', [SystemUsersController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/purge', [SystemUsersController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1183,6 +1189,8 @@ return function (Router $router) {
     $router->post('/back-office/ressources/recrutement/automod/escalate', [RecruitmentWorkspaceController::class, 'automodEscalateToPlatform'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs', [EffectifsWorkspaceController::class, 'roster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/export', [EffectifsWorkspaceController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'duplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'saveDuplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/droits', [EffectifsWorkspaceController::class, 'droits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'fonctions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1910,6 +1918,17 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/reports', [AtakApiController::class, 'tacticalReportsStore']);
     $router->get('/api/atak/reports/catalog', [AtakApiController::class, 'tacticalReportsCatalog']);
     $router->get('/api/atak/reports/routed', [AtakApiController::class, 'tacticalReportsRouted']);
+    // ACE Arsenal — wardrobes cloud + collections d’équipement
+    $router->get('/api/atak/wardrobes', [\App\Controllers\Api\AtakWardrobeApiController::class, 'index']);
+    $router->post('/api/atak/wardrobes/sync', [\App\Controllers\Api\AtakWardrobeApiController::class, 'sync']);
+    $router->get('/api/atak/wardrobes/{id}', [\App\Controllers\Api\AtakWardrobeApiController::class, 'show']);
+    $router->post('/api/atak/wardrobes/{id}/delete', [\App\Controllers\Api\AtakWardrobeApiController::class, 'destroy']);
+    $router->delete('/api/atak/wardrobes/{id}', [\App\Controllers\Api\AtakWardrobeApiController::class, 'destroy']);
+    $router->get('/api/atak/wardrobe-collections', [\App\Controllers\Api\AtakWardrobeApiController::class, 'collections']);
+    $router->post('/api/atak/wardrobe-collections', [\App\Controllers\Api\AtakWardrobeApiController::class, 'collections']);
+    $router->post('/api/atak/wardrobe-collections/{id}/delete', [\App\Controllers\Api\AtakWardrobeApiController::class, 'destroyCollection']);
+    $router->delete('/api/atak/wardrobe-collections/{id}', [\App\Controllers\Api\AtakWardrobeApiController::class, 'destroyCollection']);
+
     $router->get('/api/atak/terminals', [\App\Controllers\Api\AtakRealismApiController::class, 'terminals']);
     $router->post('/api/atak/terminals', [\App\Controllers\Api\AtakRealismApiController::class, 'terminals']);
     $router->post('/api/atak/terminals/compromise', [\App\Controllers\Api\AtakRealismApiController::class, 'compromise']);

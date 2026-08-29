@@ -27,9 +27,29 @@ $roleLabel = trim((string) ($ctx['role_label'] ?? ''));
 $accountUserForShell = is_array($accountUser ?? null)
     ? $accountUser
     : (is_array($user ?? null) ? $user : []);
-$accountAvatarSrc = function_exists('user_media_public_url')
-    ? user_media_public_url($accountUserForShell['avatar_url'] ?? null)
-    : null;
+$accountShellPp = is_array($personnelProfile ?? null) ? $personnelProfile : null;
+$accountShellDisplay = is_array($displaySettings ?? null) ? $displaySettings : null;
+if ($accountShellPp === null && !empty($accountUserForShell['id'])) {
+    try {
+        $accountShellPp = \App\Core\Container::get(\App\Repositories\PersonnelProfileRepository::class)
+            ->getByUserId((int) $accountUserForShell['id']);
+    } catch (\Throwable) {
+        $accountShellPp = null;
+    }
+}
+if ($accountShellDisplay === null && !empty($accountUserForShell['id'])) {
+    try {
+        $accountShellDisplay = \App\Core\Container::get(\App\Repositories\UserProfileDisplaySettingsRepository::class)
+            ->getOrDefaults((int) $accountUserForShell['id']);
+    } catch (\Throwable) {
+        $accountShellDisplay = ['site_photo_priority' => 'operator'];
+    }
+}
+$accountAvatarSrc = function_exists('user_site_avatar_url')
+    ? user_site_avatar_url($accountUserForShell, $accountShellPp, $accountShellDisplay)
+    : (function_exists('user_media_public_url')
+        ? user_media_public_url($accountUserForShell['avatar_url'] ?? null)
+        : null);
 $accountInitials = $displayName !== '' && function_exists('user_display_initials')
     ? user_display_initials($displayName)
     : ($displayName !== ''

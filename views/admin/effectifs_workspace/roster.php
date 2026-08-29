@@ -113,8 +113,35 @@ $exportQuery = array_filter([
     'sans_role' => !empty($filters['sans_role']) ? '1' : null,
 ], static fn ($v) => $v !== null && $v !== '' && $v !== 0);
 $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_build_query($exportQuery) : '');
+$dupScan = is_array($personnelDuplicateScan ?? null) ? $personnelDuplicateScan : [];
+$dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
 ?>
 <div class="eff-catalog">
+    <?php if (!empty($dupScan['enabled']) && $dupGroups !== []): ?>
+    <div class="mb-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <p class="font-bold">Doublons de fiches détectés</p>
+                <p class="mt-1">
+                    <?= (int) ($dupScan['group_count'] ?? 0) ?> groupe(s) ·
+                    <?= (int) ($dupScan['member_count'] ?? 0) ?> membre(s) partagent le même
+                    <?php
+                    $fieldBits = [];
+                    foreach (array_slice($dupGroups, 0, 3) as $g) {
+                        $fieldBits[] = (string) ($g['field_label'] ?? '');
+                    }
+                    echo htmlspecialchars(implode(', ', array_unique(array_filter($fieldBits))), ENT_QUOTES, 'UTF-8');
+                    ?>.
+                    Vérifiez qu’il ne s’agit pas d’une contamination d’identité entre dossiers.
+                </p>
+            </div>
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('doublons'), ENT_QUOTES, 'UTF-8') ?>"
+               class="inline-flex rounded-xl border border-amber-400 bg-white px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-amber-900 hover:bg-amber-100">
+                Voir / régler
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
     <div class="eff-catalog__head">
         <div class="min-w-0">
             <p class="eff-catalog__kicker">Ressources humaines</p>

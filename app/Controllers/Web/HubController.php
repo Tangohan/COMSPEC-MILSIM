@@ -174,6 +174,13 @@ class HubController
                 'icon' => 'equipment',
                 'accent' => 'stone',
             ],
+            [
+                'label' => 'Wardrobes ACE Arsenal',
+                'url' => url('equipment/wardrobes'),
+                'description' => 'Loadouts synchronisés en ligne et collections d’équipement.',
+                'icon' => 'equipment',
+                'accent' => 'amber',
+            ],
         ];
         if ($gate->allows('intel.transmission.view')) {
             $terrainEntries[] = [
