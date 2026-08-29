@@ -558,7 +558,6 @@ if ($missingMediaUsers !== []):
 </section>
 <?php
 endif;
-?>
 
 // ---- Alertes locales ----
 $athTableTitle = 'Alertes locales actives';

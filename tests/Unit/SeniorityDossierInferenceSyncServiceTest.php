@@ -203,6 +203,11 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
             self::assertContains($code, $pack);
         }
         self::assertContains('tenure_community', $pack);
+        self::assertContains('tenure_pre_platform', $pack);
+        self::assertContains('tenure_org_pre_platform', $pack);
+        self::assertTrue(SeniorityTenantDefaultsService::isPrePlatformManualCode('tenure_pre_platform'));
+        self::assertTrue(SeniorityTenantDefaultsService::isPrePlatformManualCode('tenure_org_pre_platform'));
+        self::assertFalse(SeniorityTenantDefaultsService::isPrePlatformManualCode('tenure_community'));
     }
 
     public function testSeedMissingPackPeriodsInsertsOnlyWhenEmpty(): void
@@ -219,7 +224,10 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
                 return $calls === 1 ? [['id' => 1]] : [];
             }
         );
-        $expectedInserts = count(SeniorityTenantDefaultsService::listStandardPackCodes()) - 1;
+        $expectedInserts = count(array_filter(
+            SeniorityTenantDefaultsService::listStandardPackCodes(),
+            static fn (string $code): bool => !SeniorityTenantDefaultsService::isPrePlatformManualCode($code)
+        )) - 1;
         $seniority->expects(self::exactly($expectedInserts))->method('insertPeriod')->willReturn(99);
 
         $profiles = $this->createMock(\App\Repositories\PersonnelProfileRepository::class);
