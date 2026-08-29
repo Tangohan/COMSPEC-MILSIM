@@ -107,6 +107,14 @@ class CfgFunctions {
             class moduleTheaterSurvey {};
             class registerZenTheaterSurvey {};
             class forceSyncData {};
+            class arsenalLocalLoadouts {};
+            class arsenalNormalizeLoadout {};
+            class arsenalPushAll {};
+            class arsenalPullAll {};
+            class arsenalApplyCloud {};
+            class arsenalOverlayShow {};
+            class arsenalOverlayRefresh {};
+            class arsenalInitOverlay {};
             class sendIntel {};
             class initACE {};
             class initExplosiveTimers {};

@@ -3333,6 +3333,16 @@ try {
 }
 $migrationEnsurePdo();
 
+$arsenalWardrobeMigrate = require $root . '/bootstrap/arsenal_wardrobe_migration.php';
+try {
+    echo "Migration arsenal_wardrobe (wardrobes ACE Arsenal + collections d’équipement)...\n";
+    $migrationFlush();
+    $arsenalWardrobeMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] arsenal_wardrobe : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $aarReportsMigrate = require $root . '/bootstrap/aar_reports_migration.php';
 try {
     echo "Migration aar_reports (comptes rendus post-op structurés)...\n";

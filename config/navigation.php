@@ -97,6 +97,7 @@ return [
                     'slot' => 'secondary',
                     'links' => [
                         ['label' => 'Équipement', 'path' => 'equipment', 'description' => 'Manuels et fiches matériel'],
+                        ['label' => 'Wardrobes ACE Arsenal', 'path' => 'equipment/wardrobes', 'description' => 'Loadouts synchronisés et collections'],
                         ['label' => 'Modpacks', 'path' => 'modpacks', 'description' => 'Mods et paquets de la communauté'],
                         ['label' => 'Salle de guerre', 'path' => 'salle-de-guerre', 'description' => 'Espace de briefing collectif'],
                     ],
