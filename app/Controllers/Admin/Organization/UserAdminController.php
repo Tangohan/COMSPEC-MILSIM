@@ -331,6 +331,21 @@ class UserAdminController
         $headName = $displayName !== '' ? $displayName : 'Fiche membre';
         $headEmail = trim((string) ($user['email'] ?? ''));
 
+        $gradeId = (int) ($user['grade_id'] ?? 0);
+        $memberGrade = $gradeId > 0 ? $this->gradeRepository->findById($gradeId, $tenantId) : null;
+        $primaryAssignment = null;
+        try {
+            /** @var \App\Repositories\PersonnelAssignmentRepository $assignRepo */
+            $assignRepo = \App\Core\Container::get(\App\Repositories\PersonnelAssignmentRepository::class);
+            $primaryAssignment = $assignRepo->getPrimaryAssignment($id);
+        } catch (\Throwable) {
+            $primaryAssignment = null;
+        }
+        $siblingMemberships = [];
+        if ($forPlatformOperator && $headEmail !== '') {
+            $siblingMemberships = $this->userRepository->listAllMembershipsByEmail($headEmail);
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.show',
             'title' => $headName,
@@ -347,6 +362,10 @@ class UserAdminController
             'userRoleIds' => $userRoleIds,
             'userProfile' => $userProfile,
             'personnelProfile' => $personnelProfile,
+            'personnelExtras' => is_array($extras) ? $extras : [],
+            'memberGrade' => is_array($memberGrade) ? $memberGrade : null,
+            'primaryAssignment' => is_array($primaryAssignment) ? $primaryAssignment : null,
+            'siblingMemberships' => $siblingMemberships,
             'completeness' => $completenessAccount,
             'completenessAccount' => $completenessAccount,
             'completenessPersonnel' => $completenessPersonnel,
