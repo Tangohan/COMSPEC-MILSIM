@@ -79,7 +79,15 @@ final class VideoSourceProbe
         if ($brand === 'qt') {
             $mime = 'video/quicktime';
         }
-        $mime .= '; codecs="' . $codec . '"';
+
+        // Ne pas coller un fourcc nu (`codecs="avc1"`) dans l’attribut type :
+        // canPlayType() de Chrome/Firefox/Safari renvoie alors "" et le <source>
+        // est ignoré (hero figé sur les photos). Pour une source jouable, le
+        // MIME de conteneur suffit — le rejet HEVC a déjà eu lieu ci-dessus.
+        // Pour une source indécodable, on garde le codec pour le diagnostic.
+        if (!$playable) {
+            $mime .= '; codecs="' . $codec . '"';
+        }
 
         return ['mime' => $mime, 'codec' => $codec, 'brand' => $brand, 'playable' => $playable];
     }

@@ -46,8 +46,8 @@ final class VideoSourceProbeTest extends TestCase
 
         self::assertTrue($result['playable']);
         self::assertSame('avc1', $result['codec']);
-        self::assertStringContainsString('video/mp4', $result['mime']);
-        self::assertStringContainsString('codecs="avc1"', $result['mime']);
+        self::assertSame('video/mp4', $result['mime']);
+        self::assertStringNotContainsString('codecs=', $result['mime']);
     }
 
     public function testWebmIsTrustedWithoutDeepProbe(): void
