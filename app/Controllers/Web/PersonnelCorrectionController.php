@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Web;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -12,7 +13,6 @@ use App\Repositories\PersonnelCorrectionRequestRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Personnel\PersonnelCorrectionRequestService;
-use App\Services\Rbac\RbacService;
 
 final class PersonnelCorrectionController
 {
@@ -21,7 +21,6 @@ final class PersonnelCorrectionController
         private UserRepository $userRepository,
         private PersonnelCorrectionRequestService $correctionService,
         private PersonnelCorrectionRequestRepository $correctionRepository,
-        private RbacService $rbacService,
     ) {
     }
 
@@ -181,13 +180,12 @@ final class PersonnelCorrectionController
 
     private function canStaffManage(): bool
     {
-        $user = $this->authService->user();
-        if (!$user) {
+        if ($this->authService->user() === null) {
             return false;
         }
-        $uid = (int) $user['id'];
+        $gate = Gate::getInstance();
         foreach (['personnel.profile.update', 'admin.organization', 'admin.access', 'personnel.grades.manage', 'personnel.assignments.manage', 'personnel.status.manage'] as $slug) {
-            if ($this->rbacService->userHasPermission($uid, $slug)) {
+            if ($gate->allows($slug)) {
                 return true;
             }
         }
