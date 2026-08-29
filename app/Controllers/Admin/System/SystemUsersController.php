@@ -52,7 +52,7 @@ final class SystemUsersController
             $status = '';
         }
 
-        $result = $this->users->listAccountsForPlatformDirectory(
+        $result = $this->users->listGroupedAccountsForPlatformDirectory(
             $q !== '' ? $q : null,
             $status !== '' ? $status : null,
             $tenantFilter > 0 ? $tenantFilter : null,
@@ -65,7 +65,8 @@ final class SystemUsersController
         return Response::view('layout.main', [
             'title' => 'Comptes utilisateurs',
             'content' => 'admin.system.users',
-            'platformUsers' => $result['rows'] ?? [],
+            'platformUserGroups' => $result['groups'] ?? [],
+            'platformUsers' => [], // rétrocompat partielle si une vue externe lit encore la clé
             'platformUsersTotal' => $total,
             'platformUsersPage' => $page,
             'platformUsersPages' => $pages,
@@ -139,9 +140,10 @@ final class SystemUsersController
     }
 
     /**
-     * Suppression douce (anonymisation) : la ligne reste (FK CASCADE sur tout l'historique
-     * lié — forum, formations, dossiers personnel, documents…), mais le compte devient
-     * inutilisable et ses données personnelles sont scrubées. Jamais de vraie suppression SQL.
+     * Suppression douce (anonymisation).
+     *
+     * scope=org  → uniquement la fiche de cette communauté
+     * scope=site → toutes les fiches partageant le même e-mail (site entier)
      */
     public function delete(Request $request, array $params = []): Response
     {
@@ -154,6 +156,10 @@ final class SystemUsersController
         $actorId = (int) Session::get('user_id');
         $userId = (int) $request->input('user_id');
         $tenantId = (int) $request->input('tenant_id');
+        $scope = strtolower(trim((string) $request->input('scope', 'site')));
+        if (!in_array($scope, ['org', 'site'], true)) {
+            $scope = 'site';
+        }
         if ($userId < 1 || $tenantId < 1) {
             Session::flash('error', 'Demande invalide.');
 
@@ -172,7 +178,9 @@ final class SystemUsersController
             return Response::redirect($this->backUrl($request));
         }
 
-        $result = $this->deletionService()->softDeleteAccount($userId, $tenantId, $actorId);
+        $result = $scope === 'org'
+            ? $this->deletionService()->softDeleteMembership($userId, $tenantId, $actorId)
+            : $this->deletionService()->softDeleteAccount($userId, $tenantId, $actorId);
         if (!$result['ok']) {
             Session::flash('error', 'Impossible de supprimer ce compte.');
 
@@ -186,18 +194,29 @@ final class SystemUsersController
             'user',
             $userId,
             ['status' => (string) ($target['status'] ?? ''), 'email' => (string) ($target['email'] ?? '')],
-            ['status' => 'deleted', 'platform_directory' => true, 'anonymized_user_ids' => $result['anonymized_user_ids']],
+            [
+                'status' => 'deleted',
+                'platform_directory' => true,
+                'scope' => $scope,
+                'anonymized_user_ids' => $result['anonymized_user_ids'],
+            ],
         );
 
-        Session::flash('success', 'Le compte a été supprimé. Ses données personnelles ont été anonymisées. L’adresse e-mail peut être réutilisée pour une nouvelle inscription.');
+        Session::flash(
+            'success',
+            $scope === 'org'
+                ? 'Appartenance retirée de cette communauté (anonymisation). Les autres communautés de la personne sont intactes.'
+                : 'Compte anonymisé sur tout le site. Ses données personnelles ont été effacées. L’adresse e-mail peut être réutilisée.'
+        );
 
         return Response::redirect($this->backUrl($request));
     }
 
     /**
-     * Suppression définitive : la ligne `users` et tout ce qui décrit la personne quittent
-     * la base. Aucune reprise possible — d’où la confirmation par saisie de l’adresse, et
-     * la journalisation *avant* exécution : après, il ne reste plus rien à relier.
+     * Suppression définitive.
+     *
+     * scope=org  → purge uniquement cette fiche users (une communauté)
+     * scope=site → purge toutes les fiches du même e-mail
      */
     public function purge(Request $request, array $params = []): Response
     {
@@ -210,6 +229,10 @@ final class SystemUsersController
         $actorId = (int) Session::get('user_id');
         $userId = (int) $request->input('user_id');
         $tenantId = (int) $request->input('tenant_id');
+        $scope = strtolower(trim((string) $request->input('scope', 'site')));
+        if (!in_array($scope, ['org', 'site'], true)) {
+            $scope = 'site';
+        }
         if ($userId < 1 || $tenantId < 1) {
             Session::flash('error', 'Demande invalide.');
 
@@ -236,14 +259,14 @@ final class SystemUsersController
             return Response::redirect($this->backUrl($request));
         }
 
-        // Les comptes partageant l’adresse partent ensemble, comme pour l’anonymisation :
-        // n’en purger qu’un laisserait des doublons impossibles à retrouver ensuite.
-        $siblingIds = !str_ends_with($email, '@deleted.invalid')
-            ? $this->users->listIdsByEmailNormalized($email)
-            : [$userId];
+        $siblingIds = [$userId];
+        if ($scope === 'site' && $email !== '' && !str_ends_with($email, '@deleted.invalid')) {
+            $siblingIds = $this->users->listIdsByEmailNormalized($email);
+            if ($siblingIds === []) {
+                $siblingIds = [$userId];
+            }
+        }
 
-        // Journaliser avant : la purge peut effacer des lignes du journal elles-mêmes
-        // rattachées au compte, et l’entrée doit survivre à l’opération.
         $this->audit->logChange(
             AuditAction::USER_PURGED,
             $actorTenantId > 0 ? $actorTenantId : $tenantId,
@@ -255,10 +278,15 @@ final class SystemUsersController
                 'email' => $email,
                 'display_name' => (string) ($target['display_name'] ?? ''),
             ],
-            ['status' => 'purged', 'platform_directory' => true, 'target_user_ids' => array_map('intval', $siblingIds)],
+            [
+                'status' => 'purged',
+                'platform_directory' => true,
+                'scope' => $scope,
+                'target_user_ids' => array_map('intval', $siblingIds),
+            ],
         );
 
-        $report = $this->purgeService()->purge($userId, $siblingIds);
+        $report = $this->purgeService()->purge($userId, $scope === 'org' ? [] : $siblingIds);
         if (!$report['ok'] && $report['purged_user_ids'] === []) {
             Session::flash(
                 'error',
@@ -268,8 +296,9 @@ final class SystemUsersController
             return Response::redirect($this->backUrl($request));
         }
 
-        $message = 'Compte supprimé définitivement — '
-            . count($report['purged_user_ids']) . ' compte' . (count($report['purged_user_ids']) > 1 ? 's' : '')
+        $scopeLabel = $scope === 'org' ? 'dans cette communauté' : 'sur tout le site';
+        $message = 'Compte supprimé définitivement ' . $scopeLabel . ' — '
+            . count($report['purged_user_ids']) . ' fiche' . (count($report['purged_user_ids']) > 1 ? 's' : '')
             . ', ' . $report['rows_deleted'] . ' ligne' . ($report['rows_deleted'] > 1 ? 's' : '') . ' effacée'
             . ($report['rows_deleted'] > 1 ? 's' : '')
             . ', ' . $report['rows_detached'] . ' référence' . ($report['rows_detached'] > 1 ? 's' : '')
