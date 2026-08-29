@@ -834,6 +834,13 @@ class Container
                 self::get(\App\Repositories\PersonnelCorrectionRequestRepository::class),
                 self::get(RbacService::class),
             ),
+            \App\Repositories\UserAdvancedEditGrantRepository::class => new \App\Repositories\UserAdvancedEditGrantRepository(),
+            \App\Controllers\Web\AdvancedFicheEditGrantController::class => new \App\Controllers\Web\AdvancedFicheEditGrantController(
+                self::get(AuthService::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UserAdvancedEditGrantRepository::class),
+                self::get(RbacService::class),
+            ),
             \App\Repositories\BadgeRepository::class => new \App\Repositories\BadgeRepository(),
             \App\Repositories\PersonnelStageBilanRepository::class => new \App\Repositories\PersonnelStageBilanRepository(),
             \App\Controllers\Admin\Organization\RoleplayFollowupAdminController::class => new \App\Controllers\Admin\Organization\RoleplayFollowupAdminController(
