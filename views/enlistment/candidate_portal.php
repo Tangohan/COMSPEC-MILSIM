@@ -48,18 +48,7 @@ $callsign = trim((string) ($enlistment['callsign'] ?? ''));
 $fullName = trim($first . ' ' . $last);
 $displayName = $fullName !== '' ? $fullName : ($callsign !== '' ? $callsign : 'Candidat');
 $emailRaw = trim((string) ($enlistment['email'] ?? ''));
-$maskEmail = static function (string $e): string {
-    if ($e === '' || !str_contains($e, '@')) {
-        return '—';
-    }
-    [$u, $d] = explode('@', $e, 2);
-    $u = (string) $u;
-    $d = (string) $d;
-    $head = $u !== '' ? mb_substr($u, 0, 1) : '?';
-
-    return $head . '•••@' . $d;
-};
-$maskedEmail = $maskEmail($emailRaw);
+$maskedEmail = mask_email_for_display($emailRaw);
 $createdAt = trim((string) ($enlistment['created_at'] ?? ''));
 $createdFmt = $createdAt !== '' ? date('d/m/Y à H:i', strtotime($createdAt) ?: time()) : '—';
 $updatedAt = trim((string) ($enlistment['updated_at'] ?? ''));

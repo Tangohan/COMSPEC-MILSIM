@@ -495,10 +495,17 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                         <?php if ($canUseAccount): ?>
                             <div id="enlist-account-panel" class="ce-panel">
                                 <p class="ce-panel__title">Envoi avec le compte connecté</p>
+                                <?php
+                                $accountEmailForMask = trim((string) ($prefill['email'] ?? ''));
+                                $accountEmailMaskedPreview = $accountEmailForMask !== ''
+                                    ? mask_email_for_display($accountEmailForMask)
+                                    : 'je***@exemple.fr';
+                                ?>
+                                <p class="ce-help">Votre e-mail de connexion est toujours transmis au staff recrutement. Vous pouvez seulement demander un affichage masqué.</p>
                                 <div class="ce-check-list">
                                     <label class="ce-check">
-                                        <input type="checkbox" name="share_email" value="1" checked>
-                                        <span>Partager mon <strong>e-mail</strong> de connexion</span>
+                                        <input type="checkbox" name="mask_email" value="1" id="enlist-mask-email">
+                                        <span>Masquer mon <strong>e-mail</strong> à l’affichage (<span class="font-mono"><?= htmlspecialchars($accountEmailMaskedPreview, ENT_QUOTES, 'UTF-8') ?></span>)</span>
                                     </label>
                                     <label class="ce-check">
                                         <input type="checkbox" name="share_name" value="1" checked>

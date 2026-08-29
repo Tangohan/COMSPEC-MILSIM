@@ -190,8 +190,12 @@ if ($sharedFields !== []) {
     if (!empty($sharedFields['share_name'])) {
         $transmissionLines[] = 'Nom issu du profil portail';
     }
-    if (!empty($sharedFields['share_email'])) {
-        $transmissionLines[] = 'Adresse e-mail de connexion';
+    if (!empty($sharedFields['share_email']) || array_key_exists('mask_email', $sharedFields)) {
+        if (!empty($sharedFields['mask_email'])) {
+            $transmissionLines[] = 'Adresse e-mail de connexion (affichage masqué demandé)';
+        } else {
+            $transmissionLines[] = 'Adresse e-mail de connexion';
+        }
     }
     if (!empty($sharedFields['share_callsign'])) {
         $transmissionLines[] = 'Indicatif enregistré sur le profil';
@@ -1054,7 +1058,16 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                         </div>
                         <div class="dossier-identity__field rounded-xl border border-slate-200 bg-slate-50/90 p-4">
                             <p class="dossier-identity__label text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Courriel</p>
-                            <p class="mt-2 break-all text-sm font-semibold leading-snug text-slate-800"><?= htmlspecialchars((string) ($e['email'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php
+                            $dossierEmailRaw = trim((string) ($e['email'] ?? ''));
+                            $dossierEmailMaskedPref = !empty($sharedFields['mask_email']);
+                            ?>
+                            <?php if ($dossierEmailMaskedPref && $dossierEmailRaw !== ''): ?>
+                                <p class="mt-2 break-all text-sm font-semibold leading-snug text-slate-800 font-mono"><?= htmlspecialchars(mask_email_for_display($dossierEmailRaw), ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="mt-1 text-[11px] leading-relaxed text-slate-500">Affichage masqué demandé — contact staff : <span class="break-all font-medium text-slate-700"><?= htmlspecialchars($dossierEmailRaw, ENT_QUOTES, 'UTF-8') ?></span></p>
+                            <?php else: ?>
+                                <p class="mt-2 break-all text-sm font-semibold leading-snug text-slate-800"><?= htmlspecialchars($dossierEmailRaw !== '' ? $dossierEmailRaw : '—', ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php endif; ?>
                         </div>
                         <div class="dossier-identity__field rounded-xl border border-slate-200 bg-slate-50/90 p-4">
                             <p class="dossier-identity__label text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Indicatif</p>

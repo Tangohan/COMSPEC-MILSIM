@@ -143,9 +143,16 @@ document.addEventListener('alpine:init', function () {
             <?php if ($canUseAccount): ?>
                 <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
                     <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Partage avec le staff recrutement</p>
+                    <?php
+                    $simpleAccountEmail = trim((string) ($prefill['email'] ?? $platformEmail ?? ''));
+                    $simpleEmailMasked = $simpleAccountEmail !== ''
+                        ? mask_email_for_display($simpleAccountEmail)
+                        : 'je***@exemple.fr';
+                    ?>
+                    <p class="text-xs text-slate-500 mb-3">Votre e-mail de connexion est toujours transmis au staff. Cochez seulement pour un affichage masqué.</p>
                     <label class="flex items-center gap-2 mb-2">
-                        <input type="checkbox" name="share_email" value="1" checked class="rounded border-slate-300" x-bind:disabled="flow !== 'account'" required>
-                        <span>Partager mon <strong>email</strong> de connexion (recommandé)</span>
+                        <input type="checkbox" name="mask_email" value="1" class="rounded border-slate-300" x-bind:disabled="flow !== 'account'">
+                        <span>Masquer mon <strong>email</strong> à l’affichage (<span class="font-mono text-xs"><?= htmlspecialchars($simpleEmailMasked, ENT_QUOTES, 'UTF-8') ?></span>)</span>
                     </label>
                     <label class="flex items-center gap-2 mb-2">
                         <input type="checkbox" name="share_name" value="1" checked class="rounded border-slate-300" x-bind:disabled="flow !== 'account'">
