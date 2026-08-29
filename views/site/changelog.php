@@ -39,8 +39,8 @@ $featuredDispatch = is_array($featuredDispatch ?? null) ? $featuredDispatch : nu
             <h1><?= $h(__('site.changelog_title')) ?></h1>
             <p class="cl-hero__lead"><?= $h(__('site.changelog_lead')) ?></p>
             <div class="cl-hero__actions">
-                <a href="#journal" class="hi-cta hi-cta-solid"><?= $h(__('site.cl_cta_latest')) ?></a>
-                <a href="<?= $h($discoverHref) ?>" class="hi-cta hi-cta-ghost"><?= $h(__('site.cl_cta_discover')) ?></a>
+                <a href="#journal" class="cl-cta cl-cta--primary"><?= $h(__('site.cl_cta_latest')) ?></a>
+                <a href="<?= $h($discoverHref) ?>" class="cl-cta cl-cta--ghost"><?= $h(__('site.cl_cta_discover')) ?></a>
             </div>
             <dl class="cl-status">
                 <div>

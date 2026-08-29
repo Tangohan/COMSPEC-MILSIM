@@ -1,4 +1,4 @@
-/* Journal produit Athena — Nouveautés */
+/* Journal produit Athena — Nouveautés (aligné palette dashboard membre) */
 .cl {
   --cl-void: #050505;
   --cl-ink: #f4f4f0;
@@ -7,6 +7,10 @@
   --cl-line: rgba(255, 255, 255, 0.08);
   --cl-surface: #0b0f12;
   --cl-surface-2: #10151a;
+  /* Primaire dashboard (#059669) + mint secondaire (#34d399) */
+  --cl-primary: #059669;
+  --cl-primary-strong: #065f46;
+  --cl-primary-soft: rgba(5, 150, 105, 0.16);
   --cl-accent: #34d399;
   --cl-accent-dim: rgba(52, 211, 153, 0.14);
   --cl-blue: #7dd3fc;
@@ -18,7 +22,7 @@
 .cl a:focus-visible,
 .cl button:focus-visible,
 .cl input:focus-visible {
-  outline: 2px solid rgba(52, 211, 153, 0.55);
+  outline: 2px solid rgba(5, 150, 105, 0.55);
   outline-offset: 2px;
 }
 
@@ -30,15 +34,16 @@
   .cl-wrap { width: min(72rem, calc(100% - 4rem)); }
 }
 
-/* Hero */
+/* Hero — wash émeraude comme .dash-hero */
 .cl-hero {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   padding: 4.5rem 0 3.25rem;
   background:
-    radial-gradient(ellipse 80% 55% at 50% -10%, rgba(52, 211, 153, 0.12), transparent 55%),
-    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(14, 116, 144, 0.08), transparent 50%),
+    linear-gradient(115deg, rgba(5, 150, 105, 0.22) 0%, transparent 42%),
+    radial-gradient(ellipse 80% 55% at 50% -10%, rgba(52, 211, 153, 0.14), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(5, 150, 105, 0.1), transparent 50%),
     linear-gradient(180deg, #07090b 0%, #050505 100%);
 }
 .cl-hero__grid {
@@ -52,6 +57,7 @@
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 20%, transparent 75%);
   animation: cl-grid-drift 48s linear infinite;
+  opacity: 0.55;
 }
 .cl-hero__halo {
   pointer-events: none;
@@ -61,7 +67,7 @@
   left: 50%;
   top: -8rem;
   transform: translateX(-50%);
-  background: radial-gradient(circle, rgba(52, 211, 153, 0.16), transparent 62%);
+  background: radial-gradient(circle, rgba(5, 150, 105, 0.22), transparent 62%);
   filter: blur(8px);
   z-index: 0;
 }
@@ -72,7 +78,7 @@
   font-weight: 700;
   letter-spacing: 0.34em;
   text-transform: uppercase;
-  color: var(--cl-accent);
+  color: var(--cl-primary);
 }
 .cl-hero h1 {
   margin: 1.1rem 0 0;
@@ -1068,3 +1074,72 @@
 }
 .tr-featured.is-hidden,
 .tr-card.is-hidden { display: none !important; }
+
+/* CTAs hero — style bouton dashboard (.cc-btn-primary) */
+.cl-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.85rem 1.75rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 0.35rem;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.cl-cta--primary {
+  background: var(--cl-primary);
+  color: #fff;
+  border: 1px solid var(--cl-primary-strong);
+}
+.cl-cta--primary:hover {
+  background: var(--cl-primary-strong);
+  color: #fff;
+}
+.cl-cta--ghost {
+  border: 1px solid rgba(244, 244, 240, 0.28);
+  color: var(--cl-ink);
+  background: transparent;
+}
+.cl-cta--ghost:hover {
+  border-color: rgba(5, 150, 105, 0.55);
+  background: var(--cl-primary-soft);
+  color: #fff;
+}
+
+/* Header marketing sur Nouveautés — accents dashboard */
+body.site-marketing--changelog .site-marketing__topbar {
+  background: rgba(5, 5, 5, 0.92);
+  border-bottom-color: rgba(5, 150, 105, 0.28);
+}
+body.site-marketing--changelog .site-marketing__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+body.site-marketing--changelog .site-marketing__brand-mark {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--cl-primary, #059669);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.22);
+}
+body.site-marketing--changelog .site-marketing__ops {
+  color: #34d399;
+}
+body.site-marketing--changelog .site-marketing__ops:hover {
+  color: #6ee7b7;
+}
+body.site-marketing--changelog .cl-chip.is-active {
+  background: var(--cl-primary);
+  border-color: var(--cl-primary-strong);
+  color: #fff;
+}
+body.site-marketing--changelog .cl-nav__links a:hover,
+body.site-marketing--changelog .cl-nav__links a:focus-visible {
+  color: var(--cl-accent);
+}
