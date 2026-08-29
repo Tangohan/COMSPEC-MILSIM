@@ -5,12 +5,21 @@
   z-index: 2;
   background: #070a0e;
   overflow: hidden;
+  isolation: isolate;
+  contain: layout paint;
+  transform: translateZ(0);
+  pointer-events: none;
 }
 .terrain3d-host[hidden] {
   display: none !important;
 }
 .terrain3d-host.is-active {
   pointer-events: auto;
+}
+.terrain3d-host.is-booting {
+  /* Pendant le boot : Leaflet reste visible en dessous (pas encore hidden). */
+  background: rgba(7, 10, 14, 0.35);
+  pointer-events: none;
 }
 .terrain3d-host .terrain3d-canvas {
   display: block;
@@ -63,6 +72,18 @@
 }
 .atak-map-stage--premium-3d .atak-map-3d-nav {
   z-index: 6;
+  pointer-events: auto;
+}
+/* HUD / légende restent au-dessus de l’hôte 3D */
+.atak-map-stage--premium-3d .atak-map-br-stack,
+.atak-map-stage--premium-3d .atak-trail-legend,
+.atak-map-stage--premium-3d .atak-map-hud {
+  z-index: 5;
+  pointer-events: none;
+}
+.atak-map-stage--premium-3d .atak-map-hud a,
+.atak-map-stage--premium-3d .atak-map-hud button {
+  pointer-events: auto;
 }
 .atak-geo-live-prefs {
   display: grid;

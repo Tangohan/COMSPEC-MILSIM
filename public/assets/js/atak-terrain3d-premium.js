@@ -273,19 +273,53 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
 
   function setMapHidden(hidden) {
     if (!mapEl) mapEl = document.getElementById('atak-map');
+    if (!stage) stage = document.querySelector('.atak-map-stage');
+    if (!host) host = document.getElementById('terrain3d-container');
+
+    if (hidden) {
+      /* Afficher d’abord l’hôte 3D, puis masquer Leaflet — évite le flash gris vide. */
+      if (host) {
+        host.hidden = false;
+        host.classList.add('is-active', 'is-booting');
+      }
+      if (stage) {
+        stage.classList.add('atak-map-stage--premium-3d', 'atak-map-stage--3d');
+      }
+      window.requestAnimationFrame(function () {
+        if (!state.enabled) return;
+        if (mapEl) {
+          mapEl.classList.add('atak-map-2d-fallback');
+          mapEl.hidden = true;
+          mapEl.setAttribute('aria-hidden', 'true');
+        }
+        if (host) host.classList.remove('is-booting');
+      });
+      return;
+    }
+
     if (mapEl) {
-      mapEl.classList.toggle('atak-map-2d-fallback', !!hidden);
-      mapEl.hidden = !!hidden;
-      mapEl.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+      mapEl.classList.remove('atak-map-2d-fallback');
+      mapEl.hidden = false;
+      mapEl.setAttribute('aria-hidden', 'false');
     }
     if (host) {
-      host.hidden = !hidden;
-      host.classList.toggle('is-active', !!hidden);
+      host.classList.remove('is-active', 'is-booting');
+      host.hidden = true;
     }
     if (stage) {
-      stage.classList.toggle('atak-map-stage--premium-3d', !!hidden);
-      stage.classList.toggle('atak-map-stage--3d', !!hidden);
+      stage.classList.remove('atak-map-stage--premium-3d', 'atak-map-stage--3d');
     }
+  }
+
+  function invalidateLeafletSoon() {
+    var map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
+    if (!map || !map.invalidateSize) return;
+    try { map.invalidateSize(false); } catch (e) { /* ignore */ }
+    window.setTimeout(function () {
+      try {
+        if (map && map.invalidateSize) map.invalidateSize(false);
+      } catch (e2) { /* ignore */ }
+    }, 220);
   }
 
   function renderChrome() {
@@ -322,8 +356,12 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
     }));
   }
 
+  var toggleLock = false;
+
   function setEnabled(enabled) {
-    state.enabled = !!enabled;
+    enabled = !!enabled;
+    if (toggleLock && enabled === state.enabled) return;
+    state.enabled = enabled;
     ensureHost();
     renderChrome();
     save();
@@ -333,13 +371,11 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
       if (renderer && renderer.getMode && renderer.getMode() === '3d') {
         try { renderer.toggle2D3D('2d'); } catch (e) { /* ignore */ }
       }
-      window.setTimeout(function () {
-        const map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
-        if (map && map.invalidateSize) map.invalidateSize(false);
-      }, 200);
+      invalidateLeafletSoon();
       return;
     }
 
+    toggleLock = true;
     ensureRenderer()
       .then(function () {
         if (!state.enabled) return;
@@ -349,12 +385,19 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
         applyPitchToCamera();
         loadHeights();
         syncMarkersFromCache();
+        if (renderer && typeof renderer.resize === 'function') {
+          try { renderer.resize(); } catch (e) { /* ignore */ }
+        }
       })
       .catch(function () {
         state.enabled = false;
         setMapHidden(false);
         renderChrome();
         save();
+        invalidateLeafletSoon();
+      })
+      .finally(function () {
+        toggleLock = false;
       });
   }
 

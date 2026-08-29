@@ -35,7 +35,7 @@
 
   function ensureCheckboxes() {
     var settings = document.getElementById('atak-terrain-3d-settings');
-    var host = document.getElementById('atak-map-look-prefs');
+    var host = document.getElementById('atak-settings-map') || document.getElementById('atak-map-look-prefs');
     var mount = settings || host;
     if (!mount || document.getElementById('atak-geo-places')) return;
 

@@ -30,6 +30,7 @@ export class MapControls {
       + group('Cible', [
           btn('recenter', '⌖', 'Centre', 'Recentrer la carte'),
           btn('follow', '◎', 'Suivi', 'Suivre ma position', 'tac-ctrl-follow'),
+          btn('map-settings', '⚙', 'Carte', 'Réglages carte (relief, ombre, 3D, données)', 'tac-ctrl-settings'),
         ])
       + '</div>';
 
@@ -52,6 +53,18 @@ export class MapControls {
         if (action === 'follow' && h.onFollow) {
           el.classList.toggle('is-active');
           h.onFollow(el.classList.contains('is-active'));
+        }
+        if (action === 'map-settings') {
+          if (h.onMapSettings) h.onMapSettings();
+          else if (window.ATAKMapTools && typeof window.ATAKMapTools.openMapSettings === 'function') {
+            window.ATAKMapTools.openMapSettings();
+          } else if (window.ATAKC2Workspace && typeof window.ATAKC2Workspace.setSettingsOpen === 'function') {
+            window.ATAKC2Workspace.setSettingsOpen(true);
+            var target = document.getElementById('atak-settings-map');
+            if (target && target.scrollIntoView) {
+              try { target.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+            }
+          }
         }
       });
     });

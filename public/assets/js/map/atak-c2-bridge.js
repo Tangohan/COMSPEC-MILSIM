@@ -227,7 +227,7 @@
           var still = document.getElementById('atak-view-3d');
           var on = still && still.getAttribute('aria-pressed') === 'true';
           state.controls.setMode(on ? '3d' : '2d');
-        }, 400);
+        }, 700);
       },
       onFollow: function (on) {
         triggerLegacyTool('follow', on);
