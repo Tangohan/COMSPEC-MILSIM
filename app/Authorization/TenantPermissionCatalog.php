@@ -341,6 +341,13 @@ final class TenantPermissionCatalog
             ['slug' => 'personnel.status.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer les statuts'],
             ['slug' => 'personnel.badges.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer badges / qualifications'],
             ['slug' => 'personnel.directory.export', 'module' => 'personnel', 'action' => 'export', 'name' => 'Exporter l’annuaire'],
+            ['slug' => 'personnel.progression.view', 'module' => 'personnel', 'action' => 'view', 'name' => 'Voir la progression / carrière'],
+            ['slug' => 'personnel.progression.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer la progression des personnels'],
+            ['slug' => 'personnel.progression.validate', 'module' => 'personnel', 'action' => 'validate', 'name' => 'Valider une progression'],
+            ['slug' => 'personnel.progression.override', 'module' => 'personnel', 'action' => 'override', 'name' => 'Override administratif de progression'],
+            ['slug' => 'personnel.progression.configure', 'module' => 'personnel', 'action' => 'configure', 'name' => 'Configurer parcours et conditions'],
+            ['slug' => 'personnel.qualification.grant', 'module' => 'personnel', 'action' => 'grant', 'name' => 'Attribuer une qualification'],
+            ['slug' => 'personnel.callsign.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer les indicatifs / séquences'],
         ];
     }
 
