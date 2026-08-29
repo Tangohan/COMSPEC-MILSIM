@@ -300,6 +300,9 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
     }).then(function (terrain) {
       renderer = terrain;
       window.ATAKTerrainThree = terrain;
+      if (typeof terrain.syncCameraToWorld === 'function') {
+        terrain.syncCameraToWorld(size, size);
+      }
       return applyMapTexture(terrain).then(function () {
         loadHeights();
         syncMarkersFromCache();

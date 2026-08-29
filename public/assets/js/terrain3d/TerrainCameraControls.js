@@ -53,8 +53,8 @@ export class TerrainCameraControls {
     this.bounds.worldWidth = w;
     this.bounds.worldDepth = d;
     const diag = Math.sqrt(w * w + d * d);
-    const far = Math.max(8000, diag * 2.4);
-    const maxDist = Math.max(2800, diag * 1.35);
+    const far = Math.max(12000, diag * 3.2);
+    const maxDist = Math.max(3200, diag * 1.55);
     const minDist = Math.max(40, Math.min(400, diag * 0.008));
 
     this.perspectiveCamera.near = Math.max(1, minDist * 0.05);
@@ -67,6 +67,11 @@ export class TerrainCameraControls {
     const c = this.controls;
     c.minDistance = minDist;
     c.maxDistance = maxDist;
+    /* Empêche un pan infini hors mesh (sinon dézoom = vide/noir hors scène). */
+    c.maxPan = undefined;
+    if (typeof c.mouseButtons === 'object') {
+      /* no-op — OrbitControls ne borne pas le pan nativement ; cible recentrée au setDefault. */
+    }
     if (this.mode === '3d') {
       this.setDefault3DView();
     } else {
@@ -194,6 +199,12 @@ export class TerrainCameraControls {
   }
 
   update() {
+    /* Garde la cible orbit dans le rectangle monde — un pan trop loin + dézoom = fond noir. */
+    const halfW = (this.bounds.worldWidth || 1024) * 0.55;
+    const halfD = (this.bounds.worldDepth || 1024) * 0.55;
+    const t = this.controls.target;
+    t.x = clamp(t.x, -halfW, halfW);
+    t.z = clamp(t.z, -halfD, halfD);
     this.controls.update();
   }
 

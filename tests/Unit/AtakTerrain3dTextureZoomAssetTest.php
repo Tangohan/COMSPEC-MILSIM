@@ -28,5 +28,13 @@ final class AtakTerrain3dTextureZoomAssetTest extends TestCase
         self::assertStringContainsString('syncCameraToWorld', $renderer);
         self::assertStringContainsString('setTextureFromCanvas', $renderer);
         self::assertStringContainsString('ATAKTerrainThree.dolly', $bridge);
+
+        $material = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/terrain3d/TerrainMaterial.js');
+        self::assertStringContainsString('fogDensityForWorld', $material);
+        self::assertStringContainsString('syncFogToWorld', $material);
+        self::assertStringContainsString('syncLightingToWorld', $material);
+        self::assertStringContainsString('syncFogToWorld', $renderer);
+        self::assertStringContainsString('syncLightingToWorld', $renderer);
+        self::assertStringContainsString('syncCameraToWorld(size, size)', $premium);
     }
 }

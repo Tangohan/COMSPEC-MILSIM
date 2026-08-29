@@ -23,7 +23,7 @@ const DEFAULT_OPTIONS = {
   markers: [],
   fog: true,
   fogDensity: 0.00045,
-  backgroundColor: 0x070a0e,
+  backgroundColor: 0x0b1220,
 };
 
 export class Terrain3DRenderer {
@@ -64,12 +64,18 @@ export class Terrain3DRenderer {
     const THREE = this.THREE;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(this.options.backgroundColor);
+    const fogDensity = TerrainMaterialFactory.fogDensityForWorld(
+      this.options.width,
+      this.options.height,
+      this.options.fogDensity
+    );
     TerrainMaterialFactory.setupFog(this.scene, THREE, {
       enabled: this.options.fog !== false,
-      density: this.options.fogDensity,
+      density: fogDensity,
       color: this.options.backgroundColor,
     });
     this.lights = TerrainMaterialFactory.setupLighting(this.scene, THREE);
+    TerrainMaterialFactory.syncLightingToWorld(this.lights, this.options.width, this.options.height);
   }
 
   _buildRenderer() {
@@ -259,13 +265,24 @@ export class Terrain3DRenderer {
     TerrainMaterialFactory.setMap(this.terrainMaterial, tex);
   }
 
-  /** Recale orbit / far plane sur la taille réelle du théâtre. */
+  /** Recale orbit / far plane / fog / lumières sur la taille réelle du théâtre. */
   syncCameraToWorld(worldWidth, worldDepth) {
-    if (!this.cameraControls || typeof this.cameraControls.syncToWorld !== 'function') return;
-    this.cameraControls.syncToWorld(
-      worldWidth != null ? worldWidth : this.options.width,
-      worldDepth != null ? worldDepth : this.options.height
-    );
+    const w = worldWidth != null ? worldWidth : this.options.width;
+    const d = worldDepth != null ? worldDepth : this.options.height;
+    if (this.cameraControls && typeof this.cameraControls.syncToWorld === 'function') {
+      this.cameraControls.syncToWorld(w, d);
+    }
+    TerrainMaterialFactory.syncFogToWorld(this.scene, this.THREE, {
+      enabled: this.options.fog !== false,
+      density: this.options.fogDensity,
+      color: this.options.backgroundColor,
+      worldWidth: w,
+      worldDepth: d,
+    });
+    TerrainMaterialFactory.syncLightingToWorld(this.lights, w, d);
+    if (this.scene && this.scene.background && typeof this.scene.background.setHex === 'function') {
+      this.scene.background.setHex(this.options.backgroundColor != null ? this.options.backgroundColor : 0x0b1220);
+    }
   }
 
   /** Zoom UI (±) — facteur > 1 = dézoom. */
