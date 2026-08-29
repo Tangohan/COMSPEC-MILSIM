@@ -6,342 +6,400 @@ $h = static fn(mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'U
 $releases = is_array($catalog['releases'] ?? null) ? $catalog['releases'] : [];
 $featured = is_array($catalog['featured'] ?? null) ? $catalog['featured'] : null;
 $modules = is_array($catalog['modules'] ?? null) ? $catalog['modules'] : [];
-$pipeline = is_array($catalog['pipeline'] ?? null) ? $catalog['pipeline'] : [];
 $roadmap = is_array($catalog['roadmap'] ?? null) ? $catalog['roadmap'] : [];
-$stats = is_array($catalog['stats'] ?? null) ? $catalog['stats'] : [];
-$years = is_array($catalog['years'] ?? null) ? $catalog['years'] : [];
-$filters = is_array($catalog['filters'] ?? null) ? $catalog['filters'] : [];
-$kindLabels = is_array($catalog['kindLabels'] ?? null) ? $catalog['kindLabels'] : [];
-$categoryLabels = is_array($catalog['categoryLabels'] ?? null) ? $catalog['categoryLabels'] : [];
-$typeLabels = is_array($catalog['typeLabels'] ?? null) ? $catalog['typeLabels'] : [];
-$statusLabels = is_array($catalog['statusLabels'] ?? null) ? $catalog['statusLabels'] : [];
-$byYear = [];
-foreach ($releases as $release) {
-    if (!is_array($release) || !empty($release['featured'])) {
+$dispatches = is_array($dispatches ?? null) ? $dispatches : [];
+
+$moduleFromGroups = static function (array $groups): array {
+    if (in_array('atak', $groups, true)) {
+        return ['label' => 'ATAK', 'class' => 'atak'];
+    }
+    if (in_array('intel', $groups, true) || in_array('sse', $groups, true)) {
+        return ['label' => 'SSE', 'class' => 'intel'];
+    }
+    if (in_array('command', $groups, true) || in_array('c2', $groups, true)) {
+        return ['label' => 'C2', 'class' => 'c2'];
+    }
+    if (in_array('personnel', $groups, true)) {
+        return ['label' => 'PERSONNEL', 'class' => 'personnel'];
+    }
+    if (in_array('training', $groups, true)) {
+        return ['label' => 'LMS', 'class' => 'platform'];
+    }
+
+    return ['label' => 'PLATFORM', 'class' => 'platform'];
+};
+
+$countUpdate = 0;
+$countSpot = 0;
+$countTech = 0;
+foreach ($dispatches as $row) {
+    if (!is_array($row)) {
         continue;
     }
-    $byYear[(int) ($release['year'] ?? 0)][] = $release;
+    $k = (string) ($row['kind'] ?? '');
+    if ($k === 'spotrep') {
+        $countSpot++;
+    } elseif ($k === 'techrep') {
+        $countTech++;
+    } else {
+        $countUpdate++;
+    }
 }
-$featuredGroups = $featured ? implode(' ', array_map('strval', $featured['filter_groups'] ?? [])) : '';
-$featuredImg = ($featured && is_string($featured['image'] ?? null) && $featured['image'] !== '')
-    ? asset_url((string) $featured['image'])
-    : '';
+$countAll = count($dispatches);
+$prodVersion = (string) ($featured['version'] ?? '2026.08d');
 $discoverHref = url('a-propos');
-$dispatches = is_array($dispatches ?? null) ? $dispatches : [];
-$featuredDispatch = is_array($featuredDispatch ?? null) ? $featuredDispatch : null;
+$opsJson = [];
+foreach ($dispatches as $row) {
+    if (!is_array($row)) {
+        continue;
+    }
+    $groups = array_map('strval', $row['filter_groups'] ?? []);
+    $mod = $moduleFromGroups($groups);
+    $changes = [];
+    foreach ($row['sections'] ?? [] as $section) {
+        if (!is_array($section)) {
+            continue;
+        }
+        foreach ($section['items'] ?? [] as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $verb = strtoupper((string) ($item['verb'] ?? 'CHANGED'));
+            if ($verb === 'TWEAKED') {
+                $verb = 'CHANGED';
+            }
+            $changes[] = [$verb, (string) ($item['text'] ?? '')];
+        }
+    }
+    $opsJson[] = [
+        'id' => (string) ($row['number_pad'] ?? ''),
+        'kind' => (string) ($row['kind'] ?? 'update'),
+        'kind_label' => (string) ($row['kind_label'] ?? 'UPDATE'),
+        'title' => (string) ($row['title'] ?? ''),
+        'summary' => (string) ($row['activity'] ?? ''),
+        'module' => $mod['label'],
+        'module_class' => $mod['class'],
+        'version' => (string) ($row['size'] ?? $prodVersion),
+        'status' => 'DEPLOYED',
+        'channel' => 'PROD',
+        'date' => (string) ($row['date_label'] ?? ''),
+        'author' => (string) ($row['reporter'] ?? 'Ops'),
+        'from' => (string) ($row['from'] ?? ''),
+        'to' => (string) ($row['to'] ?? ''),
+        'href' => (string) ($row['href'] ?? '#'),
+        'lead' => (string) ($row['activity'] ?? ''),
+        'situation' => implode(' ', array_map('strval', $row['notes'] ?? [])),
+        'impact' => (string) ($row['activity'] ?? ''),
+        'action' => (string) (($row['notes'][0] ?? '') ?: 'Recharger le portail ou installer le pack indiqué.'),
+        'changes' => $changes,
+        'tags' => array_map('strtoupper', $groups),
+        'search' => (string) ($row['search'] ?? ''),
+    ];
+}
 ?>
-<div class="cl" data-cl-root>
-    <header class="cl-hero">
-        <div class="cl-hero__grid" aria-hidden="true"></div>
-        <div class="cl-hero__halo" aria-hidden="true"></div>
-        <div class="cl-wrap">
-            <p class="cl-kicker"><?= $h(__('site.changelog_kicker')) ?></p>
-            <h1><?= $h(__('site.changelog_title')) ?></h1>
-            <p class="cl-hero__lead"><?= $h(__('site.changelog_lead')) ?></p>
-            <div class="cl-hero__actions">
-                <a href="#journal" class="hi-cta hi-cta-solid"><?= $h(__('site.cl_cta_latest')) ?></a>
-                <a href="<?= $h($discoverHref) ?>" class="hi-cta hi-cta-ghost"><?= $h(__('site.cl_cta_discover')) ?></a>
+<div class="cl cl-ops" data-cl-root data-cl-ops>
+    <div class="cl-ops-layout">
+        <aside class="cl-ops-sidebar" aria-label="<?= $h(__('site.changelog')) ?>">
+            <div class="cl-ops-side-label">Journal</div>
+            <button type="button" class="cl-ops-side-link is-active" data-cl-ops-nav="updates">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.4 2.4L16.5 8"/></svg>
+                <span>Updates</span>
+                <span class="cl-ops-side-count"><?= $h((string) $countUpdate) ?></span>
+            </button>
+            <button type="button" class="cl-ops-side-link" data-cl-ops-nav="spotrep">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v5h5M9 13h6M9 17h4"/></svg>
+                <span>SPOTREP</span>
+                <span class="cl-ops-side-count"><?= $h((string) $countSpot) ?></span>
+            </button>
+            <button type="button" class="cl-ops-side-link" data-cl-ops-nav="techrep">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M9 3h6v4H9zM5 7h14v14H5z"/><path d="M9 12h6M9 16h6"/></svg>
+                <span>TECHREP</span>
+                <span class="cl-ops-side-count"><?= $h((string) $countTech) ?></span>
+            </button>
+            <button type="button" class="cl-ops-side-link" data-cl-ops-nav="roadmap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 2 5-6"/></svg>
+                <span>Roadmap</span>
+            </button>
+            <div class="cl-ops-side-sep"></div>
+            <div class="cl-ops-side-label">Produit</div>
+            <button type="button" class="cl-ops-side-link" data-cl-ops-nav="modules">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                <span>Modules</span>
+            </button>
+            <button type="button" class="cl-ops-side-link" data-cl-ops-nav="releases">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg>
+                <span>Versions</span>
+                <span class="cl-ops-side-count"><?= $h((string) count($releases)) ?></span>
+            </button>
+            <div class="cl-ops-side-sep"></div>
+            <div class="cl-ops-channel">
+                <div class="cl-ops-channel-top"><strong>PROD</strong><span class="cl-ops-live-dot" aria-hidden="true"></span></div>
+                <p>Canal stable<br><span class="cl-ops-mono">athena-<?= $h($prodVersion) ?></span></p>
             </div>
-            <dl class="cl-status">
-                <div>
-                    <dt class="cl-status__k"><?= $h(__('site.cl_status_version')) ?></dt>
-                    <dd class="cl-status__v"><?= $h(($featured['month_label'] ?? '') . ' ' . (string) ($featured['year'] ?? '')) ?></dd>
-                </div>
-                <div>
-                    <dt class="cl-status__k"><?= $h(__('site.cl_status_modules')) ?></dt>
-                    <dd class="cl-status__v"><?= $h(__('site.cl_status_modules_v')) ?></dd>
-                </div>
-                <div>
-                    <dt class="cl-status__k"><?= $h(__('site.cl_status_state')) ?></dt>
-                    <dd class="cl-status__v"><?= $h(__('site.cl_status_state_v')) ?></dd>
-                </div>
-            </dl>
-        </div>
-    </header>
+        </aside>
 
-    <div class="cl-nav">
-        <div class="cl-wrap cl-nav__inner">
-            <nav class="cl-nav__links" aria-label="<?= $h(__('site.changelog')) ?>">
-                <a href="#presentation"><?= $h(__('site.cl_nav_presentation')) ?></a>
-                <a href="#journal"><?= $h(__('site.cl_nav_dispatch')) ?></a>
-                <a href="#release"><?= $h(__('site.cl_nav_release')) ?></a>
-                <a href="#historique"><?= $h(__('site.cl_nav_history')) ?></a>
-                <a href="#modules"><?= $h(__('site.cl_nav_modules')) ?></a>
-                <a href="#roadmap"><?= $h(__('site.cl_nav_roadmap')) ?></a>
-            </nav>
-            <div class="cl-filters" role="group" aria-label="<?= $h(__('site.cl_nav_history')) ?>">
-                <?php foreach ($filters as $filter): ?>
-                    <button type="button" class="cl-chip<?= ($filter['id'] ?? '') === 'all' ? ' is-active' : '' ?>" data-cl-domain="<?= $h($filter['id'] ?? '') ?>" aria-pressed="<?= ($filter['id'] ?? '') === 'all' ? 'true' : 'false' ?>"><?= $h($filter['label'] ?? '') ?></button>
-                <?php endforeach; ?>
-            </div>
-            <div class="cl-filters cl-filters--years" role="group" aria-label="<?= $h(__('site.cl_filter_years_all')) ?>">
-                <button type="button" class="cl-chip is-active" data-cl-year="all" aria-pressed="true"><?= $h(__('site.cl_filter_years_all')) ?></button>
-                <?php foreach ($years as $year): ?>
-                    <button type="button" class="cl-chip" data-cl-year="<?= $h((string) $year) ?>" aria-pressed="false"><?= $h((string) $year) ?></button>
-                <?php endforeach; ?>
-            </div>
-            <div class="cl-search">
-                <label class="sr-only" for="cl-search"><?= $h(__('site.cl_search_label')) ?></label>
-                <input id="cl-search" type="search" data-cl-search placeholder="<?= $h(__('site.cl_search_ph')) ?>" autocomplete="off">
-            </div>
-        </div>
-    </div>
+        <div class="cl-ops-main">
+            <section id="cl-ops-list" class="cl-ops-panel is-active" data-cl-ops-panel="list">
+                <div class="cl-ops-page-head">
+                    <div>
+                        <div class="cl-ops-crumb cl-ops-mono">athena / product / updates</div>
+                        <h1 class="cl-ops-page-title"><?= $h(__('site.changelog_title')) ?></h1>
+                        <p class="cl-ops-page-desc"><?= $h(__('site.changelog_lead')) ?></p>
+                    </div>
+                    <div class="cl-ops-page-actions">
+                        <a href="<?= $h($discoverHref) ?>" class="cl-cta cl-cta--ghost"><?= $h(__('site.cl_cta_discover')) ?></a>
+                        <a href="#cl-ops-table" class="cl-cta cl-cta--primary"><?= $h(__('site.cl_cta_latest')) ?></a>
+                    </div>
+                </div>
 
-    <section class="cl-section" id="presentation">
-        <div class="cl-wrap">
-            <p class="cl-section__kicker"><?= $h(__('site.cl_plat_kicker')) ?></p>
-            <h2 class="cl-section__title"><?= $h(__('site.cl_plat_title')) ?></h2>
-            <div class="cl-modules">
-                <?php foreach ($modules as $module): ?>
-                    <article class="cl-mod" data-cl-reveal>
-                        <h3 class="cl-mod__name"><?= $h($module['name'] ?? '') ?></h3>
-                        <p class="cl-mod__body"><?= $h($module['body'] ?? '') ?></p>
-                        <p class="cl-mod__meta">
-                            <span><?= $h($module['status'] ?? '') ?></span>
-                            <span><?= $h(__('site.cl_mod_updated')) ?> · <?= $h($module['update'] ?? '') ?></span>
-                        </p>
-                        <a class="cl-mod__cta" href="<?= $h($module['href'] ?? '#') ?>"><?= $h(__('site.cl_mod_discover')) ?></a>
+                <div class="cl-ops-metric-strip" role="list">
+                    <div class="cl-ops-metric" role="listitem">
+                        <div class="cl-ops-metric-k">Updates publiées</div>
+                        <div class="cl-ops-metric-v"><?= $h((string) $countAll) ?> <small>bulletins</small></div>
+                    </div>
+                    <div class="cl-ops-metric" role="listitem">
+                        <div class="cl-ops-metric-k">Version production</div>
+                        <div class="cl-ops-metric-v cl-ops-mono"><?= $h($prodVersion) ?> <small class="ok">STABLE</small></div>
+                    </div>
+                    <div class="cl-ops-metric" role="listitem">
+                        <div class="cl-ops-metric-k">SPOTREP / TECHREP</div>
+                        <div class="cl-ops-metric-v"><?= $h((string) $countSpot) ?> / <?= $h((string) $countTech) ?> <small>vagues</small></div>
+                    </div>
+                    <div class="cl-ops-metric" role="listitem">
+                        <div class="cl-ops-metric-k">Modules suivis</div>
+                        <div class="cl-ops-metric-v"><?= $h((string) max(1, count($modules))) ?> <small>actifs</small></div>
+                    </div>
+                </div>
+
+                <nav class="cl-ops-tabs" aria-label="Filtres journal">
+                    <button type="button" class="cl-ops-tab is-active" data-cl-ops-tab="all">Updates <span class="count"><?= $h((string) $countAll) ?></span></button>
+                    <button type="button" class="cl-ops-tab" data-cl-ops-tab="update">Releases <span class="count"><?= $h((string) $countUpdate) ?></span></button>
+                    <button type="button" class="cl-ops-tab" data-cl-ops-tab="spotrep">SPOTREP <span class="count"><?= $h((string) $countSpot) ?></span></button>
+                    <button type="button" class="cl-ops-tab" data-cl-ops-tab="techrep">TECHREP <span class="count"><?= $h((string) $countTech) ?></span></button>
+                </nav>
+
+                <div class="cl-ops-filterbar" id="cl-ops-table">
+                    <label class="cl-ops-search-field">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                        <span class="sr-only"><?= $h(__('site.cl_search_label')) ?></span>
+                        <input id="cl-ops-search" type="search" data-cl-ops-search placeholder="<?= $h(__('site.cl_search_ph')) ?>" autocomplete="off">
+                    </label>
+                    <select class="cl-ops-select" data-cl-ops-module aria-label="Module">
+                        <option value="all">Tous modules</option>
+                        <option value="ATAK">ATAK</option>
+                        <option value="SSE">SSE</option>
+                        <option value="C2">C2</option>
+                        <option value="PLATFORM">PLATFORM</option>
+                        <option value="PERSONNEL">PERSONNEL</option>
+                        <option value="LMS">LMS</option>
+                    </select>
+                    <select class="cl-ops-select" data-cl-ops-kind aria-label="Type">
+                        <option value="all">Tous types</option>
+                        <option value="update">UPDATE</option>
+                        <option value="spotrep">SPOTREP</option>
+                        <option value="techrep">TECHREP</option>
+                    </select>
+                    <span class="cl-ops-filter-result" data-cl-ops-result><?= $h((string) $countAll) ?> résultats</span>
+                </div>
+
+                <div class="cl-ops-table-wrap">
+                    <table class="cl-ops-table">
+                        <thead>
+                            <tr>
+                                <th class="col-id">ID</th>
+                                <th class="col-title">Objet</th>
+                                <th class="col-module">Module</th>
+                                <th class="col-version">Version</th>
+                                <th class="col-status">État</th>
+                                <th class="col-channel">Canal</th>
+                                <th class="col-date">Date</th>
+                                <th class="col-author">Auteur</th>
+                            </tr>
+                        </thead>
+                        <tbody data-cl-ops-body>
+                            <?php foreach ($opsJson as $u): ?>
+                                <?php
+                                $initials = mb_strtoupper(mb_substr((string) $u['author'], 0, 2));
+                                ?>
+                                <tr
+                                    class="cl-ops-row"
+                                    tabindex="0"
+                                    data-cl-ops-row
+                                    data-id="<?= $h($u['id']) ?>"
+                                    data-kind="<?= $h($u['kind']) ?>"
+                                    data-module="<?= $h($u['module']) ?>"
+                                    data-search="<?= $h($u['search'] . ' ' . $u['title'] . ' ' . $u['id'] . ' ' . $u['module']) ?>"
+                                >
+                                    <td class="col-id"><span class="cl-ops-id">#<?= $h($u['id']) ?></span></td>
+                                    <td class="col-title">
+                                        <div class="cl-ops-title">
+                                            <strong><?= $h($u['title']) ?></strong>
+                                            <span><?= $h($u['summary']) ?></span>
+                                        </div>
+                                    </td>
+                                    <td class="col-module"><span class="cl-ops-mod cl-ops-mod--<?= $h($u['module_class']) ?>"><?= $h($u['module']) ?></span></td>
+                                    <td class="col-version"><span class="cl-ops-mono"><?= $h($u['version']) ?></span></td>
+                                    <td class="col-status"><span class="cl-ops-status cl-ops-status--deployed">● Déployé</span></td>
+                                    <td class="col-channel"><span class="cl-ops-chan"><?= $h($u['channel']) ?></span></td>
+                                    <td class="col-date"><span class="cl-ops-mono"><?= $h($u['date']) ?></span></td>
+                                    <td class="col-author">
+                                        <div class="cl-ops-author">
+                                            <span class="cl-ops-avatar"><?= $h($initials) ?></span>
+                                            <span><?= $h($u['author']) ?></span>
+                                            <svg class="cl-ops-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="cl-ops-empty" data-cl-ops-empty hidden><?= $h(__('site.cl_empty')) ?></p>
+                <div class="cl-ops-pagination">
+                    <span>Affichage du journal d’opérations produit</span>
+                    <span class="cl-ops-mono"><?= $h((string) $countAll) ?> entrées</span>
+                </div>
+            </section>
+
+            <section id="cl-ops-detail" class="cl-ops-panel" data-cl-ops-panel="detail" hidden>
+                <div class="cl-ops-detail-shell">
+                    <button type="button" class="cl-ops-back" data-cl-ops-back>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                        Retour au registre
+                    </button>
+                    <div class="cl-ops-detail-toolbar">
+                        <div class="cl-ops-detail-tabs">
+                            <span class="cl-ops-detail-tab is-active" data-cl-ops-kind-label>UPDREP</span>
+                        </div>
+                        <div class="cl-ops-detail-actions">
+                            <a class="cl-ops-detail-action" data-cl-ops-full href="#">Fiche complète</a>
+                        </div>
+                    </div>
+                    <article class="cl-ops-report">
+                        <div class="cl-ops-report-topline"></div>
+                        <header class="cl-ops-report-head">
+                            <div class="cl-ops-report-class">
+                                <span>ATHENA // PRODUCT OPERATIONS // <span data-cl-ops-r-kind>UPDREP</span></span>
+                                <span>DIFFUSION : COMMUNAUTÉS AUTORISÉES</span>
+                            </div>
+                            <div class="cl-ops-report-heading">
+                                <div>
+                                    <div class="cl-ops-report-id" data-cl-ops-r-id></div>
+                                    <h2 data-cl-ops-r-title></h2>
+                                    <p class="cl-ops-report-lead" data-cl-ops-r-lead></p>
+                                </div>
+                                <div class="cl-ops-report-seal" aria-hidden="true">
+                                    <div class="cl-ops-seal-content"><strong>ATHENA</strong><small>PRODUCT OPS<br>CHANGE CONTROL</small></div>
+                                </div>
+                            </div>
+                        </header>
+                        <div class="cl-ops-report-meta">
+                            <div class="cl-ops-meta-cell"><span class="cl-ops-meta-k">From</span><span class="cl-ops-meta-v" data-cl-ops-r-from></span></div>
+                            <div class="cl-ops-meta-cell"><span class="cl-ops-meta-k">To</span><span class="cl-ops-meta-v" data-cl-ops-r-to></span></div>
+                            <div class="cl-ops-meta-cell"><span class="cl-ops-meta-k">Release</span><span class="cl-ops-meta-v" data-cl-ops-r-version></span></div>
+                            <div class="cl-ops-meta-cell"><span class="cl-ops-meta-k">Status</span><span class="cl-ops-meta-v" data-cl-ops-r-status></span></div>
+                        </div>
+                        <div class="cl-ops-report-body">
+                            <div class="cl-ops-report-main">
+                                <section class="cl-ops-report-section">
+                                    <div class="cl-ops-report-num">01 // SITUATION</div>
+                                    <h3>Situation / constat</h3>
+                                    <p data-cl-ops-r-situation></p>
+                                </section>
+                                <section class="cl-ops-report-section">
+                                    <div class="cl-ops-report-num">02 // MISSION EFFECT</div>
+                                    <h3>Effet utilisateur</h3>
+                                    <p data-cl-ops-r-impact></p>
+                                    <div class="cl-ops-action-box">
+                                        <strong>Action requise</strong>
+                                        <p data-cl-ops-r-action></p>
+                                    </div>
+                                </section>
+                                <section class="cl-ops-report-section">
+                                    <div class="cl-ops-report-num">03 // CHANGE SUMMARY</div>
+                                    <h3>Changements appliqués</h3>
+                                    <ul class="cl-ops-report-list" data-cl-ops-r-changes></ul>
+                                </section>
+                            </div>
+                            <aside class="cl-ops-report-aside">
+                                <div class="cl-ops-aside-block">
+                                    <p class="cl-ops-aside-title">Classification produit</p>
+                                    <div class="cl-ops-aside-pills" data-cl-ops-r-tags></div>
+                                </div>
+                                <div class="cl-ops-aside-block">
+                                    <p class="cl-ops-aside-title">Responsable</p>
+                                    <div class="cl-ops-author"><span class="cl-ops-avatar" data-cl-ops-r-avatar>AO</span><span data-cl-ops-r-author class="cl-ops-mono"></span></div>
+                                </div>
+                            </aside>
+                        </div>
+                        <footer class="cl-ops-report-footer">
+                            <span>ATHENA // PRODUCT OPS // AUTO-GENERATED RECORD</span>
+                            <span data-cl-ops-r-footer></span>
+                        </footer>
                     </article>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </section>
-
-    <?php if ($featuredDispatch !== null || $dispatches !== []): ?>
-    <section class="cl-section" id="journal">
-        <div class="cl-wrap">
-            <p class="cl-section__kicker"><?= $h(__('site.cl_dispatch_kicker')) ?></p>
-            <h2 class="cl-section__title"><?= $h(__('site.cl_dispatch_title')) ?></h2>
-            <p class="cl-hero__lead" style="margin-top:0.85rem"><?= $h(__('site.cl_dispatch_lead')) ?></p>
-            <?php if ($featuredDispatch !== null): ?>
-                <div
-                    class="tr-featured"
-                    data-cl-reveal
-                    data-cl-card
-                    data-groups="<?= $h(implode(' ', array_map('strval', $featuredDispatch['filter_groups'] ?? []))) ?>"
-                    data-year="<?= $h((string) ($featuredDispatch['year'] ?? '')) ?>"
-                    data-search="<?= $h($featuredDispatch['search'] ?? '') ?>"
-                >
-                    <?php $dispatch = $featuredDispatch; $dispatchHeadingTag = 'h3'; require base_path('views/partials/dispatch_article.php'); ?>
-                    <p class="tr-featured__more"><a href="<?= $h($featuredDispatch['href'] ?? '#') ?>"><?= $h(__('site.cl_dispatch_open')) ?></a></p>
                 </div>
-            <?php endif; ?>
-            <?php if ($dispatches !== []): ?>
-                <div class="tr-grid">
-                    <?php foreach ($dispatches as $dispatch): ?>
-                        <?php
-                        if ($featuredDispatch && ($dispatch['id'] ?? '') === ($featuredDispatch['id'] ?? '')) {
-                            continue;
-                        }
-                        require base_path('views/partials/dispatch_card.php');
-                        ?>
+            </section>
+
+            <section id="cl-ops-modules" class="cl-ops-panel" data-cl-ops-panel="modules" hidden>
+                <div class="cl-ops-page-head">
+                    <div>
+                        <div class="cl-ops-crumb cl-ops-mono">athena / product / modules</div>
+                        <h2 class="cl-ops-page-title"><?= $h(__('site.cl_plat_title')) ?></h2>
+                        <p class="cl-ops-page-desc"><?= $h(__('site.cl_eco_lead')) ?></p>
+                    </div>
+                </div>
+                <div class="cl-ops-cards">
+                    <?php foreach ($modules as $module): ?>
+                        <article class="cl-ops-card">
+                            <h3><?= $h($module['name'] ?? '') ?></h3>
+                            <p><?= $h($module['body'] ?? '') ?></p>
+                            <p class="cl-ops-card-meta"><?= $h($module['status'] ?? '') ?> · <?= $h($module['update'] ?? '') ?></p>
+                            <a href="<?= $h($module['href'] ?? '#') ?>"><?= $h(__('site.cl_mod_discover')) ?></a>
+                        </article>
                     <?php endforeach; ?>
                 </div>
-            <?php endif; ?>
-        </div>
-    </section>
-    <?php endif; ?>
+            </section>
 
-    <?php if ($featured !== null): ?>
-    <section
-        class="cl-section"
-        id="release"
-        data-cl-card
-        data-groups="<?= $h($featuredGroups) ?>"
-        data-year="<?= $h((string) ($featured['year'] ?? '')) ?>"
-        data-search="<?= $h($featured['search'] ?? '') ?>"
-    >
-        <div class="cl-wrap">
-            <p class="cl-section__kicker"><?= $h(__('site.cl_feat_kicker')) ?></p>
-            <h2 class="cl-section__title"><?= $h(($featured['version_label'] ?? 'Athena') . ' — ' . ($featured['month_label'] ?? '') . ' ' . (string) ($featured['year'] ?? '')) ?></h2>
-            <article class="cl-featured" data-cl-reveal>
-                <?php if ($featuredImg !== ''): ?>
-                    <button type="button" class="cl-featured__media" data-cl-img="<?= $h($featuredImg) ?>" data-cl-alt="<?= $h($featured['title'] ?? '') ?>">
-                        <img src="<?= $h($featuredImg) ?>" alt="<?= $h($featured['title'] ?? '') ?>" width="960" height="640">
-                    </button>
-                <?php else: ?>
-                    <div class="cl-featured__media" aria-hidden="true"></div>
-                <?php endif; ?>
-                <div class="cl-featured__body">
-                    <p class="cl-featured__ver"><?= $h(($featured['version_label'] ?? '') . ' ' . ($featured['version'] ?? '')) ?></p>
-                    <div class="cl-badges">
-                        <?php if (($featured['type'] ?? '') === 'major'): ?>
-                            <span class="cl-badge cl-badge--new"><?= $h($typeLabels['major'] ?? '') ?></span>
-                        <?php endif; ?>
-                        <?php foreach ($featured['kinds'] ?? [] as $kind): ?>
-                            <span class="cl-badge cl-badge--<?= $h($kind) ?>"><?= $h($kindLabels[$kind] ?? $kind) ?></span>
-                        <?php endforeach; ?>
-                        <?php foreach ($featured['categories'] ?? [] as $cat): ?>
-                            <span class="cl-badge"><?= $h($categoryLabels[$cat] ?? $cat) ?></span>
-                        <?php endforeach; ?>
-                    </div>
-                    <h3><?= $h($featured['title'] ?? '') ?></h3>
-                    <p class="cl-featured__sum"><?= $h($featured['summary'] ?? '') ?></p>
-                    <?php if (!empty($featured['features'])): ?>
-                        <p class="cl-section__kicker" style="margin-top:1.1rem"><?= $h(__('site.cl_feat_new')) ?></p>
-                        <ul class="cl-featured__list">
-                            <?php foreach ($featured['features'] as $feature): ?>
-                                <li><?= $h(is_array($feature) ? ($feature['text'] ?? '') : $feature) ?></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                    <?php if (($featured['why'] ?? '') !== ''): ?>
-                        <div class="cl-why">
-                            <h4><?= $h(__('site.cl_why')) ?></h4>
-                            <p><?= $h($featured['why']) ?></p>
-                            <div class="cl-audiences">
-                                <?php if (!empty($featured['audiences']['ops'])): ?>
-                                    <div class="cl-aud"><strong><?= $h(__('site.cl_aud_ops')) ?></strong><span><?= $h($featured['audiences']['ops']) ?></span></div>
-                                <?php endif; ?>
-                                <?php if (!empty($featured['audiences']['cmd'])): ?>
-                                    <div class="cl-aud"><strong><?= $h(__('site.cl_aud_cmd')) ?></strong><span><?= $h($featured['audiences']['cmd']) ?></span></div>
-                                <?php endif; ?>
-                                <?php if (!empty($featured['audiences']['admin'])): ?>
-                                    <div class="cl-aud"><strong><?= $h(__('site.cl_aud_admin')) ?></strong><span><?= $h($featured['audiences']['admin']) ?></span></div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                    <?php if (!empty($featured['gallery'])): ?>
-                        <div class="cl-gallery">
-                            <?php foreach ($featured['gallery'] as $shot): ?>
-                                <?php $gSrc = asset_url((string) ($shot['src'] ?? '')); ?>
-                                <button type="button" data-cl-img="<?= $h($gSrc) ?>" data-cl-alt="<?= $h($shot['alt'] ?? '') ?>">
-                                    <img src="<?= $h($gSrc) ?>" alt="<?= $h($shot['alt'] ?? '') ?>" width="176" height="115" loading="lazy">
-                                </button>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                    <div class="cl-card__foot">
-                        <?php foreach ($featured['links'] ?? [] as $link): ?>
-                            <a href="<?= $h($link['href'] ?? '#') ?>"><?= $h($link['label'] ?? '') ?></a>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php if (($featured['availability'] ?? '') !== ''): ?>
-                        <div class="cl-avail" style="margin-top:0.75rem">
-                            <p><?= $h($featured['availability']) ?></p>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </article>
-        </div>
-    </section>
-    <?php endif; ?>
-
-    <section class="cl-section" id="historique">
-        <div class="cl-wrap">
-            <p class="cl-section__kicker"><?= $h(__('site.cl_hist_kicker')) ?></p>
-            <h2 class="cl-section__title"><?= $h(__('site.cl_hist_title')) ?></h2>
-            <p class="cl-empty" data-cl-empty><?= $h(__('site.cl_empty')) ?></p>
-            <?php foreach ($byYear as $year => $yearReleases): ?>
-                <div class="cl-year-block" data-cl-year-block="<?= $h((string) $year) ?>">
-                    <p class="cl-year"><?= $h((string) $year) ?></p>
-                    <div class="cl-tl">
-                        <?php foreach ($yearReleases as $release): ?>
-                            <?php require base_path('views/partials/changelog_release.php'); ?>
-                        <?php endforeach; ?>
+            <section id="cl-ops-releases" class="cl-ops-panel" data-cl-ops-panel="releases" hidden>
+                <div class="cl-ops-page-head">
+                    <div>
+                        <div class="cl-ops-crumb cl-ops-mono">athena / product / versions</div>
+                        <h2 class="cl-ops-page-title"><?= $h(__('site.cl_hist_title')) ?></h2>
+                        <p class="cl-ops-page-desc"><?= $h(__('site.cl_feat_kicker')) ?></p>
                     </div>
                 </div>
-            <?php endforeach; ?>
-        </div>
-    </section>
+                <div class="cl-ops-cards">
+                    <?php foreach ($releases as $release): ?>
+                        <?php if (!is_array($release)) {
+                            continue;
+                        } ?>
+                        <article class="cl-ops-card" id="<?= $h((string) ($release['id'] ?? '')) ?>">
+                            <p class="cl-ops-card-meta cl-ops-mono"><?= $h(($release['version_label'] ?? '') . ' ' . ($release['version'] ?? '')) ?></p>
+                            <h3><?= $h($release['title'] ?? '') ?></h3>
+                            <p><?= $h($release['summary'] ?? '') ?></p>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </section>
 
-    <section class="cl-section" id="modules">
-        <div class="cl-wrap">
-            <p class="cl-section__kicker"><?= $h(__('site.cl_eco_kicker')) ?></p>
-            <h2 class="cl-section__title"><?= $h(__('site.cl_eco_title')) ?></h2>
-            <p class="cl-hero__lead" style="margin-top:0.85rem"><?= $h(__('site.cl_eco_lead')) ?></p>
-            <div class="cl-eco" data-cl-reveal>
-                <svg viewBox="0 0 720 430" role="img" aria-labelledby="cl-eco-title cl-eco-desc">
-                    <title id="cl-eco-title"><?= $h(__('site.cl_eco_title')) ?></title>
-                    <desc id="cl-eco-desc"><?= $h(__('site.cl_eco_lead')) ?></desc>
-                    <g fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1.2">
-                        <path d="M360 62 V118"/>
-                        <path d="M160 118 H560"/>
-                        <path d="M160 118 V168"/>
-                        <path d="M360 118 V168"/>
-                        <path d="M560 118 V168"/>
-                        <path d="M160 208 V258"/>
-                        <path d="M360 208 V258"/>
-                        <path d="M560 208 V258"/>
-                        <path d="M160 298 V348"/>
-                        <path d="M160 378 V398"/>
-                    </g>
-                    <g fill="#0b0f12" stroke="rgba(52,211,153,0.45)" stroke-width="1.2">
-                        <rect x="292" y="22" width="136" height="40" rx="8"/>
-                    </g>
-                    <g fill="#10151a" stroke="rgba(255,255,255,0.12)" stroke-width="1">
-                        <rect x="92" y="168" width="136" height="40" rx="8"/>
-                        <rect x="292" y="168" width="136" height="40" rx="8"/>
-                        <rect x="492" y="168" width="136" height="40" rx="8"/>
-                        <rect x="92" y="258" width="136" height="40" rx="8"/>
-                        <rect x="292" y="258" width="136" height="40" rx="8"/>
-                        <rect x="492" y="258" width="136" height="40" rx="8"/>
-                        <rect x="92" y="348" width="136" height="40" rx="8"/>
-                        <rect x="92" y="398" width="136" height="32" rx="8"/>
-                    </g>
-                    <text x="360" y="47" text-anchor="middle" font-size="12" font-weight="800" letter-spacing="3">ATHENA</text>
-                    <text x="160" y="193" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="2">C2</text>
-                    <text x="360" y="193" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="2">SSE</text>
-                    <text x="560" y="193" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="2"><?= $h(__('site.cl_eco_hr')) ?></text>
-                    <text x="160" y="283" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="2">ATAK</text>
-                    <text x="360" y="283" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1.5"><?= $h(__('site.cl_eco_intel')) ?></text>
-                    <text x="560" y="283" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="2">LMS</text>
-                    <text x="160" y="373" text-anchor="middle" font-size="10" font-weight="700" letter-spacing="1.5">OVERWATCH</text>
-                    <text x="160" y="418" text-anchor="middle" font-size="10" font-weight="700" letter-spacing="2">ARMA 3</text>
-                </svg>
-            </div>
-        </div>
-    </section>
-
-    <section class="cl-section" id="chiffres">
-        <div class="cl-wrap">
-            <p class="cl-section__kicker"><?= $h(__('site.cl_stat_kicker')) ?></p>
-            <h2 class="cl-section__title"><?= $h(__('site.cl_stat_title')) ?></h2>
-            <div class="cl-stats">
-                <?php foreach ($stats as $stat): ?>
-                    <div class="cl-stat" data-cl-reveal>
-                        <strong><?= $h($stat['value'] ?? '') ?></strong>
-                        <span><?= $h($stat['label'] ?? '') ?></span>
+            <section id="cl-ops-roadmap" class="cl-ops-panel" data-cl-ops-panel="roadmap" hidden>
+                <div class="cl-ops-page-head">
+                    <div>
+                        <div class="cl-ops-crumb cl-ops-mono">athena / product / roadmap</div>
+                        <h2 class="cl-ops-page-title"><?= $h(__('site.cl_road_title')) ?></h2>
                     </div>
-                <?php endforeach; ?>
-            </div>
+                </div>
+                <div class="cl-ops-cards">
+                    <?php foreach ($roadmap as $item): ?>
+                        <article class="cl-ops-card">
+                            <strong><?= $h($item['when'] ?? '') ?></strong>
+                            <p><?= $h($item['body'] ?? '') ?></p>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </section>
         </div>
-    </section>
-
-    <section class="cl-section" id="pipeline">
-        <div class="cl-wrap">
-            <p class="cl-section__kicker"><?= $h(__('site.cl_pipe_kicker')) ?></p>
-            <h2 class="cl-section__title"><?= $h(__('site.cl_pipe_title')) ?></h2>
-            <p class="cl-hero__lead" style="margin-top:0.85rem"><?= $h(__('site.cl_pipe_lead')) ?></p>
-            <div class="cl-pipe">
-                <?php foreach ($pipeline as $item): ?>
-                    <div class="cl-pipe__item" data-cl-reveal>
-                        <p><?= $h($item['title'] ?? '') ?></p>
-                        <span class="cl-st cl-st--<?= $h($item['status'] ?? '') ?>"><?= $h($statusLabels[$item['status'] ?? ''] ?? '') ?></span>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </section>
-
-    <section class="cl-section" id="roadmap">
-        <div class="cl-wrap">
-            <p class="cl-section__kicker"><?= $h(__('site.cl_road_kicker')) ?></p>
-            <h2 class="cl-section__title"><?= $h(__('site.cl_road_title')) ?></h2>
-            <div class="cl-road">
-                <?php foreach ($roadmap as $item): ?>
-                    <div class="cl-road__item" data-cl-reveal>
-                        <strong><?= $h($item['when'] ?? '') ?></strong>
-                        <p><?= $h($item['body'] ?? '') ?></p>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </section>
-
-    <div id="cl-lightbox" class="cl-lb" hidden role="dialog" aria-modal="true" aria-label="<?= $h(__('site.cl_lb_close')) ?>">
-        <button type="button" class="cl-lb__close" data-cl-lb-close><?= $h(__('site.cl_lb_close')) ?></button>
-        <img src="" alt="">
     </div>
+
+    <script type="application/json" id="cl-ops-data"><?= json_encode($opsJson, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?></script>
 </div>

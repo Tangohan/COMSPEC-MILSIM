@@ -88,28 +88,29 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     endforeach;
 ?>
 </head>
-<body class="home-impact site-marketing layout-light bg-[var(--hi-void)] text-[var(--hi-ink)] antialiased selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
+<body class="home-impact site-marketing layout-light bg-[var(--hi-void)] text-[var(--hi-ink)] antialiased selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden<?= $marketingActive !== '' ? ' site-marketing--' . htmlspecialchars(preg_replace('/[^a-z0-9\-]/i', '', $marketingActive) ?? '', ENT_QUOTES, 'UTF-8') : '' ?>">
 
     <div id="bodyOverlay" class="overlay fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm" onclick="toggleMenu()"></div>
     <div id="navDrawer" class="drawer-translate fixed top-0 left-0 z-[120] flex h-full w-[min(100%,320px)] flex-col overflow-hidden border-r border-white/10 bg-[#0a0a0a] shadow-2xl">
         <?php require base_path('views/partials/home_nav_drawer.php'); ?>
     </div>
 
-    <header class="fixed inset-x-0 top-0 z-[100] border-b border-white/5 bg-black/70 backdrop-blur-md">
+    <header class="site-marketing__topbar fixed inset-x-0 top-0 z-[100] border-b border-white/5 bg-black/70 backdrop-blur-md">
         <div class="mx-auto flex h-14 max-w-[100rem] items-center justify-between px-5 md:px-8">
             <button type="button" onclick="toggleMenu()" class="group flex h-6 w-6 flex-col justify-center gap-1.5 outline-none" aria-label="<?= htmlspecialchars(__('common.open_menu'), ENT_QUOTES, 'UTF-8') ?>">
                 <span class="h-px w-full bg-white/80 transition group-hover:bg-white"></span>
                 <span class="ml-auto h-px w-1/2 bg-white/50 transition group-hover:w-full group-hover:bg-white"></span>
             </button>
-            <a href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/" class="absolute left-1/2 -translate-x-1/2 text-center">
+            <a href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/" class="site-marketing__brand absolute left-1/2 -translate-x-1/2 text-center">
+                <span class="site-marketing__brand-mark" aria-hidden="true"></span>
                 <span class="block text-[11px] font-black uppercase tracking-[0.32em] text-white">Athena</span>
             </a>
             <div class="flex items-center gap-4">
                 <?php require base_path('views/partials/language_switcher.php'); ?>
                 <?php if (!$loggedIn): ?>
-                    <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 transition hover:text-white"><?= htmlspecialchars(__('common.enter'), ENT_QUOTES, 'UTF-8') ?></a>
+                    <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" class="site-marketing__enter text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 transition hover:text-white"><?= htmlspecialchars(__('common.enter'), ENT_QUOTES, 'UTF-8') ?></a>
                 <?php else: ?>
-                    <a href="<?= htmlspecialchars(url('hub'), ENT_QUOTES, 'UTF-8') ?>" class="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400 transition hover:text-emerald-300"><?= htmlspecialchars(__('common.ops'), ENT_QUOTES, 'UTF-8') ?></a>
+                    <a href="<?= htmlspecialchars(url('hub'), ENT_QUOTES, 'UTF-8') ?>" class="site-marketing__ops text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400 transition hover:text-emerald-300"><?= htmlspecialchars(__('common.ops'), ENT_QUOTES, 'UTF-8') ?></a>
                 <?php endif; ?>
             </div>
         </div>
