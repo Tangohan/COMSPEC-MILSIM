@@ -197,8 +197,22 @@
       || document.getElementById('atak-c2-map-controls');
     if (!el || !MapControls) return;
     state.controls = new MapControls(el, {
-      onZoomIn: function () { map.zoomIn(); },
-      onZoomOut: function () { map.zoomOut(); },
+      onZoomIn: function () {
+        var stage3d = document.querySelector('.atak-map-stage--premium-3d');
+        if (stage3d && window.ATAKTerrainThree && typeof window.ATAKTerrainThree.dolly === 'function') {
+          window.ATAKTerrainThree.dolly(0.82);
+          return;
+        }
+        map.zoomIn();
+      },
+      onZoomOut: function () {
+        var stage3dOut = document.querySelector('.atak-map-stage--premium-3d');
+        if (stage3dOut && window.ATAKTerrainThree && typeof window.ATAKTerrainThree.dolly === 'function') {
+          window.ATAKTerrainThree.dolly(1.22);
+          return;
+        }
+        map.zoomOut();
+      },
       onNorth: function () {
         try {
           if (typeof map.setBearing === 'function') map.setBearing(0);

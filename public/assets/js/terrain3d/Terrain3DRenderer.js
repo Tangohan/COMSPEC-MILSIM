@@ -249,6 +249,32 @@ export class Terrain3DRenderer {
     }
   }
 
+  /** Applique une texture depuis un canvas (overview stitchée). */
+  setTextureFromCanvas(canvas) {
+    if (!canvas || !this.terrainMaterial) return;
+    const THREE = this.THREE;
+    const tex = this.textureLoader.fromSource(canvas, THREE);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
+    TerrainMaterialFactory.setMap(this.terrainMaterial, tex);
+  }
+
+  /** Recale orbit / far plane sur la taille réelle du théâtre. */
+  syncCameraToWorld(worldWidth, worldDepth) {
+    if (!this.cameraControls || typeof this.cameraControls.syncToWorld !== 'function') return;
+    this.cameraControls.syncToWorld(
+      worldWidth != null ? worldWidth : this.options.width,
+      worldDepth != null ? worldDepth : this.options.height
+    );
+  }
+
+  /** Zoom UI (±) — facteur > 1 = dézoom. */
+  dolly(factor) {
+    if (this.cameraControls && typeof this.cameraControls.dolly === 'function') {
+      this.cameraControls.dolly(factor);
+    }
+  }
+
   /** Charge une heightmap image et reconstruit la géométrie. */
   async setHeightmap(url) {
     this.options.heightmapUrl = url;
