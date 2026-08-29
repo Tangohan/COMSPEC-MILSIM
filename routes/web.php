@@ -531,6 +531,7 @@ return function (Router $router) {
     $router->get('/connect/{token}/slides', [\App\Controllers\Web\AtakPhoneConnectController::class, 'slides']);
     $router->get('/connect/{token}/carte', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openCarte']);
     $router->get('/connect/{token}/tchat', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openChat']);
+    $router->get('/connect/{token}/sitac', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openSitac']);
     $router->get('/connect/{token}/ordres', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openOrders']);
     $router->get('/connect/{token}/explosifs', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openExplosives']);
     $router->get('/connect/{token}/c2', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openC2']);
@@ -540,6 +541,7 @@ return function (Router $router) {
     $router->get('/atak/connect/{token}/slides', [\App\Controllers\Web\AtakPhoneConnectController::class, 'slides']);
     $router->get('/atak/connect/{token}/carte', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openCarte']);
     $router->get('/atak/connect/{token}/tchat', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openChat']);
+    $router->get('/atak/connect/{token}/sitac', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openSitac']);
     $router->get('/atak/connect/{token}/ordres', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openOrders']);
     $router->get('/atak/connect/{token}/explosifs', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openExplosives']);
     $router->get('/atak/connect/{token}/c2', [\App\Controllers\Web\AtakPhoneConnectController::class, 'openC2']);

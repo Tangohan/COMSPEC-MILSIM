@@ -363,25 +363,13 @@ if ($atakMapConfig) {
         </button>
       </div>
       <div class="atak-screen-modal__phone" id="atak-screen-modal-phone-result" hidden aria-live="polite">
-        <div class="atak-qr-phone atak-qr-phone--modal" data-atak-qr-phone>
-          <div class="atak-qr-phone__screen">
-            <div class="atak-qr-phone__osd" aria-hidden="true">
-              <span class="atak-qr-phone__osd-brand">ATAK</span>
-              <span class="atak-qr-phone__osd-sep">·</span>
-              <span class="atak-qr-phone__osd-mode" data-atak-qr-phone-mode>MODULE</span>
-            </div>
-            <div class="atak-qr-phone__panel">
-              <div class="atak-qr-phone__panel-bar">
-                <span>Panneau détaché</span>
-                <span data-atak-qr-phone-label>Module</span>
-              </div>
-              <div class="atak-qr-phone__qr">
-                <img id="atak-screen-modal-qr" alt="QR code panneau détaché ATAK sur téléphone" width="220" height="220" />
-              </div>
-            </div>
-          </div>
-          <img class="atak-qr-phone__bezel" src="<?= htmlspecialchars($atakPhoneBezelUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="512" height="512" decoding="async" draggable="false" />
-        </div>
+        <?php
+        $qrImgId = 'atak-screen-modal-qr';
+        $qrImgAlt = 'QR code panneau détaché ATAK sur téléphone';
+        $phoneModifier = 'atak-qr-phone--modal';
+        $defaultModule = 'chat';
+        require base_path('views/partials/atak_qr_phone_preview.php');
+        ?>
         <div class="atak-screen-modal__phone-copy">
           <strong id="atak-screen-modal-phone-title">Scannez pour ouvrir le panneau</strong>
           <p id="atak-screen-modal-status">Génération du QR code…</p>
@@ -1849,10 +1837,11 @@ if ($atakMapConfig) {
           <div class="atak-qr-hub__hero">
             <span class="atak-qr-hub__kicker">PASSERELLE MOBILE SÉCURISÉE</span>
             <h3 id="atak-qr-title">Emportez le C2 sur le terrain</h3>
-            <p>Choisissez un module, générez une liaison temporaire puis scannez-la avec le téléphone. Chaque QR ouvre directement la bonne vue ATAK.</p>
+            <p>Choisissez un module (C2, SITAC, Tchat…). Le QR ouvre la fenêtre détachée dans le téléphone — même UI mobile que sur le poste.</p>
           </div>
           <div class="atak-qr-destinations" role="radiogroup" aria-label="Vue à ouvrir sur le téléphone">
-            <button type="button" class="atak-qr-destination is-active" data-qr-destination="c2" aria-pressed="true"><strong>C2</strong><span>Conduite et suivi</span></button>
+            <button type="button" class="atak-qr-destination is-active" data-qr-destination="c2" aria-pressed="true"><strong>C2</strong><span>Overview mobile</span></button>
+            <button type="button" class="atak-qr-destination" data-qr-destination="sitac" aria-pressed="false"><strong>SITAC</strong><span>Carte tactique</span></button>
             <button type="button" class="atak-qr-destination" data-qr-destination="chat" aria-pressed="false"><strong>Tchat</strong><span>Messagerie terrain</span></button>
             <button type="button" class="atak-qr-destination" data-qr-destination="orders" aria-pressed="false"><strong>Ordres</strong><span>Directives et FRAGO</span></button>
             <button type="button" class="atak-qr-destination" data-qr-destination="explosives" aria-pressed="false"><strong>Explosifs</strong><span>Charges et minuteries</span></button>
@@ -1860,30 +1849,18 @@ if ($atakMapConfig) {
           <button type="button" class="atak-qr-generate" id="atak-qr-generate" data-qr-api="<?= htmlspecialchars(url('api/atak/phone-pairing'), ENT_QUOTES, 'UTF-8') ?>">Générer le QR C2</button>
           <div class="atak-qr-result" id="atak-qr-result" hidden aria-live="polite">
             <div class="atak-qr-result__phone">
-              <div class="atak-qr-phone" data-atak-qr-phone>
-                <div class="atak-qr-phone__screen">
-                  <div class="atak-qr-phone__osd" aria-hidden="true">
-                    <span class="atak-qr-phone__osd-brand">ATAK</span>
-                    <span class="atak-qr-phone__osd-sep">·</span>
-                    <span class="atak-qr-phone__osd-mode" data-atak-qr-phone-mode>C2</span>
-                  </div>
-                  <div class="atak-qr-phone__panel">
-                    <div class="atak-qr-phone__panel-bar">
-                      <span>Panneau détaché</span>
-                      <span data-atak-qr-phone-label>C2</span>
-                    </div>
-                    <div class="atak-qr-phone__qr">
-                      <img id="atak-qr-image" alt="QR code d'accès ATAK mobile" width="240" height="240" />
-                    </div>
-                  </div>
-                </div>
-                <img class="atak-qr-phone__bezel" src="<?= htmlspecialchars($atakPhoneBezelUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="512" height="512" decoding="async" draggable="false" />
-              </div>
+              <?php
+              $qrImgId = 'atak-qr-image';
+              $qrImgAlt = 'QR code d\'accès ATAK mobile';
+              $phoneModifier = '';
+              $defaultModule = 'c2';
+              require base_path('views/partials/atak_qr_phone_preview.php');
+              ?>
             </div>
             <div class="atak-qr-result__details">
               <span class="atak-qr-status">PRÊT À SCANNER</span>
               <h4 id="atak-qr-result-title">Accès C2</h4>
-              <p>Le téléphone ouvre la même fenêtre détachée que sur le poste — module ciblé, liaison temporaire.</p>
+              <p>Le téléphone ouvre la fenêtre détachée du module — même UI mobile que le poste, liaison temporaire.</p>
               <div class="atak-qr-code-row"><code id="atak-qr-code">————</code><button type="button" id="atak-qr-copy">Copier</button></div>
               <p class="atak-qr-expiry" id="atak-qr-expiry"></p>
               <a id="atak-qr-open" href="#" target="_blank" rel="noopener noreferrer">Ouvrir sur cet appareil ↗</a>

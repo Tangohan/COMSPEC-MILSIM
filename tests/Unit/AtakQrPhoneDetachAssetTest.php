@@ -8,22 +8,28 @@ use PHPUnit\Framework\TestCase;
 
 final class AtakQrPhoneDetachAssetTest extends TestCase
 {
-    public function testQrHubAndScreenModalUsePhoneDetachedPanelShell(): void
+    public function testQrHubAndScreenModalUseMobileDetachedShell(): void
     {
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
+        $partial = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/atak_qr_phone_preview.php');
         $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-c2-shell.css');
         $hub = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-qr-hub.js');
         $chrome = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-panel-chrome.js');
+        $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
+        $controller = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/AtakPhoneConnectController.php');
 
-        self::assertStringContainsString('atak-qr-phone', $view);
-        self::assertStringContainsString('Panneau détaché', $view);
+        self::assertStringContainsString('atak_qr_phone_preview.php', $view);
+        self::assertStringContainsString('data-qr-destination="sitac"', $view);
         self::assertStringContainsString('Fenêtre détachée sur téléphone', $view);
-        self::assertStringContainsString('comspec_phone_bg_ca.png', $view);
-        self::assertStringContainsString('.atak-qr-phone', $css);
-        self::assertStringContainsString('--aqp-scr-l', $css);
+        self::assertStringContainsString('COMSPEC', $partial);
+        self::assertStringContainsString('atak-qr-phone__topbar', $partial);
+        self::assertStringContainsString('data-skin="sitac"', $partial);
+        self::assertStringContainsString('atak-qr-phone__qr-overlay', $partial);
+        self::assertStringContainsString('.atak-qr-phone__mobile', $css);
         self::assertStringContainsString('paintPhone', $hub);
-        self::assertStringContainsString('destinationFromTab', $chrome);
-        self::assertStringContainsString("destination: 'chat'", $chrome);
-        self::assertStringContainsString('SITAC', $chrome);
+        self::assertStringContainsString("sitac: 'SITAC'", $hub);
+        self::assertStringContainsString("destination: 'sitac'", $chrome);
+        self::assertStringContainsString("openSitac", $controller);
+        self::assertStringContainsString("/connect/{token}/sitac", $routes);
     }
 }

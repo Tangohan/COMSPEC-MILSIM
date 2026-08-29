@@ -206,24 +206,36 @@
 
   function destinationFromTab(tab) {
     var t = String(tab || '');
-    if (t === 'chat') return { destination: 'chat', label: 'Tchat', mode: 'TCHAT' };
+    if (t === 'chat') return { destination: 'chat', label: 'Tchat', mode: 'TCHAT C2' };
     if (t === 'orders') return { destination: 'orders', label: 'Ordres', mode: 'ORDRES' };
     if (t === 'charges') return { destination: 'explosives', label: 'Explosifs', mode: 'EXPLOSIFS' };
-    if (t === 'qrcode') return { destination: 'c2', label: 'C2', mode: 'C2' };
-    /* SITAC et autres onglets carte → même panneau détaché côté C2 */
+    if (t === 'qrcode') return { destination: 'c2', label: 'C2', mode: 'C2 OVERVIEW' };
     if (t === 'markers' || t === 'zones' || t === 'identification' || t === 'situation' || t === 'pings') {
-      return { destination: 'c2', label: 'SITAC', mode: 'SITAC' };
+      return { destination: 'sitac', label: 'SITAC', mode: 'SITAC' };
     }
-    return { destination: 'chat', label: 'Tchat', mode: 'TCHAT' };
+    return { destination: 'chat', label: 'Tchat', mode: 'TCHAT C2' };
   }
 
-  function paintPhonePreview(scope, label, mode) {
+  function paintPhonePreview(scope, label, mode, destination) {
     if (!scope) return;
-    scope.querySelectorAll('[data-atak-qr-phone-label]').forEach(function (el) {
-      el.textContent = label || 'Module';
-    });
-    scope.querySelectorAll('[data-atak-qr-phone-mode]').forEach(function (el) {
-      el.textContent = mode || 'MODULE';
+    var key = destination || 'c2';
+    var title = mode || label || 'MODULE';
+    scope.querySelectorAll('[data-atak-qr-phone]').forEach(function (phone) {
+      phone.setAttribute('data-module', key);
+      phone.querySelectorAll('[data-atak-qr-phone-mode]').forEach(function (el) {
+        el.textContent = title;
+      });
+      phone.querySelectorAll('[data-atak-qr-phone-label]').forEach(function (el) {
+        el.textContent = label || title;
+      });
+      phone.querySelectorAll('[data-skin]').forEach(function (skin) {
+        var on = skin.getAttribute('data-skin') === key;
+        skin.classList.toggle('is-active', on);
+        skin.setAttribute('aria-hidden', on ? 'false' : 'true');
+      });
+      phone.querySelectorAll('[data-nav-mod]').forEach(function (nav) {
+        nav.classList.toggle('is-on', nav.getAttribute('data-nav-mod') === key);
+      });
     });
   }
 
@@ -236,7 +248,7 @@
     var title = document.getElementById('atak-screen-modal-phone-title');
     if (!result || !status || !image || !button) return;
     var dest = destinationFromTab(activeTabId());
-    paintPhonePreview(result, dest.label, dest.mode);
+    paintPhonePreview(result, dest.label, dest.mode, dest.destination);
     if (title) title.textContent = 'Scannez pour ouvrir « ' + dest.label + ' »';
     result.hidden = false;
     status.textContent = 'Génération du QR code…';
@@ -265,7 +277,7 @@
       };
       image.src = qrSrc;
       image.hidden = false;
-      status.textContent = 'Même fenêtre détachée que sur le poste, dans le téléphone. Liaison temporaire.';
+      status.textContent = 'Fenêtre détachée mobile dans le téléphone. Liaison temporaire.';
       if (openLink) {
         openLink.href = body.pair_url;
         openLink.hidden = false;

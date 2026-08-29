@@ -255,6 +255,12 @@ final class AtakPhoneConnectController
         return $this->openDevice($params, 'chat');
     }
 
+    /** Ouvre la SITAC (carte / marqueurs) dans la coque téléphone. */
+    public function openSitac(Request $request, array $params = []): Response
+    {
+        return $this->openDevice($params, 'sitac');
+    }
+
     public function openOrders(Request $request, array $params = []): Response
     {
         return $this->openDevice($params, 'orders');
@@ -304,9 +310,9 @@ final class AtakPhoneConnectController
         }
 
         $tenantName = $this->tenantDisplayName($tenantId);
-        $tabs = ['chat' => 'chat', 'orders' => 'orders', 'charges' => 'charges', 'c2' => 'orders'];
+        $tabs = ['chat' => 'chat', 'orders' => 'orders', 'charges' => 'charges', 'c2' => 'orders', 'sitac' => 'markers'];
         $tab = $tabs[$view] ?? '';
-        $labels = ['chat' => 'Tchat', 'orders' => 'Ordres', 'charges' => 'Explosifs', 'c2' => 'C2'];
+        $labels = ['chat' => 'Tchat', 'orders' => 'Ordres', 'charges' => 'Explosifs', 'c2' => 'C2', 'sitac' => 'SITAC'];
         $label = $labels[$view] ?? 'ATAK';
         $atakEmbedUrl = url('atak') . ($tab !== ''
             ? '?embed=device&popout=left&tab=' . rawurlencode($tab)
