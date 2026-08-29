@@ -1567,7 +1567,9 @@ class Container
                 self::get(\App\Services\Steam\SteamWebApiService::class),
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
-                self::get(\App\Repositories\UnitRepository::class)
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Services\Personnel\SeniorityEnrollmentBootstrapService::class),
+                self::get(\App\Services\Personnel\SeniorityDossierInferenceSyncService::class)
             ),
             \App\Services\Recruitment\EnlistmentPortalAttachmentService::class => new \App\Services\Recruitment\EnlistmentPortalAttachmentService(
                 self::get(\App\Repositories\EnlistmentRepository::class)
