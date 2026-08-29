@@ -48,6 +48,10 @@ final class AtakTerrain3dTextureZoomAssetTest extends TestCase
         self::assertStringContainsString('setLoading', $premium);
         self::assertStringContainsString('terrain3d-loader', $premium);
         self::assertStringContainsString('mapTileSize', $premium);
+        self::assertStringContainsString('cropToLand', $renderer);
+        self::assertStringContainsString('_syncSeaPlane', $renderer);
+        self::assertStringContainsString('computeLandUvWindow', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/terrain3d/TerrainGeometryBuilder.js'));
+        self::assertStringContainsString('flattenSea', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/terrain3d/TerrainGeometryBuilder.js'));
         /* Helpers locaux : init OK même si TerrainMaterial.js est encore en cache navigateur. */
         self::assertMatchesRegularExpression(
             '/function\s+fogDensityForWorld\s*\(/',

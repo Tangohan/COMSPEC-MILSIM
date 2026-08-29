@@ -24,6 +24,8 @@ const DEFAULT_OPTIONS = {
   fog: true,
   fogDensity: 0.00045,
   backgroundColor: 0x0b1220,
+  cropToLand: true,
+  flattenSea: true,
 };
 
 /**
@@ -103,6 +105,8 @@ export class Terrain3DRenderer {
     this.grid = null;
     this._animationId = null;
     this._disposed = false;
+    this._landCrop = null;
+    this.seaMesh = null;
 
     this._buildScene();
     this._buildRenderer();
@@ -246,31 +250,56 @@ export class Terrain3DRenderer {
       if (this.terrainMaterial) this.terrainMaterial.dispose();
     }
 
-    const geometry = TerrainGeometryBuilder.build(THREE, {
-      grid: this.grid,
-      worldWidth: this.options.width,
-      worldDepth: this.options.height,
-      heightScale: this.mode === '2d' ? 0 : this.options.heightScale,
-      minAltitude: this.options.minAltitude,
-      maxAltitude: this.options.maxAltitude,
-      segmentsX: this.options.segments,
-      segmentsY: this.options.segments,
-    });
+    const built = TerrainGeometryBuilder.build(THREE, this._geomParams());
+    const geometry = built.geometry || built;
+    this._landCrop = built.crop || null;
 
     this.terrainMaterial = TerrainMaterialFactory.create(THREE, this.textureLoader.texture);
     this.terrainMesh = new THREE.Mesh(geometry, this.terrainMaterial);
     this.terrainMesh.name = 'atak-terrain-mesh';
+    if (this._landCrop) {
+      this.terrainMesh.position.set(this._landCrop.offsetX || 0, 0, this._landCrop.offsetZ || 0);
+    }
     this.scene.add(this.terrainMesh);
+    this._syncSeaPlane();
   }
 
-  _syncOverlayContext() {
-    this.overlays.setTerrainContext(this.grid, {
-      worldWidth: this.options.width,
-      worldDepth: this.options.height,
-      heightScale: this.mode === '2d' ? 0 : this.options.heightScale,
-      minAltitude: this.options.minAltitude,
-      maxAltitude: this.options.maxAltitude,
+  /** Plan d’eau calé sur l’emprise cropée — ne dépasse plus le mesh terre. */
+  _syncSeaPlane() {
+    const THREE = this.THREE;
+    if (!this.scene || !THREE) return;
+    if (this.seaMesh) {
+      this.scene.remove(this.seaMesh);
+      if (this.seaMesh.geometry) this.seaMesh.geometry.dispose();
+      if (this.seaMesh.material) this.seaMesh.material.dispose();
+      this.seaMesh = null;
+    }
+    if (this.options.flattenSea === false) return;
+    const crop = this._landCrop;
+    const w = crop && crop.width ? crop.width : this.options.width;
+    const d = crop && crop.depth ? crop.depth : this.options.height;
+    const y = crop && Number.isFinite(crop.seaLevelY)
+      ? crop.seaLevelY
+      : (Number(this.options.minAltitude) || 0) * (this.mode === '2d' ? 0 : this.options.heightScale);
+    const geo = new THREE.PlaneGeometry(w, d, 1, 1);
+    geo.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x14384a,
+      roughness: 0.92,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 0.72,
+      depthWrite: false,
     });
+    this.seaMesh = new THREE.Mesh(geo, mat);
+    this.seaMesh.name = 'atak-terrain-sea';
+    this.seaMesh.position.set(
+      crop && crop.offsetX != null ? crop.offsetX : 0,
+      y - 0.35,
+      crop && crop.offsetZ != null ? crop.offsetZ : 0
+    );
+    this.seaMesh.renderOrder = -1;
+    this.scene.add(this.seaMesh);
   }
 
   _geomParams() {
@@ -283,7 +312,22 @@ export class Terrain3DRenderer {
       maxAltitude: this.options.maxAltitude,
       segmentsX: this.options.segments,
       segmentsY: this.options.segments,
+      cropToLand: this.options.cropToLand !== false,
+      flattenSea: this.options.flattenSea !== false,
+      landPad: this.options.landPad,
+      seaSlack: this.options.seaSlack,
+      crop: this._landCrop,
     };
+  }
+
+  _syncOverlayContext() {
+    this.overlays.setTerrainContext(this.grid, {
+      worldWidth: this.options.width,
+      worldDepth: this.options.height,
+      heightScale: this.mode === '2d' ? 0 : this.options.heightScale,
+      minAltitude: this.options.minAltitude,
+      maxAltitude: this.options.maxAltitude,
+    });
   }
 
   /** @returns {Promise<Terrain3DRenderer>} */
@@ -365,12 +409,7 @@ export class Terrain3DRenderer {
       console.warn('[Terrain3D] setHeightmap échoué, conservation du relief actuel.', err);
       return;
     }
-    if (this.terrainMesh) {
-      this.terrainMesh.geometry.dispose();
-      this.terrainMesh.geometry = TerrainGeometryBuilder.build(this.THREE, this._geomParams());
-    } else {
-      this._buildTerrainMesh();
-    }
+    this._buildTerrainMesh();
     this._syncOverlayContext();
   }
 
@@ -386,10 +425,7 @@ export class Terrain3DRenderer {
       maxAltitude: this.options.maxAltitude,
     });
     this.options.heightData = data;
-    if (this.terrainMesh) {
-      this.terrainMesh.geometry.dispose();
-      this.terrainMesh.geometry = TerrainGeometryBuilder.build(this.THREE, this._geomParams());
-    }
+    this._buildTerrainMesh();
     this._syncOverlayContext();
   }
 
@@ -403,6 +439,10 @@ export class Terrain3DRenderer {
     this.options.heightScale = this._storedHeightScale;
     if (this.terrainMesh && this.grid) {
       TerrainGeometryBuilder.updateHeights(this.terrainMesh.geometry, this.grid, this._geomParams());
+      if (this._landCrop) {
+        this._landCrop.seaLevelY = (Number(this.options.minAltitude) || 0) * this.options.heightScale;
+      }
+      this._syncSeaPlane();
     }
     this._syncOverlayContext();
   }
@@ -417,6 +457,7 @@ export class Terrain3DRenderer {
       this.cameraControls.set2DView();
       if (this.terrainMesh && this.grid) {
         TerrainGeometryBuilder.updateHeights(this.terrainMesh.geometry, this.grid, this._geomParams());
+        this._syncSeaPlane();
       }
     } else {
       this.mode = '3d';
@@ -424,6 +465,10 @@ export class Terrain3DRenderer {
       this.cameraControls.set3DView();
       if (this.terrainMesh && this.grid) {
         TerrainGeometryBuilder.updateHeights(this.terrainMesh.geometry, this.grid, this._geomParams());
+        if (this._landCrop) {
+          this._landCrop.seaLevelY = (Number(this.options.minAltitude) || 0) * this.options.heightScale;
+        }
+        this._syncSeaPlane();
       }
     }
 
@@ -513,6 +558,12 @@ export class Terrain3DRenderer {
       this.scene.remove(this.terrainMesh);
       this.terrainMesh.geometry.dispose();
       this.terrainMaterial.dispose();
+    }
+    if (this.seaMesh) {
+      this.scene.remove(this.seaMesh);
+      if (this.seaMesh.geometry) this.seaMesh.geometry.dispose();
+      if (this.seaMesh.material) this.seaMesh.material.dispose();
+      this.seaMesh = null;
     }
 
     this.renderer.dispose();
