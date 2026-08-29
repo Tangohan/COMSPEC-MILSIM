@@ -1197,6 +1197,15 @@ if ($stmt && !$stmt->fetch()) {
         echo '  [ATTENTION] forum_visible_role_id : ' . $e->getMessage() . "\n";
     }
 }
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'site_photo_priority'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Migration site_photo_priority (user_profile_display_settings)...\n";
+    try {
+        $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN site_photo_priority varchar(16) NOT NULL DEFAULT 'operator' COMMENT 'operator|account — photo prioritaire header / portail' AFTER hide_personal_info");
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] site_photo_priority : ' . $e->getMessage() . "\n";
+    }
+}
 
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_topics' AND COLUMN_NAME = 'is_official'");
 if ($stmt && !$stmt->fetch()) {

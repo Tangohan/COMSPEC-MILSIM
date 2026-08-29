@@ -674,6 +674,7 @@ class Container
                 self::get(\App\Repositories\UserUiPreferencesRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Services\Profile\UserUiPreferencesValidationService::class),
+                self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class),
                 self::get(\App\Services\Steam\SteamWebApiService::class),
                 self::get(\App\Services\Auth\LoginSecurityOtpService::class),
                 self::get(\App\Services\Community\LeaveCommunityService::class),
