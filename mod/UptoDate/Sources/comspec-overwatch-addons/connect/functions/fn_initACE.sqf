@@ -212,6 +212,13 @@ private _sceneAction = [
 ] call ace_interact_menu_fnc_createAction;
 [_sceneAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+private _geoAction = [
+    "COMSPEC_GeoNetwork", "Relever villes et routes (réseau Athena)", "", {
+        [] call comspec_overwatch_connect_fnc_sampleGeoNetwork;
+    }, _condSync, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_geoAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
 private _helmetSnapAction = [
     "COMSPEC_HelmetSnap", "Envoyer aperçu casque", "", {
         private _uid = getPlayerUID player;

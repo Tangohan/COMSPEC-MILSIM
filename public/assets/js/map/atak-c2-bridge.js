@@ -181,9 +181,13 @@
 
   function mapPlatformType(u, extra) {
     var raw = String(u.platform || u.unitType || extra.platform || extra.vehicle_type || '').toUpperCase();
-    if (raw.indexOf('AIR') >= 0 || raw.indexOf('HELI') >= 0 || raw.indexOf('PLANE') >= 0) return 'AIR';
     if (raw.indexOf('UAV') >= 0 || raw.indexOf('DRONE') >= 0) return 'UAV';
-    if (raw.indexOf('VEH') >= 0 || raw.indexOf('CAR') >= 0 || raw.indexOf('TANK') >= 0) return 'VEHICLE';
+    if (raw.indexOf('AIR') >= 0 || raw.indexOf('HELI') >= 0 || raw.indexOf('PLANE') >= 0 || raw.indexOf('JET') >= 0) return 'AIR';
+    if (raw.indexOf('TANK') >= 0 || raw.indexOf('MBT') >= 0) return 'VEHICLE';
+    if (raw.indexOf('APC') >= 0 || raw.indexOf('IFV') >= 0 || raw.indexOf('AFV') >= 0) return 'VEHICLE';
+    if (raw.indexOf('TRUCK') >= 0 || raw.indexOf('MRAP') >= 0 || raw.indexOf('CAR') >= 0 || raw.indexOf('VEH') >= 0) return 'VEHICLE';
+    if (raw.indexOf('ARTILLERY') >= 0 || raw.indexOf('ARTY') >= 0 || raw.indexOf('MORTAR') >= 0) return 'VEHICLE';
+    if (raw.indexOf('LIGHT_VEHICLE') >= 0 || raw.indexOf('SHIP') >= 0 || raw.indexOf('BOAT') >= 0) return 'VEHICLE';
     if (raw.indexOf('MED') >= 0) return 'MEDICAL';
     if (raw.indexOf('CMD') >= 0 || raw.indexOf('HQ') >= 0) return 'COMMAND';
     var role = String(u.role || extra.role || '').toLowerCase();
