@@ -7,6 +7,7 @@ namespace App\Services\Personnel;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelOrgHistoryRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelQualificationRepository;
 use App\Repositories\RoleAssignmentLogRepository;
 use App\Repositories\SeniorityRepository;
@@ -28,6 +29,16 @@ final class SeniorityDossierInferenceSyncService
         'tenure_rank_current',
         'tenure_training_track',
         'tenure_qualification_hold',
+        'tenure_garrison',
+        'tenure_operational_commitment',
+        'tenure_staff_assignment',
+        'tenure_reserve_status',
+    ];
+
+    /** @var list<string> */
+    private const STAFF_SLUG_NEEDLES = [
+        'admin', 'owner', 'officer', 'cadre', 'staff', 'rh', 'command', 's1',
+        'instruct', 'zeus', 'gm', 'moderat', 'recrut', 'ops',
     ];
 
     public function __construct(
@@ -40,6 +51,7 @@ final class SeniorityDossierInferenceSyncService
         private UserRepository $userRepository,
         private PersonnelQualificationRepository $personnelQualificationRepository,
         private TrainingCertificateRepository $trainingCertificateRepository,
+        private ?PersonnelProfileRepository $personnelProfileRepository = null,
     ) {}
 
     public static function inferenceMarker(string $code): string
@@ -182,8 +194,79 @@ final class SeniorityDossierInferenceSyncService
             'tenure_rank_current' => $this->resolveRankStartYmd($tenantId, $userId),
             'tenure_training_track' => $this->resolveTrainingTrackStartYmd($tenantId, $userId),
             'tenure_qualification_hold' => $this->resolveQualificationHoldStartYmd($tenantId, $userId),
+            'tenure_garrison' => $this->resolveGarrisonStartYmd($tenantId, $userId),
+            'tenure_operational_commitment' => $this->resolveServiceStartYmd($tenantId, $userId),
+            'tenure_staff_assignment' => $this->resolveStaffAssignmentStartYmd($tenantId, $userId),
+            'tenure_reserve_status' => $this->resolveReserveStatusStartYmd($tenantId, $userId),
             default => null,
         };
+    }
+
+    private function resolveGarrisonStartYmd(int $tenantId, int $userId): ?string
+    {
+        $unit = $this->personnelAssignmentRepository->inferCurrentAttachmentStartYmd($tenantId, $userId, false);
+        if ($unit !== null) {
+            return $unit;
+        }
+
+        return $this->resolveEnlistmentOrServiceStartYmd($tenantId, $userId);
+    }
+
+    private function resolveStaffAssignmentStartYmd(int $tenantId, int $userId): ?string
+    {
+        $slug = strtolower(trim((string) ($this->userRepository->getRoleSlugForUser($userId) ?? '')));
+        if ($slug === '' || in_array($slug, ['member', 'guest', 'invite', 'applicant', 'candidate'], true)) {
+            return null;
+        }
+        if (!$this->slugLooksLikeStaff($slug)) {
+            return null;
+        }
+
+        return $this->resolveRoleCommunityStartYmd($tenantId, $userId)
+            ?? $this->resolveEnlistmentOrServiceStartYmd($tenantId, $userId);
+    }
+
+    private function resolveReserveStatusStartYmd(int $tenantId, int $userId): ?string
+    {
+        if ($this->personnelProfileRepository === null) {
+            return null;
+        }
+        $pp = $this->personnelProfileRepository->getByUserId($userId) ?? [];
+        $hay = strtolower(trim(
+            (string) ($pp['operator_status'] ?? '') . ' ' .
+            (string) ($pp['service_status'] ?? '') . ' ' .
+            (string) ($pp['gendarmerie_status'] ?? '') . ' ' .
+            (string) ($pp['administrative_position'] ?? '')
+        ));
+        if ($hay === '' || !preg_match('/reserv|réserv|irr[eé]gulier|dispo\b|disponib/', $hay)) {
+            return null;
+        }
+
+        return $this->resolveEnlistmentOrServiceStartYmd($tenantId, $userId);
+    }
+
+    private function resolveEnlistmentOrServiceStartYmd(int $tenantId, int $userId): ?string
+    {
+        if ($this->personnelProfileRepository !== null) {
+            $pp = $this->personnelProfileRepository->getByUserId($userId) ?? [];
+            $enlist = $this->normalizeDateYmd(isset($pp['enlistment_date']) ? (string) $pp['enlistment_date'] : null);
+            if ($enlist !== null) {
+                return $enlist;
+            }
+        }
+
+        return $this->resolveServiceStartYmd($tenantId, $userId);
+    }
+
+    private function slugLooksLikeStaff(string $slug): bool
+    {
+        foreach (self::STAFF_SLUG_NEEDLES as $needle) {
+            if (str_contains($slug, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function resolveServiceStartYmd(int $tenantId, int $userId): ?string

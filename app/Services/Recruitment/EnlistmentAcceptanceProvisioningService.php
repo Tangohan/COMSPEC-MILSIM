@@ -19,11 +19,13 @@ use App\Services\Admin\AdminAuditService;
 use App\Services\Documents\DocumentAccessService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
+use App\Services\Personnel\MatriculeService;
 use App\Services\Personnel\SeniorityDossierInferenceSyncService;
 use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Steam\SteamWebApiService;
 use App\Support\EnlistmentAcceptedIdentity;
+use App\Repositories\RecruitmentOpeningRepository;
 use DateTimeImmutable;
 use Throwable;
 
@@ -55,6 +57,8 @@ final class EnlistmentAcceptanceProvisioningService
         private ?UnitRepository $unitRepository = null,
         private ?SeniorityEnrollmentBootstrapService $seniorityEnrollmentBootstrapService = null,
         private ?SeniorityDossierInferenceSyncService $seniorityDossierInferenceSyncService = null,
+        private ?MatriculeService $matriculeService = null,
+        private ?RecruitmentOpeningRepository $recruitmentOpeningRepository = null,
     ) {}
 
     /**
@@ -261,6 +265,18 @@ final class EnlistmentAcceptanceProvisioningService
             ];
         }
 
+        $clearanceOpt = strtolower(trim((string) ($options['clearance_level'] ?? '')));
+        if ($clearanceOpt === '' && $this->recruitmentOpeningRepository !== null) {
+            $openingId = (int) ($fresh['recruitment_opening_id'] ?? 0);
+            if ($openingId > 0) {
+                $opening = $this->recruitmentOpeningRepository->findByIdForTenant($openingId, $tenantId);
+                $fromOpening = strtolower(trim((string) ($opening['clearance_level'] ?? '')));
+                if ($fromOpening !== '' && $fromOpening !== 'none') {
+                    $options['clearance_level'] = $fromOpening;
+                }
+            }
+        }
+
         $extras = $this->applyOnboardingExtras($tenantId, $userId, $options, $actorUserId);
         if (!$extras['ok']) {
             return [
@@ -412,6 +428,7 @@ final class EnlistmentAcceptanceProvisioningService
                     $unitId,
                     mb_substr($assignmentLabel, 0, 120)
                 );
+                $ppPatch['primary_unit_id'] = $unitId;
             } catch (Throwable $e) {
                 return [
                     'ok' => false,
@@ -430,8 +447,22 @@ final class EnlistmentAcceptanceProvisioningService
             $ppPatch['clearance_reviewed_at'] = date('Y-m-d H:i:s');
         }
 
+        $existingPp = $this->personnelProfileRepository->getByUserId($userId) ?? [];
+        $currentReadiness = (int) ($existingPp['readiness_score'] ?? 0);
+        if ($currentReadiness < 1) {
+            $ppPatch['readiness_score'] = 1;
+        }
+
         if ($ppPatch !== []) {
             $this->personnelProfileRepository->update($userId, $ppPatch);
+        }
+
+        if ($this->matriculeService !== null) {
+            try {
+                $this->matriculeService->assignNextForUser($userId, $tenantId);
+            } catch (Throwable $e) {
+                $warnings[] = 'Matricule non attribué automatiquement : ' . $this->shortExceptionMessage($e);
+            }
         }
 
         return [
@@ -1014,10 +1045,20 @@ final class EnlistmentAcceptanceProvisioningService
                 );
             }
             if ($this->seniorityDossierInferenceSyncService !== null) {
-                $this->seniorityDossierInferenceSyncService->syncForUser($tenantId, $userId, false);
+                $stats = $this->seniorityDossierInferenceSyncService->syncForUser($tenantId, $userId, false);
+                if (($stats['skipped_schema'] ?? 0) > 0 || ($stats['insert_failed'] ?? 0) > 0) {
+                    error_log(sprintf(
+                        '[seniority-accept] tenant=%d user=%d schema=%d insert_failed=%d inserted=%d',
+                        $tenantId,
+                        $userId,
+                        (int) ($stats['skipped_schema'] ?? 0),
+                        (int) ($stats['insert_failed'] ?? 0),
+                        (int) ($stats['inserted'] ?? 0)
+                    ));
+                }
             }
-        } catch (Throwable) {
-            // Ne jamais faire échouer l’acceptation si le module ancienneté est partiel.
+        } catch (Throwable $e) {
+            error_log('[seniority-accept] ' . $e->getMessage());
         }
     }
 

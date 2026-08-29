@@ -37,6 +37,10 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
                 'tenure_rank_current',
                 'tenure_training_track',
                 'tenure_qualification_hold',
+                'tenure_garrison',
+                'tenure_operational_commitment',
+                'tenure_staff_assignment',
+                'tenure_reserve_status',
             ],
             SeniorityDossierInferenceSyncService::INFERENCE_CODES
         );
@@ -93,6 +97,7 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
         $users = $this->createMock(UserRepository::class);
         $users->method('listOrganizationRoleIdsForUser')->willReturn([9]);
         $users->method('findById')->willReturn(['created_at' => '2021-01-01 00:00:00']);
+        $users->method('getRoleSlugForUser')->willReturn('tenant_admin');
 
         $quals = $this->createMock(PersonnelQualificationRepository::class);
         $quals->method('listForUser')->willReturn([
@@ -102,6 +107,12 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
         $certs = $this->createMock(TrainingCertificateRepository::class);
         $certs->method('listByUserId')->willReturn([
             ['issued_at' => '2020-08-01'],
+        ]);
+
+        $profiles = $this->createMock(\App\Repositories\PersonnelProfileRepository::class);
+        $profiles->method('getByUserId')->willReturn([
+            'enlistment_date' => '2021-01-01',
+            'operator_status' => 'réserve',
         ]);
 
         $svc = new SeniorityDossierInferenceSyncService(
@@ -114,6 +125,7 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
             $users,
             $quals,
             $certs,
+            $profiles,
         );
 
         $stats = $svc->syncForUser(1, 2, true);
