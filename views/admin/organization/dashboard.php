@@ -182,6 +182,7 @@ $modActionLabelFr = static function (string $t): string {
 <?php
 $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : null;
 $discordInviteMissing = !empty($discordInviteMissing);
+$missingMediaCount = (int) ($missingMediaCount ?? 0);
 ?>
 <?php if (!empty($isBackOfficeShell)): ?>
 <div class="ath-dash-page">
@@ -190,6 +191,16 @@ $discordInviteMissing = !empty($discordInviteMissing);
         <div class="ath-banner-warn__kicker">Recrutement Discord</div>
         <div class="ath-banner-warn__text">Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné. Les candidats ne peuvent pas rejoindre votre serveur depuis le formulaire.</div>
         <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '#contact', ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid" style="margin-top:12px;display:inline-flex;">Renseigner le lien</a>
+    </div>
+    <?php endif; ?>
+    <?php if ($missingMediaCount > 0): ?>
+    <div class="ath-banner-warn ath-rise" role="alert">
+        <div class="ath-banner-warn__kicker">Photos après migration</div>
+        <div class="ath-banner-warn__text">
+            <?= (int) $missingMediaCount ?> compte(s) ont une photo ou un portrait référencé en base alors que le fichier n’est plus sur le serveur.
+            Demandez un re-téléversement (Mon compte → Image / Portrait).
+        </div>
+        <a href="<?= htmlspecialchars(url('back-office/centre-operations') . '#anomalies-medias', ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid" style="margin-top:12px;display:inline-flex;">Voir les comptes concernés</a>
     </div>
     <?php endif; ?>
     <?php if ($setupBanner !== null): ?>
@@ -255,6 +266,21 @@ $discordInviteMissing = !empty($discordInviteMissing);
         </div>
         <?php endif; ?>
 
+        <?php if ($missingMediaCount > 0): ?>
+        <div class="org-dash__setup org-dash__setup--warn" role="alert">
+            <div class="org-dash__setup-inner">
+                <div class="org-dash__setup-copy">
+                    <p class="org-dash__setup-kicker">Photos après migration</p>
+                    <p class="org-dash__setup-title"><?= (int) $missingMediaCount ?> photo(s) à re-téléverser</p>
+                    <p class="org-dash__setup-lead">Des chemins d’images restent en base alors que les fichiers ne sont plus sur le serveur. Demandez aux membres de recharger leur photo via Mon compte → Image / Portrait.</p>
+                </div>
+                <div class="org-dash__setup-actions">
+                    <a href="<?= htmlspecialchars(url('back-office/centre-operations') . '#anomalies-medias', ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--solid">Voir les comptes</a>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <?php if ($setupBanner !== null): ?>
         <div class="org-dash__setup">
             <div class="org-dash__setup-inner">
@@ -280,7 +306,7 @@ $discordInviteMissing = !empty($discordInviteMissing);
         </div>
         <?php endif; ?>
 
-        <header class="org-dash__hero<?= ($setupBanner !== null || $discordInviteMissing) ? ' org-dash__hero--after-setup' : '' ?>">
+        <header class="org-dash__hero<?= ($setupBanner !== null || $discordInviteMissing || $missingMediaCount > 0) ? ' org-dash__hero--after-setup' : '' ?>">
             <div class="org-dash__hero-inner">
                 <div>
                     <p class="org-dash__brand">Athena · État-major</p>

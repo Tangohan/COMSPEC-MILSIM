@@ -19,28 +19,40 @@ final class PersonnelRpIdentityAssetTest extends TestCase
         self::assertStringContainsString('name="rp_first_name"', $edit);
         self::assertStringContainsString('name="rp_last_name"', $edit);
         self::assertStringContainsString('name="rp_bio"', $edit);
-        self::assertStringContainsString('Prénom (personnage)', $edit);
+        self::assertStringContainsString('>Prénom</label>', $edit);
+        self::assertStringContainsString('>Nom</label>', $edit);
         self::assertStringContainsString('Présentation du personnage', $edit);
+        self::assertStringContainsString('Identité en jeu', $edit);
         self::assertStringNotContainsString('hors personnage', $edit);
         self::assertStringNotContainsString('Identité nominative', $edit);
         self::assertStringNotContainsString('civil_first_name', $edit);
+        self::assertStringNotContainsString('name="character_name"', $edit);
+        self::assertStringNotContainsString('name="display_name"', $edit);
         self::assertStringContainsString('edit-identite-rp', $edit);
 
-        self::assertStringContainsString('Prénom (personnage)', $file);
+        self::assertStringContainsString('>Prénom</p>', $file);
+        self::assertStringContainsString('>Nom</p>', $file);
         self::assertStringContainsString('Présentation du personnage', $file);
         self::assertStringNotContainsString('Identité civile / administrative', $file);
         self::assertStringNotContainsString('Bio (compte)', $file);
+        self::assertStringNotContainsString('Nom affiché sur le compte', $file);
+        self::assertStringNotContainsString('Nom de scène', $file);
 
-        self::assertStringContainsString("'Personnage', 'Prénom'", $tableau);
+        self::assertStringContainsString("'Identité', 'Prénom'", $tableau);
+        self::assertStringContainsString("'Identité', 'Nom'", $tableau);
         self::assertStringNotContainsString('Identité civile', $tableau);
+        self::assertStringNotContainsString('Nom affiché', $tableau);
+        self::assertStringNotContainsString('Nom de personnage', $tableau);
 
         self::assertStringContainsString("input('rp_first_name')", $controller);
         self::assertStringContainsString("input('rp_bio')", $controller);
         self::assertStringNotContainsString("input('civil_first_name')", $controller);
         self::assertStringNotContainsString('userLegalIdentityRepository->upsert', $controller);
 
-        self::assertStringContainsString('Prénom (personnage)', $prefs);
-        self::assertStringContainsString('Nom (personnage)', $prefs);
+        self::assertStringContainsString('for="first_name">Prénom</label>', $prefs);
+        self::assertStringContainsString('for="last_name">Nom</label>', $prefs);
         self::assertStringNotContainsString('dossier nominatif', $prefs);
+        self::assertStringNotContainsString('name="display_name"', $prefs);
+        self::assertStringNotContainsString('name="character_name"', $prefs);
     }
 }

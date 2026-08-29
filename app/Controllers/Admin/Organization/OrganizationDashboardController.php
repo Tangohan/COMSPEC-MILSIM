@@ -172,6 +172,23 @@ class OrganizationDashboardController
         } catch (\Throwable) {
             $discordInviteMissing = false;
         }
+        $missingMediaCount = 0;
+        try {
+            $mediaScan = (new \App\Services\Media\MissingUserMediaScanner())->scanTenant($tenantId, 300);
+            $missingMediaCount = (int) ($mediaScan['total_users'] ?? 0);
+            if ($missingMediaCount > 0) {
+                $orgAnnounceItems[] = [
+                    'kind' => 'urgent',
+                    'category' => 'Médias',
+                    'title' => 'Photos perdues après migration',
+                    'body' => $missingMediaCount . ' compte(s) ont encore un chemin d’image en base alors que le fichier n’est plus sur le serveur. Demandez un re-téléversement.',
+                    'cta_label' => 'Voir les comptes',
+                    'cta_url' => url('back-office/centre-operations') . '#anomalies-medias',
+                ];
+            }
+        } catch (\Throwable) {
+            $missingMediaCount = 0;
+        }
         try {
             foreach ($this->tenantAlertRepository->listActiveForTenantDisplay($tenantId) as $alert) {
                 $style = \App\Support\AlertDisplayStyle::sanitizeTenant(
@@ -391,6 +408,7 @@ class OrganizationDashboardController
             'initialSetupBanner' => $initialSetupBanner,
             'configurationUpdateBadge' => $configurationUpdateBadge,
             'discordInviteMissing' => $discordInviteMissing,
+            'missingMediaCount' => $missingMediaCount,
             'orgActivityChart' => $orgActivityChart,
             'orgNextOperation' => $orgNextOperation,
             'orgElevationOpen' => $orgElevationOpen,
