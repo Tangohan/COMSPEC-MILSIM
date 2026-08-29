@@ -146,5 +146,7 @@ Le module existant (`public/assets/js/atak-terrain-3d.js`) déforme les tuiles L
 
 ## Dépendances
 
-- **Three.js r160+** (chargé via CDN dans `initTerrain3D`, ou injecté via bundler)
+- **Three.js r160** — vendored sous `public/assets/vendor/three/` (CSP `script-src 'self'`)
+- Import map `three` dans `views/atak.php` pour OrbitControls / CSS2DRenderer
+- Fallback optionnel CDN jsDelivr si `ATAK_THREE_BASE` / `threeBase` pointe ailleurs
 - Navigateur desktop moderne (WebGL2)

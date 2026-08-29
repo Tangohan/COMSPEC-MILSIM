@@ -1,5 +1,6 @@
 /**
  * MapControls — contrôles carte flottants (nord, zoom, 2D/3D, recentrage).
+ * Affiche libellés visibles pour zoom / mode / actions.
  */
 export class MapControls {
   /**
@@ -16,13 +17,20 @@ export class MapControls {
   _render() {
     const h = this.handlers;
     this.container.innerHTML =
-      '<div class="tac-map-controls__stack">'
-      + btn('nord', 'N', 'Nord', h.onNorth)
-      + btn('zoom-in', '+', 'Zoom avant', h.onZoomIn)
-      + btn('zoom-out', '−', 'Zoom arrière', h.onZoomOut)
-      + btn('toggle-23d', '3D', 'Basculer 2D / 3D', h.onToggle23d, 'tac-ctrl-23d')
-      + btn('recenter', '⌖', 'Recentrer', h.onRecenter)
-      + btn('follow', '◎', 'Suivi unité', h.onFollow, 'tac-ctrl-follow')
+      '<div class="tac-map-controls__stack" role="toolbar" aria-label="Contrôles de la carte">'
+      + group('Vue', [
+          btn('nord', 'N', 'Nord', 'Remettre le nord en haut'),
+          btn('toggle-2d', '2D', '2D', 'Vue carte à plat', 'tac-ctrl-mode tac-ctrl-2d is-active'),
+          btn('toggle-3d', '3D', '3D', 'Vue topo premium 3D', 'tac-ctrl-mode tac-ctrl-3d'),
+        ])
+      + group('Zoom', [
+          btn('zoom-in', '+', 'Zoom +', 'Zoom avant'),
+          btn('zoom-out', '−', 'Zoom −', 'Zoom arrière'),
+        ])
+      + group('Cible', [
+          btn('recenter', '⌖', 'Centre', 'Recentrer la carte'),
+          btn('follow', '◎', 'Suivi', 'Suivre ma position', 'tac-ctrl-follow'),
+        ])
       + '</div>';
 
     const self = this;
@@ -32,11 +40,13 @@ export class MapControls {
         if (action === 'nord' && h.onNorth) h.onNorth();
         if (action === 'zoom-in' && h.onZoomIn) h.onZoomIn();
         if (action === 'zoom-out' && h.onZoomOut) h.onZoomOut();
-        if (action === 'toggle-23d' && h.onToggle23d) {
-          self.mode = self.mode === '2d' ? '3d' : '2d';
-          el.textContent = self.mode === '2d' ? '3D' : '2D';
-          el.classList.toggle('is-active', self.mode === '3d');
-          h.onToggle23d(self.mode);
+        if (action === 'toggle-2d') {
+          self.setMode('2d');
+          if (h.onToggle23d) h.onToggle23d('2d');
+        }
+        if (action === 'toggle-3d') {
+          self.setMode('3d');
+          if (h.onToggle23d) h.onToggle23d('3d');
         }
         if (action === 'recenter' && h.onRecenter) h.onRecenter();
         if (action === 'follow' && h.onFollow) {
@@ -48,18 +58,28 @@ export class MapControls {
   }
 
   setMode(mode) {
-    this.mode = mode;
-    const btn23d = this.container && this.container.querySelector('[data-action="toggle-23d"]');
-    if (btn23d) {
-      btn23d.textContent = mode === '2d' ? '3D' : '2D';
-      btn23d.classList.toggle('is-active', mode === '3d');
-    }
+    this.mode = mode === '3d' ? '3d' : '2d';
+    if (!this.container) return;
+    const b2 = this.container.querySelector('[data-action="toggle-2d"]');
+    const b3 = this.container.querySelector('[data-action="toggle-3d"]');
+    if (b2) b2.classList.toggle('is-active', this.mode === '2d');
+    if (b3) b3.classList.toggle('is-active', this.mode === '3d');
   }
 }
 
-function btn(action, label, title, handler, extraClass) {
+function group(label, buttonsHtml) {
+  return '<div class="tac-map-controls__group" role="group" aria-label="' + label + '">'
+    + '<span class="tac-map-controls__group-label">' + label + '</span>'
+    + buttonsHtml.join('')
+    + '</div>';
+}
+
+function btn(action, glyph, label, title, extraClass) {
   return '<button type="button" class="tac-map-controls__btn' + (extraClass ? ' ' + extraClass : '') + '"'
-    + ' data-action="' + action + '" title="' + title + '">' + label + '</button>';
+    + ' data-action="' + action + '" title="' + title + '" aria-label="' + title + '">'
+    + '<span class="tac-map-controls__glyph" aria-hidden="true">' + glyph + '</span>'
+    + '<span class="tac-map-controls__label">' + label + '</span>'
+    + '</button>';
 }
 
 if (typeof window !== 'undefined') {

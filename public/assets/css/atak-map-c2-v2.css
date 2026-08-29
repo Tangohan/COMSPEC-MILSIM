@@ -18,7 +18,7 @@
   --c2-radius: 4px;
   --c2-trans: 140ms ease;
   --c2-top-h: 46px;
-  --c2-rail-w: 44px;
+  --c2-rail-w: 72px;
   --c2-ctx-h: 72px;
   --c2-font: 'Inter', system-ui, sans-serif;
   --c2-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -113,27 +113,55 @@ html, body.tac-c2-body {
 
 /* —— Tool rail —— */
 .tac-c2-rail {
+  --c2-rail-w: 72px;
   grid-area: rail;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 4px;
+  align-items: stretch;
+  gap: 3px;
+  padding: 8px 5px;
   background: var(--c2-bg2);
   border-right: 1px solid var(--c2-line);
   z-index: 15;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .tac-c2-rail__btn {
-  width: 38px;
-  height: 38px;
+  width: 100%;
+  min-height: 44px;
   border: 0;
   border-radius: var(--c2-radius);
   background: transparent;
   color: var(--c2-muted);
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
   transition: background var(--c2-trans), color var(--c2-trans);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 5px 2px 4px;
+}
+
+.tac-c2-rail__icon {
+  display: block;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.tac-c2-rail__label {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tac-c2-rail__btn:hover,
@@ -202,20 +230,61 @@ html, body.tac-c2-body {
 .tac-map-controls__stack {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+}
+
+.tac-map-controls__group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 5px;
+  background: var(--c2-panel);
+  border: 1px solid var(--c2-line);
+  border-radius: var(--c2-radius);
+  backdrop-filter: blur(8px);
+}
+
+.tac-map-controls__group-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c2-muted);
+  text-align: center;
+  padding: 0 2px 2px;
 }
 
 .tac-map-controls__btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--c2-line2);
+  width: 52px;
+  min-height: 36px;
+  border: 1px solid transparent;
   border-radius: var(--c2-radius);
-  background: var(--c2-panel);
+  background: transparent;
   color: var(--c2-text);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color var(--c2-trans), background var(--c2-trans);
+  transition: border-color var(--c2-trans), background var(--c2-trans), color var(--c2-trans);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 4px 2px;
+}
+
+.tac-map-controls__glyph {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.tac-map-controls__label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--c2-muted);
 }
 
 .tac-map-controls__btn:hover,
@@ -225,7 +294,13 @@ html, body.tac-c2-body {
   color: var(--c2-accent);
 }
 
-.tac-ctrl-23d { font-size: 10px !important; letter-spacing: 0.04em; }
+.tac-map-controls__btn:hover .tac-map-controls__label,
+.tac-map-controls__btn.is-active .tac-map-controls__label {
+  color: var(--c2-accent);
+}
+
+.tac-ctrl-mode { font-size: 11px !important; letter-spacing: 0.04em; }
+.tac-ctrl-mode .tac-map-controls__glyph { font-size: 11px; font-weight: 800; }
 
 /* —— Right panel flottant (unité sélectionnée) —— */
 .tac-c2-side {
