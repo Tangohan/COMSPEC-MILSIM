@@ -246,3 +246,58 @@
   if (start === null) start = 0;
   goTo(start, { force: true, replaceHash: true, updateHash: start !== 0 });
 })();
+
+/**
+ * Aperçu côté candidat : heuristique légère (pas le score serveur).
+ * Affiche un rappel si le texte ressemble à un modèle IA.
+ */
+(function () {
+  'use strict';
+  var PHRASES = [
+    'il est important de noter',
+    'dans le monde d’aujourd',
+    'dans le monde d aujourd',
+    'en conclusion',
+    'je reste à votre disposition',
+    'je reste a votre disposition',
+    'c’est avec un grand enthousiasme',
+    'c est avec un grand enthousiasme',
+    'contribuer de manière significative',
+    'contribuer de maniere significative',
+    'it is important to note',
+    'in conclusion',
+    'as an avid'
+  ];
+
+  function scoreHint(text) {
+    var t = (text || '').toLowerCase();
+    if (t.trim().split(/\s+/).length < 40) return 0;
+    var hits = 0;
+    for (var i = 0; i < PHRASES.length; i++) {
+      if (t.indexOf(PHRASES[i]) !== -1) hits++;
+    }
+    return hits;
+  }
+
+  function bind(el) {
+    if (!(el instanceof HTMLTextAreaElement) && !(el instanceof HTMLInputElement)) return;
+    var hint = el.parentElement && el.parentElement.querySelector('[data-ai-hint]');
+    if (!hint) {
+      hint = document.createElement('p');
+      hint.setAttribute('data-ai-hint', '1');
+      hint.className = 'ce-label-hint';
+      hint.hidden = true;
+      hint.style.color = '#b45309';
+      hint.textContent = 'Ce texte ressemble à un modèle générique. Rédigez avec vos mots : l’équipe lit la sincérité autant que le fond.';
+      el.insertAdjacentElement('afterend', hint);
+    }
+    var run = function () {
+      var hits = scoreHint(el.value || '');
+      hint.hidden = hits < 2;
+    };
+    el.addEventListener('input', run);
+    run();
+  }
+
+  document.querySelectorAll('[data-ai-scan="1"]').forEach(bind);
+})();

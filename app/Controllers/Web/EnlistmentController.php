@@ -61,7 +61,10 @@ class EnlistmentController
         private TenantBrandingRepository $tenantBrandingRepository,
         private ?RecruitmentDiscordQuestionRepository $recruitmentDiscordQuestionRepository = null,
         private ?RecruitmentInviteCodeRepository $inviteCodeRepository = null,
-    ) {}
+        private ?\App\Services\Moderation\AiTextLikelihoodDetector $aiTextLikelihoodDetector = null,
+    ) {
+        $this->aiTextLikelihoodDetector ??= new \App\Services\Moderation\AiTextLikelihoodDetector();
+    }
 
     public function show(Request $request, array $params = []): Response
     {
@@ -665,6 +668,8 @@ class EnlistmentController
             (string) ($payload['submitted_via'] ?? 'guest')
         );
 
+        $this->flagAiLikelihoodIfNeeded((int) $tenant['id'], $enlistmentId, $payload);
+
         $submittedProps = null;
         if (!empty($payload['recruitment_opening_id'])) {
             $submittedProps = ['opening_id' => (int) $payload['recruitment_opening_id']];
@@ -829,6 +834,7 @@ class EnlistmentController
         }
 
         $this->enlistmentTimelineRepository->logIntakeFromSubmission($targetTenantId, $enlistmentId, null, 'guest');
+        $this->flagAiLikelihoodIfNeeded($targetTenantId, $enlistmentId, $payload);
         $this->analyticsEventService->record(
             $targetTenantId,
             null,
@@ -1183,6 +1189,82 @@ class EnlistmentController
         }
 
         return $out;
+    }
+
+    /**
+     * Signal d’instruction : textes libres du dossier scorés localement (heuristique IA).
+     * N’empêche pas le dépôt — journalise une entrée chronologie si le score dépasse le seuil.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function flagAiLikelihoodIfNeeded(int $tenantId, int $enlistmentId, array $payload): void
+    {
+        if ($tenantId < 1 || $enlistmentId < 1 || !$this->enlistmentTimelineRepository->tableExists()) {
+            return;
+        }
+        $fields = [
+            'motivation_why_join' => (string) ($payload['motivation_why_join'] ?? ''),
+            'motivation_accountability' => (string) ($payload['motivation_accountability'] ?? ''),
+            'commitment_effort' => (string) ($payload['commitment_effort'] ?? ''),
+            'past_milsim_experience' => (string) ($payload['past_milsim_experience'] ?? ''),
+            'notes' => (string) ($payload['notes'] ?? ''),
+            'experience' => (string) ($payload['experience'] ?? ''),
+        ];
+        $custom = $payload['custom_answers'] ?? null;
+        if (is_array($custom)) {
+            foreach ($custom as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $widget = (string) ($row['widget'] ?? 'text');
+                if (!in_array($widget, ['text', 'textarea', ''], true)) {
+                    continue;
+                }
+                $id = trim((string) ($row['question_id'] ?? $row['label'] ?? 'custom'));
+                $fields['custom_' . $id] = (string) ($row['answer'] ?? '');
+            }
+        }
+        $discordAnswers = $payload['discord_answers'] ?? null;
+        if (is_array($discordAnswers)) {
+            foreach ($discordAnswers as $i => $ans) {
+                if (is_string($ans)) {
+                    $fields['discord_' . $i] = $ans;
+                } elseif (is_array($ans)) {
+                    $fields['discord_' . $i] = (string) ($ans['answer'] ?? $ans['value'] ?? '');
+                }
+            }
+        }
+
+        $analysis = $this->aiTextLikelihoodDetector->analyzeFields($fields);
+        if (!$this->aiTextLikelihoodDetector->shouldFlag($analysis)) {
+            return;
+        }
+
+        $signals = is_array($analysis['signals'] ?? null) ? $analysis['signals'] : [];
+        $body = (string) ($analysis['label'] ?? 'Suspicion de texte généré par IA')
+            . ' — score ' . (int) ($analysis['score'] ?? 0) . '/100.';
+        if ($signals !== []) {
+            $body .= "\n• " . implode("\n• ", array_slice($signals, 0, 6));
+        }
+        $body .= "\n\nIndicateur automatique (heuristique locale). À croiser avec le reste du dossier — pas une preuve.";
+
+        $this->enlistmentTimelineRepository->append(
+            $tenantId,
+            $enlistmentId,
+            'system',
+            'reception',
+            'Détection IA — ' . (string) ($analysis['label'] ?? 'signal'),
+            $body,
+            null,
+            [
+                'timeline_family' => 'ai_likelihood',
+                'ai_score' => (int) ($analysis['score'] ?? 0),
+                'ai_level' => (string) ($analysis['level'] ?? ''),
+                'ai_signals' => $signals,
+                'ai_word_count' => (int) ($analysis['word_count'] ?? 0),
+                'ai_fields_scanned' => (int) ($analysis['fields_scanned'] ?? 0),
+            ]
+        );
     }
 
     /**
