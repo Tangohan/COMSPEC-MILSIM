@@ -413,7 +413,7 @@ final class TenantMemberNumberService
             $name = trim((string) ($tenant['name'] ?? ''));
 
             return $name !== '' ? strtoupper(preg_replace('/\s+/', '', $name) ?? $name) : null;
-        } catch (Throwable) {
+        } catch (\Throwable) {
             return null;
         }
     }

@@ -152,7 +152,7 @@ final class TenantMemberNumberConfigRepository
             $this->pdo->commit();
 
             return $consumed;
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
