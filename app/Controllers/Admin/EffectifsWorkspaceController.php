@@ -668,6 +668,56 @@ class EffectifsWorkspaceController
         return Response::redirect(effectifs_workspace_url('membres/' . $id));
     }
 
+    /** Archive administrative du dossier lié à un départ. */
+    public function archiveDepartureDossier(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canManageStatus(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à archiver un dossier.');
+
+            return Response::redirect(effectifs_workspace_url('departs'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('departs'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        $result = $this->memberOffboardingService->archiveDossier($tenantId, $id, (int) Session::get('user_id'));
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(effectifs_workspace_url('departs'));
+    }
+
+    /** Réintégration d’un ancien membre (compte réactivé). */
+    public function reinstateDeparture(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canManageStatus(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à réintégrer un membre.');
+
+            return Response::redirect(effectifs_workspace_url('departs'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('departs'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        $result = $this->memberOffboardingService->reinstate($tenantId, $id, (int) Session::get('user_id'));
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(effectifs_workspace_url('departs'));
+    }
+
     /** Vue « anciens membres » — historique des départs, filtrable par motif. */
     public function departures(Request $request, array $params = []): Response
     {
@@ -1249,6 +1299,23 @@ class EffectifsWorkspaceController
             }
         }
 
+        $mobilityPending = $extra['mobilityPendingCount'] ?? null;
+        if ($mobilityPending === null) {
+            try {
+                $mobilityPending = (new \App\Repositories\PersonnelMobilityRequestRepository())->countPending($tenantId);
+            } catch (\Throwable) {
+                $mobilityPending = 0;
+            }
+        }
+        $rhAlertTotal = $extra['rhAlertTotalCount'] ?? null;
+        if ($rhAlertTotal === null) {
+            try {
+                $rhAlertTotal = (int) ((new \App\Services\Effectifs\RhAlertAggregatorService())->summarize($tenantId)['total'] ?? 0);
+            } catch (\Throwable) {
+                $rhAlertTotal = 0;
+            }
+        }
+
         return Response::view('layout.effectifs_lms', array_merge([
             'content' => $content,
             'showPortalFooter' => false,
@@ -1256,6 +1323,8 @@ class EffectifsWorkspaceController
             'elevationOpenCount' => $elevationOpen,
             'qualificationsExpiringCount' => $qualifExpiring,
             'personnelDuplicateScan' => $dupScan,
+            'mobilityPendingCount' => $mobilityPending,
+            'rhAlertTotalCount' => $rhAlertTotal,
             'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
         ], $extra));
     }

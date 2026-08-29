@@ -70,12 +70,14 @@ $filterUrl = static function (?string $reason, int $p = 1) {
                         <th>Date</th>
                         <th>Enregistré par</th>
                         <th>Accès</th>
+                        <th>Dossier</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($rows as $d): ?>
                     <?php
+                    $depId = (int) ($d['id'] ?? 0);
                     $uid = (int) ($d['user_id'] ?? 0);
                     $userName = trim((string) ($d['user_display_name'] ?? '')) ?: trim((string) ($d['user_email'] ?? '')) ?: 'Membre';
                     $userStatus = (string) ($d['user_status'] ?? '');
@@ -83,13 +85,18 @@ $filterUrl = static function (?string $reason, int $p = 1) {
                     $departedAt = (string) ($d['departed_at'] ?? '');
                     $initiatorName = trim((string) ($d['initiator_display_name'] ?? '')) ?: trim((string) ($d['initiator_email'] ?? '')) ?: '—';
                     $accessRevoked = !empty($d['access_revoked']);
+                    $archived = !empty($d['dossier_archived']);
+                    $reinstated = !empty($d['reinstated_at']);
                     $note = trim((string) ($d['reason_note'] ?? ''));
+                    $csrf = htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8');
                     ?>
                     <tr>
                         <td>
                             <strong class="eff-sheets__name"><?= htmlspecialchars($userName, ENT_QUOTES, 'UTF-8') ?></strong>
-                            <?php if ($userStatus !== '' && $userStatus !== 'inactive'): ?>
-                                <span class="eff-sheets__badge eff-sheets__badge--watch" title="Le compte n’est plus au statut inactif">Réintégré ?</span>
+                            <?php if ($reinstated): ?>
+                                <span class="eff-sheets__badge eff-sheets__badge--ok" title="Réintégration enregistrée">Réintégré</span>
+                            <?php elseif ($userStatus !== '' && $userStatus !== 'inactive'): ?>
+                                <span class="eff-sheets__badge eff-sheets__badge--watch" title="Le compte n’est plus au statut inactif">Compte actif</span>
                             <?php endif; ?>
                         </td>
                         <td><?= htmlspecialchars($reasonLabels[$reason] ?? $reason, ENT_QUOTES, 'UTF-8') ?><?php if ($note !== ''): ?><br><span class="eff-sheets__meta"><?= htmlspecialchars($note, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?></td>
@@ -103,8 +110,27 @@ $filterUrl = static function (?string $reason, int $p = 1) {
                             <?php endif; ?>
                         </td>
                         <td>
+                            <?php if ($archived): ?>
+                                <span class="eff-sheets__badge eff-sheets__badge--muted">Archivé</span>
+                            <?php else: ?>
+                                <span class="eff-sheets__badge">Ouvert</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
                             <?php if ($uid > 0): ?>
                                 <a class="is-primary" href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $uid), ENT_QUOTES, 'UTF-8') ?>">Fiche</a>
+                            <?php endif; ?>
+                            <?php if ($depId > 0 && !$archived): ?>
+                                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('departs/' . $depId . '/archiver'), ENT_QUOTES, 'UTF-8') ?>" style="display:inline" onsubmit="return confirm('Archiver ce dossier RH ?');">
+                                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                    <button type="submit" class="eff-catalog__btn">Archiver</button>
+                                </form>
+                            <?php endif; ?>
+                            <?php if ($depId > 0 && !$reinstated): ?>
+                                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('departs/' . $depId . '/reintegrer'), ENT_QUOTES, 'UTF-8') ?>" style="display:inline" onsubmit="return confirm('Réintégrer ce membre (réactiver le compte) ?');">
+                                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                    <button type="submit" class="eff-catalog__btn">Réintégrer</button>
+                                </form>
                             <?php endif; ?>
                         </td>
                     </tr>

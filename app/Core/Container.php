@@ -1112,11 +1112,30 @@ class Container
                 self::get(\App\Services\Audit\AuditService::class)
             ),
             \App\Repositories\MemberDepartureRepository::class => new \App\Repositories\MemberDepartureRepository(),
+            \App\Repositories\PersonnelHrDocumentRepository::class => new \App\Repositories\PersonnelHrDocumentRepository(),
+            \App\Repositories\PersonnelMobilityRequestRepository::class => new \App\Repositories\PersonnelMobilityRequestRepository(),
+            \App\Repositories\PersonnelSuccessionRepository::class => new \App\Repositories\PersonnelSuccessionRepository(),
+            \App\Services\Effectifs\RhAlertAggregatorService::class => new \App\Services\Effectifs\RhAlertAggregatorService(
+                self::get(\App\Repositories\PersonnelQualificationRepository::class),
+                self::get(\App\Repositories\PersonnelAbsenceRepository::class),
+                self::get(\App\Repositories\PersonnelMobilityRequestRepository::class),
+            ),
             \App\Services\Effectifs\MemberOffboardingService::class => new \App\Services\Effectifs\MemberOffboardingService(
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(\App\Repositories\MemberDepartureRepository::class),
                 self::get(\App\Services\Admin\AdminAuditService::class)
+            ),
+            \App\Controllers\Admin\RhDossierWorkspaceController::class => new \App\Controllers\Admin\RhDossierWorkspaceController(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Repositories\PersonnelHrDocumentRepository::class),
+                self::get(\App\Repositories\PersonnelMobilityRequestRepository::class),
+                self::get(\App\Repositories\PersonnelSuccessionRepository::class),
+                self::get(\App\Services\Effectifs\RhAlertAggregatorService::class),
+                self::get(\App\Repositories\ElevationRequestRepository::class),
+                self::get(\App\Repositories\PersonnelQualificationRepository::class),
             ),
             \App\Repositories\PersonnelOrgHistoryRepository::class => new \App\Repositories\PersonnelOrgHistoryRepository(),
             \App\Repositories\UserLegalIdentityRepository::class => new \App\Repositories\UserLegalIdentityRepository(),

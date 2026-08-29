@@ -57,6 +57,52 @@ class MemberDepartureRepository
         return $stmt->rowCount() > 0;
     }
 
+    public function markDossierArchived(int $id, int $tenantId): bool
+    {
+        if (!$this->hasArchiveColumns()) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE member_departures
+             SET dossier_archived = 1, dossier_archived_at = NOW()
+             WHERE id = ? AND tenant_id = ?'
+        );
+        $stmt->execute([$id, $tenantId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function markReinstated(int $id, int $tenantId, int $reinstatedBy): bool
+    {
+        if (!$this->hasArchiveColumns()) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE member_departures
+             SET reinstated_at = NOW(), reinstated_by = ?
+             WHERE id = ? AND tenant_id = ? AND reinstated_at IS NULL'
+        );
+        $stmt->execute([$reinstatedBy, $id, $tenantId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    private function hasArchiveColumns(): bool
+    {
+        static $ready = null;
+        if ($ready !== null) {
+            return $ready;
+        }
+        $st = $this->pdo->query(
+            "SELECT 1 FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'member_departures' AND COLUMN_NAME = 'dossier_archived'
+             LIMIT 1"
+        );
+        $ready = (bool) ($st && $st->fetchColumn());
+
+        return $ready;
+    }
+
     public function findByIdForTenant(int $id, int $tenantId): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM member_departures WHERE id = ? AND tenant_id = ? LIMIT 1');

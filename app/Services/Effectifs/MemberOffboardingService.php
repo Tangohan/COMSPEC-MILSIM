@@ -87,6 +87,81 @@ class MemberOffboardingService
     }
 
     /**
+     * Archive le dossier RH lié au départ (marquage administratif, sans purge).
+     *
+     * @return array{ok:bool,message:string}
+     */
+    public function archiveDossier(int $tenantId, int $departureId, int $actorUserId): array
+    {
+        $row = $this->departureRepository->findByIdForTenant($departureId, $tenantId);
+        if ($row === null) {
+            return ['ok' => false, 'message' => 'Départ introuvable.'];
+        }
+        if (!empty($row['dossier_archived'])) {
+            return ['ok' => true, 'message' => 'Dossier déjà archivé.'];
+        }
+        if (!$this->departureRepository->markDossierArchived($departureId, $tenantId)) {
+            return ['ok' => false, 'message' => 'Archivage indisponible (migration requise) ou déjà effectué.'];
+        }
+        $this->adminAuditService->logUserUpdated(
+            $tenantId,
+            $actorUserId,
+            (int) ($row['user_id'] ?? 0),
+            'dossier_open',
+            'dossier_archived'
+        );
+
+        return ['ok' => true, 'message' => 'Dossier RH archivé.'];
+    }
+
+    /**
+     * Réintégration : réactive le compte et marque le départ comme réintégré.
+     * Ne restaure pas automatiquement les rôles (à reposer via élévation / affectation).
+     *
+     * @return array{ok:bool,message:string}
+     */
+    public function reinstate(int $tenantId, int $departureId, int $actorUserId): array
+    {
+        $row = $this->departureRepository->findByIdForTenant($departureId, $tenantId);
+        if ($row === null) {
+            return ['ok' => false, 'message' => 'Départ introuvable.'];
+        }
+        if (!empty($row['reinstated_at'])) {
+            return ['ok' => true, 'message' => 'Réintégration déjà enregistrée.'];
+        }
+        $userId = (int) ($row['user_id'] ?? 0);
+        if ($userId < 1) {
+            return ['ok' => false, 'message' => 'Membre introuvable.'];
+        }
+        $user = $this->userRepository->findById($userId, $tenantId);
+        if ($user === null) {
+            return ['ok' => false, 'message' => 'Compte introuvable.'];
+        }
+        try {
+            if ((string) ($user['status'] ?? '') !== 'active') {
+                $this->userRepository->update($userId, $tenantId, ['status' => 'active']);
+            }
+            if (!$this->departureRepository->markReinstated($departureId, $tenantId, $actorUserId)) {
+                return ['ok' => false, 'message' => 'Réintégration indisponible (migration requise).'];
+            }
+            $this->adminAuditService->logUserUpdated(
+                $tenantId,
+                $actorUserId,
+                $userId,
+                'inactive_departed',
+                'active_reinstated'
+            );
+        } catch (Throwable) {
+            return ['ok' => false, 'message' => 'La réintégration a échoué. Réessayez.'];
+        }
+
+        return [
+            'ok' => true,
+            'message' => 'Membre réintégré (compte réactivé). Repassez les rôles et habilitations si besoin.',
+        ];
+    }
+
+    /**
      * Retire les rôles organisation et l’habilitation en cours. Best-effort par étape :
      * un échec sur l’un n’empêche pas de tenter l’autre.
      */

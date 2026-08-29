@@ -9,6 +9,8 @@ $nNoUnit = (int) ($counts['no_unit'] ?? 0);
 $nNoRole = (int) ($counts['no_role'] ?? 0);
 $nElevationOpen = (int) ($elevationOpenCount ?? 0);
 $nQualifExpiring = (int) ($qualificationsExpiringCount ?? 0);
+$nMobilityPending = (int) ($mobilityPendingCount ?? 0);
+$nRhAlerts = (int) ($rhAlertTotalCount ?? 0);
 
 $navClass = static function (string $id) use ($active): string {
     return 'eff-nav-btn' . ($id === $active ? ' active' : '');
@@ -68,7 +70,27 @@ $navClass = static function (string $id) use ($active): string {
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('departs'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('departures'), ENT_QUOTES, 'UTF-8') ?>">
                 <b>09</b>
-                <span>Anciens membres<em>Historique des départs</em></span>
+                <span>Anciens membres<em>Départs, archive, réintégration</em></span>
+            </a>
+        </nav>
+
+        <p class="eff-section-label">Dossier RH</p>
+        <nav class="eff-rail-nav" aria-label="Dossier RH individuel">
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('documents-rh'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_documents'), ENT_QUOTES, 'UTF-8') ?>">
+                <b>10</b>
+                <span>Documents RH<em>Candidature, charte, évaluations…</em></span>
+            </a>
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('mobilite'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_mobility'), ENT_QUOTES, 'UTF-8') ?>">
+                <b>11</b>
+                <span>Mobilité<?= $nMobilityPending > 0 ? ' <i class="eff-nav-badge">' . $nMobilityPending . '</i>' : '' ?><em>Unité, poste, évolution</em></span>
+            </a>
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('vivier'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_succession'), ENT_QUOTES, 'UTF-8') ?>">
+                <b>12</b>
+                <span>Vivier<em>Succession chefs / instructeurs</em></span>
+            </a>
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('alertes'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_alerts'), ENT_QUOTES, 'UTF-8') ?>">
+                <b>13</b>
+                <span>Alertes RH<?= $nRhAlerts > 0 ? ' <i class="eff-nav-badge">' . $nRhAlerts . '</i>' : '' ?><em>Qualifs, absences, inactivité</em></span>
             </a>
         </nav>
 

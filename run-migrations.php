@@ -2357,6 +2357,14 @@ try {
     echo '  [ATTENTION] member_departures : ' . $e->getMessage() . "\n";
 }
 
+$rhDossierIndividuelMigrate = require $root . '/bootstrap/rh_dossier_individuel_migration.php';
+try {
+    echo "Migration rh_dossier_individuel (documents, mobilité, vivier, offboarding v2)...\n";
+    $rhDossierIndividuelMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] rh_dossier_individuel : ' . $e->getMessage() . "\n";
+}
+
 $enlistmentCannedMessagesMigrate = require $root . '/bootstrap/enlistment_canned_messages_migration.php';
 $enlistmentCannedMessagesMigrate($pdo);
 
