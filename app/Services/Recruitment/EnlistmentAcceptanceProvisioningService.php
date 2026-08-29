@@ -19,6 +19,8 @@ use App\Services\Admin\AdminAuditService;
 use App\Services\Documents\DocumentAccessService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
+use App\Services\Personnel\SeniorityDossierInferenceSyncService;
+use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Steam\SteamWebApiService;
 use App\Support\EnlistmentAcceptedIdentity;
@@ -51,6 +53,8 @@ final class EnlistmentAcceptanceProvisioningService
         private ?PersonnelAssignmentRepository $personnelAssignmentRepository = null,
         private ?PersonnelJobRoleRepository $personnelJobRoleRepository = null,
         private ?UnitRepository $unitRepository = null,
+        private ?SeniorityEnrollmentBootstrapService $seniorityEnrollmentBootstrapService = null,
+        private ?SeniorityDossierInferenceSyncService $seniorityDossierInferenceSyncService = null,
     ) {}
 
     /**
@@ -265,6 +269,9 @@ final class EnlistmentAcceptanceProvisioningService
                 'user_id' => $userId,
             ];
         }
+
+        /* Re-sync après unité / rôles : l’inférence d’ancienneté a alors les rattachements. */
+        $this->provisionSeniorityAfterAcceptance($tenantId, $userId, $fresh);
 
         $this->enlistmentRepository->updatePipelineStage($tenantId, $enlistmentId, 'accepted');
 
@@ -503,6 +510,7 @@ final class EnlistmentAcceptanceProvisioningService
         $provisionedUserId = (int) ($sync['user_id'] ?? 0);
         if ($provisionedUserId > 0) {
             $this->applyAcceptedIdentityFromEnlistment($tenantId, $provisionedUserId, $row, $actorUserId);
+            $this->provisionSeniorityAfterAcceptance($tenantId, $provisionedUserId, $row);
         }
 
         $staffLine = (string) $sync['staff_summary'];
@@ -983,6 +991,62 @@ final class EnlistmentAcceptanceProvisioningService
         if ($ppPatch !== []) {
             $this->personnelProfileRepository->update($userId, $ppPatch);
         }
+    }
+
+    /**
+     * Initialise le catalogue d’ancienneté + périodes dérivées (communauté + inférences dossier).
+     *
+     * @param array<string, mixed> $row
+     */
+    private function provisionSeniorityAfterAcceptance(int $tenantId, int $userId, array $row): void
+    {
+        if ($tenantId < 1 || $userId < 1) {
+            return;
+        }
+        try {
+            $this->ensureEnlistmentDateOnProfile($userId, $row);
+            if ($this->seniorityEnrollmentBootstrapService !== null) {
+                $this->seniorityEnrollmentBootstrapService->syncTenureCommunityFromEnrollment(
+                    $tenantId,
+                    $userId,
+                    null,
+                    false
+                );
+            }
+            if ($this->seniorityDossierInferenceSyncService !== null) {
+                $this->seniorityDossierInferenceSyncService->syncForUser($tenantId, $userId, false);
+            }
+        } catch (Throwable) {
+            // Ne jamais faire échouer l’acceptation si le module ancienneté est partiel.
+        }
+    }
+
+    /**
+     * Pose la date d’enrôlement dossier si absente (base de l’ancienneté communauté).
+     *
+     * @param array<string, mixed> $row
+     */
+    private function ensureEnlistmentDateOnProfile(int $userId, array $row): void
+    {
+        $this->personnelProfileRepository->ensureRecord($userId);
+        $pp = $this->personnelProfileRepository->getByUserId($userId) ?? [];
+        $current = trim((string) ($pp['enlistment_date'] ?? ''));
+        if ($current !== '' && $current !== '0000-00-00') {
+            return;
+        }
+        $raw = trim((string) ($row['reviewed_at'] ?? $row['updated_at'] ?? $row['created_at'] ?? ''));
+        $ymd = null;
+        if ($raw !== '') {
+            try {
+                $ymd = (new DateTimeImmutable($raw))->format('Y-m-d');
+            } catch (Throwable) {
+                $ymd = null;
+            }
+        }
+        if ($ymd === null) {
+            $ymd = (new DateTimeImmutable('today'))->format('Y-m-d');
+        }
+        $this->personnelProfileRepository->update($userId, ['enlistment_date' => $ymd]);
     }
 
     private function roleSlugNeedsPromotion(int $tenantId, int $userId): bool
