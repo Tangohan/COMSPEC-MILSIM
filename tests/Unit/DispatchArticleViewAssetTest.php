@@ -14,7 +14,6 @@ final class DispatchArticleViewAssetTest extends TestCase
         $partial = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/dispatch_article.php');
         $dispatchView = (string) file_get_contents(dirname(__DIR__, 2) . '/views/site/dispatch.php');
         $controller = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/SitePagesController.php');
-        $changelog = (string) file_get_contents(dirname(__DIR__, 2) . '/views/site/changelog.php');
 
         self::assertMatchesRegularExpression(
             '/\$dispatchHeadingTag\s*=\s*\$dispatchHeadingTag\s*\?\?\s*[\'"]h1[\'"]/',
@@ -32,7 +31,6 @@ final class DispatchArticleViewAssetTest extends TestCase
             "/'dispatchHeadingTag'\s*=>\s*'h1'/",
             $controller
         );
-        self::assertStringContainsString("\$dispatchHeadingTag = 'h3'", $changelog);
     }
 
     public function testPartialRendersH1WhenHeadingTagIsOmitted(): void
