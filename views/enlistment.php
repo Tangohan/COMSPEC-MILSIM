@@ -123,7 +123,9 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
         <div class="ce-gate__card">
             <div class="ce-gate__brand">
                 <?php if ($brandLogo !== ''): ?>
-                    <img class="ce-topbar__logo" src="<?= htmlspecialchars($brandLogo, ENT_QUOTES, 'UTF-8') ?>" alt="" width="52" height="52" style="width:3.25rem;height:3.25rem;border-radius:0.85rem">
+                    <img class="ce-topbar__logo" src="<?= htmlspecialchars($brandLogo, ENT_QUOTES, 'UTF-8') ?>" alt="" width="52" height="52"
+                         data-fallback-letter="<?= htmlspecialchars($logoLetter, ENT_QUOTES, 'UTF-8') ?>"
+                         onerror="var m=document.createElement('div');m.className='ce-gate__mark';m.setAttribute('aria-hidden','true');m.textContent=this.getAttribute('data-fallback-letter')||'A';this.replaceWith(m);">
                 <?php else: ?>
                     <div class="ce-gate__mark" aria-hidden="true"><?= htmlspecialchars($logoLetter) ?></div>
                 <?php endif; ?>
