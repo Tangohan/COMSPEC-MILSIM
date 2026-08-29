@@ -23,6 +23,10 @@ final class PersonnelFicheIdentityBleedAssetTest extends TestCase
         self::assertStringContainsString('Garde anti-contamination', $file);
         self::assertStringContainsString('Donnée manquante', $file);
         self::assertStringContainsString('$showGradeReferenceBeside', $file);
+        // Merge #284 / identity-bleed : la fiche définit $matriculeInternalOnly,
+        // jamais $matriculeInternal (sinon ErrorException en prod sur /personnel/{id}).
+        self::assertStringContainsString('$matriculeInternalOnly', $file);
+        self::assertDoesNotMatchRegularExpression('/\$matriculeInternal(?!Only)\b/', $file);
 
         $tableau = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/personnel/file_tableau_admin_tab.php');
         self::assertStringContainsString('Donnée manquante', $tableau);
