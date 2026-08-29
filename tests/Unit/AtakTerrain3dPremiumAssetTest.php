@@ -36,6 +36,10 @@ final class AtakTerrain3dPremiumAssetTest extends TestCase
         self::assertStringContainsString("getElementById('atak-view-3d')", $js);
         self::assertStringContainsString("addEventListener('atak:units-updated'", $js);
         self::assertStringContainsString('ATAKTerrain3DPremium', $js);
+        self::assertStringContainsString('setLoading', $js);
+        self::assertStringContainsString('terrain3d-loader', $js);
+        self::assertStringContainsString('resetView: false', $js);
+        self::assertStringContainsString('mapTileSize', $js);
     }
 
     public function testLegacyTerrain3dDelegatesWhenPremiumFlagIsSet(): void

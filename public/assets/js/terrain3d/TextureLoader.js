@@ -37,6 +37,8 @@ export class TerrainTextureLoader {
           texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
           texture.minFilter = THREE.LinearMipmapLinearFilter;
           texture.magFilter = THREE.LinearFilter;
+          texture.anisotropy = 8;
+          texture.generateMipmaps = true;
           self.texture = texture;
           self.currentUrl = url;
           resolve(texture);
@@ -58,6 +60,8 @@ export class TerrainTextureLoader {
     texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.minFilter = THREE.LinearMipmapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
+    texture.anisotropy = 8;
+    texture.generateMipmaps = true;
     texture.needsUpdate = true;
     this.texture = texture;
     this.currentUrl = null;

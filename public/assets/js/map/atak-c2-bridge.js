@@ -219,7 +219,8 @@
       onZoomIn: function () {
         var stage3d = document.querySelector('.atak-map-stage--premium-3d');
         if (stage3d && window.ATAKTerrainThree && typeof window.ATAKTerrainThree.dolly === 'function') {
-          window.ATAKTerrainThree.dolly(0.82);
+          /* Pas plus fin / animé — évite le pop des anciens ×0.82. */
+          window.ATAKTerrainThree.dolly(0.9);
           return;
         }
         map.zoomIn();
@@ -227,7 +228,7 @@
       onZoomOut: function () {
         var stage3dOut = document.querySelector('.atak-map-stage--premium-3d');
         if (stage3dOut && window.ATAKTerrainThree && typeof window.ATAKTerrainThree.dolly === 'function') {
-          window.ATAKTerrainThree.dolly(1.22);
+          window.ATAKTerrainThree.dolly(1.11);
           return;
         }
         map.zoomOut();

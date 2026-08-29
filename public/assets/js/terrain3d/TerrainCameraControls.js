@@ -1,5 +1,5 @@
 /**
- * Contrôles caméra tactiques — vue inclinée, zoom, rotation limitée, pan.
+ * Contrôles caméra tactiques — vue inclinée, zoom gradué, rotation limitée, pan.
  */
 import { clamp } from 'atak-terrain3d/utils.js';
 
@@ -19,6 +19,10 @@ export class TerrainCameraControls {
     this.bounds = bounds;
     this.mode = '3d';
     this._savedPerspective = null;
+    this._framed = false;
+    this._dollyTargetDist = null;
+    this._dollyTargetZoom = null;
+    this._dollyEase = 0.14;
 
     this._configureOrbit();
   }
@@ -26,7 +30,7 @@ export class TerrainCameraControls {
   _configureOrbit() {
     const c = this.controls;
     c.enableDamping = true;
-    c.dampingFactor = 0.06;
+    c.dampingFactor = 0.08;
     c.enablePan = true;
     c.screenSpacePanning = true;
     /* Distances recalées via syncToWorld() selon la taille du théâtre. */
@@ -38,16 +42,21 @@ export class TerrainCameraControls {
     c.maxAzimuthAngle = THREE_ORBIT_DEG(45);
     c.minAzimuthAngle = THREE_ORBIT_DEG(-45);
     c.rotateSpeed = 0.45;
-    c.zoomSpeed = 1.15;
+    /* Zoom molette plus fin — évite les sauts « pop ». */
+    c.zoomSpeed = 0.72;
     c.panSpeed = 0.85;
     c.target.set(0, 0, 0);
   }
 
   /**
-   * Adapte near/far, distances orbit et cadrage au monde réel (ex. Altis ~30 km).
-   * Permet un dézoom total pour voir tout le théâtre.
+   * Adapte near/far, distances orbit au monde réel (ex. Altis ~30 km).
+   * Par défaut conserve le cadrage courant (pas de reset au chargement heights).
+   * @param {number} worldWidth
+   * @param {number} worldDepth
+   * @param {{ resetView?: boolean }} [opts]
    */
-  syncToWorld(worldWidth, worldDepth) {
+  syncToWorld(worldWidth, worldDepth, opts) {
+    opts = opts || {};
     const w = Math.max(256, Number(worldWidth) || this.bounds.worldWidth || 1024);
     const d = Math.max(256, Number(worldDepth) || this.bounds.worldDepth || 1024);
     this.bounds.worldWidth = w;
@@ -55,7 +64,7 @@ export class TerrainCameraControls {
     const diag = Math.sqrt(w * w + d * d);
     const far = Math.max(12000, diag * 3.2);
     const maxDist = Math.max(3200, diag * 1.55);
-    const minDist = Math.max(40, Math.min(400, diag * 0.008));
+    const minDist = Math.max(28, Math.min(220, diag * 0.0045));
 
     this.perspectiveCamera.near = Math.max(1, minDist * 0.05);
     this.perspectiveCamera.far = far;
@@ -67,16 +76,28 @@ export class TerrainCameraControls {
     const c = this.controls;
     c.minDistance = minDist;
     c.maxDistance = maxDist;
-    /* Empêche un pan infini hors mesh (sinon dézoom = vide/noir hors scène). */
-    c.maxPan = undefined;
-    if (typeof c.mouseButtons === 'object') {
-      /* no-op — OrbitControls ne borne pas le pan nativement ; cible recentrée au setDefault. */
+
+    if (opts.resetView === true || !this._framed) {
+      if (this.mode === '3d') {
+        this.setDefault3DView();
+      } else {
+        this.onResize(this.domElement.clientWidth, this.domElement.clientHeight);
+      }
+      return;
     }
-    if (this.mode === '3d') {
-      this.setDefault3DView();
-    } else {
-      this.onResize(this.domElement.clientWidth, this.domElement.clientHeight);
+
+    /* Conserver la distance / cible actuelles, juste les clamper aux nouvelles bornes. */
+    this._dollyTargetDist = null;
+    const cam = this.getActiveCamera();
+    if (this.mode === '3d' && cam && c.target) {
+      const offset = cam.position.clone().sub(c.target);
+      const len = offset.length();
+      if (Number.isFinite(len) && len > 0) {
+        offset.setLength(clamp(len, minDist, maxDist));
+        cam.position.copy(c.target).add(offset);
+      }
     }
+    c.update();
   }
 
   /** Position initiale type C2 incliné — cadrée sur la taille monde. */
@@ -86,6 +107,7 @@ export class TerrainCameraControls {
     const diag = Math.sqrt(w * w + d * d);
     const dist = Math.min(this.controls.maxDistance * 0.92, Math.max(this.controls.minDistance * 8, diag * 0.72));
     const elev = dist * 0.55;
+    this._dollyTargetDist = null;
     this.perspectiveCamera.position.set(0, elev, dist * 0.85);
     this.controls.object = this.perspectiveCamera;
     this.controls.minPolarAngle = THREE_ORBIT_DEG(28);
@@ -95,30 +117,47 @@ export class TerrainCameraControls {
     this.controls.enableRotate = true;
     this.controls.target.set(0, 0, 0);
     this.controls.update();
+    this._framed = true;
   }
 
-  /** Recul caméra (dézoom) — facteur > 1 = plus loin. */
-  dolly(factor) {
+  /**
+   * Recul caméra (dézoom) — facteur > 1 = plus loin.
+   * Zoom gradué : cible interpolée dans update() (pas de téléport).
+   * @param {number} factor
+   * @param {{ animate?: boolean }} [opts]
+   */
+  dolly(factor, opts) {
     const f = Number(factor);
     if (!Number.isFinite(f) || f <= 0) return;
+    opts = opts || {};
+    const animate = opts.animate !== false;
     const cam = this.getActiveCamera();
     if (this.mode === '2d' && this.orthoCamera) {
-      this.orthoCamera.zoom = clamp(this.orthoCamera.zoom / f, 0.15, 12);
-      this.orthoCamera.updateProjectionMatrix();
-      this.controls.update();
+      const nextZoom = clamp(this.orthoCamera.zoom / f, 0.15, 12);
+      if (animate) {
+        this._dollyTargetZoom = nextZoom;
+      } else {
+        this._dollyTargetZoom = null;
+        this.orthoCamera.zoom = nextZoom;
+        this.orthoCamera.updateProjectionMatrix();
+        this.controls.update();
+      }
       return;
     }
     const target = this.controls.target;
     const offset = cam.position.clone().sub(target);
-    offset.multiplyScalar(f);
-    const nextLen = offset.length();
+    const curLen = offset.length() || 1;
     const minD = this.controls.minDistance || 80;
     const maxD = this.controls.maxDistance || 2800;
-    if (nextLen < minD || nextLen > maxD) {
-      offset.setLength(clamp(nextLen, minD, maxD));
+    const nextLen = clamp(curLen * f, minD, maxD);
+    if (animate) {
+      this._dollyTargetDist = nextLen;
+    } else {
+      this._dollyTargetDist = null;
+      offset.setLength(nextLen);
+      cam.position.copy(target).add(offset);
+      this.controls.update();
     }
-    cam.position.copy(target).add(offset);
-    this.controls.update();
   }
 
   /** Vue 2D orthographique — regard vertical, rotation désactivée. */
@@ -127,6 +166,8 @@ export class TerrainCameraControls {
       position: this.perspectiveCamera.position.clone(),
       target: this.controls.target.clone(),
     };
+    this._dollyTargetDist = null;
+    this._dollyTargetZoom = null;
     const maxDim = Math.max(this.bounds.worldWidth, this.bounds.worldDepth);
     const aspect = this.domElement.clientWidth / Math.max(1, this.domElement.clientHeight);
     this.orthoCamera.left = (-maxDim / 2) * aspect;
@@ -151,6 +192,7 @@ export class TerrainCameraControls {
 
   /** Retour vue 3D perspective. */
   set3DView() {
+    this._dollyTargetZoom = null;
     this.controls.object = this.perspectiveCamera;
     this.controls.minPolarAngle = THREE_ORBIT_DEG(28);
     this.controls.maxPolarAngle = THREE_ORBIT_DEG(72);
@@ -161,6 +203,7 @@ export class TerrainCameraControls {
     if (this._savedPerspective) {
       this.perspectiveCamera.position.copy(this._savedPerspective.position);
       this.controls.target.copy(this._savedPerspective.target);
+      this._framed = true;
     } else {
       this.setDefault3DView();
     }
@@ -198,6 +241,35 @@ export class TerrainCameraControls {
     this.orthoCamera.updateProjectionMatrix();
   }
 
+  _tickDolly() {
+    const ease = this._dollyEase;
+    if (this.mode === '2d' && this._dollyTargetZoom != null && this.orthoCamera) {
+      const cur = this.orthoCamera.zoom;
+      const next = cur + (this._dollyTargetZoom - cur) * ease;
+      if (Math.abs(this._dollyTargetZoom - next) < 0.002) {
+        this.orthoCamera.zoom = this._dollyTargetZoom;
+        this._dollyTargetZoom = null;
+      } else {
+        this.orthoCamera.zoom = next;
+      }
+      this.orthoCamera.updateProjectionMatrix();
+      return;
+    }
+    if (this._dollyTargetDist == null || this.mode !== '3d') return;
+    const cam = this.perspectiveCamera;
+    const target = this.controls.target;
+    const offset = cam.position.clone().sub(target);
+    const curLen = offset.length() || 1;
+    const nextLen = curLen + (this._dollyTargetDist - curLen) * ease;
+    if (Math.abs(this._dollyTargetDist - nextLen) < Math.max(0.5, this._dollyTargetDist * 0.0015)) {
+      offset.setLength(this._dollyTargetDist);
+      this._dollyTargetDist = null;
+    } else {
+      offset.setLength(nextLen);
+    }
+    cam.position.copy(target).add(offset);
+  }
+
   update() {
     /* Garde la cible orbit dans le rectangle monde — un pan trop loin + dézoom = fond noir. */
     const halfW = (this.bounds.worldWidth || 1024) * 0.55;
@@ -205,6 +277,7 @@ export class TerrainCameraControls {
     const t = this.controls.target;
     t.x = clamp(t.x, -halfW, halfW);
     t.z = clamp(t.z, -halfD, halfD);
+    this._tickDolly();
     this.controls.update();
   }
 

@@ -148,7 +148,7 @@ export class Terrain3DRenderer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.22;
 
     this.textureLoader = new TerrainTextureLoader(new THREE.TextureLoader(), THREE);
     this.terrainMesh = null;
@@ -320,12 +320,17 @@ export class Terrain3DRenderer {
     TerrainMaterialFactory.setMap(this.terrainMaterial, tex);
   }
 
-  /** Recale orbit / far plane / fog / lumières sur la taille réelle du théâtre. */
-  syncCameraToWorld(worldWidth, worldDepth) {
+  /**
+   * Recale orbit / far plane / fog / lumières sur la taille réelle du théâtre.
+   * @param {number} [worldWidth]
+   * @param {number} [worldDepth]
+   * @param {{ resetView?: boolean }} [opts] — resetView:false conserve le zoom/cadrage (défaut).
+   */
+  syncCameraToWorld(worldWidth, worldDepth, opts) {
     const w = worldWidth != null ? worldWidth : this.options.width;
     const d = worldDepth != null ? worldDepth : this.options.height;
     if (this.cameraControls && typeof this.cameraControls.syncToWorld === 'function') {
-      this.cameraControls.syncToWorld(w, d);
+      this.cameraControls.syncToWorld(w, d, opts || {});
     }
     syncFogToWorld(this.scene, this.THREE, {
       enabled: this.options.fog !== false,

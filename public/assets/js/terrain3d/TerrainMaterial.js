@@ -12,9 +12,9 @@ export class TerrainMaterialFactory {
     opts = opts || {};
     return new THREE.MeshStandardMaterial({
       map: mapTexture || null,
-      color: mapTexture ? 0xffffff : 0x3d4f3a,
-      roughness: 0.92,
-      metalness: 0.02,
+      color: mapTexture ? 0xffffff : 0x4a6b45,
+      roughness: 0.76,
+      metalness: 0.04,
       flatShading: false,
       wireframe: !!opts.wireframe,
     });
@@ -27,16 +27,17 @@ export class TerrainMaterialFactory {
    * @returns {{ ambient: THREE.AmbientLight, sun: THREE.DirectionalLight, fill: THREE.DirectionalLight }}
    */
   static setupLighting(scene, THREE) {
-    const ambient = new THREE.AmbientLight(0x6b7c8f, 0.55);
+    /* Ambiance neutre-chaude : laisse parler les couleurs carte (pas de voile bleu-gris). */
+    const ambient = new THREE.AmbientLight(0xc8d2c4, 0.32);
     scene.add(ambient);
 
-    /* Lumière rasante nord-ouest — accentue les pentes sans effet cartoon. */
-    const sun = new THREE.DirectionalLight(0xdce6f0, 0.95);
+    /* Soleil NW — relief lisible sans laver la diffuse. */
+    const sun = new THREE.DirectionalLight(0xfff2d6, 1.15);
     sun.position.set(-120, 180, -90);
     sun.castShadow = false;
     scene.add(sun);
 
-    const fill = new THREE.DirectionalLight(0x8aa4c0, 0.28);
+    const fill = new THREE.DirectionalLight(0xa8c4b0, 0.22);
     fill.position.set(80, 60, 120);
     scene.add(fill);
 
@@ -131,7 +132,7 @@ export class TerrainMaterialFactory {
       material.map.dispose();
     }
     material.map = texture;
-    material.color.setHex(texture ? 0xffffff : 0x3d4f3a);
+    material.color.setHex(texture ? 0xffffff : 0x4a6b45);
     material.needsUpdate = true;
   }
 }

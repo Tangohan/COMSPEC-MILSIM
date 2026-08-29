@@ -21,6 +21,44 @@
   background: rgba(7, 10, 14, 0.35);
   pointer-events: none;
 }
+.terrain3d-host.is-loading .terrain3d-loader {
+  display: flex;
+}
+.terrain3d-loader {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(7, 12, 16, 0.55);
+  pointer-events: none;
+}
+.terrain3d-loader[hidden] {
+  display: none !important;
+}
+.terrain3d-loader__spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(180, 210, 190, 0.22);
+  border-top-color: #8fd4a8;
+  animation: terrain3d-spin 0.75s linear infinite;
+}
+.terrain3d-loader__label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #d8e8de;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+@keyframes terrain3d-spin {
+  to { transform: rotate(360deg); }
+}
 .terrain3d-host .terrain3d-canvas {
   display: block;
   width: 100% !important;
