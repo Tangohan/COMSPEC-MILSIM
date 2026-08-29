@@ -309,6 +309,9 @@
   }
 
   function initialSection() {
+    if (window.ATAK_POPOUT_SECTION && SECTIONS[window.ATAK_POPOUT_SECTION]) {
+      return String(window.ATAK_POPOUT_SECTION);
+    }
     var active = document.querySelector('#atak-panel-left .atak-tab.active[data-tab]');
     if (active) {
       var fromActive = sectionForTab(active.getAttribute('data-tab'));

@@ -31,5 +31,9 @@ final class AtakQrPhoneDetachAssetTest extends TestCase
         self::assertStringContainsString("destination: 'sitac'", $chrome);
         self::assertStringContainsString("openSitac", $controller);
         self::assertStringContainsString("/connect/{token}/sitac", $routes);
+        self::assertStringContainsString("'c2' => 'mission'", $controller);
+        self::assertStringNotContainsString("'c2' => 'orders'", $controller);
+        self::assertStringContainsString('section=c2', $controller);
+        self::assertStringContainsString('section=sitac', $controller);
     }
 }

@@ -35,6 +35,7 @@ $hasGameConfig = $atakConfig && ($atakConfig['arma_server_host'] ?? $atakConfig[
 $atakPopoutRaw = isset($_GET['popout']) ? strtolower(trim((string) $_GET['popout'])) : '';
 $atakPopout = ($atakPopoutRaw === 'left' || $atakPopoutRaw === 'right') ? $atakPopoutRaw : '';
 $atakPopoutTab = isset($_GET['tab']) ? preg_replace('/[^a-z0-9_-]/i', '', (string) $_GET['tab']) : '';
+$atakPopoutSection = isset($_GET['section']) ? preg_replace('/[^a-z0-9_-]/i', '', (string) $_GET['section']) : '';
 $atakDeviceEmbed = isset($_GET['embed']) && strtolower(trim((string) $_GET['embed'])) === 'device';
 $atakPhoneBezelUrl = $base . '/assets/img/connect-device/comspec_phone_bg_ca.png?v=' . rawurlencode((string) $assetVer);
 $atakMapConfigForJs = null;
