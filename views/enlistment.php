@@ -387,27 +387,49 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
         <?php else: ?>
         <div class="ce-wrap ce-form-layout">
             <aside class="ce-rail" aria-label="Avancement du dossier">
+                <?php
+                $railClassification = trim((string) ($p['rail_classification'] ?? ''));
+                $railMetaRows = \App\Services\Community\EnlistmentMilsimPackService::normalizeRailMetaRows($p['rail_meta_rows'] ?? []);
+                $railStamp = strtoupper(substr(preg_replace('/[^A-Z0-9]/i', '', (string) ($p['watermark'] ?? 'ATHENA')) ?: 'ATHENA', 0, 8));
+                $railHour = date('H:i');
+                $railDay = date('d/m/Y');
+                ?>
                 <div class="ce-rail__block">
+                    <?php if ($railClassification !== ''): ?>
+                        <p class="ce-rail__classif" aria-hidden="true"><?= htmlspecialchars($railClassification, ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endif; ?>
                     <p class="ce-rail__label"><?= htmlspecialchars((string) $p['session_block_title']) ?></p>
                     <div class="ce-rail__row">
                         <span><?= htmlspecialchars((string) $p['ref_label']) ?></span>
                         <span><?= htmlspecialchars($ref) ?></span>
                     </div>
                     <div class="ce-rail__row">
-                        <span>Connexion</span>
+                        <span>Liaison</span>
                         <span><?= htmlspecialchars((string) $p['security_label']) ?></span>
                     </div>
+                    <div class="ce-rail__row">
+                        <span>Horodatage</span>
+                        <span><?= htmlspecialchars($railDay . ' · ' . $railHour, ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <?php foreach ($railMetaRows as $metaRow): ?>
+                        <div class="ce-rail__row ce-rail__row--meta">
+                            <span><?= htmlspecialchars((string) $metaRow['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <span><?= htmlspecialchars((string) $metaRow['value'], ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
+                    <?php endforeach; ?>
                     <div class="ce-progress">
                         <div class="ce-progress__bar"><div class="ce-progress__fill" id="progress-bar"></div></div>
                         <p id="progress-text" class="ce-progress__text" data-progress-prefix="<?= htmlspecialchars((string) $p['progress_prefix']) ?>"><?= htmlspecialchars((string) $p['progress_prefix']) ?> 0 réponses</p>
                     </div>
+                    <p class="ce-rail__stamp" aria-hidden="true">VISA <?= htmlspecialchars($railStamp, ENT_QUOTES, 'UTF-8') ?> · SAISIE CANDIDAT</p>
                 </div>
                 <nav class="ce-rail__nav">
-                    <a href="#ce-sec-mode">Mode de candidature</a>
-                    <a href="#ce-sec-identity">Identité et contact</a>
-                    <a href="#ce-sec-gear">Matériel et expérience</a>
-                    <a href="#ce-sec-motivation"><?= htmlspecialchars($motivationSectionTitle) ?></a>
-                    <a href="#ce-sec-commit">Engagement</a>
+                    <p class="ce-rail__nav-label">Parcours dossier</p>
+                    <a href="#ce-sec-mode">01 — Mode de candidature</a>
+                    <a href="#ce-sec-identity">02 — Identité et contact</a>
+                    <a href="#ce-sec-gear">03 — Matériel et expérience</a>
+                    <a href="#ce-sec-motivation">04 — <?= htmlspecialchars($motivationSectionTitle) ?></a>
+                    <a href="#ce-sec-commit">05 — Engagement</a>
                 </nav>
             </aside>
 

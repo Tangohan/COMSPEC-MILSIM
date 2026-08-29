@@ -46,6 +46,42 @@ final class EnlistmentMilsimPackService
     }
 
     /**
+     * Lignes d’ambiance du rail « Avancement » (affichage uniquement).
+     *
+     * @param mixed $raw
+     * @return list<array{label: string, value: string}>
+     */
+    public static function normalizeRailMetaRows(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $row) {
+            if (count($out) >= 8) {
+                break;
+            }
+            if (!is_array($row)) {
+                continue;
+            }
+            $label = isset($row['label']) && is_string($row['label']) ? trim($row['label']) : '';
+            $value = isset($row['value']) && is_string($row['value']) ? trim($row['value']) : '';
+            if ($label === '' || $value === '') {
+                continue;
+            }
+            if (mb_strlen($label) > 48) {
+                $label = mb_substr($label, 0, 48);
+            }
+            if (mb_strlen($value) > 64) {
+                $value = mb_substr($value, 0, 64);
+            }
+            $out[] = ['label' => $label, 'value' => $value];
+        }
+
+        return $out;
+    }
+
+    /**
      * @param mixed $raw
      * @return list<array{id: string, label: string}>
      */
@@ -423,9 +459,18 @@ final class EnlistmentMilsimPackService
             'preamble_footer' => 'En poursuivant, vous acceptez le traitement de vos données pour le recrutement.',
             'nav_brand' => self::PLATFORM_NAV_BRAND,
             'session_block_title' => 'Avancement',
-            'ref_label' => 'Référence',
-            'security_label' => 'Connexion sécurisée',
-            'progress_prefix' => 'Complété :',
+            'ref_label' => 'Réf. dossier',
+            'security_label' => 'Canal sécurisé',
+            'progress_prefix' => 'Saisie :',
+            /** Métadonnées d’ambiance (rail Avancement) — purement affichage, non fonctionnelles. */
+            'rail_classification' => 'DIFFUSION RESTREINTE',
+            'rail_meta_rows' => [
+                ['label' => 'Bureau émetteur', 'value' => 'S1 — RECRUTEMENT'],
+                ['label' => 'Circuit', 'value' => 'PORTAIL → CELLULE RH'],
+                ['label' => 'Priorité', 'value' => 'ROUTINE'],
+                ['label' => 'Statut saisie', 'value' => 'EN COURS'],
+                ['label' => 'Imprimé', 'value' => 'F-CAND / ATHENA'],
+            ],
             'roe_title' => 'Ce que nous attendons',
             'roe_items' => [
                 'Réponses détaillées et honnêtes.',
@@ -669,12 +714,20 @@ final class EnlistmentMilsimPackService
             'queue_label', 'candidate_prefix', 'classified_badge', 'op_note_title', 'op_col1',
             'op_ai_warning', 'op_col2', 'archive_note', 'section_0', 'section_1', 'section_2', 'section_3', 'section_4',
             'commitment_q13', 'availability_q15', 'ai_checkbox', 'submit_button', 'submit_footer',
+            'rail_classification',
         ] as $k) {
             if (isset($raw[$k]) && is_string($raw[$k]) && trim($raw[$k]) !== '') {
                 $out[$k] = $raw[$k];
             }
         }
         $out['nav_brand'] = self::PLATFORM_NAV_BRAND;
+
+        if (array_key_exists('rail_meta_rows', $raw) && is_array($raw['rail_meta_rows'])) {
+            $rows = self::normalizeRailMetaRows($raw['rail_meta_rows']);
+            if ($rows !== []) {
+                $out['rail_meta_rows'] = $rows;
+            }
+        }
 
         // Clé absente = non configuré (état vide). Clé présente (même []) = choix explicite du tenant.
         if (array_key_exists('availability_slots', $raw)) {
