@@ -878,8 +878,8 @@ $personnelFileShell = $personnelFileIsRhFull
                             <p class="text-[7px] font-black text-slate-400 tracking-[0.3em] mb-0.5 uppercase"><?= htmlspecialchars($tenantMemberNumberLabel, ENT_QUOTES, 'UTF-8') ?></p>
                             <?php if ($tenantMemberNumber !== ''): ?>
                             <p class="text-base font-black text-slate-900 font-mono"><?= htmlspecialchars($tenantMemberNumber, ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php elseif ($matriculeInternal !== ''): ?>
-                            <p class="text-base font-black text-slate-900 font-mono"><?= htmlspecialchars($matriculeInternal, ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php elseif ($matriculeInternalOnly !== ''): ?>
+                            <p class="text-base font-black text-slate-900 font-mono"><?= htmlspecialchars($matriculeInternalOnly, ENT_QUOTES, 'UTF-8') ?></p>
                             <?php else: ?>
                             <p class="text-xs text-slate-400 italic">Non attribué</p>
                             <?php endif; ?>
