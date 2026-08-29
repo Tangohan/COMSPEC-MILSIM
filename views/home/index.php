@@ -1569,7 +1569,14 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 try {
                     var probe = document.createElement('video');
                     var answer = probe.canPlayType(mime);
-                    return answer === 'probably' || answer === 'maybe';
+                    if (answer === 'probably' || answer === 'maybe') return true;
+                    // codecs incomplets (ex. codecs="avc1") → "" alors que video/mp4 est OK
+                    var base = String(mime).split(';')[0].trim();
+                    if (base && base !== mime) {
+                        var baseAnswer = probe.canPlayType(base);
+                        return baseAnswer === 'probably' || baseAnswer === 'maybe';
+                    }
+                    return false;
                 } catch (e) {
                     return true;
                 }
@@ -1581,10 +1588,23 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 var kept = 0;
                 sources.forEach(function (source) {
                     var type = source.getAttribute('type') || '';
-                    if (type && !canPlayMime(type)) {
-                        source.remove();
-                    } else {
+                    if (!type) {
                         kept++;
+                        return;
+                    }
+                    if (canPlayMime(type)) {
+                        // Si seul le MIME de base est accepté, retirer un codecs= incomplet
+                        // pour que le navigateur ne saute plus la source au parsing.
+                        var base = type.split(';')[0].trim();
+                        var probe = document.createElement('video');
+                        var full = '';
+                        try { full = probe.canPlayType(type); } catch (e) {}
+                        if ((!full || full === '') && base && base !== type) {
+                            source.setAttribute('type', base);
+                        }
+                        kept++;
+                    } else {
+                        source.remove();
                     }
                 });
                 return kept > 0;
