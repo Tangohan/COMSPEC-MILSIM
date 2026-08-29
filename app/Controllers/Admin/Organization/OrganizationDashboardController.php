@@ -498,12 +498,15 @@ class OrganizationDashboardController
             $opsByType[$type][] = $item;
         }
 
+        $mediaScan = (new \App\Services\Media\MissingUserMediaScanner())->scanTenant((int) $tenantId, 300);
         $onboardingAnomalies = [
             'profils_incomplets' => count($workQueue['incomplete_profiles'] ?? []),
             'membres_sans_unite' => count($workQueue['users_without_unit'] ?? []),
             'membres_sans_role' => count($workQueue['users_without_role'] ?? []),
             'invitations_expirees' => count($workQueue['expired_invitations'] ?? []),
+            'medias_manquants' => (int) ($mediaScan['total_users'] ?? 0),
         ];
+        $missingMediaUsers = is_array($mediaScan['users'] ?? null) ? $mediaScan['users'] : [];
 
         $actionableAlerts = [
             [
@@ -545,6 +548,16 @@ class OrganizationDashboardController
                 'count' => count($eventsJ1),
                 'link' => url('back-office/events'),
                 'cta' => 'Préparer les événements',
+            ],
+            [
+                'id' => 'missing_media',
+                'type' => 'RH',
+                'title' => 'Photos perdues — demander un re-téléversement',
+                'impact_score' => min(100, 22 + ((int) ($onboardingAnomalies['medias_manquants'] ?? 0) * 5)),
+                'sla_label' => 'Après migration',
+                'count' => (int) ($onboardingAnomalies['medias_manquants'] ?? 0),
+                'link' => url('back-office/operations') . '#anomalies-medias',
+                'cta' => 'Voir les comptes',
             ],
             [
                 'id' => 'onboarding_anomalies',
@@ -643,6 +656,7 @@ class OrganizationDashboardController
             'operationsActiveAlerts' => $alerts,
             'operationsAlertsError' => $alertsError,
             'operationsOnboardingAnomalies' => $onboardingAnomalies,
+            'operationsMissingMediaUsers' => $missingMediaUsers,
             'operationsWorkQueue' => $workQueue,
             'operationsOpsBoardItemsByType' => $opsByType,
             'operationsOpsBoardFilters' => $opsBoardFilters,
