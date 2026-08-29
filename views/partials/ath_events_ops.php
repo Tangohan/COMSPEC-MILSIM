@@ -10,17 +10,26 @@ declare(strict_types=1);
  * @var bool $canCreateEvent
  * @var array<string, mixed> $eventsRegistryFilters
  * @var array<string, array{id: int, status: string, status_label: string}> $eventsAarIndex
+ * @var array{
+ *   mois: string,
+ *   label: string,
+ *   prev: string,
+ *   next: string,
+ *   today: string,
+ *   weeks: list<list<array{ymd: string, in_month: bool, is_today: bool, day: int, events: list<array<string, mixed>>}>>
+ * }|null $eventsCalendarMonth
  */
 
 use App\Repositories\AarReportRepository;
 use App\Support\CommunityEventDetails;
 
 $events = is_array($events ?? null) ? $events : [];
-$eventsVue = (string) ($eventsVue ?? 'a_venir');
+$eventsVue = (string) ($eventsVue ?? 'calendrier');
 $eventsAttendanceKpis = is_array($eventsAttendanceKpis ?? null) ? $eventsAttendanceKpis : [];
 $canCreateEvent = !empty($canCreateEvent);
 $registryFilters = is_array($eventsRegistryFilters ?? null) ? $eventsRegistryFilters : [];
 $eventsAarIndex = is_array($eventsAarIndex ?? null) ? $eventsAarIndex : [];
+$eventsCalendarMonth = is_array($eventsCalendarMonth ?? null) ? $eventsCalendarMonth : null;
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
@@ -33,10 +42,12 @@ $filterAnnee = (int) ($registryFilters['annee'] ?? 0);
 $filterType = (string) ($registryFilters['type'] ?? '');
 $filterStatut = (string) ($registryFilters['statut'] ?? '');
 $filterQ = (string) ($registryFilters['q'] ?? '');
+$filterMois = (string) ($registryFilters['mois'] ?? ($eventsCalendarMonth['mois'] ?? date('Y-m')));
 
-$registryQuery = static function (array $extra = []) use ($registryFilters, $eventsVue): string {
+$registryQuery = static function (array $extra = []) use ($registryFilters, $eventsVue, $filterMois): string {
     $q = array_merge([
         'vue' => $eventsVue,
+        'mois' => $eventsVue === 'calendrier' ? $filterMois : null,
         'annee' => !empty($registryFilters['annee']) ? (int) $registryFilters['annee'] : null,
         'type' => ($registryFilters['type'] ?? '') !== '' ? (string) $registryFilters['type'] : null,
         'statut' => ($registryFilters['statut'] ?? '') !== '' ? (string) $registryFilters['statut'] : null,
@@ -169,6 +180,7 @@ $athKpis = [
     ['label' => 'CRÉNEAUX', 'value' => (string) count($events), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => match ($eventsVue) {
         'passes' => 'passés',
         'annules' => 'annulés',
+        'calendrier' => 'ce mois',
         default => 'à venir',
     }],
     ['label' => 'CONFIRMÉS', 'value' => (string) $confirmed, 'delta' => '', 'tone' => '#1e4f80', 'pct' => $confirmed > 0 ? '74%' : '0%', 'note' => 'présence déclarée'],
@@ -176,14 +188,175 @@ $athKpis = [
     ['label' => 'NO-SHOW', 'value' => (string) $noShow, 'delta' => '', 'tone' => $noShow > 0 ? '#c98a12' : '#0b8a5c', 'pct' => $confirmed > 0 ? (int) round($noShow / $confirmed * 100) . '%' : '0%', 'note' => 'absents non pointés'],
 ];
 require base_path('views/partials/ath_kpis.php');
+
+$chipClass = static function (array $ev): string {
+    $status = (string) ($ev['registry_status'] ?? '');
+    $type = (string) ($ev['event_type'] ?? 'evenement');
+    if ($status === 'annule') {
+        return 'ath-cal__chip ath-cal__chip--annule';
+    }
+    return match ($type) {
+        'operation' => 'ath-cal__chip ath-cal__chip--op',
+        'formation' => 'ath-cal__chip ath-cal__chip--form',
+        'autre' => 'ath-cal__chip ath-cal__chip--autre',
+        default => 'ath-cal__chip ath-cal__chip--evt',
+    };
+};
 ?>
 
 <div class="ath-users-filters ath-rise">
+    <a href="<?= $h(url('back-office/events') . '?vue=calendrier') ?>" class="ath-btn<?= $eventsVue === 'calendrier' ? ' ath-btn--solid' : '' ?>">Calendrier</a>
     <a href="<?= $h(url('back-office/events') . '?vue=a_venir') ?>" class="ath-btn<?= $eventsVue === 'a_venir' ? ' ath-btn--solid' : '' ?>">À venir</a>
     <a href="<?= $h(url('back-office/events') . '?vue=passes') ?>" class="ath-btn<?= $eventsVue === 'passes' ? ' ath-btn--solid' : '' ?>">Passés</a>
     <a href="<?= $h(url('back-office/events') . '?vue=annules') ?>" class="ath-btn<?= $eventsVue === 'annules' ? ' ath-btn--solid' : '' ?>">Annulés</a>
     <a href="<?= $h(url('back-office/events/insights')) ?>" class="ath-btn">Insights présence</a>
 </div>
+
+<?php if ($eventsVue === 'calendrier' && is_array($eventsCalendarMonth)): ?>
+<?php
+    $cal = $eventsCalendarMonth;
+    $calMois = (string) ($cal['mois'] ?? $filterMois);
+    $calLabel = (string) ($cal['label'] ?? $calMois);
+    $calPrev = (string) ($cal['prev'] ?? $calMois);
+    $calNext = (string) ($cal['next'] ?? $calMois);
+    $calWeeks = is_array($cal['weeks'] ?? null) ? $cal['weeks'] : [];
+?>
+<div class="ath-cal ath-rise" aria-label="Calendrier agenda">
+    <div class="ath-cal__toolbar">
+        <div class="ath-cal__nav">
+            <a class="ath-btn" href="<?= $h($registryQuery(['mois' => $calPrev])) ?>" aria-label="Mois précédent">‹</a>
+            <h2 class="ath-cal__title"><?= $h($calLabel) ?></h2>
+            <a class="ath-btn" href="<?= $h($registryQuery(['mois' => $calNext])) ?>" aria-label="Mois suivant">›</a>
+        </div>
+        <div class="ath-cal__actions">
+            <a class="ath-btn" href="<?= $h($registryQuery(['mois' => date('Y-m')])) ?>">Aujourd’hui</a>
+            <form method="get" action="<?= $h(url('back-office/events')) ?>" class="ath-cal__jump">
+                <input type="hidden" name="vue" value="calendrier">
+                <?php if ($filterType !== ''): ?><input type="hidden" name="type" value="<?= $h($filterType) ?>"><?php endif; ?>
+                <?php if ($filterStatut !== ''): ?><input type="hidden" name="statut" value="<?= $h($filterStatut) ?>"><?php endif; ?>
+                <?php if ($filterQ !== ''): ?><input type="hidden" name="q" value="<?= $h($filterQ) ?>"><?php endif; ?>
+                <label class="ath-users-filters__label" for="ops-mois">Mois</label>
+                <input type="month" id="ops-mois" name="mois" value="<?= $h($calMois) ?>" class="bo-select" style="height:40px;" onchange="this.form.submit()">
+            </form>
+        </div>
+    </div>
+
+    <form method="get" action="<?= $h(url('back-office/events')) ?>" class="ath-users-filters" style="margin-bottom:12px;">
+        <input type="hidden" name="vue" value="calendrier">
+        <input type="hidden" name="mois" value="<?= $h($calMois) ?>">
+        <label class="ath-users-filters__label" for="ops-type-cal">Type</label>
+        <select name="type" id="ops-type-cal" class="bo-select">
+            <option value="">Tous</option>
+            <option value="operation" <?= $filterType === 'operation' ? 'selected' : '' ?>>Opération</option>
+            <option value="formation" <?= $filterType === 'formation' ? 'selected' : '' ?>>Formation</option>
+            <option value="evenement" <?= $filterType === 'evenement' ? 'selected' : '' ?>>Événement</option>
+            <option value="autre" <?= $filterType === 'autre' ? 'selected' : '' ?>>Autre</option>
+        </select>
+        <label class="ath-users-filters__label" for="ops-statut-cal">Statut</label>
+        <select name="statut" id="ops-statut-cal" class="bo-select">
+            <option value="">Tous</option>
+            <option value="planifie" <?= $filterStatut === 'planifie' ? 'selected' : '' ?>>Planifié</option>
+            <option value="en_cours" <?= $filterStatut === 'en_cours' ? 'selected' : '' ?>>En cours</option>
+            <option value="clos" <?= $filterStatut === 'clos' ? 'selected' : '' ?>>Clos</option>
+            <option value="annule" <?= $filterStatut === 'annule' ? 'selected' : '' ?>>Annulé</option>
+        </select>
+        <label class="ath-users-filters__label" for="ops-q-cal">Recherche</label>
+        <input type="search" name="q" id="ops-q-cal" value="<?= $h($filterQ) ?>" class="bo-select" style="height:40px;min-width:180px;" placeholder="Titre, zone…" autocomplete="off">
+        <button type="submit" class="ath-btn ath-btn--solid">Filtrer</button>
+    </form>
+
+    <div class="ath-cal__legend" aria-hidden="true">
+        <span><i class="ath-cal__dot ath-cal__dot--op"></i> Opération</span>
+        <span><i class="ath-cal__dot ath-cal__dot--evt"></i> Événement</span>
+        <span><i class="ath-cal__dot ath-cal__dot--form"></i> Formation</span>
+        <span><i class="ath-cal__dot ath-cal__dot--annule"></i> Annulé</span>
+    </div>
+
+    <div class="ath-cal__grid" role="grid" aria-label="<?= $h($calLabel) ?>">
+        <div class="ath-cal__head" role="row">
+            <?php foreach (['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as $dow): ?>
+            <div class="ath-cal__dow" role="columnheader"><?= $dow ?></div>
+            <?php endforeach; ?>
+        </div>
+        <?php foreach ($calWeeks as $week): ?>
+        <div class="ath-cal__week" role="row">
+            <?php foreach ($week as $cell): ?>
+            <?php
+                $cellClasses = 'ath-cal__day';
+                if (empty($cell['in_month'])) {
+                    $cellClasses .= ' ath-cal__day--out';
+                }
+                if (!empty($cell['is_today'])) {
+                    $cellClasses .= ' ath-cal__day--today';
+                }
+                $dayEvents = is_array($cell['events'] ?? null) ? $cell['events'] : [];
+            ?>
+            <div class="<?= $h($cellClasses) ?>" role="gridcell" data-ymd="<?= $h((string) ($cell['ymd'] ?? '')) ?>">
+                <div class="ath-cal__daynum"><?= (int) ($cell['day'] ?? 0) ?></div>
+                <div class="ath-cal__chips">
+                    <?php foreach (array_slice($dayEvents, 0, 4) as $ev): ?>
+                    <?php
+                        $eid = (int) ($ev['id'] ?? 0);
+                        $title = trim((string) ($ev['title'] ?? 'Créneau'));
+                        $startsRaw = isset($ev['starts_at']) ? (string) $ev['starts_at'] : '';
+                        $startsTs = $startsRaw !== '' ? strtotime($startsRaw) : false;
+                        $time = $startsTs !== false ? date('H:i', $startsTs) : '';
+                        $href = $eid > 0 ? url('back-office/events/' . $eid) : '#';
+                    ?>
+                    <a class="<?= $h($chipClass($ev)) ?>" href="<?= $h($href) ?>" title="<?= $h(($time !== '' ? $time . ' · ' : '') . $title) ?>">
+                        <?php if ($time !== ''): ?><span class="ath-cal__time"><?= $h($time) ?></span><?php endif; ?>
+                        <span class="ath-cal__name"><?= $h($title) ?></span>
+                    </a>
+                    <?php endforeach; ?>
+                    <?php if (count($dayEvents) > 4): ?>
+                    <span class="ath-cal__more">+<?= count($dayEvents) - 4 ?></span>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+<?php if ($canCreateEvent): ?>
+<form method="post" action="<?= $h(url('back-office/events')) ?>" enctype="multipart/form-data" class="ath-card ath-rise" id="nouveau" style="padding:18px 20px;margin:16px 0;">
+    <div style="font-size:9px;font-weight:800;letter-spacing:0.18em;color:#8c979b;margin-bottom:12px;">NOUVEAU CRÉNEAU</div>
+    <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
+    <input type="hidden" name="return_vue" value="calendrier">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+        <div style="grid-column:1/-1;">
+            <label class="ath-users-filters__label" for="ev-title-ath-cal">Titre</label>
+            <input id="ev-title-ath-cal" type="text" name="title" required class="bo-select" style="height:40px;width:100%;" placeholder="Ex. Briefing opération">
+        </div>
+        <div>
+            <label class="ath-users-filters__label" for="ev-start-ath-cal">Début</label>
+            <input id="ev-start-ath-cal" type="datetime-local" name="starts_at" required step="60" class="bo-select" style="height:40px;width:100%;">
+        </div>
+        <div>
+            <label class="ath-users-filters__label" for="ev-end-ath-cal">Fin</label>
+            <input id="ev-end-ath-cal" type="datetime-local" name="ends_at" step="60" class="bo-select" style="height:40px;width:100%;">
+        </div>
+        <div>
+            <label class="ath-users-filters__label" for="ev-loc-ath-cal">Lieu</label>
+            <input id="ev-loc-ath-cal" type="text" name="location" class="bo-select" style="height:40px;width:100%;">
+        </div>
+        <div>
+            <label class="ath-users-filters__label" for="ev-type-ath-cal">Type</label>
+            <select id="ev-type-ath-cal" name="event_type" class="bo-select">
+                <option value="operation">Opération</option>
+                <option value="evenement" selected>Événement</option>
+                <option value="formation">Formation</option>
+                <option value="autre">Autre</option>
+            </select>
+        </div>
+    </div>
+    <button type="submit" class="ath-btn ath-btn--solid" style="margin-top:14px;">Publier le créneau</button>
+</form>
+<?php endif; ?>
+
+<?php return; ?>
+<?php endif; ?>
 
 <form method="get" action="<?= $h(url('back-office/events')) ?>" class="ath-users-filters ath-rise">
     <input type="hidden" name="vue" value="<?= $h($eventsVue) ?>">

@@ -145,7 +145,7 @@ $athNavGroups = [
             $canMurOperationnel
                 ? ['label' => 'Mur opérationnel', 'href' => url('back-office/tableau-operationnel'), 'icon' => 'wall', 'active' => $boNavOpsBoard || $boNavPortalOpsBoard]
                 : null,
-            ['label' => 'Agenda', 'href' => url('back-office/events'), 'icon' => 'cal', 'active' => $boNavEvents],
+            ['label' => 'Agenda', 'href' => url('back-office/events') . '?vue=calendrier', 'icon' => 'cal', 'active' => $boNavEvents],
         ], static fn (?array $row): bool => is_array($row))),
     ],
     [
