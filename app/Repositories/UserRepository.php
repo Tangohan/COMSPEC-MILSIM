@@ -2068,6 +2068,185 @@ class UserRepository
         ];
     }
 
+    /**
+     * Annuaire plateforme regroupé par personne (e-mail) : une entrée = toutes les
+     * appartenances communautaires (une ligne users par tenant).
+     *
+     * @return array{groups: list<array<string, mixed>>, total: int}
+     */
+    public function listGroupedAccountsForPlatformDirectory(
+        ?string $search = null,
+        ?string $status = null,
+        ?int $tenantId = null,
+        int $page = 1,
+        int $perPage = 50
+    ): array {
+        $page = max(1, $page);
+        $perPage = max(10, min(100, $perPage));
+        $offset = ($page - 1) * $perPage;
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $parts = [$pack['sql']];
+        $params = $pack['params'];
+        $hasDeletedAt = $this->hasDeletedAtColumn();
+
+        $search = $search !== null ? trim($search) : '';
+        if ($search !== '') {
+            $term = '%' . (function_exists('mb_substr') ? mb_substr($search, 0, 120) : substr($search, 0, 120)) . '%';
+            $parts[] = '(u.email LIKE ? OR u.display_name LIKE ? OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?))';
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+        }
+        if ($status === 'deleted' && $hasDeletedAt) {
+            $parts[] = 'u.deleted_at IS NOT NULL';
+        } else {
+            if ($hasDeletedAt) {
+                $parts[] = 'u.deleted_at IS NULL';
+            }
+            if ($status !== null && $status !== '' && in_array($status, ['active', 'inactive', 'pending_verification'], true)) {
+                $parts[] = 'u.status = ?';
+                $params[] = $status;
+            }
+        }
+        if ($tenantId !== null && $tenantId > 0) {
+            $parts[] = 'u.tenant_id = ?';
+            $params[] = $tenantId;
+        } else {
+            $siblingAlive = $hasDeletedAt ? 'AND u2.deleted_at IS NULL' : '';
+            $parts[] = "(t.slug <> 'default' OR NOT EXISTS (
+                SELECT 1 FROM users u2
+                INNER JOIN tenants t2 ON t2.id = u2.tenant_id AND t2.slug <> 'default'
+                WHERE LOWER(TRIM(u2.email)) = LOWER(TRIM(u.email))
+                  AND TRIM(u.email) <> ''
+                  AND LOWER(TRIM(u.email)) NOT LIKE '%@deleted.invalid'
+                  AND u2.id <> u.id
+                  {$siblingAlive}
+            ))";
+        }
+
+        $where = implode(' AND ', $parts);
+
+        $countStmt = $this->pdo()->prepare(
+            "SELECT COUNT(*) FROM (
+                SELECT 1
+                FROM users u
+                INNER JOIN tenants t ON t.id = u.tenant_id
+                WHERE {$where}
+                GROUP BY LOWER(TRIM(u.email))
+            ) grouped_accounts"
+        );
+        $countStmt->execute($params);
+        $total = (int) $countStmt->fetchColumn();
+
+        $emailStmt = $this->pdo()->prepare(
+            "SELECT LOWER(TRIM(u.email)) AS email_key, MAX(u.updated_at) AS sort_at
+             FROM users u
+             INNER JOIN tenants t ON t.id = u.tenant_id
+             WHERE {$where}
+             GROUP BY LOWER(TRIM(u.email))
+             ORDER BY sort_at DESC
+             LIMIT {$perPage} OFFSET {$offset}"
+        );
+        $emailStmt->execute($params);
+        $emailKeys = [];
+        foreach ($emailStmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $er) {
+            $key = strtolower(trim((string) ($er['email_key'] ?? '')));
+            if ($key !== '') {
+                $emailKeys[] = $key;
+            }
+        }
+
+        if ($emailKeys === []) {
+            return ['groups' => [], 'total' => $total];
+        }
+
+        $ph = implode(',', array_fill(0, count($emailKeys), '?'));
+        $memberWhere = $parts;
+        // Remonter toutes les appartenances des e-mails de la page (même si filtre statut
+        // ne matchait qu’une fiche) pour afficher le panel multi-communautés complet.
+        $memberParts = [$pack['sql']];
+        $memberParams = $pack['params'];
+        $memberParts[] = 'LOWER(TRIM(u.email)) IN (' . $ph . ')';
+        $memberParams = array_merge($memberParams, $emailKeys);
+        if ($tenantId !== null && $tenantId > 0) {
+            // Si on filtre une communauté, on garde quand même les sœurs pour le regroupement,
+            // mais on n’affiche que les groupes qui ont au moins un match (déjà garanti par emailKeys).
+        } else {
+            $siblingAlive = $hasDeletedAt ? 'AND u2.deleted_at IS NULL' : '';
+            $memberParts[] = "(t.slug <> 'default' OR NOT EXISTS (
+                SELECT 1 FROM users u2
+                INNER JOIN tenants t2 ON t2.id = u2.tenant_id AND t2.slug <> 'default'
+                WHERE LOWER(TRIM(u2.email)) = LOWER(TRIM(u.email))
+                  AND TRIM(u.email) <> ''
+                  AND LOWER(TRIM(u.email)) NOT LIKE '%@deleted.invalid'
+                  AND u2.id <> u.id
+                  {$siblingAlive}
+            ))";
+        }
+        $memberWhereSql = implode(' AND ', $memberParts);
+
+        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.created_at, u.updated_at,
+                       " . ($hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at') . ",
+                       t.name AS tenant_name, t.slug AS tenant_slug,
+                       r.name AS role_name
+                FROM users u
+                INNER JOIN tenants t ON t.id = u.tenant_id
+                LEFT JOIN roles r ON r.id = u.role_id
+                WHERE {$memberWhereSql}
+                ORDER BY u.updated_at DESC, u.id DESC";
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute($memberParams);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $byEmail = [];
+        foreach ($rows as $row) {
+            if (function_exists('community_display_name')) {
+                $row['tenant_name'] = community_display_name([
+                    'name' => (string) ($row['tenant_name'] ?? ''),
+                    'slug' => (string) ($row['tenant_slug'] ?? ''),
+                ]);
+            }
+            $key = strtolower(trim((string) ($row['email'] ?? '')));
+            if ($key === '') {
+                continue;
+            }
+            if (!isset($byEmail[$key])) {
+                $byEmail[$key] = [
+                    'email' => (string) ($row['email'] ?? ''),
+                    'email_key' => $key,
+                    'display_name' => (string) ($row['display_name'] ?? ''),
+                    'callsign' => (string) ($row['callsign'] ?? ''),
+                    'memberships' => [],
+                ];
+            }
+            // Préférer un indicatif / nom non anonymisé pour l’en-tête personne.
+            $dn = trim((string) ($row['display_name'] ?? ''));
+            $cs = trim((string) ($row['callsign'] ?? ''));
+            if ($cs !== '' && trim((string) ($byEmail[$key]['callsign'] ?? '')) === '') {
+                $byEmail[$key]['callsign'] = $cs;
+            }
+            if ($dn !== '' && $dn !== 'Compte supprimé' && (
+                trim((string) ($byEmail[$key]['display_name'] ?? '')) === ''
+                || (string) ($byEmail[$key]['display_name'] ?? '') === 'Compte supprimé'
+            )) {
+                $byEmail[$key]['display_name'] = $dn;
+            }
+            $byEmail[$key]['memberships'][] = $row;
+        }
+
+        $groups = [];
+        foreach ($emailKeys as $key) {
+            if (isset($byEmail[$key])) {
+                $groups[] = $byEmail[$key];
+            }
+        }
+
+        return [
+            'groups' => $groups,
+            'total' => $total,
+        ];
+    }
+
     /** @return list<int> User IDs ayant le rôle donné (pour assignation formation par rôle). */
     public function getIdsByRole(int $tenantId, int $roleId): array
     {

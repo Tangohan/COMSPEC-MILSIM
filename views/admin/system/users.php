@@ -1,7 +1,27 @@
 <?php
 declare(strict_types=1);
 
-$rows = is_array($platformUsers ?? null) ? $platformUsers : [];
+$groups = is_array($platformUserGroups ?? null) ? $platformUserGroups : [];
+// Repli si une ancienne clé plate est encore fournie.
+if ($groups === [] && is_array($platformUsers ?? null) && $platformUsers !== []) {
+    foreach ($platformUsers as $u) {
+        $key = strtolower(trim((string) ($u['email'] ?? '')));
+        if ($key === '') {
+            continue;
+        }
+        if (!isset($groups[$key])) {
+            $groups[$key] = [
+                'email' => (string) ($u['email'] ?? ''),
+                'display_name' => (string) ($u['display_name'] ?? ''),
+                'callsign' => (string) ($u['callsign'] ?? ''),
+                'memberships' => [],
+            ];
+        }
+        $groups[$key]['memberships'][] = $u;
+    }
+    $groups = array_values($groups);
+}
+
 $total = (int) ($platformUsersTotal ?? 0);
 $page = max(1, (int) ($platformUsersPage ?? 1));
 $pages = max(1, (int) ($platformUsersPages ?? 1));
@@ -12,10 +32,10 @@ $tenants = is_array($platformTenants ?? null) ? $platformTenants : [];
 
 $statusLabel = static function (string $status): string {
     return match ($status) {
-        'active' => 'Compte actif',
-        'inactive' => 'Compte désactivé',
-        'pending_verification' => 'En attente de vérification de l’e-mail',
-        default => 'Statut inconnu',
+        'active' => 'Actif',
+        'inactive' => 'Désactivé',
+        'pending_verification' => 'E-mail à vérifier',
+        default => 'Inconnu',
     };
 };
 
@@ -29,33 +49,8 @@ $statusBadgeClass = static function (string $status): string {
 };
 
 $currentActorId = (int) \App\Core\Session::get('user_id');
-
-/**
- * Formulaire de suppression définitive.
- *
- * Distinct de « Anonymiser », qui garde la ligne `users` sous le libellé « Compte
- * supprimé » : ici la ligne et tout ce qui décrit la personne quittent la base. Comme
- * rien n’est récupérable ensuite, l’adresse exacte doit être saisie pour confirmer —
- * un `confirm()` se clique trop vite.
- */
-$purgeForm = static function (int $uid, int $tid, string $email, array $ctx): string {
-    $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
-    $formId = 'purge-form-' . $uid;
-    $emailJs = htmlspecialchars(json_encode($email, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '""', ENT_QUOTES, 'UTF-8');
-
-    return '<form method="post" action="' . $h(url('admin/users/purge')) . '" id="' . $h($formId) . '"'
-        . ' onsubmit="return athPurgeConfirm(this, ' . $emailJs . ');">'
-        . '<input type="hidden" name="_csrf_token" value="' . $h(\App\Core\Csrf::token()) . '">'
-        . '<input type="hidden" name="user_id" value="' . $uid . '">'
-        . '<input type="hidden" name="tenant_id" value="' . $tid . '">'
-        . '<input type="hidden" name="confirm_email" value="">'
-        . '<input type="hidden" name="return_q" value="' . $h((string) ($ctx['q'] ?? '')) . '">'
-        . '<input type="hidden" name="return_status" value="' . $h((string) ($ctx['status'] ?? '')) . '">'
-        . '<input type="hidden" name="return_tenant_id" value="' . $h((string) ($ctx['tenant_id'] ?? '')) . '">'
-        . '<input type="hidden" name="return_page" value="' . $h((string) ($ctx['page'] ?? '1')) . '">'
-        . '<button type="submit" class="w-full rounded-lg border border-rose-700 bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">Supprimer définitivement</button>'
-        . '</form>';
-};
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$csrf = $h(\App\Core\Csrf::token());
 
 $returnCtx = [
     'q' => $q,
@@ -63,6 +58,13 @@ $returnCtx = [
     'tenant_id' => $tenantFilter > 0 ? (string) $tenantFilter : '',
     'page' => (string) $page,
 ];
+
+$hiddenReturns = static function () use ($h, $returnCtx): string {
+    return '<input type="hidden" name="return_q" value="' . $h((string) $returnCtx['q']) . '">'
+        . '<input type="hidden" name="return_status" value="' . $h((string) $returnCtx['status']) . '">'
+        . '<input type="hidden" name="return_tenant_id" value="' . $h((string) $returnCtx['tenant_id']) . '">'
+        . '<input type="hidden" name="return_page" value="' . $h((string) $returnCtx['page']) . '">';
+};
 
 $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFilter, $page): string {
     $params = [
@@ -87,40 +89,40 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         <nav class="text-sm text-slate-500">
-            <a href="<?= htmlspecialchars(url('admin'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 hover:text-emerald-950">Administration plateforme</a>
+            <a href="<?= $h(url('admin')) ?>" class="font-semibold text-emerald-800 hover:text-emerald-950">Administration plateforme</a>
             <span class="mx-2" aria-hidden="true">/</span>
             <span class="text-slate-800">Comptes utilisateurs</span>
         </nav>
 
         <?php $ok = \App\Core\Session::getFlash('success'); ?>
         <?php if ($ok): ?>
-            <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900"><?= htmlspecialchars((string) $ok, ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900"><?= $h((string) $ok) ?></p>
         <?php endif; ?>
         <?php $err = \App\Core\Session::getFlash('error'); ?>
         <?php if ($err): ?>
-            <p class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900"><?= htmlspecialchars((string) $err, ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900"><?= $h((string) $err) ?></p>
         <?php endif; ?>
 
         <header>
             <h1 class="text-2xl font-black text-slate-900">Comptes utilisateurs (toutes communautés)</h1>
             <p class="mt-2 max-w-3xl text-sm text-slate-600 leading-relaxed">
-                Recherchez un compte sur l’ensemble du site, filtrez par communauté ou par état d’accès, puis activez ou désactivez la connexion.
-                Les dossiers RH détaillés restent dans le back-office de chaque communauté&nbsp;; les mesures d’accès avancées se gèrent via les sanctions site.
-                Les comptes restés sur le contexte système sans organisation sont masqués dès qu’une vraie communauté est liée au même e-mail.
+                Une personne = une ligne (regroupée par e-mail), avec toutes ses appartenances.
+                Actions possibles&nbsp;: désactiver / réactiver une communauté, retirer d’une organisation,
+                ou supprimer sur tout le site (anonymisation ou suppression définitive).
             </p>
         </header>
 
         <div class="flex flex-wrap gap-3 text-sm">
-            <a href="<?= htmlspecialchars(url('admin/system/member-sanctions'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-rose-800 hover:underline">Sanctions à l’échelle du site</a>
-            <a href="<?= htmlspecialchars(url('admin/site-roles'), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:underline">Affectations rôles site</a>
-            <a href="<?= htmlspecialchars(url('admin/tenants'), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:underline">Annuaire des communautés</a>
+            <a href="<?= $h(url('admin/system/member-sanctions')) ?>" class="font-semibold text-rose-800 hover:underline">Sanctions à l’échelle du site</a>
+            <a href="<?= $h(url('admin/site-roles')) ?>" class="text-slate-600 hover:underline">Affectations rôles site</a>
+            <a href="<?= $h(url('admin/tenants')) ?>" class="text-slate-600 hover:underline">Annuaire des communautés</a>
         </div>
 
-        <form method="get" action="<?= htmlspecialchars(url('admin/users'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <form method="get" action="<?= $h(url('admin/users')) ?>" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div class="grid gap-3 md:grid-cols-4">
                 <div class="md:col-span-2">
                     <label for="platform-users-q" class="block text-xs font-medium text-slate-500 mb-1">Rechercher</label>
-                    <input id="platform-users-q" type="search" name="q" value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>"
+                    <input id="platform-users-q" type="search" name="q" value="<?= $h($q) ?>"
                            placeholder="Adresse e-mail, nom affiché ou indicatif"
                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                 </div>
@@ -131,7 +133,7 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                         <?php foreach ($tenants as $t): ?>
                             <?php $tid = (int) ($t['id'] ?? 0); ?>
                             <option value="<?= $tid ?>" <?= $tid === $tenantFilter ? 'selected' : '' ?>>
-                                <?= htmlspecialchars((string) ($t['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                <?= $h((string) ($t['name'] ?? '')) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -149,136 +151,206 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
             </div>
             <div class="mt-4 flex flex-wrap gap-2">
                 <button type="submit" class="inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Filtrer</button>
-                <a href="<?= htmlspecialchars(url('admin/users'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Réinitialiser</a>
+                <a href="<?= $h(url('admin/users')) ?>" class="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Réinitialiser</a>
             </div>
         </form>
 
         <p class="text-sm text-slate-600">
-            <?= $total === 0 ? 'Aucun compte trouvé.' : ($total === 1 ? '1 compte trouvé.' : number_format($total, 0, ',', ' ') . ' comptes trouvés.') ?>
+            <?= $total === 0 ? 'Aucune personne trouvée.' : ($total === 1 ? '1 personne trouvée.' : number_format($total, 0, ',', ' ') . ' personnes trouvées.') ?>
             <?php if ($pages > 1): ?>
                 <span class="text-slate-400">— page <?= $page ?> / <?= $pages ?></span>
             <?php endif; ?>
         </p>
 
-        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-            <table class="min-w-full divide-y divide-slate-200 text-sm">
-                <thead class="bg-slate-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left font-semibold text-slate-700">Personne</th>
-                        <th class="px-4 py-3 text-left font-semibold text-slate-600">Communauté</th>
-                        <th class="px-4 py-3 text-left font-semibold text-slate-600">Rôle communautaire</th>
-                        <th class="px-4 py-3 text-left font-semibold text-slate-600">État</th>
-                        <th class="px-4 py-3 text-left font-semibold text-slate-600">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    <?php if ($rows === []): ?>
-                        <tr>
-                            <td colspan="5" class="px-4 py-10 text-center text-slate-500">Aucun compte ne correspond à ces critères.</td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($rows as $u): ?>
-                            <?php
-                            $uid = (int) ($u['id'] ?? 0);
-                            $tid = (int) ($u['tenant_id'] ?? 0);
-                            $email = (string) ($u['email'] ?? '');
-                            $display = trim((string) ($u['display_name'] ?? ''));
-                            $callsign = trim((string) ($u['callsign'] ?? ''));
-                            $tenantName = (string) ($u['tenant_name'] ?? '');
-                            $roleName = trim((string) ($u['role_name'] ?? ''));
-                            $st = (string) ($u['status'] ?? '');
-                            $isDeleted = !empty($u['deleted_at']);
-                            $primary = $callsign !== '' ? $callsign : ($display !== '' ? $display : $email);
-                            $sanctionsUrl = url('admin/system/member-sanctions') . ($tid > 0 ? '?tenant_id=' . $tid : '');
-                            ?>
-                            <tr>
-                                <td class="px-4 py-3">
-                                    <p class="font-semibold text-slate-900"><?= htmlspecialchars($primary, ENT_QUOTES, 'UTF-8') ?></p>
-                                    <?php if ($display !== '' && strcasecmp($display, $primary) !== 0): ?>
-                                        <p class="text-xs text-slate-600"><?= htmlspecialchars($display, ENT_QUOTES, 'UTF-8') ?></p>
-                                    <?php endif; ?>
-                                    <?php if ($email !== ''): ?>
-                                        <p class="text-xs text-slate-500"><?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?></p>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="px-4 py-3 text-slate-800"><?= htmlspecialchars($tenantName !== '' ? $tenantName : '—', ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars($roleName !== '' ? $roleName : '—', ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <?php if ($isDeleted): ?>
-                                        <span class="inline-flex rounded-md px-2 py-1 text-xs font-semibold bg-slate-200 text-slate-700">Compte supprimé</span>
-                                    <?php else: ?>
-                                        <span class="inline-flex rounded-md px-2 py-1 text-xs font-semibold <?= htmlspecialchars($statusBadgeClass($st), ENT_QUOTES, 'UTF-8') ?>">
-                                            <?= htmlspecialchars($statusLabel($st), ENT_QUOTES, 'UTF-8') ?>
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex flex-col gap-2 min-w-[10rem]">
-                                        <?php if ($isDeleted): ?>
-                                            <?php if ($uid === $currentActorId): ?>
-                                                <p class="text-xs text-slate-400">C’est votre propre compte.</p>
-                                            <?php else: ?>
-                                                <p class="text-xs text-slate-500">Fiche anonymisée. Elle reste dans les annuaires tant qu’elle n’est pas supprimée définitivement.</p>
-                                                <?= $purgeForm($uid, $tid, $email, $returnCtx) ?>
+        <div class="space-y-4">
+            <?php if ($groups === []): ?>
+                <div class="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-slate-500 shadow-sm">
+                    Aucun compte ne correspond à ces critères.
+                </div>
+            <?php else: ?>
+                <?php foreach ($groups as $group): ?>
+                    <?php
+                    $email = (string) ($group['email'] ?? '');
+                    $display = trim((string) ($group['display_name'] ?? ''));
+                    $callsign = trim((string) ($group['callsign'] ?? ''));
+                    $memberships = is_array($group['memberships'] ?? null) ? $group['memberships'] : [];
+                    $primary = $callsign !== '' ? $callsign : ($display !== '' ? $display : $email);
+                    $isSelf = false;
+                    foreach ($memberships as $m) {
+                        if ((int) ($m['id'] ?? 0) === $currentActorId) {
+                            $isSelf = true;
+                            break;
+                        }
+                    }
+                    $alive = [];
+                    foreach ($memberships as $m) {
+                        if (empty($m['deleted_at'])) {
+                            $alive[] = $m;
+                        }
+                    }
+                    $siteAnchor = $alive[0] ?? ($memberships[0] ?? null);
+                    $siteUid = (int) ($siteAnchor['id'] ?? 0);
+                    $siteTid = (int) ($siteAnchor['tenant_id'] ?? 0);
+                    $emailJs = htmlspecialchars(json_encode($email, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '""', ENT_QUOTES, 'UTF-8');
+                    ?>
+                    <article class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 bg-slate-50">
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900"><?= $h($primary) ?></h2>
+                                <?php if ($display !== '' && strcasecmp($display, $primary) !== 0): ?>
+                                    <p class="text-xs text-slate-600"><?= $h($display) ?></p>
+                                <?php endif; ?>
+                                <?php if ($email !== ''): ?>
+                                    <p class="text-xs text-slate-500 font-mono"><?= $h($email) ?></p>
+                                <?php endif; ?>
+                                <p class="mt-1 text-xs text-slate-500">
+                                    <?= count($memberships) ?> communauté<?= count($memberships) > 1 ? 's' : '' ?>
+                                </p>
+                            </div>
+                            <?php if (!$isSelf && $siteUid > 0 && $siteTid > 0 && $alive !== []): ?>
+                                <div class="flex flex-wrap gap-2">
+                                    <form method="post" action="<?= $h(url('admin/users/delete')) ?>"
+                                          onsubmit="return confirm('Anonymiser <?= $h(addslashes($primary)) ?> sur TOUT LE SITE ?\n\nToutes les communautés de cette adresse seront retirées (fiches « Compte supprimé »).');">
+                                        <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                        <input type="hidden" name="user_id" value="<?= $siteUid ?>">
+                                        <input type="hidden" name="tenant_id" value="<?= $siteTid ?>">
+                                        <input type="hidden" name="scope" value="site">
+                                        <?= $hiddenReturns() ?>
+                                        <button type="submit" class="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-950 hover:bg-rose-100">
+                                            Anonymiser (site)
+                                        </button>
+                                    </form>
+                                    <form method="post" action="<?= $h(url('admin/users/purge')) ?>"
+                                          onsubmit="return athPurgeConfirm(this, <?= $emailJs ?>, 'site');">
+                                        <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                        <input type="hidden" name="user_id" value="<?= $siteUid ?>">
+                                        <input type="hidden" name="tenant_id" value="<?= $siteTid ?>">
+                                        <input type="hidden" name="scope" value="site">
+                                        <input type="hidden" name="confirm_email" value="">
+                                        <?= $hiddenReturns() ?>
+                                        <button type="submit" class="rounded-lg border border-rose-700 bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">
+                                            Supprimer définitivement (site)
+                                        </button>
+                                    </form>
+                                </div>
+                            <?php elseif ($isSelf): ?>
+                                <p class="text-xs text-slate-400">C’est votre propre compte.</p>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="divide-y divide-slate-100">
+                            <?php foreach ($memberships as $m): ?>
+                                <?php
+                                $uid = (int) ($m['id'] ?? 0);
+                                $tid = (int) ($m['tenant_id'] ?? 0);
+                                $tenantName = (string) ($m['tenant_name'] ?? '');
+                                $roleName = trim((string) ($m['role_name'] ?? ''));
+                                $st = (string) ($m['status'] ?? '');
+                                $isDeleted = !empty($m['deleted_at']);
+                                $mCallsign = trim((string) ($m['callsign'] ?? ''));
+                                $sanctionsUrl = url('admin/system/member-sanctions') . ($tid > 0 ? '?tenant_id=' . $tid : '');
+                                ?>
+                                <div class="grid gap-3 px-4 py-3 md:grid-cols-[1.2fr_1fr_auto] md:items-center">
+                                    <div>
+                                        <p class="font-semibold text-slate-900"><?= $h($tenantName !== '' ? $tenantName : '—') ?></p>
+                                        <p class="text-xs text-slate-500">
+                                            <?= $h($roleName !== '' ? $roleName : 'Sans rôle') ?>
+                                            <?php if ($mCallsign !== ''): ?>
+                                                · <?= $h($mCallsign) ?>
                                             <?php endif; ?>
-                                        <?php elseif ($uid === $currentActorId): ?>
-                                            <p class="text-xs text-slate-400">C’est votre propre compte.</p>
-                                        <?php elseif ($st === 'active'): ?>
-                                            <form method="post" action="<?= htmlspecialchars(url('admin/users/set-status'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Désactiver ce compte ? La personne ne pourra plus se connecter.');">
-                                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="user_id" value="<?= $uid ?>">
-                                                <input type="hidden" name="tenant_id" value="<?= $tid ?>">
-                                                <input type="hidden" name="status" value="inactive">
-                                                <input type="hidden" name="return_q" value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="return_status" value="<?= htmlspecialchars($statusFilter, ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="return_tenant_id" value="<?= $tenantFilter > 0 ? $tenantFilter : '' ?>">
-                                                <input type="hidden" name="return_page" value="<?= $page ?>">
-                                                <button type="submit" class="w-full rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-950 hover:bg-rose-100">Désactiver</button>
-                                            </form>
-                                        <?php elseif ($st === 'inactive' || $st === 'pending_verification'): ?>
-                                            <form method="post" action="<?= htmlspecialchars(url('admin/users/set-status'), ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="user_id" value="<?= $uid ?>">
-                                                <input type="hidden" name="tenant_id" value="<?= $tid ?>">
-                                                <input type="hidden" name="status" value="active">
-                                                <input type="hidden" name="return_q" value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="return_status" value="<?= htmlspecialchars($statusFilter, ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="return_tenant_id" value="<?= $tenantFilter > 0 ? $tenantFilter : '' ?>">
-                                                <input type="hidden" name="return_page" value="<?= $page ?>">
-                                                <button type="submit" class="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-950 hover:bg-emerald-100">Réactiver</button>
-                                            </form>
-                                            <form method="post" action="<?= htmlspecialchars(url('admin/users/delete'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Anonymiser le compte <?= htmlspecialchars(addslashes($primary), ENT_QUOTES, 'UTF-8') ?> ?\n\nSes données personnelles (e-mail, nom, avatar) sont effacées et la connexion est coupée immédiatement, mais la fiche reste dans les annuaires sous « Compte supprimé » et son historique reste rattaché.\n\nPour tout effacer de la base, utilisez « Supprimer définitivement ».');">
-                                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="user_id" value="<?= $uid ?>">
-                                                <input type="hidden" name="tenant_id" value="<?= $tid ?>">
-                                                <input type="hidden" name="return_q" value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="return_status" value="<?= htmlspecialchars($statusFilter, ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="return_tenant_id" value="<?= $tenantFilter > 0 ? $tenantFilter : '' ?>">
-                                                <input type="hidden" name="return_page" value="<?= $page ?>">
-                                                <button type="submit" class="w-full rounded-lg border border-rose-300 bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-950 hover:bg-rose-200">Anonymiser</button>
-                                            </form>
-                                            <?= $purgeForm($uid, $tid, $email, $returnCtx) ?>
-                                        <?php endif; ?>
-                                        <a href="<?= htmlspecialchars($sanctionsUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Sanctions</a>
+                                            · #<?= $uid ?>
+                                        </p>
                                     </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                                    <div>
+                                        <?php if ($isDeleted): ?>
+                                            <span class="inline-flex rounded-md px-2 py-1 text-xs font-semibold bg-slate-200 text-slate-700">Compte supprimé</span>
+                                        <?php else: ?>
+                                            <span class="inline-flex rounded-md px-2 py-1 text-xs font-semibold <?= $h($statusBadgeClass($st)) ?>">
+                                                <?= $h($statusLabel($st)) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 justify-start md:justify-end">
+                                        <?php if ($uid === $currentActorId): ?>
+                                            <span class="text-xs text-slate-400 self-center">Vous</span>
+                                        <?php elseif ($isDeleted): ?>
+                                            <form method="post" action="<?= $h(url('admin/users/purge')) ?>"
+                                                  onsubmit="return athPurgeConfirm(this, <?= $emailJs ?>, 'org');">
+                                                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                                <input type="hidden" name="user_id" value="<?= $uid ?>">
+                                                <input type="hidden" name="tenant_id" value="<?= $tid ?>">
+                                                <input type="hidden" name="scope" value="org">
+                                                <input type="hidden" name="confirm_email" value="">
+                                                <?= $hiddenReturns() ?>
+                                                <button type="submit" class="rounded-lg border border-rose-700 bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">
+                                                    Purger cette communauté
+                                                </button>
+                                            </form>
+                                        <?php else: ?>
+                                            <?php if ($st === 'active'): ?>
+                                                <form method="post" action="<?= $h(url('admin/users/set-status')) ?>"
+                                                      onsubmit="return confirm('Désactiver l’accès dans <?= $h(addslashes($tenantName)) ?> ?');">
+                                                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                                    <input type="hidden" name="user_id" value="<?= $uid ?>">
+                                                    <input type="hidden" name="tenant_id" value="<?= $tid ?>">
+                                                    <input type="hidden" name="status" value="inactive">
+                                                    <?= $hiddenReturns() ?>
+                                                    <button type="submit" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-950 hover:bg-amber-100">Désactiver</button>
+                                                </form>
+                                            <?php else: ?>
+                                                <form method="post" action="<?= $h(url('admin/users/set-status')) ?>">
+                                                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                                    <input type="hidden" name="user_id" value="<?= $uid ?>">
+                                                    <input type="hidden" name="tenant_id" value="<?= $tid ?>">
+                                                    <input type="hidden" name="status" value="active">
+                                                    <?= $hiddenReturns() ?>
+                                                    <button type="submit" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-950 hover:bg-emerald-100">Réactiver</button>
+                                                </form>
+                                            <?php endif; ?>
+                                            <form method="post" action="<?= $h(url('admin/users/delete')) ?>"
+                                                  onsubmit="return confirm('Retirer <?= $h(addslashes($primary)) ?> de « <?= $h(addslashes($tenantName)) ?> » uniquement ?\n\nLes autres communautés restent intactes.');">
+                                                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                                <input type="hidden" name="user_id" value="<?= $uid ?>">
+                                                <input type="hidden" name="tenant_id" value="<?= $tid ?>">
+                                                <input type="hidden" name="scope" value="org">
+                                                <?= $hiddenReturns() ?>
+                                                <button type="submit" class="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-950 hover:bg-rose-100">
+                                                    Retirer de l’orga
+                                                </button>
+                                            </form>
+                                            <form method="post" action="<?= $h(url('admin/users/purge')) ?>"
+                                                  onsubmit="return athPurgeConfirm(this, <?= $emailJs ?>, 'org');">
+                                                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                                <input type="hidden" name="user_id" value="<?= $uid ?>">
+                                                <input type="hidden" name="tenant_id" value="<?= $tid ?>">
+                                                <input type="hidden" name="scope" value="org">
+                                                <input type="hidden" name="confirm_email" value="">
+                                                <?= $hiddenReturns() ?>
+                                                <button type="submit" class="rounded-lg border border-rose-700 bg-white px-3 py-1.5 text-xs font-semibold text-rose-800 hover:bg-rose-50">
+                                                    Purger orga
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                        <a href="<?= $h($sanctionsUrl) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Sanctions</a>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </div>
 
         <?php if ($pages > 1): ?>
             <nav class="flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="Pagination">
                 <?php if ($page > 1): ?>
-                    <a href="<?= htmlspecialchars($queryUrl(['page' => $page - 1]), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold text-slate-800 hover:bg-slate-50">Page précédente</a>
+                    <a href="<?= $h($queryUrl(['page' => $page - 1])) ?>" class="rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold text-slate-800 hover:bg-slate-50">Page précédente</a>
                 <?php else: ?>
                     <span class="text-slate-400">Page précédente</span>
                 <?php endif; ?>
                 <span class="text-slate-600">Page <?= $page ?> sur <?= $pages ?></span>
                 <?php if ($page < $pages): ?>
-                    <a href="<?= htmlspecialchars($queryUrl(['page' => $page + 1]), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold text-slate-800 hover:bg-slate-50">Page suivante</a>
+                    <a href="<?= $h($queryUrl(['page' => $page + 1])) ?>" class="rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold text-slate-800 hover:bg-slate-50">Page suivante</a>
                 <?php else: ?>
                     <span class="text-slate-400">Page suivante</span>
                 <?php endif; ?>
@@ -288,19 +360,13 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
         <section class="rounded-2xl border border-rose-200 bg-rose-50 p-5">
             <h2 class="text-base font-semibold text-rose-950">Purge des fiches anonymisées</h2>
             <p class="mt-2 max-w-3xl text-sm text-rose-900">
-                Les comptes anonymisés avant l’arrivée de la suppression définitive restent
-                présents en base sous « Compte supprimé », adresse <span class="font-mono">deleted-…@deleted.invalid</span>,
-                et continuent d’apparaître dans les annuaires. Cette action les efface tous, avec
-                ce qui les décrit. Les traces qu’ils ont laissées sur les dossiers d’autres membres
-                sont conservées mais détachées : elles n’attribuent plus rien à personne.
+                Les comptes anonymisés restent en base sous « Compte supprimé ». Cette action les
+                efface tous définitivement.
             </p>
-            <p class="mt-2 text-sm font-semibold text-rose-950">Aucune restauration n’est possible après coup.</p>
-            <form method="post" action="<?= htmlspecialchars(url('admin/users/purge-anonymises'), ENT_QUOTES, 'UTF-8') ?>"
+            <form method="post" action="<?= $h(url('admin/users/purge-anonymises')) ?>"
                   class="mt-4 flex flex-wrap items-end gap-3">
-                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                <input type="hidden" name="return_q" value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>">
-                <input type="hidden" name="return_status" value="<?= htmlspecialchars($statusFilter, ENT_QUOTES, 'UTF-8') ?>">
-                <input type="hidden" name="return_tenant_id" value="<?= $tenantFilter > 0 ? $tenantFilter : '' ?>">
+                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                <?= $hiddenReturns() ?>
                 <label class="flex-1 min-w-[16rem]">
                     <span class="block text-xs font-semibold uppercase tracking-wide text-rose-900">Tapez « supprimer definitivement » pour confirmer</span>
                     <input type="text" name="confirm_phrase" autocomplete="off" required
@@ -315,12 +381,14 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
 </div>
 
 <script>
-// La saisie de l’adresse remplace un simple confirm() : la suppression est définitive,
-// et rien ne permettra de revenir en arrière si le mauvais compte est visé.
-function athPurgeConfirm(form, expectedEmail) {
+function athPurgeConfirm(form, expectedEmail, scope) {
+    var scopeLabel = scope === 'org'
+        ? 'cette communauté uniquement'
+        : 'TOUT LE SITE (toutes les communautés de cette adresse)';
     var saisi = window.prompt(
-        'Suppression DÉFINITIVE du compte ' + expectedEmail + '.\n\n'
-        + 'La fiche et tout ce qui la décrit quittent la base. Aucune restauration n’est possible.\n\n'
+        'Suppression DÉFINITIVE — ' + scopeLabel + '.\n\n'
+        + 'Compte : ' + expectedEmail + '\n\n'
+        + 'Aucune restauration n’est possible.\n\n'
         + 'Retapez l’adresse exacte pour confirmer :'
     );
     if (saisi === null) {

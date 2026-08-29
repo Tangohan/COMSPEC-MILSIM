@@ -84,6 +84,27 @@ final class AccountDeletionService
     }
 
     /**
+     * Soft-delete limité à une communauté : n’anonymise que la fiche user_id/tenant_id.
+     * Les autres appartenance (même e-mail) restent intactes.
+     *
+     * @return array{ok: bool, anonymized_user_ids: list<int>}
+     */
+    public function softDeleteMembership(int $userId, int $tenantId, int $actorUserId): array
+    {
+        $target = $this->users->findById($userId, $tenantId);
+        if ($target === null) {
+            return ['ok' => false, 'anonymized_user_ids' => []];
+        }
+
+        $ok = $this->users->anonymizeUserIdentity($userId, $actorUserId);
+        if ($ok) {
+            $this->scrubRelatedPersonalData($userId);
+        }
+
+        return ['ok' => $ok, 'anonymized_user_ids' => $ok ? [$userId] : []];
+    }
+
+    /**
      * Libère une adresse encore portée par des comptes déjà marqués supprimés
      * (anonymisation incomplète) et scrub les traces personnelles restantes.
      */
