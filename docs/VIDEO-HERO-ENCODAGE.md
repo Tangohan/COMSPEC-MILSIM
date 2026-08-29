@@ -30,14 +30,15 @@ Un premier passage avait utilisé `-an` : image OK, **son mort** — voir
 
 `App\Support\Media\VideoSourceProbe` lit la marque de conteneur et le codec de piste, puis :
 
-- annonce le **type MIME réel** (`video/quicktime; codecs="hvc1"`) au lieu d'un
-  `video/mp4` optimiste ;
-- **écarte la source** si le codec n'est pas décodable par ces navigateurs ;
+- **écarte la source** si le codec n'est pas décodable (HEVC / QuickTime) ;
+- pour une source **jouable** (H.264 / VP9 / AV1), annonce le MIME de conteneur
+  (`video/mp4`) **sans** `codecs="avc1"` nu — sinon `canPlayType()` renvoie `""`
+  et le navigateur ignore la balise `<source>` (hero figé sur les photos) ;
 - si plus aucun emplacement n'a de source exploitable, les balises `<video>` ne sont plus
   rendues du tout et le carrousel d'images porte le hero.
 
-Le hero ne peut donc plus rester noir. **Cela ne restaure pas la vidéo** : il faut
-réencoder les fichiers.
+Le hero ne peut donc plus rester noir faute de codec. **Cela ne restaure pas une
+vidéo encore en HEVC** : il faut réencoder les fichiers.
 
 ## Encodage attendu
 
