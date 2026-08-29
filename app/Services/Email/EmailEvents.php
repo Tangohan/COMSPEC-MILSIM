@@ -69,6 +69,12 @@ final class EmailEvents
     public const TRAINING_PUBLISH_ELEVATION_REQUEST = 'TRAINING_PUBLISH_ELEVATION_REQUEST';
     /** Demande d’élévation RH (grade / rôle / droits) depuis le bureau effectifs. */
     public const EFFECTIFS_ELEVATION_REQUEST = 'EFFECTIFS_ELEVATION_REQUEST';
+    /** Demande de correction RH fiche opérateur — notification organisateurs. */
+    public const PERSONNEL_CORRECTION_REQUEST_STAFF = 'PERSONNEL_CORRECTION_REQUEST_STAFF';
+    /** Accusé de réception — demande de correction RH (membre). */
+    public const PERSONNEL_CORRECTION_REQUEST_MEMBER = 'PERSONNEL_CORRECTION_REQUEST_MEMBER';
+    /** Décision sur une demande de correction RH (confirmée / refusée). */
+    public const PERSONNEL_CORRECTION_DECISION = 'PERSONNEL_CORRECTION_DECISION';
     /** Résumé hebdomadaire au staff RH : dossiers incomplets, sans unité/rôle, élévations en attente. */
     public const EFFECTIFS_HR_WEEKLY_DIGEST = 'EFFECTIFS_HR_WEEKLY_DIGEST';
     /** Résumé hebdomadaire au staff LMS : brouillons oubliés, documents publiés jamais consultés. */
@@ -180,6 +186,9 @@ final class EmailEvents
         self::TRAINING_COURSE_SESSION_SCHEDULED_LEARNER,
         self::TRAINING_PUBLISH_ELEVATION_REQUEST,
         self::EFFECTIFS_ELEVATION_REQUEST,
+        self::PERSONNEL_CORRECTION_REQUEST_STAFF,
+        self::PERSONNEL_CORRECTION_REQUEST_MEMBER,
+        self::PERSONNEL_CORRECTION_DECISION,
         self::EFFECTIFS_HR_WEEKLY_DIGEST,
         self::TRAINING_FORGOTTEN_DOCS_DIGEST,
         self::COMMUNITY_REPORT_RECEIPT,
