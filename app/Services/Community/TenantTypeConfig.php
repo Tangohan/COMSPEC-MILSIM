@@ -323,6 +323,8 @@ final class TenantTypeConfig
             'back-office/organisation-effectifs' => 'personnel',
             'back-office/organisation/structure' => 'personnel',
             'back-office/organisation/anciennete' => 'personnel',
+            'back-office/organisation/progression' => 'personnel',
+            'back-office/organisation/indicatifs' => 'personnel',
             'back-office/personnel-job-roles' => 'personnel',
             'back-office/roles-functions' => 'personnel',
             'back-office/groups' => 'personnel',

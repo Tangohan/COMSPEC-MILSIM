@@ -13,7 +13,7 @@ final class UserAdvancedEditGrantRepository
 
     private function pdo(): PDO
     {
-        return Database::connection();
+        return Database::getPdo();
     }
 
     public function tableExists(): bool

@@ -82,6 +82,8 @@ return [
         ['path' => 'back-office/ressources/effectifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Bureau effectifs', 'css' => ['back-office-effectifs-hub.css']],
         ['path' => 'back-office/organisation/structure', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Structure & recrutement'],
         ['path' => 'back-office/organisation/anciennete', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Ancienneté', 'css' => ['back-office-seniority.css']],
+        ['path' => 'back-office/organisation/progression', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Progression & carrière', 'subtitle' => 'Parcours, validations, qualifications et règles d’indicatifs.'],
+        ['path' => 'back-office/organisation/indicatifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Règles d’indicatifs', 'subtitle' => 'Séquences transactionnelles, plages réservées et historique.'],
         ['path' => 'back-office/groups', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Groupes'],
         ['path' => 'back-office/teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Équipes'],
         ['path' => 'back-office/categories', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Catégories forum'],

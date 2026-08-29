@@ -8,6 +8,7 @@ $canGrades = !empty($canGrades);
 $canStructure = !empty($canStructure);
 $canStructureRecruitmentHub = !empty($canStructureRecruitmentHub);
 $canSeniorityAdmin = !empty($canSeniorityAdmin);
+$canProgressionAdmin = !empty($canProgressionAdmin);
 
 $stats = is_array($hubStats ?? null) ? $hubStats : [];
 $membersActive = (int) ($stats['members_active'] ?? 0);
@@ -161,6 +162,18 @@ $hubRows = [
         'primary' => false,
         'ok' => $canSeniorityAdmin,
     ],
+    [
+        'id' => 'progression',
+        'title' => 'Progression & carrière',
+        'desc' => 'Parcours, conditions, validations, qualifications et règles d’indicatifs séquentiels.',
+        'domain' => 'Carrière',
+        'domainKey' => 'carriere',
+        'href' => url('back-office/organisation/progression'),
+        'volume' => 'Moteur RH',
+        'cta' => 'Ouvrir le hub',
+        'primary' => false,
+        'ok' => $canProgressionAdmin,
+    ],
 ];
 
 $visibleRows = array_values(array_filter($hubRows, static fn (array $r): bool => !empty($r['ok'])));
@@ -241,6 +254,9 @@ $athKpis = [
         <?php endif; ?>
         <?php if ($canSeniorityAdmin): ?>
             <a href="<?= $h(url('back-office/organisation/anciennete')) ?>" class="ath-btn">Ancienneté</a>
+        <?php endif; ?>
+        <?php if ($canProgressionAdmin): ?>
+            <a href="<?= $h(url('back-office/organisation/progression')) ?>" class="ath-btn">Progression</a>
         <?php endif; ?>
     </nav>
 
