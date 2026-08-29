@@ -2268,6 +2268,14 @@ try {
     echo '  [ATTENTION] training_formation_custom_page_feedback : ' . $e->getMessage() . "\n";
 }
 
+$platformUxFeedbackMigrate = require $root . '/bootstrap/platform_ux_feedback_migration.php';
+try {
+    echo "Migration platform_ux_feedback (retours UI + flash_info_detailed)...\n";
+    $platformUxFeedbackMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] platform_ux_feedback : ' . $e->getMessage() . "\n";
+}
+
 $tenantCustomMapsMigrate = require $root . '/bootstrap/tenant_custom_maps_migration.php';
 try {
     $tenantCustomMapsMigrate($pdo);

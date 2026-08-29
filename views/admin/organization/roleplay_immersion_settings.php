@@ -11,18 +11,9 @@ $formAction = (string) ($immersionFormAction ?? url('back-office/roleplay/immers
 $stages = is_array($cfg['stages'] ?? null) ? $cfg['stages'] : ['Pré-qualification', 'Tutorat', 'Validation', 'Intégration active'];
 $tracks = is_array($cfg['recruitment_tracks'] ?? null) ? $cfg['recruitment_tracks'] : ['Infanterie', 'Support', 'Commandement'];
 
-$err = \App\Core\Session::getFlash('error');
-$ok = \App\Core\Session::getFlash('success');
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 ?>
 <div class="bo-community-settings">
-
-    <?php if ($err): ?>
-        <div class="bo-settings-flash bo-settings-flash--err" role="alert"><?= $h((string) $err) ?></div>
-    <?php endif; ?>
-    <?php if ($ok): ?>
-        <div class="bo-settings-flash bo-settings-flash--ok" role="status"><?= $h((string) $ok) ?></div>
-    <?php endif; ?>
 
     <section class="ath-card ath-rise bo-setting-group" id="activation">
         <p class="bo-setting-group__kicker">Dossiers personnel</p>

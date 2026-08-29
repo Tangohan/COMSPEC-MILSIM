@@ -112,6 +112,7 @@ $boNavInteg = str_starts_with($p, 'back-office/integrations');
 $boNavAlerts = str_starts_with($p, 'back-office/alerts');
 $boNavConfig = $p === 'back-office/configuration' || str_starts_with($p, 'back-office/configuration/');
 $boNavAnalytics = $p === 'back-office/analytics';
+$boNavUxFeedback = str_starts_with($p, 'back-office/retours-interface');
 $boNavOnbMembers = str_starts_with($p, 'back-office/onboarding-members');
 $boNavAudit = str_starts_with($p, 'back-office/audit');
 $boNavMod = str_starts_with($p, 'back-office/moderation');

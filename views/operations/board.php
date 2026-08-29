@@ -40,6 +40,7 @@ $entryTypeLabels = [
     'task' => 'Tâche',
     'formation' => 'Formation',
     'flash_info' => 'Flash information',
+    'flash_info_detailed' => 'Flash information détaillé',
 ];
 
 $temporalBucket = static function (array $e, string $today): string {
@@ -456,6 +457,7 @@ $familleModeleLabels = [
             <p class="ops-board__quick-hint">Chaque bouton ouvre l’éditeur en brouillon, avec la date du jour. Complétez, validez, puis mettez en ligne.</p>
             <div class="ops-board__quick-grid">
                 <a href="<?= htmlspecialchars($lienNouvelle('flash_info'), ENT_QUOTES, 'UTF-8') ?>">Flash information</a>
+                <a href="<?= htmlspecialchars($lienNouvelle('flash_info_detailed'), ENT_QUOTES, 'UTF-8') ?>">Flash détaillé</a>
                 <a href="<?= htmlspecialchars($lienNouvelle('permanence'), ENT_QUOTES, 'UTF-8') ?>">Permanence</a>
                 <a href="<?= htmlspecialchars($lienNouvelle('info'), ENT_QUOTES, 'UTF-8') ?>">Info pratique</a>
                 <a href="<?= htmlspecialchars($lienNouvelle('manifestation'), ENT_QUOTES, 'UTF-8') ?>">Manifestation</a>

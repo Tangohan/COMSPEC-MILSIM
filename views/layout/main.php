@@ -329,7 +329,7 @@ if (!empty($isBackOfficeShell)) {
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <?php endif; ?>
     <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? (!empty($isBackOfficeShell) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : 'min-h-[80vh]') ?>">
-        <?php if (empty($communityReelsPage)): ?>
+        <?php if (empty($communityReelsPage) && empty($isBackOfficeShell)): ?>
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
         <?php endif; ?>
         <?php if (!empty($usesAdminSidebarShell)): ?>
@@ -423,6 +423,11 @@ if (!empty($isBackOfficeShell)) {
                 <?php if (!empty($isBackOfficeShell) && empty($boSkipPageHead)): ?>
                     <?php require base_path('views/partials/back_office_page_head.php'); ?>
                 <?php endif; ?>
+                <?php if (!empty($isBackOfficeShell) && empty($boSkipSessionFlashes)): ?>
+                <div class="ath-main__flashes ath-rise">
+                    <?php require base_path('views/partials/bo_session_flashes.php'); ?>
+                </div>
+                <?php endif; ?>
                 <?php
                 $contentPath = str_replace('.', '/', $content);
                 $innerPath = base_path('views/' . $contentPath . '.php');
@@ -458,6 +463,9 @@ if (!empty($isBackOfficeShell)) {
     <?php require base_path('views/partials/analytics_beacon.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
     <?php require base_path('views/partials/demo_nda_session_widget.php'); ?>
+    <?php if (!empty($isBackOfficeShell) && !empty(\App\Core\Session::get('user_id'))): ?>
+        <?php require base_path('views/partials/ux_feedback_widget.php'); ?>
+    <?php endif; ?>
 <?php
     $cdnPhase = 'body';
     $cdnPreset = 'portal';

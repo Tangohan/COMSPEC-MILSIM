@@ -90,13 +90,6 @@ if ($isAthShell):
     </div>
     <?php endif; ?>
 
-    <?php if ($flashSuccess): ?>
-    <div class="<?= $isAthShell ? 'bo-settings-flash bo-settings-flash--ok ath-rise' : 'mb-4 rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-800' ?>" role="status"><?= $h((string) $flashSuccess) ?></div>
-    <?php endif; ?>
-    <?php if ($flashError): ?>
-    <div class="<?= $isAthShell ? 'bo-settings-flash bo-settings-flash--err ath-rise' : 'mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-800' ?>" role="alert"><?= $h((string) $flashError) ?></div>
-    <?php endif; ?>
-
     <?php if ($isAthShell): ?>
     <div class="ath-panel-dark ath-rise">
         <p class="ath-panel-dark__kicker">Autorisations &amp; emplois</p>

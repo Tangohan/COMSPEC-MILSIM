@@ -176,13 +176,6 @@ $athTableShowCheckbox = true;
         <a href="<?= $h(url('back-office/personnel-job-roles/assignments')) ?>" class="ath-btn">Attributions métier</a>
     </div>
 
-    <?php if ($success): ?>
-    <div class="bo-rf__flash bo-rf__flash--ok ath-rise" role="status"><?= $h((string) $success) ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-    <div class="bo-rf__flash bo-rf__flash--err ath-rise" role="alert"><?= $h((string) $error) ?></div>
-    <?php endif; ?>
-
     <?php require base_path('views/partials/ath_table.php'); ?>
 
     <?php if (!$requiredRoleDefinitionsFeature): ?>

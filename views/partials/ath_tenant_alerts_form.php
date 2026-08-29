@@ -37,6 +37,13 @@ $currentFeatures = TenantAlertFeatures::decodeJson($row['features_json'] ?? null
 $displayOptions = AlertDisplayStyle::tenantOptionsWithMeta();
 $currentDisplay = AlertDisplayStyle::sanitizeTenant(isset($row['display_style']) ? (string) $row['display_style'] : null);
 
+$previewToneMap = [
+    'urgent' => 'error', 'security' => 'error', 'discount' => 'warning', 'maintenance' => 'warning',
+    'novelty' => 'info', 'event' => 'info', 'notice' => 'info', 'training' => 'info',
+    'recruitment' => 'info', 'info' => 'info',
+];
+$previewTone = $previewToneMap[$currentKind] ?? 'info';
+
 $iconSvg = [
     'auto' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h14"/></svg>',
     'info' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
@@ -51,22 +58,12 @@ $iconSvg = [
     'graduation' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>',
     'users' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>',
 ];
-
-$success = \App\Core\Session::getFlash('success');
-$error = \App\Core\Session::getFlash('error');
 ?>
 
 <div class="bo-ta bo-ta-form ath-rise">
     <div class="ath-users-filters ath-rise">
         <a href="<?= $h(url('back-office/alerts')) ?>" class="ath-btn">← Liste des annonces</a>
     </div>
-
-    <?php if ($success): ?>
-    <div class="bo-settings-flash bo-settings-flash--ok ath-rise" role="status"><?= $h((string) $success) ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-    <div class="bo-settings-flash bo-settings-flash--err ath-rise" role="alert"><?= $h((string) $error) ?></div>
-    <?php endif; ?>
 
     <form method="<?= $h((string) ($formMethod ?? 'post')) ?>" action="<?= $h((string) ($formAction ?? '')) ?>" enctype="multipart/form-data" class="ath-card bo-ta-form__card" id="ta-alert-form">
         <?= \App\Core\Csrf::field() ?>
@@ -108,20 +105,12 @@ $error = \App\Core\Session::getFlash('error');
                 <label class="ath-users-filters__label" for="ta-accent">Couleur d’accent
                     <input id="ta-accent" type="color" name="accent_color" value="<?= $h($currentColor) ?>" class="bo-ta-form__color">
                 </label>
-                <div class="bo-ta-preview" id="ta-live-preview">
-                    <?php if ($bannerUrl): ?>
-                    <img src="<?= $h($bannerUrl) ?>" alt="" class="bo-ta-preview__banner" id="ta-preview-banner">
-                    <?php else: ?>
-                    <img src="" alt="" class="bo-ta-preview__banner hidden" id="ta-preview-banner">
-                    <?php endif; ?>
-                    <div class="bo-ta-preview__body" id="ta-preview-strip" style="border-left:4px solid <?= $h($currentColor) ?>">
-                        <div class="bo-ta-preview__icon" id="ta-preview-icon" style="background:<?= $h($currentColor) ?>"><?= $iconSvg[$currentIcon] ?? $iconSvg['info'] ?></div>
-                        <div>
-                            <p class="bo-ta-preview__kind" id="ta-preview-kind"><?= $h($kindOptions[$currentKind]['label']) ?></p>
-                            <p class="bo-ta-preview__title" id="ta-preview-title"><?= $h((string) ($row['title'] ?? 'Titre de l’annonce')) ?></p>
-                        </div>
-                    </div>
-                </div>
+                <?php
+                $previewKindLabel = $kindOptions[$currentKind]['label'];
+                $previewTitle = (string) ($row['title'] ?? 'Titre de l\'annonce');
+                $previewBody = (string) ($row['body'] ?? '');
+                include __DIR__ . '/bo_ta_preview_dsfr.php';
+                ?>
             </div>
 
             <fieldset class="bo-ta-form__fieldset">
@@ -232,72 +221,43 @@ $error = \App\Core\Session::getFlash('error');
 (function () {
   var form = document.getElementById('ta-alert-form');
   if (!form) return;
-  var accent = document.getElementById('ta-accent');
   var title = document.getElementById('ta-title');
+  var body = document.getElementById('ta-body');
   var previewTitle = document.getElementById('ta-preview-title');
   var previewKind = document.getElementById('ta-preview-kind');
-  var previewStrip = document.getElementById('ta-preview-strip');
-  var previewIcon = document.getElementById('ta-preview-icon');
-  var previewImage = document.getElementById('ta-preview-image');
-  var previewBanner = document.getElementById('ta-preview-banner');
-  var iconSvgs = <?= json_encode($iconSvg, JSON_UNESCAPED_UNICODE) ?>;
+  var previewBody = document.getElementById('ta-preview-body');
+  var previewRoot = document.getElementById('ta-live-preview');
   var kindLabels = <?= json_encode(array_map(static fn ($m) => $m['label'], $kindOptions), JSON_UNESCAPED_UNICODE) ?>;
+  var kindTones = <?= json_encode($previewToneMap, JSON_UNESCAPED_UNICODE) ?>;
 
-  function syncColor(c) {
-    if (!c) return;
-    if (previewStrip) previewStrip.style.borderLeftColor = c;
-    if (previewIcon) previewIcon.style.background = c;
-  }
   function syncKind() {
     var checked = form.querySelector('input[name="kind"]:checked');
     if (!checked) return;
     if (previewKind) previewKind.textContent = kindLabels[checked.value] || 'Annonce';
-    var def = checked.getAttribute('data-default-color');
-    if (accent && def && !accent.dataset.userTouched) {
-      accent.value = def;
-      syncColor(def);
+    if (previewRoot) {
+      var tone = kindTones[checked.value] || 'info';
+      var alertEl = previewRoot.querySelector('.ds-alert');
+      if (alertEl) {
+        alertEl.className = 'ds-alert ds-alert--' + tone;
+      }
     }
-  }
-  function syncIcon() {
-    var checked = form.querySelector('input[name="icon_key"]:checked');
-    var key = checked ? checked.value : 'auto';
-    if (key === 'auto') {
-      var kind = form.querySelector('input[name="kind"]:checked');
-      key = kind ? kind.value : 'info';
-      if (!iconSvgs[key]) key = 'info';
-    }
-    if (previewIcon) previewIcon.innerHTML = iconSvgs[key] || iconSvgs.info;
-  }
-  function previewFile(input, imgEl) {
-    if (!input || !imgEl || !input.files || !input.files[0]) return;
-    imgEl.src = URL.createObjectURL(input.files[0]);
-    imgEl.classList.remove('hidden');
-  }
-
-  form.querySelectorAll('input[name="kind"]').forEach(function (el) {
-    el.addEventListener('change', function () { syncKind(); syncIcon(); });
-  });
-  form.querySelectorAll('input[name="icon_key"]').forEach(function (el) {
-    el.addEventListener('change', syncIcon);
-  });
-  if (accent) {
-    accent.addEventListener('input', function () {
-      accent.dataset.userTouched = '1';
-      syncColor(accent.value);
-    });
   }
   if (title && previewTitle) {
     title.addEventListener('input', function () {
-      previewTitle.textContent = title.value.trim() || 'Titre de l’annonce';
+      previewTitle.textContent = title.value.trim() || 'Titre de l\'annonce';
     });
   }
-  var imageInput = document.getElementById('ta-image');
-  var bannerInput = document.getElementById('ta-banner');
-  if (imageInput && previewImage) imageInput.addEventListener('change', function () { previewFile(imageInput, previewImage); });
-  if (bannerInput && previewBanner) bannerInput.addEventListener('change', function () { previewFile(bannerInput, previewBanner); });
-
-  syncColor(accent ? accent.value : null);
+  if (body && previewBody) {
+    body.addEventListener('input', function () {
+      var t = body.value.trim();
+      previewBody.textContent = t;
+      previewBody.hidden = !t;
+      previewBody.classList.toggle('hidden', !t);
+    });
+  }
+  form.querySelectorAll('input[name="kind"]').forEach(function (el) {
+    el.addEventListener('change', syncKind);
+  });
   syncKind();
-  syncIcon();
 })();
 </script>

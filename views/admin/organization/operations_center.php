@@ -72,6 +72,7 @@ $blockTypeLabels = [
     'info_pratique' => 'Info pratique',
     'manifestation' => 'Manifestation',
     'flash_info' => 'Flash info',
+    'flash_info_detailed' => 'Flash info détaillé',
 ];
 
 $formatDate = static function (mixed $raw, string $format = 'd/m/Y H:i'): string {
@@ -367,7 +368,10 @@ require base_path('views/partials/ath_table.php');
 
 <?php
 // D. Flash infos — gardés en fiches : le corps du message doit rester lisible en entier.
-$flashes = is_array($opsByType['flash_info'] ?? null) ? $opsByType['flash_info'] : [];
+$flashes = array_merge(
+    is_array($opsByType['flash_info'] ?? null) ? $opsByType['flash_info'] : [],
+    is_array($opsByType['flash_info_detailed'] ?? null) ? $opsByType['flash_info_detailed'] : [],
+);
 ?>
 <h2 class="ath-section-title">Flash infos</h2>
 <?php if ($flashes === []): ?>

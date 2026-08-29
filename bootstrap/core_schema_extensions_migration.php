@@ -757,7 +757,7 @@ SQL, 'units normalize type');
 ALTER TABLE planning_entries
     MODIFY COLUMN entry_type ENUM(
         'permanence','info','mission','task','formation',
-        'manifestation','flash_info'
+        'manifestation','flash_info','flash_info_detailed'
     ) NOT NULL
 SQL, 'planning_entries.entry_type enum');
     }

@@ -4,23 +4,17 @@ declare(strict_types=1);
 $categories = $categories ?? [];
 $roles = $roles ?? [];
 $permCounts = $permCounts ?? [];
-$flashSuccess = \App\Core\Session::getFlash('success');
-$flashError = \App\Core\Session::getFlash('error');
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 ?>
 
 <div class="pjr-ath-body ath-rise">
     <?php if (empty($personnelProfilesJobRoleReady)): ?>
-    <div class="bo-settings-flash bo-settings-flash--warn ath-rise" role="status">
-        Les colonnes dossier ne sont pas encore en base : le référentiel est éditable, mais les attributions effectifs nécessitent la migration complète.
-    </div>
-    <?php endif; ?>
-
-    <?php if ($flashSuccess): ?>
-    <div class="bo-settings-flash bo-settings-flash--ok ath-rise" role="status"><?= $h((string) $flashSuccess) ?></div>
-    <?php endif; ?>
-    <?php if ($flashError): ?>
-    <div class="bo-settings-flash bo-settings-flash--err ath-rise" role="alert"><?= $h((string) $flashError) ?></div>
+    <?php
+    $notice_tone = 'warning';
+    $notice_title = 'Migration en attente';
+    $notice_body = 'Les colonnes dossier ne sont pas encore en base : le référentiel est éditable, mais les attributions effectifs nécessitent la migration complète.';
+    include __DIR__ . '/bo_dsfr_notice.php';
+    ?>
     <?php endif; ?>
 
     <details class="ath-roles-edit-item ath-rise">

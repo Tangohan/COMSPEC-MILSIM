@@ -57,9 +57,44 @@ $searchHaystack = strtolower(trim(implode(' ', array_filter([
             <a href="<?= url('back-office/tableau-operationnel/fiche/' . $eid) ?>" class="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-[11px] font-bold text-amber-950 shadow-sm hover:bg-amber-100">Continuer la rédaction</a>
         </div>
     <?php endif; ?>
-    <?php if ($etype === 'flash_info' && !empty($entry['description'])): ?>
+    <?php if (in_array($etype, ['flash_info', 'flash_info_detailed'], true) && !empty($entry['description'])): ?>
         <div class="entry-card__body mt-2 text-sm leading-relaxed text-slate-800"><?= nl2br(htmlspecialchars((string) $entry['description'], ENT_QUOTES, 'UTF-8')) ?></div>
-    <?php elseif (!empty($entry['description'])): ?>
+    <?php endif; ?>
+    <?php if ($etype === 'flash_info_detailed'): ?>
+        <?php
+        $flashNotes = is_array($entry['notes'] ?? null) ? $entry['notes'] : [];
+        if ($flashNotes !== []):
+        ?>
+        <div class="entry-card__flash-detail mt-2 space-y-2 text-sm leading-relaxed text-slate-800">
+            <?php foreach ($flashNotes as $note):
+                $noteType = (string) ($note['note_type'] ?? 'info');
+                $noteLabel = match ($noteType) {
+                    'consigne' => 'Action',
+                    'restriction' => 'Restriction',
+                    'brief' => 'Brief',
+                    default => 'Info',
+                };
+                $content = trim((string) ($note['content'] ?? ''));
+                if ($content === '') { continue; }
+                ?>
+            <div class="rounded-lg border border-orange-100 bg-orange-50/60 px-2.5 py-2">
+                <p class="text-[10px] font-bold uppercase tracking-wide text-orange-900"><?= htmlspecialchars($noteLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                <p class="mt-1"><?= nl2br(htmlspecialchars($content, ENT_QUOTES, 'UTF-8')) ?></p>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($entry['operation_zone']) || !empty($entry['accountability_note'])): ?>
+        <p class="entry-card__meta mt-2 text-slate-700">
+            <?php if (!empty($entry['operation_zone'])): ?>
+                <span class="font-semibold">Zone :</span> <?= htmlspecialchars((string) $entry['operation_zone'], ENT_QUOTES, 'UTF-8') ?>
+            <?php endif; ?>
+            <?php if (!empty($entry['accountability_note'])): ?>
+                <?= !empty($entry['operation_zone']) ? ' · ' : '' ?><span class="font-semibold">Contact :</span> <?= htmlspecialchars((string) $entry['accountability_note'], ENT_QUOTES, 'UTF-8') ?>
+            <?php endif; ?>
+        </p>
+        <?php endif; ?>
+    <?php elseif ($etype !== 'flash_info' && !empty($entry['description'])): ?>
         <p class="entry-card__body mt-2 leading-relaxed text-slate-700"><?= nl2br(htmlspecialchars((string) $entry['description'], ENT_QUOTES, 'UTF-8')) ?></p>
     <?php endif; ?>
     <dl class="entry-card__meta mt-2 grid grid-cols-1 gap-1.5 text-slate-700 md:grid-cols-2">

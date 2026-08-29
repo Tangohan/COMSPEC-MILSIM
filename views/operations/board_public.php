@@ -41,6 +41,7 @@ $entryTypeLabels = [
     'task' => 'Tâche',
     'formation' => 'Formation',
     'flash_info' => 'Flash information',
+    'flash_info_detailed' => 'Flash information détaillé',
 ];
 $operationalLabels = [
     'planned' => 'Planifié',
