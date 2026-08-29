@@ -11,7 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Services\Auth\AuthService;
 use App\Services\Personnel\CallsignSequenceService;
-use App\Services\Rbac\Gate;
+use App\Core\Gate;
 
 final class OrganizationCallsignSequencesController
 {

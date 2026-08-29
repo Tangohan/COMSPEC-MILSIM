@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Controllers\Web;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\UserAdvancedEditGrantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
-use App\Services\Rbac\RbacService;
 
 final class AdvancedFicheEditGrantController
 {
@@ -19,7 +19,6 @@ final class AdvancedFicheEditGrantController
         private AuthService $authService,
         private UserRepository $userRepository,
         private UserAdvancedEditGrantRepository $grantRepository,
-        private RbacService $rbacService,
     ) {
     }
 
@@ -138,13 +137,12 @@ final class AdvancedFicheEditGrantController
 
     private function canManage(): bool
     {
-        $user = $this->authService->user();
-        if (!$user) {
+        if ($this->authService->user() === null) {
             return false;
         }
-        $uid = (int) $user['id'];
+        $gate = Gate::getInstance();
         foreach (['personnel.profile.update', 'admin.organization', 'admin.access', 'personnel.grades.manage', 'personnel.status.manage'] as $slug) {
-            if ($this->rbacService->userHasPermission($uid, $slug)) {
+            if ($gate->allows($slug)) {
                 return true;
             }
         }
