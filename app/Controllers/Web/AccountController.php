@@ -391,8 +391,15 @@ class AccountController
                 ]);
                 try {
                     $this->personnelProfileRepository->ensureRecord($uid);
+                    $primaryCs = trim((string) $request->input('callsign'));
+                    $extraSlots = function_exists('personnel_extra_callsign_slots') ? personnel_extra_callsign_slots() : 5;
+                    $extraList = function_exists('personnel_normalize_extra_callsigns')
+                        ? personnel_normalize_extra_callsigns($request->input('extra_callsigns'), $primaryCs, $extraSlots, 100)
+                        : [];
                     $this->personnelProfileRepository->update($uid, [
                         'character_name' => $derivedDisplay !== '' ? $derivedDisplay : '',
+                        'callsign' => $primaryCs,
+                        'extra_callsigns_json' => json_encode($extraList, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                     ]);
                 } catch (\Throwable) {
                 }
@@ -422,10 +429,22 @@ class AccountController
         $totpEnabled = $freshForOtp !== null
             && $this->loginSecurityOtpService->isTotpEnabled($freshForOtp);
 
+        $personnelProfile = $this->personnelProfileRepository->getByUserId($uid) ?? [];
+        $extraCallsignSlots = function_exists('personnel_extra_callsign_slots') ? personnel_extra_callsign_slots() : 5;
+        $extraCallsigns = function_exists('personnel_decode_extra_callsigns')
+            ? personnel_decode_extra_callsigns($personnelProfile['extra_callsigns_json'] ?? null)
+            : [];
+        while (count($extraCallsigns) < $extraCallsignSlots) {
+            $extraCallsigns[] = '';
+        }
+        $extraCallsigns = array_slice($extraCallsigns, 0, $extraCallsignSlots);
+
         return $this->accountView('account.preferences', 'Préférences', [
             'user' => $user,
             'profile' => $profile,
             'uiPrefs' => $uiPrefs,
+            'extraCallsigns' => $extraCallsigns,
+            'extraCallsignSlots' => $extraCallsignSlots,
             'notifEmailCatalog' => $notifEmailCatalog,
             'notifEmailState' => $notifEmailState,
             'accountSnapshot' => $accountSnapshot,
