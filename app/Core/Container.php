@@ -831,6 +831,7 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Services\Personnel\PersonnelCorrectionRequestService::class),
                 self::get(\App\Repositories\PersonnelCorrectionRequestRepository::class),
+                self::get(RbacService::class),
             ),
             \App\Repositories\BadgeRepository::class => new \App\Repositories\BadgeRepository(),
             \App\Repositories\PersonnelStageBilanRepository::class => new \App\Repositories\PersonnelStageBilanRepository(),
