@@ -14,6 +14,7 @@ final class OperationsCenterAlertsPhpLeakTest extends TestCase
         $src = (string) file_get_contents($path);
 
         self::assertStringContainsString('Alertes locales actives', $src);
+        self::assertStringContainsString('// ---- Alertes locales ----', $src);
 
         // Bug historisé : PHP fermé puis source brut « Alertes locales » affiché en HTML.
         $closeThenComment = '/' . preg_quote('?' . '>', '/') . '\s*\/\/\s*----\s*Alertes locales/';
@@ -23,11 +24,10 @@ final class OperationsCenterAlertsPhpLeakTest extends TestCase
             'Le bloc Alertes locales ne doit pas suivre une fermeture PHP'
         );
 
-        $pos = strpos($src, '// ---- Alertes locales ----');
-        self::assertNotFalse($pos);
-        $before = substr($src, 0, $pos);
-        $open = substr_count($before, '<' . '?php');
-        $close = substr_count($before, '?' . '>');
-        self::assertGreaterThan($close, $open, 'Le bloc Alertes locales doit rester dans un contexte PHP ouvert');
+        // Le commentaire métier doit être immédiatement précédé d'un endif (même bloc PHP).
+        self::assertMatchesRegularExpression(
+            '/endif;\s*\/\/ ---- Alertes locales ----/',
+            $src
+        );
     }
 }
