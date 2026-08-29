@@ -24,7 +24,6 @@ final class PersonnelCorrectionRequestService
      */
     public const CORRECTABLE_FIELDS = [
         'callsign' => 'Indicatif radio',
-        'character_name' => 'Nom de personnage',
         'nickname_primary' => 'Surnom principal',
         'motto' => 'Devise',
         'languages' => 'Langues',
@@ -296,7 +295,7 @@ final class PersonnelCorrectionRequestService
             $max = match ($key) {
                 'motto', 'languages', 'operator_tags', 'weapon_specialty', 'kit_assigned' => 255,
                 'operator_status' => 160,
-                'character_name', 'callsign', 'nickname_primary', 'rank_display' => 120,
+                'callsign', 'nickname_primary', 'rank_display' => 120,
                 default => 150,
             };
             $out[$key] = mb_substr($new, 0, $max);

@@ -201,7 +201,7 @@ $editValidTabIds = implode(',', array_map(
                 <div>
                   <label for="rp_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom</label>
                   <input type="text" name="rp_last_name" id="rp_last_name" value="<?= htmlspecialchars((string) ($up['last_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
-                  <p class="mt-1 text-[11px] text-slate-500">Nom du personnage. Remplace l’ancien « nom affiché » / « nom de scène ».</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Nom du personnage — utilisé partout (dossier, annuaire, forum).</p>
                 </div>
                 <div class="md:col-span-2">
                   <label for="rp_bio" class="mb-1 block text-xs font-bold text-slate-600">Présentation du personnage</label>
@@ -692,7 +692,7 @@ $editValidTabIds = implode(',', array_map(
         <section id="forum-community-settings" x-show="tab === 'forum-community-settings'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-violet-200/80 bg-white shadow-sm ring-1 ring-violet-900/[0.06]">
           <div class="border-b border-violet-100 bg-violet-50/60 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-violet-950">Forum &amp; fiche</h2>
-            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-violet-900/85">Pseudo, éléments visibles sur vos messages et sur votre fiche pour les autres membres.</p>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-violet-900/85">Éléments visibles sur vos messages et sur votre fiche pour les autres membres.</p>
           </div>
           <div class="space-y-6 p-6">
             <div class="grid gap-4 md:grid-cols-2">

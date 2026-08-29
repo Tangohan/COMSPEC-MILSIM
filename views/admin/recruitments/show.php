@@ -200,7 +200,7 @@ if ($sharedFields !== []) {
     if (is_array($rpS)) {
         $rpShareLabels = [
             'identity' => 'Identité personnage (prénom, nom, naissance, nationalité)',
-            'character_name' => 'Nom de scène (optionnel)',
+            'character_name' => 'Prénom et nom (dérivé)',
             'bio' => 'Biographie',
             'cv' => 'Parcours (CV)',
             'image_url' => 'Portrait (fichier)',
@@ -1696,13 +1696,17 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                             <?php if ($rpLn !== ''): ?><div><span class="text-[10px] font-bold uppercase text-emerald-900">Nom</span><p class="mt-0.5 text-stone-900"><?= htmlspecialchars($rpLn) ?></p></div><?php endif; ?>
                             <?php if ($rpBd !== ''): ?><div><span class="text-[10px] font-bold uppercase text-emerald-900">Naissance</span><p class="mt-0.5 text-stone-900"><?= htmlspecialchars($rpBd) ?></p></div><?php endif; ?>
                             <?php if ($rpNat !== ''): ?><div><span class="text-[10px] font-bold uppercase text-emerald-900">Nationalité</span><p class="mt-0.5 text-stone-900"><?= htmlspecialchars($rpNat) ?></p></div><?php endif; ?>
-                            <?php if ($rpScene !== ''): ?><div class="sm:col-span-2"><span class="text-[10px] font-bold uppercase text-emerald-900">Nom de scène</span><p class="mt-0.5 text-stone-900"><?= htmlspecialchars($rpScene) ?></p></div><?php endif; ?>
+                            <?php if ($rpScene !== '' && $rpScene !== trim($rpFn . ' ' . $rpLn)): ?><div class="sm:col-span-2"><span class="text-[10px] font-bold uppercase text-emerald-900">Libellé alternatif (ancien)</span><p class="mt-0.5 text-stone-900"><?= htmlspecialchars($rpScene) ?></p></div><?php endif; ?>
                         </div>
                     <?php endif; ?>
-                    <?php if (trim((string) ($rpSnap['character_name'] ?? '')) !== ''): ?>
+                    <?php
+                    $snapChar = trim((string) ($rpSnap['character_name'] ?? ''));
+                    $snapFull = trim($rpFn . ' ' . $rpLn);
+                    if ($snapChar !== '' && $snapChar !== $snapFull && $snapChar !== $rpScene):
+                    ?>
                         <div>
-                            <p class="text-xs font-bold uppercase tracking-wide text-emerald-900">Libellé dossier (affichage)</p>
-                            <p class="mt-1 text-stone-900"><?= htmlspecialchars((string) $rpSnap['character_name']) ?></p>
+                            <p class="text-xs font-bold uppercase tracking-wide text-emerald-900">Libellé dossier (historique)</p>
+                            <p class="mt-1 text-stone-900"><?= htmlspecialchars($snapChar) ?></p>
                         </div>
                     <?php endif; ?>
                     <?php if (trim((string) ($rpSnap['bio'] ?? '')) !== ''): ?>

@@ -16,7 +16,8 @@ $pushRow = static function (array &$rows, string $section, string $field, string
     ];
 };
 
-$pushRow($sheetRows, 'Identité', 'Nom affiché', (string) ($displayName ?? '—'));
+$pushRow($sheetRows, 'Identité', 'Prénom', (string) (($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : '—'));
+$pushRow($sheetRows, 'Identité', 'Nom', (string) (($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : '—'));
 if (!empty($showMatriculePublic)) {
     $pushRow($sheetRows, 'Identité', 'Matricule', $matricule ? (string) $matricule : 'Non attribué');
 }
@@ -24,16 +25,7 @@ $pushRow($sheetRows, 'Identité', 'Indicatif radio', $callsign ? (string) $calls
 if (!empty($showEmailInContact) && $athenaIdentifier !== '') {
     $pushRow($sheetRows, 'Identité', 'Identifiant Athena', $athenaIdentifier);
 }
-$rpCharacterDistinct = \App\Support\PersonnelDirectoryHints::distinctCharacterLabel(
-    (string) ($displayName ?? ''),
-    (string) ($rpCharacterNameDisplay ?? '')
-);
-if ($rpCharacterDistinct !== '') {
-    $pushRow($sheetRows, 'Identité', 'Nom de personnage', $rpCharacterDistinct);
-}
 if (!empty($canViewCivilSection)) {
-    $pushRow($sheetRows, 'Personnage', 'Prénom', (string) (($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : '—'));
-    $pushRow($sheetRows, 'Personnage', 'Nom', (string) (($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : '—'));
     if (!empty($showEmailInContact)) {
         $pushRow($sheetRows, 'Compte', 'E-mail', (string) ($targetUser['email'] ?? '—'));
     } else {

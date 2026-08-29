@@ -510,7 +510,6 @@ class AccountController
 
             return Response::redirect(url('account/preferences'));
         }
-        $applyName = $request->input('apply_steam_display_name') === '1';
         $steps = [];
         if ($steamIdJustSavedFromForm) {
             $steps[] = [
@@ -558,17 +557,12 @@ class AccountController
                 ? mb_substr($summary['avatar_url'], 0, 500)
                 : substr($summary['avatar_url'], 0, 500);
         }
-        if ($applyName && $summary['personaname'] !== '') {
-            $patch['display_name'] = function_exists('mb_substr')
-                ? mb_substr($summary['personaname'], 0, 100)
-                : substr($summary['personaname'], 0, 100);
-        }
         if ($patch === []) {
             $steps[] = [
                 'key' => 'apply',
                 'label' => 'Mise à jour du dossier',
                 'ok' => false,
-                'detail' => 'Aucune photo ni nom exploitable n’a été renvoyé pour ce profil.',
+                'detail' => 'Aucune photo exploitable n’a été renvoyée pour ce profil.',
             ];
             Session::flash('steam_sync_report', [
                 'ok' => false,
@@ -578,7 +572,7 @@ class AccountController
                     'public_pseudo' => $summary['personaname'],
                 ],
             ]);
-            Session::flash('error', 'Aucune donnée exploitable n’a été renvoyée pour ce profil.');
+            Session::flash('error', 'Aucune photo exploitable n’a été renvoyée pour ce profil.');
 
             return Response::redirect(url('account/preferences'));
         }
@@ -592,7 +586,7 @@ class AccountController
             'key' => 'apply',
             'label' => 'Mise à jour du dossier',
             'ok' => true,
-            'detail' => isset($patch['avatar_url']) ? 'Photo du compte actualisée.' : 'Nom d’affichage actualisé.',
+            'detail' => 'Photo du compte actualisée.',
         ];
         Session::flash('steam_sync_report', [
             'ok' => true,
@@ -601,16 +595,11 @@ class AccountController
             'data' => [
                 'public_pseudo' => $summary['personaname'],
                 'avatar_updated' => isset($patch['avatar_url']),
-                'display_name_updated' => isset($patch['display_name']),
+                'display_name_updated' => false,
                 'steam_id' => $summary['steam_id'],
             ],
         ]);
-        Session::flash(
-            'success',
-            $applyName
-                ? 'Photo et nom d’affichage mis à jour depuis le profil public Steam.'
-                : 'Photo du compte mise à jour depuis le profil public Steam.'
-        );
+        Session::flash('success', 'Photo du compte mise à jour depuis le profil public Steam.');
 
         return Response::redirect(url('account/preferences'));
     }

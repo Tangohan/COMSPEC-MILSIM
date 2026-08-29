@@ -76,7 +76,7 @@ require base_path('views/partials/account/shell_open.php');
         $pseudo = isset($sd['public_pseudo']) ? trim((string) $sd['public_pseudo']) : '';
         $sidShow = isset($sd['steam_id']) ? trim((string) $sd['steam_id']) : '';
         ?>
-        <?php if ($pseudo !== '' || $sidShow !== '' || !empty($sd['avatar_updated']) || !empty($sd['display_name_updated'])): ?>
+        <?php if ($pseudo !== '' || $sidShow !== '' || !empty($sd['avatar_updated'])): ?>
         <div style="margin-top:1rem;padding:1rem;border-radius:.75rem;border:1px solid #e2e8f0;background:#f8fafc">
             <p class="account-hub__stat-label">Données lues sur le profil public</p>
             <dl class="account-hub__form-grid account-hub__form-grid--2" style="margin-top:.75rem">
@@ -87,7 +87,6 @@ require base_path('views/partials/account/shell_open.php');
                 <div><dt class="account-hub__hint" style="margin:0">Identifiant numérique confirmé</dt><dd style="margin:.2rem 0 0;font-family:ui-monospace,monospace;font-weight:700"><?= htmlspecialchars($sidShow, ENT_QUOTES, 'UTF-8') ?></dd></div>
                 <?php endif; ?>
                 <div><dt class="account-hub__hint" style="margin:0">Photo du compte</dt><dd style="margin:.2rem 0 0"><?= !empty($sd['avatar_updated']) ? 'Mise à jour enregistrée' : 'Inchangée sur cette passe' ?></dd></div>
-                <div><dt class="account-hub__hint" style="margin:0">Nom d’affichage</dt><dd style="margin:.2rem 0 0"><?= !empty($sd['display_name_updated']) ? 'Aligné sur le pseudo Steam' : 'Inchangé sur cette passe' ?></dd></div>
             </dl>
         </div>
         <?php endif; ?>
@@ -192,7 +191,7 @@ require base_path('views/partials/account/shell_open.php');
                 <div>
                     <label class="account-hub__label" for="last_name">Nom</label>
                     <input type="text" name="last_name" id="last_name" value="<?= htmlspecialchars((string) ($profile['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off" required>
-                    <p class="account-hub__hint">Nom du personnage. Remplace l’ancien « nom affiché » / « nom de scène ».</p>
+                    <p class="account-hub__hint">Nom du personnage — utilisé partout (dossier, annuaire, forum).</p>
                     <?php if (!empty($errors['last_name'])): foreach ($errors['last_name'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>

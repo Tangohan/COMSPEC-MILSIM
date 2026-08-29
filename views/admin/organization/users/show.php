@@ -257,23 +257,17 @@ $flashWarn = \App\Core\Session::getFlash('warning');
                         <dd><?= $displayValue($email, 'Aucune adresse') ?></dd>
                     </div>
                     <div class="ath-member-show__data-row">
-                        <dt>Nom affiché sur le portail</dt>
-                        <dd><?= $displayValue($displayName) ?></dd>
+                        <dt>Prénom</dt>
+                        <dd><?= $displayValue($userProfile['first_name'] ?? null) ?></dd>
+                    </div>
+                    <div class="ath-member-show__data-row">
+                        <dt>Nom</dt>
+                        <dd><?= $displayValue($userProfile['last_name'] ?? null) ?></dd>
                     </div>
                     <div class="ath-member-show__data-row">
                         <dt>Indicatif du compte</dt>
                         <dd><?= $displayValue($callsign) ?></dd>
                     </div>
-                    <?php if ($showPlatformDiagnostics): ?>
-                    <div class="ath-member-show__data-row">
-                        <dt>Prénom (état civil)</dt>
-                        <dd><?= $displayValue($userProfile['first_name'] ?? null) ?></dd>
-                    </div>
-                    <div class="ath-member-show__data-row">
-                        <dt>Nom (état civil)</dt>
-                        <dd><?= $displayValue($userProfile['last_name'] ?? null) ?></dd>
-                    </div>
-                    <?php endif; ?>
                     <div class="ath-member-show__data-row">
                         <dt>Rôles dans l’unité</dt>
                         <dd>

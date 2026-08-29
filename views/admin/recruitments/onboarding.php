@@ -108,7 +108,6 @@ $formAction = url('back-office/recruitments/' . $id . '/onboarding');
                 <h2 class="rec-onb__panel-title">Identité du personnage</h2>
                 <p class="rec-onb__panel-text">
                     Un seul couple prénom + nom : c’est le nom du personnage. Il sert partout (dossier, annuaire, ATAK).
-                    Plus besoin de « nom affiché » ou « pseudo forum » séparés.
                 </p>
             </div>
             <div class="rec-onb__grid">

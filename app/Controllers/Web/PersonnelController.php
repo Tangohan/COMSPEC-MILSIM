@@ -434,7 +434,7 @@ class PersonnelController
         $civilSourceLabel = match ($civilIdentity['source'] ?? null) {
             'profile' => 'Dossier personnage',
             'enlistment' => 'Candidature d’enrôlement',
-            'display_name' => 'Nom d’affichage (découpage)',
+            'display_name' => 'Prénom et nom (découpage)',
             default => '',
         };
 
@@ -1778,7 +1778,6 @@ class PersonnelController
 
             return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
         }
-        $applyName = $request->input('apply_steam_display_name') === '1';
         $summary = $this->steamWebApiService->fetchPublicPlayer($steamId);
         if ($summary === null) {
             Session::flash('error', 'Impossible de récupérer le profil public pour cet identifiant. Vérifiez l’identifiant ou réessayez plus tard.');
@@ -1791,13 +1790,8 @@ class PersonnelController
                 ? mb_substr($summary['avatar_url'], 0, 500)
                 : substr($summary['avatar_url'], 0, 500);
         }
-        if ($applyName && $summary['personaname'] !== '') {
-            $patch['display_name'] = function_exists('mb_substr')
-                ? mb_substr($summary['personaname'], 0, 100)
-                : substr($summary['personaname'], 0, 100);
-        }
         if ($patch === []) {
-            Session::flash('error', 'Aucune donnée exploitable n’a été renvoyée pour ce profil.');
+            Session::flash('error', 'Aucune photo exploitable n’a été renvoyée pour ce profil.');
 
             return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
         }
@@ -1810,12 +1804,7 @@ class PersonnelController
                 Session::set('callsign', (string) ($fresh['callsign'] ?? ''));
             }
         }
-        Session::flash(
-            'success',
-            $applyName
-                ? 'Photo et nom d’affichage mis à jour depuis le profil public Steam.'
-                : 'Photo du compte mise à jour depuis le profil public Steam.'
-        );
+        Session::flash('success', 'Photo du compte mise à jour depuis le profil public Steam.');
 
         return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
     }

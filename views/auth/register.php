@@ -265,7 +265,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
                                            class="login-field">
                                 </div>
                             </div>
-                            <p class="text-xs text-white/35">Prénom et nom du personnage — une seule identité (plus de « nom affiché » séparé).</p>
+                            <p class="text-xs text-white/35">Prénom et nom du personnage — une seule identité partout.</p>
                             <input type="hidden" name="display_name" id="display_name" value="<?= $val($old, 'display_name') ?>">
                             <div>
                                 <label class="login-label" for="discord_handle">Discord <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>

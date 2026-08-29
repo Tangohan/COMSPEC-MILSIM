@@ -129,7 +129,7 @@
         <ul class="mt-6 mb-0 list-none space-y-4 pl-0">
           <li class="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
             <a class="font-semibold text-emerald-800 underline underline-offset-2" href="<?= htmlspecialchars(url('account/preferences')) ?>">Préférences du compte</a>
-            <p class="mt-1 mb-0 text-slate-600">Nom affiché, indicatif et langue de l’interface.</p>
+            <p class="mt-1 mb-0 text-slate-600">Prénom, nom, indicatif et langue de l’interface.</p>
           </li>
           <li class="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
             <a class="font-semibold text-emerald-800 underline underline-offset-2" href="<?= htmlspecialchars(url('account/portrait')) ?>">Portrait et médias</a>

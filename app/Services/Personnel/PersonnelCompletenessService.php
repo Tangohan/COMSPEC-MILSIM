@@ -55,8 +55,15 @@ class PersonnelCompletenessService
         $extrasReadiness = isset($personnelExtras['readiness_percent']) ? (int) $personnelExtras['readiness_percent'] : 0;
         $hasReadiness = $readinessScore > 0 || $extrasReadiness > 0 || count($certs) > 0;
 
+        $fn = trim((string) ($userProfile['first_name'] ?? ''));
+        $ln = trim((string) ($userProfile['last_name'] ?? ''));
+        $hasCharacterIdentity = ($fn !== '' && $ln !== '')
+            || trim($fn . ' ' . $ln) !== ''
+            || !empty(trim((string) ($profile['character_name'] ?? '')))
+            || !empty(trim((string) ($user['display_name'] ?? '')));
+
         $checks = [
-            'identity_name' => !empty(trim((string) ($profile['character_name'] ?? $user['display_name'] ?? ''))),
+            'identity_name' => $hasCharacterIdentity,
             'identity_callsign' => !empty(trim((string) ($user['callsign'] ?? '')))
                 || !empty(trim((string) ($profile['callsign'] ?? ''))),
             'identity_matricule' => !empty(trim((string) ($profile['matricule_internal'] ?? $personnelExtras['service_number'] ?? ''))),
@@ -105,7 +112,7 @@ class PersonnelCompletenessService
     {
         $base = $this->getScore($userId, $user, $userProfile, $personnelExtras, $tenantId);
         $labels = [
-            'identity_name' => 'Nom affiché dossier personnage',
+            'identity_name' => 'Prénom et nom du personnage',
             'identity_callsign' => 'Indicatif',
             'identity_matricule' => 'Matricule',
             'identity_role' => 'Rôle principal (dossier)',
@@ -146,7 +153,7 @@ class PersonnelCompletenessService
         $base = $this->getScore($userId, $user, $userProfile, $personnelExtras, $tenantId);
 
         $labelsFull = [
-            'identity_name' => 'Nom affiché dossier personnage',
+            'identity_name' => 'Prénom et nom du personnage',
             'identity_callsign' => 'Indicatif',
             'identity_matricule' => 'Matricule',
             'identity_role' => 'Rôle principal (dossier)',
@@ -161,7 +168,7 @@ class PersonnelCompletenessService
         ];
 
         $labelsCommunity = [
-            'identity_name' => 'Nom affiché dossier personnage',
+            'identity_name' => 'Prénom et nom du personnage',
             'identity_callsign' => 'Indicatif',
             'identity_matricule' => 'Matricule',
             'identity_role' => 'Rôle principal sur la fiche',

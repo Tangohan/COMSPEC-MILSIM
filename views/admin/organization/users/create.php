@@ -45,7 +45,7 @@ $flashErr = \App\Core\Session::getFlash('error');
             <?= \App\Core\Csrf::field() ?>
             <section class="bo-user-edit__panel" aria-labelledby="create-account-heading">
                 <h2 id="create-account-heading" class="bo-user-edit__panel-title">Identité &amp; accès</h2>
-                <p class="bo-user-edit__panel-lead">Renseignez l’e-mail de contact, le nom affiché, l’indicatif et les rôles à attribuer dès la création.</p>
+                <p class="bo-user-edit__panel-lead">Renseignez l’e-mail, le prénom et le nom du personnage, l’indicatif et les rôles à attribuer dès la création.</p>
                 <div class="bo-user-edit__create-fields space-y-4">
                     <?php
                     $fieldIdPrefix = '';

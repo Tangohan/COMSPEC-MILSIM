@@ -93,9 +93,12 @@ class UserAdminController
     }
 
     /**
+     * Synchronise uniquement la photo depuis le profil public Steam.
+     * Le nom du personnage (prénom + nom) n’est jamais écrasé par le pseudo Steam.
+     *
      * @return list<string> messages de résultat
      */
-    private function applySteamProfileSync(int $userId, int $tenantId, string $steamId, bool $applyDisplayName): array
+    private function applySteamProfileSync(int $userId, int $tenantId, string $steamId): array
     {
         $notes = [];
         if (!$this->steamWebApiService->isConfigured()) {
@@ -115,24 +118,13 @@ class UserAdminController
                 ? mb_substr((string) $summary['avatar_url'], 0, 500)
                 : substr((string) $summary['avatar_url'], 0, 500);
         }
-        if ($applyDisplayName && ($summary['personaname'] ?? '') !== '') {
-            $patch['display_name'] = function_exists('mb_substr')
-                ? mb_substr((string) $summary['personaname'], 0, 100)
-                : substr((string) $summary['personaname'], 0, 100);
-        }
         if ($patch === []) {
             $notes[] = 'Identifiant Steam enregistré. Aucune donnée exploitable renvoyée par Steam.';
 
             return $notes;
         }
         $this->userRepository->update($userId, $tenantId, $patch);
-        if (isset($patch['avatar_url']) && isset($patch['display_name'])) {
-            $notes[] = 'Photo et nom d’affichage mis à jour depuis Steam.';
-        } elseif (isset($patch['avatar_url'])) {
-            $notes[] = 'Photo du compte mise à jour depuis Steam.';
-        } else {
-            $notes[] = 'Nom d’affichage mis à jour depuis Steam.';
-        }
+        $notes[] = 'Photo du compte mise à jour depuis Steam.';
 
         return $notes;
     }
@@ -505,7 +497,9 @@ class UserAdminController
         }
         $createUrl = $this->memberCreateEntryUrl($tenantId);
         $email = trim((string) $request->input('email'));
-        $displayName = trim((string) $request->input('display_name'));
+        $firstName = trim((string) $request->input('first_name'));
+        $lastName = trim((string) $request->input('last_name'));
+        $displayName = trim($firstName . ' ' . $lastName);
         $callsign = trim((string) $request->input('callsign'));
         $roleIds = $this->parseRoleIdsFromRequest($request);
         foreach ($roleIds as $rid) {
@@ -526,6 +520,10 @@ class UserAdminController
 
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Session::flash('error', 'Une adresse e-mail valide est requise.');
+            return Response::redirect($createUrl);
+        }
+        if ($firstName === '' || $lastName === '') {
+            Session::flash('error', 'Le prénom et le nom du personnage sont requis.');
             return Response::redirect($createUrl);
         }
         if ($this->userRepository->emailExistsInTenant($tenantId, $email)) {
@@ -550,7 +548,7 @@ class UserAdminController
         $userId = $this->userRepository->create($tenantId, [
             'email' => $email,
             'password_hash' => $passwordPlaceholder,
-            'display_name' => $displayName ?: null,
+            'display_name' => $displayName !== '' ? $displayName : null,
             'callsign' => $callsign ?: null,
             'role_id' => $primaryRoleId,
             'grade_id' => $gradeId,
@@ -559,6 +557,17 @@ class UserAdminController
             'preferred_grade_format' => $preferredGradeFormat,
             'professional_category_code' => $professionalCategoryCode,
         ]);
+        $this->userProfileRepository->upsert($userId, [
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+        ]);
+        try {
+            $this->personnelProfileRepository->ensureRecord($userId);
+            $this->personnelProfileRepository->update($userId, [
+                'character_name' => $displayName,
+            ]);
+        } catch (\Throwable) {
+        }
         try {
             $this->userRepository->syncOrganizationRoles($userId, $tenantId, $roleIds, $actorUserId);
         } catch (\InvalidArgumentException $e) {
@@ -571,12 +580,7 @@ class UserAdminController
         if ($steamId !== null) {
             $this->userRepository->update($userId, $tenantId, ['steam_id' => $steamId]);
             if ($request->input('sync_steam_profile') === '1') {
-                $steamNotes = $this->applySteamProfileSync(
-                    $userId,
-                    $tenantId,
-                    $steamId,
-                    $request->input('apply_steam_display_name') === '1'
-                );
+                $steamNotes = $this->applySteamProfileSync($userId, $tenantId, $steamId);
             }
         }
 
@@ -700,8 +704,23 @@ class UserAdminController
         $roleIds = [];
         $oldRoleIds = [];
 
-        if ($request->input('display_name') !== null) {
-            $displayName = trim((string) $request->input('display_name'));
+        $identityTouched = $request->input('first_name') !== null || $request->input('last_name') !== null;
+        $firstName = trim((string) $request->input('first_name'));
+        $lastName = trim((string) $request->input('last_name'));
+        if ($identityTouched) {
+            if ($firstName === '' || $lastName === '') {
+                Session::flash('error', 'Le prénom et le nom du personnage sont requis.');
+
+                return Response::redirect($editUrl);
+            }
+            if (function_exists('mb_substr')) {
+                $firstName = mb_substr($firstName, 0, 100);
+                $lastName = mb_substr($lastName, 0, 100);
+            } else {
+                $firstName = substr($firstName, 0, 100);
+                $lastName = substr($lastName, 0, 100);
+            }
+            $displayName = trim($firstName . ' ' . $lastName);
             if (function_exists('mb_substr')) {
                 $displayName = mb_substr($displayName, 0, 160);
             } else {
@@ -967,12 +986,21 @@ class UserAdminController
 
                 return Response::redirect($editUrl);
             }
-            $steamNotes = $this->applySteamProfileSync(
-                $id,
-                $tenantId,
-                $finalSteamId,
-                $request->input('apply_steam_display_name') === '1'
-            );
+            $steamNotes = $this->applySteamProfileSync($id, $tenantId, $finalSteamId);
+        }
+
+        if ($identityTouched) {
+            $this->userProfileRepository->upsert($id, [
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+            ]);
+            try {
+                $this->personnelProfileRepository->ensureRecord($id);
+                $this->personnelProfileRepository->update($id, [
+                    'character_name' => trim($firstName . ' ' . $lastName),
+                ]);
+            } catch (\Throwable) {
+            }
         }
 
         if ($structureBefore !== null) {
@@ -998,7 +1026,7 @@ class UserAdminController
         $extraSteam = $steamNotes !== [] ? ' ' . implode(' ', $steamNotes) : '';
         if (!empty($data) && $rolesSynced) {
             Session::flash('success', 'Compte et rôles enregistrés.' . $extraSteam);
-        } elseif (!empty($data)) {
+        } elseif (!empty($data) || $identityTouched) {
             Session::flash('success', 'Compte mis à jour.' . $extraSteam);
         } elseif ($rolesSynced) {
             Session::flash('success', 'Rôles mis à jour.' . $extraSteam);
