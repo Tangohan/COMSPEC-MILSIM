@@ -48,6 +48,10 @@ Le mod **ne remplace pas** cTab ou BCE : il les **complète**.
 
 → [Indépendance, couche sur les addons, interopérabilité et API](independance-couche-interoperabilite-api.md)
 
+## Prompt d’alignement portail → mod
+
+→ [Mettre en place les updates Athena nécessaires dans le mod](../atak-mod-updates-necessaires-prompt.md) (GPS visible, zones ATAK, rebuild, backlog)
+
 ## Périmètre de cette documentation
 
 **Inclus :** structure des addons, conventions SQF, catalogue des mods tiers, build / Workshop.

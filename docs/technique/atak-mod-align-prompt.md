@@ -1,7 +1,8 @@
 # Prompt — Aligner le mod Overwatch sur les payloads ATAK du site
 
 > Copier-coller ce prompt pour un agent / développeur mod.  
-> État Athena (site) en avance : geo live, route A*, 3D premium, C2 v2, waypoints GPS.
+> État Athena (site) en avance : geo live, route A*, 3D premium, C2 v2, waypoints GPS.  
+> **Vague complète (GPS marqueurs, zones `/api/atak/zones`, rebuild 1.4.94, backlog)** : voir [`atak-mod-updates-necessaires-prompt.md`](atak-mod-updates-necessaires-prompt.md).
 
 ## Mission
 
