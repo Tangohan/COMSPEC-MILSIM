@@ -27,6 +27,8 @@ Sources Markdown du dépôt mod : `mod/UptoDate/docs/`.
 | [Sécurité et permissions](securite-et-permissions.md) | Auth, RBAC, API tactiques, en-têtes |
 | [Intégrations externes](integrations.md) | Courriel, Stripe, clients tactiques |
 | [Blueprint LMS compétences](lms-competency-system-blueprint.md) | Schéma multi-tenant compétences/modules et prompt enrichi |
+| [Prompt align geo/GPS mod](atak-mod-align-prompt.md) | Prompt court : geo network + waypoints (P0/P1) |
+| [Prompt updates mod nécessaires](atak-mod-updates-necessaires-prompt.md) | Prompt exhaustif : GPS visible, zones ATAK, rebuild, backlog |
 | [Plan amélioration administration site](plan-amelioration-administration-site-mod-admin-support.md) | Diagnostic et axes d'amélioration modération/support/admin |
 | [Plan exécution administration site](plan-execution-administration-site-mod-admin-support.md) | Roadmap exécutable par lots, RACI, DoD, KPI et run |
 | [Plan amélioration interactif/UI-UX/features](plan-amelioration-interactif-ui-ux-feature.md) | Analyse et plan exécutable pour interactions, UX/UI et fonctionnalités transverses |
