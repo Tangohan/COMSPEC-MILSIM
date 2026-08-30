@@ -141,6 +141,7 @@ if ($atakMapConfig) {
   {
     "imports": {
       "three": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/vendor/three/build/three.module.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
+      "three/addons/": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/vendor/three/examples/jsm/",
       "atak-terrain3d/utils.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/utils.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
       "atak-terrain3d/HeightmapLoader.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/HeightmapLoader.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",
       "atak-terrain3d/TextureLoader.js": "<?= htmlspecialchars(rtrim($base, '/'), ENT_QUOTES, 'UTF-8') ?>/assets/js/terrain3d/TextureLoader.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>",

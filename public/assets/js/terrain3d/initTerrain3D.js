@@ -30,8 +30,18 @@ export function resolveThreeBase(config) {
 }
 
 /**
- * Charge Three.js et les addons (OrbitControls, CSS2D) depuis le vendor local.
- * Nécessite un import map `three` → vendor/three/build/three.module.js (voir atak.php).
+ * Charge Three.js et les addons (OrbitControls, CSS2D) via le même graphe de modules.
+ *
+ * Critique : OrbitControls / CSS2D font `from 'three'` (import map). Si le core
+ * est importé via une autre URL (ex. three.module.js sans ?v=), le navigateur
+ * instancie Two.js deux fois → warning « Multiple instances of Three.js » et
+ * artefacts texture (moiré / static) sur le mesh terrain.
+ *
+ * Nécessite un import map :
+ *   "three" → …/three.module.js
+ *   "three/addons/" → …/examples/jsm/
+ * (voir views/atak.php et demos).
+ *
  * @param {{ threeBase?: string }} [config]
  */
 export async function loadThreeDeps(config) {
@@ -39,18 +49,51 @@ export async function loadThreeDeps(config) {
 
   const base = resolveThreeBase(config);
 
-  _depsPromise = Promise.all([
-    import(/* @vite-ignore */ base + '/build/three.module.js'),
-    import(/* @vite-ignore */ base + '/examples/jsm/controls/OrbitControls.js'),
-    import(/* @vite-ignore */ base + '/examples/jsm/renderers/CSS2DRenderer.js'),
-  ]).then(function (mods) {
+  _depsPromise = (async function () {
+    let THREE;
+    let controlsMod;
+    let css2dMod;
+
+    try {
+      /* Chemin nominal : une seule instance via import map. */
+      const mods = await Promise.all([
+        import('three'),
+        import('three/addons/controls/OrbitControls.js'),
+        import('three/addons/renderers/CSS2DRenderer.js'),
+      ]);
+      THREE = mods[0];
+      controlsMod = mods[1];
+      css2dMod = mods[2];
+    } catch (importMapErr) {
+      /* Fallback hors page ATAK : même URL de base pour core + addons. */
+      console.warn(
+        '[Terrain3D] Import map three/addons indisponible, repli vendor local.',
+        importMapErr
+      );
+      const threeUrl = base + '/build/three.module.js';
+      /* Enregistre un import map dynamique impossible ici — on charge le core
+         une fois, puis les addons (qui résolvent encore 'three' si un import
+         map partiel existe). */
+      THREE = await import(/* @vite-ignore */ threeUrl);
+      try {
+        controlsMod = await import(/* @vite-ignore */ base + '/examples/jsm/controls/OrbitControls.js');
+        css2dMod = await import(/* @vite-ignore */ base + '/examples/jsm/renderers/CSS2DRenderer.js');
+      } catch (addonErr) {
+        throw addonErr;
+      }
+    }
+
+    if (!THREE || !controlsMod || !controlsMod.OrbitControls || !css2dMod || !css2dMod.CSS2DRenderer) {
+      throw new Error('Dépendances Three.js incomplètes (OrbitControls / CSS2D).');
+    }
+
     return {
-      THREE: mods[0],
-      OrbitControls: mods[1].OrbitControls,
-      CSS2DRenderer: mods[2].CSS2DRenderer,
-      CSS2DObject: mods[2].CSS2DObject,
+      THREE: THREE,
+      OrbitControls: controlsMod.OrbitControls,
+      CSS2DRenderer: css2dMod.CSS2DRenderer,
+      CSS2DObject: css2dMod.CSS2DObject,
     };
-  }).catch(function (err) {
+  })().catch(function (err) {
     _depsPromise = null;
     throw err;
   });
