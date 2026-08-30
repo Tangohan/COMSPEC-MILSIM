@@ -178,7 +178,7 @@ use App\Controllers\Admin\Organization\DashboardPinsAdminController;
 use App\Controllers\Admin\Organization\ModerationOrganizationController;
 use App\Controllers\Admin\Organization\OrganizationSecurityIndicatorsController;
 use App\Controllers\Admin\Organization\OrganizationAnalyticsController;
-use App\Controllers\Admin\Organization\OrganizationUxFeedbackController;
+use App\Controllers\Admin\System\SystemUxFeedbackController;
 use App\Controllers\Admin\Organization\OrganizationCommunityController;
 use App\Controllers\Admin\Organization\OrganizationSettingsController;
 use App\Controllers\Admin\Organization\TenantInitialSetupController;
@@ -841,6 +841,7 @@ return function (Router $router) {
     $router->post('/admin/system/demo-nda/reset-visit', [SystemDemoNdaController::class, 'resetVisit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/run', [SystemCronController::class, 'runNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/retours-interface', [SystemUxFeedbackController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/install-vps', [SystemCronController::class, 'installVps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/uninstall-vps', [SystemCronController::class, 'uninstallVps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/recruitment-portal-tools', [SystemRecruitmentPortalToolsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1013,7 +1014,7 @@ return function (Router $router) {
     $router->post('/back-office/security-indicators/revoke', [OrganizationSecurityIndicatorsController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/analytics', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/analytics/conversion', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/retours-interface', [OrganizationUxFeedbackController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/retours-interface', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/retours-interface')), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/back-office/integrations', [OrganizationIntegrationsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord', [OrganizationIntegrationsController::class, 'saveDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord/essai', [OrganizationIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

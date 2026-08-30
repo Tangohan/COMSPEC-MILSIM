@@ -51,6 +51,7 @@ $navAdvancedFiche = str_starts_with($p, 'admin/system/advanced-fiche-edit');
 $navPlatformUsers = $p === 'admin/users' || str_starts_with($p, 'admin/users/');
 $navBrief = str_starts_with($p, 'admin/system/brief');
 $navCron = str_starts_with($p, 'admin/system/cron');
+$navUxFeedback = str_starts_with($p, 'admin/system/retours-interface');
 $navDeployment = str_starts_with($p, 'admin/system/deployment');
 $navUpdates = str_starts_with($p, 'admin/system/updates');
 $navAlerts = str_starts_with($p, 'admin/system/alerts');
@@ -77,6 +78,9 @@ $alertsOpen = $navAlerts;
             <?php $paLink('admin/newsletter', 'Lettre d’information du site', $navNewsletter); ?>
         <?php endif; ?>
         <?php $paLink('admin/analytics', 'Indicateurs transverses', $navAnalytics); ?>
+        <?php if ($isPlatformAdmin): ?>
+            <?php $paLink('admin/system/retours-interface', 'Retours interface', $navUxFeedback); ?>
+        <?php endif; ?>
         <?php $paLink('admin/ops-center', 'Synthèse opérationnelle', $navOps); ?>
 
         <?php if ($isPlatformAdmin): ?>
