@@ -117,6 +117,25 @@ final class AccountPurgeService
     ];
 
     /**
+     * Possession sur données personnelles ou appartenance : la ligne disparaît, sans
+     * réassignation au compte technique « Ancien membre ».
+     *
+     * @var list<string>
+     */
+    private const OWNERSHIP_DELETE_TABLES = [
+        'user_profiles',
+        'user_legal_identities',
+        'personnel_profiles',
+        'user_profile_display_settings',
+        'personnel_extras',
+        'personnel_media',
+        'personnel_admin_data',
+        'user_forum_stats',
+        'user_roles',
+        'recruitment_presets',
+    ];
+
+    /**
      * @param PDO|null $pdo Connexion explicite — sert aux tests, qui rejouent le balayage
      *                      sur un schéma jetable plutôt que sur la base de production.
      */
@@ -318,14 +337,161 @@ final class AccountPurgeService
     }
 
     /**
-     * Purge en série les comptes déjà anonymisés — le passif laissé par l’ancien
-     * comportement, ces fiches « Compte supprimé » qui traînent dans les annuaires.
+     * Retire une fiche anonymisée du tenant en réassignant l’historique métier au compte
+     * technique « Ancien membre », sans laisser « Compte supprimé » dans les annuaires.
      *
-     * @return array{ok: bool, purged: int, failed: int, rows_deleted: int, errors: list<string>}
+     * @return array{
+     *     ok: bool,
+     *     purged_user_ids: list<int>,
+     *     rows_deleted: int,
+     *     rows_reassigned: int,
+     *     rows_detached: int,
+     *     ghost_user_id: int,
+     *     tables: array<string, array{deleted: int, reassigned: int, detached: int}>,
+     *     errors: list<string>
+     * }
+     */
+    public function purgeFromTenantPreservingHistory(int $userId): array
+    {
+        $report = [
+            'ok' => true,
+            'purged_user_ids' => [],
+            'rows_deleted' => 0,
+            'rows_reassigned' => 0,
+            'rows_detached' => 0,
+            'ghost_user_id' => 0,
+            'tables' => [],
+            'errors' => [],
+        ];
+
+        if ($userId < 1) {
+            $report['ok'] = false;
+            $report['errors'][] = 'Identifiant de compte invalide.';
+
+            return $report;
+        }
+
+        try {
+            $pdo = $this->pdo();
+        } catch (Throwable $e) {
+            $report['ok'] = false;
+            $report['errors'][] = 'Connexion base indisponible : ' . $e->getMessage();
+
+            return $report;
+        }
+
+        $user = $this->fetchUserRow($pdo, $userId);
+        if ($user === null) {
+            $report['ok'] = false;
+            $report['errors'][] = 'Compte introuvable.';
+
+            return $report;
+        }
+        if (!AccountDeletionService::isAnonymizedUser($user)) {
+            $report['ok'] = false;
+            $report['errors'][] = 'Le compte n’est pas anonymisé (« Compte supprimé »).';
+
+            return $report;
+        }
+
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        if ($tenantId < 1) {
+            $report['ok'] = false;
+            $report['errors'][] = 'Communauté du compte introuvable.';
+
+            return $report;
+        }
+
+        $ghostId = $this->ensureTenantHistoryGhostUser($pdo, $tenantId);
+        if ($ghostId < 1) {
+            $report['ok'] = false;
+            $report['errors'][] = 'Impossible de créer le compte technique d’archivage pour la communauté.';
+
+            return $report;
+        }
+        $report['ghost_user_id'] = $ghostId;
+
+        $ids = [$userId];
+        $plan = $this->buildPlan($pdo);
+
+        $restoreChecks = false;
+        try {
+            $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+            $restoreChecks = true;
+        } catch (Throwable) {
+        }
+
+        try {
+            foreach ($plan['ownership'] as $table => $columns) {
+                foreach ($columns as $column) {
+                    if (in_array($table, self::OWNERSHIP_DELETE_TABLES, true)) {
+                        $affected = $this->deleteRows($pdo, $table, $column, $ids, $report);
+                        if ($affected > 0) {
+                            $this->tallyPreserve($report, $table, 'deleted', $affected);
+                        }
+                    } else {
+                        $affected = $this->reassignRows($pdo, $table, $column, $ids, $ghostId, $report);
+                        if ($affected > 0) {
+                            $this->tallyPreserve($report, $table, 'reassigned', $affected);
+                        }
+                    }
+                }
+            }
+
+            foreach ($plan['attribution'] as $table => $columns) {
+                foreach ($columns as $column) {
+                    $affected = $this->detachRows($pdo, $table, $column, $ids, $report);
+                    if ($affected > 0) {
+                        $this->tallyPreserve($report, $table, 'detached', $affected);
+                    }
+                }
+            }
+
+            try {
+                $stmt = $pdo->prepare('DELETE FROM `users` WHERE `id` = ?');
+                $stmt->execute([$userId]);
+                if ($stmt->rowCount() > 0) {
+                    $report['purged_user_ids'][] = $userId;
+                    $report['rows_deleted'] += $stmt->rowCount();
+                    $this->tallyPreserve($report, 'users', 'deleted', $stmt->rowCount());
+                }
+            } catch (Throwable $e) {
+                $report['ok'] = false;
+                $report['errors'][] = 'users #' . $userId . ' : ' . $e->getMessage();
+            }
+        } finally {
+            if ($restoreChecks) {
+                try {
+                    $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
+                } catch (Throwable) {
+                }
+            }
+        }
+
+        if ($report['purged_user_ids'] === []) {
+            $report['ok'] = false;
+            $report['errors'][] = 'Aucune ligne users supprimée.';
+        }
+
+        return $report;
+    }
+
+    /**
+     * Purge en série les comptes déjà anonymisés — retire les fiches « Compte supprimé »
+     * des annuaires tout en conservant l’historique sous « Ancien membre ».
+     *
+     * @return array{ok: bool, purged: int, failed: int, rows_deleted: int, rows_reassigned: int, errors: list<string>}
      */
     public function purgeAnonymizedAccounts(int $limit = 200): array
     {
-        $result = ['ok' => true, 'purged' => 0, 'failed' => 0, 'rows_deleted' => 0, 'errors' => []];
+        $result = [
+            'ok' => true,
+            'purged' => 0,
+            'failed' => 0,
+            'rows_deleted' => 0,
+            'rows_reassigned' => 0,
+            'errors' => [],
+        ];
 
         try {
             $pdo = $this->pdo();
@@ -335,16 +501,22 @@ final class AccountPurgeService
             );
             $ids = $stmt ? array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)) : [];
         } catch (Throwable $e) {
-            return ['ok' => false, 'purged' => 0, 'failed' => 0, 'rows_deleted' => 0, 'errors' => [$e->getMessage()]];
+            return [
+                'ok' => false,
+                'purged' => 0,
+                'failed' => 0,
+                'rows_deleted' => 0,
+                'rows_reassigned' => 0,
+                'errors' => [$e->getMessage()],
+            ];
         }
 
         foreach ($ids as $id) {
-            // Chaque compte est purgé seul : leurs adresses anonymisées sont déjà
-            // distinctes, il n’y a pas de fratrie à regrouper.
-            $report = $this->purge($id);
+            $report = $this->purgeFromTenantPreservingHistory($id);
             if ($report['ok']) {
                 $result['purged']++;
                 $result['rows_deleted'] += $report['rows_deleted'];
+                $result['rows_reassigned'] += $report['rows_reassigned'];
             } else {
                 $result['failed']++;
                 $result['ok'] = false;
@@ -444,6 +616,137 @@ final class AccountPurgeService
     }
 
     /**
+     * Compte technique par communauté — reçoit l’historique sans apparaître aux annuaires.
+     */
+    private function ensureTenantHistoryGhostUser(PDO $pdo, int $tenantId): int
+    {
+        if ($tenantId < 1) {
+            return 0;
+        }
+
+        $email = 'history.' . $tenantId . '@internal.local';
+        try {
+            $stmt = $pdo->prepare('SELECT `id` FROM `users` WHERE `tenant_id` = ? AND LOWER(TRIM(`email`)) = ? LIMIT 1');
+            $stmt->execute([$tenantId, strtolower($email)]);
+            $existing = $stmt->fetchColumn();
+            if ($existing !== false) {
+                return (int) $existing;
+            }
+        } catch (Throwable) {
+            return 0;
+        }
+
+        $columns = ['tenant_id', 'email', 'password_hash', 'display_name', 'callsign', 'status', 'created_at', 'updated_at'];
+        $values = [
+            $tenantId,
+            $email,
+            password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT),
+            AccountDeletionService::HISTORY_GHOST_DISPLAY_NAME,
+            'HIST',
+            'inactive',
+            date('Y-m-d H:i:s'),
+            date('Y-m-d H:i:s'),
+        ];
+        if ($this->columnExists($pdo, 'users', 'is_service_account')) {
+            $columns[] = 'is_service_account';
+            $values[] = 1;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($values), '?'));
+        $columnSql = implode(',', array_map(static fn (string $c): string => '`' . $c . '`', $columns));
+
+        try {
+            $pdo->prepare('INSERT INTO `users` (' . $columnSql . ') VALUES (' . $placeholders . ')')->execute($values);
+
+            return (int) $pdo->lastInsertId();
+        } catch (Throwable) {
+            try {
+                $stmt = $pdo->prepare('SELECT `id` FROM `users` WHERE `tenant_id` = ? AND LOWER(TRIM(`email`)) = ? LIMIT 1');
+                $stmt->execute([$tenantId, strtolower($email)]);
+                $again = $stmt->fetchColumn();
+
+                return $again !== false ? (int) $again : 0;
+            } catch (Throwable) {
+                return 0;
+            }
+        }
+    }
+
+    private function columnExists(PDO $pdo, string $table, string $column): bool
+    {
+        try {
+            $driver = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        } catch (Throwable) {
+            $driver = 'mysql';
+        }
+
+        try {
+            if ($driver === 'sqlite') {
+                $info = $pdo->query('PRAGMA table_info(`' . $table . '`)');
+                foreach ($info ? $info->fetchAll(PDO::FETCH_ASSOC) : [] as $col) {
+                    if ((string) ($col['name'] ?? '') === $column) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            $stmt = $pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $stmt->execute([$table, $column]);
+
+            return (bool) $stmt->fetchColumn();
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function fetchUserRow(PDO $pdo, int $userId): ?array
+    {
+        try {
+            $stmt = $pdo->prepare('SELECT * FROM `users` WHERE `id` = ? LIMIT 1');
+            $stmt->execute([$userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return is_array($row) ? $row : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @param list<int> $ids
+     * @param array<string, mixed> $report
+     */
+    private function reassignRows(PDO $pdo, string $table, string $column, array $ids, int $ghostId, array &$report): int
+    {
+        if ($ghostId < 1) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        try {
+            $stmt = $pdo->prepare(
+                'UPDATE `' . $table . '` SET `' . $column . '` = ? WHERE `' . $column . '` IN (' . $placeholders . ')'
+            );
+            $stmt->execute(array_merge([$ghostId], $ids));
+            $affected = $stmt->rowCount();
+            $report['rows_reassigned'] = ($report['rows_reassigned'] ?? 0) + $affected;
+
+            return $affected;
+        } catch (Throwable $e) {
+            $report['errors'][] = $table . '.' . $column . ' (réassignation) : ' . $e->getMessage();
+
+            return 0;
+        }
+    }
+
+    /**
      * @param list<int> $ids
      * @param array<string, mixed> $report
      */
@@ -496,6 +799,17 @@ final class AccountPurgeService
     {
         if (!isset($report['tables'][$table])) {
             $report['tables'][$table] = ['deleted' => 0, 'detached' => 0];
+        }
+        $report['tables'][$table][$key] += $count;
+    }
+
+    /**
+     * @param array<string, mixed> $report
+     */
+    private function tallyPreserve(array &$report, string $table, string $key, int $count): void
+    {
+        if (!isset($report['tables'][$table])) {
+            $report['tables'][$table] = ['deleted' => 0, 'reassigned' => 0, 'detached' => 0];
         }
         $report['tables'][$table][$key] += $count;
     }

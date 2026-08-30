@@ -128,7 +128,7 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                 </h2>
                 <p class="mt-2 max-w-3xl text-sm text-amber-900">
                     Émises par des organisateurs pour des fiches déjà anonymisées (« Compte supprimé ») dans leur communauté.
-                    Approuver déclenche une purge définitive limitée à cette communauté.
+                    Approuver retire la fiche des annuaires tout en conservant l’historique sous « Ancien membre ».
                 </p>
             </div>
             <ul class="space-y-3">
@@ -447,10 +447,11 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
         <?php endif; ?>
 
         <section class="rounded-2xl border border-rose-200 bg-rose-50 p-5">
-            <h2 class="text-base font-semibold text-rose-950">Purge des fiches anonymisées</h2>
+            <h2 class="text-base font-semibold text-rose-950">Retrait des fiches anonymisées</h2>
             <p class="mt-2 max-w-3xl text-sm text-rose-900">
-                Les comptes anonymisés restent en base sous « Compte supprimé ». Cette action les
-                efface tous définitivement.
+                Les comptes anonymisés restent visibles en annuaire sous « Compte supprimé ». Cette action les
+                retire tous d’un coup de chaque communauté : l’historique (forum, événements, etc.) est conservé
+                et affiché sous « Ancien membre », sans laisser de fiche inexplicable dans le back-office.
             </p>
             <form method="post" action="<?= $h(url('admin/users/purge-anonymises')) ?>"
                   class="mt-4 flex flex-wrap items-end gap-3">
@@ -462,7 +463,7 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                            class="mt-1 w-full rounded-lg border border-rose-300 bg-white px-3 py-2 text-sm text-slate-900">
                 </label>
                 <button type="submit" class="rounded-lg border border-rose-700 bg-rose-700 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-800">
-                    Purger les fiches anonymisées
+                    Retirer les fiches anonymisées
                 </button>
             </form>
         </section>

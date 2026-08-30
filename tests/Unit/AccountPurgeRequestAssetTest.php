@@ -15,6 +15,14 @@ final class AccountPurgeRequestAssetTest extends TestCase
             'email' => 'deleted-12-99@deleted.invalid',
             'display_name' => 'Compte supprimé',
         ]));
+        self::assertTrue(AccountDeletionService::isTenantHistoryGhostUser([
+            'email' => 'history.3@internal.local',
+            'display_name' => AccountDeletionService::HISTORY_GHOST_DISPLAY_NAME,
+        ]));
+        self::assertFalse(AccountDeletionService::isTenantHistoryGhostUser([
+            'email' => 'deleted-12-99@deleted.invalid',
+            'display_name' => 'Compte supprimé',
+        ]));
         self::assertTrue(AccountDeletionService::isAnonymizedUser([
             'email' => 'alive@example.com',
             'display_name' => 'Compte supprimé',
@@ -53,6 +61,7 @@ final class AccountPurgeRequestAssetTest extends TestCase
         self::assertStringContainsString('function rejectPurgeRequest', $sysCtrl);
         self::assertStringContainsString('pendingPurgeRequests', $sysCtrl);
         self::assertStringContainsString("scope' => 'org'", $sysCtrl);
+        self::assertStringContainsString('purgeFromTenantPreservingHistory', $sysCtrl);
 
         $routes = (string) file_get_contents($root . '/routes/web.php');
         self::assertStringContainsString('/back-office/users/{id}/request-purge', $routes);
@@ -68,6 +77,8 @@ final class AccountPurgeRequestAssetTest extends TestCase
         self::assertStringContainsString('Demandes de suppression définitive', $platUsers);
         self::assertStringContainsString('purge-requests/approve', $platUsers);
         self::assertStringContainsString('Approuver &amp; purger', $platUsers);
+        self::assertStringContainsString('Ancien membre', $platUsers);
+        self::assertStringContainsString('Retirer les fiches anonymisées', $platUsers);
 
         $container = (string) file_get_contents($root . '/app/Core/Container.php');
         self::assertStringContainsString('AccountPurgeRequestRepository::class', $container);

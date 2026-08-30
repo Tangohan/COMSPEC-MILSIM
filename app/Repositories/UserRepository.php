@@ -268,6 +268,8 @@ class UserRepository
         $params[] = strtolower(self::SYSTEM_MODERATOR_EMAIL);
         $fragments[] = "LOWER(TRIM({$alias}.email)) NOT LIKE ?";
         $params[] = 'system.%@internal.local';
+        $fragments[] = "LOWER(TRIM({$alias}.email)) NOT LIKE ?";
+        $params[] = 'history.%@internal.local';
 
         return ['sql' => '(' . implode(' AND ', $fragments) . ')', 'params' => $params];
     }
@@ -764,12 +766,56 @@ class UserRepository
         return (int) $this->pdo()->lastInsertId();
     }
 
+    /**
+     * Compte technique par communauté : reçoit l’historique des fiches anonymisées purgées
+     * sans laisser de « Compte supprimé » visible dans les annuaires.
+     *
+     * @return int id utilisateur ou 0 si impossible (colonne is_service_account absente)
+     */
+    public function ensureTenantHistoryGhostUser(int $tenantId): int
+    {
+        if ($tenantId < 1 || !$this->hasServiceAccountColumn()) {
+            return 0;
+        }
+        $email = $this->tenantHistoryGhostEmail($tenantId);
+        $existing = $this->findByEmail($tenantId, $email);
+        if ($existing) {
+            return (int) $existing['id'];
+        }
+        $hash = password_hash(bin2hex(random_bytes(16)), PASSWORD_ARGON2ID);
+        $displayName = \App\Services\Account\AccountDeletionService::HISTORY_GHOST_DISPLAY_NAME;
+        $sql = 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, status, is_service_account, created_at, updated_at)
+                VALUES (?,?,?,?,?,?,1,NOW(),NOW())';
+        try {
+            $this->pdo()->prepare($sql)->execute([$tenantId, $email, $hash, $displayName, 'HIST', 'inactive']);
+        } catch (\PDOException $e) {
+            $again = $this->findByEmail($tenantId, $email);
+            if ($again) {
+                return (int) $again['id'];
+            }
+            throw $e;
+        }
+
+        return (int) $this->pdo()->lastInsertId();
+    }
+
+    public function tenantHistoryGhostEmail(int $tenantId): string
+    {
+        return 'history.' . max(1, $tenantId) . '@internal.local';
+    }
+
+    public function isTenantHistoryGhostUser(?array $user): bool
+    {
+        return \App\Services\Account\AccountDeletionService::isTenantHistoryGhostUser($user);
+    }
+
     public function isServiceAccount(int $userId): bool
     {
         if (!$this->hasServiceAccountColumn()) {
             return false;
         }
         $u = $this->findById($userId);
+
         return $u !== null && !empty($u['is_service_account']);
     }
 
@@ -1629,6 +1675,9 @@ class UserRepository
         if ($status !== null && $status !== '') {
             $parts[] = 'u.status = ?';
             $params[] = $status;
+        } else {
+            $parts[] = "LOWER(TRIM(u.email)) NOT LIKE '%@deleted.invalid'";
+            $parts[] = "(u.display_name IS NULL OR TRIM(u.display_name) <> 'Compte supprimé')";
         }
         if ($roleId !== null && $roleId > 0) {
             if ($this->hasUserRolesTable()) {
