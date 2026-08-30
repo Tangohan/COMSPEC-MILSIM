@@ -334,6 +334,8 @@ return function (Router $router) {
     $router->post('/login/otp/switch', [AuthController::class, 'switchLoginOtpChannel'], [GuestMiddleware::class]);
     $router->get('/login/select-community', [AuthController::class, 'showSelectCommunity'], [GuestMiddleware::class]);
     $router->post('/login/select-community', [AuthController::class, 'selectCommunity'], [GuestMiddleware::class]);
+    $router->get('/login/accueil', [AuthController::class, 'showWelcome'], [AuthMiddleware::class]);
+    $router->post('/login/accueil', [AuthController::class, 'enterWelcome'], [AuthMiddleware::class]);
     $router->get('/login/choisir-espace', [AuthController::class, 'showSelectPortal'], [AuthMiddleware::class]);
     $router->post('/login/choisir-espace', [AuthController::class, 'selectPortal'], [AuthMiddleware::class]);
     $router->post('/logout', [AuthController::class, 'logout']);

@@ -304,7 +304,14 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Services\Auth\LoginSecurityNotificationService::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
-                self::get(\App\Services\Auth\LoginSecurityOtpService::class)
+                self::get(\App\Services\Auth\LoginSecurityOtpService::class),
+                self::get(\App\Services\Auth\LoginWelcomeProfileService::class),
+            ),
+            \App\Services\Auth\LoginWelcomeProfileService::class => new \App\Services\Auth\LoginWelcomeProfileService(
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PersonnelAssignmentRepository::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class),
             ),
             \App\Controllers\Web\RegisterController::class => new \App\Controllers\Web\RegisterController(
                 self::get(AuthService::class),
