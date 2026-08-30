@@ -526,29 +526,17 @@ $eventCount = count($events);
                             <td class="max-w-[12rem]"><?= $location !== '' ? htmlspecialchars($location) : '—' ?></td>
                             <td>
                                 <?php if ($currentUserId): ?>
-                                <span class="events-sheets__badge <?= $rsvpBadge['badge'] ?>"><?= htmlspecialchars($rsvpBadge['label']) ?></span>
-                                <form method="post" action="<?= url('evenements/rsvp') ?>" class="mt-1.5" data-rsvp-form>
-                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
-                                    <input type="hidden" name="event_id" value="<?= $eid ?>">
-                                    <div class="flex flex-wrap items-center gap-1">
-                                        <select name="status" data-rsvp-status-select class="events-sheets__select">
-                                            <?php foreach (['yes' => 'Présent', 'maybe' => 'Peut-être', 'no' => 'Absent'] as $val => $lab): ?>
-                                                <option value="<?= $val ?>" <?= $cur === $val ? ' selected' : '' ?>><?= htmlspecialchars($lab) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <span data-rsvp-reason-wrap class="<?= $cur === 'no' ? '' : 'hidden' ?>">
-                                            <select name="absence_reason" class="events-sheets__select">
-                                                <option value="">Motif d’absence</option>
-                                                <option value="service">Service</option>
-                                                <option value="sante">Santé</option>
-                                                <option value="indisponibilite_planifiee">Indispo planifiée</option>
-                                                <option value="absence_non_justifiee">Absence non justifiée</option>
-                                                <option value="autre">Autre</option>
-                                            </select>
-                                        </span>
-                                        <button type="submit" class="events-sheets__btn">OK</button>
-                                    </div>
-                                </form>
+                                <span class="events-sheets__badge <?= $rsvpBadge['badge'] ?>"
+                                      data-rsvp-badge
+                                      data-rsvp-badge-base="events-sheets__badge"
+                                      data-event-id="<?= $eid ?>"><?= htmlspecialchars($rsvpBadge['label']) ?></span>
+                                <?php
+                                $rsvpEventId = $eid;
+                                $rsvpCurrentStatus = $cur;
+                                $rsvpCompact = true;
+                                $rsvpShowAbsenceReason = true;
+                                require base_path('views/partials/dashboard_rsvp_buttons.php');
+                                ?>
                                 <?php else: ?>
                                 <span class="text-xs text-slate-400">Connexion requise</span>
                                 <?php endif; ?>
@@ -804,15 +792,5 @@ $eventCount = count($events);
             applyFilters();
         });
     }
-
-    root.querySelectorAll('[data-rsvp-status-select]').forEach(function (sel) {
-        sel.addEventListener('change', function () {
-            var form = sel.closest('form');
-            var wrap = form ? form.querySelector('[data-rsvp-reason-wrap]') : null;
-            if (wrap) {
-                wrap.classList.toggle('hidden', sel.value !== 'no');
-            }
-        });
-    });
 })();
 </script>

@@ -61,15 +61,14 @@ $todayLabel = (new DateTimeImmutable('now'))->format('d/m/Y');
                             </span>
                             <span class="mt-1 block text-xs leading-relaxed text-slate-600"><?= htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') ?></span>
                             <?php if ($eventId > 0): ?>
-                                <div class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Répondre à <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>">
-                                    <?php foreach (['yes' => 'Présent', 'maybe' => 'Peut-être', 'no' => 'Absent'] as $status => $statusLabel): ?>
-                                        <form method="post" action="<?= htmlspecialchars(url('aujourdhui/rsvp'), ENT_QUOTES, 'UTF-8') ?>">
-                                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                                            <input type="hidden" name="event_id" value="<?= $eventId ?>">
-                                            <input type="hidden" name="status" value="<?= $status ?>">
-                                            <button type="submit" class="rounded-lg border px-2.5 py-1.5 text-xs font-bold transition <?= $rsvpStatus === $status ? 'border-emerald-600 bg-emerald-700 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-400 hover:text-emerald-800' ?>" aria-pressed="<?= $rsvpStatus === $status ? 'true' : 'false' ?>"><?= $statusLabel ?></button>
-                                        </form>
-                                    <?php endforeach; ?>
+                                <div class="mt-3">
+                                    <?php
+                                    $rsvpEventId = $eventId;
+                                    $rsvpCurrentStatus = $rsvpStatus;
+                                    $rsvpCompact = true;
+                                    $rsvpShowAbsenceReason = false;
+                                    require base_path('views/partials/dashboard_rsvp_buttons.php');
+                                    ?>
                                 </div>
                             <?php else: ?>
                                 <a href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-block text-xs font-bold text-emerald-700 group-hover:text-emerald-800"><?= htmlspecialchars($action, ENT_QUOTES, 'UTF-8') ?> →</a>

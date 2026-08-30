@@ -524,6 +524,13 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                             <?php $rsvpQuickTs = !empty($mbOp['starts_at']) ? strtotime((string) $mbOp['starts_at']) : false; ?>
                             <p class="dash-rsvp-quick__meta">
                                 <?= $rsvpQuickTs !== false ? htmlspecialchars(date('d/m/Y H\hi', $rsvpQuickTs), ENT_QUOTES, 'UTF-8') : 'Date à confirmer' ?>
+                                <?php
+                                $rsvpQuickLabel = (string) ($mbOp['rsvp_label'] ?? '');
+                                if ($rsvpQuickLabel === '') {
+                                    $rsvpQuickLabel = 'Réponse non renseignée';
+                                }
+                                ?>
+                                · <span data-rsvp-meta-label data-event-id="<?= (int) $mbOp['id'] ?>"><?= htmlspecialchars($rsvpQuickLabel, ENT_QUOTES, 'UTF-8') ?></span>
                             </p>
                         </div>
                         <div class="dash-rsvp-quick__actions">
@@ -970,7 +977,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                         <p class="mt-0.5 text-xs text-slate-500">
                                             <?= $dateFull !== '' ? htmlspecialchars($dateFull, ENT_QUOTES, 'UTF-8') : '' ?>
                                             <?= $time !== '' ? ' · ' . htmlspecialchars($time, ENT_QUOTES, 'UTF-8') : '' ?>
-                                            <?= $rsvp !== '' ? ' · ' . htmlspecialchars($rsvp, ENT_QUOTES, 'UTF-8') : '' ?>
+                                            · <span data-rsvp-meta-label data-event-id="<?= (int) ($op['id'] ?? 0) ?>"><?= htmlspecialchars($rsvp !== '' ? $rsvp : 'Réponse non renseignée', ENT_QUOTES, 'UTF-8') ?></span>
                                         </p>
                                         <?php if ($summary !== ''): ?>
                                             <p class="mt-1 text-sm text-slate-600 line-clamp-2"><?= htmlspecialchars($summary, ENT_QUOTES, 'UTF-8') ?></p>
@@ -1304,53 +1311,6 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 .dash-rsvp-quick__title { margin: 0.15rem 0 0; font-size: 1.05rem; font-weight: 900; color: #0f172a; letter-spacing: -0.01em; line-height: 1.25; }
 .dash-rsvp-quick__meta { margin: 0.25rem 0 0; font-size: 0.75rem; font-weight: 600; color: #64748b; }
 
-.dash-rsvp { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
-.dash-rsvp--compact { margin-top: 0.6rem; }
-.dash-rsvp__btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem 0.85rem;
-    border-radius: 0.6rem;
-    border: 1px solid #cbd5e1;
-    background: #fff;
-    color: #334155;
-    font-size: 0.6875rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
-}
-.dash-rsvp__btn--yes {
-    border-color: #059669;
-    background: #059669;
-    color: #fff;
-    box-shadow: 0 6px 14px -8px rgba(5, 150, 105, 0.7);
-}
-.dash-rsvp__btn--yes:hover { background: #047857; border-color: #047857; }
-.dash-rsvp__btn--maybe:hover,
-.dash-rsvp__btn--no:hover { background: #f8fafc; border-color: #94a3b8; }
-.dash-rsvp__btn[disabled] { opacity: 0.55; cursor: wait; }
-.dash-rsvp[data-rsvp-current="yes"] .dash-rsvp__btn--yes,
-.dash-rsvp[data-rsvp-current="maybe"] .dash-rsvp__btn--maybe,
-.dash-rsvp[data-rsvp-current="no"] .dash-rsvp__btn--no {
-    color: #fff;
-    border-color: transparent;
-    box-shadow: none;
-}
-.dash-rsvp[data-rsvp-current="yes"] .dash-rsvp__btn--yes { background: #059669; }
-.dash-rsvp[data-rsvp-current="maybe"] .dash-rsvp__btn--maybe { background: #d97706; }
-.dash-rsvp[data-rsvp-current="maybe"] .dash-rsvp__btn--yes,
-.dash-rsvp[data-rsvp-current="no"] .dash-rsvp__btn--yes {
-    background: #fff;
-    color: #334155;
-    border-color: #cbd5e1;
-    box-shadow: none;
-}
-.dash-rsvp[data-rsvp-current="no"] .dash-rsvp__btn--no { background: #dc2626; }
-.dash-rsvp__status { font-size: 0.6875rem; font-weight: 700; color: #059669; min-height: 1em; }
-
 .dash-channels-list { list-style: none; margin: 0; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.15rem; }
 .dash-channels-item {
     display: flex;
@@ -1393,46 +1353,3 @@ if (is_array($modpack) && !empty($modpack['id'])) {
     font-weight: 900;
 }
 </style>
-<script>
-(function () {
-    var csrfToken = <?= json_encode(\App\Core\Csrf::token(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
-    var endpointBase = <?= json_encode(url('api/events/'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
-    var statusLabels = { yes: 'Réponse enregistrée : présent(e)', maybe: 'Réponse enregistrée : peut-être', no: 'Réponse enregistrée : absent(e)' };
-
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('[data-rsvp-choice]');
-        if (!btn) return;
-        var group = btn.closest('[data-rsvp-group]');
-        if (!group) return;
-        var eventId = parseInt(group.getAttribute('data-event-id') || '0', 10);
-        var choice = btn.getAttribute('data-rsvp-choice');
-        if (!eventId || !choice) return;
-
-        var buttons = group.querySelectorAll('[data-rsvp-choice]');
-        buttons.forEach(function (b) { b.disabled = true; });
-
-        var fd = new FormData();
-        fd.append('_csrf_token', csrfToken);
-        fd.append('status', choice);
-
-        fetch(endpointBase + eventId + '/rsvp', { method: 'POST', body: fd, credentials: 'same-origin' })
-            .then(function (res) { return res.json().catch(function () { return { ok: res.ok }; }); })
-            .then(function (data) {
-                buttons.forEach(function (b) { b.disabled = false; });
-                if (data && data.ok) {
-                    document.querySelectorAll('[data-rsvp-group][data-event-id="' + eventId + '"]').forEach(function (g) {
-                        g.setAttribute('data-rsvp-current', choice);
-                        var lbl = g.querySelector('[data-rsvp-status-label]');
-                        if (lbl) lbl.textContent = statusLabels[choice] || '';
-                    });
-                } else {
-                    window.alert((data && data.error) || 'Impossible d’enregistrer votre réponse pour le moment.');
-                }
-            })
-            .catch(function () {
-                buttons.forEach(function (b) { b.disabled = false; });
-                window.alert('Connexion impossible. Réessayez.');
-            });
-    });
-})();
-</script>
