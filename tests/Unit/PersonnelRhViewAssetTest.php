@@ -1,0 +1,41 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit;
+
+use PHPUnit\Framework\TestCase;
+
+final class PersonnelRhViewAssetTest extends TestCase
+{
+    public function testRhViewHasExtendedTableauAndCleanNotifications(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $file = (string) file_get_contents($root . '/views/personnel/file.php');
+        $rh = (string) file_get_contents($root . '/views/partials/personnel/file_rh_view.php');
+        $tableau = (string) file_get_contents($root . '/views/partials/personnel/file_tableau_admin_tab.php');
+        $controller = (string) file_get_contents($root . '/app/Controllers/Web/PersonnelController.php');
+        $edit = (string) file_get_contents($root . '/views/personnel/edit.php');
+
+        self::assertStringContainsString('personnelFileIsRhFull', $file);
+        self::assertStringContainsString('personnelFileRhContext', $file);
+        self::assertStringNotContainsString('getFlash(\'success\')', $file);
+
+        self::assertStringContainsString('<details', $rh);
+        self::assertStringContainsString('return_view=rh', $rh);
+        self::assertStringNotContainsString('grid gap-2.5 lg:grid-cols-2', $rh);
+
+        self::assertStringContainsString('$tableauAdminStandalone', $tableau);
+        self::assertStringContainsString("'Qualifications'", $tableau);
+        self::assertStringContainsString("'Formations'", $tableau);
+        self::assertStringContainsString("'Absences'", $tableau);
+        self::assertStringContainsString('character_name', $tableau);
+
+        self::assertStringContainsString('personnelShowRedirectUrl', $controller);
+        self::assertStringContainsString("return_view === 'rh'", $controller);
+        self::assertStringContainsString('$canSensitive || $isForumMod', $controller);
+
+        self::assertStringContainsString('return_view', $edit);
+        self::assertStringContainsString('name="return_view" value="rh"', $edit);
+    }
+}

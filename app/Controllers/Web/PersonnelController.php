@@ -183,6 +183,17 @@ class PersonnelController
         return $slug !== '' ? $slug : (string) ($userRow['id'] ?? '');
     }
 
+    /** URL de retour vers la fiche (optionnellement vue RH). */
+    private function personnelShowRedirectUrl(array $target, bool $isSelf, ?string $viewMode = null): string
+    {
+        $base = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
+        if ($viewMode === 'rh') {
+            return $base . '?view=rh';
+        }
+
+        return $base;
+    }
+
     /** @return list<string> */
     private function normalizeMultilineList(string $raw, int $maxItems = 12, int $maxLen = 120): array
     {
@@ -551,10 +562,11 @@ class PersonnelController
         $adminPanels = $this->adminPanelRepository->listForTenant((int) $tenantId);
         $adminDataByPanel = $this->adminDataRepository->getAllForUser($uid);
 
-        $rpDossierNeedsAttention = $isSelf && RecruitmentPresetPayloadService::personnelRpDossierNeedsAttention(is_array($personnelProfile) ? $personnelProfile : []);
         $canStaffEdit = $this->canStaffEditPersonnel();
         $canStaffView = $this->canStaffViewPersonnel();
         $canSensitive = $this->canViewSensitivePersonnel();
+        $rpDossierNeedsAttention = ($isSelf || $canStaffView || $canStaffEdit || $canSensitive)
+            && RecruitmentPresetPayloadService::personnelRpDossierNeedsAttention(is_array($personnelProfile) ? $personnelProfile : []);
         $roleplayTimelineEvents = [];
         if ($roleplayFollowupConfig['enabled'] && ($isSelf || $canStaffView || $canStaffEdit) && $this->personnelRoleplayTimelineRepository->tableExists()) {
             $roleplayTimelineEvents = $this->personnelRoleplayTimelineRepository->listForUser((int) $tenantId, $uid, 80);
@@ -574,7 +586,7 @@ class PersonnelController
         $canViewCommandNotes = $isSelf || $canStaffEdit;
         $displaySettings = $this->displaySettingsRepository->getOrDefaults((int) $target['id']);
         $hidePersonalInfo = (int) ($displaySettings['hide_personal_info'] ?? 0) === 1;
-        $viewerPrivilegedForPersonal = $isSelf || $canStaffView || $canStaffEdit || $isForumMod;
+        $viewerPrivilegedForPersonal = $isSelf || $canStaffView || $canStaffEdit || $canSensitive || $isForumMod;
         $redactPersonalPresentation = $hidePersonalInfo && !$viewerPrivilegedForPersonal;
         $canViewCivilSection = $canViewCivil && !$redactPersonalPresentation;
         $gateInst = Gate::getInstance();
@@ -1922,7 +1934,9 @@ class PersonnelController
         }
 
         Session::flash('success', 'Dossier mis à jour.');
-        $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
+        $returnView = trim((string) $request->input('return_view', ''));
+        $redirect = $this->personnelShowRedirectUrl($target, $isSelf, $returnView === 'rh' ? 'rh' : null);
+
         return Response::redirect($redirect);
     }
 
