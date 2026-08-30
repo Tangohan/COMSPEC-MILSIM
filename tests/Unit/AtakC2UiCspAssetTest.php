@@ -15,9 +15,13 @@ final class AtakC2UiCspAssetTest extends TestCase
 
         self::assertStringContainsString('type="importmap"', $view);
         self::assertStringContainsString('assets/vendor/three/build/three.module.js', $view);
+        self::assertStringContainsString('"three/addons/"', $view);
         self::assertStringContainsString('window.ATAK_THREE_BASE', $view);
         self::assertStringContainsString('resolveThreeBase', $init);
         self::assertStringContainsString("window.ATAK_THREE_BASE", $init);
+        self::assertStringContainsString("import('three')", $init);
+        self::assertStringContainsString("import('three/addons/controls/OrbitControls.js')", $init);
+        self::assertStringContainsString('Multiple instances of Three.js', $init);
         self::assertFileExists(dirname(__DIR__, 2) . '/public/assets/vendor/three/build/three.module.js');
         self::assertFileExists(dirname(__DIR__, 2) . '/public/assets/vendor/three/examples/jsm/controls/OrbitControls.js');
         self::assertFileExists(dirname(__DIR__, 2) . '/public/assets/vendor/three/examples/jsm/renderers/CSS2DRenderer.js');

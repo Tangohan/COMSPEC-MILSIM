@@ -73,7 +73,8 @@ export class TerrainTextureLoader {
     texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.magFilter = THREE.LinearFilter;
     texture.flipY = true;
-    texture.anisotropy = 8;
+    /* Anisotropie modérée : trop haute sur certains GPU accentue le moiré. */
+    texture.anisotropy = 4;
     if (opts.pot) {
       texture.minFilter = THREE.LinearMipmapLinearFilter;
       texture.generateMipmaps = true;
@@ -81,6 +82,9 @@ export class TerrainTextureLoader {
       /* NPOT : pas de mipmaps (sinon bruit / static WebGL). */
       texture.minFilter = THREE.LinearFilter;
       texture.generateMipmaps = false;
+    }
+    if (THREE.SRGBColorSpace != null) {
+      texture.colorSpace = THREE.SRGBColorSpace;
     }
     texture.needsUpdate = true;
     return texture;
@@ -131,7 +135,10 @@ export class TerrainTextureLoader {
    */
   fromSource(source, THREE) {
     const potSource = ensurePowerOfTwoSource(source);
-    const texture = new THREE.Texture(potSource);
+    /* CanvasTexture signale correctement une source canvas (update / color space). */
+    const texture = typeof THREE.CanvasTexture === 'function'
+      ? new THREE.CanvasTexture(potSource)
+      : new THREE.Texture(potSource);
     this.configureDiffuse(texture, { pot: true });
     this.texture = texture;
     this.currentUrl = null;

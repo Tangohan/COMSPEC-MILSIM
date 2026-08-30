@@ -30,6 +30,8 @@ final class AtakTerrain3dTextureZoomAssetTest extends TestCase
         self::assertStringContainsString('ensurePowerOfTwoSource', $loader);
         self::assertStringContainsString('generateMipmaps = false', $loader);
         self::assertStringContainsString('configureDiffuse', $loader);
+        self::assertStringContainsString('CanvasTexture', $loader);
+        self::assertStringContainsString('SRGBColorSpace', $loader);
         self::assertStringContainsString('syncToWorld', $camera);
         self::assertStringContainsString('_dollyTargetDist', $camera);
         self::assertStringContainsString('resetView', $camera);
