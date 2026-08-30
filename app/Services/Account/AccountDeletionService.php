@@ -28,6 +28,24 @@ final class AccountDeletionService
 
     public const DELETED_DISPLAY_NAME = 'Compte supprimé';
 
+    /** Libellé neutre pour l’historique rattaché au compte technique par communauté. */
+    public const HISTORY_GHOST_DISPLAY_NAME = 'Ancien membre';
+
+    /**
+     * Compte technique d’archivage (une fiche par communauté) — invisible des annuaires.
+     *
+     * @param array<string, mixed>|null $user
+     */
+    public static function isTenantHistoryGhostUser(?array $user): bool
+    {
+        if (!is_array($user) || $user === []) {
+            return false;
+        }
+        $email = strtolower(trim((string) ($user['email'] ?? '')));
+
+        return preg_match('/^history\.\d+@internal\.local$/', $email) === 1;
+    }
+
     /**
      * Compte déjà anonymisé (« Compte supprimé » / @deleted.invalid).
      *

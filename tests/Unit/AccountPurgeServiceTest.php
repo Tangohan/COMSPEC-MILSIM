@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Services\Account\AccountDeletionService;
 use App\Services\Account\AccountPurgeService;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -121,27 +122,81 @@ final class AccountPurgeServiceTest extends TestCase
         self::assertSame(3, $this->countRows($pdo, 'SELECT COUNT(*) FROM users'));
     }
 
-    public function testPurgeAnonymizedAccountsClearsTheBacklog(): void
+    public function testPurgeAnonymizedAccountsRemovesStubsButPreservesHistory(): void
     {
         $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, tenant_id INT, email TEXT, display_name TEXT)');
+        $pdo->exec('CREATE TABLE users (
+            id INTEGER PRIMARY KEY,
+            tenant_id INT,
+            email TEXT,
+            display_name TEXT,
+            callsign TEXT,
+            status TEXT,
+            is_service_account INT DEFAULT 0,
+            created_at TEXT,
+            updated_at TEXT
+        )');
         $pdo->exec('CREATE TABLE user_profiles (id INTEGER PRIMARY KEY, user_id INT, bio TEXT)');
+        $pdo->exec('CREATE TABLE forum_posts (id INTEGER PRIMARY KEY, author_user_id INT, body TEXT)');
         $pdo->exec(
-            "INSERT INTO users (id, tenant_id, email, display_name) VALUES
-             (1, 1, 'deleted-29-170000@deleted.invalid', 'Compte supprimé'),
-             (2, 1, 'deleted-31-170001@deleted.invalid', 'Compte supprimé'),
-             (3, 1, 'vivant@example.com', 'Vivant')"
+            "INSERT INTO users (id, tenant_id, email, display_name, callsign, status, is_service_account, created_at, updated_at) VALUES
+             (1, 1, 'deleted-29-170000@deleted.invalid', 'Compte supprimé', 'DEL1', 'inactive', 0, '2026-01-01', '2026-01-01'),
+             (2, 1, 'deleted-31-170001@deleted.invalid', 'Compte supprimé', 'DEL2', 'inactive', 0, '2026-01-01', '2026-01-01'),
+             (3, 1, 'vivant@example.com', 'Vivant', 'VIV', 'active', 0, '2026-01-01', '2026-01-01')"
         );
         $pdo->exec('INSERT INTO user_profiles (id, user_id, bio) VALUES (1, 1, "orphelin"), (2, 3, "vivant")');
+        $pdo->exec(
+            'INSERT INTO forum_posts (id, author_user_id, body) VALUES
+             (1, 1, "post anonymisé"),
+             (2, 2, "autre post"),
+             (3, 3, "post vivant")'
+        );
 
         $result = (new AccountPurgeService($pdo))->purgeAnonymizedAccounts();
 
         self::assertTrue($result['ok'], implode(' | ', $result['errors']));
         self::assertSame(2, $result['purged']);
         self::assertSame(0, $result['failed']);
+        self::assertSame(2, $result['rows_reassigned']);
         self::assertSame(0, $this->countRows($pdo, "SELECT COUNT(*) FROM users WHERE email LIKE '%@deleted.invalid'"));
         self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM users WHERE id = 3'));
         self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id = 3'));
+        self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id IN (1, 2)'));
+        self::assertSame(3, $this->countRows($pdo, 'SELECT COUNT(*) FROM forum_posts'));
+
+        $ghostId = (int) $pdo->query("SELECT id FROM users WHERE email = 'history.1@internal.local'")->fetchColumn();
+        self::assertGreaterThan(0, $ghostId);
+        self::assertSame(2, $this->countRows($pdo, 'SELECT COUNT(*) FROM forum_posts WHERE author_user_id = ' . $ghostId));
+        self::assertSame(
+            AccountDeletionService::HISTORY_GHOST_DISPLAY_NAME,
+            (string) $pdo->query('SELECT display_name FROM users WHERE id = ' . $ghostId)->fetchColumn()
+        );
+    }
+
+    public function testPurgeFromTenantPreservingHistoryRejectsLiveAccounts(): void
+    {
+        $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $pdo->exec('CREATE TABLE users (
+            id INTEGER PRIMARY KEY,
+            tenant_id INT,
+            email TEXT,
+            display_name TEXT,
+            callsign TEXT,
+            status TEXT,
+            is_service_account INT DEFAULT 0,
+            created_at TEXT,
+            updated_at TEXT
+        )');
+        $pdo->exec(
+            "INSERT INTO users (id, tenant_id, email, display_name, callsign, status, is_service_account, created_at, updated_at)
+             VALUES (5, 1, 'vivant@example.com', 'Vivant', 'VIV', 'active', 0, '2026-01-01', '2026-01-01')"
+        );
+
+        $report = (new AccountPurgeService($pdo))->purgeFromTenantPreservingHistory(5);
+
+        self::assertFalse($report['ok']);
+        self::assertSame([], $report['purged_user_ids']);
+        self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM users WHERE id = 5'));
     }
 
     public function testInvalidOrUnknownAccountIsReportedAsFailure(): void

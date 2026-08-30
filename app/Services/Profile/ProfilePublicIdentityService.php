@@ -33,6 +33,9 @@ final class ProfilePublicIdentityService
     ): string {
         $email = trim((string) ($user['email'] ?? ''));
         $displayName = trim((string) ($user['display_name'] ?? ''));
+        if (\App\Services\Account\AccountDeletionService::isTenantHistoryGhostUser($user)) {
+            return \App\Services\Account\AccountDeletionService::HISTORY_GHOST_DISPLAY_NAME;
+        }
         // Compte anonymisé / soft-deleted : jamais d’alias, callsign ou nom RP résiduel.
         if (
             $displayName === \App\Services\Account\AccountDeletionService::DELETED_DISPLAY_NAME
@@ -74,6 +77,9 @@ final class ProfilePublicIdentityService
     {
         $displayName = trim((string) ($user['display_name'] ?? ''));
         $email = trim((string) ($user['email'] ?? ''));
+        if (\App\Services\Account\AccountDeletionService::isTenantHistoryGhostUser($user)) {
+            return \App\Services\Account\AccountDeletionService::HISTORY_GHOST_DISPLAY_NAME;
+        }
         if (
             $displayName === \App\Services\Account\AccountDeletionService::DELETED_DISPLAY_NAME
             || str_ends_with(strtolower($email), '@deleted.invalid')

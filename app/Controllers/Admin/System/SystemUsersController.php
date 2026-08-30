@@ -489,7 +489,7 @@ final class SystemUsersController
         }
 
         if ($result['purged'] === 0 && $result['failed'] === 0) {
-            Session::flash('success', 'Aucune fiche anonymisée à supprimer.');
+            Session::flash('success', 'Aucune fiche anonymisée à retirer des annuaires.');
 
             return Response::redirect($this->backUrl($request));
         }
@@ -497,8 +497,12 @@ final class SystemUsersController
         Session::flash(
             $result['failed'] > 0 ? 'error' : 'success',
             $result['purged'] . ' fiche' . ($result['purged'] > 1 ? 's' : '') . ' anonymisée'
-            . ($result['purged'] > 1 ? 's' : '') . ' supprimée' . ($result['purged'] > 1 ? 's' : '')
-            . ' définitivement (' . $result['rows_deleted'] . ' lignes)'
+            . ($result['purged'] > 1 ? 's' : '') . ' retirée' . ($result['purged'] > 1 ? 's' : '')
+            . ' des annuaires — historique conservé sous « Ancien membre »'
+            . ($result['rows_reassigned'] > 0
+                ? ' (' . $result['rows_reassigned'] . ' lien' . ($result['rows_reassigned'] > 1 ? 's' : '') . ' réassigné'
+                . ($result['rows_reassigned'] > 1 ? 's' : '') . ')'
+                : '')
             . ($result['failed'] > 0 ? ' · ' . $result['failed'] . ' en échec, voir le journal serveur.' : '.')
         );
 
@@ -506,7 +510,8 @@ final class SystemUsersController
     }
 
     /**
-     * Approuve une demande organisateur : purge définitive de la fiche dans l’orga concernée.
+     * Approuve une demande organisateur : retire la fiche anonymisée de l’orga en
+     * conservant l’historique sous « Ancien membre ».
      */
     public function approvePurgeRequest(Request $request, array $params = []): Response
     {
@@ -591,7 +596,7 @@ final class SystemUsersController
             ],
         );
 
-        $report = $this->purgeService()->purge($targetUserId, []);
+        $report = $this->purgeService()->purgeFromTenantPreservingHistory($targetUserId);
         if (!$report['ok'] && $report['purged_user_ids'] === []) {
             Session::flash(
                 'error',
@@ -601,9 +606,12 @@ final class SystemUsersController
             return Response::redirect($this->backUrl($request));
         }
 
-        $message = 'Demande approuvée — fiche purgée de la communauté ('
-            . $report['rows_deleted'] . ' ligne' . ($report['rows_deleted'] > 1 ? 's' : '')
-            . ' effacée' . ($report['rows_deleted'] > 1 ? 's' : '') . ').';
+        $message = 'Demande approuvée — fiche retirée de la communauté, historique conservé sous « Ancien membre »'
+            . ($report['rows_reassigned'] > 0
+                ? ' (' . $report['rows_reassigned'] . ' lien' . ($report['rows_reassigned'] > 1 ? 's' : '')
+                . ' réassigné' . ($report['rows_reassigned'] > 1 ? 's' : '') . ')'
+                : '')
+            . '.';
         if ($report['errors'] !== []) {
             $message .= ' ' . count($report['errors']) . ' avertissement'
                 . (count($report['errors']) > 1 ? 's' : '') . ' — voir le journal serveur.';
