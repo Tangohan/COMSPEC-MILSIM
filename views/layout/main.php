@@ -328,7 +328,9 @@ if (!empty($isBackOfficeShell)) {
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <?php endif; ?>
+    <?php if (empty($usesAdminSidebarShell)): ?>
     <?php require base_path('views/partials/advanced_fiche_edit_banner.php'); ?>
+    <?php endif; ?>
     <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? (!empty($isBackOfficeShell) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : 'min-h-[80vh]') ?>">
         <?php if (empty($communityReelsPage) && empty($isBackOfficeShell)): ?>
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
