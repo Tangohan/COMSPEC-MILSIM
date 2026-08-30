@@ -198,4 +198,10 @@ class CommunityEventSlotRepository
 
         return $stmt->rowCount() > 0;
     }
+
+    public function deleteAllForEvent(int $eventId): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM community_event_slots WHERE event_id = ?');
+        $stmt->execute([$eventId]);
+    }
 }

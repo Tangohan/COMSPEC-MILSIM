@@ -501,6 +501,14 @@ final class CommunityEventsAdminController
 
             return $this->redirectEventsIndex($listVue);
         }
+        $schedule = $this->normalizeEventSchedule($starts, $ends);
+        if (isset($schedule['error'])) {
+            Session::flash('error', (string) $schedule['error']);
+
+            return $this->redirectEventsIndex($listVue);
+        }
+        $starts = (string) $schedule['starts'];
+        $ends = $schedule['ends'];
         $eventType = trim((string) $request->input('event_type', 'evenement'));
         if (!in_array($eventType, ['operation', 'evenement', 'formation', 'autre'], true)) {
             $eventType = 'evenement';
@@ -530,7 +538,7 @@ final class CommunityEventsAdminController
         $this->featureGate->recordQuotaUse($tenantId, 'events', (int) $user['id']);
         Session::flash('success', 'Événement créé.');
 
-        return $this->redirectEventsIndex($listVue);
+        return $this->redirectEventsIndex($listVue, substr($starts, 0, 7), $eventId);
     }
 
     public function updateDetails(Request $request, array $params = []): Response
@@ -1078,13 +1086,92 @@ final class CommunityEventsAdminController
         return Response::redirect(url('back-office/events'));
     }
 
-    private function redirectEventsIndex(string $vue): Response
+    public function destroy(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/events'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('back-office/events'));
+        }
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            Session::flash('error', 'Événement invalide.');
+
+            return Response::redirect(url('back-office/events'));
+        }
+
+        $result = $this->events->deletePermanently($id, $tenantId);
+        if (!($result['ok'] ?? false)) {
+            Session::flash('error', $result['error'] ?? 'Suppression impossible.');
+
+            return Response::redirect(url('back-office/events/' . (string) $id));
+        }
+        $cover = isset($result['cover_image_path']) ? (string) $result['cover_image_path'] : '';
+        if ($cover !== '') {
+            $this->deleteCoverFile($cover);
+        }
+        Session::flash('success', 'Créneau supprimé définitivement.');
+
+        return Response::redirect(url('back-office/events') . '?vue=annules');
+    }
+
+    private function redirectEventsIndex(string $vue, ?string $mois = null, ?int $highlightEventId = null): Response
     {
         if (!in_array($vue, ['calendrier', 'a_venir', 'passes', 'annules'], true)) {
             $vue = 'calendrier';
         }
+        $query = ['vue' => $vue];
+        if ($vue === 'calendrier' && $mois !== null && preg_match('/^\d{4}-\d{2}$/', $mois) === 1) {
+            $query['mois'] = $mois;
+        }
+        $url = url('back-office/events') . '?' . http_build_query($query);
+        if ($highlightEventId !== null && $highlightEventId > 0) {
+            $url .= '#event-' . $highlightEventId;
+        }
 
-        return Response::redirect(url('back-office/events') . '?vue=' . rawurlencode($vue));
+        return Response::redirect($url);
+    }
+
+    /**
+     * Valide et normalise début/fin : fin par défaut = début + 2 h, fin >= début, créneau non déjà clos.
+     *
+     * @return array{starts: string, ends: ?string}|array{error: string}
+     */
+    private function normalizeEventSchedule(string $starts, ?string $ends): array
+    {
+        $startsTs = strtotime($starts);
+        if ($startsTs === false) {
+            return ['error' => 'La date et l’heure de début ne sont pas valides.'];
+        }
+        if ($ends === null) {
+            $endsTs = strtotime('+2 hours', $startsTs);
+            $ends = $endsTs !== false ? date('Y-m-d H:i:s', $endsTs) : null;
+        } else {
+            $endsTs = strtotime($ends);
+            if ($endsTs === false) {
+                return ['error' => 'La date et l’heure de fin ne sont pas valides.'];
+            }
+            if ($endsTs < $startsTs) {
+                return ['error' => 'La fin doit être postérieure au début. Vérifiez les deux horaires.'];
+            }
+        }
+
+        $effectiveEndTs = $ends !== null ? strtotime($ends) : $startsTs;
+        if ($effectiveEndTs !== false && $effectiveEndTs < time()) {
+            return [
+                'error' => 'Ce créneau serait déjà terminé à l’enregistrement. Choisissez une date de début ou de fin dans le futur.',
+            ];
+        }
+
+        return ['starts' => $starts, 'ends' => $ends];
     }
 
     /**

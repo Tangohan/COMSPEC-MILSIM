@@ -608,6 +608,84 @@ class CommunityEventRepository
         return $stmt->rowCount() > 0;
     }
 
+    public function countRsvpsForEvent(int $eventId): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM community_event_rsvps WHERE event_id = ?');
+        $stmt->execute([$eventId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Suppression définitive d’un créneau et de ses données liées (postes, inscriptions, RSVP).
+     * Les fiches de planification et sessions recon pointent event_id à NULL si applicable.
+     *
+     * @return array{ok: bool, error?: string}
+     */
+    public function deletePermanently(int $eventId, int $tenantId): array
+    {
+        $event = $this->findByIdForTenant($eventId, $tenantId);
+        if (!$event) {
+            return ['ok' => false, 'error' => 'Créneau introuvable.'];
+        }
+
+        $isCancelled = !empty($event['cancelled_at']);
+        $rsvpCount = $this->countRsvpsForEvent($eventId);
+        if (!$isCancelled && $rsvpCount > 0) {
+            return [
+                'ok' => false,
+                'error' => 'Annulez d’abord ce créneau avant de le supprimer : des membres y sont inscrits.',
+            ];
+        }
+
+        try {
+            $this->pdo->beginTransaction();
+
+            if ($this->tableExists('community_event_slot_assignments')) {
+                $st = $this->pdo->prepare('DELETE FROM community_event_slot_assignments WHERE event_id = ?');
+                $st->execute([$eventId]);
+            }
+            if ($this->tableExists('community_event_slots')) {
+                $st = $this->pdo->prepare('DELETE FROM community_event_slots WHERE event_id = ?');
+                $st->execute([$eventId]);
+            }
+            if ($this->tableExists('community_event_rsvp_history')) {
+                $st = $this->pdo->prepare('DELETE FROM community_event_rsvp_history WHERE event_id = ?');
+                $st->execute([$eventId]);
+            }
+            if ($this->tableExists('mission_plans')) {
+                $st = $this->pdo->prepare(
+                    'UPDATE mission_plans SET event_id = NULL WHERE event_id = ? AND tenant_id = ?'
+                );
+                $st->execute([$eventId, $tenantId]);
+            }
+            if ($this->tableExists('personnel_deployments')) {
+                $st = $this->pdo->prepare(
+                    'UPDATE personnel_deployments SET event_id = NULL WHERE event_id = ? AND tenant_id = ?'
+                );
+                $st->execute([$eventId, $tenantId]);
+            }
+
+            $stmt = $this->pdo->prepare('DELETE FROM community_events WHERE id = ? AND tenant_id = ?');
+            $stmt->execute([$eventId, $tenantId]);
+            if ($stmt->rowCount() < 1) {
+                $this->pdo->rollBack();
+
+                return ['ok' => false, 'error' => 'Suppression impossible.'];
+            }
+
+            $this->pdo->commit();
+
+            return ['ok' => true, 'cover_image_path' => isset($event['cover_image_path']) ? (string) $event['cover_image_path'] : null];
+        } catch (\Throwable) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            return ['ok' => false, 'error' => 'Erreur lors de la suppression du créneau.'];
+        }
+    }
+
     public function markReminderSent(int $eventId, int $userId): void
     {
         if ($this->columnExists('community_event_rsvps', 'reminder_count')) {
@@ -867,9 +945,11 @@ class CommunityEventRepository
             $where[] = 'COALESCE(ce.ends_at, ce.starts_at) >= ?';
             $params[] = $monthStart;
             $statutCal = trim((string) ($filters['statut'] ?? ''));
-            if ($statutCal !== 'annule') {
-                /* Par défaut on garde les annulés visibles mais grisés côté UI ;
-                   sauf filtre statut explicite « annule » qui ne montre qu’eux. */
+            if ($statutCal === 'annule') {
+                $where[] = 'ce.cancelled_at IS NOT NULL';
+            } else {
+                /* Hors filtre « annulé », on masque les créneaux annulés pour ne pas les confondre avec les actifs. */
+                $where[] = 'ce.cancelled_at IS NULL';
             }
         } elseif ($vue === 'annules') {
             $where[] = 'ce.cancelled_at IS NOT NULL';

@@ -1049,6 +1049,7 @@ return function (Router $router) {
     $router->post('/back-office/events/{id}/participant/presence', [CommunityEventsAdminController::class, 'forceCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/participant/presence/clear', [CommunityEventsAdminController::class, 'clearCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/cancel', [CommunityEventsAdminController::class, 'cancel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/supprimer', [CommunityEventsAdminController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/slots', [CommunityEventsAdminController::class, 'storeSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/slots/{slotId}', [CommunityEventsAdminController::class, 'updateSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/slots/{slotId}/supprimer', [CommunityEventsAdminController::class, 'deleteSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

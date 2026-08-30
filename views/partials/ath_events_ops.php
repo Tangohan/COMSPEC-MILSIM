@@ -269,7 +269,7 @@ $chipClass = static function (array $ev): string {
         <span><i class="ath-cal__dot ath-cal__dot--op"></i> Opération</span>
         <span><i class="ath-cal__dot ath-cal__dot--evt"></i> Événement</span>
         <span><i class="ath-cal__dot ath-cal__dot--form"></i> Formation</span>
-        <span><i class="ath-cal__dot ath-cal__dot--annule"></i> Annulé</span>
+        <span class="ath-cal__hint">Les créneaux annulés sont listés dans l’onglet « Annulés ».</span>
     </div>
 
     <div class="ath-cal__grid" role="grid" aria-label="<?= $h($calLabel) ?>">
@@ -303,7 +303,7 @@ $chipClass = static function (array $ev): string {
                         $time = $startsTs !== false ? date('H:i', $startsTs) : '';
                         $href = $eid > 0 ? url('back-office/events/' . $eid) : '#';
                     ?>
-                    <a class="<?= $h($chipClass($ev)) ?>" href="<?= $h($href) ?>" title="<?= $h(($time !== '' ? $time . ' · ' : '') . $title) ?>">
+                    <a class="<?= $h($chipClass($ev)) ?>" id="event-<?= $eid ?>" href="<?= $h($href) ?>" title="<?= $h(($time !== '' ? $time . ' · ' : '') . $title) ?>">
                         <?php if ($time !== ''): ?><span class="ath-cal__time"><?= $h($time) ?></span><?php endif; ?>
                         <span class="ath-cal__name"><?= $h($title) ?></span>
                     </a>
@@ -334,8 +334,8 @@ $chipClass = static function (array $ev): string {
             <input id="ev-start-ath-cal" type="datetime-local" name="starts_at" required step="60" class="bo-select" style="height:40px;width:100%;">
         </div>
         <div>
-            <label class="ath-users-filters__label" for="ev-end-ath-cal">Fin</label>
-            <input id="ev-end-ath-cal" type="datetime-local" name="ends_at" step="60" class="bo-select" style="height:40px;width:100%;">
+            <label class="ath-users-filters__label" for="ev-end-ath-cal">Fin <span class="ath-event-show__opt">(optionnel — +2 h par défaut)</span></label>
+            <input id="ev-end-ath-cal" type="datetime-local" name="ends_at" step="60" class="bo-select ath-event-datetime-end" style="height:40px;width:100%;" data-start-for="ev-start-ath-cal">
         </div>
         <div>
             <label class="ath-users-filters__label" for="ev-loc-ath-cal">Lieu</label>
@@ -404,8 +404,8 @@ $chipClass = static function (array $ev): string {
             <input id="ev-start-ath" type="datetime-local" name="starts_at" required step="60" class="bo-select" style="height:40px;width:100%;">
         </div>
         <div>
-            <label class="ath-users-filters__label" for="ev-end-ath">Fin</label>
-            <input id="ev-end-ath" type="datetime-local" name="ends_at" step="60" class="bo-select" style="height:40px;width:100%;">
+            <label class="ath-users-filters__label" for="ev-end-ath">Fin <span class="ath-event-show__opt">(optionnel — +2 h par défaut)</span></label>
+            <input id="ev-end-ath" type="datetime-local" name="ends_at" step="60" class="bo-select ath-event-datetime-end" style="height:40px;width:100%;" data-start-for="ev-start-ath">
         </div>
         <div>
             <label class="ath-users-filters__label" for="ev-loc-ath">Lieu</label>
@@ -474,3 +474,53 @@ $athTableFoot = count($events) > 0
     ? 'Affichage 1 – ' . count($events) . ' sur ' . count($events) . ' · ' . date('d/m/Y H:i')
     : 'Aucun créneau dans cette vue · ' . date('d/m/Y H:i');
 require base_path('views/partials/ath_table.php');
+?>
+<script>
+(function () {
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function toLocalInputValue(d) {
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+            + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+    function defaultStart() {
+        var d = new Date();
+        d.setMinutes(0, 0, 0);
+        d.setHours(d.getHours() + 2);
+        return d;
+    }
+    document.querySelectorAll('input[type="datetime-local"][name="starts_at"]').forEach(function (startEl) {
+        if (!startEl.value) {
+            startEl.value = toLocalInputValue(defaultStart());
+        }
+        startEl.addEventListener('change', function () {
+            var endEl = startEl.form && startEl.form.querySelector('.ath-event-datetime-end');
+            if (!endEl || endEl.value) {
+                return;
+            }
+            var base = new Date(startEl.value);
+            if (Number.isNaN(base.getTime())) {
+                return;
+            }
+            base.setHours(base.getHours() + 2);
+            endEl.min = startEl.value;
+            endEl.value = toLocalInputValue(base);
+        });
+        startEl.dispatchEvent(new Event('change'));
+    });
+    document.querySelectorAll('.ath-event-datetime-end').forEach(function (endEl) {
+        var startId = endEl.getAttribute('data-start-for');
+        var startEl = startId ? document.getElementById(startId) : null;
+        if (startEl && startEl.value) {
+            endEl.min = startEl.value;
+        }
+    });
+    var hash = window.location.hash || '';
+    if (hash.indexOf('#event-') === 0) {
+        var target = document.querySelector(hash);
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.classList.add('ath-cal__chip--highlight');
+        }
+    }
+})();
+</script>

@@ -99,7 +99,7 @@ $athKpis = [
 
 ?>
 
-<div class="ath-event-show ath-rise" x-data="{ addOpen: <?= $addOpen ? 'true' : 'false' ?>, dangerOpen: false }">
+<div class="ath-event-show ath-rise" x-data="{ addOpen: <?= $addOpen ? 'true' : 'false' ?>, deleteOpen: false, cancelOpen: false }">
     <div class="ath-event-show__meta ath-card ath-rise" style="padding:14px 18px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;">
         <span class="ath-cell ath-cell--mono" style="font-size:10px;font-weight:800;letter-spacing:0.12em;color:#8c979b;"><?= $h($ref) ?></span>
         <span class="ath-cell ath-cell--badge" style="color:<?= $h($type['tone']) ?>;background:<?= $h($type['bg']) ?>;border-color:transparent;"><?= $h($type['label']) ?></span>
@@ -482,21 +482,41 @@ $athKpis = [
         <?php endif; ?>
     </div>
 
+    <?php
+    $canDeletePermanently = $cancelled || $nTotal === 0;
+    ?>
+    <?php if ($canDeletePermanently): ?>
+    <section class="ath-card ath-rise ath-event-show__section ath-event-show__section--danger">
+        <button type="button" class="ath-event-show__collapse-head ath-event-show__collapse-head--danger" @click="deleteOpen = !deleteOpen" :aria-expanded="deleteOpen.toString()">
+            <div>
+                <h2>Supprimer définitivement</h2>
+                <p>Retire ce créneau de l’agenda<?= $cancelled ? '' : ' sans passer par l’annulation' ?>. Les inscriptions et postes associés seront effacés.</p>
+            </div>
+            <svg class="ath-event-show__chevron" :style="deleteOpen ? 'transform: rotate(180deg)' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+        </button>
+        <form method="post" action="<?= $h(url('back-office/events/' . $eid . '/supprimer')) ?>" class="ath-event-show__section-body ath-event-show__form" x-show="deleteOpen" x-cloak onsubmit="return confirm('Supprimer définitivement ce créneau ? Cette action est irréversible.');">
+            <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
+            <div class="ath-event-show__form-actions">
+                <button type="submit" class="ath-btn" style="background:#b42318;color:#fff;border-color:#b42318;">Supprimer définitivement</button>
+            </div>
+        </form>
+    </section>
+    <?php endif; ?>
     <?php if (!$cancelled): ?>
     <section class="ath-card ath-rise ath-event-show__section ath-event-show__section--danger">
-        <button type="button" class="ath-event-show__collapse-head ath-event-show__collapse-head--danger" @click="dangerOpen = !dangerOpen" :aria-expanded="dangerOpen.toString()">
+        <button type="button" class="ath-event-show__collapse-head ath-event-show__collapse-head--danger" @click="cancelOpen = !cancelOpen" :aria-expanded="cancelOpen.toString()">
             <div>
                 <h2>Annuler le créneau</h2>
-                <p>Les membres indiqués comme présents ou « peut-être » seront prévenus.</p>
+                <p>Le créneau reste visible dans l’historique « Annulés ». Les membres indiqués comme présents ou « peut-être » seront prévenus.</p>
             </div>
-            <svg class="ath-event-show__chevron" :style="dangerOpen ? 'transform: rotate(180deg)' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+            <svg class="ath-event-show__chevron" :style="cancelOpen ? 'transform: rotate(180deg)' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
         </button>
-        <form method="post" action="<?= $h(url('back-office/events/' . $eid . '/cancel')) ?>" class="ath-event-show__section-body ath-event-show__form" x-show="dangerOpen" x-cloak onsubmit="return confirm('Annuler ce créneau et prévenir les membres inscrits ?');">
+        <form method="post" action="<?= $h(url('back-office/events/' . $eid . '/cancel')) ?>" class="ath-event-show__section-body ath-event-show__form" x-show="cancelOpen" x-cloak onsubmit="return confirm('Annuler ce créneau et prévenir les membres inscrits ?');">
             <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
             <label class="ath-users-filters__label" for="cancel-reason">Motif affiché aux membres <span class="ath-event-show__opt">(optionnel)</span></label>
             <textarea id="cancel-reason" name="cancel_reason" rows="2" class="bo-select" style="width:100%;min-height:72px;padding:10px 12px;" placeholder="Ex. Report pour conditions météo / indisponibilité serveur…"></textarea>
             <div class="ath-event-show__form-actions">
-                <button type="submit" class="ath-btn" style="background:#b42318;color:#fff;border-color:#b42318;">Annuler définitivement</button>
+                <button type="submit" class="ath-btn" style="background:#b42318;color:#fff;border-color:#b42318;">Annuler le créneau</button>
             </div>
         </form>
     </section>

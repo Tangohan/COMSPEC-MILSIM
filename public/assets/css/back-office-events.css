@@ -1584,6 +1584,15 @@
   color: #64748b;
   text-decoration: line-through;
 }
+.ath-cal__chip--highlight {
+  outline: 2px solid #0b8a5c;
+  outline-offset: 2px;
+}
+.ath-cal__hint {
+  font-size: 11px;
+  color: #8c979b;
+  margin-left: 8px;
+}
 .ath-cal__time {
   font-family: var(--ath-mono, ui-monospace, monospace);
   font-weight: 700;
