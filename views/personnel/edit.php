@@ -23,6 +23,11 @@ $rpTutorChoices = is_array($rpTutorChoices ?? null) ? $rpTutorChoices : [];
 $roleplayEventTypes = is_array($roleplayEventTypes ?? null) ? $roleplayEventTypes : ['administratif'];
 
 $isMe = (int) ($targetUser['id'] ?? 0) === (int) (\App\Core\Session::get('user_id'));
+$returnViewRh = trim((string) ($_GET['return_view'] ?? '')) === 'rh';
+$personnelBackUrl = $isMe ? url('personnel/me') : url('personnel/' . (int) ($targetUser['id'] ?? 0));
+if ($returnViewRh) {
+    $personnelBackUrl .= '?view=rh';
+}
 $formAction = url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/update');
 if (!$targetUser) {
     echo '<div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">';
@@ -121,7 +126,7 @@ $editValidTabIds = implode(',', array_map(
         <p class="pd-header__sub">Identité, affectation, immersion et affichage — un onglet à la fois, comme un tableau de bord administratif.</p>
       </div>
       <div class="pd-header__actions">
-        <a href="<?= $isMe ? url('personnel/me') : url('personnel/' . (int) $targetUser['id']) ?>" class="pd-btn">← Fiche</a>
+        <a href="<?= htmlspecialchars($personnelBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">← Fiche</a>
         <a href="<?= url('account/preferences') ?>" class="pd-btn">Préférences</a>
         <a href="<?= url('account/portrait') ?>" class="pd-btn">Portrait</a>
         <a href="<?= htmlspecialchars(url('personnel/tutorials')) ?>" class="pd-btn">Tutoriels</a>
@@ -176,6 +181,9 @@ $editValidTabIds = implode(',', array_map(
 
       <form method="post" action="<?= htmlspecialchars($formAction) ?>">
         <?= \App\Core\Csrf::field() ?>
+        <?php if ($returnViewRh): ?>
+        <input type="hidden" name="return_view" value="rh">
+        <?php endif; ?>
         <div class="pd-card__body">
 
         <?php if ($isMe): ?>
@@ -953,7 +961,7 @@ $editValidTabIds = implode(',', array_map(
 
         <div class="pd-card__foot">
           <button type="submit" class="pd-btn pd-btn--primary">Enregistrer</button>
-          <a href="<?= $isMe ? url('personnel/me') : url('personnel/' . (int) $targetUser['id']) ?>" class="pd-btn">Annuler</a>
+          <a href="<?= htmlspecialchars($personnelBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">Annuler</a>
         </div>
     </form>
     </div>

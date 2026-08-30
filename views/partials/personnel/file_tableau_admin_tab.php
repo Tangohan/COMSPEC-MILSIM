@@ -22,9 +22,29 @@ $pushRow = static function (array &$rows, string $section, string $field, string
 };
 
 $missingLabel = $missingLabel ?? 'Donnée manquante';
+$tableauAdminStandalone = !empty($tableauAdminStandalone ?? false);
+$personnelProfile = is_array($personnelProfile ?? null) ? $personnelProfile : [];
+$userProfile = is_array($userProfile ?? null) ? $userProfile : [];
 
-$pushRow($sheetRows, 'Identité', 'Prénom', (string) (($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : ''));
-$pushRow($sheetRows, 'Identité', 'Nom', (string) (($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : ''));
+$tblFirstName = trim((string) ($civilIdentity['first_name'] ?? ''));
+$tblLastName = trim((string) ($civilIdentity['last_name'] ?? ''));
+if ($tblFirstName === '' && $tblLastName === '') {
+    $charName = trim((string) ($personnelProfile['character_name'] ?? ''));
+    if ($charName !== '') {
+        $nameParts = preg_split('/\s+/u', $charName, 2) ?: [];
+        $tblFirstName = trim((string) ($nameParts[0] ?? $charName));
+        $tblLastName = trim((string) ($nameParts[1] ?? ''));
+    }
+}
+
+$pushRow($sheetRows, 'Identité', 'Prénom', $tblFirstName);
+$pushRow($sheetRows, 'Identité', 'Nom', $tblLastName);
+if ($tblFirstName === '' && $tblLastName === '') {
+    $displayOnly = trim((string) ($targetUser['display_name'] ?? ''));
+    if ($displayOnly !== '') {
+        $pushRow($sheetRows, 'Identité', 'Libellé du compte', $displayOnly);
+    }
+}
 if (!empty($showMatriculePublic)) {
     $pushRow($sheetRows, 'Identité', 'Matricule', $matricule ? (string) $matricule : '');
 }
@@ -151,6 +171,159 @@ if ($rpTutorLabel) {
     $pushRow($sheetRows, 'Suivi', 'Tuteur', (string) $rpTutorLabel);
 }
 
+if ($tableauAdminStandalone) {
+    $charNameRow = trim((string) ($personnelProfile['character_name'] ?? ''));
+    if ($charNameRow !== '') {
+        $pushRow($sheetRows, 'Personnage', 'Nom du personnage', $charNameRow);
+    }
+    $nicknameRow = trim((string) ($personnelProfile['nickname_primary'] ?? ''));
+    if ($nicknameRow !== '') {
+        $pushRow($sheetRows, 'Personnage', 'Surnom', $nicknameRow);
+    }
+    $bioRow = trim((string) ($userProfile['bio'] ?? ''));
+    if ($bioRow !== '') {
+        $pushRow($sheetRows, 'Personnage', 'Présentation', $bioRow);
+    }
+    $natRow = trim((string) ($personnelProfile['nationality'] ?? ''));
+    if ($natRow !== '') {
+        $pushRow($sheetRows, 'Personnage', 'Nationalité', $natRow);
+    }
+    $rpBlood = trim((string) (($personnelProfile['rp_blood_type_confirmed'] ?? '') !== ''
+        ? $personnelProfile['rp_blood_type_confirmed']
+        : ($personnelProfile['blood_type'] ?? '')));
+    if ($rpBlood !== '') {
+        $pushRow($sheetRows, 'Personnage', 'Groupe sanguin', $rpBlood);
+    }
+    $rpLangs = trim((string) ($personnelProfile['languages'] ?? ''));
+    if ($rpLangs !== '') {
+        $pushRow($sheetRows, 'Personnage', 'Langues', $rpLangs);
+    }
+    if ($orgPositionDisplayLabel !== null) {
+        $pushRow(
+            $sheetRows,
+            'Organisation',
+            ($orgPositionDisplayKind ?? '') === 'position' ? 'Poste organisationnel' : 'Profil communauté',
+            (string) $orgPositionDisplayLabel
+        );
+    }
+    if (!empty($steamId)) {
+        $pushRow($sheetRows, 'Compte', 'Identifiant Steam', (string) $steamId);
+    }
+    if (!empty($targetUser['last_login_at'])) {
+        $lastLoginTs = strtotime((string) $targetUser['last_login_at']);
+        $pushRow(
+            $sheetRows,
+            'Compte',
+            'Dernière connexion',
+            $lastLoginTs ? date('d/m/Y H:i', $lastLoginTs) : (string) $targetUser['last_login_at']
+        );
+    }
+    if (!empty($armaPlaytime['hours_label'])) {
+        $pushRow($sheetRows, 'Compte', 'Temps de jeu Arma', (string) $armaPlaytime['hours_label']);
+    }
+    if (!empty($canViewCommandNotes) && !empty($adminNotes)) {
+        $pushRow($sheetRows, 'Encadrement', 'Notes de commandement', (string) $adminNotes);
+    }
+    if (is_array($seniorityDetailLines ?? null)) {
+        foreach ($seniorityDetailLines as $senLine) {
+            if (!is_array($senLine)) {
+                continue;
+            }
+            $senUnit = trim((string) ($senLine['unit_name'] ?? 'Unité'));
+            $senVal = trim((string) ($senLine['formatted'] ?? ''));
+            $senBasis = trim((string) ($senLine['basis_label'] ?? ''));
+            if ($senVal !== '') {
+                $pushRow($sheetRows, 'Ancienneté', $senUnit, $senVal, $senBasis);
+            }
+        }
+    }
+    if (!empty($canViewAbsences) && is_array($personnelAbsences ?? null)) {
+        foreach (array_slice($personnelAbsences, 0, 20) as $absRow) {
+            if (!is_array($absRow)) {
+                continue;
+            }
+            $absStart = (string) ($absRow['starts_on'] ?? '');
+            $absEnd = $absRow['ends_on'] ?? null;
+            $absStartTs = $absStart !== '' ? strtotime($absStart) : false;
+            $absStartFr = $absStartTs !== false ? date('d/m/Y', $absStartTs) : $absStart;
+            if ($absEnd === null || $absEnd === '') {
+                $absPeriod = $absStartFr !== '' ? ('À partir du ' . $absStartFr) : 'Durée non précisée';
+            } else {
+                $absEndTs = strtotime((string) $absEnd);
+                $absEndFr = $absEndTs !== false ? date('d/m/Y', $absEndTs) : (string) $absEnd;
+                $absPeriod = $absStartFr . ' → ' . $absEndFr;
+            }
+            $absReasonKey = (string) ($absRow['reason'] ?? 'autre');
+            $absReasonLab = (string) ($personnelAbsenceReasonLabels[$absReasonKey] ?? 'Autre');
+            $absNote = trim((string) ($absRow['note'] ?? ''));
+            $pushRow($sheetRows, 'Absences', $absPeriod, $absReasonLab, $absNote);
+        }
+    }
+    if (is_array($qualifications ?? null)) {
+        foreach ($qualifications as $q) {
+            if (!is_array($q)) {
+                continue;
+            }
+            $qName = trim((string) ($q['name'] ?? $q['qualification_name'] ?? 'Qualification'));
+            $qStatus = isset($qualificationStatusFr) && is_callable($qualificationStatusFr)
+                ? $qualificationStatusFr((string) ($q['status'] ?? ''))
+                : (string) ($q['status'] ?? '');
+            $qExpires = !empty($q['expires_at']) ? date('d/m/Y', strtotime((string) $q['expires_at']) ?: time()) : '';
+            $pushRow($sheetRows, 'Qualifications', $qName, $qStatus, $qExpires);
+        }
+    }
+    if (is_array($lmsEnrollmentsForPersonnel ?? null)) {
+        foreach (array_slice($lmsEnrollmentsForPersonnel, 0, 25) as $enr) {
+            if (!is_array($enr)) {
+                continue;
+            }
+            $enrTitle = trim((string) ($enr['course_title'] ?? $enr['title'] ?? 'Parcours'));
+            $enrStatus = isset($lmsEnrollmentStatusFr) && is_callable($lmsEnrollmentStatusFr)
+                ? $lmsEnrollmentStatusFr((string) ($enr['status'] ?? ''))
+                : (string) ($enr['status'] ?? '');
+            $enrProgress = isset($enr['progress_percent']) ? ((int) $enr['progress_percent'] . ' %') : '';
+            $pushRow($sheetRows, 'Formations', $enrTitle, $enrStatus, $enrProgress);
+        }
+    }
+    if (is_array($trainingCertificates ?? null)) {
+        foreach (array_slice($trainingCertificates, 0, 20) as $cert) {
+            if (!is_array($cert)) {
+                continue;
+            }
+            $certTitle = trim((string) ($cert['course_title'] ?? $cert['title'] ?? 'Attestation'));
+            $certStatus = isset($lmsCertificateStatusFr) && is_callable($lmsCertificateStatusFr)
+                ? $lmsCertificateStatusFr((string) ($cert['status'] ?? 'valid'))
+                : (string) ($cert['status'] ?? '');
+            $certExpires = !empty($cert['expires_at']) ? date('d/m/Y', strtotime((string) $cert['expires_at']) ?: time()) : '';
+            $pushRow($sheetRows, 'Attestations', $certTitle, $certStatus, $certExpires);
+        }
+    }
+    if (is_array($personnelStageBilans ?? null)) {
+        foreach (array_slice($personnelStageBilans, 0, 15) as $bilan) {
+            if (!is_array($bilan)) {
+                continue;
+            }
+            $bStage = trim((string) ($bilan['stage_label'] ?? $bilan['stage'] ?? 'Bilan'));
+            $bDate = !empty($bilan['created_at']) ? date('d/m/Y', strtotime((string) $bilan['created_at']) ?: time()) : '';
+            $bSummary = trim((string) ($bilan['summary'] ?? $bilan['notes'] ?? ''));
+            $pushRow($sheetRows, 'Bilans', $bStage, $bDate, $bSummary);
+        }
+    }
+    if (is_array($serviceHistory ?? null)) {
+        foreach (array_slice($serviceHistory, 0, 20) as $evt) {
+            if (!is_array($evt)) {
+                continue;
+            }
+            $evtType = isset($serviceHistoryEventTypeFr) && is_callable($serviceHistoryEventTypeFr)
+                ? $serviceHistoryEventTypeFr((string) ($evt['event_type'] ?? ''))
+                : (string) ($evt['event_type'] ?? 'Événement');
+            $evtTitle = trim((string) ($evt['title'] ?? $evt['label'] ?? ''));
+            $evtDate = !empty($evt['occurred_at']) ? date('d/m/Y', strtotime((string) $evt['occurred_at']) ?: time()) : '';
+            $pushRow($sheetRows, 'Historique', $evtType, $evtTitle !== '' ? $evtTitle : '—', $evtDate);
+        }
+    }
+}
+
 foreach ($adminPanels as $panel) {
     $panelId = (int) ($panel['id'] ?? 0);
     $panelName = trim((string) ($panel['name'] ?? 'Bloc administratif'));
@@ -173,7 +346,6 @@ foreach ($adminPanels as $panel) {
 }
 
 $sheetCount = count($sheetRows);
-$tableauAdminStandalone = !empty($tableauAdminStandalone ?? false);
 ?>
 <style>
 .personnel-sheets {

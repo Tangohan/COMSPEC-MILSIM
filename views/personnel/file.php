@@ -553,13 +553,15 @@ $personnelFileSegment = trim((string) ($targetUser['profile_slug'] ?? ''));
 $personnelFileSegment = $personnelFileSegment !== '' ? $personnelFileSegment : (string) ($targetUser['id'] ?? '');
 $personnelFileBaseUrl = url('personnel/' . $personnelFileSegment);
 $personnelFileIsRhFull = $canAccessRhView && $personnelViewMode === 'rh';
+$personnelFileIsRhGate = $canAccessRhView && $personnelViewMode === '';
+$personnelFileRhContext = $personnelFileIsRhFull || $personnelFileIsRhGate;
 /** Conteneur page : vue RH en plein largeur ; sinon colonne classique max-w-7xl. */
 $personnelFileShell = $personnelFileIsRhFull
     ? 'w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12'
     : 'max-w-7xl mx-auto px-6 md:px-8';
 ?>
 <main class="min-h-screen pt-20 pb-24<?= $personnelFileIsRhFull ? ' personnel-file--rh-full' : '' ?>">
-    <?php if ($personnelModerationStaffLines !== []): ?>
+    <?php if (!$personnelFileIsRhFull && $personnelModerationStaffLines !== []): ?>
     <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
         <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" role="region" aria-label="Restrictions d’accès">
             <p class="text-xs font-bold uppercase tracking-wide text-slate-600">Restrictions actuelles (vue encadrement)</p>
@@ -570,14 +572,14 @@ $personnelFileShell = $personnelFileIsRhFull
             </ul>
         </div>
     </div>
-    <?php elseif ($personnelModerationMemberBrief !== null): ?>
+    <?php elseif (!$personnelFileIsRhFull && $personnelModerationMemberBrief !== null): ?>
     <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
         <div class="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm" role="status">
             <?= htmlspecialchars($personnelModerationMemberBrief, ENT_QUOTES, 'UTF-8') ?>
         </div>
     </div>
     <?php endif; ?>
-    <?php if ($canViewAbsences && $personnelActiveAbsences !== []): ?>
+    <?php if (!$personnelFileIsRhFull && $canViewAbsences && $personnelActiveAbsences !== []): ?>
     <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
         <div class="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm" role="status">
             <p class="font-semibold">Absence en cours</p>
@@ -616,20 +618,7 @@ $personnelFileShell = $personnelFileIsRhFull
         </div>
     </div>
     <?php endif; ?>
-    <?php
-    $personnelFlashSuccess = \App\Core\Session::getFlash('success');
-    $personnelFlashError = \App\Core\Session::getFlash('error');
-    ?>
-    <?php if ($personnelFlashSuccess || $personnelFlashError): ?>
-    <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-4">
-        <?php if ($personnelFlashSuccess): ?>
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-sm font-medium text-emerald-900 shadow-sm" role="status"><?= htmlspecialchars((string) $personnelFlashSuccess, ENT_QUOTES, 'UTF-8') ?></div>
-        <?php endif; ?>
-        <?php if ($personnelFlashError): ?>
-        <div class="mt-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900 shadow-sm" role="alert"><?= htmlspecialchars((string) $personnelFlashError, ENT_QUOTES, 'UTF-8') ?></div>
-        <?php endif; ?>
-    </div>
-    <?php endif; ?>
+    <?php if (!$personnelFileRhContext): ?>
     <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
         <?php
         $active_tab = 'identity';
@@ -637,6 +626,7 @@ $personnelFileShell = $personnelFileIsRhFull
         require base_path('views/partials/personnel/operator_tabs.php');
         ?>
     </div>
+    <?php endif; ?>
     <?php
     if ($canAccessRhView && $personnelViewMode === '') {
         require base_path('views/partials/personnel/file_view_gate.php');
