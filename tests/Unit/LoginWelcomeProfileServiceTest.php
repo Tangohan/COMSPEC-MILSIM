@@ -6,18 +6,22 @@ namespace Tests\Unit;
 
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAssignmentRepository;
+use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
+use App\Repositories\UnitRepository;
 use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Services\Auth\LoginWelcomeProfileService;
 use PHPUnit\Framework\TestCase;
 
 final class LoginWelcomeProfileServiceTest extends TestCase
 {
-    public function testBuildUsesDisplayNameGradeUnitAndChanges(): void
+    public function testBuildUsesDisplayNameGradeAndAccountFacts(): void
     {
         $profiles = $this->createMock(PersonnelProfileRepository::class);
         $profiles->method('getByUserId')->willReturn([
             'primary_role' => 'Cellule C2',
+            'enlistment_date' => '2020-01-01',
+            'primary_unit_id' => 7,
             'character_portrait_path' => '',
         ]);
 
@@ -35,7 +39,13 @@ final class LoginWelcomeProfileServiceTest extends TestCase
         $display = $this->createMock(UserProfileDisplaySettingsRepository::class);
         $display->method('getByUserId')->willReturn(['site_photo_priority' => 'operator']);
 
-        $svc = new LoginWelcomeProfileService($profiles, $assignments, $grades, $display);
+        $jobRoles = $this->createMock(PersonnelJobRoleRepository::class);
+        $jobRoles->method('findRoleById')->willReturn(null);
+
+        $units = $this->createMock(UnitRepository::class);
+        $units->method('findById')->willReturn(['name' => '24th STS Gold Team SOF TACP']);
+
+        $svc = new LoginWelcomeProfileService($profiles, $assignments, $grades, $display, $jobRoles, $units);
         $profile = $svc->build([
             'id' => 10,
             'tenant_id' => 3,
@@ -48,9 +58,13 @@ final class LoginWelcomeProfileServiceTest extends TestCase
 
         $this->assertSame('Tanguy TETARD', $profile['display_name']);
         $this->assertSame('Maréchal des logis-chef', $profile['grade_label']);
-        $this->assertSame('S.O.A.R.', $profile['unit_label']);
-        $this->assertIsArray($profile['changes']);
-        $this->assertLessThanOrEqual(3, count($profile['changes']));
+        $this->assertCount(3, $profile['account_facts']);
+        $this->assertSame('Ancienneté', $profile['account_facts'][0]['label']);
+        $this->assertStringContainsString('an', $profile['account_facts'][0]['value']);
+        $this->assertSame('Rôle / Fonction', $profile['account_facts'][1]['label']);
+        $this->assertSame('Cellule C2', $profile['account_facts'][1]['value']);
+        $this->assertSame('Affectation', $profile['account_facts'][2]['label']);
+        $this->assertSame('24th STS Gold Team SOF TACP', $profile['account_facts'][2]['value']);
     }
 
     public function testDisplayNameFallsBackToEmailLocalPart(): void
@@ -63,8 +77,10 @@ final class LoginWelcomeProfileServiceTest extends TestCase
         $grades->method('findById')->willReturn(null);
         $display = $this->createMock(UserProfileDisplaySettingsRepository::class);
         $display->method('getByUserId')->willReturn(null);
+        $jobRoles = $this->createMock(PersonnelJobRoleRepository::class);
+        $units = $this->createMock(UnitRepository::class);
 
-        $svc = new LoginWelcomeProfileService($profiles, $assignments, $grades, $display);
+        $svc = new LoginWelcomeProfileService($profiles, $assignments, $grades, $display, $jobRoles, $units);
         $profile = $svc->build([
             'id' => 2,
             'tenant_id' => 1,
@@ -74,5 +90,8 @@ final class LoginWelcomeProfileServiceTest extends TestCase
         ]);
 
         $this->assertSame('operateur', $profile['display_name']);
+        $this->assertSame('Non renseignée', $profile['account_facts'][0]['value']);
+        $this->assertSame('Non renseignée', $profile['account_facts'][1]['value']);
+        $this->assertSame('Non renseignée', $profile['account_facts'][2]['value']);
     }
 }

@@ -14,7 +14,8 @@ final class LoginWelcomeViewAssetTest extends TestCase
         $this->assertFileExists($view);
         $src = (string) file_get_contents($view);
         $this->assertStringContainsString('Entrer dans', $src);
-        $this->assertStringContainsString('profile-layer', $src);
+        $this->assertStringContainsString('account-facts', $src);
+        $this->assertStringNotContainsString('unitLabel', $src);
         $this->assertStringContainsString('Appuyez sur Entrée', $src);
         $this->assertStringContainsString('Archivo', $src);
 
