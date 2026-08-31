@@ -21,8 +21,10 @@ use App\Services\Auth\LoginSecurityNotificationService;
 use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Support\LoginIntendedDestination;
+use App\Support\LoginWelcomeGate;
 use App\Support\PortalAccessChoice;
 use App\Services\Auth\LoginSecurityOtpService;
+use App\Services\Auth\LoginWelcomeProfileService;
 
 class AuthController
 {
@@ -46,6 +48,7 @@ class AuthController
         private LoginSecurityNotificationService $loginSecurityNotifications,
         private IndicatorBlocklistService $indicatorBlocklist,
         private LoginSecurityOtpService $loginSecurityOtpService,
+        private LoginWelcomeProfileService $loginWelcomeProfileService,
     ) {}
 
     /**
@@ -90,32 +93,108 @@ class AuthController
         );
         $this->loginSecurityNotifications->onSuccessfulLogin($request, $user);
 
+        $continueUrl = $this->resolvePostLoginContinueUrl();
+        LoginWelcomeGate::arm($continueUrl);
+
+        return Response::redirect(url('login/accueil'));
+    }
+
+    /**
+     * Destination après le sas d’accueil (intended → espace mémorisé → sélecteur → dashboard).
+     */
+    private function resolvePostLoginContinueUrl(): string
+    {
         $after = LoginIntendedDestination::consumeRedirectUrl();
         if ($after !== null) {
-            return Response::redirect($after);
+            return $after;
         }
 
-        // Compte sans organisation : pas de JNET ni de sélecteur d’espace — dashboard classique.
         if (PortalAccessChoice::isNoOrganizationContext()) {
-            return Response::redirect(url('dashboard'));
+            return url('dashboard');
         }
 
         $remembered = PortalAccessChoice::remembered();
         if ($remembered !== null) {
             if ($remembered === PortalAccessChoice::PORTAL_TBA && !PortalAccessChoice::canAccessTba()) {
-                return Response::redirect(PortalAccessChoice::redirectUrlFor(PortalAccessChoice::PORTAL_JNET));
+                return PortalAccessChoice::redirectUrlFor(PortalAccessChoice::PORTAL_JNET);
             }
 
-            return Response::redirect(PortalAccessChoice::redirectUrlFor($remembered));
+            return PortalAccessChoice::redirectUrlFor($remembered);
         }
 
-        return Response::redirect(url('login/choisir-espace'));
+        return url('login/choisir-espace');
+    }
+
+    public function showWelcome(Request $request, array $params = []): Response
+    {
+        if (!$this->authService->check()) {
+            LoginWelcomeGate::clear();
+
+            return Response::redirect(url('login'));
+        }
+        $user = $this->authService->user();
+        if (!is_array($user)) {
+            LoginWelcomeGate::clear();
+
+            return Response::redirect(url('login'));
+        }
+        $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
+
+        if (!LoginWelcomeGate::isPending()) {
+            if (PortalAccessChoice::isNoOrganizationContext()) {
+                return Response::redirect(url('dashboard'));
+            }
+            $remembered = PortalAccessChoice::remembered();
+            if ($remembered !== null) {
+                return Response::redirect(PortalAccessChoice::redirectUrlFor($remembered));
+            }
+
+            return Response::redirect(url('login/choisir-espace'));
+        }
+
+        $profile = $this->loginWelcomeProfileService->build($user);
+        $brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
+
+        return Response::view('auth.welcome', [
+            'title' => 'Bienvenue',
+            'brand' => $brand,
+            'displayName' => $profile['display_name'],
+            'gradeLabel' => $profile['grade_label'],
+            'unitLabel' => $profile['unit_label'],
+            'avatarUrl' => $profile['avatar_url'],
+            'initials' => $profile['initials'],
+            'changes' => $profile['changes'],
+            'enterUrl' => url('login/accueil'),
+            'lockBackgroundUrl' => asset_url('assets/images/WES_Operator_V2_re_05.jpg'),
+        ]);
+    }
+
+    public function enterWelcome(Request $request, array $params = []): Response
+    {
+        if (!$this->authService->check()) {
+            LoginWelcomeGate::clear();
+
+            return Response::redirect(url('login'));
+        }
+        if (!$request->isPost()) {
+            return Response::redirect(url('login/accueil'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', __('auth.flash_session_expired'));
+
+            return Response::redirect(url('login/accueil'));
+        }
+
+        return Response::redirect(LoginWelcomeGate::consume());
     }
 
     public function showSelectPortal(Request $request, array $params = []): Response
     {
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
+        }
+        if (LoginWelcomeGate::isPending()) {
+            return Response::redirect(url('login/accueil'));
         }
         $user = $this->authService->user();
         if ($user) {
@@ -189,6 +268,9 @@ class AuthController
     public function showLogin(Request $request, array $params = []): Response
     {
         if ($this->authService->check()) {
+            if (LoginWelcomeGate::isPending()) {
+                return Response::redirect(url('login/accueil'));
+            }
             if (PortalAccessChoice::isNoOrganizationContext()) {
                 return Response::redirect(url('dashboard'));
             }
