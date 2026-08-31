@@ -160,10 +160,9 @@ class AuthController
             'brand' => $brand,
             'displayName' => $profile['display_name'],
             'gradeLabel' => $profile['grade_label'],
-            'unitLabel' => $profile['unit_label'],
             'avatarUrl' => $profile['avatar_url'],
             'initials' => $profile['initials'],
-            'changes' => $profile['changes'],
+            'accountFacts' => $profile['account_facts'],
             'enterUrl' => url('login/accueil'),
             'lockBackgroundUrl' => asset_url('assets/images/WES_Operator_V2_re_05.jpg'),
         ]);

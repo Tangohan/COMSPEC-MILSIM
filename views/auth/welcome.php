@@ -2,10 +2,9 @@
 /** @var string $brand */
 /** @var string $displayName */
 /** @var string $gradeLabel */
-/** @var string $unitLabel */
 /** @var string|null $avatarUrl */
 /** @var string $initials */
-/** @var list<array{label: string, when: string}> $changes */
+/** @var list<array{label: string, value: string}> $accountFacts */
 /** @var string $enterUrl */
 /** @var string $lockBackgroundUrl */
 /** @var string $title */
@@ -14,10 +13,9 @@ $brand = trim((string) ($brand ?? (function_exists('email_brand_name') ? email_b
 $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
 $displayName = trim((string) ($displayName ?? 'Opérateur'));
 $gradeLabel = trim((string) ($gradeLabel ?? ''));
-$unitLabel = trim((string) ($unitLabel ?? ''));
 $avatarUrl = is_string($avatarUrl ?? null) && $avatarUrl !== '' ? $avatarUrl : null;
 $initials = trim((string) ($initials ?? 'A'));
-$changes = is_array($changes ?? null) ? $changes : [];
+$accountFacts = is_array($accountFacts ?? null) ? $accountFacts : [];
 $enterUrl = (string) ($enterUrl ?? url('login/accueil'));
 $lockBackgroundUrl = (string) ($lockBackgroundUrl ?? asset_url('assets/images/WES_Operator_V2_re_05.jpg'));
 $error = \App\Core\Session::getFlash('error');
@@ -169,23 +167,18 @@ $title = (string) ($title ?? 'Bienvenue');
             color: #c5cfcc;
             font-size: 15px;
         }
-        .unit {
-            margin-top: 4px;
-            color: #8fa09a;
-            font-size: 13px;
-        }
         .separator {
             width: 64px;
             height: 1px;
             background: rgba(255, 255, 255, .22);
             margin: 24px auto;
         }
-        .changes {
+        .account-facts {
             text-align: left;
             border-top: 1px solid rgba(255, 255, 255, .10);
             border-bottom: 1px solid rgba(255, 255, 255, .10);
         }
-        .change {
+        .account-fact {
             padding: 14px 4px;
             display: flex;
             justify-content: space-between;
@@ -193,12 +186,11 @@ $title = (string) ($title ?? 'Bienvenue');
             border-bottom: 1px solid rgba(255, 255, 255, .07);
             font-size: 13px;
         }
-        .change:last-child { border-bottom: 0; }
-        .change span:first-child { color: #e9eeec; }
-        .change span:last-child {
-            color: #7f8c88;
-            white-space: nowrap;
-            flex-shrink: 0;
+        .account-fact:last-child { border-bottom: 0; }
+        .account-fact span:first-child { color: #8fa09a; }
+        .account-fact span:last-child {
+            color: #e9eeec;
+            text-align: right;
         }
         .enter {
             margin-top: 24px;
@@ -250,7 +242,7 @@ $title = (string) ($title ?? 'Bienvenue');
         @media (max-width: 700px) {
             .brand { left: 22px; top: 22px; }
             .clock { left: 24px; bottom: 36px; }
-            .change { font-size: 12px; }
+            .account-fact { font-size: 12px; }
         }
         @media (prefers-reduced-motion: reduce) {
             .profile-layer { transition: none; }
@@ -284,18 +276,15 @@ $title = (string) ($title ?? 'Bienvenue');
             <?php if ($gradeLabel !== ''): ?>
                 <div class="meta"><?= $h($gradeLabel) ?></div>
             <?php endif; ?>
-            <?php if ($unitLabel !== ''): ?>
-                <div class="unit"><?= $h($unitLabel) ?></div>
-            <?php endif; ?>
 
             <div class="separator" aria-hidden="true"></div>
 
-            <?php if ($changes !== []): ?>
-                <div class="changes">
-                    <?php foreach ($changes as $change): ?>
-                        <div class="change">
-                            <span><?= $h($change['label'] ?? '') ?></span>
-                            <span><?= $h($change['when'] ?? '') ?></span>
+            <?php if ($accountFacts !== []): ?>
+                <div class="account-facts">
+                    <?php foreach ($accountFacts as $fact): ?>
+                        <div class="account-fact">
+                            <span><?= $h($fact['label'] ?? '') ?></span>
+                            <span><?= $h($fact['value'] ?? '') ?></span>
                         </div>
                     <?php endforeach; ?>
                 </div>

@@ -312,6 +312,8 @@ class Container
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(\App\Repositories\GradeRepository::class),
                 self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
             ),
             \App\Controllers\Web\RegisterController::class => new \App\Controllers\Web\RegisterController(
                 self::get(AuthService::class),
