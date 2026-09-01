@@ -69,13 +69,14 @@ $fieldLooksEmail = static function (string $key): bool {
     return str_contains($k, 'email') || str_contains($k, 'e-mail') || str_contains($k, 'mail');
 };
 
-// Grade : valeur = code / affichage court ; détail = libellé long quand il diffère.
+// Grade : valeur = libellé attribué ; détail = code court / OTAN s’il diffère.
 $gradeValue = $effectiveRankDisplay !== '' ? (string) $effectiveRankDisplay : '';
 $gradeDetail = '';
-if (!empty($showGradeReferenceBeside) && !empty($gradeReferenceLabel)) {
-    $gradeDetail = (string) $gradeReferenceLabel;
+$gradeCodeBesideLocal = trim((string) ($gradeCodeBeside ?? ''));
+if ($gradeCodeBesideLocal !== '' && strcasecmp($gradeCodeBesideLocal, $gradeValue) !== 0) {
+    $gradeDetail = $gradeCodeBesideLocal;
     if (!empty($gradeOtanCode) && strcasecmp((string) $gradeOtanCode, $gradeValue) !== 0
-        && strcasecmp((string) $gradeOtanCode, (string) $gradeReferenceLabel) !== 0) {
+        && strcasecmp((string) $gradeOtanCode, $gradeCodeBesideLocal) !== 0) {
         $gradeDetail .= ' · ' . (string) $gradeOtanCode;
     }
 } elseif (!empty($gradeOtanCode) && $gradeValue !== '' && strcasecmp((string) $gradeOtanCode, $gradeValue) !== 0) {

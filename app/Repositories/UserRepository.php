@@ -1401,6 +1401,9 @@ class UserRepository
 
         $jobRole = $this->primaryJobRoleJoinFragments('u');
         $deployableSelect = $this->personnelProfilesHasColumn('deployable') ? 'pp.deployable' : 'NULL AS deployable';
+        $portraitSelect = $this->personnelProfilesHasColumn('character_portrait_path')
+            ? 'pp.character_portrait_path'
+            : "'' AS character_portrait_path";
         $hasExtras = $this->tableExists('personnel_extras');
         $extrasSelect = $hasExtras ? 'pex.service_number, pex.date_of_enlistment' : 'NULL AS service_number, NULL AS date_of_enlistment';
         $extrasJoin = $hasExtras ? 'LEFT JOIN personnel_extras pex ON pex.user_id = u.id' : '';
@@ -1413,7 +1416,7 @@ class UserRepository
                        ' . $gc['select'] . ',
                        un.name AS unit_name, un.code AS unit_code, ' . $unitBlurbSelect . ', pp.primary_unit_id,
                        pp.character_name, pp.matricule_internal, pp.enlistment_date, ' . $jobRole['select_as_primary_role'] . ',
-                       pp.radio_assigned, pp.readiness_score, pp.rank_display, pp.rank_display_override, ' . $deployableSelect . ',
+                       pp.radio_assigned, pp.readiness_score, pp.rank_display, pp.rank_display_override, ' . $portraitSelect . ', ' . $deployableSelect . ',
                        ' . $extrasSelect . '
                 FROM users u
                 ' . $legal['join'] . '
@@ -1488,6 +1491,11 @@ class UserRepository
         $unitSelect = 'COALESCE(' . implode(', ', $unitParts) . ') AS unit_name, COALESCE(' . implode(', ', $codeParts) . ') AS unit_code, COALESCE(' . implode(', ', $idParts) . ') AS unit_id';
         $profileExtras = 'pp.character_name, pp.matricule_internal,
                        pp.enlistment_date, pp.readiness_score, pp.clearance_level, pp.clearance_reviewed_at';
+        if ($this->personnelProfilesHasColumn('character_portrait_path')) {
+            $profileExtras .= ', pp.character_portrait_path';
+        } else {
+            $profileExtras .= ", '' AS character_portrait_path";
+        }
         if ($this->personnelProfilesHasColumn('deployable')) {
             $profileExtras .= ', pp.deployable';
         } else {

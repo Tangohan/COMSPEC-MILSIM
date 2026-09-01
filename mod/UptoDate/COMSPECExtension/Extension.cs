@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace COMSPECExtension;
 
-public static class Extension
+public static partial class Extension
 {
     // Timeout HttpClient = plafond global ; les appels sync utilisent aussi un CTS dédié.
     // 3 s était trop juste pour TLS+DNS sur le premier appel (redeem / whoami).
@@ -29,7 +29,7 @@ public static class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.17.9";
+    private const string ExtensionVersion = "1.18.0";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -1668,6 +1668,14 @@ public static class Extension
             req.Headers.Remove("User-Agent");
             req.Headers.TryAddWithoutValidation("User-Agent", "COMSPECExtension/" + ExtensionVersion);
         }
+        var gameTok = _gameAccessToken;
+        if (gameTok.Length > 0)
+        {
+            req.Headers.Remove("Authorization");
+            req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + gameTok);
+            req.Headers.Remove("User-Agent");
+            req.Headers.TryAddWithoutValidation("User-Agent", "COMSPECExtension/" + ExtensionVersion);
+        }
         var sess = _sessionToken;
         if (sess.Length > 0)
         {
@@ -1811,6 +1819,10 @@ public static class Extension
         {
             return FormatAtakExtArray("2.0.16", "COMSPEC Extension ATAK");
         }
+
+        var gameAuth = HandleGameAuth(function, args);
+        if (gameAuth.Length > 0)
+            return gameAuth;
 
         if (function == "Terrain.Chunk")
         {
@@ -1981,7 +1993,7 @@ public static class Extension
                     ApplyApiKeyHeaders(keyArg);
                 // sinon : conserver prevKey (clé SQF suspecte / tronquée)
             }
-            if (args.Length > 2)
+            if (args.Length > 2 && _gameAccessToken.Length == 0)
             {
                 var tidArg = SanitizeSecret(args[2]);
                 if (tidArg.Length > 0)
@@ -1996,7 +2008,19 @@ public static class Extension
             if (args.Length > 5)
                 ApplyBloodType(args[5]);
             if (_apiKey.Length == 0)
+            {
+                if (_gameAccessToken.Length > 0)
+                {
+                    var gameVerify = VerifyClientInitSync();
+                    if (gameVerify.StartsWith("OK|", StringComparison.Ordinal))
+                    {
+                        EnsureScreenshotWatchers();
+                        return gameVerify;
+                    }
+                    return gameVerify;
+                }
                 return "OK|connected";
+            }
 
             var verify = VerifyClientInitSync();
             if (verify.StartsWith("OK|", StringComparison.Ordinal))
@@ -2583,7 +2607,7 @@ public static class Extension
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
             // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
-            // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated
+            // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner
             if (function == "ListWardrobes")
             {
                 var url = _baseUrl + "/api/atak/wardrobes";
@@ -4246,10 +4270,12 @@ public static class Extension
                 var fav = el.TryGetProperty("is_favorite", out var f) && (f.ValueKind == JsonValueKind.True || (f.ValueKind == JsonValueKind.Number && f.GetInt32() != 0)) ? "1" : "0";
                 var bytes = el.TryGetProperty("payload_bytes", out var b) ? b.ToString() : "0";
                 var upd = el.TryGetProperty("updated_at", out var u) && u.ValueKind == JsonValueKind.String ? Clean(u.GetString() ?? "") : "";
+                var owner = el.TryGetProperty("owner_label", out var o) && o.ValueKind == JsonValueKind.String ? Clean(o.GetString() ?? "") : "";
                 if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name)) continue;
                 if (sb.Length > 0) sb.Append('\n');
                 sb.Append(id).Append('\t').Append(name).Append('\t').Append(slug).Append('\t')
-                    .Append(coll).Append('\t').Append(fav).Append('\t').Append(bytes).Append('\t').Append(upd);
+                    .Append(coll).Append('\t').Append(fav).Append('\t').Append(bytes).Append('\t').Append(upd)
+                    .Append('\t').Append(owner);
             }
             return sb.ToString();
         }
@@ -5446,7 +5472,7 @@ public static class Extension
                     _baseUrl = normalized;
                     var key = args.Length > 1 ? (args[1] ?? "") : "";
                     ApplyApiKeyHeaders(key);
-                    if (args.Length > 2)
+                    if (args.Length > 2 && _gameAccessToken.Length == 0)
                         ApplyTenantId(args[2]);
                     if (_apiKey.Length > 0)
                         StartClientInitAsync();

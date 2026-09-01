@@ -35,7 +35,7 @@ Requis uniquement pour l’addon `atak_athena` :
 | Mod / addon | Identifiant typique | Usage |
 |---|---|---|
 | **cTab** | `cTab`, `ctab_core` | Tablette / interface ATAK Enhanced |
-| **BCE** (Better CAS Environment) | `BCE_Core`, `BCE_cTab` | Apps, photos, feeds, outils CAS liés cTab |
+| **BCE** (Better CAS Environment) | `BCE_Core`, `BCE_cTab_ATAK` | Apps, photos, feeds, outils CAS liés cTab |
 
 Overwatch consomme les **interfaces publiques** de ces mods (variables / events) — pas de copie de leur code.
 

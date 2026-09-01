@@ -169,7 +169,7 @@ final class ComspecApiKeyAuth
             // Ignore DB errors — fall through to false.
         }
 
-        return false;
+        return self::acceptGameSessionToken($presented);
     }
 
     /**
@@ -287,6 +287,32 @@ final class ComspecApiKeyAuth
         return filter_var($raw, FILTER_VALIDATE_BOOLEAN);
     }
 
+    /** Session jeu Overwatch : le tenant est lu côté serveur, jamais fourni par le client. */
+    private static function acceptGameSessionToken(string $presented): bool
+    {
+        if (strlen($presented) < 32) {
+            return false;
+        }
+        try {
+            $row = (new \App\Repositories\AthenaAccountRepository())->findSessionByAccessHash(hash('sha256', $presented));
+        } catch (\Throwable) {
+            return false;
+        }
+        if ($row === null) {
+            return false;
+        }
+        if (strtotime((string) ($row['expires_at'] ?? '')) < time()) {
+            return false;
+        }
+        $tid = (int) ($row['tenant_id'] ?? 0);
+        if ($tid < 1) {
+            return false;
+        }
+        self::$matchedTenantId = $tid;
+
+        return true;
+    }
+
     private static function json401(): Response
     {
         return Response::json([
@@ -376,6 +402,15 @@ final class ComspecApiKeyAuth
             if ($path === $ex) {
                 return false;
             }
+        }
+        if (str_starts_with($path, '/api/game/v1/')) {
+            if (str_starts_with($path, '/api/game/v1/auth/')
+                || $path === '/api/game/v1/session/restore'
+                || str_starts_with($path, '/api/game/v1/branding/render')) {
+                return false;
+            }
+
+            return true;
         }
         if (str_starts_with($path, '/api/atak/')) {
             foreach ($cfg['atak_exempt_paths'] ?? [] as $ex) {

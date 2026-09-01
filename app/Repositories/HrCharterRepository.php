@@ -58,6 +58,23 @@ final class HrCharterRepository
         return (bool) $st->fetchColumn();
     }
 
+    public function findAcceptanceAt(int $userId, int $documentId): ?string
+    {
+        if (!$this->schemaReady() || $documentId < 1 || $userId < 1) {
+            return null;
+        }
+        $st = $this->pdo()->prepare(
+            'SELECT accepted_at FROM lms_hr_charter_acceptances WHERE user_id = ? AND document_id = ? LIMIT 1'
+        );
+        $st->execute([$userId, $documentId]);
+        $raw = $st->fetchColumn();
+        if (!is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+
+        return $raw;
+    }
+
     /**
      * Vrai si un document actif existe et que le membre ne l’a pas encore accepté.
      */

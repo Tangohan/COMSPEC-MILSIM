@@ -68,9 +68,9 @@ foreach ($docs as $d) {
     <section class="eff-rh-form" aria-labelledby="eff-docs-add-title">
         <div class="eff-rh-form__head">
             <h2 id="eff-docs-add-title" class="eff-rh-form__title">Ajouter une pièce</h2>
-            <p class="eff-rh-form__lead">Classez le document, indiquez qui peut le voir, puis donnez un titre clair.</p>
+            <p class="eff-rh-form__lead">Déposez le fichier, indiquez qui peut le voir, puis donnez un titre clair.</p>
         </div>
-        <form method="post" action="<?= $h(effectifs_workspace_url('documents-rh')) ?>" class="eff-rh-form__grid">
+        <form method="post" action="<?= $h(effectifs_workspace_url('documents-rh')) ?>" class="eff-rh-form__grid" enctype="multipart/form-data">
             <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
             <div class="eff-rh-field">
                 <span class="eff-rh-field__label">Membre</span>
@@ -98,10 +98,17 @@ foreach ($docs as $d) {
             </div>
             <div class="eff-rh-field">
                 <span class="eff-rh-field__label">
-                    Emplacement
-                    <?php $rhTip('tip-docs-loc', 'À propos de l’emplacement', 'Indiquez où retrouver la pièce : dossier partagé de la communauté, archives, ou lien interne déjà publié.'); ?>
+                    Fichier
+                    <?php $rhTip('tip-docs-file', 'À propos du fichier', 'Déposez la pièce ici (PDF, image ou document Word, 15 Mo maximum). Elle reste dans le coffre : seuls les gestionnaires, et le membre si vous le choisissez, peuvent l’ouvrir.'); ?>
                 </span>
-                <input type="text" name="file_path" maxlength="500" placeholder="Dossier partagé, archives, lien interne…" aria-label="Emplacement">
+                <input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.doc,.docx,.odt,application/pdf,image/jpeg,image/png,image/webp,application/msword" aria-label="Fichier">
+            </div>
+            <div class="eff-rh-field">
+                <span class="eff-rh-field__label">
+                    Emplacement
+                    <?php $rhTip('tip-docs-loc', 'À propos de l’emplacement', 'Si le document n’est pas déposé ici, indiquez où le retrouver : dossier partagé de la communauté, archives, ou lien interne déjà publié.'); ?>
+                </span>
+                <input type="text" name="location_note" maxlength="500" placeholder="Dossier partagé, archives, lien interne…" aria-label="Emplacement">
             </div>
             <div class="eff-rh-field">
                 <span class="eff-rh-field__label">
@@ -154,15 +161,31 @@ foreach ($docs as $d) {
                         $name = trim((string) ($d['user_display_name'] ?? '')) ?: (string) ($d['user_email'] ?? 'Membre');
                         $type = (string) ($d['doc_type'] ?? 'autre');
                         $path = trim((string) ($d['file_path'] ?? ''));
+                        $stored = \App\Support\PersonnelHrDocumentStorage::isStoredPath($path);
+                        $orig = trim((string) ($d['original_name'] ?? ''));
                         $visMember = ($d['visibility'] ?? '') === 'MEMBER';
                         ?>
                         <tr>
                             <td><strong class="eff-sheets__name"><?= $h($name) ?></strong></td>
                             <td><span class="eff-rh-chip"><?= $h((string) ($typeLabels[$type] ?? $type)) ?></span></td>
-                            <td><?= $h((string) ($d['title'] ?? '')) ?><?php if ($path !== ''): ?><br><span class="eff-sheets__meta"><?= $h($path) ?></span><?php endif; ?></td>
+                            <td>
+                                <?= $h((string) ($d['title'] ?? '')) ?>
+                                <?php if ($stored && $orig !== ''): ?>
+                                    <br><span class="eff-sheets__meta"><?= $h($orig) ?></span>
+                                <?php elseif (!$stored && $path !== ''): ?>
+                                    <br><span class="eff-sheets__meta"><?= $h($path) ?></span>
+                                <?php endif; ?>
+                            </td>
                             <td><span class="eff-rh-chip <?= $visMember ? 'eff-rh-chip--info' : '' ?>"><?= $visMember ? 'Visible du membre' : 'État-major' ?></span></td>
                             <td><?= $h($rhWhen((string) ($d['created_at'] ?? ''))) ?></td>
-                            <td><?php if ($uid > 0): ?><a class="is-primary" href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>">Fiche</a><?php endif; ?></td>
+                            <td>
+                                <?php if ($stored): ?>
+                                    <a class="is-primary" href="<?= $h(effectifs_workspace_url('documents-rh/' . (int) ($d['id'] ?? 0) . '/fichier')) ?>">Ouvrir</a>
+                                <?php endif; ?>
+                                <?php if ($uid > 0): ?>
+                                    <a href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>">Fiche</a>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

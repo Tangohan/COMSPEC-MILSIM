@@ -45,7 +45,7 @@ Les assets visuels (overlays, cadres tablette/téléphone) sont **originaux COMS
 | `comspec_overwatch_atak_athena` | cTab + BCE présents dans le launcher | Pas de pont tablette ATAK Enhanced ; le reste du pack fonctionne |
 | `comspec_overwatch_mavik_compat` | `Mavic_Core` détecté | Pas de shim settings Mavic ; pas d’impact sur Overwatch |
 
-L’addon `atak_athena` déclare explicitement `cTab`, `ctab_core`, `BCE_Core`, `BCE_cTab` en `requiredAddons`. Il peut être **retiré du mod pack** sur un serveur minimaliste : le PBO `connect` reste valide.
+L’addon `atak_athena` déclare explicitement `cTab`, `ctab_core`, `BCE_Core`, `BCE_cTab_ATAK` en `requiredAddons`. Il peut être **retiré du mod pack** sur un serveur minimaliste : le PBO `connect` reste valide.
 
 ### Dégradation gracieuse côté SQF
 

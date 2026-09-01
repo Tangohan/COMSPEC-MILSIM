@@ -2,31 +2,28 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
-[h1]COMSPEC Overwatch 1.4.95[/h1]
-[b]30/08/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
+[h1]COMSPEC Overwatch 1.4.96[/h1]
+[b]01/09/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
 
-[h2]Guidage GPS et zones du poste[/h2]
+[h2]Tablette, Zeus et arsenal[/h2]
 [list]
-[*] Un itinéraire tracé au poste apparaît en jeu : points numérotés et trait d’itinéraire
-[*] En s’approchant d’un point, le poste le marque atteint, le marqueur passe en gris, une annonce le confirme
-[*] Les zones posées au poste (poser, largage, danger, ralliement…) se voient en jeu
-[*] Entrer dans une zone dangereuse déclenche une alerte locale ; une zone de poser n’applique pas les effets radio
-[/list]
-
-[h2]Correctifs déjà prêts, publiés avec ce pack[/h2]
-[list]
-[*] PANIC : un opérateur inconscient ou hors combat apparaît dans la liste d’alerte, avec sa position
-[*] SEEK : relevé biométrique avec le kit correspondant et animation à genoux ; page Contexte lisible
-[*] Zeus : le nom et le prénom saisis sur un profil SSE sont bien ceux de la personne
-[*] Téléphone ATAK : Accepter / Refuser restent visibles ; écran Sons lisible ; Vibrer lève l’écran « liaison perdue » simulé
-[*] Photo de visage SEEK : part sur la fiche
-[*] Lieux, routes et suivi d’itinéraire actif vers le poste
-[*] Tenues du poste depuis l’arsenal ACE
+[*] La tablette ATAK Enhanced se charge à nouveau
+[*] Zeus : SSE, ATAK et OVERWATCH en haut du panneau d’édition d’une unité — plus de superposition sur les filtres
+[*] Arsenal ACE : bandeau des tenues Athena en haut, sans masquer « Mes équipements »
 [/list]
 
 ================================================================================
 HISTORIQUE (fiche Workshop / archive)
 ================================================================================
+
+COMSPEC Overwatch 1.4.96 / Athena ATAK 1.5.48 / liaison 1.17.9 — 01/09/2026
+
+Tablette, Zeus et arsenal
+
+• La tablette ATAK Enhanced se charge à nouveau
+• Zeus : SSE, ATAK et OVERWATCH en haut du panneau d’édition d’une unité
+• Arsenal : bandeau des tenues Athena en haut, sans masquer la liste locale
+• Relier le compte, recharger le pack, relancer Arma complètement
 
 COMSPEC Overwatch 1.4.95 / Athena ATAK 1.5.48 / liaison 1.17.9 — 30/08/2026
 

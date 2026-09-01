@@ -1533,6 +1533,11 @@ class Container
                 self::get(\App\Repositories\DocumentLinkRepository::class),
                 self::get(\App\Repositories\DocumentRepository::class)
             ),
+            \App\Controllers\Web\ArsenalWardrobeController::class => new \App\Controllers\Web\ArsenalWardrobeController(
+                new \App\Repositories\ArsenalWardrobeRepository(),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Repositories\EquipmentClassRepository::class)
+            ),
             \App\Services\Tactical\AtakTokenService::class => new \App\Services\Tactical\AtakTokenService(),
             \App\Repositories\TenantAtakConfigRepository::class => new \App\Repositories\TenantAtakConfigRepository(),
             \App\Repositories\AtakMapRepository::class => new \App\Repositories\AtakMapRepository(),

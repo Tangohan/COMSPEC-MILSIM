@@ -45,16 +45,25 @@ final class HrCharterController
         }
         $documentId = (int) ($doc['id'] ?? 0);
         $already = $this->hrCharterRepository->userHasAcceptedDocument($userId, $documentId);
+        $acceptedAt = $already ? $this->hrCharterRepository->findAcceptanceAt($userId, $documentId) : null;
         $redirectTo = trim((string) $request->query('redirect', ''));
         if ($redirectTo !== '' && (!str_starts_with($redirectTo, '/') || str_starts_with($redirectTo, '//'))) {
             $redirectTo = '';
         }
 
+        $pageTitle = trim((string) ($doc['title'] ?? ''));
+        if ($pageTitle === '') {
+            $pageTitle = 'Charte des formations';
+        }
+
         return Response::view('layout.main', [
-            'title' => 'Charte — formations',
+            'title' => $pageTitle,
             'content' => 'rh.charter',
+            'accountHubPage' => true,
+            'user' => $user,
             'hrCharterDocument' => $doc,
             'hrCharterAccepted' => $already,
+            'hrCharterAcceptedAt' => $acceptedAt,
             'hrCharterRedirect' => $redirectTo,
             'hrCharterCsrf' => Csrf::token(),
         ]);

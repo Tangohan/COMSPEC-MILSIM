@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\Web\HomeController;
 use App\Controllers\Web\HubController;
+use App\Controllers\Web\OperationWorkspaceController;
 use App\Controllers\Web\PersonnelController;
 use App\Controllers\Web\EnlistmentController;
 use App\Controllers\Web\EnlistmentCandidatePortalController;
@@ -443,6 +444,21 @@ return function (Router $router) {
     $router->get('/api/portal/search', [PortalSearchController::class, 'apiSearch'], [AuthMiddleware::class]);
     $router->get('/api/back-office/search', [\App\Controllers\Admin\Organization\BackOfficeSearchController::class, 'api'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/hub', [HubController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/operations', [OperationWorkspaceController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/operations', [OperationWorkspaceController::class, 'store'], [AuthMiddleware::class]);
+    $router->get('/operations/{uuid}', [OperationWorkspaceController::class, 'show'], [AuthMiddleware::class]);
+    $router->get('/operations/{uuid}/snapshot', [OperationWorkspaceController::class, 'snapshot'], [AuthMiddleware::class]);
+    $router->post('/operations/{uuid}/statut', [OperationWorkspaceController::class, 'setStatus'], [AuthMiddleware::class]);
+    $router->post('/operations/{uuid}/phase', [OperationWorkspaceController::class, 'setPhase'], [AuthMiddleware::class]);
+    $router->post('/operations/{uuid}/objets', [OperationWorkspaceController::class, 'storeObject'], [AuthMiddleware::class]);
+    $router->post('/operations/{uuid}/objets/{object}', [OperationWorkspaceController::class, 'updateObject'], [AuthMiddleware::class]);
+    $router->post('/operations/{uuid}/objets/{object}/supprimer', [OperationWorkspaceController::class, 'destroyObject'], [AuthMiddleware::class]);
+    $router->post('/operations/{uuid}/calques/{overlay}/workflow', [OperationWorkspaceController::class, 'overlayWorkflow'], [AuthMiddleware::class]);
+    $router->post('/operations/{uuid}/calques/{overlay}/restaurer', [OperationWorkspaceController::class, 'restoreOverlay'], [AuthMiddleware::class]);
+    $router->post('/operations/{uuid}/taches', [OperationWorkspaceController::class, 'storeTask'], [AuthMiddleware::class]);
+    $router->post('/operations/{uuid}/objectifs', [OperationWorkspaceController::class, 'storeTarget'], [AuthMiddleware::class]);
+    $router->post('/operations/{uuid}/ordres', [OperationWorkspaceController::class, 'storeOrder'], [AuthMiddleware::class]);
+    $router->get('/tactical/{uuid}', [OperationWorkspaceController::class, 'tactical'], [AuthMiddleware::class]);
     $router->get('/centre-actions', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/aujourdhui', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/aujourdhui/rsvp', [ActionCenterController::class, 'rsvp'], [AuthMiddleware::class]);
@@ -521,6 +537,7 @@ return function (Router $router) {
     $router->post('/personnel/mon-espace-rh/absences', [RhWorkspaceController::class, 'storeAbsence'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/absences/annuler', [RhWorkspaceController::class, 'cancelAbsence'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/mobilite', [RhWorkspaceController::class, 'storeCareerWish'], [AuthMiddleware::class]);
+    $router->get('/personnel/mon-espace-rh/documents/{id}/fichier', [RhWorkspaceController::class, 'downloadHrDocument'], [AuthMiddleware::class]);
     $router->get('/personnel/mon-espace-rh', [RhWorkspaceController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/personnel/{id}', [PersonnelController::class, 'show'], [AuthMiddleware::class]);
     $router->get('/personnel/{id}/edit', [PersonnelController::class, 'edit'], [AuthMiddleware::class]);
@@ -596,8 +613,15 @@ return function (Router $router) {
     $router->get('/documents/{id}/file', [DocumentsController::class, 'file'], $mwDocuments);
     $router->get('/documents/{id}/download', [DocumentsController::class, 'download'], $mwDocuments);
     $router->get('/documents/{slug}', [DocumentsController::class, 'show'], $mwDocuments);
-    $router->get('/equipment', [EquipmentController::class, 'index'], [AuthMiddleware::class]);
-    $router->get('/equipment/wardrobes', [ArsenalWardrobeController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/equipment', [ArsenalWardrobeController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/equipment/wardrobes', [ArsenalWardrobeController::class, 'redirectHub'], [AuthMiddleware::class]);
+    $router->post('/equipment/collections', [ArsenalWardrobeController::class, 'storeCollection'], [AuthMiddleware::class]);
+    $router->post('/equipment/collections/{id}', [ArsenalWardrobeController::class, 'updateCollection'], [AuthMiddleware::class]);
+    $router->post('/equipment/collections/{id}/delete', [ArsenalWardrobeController::class, 'destroyCollection'], [AuthMiddleware::class]);
+    $router->get('/equipment/collections/{id}', [ArsenalWardrobeController::class, 'showCollection'], [AuthMiddleware::class]);
+    $router->post('/equipment/tenues/{id}', [ArsenalWardrobeController::class, 'updateWardrobe'], [AuthMiddleware::class]);
+    $router->post('/equipment/tenues/{id}/delete', [ArsenalWardrobeController::class, 'destroyWardrobe'], [AuthMiddleware::class]);
+    $router->get('/equipment/tenues/{id}', [ArsenalWardrobeController::class, 'showWardrobe'], [AuthMiddleware::class]);
     $router->post('/equipment/wardrobes/collections', [ArsenalWardrobeController::class, 'storeCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/wardrobes/collections/{id}/delete', [ArsenalWardrobeController::class, 'destroyCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/wardrobes/{id}/delete', [ArsenalWardrobeController::class, 'destroyWardrobe'], [AuthMiddleware::class]);
@@ -1237,6 +1261,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/departs/{id}/reintegrer', [EffectifsWorkspaceController::class, 'reinstateDeparture'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/elevations', [EffectifsWorkspaceController::class, 'elevationRequests'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/elevations/{id}/statut', [EffectifsWorkspaceController::class, 'updateElevationRequestStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/documents-rh/{id}/fichier', [RhDossierWorkspaceController::class, 'downloadDocument'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/documents-rh', [RhDossierWorkspaceController::class, 'documents'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/documents-rh', [RhDossierWorkspaceController::class, 'storeDocument'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/mobilite', [RhDossierWorkspaceController::class, 'mobility'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1351,6 +1376,7 @@ return function (Router $router) {
     $router->post('/admin/atak-config/maintenance', [AdminAtakConfigController::class, 'setMaintenance'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/modules', [AdminAtakConfigController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/experience', [AdminAtakConfigController::class, 'storeExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-config/game-experience', [AdminAtakConfigController::class, 'storeGameExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/photo-hud', [AdminAtakConfigController::class, 'storePhotoHud'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/marker-icons', [AdminAtakConfigController::class, 'storeMarkerIcons'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/marker-icons/upload', [AdminAtakConfigController::class, 'uploadMarkerIcon'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1792,6 +1818,26 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
 
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
+
+    // Authentification Athena du pack jeu (session DLL — pas de clé communauté comme preuve).
+    $gameAuth = \App\Controllers\Api\Game\GameAuthApiController::class;
+    $router->post('/api/game/v1/auth/password', [$gameAuth, 'password']);
+    $router->post('/api/game/v1/auth/otp/request', [$gameAuth, 'otpRequest']);
+    $router->post('/api/game/v1/auth/otp/verify', [$gameAuth, 'otpVerify']);
+    $router->post('/api/game/v1/auth/steam/challenge', [$gameAuth, 'steamChallenge']);
+    $router->post('/api/game/v1/auth/steam/exchange', [$gameAuth, 'steamExchange']);
+    $router->post('/api/game/v1/session/restore', [$gameAuth, 'restore']);
+    $router->post('/api/game/v1/session/refresh', [$gameAuth, 'refresh']);
+    $router->post('/api/game/v1/session/logout', [$gameAuth, 'logout']);
+    $router->get('/api/game/v1/bootstrap', [$gameAuth, 'bootstrap']);
+    $router->get('/api/game/v1/profile', [$gameAuth, 'profile']);
+    $router->get('/api/game/v1/config', [$gameAuth, 'config']);
+    $router->get('/api/game/v1/branding', [$gameAuth, 'branding']);
+    $router->get('/api/game/v1/branding/render/{slug}', [$gameAuth, 'brandingRender']);
+    $gameOps = \App\Controllers\Api\Game\GameOperationsApiController::class;
+    $router->get('/api/game/v1/operations', [$gameOps, 'list']);
+    $router->get('/api/game/v1/operations/{uuid}/tactical', [$gameOps, 'tactical']);
+
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     $router->post('/api/atak/beta-register', [AtakApiController::class, 'betaRegister']);
     $router->post('/api/atak/mod-report', [AtakApiController::class, 'modReport']);

@@ -48,6 +48,7 @@ $iconKey = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="
 $iconUsers = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>';
 $iconMap = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path stroke-linecap="round" d="M9 4v14M15 6v14"/></svg>';
 ?>
+<div class="eff-roles-page">
 <section class="eff-page-head">
     <p class="eff-page-kicker">Gouvernance</p>
     <h1 class="eff-page-title">Rôles</h1>
@@ -113,7 +114,7 @@ $iconMap = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="
         </p>
     </div>
 
-    <div class="eff-role-grid" role="list" aria-label="Liste des rôles">
+    <div class="eff-role-grid eff-role-grid--cards" role="list" aria-label="Liste des rôles">
         <?php foreach ($roles as $role):
             $rid = (int) ($role['id'] ?? 0);
             $name = trim((string) ($role['name'] ?? ''));
@@ -179,3 +180,4 @@ $iconMap = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="
         </div>
     </aside>
 <?php endif; ?>
+</div>

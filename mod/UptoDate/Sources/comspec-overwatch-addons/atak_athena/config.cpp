@@ -11,14 +11,14 @@ class CfgPatches
             "cTab",
             "ctab_core",
             "BCE_Core",
-            "BCE_cTab",
+            "BCE_cTab_ATAK",
             "comspec_overwatch_connect"
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.56;
-        versionStr = "1.0.56";
-        versionAr[] = {1, 0, 56};
+        version = 1.0.57;
+        versionStr = "1.0.57";
+        versionAr[] = {1, 0, 57};
     };
 };
 

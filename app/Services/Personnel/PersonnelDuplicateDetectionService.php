@@ -23,10 +23,10 @@ final class PersonnelDuplicateDetectionService
     /** @var array<string, string> */
     public const FIELD_LABELS = [
         self::FIELD_MATRICULE => 'Matricule',
-        self::FIELD_CALLSIGN => 'Indicatif (callsign)',
+        self::FIELD_CALLSIGN => 'Indicatif',
         self::FIELD_DISPLAY_NAME => 'Nom affiché',
-        self::FIELD_CHARACTER_NAME => 'Prénom + nom personnage',
-        self::FIELD_EMAIL => 'E-mail',
+        self::FIELD_CHARACTER_NAME => 'Nom du personnage',
+        self::FIELD_EMAIL => 'Adresse e-mail',
     ];
 
     public function __construct(

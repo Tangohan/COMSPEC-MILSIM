@@ -2,24 +2,21 @@
 
 ## Équipement
 
-La section **Équipement** présente des **fiches** par type de matériel (armement, véhicules, tenues, etc.) — contenu rédactionnel et visuel géré par la communauté.
+La section **Équipement** est le catalogue des **tenues** envoyées depuis l’arsenal, rangées en **collections**, avec une **photo de présentation**. Les anciennes **fiches matériel** restent accessibles en bas de page.
 
-- Navigation par **liste** ou **catégories**.
-- Chaque fiche peut inclure descriptions, tableaux de données, liens vers des **documents** associés.
+- Créez une collection : nom, présentation, qui peut s’en servir (vous, votre unité, ou toute la communauté), et une photo.
+- Chaque tenue peut recevoir sa propre photo, une note, et rejoindre une collection.
+- Les tenues arrivent depuis le jeu : bandeau Athena en haut de l’arsenal.
 
-### Wardrobes ACE Arsenal (sync cloud)
+### Envoyer et récupérer les tenues
 
-Depuis **Équipement → Wardrobes ACE Arsenal** (`/equipment/wardrobes`) vous consultez les loadouts remontés depuis le jeu et organisez des **collections d’équipement** (perso / unité / communauté).
+En jeu (pack Overwatch, compte identifié) :
 
-In-game (mod Overwatch, liaison Athena active) :
-
-1. Ouvrez **ACE Arsenal** : un panneau **Athena · Wardrobes** apparaît à droite.
-2. **Sauvegarder tout → Athena** remonte l’ensemble des wardrobes locales (`ace_arsenal_saved_loadouts`).
-3. **Récupérer ← Athena** fusionne les loadouts cloud dans votre profil ACE.
-4. Double-clic sur une entrée cloud pour **équiper** immédiatement.
-5. Menu ACE Self → COMSPEC Overwatch : raccourcis push / pull sans ouvrir l’arsenal.
-
-API jeu (clé ATAK) : `GET/POST /api/atak/wardrobes`, `POST /api/atak/wardrobes/sync`, `GET/POST /api/atak/wardrobe-collections`.
+1. Ouvrez l’arsenal : un bandeau **Athena · Tenues de la communauté** apparaît en haut, sans masquer « Mes équipements ».
+2. **Envoyer vers Athena** enregistre vos tenues locales. Elles apparaissent ensuite sur la page Équipement du portail.
+3. **Récupérer** ajoute dans votre arsenal les tenues déjà enregistrées par les autres.
+4. Double-clic sur une ligne pour l’enfiler tout de suite.
+5. Menu personnel ACE → COMSPEC Overwatch : les mêmes actions, sans ouvrir l’arsenal.
 
 ## Modpacks
 

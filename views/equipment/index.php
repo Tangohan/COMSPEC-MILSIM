@@ -15,7 +15,7 @@ ksort($byCategory);
     <p class="text-slate-600 mb-4">Classes d'équipement et documentation associée.</p>
     <p class="mb-8">
         <a href="<?= url('equipment/wardrobes') ?>" class="inline-flex items-center text-sm font-semibold text-slate-800 underline hover:text-slate-600">
-            Wardrobes ACE Arsenal (sync cloud)
+            Tenues de la communauté
         </a>
     </p>
     <?php if (empty($equipmentClasses)): ?>

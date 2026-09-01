@@ -8,6 +8,7 @@ params ["_unit", ["_force", false, [true]]];
 if (!hasInterface) exitWith { if (_force) then { "" } else { nil } };
 if (isNull _unit || !alive _unit) exitWith { if (_force) then { "dead" } else { nil } };
 if (isNull player || _unit != player) exitWith { if (_force) then { "dead" } else { nil } };
+if !([] call comspec_overwatch_connect_fnc_isReady) exitWith { if (_force) then { "" } else { nil } };
 // Quit jeu / fin mission : ne plus pousser position ni évaluer d’alerte médicale
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { if (_force) then { "" } else { nil } };
 

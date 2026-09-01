@@ -28,6 +28,12 @@ $items = [
         'title' => 'Alertes RH',
         'hint' => 'Ce qui demande un suivi',
     ],
+    [
+        'id' => 'doublons',
+        'href' => effectifs_workspace_url('doublons'),
+        'title' => 'Fiches jumelles',
+        'hint' => 'Valeurs identiques entre dossiers',
+    ],
 ];
 ?>
 <nav class="eff-rh-shortcuts" aria-label="Autres pages du dossier RH">

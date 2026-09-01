@@ -5,13 +5,13 @@ if (!hasInterface) exitWith { false };
 
 private _key = missionNamespace getVariable ["comspec_overwatch_api_key", ""];
 if (_key isEqualTo "") exitWith {
-    ["Liaison Athena requise pour synchroniser les wardrobes.", "arsenal", "warn", true] call comspec_overwatch_connect_fnc_announce;
+    ["Liaison Athena requise pour synchroniser les tenues.", "arsenal", "warn", true] call comspec_overwatch_connect_fnc_announce;
     false
 };
 
 private _entries = [] call comspec_overwatch_connect_fnc_arsenalLocalLoadouts;
 if (_entries isEqualTo []) exitWith {
-    ["Aucune wardrobe ACE Arsenal locale à remonter.", "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
+    ["Aucune tenue locale à envoyer.", "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
     false
 };
 
@@ -36,7 +36,7 @@ private _fail = 0;
     };
 } forEach _entries;
 
-private _msg = format ["Wardrobes Athena : %1 synchronisée(s)%2.", _ok, if (_fail > 0) then { format [", %1 échec(s)", _fail] } else { "" }];
+private _msg = format ["Tenues Athena : %1 enregistrée(s)%2.", _ok, if (_fail > 0) then { format [", %1 échec(s)", _fail] } else { "" }];
 [_msg, "arsenal", if (_fail > 0 && {_ok < 1}) then { "warn" } else { "ok" }, true] call comspec_overwatch_connect_fnc_announce;
 missionNamespace setVariable ["COMSPEC_ArsenalLastPushAt", diag_tickTime, false];
 

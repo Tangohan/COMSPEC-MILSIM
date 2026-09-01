@@ -176,6 +176,9 @@ final class RolePermissionMatrixCatalog
             self::MODULE_OPERATIONS => [
                 self::LEVEL_COMPLET => [
                     'operations.missions.view', 'operations.missions.manage',
+                    'operations.tactical.view', 'operations.planning.edit',
+                    'operations.intel.product', 'operations.orders.edit',
+                    'operations.overlay.publish', 'operations.phase.change',
                     'operations.sitrep.view', 'operations.sitrep.create',
                     'operations.aar.view', 'operations.aar.export',
                     'operations.readiness.view', 'operations.readiness.manage',
@@ -186,18 +189,19 @@ final class RolePermissionMatrixCatalog
                     'cooperation.missions.respond', 'cooperation.missions.activate', 'cooperation.missions.close',
                 ],
                 self::LEVEL_SA_SECTION => [
-                    'operations.missions.view', 'operations.sitrep.view', 'operations.aar.view',
+                    'operations.missions.view', 'operations.tactical.view', 'operations.planning.edit',
+                    'operations.sitrep.view', 'operations.aar.view',
                     'operational.board.view', 'intel.transmission.view', 'intel.transmission.contribute',
                 ],
                 self::LEVEL_SON_GROUPE => [
-                    'operations.missions.view', 'operations.sitrep.view', 'operational.board.view',
+                    'operations.missions.view', 'operations.tactical.view', 'operations.sitrep.view', 'operational.board.view',
                 ],
                 self::LEVEL_LECTURE => [
-                    'operations.missions.view', 'operations.sitrep.view', 'operations.aar.view', 'operational.board.view',
+                    'operations.missions.view', 'operations.tactical.view', 'operations.sitrep.view', 'operations.aar.view', 'operational.board.view',
                 ],
                 self::LEVEL_SA_FICHE => [],
                 self::LEVEL_INSTRUCTION => [
-                    'operations.missions.view', 'operational.board.view',
+                    'operations.missions.view', 'operations.tactical.view', 'operational.board.view',
                 ],
                 self::LEVEL_PARTIEL => [
                     'operations.missions.view', 'operations.sitrep.view',

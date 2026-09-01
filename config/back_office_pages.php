@@ -79,6 +79,10 @@ return [
             ['label' => 'Tableur des membres', 'href' => 'back-office/ressources/effectifs'],
             ['label' => 'Centre de pilotage', 'href' => 'back-office'],
         ]],
+        ['path' => 'back-office/personnel/corrections', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RH', 'title' => 'Corrections RH', 'subtitle' => 'Demandes de mise à jour de fiche : rien n’est appliqué tant que vous n’avez pas confirmé.', 'css' => ['back-office-corrections.css'], 'quick' => [
+            ['label' => 'Bureau effectifs', 'href' => 'back-office/ressources/effectifs'],
+            ['label' => 'Annuaire', 'href' => 'personnel'],
+        ]],
         ['path' => 'back-office/ressources/effectifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Bureau effectifs', 'css' => ['back-office-effectifs-hub.css']],
         ['path' => 'back-office/organisation/catalogue', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Catalogue de l’organisation', 'subtitle' => 'Administrez l’organigramme, les grades, les fonctions et les rôles, ou copiez un modèle.', 'css' => ['back-office-catalog.css'], 'quick' => [
             ['label' => 'Structure', 'href' => 'back-office/organisation/structure'],

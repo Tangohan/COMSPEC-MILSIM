@@ -238,6 +238,8 @@ final class AtakWardrobeApiController
             'collection_id' => $row['collection_id'] ?? null,
             'collection_name' => $row['collection_name'] ?? null,
             'collection_slug' => $row['collection_slug'] ?? null,
+            'owner_label' => (string) ($row['owner_label'] ?? ''),
+            'mine' => !empty($row['mine']),
             'notes' => $row['notes'] ?? null,
             'is_favorite' => !empty($row['is_favorite']),
             'last_synced_at' => $row['last_synced_at'] ?? null,

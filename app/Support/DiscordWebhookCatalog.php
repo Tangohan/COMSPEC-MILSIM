@@ -14,6 +14,9 @@ final class DiscordWebhookCatalog
 {
     public const KEY_ANNOUNCEMENTS = 'announcements';
     public const KEY_OVERWATCH_PACK = 'overwatch_pack';
+    public const KEY_OPERATION_STATUS = 'operation_status';
+    public const KEY_OVERLAY_PUBLISHED = 'overlay_published';
+    public const KEY_ORDER_PUBLISHED = 'order_published';
 
     public const MODE_OFF = 'off';
     public const MODE_DEFAULT = 'default';
@@ -205,6 +208,27 @@ final class DiscordWebhookCatalog
                 'group' => 'Accès',
                 'label' => 'Annonce de coopération',
                 'hint' => 'Message lié à une coopération inter-unités.',
+                'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_OPERATION_STATUS,
+                'group' => 'Opérations',
+                'label' => 'Statut d’une opération',
+                'hint' => 'Ouverture, mise en cours ou clôture d’une opération.',
+                'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_OVERLAY_PUBLISHED,
+                'group' => 'Opérations',
+                'label' => 'Calque publié sur la vue terrain',
+                'hint' => 'Quand un calque de planification est poussé vers les opérateurs.',
+                'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_ORDER_PUBLISHED,
+                'group' => 'Opérations',
+                'label' => 'Ordre d’opération publié',
+                'hint' => 'Quand un ordre d’opération, d’alerte ou fragmentaire est publié.',
                 'default_mode' => self::MODE_OFF,
             ],
         ];

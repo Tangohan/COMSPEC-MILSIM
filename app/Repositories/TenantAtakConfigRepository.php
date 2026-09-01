@@ -732,4 +732,110 @@ class TenantAtakConfigRepository
 
         return $cached;
     }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getOverwatchGameExperienceRaw(int $tenantId): ?array
+    {
+        if ($tenantId < 1) {
+            return null;
+        }
+        $this->ensureOverwatchGameExperienceSchema();
+        if (!$this->hasOverwatchGameExperienceColumn()) {
+            return null;
+        }
+        $stmt = $this->pdo()->prepare(
+            'SELECT overwatch_game_experience FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId]);
+        $raw = $stmt->fetchColumn();
+        if (!is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+        $data = json_decode($raw, true);
+
+        return is_array($data) ? $data : null;
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function saveOverwatchGameExperience(int $tenantId, array $config): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        $this->ensureOverwatchGameExperienceSchema();
+        if (!$this->hasOverwatchGameExperienceColumn()) {
+            return false;
+        }
+        $json = json_encode($config, JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            return false;
+        }
+        try {
+            $stmt = $this->pdo()->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+            $stmt->execute([$tenantId]);
+            if ((bool) $stmt->fetchColumn()) {
+                $upd = $this->pdo()->prepare(
+                    'UPDATE tenant_atak_config SET overwatch_game_experience = ?, updated_at = NOW() WHERE tenant_id = ?'
+                );
+                $upd->execute([$json, $tenantId]);
+            } else {
+                $ins = $this->pdo()->prepare(
+                    'INSERT INTO tenant_atak_config (tenant_id, overwatch_game_experience, default_map_slug, created_at, updated_at)
+                     VALUES (?, ?, \'altis\', NOW(), NOW())'
+                );
+                $ins->execute([$tenantId, $json]);
+            }
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function ensureOverwatchGameExperienceSchema(): void
+    {
+        static $attempted = false;
+        if ($attempted) {
+            return;
+        }
+        $attempted = true;
+        if ($this->hasOverwatchGameExperienceColumn()) {
+            return;
+        }
+        try {
+            $this->pdo()->exec(
+                'ALTER TABLE tenant_atak_config ADD COLUMN overwatch_game_experience JSON DEFAULT NULL'
+            );
+            $this->hasOverwatchGameExperienceColumn(true);
+        } catch (\Throwable) {
+            $this->hasOverwatchGameExperienceColumn(true);
+        }
+    }
+
+    private function hasOverwatchGameExperienceColumn(bool $resetCache = false): bool
+    {
+        static $cached = null;
+        if ($resetCache) {
+            $cached = null;
+        }
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            $st = $this->pdo()->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config'
+                   AND COLUMN_NAME = 'overwatch_game_experience' LIMIT 1"
+            );
+            $cached = $st !== false && (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $cached = false;
+        }
+
+        return $cached;
+    }
 }

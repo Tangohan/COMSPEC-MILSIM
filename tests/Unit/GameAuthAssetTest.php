@@ -1,0 +1,57 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit;
+
+use PHPUnit\Framework\TestCase;
+
+final class GameAuthAssetTest extends TestCase
+{
+    public function testGameAuthApiIsWiredAndDoesNotTrustClientTenant(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $routes = (string) file_get_contents($root . '/routes/web.php');
+        $svc = (string) file_get_contents($root . '/app/Services/Game/GameAuthService.php');
+        $ctrl = (string) file_get_contents($root . '/app/Controllers/Api/Game/GameAuthApiController.php');
+        $auth = (string) file_get_contents($root . '/app/Support/ComspecApiKeyAuth.php');
+        $sqfInit = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_initAuth.sqf');
+        $sqfConnect = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_connect.sqf');
+        $dll = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/GameAuth.cs');
+        $pos = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_updatePosition.sqf');
+        $wait = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_waitAthenaReady.sqf');
+        $bo = (string) file_get_contents($root . '/views/admin/atak-config/_game_experience.php');
+        $catalog = (string) file_get_contents($root . '/app/Services/ConfigurationUpdate/ConfigurationUpdateCatalog.php');
+
+        self::assertStringContainsString('/api/game/v1/auth/password', $routes);
+        self::assertStringContainsString('/api/game/v1/auth/otp/request', $routes);
+        self::assertStringContainsString('/api/game/v1/auth/steam/exchange', $routes);
+        self::assertStringContainsString('/api/game/v1/session/restore', $routes);
+        self::assertStringContainsString('/api/game/v1/bootstrap', $routes);
+        self::assertStringContainsString('pickMembership', $svc);
+        self::assertStringContainsString('STEAM_NOT_LINKED', $svc);
+        self::assertStringContainsString('pairing_token', $svc);
+        self::assertStringContainsString('acceptGameSessionToken', $auth);
+        self::assertStringContainsString('/api/game/v1/auth/', $auth);
+        self::assertStringContainsString('comspec_overwatch_connect_fnc_restoreSession', $sqfInit);
+        self::assertStringContainsString('plus une saisie joueur', $sqfConnect);
+        self::assertStringNotContainsString('LinkBySteam', $sqfConnect);
+        self::assertStringContainsString('CryptProtectData', $dll);
+        self::assertStringContainsString('AuthPassword', $dll);
+        self::assertStringContainsString('comspec_overwatch_connect_fnc_isReady', $pos);
+        self::assertStringContainsString('Pas de session', $wait);
+        self::assertStringContainsString('Expérience en jeu', $bo);
+        self::assertStringContainsString('OVERWATCH_GAME_AUTH_V1', $catalog);
+        self::assertFileExists($root . '/bootstrap/athena_game_auth_migration.php');
+        self::assertFileExists($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/display_athena_auth.hpp');
+        self::assertStringNotContainsString('php://input', $ctrl);
+    }
+
+    public function testSteamIdAloneIsNotASessionProof(): void
+    {
+        $svc = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Game/GameAuthService.php');
+        self::assertStringContainsString('SteamID seul n’est jamais une preuve', $svc);
+        self::assertStringContainsString('pairing_token', $svc);
+        self::assertStringContainsString('findPairing', $svc);
+    }
+}

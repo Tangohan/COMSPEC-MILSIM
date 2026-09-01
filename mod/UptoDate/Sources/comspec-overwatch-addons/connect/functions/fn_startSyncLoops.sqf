@@ -5,6 +5,7 @@
         Évite de spammer le portail / le scheduler tant que la liaison n’est pas prête.
 */
 if (!hasInterface) exitWith {};
+if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {};
 missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 
@@ -43,6 +44,11 @@ private _loadHint = missionNamespace getVariable ["COMSPEC_NetworkLoadHint", "no
 }, 1] call CBA_fnc_addPerFrameHandler;
 
 [] call comspec_overwatch_connect_fnc_initRadioMonitor;
+
+[{
+    if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
+    [] call comspec_overwatch_connect_fnc_syncProfile;
+}, 60] call CBA_fnc_addPerFrameHandler;
 
 if (isNil "COMSPEC_MapMarkerEHs") then {
     private _resyncSoon = {

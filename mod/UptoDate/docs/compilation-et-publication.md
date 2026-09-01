@@ -63,7 +63,8 @@ mod/UptoDate/@COMSPECOverwatch/
 
 1. Lancer **build_mod.bat** (build frais)
 2. Lancer **workshop-pack.ps1** → dossier `publisher/@COMSPECOverwatch/` propre
-3. Copier texte depuis **STEAM_CHANGELOG.txt** dans la description Workshop
+3. Coller la **fiche** depuis **STEAM_DESCRIPTION.md** (positionnement, installation, crédits).
+4. Coller les **notes de version** depuis **STEAM_CHANGELOG.txt**.
 4. **Ne jamais publier** : sources `.sqf` nues, dossiers `net8.0`, fichiers `.pdb`
 
 Workshop ID référence projet : `3684656708`

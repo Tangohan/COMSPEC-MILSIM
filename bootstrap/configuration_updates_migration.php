@@ -319,6 +319,32 @@ SQL
             'dismissible' => 1,
             'sort_order' => 77,
         ],
+        [
+            'code' => 'OVERWATCH_GAME_AUTH_V1',
+            'version' => '1',
+            'title' => 'Fenêtre de connexion Overwatch',
+            'description' => 'Les opérateurs s’identifient désormais avec leur compte Athena dans Arma. Vous pouvez personnaliser l’image, le message d’accueil, les méthodes de connexion et les fonctions Overwatch autorisées.',
+            'configuration_level' => 'informative',
+            'configure_path' => 'admin/atak-config#overwatch-game-experience',
+            'estimate_minutes' => 5,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 78,
+        ],
+        [
+            'code' => 'OPERATIONS_WORKSPACE_V1',
+            'version' => '1',
+            'title' => 'Espaces opérationnels',
+            'description' => 'Les opérations disposent désormais d’un dossier unique : plan, renseignement, ordres et vue terrain. Ouvrez un premier espace pour y rattacher votre prochaine mission.',
+            'configuration_level' => 'informative',
+            'configure_path' => 'operations',
+            'estimate_minutes' => 8,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 79,
+        ],
     ];
 
     $upsert = $pdo->prepare(

@@ -95,6 +95,8 @@ class AdminAtakConfigController
             'photoHudPreview' => $photoHudPreview,
             'markerIcons' => $markerIcons,
             'markerIconKinds' => \App\Services\Tactical\AtakMarkerIconsService::KINDS,
+            'gameExperience' => (new \App\Services\Game\GameOverwatchExperienceService())->get($tenantId),
+            'gameExperiencePreview' => $this->gameExperiencePreviewData($tenantId),
         ]);
     }
 
@@ -223,7 +225,84 @@ class AdminAtakConfigController
         return Response::redirect(url('admin/atak-config'));
     }
 
-    /** Bandeau d’identification des photos terrain (type caméra-piéton). */
+    public function storeGameExperience(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('admin/atak-config') . '#overwatch-game-experience');
+        }
+        $tenantId = (int) $tenantId;
+        $svc = new \App\Services\Game\GameOverwatchExperienceService();
+        $incoming = $svc->get($tenantId);
+        $bools = [
+            'auth_password', 'auth_otp', 'auth_steam', 'allow_auto_reconnect',
+            'sync_profile', 'sync_grade', 'sync_unit', 'sync_callsign', 'sync_avatar',
+            'sync_clearances', 'sync_c2', 'bft_enabled', 'chat_enabled', 'intel_enabled',
+            'photos_enabled', 'markers_enabled', 'jtac_enabled',
+        ];
+        foreach ($bools as $key) {
+            $incoming[$key] = (string) $request->input('game_' . $key, '0') === '1';
+        }
+        $incoming['display_name'] = trim((string) $request->input('game_display_name', ''));
+        $incoming['welcome_message'] = trim((string) $request->input('game_welcome_message', ''));
+        $incoming['min_mod_version'] = trim((string) $request->input('game_min_mod_version', '2.3.0'));
+        $incoming['channel'] = trim((string) $request->input('game_channel', 'PROD'));
+        $incoming['update_interval'] = (int) $request->input('game_update_interval', 5);
+        $uploads = new \App\Services\Community\CommunityMediaUploadService();
+        if (!empty($_FILES['game_login_image']['tmp_name'])) {
+            $stored = $uploads->storeImage($_FILES['game_login_image'], $tenantId);
+            if (($stored['error'] ?? null) !== null) {
+                Session::flash('error', (string) $stored['error']);
+
+                return Response::redirect(url('admin/atak-config') . '#overwatch-game-experience');
+            }
+            if (!empty($stored['path'])) {
+                $incoming['login_image_path'] = $stored['path'];
+            }
+        }
+        if (!empty($_FILES['game_logo']['tmp_name'])) {
+            $stored = $uploads->storeImage($_FILES['game_logo'], $tenantId);
+            if (($stored['error'] ?? null) !== null) {
+                Session::flash('error', (string) $stored['error']);
+
+                return Response::redirect(url('admin/atak-config') . '#overwatch-game-experience');
+            }
+            if (!empty($stored['path'])) {
+                $incoming['logo_path'] = $stored['path'];
+            }
+        }
+        $svc->put($tenantId, $incoming);
+        try {
+            \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class)
+                ->markCompleted($tenantId, 'OVERWATCH_GAME_AUTH_V1', (int) (Session::get('user_id') ?? 0) ?: null);
+        } catch (\Throwable) {
+        }
+        Session::flash('success', 'L’expérience en jeu a été enregistrée. Elle s’applique à la prochaine connexion Overwatch.');
+
+        return Response::redirect(url('admin/atak-config') . '#overwatch-game-experience');
+    }
+
+    /**
+     * @return array{name: string, image: string, message: string}
+     */
+    private function gameExperiencePreviewData(int $tenantId): array
+    {
+        $svc = new \App\Services\Game\GameOverwatchExperienceService();
+        $cfg = $svc->get($tenantId);
+        $tenant = (new \App\Repositories\TenantRepository())->findById($tenantId) ?? [];
+        $name = trim((string) ($cfg['display_name'] ?: ($tenant['name'] ?? 'ATHENA')));
+
+        return [
+            'name' => $name,
+            'image' => $svc->loginImageUrl($tenantId, $cfg, (string) ($tenant['logo_url'] ?? '')),
+            'message' => (string) ($cfg['welcome_message'] ?? ''),
+        ];
+    }
     public function storePhotoHud(Request $request, array $params = []): Response
     {
         $tenantId = Session::get('tenant_id');

@@ -90,13 +90,8 @@ $seniorityLabel = static function (?string $dateStr): ?array {
 };
 
 $gradeLabelFor = static function (array $row): string {
-    $override = trim((string) ($row['rank_display_override'] ?? ''));
-    if ($override !== '') {
-        return $override;
-    }
-    $rp = trim((string) ($row['rank_display'] ?? ''));
-    if ($rp !== '') {
-        return $rp;
+    if (function_exists('personnel_assigned_grade_label')) {
+        return personnel_assigned_grade_label($row);
     }
     $long = trim((string) ($row['grade_long'] ?? ''));
     if ($long !== '') {
@@ -219,9 +214,11 @@ $totalResults = count($results);
                         $athenaId = trim((string) ($row['athena_identifier'] ?? ''));
                         $slug = trim((string) ($row['profile_slug'] ?? ''));
                         $character = \App\Support\PersonnelDirectoryHints::distinctCharacterLabel($displayName, (string) ($row['character_name'] ?? ''));
-                        $avatar = function_exists('user_media_public_url')
-                            ? (user_media_public_url($row['avatar_url'] ?? null) ?? '')
-                            : trim((string) ($row['avatar_url'] ?? ''));
+                        $avatar = function_exists('personnel_operator_portrait_url')
+                            ? (string) (personnel_operator_portrait_url($row) ?? '')
+                            : (function_exists('user_media_public_url')
+                                ? (user_media_public_url($row['avatar_url'] ?? null) ?? '')
+                                : trim((string) ($row['avatar_url'] ?? '')));
                         $target = $slug !== '' ? $slug : (string) $uid;
 
                         $gradeLabel = $gradeLabelFor($row);
@@ -250,9 +247,9 @@ $totalResults = count($results);
                     <tr class="align-top hover:bg-slate-50/80">
                         <td class="px-4 py-3">
                             <div class="flex items-start gap-3">
-                                <div class="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                                <div class="h-14 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
                                     <?php if ($avatar !== ''): ?>
-                                    <img src="<?= htmlspecialchars($avatar, ENT_QUOTES, 'UTF-8') ?>" alt="Photo de compte de <?= htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') ?>" class="h-full w-full object-cover" loading="lazy" decoding="async" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars($initialsOf($displayName), ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible">
+                                    <img src="<?= htmlspecialchars($avatar, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur de <?= htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') ?>" class="h-full w-full object-cover" loading="lazy" decoding="async" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($initialsOf($displayName), ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible">
                                     <?php else: ?>
                                     <div class="flex h-full w-full items-center justify-center text-xs font-bold text-slate-400"><?= htmlspecialchars($initialsOf($displayName), ENT_QUOTES, 'UTF-8') ?></div>
                                     <?php endif; ?>

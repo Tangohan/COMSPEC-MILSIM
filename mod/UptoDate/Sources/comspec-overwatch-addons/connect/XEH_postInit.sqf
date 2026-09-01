@@ -150,6 +150,9 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         private _ok = [] call comspec_overwatch_connect_fnc_waitAthenaReady;
         ["INFO", "Athena", format ["Handshake terminé ok=%1", _ok]] call comspec_overwatch_connect_fnc_log;
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {
+            ["WARN", "Boot", "Session Athena absente — sync non démarrée"] call comspec_overwatch_connect_fnc_log;
+        };
 
         private _deadline = diag_tickTime + 90;
         waitUntil {

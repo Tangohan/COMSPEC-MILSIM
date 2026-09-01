@@ -33,7 +33,4 @@ class Extended_DisplayLoad_EventHandlers {
     class RscDisplayAttributesGroup {
         comspec_overwatch_connect = "[(_this select 0)] call comspec_overwatch_connect_fnc_zeusAttributesInject";
     };
-    class RscDisplayAttributes {
-        comspec_overwatch_connect = "[(_this select 0)] call comspec_overwatch_connect_fnc_zeusAttributesInject";
-    };
 };
