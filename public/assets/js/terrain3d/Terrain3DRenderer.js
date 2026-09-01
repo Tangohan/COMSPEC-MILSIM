@@ -26,6 +26,7 @@ const DEFAULT_OPTIONS = {
   backgroundColor: 0x0b1220,
   cropToLand: true,
   flattenSea: true,
+  tacticalGrid: true,
 };
 
 /**
@@ -103,6 +104,7 @@ export class Terrain3DRenderer {
     this.mode = '3d';
     this._storedHeightScale = this.options.heightScale;
     this.grid = null;
+    this.tacticalGrid = null;
     this._animationId = null;
     this._disposed = false;
     this._landCrop = null;
@@ -262,6 +264,25 @@ export class Terrain3DRenderer {
     }
     this.scene.add(this.terrainMesh);
     this._syncSeaPlane();
+    this._syncTacticalGrid();
+  }
+
+  /** Grille kilomètre, collée au relief (pas de tuiles CSS en perspective). */
+  _syncTacticalGrid() {
+    const THREE = this.THREE;
+    if (this.tacticalGrid) {
+      if (this.tacticalGrid.parent) this.tacticalGrid.parent.remove(this.tacticalGrid);
+      if (this.tacticalGrid.geometry) this.tacticalGrid.geometry.dispose();
+      if (this.tacticalGrid.material) this.tacticalGrid.material.dispose();
+      this.tacticalGrid = null;
+    }
+    if (!this.terrainMesh || !this.grid || this.options.tacticalGrid === false) return;
+    const built = TerrainGeometryBuilder.buildTacticalGrid(THREE, this._geomParams());
+    if (!built) return;
+    this.tacticalGrid = new THREE.LineSegments(built.geometry, built.material);
+    this.tacticalGrid.name = 'atak-terrain-grid';
+    this.tacticalGrid.renderOrder = 2;
+    this.terrainMesh.add(this.tacticalGrid);
   }
 
   /** Plan d’eau calé sur l’emprise cropée — ne dépasse plus le mesh terre. */
@@ -459,6 +480,7 @@ export class Terrain3DRenderer {
         this._landCrop.seaLevelY = (Number(this.options.minAltitude) || 0) * this.options.heightScale;
       }
       this._syncSeaPlane();
+      this._syncTacticalGrid();
     }
     this._syncOverlayContext();
   }
@@ -474,6 +496,7 @@ export class Terrain3DRenderer {
       if (this.terrainMesh && this.grid) {
         TerrainGeometryBuilder.updateHeights(this.terrainMesh.geometry, this.grid, this._geomParams());
         this._syncSeaPlane();
+        this._syncTacticalGrid();
       }
     } else {
       this.mode = '3d';
@@ -485,6 +508,7 @@ export class Terrain3DRenderer {
           this._landCrop.seaLevelY = (Number(this.options.minAltitude) || 0) * this.options.heightScale;
         }
         this._syncSeaPlane();
+        this._syncTacticalGrid();
       }
     }
 
@@ -497,6 +521,24 @@ export class Terrain3DRenderer {
   /** Centre la caméra sur une coordonnée grille. */
   focusOnGrid(x, y) {
     this.cameraControls.focusOnGrid(x, y, this.options.width, this.options.height);
+  }
+
+  /**
+   * Cadrage partagé avec Leaflet (x/y mètres Arma dans l’emprise du mesh).
+   * @param {{ x?: number, y?: number, zoom?: number, pitch?: number, bearing?: number }} view
+   */
+  setTacticalView(view) {
+    if (this.cameraControls && typeof this.cameraControls.setTacticalView === 'function') {
+      this.cameraControls.setTacticalView(view);
+    }
+  }
+
+  /** @returns {{ x: number, y: number, zoom: number, pitch: number, bearing: number }|null} */
+  getTacticalView() {
+    if (this.cameraControls && typeof this.cameraControls.getTacticalView === 'function') {
+      return this.cameraControls.getTacticalView();
+    }
+    return null;
   }
 
   /** Met à jour les marqueurs tactiques. */
@@ -570,6 +612,12 @@ export class Terrain3DRenderer {
     this.cameraControls.dispose();
     this.textureLoader.dispose();
 
+    if (this.tacticalGrid) {
+      if (this.tacticalGrid.parent) this.tacticalGrid.parent.remove(this.tacticalGrid);
+      if (this.tacticalGrid.geometry) this.tacticalGrid.geometry.dispose();
+      if (this.tacticalGrid.material) this.tacticalGrid.material.dispose();
+      this.tacticalGrid = null;
+    }
     if (this.terrainMesh) {
       this.scene.remove(this.terrainMesh);
       this.terrainMesh.geometry.dispose();

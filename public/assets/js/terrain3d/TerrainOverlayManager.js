@@ -3,6 +3,9 @@
  */
 import { heightAtWorld } from 'atak-terrain3d/utils.js';
 
+/** Hauteur au-dessus du sol (mètres Arma) pour rester collé au relief sans z-fighting. */
+const MARKER_LIFT_M = 3;
+
 export class TerrainOverlayManager {
   /**
    * @param {THREE.Scene} scene
@@ -86,7 +89,7 @@ export class TerrainOverlayManager {
       this.heightScale,
       this.minAltitude,
       this.maxAltitude
-    ) + 2;
+    ) + MARKER_LIFT_M;
     obj.position.set(wx, wy, wz);
   }
 

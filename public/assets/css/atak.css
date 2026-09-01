@@ -4714,58 +4714,9 @@ body.atak-theme-light .atak-chat-messages {
   border: 1px solid var(--atak-border);
 }
 
-/* Vue tactique inclinée — conserve la pile Leaflet afin que les unités et tracés
-   restent exactement calés sur la cartographie. */
-.atak-map-stage { perspective: 1350px; perspective-origin: 50% 42%; overflow: hidden; }
-#atak-map { transform-origin: 50% 58%; transition: transform 420ms cubic-bezier(.2,.75,.2,1), filter 240ms ease; }
-.atak-map-stage.atak-map-stage--3d #atak-map {
-  transform: scale(1.18) rotateX(var(--atak-map-pitch, 48deg)) rotateZ(var(--atak-map-bearing, 0deg));
-  filter: saturate(1.08) contrast(1.06);
-}
-.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-tile-pane,
-.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-overlay-pane { filter: drop-shadow(0 14px 11px rgba(0, 0, 0, .42)); }
-.atak-map-stage.atak-map-stage--3d #atak-map {
-  --atak-billboard: rotateZ(calc(-1 * var(--atak-map-bearing, 0deg))) rotateX(calc(-1 * var(--atak-map-pitch, 48deg)));
-}
-.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-marker-pane,
-.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-popup-pane {
-  transform-style: preserve-3d;
-}
-.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-marker-icon {
-  transform-style: preserve-3d;
-  overflow: visible;
-}
-.atak-map-stage.atak-map-stage--3d #atak-map .atak-marker-billboard,
-.atak-map-stage.atak-map-stage--3d #atak-map .atak-marker-glyph {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  transform: var(--atak-billboard) scale(var(--atak-zoom-scale, 1));
-  transform-origin: center center;
-  backface-visibility: hidden;
-}
-.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-marker-icon:hover .atak-marker-glyph {
-  transform: var(--atak-billboard) scale(calc(var(--atak-zoom-scale, 1) * 1.15));
-}
-.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-marker-icon.atak-marker-selected .atak-marker-glyph {
-  transform: var(--atak-billboard) scale(calc(var(--atak-zoom-scale, 1) * 1.25));
-}
-.atak-map-stage.atak-map-stage--3d #atak-map .atak-trail-loss .atak-marker-glyph,
-.atak-map-stage.atak-map-stage--3d #atak-map .atak-trail-loss .atak-marker-billboard {
-  transform: none;
-}
-.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-popup-content-wrapper,
-.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-popup-tip-container {
-  transform: var(--atak-billboard);
-  transform-origin: center bottom;
-  backface-visibility: hidden;
-}
-.atak-map-stage.atak-map-stage--3d #atak-map .nato-sidc-label,
-.atak-map-stage.atak-map-stage--3d #atak-map .atak-unit-dot-label {
-  display: block;
-  margin-top: 2px;
-  white-space: nowrap;
-}
+/* Carte 2D : plan Leaflet, sans perspective CSS. La vue relief est un hôte WebGL séparé. */
+.atak-map-stage { overflow: hidden; }
+#atak-map { transform: none; }
 .atak-terrain-mesh,
 .atak-scene-3d { position: absolute; pointer-events: none; }
 .atak-terrain-mesh:not(.atak-terrain-mesh--draped) { mix-blend-mode: multiply; }

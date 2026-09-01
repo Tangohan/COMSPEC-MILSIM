@@ -1,7 +1,7 @@
 /**
  * ATAK — vue topo premium (Three.js Terrain3DRenderer).
- * Remplace le maillage CSS-pitch de atak-terrain-3d.js lorsque
- * window.ATAK_TERRAIN3D_PREMIUM === true.
+ * Remplace l’inclinaison CSS de la carte 2D. Leaflet reste un plan ;
+ * le relief est un moteur WebGL séparé (Terrain3DRenderer).
  */
 import { initTerrain3D } from 'atak-terrain3d/initTerrain3D.js';
 
@@ -23,6 +23,90 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
   let heightsMapId = null;
   let meshOrigin = { x: 0, y: 0, width: 30720, depth: 30720 };
   let lastUnits = [];
+  let lastLeafletView = null;
+
+  function mapSlug() {
+    const cfg = window.ATAK_MAP_CONFIG || {};
+    return String(cfg.slug || cfg.title || 'map');
+  }
+
+  function publishTacticalView(partial) {
+    const next = Object.assign({
+      center: [0, 0],
+      zoom: 0,
+      bearing: 0,
+      pitch: state.pitch,
+      map: mapSlug(),
+    }, window.ATAKTacticalView || {}, partial || {});
+    window.ATAKTacticalView = next;
+    return next;
+  }
+
+  function captureLeafletView() {
+    const map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
+    if (!map || !window.ATAKMap.worldFromLatLng) return null;
+    let ll = null;
+    try { ll = map.getCenter(); } catch (e) { return null; }
+    const world = window.ATAKMap.worldFromLatLng(ll);
+    if (!world) return null;
+    const view = {
+      center: [Number(world.x) || 0, Number(world.y) || 0],
+      zoom: Number(map.getZoom()) || 0,
+      bearing: 0,
+      pitch: state.pitch,
+      map: mapSlug(),
+    };
+    lastLeafletView = view;
+    publishTacticalView(view);
+    return view;
+  }
+
+  function applyLeafletView(view) {
+    const map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
+    if (!map || !view || !window.ATAKMap.latLngFromWorld) return;
+    const x = view.center ? Number(view.center[0]) : NaN;
+    const y = view.center ? Number(view.center[1]) : NaN;
+    const z = Number(view.zoom);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return;
+    try {
+      map.setView(window.ATAKMap.latLngFromWorld(x, y), z, { animate: false });
+    } catch (e) { /* ignore */ }
+  }
+
+  function applyTacticalViewToRenderer(view) {
+    if (!renderer || typeof renderer.setTacticalView !== 'function') return;
+    const src = view || lastLeafletView || captureLeafletView();
+    if (!src) return;
+    renderer.setTacticalView({
+      x: (src.center ? Number(src.center[0]) : 0) - meshOrigin.x,
+      y: (src.center ? Number(src.center[1]) : 0) - meshOrigin.y,
+      zoom: src.zoom,
+      pitch: state.pitch,
+      bearing: src.bearing || 0,
+    });
+  }
+
+  function restoreLeafletFromRenderer() {
+    if (!renderer || typeof renderer.getTacticalView !== 'function') {
+      if (lastLeafletView) applyLeafletView(lastLeafletView);
+      return;
+    }
+    const tv = renderer.getTacticalView();
+    if (!tv) {
+      if (lastLeafletView) applyLeafletView(lastLeafletView);
+      return;
+    }
+    const view = {
+      center: [Number(tv.x) + meshOrigin.x, Number(tv.y) + meshOrigin.y],
+      zoom: tv.zoom,
+      bearing: tv.bearing || 0,
+      pitch: state.pitch,
+      map: mapSlug(),
+    };
+    lastLeafletView = view;
+    publishTacticalView(view);
+    applyLeafletView(view);
+  }
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, Number(value) || min));
@@ -285,6 +369,7 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
       /* Ne pas reset le cadrage : le zoom utilisateur ne doit pas « pop » au chargement heights. */
       renderer.syncCameraToWorld(w, d, { resetView: false });
     }
+    applyTacticalViewToRenderer(lastLeafletView);
     syncMarkersFromCache();
   }
 
@@ -381,7 +466,7 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
         setLoading(true, 'Relief altimétrique…');
         loadHeights();
         syncMarkersFromCache();
-        applyPitchToCamera();
+        applyTacticalViewToRenderer(lastLeafletView || captureLeafletView());
         return terrain;
       });
     }).catch(function (err) {
@@ -398,20 +483,7 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
   }
 
   function applyPitchToCamera() {
-    if (!renderer || !renderer.orbit) return;
-    const polar = ((90 - state.pitch) * Math.PI) / 180;
-    renderer.orbit.minPolarAngle = Math.max(0.2, polar - 0.15);
-    renderer.orbit.maxPolarAngle = Math.min(1.45, polar + 0.15);
-    if (renderer.perspectiveCamera && renderer.orbit.target) {
-      const dist = renderer.perspectiveCamera.position.distanceTo(renderer.orbit.target) || 800;
-      const t = renderer.orbit.target;
-      renderer.perspectiveCamera.position.set(
-        t.x,
-        t.y + Math.cos(polar) * dist,
-        t.z + Math.sin(polar) * dist
-      );
-      renderer.orbit.update();
-    }
+    applyTacticalViewToRenderer(lastLeafletView);
   }
 
   function setMapHidden(hidden) {
@@ -427,7 +499,8 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
         setLoading(true, 'Initialisation 3D…');
       }
       if (stage) {
-        stage.classList.add('atak-map-stage--premium-3d', 'atak-map-stage--3d');
+        stage.classList.add('atak-map-stage--premium-3d');
+        stage.classList.remove('atak-map-stage--3d');
       }
       window.requestAnimationFrame(function () {
         if (!state.enabled) return;
@@ -494,7 +567,7 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
     if (hint && !hint.dataset.premiumHint) {
       hint.dataset.premiumHint = '1';
       hint.textContent =
-        'Vue topo premium : mesh Three.js drapé sur le relevé d’altitudes. Amplifiez le relief, ajustez l’inclinaison, orientez avec la souris. Le rendu CSS-pitch legacy est désactivé.';
+        'La carte à plat reste un plan. La vue relief montre le sol relevé : collines, vallées, et les unités posées dessus. Le cadrage de la carte à plat est repris.';
     }
     window.dispatchEvent(new CustomEvent('atak:terrain3dchange', {
       detail: { enabled: state.enabled, premium: true },
@@ -513,6 +586,7 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
 
     if (!state.enabled) {
       setMapHidden(false);
+      restoreLeafletFromRenderer();
       if (renderer && renderer.getMode && renderer.getMode() === '3d') {
         try { renderer.toggle2D3D('2d'); } catch (e) { /* ignore */ }
       }
@@ -521,13 +595,14 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
     }
 
     toggleLock = true;
+    captureLeafletView();
     ensureRenderer()
       .then(function () {
         if (!state.enabled) return;
         setMapHidden(true);
         if (renderer.getMode() !== '3d') renderer.toggle2D3D('3d');
         renderer.setHeightScale(state.verticalExaggeration);
-        applyPitchToCamera();
+        applyTacticalViewToRenderer(lastLeafletView);
         loadHeights();
         syncMarkersFromCache();
         if (renderer && typeof renderer.resize === 'function') {
@@ -599,13 +674,14 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
         if (!renderer || !renderer.cameraControls) return;
         try {
           renderer.cameraControls.setDefault3DView();
-          applyPitchToCamera();
+          applyTacticalViewToRenderer(lastLeafletView);
         } catch (e) { /* ignore */ }
       });
     }
 
     window.addEventListener('atak:units-updated', onUnitsUpdated);
     window.addEventListener('atak:mapready', function () {
+      captureLeafletView();
       if (state.enabled) setEnabled(true);
     });
     window.addEventListener('atak:terrain-ready', function () {
@@ -629,5 +705,6 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
     getState: function () { return Object.assign({}, state); },
     getRenderer: function () { return renderer; },
     reloadHeights: loadHeights,
+    getTacticalView: function () { return window.ATAKTacticalView || null; },
   };
 }

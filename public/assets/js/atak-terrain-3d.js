@@ -365,14 +365,7 @@ window.ATAKTerrain3D = (function () {
     stage.classList.toggle('atak-map-stage--3d', state.enabled);
     if (!state.enabled) stage.classList.remove('atak-terrain-mesh-ready');
     syncHillshade();
-    stage.style.setProperty('--atak-map-pitch', state.pitch + 'deg');
-    stage.style.setProperty('--atak-map-bearing', state.bearing + 'deg');
     stage.style.setProperty('--atak-map-bearing-number', String(state.bearing));
-    var mapEl = document.getElementById('atak-map');
-    if (mapEl) {
-      mapEl.style.setProperty('--atak-map-pitch', state.pitch + 'deg');
-      mapEl.style.setProperty('--atak-map-bearing', state.bearing + 'deg');
-    }
     if (button) {
       button.classList.toggle('is-active', state.enabled);
       button.setAttribute('aria-pressed', state.enabled ? 'true' : 'false');

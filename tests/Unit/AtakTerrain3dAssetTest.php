@@ -44,7 +44,7 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertStringContainsString('id="atak-terrain-3d-mode"', $view);
         self::assertStringContainsString('Vue de la carte', $view);
         self::assertStringContainsString('<option value="flat" selected>À plat (2D)</option>', $view);
-        self::assertStringContainsString('<option value="inclined">Topo premium 3D</option>', $view);
+        self::assertStringContainsString('<option value="inclined">Relief 3D</option>', $view);
         self::assertDoesNotMatchRegularExpression('/id="atak-terrain-3d-settings"[^>]*\bhidden\b/', $view);
         self::assertStringContainsString("modeSelect.value = state.enabled ? 'inclined' : 'flat'", $javascript);
         self::assertStringContainsString('settings.hidden = false', $javascript);
@@ -80,7 +80,7 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertStringContainsString("placeViewportCanvas(terrainCanvas, map, 'atakTerrainMeshPane', 250)", $javascript);
         self::assertStringContainsString('function placeViewportCanvas', $javascript);
         self::assertStringContainsString('containerPointToLayerPoint', $javascript);
-        self::assertStringContainsString("mapEl.style.setProperty('--atak-map-pitch'", $javascript);
+        self::assertStringNotContainsString("mapEl.style.setProperty('--atak-map-pitch'", $javascript);
         self::assertStringNotContainsString('mapEl.appendChild(terrainCanvas)', $javascript);
         self::assertStringContainsString('if (state.enabled) scheduleTerrain()', $javascript);
     }
@@ -105,16 +105,19 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertStringContainsString('data-tool-slot="view3d"', $view);
     }
 
-    public function testInclinedViewBillboardsMarkerGlyphsTowardTheScreen(): void
+    public function testLeafletMapStaysFlatWithoutCssPerspective(): void
     {
         $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak.css');
-        $sizes = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-marker-sizes.js');
+        $premiumCss = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-terrain3d-premium.css');
         $map = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-map.js');
         $nato = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/nato-sidc-icons.js');
 
-        self::assertStringContainsString('--atak-billboard: rotateZ(calc(-1 * var(--atak-map-bearing, 0deg))) rotateX(calc(-1 * var(--atak-map-pitch, 48deg)))', $css);
-        self::assertStringContainsString('.atak-marker-billboard', $css);
-        self::assertStringContainsString("atak-marker-glyph atak-marker-billboard", $sizes);
+        self::assertStringNotContainsString('perspective: 1350px', $css);
+        self::assertStringNotContainsString('rotateX(var(--atak-map-pitch', $css);
+        self::assertStringNotContainsString('--atak-billboard:', $css);
+        self::assertStringContainsString('.atak-map-stage { overflow: hidden; }', $css);
+        self::assertStringContainsString('#atak-map { transform: none; }', $css);
+        self::assertStringNotContainsString('transform: translateZ(0)', $premiumCss);
         self::assertStringContainsString('function inclinedView()', $map);
         self::assertStringContainsString('showLabel: inclinedView()', $map);
         self::assertStringContainsString("window.addEventListener('atak:terrain3dchange', refreshInclinedMarkers)", $map);

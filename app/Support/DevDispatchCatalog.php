@@ -491,6 +491,16 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(275, '2026-09-01', 'La vue relief n’incline plus le plan de la carte', 'La carte à plat reste un plan ; le relief se voit dans une vue séparée, collines et unités posées sur le sol', [
+                'La carte à plat reste parfaitement plane : plus de trapèze ni de bandes étirées',
+                'La vue relief montre le sol relevé, avec la grille et les unités posées sur le terrain',
+            ], [
+                'Passer de la carte à plat au relief reprend le même cadrage',
+            ], [
+                'L’ancienne vue inclinée déformait tout le plan, sans collines réelles',
+            ], ['atak'], [
+                'Sur la carte du poste, choisissez À plat pour le plan, ou Relief 3D pour voir le sol relevé. Le cadrage suit le centre déjà affiché.',
+            ], 'Portail 1.5.96'),
             $pr(270, '2026-09-01', 'La page des rôles a plus d’air', 'Dans le bureau effectifs, la liste des rôles n’est plus collée : cartes, indicateurs et boutons se lisent sans se serrer', [], [
                 'Les indicateurs (nombre de rôles, communauté, intra-unité) ont plus d’espace entre le libellé et la valeur',
                 'Le bandeau de pilotage et les cartes de rôles ont davantage de marge intérieure, et les cartes sont plus écartées les unes des autres',

@@ -1506,9 +1506,9 @@ if ($atakMapConfig) {
             <p class="atak-map-look__key">Vue 3D / topo</p>
             <label class="atak-map-look__row" for="atak-terrain-3d-mode">
                 <span class="atak-map-look__key">Vue de la carte</span>
-                <select id="atak-terrain-3d-mode" class="atak-header-select atak-map-look__select" title="Vue topo premium Three.js">
+                <select id="atak-terrain-3d-mode" class="atak-header-select atak-map-look__select" title="Vue relief du théâtre">
                   <option value="flat" selected>À plat (2D)</option>
-                  <option value="inclined">Topo premium 3D</option>
+                  <option value="inclined">Relief 3D</option>
                 </select>
               </label>
             <label class="atak-map-look__check" for="atak-scene-buildings">
@@ -1523,7 +1523,7 @@ if ($atakMapConfig) {
               <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
               <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
             </label>
-            <p class="atak-terrain-3d-hint">Vue topo premium : mesh Three.js drapé sur le relevé d’altitudes. Amplifiez le relief, ajustez l’inclinaison, orientez avec la souris. Sans relevé d’altitude, le Z n’a pas d’effet.</p>
+            <p class="atak-terrain-3d-hint">La carte à plat reste un plan. La vue relief montre le sol relevé : collines, vallées, et les unités posées dessus. Le cadrage de la carte à plat est repris.</p>
           </div>
 
           <div class="atak-settings-map-data" id="atak-settings-map-data">

@@ -81,7 +81,7 @@ export class MarkerManager3D {
     const wz = Number(entity.y != null ? entity.y : entity.pos_y) - (t.worldDepth || 1024) / 2;
     let wy = 0;
     if (typeof t.heightAtWorld === 'function') {
-      wy = t.heightAtWorld(wx, wz) + 1;
+      wy = t.heightAtWorld(wx, wz) + 3;
     }
     obj.position.set(wx, wy, wz);
   }
