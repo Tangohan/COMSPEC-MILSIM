@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(326, '2026-09-01', 'Connexion Steam depuis le tableau de bord', 'Une tuile Connexion Steam ouvre Steam pour associer votre compte au portail. Après validation, Overwatch vous reconnaît en jeu. Si Steam est déjà associé, la tuile le confirme et permet de changer de compte', [
+                'Tuile Connexion Steam sur le tableau de bord, et le même accès dans Mon compte',
+            ], [], [], ['atak', 'platform'], [
+                'Ouvrez le tableau de bord. Tuile Connexion Steam : connectez-vous sur Steam, puis revenez. Un message confirme l’association. Pas de pack jeu.',
+            ], 'Portail'),
             $pr(322, '2026-09-01', 'L’ombrage d’un théâtre est le même pour toutes les communautés', 'Le sol, l’ombrage et les volumes du jeu relevés sur un théâtre — Altis, Malden, Stratis… — apparaissent désormais sur le poste de chaque communauté. Une communauté n’a plus à tout relever à nouveau si une autre l’a déjà fait. Les positions, les notes et les effectifs restent propres à chacune', [], [], [
                 'Deux communautés sur le même théâtre : l’une voyait l’ombrage et le relief, l’autre « pas encore sur le poste »',
             ], ['atak'], [

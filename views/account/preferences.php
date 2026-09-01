@@ -238,7 +238,10 @@ require base_path('views/partials/account/shell_open.php');
                 </div>
 
                 <div style="padding:1rem;border-radius:.85rem;border:1px solid #e2e8f0;background:#f8fafc">
-                    <label class="account-hub__label" for="steam_id">Liaison Steam (jeu et cartographie)</label>
+                    <p class="account-hub__label">Liaison Steam (jeu et cartographie)</p>
+                    <p class="account-hub__hint" style="margin-bottom:.85rem">Ouvrez Steam pour associer votre compte, sans taper de numéro.</p>
+                    <a href="<?= htmlspecialchars(url('account/steam/connect'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--ink"><?= trim((string) ($user['steam_id'] ?? '')) !== '' ? 'Changer le compte Steam' : 'Se connecter avec Steam' ?></a>
+                    <label class="account-hub__label" for="steam_id" style="margin-top:1rem">Ou indiquer le numéro / l’adresse de profil</label>
                     <input type="text" name="steam_id" id="steam_id" value="<?= htmlspecialchars((string) ($user['steam_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Numéro en jeu, STEAM_0:…, ou adresse de profil" maxlength="512" autocomplete="off">
                     <p class="account-hub__hint">Collez le numéro affiché dans le jeu, un identifiant Steam classique, ou une adresse de profil public<?php if ($steamWebConfigured): ?> (y compris un lien avec votre pseudo)<?php endif; ?>.</p>
                     <?php if (!empty($errors['steam_id'])): foreach ($errors['steam_id'] as $e): ?>

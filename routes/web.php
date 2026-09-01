@@ -503,6 +503,8 @@ return function (Router $router) {
     $router->get('/account/preferences', [AccountController::class, 'preferences'], [AuthMiddleware::class]);
     $router->post('/account/preferences', [AccountController::class, 'preferences'], [AuthMiddleware::class]);
     $router->post('/account/preferences/login-otp-mailbox-test', [AccountController::class, 'sendLoginOtpMailboxTest'], [AuthMiddleware::class]);
+    $router->get('/account/steam/connect', [AccountController::class, 'steamConnect'], [AuthMiddleware::class]);
+    $router->get('/account/steam/callback', [AccountController::class, 'steamCallback'], [AuthMiddleware::class]);
     $router->post('/account/steam-sync', [AccountController::class, 'syncSteamProfile'], [AuthMiddleware::class]);
     $router->get('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);
     $router->post('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);
