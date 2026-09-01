@@ -15,6 +15,23 @@ params [
     ["_jpegRetryOnce", true]
 ];
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+if (!hasInterface) exitWith { false };
+
+// Sans session Athena, NotifyNewPhoto échoue (not_connected) puis un retry
+// reclichait un PNG toutes les ~3 s — spam journal + disque.
+if (!isNil "comspec_overwatch_connect_fnc_isReady"
+    && {!([] call comspec_overwatch_connect_fnc_isReady)}
+) exitWith {
+    missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
+    missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|not_connected", false];
+    private _hintAt = missionNamespace getVariable ["COMSPEC_ReconNotReadyHintAt", 0];
+    if (!(_hintAt isEqualType 0)) then { _hintAt = 0; };
+    if (diag_tickTime > _hintAt) then {
+        missionNamespace setVariable ["COMSPEC_ReconNotReadyHintAt", diag_tickTime + 30, false];
+        ["COMSPEC_Warning", ["Session Athena pas encore prête — réessayez après la connexion"]] call comspec_overwatch_connect_fnc_showNotification;
+    };
+    false
+};
 
 private _unit = player;
 private _pos = getPosASL _unit;
@@ -399,11 +416,7 @@ if (_path isNotEqualTo "") exitWith {
         [_path, _caption, _device, _feedId] spawn {
             params ["_path", "_caption", "_device", "_feedId"];
             uiSleep 0.45;
-            private _retry = [_path, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
-            if (!(_retry isEqualType true) || {!_retry}) then {
-                uiSleep 0.2;
-                [_path, _caption, _device, _feedId, false, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
-            };
+            [_path, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
         };
         true
     } else {
@@ -411,7 +424,7 @@ if (_path isNotEqualTo "") exitWith {
             [_png, _caption, _device, _feedId] spawn {
                 params ["_png", "_caption", "_device", "_feedId"];
                 uiSleep 2.5;
-                [_png, _caption, _device, _feedId, true] call comspec_overwatch_connect_fnc_captureReconImage;
+                [_png, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
             };
         };
         if (_ok) then {
@@ -492,7 +505,7 @@ if (_path isEqualTo "") exitWith {
         [_png, _caption, _device, _feedId] spawn {
             params ["_png", "_caption", "_device", "_feedId"];
             uiSleep 2.4;
-            [_png, _caption, _device, _feedId, true] call comspec_overwatch_connect_fnc_captureReconImage;
+            [_png, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
         };
     };
     _ok

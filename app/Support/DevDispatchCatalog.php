@@ -584,6 +584,16 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(323, '2026-09-01', 'Les photos ne saturent plus le journal au lancement', 'Tant que la session Athena n’est pas prête, Overwatch n’essaie plus d’envoyer les photos en boucle. Après connexion, une photo part une fois, même sans l’ancienne clé de liaison', [], [], [
+                'Le journal se remplissait de photos refusées toutes les secondes, y compris après « session prête »',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement, connectez-vous, puis prenez une photo. Un seul envoi, pas de rafale dans le journal.',
+            ], 'Overwatch'),
+            $pr(326, '2026-09-01', 'Connexion Steam depuis le tableau de bord', 'Une tuile Connexion Steam ouvre Steam pour associer votre compte au portail. Après validation, Overwatch vous reconnaît en jeu. Si Steam est déjà associé, la tuile le confirme et permet de changer de compte', [
+                'Tuile Connexion Steam sur le tableau de bord, et le même accès dans Mon compte',
+            ], [], [], ['atak', 'platform'], [
+                'Ouvrez le tableau de bord. Tuile Connexion Steam : connectez-vous sur Steam, puis revenez. Un message confirme l’association. Pas de pack jeu.',
+            ], 'Portail'),
             $pr(320, '2026-09-01', 'Le tableau des effectifs reste visible sur la carte', 'Sur la carte du poste, le tableau des effectifs reste sous la carte. Le journal d’analyse démarre replié. Le bouton Unités à gauche réaffiche le tableau s’il était réduit', [], [
                 'Le calque de suivi s’arrête au-dessus du tableau des effectifs',
             ], [
