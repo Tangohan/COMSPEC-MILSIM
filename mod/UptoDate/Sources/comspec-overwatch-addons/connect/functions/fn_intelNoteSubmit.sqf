@@ -32,13 +32,13 @@ private _themes = uiNamespace getVariable ["COMSPEC_IntelNote_Themes", []];
 if (!(_themes isEqualType [])) then { _themes = []; };
 
 if (count _body < 10) exitWith {
-    ["<t size='0.42' color='#ff8a4a'>Écrivez le renseignement dans le cadre avant de valider.</t>"] call _fnc_say;
+    ["<t size='0.64' color='#ff8a4a'>Écrivez le renseignement dans le cadre avant de valider.</t>"] call _fnc_say;
     ['redaction'] call comspec_overwatch_connect_fnc_intelNotePane;
     ["Fiche vide ou trop courte — précisez ce que vous avez constaté.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
 };
 
 if (_themes isEqualTo []) exitWith {
-    ["<t size='0.42' color='#ff8a4a'>Choisissez au moins un thème dans le volet contexte.</t>"] call _fnc_say;
+    ["<t size='0.64' color='#ff8a4a'>Choisissez au moins un thème dans le volet contexte.</t>"] call _fnc_say;
     ['contexte'] call comspec_overwatch_connect_fnc_intelNotePane;
     ["Aucun thème retenu — la fiche ne saurait pas vers quel analyste partir.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
 };
@@ -167,7 +167,7 @@ if (_observed isNotEqualTo "") then {
 
 private _json = "{" + (_parts joinString ",") + "}";
 
-["<t size='0.42' color='#8aa0b4'>Transmission en cours…</t>"] call _fnc_say;
+["<t size='0.64' color='#8aa0b4'>Transmission en cours…</t>"] call _fnc_say;
 
 private _parsed = [
     "SubmitSseFieldNote",
@@ -184,7 +184,7 @@ _parsed params ["_ok", "_status", "_detail"];
 // pousserait l'opérateur à ressaisir, et le bureau récupérerait deux fiches du
 // même constat au rétablissement.
 if (!_ok && {_status isEqualTo "QUEUED"}) exitWith {
-    ["<t size='0.42' color='#e0a233'>Liaison coupée — fiche conservée, elle partira au rétablissement. Ne la ressaisissez pas.</t>"] call _fnc_say;
+    ["<t size='0.64' color='#e0a233'>Liaison coupée — fiche conservée, elle partira au rétablissement. Ne la ressaisissez pas.</t>"] call _fnc_say;
     [true] call comspec_overwatch_connect_fnc_intelNoteSaveDraft;
     uiNamespace setVariable ["COMSPEC_IntelNote_Pieces", []];
     uiNamespace setVariable ["COMSPEC_IntelNote_Idempotency", ""];
@@ -213,7 +213,7 @@ if (!_ok) exitWith {
     if ((_d find "http 5") >= 0) then {
         _reason = "Le poste de commandement est en erreur — signalez-le à l’administrateur.";
     };
-    [format ["<t size='0.42' color='#ff8a4a'>%1</t>", _reason]] call _fnc_say;
+    [format ["<t size='0.64' color='#ff8a4a'>%1</t>", _reason]] call _fnc_say;
     [([
         _detail,
         "Impossible de transmettre la fiche — vérifiez la liaison Athena."

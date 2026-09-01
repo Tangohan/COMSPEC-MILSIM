@@ -584,6 +584,13 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(324, '2026-09-01', 'Le texte des fiches en jeu se lit enfin', 'Dans le rédacteur de fiche ATAK, titres, libellés, thèmes et boutons sont plus grands. La phrase sous le dossier se distingue du fond. Un réglage « Texte et boutons de la fiche » permet encore d’agrandir', [], [
+                'Libellés, thèmes et bandeau date / lieu plus lisibles',
+            ], [
+                'Les intitulés étaient trop petits, surtout dans Contexte de la fiche',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement, ouvrez une fiche puis Contexte. Les libellés doivent se lire sans se pencher. Menu Overwatch → ATAK — fiches : Texte et boutons si besoin.',
+            ], 'Overwatch'),
             $pr(323, '2026-09-01', 'Les photos ne saturent plus le journal au lancement', 'Tant que la session Athena n’est pas prête, Overwatch n’essaie plus d’envoyer les photos en boucle. Après connexion, une photo part une fois, même sans l’ancienne clé de liaison', [], [], [
                 'Le journal se remplissait de photos refusées toutes les secondes, y compris après « session prête »',
             ], ['atak'], [

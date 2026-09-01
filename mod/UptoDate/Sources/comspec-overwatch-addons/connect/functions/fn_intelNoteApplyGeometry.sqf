@@ -13,9 +13,9 @@ private _size = missionNamespace getVariable ["comspec_overwatch_frs_size", 1];
 if (!(_size isEqualType 0)) then { _size = 1; };
 _size = (_size max 0.55) min 1;
 
-private _ui = missionNamespace getVariable ["comspec_overwatch_frs_ui", 1];
+private _ui = missionNamespace getVariable ["comspec_overwatch_frs_ui", 1.20];
 if (!(_ui isEqualType 0)) then { _ui = 1; };
-_ui = (_ui max 0.75) min 1.45;
+_ui = (_ui max 0.75) min 1.75;
 
 private _frameW = safezoneW * _size;
 private _frameH = safezoneH * _size;
