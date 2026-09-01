@@ -584,6 +584,13 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(324, '2026-09-01', 'Le texte des fiches en jeu se lit enfin', 'Dans le rédacteur de fiche ATAK, titres, libellés, thèmes et boutons sont plus grands. La phrase sous le dossier se distingue du fond. Un réglage « Texte et boutons de la fiche » permet encore d’agrandir', [], [
+                'Libellés, thèmes et bandeau date / lieu plus lisibles',
+            ], [
+                'Les intitulés étaient trop petits, surtout dans Contexte de la fiche',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement, ouvrez une fiche puis Contexte. Les libellés doivent se lire sans se pencher. Menu Overwatch → ATAK — fiches : Texte et boutons si besoin.',
+            ], 'Overwatch'),
             $pr(318, '2026-09-01', 'Overwatch 1.5.0 : votre identité, plus le nom de la communauté', 'Le pack jeu affiche l’opérateur, pas le titre de la communauté. L’indicatif vient de la fiche Effectifs. Les messages du poste restent dans le téléphone et le journal, plus dans le chat de bord d’Arma. Sur le téléphone, le journal Athena se lit enfin', [
                 'Écran prêt : photo si elle existe, prénom, nom, indicatif, rôle, grade et fonction',
             ], [
