@@ -584,7 +584,7 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
-            $pr(316, '2026-09-01', 'Overwatch 1.5.0 : votre identité, plus le nom de la communauté', 'Le pack jeu affiche l’opérateur, pas le titre de la communauté. L’indicatif vient de la fiche Effectifs. Les messages du poste restent dans le téléphone et le journal, plus dans le chat de bord d’Arma. Sur le téléphone, le journal Athena se lit enfin', [
+            $pr(318, '2026-09-01', 'Overwatch 1.5.0 : votre identité, plus le nom de la communauté', 'Le pack jeu affiche l’opérateur, pas le titre de la communauté. L’indicatif vient de la fiche Effectifs. Les messages du poste restent dans le téléphone et le journal, plus dans le chat de bord d’Arma. Sur le téléphone, le journal Athena se lit enfin', [
                 'Écran prêt : photo si elle existe, prénom, nom, indicatif, rôle, grade et fonction',
             ], [
                 'Paramètres du téléphone et bandeau de carte : même indicatif que les Effectifs',

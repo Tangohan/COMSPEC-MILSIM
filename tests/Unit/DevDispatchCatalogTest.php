@@ -360,9 +360,9 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($zeusPin);
         self::assertSame('00308', $zeusPin['number_pad']);
         self::assertStringContainsString('point carte', strtolower((string) $zeusPin['title']));
-        $overwatch150 = DevDispatchCatalog::find('update', '316');
+        $overwatch150 = DevDispatchCatalog::find('update', '318');
         self::assertNotNull($overwatch150);
-        self::assertSame('00316', $overwatch150['number_pad']);
+        self::assertSame('00318', $overwatch150['number_pad']);
         self::assertStringContainsString('identité', strtolower((string) $overwatch150['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
