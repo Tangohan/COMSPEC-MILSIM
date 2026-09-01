@@ -47,6 +47,9 @@ switch (_phaseKey) do {
         _level = "ERROR";
         _prefix = "[Tx ÉCHEC]";
         _techLabel = format ["ÉCHEC · %1", _label];
+        if ((toLower _cmd) in ["syncwardrobe", "syncwardrobesbatch"]) then {
+            _level = "DEBUG";
+        };
     };
     case "warn";
     case "warning": {

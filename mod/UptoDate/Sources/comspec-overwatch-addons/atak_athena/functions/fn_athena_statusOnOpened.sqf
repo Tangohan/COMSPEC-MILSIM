@@ -7,6 +7,7 @@ if (isNull _group) exitWith {};
 
 // Invalide tout refresh précédent (évite d’écrire sur une page déjà quittée)
 uiNamespace setVariable ["COMSPEC_ATAK_Status_group", _group];
+["status"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
 private _token = diag_tickTime + random 1;
 uiNamespace setVariable ["COMSPEC_ATAK_Status_token", _token];
 

@@ -13,6 +13,8 @@ params [
 ];
 
 if (!hasInterface) exitWith { false };
+if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
+if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith { false };
 if (!(["iceman_photo"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith { false };
 if (_filePath isEqualTo "") exitWith { false };
 if ((toLower _filePath) find "comspec_sse_face" >= 0) exitWith { true };
@@ -55,6 +57,24 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto") then {
 };
 
 if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith { false };
+
+// BCE_fnc_screenShot renvoie [dossier, nom.jpg] — pas un fichier unique.
+private _lowEarly = toLower _filePath;
+private _hasExt = (_lowEarly find ".jpg") >= 0
+    || {(_lowEarly find ".jpeg") >= 0}
+    || {(_lowEarly find ".png") >= 0}
+    || {(_lowEarly find ".webp") >= 0};
+if (!_hasExt && {_fileName isNotEqualTo ""}) then {
+    private _base = _filePath;
+    while { (count _base) > 0 && {(_base select [(count _base) - 1, 1]) isEqualTo "\\"} } do {
+        _base = _base select [0, (count _base) - 1];
+    };
+    if (_base isNotEqualTo "") then {
+        _filePath = format ["%1\\%2", _base, _fileName];
+    } else {
+        _filePath = _fileName;
+    };
+};
 
 // Anti double-clic SQF (le dédup réel est côté DLL).
 private _last = missionNamespace getVariable ["COMSPEC_Athena_LastPhotoUpload", ["", 0]];
@@ -105,19 +125,13 @@ if (_overlayKind in ["phone", "hcam", "hcam_pip", "tgp", "uav_pip"]) then {
 
 private _skipShot = false;
 private _lowPath = toLower _filePath;
-// Photo Library / BCE : le .jpg annoncé est souvent un chemin mort (srcdir_missing).
-// On prend un PNG Arma hors de la frame du clic, au lieu de notifier le JPEG fantôme.
-if (
-    ((_lowPath find ".jpg") >= 0 || {(_lowPath find ".jpeg") >= 0})
-    && {
-        _overlayKind isEqualTo ""
-        || {missionNamespace getVariable ["COMSPEC_OverlayCamPromoted", false]}
-    }
-) exitWith {
+// JPEG BCE / SOAR déjà écrit : notifier ce fichier. Un PNG Arma en plus
+// (souvent jamais créé) produisait file_not_found (COMSPEC_….png).
+if ((_lowPath find ".jpg") >= 0 || {(_lowPath find ".jpeg") >= 0}) exitWith {
     [_filePath, _caption, _device, _feedId] spawn {
         params ["_path", "_caption", "_device", "_feedId"];
         uiSleep 0.4;
-        [_path, _caption, _device, _feedId, false, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+        [_path, _caption, _device, _feedId, true, false, true] call comspec_overwatch_connect_fnc_captureReconImage;
     };
     [format ["Photo en file (%1)", _fileName]] call comspec_overwatch_connect_fnc_appendModuleLog;
     true

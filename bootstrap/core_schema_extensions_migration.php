@@ -837,6 +837,14 @@ ALTER TABLE `email_deliveries`
 SQL, 'email_deliveries.campaign_id');
     }
 
+    if ($tableExists($pdo, 'documents') && !$columnExists($pdo, 'documents', 'origin')) {
+        $execTry($pdo, "ALTER TABLE `documents` ADD COLUMN `origin` VARCHAR(20) NOT NULL DEFAULT 'upload' AFTER `status`", 'documents.origin');
+    }
+    if ($tableExists($pdo, 'documents') && !$columnExists($pdo, 'documents', 'authored_json')) {
+        $after = $columnExists($pdo, 'documents', 'origin') ? 'origin' : 'status';
+        $execTry($pdo, "ALTER TABLE `documents` ADD COLUMN `authored_json` LONGTEXT NULL AFTER `{$after}`", 'documents.authored_json');
+    }
+
     try {
         $autoBootstrap = $root . '/bootstrap/autoload.php';
         if (is_file($autoBootstrap) && !class_exists(\App\Services\Community\TenantDefaultRoleDefinitions::class, false)) {

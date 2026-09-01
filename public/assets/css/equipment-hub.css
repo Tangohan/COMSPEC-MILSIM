@@ -81,3 +81,37 @@
 .eq-hub__docs a { color: var(--eq-accent); }
 .eq-hub__danger { margin-top: 1rem; }
 .eq-hub__detail { margin-bottom: 1.5rem; }
+.eq-hub__items {
+  display: grid;
+  gap: 1rem 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+.eq-hub__item-group h3 {
+  font-size: .78rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--eq-muted);
+  margin: 0 0 .45rem;
+}
+.eq-hub__item-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .28rem;
+}
+.eq-hub__item-group li {
+  display: flex;
+  justify-content: space-between;
+  gap: .75rem;
+  font-size: .92rem;
+  padding: .28rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.eq-hub__item-group li em {
+  font-style: normal;
+  color: var(--eq-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

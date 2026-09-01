@@ -178,9 +178,41 @@ public static partial class Extension
         if (LooksLikeInternalUrl(s)) return "-";
         var t = (s ?? "").Trim();
         if (t.Length > 40) return "-";
-        if (_gameTenantName.Length > 0 && t.Equals(_gameTenantName.Trim(), StringComparison.OrdinalIgnoreCase))
+        if (LooksLikeCommunityTitle(t))
             return "-";
         return TabCell(t);
+    }
+
+    private static bool LooksLikeCommunityTitle(string value)
+    {
+        var t = (value ?? "").Trim();
+        var tenant = (_gameTenantName ?? "").Trim();
+        if (t.Length == 0 || tenant.Length == 0) return false;
+        if (t.Equals(tenant, StringComparison.OrdinalIgnoreCase)) return true;
+        if (t.Length >= 16 && tenant.Length >= 16
+            && (tenant.StartsWith(t, StringComparison.OrdinalIgnoreCase)
+                || t.StartsWith(tenant, StringComparison.OrdinalIgnoreCase)))
+            return true;
+        return false;
+    }
+
+    private static string ComposeBftGroupLabel(string armaGroup, string callsign)
+    {
+        var cs = (callsign ?? "").Trim();
+        if (cs.Length == 0) cs = (_gameProfileCallsign ?? "").Trim();
+        if (LooksLikeInternalUrl(cs) || LooksLikeCommunityTitle(cs) || cs.Length > 40)
+            cs = "";
+        var unit = (_gameProfileUnit ?? "").Trim();
+        if (LooksLikeInternalUrl(unit) || LooksLikeCommunityTitle(unit))
+            unit = "";
+        if (cs.Length > 0 && unit.Length > 0)
+            return cs + " · " + unit;
+        var arma = (armaGroup ?? "").Trim();
+        if (arma.Length > 0 && !LooksLikeCommunityTitle(arma) && !LooksLikeInternalUrl(arma))
+            return arma;
+        if (cs.Length > 0) return cs;
+        if (unit.Length > 0) return unit;
+        return "";
     }
 
     private static bool LooksLikeInternalUrl(string s)
@@ -496,9 +528,10 @@ public static partial class Extension
         if (LooksLikeInternalUrl(_gameProfileUnit))
             _gameProfileUnit = "";
         if (_gameProfileCallsign.Length > 40
-            || (_gameTenantName.Length > 0
-                && _gameProfileCallsign.Equals(_gameTenantName, StringComparison.OrdinalIgnoreCase)))
+            || LooksLikeCommunityTitle(_gameProfileCallsign))
             _gameProfileCallsign = "";
+        if (LooksLikeCommunityTitle(_gameProfileUnit))
+            _gameProfileUnit = "";
         if (prof.TryGetProperty("revision", out var rv) && rv.TryGetInt32(out var n))
             _gameProfileRevision = n;
         if (_gameProfileCallsign.Length > 0)

@@ -1,9 +1,7 @@
 // App ATAK « RENS » — fiches de renseignement simplifiées.
 //
-// La page du tiroir n'est qu'un accueil : le rédacteur, lui, s'ouvre en plein
-// cadre sur toute la surface de l'ATAK (COMSPEC_IntelNote_Dialog). Elle sert de
-// point de retour quand on referme le rédacteur, et rappelle l'état du brouillon
-// en cours et de la liaison.
+// La page du tiroir n'est qu'un accueil : le rédacteur s'ouvre dans le
+// panneau d'application du téléphone (même surface que les autres apps).
 #ifndef QUOTE
     #define QUOTE(var1) #var1
 #endif
@@ -91,7 +89,7 @@ class COMSPEC_ATAK_Note: ATAK_Message
             w = QUOTE(COMSPEC_NOTE_W(2.84));
             h = QUOTE(COMSPEC_NOTE_H(0.72));
             size = QUOTE(COMSPEC_NOTE_H(0.40));
-            text = "Rédiger une fiche (plein écran)";
+            text = "Rédiger une fiche";
             colorBackground[] = NOTE_BTN;
             colorBackground2[] = NOTE_BTN;
             colorBackgroundFocused[] = NOTE_BTN_F;

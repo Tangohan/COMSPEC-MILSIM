@@ -54,4 +54,42 @@ if (!_ok || {isNull _disp}) exitWith {
 };
 
 uiNamespace setVariable ["COMSPEC_IntelNote_Display", _disp];
+
+[_disp] spawn {
+    params ["_disp"];
+    uiSleep 0.08;
+    if (!isNull _disp) then {
+        [] call comspec_overwatch_connect_fnc_intelNoteApplyGeometry;
+        [] call comspec_overwatch_connect_fnc_intelNoteRefresh;
+    };
+};
+
+// Le téléphone peut refermer un display enfant pendant le calage du menu.
+[_disp, _parent] spawn {
+    params ["_disp", "_parent"];
+    uiSleep 0.35;
+    if (!isNull _disp && {!isNull (findDisplay 9982)}) exitWith {
+        [] call comspec_overwatch_connect_fnc_intelNoteApplyGeometry;
+    };
+    uiNamespace setVariable ["COMSPEC_IntelNote_Display", displayNull];
+    private _againParent = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
+    if (isNull _againParent) then { _againParent = _parent; };
+    private _retryOk = false;
+    if (!isNull _againParent) then {
+        private _retryDisp = _againParent createDisplay "COMSPEC_IntelNote_Dialog";
+        if (!isNull _retryDisp) then {
+            uiNamespace setVariable ["COMSPEC_IntelNote_Display", _retryDisp];
+            [] call comspec_overwatch_connect_fnc_intelNoteApplyGeometry;
+            _retryOk = true;
+        };
+    };
+    if (!_retryOk) then {
+        [
+            "Le rédacteur de fiche s’est refermé. Utilisez la tuile FRS/FRM ou Rédiger une fiche.",
+            "tactical",
+            "warn"
+        ] call comspec_overwatch_connect_fnc_announce;
+    };
+};
+
 true

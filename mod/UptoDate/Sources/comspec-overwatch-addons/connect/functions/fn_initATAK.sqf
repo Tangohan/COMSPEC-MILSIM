@@ -28,18 +28,16 @@ if ((_extensionVersion select 0) isEqualTo "") then {
 [] call comspec_overwatch_connect_fnc_initGpsBeacons;
 
 if (
-    (missionNamespace getVariable ["comspec_overwatch_ace_menus", false])
-    && {isClass (configFile >> "CfgPatches" >> "ace_interact_menu")}
+    isClass (configFile >> "CfgPatches" >> "ace_interact_menu")
     && {!isNil "ace_interact_menu_fnc_createAction"}
 ) then {
     [{
         if (isNull player) exitWith {};
-        if (!(missionNamespace getVariable ["comspec_overwatch_ace_menus", false])) exitWith {};
         [] call comspec_overwatch_connect_fnc_initATAKMenu;
         diag_log "[COMSPEC ATAK] ACE Interact menus initialized";
     }, [], 10] call CBA_fnc_waitAndExecute;
 } else {
-    diag_log "[COMSPEC ATAK] ACE Interact menus skipped";
+    diag_log "[COMSPEC ATAK] ACE Interact menus skipped (ACE absent)";
 };
 
 // Respawn / REAPP : grâce + tracking. Les menus ACE sont en classe CAManBase :

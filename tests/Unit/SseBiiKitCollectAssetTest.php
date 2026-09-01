@@ -37,7 +37,7 @@ final class SseBiiKitCollectAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_SsePerson_SuspendUnload', $hpp);
         self::assertStringContainsString('COMSPEC_SsePerson_ResumeCollect', $onLoad);
         self::assertStringContainsString('[3] call comspec_overwatch_connect_fnc_sseTerminalPage', $onLoad);
-        self::assertStringContainsString('1.5.0', (string) file_get_contents(
+        self::assertStringContainsString('1.5.5', (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp'
         ));
     }

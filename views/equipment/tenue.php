@@ -2,6 +2,7 @@
 declare(strict_types=1);
 $wardrobe = $wardrobe ?? [];
 $collections = $collections ?? [];
+$loadoutItems = is_array($loadoutItems ?? null) ? $loadoutItems : [];
 $csrfToken = (string) ($csrfToken ?? '');
 $flashOk = trim((string) ($flash_success ?? ''));
 $flashErr = trim((string) ($flash_error ?? ''));
@@ -36,6 +37,43 @@ $mine = !empty($wardrobe['mine']);
             <p class="eq-hub__hint">Cette tenue s’envoie et se récupère depuis l’arsenal en jeu, bandeau Athena en haut de l’écran d’équipement.</p>
         </div>
 
+        <section class="eq-hub__panel" aria-labelledby="eq-items-heading">
+            <h2 id="eq-items-heading">Équipement</h2>
+            <?php if ($loadoutItems === []): ?>
+            <p class="eq-hub__empty">Aucun équipement n’est listé pour cette tenue.</p>
+            <?php else: ?>
+            <div class="eq-hub__items">
+                <?php foreach ($loadoutItems as $section): ?>
+                <?php
+                    $secTitle = trim((string) ($section['title'] ?? ''));
+                    $secItems = is_array($section['items'] ?? null) ? $section['items'] : [];
+                    if ($secTitle === '' || $secItems === []) {
+                        continue;
+                    }
+                ?>
+                <div class="eq-hub__item-group">
+                    <h3><?= $h($secTitle) ?></h3>
+                    <ul>
+                        <?php foreach ($secItems as $it): ?>
+                        <?php
+                            $iname = trim((string) ($it['name'] ?? ''));
+                            $iqty = (int) ($it['qty'] ?? 1);
+                            if ($iname === '') {
+                                continue;
+                            }
+                        ?>
+                        <li>
+                            <span><?= $h($iname) ?></span>
+                            <?php if ($iqty > 1): ?><em>× <?= $iqty ?></em><?php endif; ?>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        </section>
+
         <?php if ($mine): ?>
         <section class="eq-hub__panel">
             <h2>Présentation</h2>
@@ -43,7 +81,7 @@ $mine = !empty($wardrobe['mine']);
                 <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
                 <label>Photo de présentation
                     <input type="file" name="cover" accept="image/jpeg,image/png,image/webp">
-                    <span class="eq-hub__hint">JPG, PNG ou WebP, 8 Mo maximum.</span>
+                    <span class="eq-hub__hint"><?= $h(\App\Support\EquipmentCoverStorage::hintText()) ?></span>
                 </label>
                 <label>Collection
                     <select name="collection_id" class="bo-select">

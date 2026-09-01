@@ -94,7 +94,7 @@ foreach ($wardrobes as $w) {
                 </label>
                 <label>Photo de présentation
                     <input type="file" name="cover" accept="image/jpeg,image/png,image/webp">
-                    <span class="eq-hub__hint">Laisser vide pour conserver la photo actuelle.</span>
+                    <span class="eq-hub__hint"><?= $h(\App\Support\EquipmentCoverStorage::hintText()) ?> Laisser vide pour conserver la photo actuelle.</span>
                 </label>
                 <?php if ($mineWardrobes !== []): ?>
                 <fieldset>

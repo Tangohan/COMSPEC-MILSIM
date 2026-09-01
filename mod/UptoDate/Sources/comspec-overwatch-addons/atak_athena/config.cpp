@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.63;
-        versionStr = "1.0.63";
-        versionAr[] = {1, 0, 63};
+        version = 1.0.67;
+        versionStr = "1.0.67";
+        versionAr[] = {1, 0, 67};
     };
 };
 
@@ -42,6 +42,7 @@ class CfgFunctions
             class athena_selectFilter {};
             class athena_applyHomeLayout {};
             class athena_resolveAthenaGroup {};
+            class athena_hideForeignPages {};
             class athena_fixReportsLayout {};
             class athena_installReportsLayout {};
             class athena_sendPhoto {};
@@ -298,7 +299,7 @@ class ATAK_APPs
     // Menu dédié des fiches de renseignement : ouvre un rédacteur plein cadre.
     class AtakNote: message
     {
-        text = "<t size='1'>RENS</t>";
+        text = "<t size='1'>FRS/FRM</t>";
         textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
         class Menu_Property
@@ -436,7 +437,7 @@ class RscTitles
         };
         class AtakNote: message
         {
-            text = "<t size='1'>RENS</t>";
+            text = "<t size='1'>FRS/FRM</t>";
             textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
             class Menu_Property

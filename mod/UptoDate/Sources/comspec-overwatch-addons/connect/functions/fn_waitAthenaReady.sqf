@@ -12,7 +12,7 @@ missionNamespace setVariable ["COMSPEC_HandshakeQuiet", true, false];
 
 [] call comspec_overwatch_connect_fnc_initAuth;
 
-private _deadline = diag_tickTime + 180;
+private _deadline = diag_tickTime + 4;
 while {diag_tickTime < _deadline} do {
     if ([] call comspec_overwatch_connect_fnc_isReady) then { break };
     [] call comspec_overwatch_connect_fnc_applyBootstrap;
@@ -30,6 +30,6 @@ if ([] call comspec_overwatch_connect_fnc_isReady) then {
     missionNamespace setVariable ["COMSPEC_LinkDetail", "Connexion Athena requise", false];
     [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     ["WARN", "Athena", "Pas de session — les transmissions restent coupées"] call comspec_overwatch_connect_fnc_log;
-    ["Connectez-vous à Athena pour activer la carte, le suivi et les transmissions.", "link", "warn"] call comspec_overwatch_connect_fnc_announce;
+    ["Ouvrez le téléphone ATAK, tuile Connexion Athena, pour activer la carte, le suivi et les transmissions.", "link", "warn"] call comspec_overwatch_connect_fnc_announce;
     false
 };

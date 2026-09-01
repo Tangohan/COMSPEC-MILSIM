@@ -27,7 +27,7 @@ if (!(_pieces isEqualType [])) then { _pieces = []; };
 private _dateText = trim (["value", "date"] call comspec_overwatch_connect_fnc_intelNoteCache);
 if (_dateText isEqualTo "") then { _dateText = "DATE À PRÉCISER"; };
 (_disp displayCtrl 9611) ctrlSetStructuredText parseText format [
-    "<t size='0.44' color='#f4f5f6'>%1</t>",
+    "<t size='0.78' color='#f4f5f6'>%1</t>",
     _dateText
 ];
 
@@ -37,7 +37,7 @@ if (_placeText isEqualTo "") then {
     _placeText = if (_grid isEqualTo "") then { "LIEU À PRÉCISER" } else { "REPÈRE " + _grid };
 };
 (_disp displayCtrl 9612) ctrlSetStructuredText parseText format [
-    "<t size='0.44' align='right' color='#f4f5f6'>%1</t>",
+    "<t size='0.78' align='right' color='#f4f5f6'>%1</t>",
     _placeText
 ];
 
@@ -111,7 +111,7 @@ if (_signature isNotEqualTo (_disp getVariable ["COMSPEC_IntelNote_ChipsKey", ""
         _ctrl ctrlSetPosition [_chipX, _chipY, _chipW, _chipH];
         _ctrl ctrlSetBackgroundColor ([_hex] call _fnc_hexToRgba);
         _ctrl ctrlSetTextColor [1, 1, 1, 1];
-        _ctrl ctrlSetFontHeight ((0.014 * _frameH) * _ui);
+        _ctrl ctrlSetFontHeight ((0.018 * _frameH) * _ui);
         _ctrl ctrlSetText ("  " + _label);
         _ctrl ctrlCommit 0;
         _chips pushBack _ctrl;
@@ -130,7 +130,7 @@ _counter ctrlSetBackgroundColor (
     }
 );
 _counter ctrlSetStructuredText parseText format [
-    "<t size='0.40' align='center' color='#ffffff'>%1/%2</t>",
+    "<t size='0.62' align='center' color='#ffffff'>%1/%2</t>",
     _length,
     _bodyMax
 ];
@@ -159,7 +159,7 @@ for "_i" from 0 to 16 do {
 
 // --- Emplacements de pièces jointes ---
 (_disp displayCtrl 9630) ctrlSetStructuredText parseText format [
-    "<t size='0.50' color='#f4f5f6'>Pièce(s) jointe(s) (%1/%2)</t>",
+    "<t size='0.78' color='#f4f5f6'>Pièce(s) jointe(s) (%1/%2)</t>",
     count _pieces,
     _piecesMax
 ];
@@ -186,7 +186,7 @@ for "_i" from 0 to (_piecesMax - 1) do {
         };
         if (_name isEqualTo "") then { _name = "capture à la validation"; };
         _slot ctrlSetStructuredText parseText format [
-            "<t size='0.36' color='#f4f5f6'>%1</t><br/><t size='0.32' color='#8b929c'>%2</t>",
+            "<t size='0.58' color='#f4f5f6'>%1</t><br/><t size='0.50' color='#8b929c'>%2</t>",
             _kindLabel,
             if (_caption isEqualTo "") then { _name } else { _caption }
         ];
@@ -207,7 +207,7 @@ for "_i" from 0 to (_piecesMax - 1) do {
         };
     } else {
         _slot ctrlSetStructuredText parseText
-            "<t size='0.36' align='center' color='#565c66'>Libre</t>";
+            "<t size='0.58' align='center' color='#565c66'>Libre</t>";
         if (!isNull _pic) then {
             _pic ctrlSetText "";
             _pic ctrlShow false;

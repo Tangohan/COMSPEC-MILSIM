@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.500;
-        versionStr = "1.5.0";
-        versionAr[] = {1, 5, 0};
+        version = 1.505;
+        versionStr = "1.5.5";
+        versionAr[] = {1, 5, 5};
     };
 };
 
@@ -109,14 +109,20 @@ class CfgFunctions {
             class forceSyncData {};
             class arsenalLocalLoadouts {};
             class arsenalNormalizeLoadout {};
+            class arsenalItemPicture {};
+            class arsenalLoadoutIcons {};
+            class arsenalCloudLoadout {};
+            class arsenalApplyLoadout {};
             class arsenalPushAll {};
             class arsenalPullAll {};
             class arsenalApplyCloud {};
             class arsenalOverlayShow {};
             class arsenalOverlayRefresh {};
+            class arsenalOverlayPreview {};
             class arsenalInitOverlay {};
             class sendIntel {};
             class initACE {};
+            class initACEAthena {};
             class initExplosiveTimers {};
             class initChargeAceActions {};
             class reportExplosiveTimer {};

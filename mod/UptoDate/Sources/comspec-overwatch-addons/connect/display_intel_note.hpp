@@ -1,8 +1,7 @@
 // Rédacteur de fiche de renseignement simplifiée (idd 9982).
 //
 // Contrairement au terminal SEEK, qui imite un appareil posé au milieu de
-// l'écran, ce rédacteur occupe TOUTE la surface de l'ATAK : c'est une
-// application plein cadre, ouverte comme enfant de cTab_Android_dlg.
+// l'écran, ce rédacteur épouse le panneau d'application du téléphone ATAK.
 //
 // Disposition, de haut en bas :
 //   bandeau      date (gauche) · lieu (droite)
@@ -40,9 +39,9 @@
 #define NT_W        (safezoneW)
 #define NT_H        (safezoneH)
 
-#define NT_TOP_H    (0.030 * NT_H)
-#define NT_TAG_H    (0.028 * NT_H)
-#define NT_BOT_H    (0.058 * NT_H)
+#define NT_TOP_H    (0.042 * NT_H)
+#define NT_TAG_H    (0.038 * NT_H)
+#define NT_BOT_H    (0.078 * NT_H)
 #define NT_STAGE_Y  (NT_Y + NT_TOP_H + NT_TAG_H)
 #define NT_STAGE_H  (NT_H - NT_TOP_H - NT_TAG_H - NT_BOT_H)
 
@@ -55,16 +54,15 @@
 #define NT_ED_H     (NT_STAGE_H - 0.098 * NT_H)
 #define NT_CNT_Y    (NT_ED_Y + NT_ED_H + 0.004 * NT_H)
 
-// Volet contexte : colonne à droite. Il commence sous les étiquettes — sinon il
-// passerait derrière les pastilles de thème, qui restent visibles en permanence.
-#define NT_SHEET_W  (0.30 * NT_W)
-#define NT_SHEET_X  (NT_X + NT_W - NT_SHEET_W)
+// Volet contexte : toute la surface du cadre (panneau ATAK), pas une colonne 30 %.
+#define NT_SHEET_W  (NT_W)
+#define NT_SHEET_X  (NT_X)
 #define NT_SHEET_Y  (NT_STAGE_Y)
 #define NT_SHEET_H  (NT_H - NT_TOP_H - NT_TAG_H - NT_BOT_H)
-#define NT_SH_IN_X  (NT_SHEET_X + 0.010 * NT_W)
-#define NT_SH_IN_W  (NT_SHEET_W - 0.020 * NT_W)
-#define NT_SH_ROW   (0.040 * NT_H)
-#define NT_SH_Y(n)  (NT_SHEET_Y + 0.048 * NT_H + (n) * NT_SH_ROW)
+#define NT_SH_IN_X  (NT_SHEET_X + 0.028 * NT_W)
+#define NT_SH_IN_W  (NT_SHEET_W - 0.056 * NT_W)
+#define NT_SH_ROW   (0.052 * NT_H)
+#define NT_SH_Y(n)  (NT_SHEET_Y + 0.036 * NT_H + (n) * NT_SH_ROW)
 
 // Boutons ronds du volet pièces jointes (centrés en bas, comme la maquette).
 #define NT_FAB_W    (0.030 * NT_W)
@@ -146,7 +144,7 @@ class COMSPEC_IntelNote_Dialog {
             colorBackground[] = {0, 0, 0, 0};
             colorText[] = {0.957, 0.961, 0.965, 1};
             colorSelection[] = {0.24, 0.35, 0.75, 0.5};
-            sizeEx = 0.026;
+            sizeEx = 0.034;
             autocomplete = "";
             canModify = 1;
             tooltip = "Écrivez ici ce que vous avez constaté. 1000 caractères au maximum.";
@@ -169,7 +167,7 @@ class COMSPEC_IntelNote_Dialog {
             text = "PIÈCES JOINTES";
             x = (NT_X + 0.5 * NT_W - 0.075 * NT_W); y = (NT_STAGE_Y + NT_STAGE_H - 0.050 * NT_H);
             w = (0.15 * NT_W); h = (0.038 * NT_H);
-            sizeEx = 0.024;
+            sizeEx = 0.032;
             colorBackground[] = {0.949, 0.957, 0.965, 0.95};
             colorBackgroundActive[] = {1, 1, 1, 1};
             colorFocused[] = {1, 1, 1, 1};
@@ -184,7 +182,7 @@ class COMSPEC_IntelNote_Dialog {
             text = "FICHE";
             x = NT_X; y = (NT_STAGE_Y + 0.5 * NT_STAGE_H - 0.045 * NT_H);
             w = (0.024 * NT_W); h = (0.090 * NT_H);
-            sizeEx = 0.020;
+            sizeEx = 0.026;
             colorBackground[] = {0.231, 0.235, 0.251, 0.95};
             tooltip = "Revenir au cadre de rédaction.";
             action = "['redaction'] call comspec_overwatch_connect_fnc_intelNotePane;";
@@ -205,7 +203,7 @@ class COMSPEC_IntelNote_Dialog {
         };
         class PiecesHelp: RscStructuredText {
             idc = 9631;
-            text = "<t size='0.42' color='#8b929c'>Quatre pièces au maximum. PHOTO joint une capture déjà prise. CAPTURE photographie la scène à la validation.</t>";
+            text = "<t size='0.68' color='#8b929c'>Quatre pièces au maximum. PHOTO joint une capture déjà prise. CAPTURE photographie la scène à la validation.</t>";
             x = NT_IN_X; y = (NT_STAGE_Y + 0.034 * NT_H); w = (0.70 * NT_W); h = (0.024 * NT_H);
         };
         class SlotBg0: RscText {
@@ -241,8 +239,8 @@ class COMSPEC_IntelNote_Dialog {
             colorSelectBackground[] = {0.165, 0.141, 0.498, 1};
             colorSelect[] = {1, 1, 1, 1};
             colorText[] = {0.957, 0.961, 0.965, 1};
-            sizeEx = 0.024;
-            rowHeight = 0.032;
+            sizeEx = 0.032;
+            rowHeight = 0.040;
             onLBSelChanged = "_this call comspec_overwatch_connect_fnc_intelNotePickPhoto;";
         };
         class Drop0: COMSPEC_RscButtonDanger {
@@ -250,7 +248,7 @@ class COMSPEC_IntelNote_Dialog {
             text = "Retirer";
             x = NT_SLOT_X(0); y = (NT_SLOT_Y + NT_SLOT_H + 0.004 * NT_H);
             w = NT_SLOT_W; h = (0.028 * NT_H);
-            sizeEx = 0.022;
+            sizeEx = 0.028;
             action = "[0] call comspec_overwatch_connect_fnc_intelNoteDropPiece;";
         };
         class Drop1: Drop0 { idc = 9637; x = NT_SLOT_X(1); action = "[1] call comspec_overwatch_connect_fnc_intelNoteDropPiece;"; };
@@ -261,7 +259,7 @@ class COMSPEC_IntelNote_Dialog {
             idc = 9640;
             text = "PHOTO";
             x = NT_FAB_X(0); y = NT_FAB_Y; w = (1.2 * NT_FAB_W); h = NT_FAB_H;
-            sizeEx = 0.022;
+            sizeEx = 0.028;
             colorBackground[] = {0.122, 0.106, 0.420, 0.95};
             colorBackgroundActive[] = {0.165, 0.141, 0.498, 1};
             colorFocused[] = {0.165, 0.141, 0.498, 1};
@@ -286,7 +284,7 @@ class COMSPEC_IntelNote_Dialog {
             idc = 9643;
             text = "REVENIR";
             x = NT_FAB_X(4.5); y = NT_FAB_Y; w = (1.2 * NT_FAB_W); h = NT_FAB_H;
-            sizeEx = 0.022;
+            sizeEx = 0.028;
             colorBackground[] = {0.678, 0.686, 0.702, 0.95};
             colorText[] = {0.12, 0.14, 0.18, 1};
             tooltip = "Revenir au cadre de rédaction.";
@@ -301,71 +299,71 @@ class COMSPEC_IntelNote_Dialog {
         };
         class SheetTitle: RscStructuredText {
             idc = 9651;
-            text = "<t size='0.50' color='#f4f5f6'>Contexte de la fiche</t>";
+            text = "<t size='0.82' color='#f4f5f6'>Contexte de la fiche</t>";
             x = NT_SH_IN_X; y = (NT_SHEET_Y + 0.012 * NT_H); w = NT_SH_IN_W; h = (0.026 * NT_H);
         };
         class LabelDate: RscStructuredText {
             idc = 9690;
-            text = "<t size='0.40' color='#8b929c'>DATE ET HEURE DE L’ÉVÉNEMENT</t>";
-            x = NT_SH_IN_X; y = NT_SH_Y(0); w = NT_SH_IN_W; h = (0.018 * NT_H);
+            text = "<t size='0.72' color='#8b929c'>DATE ET HEURE DE L’ÉVÉNEMENT</t>";
+            x = NT_SH_IN_X; y = NT_SH_Y(0); w = NT_SH_IN_W; h = (0.024 * NT_H);
         };
         class EditDate: RscEdit {
             idc = 9652;
-            x = NT_SH_IN_X; y = (NT_SH_Y(0) + 0.018 * NT_H); w = NT_SH_IN_W; h = (0.020 * NT_H);
+            x = NT_SH_IN_X; y = (NT_SH_Y(0) + 0.022 * NT_H); w = NT_SH_IN_W; h = (0.028 * NT_H);
             colorBackground[] = {0.063, 0.067, 0.078, 1};
             colorText[] = {0.957, 0.961, 0.965, 1};
-            sizeEx = 0.024;
+            sizeEx = 0.034;
             autocomplete = "";
             tooltip = "Format jour/mois/année heure:minute.";
         };
         class LabelPlace: LabelDate {
             idc = 9691;
-            text = "<t size='0.40' color='#8b929c'>LIEU</t>";
+            text = "<t size='0.72' color='#8b929c'>LIEU</t>";
             y = NT_SH_Y(1);
         };
         class EditPlace: EditDate {
             idc = 9653;
-            y = (NT_SH_Y(1) + 0.018 * NT_H);
+            y = (NT_SH_Y(1) + 0.022 * NT_H);
             tooltip = "Commune, secteur, axe ou point de repère.";
         };
         class LabelGrid: LabelDate {
             idc = 9692;
-            text = "<t size='0.40' color='#8b929c'>REPÈRE (CARROYAGE)</t>";
+            text = "<t size='0.72' color='#8b929c'>REPÈRE (CARROYAGE)</t>";
             y = NT_SH_Y(2);
         };
         class EditGrid: EditDate {
             idc = 9654;
-            y = (NT_SH_Y(2) + 0.018 * NT_H);
+            y = (NT_SH_Y(2) + 0.022 * NT_H);
             tooltip = "Prérempli avec votre carroyage courant.";
         };
         class LabelKind: LabelDate {
             idc = 9693;
-            text = "<t size='0.40' color='#8b929c'>TYPE DE FICHE</t>";
+            text = "<t size='0.72' color='#8b929c'>TYPE DE FICHE</t>";
             y = NT_SH_Y(3);
         };
         class ComboKind: RscCombo {
             idc = 9656;
-            x = NT_SH_IN_X; y = (NT_SH_Y(3) + 0.018 * NT_H); w = NT_SH_IN_W; h = (0.020 * NT_H);
+            x = NT_SH_IN_X; y = (NT_SH_Y(3) + 0.022 * NT_H); w = NT_SH_IN_W; h = (0.028 * NT_H);
             colorBackground[] = {0.063, 0.067, 0.078, 1};
             colorText[] = {0.957, 0.961, 0.965, 1};
             colorSelectBackground[] = {0.165, 0.141, 0.498, 1};
-            sizeEx = 0.024;
+            sizeEx = 0.032;
             onLBSelChanged = "[] call comspec_overwatch_connect_fnc_intelNoteRefresh;";
         };
         class LabelUrgency: LabelDate {
             idc = 9694;
-            text = "<t size='0.40' color='#8b929c'>URGENCE</t>";
+            text = "<t size='0.72' color='#8b929c'>URGENCE</t>";
             y = NT_SH_Y(4);
             w = (NT_SH_IN_W / 2 - 0.003 * NT_W);
         };
         class ComboUrgency: ComboKind {
             idc = 9657;
-            y = (NT_SH_Y(4) + 0.018 * NT_H);
+            y = (NT_SH_Y(4) + 0.022 * NT_H);
             w = (NT_SH_IN_W / 2 - 0.003 * NT_W);
         };
         class LabelSource: LabelDate {
             idc = 9698;
-            text = "<t size='0.40' color='#8b929c'>RECUEIL</t>";
+            text = "<t size='0.72' color='#8b929c'>RECUEIL</t>";
             x = (NT_SH_IN_X + NT_SH_IN_W / 2 + 0.003 * NT_W);
             y = NT_SH_Y(4);
             w = (NT_SH_IN_W / 2 - 0.003 * NT_W);
@@ -373,12 +371,12 @@ class COMSPEC_IntelNote_Dialog {
         class ComboSource: ComboKind {
             idc = 9658;
             x = (NT_SH_IN_X + NT_SH_IN_W / 2 + 0.003 * NT_W);
-            y = (NT_SH_Y(4) + 0.018 * NT_H);
+            y = (NT_SH_Y(4) + 0.022 * NT_H);
             w = (NT_SH_IN_W / 2 - 0.003 * NT_W);
         };
         class LabelThemes: LabelDate {
             idc = 9695;
-            text = "<t size='0.40' color='#8b929c'>THÈMES — 4 AU MAXIMUM</t>";
+            text = "<t size='0.72' color='#8b929c'>THÈMES — 4 AU MAXIMUM</t>";
             y = NT_SH_Y(5);
         };
         // Bascules de thème : deux colonnes de neuf (17 thèmes + un emplacement libre).
@@ -386,54 +384,54 @@ class COMSPEC_IntelNote_Dialog {
             idc = 9660;
             text = "";
             x = NT_SH_IN_X;
-            y = (NT_SH_Y(5) + 0.018 * NT_H);
-            w = (NT_SH_IN_W / 2 - 0.003 * NT_W); h = (0.014 * NT_H);
-            sizeEx = 0.016;
+            y = (NT_SH_Y(5) + 0.024 * NT_H);
+            w = (NT_SH_IN_W / 2 - 0.003 * NT_W); h = (0.020 * NT_H);
+            sizeEx = 0.024;
             colorBackground[] = {0.063, 0.067, 0.078, 1};
             action = "[0] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;";
         };
-        class Theme1: Theme0 { idc = 9661; y = (NT_SH_Y(5) + 0.033 * NT_H); action = "[1] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme2: Theme0 { idc = 9662; y = (NT_SH_Y(5) + 0.048 * NT_H); action = "[2] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme3: Theme0 { idc = 9663; y = (NT_SH_Y(5) + 0.063 * NT_H); action = "[3] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme4: Theme0 { idc = 9664; y = (NT_SH_Y(5) + 0.078 * NT_H); action = "[4] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme5: Theme0 { idc = 9665; y = (NT_SH_Y(5) + 0.093 * NT_H); action = "[5] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme6: Theme0 { idc = 9666; y = (NT_SH_Y(5) + 0.108 * NT_H); action = "[6] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme7: Theme0 { idc = 9667; y = (NT_SH_Y(5) + 0.123 * NT_H); action = "[7] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme8: Theme0 { idc = 9668; y = (NT_SH_Y(5) + 0.138 * NT_H); action = "[8] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme1: Theme0 { idc = 9661; y = (NT_SH_Y(5) + 0.046 * NT_H); action = "[1] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme2: Theme0 { idc = 9662; y = (NT_SH_Y(5) + 0.068 * NT_H); action = "[2] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme3: Theme0 { idc = 9663; y = (NT_SH_Y(5) + 0.090 * NT_H); action = "[3] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme4: Theme0 { idc = 9664; y = (NT_SH_Y(5) + 0.112 * NT_H); action = "[4] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme5: Theme0 { idc = 9665; y = (NT_SH_Y(5) + 0.134 * NT_H); action = "[5] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme6: Theme0 { idc = 9666; y = (NT_SH_Y(5) + 0.156 * NT_H); action = "[6] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme7: Theme0 { idc = 9667; y = (NT_SH_Y(5) + 0.178 * NT_H); action = "[7] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme8: Theme0 { idc = 9668; y = (NT_SH_Y(5) + 0.200 * NT_H); action = "[8] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
         class Theme9: Theme0 {
             idc = 9669;
             x = (NT_SH_IN_X + NT_SH_IN_W / 2 + 0.003 * NT_W);
             action = "[9] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;";
         };
-        class Theme10: Theme9 { idc = 9670; y = (NT_SH_Y(5) + 0.033 * NT_H); action = "[10] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme11: Theme9 { idc = 9671; y = (NT_SH_Y(5) + 0.048 * NT_H); action = "[11] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme12: Theme9 { idc = 9672; y = (NT_SH_Y(5) + 0.063 * NT_H); action = "[12] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme13: Theme9 { idc = 9673; y = (NT_SH_Y(5) + 0.078 * NT_H); action = "[13] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme14: Theme9 { idc = 9674; y = (NT_SH_Y(5) + 0.093 * NT_H); action = "[14] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme15: Theme9 { idc = 9675; y = (NT_SH_Y(5) + 0.108 * NT_H); action = "[15] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
-        class Theme16: Theme9 { idc = 9676; y = (NT_SH_Y(5) + 0.123 * NT_H); action = "[16] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme10: Theme9 { idc = 9670; y = (NT_SH_Y(5) + 0.046 * NT_H); action = "[10] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme11: Theme9 { idc = 9671; y = (NT_SH_Y(5) + 0.068 * NT_H); action = "[11] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme12: Theme9 { idc = 9672; y = (NT_SH_Y(5) + 0.090 * NT_H); action = "[12] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme13: Theme9 { idc = 9673; y = (NT_SH_Y(5) + 0.112 * NT_H); action = "[13] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme14: Theme9 { idc = 9674; y = (NT_SH_Y(5) + 0.134 * NT_H); action = "[14] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme15: Theme9 { idc = 9675; y = (NT_SH_Y(5) + 0.156 * NT_H); action = "[15] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
+        class Theme16: Theme9 { idc = 9676; y = (NT_SH_Y(5) + 0.178 * NT_H); action = "[16] call comspec_overwatch_connect_fnc_intelNoteToggleTheme;"; };
 
         class LabelCase: LabelDate {
             idc = 9696;
-            text = "<t size='0.40' color='#8b929c'>RATTACHER À UN DOSSIER (FACULTATIF)</t>";
-            y = (NT_SH_Y(5) + 0.158 * NT_H);
+            text = "<t size='0.72' color='#8b929c'>RATTACHER À UN DOSSIER (FACULTATIF)</t>";
+            y = (NT_SH_Y(5) + 0.226 * NT_H);
         };
         class EditCase: EditDate {
             idc = 9655;
-            y = (NT_SH_Y(5) + 0.176 * NT_H);
+            y = (NT_SH_Y(5) + 0.250 * NT_H);
             tooltip = "Laissez vide si vous ne connaissez pas la référence : le bureau classera la fiche.";
         };
         class SheetHint: RscStructuredText {
             idc = 9697;
-            text = "<t size='0.38' color='#6f7681'>Une fiche n’identifie personne et ne vaut pas preuve : elle consigne un constat daté et situé.</t>";
-            x = NT_SH_IN_X; y = (NT_SH_Y(5) + 0.204 * NT_H); w = NT_SH_IN_W; h = (0.044 * NT_H);
+            text = "<t size='0.64' color='#6f7681'>Une fiche n’identifie personne et ne vaut pas preuve : elle consigne un constat daté et situé.</t>";
+            x = NT_SH_IN_X; y = (NT_SH_Y(5) + 0.286 * NT_H); w = NT_SH_IN_W; h = (0.048 * NT_H);
         };
         class BtnSheetClose: COMSPEC_RscButtonAccent {
             idc = 9680;
             text = "REVENIR À LA RÉDACTION";
-            x = NT_SH_IN_X; y = (NT_SHEET_Y + NT_SHEET_H - 0.040 * NT_H);
-            w = NT_SH_IN_W; h = (0.030 * NT_H);
-            sizeEx = 0.024;
+            x = NT_SH_IN_X; y = (NT_SHEET_Y + NT_SHEET_H - 0.048 * NT_H);
+            w = NT_SH_IN_W; h = (0.040 * NT_H);
+            sizeEx = 0.032;
             action = "['redaction'] call comspec_overwatch_connect_fnc_intelNotePane;";
         };
 
@@ -446,9 +444,9 @@ class COMSPEC_IntelNote_Dialog {
         class BtnQuit: COMSPEC_RscButton {
             idc = 9623;
             text = "QUITTER";
-            x = (NT_X + 0.010 * NT_W); y = (NT_Y + NT_H - NT_BOT_H + 0.010 * NT_H);
-            w = (0.10 * NT_W); h = (0.036 * NT_H);
-            sizeEx = 0.024;
+            x = (NT_X + 0.012 * NT_W); y = (NT_Y + NT_H - NT_BOT_H + 0.014 * NT_H);
+            w = (0.20 * NT_W); h = (0.050 * NT_H);
+            sizeEx = 0.032;
             colorBackground[] = {0.078, 0.067, 0.290, 0.95};
             colorBackgroundActive[] = {0.114, 0.098, 0.380, 1};
             colorFocused[] = {0.114, 0.098, 0.380, 1};
@@ -457,18 +455,18 @@ class COMSPEC_IntelNote_Dialog {
         };
         class BtnContext: BtnQuit {
             idc = 9624;
-            text = "CONTEXTE : DATE, LIEU, THÈMES";
-            x = (NT_X + 0.5 * NT_W - 0.14 * NT_W);
-            w = (0.28 * NT_W);
+            text = "CONTEXTE";
+            x = (NT_X + 0.228 * NT_W);
+            w = (0.26 * NT_W);
             tooltip = "Date, lieu, repère, type de fiche, thèmes et urgence.";
             action = "['contexte'] call comspec_overwatch_connect_fnc_intelNotePane;";
         };
         class BtnValidate: COMSPEC_RscButtonAccent {
             idc = 9625;
             text = "VALIDER ET TRANSMETTRE";
-            x = (NT_X + NT_W - 0.22 * NT_W); y = (NT_Y + NT_H - NT_BOT_H + 0.010 * NT_H);
-            w = (0.21 * NT_W); h = (0.036 * NT_H);
-            sizeEx = 0.024;
+            x = (NT_X + 0.504 * NT_W); y = (NT_Y + NT_H - NT_BOT_H + 0.014 * NT_H);
+            w = (0.484 * NT_W); h = (0.050 * NT_H);
+            sizeEx = 0.036;
             colorBackground[] = {0.063, 0.725, 0.506, 0.95};
             colorBackgroundActive[] = {0.020, 0.588, 0.412, 1};
             colorFocused[] = {0.020, 0.588, 0.412, 1};

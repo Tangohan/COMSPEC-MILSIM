@@ -51,6 +51,8 @@ export class MarkerManager {
 
   render(entities) {
     if (!this.map || !this.L) return;
+    const size = this.map.getSize ? this.map.getSize() : null;
+    if (!size || size.x < 8 || size.y < 8) return;
     const self = this;
     const zoom = this._lastZoom;
     const lod = computeLOD(zoom);

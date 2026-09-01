@@ -24,11 +24,11 @@ private _shortcuts = [
 
         "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa",
 
-        "Connexion Athena — lier le compte (code ou Steam)",
+        "Connexion Athena — e-mail, code ou Steam",
 
         "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Connexion<br/>Athena</t>",
 
-        "liaison"
+        "login"
 
     ],
 
@@ -114,6 +114,22 @@ private _shortcuts = [
 
         "resynch"
 
+    ],
+
+    [
+
+        198734, 198735, 270,
+
+        "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa",
+
+        "FRS / FRM — rédiger une fiche de renseignement",
+
+        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>FRS/FRM</t>",
+
+        "atak_note",
+
+        155
+
     ]
 
 ];
@@ -138,8 +154,20 @@ missionNamespace setVariable ["COMSPEC_Athena_desktopClick", {
 
     };
 
+    if (_tab isEqualTo "login" || {_tab isEqualTo "account"} || {_tab isEqualTo "connexion"}) exitWith {
+        [] call comspec_overwatch_connect_fnc_openLogin;
+    };
+
     if (_tab isEqualTo "resynch") exitWith {
         [] call comspec_overwatch_atak_athena_fnc_athena_openResynch;
+    };
+
+    if (_tab isEqualTo "atak_note" || {_tab isEqualTo "note"} || {_tab isEqualTo "frs"}) exitWith {
+        ["AtakNote"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
+        [] spawn {
+            uiSleep 0.4;
+            [""] call comspec_overwatch_connect_fnc_intelNoteShow;
+        };
     };
 
     if (_tab isEqualTo "atak_settings" || {_tab isEqualTo "settings"} || {_tab isEqualTo "parametres"}) exitWith {
@@ -264,7 +292,7 @@ COMSPEC_Athena_desktopShortcutPFH = [{
 
         if (_idcIcon == 198710) then {
 
-            _ctrl setVariable ["COMSPEC_AthenaDesktopTab", "account"];
+            _ctrl setVariable ["COMSPEC_AthenaDesktopTab", "login"];
 
         };
 

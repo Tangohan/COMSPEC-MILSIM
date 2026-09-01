@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Pinyon+Script&display=swap');
+
+.fm-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+  padding: 1.25rem 0 2.5rem;
+  background:
+    radial-gradient(1200px 400px at 50% 0%, rgba(148, 163, 184, 0.18), transparent 60%),
+    #c5c9ce;
+}
+
+.fm-page {
+  width: min(210mm, 100%);
+  min-height: 297mm;
+  background: #f7f4ea;
+  color: #111;
+  box-shadow: 0 18px 50px -24px rgba(15, 23, 42, 0.55), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  font-family: 'Libre Baskerville', 'Times New Roman', Times, serif;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.fm-page--cover {
+  padding: 22mm 22mm 24mm;
+  display: flex;
+  flex-direction: column;
+}
+
+.fm-codes {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+
+.fm-cover-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 18mm 4mm 12mm;
+}
+
+.fm-title {
+  margin: 0;
+  font-size: clamp(1.7rem, 3.4vw, 2.55rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+}
+
+.fm-date {
+  margin: 1.4rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.fm-legal {
+  margin-top: auto;
+}
+
+.fm-legal + .fm-legal {
+  margin-top: 1.15rem;
+}
+
+.fm-legal-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fm-legal p:not(.fm-legal-label) {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  text-align: justify;
+}
+
+.fm-hq {
+  margin: 2.4rem 0 0;
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.fm-page--foreword,
+.fm-page--body {
+  padding: 20mm 24mm 24mm;
+}
+
+.fm-foreword-title {
+  margin: 0 0 1.4rem;
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.fm-foreword-intro {
+  margin: 0 0 2.2rem;
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  text-align: justify;
+}
+
+.fm-sigs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.4rem 2.8rem;
+}
+
+.fm-sig {
+  min-height: 7.5rem;
+  text-align: center;
+}
+
+.fm-sig-script {
+  margin: 0 0 0.35rem;
+  font-family: 'Pinyon Script', 'Times New Roman', cursive;
+  font-size: 2.05rem;
+  line-height: 1.1;
+  color: #1a1a1a;
+}
+
+.fm-sig-name {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fm-sig-rank,
+.fm-sig-cmd {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.fm-body {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  text-align: justify;
+}
+
+.fm-body h2,
+.fm-body h3,
+.fm-body h4 {
+  text-align: left;
+  margin: 1.4rem 0 0.7rem;
+}
+
+.fm-body p {
+  margin: 0 0 0.9rem;
+}
+
+.fm-body-empty {
+  color: #6b7280;
+  font-style: italic;
+  text-align: center;
+}
+
+.fm-preview-wrap {
+  border: 1px solid #cbd5e1;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #c5c9ce;
+  max-height: 42rem;
+  overflow-y: auto;
+}
+
+.fm-preview-wrap .fm-page {
+  min-height: 0;
+  width: 100%;
+  transform-origin: top center;
+}
+
+.fm-preview-wrap .fm-page--cover,
+.fm-preview-wrap .fm-page--foreword,
+.fm-preview-wrap .fm-page--body {
+  padding: 1.4rem 1.6rem 1.6rem;
+}
+
+.fm-preview-wrap .fm-page + .fm-page {
+  margin-top: 1rem;
+}
+
+.fm-origin-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .fm-origin-choice,
+  .fm-sigs {
+    grid-template-columns: 1fr;
+  }
+
+  .fm-page {
+    min-height: 0;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .fm-print-root,
+  .fm-print-root * {
+    visibility: visible;
+  }
+
+  .fm-print-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #fff;
+  }
+
+  .fm-stack {
+    background: #fff;
+    gap: 0;
+    padding: 0;
+  }
+
+  .fm-page {
+    box-shadow: none;
+    page-break-after: always;
+    width: auto;
+    min-height: auto;
+  }
+}

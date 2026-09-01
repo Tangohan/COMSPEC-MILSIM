@@ -53,7 +53,7 @@ $visibilityLabel = static function (string $v): string {
                 </label>
                 <label>Photo de présentation
                     <input type="file" name="cover" accept="image/jpeg,image/png,image/webp">
-                    <span class="eq-hub__hint">JPG, PNG ou WebP, 8 Mo maximum.</span>
+                    <span class="eq-hub__hint"><?= $h(\App\Support\EquipmentCoverStorage::hintText()) ?></span>
                 </label>
                 <?php if ($mineWardrobes !== []): ?>
                 <fieldset>

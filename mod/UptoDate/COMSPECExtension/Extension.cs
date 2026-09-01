@@ -29,7 +29,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.18.0";
+    private const string ExtensionVersion = "1.18.2";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -1655,6 +1655,15 @@ public static partial class Extension
         return s;
     }
 
+    /// <summary>
+    /// Clé historique ou jeton de session Athena (Overwatch 1.5).
+    /// Sans ça, NotifyNewPhoto renvoyait not_connected après « Session Athena prête ».
+    /// </summary>
+    private static bool HasPortalAuth()
+    {
+        return _apiKey.Length > 0 || _gameAccessToken.Length > 0;
+    }
+
     /// <summary>Attache X-COMSPEC-KEY (+ session / Steam mémorisés) sur une requête.</summary>
     private static void AttachApiKeyHeader(HttpRequestMessage req)
     {
@@ -2645,6 +2654,7 @@ public static partial class Extension
                 return "OK|" + simplified;
             }
             // Sync une wardrobe. Args : [name, payload, collectionSlug?, notes?]
+            // Native AOT : pas de JsonSerializer.Serialize(Dictionary<object>) — NotSupportedException → ERR|invalid.
             if (function == "SyncWardrobe" && args.Length >= 2)
             {
                 var wName = (args[0] ?? "").Trim();
@@ -2653,16 +2663,7 @@ public static partial class Extension
                 var wNotes = args.Length > 3 ? (args[3] ?? "").Trim() : "";
                 if (wName.Length < 1 || string.IsNullOrWhiteSpace(wPayload))
                     return FormatAtakExtArray("ERROR", "payload empty");
-                var syncObj = new Dictionary<string, object?>
-                {
-                    ["name"] = wName,
-                    ["payload_text"] = wPayload,
-                    ["source"] = "ace_arsenal",
-                    ["payload_format"] = "arma_loadout_str",
-                };
-                if (wColl.Length > 0) syncObj["collection_slug"] = wColl;
-                if (wNotes.Length > 0) syncObj["notes"] = wNotes;
-                var syncJson = JsonSerializer.Serialize(syncObj);
+                var syncJson = BuildWardrobeSyncJson(wName, wPayload, wColl, wNotes);
                 return PostAtakJsonSync("/api/atak/wardrobes/sync", syncJson, token);
             }
             // Sync lot (JSON déjà formé côté SQF/extension helper). Args : [json]
@@ -3517,9 +3518,9 @@ public static partial class Extension
         {
             return "ERR|network";
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return "ERR|invalid";
+            return FormatCaughtError(ex);
         }
         return null;
     }
@@ -5558,10 +5559,11 @@ public static partial class Extension
                 if (!string.IsNullOrEmpty(fuel)) extra.Append(",\"fuel\":\"").Append(EscapeJson(fuel)).Append("\"");
                 extra.Append(",\"ammo\":\"").Append(EscapeJson(ammo)).Append("\"");
                 if (!string.IsNullOrEmpty(radioFreq)) extra.Append(",\"radio_freq\":\"").Append(EscapeJson(radioFreq)).Append("\"");
-                if (!string.IsNullOrEmpty(groupName))
+                var bftGroup = ComposeBftGroupLabel(groupName, callSign);
+                if (!string.IsNullOrEmpty(bftGroup))
                 {
-                    extra.Append(",\"group_name\":\"").Append(EscapeJson(groupName)).Append("\"");
-                    extra.Append(",\"group\":\"").Append(EscapeJson(groupName)).Append("\"");
+                    extra.Append(",\"group_name\":\"").Append(EscapeJson(bftGroup)).Append("\"");
+                    extra.Append(",\"group\":\"").Append(EscapeJson(bftGroup)).Append("\"");
                 }
                 // ID BFT lié à l’indicatif (mémorisé à client-init / profil)
                 if (!isProxyContact && _militaryId.Length > 0
@@ -5936,7 +5938,7 @@ public static partial class Extension
     /// </summary>
     private static string EnqueueReconImage(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0)
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
             return "ERR|not_connected";
 
         EnsureScreenshotQuota();
@@ -6126,7 +6128,7 @@ public static partial class Extension
             ? "SsePhotoUpload"
             : "PhotoUpload";
 
-        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0)
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
         {
             ReleasePhotoDedup(job.DedupKey);
             InvokeCallback(cbName, "ERR|not_connected|" + Path.GetFileName(job.RawPath));
@@ -6158,8 +6160,8 @@ public static partial class Extension
             if (resolved == null && isSseFace && attempt >= 2)
                 resolved = FindNewestMatchingPrefix("COMSPEC_SSE_Face", TimeSpan.FromSeconds(
                     Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30)));
-            if (resolved == null && attempt >= 2)
-                resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-5));
+            if (resolved == null && attempt >= 1)
+                resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-30));
             if (resolved != null) break;
             try
             {
@@ -6171,7 +6173,7 @@ public static partial class Extension
                 {
                     resolved = FindScreenshotByFileName(orphan);
                     if (resolved == null && attempt >= 2)
-                        resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-5));
+                        resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-30));
                     if (resolved != null || attempt >= 8)
                         break;
                 }
@@ -6389,7 +6391,7 @@ public static partial class Extension
         if (string.IsNullOrWhiteSpace(fullPath)) return;
         if (!IsImageExtension(Path.GetExtension(fullPath))) return;
         if (IsSseIdentityCaptureName(fullPath)) return;
-        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0) return;
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth()) return;
 
         // Debounce Created+Changed pendant l'écriture.
         if (!WatcherDebounce.TryAdd(fullPath, 0)) return;
@@ -6476,7 +6478,7 @@ public static partial class Extension
     /// </summary>
     private static string BeginUploadSsePhoto(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0)
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
             return "ERR|not_connected";
         var personId = args.Length > 0 ? (args[0] ?? "").Trim() : "";
         if (string.IsNullOrEmpty(personId)) return "ERR|person_id_empty";
@@ -7256,6 +7258,11 @@ public static partial class Extension
         var arma = Path.Combine(local, "Arma 3");
         if (Directory.Exists(arma))
             yield return arma;
+        string? cwd = null;
+        try { cwd = Directory.GetCurrentDirectory(); }
+        catch { cwd = null; }
+        if (!string.IsNullOrWhiteSpace(cwd) && Directory.Exists(cwd))
+            yield return cwd;
     }
 
     /// <summary>
@@ -7627,12 +7634,21 @@ public static partial class Extension
                 AddScreenshotsUnder(Path.Combine(local, "Arma 3"));
         }
         catch { /* ignore */ }
-        // Captures miroir COMSPEC (stable, hors Workshop).
+        // Captures miroir COMSPEC (stable, hors Workshop) + Screenshots du même profil.
         try
         {
             var cap = ComspecCaptureDir();
             if (!string.IsNullOrWhiteSpace(cap))
+            {
                 AddIfExists(cap);
+                var parent = Directory.GetParent(cap)?.FullName;
+                if (!string.IsNullOrWhiteSpace(parent))
+                {
+                    AddIfExists(Path.Combine(parent, "Screenshots"));
+                    AddIfExists(Path.Combine(parent, "Screenshot"));
+                    AddScreenshotsUnder(parent);
+                }
+            }
         }
         catch { /* ignore */ }
 
@@ -8217,6 +8233,24 @@ public static partial class Extension
                 System.Globalization.CultureInfo.InvariantCulture, out var n))
             return n.ToString(System.Globalization.CultureInfo.InvariantCulture);
         return "\"" + EscapeJson(raw) + "\"";
+    }
+
+    /// <summary>
+    /// JSON tenue ACE sans réflexion (Native AOT interdit JsonSerializer.Serialize sur object).
+    /// </summary>
+    private static string BuildWardrobeSyncJson(string name, string payloadText, string collectionSlug, string notes)
+    {
+        var sb = new StringBuilder(256 + (payloadText?.Length ?? 0));
+        sb.Append("{\"name\":\"").Append(EscapeJson(name)).Append('"');
+        sb.Append(",\"payload_text\":\"").Append(EscapeJson(payloadText ?? "")).Append('"');
+        sb.Append(",\"source\":\"ace_arsenal\"");
+        sb.Append(",\"payload_format\":\"arma_loadout_str\"");
+        if (!string.IsNullOrEmpty(collectionSlug))
+            sb.Append(",\"collection_slug\":\"").Append(EscapeJson(collectionSlug)).Append('"');
+        if (!string.IsNullOrEmpty(notes))
+            sb.Append(",\"notes\":\"").Append(EscapeJson(notes)).Append('"');
+        sb.Append('}');
+        return sb.ToString();
     }
 
     private static string EscapeJson(string s)

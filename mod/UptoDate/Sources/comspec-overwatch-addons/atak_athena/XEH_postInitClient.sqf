@@ -14,7 +14,7 @@ private _forceCheckLayout = {
 call _forceCheckLayout;
 { [_forceCheckLayout, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8];
 
-// Caméra overlay : vue scène (pas de texture rttN) + cliché depuis CETTE caméra.
+// Caméra overlay : téléphone = rttN (l’opérateur marche) ; cliché = vue scène puis restauration.
 private _forceCamCapture = {
     private _fs = "\z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_FullScreenCamera.sqf";
     if (fileExists _fs) then {
@@ -82,7 +82,7 @@ private _ensureAtakApps = {
             _apps pushBack _app;
             _changed = true;
         };
-    } forEach ["AtakTask", "BDA_Report", "BII_Identifi"];
+    } forEach ["AtakTask", "BDA_Report", "BII_Identifi", "AtakNote"];
 
     if (_changed) then {
         profileNamespace setVariable ["BCE_ATAK_APPs", _apps];
@@ -136,6 +136,15 @@ private _ensureAtakApps = {
             if (_this isEqualType "") then { _path = _this; };
         };
         if (_path isEqualType "" && {_path isNotEqualTo ""}) then {
+            private _lowP = toLower _path;
+            private _hasExt = (_lowP find ".jpg") >= 0 || {(_lowP find ".jpeg") >= 0} || {(_lowP find ".png") >= 0};
+            if (!_hasExt && {_name isEqualType ""} && {_name isNotEqualTo ""}) then {
+                private _base = _path;
+                while { (count _base) > 0 && {(_base select [(count _base) - 1, 1]) isEqualTo "\\"} } do {
+                    _base = _base select [0, (count _base) - 1];
+                };
+                _path = if (_base isEqualTo "") then { _name } else { format ["%1\\%2", _base, _name] };
+            };
             [_path, _name, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
         } else {
             // Sans chemin : un seul balayage Photo Library (marquage vu, pas de spam).
@@ -161,6 +170,15 @@ private _ensureAtakApps = {
                 };
             };
             if (_path isEqualType "" && {_path isNotEqualTo ""}) then {
+                private _lowP = toLower _path;
+                private _hasExt = (_lowP find ".jpg") >= 0 || {(_lowP find ".jpeg") >= 0} || {(_lowP find ".png") >= 0};
+                if (!_hasExt && {_name isEqualType ""} && {_name isNotEqualTo ""}) then {
+                    private _base = _path;
+                    while { (count _base) > 0 && {(_base select [(count _base) - 1, 1]) isEqualTo "\\"} } do {
+                        _base = _base select [0, (count _base) - 1];
+                    };
+                    _path = if (_base isEqualTo "") then { _name } else { format ["%1\\%2", _base, _name] };
+                };
                 [_path, _name, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
             } else {
                 [] call comspec_overwatch_atak_athena_fnc_athena_pollIcemanPhotos;
@@ -176,16 +194,22 @@ private _ensureAtakApps = {
 
 // Repli lent : uniquement pour records sans EH (le watcher DLL couvre Screenshots).
 [{
-    private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
-    private _link = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
-    if (!_ready && {_link isNotEqualTo "linked"}) exitWith {};
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
     [] call comspec_overwatch_atak_athena_fnc_athena_pollIcemanPhotos;
 }, 30, []] call CBA_fnc_addPerFrameHandler;
 
 // Liaison Athena établie : démarrer le watcher DLL + un balayage unique
 ["COMSPEC_AthenaLinkChanged", {
+    params [["_state", ""]];
+    if (_state isNotEqualTo "ready") exitWith {};
     [] spawn {
-        uiSleep 0.5;
+        private _deadline = diag_tickTime + 30;
+        waitUntil {
+            !(missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false])
+            || {diag_tickTime > _deadline}
+        };
+        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
         ["COMSPECExtension" callExtension ["StartPhotoWatcher", []]] call comspec_overwatch_connect_fnc_extResult;
         [] call comspec_overwatch_atak_athena_fnc_athena_pollIcemanPhotos;
     };

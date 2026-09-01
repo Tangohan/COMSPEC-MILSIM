@@ -13,6 +13,7 @@ use App\Services\Tactical\AtakTerrainCartography;
 use App\Services\Tactical\AtakTerrainMath;
 use App\Services\Tactical\AtakTerrainSight;
 use App\Support\ComspecApiKeyAuth;
+use Throwable;
 
 final class AtakTerrainApiController
 {
@@ -163,7 +164,11 @@ final class AtakTerrainApiController
             return $this->tenantRequired();
         }
         $mapId = $this->mapId($request);
-        $geo = $this->cartography->contours($tenantId, $mapId);
+        try {
+            $geo = $this->cartography->contours($tenantId, $mapId);
+        } catch (Throwable) {
+            $geo = ['type' => 'FeatureCollection', 'features' => []];
+        }
 
         return Response::json($geo);
     }
@@ -358,9 +363,13 @@ final class AtakTerrainApiController
             return $this->tenantRequired();
         }
         $mapId = $this->mapId($request);
-        $path = $kind === 'slope'
-            ? $this->cartography->slopePath($tenantId, $mapId)
-            : $this->cartography->hillshadePath($tenantId, $mapId);
+        try {
+            $path = $kind === 'slope'
+                ? $this->cartography->slopePath($tenantId, $mapId)
+                : $this->cartography->hillshadePath($tenantId, $mapId);
+        } catch (Throwable) {
+            return Response::json(['ok' => false, 'error' => 'Relief du théâtre non encore relevé.'], 404);
+        }
         if ($path === null || !is_file($path)) {
             return Response::json(['ok' => false, 'error' => 'Relief du théâtre non encore relevé.'], 404);
         }
@@ -373,13 +382,19 @@ final class AtakTerrainApiController
 
             return $r;
         }
-        $bin = (string) file_get_contents($path);
         $r = new Response();
         $r->setStatusCode(200)
             ->header('Content-Type', 'image/png')
             ->header('Cache-Control', 'private, max-age=60')
             ->header('ETag', $etag)
-            ->setBody($bin);
+            ->setBodyStream(static function () use ($path): void {
+                $handle = @fopen($path, 'rb');
+                if ($handle === false) {
+                    return;
+                }
+                fpassthru($handle);
+                fclose($handle);
+            });
 
         return $r;
     }

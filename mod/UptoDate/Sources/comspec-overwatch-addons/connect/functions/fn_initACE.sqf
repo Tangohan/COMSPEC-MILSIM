@@ -33,9 +33,16 @@ private _condSync = {
 private _noChildren = { [] };
 
 private _mainAction = [
-    "COMSPEC_Main", "COMSPEC Overwatch", "", {}, _condEnabled, _noChildren
+    "COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_mainAction, ["ACE_SelfActions"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _accountAction = [
+    "COMSPEC_Account", "Connexion Athena", "", {
+        [] call comspec_overwatch_connect_fnc_openLogin;
+    }, _condEnabled, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_accountAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _tabletAction = [
     "COMSPEC_Tablet", "Ouvrir téléphone ATAK", "", {

@@ -56,6 +56,7 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('_minModRequired', $dll);
         self::assertStringContainsString('CaptureVersionHints', $dll);
         self::assertStringContainsString('fnc_packVersion', $sqfRestore);
+        self::assertStringNotContainsString('openLogin', $sqfRestore);
         self::assertStringContainsString('Pack Overwatch minimal', $bo);
         self::assertStringContainsString("'min_mod_version' => '1.5.0'", $exp);
         self::assertFileExists($root . '/bootstrap/athena_game_auth_migration.php');

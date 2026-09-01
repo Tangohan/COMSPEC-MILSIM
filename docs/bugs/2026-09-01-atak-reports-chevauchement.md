@@ -19,6 +19,8 @@ Deux effets se cumulaient.
 
 - Athena ne s’applique plus que sur sa propre page.
 - À l’ouverture de Comptes-rendus, et après le calage du menu, les blocs sont replacés : titre, Reçus / Nouveau, liste, Localiser / Effacer, détail, sans recouvrement.
+- Sur l’onglet Nouveau, un seul formulaire est visible (TIC, Eagle Down, bilan, FRAGO ou SALUTE). Les autres ne restent plus empilés.
+- Athena est masquée tant que Comptes-rendus est ouvert.
 - Libellés en français. La barre du bas montre Retour, Localiser et Effacer côte à côte.
 
 ## Fichiers touchés

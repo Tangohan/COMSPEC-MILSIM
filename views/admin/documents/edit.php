@@ -73,6 +73,9 @@ if (is_string($docTags)) {
     $docTags = json_decode($docTags, true);
 }
 $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
+$documentOrigin = $documentOrigin ?? ((isset($document['origin']) && $document['origin'] === 'authored') ? 'authored' : 'upload');
+$manuscript = $manuscript ?? \App\Support\DocumentManuscript::forView($document ?? [], (string) ($issuingAuthorityDefault ?? ''));
+$issuingAuthorityDefault = $issuingAuthorityDefault ?? '';
 ?>
 <style>
   .doc-help-details > summary { list-style: none; }
@@ -87,7 +90,7 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
     <p class="mb-4 text-sm text-red-600"><?= htmlspecialchars(\App\Core\Session::get('error')) ?></p>
     <?php \App\Core\Session::forget('error'); endif; ?>
 
-    <form action="<?= url('documents/gestion/' . $document['id'] . '/modifier') ?>" method="post" class="mb-10">
+    <form action="<?= url('documents/gestion/' . $document['id'] . '/modifier') ?>" method="post" id="doc-edit-form" class="mb-10">
         <?= \App\Core\Csrf::field() ?>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="space-y-6">
@@ -131,6 +134,29 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Tags</label>
                             <input type="text" name="tags_text" class="w-full border border-slate-200 rounded px-3 py-2" value="<?= htmlspecialchars($tagsStr) ?>" placeholder="tag1, tag2" />
+                        </div>
+                    </div>
+                </section>
+                <section class="bg-white border border-slate-200 rounded-lg p-4">
+                    <h2 class="text-sm font-bold text-slate-800 mb-3">Contenu</h2>
+                    <div class="fm-origin-choice mb-4">
+                        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                            <input type="radio" name="document_origin" value="upload" class="mt-1" <?= $documentOrigin !== 'authored' ? 'checked' : '' ?> />
+                            <span><span class="block font-semibold">Joindre un fichier</span><span class="text-[11px] text-slate-500">La pièce jointe reste gérée plus bas, dans les versions.</span></span>
+                        </label>
+                        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                            <input type="radio" name="document_origin" value="authored" class="mt-1" <?= $documentOrigin === 'authored' ? 'checked' : '' ?> />
+                            <span><span class="block font-semibold">Rédiger le document</span><span class="text-[11px] text-slate-500">Page de garde, signatures, puis le corps du texte.</span></span>
+                        </label>
+                    </div>
+                    <div id="doc-origin-authored" class="<?= $documentOrigin === 'authored' ? '' : 'hidden' ?>">
+                        <?php
+                        $documentTitle = (string) ($document['title'] ?? 'Titre du document');
+                        $fmLivePreview = true;
+                        require base_path('views/partials/document_manuscript_fields.php');
+                        ?>
+                        <div class="mt-4">
+                            <?php require base_path('views/partials/document_fm_paper.php'); ?>
                         </div>
                     </div>
                 </section>
@@ -458,3 +484,4 @@ $tagsStr = is_array($docTags) ? implode(', ', $docTags) : '';
         <a href="<?= url('documents/gestion') ?>" class="underline">Retour liste documents</a>
     </p>
 </div>
+<script src="<?= htmlspecialchars(asset_url('assets/js/document-fm-preview.js'), ENT_QUOTES, 'UTF-8') ?>"></script>

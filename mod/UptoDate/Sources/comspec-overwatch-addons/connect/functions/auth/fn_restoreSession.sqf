@@ -7,11 +7,5 @@ if (_raw find "OK|READY" == 0) then {
     [] call comspec_overwatch_connect_fnc_applyBootstrap;
     true
 } else {
-    [] spawn {
-        uiSleep 0.4;
-        if !([] call comspec_overwatch_connect_fnc_isReady) then {
-            [] call comspec_overwatch_connect_fnc_openLogin;
-        };
-    };
     false
 };

@@ -11,4 +11,4 @@ missionNamespace setVariable ["comspec_profile_function", "", false];
 missionNamespace setVariable ["comspec_profile_avatar", "", false];
 missionNamespace setVariable ["comspec_profile_avatar_local", "", false];
 missionNamespace setVariable ["comspec_profile_avatar_loading", false, false];
-[] call comspec_overwatch_connect_fnc_openLogin;
+

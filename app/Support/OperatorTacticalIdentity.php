@@ -67,6 +67,35 @@ final class OperatorTacticalIdentity
         return $unit;
     }
 
+    /**
+     * Identifiant de groupe pour le suivi d’effectif : indicatif + affectation, jamais le nom de communauté.
+     */
+    public static function groupLabel(
+        string $callsign,
+        string $unit,
+        string $tenantName = '',
+        string $communityLabel = '',
+        string $armaGroup = ''
+    ): string {
+        $cs = self::sanitizeCallsign($callsign, $tenantName, $communityLabel);
+        $asg = self::unitAssignment($unit, $tenantName, $communityLabel);
+        if ($cs !== '' && $asg !== '') {
+            return $cs . ' · ' . $asg;
+        }
+        $arma = trim($armaGroup);
+        if ($arma !== '' && !self::looksLikeCommunityTitle($arma, $tenantName, $communityLabel)) {
+            return $arma;
+        }
+        if ($cs !== '') {
+            return $cs;
+        }
+        if ($asg !== '') {
+            return $asg;
+        }
+
+        return '';
+    }
+
     public static function looksLikeCommunityTitle(string $value, string $tenantName = '', string $communityLabel = ''): bool
     {
         $raw = trim($value);

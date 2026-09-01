@@ -7,6 +7,8 @@ params ["_group", ["_interfaceInit", false], "_isDialog", "_settings"];
 
 if (isNull _group) exitWith {};
 
+["bda"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
+
 if (!isNil "Iceman_fnc_bda_onOpened") exitWith {
     _this call Iceman_fnc_bda_onOpened;
 };

@@ -28,7 +28,6 @@ if (isNull (uiNamespace getVariable ["cTab_Android_dlg", displayNull])
             _waited = _waited + 0.1;
             !isNull (uiNamespace getVariable ["cTab_Android_dlg", displayNull]) || {_waited > 3}
         };
-        if (isNull (uiNamespace getVariable ["cTab_Android_dlg", displayNull])) exitWith {};
         [_kind] call comspec_overwatch_connect_fnc_intelNoteShow;
     };
     true

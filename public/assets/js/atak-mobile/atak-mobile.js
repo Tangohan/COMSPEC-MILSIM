@@ -43,6 +43,8 @@
     lastUnitsAt: 0,
     chat: [],
     chatChannel: 'C2',
+    chatSignature: '',
+    chatDraft: '',
     pings: [],
     markers: [],
     nineLines: [],
@@ -672,48 +674,180 @@
   }
 
   /* ---------- Chat ---------- */
-  function renderChat() {
-    var el = document.getElementById('am-screen-chat');
-    if (!el) return;
-    var channels = ['C2', 'ALPHA', 'BRAVO', 'JTAC', 'LOG'];
-    var msgs = state.chat.slice().reverse().filter(function (m) {
+  function visibleChatMessages() {
+    return state.chat.slice().reverse().filter(function (m) {
       var body = String(m.body || m.message || '');
       var ch = state.chatChannel;
       if (ch === 'C2') return true;
       return body.toUpperCase().indexOf('[' + ch) >= 0 || String(m.channel || '').toUpperCase() === ch;
     }).slice(-80);
+  }
 
-    el.innerHTML =
-      '<div class="am-chat">' +
-      '<div class="am-chat__channels">' +
-      channels.map(function (c) {
-        return '<button type="button" class="am-chip' + (state.chatChannel === c ? ' is-on' : '') + '" data-channel="' + c + '">' + c + '</button>';
-      }).join('') +
-      '</div>' +
-      '<div class="am-chat__messages" id="am-chat-list">' +
-      (msgs.length ? msgs.map(renderChatMsg).join('') : '<p class="am-muted">Aucun message.</p>') +
-      '</div>' +
-      '<form class="am-chat__composer" id="am-chat-form">' +
-      '<button type="button" id="am-chat-plus" aria-label="Joindre">+</button>' +
-      '<input type="text" id="am-chat-input" placeholder="Message…" autocomplete="off" maxlength="500">' +
-      '<button type="submit" aria-label="Envoyer">➤</button>' +
-      '</form></div>';
+  function chatFingerprint(msgs) {
+    return state.chatChannel + '#' + msgs.map(function (m) {
+      return String(m.id != null ? m.id : '') + ':' + String(m.body || m.message || '').length;
+    }).join('|');
+  }
 
+  function updateChatChannels() {
+    var el = document.getElementById('am-chat-channels');
+    if (!el) return;
+    var channels = ['C2', 'ALPHA', 'BRAVO', 'JTAC', 'LOG'];
+    if (!el.dataset.ready) {
+      el.innerHTML = channels.map(function (c) {
+        return '<button type="button" class="am-chip" data-channel="' + c + '">' + c + '</button>';
+      }).join('');
+      el.dataset.ready = '1';
+    }
+    el.querySelectorAll('[data-channel]').forEach(function (btn) {
+      btn.classList.toggle('is-on', btn.getAttribute('data-channel') === state.chatChannel);
+    });
+  }
+
+  function resizeChatInput(el) {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(Math.max(el.scrollHeight, 44), 140) + 'px';
+  }
+
+  function restoreChatDraft() {
+    var input = document.getElementById('am-chat-input');
+    if (!input) return;
+    if (state.chatDraft && input.value === '') input.value = state.chatDraft;
+    resizeChatInput(input);
+  }
+
+  function renderChat(force) {
     var list = document.getElementById('am-chat-list');
-    if (list) list.scrollTop = list.scrollHeight;
+    if (!list) return;
+    updateChatChannels();
+    restoreChatDraft();
+    var msgs = visibleChatMessages();
+    var fp = chatFingerprint(msgs);
+    if (!force && fp === state.chatSignature) return;
+    state.chatSignature = fp;
+
+    var nearBottom = (list.scrollHeight - list.scrollTop - list.clientHeight) < 96;
+    var prevScroll = list.scrollTop;
+    list.innerHTML = msgs.length
+      ? msgs.map(renderChatMsg).join('')
+      : '<p class="am-muted">Aucun message pour le moment.</p>';
+    if (nearBottom || force) list.scrollTop = list.scrollHeight;
+    else list.scrollTop = prevScroll;
+  }
+
+  function linkGrids(html) {
+    return html
+      .replace(/(GRID\s*)(\d{2,4})\s+(\d{2,4})/gi, function (_, p, a, b) {
+        var x = parseInt(a, 10) * 100;
+        var y = parseInt(b, 10) * 100;
+        return '<a href="#" data-center-xy="' + x + ',' + y + '">' + p + a + ' ' + b + '</a>';
+      })
+      .replace(/(Grille\s+)(\d{6})/gi, function (_, p, g) {
+        var x = parseInt(g.slice(0, 3), 10) * 100;
+        var y = parseInt(g.slice(3, 6), 10) * 100;
+        return '<a href="#" data-center-xy="' + x + ',' + y + '">' + p + g + '</a>';
+      });
+  }
+
+  function chatTime(m) {
+    var ts = m.created_at || m.time || '';
+    var tShort = ts ? String(ts).slice(11, 19) : '';
+    return tShort ? (tShort + 'Z') : '';
+  }
+
+  function parseGroupMsg(m, body) {
+    if (m && m.group && (m.group.text || m.group.call_sign)) return m.group;
+    var raw = String(body || '');
+    var cut = raw.replace(/^(\[[^\]]+\]){3,4}\s*/, '');
+    if (cut.toUpperCase().indexOf('GROUPE|') !== 0) return null;
+    var parts = cut.split('|');
+    if (parts.length < 5) return null;
+    return {
+      group_id: parts[1] || '',
+      call_sign: parts[2] || '',
+      grid: parts[3] || '',
+      text: parts.slice(4).join('|')
+    };
+  }
+
+  function parseMedicalMsg(body) {
+    var raw = String(body || '').replace(/^(\[[^\]]+\]){3,4}\s*/, '');
+    if (!/ALERTE\s+M[ÉE]DICALE/i.test(raw) && raw.toUpperCase().indexOf('WIA|') !== 0) return null;
+    var parts = raw.split('|').map(function (s) { return String(s || '').trim(); });
+    if (raw.toUpperCase().indexOf('WIA|') === 0) {
+      return {
+        title: 'Alerte médicale',
+        call_sign: '',
+        label: parts[1] || 'Blessé',
+        extras: parts.slice(2)
+      };
+    }
+    return {
+      title: 'Alerte médicale',
+      call_sign: parts[1] || '',
+      label: parts[2] || '',
+      extras: parts.slice(3)
+    };
+  }
+
+  function parseMpMsg(m, body) {
+    if (m && m.mp && (m.mp.text || m.mp.body)) return m.mp;
+    var raw = String(body || '');
+    var up = raw.toUpperCase();
+    if (up.indexOf('MP|') !== 0 && up.indexOf('PRIVÉ|') !== 0 && up.indexOf('PRIVE|') !== 0) return null;
+    var parts = raw.split('|');
+    return {
+      from: parts[1] || '',
+      to: parts[2] || '',
+      text: parts.slice(Math.max(parts.length - 1, 3)).join('|')
+    };
   }
 
   function renderChatMsg(m) {
     var body = String(m.body || m.message || '');
-    var linked = body.replace(/(GRID\s*)(\d{2,4})\s+(\d{2,4})/gi, function (_, p, a, b) {
-      var x = parseInt(a, 10) * 100;
-      var y = parseInt(b, 10) * 100;
-      return '<a href="#" data-center-xy="' + x + ',' + y + '">' + p + a + ' ' + b + '</a>';
-    });
-    var ts = m.created_at || m.time || '';
-    var tShort = ts ? String(ts).slice(11, 19) : '';
-    return '<article class="am-msg"><div class="am-msg__meta"><strong>' + esc(m.author || '—') + '</strong><span>' + esc(tShort) + 'Z</span></div>' +
-      '<div class="am-msg__body">' + linked + '</div></article>';
+    var author = String(m.author || '—');
+    var when = chatTime(m);
+    var group = parseGroupMsg(m, body);
+    var medical = parseMedicalMsg(body);
+    var mp = parseMpMsg(m, body);
+    var cls = 'am-msg';
+    var tag = '';
+    var text = body;
+    var facts = [];
+
+    if (medical) {
+      cls += ' am-msg--med';
+      tag = 'Médical';
+      author = medical.call_sign || author;
+      text = [medical.call_sign, medical.label].filter(Boolean).join(' — ') || medical.title;
+      facts = medical.extras.slice();
+    } else if (group) {
+      cls += ' am-msg--group';
+      tag = 'Groupe';
+      author = group.call_sign || author;
+      text = group.text || 'Message de groupe';
+      if (group.group_id) facts.push(group.group_id);
+      if (group.grid) facts.push('Grille ' + group.grid);
+    } else if (mp) {
+      cls += ' am-msg--mp';
+      tag = 'Privé';
+      author = mp.from || author;
+      text = mp.text || '';
+      if (mp.to) facts.push('Pour ' + mp.to);
+    }
+
+    return '<article class="' + cls + '">' +
+      '<div class="am-msg__meta">' +
+        '<strong>' + esc(author) + '</strong>' +
+        (tag ? '<span class="am-msg__tag">' + esc(tag) + '</span>' : '') +
+        '<span>' + esc(when) + '</span>' +
+      '</div>' +
+      '<div class="am-msg__body">' + linkGrids(esc(text)) + '</div>' +
+      (facts.length ? '<div class="am-msg__facts">' + facts.map(function (f) {
+        return '<span>' + linkGrids(esc(f)) + '</span>';
+      }).join('') + '</div>' : '') +
+      '</article>';
   }
 
   function sendChat(text) {
@@ -724,7 +858,10 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ mapId: MAP_ID, author: authorLabel(), body: body, message: body })
-    }).then(function () { return loadChat(); });
+    }).then(function () {
+      state.chatDraft = '';
+      return loadChat();
+    });
   }
 
   /* ---------- BFT ---------- */
@@ -1058,7 +1195,7 @@
       t = e.target.closest('[data-channel]');
       if (t) {
         state.chatChannel = t.getAttribute('data-channel');
-        renderChat();
+        renderChat(true);
         return;
       }
       t = e.target.closest('[data-bft-filter]');
@@ -1134,8 +1271,29 @@
         e.preventDefault();
         var input = document.getElementById('am-chat-input');
         var val = input ? input.value : '';
-        if (input) input.value = '';
-        sendChat(val).catch(function () {});
+        if (!String(val || '').trim()) return;
+        if (input) {
+          input.value = '';
+          resizeChatInput(input);
+        }
+        sendChat(val).then(function () {
+          var again = document.getElementById('am-chat-input');
+          if (again) again.focus();
+        }).catch(function () {
+          var again = document.getElementById('am-chat-input');
+          if (again && !String(again.value || '').trim()) {
+            again.value = val;
+            state.chatDraft = val;
+            resizeChatInput(again);
+          }
+        });
+      }
+    });
+
+    document.addEventListener('input', function (e) {
+      if (e.target && e.target.id === 'am-chat-input') {
+        state.chatDraft = e.target.value;
+        resizeChatInput(e.target);
       }
     });
 

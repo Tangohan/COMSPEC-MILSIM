@@ -79,6 +79,8 @@ if (is_array($mbOp) && !empty($mbOp['starts_at'])) {
 }
 
 $cu = $currentUser ?? null;
+$dashSteamId = \App\Support\SteamId::normalize(is_array($cu) ? (string) ($cu['steam_id'] ?? '') : '');
+$dashSteamLinked = $dashSteamId !== null;
 $displayName = $cu ? (string) ($cu['display_name'] ?? $cu['email'] ?? 'Opérateur') : 'Opérateur';
 $roleHint = 'Opérateur';
 $gr = $grade ?? null;
@@ -345,26 +347,20 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             </div>
         </section>
 
-        <?php
-        $dashSteamId = \App\Support\SteamId::normalize(is_array($cu) ? (string) ($cu['steam_id'] ?? '') : '');
-        $dashSteamLinked = $dashSteamId !== null;
-        ?>
+        <?php if (!$dashSteamLinked): ?>
         <section class="dash-steam-tile" id="connexion-steam" aria-labelledby="dash-steam-title">
             <div class="dash-steam-tile__shell">
                 <a class="dash-steam-tile__open" href="<?= htmlspecialchars(url('account/steam/connect'), ENT_QUOTES, 'UTF-8') ?>">
                     <span class="dash-steam-tile__kicker">Liaison</span>
-                    <strong id="dash-steam-title" class="dash-steam-tile__title"><?= $dashSteamLinked ? 'Steam associé' : 'Connexion Steam' ?></strong>
+                    <strong id="dash-steam-title" class="dash-steam-tile__title">Connexion Steam</strong>
                     <em class="dash-steam-tile__hint">
-                        <?php if ($dashSteamLinked): ?>
-                            Votre compte Steam est lié. En jeu, Overwatch peut vous reconnaître. Cliquez pour changer de compte Steam.
-                        <?php else: ?>
-                            Associez votre compte Steam pour être reconnu en jeu. Steam s’ouvre, vous vous connectez, puis vous revenez ici.
-                        <?php endif; ?>
+                        Associez votre compte Steam pour être reconnu en jeu. Steam s’ouvre, vous vous connectez, puis vous revenez ici.
                     </em>
-                    <span class="dash-steam-tile__cta"><?= $dashSteamLinked ? 'Changer le compte Steam' : 'Se connecter avec Steam' ?></span>
+                    <span class="dash-steam-tile__cta">Se connecter avec Steam</span>
                 </a>
             </div>
         </section>
+        <?php endif; ?>
 
         <?php
         $announce_items = is_array($dashboard_announce_items ?? null) ? $dashboard_announce_items : [];

@@ -357,11 +357,11 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_ace_menus", "CHECKBOX",
     [
-        "Menus ACE Overwatch",
-        "Ajoute les entrées Overwatch / ATAK dans le menu d’interaction ACE (sur soi). Désactivez si votre pack de mods affiche des erreurs ACE au démarrage (Mavic, IED, ZEN…). Les raccourcis clavier et la tablette restent disponibles."
+        "Menus ACE Overwatch étendus",
+        "Les rapports ATAK, la demande d’appui, le service véhicule et la réparation du téléphone sont dans ACE. Connexion Athena reste en tête du menu. Décochez seulement si votre pack affiche des erreurs ACE au démarrage ; un redémarrage de mission peut être nécessaire."
     ],
     "COMSPEC Overwatch",
-    false
+    true
 ] call CBA_fnc_addSetting;
 
 [
@@ -505,7 +505,7 @@ private _fnc_applyNet = {
     "comspec_overwatch_frs_ui", "SLIDER",
     ["Texte et boutons de la fiche", "Agrandit ou réduit le texte, les boutons et les pastilles de la fiche, sans changer le cadre. Utile si le rédacteur est trop petit ou trop dense."],
     ["COMSPEC Overwatch", "ATAK — fiches FRS / FRM"],
-    [0.75, 1.45, 1, 0, true],
+    [0.75, 1.45, 1.2, 0, true],
     false,
     {
         if (!hasInterface) exitWith {};

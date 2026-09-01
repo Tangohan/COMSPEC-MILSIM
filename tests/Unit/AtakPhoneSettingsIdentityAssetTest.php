@@ -58,11 +58,28 @@ final class AtakPhoneSettingsIdentityAssetTest extends TestCase
         self::assertStringContainsString('[true] call comspec_overwatch_connect_fnc_getCallsign', $hud);
         self::assertStringContainsString('inGameGroupLabel', $hud);
         self::assertStringNotContainsString('name _man', $hud);
+        $grp = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_inGameGroupLabel.sqf'
+        );
+        $pos = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_updatePosition.sqf'
+        );
+        $layout = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_ATAK_Check_Layout.sqf'
+        );
+        self::assertStringContainsString('comspec_profile_unit', $grp);
+        self::assertStringContainsString('%1 · %2', $grp);
+        self::assertStringContainsString('inGameGroupLabel', $pos);
+        self::assertStringNotContainsString('trim (groupId (group _unit))', $pos);
+        self::assertStringContainsString('inGameGroupLabel', $layout);
+        self::assertStringNotContainsString('groupId group cTab_player, [cTab_player] call CBA_fnc_getGroupIndex', $layout);
         self::assertStringContainsString('Ne reprend jamais le nom de communauté', $sync);
         self::assertStringContainsString('CallsignCell', $dll);
+        self::assertStringContainsString('ComposeBftGroupLabel', $dll);
         self::assertStringContainsString('OperatorTacticalIdentity', $php);
         self::assertStringContainsString('OperatorTacticalIdentity', $web);
         self::assertStringContainsString('OperatorTacticalIdentity::callsign', $api);
+        self::assertStringContainsString('OperatorTacticalIdentity::groupLabel', $api);
         self::assertFileExists($root . '/docs/bugs/2026-09-01-atak-parametres-indicatif-communaute.md');
     }
 }
