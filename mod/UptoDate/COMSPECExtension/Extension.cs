@@ -29,7 +29,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.18.0";
+    private const string ExtensionVersion = "1.18.1";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -1653,6 +1653,15 @@ public static partial class Extension
                 break;
         }
         return s;
+    }
+
+    /// <summary>
+    /// Liaison portail : clé historique ou jeton de session Athena (Overwatch 1.5).
+    /// Sans ça, NotifyNewPhoto renvoyait not_connected après « Session Athena prête ».
+    /// </summary>
+    private static bool HasPortalAuth()
+    {
+        return _apiKey.Length > 0 || _gameAccessToken.Length > 0;
     }
 
     /// <summary>Attache X-COMSPEC-KEY (+ session / Steam mémorisés) sur une requête.</summary>
@@ -5936,7 +5945,7 @@ public static partial class Extension
     /// </summary>
     private static string EnqueueReconImage(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0)
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
             return "ERR|not_connected";
 
         EnsureScreenshotQuota();
@@ -6126,7 +6135,7 @@ public static partial class Extension
             ? "SsePhotoUpload"
             : "PhotoUpload";
 
-        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0)
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
         {
             ReleasePhotoDedup(job.DedupKey);
             InvokeCallback(cbName, "ERR|not_connected|" + Path.GetFileName(job.RawPath));
@@ -6389,7 +6398,7 @@ public static partial class Extension
         if (string.IsNullOrWhiteSpace(fullPath)) return;
         if (!IsImageExtension(Path.GetExtension(fullPath))) return;
         if (IsSseIdentityCaptureName(fullPath)) return;
-        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0) return;
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth()) return;
 
         // Debounce Created+Changed pendant l'écriture.
         if (!WatcherDebounce.TryAdd(fullPath, 0)) return;
@@ -6476,7 +6485,7 @@ public static partial class Extension
     /// </summary>
     private static string BeginUploadSsePhoto(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0)
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
             return "ERR|not_connected";
         var personId = args.Length > 0 ? (args[0] ?? "").Trim() : "";
         if (string.IsNullOrEmpty(personId)) return "ERR|person_id_empty";
