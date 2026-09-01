@@ -16,6 +16,10 @@ final class EmailEvents
     public const MEMBER_LEFT_COMMUNITY_CONFIRMATION = 'MEMBER_LEFT_COMMUNITY_CONFIRMATION';
     public const SECURITY_ALERT = 'SECURITY_ALERT';
     public const NEW_DEVICE_LOGIN = 'NEW_DEVICE_LOGIN';
+    /** Identifiant Steam associé au compte depuis Overwatch (e-mail au membre). */
+    public const GAME_STEAM_LINKED_MEMBER = 'GAME_STEAM_LINKED_MEMBER';
+    /** Identifiant Steam associé ou en conflit — e-mail à l’encadrement. */
+    public const GAME_STEAM_LINKED_STAFF = 'GAME_STEAM_LINKED_STAFF';
     public const MULTIPLE_LOGIN_ATTEMPTS = 'MULTIPLE_LOGIN_ATTEMPTS';
     public const EMAIL_VERIFICATION = 'EMAIL_VERIFICATION';
     public const COMMUNITY_INVITATION = 'COMMUNITY_INVITATION';
@@ -168,6 +172,8 @@ final class EmailEvents
         self::MEMBER_LEFT_COMMUNITY_CONFIRMATION,
         self::SECURITY_ALERT,
         self::NEW_DEVICE_LOGIN,
+        self::GAME_STEAM_LINKED_MEMBER,
+        self::GAME_STEAM_LINKED_STAFF,
         self::MULTIPLE_LOGIN_ATTEMPTS,
         self::EMAIL_VERIFICATION,
         self::COMMUNITY_INVITATION,

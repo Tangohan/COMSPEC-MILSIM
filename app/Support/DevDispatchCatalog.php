@@ -589,11 +589,24 @@ final class DevDispatchCatalog
             ], [], [], ['atak', 'platform'], [
                 'Ouvrez le tableau de bord. Tuile Connexion Steam : connectez-vous sur Steam, puis revenez. Un message confirme l’association. Pas de pack jeu.',
             ], 'Portail'),
+            $pr(325, '2026-09-01', 'La connexion Athena en jeu associe Steam toute seule', 'Si Steam n’était pas encore enregistré sur le compte, la connexion par e-mail en jeu l’associe à partir de la session. L’opérateur est prévenu à l’écran et par courriel ; l’encadrement reçoit aussi un courriel', [
+                'Connexion par e-mail en jeu : l’identifiant Steam de la session est enregistré s’il manquait',
+                'L’opérateur voit la confirmation à l’écran et reçoit un courriel ; l’encadrement est informé',
+            ], [], [
+                'Sans identifiant Steam déjà enregistré, la connexion en jeu échouait au lieu d’associer Steam',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement, connectez-vous avec votre e-mail. Si Steam n’était pas associé, il l’est après cette connexion.',
+            ], 'Overwatch'),
             $pr(322, '2026-09-01', 'L’ombrage d’un théâtre est le même pour toutes les communautés', 'Le sol, l’ombrage et les volumes du jeu relevés sur un théâtre — Altis, Malden, Stratis… — apparaissent désormais sur le poste de chaque communauté. Une communauté n’a plus à tout relever à nouveau si une autre l’a déjà fait. Les positions, les notes et les effectifs restent propres à chacune', [], [], [
                 'Deux communautés sur le même théâtre : l’une voyait l’ombrage et le relief, l’autre « pas encore sur le poste »',
             ], ['atak'], [
                 'Rechargez la carte du poste. Pas de nouveau pack jeu. Les positions et les notes restent propres à chaque communauté.',
             ], 'Portail'),
+            $pr(321, '2026-09-01', 'La session Overwatch se rouvre même sans Steam', 'Au relancement d’Arma, Overwatch retrouve la session Athena même si Steam n’est pas associé au compte. Plus d’incident qui referme la connexion', [], [], [
+                'Au relancement, la session enregistrée plantait dès qu’aucun identifiant Steam n’était connu',
+            ], ['atak'], [
+                'Relancez Arma avec Overwatch. Si vous étiez déjà connecté à Athena sans Steam associé, la session se rouvre. Pas besoin d’un nouveau pack jeu.',
+            ], 'Athena'),
             $pr(318, '2026-09-01', 'Overwatch 1.5.0 : votre identité, plus le nom de la communauté', 'Le pack jeu affiche l’opérateur, pas le titre de la communauté. L’indicatif vient de la fiche Effectifs. Les messages du poste restent dans le téléphone et le journal, plus dans le chat de bord d’Arma. Sur le téléphone, le journal Athena se lit enfin', [
                 'Écran prêt : photo si elle existe, prénom, nom, indicatif, rôle, grade et fonction',
             ], [
