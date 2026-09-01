@@ -363,7 +363,10 @@ final class GameAuthService
         $modVersion = trim((string) ($body['mod_version'] ?? ''));
         $min = trim((string) ($exp['min_mod_version'] ?? ''));
         if ($modVersion !== '' && $min !== '' && version_compare($modVersion, $min, '<')) {
-            return $this->fail('MOD_OUTDATED', 426, ['min_mod_version' => $min]);
+            return $this->fail('MOD_OUTDATED', 426, [
+                'min_mod_version' => $min,
+                'detected_mod_version' => $modVersion,
+            ]);
         }
         $deviceId = $this->sanitizeDeviceId((string) ($body['device_id'] ?? ''));
         if ($deviceId === '') {

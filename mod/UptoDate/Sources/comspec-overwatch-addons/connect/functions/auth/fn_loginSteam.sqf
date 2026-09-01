@@ -9,7 +9,7 @@ if ((count _steam) < 8) exitWith {
     };
 };
 private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
-private _raw = ["COMSPECExtension" callExtension ["AuthSteam", [_url, _steam, "1.5.0"]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = ["COMSPECExtension" callExtension ["AuthSteam", [_url, _steam, [] call comspec_overwatch_connect_fnc_packVersion]]] call comspec_overwatch_connect_fnc_extResult;
 if (_raw find "STEAM_NOT_LINKED" >= 0) then {
     private _d = uiNamespace getVariable ["COMSPEC_AthenaAuth_Display", displayNull];
     if (!isNull _d) then {

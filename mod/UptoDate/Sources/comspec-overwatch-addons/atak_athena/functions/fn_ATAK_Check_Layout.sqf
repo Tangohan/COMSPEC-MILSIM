@@ -157,3 +157,10 @@ if (!isNull _toolBnt) then {
         ["ATAK_Toggle_Spring", _ifaceInit, 1200, [3]]
     ] call BCE_fnc_Anim_CustomOffset;
 };
+
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateMapHud") then {
+    [_disp] spawn {
+        uiSleep 0.05;
+        [] call comspec_overwatch_atak_athena_fnc_athena_updateMapHud;
+    };
+};

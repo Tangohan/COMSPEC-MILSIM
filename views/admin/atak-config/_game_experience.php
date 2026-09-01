@@ -66,8 +66,9 @@ $img = trim((string) ($gp['image'] ?? ''));
                     <?php endforeach; ?>
                 </div>
                 <div class="grid grid-cols-3 gap-2 mt-3">
-                    <label class="block text-sm">Version minimale
-                        <input type="text" name="game_min_mod_version" value="<?= $h($ge['min_mod_version'] ?? '2.3.0') ?>" class="mt-1 w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
+                    <label class="block text-sm">Pack Overwatch minimal
+                        <input type="text" name="game_min_mod_version" value="<?= $h($ge['min_mod_version'] ?? '1.5.0') ?>" class="mt-1 w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm" placeholder="1.5.0">
+                        <span class="block text-xs text-slate-500 mt-1">Les opérateurs dont le pack est plus ancien voient la version actuelle et celle exigée.</span>
                     </label>
                     <label class="block text-sm">Canal
                         <select name="game_channel" class="mt-1 w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm">

@@ -7,5 +7,5 @@ if ((count _email) < 5 || {(count _pass) < 1}) exitWith {
 };
 private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 (_d displayCtrl 9410) ctrlSetStructuredText parseText "<t align='center' size='0.55' color='#7aa89a'>Authentification en cours…</t>";
-["COMSPECExtension" callExtension ["AuthPassword", [_url, _email, _pass, "1.5.0"]]] call comspec_overwatch_connect_fnc_extResult;
+["COMSPECExtension" callExtension ["AuthPassword", [_url, _email, _pass, [] call comspec_overwatch_connect_fnc_packVersion]]] call comspec_overwatch_connect_fnc_extResult;
 [] call comspec_overwatch_connect_fnc_pollAuth;

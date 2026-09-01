@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.57;
-        versionStr = "1.0.57";
-        versionAr[] = {1, 0, 57};
+        version = 1.0.58;
+        versionStr = "1.0.58";
+        versionAr[] = {1, 0, 58};
     };
 };
 
@@ -70,6 +70,9 @@ class CfgFunctions
             class athena_showLinkDialog {};
             class athena_showPhoneConnect {};
             class athena_openAtakApp {};
+            class athena_installMapHud {};
+            class athena_updateMapHud {};
+            class athena_mapHudZoom {};
             class athena_openFeature {};
             class athena_pollIcemanPhotos {};
             class athena_onVibrate {};

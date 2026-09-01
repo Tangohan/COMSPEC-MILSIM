@@ -14,6 +14,20 @@ private _tenant = if ((count _parts) > 7) then { _parts select 7 } else { "" };
 private _unit = if ((count _parts) > 8) then { _parts select 8 } else { "" };
 private _grade = if ((count _parts) > 9) then { _parts select 9 } else { "" };
 private _brand = if ((count _parts) > 10) then { _parts select 10 } else { "" };
+private _modDet = if ((count _parts) > 12) then { _parts select 12 } else { "" };
+private _extDet = if ((count _parts) > 13) then { _parts select 13 } else { "" };
+private _modMin = if ((count _parts) > 14) then { _parts select 14 } else { "" };
+
+private _fnc_blank = {
+    params ["_s"];
+    _s = str _s;
+    if (_s isEqualTo "-" || {_s isEqualTo ""}) then { "" } else { _s };
+};
+_modDet = [_modDet] call _fnc_blank;
+_extDet = [_extDet] call _fnc_blank;
+_modMin = [_modMin] call _fnc_blank;
+if (_modDet isEqualTo "") then { _modDet = [] call comspec_overwatch_connect_fnc_packVersion; };
+if (_extDet isEqualTo "") then { _extDet = "1.18.0"; };
 
 missionNamespace setVariable ["comspec_overwatch_auth_state", _state, false];
 if (!(_name isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_name", _name, false]; };
@@ -60,7 +74,17 @@ private _errTxt = switch (_err) do {
     case "ACCOUNT_DISABLED": { "Ce compte n’est plus autorisé." };
     case "TENANT_DISABLED": { "Cette communauté n’est plus accessible." };
     case "NO_TENANT": { "Aucune communauté n’est rattachée à ce compte." };
-    case "MOD_OUTDATED": { "Cette version du pack n’est plus acceptée. Installez la mise à jour." };
+    case "MOD_OUTDATED": {
+        if (_modMin isEqualTo "") then {
+            "Cette version du pack n’est plus acceptée. Installez la mise à jour."
+        } else {
+            format [
+                "Cette version du pack n’est plus acceptée. Pack actuel : %1 — version exigée : %2.",
+                _modDet,
+                _modMin
+            ]
+        }
+    };
     case "SESSION_EXPIRED": { "La session a expiré. Connectez-vous à nouveau." };
     case "NETWORK_ERROR": { "Athena est injoignable pour le moment." };
     case "C2_UNAVAILABLE": { "Les services de carte sont indisponibles." };
@@ -116,8 +140,20 @@ if (_ready) then {
 };
 
 if (!(_errTxt isEqualTo "")) then {
-    (_d displayCtrl 9410) ctrlSetStructuredText parseText format ["<t align='center' size='0.55' color='#e8b84a'>%1</t>", _errTxt];
+    (_d displayCtrl 9410) ctrlSetStructuredText parseText format ["<t align='center' size='0.52' color='#e8b84a'>%1</t>", _errTxt];
 };
+
+private _foot = if (_modMin isEqualTo "") then {
+    format ["<t align='center' size='0.48' color='#5a7080'>Liaison %1 • Pack actuel %2</t>", _extDet, _modDet]
+} else {
+    format [
+        "<t align='center' size='0.48' color='#5a7080'>Liaison %1 • Pack actuel %2 • Pack exigé %3</t>",
+        _extDet,
+        _modDet,
+        _modMin
+    ]
+};
+(_d displayCtrl 9430) ctrlSetStructuredText parseText _foot;
 
 if (_syncing && {!_ready}) then {
     [{ [] call comspec_overwatch_connect_fnc_pollAuth; }, [], 0.35] call CBA_fnc_waitAndExecute;

@@ -250,7 +250,7 @@ class AdminAtakConfigController
         }
         $incoming['display_name'] = trim((string) $request->input('game_display_name', ''));
         $incoming['welcome_message'] = trim((string) $request->input('game_welcome_message', ''));
-        $incoming['min_mod_version'] = trim((string) $request->input('game_min_mod_version', '2.3.0'));
+        $incoming['min_mod_version'] = trim((string) $request->input('game_min_mod_version', '1.5.0'));
         $incoming['channel'] = trim((string) $request->input('game_channel', 'PROD'));
         $incoming['update_interval'] = (int) $request->input('game_update_interval', 5);
         $uploads = new \App\Services\Community\CommunityMediaUploadService();

@@ -147,17 +147,17 @@ class COMSPEC_AthenaAuth_Dialog {
             idc = 9410;
             text = "<t align='center' size='0.55' color='#7a9e88'>● Athena — vérification de la liaison</t>";
             x = 0.31 * safezoneW + safezoneX;
-            y = 0.760 * safezoneH + safezoneY;
+            y = 0.742 * safezoneH + safezoneY;
             w = 0.38 * safezoneW;
-            h = 0.028 * safezoneH;
+            h = 0.048 * safezoneH;
         };
         class Footer: RscStructuredText {
             idc = 9430;
-            text = "<t align='center' size='0.5' color='#5a7080'>Extension • Mod</t>";
+            text = "<t align='center' size='0.5' color='#5a7080'>Liaison • Pack</t>";
             x = 0.31 * safezoneW + safezoneX;
-            y = 0.790 * safezoneH + safezoneY;
+            y = 0.792 * safezoneH + safezoneY;
             w = 0.38 * safezoneW;
-            h = 0.022 * safezoneH;
+            h = 0.028 * safezoneH;
         };
     };
 };

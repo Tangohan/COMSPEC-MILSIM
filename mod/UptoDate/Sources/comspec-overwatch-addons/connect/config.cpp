@@ -464,6 +464,7 @@ class CfgFunctions {
             class submitOTP {};
             class loginSteam {};
             class restoreSession {};
+            class packVersion {};
             class pollAuth {};
             class applyBootstrap {};
             class syncProfile {};
