@@ -421,6 +421,13 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                         </svg>
                         <span>Demande à l’encadrement</span>
                     </a>
+                    <button type="button" class="dash-idstrip__text-btn" data-dash-rail-open-external="org-anomaly" aria-controls="dash-rail-nested-org-anomaly">
+                        <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.8 21 19.5H3L12 3.8Z"/>
+                            <path stroke-linecap="round" d="M12 9.5v4.4M12 16.6h.01"/>
+                        </svg>
+                        <span>Signaler une anomalie</span>
+                    </button>
                     <?php if ($canViewAtakOperators): ?>
                     <a href="<?= url('back-office/atak/operateurs') ?>" class="dash-idstrip__text-btn dash-idstrip__text-btn--accent">
                         <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -476,6 +483,27 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                     <?php endif; ?>
                 </div>
                 <?php endif; ?>
+            </div>
+        </section>
+
+        <section class="dash-org-anomaly-tile" id="signaler-anomalie" aria-labelledby="dash-org-anomaly-title">
+            <div class="dash-org-anomaly-tile__shell">
+                <button
+                    type="button"
+                    class="dash-org-anomaly-tile__open"
+                    data-dash-rail-open-external="org-anomaly"
+                    aria-controls="dash-rail-nested-org-anomaly"
+                >
+                    <span class="dash-org-anomaly-tile__kicker">Gestion</span>
+                    <strong id="dash-org-anomaly-title" class="dash-org-anomaly-tile__title">Signaler une anomalie</strong>
+                    <em class="dash-org-anomaly-tile__hint">Tout dysfonctionnement, erreur ou irrégularité à transmettre à la gestion de l’organisation.</em>
+                    <span class="dash-org-anomaly-tile__cta">Ouvrir le formulaire</span>
+                </button>
+                <div class="dash-org-anomaly-tile__form">
+                    <p class="dash-org-anomaly-tile__kicker">Gestion</p>
+                    <h2 class="dash-org-anomaly-tile__title">Signaler une anomalie</h2>
+                    <?php require base_path('views/partials/dashboard_org_anomaly_form.php'); ?>
+                </div>
             </div>
         </section>
 

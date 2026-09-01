@@ -292,6 +292,7 @@ final class TenantRolePermissionPresetService
                     'forum.moderate_organization', 'dashboard.pins.manage',
                     'personnel.profile.view', 'personnel.profile.update', 'personnel.assignments.manage',
                     'organization.orbat.manage', 'organization.orbat.view', 'organization.effectifs.hub.view',
+                    'organization.catalog.manage',
                 ]
             )));
         }

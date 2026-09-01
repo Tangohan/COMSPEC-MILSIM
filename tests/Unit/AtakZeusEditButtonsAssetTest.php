@@ -24,6 +24,6 @@ final class AtakZeusEditButtonsAssetTest extends TestCase
         self::assertStringContainsString('comspec_sse_face', $photo);
         $ath = (string) file_get_contents($root . '/atak_athena/config.cpp');
         self::assertStringContainsString('1.0.56', $ath);
-        self::assertStringContainsString('1.4.94', $cfg);
+        self::assertStringContainsString('1.4.95', $cfg);
     }
 }

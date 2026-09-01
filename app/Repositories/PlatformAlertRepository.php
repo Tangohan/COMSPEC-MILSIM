@@ -159,8 +159,8 @@ class PlatformAlertRepository
     /** @param array<string, mixed> $data */
     public function insert(array $data): int
     {
-        $displayStyle = \App\Support\AlertDisplayStyle::sanitizePlatform(
-            isset($data['display_style']) ? (string) $data['display_style'] : null
+        $displayStyle = \App\Support\AlertDisplayStyle::encodePlatformList(
+            \App\Support\AlertDisplayStyle::parsePlatformList($data['display_style'] ?? null)
         );
         $cols = ['kind'];
         $vals = [$data['kind'] ?? 'info'];
@@ -201,8 +201,8 @@ class PlatformAlertRepository
     /** @param array<string, mixed> $data */
     public function update(int $id, array $data): void
     {
-        $displayStyle = \App\Support\AlertDisplayStyle::sanitizePlatform(
-            isset($data['display_style']) ? (string) $data['display_style'] : null
+        $displayStyle = \App\Support\AlertDisplayStyle::encodePlatformList(
+            \App\Support\AlertDisplayStyle::parsePlatformList($data['display_style'] ?? null)
         );
         $sets = ['kind = ?'];
         $vals = [$data['kind'] ?? 'info'];
@@ -268,8 +268,11 @@ class PlatformAlertRepository
         if (!array_key_exists('display_style', $row) || trim((string) ($row['display_style'] ?? '')) === '') {
             $row['display_style'] = \App\Support\AlertDisplayStyle::CLASSIC;
         } else {
-            $row['display_style'] = \App\Support\AlertDisplayStyle::sanitizePlatform((string) $row['display_style']);
+            $row['display_style'] = \App\Support\AlertDisplayStyle::encodePlatformList(
+                \App\Support\AlertDisplayStyle::parsePlatformList((string) $row['display_style'])
+            );
         }
+        $row['display_styles'] = \App\Support\AlertDisplayStyle::parsePlatformList((string) $row['display_style']);
 
         return $row;
     }

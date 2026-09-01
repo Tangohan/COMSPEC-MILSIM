@@ -100,19 +100,20 @@ $formatDateFr = static function (?string $raw): string {
                         </div>
                         <p class="bo-user-edit__lead">
                             Compte de connexion, rôles et statut.
-                            <?php if (!$isServiceAccount): ?>
-                            Le personnage et l’affectation opérationnelle se règlent sur la
-                            <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>">fiche personnelle</a>.
-                            <?php endif; ?>
+                            La situation RH (unité, ancienneté) se gère aussi depuis la fiche Effectifs.
                         </p>
                     </div>
                 </div>
+                <?php
+                $memberHubUserId = $uid;
+                $memberHubCurrent = 'account';
+                $memberHubTheme = 'bo';
+                require base_path('views/partials/member_hub_nav.php');
+                ?>
             </div>
             <div class="bo-user-edit__hero-actions">
-                <a href="<?= htmlspecialchars($showUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--ghost">Voir la fiche</a>
-                <?php if (!$isServiceAccount): ?>
-                <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--solid">Fiche personnelle</a>
-                <?php endif; ?>
+                <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $uid), ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--solid">Fiche Effectifs</a>
+                <a href="<?= htmlspecialchars($showUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--ghost">Aperçu</a>
             </div>
         </div>
     </header>
@@ -137,6 +138,49 @@ $formatDateFr = static function (?string $raw): string {
             <?php endforeach; ?>
 
             <?php /* Formulaire principal — aucun autre <form> à l’intérieur (sinon le navigateur ferme trop tôt). */ ?>
+            <?php
+            $rh = is_array($rhSituation ?? null) ? $rhSituation : [];
+            $rhSeniority = trim((string) ($rh['seniority_label'] ?? ''));
+            $rhUnit = trim((string) ($rh['unit_name'] ?? ''));
+            $rhEnlist = trim((string) ($rh['enlistment_date'] ?? ''));
+            $rhPre = trim((string) ($rh['pre_platform_start'] ?? ''));
+            $rhOrg = trim((string) ($rh['org_founded_on'] ?? ''));
+            ?>
+            <?php if (!$isServiceAccount): ?>
+            <section class="bo-user-edit__panel" aria-labelledby="sec-rh">
+                <h2 id="sec-rh" class="bo-user-edit__panel-title">Situation RH</h2>
+                <p class="bo-user-edit__panel-lead">Unité et ancienneté : les mêmes informations que sur la fiche Effectifs, pour ne pas jongler entre les écrans.</p>
+                <div class="bo-user-edit__rh">
+                    <dl class="bo-user-edit__rh-facts">
+                        <dt>Unité</dt>
+                        <dd><?= htmlspecialchars($rhUnit !== '' ? $rhUnit : 'Non renseignée', ENT_QUOTES, 'UTF-8') ?></dd>
+                        <dt>Ancienneté réelle</dt>
+                        <dd><?= htmlspecialchars($rhSeniority !== '' ? $rhSeniority : 'Non renseignée', ENT_QUOTES, 'UTF-8') ?></dd>
+                        <?php if ($rhOrg !== ''): ?>
+                        <dt>Création de l’organisation</dt>
+                        <dd><?= htmlspecialchars(date('d/m/Y', strtotime($rhOrg)), ENT_QUOTES, 'UTF-8') ?></dd>
+                        <?php endif; ?>
+                    </dl>
+                    <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $uid . '/anciennete'), ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__subform bo-user-edit__subform--2">
+                        <?= \App\Core\Csrf::field() ?>
+                        <input type="hidden" name="return_url" value="<?= htmlspecialchars(url('back-office/users/' . $uid . '/edit'), ENT_QUOTES, 'UTF-8') ?>">
+                        <div>
+                            <label for="edit-enlistment-date" class="bo-user-edit__label">Arrivée dans la communauté (sur Athena)</label>
+                            <input type="date" id="edit-enlistment-date" name="enlistment_date" class="bo-user-edit__input" value="<?= htmlspecialchars($rhEnlist, ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div>
+                            <label for="edit-pre-platform" class="bo-user-edit__label">Arrivée avant le site</label>
+                            <input type="date" id="edit-pre-platform" name="pre_platform_start_date" class="bo-user-edit__input" value="<?= htmlspecialchars($rhPre, ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="bo-user-edit__field--full">
+                            <p class="bo-user-edit__hint">Laissez vide s’il n’était pas membre avant l’ouverture du site.</p>
+                            <button type="submit" class="bo-user-edit__btn bo-user-edit__btn--dark">Enregistrer l’ancienneté</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+            <?php endif; ?>
+
             <form id="user-admin-edit-form" method="post" action="<?= htmlspecialchars($updateUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__stack">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="user_roles_form" value="1">
@@ -272,12 +316,12 @@ $formatDateFr = static function (?string $raw): string {
                 <?php if (!$isServiceAccount): ?>
                 <aside class="bo-user-edit__panel bo-user-edit__panel--soft">
                     <div>
-                        <h2 class="bo-user-edit__panel-title">Personnage et dossier opérationnel</h2>
+                        <h2 class="bo-user-edit__panel-title">Dossier opérationnel</h2>
                         <p class="bo-user-edit__panel-lead">
-                            Indicatif de personnage, unité, habilitation et forum — distinct du compte ci-dessus.
+                            Identité de personnage, habilitation détaillée et forum — distinct du compte ci-dessus.
                         </p>
                     </div>
-                    <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--dark">Ouvrir la fiche personnelle →</a>
+                    <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--dark">Ouvrir le dossier personnel →</a>
                 </aside>
                 <?php endif; ?>
 

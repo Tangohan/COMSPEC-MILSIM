@@ -32,7 +32,7 @@ final class AtakPanicMedicalAssetTest extends TestCase
         self::assertStringContainsString('addEventHandler ["Killed"', $hit);
         self::assertStringContainsString('COMSPEC_IcemanMedicalPanic', $post);
         self::assertStringContainsString('class pushIcemanMedicalAlert {};', $cfg);
-        self::assertStringContainsString('1.4.94', $cfg);
+        self::assertStringContainsString('1.4.95', $cfg);
         self::assertStringContainsString('PANIC', $bug);
         self::assertStringNotContainsString('endpoint', $bug);
     }

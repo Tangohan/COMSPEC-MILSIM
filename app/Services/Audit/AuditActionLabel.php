@@ -91,6 +91,8 @@ final class AuditActionLabel
         'user.purged' => 'Compte supprimé définitivement',
         'user_purge_requested' => 'Demande de suppression définitive (orga)',
         'platform.tenant_plan_assigned' => 'Formule d’accès affectée à une communauté',
+        'platform.tenant_identity_updated' => 'Identité d’une communauté mise à jour',
+        'platform.tenant_type_assigned' => 'Profil d’outils d’une communauté modifié',
         'audit.rollback' => 'Restauration d’état depuis le journal',
         'audit.rollback_alert' => 'Alerte envoyée depuis le journal',
     ];

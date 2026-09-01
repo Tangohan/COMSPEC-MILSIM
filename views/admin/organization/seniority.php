@@ -207,7 +207,7 @@ if ($rowsJson === false) {
             $notice_body = 'Deux indicateurs dédiés permettent de conserver l’historique antérieur à l’arrivée sur Athena&nbsp;:'
                 . '<ul class="mt-2 list-disc pl-5 space-y-1">'
                 . '<li><strong>Création de l’entité (avant la plateforme)</strong> — date de fondation de votre organisation / unité réelle, même si elle précède l’ouverture du site. Saisissez-la ci-dessous&nbsp;: elle est propagée à tous les membres actifs.</li>'
-                . '<li><strong>Ancienneté antérieure à la plateforme</strong> — pour chaque personne, la date à laquelle elle a rejoint l’entité <em>avant</em> de disposer d’un compte ici. À renseigner sur la <a href="' . htmlspecialchars(url('personnel'), ENT_QUOTES, 'UTF-8') . '">fiche personnel</a> (onglet Habilitation &amp; disponibilité).</li>'
+                . '<li><strong>Ancienneté antérieure à la plateforme</strong> — pour chaque personne, la date à laquelle elle a rejoint l’entité <em>avant</em> de disposer d’un compte ici. À renseigner sur le <a href="' . htmlspecialchars(url('back-office/ressources/effectifs'), ENT_QUOTES, 'UTF-8') . '">tableur Effectifs</a> (indicateur Ancienneté) ou sur la fiche personnel.</li>'
                 . '</ul>'
                 . '<p class="mt-2 mb-0">Ces dates ne sont <strong>jamais</strong> déduites automatiquement à l’acceptation d’une candidature&nbsp;: elles restent une saisie RH volontaire.</p>';
             include base_path('views/partials/bo_dsfr_notice.php');

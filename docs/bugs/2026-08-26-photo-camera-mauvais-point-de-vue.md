@@ -47,4 +47,4 @@ Non vérifié en jeu dans cette session (pas de client Arma ici).
 
 ## Statut
 
-`corrigé à vérifier en jeu` — pack Overwatch à reconstruire. Branche `split/overwatch-liaison-1.4.84` (PR 226).
+corrigé (pack Overwatch 1.4.95)

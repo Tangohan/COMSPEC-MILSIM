@@ -113,9 +113,76 @@ final class AlertDisplayStyle
 
     public static function sanitizePlatform(?string $raw): string
     {
-        $v = trim((string) $raw);
+        $list = self::parsePlatformList($raw);
 
-        return in_array($v, self::PLATFORM_STYLES, true) ? $v : self::CLASSIC;
+        return $list[0] ?? self::CLASSIC;
+    }
+
+    /**
+     * Plusieurs emplacements (cases à cocher). Chaîne historique « classic » ou « classic,mini_info ».
+     *
+     * @param mixed $raw
+     * @return list<string>
+     */
+    public static function parsePlatformList(mixed $raw): array
+    {
+        $tokens = [];
+        if (is_array($raw)) {
+            foreach ($raw as $item) {
+                $tokens[] = trim((string) $item);
+            }
+        } else {
+            $s = trim((string) $raw);
+            if ($s !== '') {
+                $tokens = preg_split('/[,\s]+/', $s, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            }
+        }
+        $out = [];
+        foreach ($tokens as $token) {
+            $v = trim((string) $token);
+            if ($v !== '' && in_array($v, self::PLATFORM_STYLES, true) && !in_array($v, $out, true)) {
+                $out[] = $v;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<string> $styles
+     */
+    public static function encodePlatformList(array $styles): string
+    {
+        $list = self::parsePlatformList($styles);
+
+        return $list !== [] ? implode(',', $list) : self::CLASSIC;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function labelsForPlatformList(mixed $raw): array
+    {
+        $out = [];
+        foreach (self::parsePlatformList($raw) as $style) {
+            $out[] = self::label($style);
+        }
+
+        return $out !== [] ? $out : [self::label(self::CLASSIC)];
+    }
+
+    /** Libellé court pour pastille d’administration. */
+    public static function shortLabel(string $style): string
+    {
+        return match (self::normalize($style)) {
+            self::MINI_INFO => 'Barre Info',
+            self::MINI_SUCCESS => 'Barre Succès',
+            self::MINI_WARNING => 'Barre Attention',
+            self::MINI_DANGER => 'Barre Critique',
+            self::BREAKING => 'Attention',
+            self::POPUP => 'Pop-up',
+            default => 'Classique',
+        };
     }
 
     public static function sanitizeTenant(?string $raw): string

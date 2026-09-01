@@ -28,7 +28,7 @@ final class OrganizationMemberNumberController
         $this->authService ??= Container::get(AuthService::class);
         $this->memberNumbers ??= Container::get(TenantMemberNumberService::class);
         $this->users ??= Container::get(UserRepository::class);
-        $this->gate ??= Container::get(Gate::class);
+        $this->gate ??= Gate::getInstance();
     }
 
     public function index(Request $request, array $params = []): Response

@@ -35,4 +35,4 @@ Tests unitaires (fenêtre, liaison, catalogue). Recette : pack 1.4.83, relance A
 
 ## Statut
 
-corrigé (sources) — pack Overwatch 1.4.83 à reconstruire pour Zeus
+corrigé (pack Overwatch 1.4.95)

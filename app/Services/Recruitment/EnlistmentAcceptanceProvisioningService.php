@@ -61,6 +61,7 @@ final class EnlistmentAcceptanceProvisioningService
         private ?MatriculeService $matriculeService = null,
         private ?RecruitmentOpeningRepository $recruitmentOpeningRepository = null,
         private ?TenantMemberNumberService $tenantMemberNumberService = null,
+        private ?\App\Services\Personnel\SeniorityPrePlatformService $seniorityPrePlatform = null,
     ) {}
 
     /**
@@ -1070,6 +1071,9 @@ final class EnlistmentAcceptanceProvisioningService
                     false
                 );
             }
+            $pre = $this->seniorityPrePlatform
+                ?? \App\Core\Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class);
+            $pre->applyStoredOrgFoundingToUser($tenantId, $userId);
             if ($this->seniorityDossierInferenceSyncService !== null) {
                 $stats = $this->seniorityDossierInferenceSyncService->syncForUser($tenantId, $userId, false);
                 $seed = $this->seniorityDossierInferenceSyncService->seedMissingPackPeriodsAfterAcceptance(

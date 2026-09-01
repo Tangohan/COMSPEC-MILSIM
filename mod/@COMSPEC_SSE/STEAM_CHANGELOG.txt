@@ -1,7 +1,39 @@
+================================================================================
+NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
+================================================================================
+
+[h1]COMSPEC SSE 0.7.18[/h1]
+[b]30/08/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
+
+[list]
+[*] SEEK : un relevé biométrique demande le kit correspondant et joue l’animation à genoux
+[*] Zeus : le nom et le prénom saisis sur un profil sont bien ceux de la personne
+[*] Resynch : plus d’incident sur la file hors-ligne
+[/list]
+
+Prérequis : CBA A3 + ACE3. Overwatch optionnel pour remonter vers Athena.
+
+================================================================================
+HISTORIQUE
+================================================================================
+
+COMSPEC SSE 0.7.18 — 30/08/2026
+
+• SEEK : un relevé biométrique demande le kit correspondant et joue l’animation à genoux
+• Relancer Arma complètement après la mise à jour
+
+COMSPEC SSE 0.7.17 — 28/08/2026
+
+• Zeus : le nom et le prénom saisis sur un profil sont bien ceux de la personne
+
+COMSPEC SSE 0.7.16 — 28/08/2026
+
+• Resynch : plus d’incident sur la file hors-ligne
+
 COMSPEC SSE 0.7.15 — 26/08/2026
 
 Publication Workshop
 
-• Dossier de publication propre, prêt à envoyer depuis le Publisher Arma 3
-• Même principe que le pack Overwatch : les joueurs reçoivent le pack, pas les fichiers d’atelier
+• Pack prêt à envoyer depuis le Publisher Arma 3
+• Les joueurs reçoivent le pack, pas les fichiers d’atelier
 • Prérequis : CBA A3 + ACE3 ; Overwatch optionnel pour Athena

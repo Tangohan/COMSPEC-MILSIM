@@ -49,6 +49,9 @@ final class MemberAlertsPageService
                 }
                 $item = $this->mapAlertRow($alert, false);
                 $key = $this->itemKey($item);
+                if (isset($activeKeys[$key])) {
+                    continue;
+                }
                 $activeKeys[$key] = true;
                 $active[] = $item;
             }

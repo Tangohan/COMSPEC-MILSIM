@@ -32,4 +32,4 @@ Tests `SseQueueOfflineIdemAssetTest`, `AtakLostLinkOverlayAssetTest`. Pack Overw
 
 ## Statut
 
-corrigé — pack jeu à reconstruire
+corrigé (pack Overwatch 1.4.95)

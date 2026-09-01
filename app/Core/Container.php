@@ -77,6 +77,7 @@ class Container
                 self::get(\App\Repositories\SeniorityRepository::class),
                 new \App\Services\Personnel\SeniorityTenantDefaultsService(self::get(\App\Repositories\SeniorityRepository::class)),
                 self::get(UserRepository::class),
+                self::get(TenantRepository::class),
             ),
             \App\Services\Platform\FeatureGateService::class => new \App\Services\Platform\FeatureGateService(
                 self::get(TenantRepository::class),
@@ -760,6 +761,7 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),
                 self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Services\Community\TenantTypeSwitchService::class),
             ),
             \App\Controllers\Admin\System\SystemUsersController::class => new \App\Controllers\Admin\System\SystemUsersController(
                 self::get(UserRepository::class),
@@ -937,6 +939,7 @@ class Container
                 self::get(\App\Repositories\PersonnelQualificationRepository::class),
                 self::get(\App\Repositories\TrainingCertificateRepository::class)
             ),
+            \App\Services\Personnel\PersonnelProfileGapScanService::class => new \App\Services\Personnel\PersonnelProfileGapScanService(),
             \App\Repositories\PersonnelAdminPanelRepository::class => new \App\Repositories\PersonnelAdminPanelRepository(),
             \App\Repositories\PersonnelAdminDataRepository::class => new \App\Repositories\PersonnelAdminDataRepository(),
             \App\Repositories\UnitRepository::class => new \App\Repositories\UnitRepository(),
@@ -1237,6 +1240,14 @@ class Container
             ),
             \App\Controllers\Web\PortalSearchController::class => new \App\Controllers\Web\PortalSearchController(
                 self::get(\App\Services\Portal\PortalSearchService::class),
+            ),
+            \App\Services\Portal\BackOfficeSearchService::class => new \App\Services\Portal\BackOfficeSearchService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\DocumentRepository::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
+            ),
+            \App\Controllers\Admin\Organization\BackOfficeSearchController::class => new \App\Controllers\Admin\Organization\BackOfficeSearchController(
+                self::get(\App\Services\Portal\BackOfficeSearchService::class),
             ),
             \App\Controllers\Web\AssistantController::class => new \App\Controllers\Web\AssistantController(
                 self::get(\App\Services\Portal\AssistantAnswerService::class),
@@ -1671,7 +1682,8 @@ class Container
                 self::get(\App\Services\Personnel\SeniorityDossierInferenceSyncService::class),
                 self::get(\App\Services\Personnel\MatriculeService::class),
                 self::get(\App\Repositories\RecruitmentOpeningRepository::class),
-                self::get(\App\Services\Personnel\TenantMemberNumberService::class)
+                self::get(\App\Services\Personnel\TenantMemberNumberService::class),
+                self::get(\App\Services\Personnel\SeniorityPrePlatformService::class)
             ),
             \App\Services\Recruitment\EnlistmentPortalAttachmentService::class => new \App\Services\Recruitment\EnlistmentPortalAttachmentService(
                 self::get(\App\Repositories\EnlistmentRepository::class)

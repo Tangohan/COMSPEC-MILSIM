@@ -59,6 +59,8 @@ require base_path('views/partials/ath_kpis.php');
 ?>
 
 <form method="get" action="<?= $h(url('back-office/users')) ?>" class="ath-users-filters ath-rise">
+    <label class="ath-users-filters__label" for="users-search">Recherche</label>
+    <input type="search" name="search" id="users-search" class="bo-select" value="<?= $h((string) ($filters['search'] ?? '')) ?>" placeholder="Nom, indicatif, e-mail…" autocomplete="off">
     <label class="ath-users-filters__label" for="users-status">Statut du compte</label>
     <select name="status" id="users-status" class="bo-select">
         <option value="">Tous les statuts</option>

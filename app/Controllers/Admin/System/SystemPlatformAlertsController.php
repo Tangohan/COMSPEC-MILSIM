@@ -303,11 +303,18 @@ final class SystemPlatformAlertsController
         // Décocher « autoriser le masquage » = interdire (dismissible = 0)
         $allowDismiss = $request->input('dismissible') === '1' || $request->input('dismissible') === 'on';
 
+        $rawStyles = $request->input('display_styles', null);
+        if (!is_array($rawStyles)) {
+            $rawStyles = [(string) $request->input('display_style', \App\Support\AlertDisplayStyle::CLASSIC)];
+        }
+        $styles = \App\Support\AlertDisplayStyle::parsePlatformList($rawStyles);
+        if ($styles === []) {
+            return ['_error' => 'Choisissez au moins un emplacement d’affichage.'];
+        }
+
         return [
             'kind' => $kind,
-            'display_style' => \App\Support\AlertDisplayStyle::sanitizePlatform(
-                (string) $request->input('display_style', \App\Support\AlertDisplayStyle::CLASSIC)
-            ),
+            'display_style' => \App\Support\AlertDisplayStyle::encodePlatformList($styles),
             'title' => $title,
             'body' => $body === '' ? null : $body,
             'cta_label' => $ctaLabel === '' ? null : $ctaLabel,

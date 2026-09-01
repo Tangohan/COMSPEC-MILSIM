@@ -397,6 +397,27 @@ $wizardSteps = [
                     </section>
 
                     <section class="cc-section">
+                        <h2 class="cc-section__title">Démarrer avec un modèle</h2>
+                        <p class="cc-section__text">En plus de la structure que vous composez ci-dessous, vous pouvez copier un modèle officiel. Les éléments déjà présents restent inchangés ; seuls ceux qui manquent sont ajoutés. Aucun membre n’est créé.</p>
+                        <div class="mt-5 space-y-3">
+                            <label class="cc-choice">
+                                <input type="radio" name="wizard_catalog_kit_code" value="" class="sr-only" checked>
+                                <span class="cc-choice__eyebrow">Par défaut</span>
+                                <span class="cc-choice__title">Sans modèle supplémentaire</span>
+                                <span class="cc-choice__text">Vous gardez uniquement la structure et les rôles définis dans cet assistant. Le catalogue restera disponible plus tard dans le back-office.</span>
+                            </label>
+                            <?php foreach (\App\Services\OrganizationCatalog\OrganizationKitDefinitions::officialKits() as $kit): ?>
+                            <label class="cc-choice">
+                                <input type="radio" name="wizard_catalog_kit_code" value="<?= htmlspecialchars((string) ($kit['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="sr-only">
+                                <span class="cc-choice__eyebrow">Modèle officiel</span>
+                                <span class="cc-choice__title"><?= htmlspecialchars((string) ($kit['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="cc-choice__text"><?= htmlspecialchars((string) ($kit['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::volumeLabel($kit), ENT_QUOTES, 'UTF-8') ?>.</span>
+                            </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
+
+                    <section class="cc-section">
                         <h2 class="cc-section__title">Structure des unités</h2>
                         <p class="cc-section__text">Représentez la chaîne de commandement : une unité racine, puis des sous-niveaux si besoin (groupe, section, équipe, escouade).</p>
 
@@ -1088,6 +1109,10 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         if (wizardDraft.wizard_grade_system_code) {
             var gsRadio = form.querySelector('input[name="wizard_grade_system_code"][value="' + wizardDraft.wizard_grade_system_code + '"]');
             if (gsRadio) gsRadio.checked = true;
+        }
+        if (wizardDraft.wizard_catalog_kit_code !== undefined) {
+            var kitRadio = form.querySelector('input[name="wizard_catalog_kit_code"][value="' + String(wizardDraft.wizard_catalog_kit_code) + '"]');
+            if (kitRadio) kitRadio.checked = true;
         }
         syncRegistrationModeUi();
         syncPaid();

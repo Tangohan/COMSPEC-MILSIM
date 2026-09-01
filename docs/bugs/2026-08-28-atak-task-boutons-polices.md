@@ -34,4 +34,4 @@ Tests `AtakTaskButtonsFontAssetTest`. Pack Athena 1.0.55, relancer Arma, ouvrir 
 
 ## Statut
 
-corrigé — pack jeu à reconstruire
+corrigé (pack Overwatch 1.4.95)

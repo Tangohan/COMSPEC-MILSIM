@@ -37,6 +37,12 @@ final class PermissionImplication
         if ($permission === 'organization.orbat.view' && in_array('organization.orbat.manage', $granted, true)) {
             return true;
         }
+        if ($permission === 'organization.catalog.manage' && (
+            in_array('organization.orbat.manage', $granted, true)
+            || in_array('admin.organization', $granted, true)
+        )) {
+            return true;
+        }
 
         if (in_array('admin.system', $granted, true)) {
             return true;

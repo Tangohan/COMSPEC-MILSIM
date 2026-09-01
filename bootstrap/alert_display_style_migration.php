@@ -28,10 +28,18 @@ return function (PDO $pdo): void {
     if ($hasTable($pdo, 'platform_alerts') && !$hasCol($pdo, 'platform_alerts', 'display_style')) {
         try {
             $pdo->exec(
-                "ALTER TABLE platform_alerts ADD COLUMN display_style VARCHAR(32) NOT NULL DEFAULT 'classic' AFTER kind"
+                "ALTER TABLE platform_alerts ADD COLUMN display_style VARCHAR(191) NOT NULL DEFAULT 'classic' AFTER kind"
             );
         } catch (PDOException $e) {
             echo '  [ATTENTION] platform_alerts.display_style : ' . $e->getMessage() . "\n";
+        }
+    } elseif ($hasTable($pdo, 'platform_alerts') && $hasCol($pdo, 'platform_alerts', 'display_style')) {
+        try {
+            $pdo->exec(
+                "ALTER TABLE platform_alerts MODIFY COLUMN display_style VARCHAR(191) NOT NULL DEFAULT 'classic'"
+            );
+        } catch (PDOException $e) {
+            echo '  [ATTENTION] platform_alerts.display_style (longueur) : ' . $e->getMessage() . "\n";
         }
     }
 

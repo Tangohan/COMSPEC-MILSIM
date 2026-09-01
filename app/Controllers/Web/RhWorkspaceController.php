@@ -290,6 +290,8 @@ final class RhWorkspaceController
         try {
             $this->personnelAssignmentRepository->syncMissingFromUserUnitsWhenPossible($userId);
             $this->seniorityEnrollmentBootstrapService->syncTenureCommunityFromEnrollment($tenantId, $userId, null, false);
+            \App\Core\Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class)
+                ->applyStoredOrgFoundingToUser($tenantId, $userId);
             $this->seniorityDossierInferenceSyncService->syncForUser($tenantId, $userId, false);
             Session::flash('success', 'Vos indicateurs ont été mis à jour à partir des informations de votre dossier.');
         } catch (\Throwable) {

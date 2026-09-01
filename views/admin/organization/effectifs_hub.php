@@ -7,6 +7,7 @@ $canPresets = !empty($canPresets);
 $canGrades = !empty($canGrades);
 $canStructure = !empty($canStructure);
 $canStructureRecruitmentHub = !empty($canStructureRecruitmentHub);
+$canCatalog = !empty($canCatalog);
 $canSeniorityAdmin = !empty($canSeniorityAdmin);
 $canProgressionAdmin = !empty($canProgressionAdmin);
 
@@ -101,6 +102,18 @@ $hubRows = [
         'cta' => 'Ouvrir la structure',
         'primary' => false,
         'ok' => $canStructureRecruitmentHub,
+    ],
+    [
+        'id' => 'org-catalog',
+        'title' => 'Catalogue de l’organisation',
+        'desc' => 'Modèles officiels (organigramme, grades, fonctions, rôles) à copier dans votre communauté, ou enregistrement de l’état actuel.',
+        'domain' => 'Structure',
+        'domainKey' => 'structure',
+        'href' => url('back-office/organisation/catalogue'),
+        'volume' => 'Modèles Athena',
+        'cta' => 'Ouvrir le catalogue',
+        'primary' => false,
+        'ok' => $canCatalog,
     ],
     [
         'id' => 'groups',

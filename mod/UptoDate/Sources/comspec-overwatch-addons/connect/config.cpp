@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.494;
-        versionStr = "1.4.94";
-        versionAr[] = {1, 4, 94};
+        version = 1.495;
+        versionStr = "1.4.95";
+        versionAr[] = {1, 4, 95};
     };
 };
 
@@ -206,6 +206,7 @@ class CfgFunctions {
             class deleteDangerZone {};
             class checkPlayerInDangerZone {};
             class warnDangerZoneEntry {};
+            class pollTacticalZones {};
             class sendLogisticsStatus {};
             class receiveIFFChallenge {};
             class submitIFFResponse {};

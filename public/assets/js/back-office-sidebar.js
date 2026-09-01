@@ -170,13 +170,6 @@
         });
       }
 
-      document.addEventListener('keydown', function (e) {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-          e.preventDefault();
-          topSearch.focus();
-          topSearch.select();
-        }
-      });
       topSearch.addEventListener('input', applyNavFilter);
       topSearch.addEventListener('search', applyNavFilter);
     }

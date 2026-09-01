@@ -60,6 +60,7 @@ final class AuditSnapshotPresenter
         'plan_slug' => 'Formule d’accès',
         'subscription_status' => 'Statut d’abonnement',
         'end_founder_trial' => 'Fin anticipée de la période fondateur',
+        'tenant_type' => 'Profil d’outils',
         'slug' => 'Identifiant court',
         'sort_order' => 'Ordre d’affichage',
         'features_json' => 'Fonctionnalités incluses',

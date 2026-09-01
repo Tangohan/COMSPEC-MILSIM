@@ -212,6 +212,33 @@ class RoleRepository
         return $row !== false ? (int) $row : null;
     }
 
+    /**
+     * Rôle communauté non verrouillé (kit catalogue). Ne touche jamais community_owner.
+     */
+    public function createOrganizationRole(int $tenantId, string $name, string $slug, ?string $description = null): int
+    {
+        $name = mb_substr(trim($name), 0, 160);
+        $slug = mb_substr(trim($slug), 0, 80);
+        if ($tenantId < 1 || $name === '' || $slug === '') {
+            return 0;
+        }
+        if (in_array($slug, ['community_owner', 'tenant_admin'], true)) {
+            return $this->getIdBySlug($tenantId, $slug) ?? 0;
+        }
+        $existing = $this->getIdBySlug($tenantId, $slug);
+        if ($existing !== null) {
+            return $existing;
+        }
+        $desc = $description !== null ? mb_substr(trim($description), 0, 500) : null;
+        $st = $this->pdo->prepare(
+            'INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at)
+             VALUES (?, ?, ?, ?, 0, 0, \'community\', NOW())'
+        );
+        $st->execute([$tenantId, $name, $slug, $desc]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
     /** Attribution depuis l’admin communauté : pas de rôle site / global. */
     public function canAssignInTenantAdminContext(int $roleId, int $tenantId): bool
     {

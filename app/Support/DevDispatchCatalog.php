@@ -491,6 +491,86 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(261, '2026-09-01', 'Administration du site, enfin complète', 'Le centre opérateur du site liste tous les outils de gestion, et chaque communauté s’administre depuis une fiche : nom, profil d’outils et formule d’accès', [
+                'Carte complète des écrans d’administration du site : communautés, comptes, communication, référentiels et exploitation',
+                'Fiche d’une communauté : identité, profil Complet / Effectifs / carte ATAK, et formule d’accès',
+                'Menu latéral et raccourcis alignés sur tous les outils déjà disponibles',
+            ], [], [], ['personnel'], [
+                'Ouvrez Administration du site. L’annuaire des communautés mène à une fiche complète. Les tuiles du tableau de bord couvrent l’ensemble des réglages du site.',
+            ], 'Portail 1.5.88'),
+            $pr(260, '2026-09-01', 'Catalogue : tout administrer, tout retracer', 'Le catalogue d’organisation devient un poste de commandement : administration de la structure, actions sur vos modèles, et journal complet de chaque application', [
+                'Tuiles pour administrer unités, grades, fonctions, rôles et droits, avec le volume actuel',
+                'Fiche complète d’un modèle : organigramme, fonctions, rôles, et actions (renommer, actualiser, retirer, restaurer)',
+                'Journal de toutes les applications : qui, quand, ce qui a été ajouté, ce qui était déjà en place',
+            ], [], [], ['personnel'], [
+                'Ouvrez Structure et effectifs, puis Catalogue de l’organisation. Les tuiles du haut mènent à l’administration. Le journal complet liste chaque copie de modèle.',
+            ], 'Portail 1.5.87'),
+            $pr(259, '2026-09-01', 'Catalogue de l’organisation', 'Des modèles officiels d’organigramme, de grades, de fonctions et de rôles se copient dans votre communauté, sans rien partager avec une autre', [
+                'Page Catalogue dans le back-office, avec aperçu chiffré puis application de ce qui manque',
+                'Deux modèles officiels : compagnie d’infanterie légère, et communauté gaming',
+                'Enregistrement d’un modèle privé à partir de l’organisation actuelle',
+                'Option « Démarrer avec un modèle » à la création d’une communauté',
+            ], [], [], ['personnel'], [
+                'Ouvrez Structure et effectifs, puis Catalogue de l’organisation. Choisissez un modèle, lisez l’aperçu, puis appliquez. Rien de déjà en place n’est écrasé.',
+            ], 'Portail 1.5.86'),
+            $pr(258, '2026-09-01', 'Dossier RH plus lisible', 'Documents, mobilité, vivier et alertes du bureau effectifs s’ouvrent avec un briefing, des tuiles et des aides au survol', [
+                'En-tête de page avec le volume à suivre, et tuiles pour filtrer ou ouvrir le bon registre',
+                'Listes déroulantes et boutons plus nets, avec une courte explication au survol des champs importants',
+            ], [], [], ['personnel'], [
+                'Ouvrez Effectifs, puis Documents RH, Mobilité, Vivier ou Alertes. Survolez le i à côté d’un libellé pour lire l’aide.',
+            ], 'Portail 1.5.85'),
+            $pr(257, '2026-09-01', 'Signaler une anomalie depuis le tableau de bord', 'Chaque membre peut transmettre un dysfonctionnement à la gestion de l’organisation, depuis une tuile du tableau de bord', [
+                'Tuile Signaler une anomalie sur le tableau de bord, ouverte à tous les membres de la communauté',
+                'Le message arrive à la gestion de l’organisation, avec un accusé de réception',
+            ], [], [], ['personnel'], [
+                'Ouvrez le tableau de bord. La tuile Signaler une anomalie se trouve à gauche, et aussi sous votre identité.',
+            ], 'Portail 1.5.84'),
+            $pr(256, '2026-08-31', 'Fiche membre et compte, enfin alignés', 'La fiche Effectifs et le compte d’un membre se complètent, avec les mêmes actions RH à portée de main', [
+                'Fiche Effectifs : identité, ancienneté, unité, rôles, grade, statut et départ sur un même écran',
+                'Passage direct entre fiche Effectifs, compte et dossier personnel',
+                'Ancienneté saisissable aussi depuis le compte',
+            ], [], [], ['personnel'], [
+                'Ouvrez un membre depuis Effectifs. Les trois onglets en tête de page mènent à la fiche, au compte et au dossier.',
+            ], 'Portail 1.5.83'),
+            $pr(255, '2026-08-31', 'Ancienneté réelle de l’organisation et des membres', 'L’ancienneté tient compte de la création de l’unité et de l’arrivée des membres avant le site, y compris depuis Effectifs', [
+                'Date de création de l’organisation, même antérieure à Athena, enregistrée pour tous les membres',
+                'Saisie de l’arrivée avant le site depuis le tableur Effectifs et la fiche membre',
+                'L’ancienneté affichée reprend la date la plus ancienne (communauté ou avant le site)',
+            ], [], [], ['personnel'], [
+                'Ouvrez Effectifs. Renseignez la création de l’organisation, puis l’arrivée réelle de chaque membre qui était là avant le site.',
+            ], 'Portail 1.5.82'),
+            $pr(254, '2026-08-31', 'Recherche complète dans le back-office', 'La barre de recherche du back-office trouve les pages, les membres, les documents et les manœuvres', [
+                'Raccourci Ctrl ou Cmd + K pour ouvrir la recherche',
+                'Résultats limités à ce que vous avez le droit de voir',
+            ], [], [], ['personnel'], [
+                'Depuis le back-office, ouvrez la recherche en haut de page. Tapez un nom, un indicatif ou le titre d’une page.',
+            ], 'Portail 1.5.82'),
+            $pr(253, '2026-08-31', 'Aperçu des annonces et plusieurs emplacements', 'Lors de la création d’une annonce, chaque emplacement se prévisualise, et plusieurs emplacements peuvent être combinés', [
+                'Aperçu visuel de chaque type et de chaque emplacement, plus un aperçu avec le titre saisi',
+                'Une même annonce peut s’afficher à la fois en bandeau, sous le menu et en fenêtre',
+            ], [], [], ['platform'], [
+                'Rechargez la page de création d’annonce. Cochez les emplacements voulus : l’aperçu se met à jour en direct.',
+            ], 'Portail 1.5.81'),
+            $pr(252, '2026-08-31', 'Ancienneté dans le tableau rapide des effectifs', 'Le tableau rapide des effectifs affiche l’ancienneté dans la communauté, à côté du temps en mission', [
+                'Colonne Ancienneté sur le tableau rapide des effectifs, comme sur la fiche',
+            ], [], [], ['personnel'], [
+                'Rechargez le tableau de bord. L’ancienneté reprend la date d’arrivée dans la communauté, ou à défaut la date d’engagement du dossier.',
+            ], 'Portail 1.5.80'),
+            $pr(251, '2026-08-31', 'Profils à compléter dès l’aperçu', 'Le tableau de bord liste les membres auxquels il manque une fonction, un grade, un rôle, une image opérateur, ou dont l’absence n’est pas indiquée', [
+                'Sur l’aperçu du back-office, un tableau rapide des dossiers incomplets, comme le tableur des effectifs',
+                'Filtres par fonction, grade, rôle, image opérateur et absence non indiquée',
+            ], [], [], ['personnel'], [
+                'Rechargez le tableau de bord du back-office. Chaque ligne ouvre la fiche du membre pour corriger le dossier.',
+            ], 'Portail 1.5.79'),
+            $pr(250, '2026-08-30', 'Itinéraire GPS et zones du poste en jeu', 'Les points d’un itinéraire et les zones posées au poste se voient en mission', [
+                'Points numérotés et trait d’itinéraire visibles en jeu',
+                'Zones du poste (poser, danger, ralliement) visibles en mission',
+                'Alerte à l’entrée d’une zone dangereuse',
+            ], [
+                'Un opérateur inconscient ou hors combat apparaît dans la liste d’alerte',
+            ], [], ['atak'], [
+                'Mise à jour du pack jeu Overwatch 1.4.95. Relancer Arma complètement, pas seulement la mission.',
+            ]),
             $pr(249, '2026-08-27', 'Symboles de la communauté, section IA, boutons Zeus', 'Le gestionnaire choisit les icônes de la carte ; une section IA propose chef ou tout le groupe ; SSE ATAK Overwatch s’ouvrent à nouveau depuis l’édition Zeus', [
                 'Bibliothèque d’icônes : envoi d’une image ou choix dans celles déjà présentes, mémorisé pour la communauté',
                 'IA alliée dans une section : chef seulement, ou toute la section',

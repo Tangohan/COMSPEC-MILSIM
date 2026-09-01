@@ -35,7 +35,7 @@ $paSubLink = static function (string $path, string $label, bool $active): void {
 };
 
 $navDash = $p === 'admin';
-$navTenants = $p === 'admin/tenants';
+$navTenants = $p === 'admin/tenants' || str_starts_with($p, 'admin/tenants/');
 $navAnalytics = $p === 'admin/analytics';
 $navNewsletter = $p === 'admin/newsletter';
 $navOps = $p === 'admin/ops-center';
@@ -55,6 +55,12 @@ $navUxFeedback = str_starts_with($p, 'admin/system/retours-interface');
 $navDeployment = str_starts_with($p, 'admin/system/deployment');
 $navUpdates = str_starts_with($p, 'admin/system/updates');
 $navAlerts = str_starts_with($p, 'admin/system/alerts');
+$navDemoNda = str_starts_with($p, 'admin/system/demo-nda');
+$navRecruitTools = str_starts_with($p, 'admin/system/recruitment-portal-tools');
+$navPlans = str_starts_with($p, 'admin/system/subscription-plans');
+$navCoopCatalog = str_starts_with($p, 'admin/system/cooperation/catalog');
+$navCoopAnnounce = str_starts_with($p, 'admin/system/cooperation/announcements');
+$navMilitaryRef = str_starts_with($p, 'admin/system/military-referential');
 $alertsCreateActive = $p === 'admin/system/alerts/create';
 $alertsListActive = $navAlerts && !$alertsCreateActive;
 $alertsOpen = $navAlerts;
@@ -74,8 +80,11 @@ $alertsOpen = $navAlerts;
         <?php $paSection('Vue d’ensemble'); ?>
         <?php $paLink('admin', 'Tableau de bord', $navDash); ?>
         <?php if ($isPlatformAdmin): ?>
+            <?php $paSection('Communautés'); ?>
             <?php $paLink('admin/tenants', 'Annuaire des communautés', $navTenants); ?>
+            <?php $paLink('admin/system/subscription-plans', 'Formules d’accès', $navPlans); ?>
             <?php $paLink('admin/newsletter', 'Lettre d’information du site', $navNewsletter); ?>
+            <?php $paLink('admin/system/demo-nda', 'Accès démo du site', $navDemoNda); ?>
         <?php endif; ?>
         <?php $paLink('admin/analytics', 'Indicateurs transverses', $navAnalytics); ?>
         <?php if ($isPlatformAdmin): ?>
@@ -91,11 +100,17 @@ $alertsOpen = $navAlerts;
             <?php $paLink('admin/site-roles', 'Affectations rôles site', $navSiteRoles); ?>
             <?php $paLink('admin/system/blocklist', 'Liste de restriction (site entier)', $navBlocklist); ?>
             <?php $paLink('admin/system/member-sanctions', 'Sanctions à l’échelle du site', $navSanctions); ?>
+            <?php $paLink('admin/system/recruitment-portal-tools', 'Outils du portail candidatures', $navRecruitTools); ?>
 
             <?php $paSection('Configuration'); ?>
             <?php $paLink('admin/settings', 'Paramètres système', $navSettings); ?>
             <?php $paLink('admin/system/brief', 'Brief (accès membres)', $navBrief); ?>
             <?php $paLink('admin/system/cron', 'Tâches automatiques', $navCron); ?>
+
+            <?php $paSection('Référentiels du site'); ?>
+            <?php $paLink('admin/system/cooperation/catalog', 'Types de coopération', $navCoopCatalog); ?>
+            <?php $paLink('admin/system/cooperation/announcements', 'Annonces de coopération', $navCoopAnnounce); ?>
+            <?php $paLink('admin/system/military-referential', 'Référentiel militaire', $navMilitaryRef); ?>
 
             <?php $paSection('Déploiement et préqualification'); ?>
             <?php $paLink('admin/system/updates', 'Mises à jour plateforme', $navUpdates); ?>

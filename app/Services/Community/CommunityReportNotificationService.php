@@ -136,8 +136,17 @@ final class CommunityReportNotificationService
             }
         }
 
-        if (strtolower(trim((string) $contentKind)) === 'training_course' && $tenantId > 0) {
-            foreach ($this->userRepository->listAdministratorEmailsForTenant($tenantId) as $email) {
+        $kind = strtolower(trim((string) $contentKind));
+        $notifyOrgManagement = $kind === 'training_course' || $kind === 'org_anomaly';
+        if ($notifyOrgManagement && $tenantId > 0) {
+            $orgEmails = $this->userRepository->listAdministratorEmailsForTenant($tenantId);
+            if ($kind === 'org_anomaly') {
+                $orgEmails = array_merge(
+                    $orgEmails,
+                    $this->userRepository->listEmailsForTenantAccessDelegation($tenantId)
+                );
+            }
+            foreach ($orgEmails as $email) {
                 $el = strtolower(trim($email));
                 if ($el === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || isset($staffEmailsSent[$el])) {
                     continue;
@@ -183,7 +192,7 @@ final class CommunityReportNotificationService
             $this->tenantCommunityFeedRepository->insert(
                 $tenantId,
                 'moderation_report',
-                'Nouveau signalement',
+                $kind === 'org_anomaly' ? 'Anomalie transmise à la gestion' : 'Nouveau signalement',
                 $summary,
                 \url('back-office/forum-moderation'),
                 $reporterId > 0 ? $reporterId : null

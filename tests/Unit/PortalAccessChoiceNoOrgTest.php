@@ -26,5 +26,11 @@ final class PortalAccessChoiceNoOrgTest extends TestCase
         self::assertSame('jnet', PortalAccessChoice::normalize('JNET'));
         self::assertSame('tba', PortalAccessChoice::normalize('tba'));
         self::assertNull(PortalAccessChoice::normalize('dashboard'));
+        $choice = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/PortalAccessChoice.php');
+        self::assertStringContainsString("return url('dashboard');", $choice);
+        self::assertStringNotContainsString("return url('jnet');", $choice);
+        $select = (string) file_get_contents(dirname(__DIR__, 2) . '/views/auth/select-portal.php');
+        self::assertStringContainsString('Accueil Athena', $select);
+        self::assertStringNotContainsString('JNET Extranet', $select);
     }
 }

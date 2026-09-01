@@ -145,10 +145,12 @@ $rowCount = count($rows);
                     if ($playtimeLabel === '' && $playtimeSeconds > 0 && function_exists('format_arma_playtime_french')) {
                         $playtimeLabel = format_arma_playtime_french($playtimeSeconds);
                     }
+                    $seniorityLabel = trim((string) ($row['seniority_label'] ?? ''));
                     $cardBits = array_values(array_filter([
                         $gradeLabel !== '' ? $gradeLabel : null,
                         $assignment !== '' ? $assignment : null,
                         $callsign !== '' ? $callsign : null,
+                        $seniorityLabel !== '' ? $seniorityLabel : null,
                     ]));
                     ?>
                     <li class="das-cards__item">
@@ -176,7 +178,7 @@ $rowCount = count($rows);
                                 </span>
                             <?php endif; ?>
                         </div>
-                        <?php if ($primaryRole !== '' || $playtimeLabel !== '' || $assignment !== ''): ?>
+                        <?php if ($primaryRole !== '' || $playtimeLabel !== '' || $assignment !== '' || $seniorityLabel !== ''): ?>
                             <p class="das-cards__step">
                                 <?php if ($assignment !== ''): ?>
                                     <span class="dash-eff-unit" tabindex="0"
@@ -186,9 +188,13 @@ $rowCount = count($rows);
                                         <span class="dash-eff-unit__hint" aria-hidden="true">i</span>
                                     </span>
                                 <?php endif; ?>
-                                <?php if ($assignment !== '' && ($primaryRole !== '' || $playtimeLabel !== '')): ?> · <?php endif; ?>
+                                <?php if ($assignment !== '' && ($primaryRole !== '' || $playtimeLabel !== '' || $seniorityLabel !== '')): ?> · <?php endif; ?>
                                 <?= $primaryRole !== '' ? htmlspecialchars($primaryRole, ENT_QUOTES, 'UTF-8') : '' ?>
-                                <?php if ($primaryRole !== '' && $playtimeLabel !== ''): ?> · <?php endif; ?>
+                                <?php if ($primaryRole !== '' && ($playtimeLabel !== '' || $seniorityLabel !== '')): ?> · <?php endif; ?>
+                                <?php if ($seniorityLabel !== ''): ?>
+                                    <span class="dash-eff-seniority"><?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php endif; ?>
+                                <?php if ($seniorityLabel !== '' && $playtimeLabel !== ''): ?> · <?php endif; ?>
                                 <?php if ($playtimeLabel !== ''): ?>
                                     <span class="dash-eff-playtime"><?= htmlspecialchars($playtimeLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php endif; ?>
@@ -208,6 +214,7 @@ $rowCount = count($rows);
                             <th scope="col">Grade</th>
                             <th scope="col">Affectation</th>
                             <th scope="col" class="das-hide-md">Fonction</th>
+                            <th scope="col">Ancienneté</th>
                             <th scope="col" class="das-hide-lg">Temps en mission</th>
                             <?php if ($canSeeInactive): ?>
                             <th scope="col" class="das-hide-md">Statut</th>
@@ -253,6 +260,7 @@ $rowCount = count($rows);
                             if ($playtimeLabel === '' && $playtimeSeconds > 0 && function_exists('format_arma_playtime_french')) {
                                 $playtimeLabel = format_arma_playtime_french($playtimeSeconds);
                             }
+                            $seniorityLabel = trim((string) ($row['seniority_label'] ?? ''));
                             ?>
                             <tr>
                                 <td class="das-sticky-col">
@@ -303,6 +311,13 @@ $rowCount = count($rows);
                                         <?= htmlspecialchars($primaryRole, ENT_QUOTES, 'UTF-8') ?>
                                     <?php else: ?>
                                         <span class="das-muted">—</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($seniorityLabel !== ''): ?>
+                                        <span class="dash-eff-seniority" title="Ancienneté dans la communauté"><?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php else: ?>
+                                        <span class="das-muted">Non renseignée</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="das-hide-lg">
@@ -508,7 +523,7 @@ $rowCount = count($rows);
     .das-sheet--effectifs .das-sheet__table { min-width: 40rem; }
 }
 @media (min-width: 1400px) {
-    .das-sheet--effectifs .das-sheet__table { min-width: <?= $canSeeInactive ? '52rem' : '46rem' ?>; }
+    .das-sheet--effectifs .das-sheet__table { min-width: <?= $canSeeInactive ? '58rem' : '52rem' ?>; }
 }
 .das-sheet__table th,
 .das-sheet__table td {
@@ -663,6 +678,13 @@ $rowCount = count($rows);
     font-size: 0.8125rem;
     font-weight: 700;
     color: #0f766e;
+    white-space: nowrap;
+}
+.dash-eff-seniority {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #1e3a5f;
     white-space: nowrap;
 }
 

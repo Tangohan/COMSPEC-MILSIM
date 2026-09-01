@@ -260,6 +260,8 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/css/back-office-shell.css'))): ?>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-shell.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php elseif (!empty($isPlatformAdminShell)): ?>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
     <?php endif; ?>
     <?php
     $backOfficePageCss = isset($backOfficePageCss) && is_array($backOfficePageCss) ? $backOfficePageCss : [];
@@ -320,6 +322,9 @@ if (!empty($isBackOfficeShell)) {
     <?php endif; ?>
     <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/js/back-office-sidebar.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-sidebar.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <?php endif; ?>
+    <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/js/back-office-search.js'))): ?>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-search.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php elseif ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/js/dashboard-rail.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/dashboard-rail.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
@@ -469,6 +474,7 @@ if (!empty($isBackOfficeShell)) {
     <?php require base_path('views/partials/demo_nda_session_widget.php'); ?>
     <?php if (!empty($isBackOfficeShell) && !empty(\App\Core\Session::get('user_id'))): ?>
         <?php require base_path('views/partials/ux_feedback_widget.php'); ?>
+        <?php require base_path('views/partials/back_office_search.php'); ?>
     <?php endif; ?>
 <?php
     $cdnPhase = 'body';

@@ -119,6 +119,7 @@ class SystemDashboardController
             'adminAuditRecentTenant' => $adminAuditRecentTenant,
             'adminAuditModerationError' => $adminAuditModerationError,
             'adminPlatformUsagePreview' => $adminPlatformUsagePreview,
+            'backOfficePageCss' => ['platform-admin.css'],
         ]);
     }
 }

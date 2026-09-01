@@ -148,11 +148,11 @@ $canTba = !empty($canTba);
 
                 <label class="portal-card<?= $canTba ? '' : ' sm:col-span-2' ?>">
                     <input type="radio" name="portal" value="jnet" class="sr-only"<?= $canTba ? '' : ' checked' ?> required>
-                    <span class="portal-card__abbr">JNT</span>
+                    <span class="portal-card__abbr">ATH</span>
                     <span>
-                        <span class="block text-[10px] font-black uppercase tracking-[0.22em] text-emerald-400/90">Extranet opérationnel</span>
-                        <span class="mt-1.5 block text-base font-bold text-white">JNET Extranet</span>
-                        <span class="mt-1.5 block text-sm leading-relaxed text-white/50">Situation d’unité, personnel, opérations, cibles et renseignement.</span>
+                        <span class="block text-[10px] font-black uppercase tracking-[0.22em] text-emerald-400/90">Portail membre</span>
+                        <span class="mt-1.5 block text-base font-bold text-white">Accueil Athena</span>
+                        <span class="mt-1.5 block text-sm leading-relaxed text-white/50">Briefing, formations, messages et activités de votre communauté.</span>
                     </span>
                 </label>
             </div>

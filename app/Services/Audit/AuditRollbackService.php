@@ -129,6 +129,7 @@ final class AuditRollbackService
             AuditAction::PLATFORM_SETTINGS_UPDATED => $this->assessPlatformSettingsRestore($before),
             AuditAction::SUBSCRIPTION_PLAN_UPDATED => $this->assessSubscriptionPlanRestore($row, $before),
             AuditAction::TENANT_PLAN_ASSIGNED => $this->assessTenantPlanRestore($row, $before),
+            AuditAction::TENANT_IDENTITY_UPDATED => $this->assessTenantIdentityRestore($row, $before),
             default => array_merge($empty, [
                 'reason' => 'Ce type d’événement n’est pas encore pris en charge pour une restauration automatique. Utilisez les écrans métier concernés ou contactez un administrateur technique.',
             ]),
@@ -162,6 +163,7 @@ final class AuditRollbackService
                 AuditAction::PLATFORM_SETTINGS_UPDATED => $this->applyPlatformSettingsRestore($before),
                 AuditAction::SUBSCRIPTION_PLAN_UPDATED => $this->applySubscriptionPlanRestore($row, $before),
                 AuditAction::TENANT_PLAN_ASSIGNED => $this->applyTenantPlanRestore($row, $before),
+                AuditAction::TENANT_IDENTITY_UPDATED => $this->applyTenantIdentityRestore($row, $before),
                 default => false,
             };
         } catch (\Throwable) {
@@ -543,6 +545,65 @@ final class AuditRollbackService
         }
 
         return $this->tenants->updatePlanAssignment($tenantId, $planSlug, $status);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @param array<string, mixed> $before
+     * @return array{can_rollback: bool, reason: string, summary: string, restore_fields: list<array{key: string, label: string, value: string}>}
+     */
+    private function assessTenantIdentityRestore(array $row, array $before): array
+    {
+        $tenantId = (int) ($row['entity_id'] ?? ($row['tenant_id'] ?? 0));
+        if ($tenantId < 2) {
+            return [
+                'can_rollback' => false,
+                'reason' => 'La communauté concernée n’est pas identifiable pour une restauration.',
+                'summary' => '',
+                'restore_fields' => [],
+            ];
+        }
+        $name = trim((string) ($before['name'] ?? ''));
+        $slug = strtolower(trim((string) ($before['slug'] ?? '')));
+        if ($name === '' || $slug === '') {
+            return [
+                'can_rollback' => false,
+                'reason' => 'L’identité précédente est incomplète : restauration refusée.',
+                'summary' => '',
+                'restore_fields' => [],
+            ];
+        }
+
+        return [
+            'can_rollback' => true,
+            'reason' => '',
+            'summary' => 'Rétablir le nom et l’adresse publique précédents de cette communauté.',
+            'restore_fields' => $this->fieldSummaries(['name' => $name, 'slug' => $slug]),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @param array<string, mixed> $before
+     */
+    private function applyTenantIdentityRestore(array $row, array $before): bool
+    {
+        $tenantId = (int) ($row['entity_id'] ?? ($row['tenant_id'] ?? 0));
+        $name = trim((string) ($before['name'] ?? ''));
+        $slug = strtolower(trim((string) ($before['slug'] ?? '')));
+        if ($tenantId < 2 || $name === '' || $slug === '') {
+            return false;
+        }
+        if (!\App\Services\Community\TenantSlugService::isValidFormat($slug)
+            || \App\Services\Community\TenantSlugService::isReserved($slug)
+            || $this->tenants->isSlugTakenByOther($tenantId, $slug)
+        ) {
+            return false;
+        }
+        $this->tenants->updateName($tenantId, mb_substr($name, 0, 255));
+        $this->tenants->updateSlug($tenantId, $slug);
+
+        return true;
     }
 
     /**

@@ -1,3 +1,47 @@
+COMSPEC Overwatch 1.4.95 / Athena ATAK 1.5.48 / liaison 1.17.9 — 30/08/2026
+
+Guidage GPS et zones du poste
+
+• Un itinéraire tracé au poste apparaît en jeu : points numérotés et trait d’itinéraire
+• En s’approchant d’un point, le poste le marque atteint, le marqueur passe en gris, une annonce le confirme
+• Les zones posées au poste (poser, largage, danger, ralliement…) se voient en jeu
+• Entrer dans une zone dangereuse déclenche une alerte locale ; une zone de poser n’applique pas les effets radio
+• Relier le compte, recharger le pack, relancer Arma complètement
+
+COMSPEC Overwatch 1.4.94 / Athena ATAK 1.5.48 / liaison 1.17.8 — 28/08/2026
+
+• PANIC : un opérateur inconscient ou hors combat apparaît dans la liste d’alerte, avec sa position
+
+COMSPEC Overwatch 1.4.93 / Athena ATAK 1.5.48 / liaison 1.17.8 — 28/08/2026
+
+• SEEK : un relevé biométrique demande le kit correspondant et joue l’animation à genoux
+
+COMSPEC Overwatch 1.4.92 / Athena ATAK 1.5.48 / liaison 1.17.8 — 28/08/2026
+
+• SEEK : la page Contexte se lit à bout de bras (textes et champs plus grands)
+
+COMSPEC Overwatch 1.4.91 / Athena ATAK 1.5.48 / liaison 1.17.8 — 28/08/2026
+
+• Zeus : le nom et le prénom saisis sur un profil SSE sont bien ceux de la personne, plus un nom inventé
+
+COMSPEC Overwatch 1.4.90 / Athena ATAK 1.5.48 / liaison 1.17.8 — 28/08/2026
+
+• Téléphone ATAK : Accepter et Refuser restent visibles sur un ordre remis ; les textes Athena se lisent à nouveau
+• Écran Sons : les boutons ont retrouvé un fond lisible
+• Vibrer depuis le poste lève l’écran « liaison perdue » simulé
+
+COMSPEC Overwatch 1.4.89 / Athena ATAK 1.5.48 / liaison 1.17.8 — 27/08/2026
+
+• La photo de visage SEEK part sur la fiche, plus vers le canal reconnaissance
+
+COMSPEC Overwatch 1.4.88 / Athena ATAK 1.5.48 / liaison 1.17.8 — 26/08/2026
+
+• Lieux, routes et navigation GPS du poste : le jeu remonte les villes et le réseau, et suit l’itinéraire actif
+
+COMSPEC Overwatch 1.4.87 / Athena ATAK 1.5.48 / liaison 1.17.7 — 26/08/2026
+
+• Wardrobes ACE Arsenal : les tenues du poste se poussent et se tirent depuis le menu d’arsenal
+
 COMSPEC Overwatch 1.4.86 / Athena ATAK 1.5.48 / liaison 1.17.7 — 26/08/2026
 
 • Le menu d’actions personnelles n’empile plus les mêmes commandes après un retour au combat

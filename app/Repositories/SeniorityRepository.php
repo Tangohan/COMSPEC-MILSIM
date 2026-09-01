@@ -152,7 +152,7 @@ class SeniorityRepository
             return [];
         }
         $st = $this->pdo()->prepare(
-            'SELECT start_date, end_date, status FROM seniority_periods
+            'SELECT id, start_date, end_date, status FROM seniority_periods
              WHERE user_id = ? AND definition_id = ?
              ORDER BY start_date ASC'
         );
@@ -160,6 +160,7 @@ class SeniorityRepository
         $out = [];
         while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
             $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
                 'start_date' => (string) ($row['start_date'] ?? ''),
                 'end_date' => isset($row['end_date']) && $row['end_date'] !== null ? (string) $row['end_date'] : null,
                 'status' => isset($row['status']) ? (string) $row['status'] : null,

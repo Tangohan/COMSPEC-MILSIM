@@ -65,5 +65,27 @@ final class RhDossierIndividuelAssetTest extends TestCase
         foreach (['rh_documents.php', 'rh_mobility.php', 'rh_succession.php', 'rh_alerts.php'] as $view) {
             self::assertFileExists($root . '/views/admin/effectifs_workspace/' . $view);
         }
+
+        $docs = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_documents.php');
+        $mob = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_mobility.php');
+        $viv = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_succession.php');
+        $alerts = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_alerts.php');
+        $css = (string) file_get_contents($root . '/public/assets/css/effectifs_lms.css');
+        $agg = (string) file_get_contents($root . '/app/Services/Effectifs/RhAlertAggregatorService.php');
+
+        self::assertStringContainsString('eff-rh-hero', $docs);
+        self::assertStringContainsString('eff-rh-hero', $mob);
+        self::assertStringContainsString('eff-rh-hero', $viv);
+        self::assertStringContainsString('eff-rh-hero', $alerts);
+        self::assertStringContainsString('eff-rh-tip', $docs);
+        self::assertStringContainsString('Visible du membre', $docs);
+        self::assertStringNotContainsString('Chemin / URL', $docs);
+        self::assertStringNotContainsString('Schéma non migrée', $docs);
+        self::assertStringContainsString('Approuver', $mob);
+        self::assertStringContainsString('eff-rh-pill', $viv);
+        self::assertStringContainsString('eff-rh-tile', $alerts);
+        self::assertStringContainsString('eff-rh-tip__pop', $css);
+        self::assertStringContainsString('Organigramme', $agg);
+        self::assertStringNotContainsString("'ORBAT'", $agg);
     }
 }

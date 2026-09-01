@@ -61,7 +61,7 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
         <div class="ath-topbar__spacer" aria-hidden="true"></div>
         <label class="ath-topbar__search" for="ath-top-search">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8c979b" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
-            <input id="ath-top-search" type="search" placeholder="Rechercher…" autocomplete="off" spellcheck="false" aria-label="Rechercher dans le menu">
+            <input id="ath-top-search" type="search" placeholder="Pages, membres, documents…" autocomplete="off" spellcheck="false" aria-label="Rechercher dans le back-office" readonly>
             <span class="ath-topbar__search-kbd" aria-hidden="true">⌘K</span>
         </label>
         <?php if ($topAlerts !== []): ?>

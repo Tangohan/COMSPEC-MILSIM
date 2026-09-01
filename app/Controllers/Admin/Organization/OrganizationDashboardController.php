@@ -34,6 +34,7 @@ use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingQuizRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
+use App\Services\Personnel\PersonnelProfileGapScanService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingEnrollmentCompletionAnalytics;
 
@@ -54,6 +55,7 @@ class OrganizationDashboardController
         private ?AtakRealismRepository $atakRealism = null,
         private ?UserRepository $users = null,
         private ?PersonnelRoleplayTimelineRepository $personnelRoleplayTimelineRepository = null,
+        private ?PersonnelProfileGapScanService $profileGaps = null,
     ) {
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
@@ -72,6 +74,7 @@ class OrganizationDashboardController
         $this->atakRealism ??= new AtakRealismRepository();
         $this->users ??= new UserRepository();
         $this->personnelRoleplayTimelineRepository ??= new PersonnelRoleplayTimelineRepository();
+        $this->profileGaps ??= new PersonnelProfileGapScanService();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -367,6 +370,26 @@ class OrganizationDashboardController
             }
         }
 
+        $orgProfileGaps = [
+            'rows' => [],
+            'total' => 0,
+            'shown' => 0,
+            'truncated' => false,
+            'counts' => [
+                'function' => 0,
+                'rank' => 0,
+                'role' => 0,
+                'operator_image' => 0,
+                'absence' => 0,
+            ],
+            'error' => null,
+        ];
+        try {
+            $orgProfileGaps = $this->profileGaps->listForTenant($tenantId, 80);
+        } catch (\Throwable) {
+            $orgProfileGaps['error'] = 'La liste des profils à compléter n’est pas disponible pour le moment.';
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.dashboard',
             'title' => 'Tableau de bord',
@@ -415,6 +438,7 @@ class OrganizationDashboardController
             'orgElevationOpenCount' => $orgElevationOpenCount,
             'orgElevationKindLabels' => EffectifsStaffAlertService::ELEVATION_KIND_LABELS,
             'orgMessagesRecent' => $orgMessagesRecent,
+            'orgProfileGaps' => $orgProfileGaps,
         ]);
     }
 
@@ -744,6 +768,10 @@ class OrganizationDashboardController
                 || $gate->allows('admin.organization')
                 || $gate->allows('admin.access')
                 || $gate->allows('site.support'),
+            'canCatalog' => $gate->allows('organization.catalog.manage')
+                || $gate->allows('organization.orbat.manage')
+                || $gate->allows('admin.organization')
+                || $gate->allows('admin.access'),
             'canSeniorityAdmin' => $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support'),
             'canProgressionAdmin' => $gate->allows('personnel.progression.view')
                 || $gate->allows('personnel.progression.configure')

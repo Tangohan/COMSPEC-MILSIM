@@ -25,11 +25,16 @@ final class SeniorityPrePlatformService
 
     public const CODE_ORG = 'tenure_org_pre_platform';
 
+    public const SETTINGS_BLOCK = 'seniority';
+
     public function __construct(
         private SeniorityRepository $seniorityRepository,
         private SeniorityTenantDefaultsService $tenantDefaultsService,
         private UserRepository $userRepository,
-    ) {}
+        private ?\App\Repositories\TenantRepository $tenantRepository = null,
+    ) {
+        $this->tenantRepository ??= new \App\Repositories\TenantRepository();
+    }
 
     public function getPersonStartDate(int $tenantId, int $userId): ?string
     {
@@ -37,10 +42,14 @@ final class SeniorityPrePlatformService
     }
 
     /**
-     * Date de création d’entité déjà propagée (plus ancienne période connue pour l’indicateur org).
+     * Date de création de l’entité : réglage communauté, sinon plus ancienne période déjà propagée.
      */
     public function getOrgFoundingDate(int $tenantId): ?string
     {
+        $fromSettings = $this->readOrgFoundingFromSettings($tenantId);
+        if ($fromSettings !== null) {
+            return $fromSettings;
+        }
         if (!$this->seniorityRepository->schemaReady() || $tenantId < 1) {
             return null;
         }
@@ -51,6 +60,34 @@ final class SeniorityPrePlatformService
         }
 
         return $this->seniorityRepository->earliestStartForDefinitionTenant($tenantId, $defId);
+    }
+
+    public function hasReviewedOrgFounding(int $tenantId): bool
+    {
+        $block = $this->senioritySettings($tenantId);
+
+        return !empty($block['org_founding_reviewed']) || $this->readOrgFoundingFromSettings($tenantId) !== null;
+    }
+
+    /**
+     * Applique la date de fondation enregistrée à un membre (nouveaux arrivants).
+     */
+    public function applyStoredOrgFoundingToUser(int $tenantId, int $userId): string
+    {
+        $date = $this->readOrgFoundingFromSettings($tenantId);
+        if ($date === null) {
+            return 'unchanged';
+        }
+
+        return $this->upsertMarkedPeriod(
+            $tenantId,
+            $userId,
+            self::CODE_ORG,
+            self::ORG_MARKER,
+            $date,
+            ['source' => 'org_founding_member'],
+            true
+        );
     }
 
     /**
@@ -98,7 +135,7 @@ final class SeniorityPrePlatformService
             'skipped_no_definition' => 0,
             'invalid_date' => 0,
         ];
-        if (!$this->seniorityRepository->schemaReady() || $tenantId < 1) {
+        if ($tenantId < 1) {
             $stats['skipped_schema'] = 1;
 
             return $stats;
@@ -108,6 +145,14 @@ final class SeniorityPrePlatformService
             : $this->normalizeDateString($startDateRaw);
         if ($startDateRaw !== null && trim($startDateRaw) !== '' && $normalized === null) {
             $stats['invalid_date'] = 1;
+
+            return $stats;
+        }
+
+        $this->persistOrgFoundingSetting($tenantId, $normalized);
+
+        if (!$this->seniorityRepository->schemaReady()) {
+            $stats['skipped_schema'] = 1;
 
             return $stats;
         }
@@ -249,6 +294,40 @@ final class SeniorityPrePlatformService
         );
 
         return $newId !== null ? 'inserted' : 'insert_failed';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function senioritySettings(int $tenantId): array
+    {
+        if ($tenantId < 1 || $this->tenantRepository === null) {
+            return [];
+        }
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $block = $settings[self::SETTINGS_BLOCK] ?? null;
+
+        return is_array($block) ? $block : [];
+    }
+
+    private function readOrgFoundingFromSettings(int $tenantId): ?string
+    {
+        $raw = $this->senioritySettings($tenantId)['org_founded_on'] ?? null;
+
+        return $this->normalizeDateString(is_string($raw) ? $raw : null);
+    }
+
+    private function persistOrgFoundingSetting(int $tenantId, ?string $normalized): void
+    {
+        if ($tenantId < 1 || $this->tenantRepository === null) {
+            return;
+        }
+        $this->tenantRepository->updateSettings($tenantId, [
+            self::SETTINGS_BLOCK => [
+                'org_founded_on' => $normalized,
+                'org_founding_reviewed' => true,
+            ],
+        ]);
     }
 
     private function normalizeDateString(?string $raw): ?string

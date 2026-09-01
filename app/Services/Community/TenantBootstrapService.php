@@ -229,6 +229,16 @@ final class TenantBootstrapService
             }
 
             try {
+                $kitCode = $wizard !== null ? trim((string) ($wizard['catalog_kit_code'] ?? '')) : '';
+                if ($kitCode !== '') {
+                    $catalog = \App\Core\Container::get(\App\Services\OrganizationCatalog\OrganizationCatalogService::class);
+                    $catalog->apply($tenantId, $kitCode, [], $newUserId);
+                }
+            } catch (\Throwable $e) {
+                // Le modèle est optionnel : la communauté reste créée.
+            }
+
+            try {
                 $configSvc = \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class);
                 $configSvc->markSatisfiedForNewTenant($tenantId, $newUserId);
                 // Portail SSE : rôles seedés + module prêt — pas d’action humaine obligatoire à la création.
@@ -246,6 +256,20 @@ final class TenantBootstrapService
             $referrerId = isset($options['referrer_user_id']) ? (int) $options['referrer_user_id'] : 0;
             if ($referrerId > 0 && $referrerId !== $creatorUserId) {
                 $this->referralRepository->recordAttribution($referrerId, $tenantId, 'community_created');
+            }
+
+            try {
+                (new \App\Services\Monitoring\ErrorReportMailer())->notifyCommunityCreated([
+                    'tenant_id' => $tenantId,
+                    'name' => $name,
+                    'slug' => $slug,
+                    'community_code' => $communityCode,
+                    'plan_slug' => $planSlug,
+                    'tenant_type' => $tenantType,
+                    'creator_user_id' => $creatorUserId,
+                ]);
+            } catch (\Throwable) {
+                // L’alerte exploitation ne doit pas faire échouer la création.
             }
 
             return ['tenant_id' => $tenantId, 'user_id' => $newUserId];

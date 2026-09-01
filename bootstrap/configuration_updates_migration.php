@@ -293,6 +293,32 @@ SQL
             'dismissible' => 1,
             'sort_order' => 74,
         ],
+        [
+            'code' => 'SENIORITY_REAL_TENURE_V1',
+            'version' => '1',
+            'title' => 'Ancienneté réelle de l’organisation',
+            'description' => 'Si votre unité existait avant Athena, indiquez la date de création. Vous pouvez aussi saisir, pour chaque membre, son arrivée réelle avant l’ouverture du site, depuis Effectifs.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/organisation/anciennete',
+            'estimate_minutes' => 5,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 76,
+        ],
+        [
+            'code' => 'ORGANIZATION_CATALOG_V1',
+            'version' => '1',
+            'title' => 'Catalogue de l’organisation',
+            'description' => 'Des modèles officiels (organigramme, grades, fonctions et rôles) peuvent être copiés dans votre communauté, sans rien partager avec une autre. Vous pouvez aussi enregistrer un modèle de votre organisation actuelle.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/organisation/catalogue',
+            'estimate_minutes' => 5,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 77,
+        ],
     ];
 
     $upsert = $pdo->prepare(

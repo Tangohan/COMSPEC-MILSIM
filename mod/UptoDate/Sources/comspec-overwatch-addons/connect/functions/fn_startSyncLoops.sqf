@@ -181,6 +181,14 @@ private _fnc_addPoll = {
         [{
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollTacticalZones;
+        }, [], "pollTacticalZones"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 8, 1.8] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollMissionPlan;
         }, [], "pollMissionPlan"] call comspec_overwatch_connect_fnc_profileWrap;
 }, 30, 2.4] call _fnc_addPoll;

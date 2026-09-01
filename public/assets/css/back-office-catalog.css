@@ -1,0 +1,383 @@
+/**
+ * Catalogue de l’organisation — modèles officiels et instantané local.
+ */
+.bo-catalog {
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --mint: #059669;
+  --void: #050505;
+  color: var(--ink);
+}
+.bo-catalog__hero {
+  position: relative;
+  overflow: hidden;
+  margin: 0 0 1.5rem;
+  padding: 1.75rem 1.5rem 1.5rem;
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(1200px 400px at 10% -20%, rgba(5, 150, 105, 0.28), transparent 55%),
+    linear-gradient(160deg, #0b1220 0%, #111827 55%, #020617 100%);
+  color: #f8fafc;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.28);
+}
+.bo-catalog__kicker {
+  margin: 0 0 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #6ee7b7;
+}
+.bo-catalog__title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.6rem, 2.4vw, 2.15rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+.bo-catalog__lead {
+  margin: 0;
+  max-width: 42rem;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.bo-catalog__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+}
+.bo-catalog__admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 0.85rem;
+}
+.bo-catalog__admin-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 8.5rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: #fff;
+  padding: 1rem 1.1rem;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.bo-catalog__admin-card:hover,
+.bo-catalog__admin-card:focus-visible {
+  border-color: #6ee7b7;
+  box-shadow: 0 10px 24px rgba(5, 150, 105, 0.12);
+  transform: translateY(-1px);
+  outline: none;
+}
+.bo-catalog__admin-go {
+  margin-top: auto;
+  padding-top: 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--mint);
+}
+.bo-catalog__section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.bo-catalog__section-head .bo-catalog__section-title {
+  margin: 0;
+}
+.bo-catalog__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+}
+.bo-catalog__tile {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: #fff;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.bo-catalog__tile-kicker {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.bo-catalog__tile-value {
+  display: block;
+  margin: 0.2rem 0 0.15rem;
+  font-size: 1.65rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+.bo-catalog__tile-label {
+  color: #475569;
+  font-size: 0.82rem;
+}
+.bo-catalog__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.bo-catalog__card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 1.1rem;
+  background: #fff;
+  padding: 1.15rem 1.2rem 1.2rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+.bo-catalog__card-origin {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+.bo-catalog__card-origin--local {
+  color: #0369a1;
+}
+.bo-catalog__card-title {
+  margin: 0.35rem 0 0.4rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.bo-catalog__card-summary {
+  margin: 0 0 0.75rem;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  flex: 1 1 auto;
+}
+.bo-catalog__card-volume {
+  margin: 0 0 1rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f766e;
+}
+.bo-catalog__card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.bo-catalog__section {
+  margin: 1.75rem 0 0;
+}
+.bo-catalog__section-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.bo-catalog__section-lead {
+  margin: 0 0 0.9rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.bo-catalog__snapshot {
+  border: 1px dashed #a7f3d0;
+  border-radius: 1.1rem;
+  background: #ecfdf5;
+  padding: 1.15rem 1.2rem;
+}
+.bo-catalog__snapshot form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: end;
+}
+.bo-catalog__field {
+  flex: 1 1 16rem;
+}
+.bo-catalog__field label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #115e59;
+}
+.bo-catalog__field input {
+  width: 100%;
+  border: 1px solid #99f6e4;
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.75rem;
+  background: #fff;
+}
+.bo-catalog__include {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1rem 0;
+}
+.bo-catalog__check {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: #fff;
+  padding: 0.75rem 0.9rem;
+}
+.bo-catalog__check input {
+  margin-top: 0.2rem;
+}
+.bo-catalog__check strong {
+  display: block;
+  font-size: 0.92rem;
+}
+.bo-catalog__check span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.bo-catalog__report {
+  border-radius: 0.9rem;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  padding: 0.9rem 1rem;
+  margin: 0 0 1rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.bo-catalog__hubs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1.25rem;
+}
+.bo-catalog__empty {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+.bo-catalog__history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bo-catalog__history li {
+  border-bottom: 1px solid var(--line);
+  padding: 0.65rem 0;
+  font-size: 0.88rem;
+}
+.bo-catalog__history li:last-child {
+  border-bottom: 0;
+}
+.bo-catalog__card--archived {
+  opacity: 0.82;
+  background: #f8fafc;
+}
+.bo-catalog__outline-grid,
+.bo-catalog__diff {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.85rem;
+  margin: 0 0 1.25rem;
+}
+.bo-catalog__outline {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: #fff;
+  padding: 1rem 1.1rem;
+}
+.bo-catalog__outline .ath-btn {
+  margin-top: 0.75rem;
+}
+.bo-catalog__group-title {
+  margin: 0.7rem 0 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.bo-catalog__tree,
+.bo-catalog__plain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bo-catalog__tree li,
+.bo-catalog__plain li {
+  padding: 0.22rem 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.bo-catalog__tree li {
+  padding-left: calc(var(--d, 0) * 0.95rem);
+}
+.bo-catalog__manage {
+  display: grid;
+  gap: 0.85rem;
+}
+.bo-catalog__rename {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: end;
+}
+.bo-catalog__journal {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+.bo-catalog__journal-item {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: #fff;
+  padding: 1rem 1.15rem 1.1rem;
+}
+.bo-catalog__journal-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.45rem;
+}
+.bo-catalog__journal-meta span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.bo-catalog__journal-parts {
+  font-weight: 700;
+  color: #0f766e !important;
+}
+.bo-catalog__journal-summary {
+  margin: 0 0 0.55rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.bo-catalog__journal-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.bo-catalog__journal-counts span {
+  border-radius: 999px;
+  background: #f1f5f9;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+}
+.bo-catalog__details {
+  margin: 0.35rem 0 0.7rem;
+  font-size: 0.88rem;
+}
+.bo-catalog__details summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #0f766e;
+}

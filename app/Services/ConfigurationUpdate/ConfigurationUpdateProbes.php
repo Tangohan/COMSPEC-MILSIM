@@ -398,4 +398,36 @@ final class ConfigurationUpdateProbes
 
         return false;
     }
+
+    public function hasReviewedOrgFounding(int $tenantId): bool
+    {
+        $settings = $this->tenants->getSettings($tenantId);
+        $block = is_array($settings['seniority'] ?? null) ? $settings['seniority'] : [];
+        if (!empty($block['org_founding_reviewed'])) {
+            return true;
+        }
+        $raw = trim((string) ($block['org_founded_on'] ?? ''));
+
+        return $raw !== '' && $raw !== '0000-00-00';
+    }
+
+    public function hasOrganizationCatalogReviewed(int $tenantId): bool
+    {
+        $settings = $this->tenants->getSettings($tenantId);
+        $block = is_array($settings['organization_catalog'] ?? null) ? $settings['organization_catalog'] : [];
+        if (!empty($block['reviewed'])) {
+            return true;
+        }
+        try {
+            $st = $this->pdo->prepare('SELECT 1 FROM organization_catalog_installs WHERE tenant_id = ? LIMIT 1');
+            $st->execute([$tenantId]);
+            if ($st->fetchColumn()) {
+                return true;
+            }
+        } catch (\Throwable) {
+            return true;
+        }
+
+        return false;
+    }
 }

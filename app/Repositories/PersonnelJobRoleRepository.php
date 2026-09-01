@@ -521,6 +521,20 @@ class PersonnelJobRoleRepository
         return $id ? (int) $id : null;
     }
 
+    public function findCategoryIdBySlug(int $tenantId, string $slug): ?int
+    {
+        if (!$this->tablesExist() || $slug === '') {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND slug = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $slug]);
+        $id = $stmt->fetchColumn();
+
+        return $id ? (int) $id : null;
+    }
+
     public function updateCategory(int $id, int $tenantId, ?int $parentId, string $name, string $slug, int $sortOrder): bool
     {
         $stmt = $this->pdo->prepare(

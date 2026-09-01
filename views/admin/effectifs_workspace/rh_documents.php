@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require base_path('views/admin/effectifs_workspace/partials/rh_ui_helpers.php');
+
 $docs = is_array($hrDocuments ?? null) ? $hrDocuments : [];
 $typeLabels = is_array($hrDocTypeLabels ?? null) ? $hrDocTypeLabels : [];
 $users = is_array($orgUsers ?? null) ? $orgUsers : [];
@@ -8,71 +10,130 @@ $schemaReady = !empty($hrSchemaReady);
 $canManage = !empty($canManage);
 $count = (int) ($hrDocumentsCount ?? count($docs));
 $csrf = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
-$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+
+$typeCounts = [];
+foreach ($docs as $d) {
+    $tk = (string) ($d['doc_type'] ?? 'autre');
+    $typeCounts[$tk] = ($typeCounts[$tk] ?? 0) + 1;
+}
+arsort($typeCounts);
+$topTypes = array_slice($typeCounts, 0, 3, true);
+$memberVisible = 0;
+foreach ($docs as $d) {
+    if (($d['visibility'] ?? '') === 'MEMBER') {
+        $memberVisible++;
+    }
+}
 ?>
-<div class="eff-catalog">
-    <div class="eff-catalog__head">
-        <div class="min-w-0">
-            <p class="eff-catalog__kicker">Dossier individuel</p>
-            <h1 class="eff-catalog__title">Documents RH</h1>
-            <p class="eff-catalog__lead">
-                Coffre typé du dossier : candidature, charte, règlements, certificats, qualifications,
-                décisions d’affectation et évaluations. Référencez un chemin fichier ou une URL interne.
-            </p>
-        </div>
-        <div class="eff-catalog__tools">
-            <span class="eff-catalog__btn"><?= $count ?> document<?= $count > 1 ? 's' : '' ?></span>
+<section class="eff-rh-hero">
+    <p class="eff-page-kicker">Dossier RH</p>
+    <h1 class="eff-page-title">Documents RH</h1>
+    <p class="eff-page-lead">
+        Coffre du dossier individuel : chartes, certificats, décisions d’affectation et évaluations.
+        Chaque pièce est classée, datée, et sa visibilité est choisie.
+    </p>
+    <div class="eff-rh-tiles" aria-label="Aperçu des documents">
+        <article class="eff-rh-tile">
+            <span class="eff-rh-tile__kicker">Coffre</span>
+            <strong class="eff-rh-tile__value"><?= $count ?></strong>
+            <span class="eff-rh-tile__label">document<?= $count > 1 ? 's' : '' ?> au dossier</span>
+        </article>
+        <article class="eff-rh-tile">
+            <span class="eff-rh-tile__kicker">
+                Visibilité
+                <?php $rhTip('tip-docs-vis-hero', 'À propos de la visibilité', 'État-major uniquement : seuls les gestionnaires voient la pièce. Visible du membre : le titulaire du dossier la consulte aussi.'); ?>
+            </span>
+            <strong class="eff-rh-tile__value"><?= $memberVisible ?></strong>
+            <span class="eff-rh-tile__label">visible<?= $memberVisible > 1 ? 's' : '' ?> du membre</span>
+        </article>
+        <?php foreach ($topTypes as $tk => $n): ?>
+            <article class="eff-rh-tile">
+                <span class="eff-rh-tile__kicker">Type</span>
+                <strong class="eff-rh-tile__value"><?= (int) $n ?></strong>
+                <span class="eff-rh-tile__label"><?= $h((string) ($typeLabels[$tk] ?? $tk)) ?></span>
+            </article>
+        <?php endforeach; ?>
+    </div>
+</section>
+
+<?php if (!$schemaReady): ?>
+    <div class="eff-catalog">
+        <div class="eff-catalog__empty">
+            <strong>Documents RH indisponibles</strong>
+            <?= $h($rhUnavailable) ?>
         </div>
     </div>
-
-    <?php if (!$schemaReady): ?>
-        <div class="eff-catalog__empty"><strong>Schéma non migrée.</strong> Relancez les migrations pour activer les documents RH.</div>
-    <?php else: ?>
-        <?php if ($canManage): ?>
-        <form method="post" action="<?= $h(effectifs_workspace_url('documents-rh')) ?>" class="eff-catalog__tools" style="flex-wrap:wrap;gap:.75rem;margin-bottom:1.25rem;align-items:end">
+<?php else: ?>
+    <?php if ($canManage): ?>
+    <section class="eff-rh-form" aria-labelledby="eff-docs-add-title">
+        <div class="eff-rh-form__head">
+            <h2 id="eff-docs-add-title" class="eff-rh-form__title">Ajouter une pièce</h2>
+            <p class="eff-rh-form__lead">Classez le document, indiquez qui peut le voir, puis donnez un titre clair.</p>
+        </div>
+        <form method="post" action="<?= $h(effectifs_workspace_url('documents-rh')) ?>" class="eff-rh-form__grid">
             <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-            <label>
-                <span class="eff-section-label">Membre</span>
-                <select name="user_id" required>
-                    <option value="">Choisir…</option>
+            <div class="eff-rh-field">
+                <span class="eff-rh-field__label">Membre</span>
+                <select name="user_id" required aria-label="Membre">
+                    <option value="">Choisir un membre…</option>
                     <?php foreach ($users as $u): ?>
                         <option value="<?= (int) ($u['id'] ?? 0) ?>"><?= $h(trim((string) ($u['display_name'] ?? '')) ?: (string) ($u['email'] ?? '')) ?></option>
                     <?php endforeach; ?>
                 </select>
-            </label>
-            <label>
-                <span class="eff-section-label">Type</span>
-                <select name="doc_type">
+            </div>
+            <div class="eff-rh-field">
+                <span class="eff-rh-field__label">
+                    Type
+                    <?php $rhTip('tip-docs-type', 'À propos du type', 'Choisissez le rôle de la pièce dans le dossier : charte, certificat, évaluation, décision d’affectation…'); ?>
+                </span>
+                <select name="doc_type" aria-label="Type">
                     <?php foreach ($typeLabels as $k => $lab): ?>
                         <option value="<?= $h((string) $k) ?>"><?= $h((string) $lab) ?></option>
                     <?php endforeach; ?>
                 </select>
-            </label>
-            <label>
-                <span class="eff-section-label">Titre</span>
-                <input type="text" name="title" maxlength="200" placeholder="Ex. Charte signée 2026">
-            </label>
-            <label>
-                <span class="eff-section-label">Chemin / URL</span>
-                <input type="text" name="file_path" maxlength="500" placeholder="/storage/… ou lien">
-            </label>
-            <label>
-                <span class="eff-section-label">Visibilité</span>
-                <select name="visibility">
+            </div>
+            <div class="eff-rh-field">
+                <span class="eff-rh-field__label">Titre</span>
+                <input type="text" name="title" maxlength="200" placeholder="Ex. Charte signée 2026" aria-label="Titre">
+            </div>
+            <div class="eff-rh-field">
+                <span class="eff-rh-field__label">
+                    Emplacement
+                    <?php $rhTip('tip-docs-loc', 'À propos de l’emplacement', 'Indiquez où retrouver la pièce : dossier partagé de la communauté, archives, ou lien interne déjà publié.'); ?>
+                </span>
+                <input type="text" name="file_path" maxlength="500" placeholder="Dossier partagé, archives, lien interne…" aria-label="Emplacement">
+            </div>
+            <div class="eff-rh-field">
+                <span class="eff-rh-field__label">
+                    Visibilité
+                    <?php $rhTip('tip-docs-vis', 'À propos de la visibilité', 'État-major uniquement : réservé aux gestionnaires. Visible du membre : le titulaire du dossier peut aussi consulter cette pièce.'); ?>
+                </span>
+                <select name="visibility" aria-label="Visibilité">
                     <option value="STAFF">État-major uniquement</option>
-                    <option value="MEMBER">Visible membre</option>
+                    <option value="MEMBER">Visible du membre</option>
                 </select>
-            </label>
-            <label style="flex:1;min-width:12rem">
-                <span class="eff-section-label">Description</span>
-                <input type="text" name="description" maxlength="500" placeholder="Contexte…">
-            </label>
-            <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Ajouter</button>
+            </div>
+            <div class="eff-rh-field eff-rh-field--wide">
+                <span class="eff-rh-field__label">Description</span>
+                <input type="text" name="description" maxlength="500" placeholder="Contexte, période, décision associée…" aria-label="Description">
+            </div>
+            <div class="eff-rh-form__actions">
+                <button type="submit" class="eff-rh-btn eff-rh-btn--primary">Ajouter au dossier</button>
+            </div>
         </form>
-        <?php endif; ?>
+    </section>
+    <?php endif; ?>
 
+    <div class="eff-catalog">
+        <div class="eff-catalog__head">
+            <div class="min-w-0">
+                <p class="eff-catalog__kicker">Registre</p>
+                <h2 class="eff-catalog__title">Pièces enregistrées</h2>
+                <p class="eff-catalog__lead">Les plus récentes d’abord. Ouvrez la fiche pour le dossier complet du membre.</p>
+            </div>
+        </div>
         <?php if ($docs === []): ?>
-            <div class="eff-catalog__empty"><strong>Aucun document RH pour l’instant.</strong></div>
+            <div class="eff-catalog__empty"><strong>Aucune pièce pour l’instant.</strong> Ajoutez un premier document ci-dessus.</div>
         <?php else: ?>
             <div class="eff-sheets" role="region" aria-label="Documents RH" tabindex="0">
                 <table class="eff-sheets__table">
@@ -93,13 +154,14 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
                         $name = trim((string) ($d['user_display_name'] ?? '')) ?: (string) ($d['user_email'] ?? 'Membre');
                         $type = (string) ($d['doc_type'] ?? 'autre');
                         $path = trim((string) ($d['file_path'] ?? ''));
+                        $visMember = ($d['visibility'] ?? '') === 'MEMBER';
                         ?>
                         <tr>
                             <td><strong class="eff-sheets__name"><?= $h($name) ?></strong></td>
-                            <td><?= $h((string) ($typeLabels[$type] ?? $type)) ?></td>
+                            <td><span class="eff-rh-chip"><?= $h((string) ($typeLabels[$type] ?? $type)) ?></span></td>
                             <td><?= $h((string) ($d['title'] ?? '')) ?><?php if ($path !== ''): ?><br><span class="eff-sheets__meta"><?= $h($path) ?></span><?php endif; ?></td>
-                            <td><?= ($d['visibility'] ?? '') === 'MEMBER' ? 'Membre' : 'État-major' ?></td>
-                            <td><?= $h((string) ($d['created_at'] ?? '')) ?></td>
+                            <td><span class="eff-rh-chip <?= $visMember ? 'eff-rh-chip--info' : '' ?>"><?= $visMember ? 'Visible du membre' : 'État-major' ?></span></td>
+                            <td><?= $h($rhWhen((string) ($d['created_at'] ?? ''))) ?></td>
                             <td><?php if ($uid > 0): ?><a class="is-primary" href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>">Fiche</a><?php endif; ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -107,5 +169,7 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
                 </table>
             </div>
         <?php endif; ?>
-    <?php endif; ?>
-</div>
+    </div>
+<?php endif; ?>
+
+<?php $rhShortcutCurrent = 'documents'; require base_path('views/admin/effectifs_workspace/partials/rh_shortcuts.php'); ?>

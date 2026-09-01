@@ -18,6 +18,7 @@ $canRequestElevation = (bool) ($canRequestElevation ?? false);
 $elevationNoRecipients = (bool) ($elevationNoRecipients ?? false);
 $csrfToken = (string) ($csrfToken ?? '');
 $communityName = trim((string) ($communityName ?? 'Communauté'));
+$orgFoundingDate = trim((string) ($orgFoundingDate ?? ''));
 $currentSort = (string) ($filters['tri'] ?? 'nom');
 $elevationCatalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
 $elevationCooldownByUserId = is_array($elevationCooldownByUserId ?? null) ? $elevationCooldownByUserId : [];
@@ -160,6 +161,25 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
             <?php endif; ?>
         </div>
     </div>
+
+    <?php if ($canEditProfiles): ?>
+    <div class="eff-panel" style="margin:0 0 1rem;padding:1rem 1.1rem">
+        <p class="eff-catalog__kicker">Ancienneté réelle</p>
+        <p style="margin:0.35rem 0 0.75rem;font-size:13px;color:#475569;max-width:46rem">
+            Date de création de l’organisation, même si elle est antérieure à l’arrivée sur Athena.
+            Pour chaque membre, indiquez aussi s’il était déjà là avant le site (colonne Indicateurs).
+        </p>
+        <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('anciennete-entite'), ENT_QUOTES, 'UTF-8') ?>" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:end">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl ?? effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">
+            <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:12px;font-weight:700;color:#334155">
+                Création de l’organisation
+                <input type="date" name="org_founded_on" value="<?= htmlspecialchars($orgFoundingDate, ENT_QUOTES, 'UTF-8') ?>" style="height:2.1rem;padding:0 0.55rem;border:1px solid #cbd5e1;background:#fff">
+            </label>
+            <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" style="height:2.1rem">Enregistrer pour tous les membres</button>
+        </form>
+    </div>
+    <?php endif; ?>
 
     <div class="eff-catalog-filters" style="grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: 0; padding-bottom: 0.35rem;">
         <div>
@@ -332,6 +352,10 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                         ? (user_media_public_url($row['avatar_url'] ?? null) ?? '')
                         : trim((string) ($row['avatar_url'] ?? ''));
                     $seniorityLabel = trim((string) ($row['seniority_label'] ?? '—'));
+                    $prePlatformStart = trim((string) ($row['pre_platform_start'] ?? ''));
+                    $enlistmentStart = trim((string) ($row['enlistment_date_resolved'] ?? ''));
+                    $prePlatformLabel = trim((string) ($row['seniority_pre_platform_label'] ?? ''));
+                    $communitySeniorityLabel = trim((string) ($row['seniority_community_label'] ?? ''));
                     $availabilityScore = (int) ($row['availability_score'] ?? 0);
                     $presenceScore = (int) ($row['presence_score'] ?? 0);
                     $completionScore = (int) ($row['completion_score'] ?? 0);
@@ -428,12 +452,32 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                         </td>
                         <td>
                             <div class="eff-sheets__metrics">
-                                <span class="eff-sheets__metric" title="Ancienneté">Anc. <?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="eff-sheets__metric" title="Ancienneté réelle<?= $prePlatformLabel !== '' ? ' · avant le site : ' . $prePlatformLabel : '' ?><?= $communitySeniorityLabel !== '' ? ' · communauté : ' . $communitySeniorityLabel : '' ?>">Anc. <?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php if ($prePlatformStart !== ''): ?>
+                                    <span class="eff-sheets__badge eff-sheets__badge--info" title="Arrivée avant le site">Avant site</span>
+                                <?php endif; ?>
                                 <span class="eff-sheets__metric" title="Disponibilité">Disp. <?= $availabilityScore ?>%</span>
                                 <span class="eff-sheets__metric" title="Présence">Prés. <?= $presenceScore ?>%</span>
                                 <span class="eff-sheets__metric" title="Complétion du dossier">Doss. <?= $completionScore ?>%</span>
                                 <?php if ($clearanceOverdue): ?>
                                     <span class="eff-sheets__badge eff-sheets__badge--watch" title="Habilitation accordée sans revue récente (&gt; <?= \App\Support\ClearanceReviewPolicy::REVIEW_INTERVAL_DAYS ?> jours)">Habilitation à revoir</span>
+                                <?php endif; ?>
+                                <?php if ($canEditProfiles): ?>
+                                    <details class="eff-sheets__pop">
+                                        <summary class="eff-sheets__chip" style="height:1.4rem">Ancienneté</summary>
+                                        <div class="eff-sheets__pop-panel">
+                                            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/anciennete'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form">
+                                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
+                                                <label for="eff-enlist-<?= $id ?>">Arrivée dans la communauté (sur Athena)</label>
+                                                <input id="eff-enlist-<?= $id ?>" type="date" name="enlistment_date" value="<?= htmlspecialchars($enlistmentStart, ENT_QUOTES, 'UTF-8') ?>">
+                                                <label for="eff-pre-<?= $id ?>">Arrivée avant le site</label>
+                                                <input id="eff-pre-<?= $id ?>" type="date" name="pre_platform_start_date" value="<?= htmlspecialchars($prePlatformStart, ENT_QUOTES, 'UTF-8') ?>">
+                                                <p style="margin:0;font-size:11px;color:#64748b">Laissez vide s’il n’était pas membre avant l’ouverture du site.</p>
+                                                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" style="height:1.85rem">Enregistrer</button>
+                                            </form>
+                                        </div>
+                                    </details>
                                 <?php endif; ?>
                             </div>
                         </td>

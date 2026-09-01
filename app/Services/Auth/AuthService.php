@@ -49,6 +49,8 @@ class AuthService
                 (int) $user['id'],
                 $user
             );
+            \App\Core\Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class)
+                ->applyStoredOrgFoundingToUser((int) ($user['tenant_id'] ?? 0), (int) $user['id']);
         } catch (\Throwable) {
             // Ne jamais bloquer une connexion si le référentiel d’ancienneté est partiellement indisponible.
         }

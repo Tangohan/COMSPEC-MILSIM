@@ -9,7 +9,7 @@ use App\Core\Session;
 use App\Repositories\TenantRepository;
 
 /**
- * Choix d’espace après connexion : TBA (administration) ou JNET Extranet.
+ * Choix d’espace après connexion : administration (TBA) ou accueil Athena (tableau de bord).
  * Les comptes sans organisation (tenant système `default`) restent sur le dashboard classique.
  */
 final class PortalAccessChoice
@@ -141,7 +141,7 @@ final class PortalAccessChoice
             return url('dashboard');
         }
 
-        return url('jnet');
+        return url('dashboard');
     }
 
     public static function normalize(string $portal): ?string
