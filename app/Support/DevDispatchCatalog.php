@@ -601,6 +601,13 @@ final class DevDispatchCatalog
             ], [], [], ['atak', 'platform'], [
                 'Ouvrez le tableau de bord. Tuile Connexion Steam : connectez-vous sur Steam, puis revenez. Un message confirme l’association. Pas de pack jeu.',
             ], 'Portail'),
+            $pr(320, '2026-09-01', 'Le tableau des effectifs reste visible sur la carte', 'Sur la carte du poste, le tableau des effectifs reste sous la carte. Le journal d’analyse démarre replié. Le bouton Unités à gauche réaffiche le tableau s’il était réduit', [], [
+                'Le calque de suivi s’arrête au-dessus du tableau des effectifs',
+            ], [
+                'Le tableau des effectifs disparaissait sous le journal d’analyse et le calque de suivi',
+            ], ['atak'], [
+                'Ouvrez la carte du poste. Le tableau des effectifs est sous la carte. Unités à gauche le réaffiche s’il était réduit. Le journal d’analyse ne s’ouvre que si vous cliquez dessus.',
+            ], 'Carte du poste'),
             $pr(318, '2026-09-01', 'Overwatch 1.5.0 : votre identité, plus le nom de la communauté', 'Le pack jeu affiche l’opérateur, pas le titre de la communauté. L’indicatif vient de la fiche Effectifs. Les messages du poste restent dans le téléphone et le journal, plus dans le chat de bord d’Arma. Sur le téléphone, le journal Athena se lit enfin', [
                 'Écran prêt : photo si elle existe, prénom, nom, indicatif, rôle, grade et fonction',
             ], [
