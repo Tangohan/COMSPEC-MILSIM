@@ -17,6 +17,8 @@ private _modMin = _auth getOrDefault ["min", ""];
 private _avatar = _auth getOrDefault ["avatar", ""];
 private _role = _auth getOrDefault ["role", ""];
 private _function = _auth getOrDefault ["function", ""];
+private _steamLinked = (_auth getOrDefault ["steam_linked", ""]) isEqualTo "1";
+private _steamNotice = _auth getOrDefault ["steam_notice", ""];
 
 if (_modDet isEqualTo "") then { _modDet = [] call comspec_overwatch_connect_fnc_packVersion; };
 if (_extDet isEqualTo "") then { _extDet = "1.18.0"; };
@@ -181,7 +183,11 @@ if (_ready) then {
     if (!(_tenant isEqualTo "")) then {
         _lines pushBack format ["<t align='center' size='0.65' color='#7aa89a'>Communauté : %1</t>", _tenant];
     };
-    _lines pushBack "<t align='center' size='0.65' color='#7aa89a'>STEAM        LIÉ<br/>ATHENA      CONNECTÉ<br/>OVERWATCH   ACTIF<br/>C2          DISPONIBLE</t>";
+    private _steamLine = if (_steamLinked) then { "STEAM        LIÉ" } else { "STEAM        NON ASSOCIÉ" };
+    _lines pushBack format ["<t align='center' size='0.65' color='#7aa89a'>%1<br/>ATHENA      CONNECTÉ<br/>OVERWATCH   ACTIF<br/>C2          DISPONIBLE</t>", _steamLine];
+    if (!(_steamNotice isEqualTo "")) then {
+        _lines pushBack format ["<t align='center' size='0.62' color='#e8d48a'>%1</t>", _steamNotice];
+    };
     (_d displayCtrl 9413) ctrlSetStructuredText parseText (_lines joinString "<br/>");
     (_d displayCtrl 9410) ctrlSetStructuredText parseText "<t align='center' size='0.55' color='#7dffb0'>● Environnement opérationnel prêt</t>";
 } else {

@@ -40,5 +40,7 @@ createHashMapFromArray [
     ["min", [14] call _fnc_cell],
     ["avatar", [15] call _fnc_cell],
     ["role", [16] call _fnc_identity],
-    ["function", [17] call _fnc_identity]
+    ["function", [17] call _fnc_identity],
+    ["steam_linked", [18] call _fnc_cell],
+    ["steam_notice", [19] call _fnc_cell]
 ]

@@ -601,6 +601,19 @@ final class DevDispatchCatalog
             ], [], [], ['atak', 'platform'], [
                 'Ouvrez le tableau de bord. Tuile Connexion Steam : connectez-vous sur Steam, puis revenez. Un message confirme l’association. Pas de pack jeu.',
             ], 'Portail'),
+            $pr(325, '2026-09-01', 'La connexion Athena en jeu associe Steam toute seule', 'Si Steam n’était pas encore enregistré sur le compte, la connexion par e-mail en jeu l’associe à partir de la session. L’opérateur est prévenu à l’écran et par courriel ; l’encadrement reçoit aussi un courriel', [
+                'Connexion par e-mail en jeu : l’identifiant Steam de la session est enregistré s’il manquait',
+                'L’opérateur voit la confirmation à l’écran et reçoit un courriel ; l’encadrement est informé',
+            ], [], [
+                'Sans identifiant Steam déjà enregistré, la connexion en jeu échouait au lieu d’associer Steam',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement, connectez-vous avec votre e-mail. Si Steam n’était pas associé, il l’est après cette connexion.',
+            ], 'Overwatch'),
+            $pr(321, '2026-09-01', 'La session Overwatch se rouvre même sans Steam', 'Au relancement d’Arma, Overwatch retrouve la session Athena même si Steam n’est pas associé au compte. Plus d’incident qui referme la connexion', [], [], [
+                'Au relancement, la session enregistrée plantait dès qu’aucun identifiant Steam n’était connu',
+            ], ['atak'], [
+                'Relancez Arma avec Overwatch. Si vous étiez déjà connecté à Athena sans Steam associé, la session se rouvre. Pas besoin d’un nouveau pack jeu.',
+            ], 'Athena'),
             $pr(320, '2026-09-01', 'Le tableau des effectifs reste visible sur la carte', 'Sur la carte du poste, le tableau des effectifs reste sous la carte. Le journal d’analyse démarre replié. Le bouton Unités à gauche réaffiche le tableau s’il était réduit', [], [
                 'Le calque de suivi s’arrête au-dessus du tableau des effectifs',
             ], [

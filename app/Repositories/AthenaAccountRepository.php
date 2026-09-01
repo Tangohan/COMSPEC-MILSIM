@@ -236,8 +236,32 @@ final class AthenaAccountRepository
         return $row ?: null;
     }
 
-    public function upsertPairing(int $accountId, string $deviceId, string $steamId, string $tokenHash): void
+    public function assignSteamIdIfEmpty(int $accountId, string $steamId): bool
     {
+        $steamId = trim($steamId);
+        if ($accountId < 1 || $steamId === '') {
+            return false;
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                "UPDATE athena_accounts
+                 SET steam_id = ?
+                 WHERE id = ? AND (steam_id IS NULL OR TRIM(steam_id) = '')"
+            );
+            $st->execute([$steamId, $accountId]);
+
+            return $st->rowCount() > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function upsertPairing(int $accountId, string $deviceId, ?string $steamId, string $tokenHash): void
+    {
+        $steamId = trim((string) $steamId);
+        if ($accountId <= 0 || $deviceId === '' || $steamId === '' || $tokenHash === '') {
+            return;
+        }
         $st = $this->pdo()->prepare(
             'INSERT INTO game_device_pairings (account_id, device_id, steam_id, pairing_token_hash)
              VALUES (?, ?, ?, ?)
