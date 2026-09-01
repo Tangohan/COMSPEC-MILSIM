@@ -851,6 +851,7 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Repositories\UserProfileRepository::class),
             ),
             \App\Controllers\Web\PersonnelCorrectionController::class => new \App\Controllers\Web\PersonnelCorrectionController(
                 self::get(AuthService::class),
