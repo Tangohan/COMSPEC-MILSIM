@@ -1,0 +1,429 @@
+/**
+ * Dossier personnel — vue publique (bandeau d’identité) et écran de choix de vue.
+ * Scopé sous .personnel-file-hero / .personnel-file--public / .personnel-file--gate.
+ */
+
+.personnel-file--public,
+.personnel-file--gate {
+  min-height: 0;
+  padding-top: 0;
+  padding-bottom: 1.75rem;
+}
+
+.personnel-file--gate {
+  padding-bottom: 1.15rem;
+}
+
+body:has(.personnel-file--gate) > main {
+  min-height: 0;
+}
+
+.personnel-file-portal-main {
+  min-height: 0;
+}
+
+.personnel-file-gate__hero {
+  width: 100%;
+  background-color: #0f172a;
+  background-image: linear-gradient(135deg, #0f172a 0%, #1e293b 58%, rgba(6, 78, 59, 0.28) 100%);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.55);
+}
+
+.personnel-file-gate__hero-inner {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 1.15rem;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .personnel-file-gate__hero-inner {
+    padding: 1.4rem 2rem 1.25rem;
+  }
+}
+
+.personnel-file-gate__identity {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  margin-top: 0.45rem;
+}
+
+.personnel-file-gate__avatar {
+  position: relative;
+  height: 3.25rem;
+  width: 3.25rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 0.9rem;
+  border: 2px solid rgba(71, 85, 105, 0.55);
+  background: #1e293b;
+}
+
+.personnel-file-gate__name {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  font-style: italic;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.personnel-file-gate__lead {
+  margin: 0.55rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: #94a3b8;
+}
+
+.personnel-file-gate__choices {
+  background: #fff;
+}
+
+.personnel-file-gate__choices-inner {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 1.15rem 1.5rem 0.25rem;
+}
+
+@media (min-width: 768px) {
+  .personnel-file-gate__choices-inner {
+    padding: 1.35rem 2rem 0.35rem;
+  }
+}
+
+.personnel-file-hero {
+  width: 100%;
+  background-color: #0f172a;
+  background-image: linear-gradient(135deg, #0f172a 0%, #1e293b 58%, rgba(6, 78, 59, 0.28) 100%);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.55);
+}
+
+.personnel-file-hero__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 1.35rem;
+}
+
+@media (min-width: 768px) {
+  .personnel-file-hero__inner {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 1.75rem 2rem 1.5rem;
+  }
+}
+
+.personnel-file-hero__identity {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.personnel-file-hero__eyebrow {
+  margin: 0;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  font-style: italic;
+  color: rgba(52, 211, 153, 0.9);
+}
+
+.personnel-file-hero__name {
+  margin: 0.2rem 0 0;
+  font-size: clamp(1.55rem, 3.4vw, 2.35rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  font-style: italic;
+  line-height: 1.08;
+  color: #fff;
+}
+
+.personnel-file-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.55rem 1.35rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.personnel-file-hero__meta-label {
+  display: block;
+  margin: 0 0 0.12rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.personnel-file-hero__meta-value {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-style: italic;
+  color: #e2e8f0;
+  line-height: 1.2;
+}
+
+.personnel-file-hero__meta-value--nick {
+  color: #fde68a;
+  font-style: normal;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.personnel-file-hero__meta-value--id {
+  font-style: normal;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.personnel-file-hero__unit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.55rem;
+  margin: 0.55rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: #94a3b8;
+}
+
+.personnel-file-hero__flag {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.personnel-file-hero__badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+  max-width: 36rem;
+}
+
+.personnel-file-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 1 auto;
+  white-space: nowrap;
+  max-width: 100%;
+  padding: 0.18rem 0.55rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(52, 211, 153, 0.38);
+  background: rgba(16, 185, 129, 0.1);
+  color: #6ee7b7;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.personnel-file-hero__badge--muted {
+  border-color: rgba(148, 163, 184, 0.38);
+  background: rgba(51, 65, 85, 0.4);
+  color: #cbd5e1;
+}
+
+.personnel-file-hero__badge--warn {
+  border-color: rgba(251, 191, 36, 0.38);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fde68a;
+}
+
+.personnel-file-hero__badge-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 999px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.personnel-file-hero__report {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0.85rem;
+}
+
+.personnel-file-hero__report > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  list-style: none;
+  padding: 0.28rem 0.55rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.personnel-file-hero__report > summary::-webkit-details-marker {
+  display: none;
+}
+
+.personnel-file-hero__report > summary:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.personnel-file-hero__report > summary:focus {
+  outline: none;
+}
+
+.personnel-file-hero__report > summary:focus-visible {
+  box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px rgba(253, 164, 175, 0.75);
+}
+
+.personnel-file-hero__report-menu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 30;
+  min-width: min(100%, 17rem);
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(2, 6, 23, 0.96);
+  padding: 0.25rem 0;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.personnel-file-hero__visual {
+  flex: 0 0 auto;
+  align-self: flex-end;
+}
+
+.personnel-file-hero__portrait {
+  position: relative;
+  margin: 0;
+  width: min(10.75rem, 46vw);
+  aspect-ratio: 3 / 5;
+  max-height: min(20.5rem, 48vh);
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 2px solid rgba(71, 85, 105, 0.55);
+  background: #0f172a;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42);
+}
+
+@media (min-width: 768px) {
+  .personnel-file-hero__portrait {
+    width: 12rem;
+  }
+}
+
+.personnel-file-hero__portrait-img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.65));
+}
+
+.personnel-file-hero__portrait-empty {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #64748b;
+}
+
+.personnel-file-hero__portrait-shade {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.12) 42%, transparent 70%);
+}
+
+.personnel-file-hero__avatar-inset {
+  position: absolute;
+  left: 0.45rem;
+  bottom: 0.45rem;
+  z-index: 3;
+  width: 2.85rem;
+  height: 2.85rem;
+  overflow: hidden;
+  border-radius: 0.65rem;
+  border: 2px solid #0f172a;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28), 0 4px 12px rgba(0, 0, 0, 0.5);
+  background: #1e293b;
+}
+
+.personnel-file-hero__avatar-inset img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.personnel-file-hero__avatar-inset-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.08rem 0.12rem;
+  font-size: 0.4375rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.82);
+  line-height: 1.2;
+}
+
+@media (max-width: 639px) {
+  .personnel-file-hero__inner {
+    padding: 1.25rem 1.25rem 1.15rem;
+  }
+
+  .personnel-file-hero__badges {
+    max-width: none;
+  }
+
+  .personnel-file-hero__badge {
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  .personnel-file-hero__visual {
+    align-self: flex-start;
+  }
+
+  .personnel-file-hero__portrait {
+    width: min(11rem, 58vw);
+  }
+}
