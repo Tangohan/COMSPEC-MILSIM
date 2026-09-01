@@ -24,7 +24,9 @@ use App\Support\TenantEmailKind;
 use App\Services\Profile\RecruitmentPresetPayloadService;
 use App\Services\Profile\UserUiPreferencesValidationService;
 use App\Services\User\UserProfileSlugService;
+use App\Services\Steam\SteamOpenIdService;
 use App\Services\Steam\SteamWebApiService;
+use App\Support\SteamId;
 use App\Services\Community\MemberOnboardingService;
 use App\Services\Community\LeaveCommunityService;
 use App\Services\Auth\LoginSecurityOtpService;
@@ -1780,5 +1782,90 @@ class AccountController
             $payload['rp'] = [];
         }
         $payload['rp']['image_url'] = $res['path'] ?? '';
+    }
+
+    public function steamConnect(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $state = bin2hex(random_bytes(16));
+        Session::set('steam_openid_state', $state);
+        Session::set('steam_openid_started', time());
+
+        return Response::redirect((new SteamOpenIdService())->authorizationUrl($state));
+    }
+
+    public function steamCallback(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $uid = (int) $user['id'];
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        $expected = (string) Session::get('steam_openid_state', '');
+        $started = (int) Session::get('steam_openid_started', 0);
+        Session::forgetMany(['steam_openid_state', 'steam_openid_started']);
+        $back = url('dashboard');
+        if ($tenantId < 1) {
+            Session::flash('error', 'Communauté introuvable.');
+
+            return Response::redirect($back);
+        }
+        $query = $request->queryParams();
+        $state = trim((string) ($query['state'] ?? ''));
+        if ($expected === '' || $state === '' || !hash_equals($expected, $state) || ($started > 0 && (time() - $started) > 900)) {
+            Session::flash('error', 'La liaison Steam a expiré. Recommencez depuis le tableau de bord.');
+
+            return Response::redirect($back);
+        }
+        $openid = new SteamOpenIdService();
+        $returnTo = trim((string) ($query['openid.return_to'] ?? $query['openid_return_to'] ?? ''));
+        if ($returnTo !== '' && !str_starts_with($returnTo, $openid->callbackUrl())) {
+            Session::flash('error', 'La liaison Steam a été interrompue. Recommencez depuis le tableau de bord.');
+
+            return Response::redirect($back);
+        }
+        if (!$openid->verify($query)) {
+            Session::flash('error', 'Steam n’a pas confirmé cette connexion. Réessayez dans un instant.');
+
+            return Response::redirect($back);
+        }
+        $steamId = $openid->claimedSteamId($query);
+        if ($steamId === null || !SteamId::isSteam64($steamId)) {
+            Session::flash('error', 'Steam n’a pas renvoyé un compte reconnaissable.');
+
+            return Response::redirect($back);
+        }
+        $taken = $this->userRepository->findBySteamIdForTenant($tenantId, $steamId);
+        if (is_array($taken) && (int) ($taken['id'] ?? 0) !== $uid) {
+            Session::flash('error', 'Ce compte Steam est déjà associé à un autre membre de la communauté.');
+
+            return Response::redirect($back);
+        }
+        $previous = SteamId::normalize((string) ($user['steam_id'] ?? ''));
+        if ($previous === $steamId) {
+            Session::flash('success', 'Votre compte Steam est déjà associé.');
+
+            return Response::redirect($back);
+        }
+        $this->userRepository->update($uid, $tenantId, ['steam_id' => $steamId]);
+        try {
+            $this->auditService->log(
+                AuditAction::USER_STEAM_LINKED,
+                $tenantId,
+                $uid,
+                'user',
+                $uid,
+                $previous,
+                $steamId
+            );
+        } catch (\Throwable) {
+        }
+        Session::flash('success', 'Votre compte Steam est associé. En jeu, Overwatch pourra vous reconnaître.');
+
+        return Response::redirect($back);
     }
 }
