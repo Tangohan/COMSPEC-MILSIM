@@ -23,5 +23,9 @@ final class SteamIdNormalizeTest extends TestCase
     public function testSteam64IsKept(): void
     {
         self::assertSame('76561198000000000', SteamId::normalize('76561198000000000'));
+        self::assertSame(
+            '76561198000000000',
+            SteamId::normalize('https://steamcommunity.com/openid/id/76561198000000000')
+        );
     }
 }
