@@ -10,7 +10,6 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantRepository;
 use App\Services\Auth\AuthService;
-use App\Services\Community\MemberOnboardingService;
 use App\Services\Community\TenantCommunityProfileService;
 use App\Services\Community\TenantOnboardingHealthService;
 
@@ -343,20 +342,6 @@ final class OrganizationCommunityController
     /** Vue de suivi onboarding membres (cross-modules) pour le staff. */
     public function onboardingMembers(Request $request, array $params = []): Response
     {
-        if (!$this->authService->check()) {
-            return Response::redirect(url('login'));
-        }
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('dashboard'));
-        }
-        $dashboard = (new MemberOnboardingService())->buildStaffDashboard($tenantId, 120);
-
-        return Response::view('layout.main', [
-            'title' => 'Onboarding membres',
-            'content' => 'admin.organization.onboarding_members',
-            'onboardingRows' => $dashboard['rows'],
-            'onboardingKpis' => $dashboard['kpis'],
-        ]);
+        return Response::redirect(url('back-office/integration-membres'));
     }
 }

@@ -100,6 +100,22 @@ class OrganizationAdminMiddleware
                 || $gate->allows('media.manage')
             )) {
                 $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/integration-membres') && (
+                $gate->allows('member_integration.view')
+                || $gate->allows('member_integration.manage')
+                || $gate->allows('member_integration.assign')
+                || $gate->allows('member_integration.note')
+                || $gate->allows('member_integration.template_manage')
+            )) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/onboarding-members') && (
+                $gate->allows('member_integration.view')
+                || $gate->allows('member_integration.manage')
+                || $gate->allows('member_integration.assign')
+                || $gate->allows('member_integration.note')
+                || $gate->allows('member_integration.template_manage')
+            )) {
+                $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/roles-permissions') && (
                 $gate->allows('admin.roles.manage')
                 || $gate->allows('admin.permissions.manage')

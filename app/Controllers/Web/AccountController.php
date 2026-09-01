@@ -842,6 +842,55 @@ class AccountController
         }
 
         $items[] = [
+            'key' => EmailEvents::MEMBER_INTEGRATION_STARTED,
+            'label' => 'Ouverture de votre parcours d’intégration',
+            'hint' => 'Lorsque l’encadrement ouvre votre suivi d’arrivée dans la communauté.',
+            'group' => 'Intégration',
+        ];
+        $items[] = [
+            'key' => EmailEvents::MEMBER_INTEGRATION_TASK,
+            'label' => 'Nouvelle étape d’intégration',
+            'hint' => 'Lorsqu’une étape de votre parcours d’arrivée vous est rappelée.',
+            'group' => 'Intégration',
+        ];
+        $items[] = [
+            'key' => EmailEvents::MEMBER_INTEGRATION_INVITE,
+            'label' => 'Invitation à un rendez-vous d’intégration',
+            'hint' => 'Lorsqu’on vous propose un rendez-vous d’accueil ou de suivi.',
+            'group' => 'Intégration',
+        ];
+        $items[] = [
+            'key' => EmailEvents::MEMBER_INTEGRATION_APPOINTMENT_CHANGED,
+            'label' => 'Modification d’un rendez-vous d’intégration',
+            'hint' => 'Lorsque la date, le lieu ou le contenu d’un rendez-vous d’arrivée change.',
+            'group' => 'Intégration',
+        ];
+        $items[] = [
+            'key' => EmailEvents::MEMBER_INTEGRATION_APPOINTMENT_CANCELLED,
+            'label' => 'Annulation d’un rendez-vous d’intégration',
+            'hint' => 'Lorsqu’un rendez-vous d’arrivée est annulé.',
+            'group' => 'Intégration',
+        ];
+        $items[] = [
+            'key' => EmailEvents::MEMBER_INTEGRATION_REMINDER,
+            'label' => 'Rappel d’intégration',
+            'hint' => 'Lorsqu’une étape d’arrivée arrive à échéance ou est en retard.',
+            'group' => 'Intégration',
+        ];
+        $items[] = [
+            'key' => EmailEvents::MEMBER_INTEGRATION_REFERENT_MESSAGE,
+            'label' => 'Message de votre référent d’intégration',
+            'hint' => 'Lorsqu’un message vous est adressé dans le cadre de votre arrivée.',
+            'group' => 'Intégration',
+        ];
+        $items[] = [
+            'key' => EmailEvents::MEMBER_INTEGRATION_COMPLETED,
+            'label' => 'Fin de votre parcours d’intégration',
+            'hint' => 'Lorsque toutes les étapes obligatoires de votre arrivée sont terminées.',
+            'group' => 'Intégration',
+        ];
+
+        $items[] = [
             'key' => EmailEvents::SSE_ANALYST_DIGEST,
             'label' => 'Point quotidien renseignement SSE',
             'hint' => 'Résumé des rapprochements à trancher, signaux ouverts et nouvelles fiches terrain pour votre communauté.',

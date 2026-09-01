@@ -456,4 +456,16 @@ final class ConfigurationUpdateProbes
             return false;
         }
     }
+
+    public function hasActiveMemberIntegrationTemplate(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            return (new \App\Repositories\MemberIntegrationTemplateRepository())->hasActiveTemplate($tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 }

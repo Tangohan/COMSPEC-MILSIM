@@ -499,6 +499,17 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Ouvrez Réglages → Carte. Plus de pavé gris sous la vue relief. S’il y a des bâtiments sans ombrage, le bandeau le dit : bâtiments reçus, ombrage du sol pas encore sur le poste.',
             ], 'Portail 1.5.90'),
+            $pr(280, '2026-09-01', 'Un vrai parcours d’arrivée pour les nouveaux membres', 'Après l’acceptation d’une candidature, la création d’un compte ou une invitation, l’encadrement suit l’arrivée : étapes, dossier personnel, rendez-vous et référent. Le membre voit son propre parcours, sans les notes internes', [
+                'Tableau de suivi des arrivées, avec filtres et vue par étape en cours',
+                'Fiche de parcours : dossier personnel, groupes de suivi, bilans, rendez-vous et journal',
+                'Modèles de parcours publiés, repris à l’identique pour chaque nouvel arrivant',
+                'Page « Mon intégration » : étapes visibles, invitations et message du référent',
+                'Invitation par e-mail avec réponse Oui / Peut-être / Non et ajout au calendrier personnel',
+            ], [
+                'L’ancien écran d’accueil des arrivants ouvre désormais ce suivi',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez Intégration des nouveaux membres dans le back-office. Vérifiez le modèle Intégration recrue, puis acceptez une candidature ou créez un compte : le parcours s’ouvre. Le membre consulte Mon intégration.',
+            ], 'Portail 1.5.97'),
             $pr(275, '2026-09-01', 'La vue relief n’incline plus le plan de la carte', 'La carte à plat reste un plan ; le relief se voit dans une vue séparée, collines et unités posées sur le sol', [
                 'La carte à plat reste parfaitement plane : plus de trapèze ni de bandes étirées',
                 'La vue relief montre le sol relevé, avec la grille et les unités posées sur le terrain',

@@ -60,7 +60,11 @@ return [
         ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres avancés'],
         ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Relais Discord par événement, transmissions terrain et jetons d’accès.'],
         ['path' => 'back-office/dashboard-pins', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Raccourcis du portail'],
-        ['path' => 'back-office/onboarding-members', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Onboarding membres'],
+        ['path' => 'back-office/integration-membres', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégration des nouveaux membres', 'subtitle' => 'Parcours d’arrivée, référents, rendez-vous et dossier personnel.', 'css' => ['member-integration.css'], 'quick' => [
+            ['label' => 'Modèles', 'href' => 'back-office/integration-membres/modeles'],
+            ['label' => 'Reprise', 'href' => 'back-office/integration-membres/reprise'],
+        ]],
+        ['path' => 'back-office/onboarding-members', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégration des nouveaux membres'],
         ['path' => 'back-office/onboarding-recovery', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · PREMIERS PAS', 'title' => 'Aide après inscription', 'css' => ['back-office-onboarding-recovery.css']],
         ['path' => 'back-office/users/create', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · MEMBRES', 'title' => 'Nouvel utilisateur', 'css' => ['back-office-users.css']],
         ['path' => 'back-office/users', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · ANNUAIRE', 'title' => 'Membres', 'subtitle' => 'Annuaire complet : identité, affectation, statut et présence.', 'css' => ['back-office-users.css'], 'quick' => [

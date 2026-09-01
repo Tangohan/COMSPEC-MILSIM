@@ -206,6 +206,7 @@ $navTiles[] = $tile('effectifs', 'Effectifs', 'Annuaire et structure', 'default'
         : null,
     ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'hint' => 'Identité et grade', 'lms_module' => 'effectifs'],
     ['label' => 'Espace RH', 'href' => url('personnel/mon-espace-rh'), 'hint' => 'Dossier administratif', 'lms_module' => 'effectifs'],
+    ['label' => 'Mon intégration', 'href' => url('mon-integration'), 'hint' => 'Étapes d’arrivée et rendez-vous', 'lms_module' => 'effectifs'],
     ['label' => 'Mon personnage (RP)', 'href' => url('roleplay'), 'hint' => 'Identité RP, suivi, bilans', 'lms_module' => 'effectifs'],
     ['label' => 'Distinctions', 'href' => url('distinctions'), 'hint' => 'Reconnaissances', 'lms_module' => 'effectifs'],
 ]));

@@ -300,6 +300,20 @@ final class ConfigurationUpdateCatalog
                 isApplicable: static fn (int $tenantId): bool => true,
                 isSatisfied: fn (int $tenantId): bool => $p->hasOpenedOperationWorkspace($tenantId),
             ),
+            new ConfigurationUpdateDefinition(
+                code: 'MEMBER_INTEGRATION_V1',
+                title: 'Parcours d’intégration des nouveaux membres',
+                description: 'Préparez le suivi d’arrivée : un modèle de parcours, un référent, les étapes du dossier personnel et les rendez-vous d’accueil. Les communautés existantes conservent leurs membres ; rien n’est créé en masse sans reprise manuelle.',
+                level: ConfigurationUpdateDefinition::LEVEL_RECOMMENDED,
+                configurePath: 'back-office/integration-membres/modeles',
+                estimateMinutes: 8,
+                dismissible: true,
+                blocking: false,
+                dependsOn: [],
+                sortOrder: 80,
+                isApplicable: static fn (int $tenantId): bool => true,
+                isSatisfied: fn (int $tenantId): bool => $p->hasActiveMemberIntegrationTemplate($tenantId),
+            ),
         ];
     }
 

@@ -600,6 +600,12 @@ class UserRepository
                 $logger->logAssign($tenantId, $userId, $rid, $actorUserId, null);
             }
         }
+        \App\Services\MemberIntegration\MemberIntegrationEntryHook::afterRoleOrUnitChange(
+            $tenantId,
+            $userId,
+            $actorUserId ?? 0,
+            ['role_ids' => $valid]
+        );
     }
 
     /**

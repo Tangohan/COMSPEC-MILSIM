@@ -345,6 +345,19 @@ SQL
             'dismissible' => 1,
             'sort_order' => 79,
         ],
+        [
+            'code' => 'MEMBER_INTEGRATION_V1',
+            'version' => '1',
+            'title' => 'Parcours d’intégration des nouveaux membres',
+            'description' => 'Préparez le suivi d’arrivée : un modèle de parcours, un référent, les étapes du dossier personnel et les rendez-vous d’accueil. Les communautés existantes conservent leurs membres ; rien n’est créé en masse sans reprise manuelle.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/integration-membres/modeles',
+            'estimate_minutes' => 8,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 80,
+        ],
     ];
 
     $upsert = $pdo->prepare(

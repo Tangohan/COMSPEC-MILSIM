@@ -1810,4 +1810,71 @@ final class EmailService
             ['purpose' => 'demo_nda_feedback']
         );
     }
+
+    public function sendMemberIntegrationStarted(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $pageUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::MEMBER_INTEGRATION_STARTED,
+            'member_integration_started',
+            $to,
+            'Votre arrivée dans ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'pageUrl' => $pageUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'member_integration_started']
+        );
+    }
+
+    public function sendMemberIntegrationNotice(
+        string $eventCode,
+        string $to,
+        string $displayName,
+        string $title,
+        string $when,
+        string $actionUrl,
+        string $icsUrl,
+        int $tenantId
+    ): bool {
+        $subjects = [
+            EmailEvents::MEMBER_INTEGRATION_INVITE => 'Invitation : ' . $title,
+            EmailEvents::MEMBER_INTEGRATION_APPOINTMENT_CHANGED => 'Rendez-vous modifié : ' . $title,
+            EmailEvents::MEMBER_INTEGRATION_APPOINTMENT_CANCELLED => 'Rendez-vous annulé : ' . $title,
+            EmailEvents::MEMBER_INTEGRATION_REMINDER => 'Rappel — parcours d’intégration',
+            EmailEvents::MEMBER_INTEGRATION_TASK => 'Nouvelle étape : ' . $title,
+            EmailEvents::MEMBER_INTEGRATION_REFERENT_MESSAGE => 'Message de votre référent',
+            EmailEvents::MEMBER_INTEGRATION_COMPLETED => 'Votre intégration est terminée',
+        ];
+        $templates = [
+            EmailEvents::MEMBER_INTEGRATION_INVITE => 'member_integration_invite',
+            EmailEvents::MEMBER_INTEGRATION_APPOINTMENT_CHANGED => 'member_integration_appointment_changed',
+            EmailEvents::MEMBER_INTEGRATION_APPOINTMENT_CANCELLED => 'member_integration_appointment_cancelled',
+        ];
+        $template = $templates[$eventCode] ?? 'member_integration_notice';
+
+        return $this->sendTemplated(
+            $eventCode,
+            $template,
+            $to,
+            $subjects[$eventCode] ?? $title,
+            [
+                'displayName' => $displayName,
+                'title' => $title,
+                'when' => $when,
+                'actionUrl' => $actionUrl,
+                'icsUrl' => $icsUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => strtolower($eventCode)]
+        );
+    }
 }

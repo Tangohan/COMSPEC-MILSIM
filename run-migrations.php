@@ -133,6 +133,7 @@ $bootstrapFiles = [
     'arma_playtime_migration.php',
     'personnel_org_history_migration.php',
     'personnel_stage_bilans_migration.php',
+    'member_integration_migration.php',
     'personnel_absences_migration.php',
     'positions_admin_category_migration.php',
     'personnel_profile_extended_details_migration.php',
@@ -271,6 +272,7 @@ run_rank_catalog_migration($pdo);
 run_arma_playtime_migration($pdo);
 run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
+run_member_integration_migration($pdo);
 run_personnel_absences_migration($pdo);
 run_personnel_profile_extended_details_migration($pdo);
 run_personnel_profile_rp_identity_migration($pdo);

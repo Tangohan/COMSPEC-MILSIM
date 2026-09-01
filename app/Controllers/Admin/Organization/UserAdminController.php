@@ -679,6 +679,13 @@ class UserAdminController
         }
 
         $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, $email);
+        \App\Services\MemberIntegration\MemberIntegrationEntryHook::afterAccountReady(
+            $tenantId,
+            $userId,
+            $actorUserId,
+            \App\Support\MemberIntegrationCatalog::SOURCE_MANUAL,
+            ['role_ids' => $roleIds]
+        );
         if ($sent) {
             $ok = 'Compte créé. Un e-mail a été envoyé à ' . $email . ' avec un lien pour définir le mot de passe (valide ' . self::SETUP_TOKEN_HOURS . ' h). Le compte sera actif après cette étape.';
             if ($steamNotes !== []) {

@@ -34,6 +34,7 @@ final class CronSchedule
         'request_telemetry_purge' => 1440,
         'sse_analytical_nightly' => 1440,
         'sse_analyst_digest' => 1440,
+        'member_integration_daily' => 1440,
     ];
 
     public static function intervalMinutes(string $jobKey): int

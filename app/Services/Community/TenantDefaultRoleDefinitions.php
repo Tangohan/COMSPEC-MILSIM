@@ -310,12 +310,15 @@ final class TenantDefaultRoleDefinitions
                 'invitations.send', 'admin.members.view', 'personnel.profile.view', 'personnel.profile.update',
                 'dashboard.pins.manage',
                 'organization.orbat.view',
+                'member_integration.view', 'member_integration.manage', 'member_integration.assign',
+                'member_integration.note', 'member_integration.template_manage',
             ],
             'recruiter' => [
                 'forum.view', 'forum.create_topic', 'forum.reply',
                 'invitations.send', 'admin.members.view', 'personnel.profile.view',
                 'operational.board.view',
                 'organization.orbat.view',
+                'member_integration.view', 'member_integration.assign', 'member_integration.note',
             ],
             'instructor' => [
                 'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
@@ -325,6 +328,7 @@ final class TenantDefaultRoleDefinitions
                 'dashboard.pins.manage',
                 'operational.board.view',
                 'organization.orbat.view',
+                'member_integration.view',
             ],
             'trainer' => [
                 'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
@@ -460,6 +464,8 @@ final class TenantDefaultRoleDefinitions
                 'interteam.missions.respond',
                 'cooperation.missions.view', 'cooperation.missions.respond',
                 'cooperation.exchange.read', 'cooperation.exchange.write',
+                'member_integration.view', 'member_integration.manage', 'member_integration.assign',
+                'member_integration.note', 'member_integration.template_manage',
             ],
 
             // —— États-majors / emplois organiques ——
@@ -488,6 +494,7 @@ final class TenantDefaultRoleDefinitions
                 'organization.orbat.view',
                 'admin.backoffice.view',
                 'organization.effectifs.hub.view',
+                'member_integration.view',
             ],
             'intelligence_officer' => array_values(array_unique(array_merge($officerCore, [
                 'operations.sitrep.view', 'operations.sitrep.create',
@@ -529,6 +536,7 @@ final class TenantDefaultRoleDefinitions
                 'organization.orbat.view',
                 'operational.board.view',
                 'documents.view',
+                'member_integration.view', 'member_integration.assign', 'member_integration.note',
             ],
             'security_officer' => [
                 'admin.backoffice.view',

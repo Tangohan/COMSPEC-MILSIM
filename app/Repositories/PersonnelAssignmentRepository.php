@@ -534,6 +534,20 @@ class PersonnelAssignmentRepository
         }
 
         $this->replaceActiveAssignmentsFromDossier($userId, $assignments);
+        try {
+            $st = $this->pdo->prepare('SELECT tenant_id FROM users WHERE id = ? LIMIT 1');
+            $st->execute([$userId]);
+            $tenantId = (int) ($st->fetchColumn() ?: 0);
+            if ($tenantId > 0) {
+                \App\Services\MemberIntegration\MemberIntegrationEntryHook::afterRoleOrUnitChange(
+                    $tenantId,
+                    $userId,
+                    0,
+                    ['unit_ids' => $unitId !== null && $unitId > 0 ? [$unitId] : []]
+                );
+            }
+        } catch (\Throwable) {
+        }
     }
 
     /**
