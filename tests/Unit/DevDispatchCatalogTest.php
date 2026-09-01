@@ -19,10 +19,10 @@ final class DevDispatchCatalogTest extends TestCase
             $byKind[$kind]++;
         }
 
-        self::assertSame(2, $byKind['spotrep']);
-        self::assertSame(2, $byKind['techrep']);
-        self::assertSame(86, $byKind['update']);
-        self::assertCount(90, $all);
+        self::assertSame(3, $byKind['spotrep']);
+        self::assertSame(3, $byKind['techrep']);
+        self::assertSame(99, $byKind['update']);
+        self::assertCount(105, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -30,11 +30,11 @@ final class DevDispatchCatalogTest extends TestCase
         $featured = DevDispatchCatalog::featured();
         self::assertNotNull($featured);
         self::assertSame('spotrep', $featured['kind']);
-        self::assertSame('00002', $featured['number_pad']);
+        self::assertSame('00003', $featured['number_pad']);
         self::assertTrue($featured['featured']);
         self::assertSame('Athena Operations', $featured['reporter']);
-        self::assertSame('on August 24, 2026', $featured['reported_on']);
-        self::assertStringContainsString('nouveautes/spotrep/00002', (string) $featured['href']);
+        self::assertSame('on September 1, 2026', $featured['reported_on']);
+        self::assertStringContainsString('nouveautes/spotrep/00003', (string) $featured['href']);
     }
 
     public function testFindResolvesPaddedAndRawNumbers(): void
@@ -208,6 +208,62 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($rolesAir);
         self::assertSame('00270', $rolesAir['number_pad']);
         self::assertStringContainsString('rôles', strtolower((string) $rolesAir['title']));
+        $gpsRoute = DevDispatchCatalog::find('update', '272');
+        self::assertNotNull($gpsRoute);
+        self::assertSame('00272', $gpsRoute['number_pad']);
+        self::assertStringContainsString('itinéraire', strtolower((string) $gpsRoute['title']));
+        $terminalPack = DevDispatchCatalog::find('update', '271');
+        self::assertNotNull($terminalPack);
+        self::assertSame('00271', $terminalPack['number_pad']);
+        self::assertStringContainsString('pack', strtolower((string) $terminalPack['title']));
+        $dupDesk = DevDispatchCatalog::find('update', '273');
+        self::assertNotNull($dupDesk);
+        self::assertSame('00273', $dupDesk['number_pad']);
+        self::assertStringContainsString('fiches jumelles', strtolower((string) $dupDesk['title']));
+        $communityIcons = DevDispatchCatalog::find('update', '274');
+        self::assertNotNull($communityIcons);
+        self::assertSame('00274', $communityIcons['number_pad']);
+        self::assertStringContainsString('icônes', strtolower((string) $communityIcons['title']));
+        $icemanHud = DevDispatchCatalog::find('update', '275');
+        self::assertNotNull($icemanHud);
+        self::assertSame('00275', $icemanHud['number_pad']);
+        self::assertStringContainsString('tablette atak', strtolower((string) $icemanHud['title']));
+        $publicDossier = DevDispatchCatalog::find('update', '277');
+        self::assertNotNull($publicDossier);
+        self::assertSame('00277', $publicDossier['number_pad']);
+        self::assertStringContainsString('dossier public', strtolower((string) $publicDossier['title']));
+        $corrRh = DevDispatchCatalog::find('update', '278');
+        self::assertNotNull($corrRh);
+        self::assertSame('00278', $corrRh['number_pad']);
+        self::assertStringContainsString('corriger sa fiche', strtolower((string) $corrRh['title']));
+        $dashHub = DevDispatchCatalog::find('update', '279');
+        self::assertNotNull($dashHub);
+        self::assertSame('00279', $dashHub['number_pad']);
+        self::assertStringContainsString('tableau de bord', strtolower((string) $dashHub['title']));
+        $mapChips = DevDispatchCatalog::find('update', '280');
+        self::assertNotNull($mapChips);
+        self::assertSame('00280', $mapChips['number_pad']);
+        self::assertStringContainsString('rapports', strtolower((string) $mapChips['title']));
+        $toolbarStay = DevDispatchCatalog::find('update', '276');
+        self::assertNotNull($toolbarStay);
+        self::assertSame('00276', $toolbarStay['number_pad']);
+        self::assertStringContainsString('barre d’outils', strtolower((string) $toolbarStay['title']));
+        $idStrip = DevDispatchCatalog::find('update', '281');
+        self::assertNotNull($idStrip);
+        self::assertSame('00281', $idStrip['number_pad']);
+        self::assertStringContainsString('identité', strtolower((string) $idStrip['title']));
+        $updateModal = DevDispatchCatalog::find('update', '282');
+        self::assertNotNull($updateModal);
+        self::assertSame('00282', $updateModal['number_pad']);
+        self::assertStringContainsString('actualiser', strtolower((string) $updateModal['title']));
+        $packVersions = DevDispatchCatalog::find('update', '283');
+        self::assertNotNull($packVersions);
+        self::assertSame('00283', $packVersions['number_pad']);
+        self::assertStringContainsString('pack actuel', strtolower((string) $packVersions['title']));
+        $spot03 = DevDispatchCatalog::find('spotrep', '3');
+        self::assertNotNull($spot03);
+        self::assertTrue((bool) $spot03['featured']);
+        self::assertStringContainsString('tablette', strtolower((string) $spot03['title']));
         $update249 = strtolower(DevDispatchCatalog::publicCorpus());
         self::assertStringContainsString('mot de passe s’affichait en clair', $update249);
         self::assertStringContainsString('inclinaison, amplification du relief', $update249);
