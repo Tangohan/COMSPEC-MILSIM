@@ -307,6 +307,4 @@
     });
   }, 2000); // Toutes les 2 secondes
 
-  console.log('[COMSPEC] Effets roleplay ATAK/cTab chargés');
-
 })();

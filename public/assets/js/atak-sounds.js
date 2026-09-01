@@ -254,6 +254,7 @@ window.ATAKSounds = (function () {
     if (pref === 'mute') return false;
     var priority = !!opts.priority;
     if (pref !== 'silent_vib' && !(PREFS[pref] && PREFS[pref].vibrate) && !priority) return false;
+    if (!unlocked) return false;
     if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return false;
     try {
       var pattern = priority ? [40, 50, 40, 50, 80] : VIBRATE_PATTERN;

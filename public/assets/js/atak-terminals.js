@@ -115,6 +115,53 @@
       '<div class="atak-terminal-card__v' + cls + '">' + escapeHtml(v) + '</div>';
   }
 
+  function firstText() {
+    var i;
+    for (i = 0; i < arguments.length; i++) {
+      var s = String(arguments[i] == null ? '' : arguments[i]).trim();
+      if (s) return s;
+    }
+    return '';
+  }
+
+  function packVersionFromPlatform(label) {
+    var m = String(label || '').match(/COMSPEC\s+([\d]+(?:\.[\d]+)*)/i);
+    return m ? m[1] : '';
+  }
+
+  function typeLabel(t) {
+    var ty = String(t && t.terminal_type || '').toLowerCase();
+    if (ty === 'phone') return 'Téléphone';
+    var plat = String(t && t.platform_label || '').trim();
+    var cleaned = plat.replace(/\s*[·•|\-]\s*COMSPEC(?:\s+[\d.]+)?/i, '').trim();
+    if (cleaned) return cleaned;
+    if (ty === 'tablet') return 'Arma 3';
+    if (ty === 'radio') return 'Radio';
+    if (ty === 'vehicle') return 'Véhicule';
+    if (ty === 'desktop') return 'Poste';
+    if (ty === 'web') return 'Session web';
+    return ty ? String(t.terminal_type) : 'Poste';
+  }
+
+  function versionRows(t, extra) {
+    extra = extra || {};
+    var overwatch = firstText(
+      t.mod_version,
+      extra.mod_version,
+      extra.overwatch_version,
+      packVersionFromPlatform(t.platform_label)
+    );
+    var liaison = firstText(
+      t.extension_version,
+      extra.extension_version,
+      extra.dll_version
+    );
+    var html = '';
+    if (overwatch) html += row('Overwatch', overwatch);
+    if (liaison) html += row('Liaison Athena', liaison);
+    return html;
+  }
+
   function cardHtml(t, unit) {
     var extra = parseExtra(unit);
     var call = t.operator_callsign || t.callsign || (unit && (unit.call_sign || unit.callsign)) || t.terminal_label || 'Terminal';
@@ -123,7 +170,7 @@
     var comp = compromiseLabel(t.compromise_state);
     var idFollow = extra.bft_id || extra.military_id || t.operator_military_id || t.terminal_uid || '';
     var ip = extra.client_ip || extra.ip || extra.public_ip || extra.network || '';
-    var type = t.terminal_type === 'phone' ? 'Téléphone' : (t.platform_label || t.terminal_type || 'Poste');
+    var type = typeLabel(t);
     var seenRaw = t.last_seen_at || '';
     var seenLabel = seenRaw ? formatSeen(seenRaw, true) : formatSeen(unit && unit.updated_at, false);
     return '<article class="atak-terminal-card">' +
@@ -136,6 +183,7 @@
       row('Santé', health.label, health.tone) +
       row('Intégrité', comp.label, comp.tone) +
       row('Type', type) +
+      versionRows(t, extra) +
       (t.terminal_label && t.terminal_label !== call ? row('Libellé', t.terminal_label) : '') +
       row('Dernière activité', seenLabel) +
       row('Adresse réseau', ip || 'Non remontée') +

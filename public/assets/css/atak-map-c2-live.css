@@ -4,20 +4,12 @@ body.atak-map-c2-v2 .atak-map-wrap {
   position: relative;
 }
 
-html.atak-map-c2-v2 .atak-map-tools--c2-legacy,
-body.atak-map-c2-v2 .atak-map-tools--c2-legacy {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  overflow: hidden !important;
-  clip: rect(0 0 0 0) !important;
-  clip-path: inset(50%) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
+/* Barre classique : visible avec le rail C2. Repli uniquement via .is-collapsed (Masquer). */
+html.atak-map-c2-v2 .atak-map-tools:not(.is-collapsed),
+body.atak-map-c2-v2 .atak-map-tools:not(.is-collapsed) {
+  clip-path: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 #atak-c2-live-shell {

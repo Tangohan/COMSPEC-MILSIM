@@ -488,6 +488,7 @@ window.ATAKMapTools = (function () {
     setFollow(false);
     clearPlaceMode();
     cancelTerrainTools();
+    cancelGpsRoutes();
     var ctx = window.ATAKContextMenu;
     if (!ctx) {
       toast('Outils de dessin indisponibles.');
@@ -635,6 +636,7 @@ window.ATAKMapTools = (function () {
     setFollow(false);
     cancelMapDraw();
     cancelTerrainTools();
+    cancelGpsRoutes();
     clearPlaceMode();
     placeMode = mode;
     setToolActive(mode, true);
@@ -673,6 +675,12 @@ window.ATAKMapTools = (function () {
     }
   }
 
+  function cancelGpsRoutes() {
+    if (window.ATAKGpsRoutes && window.ATAKGpsRoutes.isPlacing && window.ATAKGpsRoutes.isPlacing()) {
+      window.ATAKGpsRoutes.stop();
+    }
+  }
+
   function startMeasure() {
     if (measureOn) {
       stopMeasure(false);
@@ -682,6 +690,7 @@ window.ATAKMapTools = (function () {
     clearPlaceMode();
     cancelMapDraw();
     cancelTerrainTools();
+    cancelGpsRoutes();
     setFollow(false);
     measureOn = true;
     measurePoints = [];
@@ -750,12 +759,24 @@ window.ATAKMapTools = (function () {
     else if (tool === 'measure') startMeasure();
     else if (tool === 'note') startPlaceMode('note');
     else if (tool === 'search-zone' || tool === 'perimeter' || tool === 'aoi' || tool === 'line') startDrawTool(tool);
-    else if (tool === 'route' || tool === 'los') {
+    else if (tool === 'route') {
       stopMeasure(false);
       cancelMapDraw();
       clearPlaceMode();
       setFollow(false);
-      if (window.ATAKTerrainTools && window.ATAKTerrainTools.start) window.ATAKTerrainTools.start(tool);
+      if (window.ATAKGpsRoutes && typeof window.ATAKGpsRoutes.toggle === 'function') {
+        window.ATAKGpsRoutes.toggle();
+      } else if (window.ATAKTerrainTools && window.ATAKTerrainTools.start) {
+        window.ATAKTerrainTools.start('route');
+      } else toast('Outil d’itinéraire indisponible.');
+    }
+    else if (tool === 'los') {
+      stopMeasure(false);
+      cancelMapDraw();
+      clearPlaceMode();
+      cancelGpsRoutes();
+      setFollow(false);
+      if (window.ATAKTerrainTools && window.ATAKTerrainTools.start) window.ATAKTerrainTools.start('los');
       else toast('Outil d’analyse indisponible.');
     }
     else if (tool === 'clear-view') clearViewOverlays();

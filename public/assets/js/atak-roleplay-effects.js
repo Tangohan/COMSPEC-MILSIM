@@ -294,7 +294,6 @@
       // Rafraîchir la config toutes les 5 minutes
       setInterval(() => this.fetchRoleplayStats(), 5 * 60 * 1000);
       
-      console.log('[atak-roleplay] Effets roleplay initialisés');
     },
   };
 

@@ -56,4 +56,5 @@ $live = (($op['status'] ?? '') === 'active');
 <script>
 window.OPS_TACTICAL = <?= $tacticalJson ?? '{}' ?>;
 </script>
+<script src="<?= htmlspecialchars(asset_url('assets/js/tactical-marker-chip.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
 <script src="<?= htmlspecialchars(asset_url('assets/js/ops-workspace-planning.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>

@@ -1,0 +1,94 @@
+/* Pastilles carte — langage visuel des marqueurs 3D Arma/ACE */
+.leaflet-div-icon.tactical-marker-chip-icon,
+.leaflet-marker-icon.tactical-marker-chip-icon,
+.tactical-marker-chip-icon {
+  background: transparent !important;
+  border: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: visible !important;
+}
+
+.tactical-marker-chip {
+  --chip-color: #e4b429;
+  position: absolute;
+  left: 0;
+  bottom: 8px;
+  transform: translateX(-50%);
+  transform-origin: 50% 100%;
+  display: inline-flex;
+  flex-direction: column;
+  min-width: 5.4rem;
+  max-width: 12rem;
+  padding: 0.2rem 0.42rem 0.22rem 0.34rem;
+  background: rgba(8, 10, 12, 0.9);
+  box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.7);
+  color: #fff;
+  pointer-events: auto;
+  white-space: nowrap;
+  line-height: 1.08;
+  font-family: "Segoe UI Condensed", "Roboto Condensed", "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
+  z-index: 1;
+}
+
+.tactical-marker-chip__bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--chip-color);
+}
+
+.tactical-marker-chip__row {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  margin-top: 0.1rem;
+}
+
+.tactical-marker-chip__diamond {
+  width: 7px;
+  height: 7px;
+  background: var(--chip-color);
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+
+.tactical-marker-chip__title {
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  color: var(--chip-color);
+  text-transform: uppercase;
+}
+
+.tactical-marker-chip__meta {
+  font-size: 10px;
+  font-weight: 500;
+  color: #f4f6f8;
+  padding-left: calc(7px + 0.28rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.leaflet-marker-icon:hover .tactical-marker-chip,
+.tactical-marker-chip:hover {
+  z-index: 4;
+  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.82);
+}
+
+/* Vue inclinée : la pastille reste face à l’écran */
+.atak-map-stage.atak-map-stage--3d #atak-map .tactical-marker-chip.atak-marker-billboard {
+  transform: var(--atak-billboard) translateX(-50%);
+}
+
+/* Espace opérationnel (SVG) */
+.ops-tac__chip-host {
+  overflow: visible;
+}
+.ops-tac__chip-host .tactical-marker-chip {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  transform: none;
+}

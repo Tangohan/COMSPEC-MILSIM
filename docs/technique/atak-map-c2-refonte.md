@@ -57,7 +57,7 @@ Statuts : `ONLINE`, `DEGRADED` (opacité), `STALE` (contour pointillé), `LOST` 
    - Réutilise la carte Leaflet `ATAKMap` (pas de second init)
    - Intercepte / écoute `setUnitsMarkers` + événement `atak:units-updated` (WebSocket / polling via `atak-units.js` → `atak-socket.js`)
    - Affiche les unités via `MarkerManager` (symbologie C2) ; le rendu legacy est désactivé
-   - Relie le rail aux outils existants (`#atak-map-tools`, masqué mais actif)
+   - Relie le rail aux outils existants (`#atak-map-tools`, visible ; « Masquer » la replie)
 
 Désactiver temporairement : `window.ATAK_MAP_C2_V2 = false` avant le chargement du bridge.
 

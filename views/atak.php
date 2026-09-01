@@ -75,6 +75,7 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-v2.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/tactical-marker-chip.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-motion.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-cop.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-mission-plan.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -1470,6 +1471,87 @@ if ($atakMapConfig) {
           </label>
         </section>
 
+        <?php
+        $markerIconKinds = \App\Services\Tactical\AtakMarkerIconsService::KINDS;
+        $settingsIconPack = is_array($atakTenantMarkerIcons) ? $atakTenantMarkerIcons : ['assignments' => [], 'library' => []];
+        $settingsIconAssign = is_array($settingsIconPack['assignments'] ?? null) ? $settingsIconPack['assignments'] : [];
+        $settingsIconLib = is_array($settingsIconPack['library'] ?? null) ? $settingsIconPack['library'] : [];
+        $settingsIconCdn = function_exists('atak_marker_icons_cdn_base') ? rtrim(atak_marker_icons_cdn_base(), '/') : '';
+        $settingsIconPreview = static function (string $val, array $lib, string $cdn): array {
+            $val = trim($val);
+            if ($val === '' || $val === 'nato') {
+                return ['caption' => 'Symbole prévu', 'url' => ''];
+            }
+            if (str_starts_with($val, 'arma:')) {
+                $png = ltrim(str_replace('\\', '/', substr($val, 5)), '/');
+                $url = ($cdn !== '' && $png !== '') ? $cdn . '/' . $png : '';
+
+                return ['caption' => 'Icône de la carte', 'url' => $url];
+            }
+            foreach ($lib as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $u = (string) ($row['url'] ?? '');
+                if ($u !== '' && ($u === $val || (string) ($row['id'] ?? '') === $val)) {
+                    return [
+                        'caption' => trim((string) ($row['label'] ?? '')) !== ''
+                            ? (string) $row['label']
+                            : 'Icône personnalisée',
+                        'url' => $u,
+                    ];
+                }
+            }
+            if ($val !== '' && ($val[0] === '/' || str_starts_with($val, 'http'))) {
+                return ['caption' => 'Icône personnalisée', 'url' => $val];
+            }
+
+            return ['caption' => 'Symbole prévu', 'url' => ''];
+        };
+        ?>
+        <section class="atak-settings-block" id="atak-settings-icons" aria-label="Icônes de la communauté">
+          <h3 class="atak-rail-audio-title">Icônes de la communauté</h3>
+          <p class="atak-settings-copy">Symboles des opérateurs, véhicules, aéronefs et téléphones pour toute la communauté. Taille et style ci-dessus restent propres à ce poste.</p>
+          <ul class="atak-settings-icons__list">
+            <?php foreach ($markerIconKinds as $kind => $kindLabel): ?>
+              <?php $preview = $settingsIconPreview((string) ($settingsIconAssign[$kind] ?? 'nato'), $settingsIconLib, $settingsIconCdn); ?>
+              <li class="atak-settings-icons__row">
+                <?php if ($preview['url'] !== ''): ?>
+                  <img class="atak-settings-icons__thumb" src="<?= htmlspecialchars($preview['url'], ENT_QUOTES, 'UTF-8') ?>" alt="" />
+                <?php else: ?>
+                  <span class="atak-settings-icons__thumb atak-settings-icons__thumb--nato" aria-hidden="true"></span>
+                <?php endif; ?>
+                <span class="atak-settings-icons__kind"><?= htmlspecialchars((string) $kindLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                <span class="atak-settings-icons__value"><?= htmlspecialchars($preview['caption'], ENT_QUOTES, 'UTF-8') ?></span>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+          <?php if ($settingsIconLib !== []): ?>
+            <p class="atak-map-look__key">Déjà dans la bibliothèque</p>
+            <ul class="atak-settings-icons__lib">
+              <?php foreach ($settingsIconLib as $iconRow): ?>
+                <?php
+                $libUrl = (string) ($iconRow['url'] ?? '');
+                $libLabel = trim((string) ($iconRow['label'] ?? 'Icône')) ?: 'Icône';
+                ?>
+                <li>
+                  <?php if ($libUrl !== ''): ?>
+                    <img src="<?= htmlspecialchars($libUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($libLabel, ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($libLabel, ENT_QUOTES, 'UTF-8') ?>" />
+                  <?php else: ?>
+                    <span><?= htmlspecialchars($libLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                  <?php endif; ?>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+          <?php endif; ?>
+          <?php if (!empty($canAccessAdminAtakConfig)): ?>
+            <a class="atak-settings-icons__cta" href="<?= htmlspecialchars(url('admin/atak-config') . '#marker-icons', ENT_QUOTES, 'UTF-8') ?>">Choisir ou ajouter des icônes</a>
+            <p class="atak-settings-copy atak-settings-copy--muted">Envoi d’une image, ou choix parmi celles déjà présentes. Les changements s’appliquent à toute la communauté ; rechargez ensuite la carte.</p>
+          <?php else: ?>
+            <p class="atak-settings-copy atak-settings-copy--muted">Le gestionnaire de la communauté choisit ces icônes dans la bibliothèque de la carte.</p>
+          <?php endif; ?>
+        </section>
+
         <section class="atak-settings-block" id="atak-settings-map" aria-label="Carte, relief et calques">
           <h3 class="atak-rail-audio-title">Carte — relief et calques</h3>
           <p class="atak-settings-copy">Ombrage, courbes, vue 3D et inventaire des données terrain chargées sur ce poste. Le bouton <strong>3D</strong> sur la carte reste le raccourci rapide.</p>
@@ -1506,7 +1588,7 @@ if ($atakMapConfig) {
             <p class="atak-map-look__key">Vue 3D / topo</p>
             <label class="atak-map-look__row" for="atak-terrain-3d-mode">
                 <span class="atak-map-look__key">Vue de la carte</span>
-                <select id="atak-terrain-3d-mode" class="atak-header-select atak-map-look__select" title="Vue topo premium Three.js">
+                <select id="atak-terrain-3d-mode" class="atak-header-select atak-map-look__select" title="Vue de la carte en relief">
                   <option value="flat" selected>À plat (2D)</option>
                   <option value="inclined">Topo premium 3D</option>
                 </select>
@@ -1523,7 +1605,7 @@ if ($atakMapConfig) {
               <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
               <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
             </label>
-            <p class="atak-terrain-3d-hint">Vue topo premium : mesh Three.js drapé sur le relevé d’altitudes. Amplifiez le relief, ajustez l’inclinaison, orientez avec la souris. Sans relevé d’altitude, le Z n’a pas d’effet.</p>
+            <p class="atak-terrain-3d-hint">Vue en relief : le sol se soulève selon le relevé d’altitudes. Amplifiez le relief, ajustez l’inclinaison, orientez avec la souris. Sans relevé, le relief n’a pas d’effet.</p>
           </div>
 
           <div class="atak-settings-map-data" id="atak-settings-map-data">
@@ -2388,7 +2470,7 @@ if ($atakMapConfig) {
       </div>
       <div class="atak-tabs-content" id="tab-terminaux" role="tabpanel">
         <div class="atak-terminals-panel">
-          <p class="atak-panel-hint">Terminaux ATAK liés à cette mission : identifiant de suivi, état de liaison, santé remontée et adresse réseau lorsqu’elle est disponible.</p>
+          <p class="atak-panel-hint">Terminaux ATAK liés à cette mission : identifiant de suivi, état de liaison, santé, versions du pack lorsqu’elles sont connues, et adresse réseau.</p>
           <div class="atak-empty-state" id="atak-terminals-empty">
             <div class="atak-empty-state-icon" aria-hidden="true">▣</div>
             <p class="atak-empty-state-title">Aucun terminal en vue</p>
@@ -2545,8 +2627,8 @@ if ($atakMapConfig) {
             <span class="tac-c2-rail__icon" aria-hidden="true">＋</span>
             <span class="tac-c2-rail__label">Note</span>
           </button>
-          <button type="button" class="tac-c2-rail__btn" data-tool="route" title="Profil itinéraire">
-            <span class="tac-c2-rail__icon" aria-hidden="true">⌀</span>
+          <button type="button" class="tac-c2-rail__btn" data-tool="route" title="Tracer un itinéraire pour les opérateurs">
+            <span class="tac-c2-rail__icon" aria-hidden="true">⇢</span>
             <span class="tac-c2-rail__label">Route</span>
           </button>
           <button type="button" class="tac-c2-rail__btn" data-tool="los" title="Visée / LOS">
@@ -2618,7 +2700,7 @@ if ($atakMapConfig) {
           <div class="atak-map-tools__cluster" data-tool-sep="analyse">
             <button type="button" class="atak-map-tools__cluster-label" data-tool-group="analyse" aria-expanded="false" aria-controls="atak-tool-group-analyse">Analyse <span aria-hidden="true">⌄</span></button>
             <div class="atak-map-tools__cluster-btns" id="atak-tool-group-analyse">
-              <button type="button" class="atak-map-tools__btn" data-tool="route" data-tool-slot="route" title="Profil du sol le long d’un itinéraire" aria-pressed="false">Itinéraire</button>
+              <button type="button" class="atak-map-tools__btn" data-tool="route" data-tool-slot="route" title="Tracer un itinéraire pour les opérateurs" aria-pressed="false">Itinéraire</button>
               <button type="button" class="atak-map-tools__btn" data-tool="los" data-tool-slot="los" title="Visée observateur vers cible (masque du relief)" aria-pressed="false">Visée</button>
             </div>
           </div>
@@ -2627,7 +2709,7 @@ if ($atakMapConfig) {
             <div class="atak-map-tools__cluster-btns" id="atak-tool-group-view">
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-in" data-tool-slot="zoom" title="Zoom avant">+</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-out" data-tool-slot="zoom" title="Zoom arrière">−</button>
-              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--view3d" id="atak-view-3d" data-tool-slot="view3d" title="Vue topo premium (relief Three.js)" aria-pressed="false">3D</button>
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--view3d" id="atak-view-3d" data-tool-slot="view3d" title="Vue de la carte en relief" aria-pressed="false">3D</button>
               <button type="button" class="atak-map-tools__btn" data-tool="nvg" data-tool-slot="nvg" title="Vision nocturne (N)" aria-pressed="false">NVG</button>
               <button type="button" class="atak-map-tools__btn" data-tool="cop" data-tool-slot="cop" title="Tableau tactique des unités">Unités</button>
             </div>
@@ -2680,7 +2762,17 @@ if ($atakMapConfig) {
           <h2 class="atak-route-panel__title" id="atak-route-panel-title">Analyse d’itinéraire</h2>
           <button type="button" class="atak-route-panel__close" id="atak-route-panel-close" title="Fermer">Fermer</button>
         </div>
-        <p class="atak-route-panel__hint" id="atak-route-panel-hint">Cliquez au moins deux points sur la carte, puis double-cliquez pour terminer.</p>
+        <p class="atak-route-panel__hint" id="atak-route-panel-hint">Cliquez au moins deux points sur la carte, puis transmettez l’itinéraire aux opérateurs.</p>
+        <div id="atak-gps-route-box" hidden>
+          <label class="atak-route-panel__field" for="atak-gps-route-name">Nom de l’itinéraire
+            <input type="text" id="atak-gps-route-name" maxlength="80" value="Itinéraire" autocomplete="off" />
+          </label>
+          <div class="atak-gps-route-actions">
+            <button type="button" class="atak-route-panel__close" id="atak-gps-route-send">Transmettre aux opérateurs</button>
+            <button type="button" class="atak-route-panel__close" id="atak-gps-route-undo">Retirer le dernier point</button>
+            <button type="button" class="atak-route-panel__close" id="atak-gps-route-cancel">Annuler</button>
+          </div>
+        </div>
         <div class="atak-route-panel__los-opts" id="atak-route-los-opts" hidden>
           <label class="atak-route-panel__field" for="atak-route-obs-eye">Observateur
             <select id="atak-route-obs-eye">
@@ -2898,6 +2990,19 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-session-profile.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map-crs.js"></script>
   <?php if (!$atakMapConfigForJs): ?><script src="<?= $base ?>/assets/js/maps/altis.js"></script><?php endif; ?>
+  <script>
+  (function () {
+    function quietMilsymbol(fn) {
+      return function () {
+        var first = arguments[0];
+        if (typeof first === 'string' && first.indexOf('milsymbol.js') === 0) return;
+        return fn.apply(console, arguments);
+      };
+    }
+    console.log = quietMilsymbol(console.log);
+    console.info = quietMilsymbol(console.info);
+  })();
+  </script>
   <script src="<?= $base ?>/assets/vendor/milsymbol/milsymbol.js"></script>
   <script src="<?= $base ?>/assets/vendor/milstd/milstd2525.js"></script>
   <script src="<?= $base ?>/assets/js/milstd-catalog.js"></script>
@@ -2906,6 +3011,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-phone-icon.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/arma-marker-catalog.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/arma-marker-library-index.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/tactical-marker-chip.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/arma-map-markers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-symbol-picker.js"></script>
   <script src="<?= $base ?>/assets/js/atak-motion.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -2938,6 +3044,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-chat.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-orders.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-waypoints.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-gps-routes.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-collapse.js"></script>
   <script src="<?= $base ?>/assets/js/atak-medical-alerts.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-cache-reset.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -3151,6 +3258,7 @@ if ($atakMapConfig) {
           if (window.ATAKJTAC && window.ATAKJTAC.fetchCas) window.ATAKJTAC.fetchCas();
           else if (window.ATAKJTAC && window.ATAKJTAC.fetchNineLines) window.ATAKJTAC.fetchNineLines();
           if (window.ATAKMap && window.ATAKMap.pollMarkers) window.ATAKMap.pollMarkers();
+          if (window.ATAKMap && window.ATAKMap.pollTacticalReports) window.ATAKMap.pollTacticalReports();
           if (window.ATAKActivity && window.ATAKActivity.refresh) window.ATAKActivity.refresh();
           if (window.ATAKIFF && window.ATAKIFF.refresh) window.ATAKIFF.refresh();
           if (window.ATAKSitrep && window.ATAKSitrep.refresh) window.ATAKSitrep.refresh();
@@ -3328,6 +3436,7 @@ if ($atakMapConfig) {
         if (window.ATAKLaserCodes) ATAKLaserCodes.fetchLaserCodes();
         if (window.ATAKMap && window.ATAKMap.pollMarkers) window.ATAKMap.pollMarkers();
         else if (window.ATAKMarkers && window.ATAKMarkers.renderFromMap) window.ATAKMarkers.renderFromMap();
+        if (window.ATAKMap && window.ATAKMap.pollTacticalReports) window.ATAKMap.pollTacticalReports();
         refreshLiaisonChipQuiet();
       }
       function pollWeatherQuiet() {

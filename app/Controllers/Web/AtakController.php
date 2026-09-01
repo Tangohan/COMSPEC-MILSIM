@@ -49,7 +49,9 @@ class AtakController
         }
         $config = $tenantId ? $this->atakConfigRepository->getByTenantId($tenantId) : null;
 
-        $canAccessAdminAtakConfig = function_exists('can') && can('admin.access');
+        $canAccessAdminAtakConfig = function_exists('can') && (
+            can('admin.access') || can('admin.organization') || can('admin.system')
+        );
         if (
             $tenantId
             && $this->atakConfigRepository->isMaintenanceEnabled($tenantId)

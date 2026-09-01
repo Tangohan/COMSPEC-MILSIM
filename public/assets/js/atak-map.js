@@ -3,8 +3,11 @@ window.ATAKMap = (function () {
   var map;
   var layerGroups = {};
   var markersById = {};
-  var intelLayer = null;
-  var intelMarkersById = {};
+    var intelLayer = null;
+    var intelMarkersById = {};
+    var reportChipsLayer = null;
+    var reportChipsById = {};
+    var lastReportChipsPollAt = 0;
   var designatorLayer = null;
   var designatorMarkersById = {};
   var sigintLayer = null;
@@ -690,6 +693,9 @@ window.ATAKMap = (function () {
     markersById = {};
     intelLayer = null;
     intelMarkersById = {};
+    reportChipsLayer = null;
+    reportChipsById = {};
+    lastReportChipsPollAt = 0;
     designatorLayer = null;
     designatorMarkersById = {};
     sigintLayer = null;
@@ -1821,6 +1827,88 @@ window.ATAKMap = (function () {
     }).catch(function () { /* conserver les marqueurs déjà affichés */ });
   }
 
+  function ensureReportChipsLayer() {
+    if (!map) return null;
+    if (!reportChipsLayer) reportChipsLayer = L.layerGroup().addTo(map);
+    return reportChipsLayer;
+  }
+
+  function reportChipPopupHtml(row) {
+    var Chip = window.TacticalMarkerChip;
+    var kind = Chip && Chip.detectKind ? Chip.detectKind(row) : String(row.report_type || 'SPOTREP');
+    var spec = Chip && Chip.specFor ? Chip.specFor(kind) : { title: kind, labelFr: 'Rapport' };
+    var label = spec.labelFr || spec.title || 'Rapport';
+    var bits = ['<strong>' + escapeHtml(label) + '</strong>'];
+    if (row.submitter_callsign) bits.push('Émetteur : ' + escapeHtml(row.submitter_callsign));
+    if (row.summary) bits.push(escapeHtml(String(row.summary).slice(0, 180)));
+    if (row.grid_reference) bits.push('Grille ' + escapeHtml(row.grid_reference));
+    return bits.join('<br>');
+  }
+
+  function setTacticalReportsOnMap(rows) {
+    var Chip = window.TacticalMarkerChip;
+    var layer = ensureReportChipsLayer();
+    if (!map || !layer || !Chip || !Chip.leafletDivIcon) return;
+    var list = Array.isArray(rows) ? rows : [];
+    var seen = {};
+    list.forEach(function (row) {
+      if (!row) return;
+      var id = String(row.id != null ? row.id : '');
+      if (!id) return;
+      var x = parseFloat(row.pos_x);
+      var y = parseFloat(row.pos_y);
+      if (isNaN(x) || isNaN(y)) return;
+      seen[id] = true;
+      var applied = applyOffset(y, x);
+      var latlng = L.latLng(applied[0], applied[1]);
+      var chipOpts = Chip.fromReport(row);
+      var key = Chip.keyOf(chipOpts);
+      var existing = reportChipsById[id];
+      if (existing) {
+        if (existing.setLatLng) existing.setLatLng(latlng);
+        if (existing._chipKey !== key && existing.setIcon) {
+          existing.setIcon(Chip.leafletDivIcon(L, chipOpts));
+          existing._chipKey = key;
+        }
+        if (existing.getPopup && existing.getPopup()) {
+          existing.setPopupContent(reportChipPopupHtml(row));
+        }
+        return;
+      }
+      var marker = L.marker(latlng, { icon: Chip.leafletDivIcon(L, chipOpts), zIndexOffset: 420 });
+      marker._chipKey = key;
+      marker.bindPopup(reportChipPopupHtml(row));
+      bindMarkerChrome(marker, Chip.specFor(chipOpts.kind).title, [
+        row.submitter_callsign || '',
+        chipOpts.subtitle || ''
+      ]);
+      marker.addTo(layer);
+      reportChipsById[id] = marker;
+    });
+    Object.keys(reportChipsById).forEach(function (k) {
+      if (seen[k]) return;
+      try { layer.removeLayer(reportChipsById[k]); } catch (e) {}
+      delete reportChipsById[k];
+    });
+  }
+
+  function pollTacticalReports() {
+    if (!map) return;
+    var now = Date.now();
+    if (now - lastReportChipsPollAt < 7000) return;
+    lastReportChipsPollAt = now;
+    var base = window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '';
+    var mapId = window.ATAKSocket && window.ATAKSocket.getMapId ? window.ATAKSocket.getMapId() : 1;
+    var url = (base || '') + '/api/atak/reports?mapId=' + encodeURIComponent(mapId) + '&limit=80';
+    fetch(url, { credentials: 'include', cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('reports');
+      return r.json();
+    }).then(function (payload) {
+      var rows = Array.isArray(payload) ? payload : (payload && payload.reports) || [];
+      setTacticalReportsOnMap(rows);
+    }).catch(function () { /* conserver les pastilles déjà affichées */ });
+  }
+
   function refreshSigintZones() {
     if (!map) return;
     var base = window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '';
@@ -2297,6 +2385,8 @@ window.ATAKMap = (function () {
     addOrUpdateDesignator: addOrUpdateDesignator,
     refreshSigintZones: refreshSigintZones,
     pollMarkers: pollMarkers,
+    pollTacticalReports: pollTacticalReports,
+    setTacticalReportsOnMap: setTacticalReportsOnMap,
     listMarkers: listMarkers,
     getMarkerById: getMarkerById,
     focusMarker: focusMarker,

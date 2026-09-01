@@ -224,6 +224,13 @@ window.ATAKGpsRoutes = (function () {
     placing = false;
     draft = [];
     setRailActive(false);
+    var selectBtn = document.querySelector('#atak-c2-rail [data-tool="select"]');
+    if (selectBtn) {
+      document.querySelectorAll('#atak-c2-rail [data-tool]').forEach(function (b) {
+        b.classList.remove('is-active');
+      });
+      selectBtn.classList.add('is-active');
+    }
     setCursor(false);
     var map = getMap();
     if (map && map.doubleClickZoom) map.doubleClickZoom.enable();
@@ -242,6 +249,9 @@ window.ATAKGpsRoutes = (function () {
       return;
     }
     stopOthers();
+    if (window.ATAKContextMenu && typeof window.ATAKContextMenu.cancelDraw === 'function') {
+      window.ATAKContextMenu.cancelDraw();
+    }
     if (window.ATAKMapTools) {
       if (typeof window.ATAKMapTools.setFollow === 'function') window.ATAKMapTools.setFollow(false);
     }
@@ -260,8 +270,12 @@ window.ATAKGpsRoutes = (function () {
   }
 
   function toggle() {
-    if (placing) stop();
-    else start();
+    if (placing) {
+      stop();
+      toast('Tracé d’itinéraire annulé.');
+      return;
+    }
+    start();
   }
 
   function addDraftFromEvent(e) {
@@ -316,13 +330,7 @@ window.ATAKGpsRoutes = (function () {
           refreshHint();
           return;
         }
-        draft = [];
-        placing = false;
-        setRailActive(false);
-        setCursor(false);
-        var map = getMap();
-        if (map && map.doubleClickZoom) map.doubleClickZoom.enable();
-        showGpsPanel(false);
+        stop();
         toast('Itinéraire transmis aux opérateurs.');
         fetchWaypoints();
       })
@@ -362,6 +370,15 @@ window.ATAKGpsRoutes = (function () {
     if (e && e.originalEvent) {
       e.originalEvent.preventDefault();
       e.originalEvent.stopPropagation();
+    }
+    if (draft.length >= 3) {
+      var last = draft[draft.length - 1];
+      var prev = draft[draft.length - 2];
+      if (last && prev) {
+        var dx = last.x - prev.x;
+        var dy = last.y - prev.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 8) draft.pop();
+      }
     }
     if (draft.length >= 2) transmit();
   }

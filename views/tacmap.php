@@ -46,6 +46,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="<?= htmlspecialchars($base) ?>/assets/js/nato-sidc-icons.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/arma-marker-catalog.js?v=202608232330"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/arma-marker-library-index.js?v=202608232330"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/tactical-marker-chip.js?v=202609011215"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/arma-map-markers.js?v=202608232330"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-unit-popup.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-medical-alerts.js"></script>
@@ -59,6 +60,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="<?= htmlspecialchars(asset_url('assets/js/comspec-operational-map.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-map-popups.css" rel="stylesheet">
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/tactical-marker-chip.css?v=202609011215" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/tacmap.css?v=202607282040" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=202607270700" rel="stylesheet">
   <script src="<?= htmlspecialchars($base) ?>/assets/js/mission-cycle-badge.js?v=202607270700"></script>
