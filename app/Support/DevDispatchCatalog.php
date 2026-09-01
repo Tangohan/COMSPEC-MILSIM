@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(323, '2026-09-01', 'Les photos ne saturent plus le journal au lancement', 'Tant que la session Athena n’est pas prête, Overwatch n’essaie plus d’envoyer les photos en boucle. Après connexion, une photo part une fois, même sans l’ancienne clé de liaison', [], [], [
+                'Le journal se remplissait de photos refusées toutes les secondes, y compris après « session prête »',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement, connectez-vous, puis prenez une photo. Un seul envoi, pas de rafale dans le journal.',
+            ], 'Overwatch'),
             $pr(326, '2026-09-01', 'Connexion Steam depuis le tableau de bord', 'Une tuile Connexion Steam ouvre Steam pour associer votre compte au portail. Après validation, Overwatch vous reconnaît en jeu. Si Steam est déjà associé, la tuile le confirme et permet de changer de compte', [
                 'Tuile Connexion Steam sur le tableau de bord, et le même accès dans Mon compte',
             ], [], [], ['atak', 'platform'], [
