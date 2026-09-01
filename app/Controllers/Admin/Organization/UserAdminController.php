@@ -378,7 +378,8 @@ class UserAdminController
         }
         $displayName = trim((string) ($user['display_name'] ?? ''));
         $headName = $displayName !== '' ? $displayName : 'Fiche membre';
-        $headEmail = trim((string) ($user['email'] ?? ''));
+        $headEmailRaw = trim((string) ($user['email'] ?? ''));
+        $headEmail = $headEmailRaw !== '' ? \App\Support\EmailPrivacy::display($headEmailRaw) : '';
 
         $gradeId = (int) ($user['grade_id'] ?? 0);
         $memberGrade = $gradeId > 0 ? $this->gradeRepository->findById($gradeId, $tenantId) : null;
@@ -391,11 +392,13 @@ class UserAdminController
             $primaryAssignment = null;
         }
         $siblingMemberships = [];
-        if ($forPlatformOperator && $headEmail !== '') {
-            $siblingMemberships = $this->userRepository->listAllMembershipsByEmail($headEmail);
+        if ($forPlatformOperator && $headEmailRaw !== '') {
+            $siblingMemberships = $this->userRepository->listAllMembershipsByEmail($headEmailRaw);
         }
         $isAnonymized = AccountDeletionService::isAnonymizedUser($user);
-        $pendingPurgeRequest = $isAnonymized
+        $actorUserId = (int) Session::get('user_id');
+        $canRequestAccountDeletion = !$isService && $id !== $actorUserId;
+        $pendingPurgeRequest = $canRequestAccountDeletion
             ? $this->accountPurgeRequests->findPendingForTarget($tenantId, $id)
             : null;
 
@@ -424,6 +427,7 @@ class UserAdminController
             'completenessPersonnel' => $completenessPersonnel,
             'isServiceAccount' => $isService,
             'isAnonymizedAccount' => $isAnonymized,
+            'canRequestAccountDeletion' => $canRequestAccountDeletion,
             'pendingPurgeRequest' => $pendingPurgeRequest,
             'roles' => $roles,
             'showPlatformDiagnostics' => $forPlatformOperator,
@@ -827,7 +831,7 @@ class UserAdminController
             $data['callsign'] = $callsign !== '' ? $callsign : null;
         }
 
-        if ($request->input('email') !== null) {
+        if (Gate::getInstance()->allows('admin.system') && $request->input('email') !== null) {
             $email = trim((string) $request->input('email'));
             if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 Session::flash('error', 'Une adresse e-mail valide est requise.');
@@ -1365,8 +1369,8 @@ class UserAdminController
     }
 
     /**
-     * Demande organisateur : purge définitive d’un compte déjà anonymisé (« Compte supprimé »).
-     * Traitée ensuite par un opérateur plateforme.
+     * Demande organisateur : suppression du compte dans la communauté.
+     * Traitée ensuite par un opérateur du site (anonymisation puis retrait des annuaires).
      */
     public function requestPurge(Request $request, array $params = []): Response
     {
@@ -1394,15 +1398,7 @@ class UserAdminController
             return Response::redirect($back);
         }
         if ($this->userRepository->isServiceAccount($id)) {
-            Session::flash('error', 'Les comptes techniques ne peuvent pas être purgés via cette demande.');
-
-            return Response::redirect($back);
-        }
-        if (!AccountDeletionService::isAnonymizedUser($user)) {
-            Session::flash(
-                'error',
-                'Seuls les comptes déjà anonymisés (« Compte supprimé ») peuvent faire l’objet d’une demande de suppression définitive.'
-            );
+            Session::flash('error', 'Les comptes techniques ne peuvent pas être supprimés via cette demande.');
 
             return Response::redirect($back);
         }
@@ -1434,7 +1430,7 @@ class UserAdminController
         $this->adminAuditService->logUserPurgeRequested($tenantId, $actorUserId, $id, $requestId);
         Session::flash(
             'success',
-            'Demande de suppression définitive envoyée à la plateforme. Elle sera traitée par un opérateur.'
+            'Demande de suppression transmise à l’administration du site. Un opérateur la traitera prochainement.'
         );
 
         return Response::redirect($back);

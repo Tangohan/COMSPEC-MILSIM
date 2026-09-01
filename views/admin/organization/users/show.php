@@ -10,6 +10,7 @@ $completenessPersonnel = $completenessPersonnel ?? null;
 $isServiceAccount = $isServiceAccount ?? false;
 $showPlatformDiagnostics = $showPlatformDiagnostics ?? false;
 $isAnonymizedAccount = (bool) ($isAnonymizedAccount ?? false);
+$canRequestAccountDeletion = (bool) ($canRequestAccountDeletion ?? false);
 $pendingPurgeRequest = is_array($pendingPurgeRequest ?? null) ? $pendingPurgeRequest : null;
 
 if (!$user) {
@@ -123,7 +124,7 @@ $flashWarn = \App\Core\Session::getFlash('warning');
         <div class="ath-member-show__identity">
             <p class="ath-member-show__kicker">Fiche membre</p>
             <p class="ath-member-show__name"><?= $h($displayName !== '' ? $displayName : 'Membre sans nom affiché') ?></p>
-            <p class="ath-member-show__email"><?= $h($email) ?></p>
+            <p class="ath-member-show__email"><?= $h(function_exists('email_for_display') ? email_for_display($email) : $email) ?></p>
             <div class="ath-member-show__tags">
                 <span class="ath-tag <?= $h($statusTagClass) ?>"><?= $h($statusLabel) ?></span>
                 <?php if ($callsign !== ''): ?>
@@ -181,35 +182,40 @@ $flashWarn = \App\Core\Session::getFlash('warning');
     </div>
     <?php endif; ?>
 
-    <?php if ($isAnonymizedAccount && !$isServiceAccount): ?>
+    <?php if ($canRequestAccountDeletion): ?>
     <section class="ath-card ath-member-show__danger-card" aria-labelledby="member-purge-request">
         <div class="ath-member-show__section-head">
-            <h2 id="member-purge-request">Suppression définitive</h2>
-            <p>Ce membre est déjà anonymisé (« Compte supprimé »). Vous pouvez demander à la plateforme d’effacer définitivement cette fiche de votre communauté.</p>
+            <h2 id="member-purge-request">Demander la suppression du compte</h2>
+            <?php if ($isAnonymizedAccount): ?>
+            <p>Ce membre est déjà anonymisé (« Compte supprimé »). Vous pouvez demander à l’administration du site d’effacer définitivement cette fiche de votre communauté. L’historique restera sous « Ancien membre ».</p>
+            <?php else: ?>
+            <p>Demandez à l’administration du site de retirer ce compte de votre communauté. L’accès sera coupé ; l’historique restera sous « Ancien membre ». Un opérateur du site doit valider la demande.</p>
+            <?php endif; ?>
         </div>
         <?php if ($pendingPurgeRequest !== null): ?>
         <div class="ath-banner-warn ath-member-show__callout" role="status">
             <p class="ath-banner-warn__kicker">Demande en cours</p>
             <p class="ath-banner-warn__text">
-                Une demande de suppression définitive a été transmise
+                Une demande de suppression a été transmise
                 <?php
                 $reqAt = trim((string) ($pendingPurgeRequest['created_at'] ?? ''));
                 echo $reqAt !== '' ? ' le ' . $h($reqAt) : '';
-                ?>. Un opérateur plateforme la traitera prochainement.
+                ?>. Un opérateur du site la traitera prochainement.
             </p>
         </div>
         <?php else: ?>
-        <form method="post" action="<?= $h(url('back-office/users/' . $uid . '/request-purge')) ?>" class="ath-member-show__danger-form" onsubmit="return confirm('Demander la suppression définitive de cette fiche « Compte supprimé » ?\n\nUn opérateur plateforme devra valider la demande.');">
+        <form method="post" action="<?= $h(url('back-office/users/' . $uid . '/request-purge')) ?>" class="ath-member-show__danger-form" onsubmit="return confirm('Demander la suppression de ce compte dans votre communauté ?\n\nUn opérateur du site devra valider la demande.');">
             <?= \App\Core\Csrf::field() ?>
             <label class="ath-member-show__check" style="display:block;margin-bottom:0.75rem;">
                 <span style="display:block;font-weight:600;margin-bottom:0.35rem;">Motif (optionnel)</span>
-                <textarea name="note" rows="3" maxlength="2000" class="ath-input" style="width:100%;" placeholder="Contexte pour l’opérateur plateforme…"></textarea>
+                <textarea name="note" rows="3" maxlength="2000" class="ath-input" style="width:100%;" placeholder="Contexte pour l’opérateur du site…"></textarea>
             </label>
-            <button type="submit" class="ath-btn ath-member-show__danger-btn">Demander la suppression définitive</button>
+            <button type="submit" class="ath-btn ath-member-show__danger-btn">Demander la suppression du compte</button>
         </form>
         <?php endif; ?>
     </section>
-    <?php elseif (($user['status'] ?? '') !== 'inactive' && !$isServiceAccount): ?>
+    <?php endif; ?>
+    <?php if (!$isAnonymizedAccount && ($user['status'] ?? '') !== 'inactive' && !$isServiceAccount): ?>
     <section class="ath-card ath-member-show__danger-card" aria-labelledby="member-deactivate">
         <div class="ath-member-show__section-head">
             <h2 id="member-deactivate">Désactiver l’accès</h2>
@@ -290,7 +296,7 @@ $flashWarn = \App\Core\Session::getFlash('warning');
                 <dl class="ath-member-show__data">
                     <div class="ath-member-show__data-row">
                         <dt>Adresse e-mail</dt>
-                        <dd><?= $displayValue($email, 'Aucune adresse') ?></dd>
+                        <dd><?= $displayValue(function_exists('email_for_display') ? email_for_display($email) : $email, 'Aucune adresse') ?></dd>
                     </div>
                     <div class="ath-member-show__data-row">
                         <dt>Prénom</dt>

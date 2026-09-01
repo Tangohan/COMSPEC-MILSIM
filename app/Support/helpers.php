@@ -1994,22 +1994,28 @@ if (!function_exists('sse_normalize_ref_display')) {
 if (!function_exists('mask_email_for_display')) {
     /**
      * Masque la partie locale d’un e-mail (ex. jean.dupont@ex.fr → je***@ex.fr).
-     * L’adresse complète reste disponible côté serveur / staff.
      */
     function mask_email_for_display(string $email): string
     {
-        $email = trim($email);
-        $at = strpos($email, '@');
-        if ($at === false || $at < 1) {
-            return $email === '' ? '—' : $email;
-        }
-        $local = substr($email, 0, $at);
-        $domain = substr($email, $at + 1);
-        $n = strlen($local);
-        $keep = min(2, $n);
-        $prefix = $keep > 0 ? substr($local, 0, $keep) : '';
+        return \App\Support\EmailPrivacy::mask($email);
+    }
+}
 
-        return $prefix . '***@' . $domain;
+if (!function_exists('viewer_can_see_emails')) {
+    /** True uniquement pour l’administration du site (pas un admin de communauté). */
+    function viewer_can_see_emails(): bool
+    {
+        return \App\Support\EmailPrivacy::viewerCanSeeEmails();
+    }
+}
+
+if (!function_exists('email_for_display')) {
+    /**
+     * Adresse à afficher : complète pour l’administration du site, masquée sinon.
+     */
+    function email_for_display(?string $email): string
+    {
+        return \App\Support\EmailPrivacy::display($email);
     }
 }
 

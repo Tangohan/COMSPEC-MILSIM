@@ -379,7 +379,7 @@ class EffectifsWorkspaceController
             fputcsv($fh, [
                 (string) ($r['display_name'] ?? ''),
                 (string) ($r['callsign'] ?? ''),
-                (string) ($r['email'] ?? ''),
+                \App\Support\EmailPrivacy::display((string) ($r['email'] ?? '')),
                 trim((string) ($r['grade_short'] ?? $r['grade_long'] ?? '')),
                 trim((string) ($r['job_role_display'] ?? '')),
                 trim((string) ($r['assignment_path'] ?? '')),

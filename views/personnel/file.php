@@ -1978,7 +1978,7 @@ if ($personnelFileIsRhGate) {
                         <?php if (!empty($showEmailInContact)): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($targetUser['email'] ?? '')) ?></p></div>
                         <?php else: ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm text-slate-500">Masqué — réservé à l’administration</p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm text-slate-500">Masqué — réservé à l’administration du site</p></div>
                         <?php endif; ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut compte</p><p class="text-sm font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?>"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
                         <?php if (!empty($userProfile['birth_date'])):
@@ -2013,7 +2013,7 @@ if ($personnelFileIsRhGate) {
                             <?php if (!empty($showEmailInContact)): ?>
                             <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars((string) ($targetUser['email'] ?? '')) ?></p></div>
                             <?php else: ?>
-                            <p class="text-xs text-slate-600">L’adresse e-mail est réservée à l’administration.</p>
+                            <p class="text-xs text-slate-600">L’adresse e-mail n’est visible que par l’administration du site.</p>
                             <?php endif; ?>
                             <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut du compte</p><p class="text-sm font-semibold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-600' ?>"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
                         </div>
@@ -2026,7 +2026,7 @@ if ($personnelFileIsRhGate) {
                         <?php if (!empty($showEmailInContact)): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars((string) ($targetUser['email'] ?? '')) ?></p></div>
                         <?php else: ?>
-                        <p class="text-xs text-slate-600">L’adresse e-mail est réservée à l’administration.</p>
+                        <p class="text-xs text-slate-600">L’adresse e-mail n’est visible que par l’administration du site.</p>
                         <?php endif; ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut du compte</p><p class="text-sm font-semibold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-600' ?>"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p></div>
                     </div>
@@ -2034,7 +2034,7 @@ if ($personnelFileIsRhGate) {
                 <?php else: ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-3">Informations réservées</h2>
-                    <p class="text-sm text-slate-600 leading-relaxed">L’adresse e-mail, le fuseau, la langue du compte et le détail des candidatures de recrutement ne sont pas affichés aux autres membres. Seuls le titulaire du dossier et le personnel habilité (gestion des effectifs ou accès RH sensible) peuvent les consulter.</p>
+                    <p class="text-sm text-slate-600 leading-relaxed">L’adresse e-mail, le fuseau, la langue du compte et le détail des candidatures de recrutement ne sont pas affichés aux autres membres. Seuls le titulaire du dossier et l’administration du site peuvent consulter l’adresse e-mail.</p>
                 </section>
                 <?php endif; ?>
 

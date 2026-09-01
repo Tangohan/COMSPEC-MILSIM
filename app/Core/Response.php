@@ -74,6 +74,9 @@ class Response
 
     public static function view(string $viewPath, array $data = []): self
     {
+        if ($viewPath !== '' && !str_starts_with($viewPath, 'emails.') && class_exists(\App\Support\EmailPrivacy::class)) {
+            $data = \App\Support\EmailPrivacy::maskViewData($data);
+        }
         extract($data, EXTR_SKIP);
         ob_start();
         $fullPath = base_path('views/' . str_replace('.', '/', $viewPath) . '.php');
