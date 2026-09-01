@@ -66,4 +66,35 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('pairing_token', $svc);
         self::assertStringContainsString('findPairing', $svc);
     }
+
+    public function testPasswordAuthDoesNotRequireASteamIdToIssueTokens(): void
+    {
+        $svc = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Game/GameAuthService.php');
+        self::assertStringContainsString('function resolveSteamId(array $body, array $account): string', $svc);
+        self::assertStringContainsString('$steamId = $this->resolveSteamId($body, $account);', $svc);
+        self::assertStringContainsString('if ($steamId !== \'\') {', $svc);
+        self::assertStringContainsString('upsertPairing((int) $account[\'id\'], $deviceId, $steamId, $pairingHash)', $svc);
+    }
+
+    public function testResolveSteamIdReturnsEmptyStringWhenMissingOrInvalid(): void
+    {
+        $ref = new \ReflectionClass(\App\Services\Game\GameAuthService::class);
+        $svc = $ref->newInstanceWithoutConstructor();
+        $method = $ref->getMethod('resolveSteamId');
+        $method->setAccessible(true);
+
+        self::assertSame('', $method->invoke($svc, [], []));
+        self::assertSame('', $method->invoke($svc, ['steam_id' => ''], []));
+        self::assertSame('', $method->invoke($svc, ['steam_id' => '_SP_player'], []));
+        self::assertSame('', $method->invoke($svc, ['steam_id' => 'LOCAL'], ['steam_id' => null]));
+        self::assertSame('76561198000000000', $method->invoke($svc, ['steam_id' => '76561198000000000'], []));
+        self::assertSame(
+            '76561198000000000',
+            $method->invoke($svc, ['steam_id' => ''], ['steam_id' => '76561198000000000'])
+        );
+        self::assertSame(
+            '76561198000000000',
+            $method->invoke($svc, ['steam_id' => '_SP_player'], ['steam_id' => '76561198000000000'])
+        );
+    }
 }

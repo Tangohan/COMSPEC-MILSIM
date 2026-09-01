@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(296, '2026-09-01', 'La connexion Athena n’exige plus Steam pour le mot de passe', 'Un opérateur peut ouvrir Overwatch avec son e-mail et son mot de passe, même si Steam n’est pas encore associé au compte', [], [], [
+                'La fenêtre de connexion se fermait en incident dès qu’aucun identifiant Steam n’était connu',
+            ], ['atak'], [
+                'Depuis Overwatch, connectez-vous avec l’e-mail Athena. Sans Steam associé, la session s’ouvre. Pas besoin d’un nouveau pack jeu.',
+            ], 'Athena'),
             $pr(295, '2026-09-01', 'Le choix de vue du dossier ne laisse plus de vide', 'Sur le dossier personnel, après Vue publique et Vue RH, le pied de page arrive tout de suite : plus de bande blanche ni de trou sous les cartes', [], [], [
                 'Grand vide entre le choix de vue et le pied de page',
             ], ['personnel'], [

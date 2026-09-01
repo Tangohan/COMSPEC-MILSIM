@@ -372,7 +372,7 @@ final class GameAuthService
         if ($deviceId === '') {
             $deviceId = bin2hex(random_bytes(16));
         }
-        $steamId = SteamId::normalize((string) ($body['steam_id'] ?? $body['steam_uid'] ?? $account['steam_id'] ?? ''));
+        $steamId = $this->resolveSteamId($body, $account);
         $access = bin2hex(random_bytes(32));
         $refresh = bin2hex(random_bytes(32));
         $pairingPlain = null;
@@ -691,6 +691,26 @@ final class GameAuthService
         }
 
         return $out;
+    }
+
+    /**
+     * SteamID64 connu, ou chaîne vide. Jamais null : un identifiant absent ou
+     * rejeté (partie solo, placeholder) ne doit pas bloquer e-mail / mot de passe.
+     *
+     * @param array<string, mixed> $body
+     * @param array<string, mixed> $account
+     */
+    private function resolveSteamId(array $body, array $account): string
+    {
+        $fromClient = SteamId::normalize((string) ($body['steam_id'] ?? $body['steam_uid'] ?? ''));
+        if ($fromClient !== null && $fromClient !== '') {
+            return $fromClient;
+        }
+        $fromAccount = SteamId::normalize(
+            isset($account['steam_id']) ? (string) $account['steam_id'] : null
+        );
+
+        return ($fromAccount !== null && $fromAccount !== '') ? $fromAccount : '';
     }
 
     private function sanitizeDeviceId(string $raw): string
