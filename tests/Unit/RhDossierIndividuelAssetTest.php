@@ -21,6 +21,8 @@ final class RhDossierIndividuelAssetTest extends TestCase
 
         self::assertContains('unit_change', PersonnelMobilityRequestRepository::TYPES);
         self::assertContains('career_wish', PersonnelMobilityRequestRepository::TYPES);
+        self::assertSame('En attente', PersonnelMobilityRequestRepository::STATUS_LABELS['pending']);
+        self::assertSame('Souhait d’évolution', PersonnelMobilityRequestRepository::TYPE_LABELS['career_wish']);
 
         self::assertContains('ready_now', PersonnelSuccessionRepository::READINESS);
         self::assertContains('ready_3m', PersonnelSuccessionRepository::READINESS);
@@ -43,6 +45,9 @@ final class RhDossierIndividuelAssetTest extends TestCase
         $storage = (string) file_get_contents($root . '/app/Support/PersonnelHrDocumentStorage.php');
         self::assertStringContainsString('hr-documents/', $storage);
         self::assertStringContainsString('storeFromUpload', $storage);
+        $boot = (string) file_get_contents($root . '/bootstrap/rh_dossier_individuel_migration.php');
+        self::assertStringContainsString('original_name', $boot);
+        self::assertStringContainsString('ADD COLUMN `original_name`', $boot);
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Admin/RhDossierWorkspaceController.php');
         self::assertStringContainsString('$_FILES[\'document\']', $ctrl);
         self::assertStringContainsString('downloadDocument', $ctrl);
@@ -55,6 +60,8 @@ final class RhDossierIndividuelAssetTest extends TestCase
         self::assertStringContainsString('documents-rh', $routes);
         self::assertStringContainsString('documents-rh/{id}/fichier', $routes);
         self::assertStringContainsString('mon-espace-rh/documents/{id}/fichier', $routes);
+        self::assertStringContainsString('mon-espace-rh/elevation', $routes);
+        self::assertStringContainsString('requestSelfElevation', $routes);
         self::assertStringContainsString('mobilite', $routes);
         self::assertStringContainsString('vivier', $routes);
         self::assertStringContainsString('alertes', $routes);
@@ -93,10 +100,13 @@ final class RhDossierIndividuelAssetTest extends TestCase
         self::assertStringContainsString('Visible du membre', $docs);
         self::assertStringContainsString('enctype="multipart/form-data"', $docs);
         self::assertStringContainsString('name="document"', $docs);
-        self::assertStringContainsString('Déposez le fichier', $docs);
-        self::assertStringContainsString('Ouvrir', $docs);
+        self::assertStringContainsString('eff-rh-deposit', $docs);
+        self::assertStringContainsString('Pièce jointe', $docs);
+        self::assertStringContainsString('Déposer le fichier', $docs);
+        self::assertStringContainsString('Ouvrir la pièce', $docs);
         self::assertStringNotContainsString('Chemin / URL', $docs);
         self::assertStringNotContainsString('Schéma non migrée', $docs);
+        self::assertStringContainsString('.eff-rh-deposit', $css);
         self::assertStringContainsString('Approuver', $mob);
         self::assertStringContainsString('eff-rh-pill', $viv);
         self::assertStringContainsString('eff-rh-tile', $alerts);
