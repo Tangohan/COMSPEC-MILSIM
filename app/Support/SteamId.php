@@ -47,7 +47,7 @@ final class SteamId
             return null;
         }
 
-        if (preg_match('#steamcommunity\.com/profiles/(\d{15,20})\b#i', $raw, $m)) {
+        if (preg_match('#steamcommunity\.com/(?:profiles|openid/id)/(\d{15,20})\b#i', $raw, $m)) {
             return self::steam64OrNull($m[1]);
         }
         if (preg_match('#(?:https?://)?s\.team/p/(\d{15,20})\b#i', $raw, $m)) {
