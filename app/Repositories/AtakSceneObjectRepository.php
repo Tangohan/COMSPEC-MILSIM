@@ -21,13 +21,18 @@ final class AtakSceneObjectRepository
     {
         $limit = max(1, min(10000, $limit));
         $st = $this->pdo()->prepare(
-            'SELECT source_id, kind, model_class, world_x AS x, world_y AS y, world_z AS z,
-                    bearing, width_m AS width, depth_m AS depth, height_m AS height, density
-             FROM atak_scene_objects
-             WHERE tenant_id = ? AND map_id = ? AND world_x BETWEEN ? AND ? AND world_y BETWEEN ? AND ?
-             ORDER BY kind, id LIMIT ' . $limit
+            'SELECT o.source_id, o.kind, o.model_class, o.world_x AS x, o.world_y AS y, o.world_z AS z,
+                    o.bearing, o.width_m AS width, o.depth_m AS depth, o.height_m AS height, o.density
+             FROM atak_scene_objects o
+             INNER JOIN (
+                SELECT MIN(id) AS id
+                FROM atak_scene_objects
+                WHERE map_id = ? AND world_x BETWEEN ? AND ? AND world_y BETWEEN ? AND ?
+                GROUP BY source_id
+             ) t ON t.id = o.id
+             ORDER BY o.kind, o.id LIMIT ' . $limit
         );
-        $st->execute([$tenantId, $mapId, $minX, $maxX, $minY, $maxY]);
+        $st->execute([$mapId, $minX, $maxX, $minY, $maxY]);
 
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
@@ -42,12 +47,12 @@ final class AtakSceneObjectRepository
         try {
             $st = $this->pdo()->prepare(
                 "SELECT
-                    COALESCE(SUM(CASE WHEN kind IN ('building', 'buildings') THEN 1 ELSE 0 END), 0) AS building,
-                    COALESCE(SUM(CASE WHEN kind IN ('forest', 'forests') THEN 1 ELSE 0 END), 0) AS forest
+                    COUNT(DISTINCT CASE WHEN kind IN ('building', 'buildings') THEN source_id END) AS building,
+                    COUNT(DISTINCT CASE WHEN kind IN ('forest', 'forests') THEN source_id END) AS forest
                  FROM atak_scene_objects
-                 WHERE tenant_id = ? AND map_id = ?"
+                 WHERE map_id = ?"
             );
-            $st->execute([$tenantId, $mapId]);
+            $st->execute([$mapId]);
             $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
             $out['building'] = (int) ($row['building'] ?? $row['BUILDING'] ?? 0);
             $out['forest'] = (int) ($row['forest'] ?? $row['FOREST'] ?? 0);
@@ -84,9 +89,9 @@ final class AtakSceneObjectRepository
         }
         try {
             $st = $this->pdo()->prepare(
-                'SELECT MAX(`updated_at`) FROM atak_scene_objects WHERE tenant_id = ? AND map_id = ?'
+                'SELECT MAX(`updated_at`) FROM atak_scene_objects WHERE map_id = ?'
             );
-            $st->execute([$tenantId, $mapId]);
+            $st->execute([$mapId]);
             $value = $st->fetchColumn();
             if ($value === false || $value === null || $value === '') {
                 return null;

@@ -18,8 +18,10 @@ final class AtakSceneObjectCountTest extends TestCase
         $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         $pdo->exec(
             'CREATE TABLE atak_scene_objects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tenant_id INTEGER NOT NULL,
                 map_id INTEGER NOT NULL,
+                source_id TEXT NOT NULL,
                 kind TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )'
@@ -28,15 +30,16 @@ final class AtakSceneObjectCountTest extends TestCase
         return $pdo;
     }
 
-    private function insert(PDO $pdo, int $tenantId, int $mapId, string $kind, int $n, string $updatedAt = '2026-08-26 19:55:00'): void
+    private function insert(PDO $pdo, int $tenantId, int $mapId, string $kind, int $n, string $updatedAt = '2026-08-26 19:55:00', string $sourcePrefix = ''): void
     {
-        $st = $pdo->prepare('INSERT INTO atak_scene_objects (tenant_id, map_id, kind, updated_at) VALUES (?, ?, ?, ?)');
+        $prefix = $sourcePrefix !== '' ? $sourcePrefix : $kind . '-' . $tenantId . '-' . $mapId . '-';
+        $st = $pdo->prepare('INSERT INTO atak_scene_objects (tenant_id, map_id, source_id, kind, updated_at) VALUES (?, ?, ?, ?, ?)');
         for ($i = 0; $i < $n; $i++) {
-            $st->execute([$tenantId, $mapId, $kind, $updatedAt]);
+            $st->execute([$tenantId, $mapId, $prefix . $i, $kind, $updatedAt]);
         }
     }
 
-    public function testCountByKindSplitsBuildingsAndForestsForTenantAndMap(): void
+    public function testCountByKindSharesATheaterAcrossCommunitiesAndDedupesSource(): void
     {
         $pdo = $this->pdoWithSceneTable();
         $this->insert($pdo, 7, 1, 'building', 12);
@@ -45,14 +48,15 @@ final class AtakSceneObjectCountTest extends TestCase
         $this->insert($pdo, 8, 1, 'forest', 4);
         $this->insert($pdo, 7, 1, 'buildings', 3);
         $this->insert($pdo, 7, 1, 'forests', 2);
+        $this->insert($pdo, 8, 1, 'building', 2, '2026-08-26 19:55:00', 'building-7-1-');
 
         $repo = new AtakSceneObjectRepository($pdo);
-        $counts = $repo->countByKind(7, 1);
+        $shared = $repo->countByKind(8, 1);
 
-        self::assertSame(15, $counts['building']);
-        self::assertSame(24, $counts['forest']);
+        self::assertSame(15, $shared['building']);
+        self::assertSame(28, $shared['forest']);
+        self::assertSame($shared, $repo->countByKind(7, 1));
         self::assertSame(['building' => 9, 'forest' => 0], $repo->countByKind(7, 2));
-        self::assertSame(['building' => 0, 'forest' => 4], $repo->countByKind(8, 1));
     }
 
     public function testCountByKindReturnsZerosWhenTableIsMissing(): void
@@ -66,15 +70,17 @@ final class AtakSceneObjectCountTest extends TestCase
         self::assertSame(['building' => 0, 'forest' => 0], $repo->countByKind(7, 1));
     }
 
-    public function testLastUpdatedAtUsesSceneStampForTenantAndMap(): void
+    public function testLastUpdatedAtUsesLatestStampOnTheTheater(): void
     {
         $pdo = $this->pdoWithSceneTable();
         $this->insert($pdo, 7, 1, 'building', 1, '2026-08-26 19:53:00');
         $this->insert($pdo, 7, 1, 'forest', 1, '2026-08-26 20:00:00');
+        $this->insert($pdo, 8, 1, 'building', 1, '2026-09-01 13:25:00');
         $this->insert($pdo, 7, 2, 'building', 1, '2026-08-26 21:00:00');
 
         $repo = new AtakSceneObjectRepository($pdo);
 
-        self::assertSame('2026-08-26 20:00:00', $repo->lastUpdatedAt(7, 1));
+        self::assertSame('2026-09-01 13:25:00', $repo->lastUpdatedAt(7, 1));
+        self::assertSame('2026-09-01 13:25:00', $repo->lastUpdatedAt(8, 1));
     }
 }
