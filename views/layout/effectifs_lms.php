@@ -39,6 +39,7 @@ require base_path('views/partials/layout_flash_toasts.php');
             <span class="eff-topnav-title">Bureau effectifs</span>
         </div>
         <div class="eff-topnav-actions">
+            <button type="button" class="eff-topnav-ghost" id="eff-bo-search-open">Rechercher</button>
             <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="eff-topnav-ghost">Back-office</a>
             <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="eff-topnav-cta">Tableau de bord</a>
         </div>
@@ -66,5 +67,9 @@ require base_path('views/partials/layout_flash_toasts.php');
         ?>
     </main>
 </div>
+<?php require base_path('views/partials/back_office_search.php'); ?>
+<?php if (is_file(base_path('public/assets/js/back-office-search.js'))): ?>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-search.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php endif; ?>
 </body>
 </html>

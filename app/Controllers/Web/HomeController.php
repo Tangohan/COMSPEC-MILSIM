@@ -342,6 +342,39 @@ class HomeController
                     // Table absente ou indisponible : le dashboard reste utilisable sans cette colonne.
                 }
 
+                try {
+                    $seniorityUserIds = [];
+                    $enlistmentByUser = [];
+                    foreach ($dashboardEffectifsRows as $effRow) {
+                        if (!is_array($effRow)) {
+                            continue;
+                        }
+                        $effUid = (int) ($effRow['id'] ?? 0);
+                        if ($effUid < 1) {
+                            continue;
+                        }
+                        $seniorityUserIds[] = $effUid;
+                        $enlist = trim((string) ($effRow['enlistment_date_resolved'] ?? $effRow['enlistment_date'] ?? $effRow['date_of_enlistment'] ?? ''));
+                        if ($enlist !== '') {
+                            $enlistmentByUser[$effUid] = $enlist;
+                        }
+                    }
+                    $seniorityByUser = \App\Core\Container::get(\App\Services\Personnel\SenioritySummaryService::class)
+                        ->dashboardLabelsByUsers($tid, $seniorityUserIds, $enlistmentByUser);
+                    foreach ($dashboardEffectifsRows as &$effRow) {
+                        if (!is_array($effRow)) {
+                            continue;
+                        }
+                        $effUid = (int) ($effRow['id'] ?? 0);
+                        $pack = is_array($seniorityByUser[$effUid] ?? null) ? $seniorityByUser[$effUid] : [];
+                        $effRow['seniority_days'] = (int) ($pack['days'] ?? 0);
+                        $effRow['seniority_label'] = trim((string) ($pack['label'] ?? ''));
+                    }
+                    unset($effRow);
+                } catch (\Throwable) {
+                    // Module d’ancienneté absent : le tableau reste lisible sans cette colonne.
+                }
+
                 if ($allowsRecruitment) {
                     try {
                         $latestDossier = $enlistRepo->findLatestBySubmitter($tid, $uid);

@@ -228,6 +228,15 @@ $renderToggle = static function (
             <?php endif; ?>
 
             <section class="ath-card ath-rise" style="padding:16px 18px;">
+                <p class="bo-setup__kicker">Catalogue</p>
+                <p class="bo-setup__type-title">Démarrer avec un modèle</p>
+                <p class="bo-setup__type-desc">Copiez un organigramme, des grades, des fonctions et des rôles officiels dans votre communauté, sans rien partager avec une autre.</p>
+                <div class="bo-setup__type-action">
+                    <a href="<?= $h(url('back-office/organisation/catalogue')) ?>" class="ath-btn">Ouvrir le catalogue</a>
+                </div>
+            </section>
+
+            <section class="ath-card ath-rise" style="padding:16px 18px;">
                 <p class="bo-setup__kicker">Profil de communauté</p>
                 <p class="bo-setup__type-title"><?= $h($setupTypeLabel) ?></p>
                 <?php if ($setupTypeDesc !== ''): ?>

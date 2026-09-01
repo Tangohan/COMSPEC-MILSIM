@@ -23,8 +23,9 @@ Aligner le pack Arma **comspec-overwatch-addons/connect** (+ extension `COMSPECE
 - Extension `MarkWaypointReached` → `POST /api/atak/waypoints/{id}/reached`.
 - SQF `fn_pollGpsNavigation` (boucle sync, module `gps_navigation`).
 - Enrichir `POST /api/atak/position` `extra` : `eta_seconds`, `distance_to_destination_m`, `active_route_id`, `active_waypoint_id`.
+- **1.4.95** : marqueurs locaux numérotés `COMSPEC_GPS_WP_<id>` + polyline d’itinéraire (`sequence` 8ᵉ colonne).
 
-### P2 — Qualité C2 / 3D
+### P2 — Qualité C2 / 3D ✅
 - Relevé théâtre (pas seulement AO 4 km) pour heights 3D.
 - `platform` / `affiliation` stables pour `atak-c2-bridge.js`
   (`FIXED_WING` → AIR, APC/IFV/TRUCK → VEHICLE, affiliation normalisée `friend|hostile|neutral|unknown`).

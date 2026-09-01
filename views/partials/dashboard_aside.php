@@ -93,6 +93,7 @@ $icon = static function (string $key): string {
         'backoffice' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z"/><path stroke-linecap="round" d="M4 8.5 12 13l8-4.5M12 13v7"/></svg>',
         'admin' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 19 6.5v5.4c0 4.6-3 7.7-7 8.6-4-.9-7-4-7-8.6V6.5L12 3.5Z"/><path stroke-linecap="round" d="M12 8v4.5M12 15.2h.01"/></svg>',
         'profile' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.2" r="3.4"/><path stroke-linecap="round" d="M4.8 19.5c.9-3.4 3.8-5.4 7.2-5.4s6.3 2 7.2 5.4"/></svg>',
+        'anomaly' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.8 21 19.5H3L12 3.8Z"/><path stroke-linecap="round" d="M12 9.5v4.4M12 16.6h.01"/></svg>',
     ];
 
     return $icons[$key] ?? '';
@@ -143,6 +144,7 @@ $navTiles = [
     $tile('overview', 'Vue d’ensemble', 'Synthèse du jour', 'default', null, $links([
         ['label' => 'Tableau de bord', 'href' => url('dashboard'), 'hint' => 'Briefing et indicateurs'],
         ['label' => 'Annonces', 'href' => url('dashboard') . '#dashboard-announce', 'hint' => 'Alertes et annonces'],
+        ['label' => 'Signaler une anomalie', 'href' => url('dashboard') . '#signaler-anomalie', 'hint' => 'À la gestion de l’organisation'],
         ['label' => 'Boîte de réception', 'href' => url('boite-reception'), 'hint' => 'Messages et éléments à traiter'],
     ]), 'overview'),
     $tile('hub', 'Hub', 'Centre de commandement', 'default', null, $links([
@@ -152,6 +154,20 @@ $navTiles = [
         ['label' => 'Premiers pas', 'href' => url('onboarding'), 'hint' => 'Parcours d’accueil'],
     ]), 'hub'),
 ];
+
+ob_start();
+require base_path('views/partials/dashboard_org_anomaly_form.php');
+$orgAnomalyExtra = (string) ob_get_clean();
+$navTiles[] = $tile(
+    'org-anomaly',
+    'Signaler une anomalie',
+    'À la gestion de l’organisation',
+    'default',
+    null,
+    [],
+    'anomaly',
+    $orgAnomalyExtra
+);
 
 if ($canForum) {
     $navTiles[] = $tile('forum', 'Forum', 'Échanges de la communauté', 'default', null, $links([
@@ -469,7 +485,9 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
                 <?php if (!empty($item['extra'])): ?>
                     <?= $item['extra'] ?>
                 <?php endif; ?>
-                <?php $renderLinks($item); ?>
+                <?php if (!empty($item['links'])): ?>
+                    <?php $renderLinks($item); ?>
+                <?php endif; ?>
             </div>
         </div>
     </div>

@@ -4,47 +4,91 @@ $gate = \App\Core\Gate::getInstance();
 if (!$gate->allows('admin.system')) {
     return;
 }
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$item = static function (string $href, string $title, string $desc) use ($h): void {
+    echo '<li><a href="' . $h($href) . '"><strong>' . $h($title) . '</strong><span>' . $h($desc) . '</span></a></li>';
+};
 ?>
-<section id="hub-annuaire" class="scroll-mt-24 mb-8 lg:mb-10 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm" aria-labelledby="hub-annuaire-heading">
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+<section id="hub-annuaire" class="pa-map scroll-mt-24" aria-labelledby="hub-annuaire-heading">
+    <div class="pa-map__head">
         <div>
-            <h2 id="hub-annuaire-heading" class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Pilotage global du site</h2>
-            <p class="mt-1 text-base font-bold text-slate-900">Communautés, recrutement et accès commercial</p>
-            <p class="mt-2 max-w-3xl text-sm text-slate-600">
-                Raccourcis vers l’annuaire transverse, la vitrine publique, le déploiement des fonctionnalités et les écrans portail liés aux formules et au parrainage.
-            </p>
+            <p class="pa-map__kicker">Administration complète du site</p>
+            <h2 id="hub-annuaire-heading" class="pa-map__title">Quatre postes, tout le site</h2>
+            <p class="pa-map__lead">Chaque ligne ouvre l’écran correspondant. La vie d’une communauté précise reste dans son back-office.</p>
         </div>
-        <a href="<?= htmlspecialchars(url('admin/tenants'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800">Annuaire complet</a>
+        <a class="pa-btn pa-btn--ink" href="<?= $h(url('admin/tenants')) ?>">Annuaire des communautés</a>
     </div>
-    <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <div class="rounded-xl border border-slate-100 bg-slate-50/80 p-4">
-            <h3 class="text-sm font-bold text-slate-900">Communautés</h3>
-            <p class="mt-1 text-xs text-slate-600">Liste opérateur, annuaire public et mise en ligne contrôlée.</p>
-            <ul class="mt-3 space-y-2 text-sm font-semibold">
-                <li><a href="<?= htmlspecialchars(url('admin/tenants'), ENT_QUOTES, 'UTF-8') ?>" class="text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200">Annuaire des communautés</a></li>
-                <li><a href="<?= htmlspecialchars(url('admin/users'), ENT_QUOTES, 'UTF-8') ?>" class="text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200">Comptes utilisateurs (toutes communautés)</a></li>
-                <li><a href="<?= htmlspecialchars(url('communities'), ENT_QUOTES, 'UTF-8') ?>" class="text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200">Annuaire public</a></li>
-                <li><a href="<?= htmlspecialchars(url('communities/create'), ENT_QUOTES, 'UTF-8') ?>" class="text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200">Créer une communauté</a></li>
-                <li><a href="<?= htmlspecialchars(url('admin/system/deployment'), ENT_QUOTES, 'UTF-8') ?>" class="text-amber-800 hover:text-amber-950 underline decoration-amber-200">Publications et préqualification</a></li>
+
+    <div class="pa-map__grid">
+        <article class="pa-map__col">
+            <div class="pa-map__col-head">
+                <h3>Communautés et accès</h3>
+                <p>Organisations, formules et portes d’entrée du site.</p>
+            </div>
+            <ul class="pa-map__list">
+                <?php
+                $item(url('admin/tenants'), 'Annuaire des communautés', 'Nom, profil, formule et effectif');
+                $item(url('communities/create'), 'Créer une communauté', 'Parcours de création sur le site');
+                $item(url('admin/system/subscription-plans'), 'Formules d’accès', 'Paliers, quotas et modules');
+                $item(url('admin/system/demo-nda'), 'Accès démo du site', 'Code, durées et adresses autorisées');
+                $item(url('admin/newsletter'), 'Lettre d’information', 'Inscriptions publiques et contacts');
+                $item(url('communities'), 'Annuaire public', 'Ce que voient les visiteurs');
+                ?>
             </ul>
-        </div>
-        <div class="rounded-xl border border-slate-100 bg-slate-50/80 p-4">
-            <h3 class="text-sm font-bold text-slate-900">Recrutement et offres d’emploi</h3>
-            <p class="mt-1 text-xs text-slate-600">
-                Chaque communauté pilote ses fiches de poste et ses candidatures dans son propre espace d’administration.
-            </p>
-            <ul class="mt-3 space-y-2 text-sm font-semibold">
-                <li><a href="<?= htmlspecialchars(url('back-office/recruitment/offers'), ENT_QUOTES, 'UTF-8') ?>" class="text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200">Offres (communauté active)</a></li>
-                <li><a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200">Dossiers de recrutement</a></li>
+        </article>
+
+        <article class="pa-map__col">
+            <div class="pa-map__col-head">
+                <h3>Comptes et sécurité</h3>
+                <p>Identités, habilitations et mesures à l’échelle du site.</p>
+            </div>
+            <ul class="pa-map__list">
+                <?php
+                $item(url('admin/users'), 'Comptes utilisateurs', 'Activation et désactivation');
+                $item(url('admin/roles'), 'Rôles système', 'Habilitations du site');
+                $item(url('admin/site-roles'), 'Affectations rôles site', 'Qui tient un rôle plateforme');
+                $item(url('admin/system/blocklist'), 'Liste de restriction', 'Blocages sur tout le site');
+                $item(url('admin/system/member-sanctions'), 'Sanctions du site', 'Mesures, toutes communautés');
+                $item(url('admin/system/advanced-fiche-edit'), 'Édition avancée de fiche', 'Modification exceptionnelle');
+                ?>
             </ul>
-        </div>
-        <div class="rounded-xl border border-slate-100 bg-slate-50/80 p-4 md:col-span-2 xl:col-span-1">
-            <h3 class="text-sm font-bold text-slate-900">Accès payant et parrainage</h3>
-            <p class="mt-1 text-xs text-slate-600">Attribuez une formule à chaque communauté depuis l’annuaire complet (« Changer la formule »).</p>
-            <ul class="mt-3 space-y-2 text-sm font-semibold">
-                <li><a href="<?= htmlspecialchars(url('platform/upgrade'), ENT_QUOTES, 'UTF-8') ?>" class="text-indigo-800 hover:text-indigo-950 underline decoration-indigo-200">Mise à niveau du service</a></li>
-                <li><a href="<?= htmlspecialchars(url('platform/invite-unit'), ENT_QUOTES, 'UTF-8') ?>" class="text-indigo-800 hover:text-indigo-950 underline decoration-indigo-200">Invitations structurantes</a></li>
+        </article>
+
+        <article class="pa-map__col">
+            <div class="pa-map__col-head">
+                <h3>Communication et référentiels</h3>
+                <p>Messages du site et catalogues partagés.</p>
+            </div>
+            <ul class="pa-map__list">
+                <?php
+                $item(url('admin/system/alerts'), 'Alertes plateforme', 'Messages visibles partout');
+                $item(url('admin/system/brief'), 'Brief membres', 'Accès au brief pour les comptes');
+                $item(url('admin/system/cooperation/catalog'), 'Types de coopération', 'Formats d’échange entre unités');
+                $item(url('admin/system/cooperation/announcements'), 'Annonces de coopération', 'Textes par défaut');
+                $item(url('admin/system/military-referential'), 'Référentiel militaire', 'Unités et affiliations');
+                $item(url('admin/system/recruitment-portal-tools'), 'Portail candidatures', 'Filtres, relances, accès exceptionnels');
+                ?>
             </ul>
-        </div>
+        </article>
+
+        <article class="pa-map__col">
+            <div class="pa-map__col-head">
+                <h3>Exploitation du site</h3>
+                <p>Réglages, publications, journaux et travaux.</p>
+            </div>
+            <ul class="pa-map__list">
+                <?php
+                $item(url('admin/settings'), 'Paramètres système', 'Configuration effective');
+                $item(url('admin/ops-center'), 'Synthèse opérationnelle', 'Signaux transverses');
+                $item(url('admin/system/cron'), 'Tâches automatiques', 'Planification et lancement');
+                $item(url('admin/system/updates'), 'Mises à jour', 'Déposer et publier une version');
+                $item(url('admin/system/deployment'), 'Publications et canaux', 'Environnements et communautés de test');
+                $item(url('admin/system/storage'), 'Espace disque', 'Historiques volumineux');
+                $item(url('admin/audit'), 'Journal d’audit', 'Traçabilité de toutes les communautés');
+                $item(url('admin/maintenance'), 'Maintenance des données', 'Fenêtre de travaux');
+                $item(url('admin/analytics'), 'Indicateurs transverses', 'Usage agrégé');
+                ?>
+            </ul>
+        </article>
     </div>
 </section>

@@ -66,11 +66,14 @@ final class AlertPresentationService
             if ($dismissible && isset($dismissed['platform'][$id])) {
                 continue;
             }
-            $item = $this->normalizeRow('platform', $r);
-            if (!$this->shouldExposeOnCurrentSurface($item, $userLoggedIn, $inBackOffice)) {
-                continue;
+            foreach (\App\Support\AlertDisplayStyle::parsePlatformList($r['display_style'] ?? null) as $style) {
+                $item = $this->normalizeRow('platform', $r);
+                $item['display_style'] = $style;
+                if (!$this->shouldExposeOnCurrentSurface($item, $userLoggedIn, $inBackOffice)) {
+                    continue;
+                }
+                $out[] = $item;
             }
-            $out[] = $item;
         }
         foreach ($tenantRows as $r) {
             $id = (int) $r['id'];

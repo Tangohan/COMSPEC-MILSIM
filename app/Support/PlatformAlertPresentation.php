@@ -192,9 +192,9 @@ final class PlatformAlertPresentation
 
         return array_merge($row, [
             '_kind_label' => self::kindLabel($kind),
-            '_display_style_label' => \App\Support\AlertDisplayStyle::label(
+            '_display_style_label' => implode(' · ', \App\Support\AlertDisplayStyle::labelsForPlatformList(
                 isset($row['display_style']) ? (string) $row['display_style'] : \App\Support\AlertDisplayStyle::CLASSIC
-            ),
+            )),
             '_badge' => self::kindBadgeClasses($kind),
             '_schedule' => self::scheduleSummary(
                 isset($row['starts_at']) ? (string) $row['starts_at'] : null,

@@ -23,6 +23,7 @@ final class EnlistmentAcceptanceSeniorityAssetTest extends TestCase
         self::assertStringContainsString('provisionSeniorityAfterAcceptance', $service);
         self::assertStringContainsString('ensureEnlistmentDateOnProfile', $service);
         self::assertStringContainsString('syncTenureCommunityFromEnrollment', $service);
+        self::assertStringContainsString('applyStoredOrgFoundingToUser', $service);
         self::assertStringContainsString('syncForUser', $service);
         self::assertStringContainsString('seedMissingPackPeriodsAfterAcceptance', $service);
         self::assertStringContainsString('MatriculeService', $service);

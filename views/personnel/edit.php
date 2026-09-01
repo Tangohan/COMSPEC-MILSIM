@@ -127,6 +127,10 @@ $editValidTabIds = implode(',', array_map(
       </div>
       <div class="pd-header__actions">
         <a href="<?= htmlspecialchars($personnelBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">← Fiche</a>
+        <?php if (\App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance())): ?>
+        <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) ($targetUser['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">Fiche Effectifs</a>
+        <a href="<?= htmlspecialchars(url('back-office/users/' . (int) ($targetUser['id'] ?? 0) . '/edit'), ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">Compte</a>
+        <?php endif; ?>
         <a href="<?= url('account/preferences') ?>" class="pd-btn">Préférences</a>
         <a href="<?= url('account/portrait') ?>" class="pd-btn">Portrait</a>
         <a href="<?= htmlspecialchars(url('personnel/tutorials')) ?>" class="pd-btn">Tutoriels</a>

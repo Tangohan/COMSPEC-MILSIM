@@ -178,6 +178,15 @@ $modActionLabelFr = static function (string $t): string {
     }
     .bo-sheet-panel { border-radius: 0.75rem; }
     .bo-sheet-panel .bo-sheet-wrap { border-radius: 0 0 0.75rem 0.75rem; }
+    .bo-gap-id { display: flex; align-items: center; gap: 0.65rem; min-width: 12rem; }
+    .bo-gap-id__avatar {
+        width: 2rem; height: 2rem; border-radius: 999px; overflow: hidden; flex: 0 0 auto;
+        background: #e2e8f0; color: #334155; display: flex; align-items: center; justify-content: center;
+        font-size: 0.65rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .bo-gap-id__avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .bo-gap-id__name { display: block; font-weight: 700; color: #0f172a; line-height: 1.2; }
+    .bo-gap-id__meta { display: block; margin-top: 0.1rem; font-size: 0.7rem; color: #64748b; }
 </style>
 <?php
 $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : null;
@@ -427,7 +436,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                         Les chiffres et listes ci-dessous sont des instantanés ; pour agir, utilisez les raccourcis ou les onglets dédiés.
                     </p>
                     <ul>
-                        <li><strong>Synthèse</strong> — indicateurs chiffrés, alertes formation et accès rapides aux tâches fréquentes.</li>
+                        <li><strong>Synthèse</strong> — indicateurs chiffrés, profils à compléter, alertes formation et accès rapides aux tâches fréquentes.</li>
                         <li><strong>RH &amp; recrutement</strong> — candidatures, mouvements d’affectation et profils à compléter, en vue tableur.</li>
                         <li><strong>Surveillance</strong> — invitations expirées, formations à échéance, mesures de modération et journal d’activité.</li>
                     </ul>
@@ -478,6 +487,8 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
           });
         })();
         </script>
+
+        <?php require base_path('views/partials/org_dashboard_profile_gaps.php'); ?>
 
         <section class="org-dash__section" aria-labelledby="org-kpi-heading">
             <div class="org-dash__section-head">

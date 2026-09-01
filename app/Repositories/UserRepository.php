@@ -1430,10 +1430,17 @@ class UserRepository
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
 
-        return \App\Support\PersonnelDirectoryHints::enrichUnitHints(
-            $tenantId,
-            $this->dedupeRowsByUserId($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [])
-        );
+        $rows = $this->dedupeRowsByUserId($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        foreach ($rows as &$row) {
+            $enlist = trim((string) ($row['enlistment_date'] ?? ''));
+            if ($enlist === '') {
+                $enlist = trim((string) ($row['date_of_enlistment'] ?? ''));
+            }
+            $row['enlistment_date_resolved'] = $enlist !== '' ? $enlist : null;
+        }
+        unset($row);
+
+        return \App\Support\PersonnelDirectoryHints::enrichUnitHints($tenantId, $rows);
     }
 
     /**

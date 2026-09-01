@@ -35,4 +35,4 @@ IceMan n’inscrit dans PANIC que les alertes de type PANIC / EAGLE_DOWN. Les al
 
 ## Statut
 
-corrigé (pack Overwatch 1.4.94 à reconstruire)
+corrigé (pack Overwatch 1.4.95)

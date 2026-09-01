@@ -139,8 +139,9 @@ $flashWarn = \App\Core\Session::getFlash('warning');
         </div>
         <div class="ath-member-show__meta-actions">
             <a href="<?= $h($listUrl) ?>" class="ath-btn">← Liste des membres</a>
-            <a href="<?= $h($personnelEditUrl) ?>" class="ath-btn">Fiche personnelle</a>
-            <a href="<?= $h($editUrl) ?>" class="ath-btn ath-btn--solid">Réglages du compte</a>
+            <a href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>" class="ath-btn">Fiche Effectifs</a>
+            <a href="<?= $h($personnelEditUrl) ?>" class="ath-btn">Dossier personnel</a>
+            <a href="<?= $h($editUrl) ?>" class="ath-btn ath-btn--solid">Compte</a>
         </div>
     </div>
 

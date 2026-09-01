@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(2, $byKind['spotrep']);
         self::assertSame(2, $byKind['techrep']);
-        self::assertSame(65, $byKind['update']);
-        self::assertCount(69, $all);
+        self::assertSame(76, $byKind['update']);
+        self::assertCount(80, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -140,6 +140,42 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($zeusIcons);
         self::assertSame('00249', $zeusIcons['number_pad']);
         self::assertStringContainsString('symbole', strtolower((string) $zeusIcons['title']));
+        $gpsZones = DevDispatchCatalog::find('update', '250');
+        self::assertNotNull($gpsZones);
+        self::assertSame('00250', $gpsZones['number_pad']);
+        self::assertStringContainsString('itinéraire', strtolower((string) $gpsZones['title']));
+        $profileGaps = DevDispatchCatalog::find('update', '251');
+        self::assertNotNull($profileGaps);
+        self::assertSame('00251', $profileGaps['number_pad']);
+        self::assertStringContainsString('profils à compléter', strtolower((string) $profileGaps['title']));
+        $seniorityRapid = DevDispatchCatalog::find('update', '252');
+        self::assertNotNull($seniorityRapid);
+        self::assertSame('00252', $seniorityRapid['number_pad']);
+        self::assertStringContainsString('ancienneté', strtolower((string) $seniorityRapid['title']));
+        $alertPreview = DevDispatchCatalog::find('update', '253');
+        self::assertNotNull($alertPreview);
+        self::assertSame('00253', $alertPreview['number_pad']);
+        self::assertStringContainsString('aperçu', strtolower((string) $alertPreview['title']));
+        $boSearch = DevDispatchCatalog::find('update', '254');
+        self::assertNotNull($boSearch);
+        self::assertSame('00254', $boSearch['number_pad']);
+        self::assertStringContainsString('recherche', strtolower((string) $boSearch['title']));
+        $realTenure = DevDispatchCatalog::find('update', '255');
+        self::assertNotNull($realTenure);
+        self::assertSame('00255', $realTenure['number_pad']);
+        self::assertStringContainsString('ancienneté', strtolower((string) $realTenure['title']));
+        $memberHub = DevDispatchCatalog::find('update', '256');
+        self::assertNotNull($memberHub);
+        self::assertSame('00256', $memberHub['number_pad']);
+        self::assertStringContainsString('fiche membre', strtolower((string) $memberHub['title']));
+        $catalogAdmin = DevDispatchCatalog::find('update', '260');
+        self::assertNotNull($catalogAdmin);
+        self::assertSame('00260', $catalogAdmin['number_pad']);
+        self::assertStringContainsString('administrer', strtolower((string) $catalogAdmin['title']));
+        $platformAdmin = DevDispatchCatalog::find('update', '261');
+        self::assertNotNull($platformAdmin);
+        self::assertSame('00261', $platformAdmin['number_pad']);
+        self::assertStringContainsString('administration du site', strtolower((string) $platformAdmin['title']));
         $update249 = strtolower(DevDispatchCatalog::publicCorpus());
         self::assertStringContainsString('mot de passe s’affichait en clair', $update249);
         self::assertStringContainsString('inclinaison, amplification du relief', $update249);
@@ -167,5 +203,6 @@ final class DevDispatchCatalogTest extends TestCase
         }
         self::assertStringContainsString('ombrage', $corpus);
         self::assertStringContainsString('organigramme', $corpus);
+        self::assertStringContainsString('points numérotés', $corpus);
     }
 }

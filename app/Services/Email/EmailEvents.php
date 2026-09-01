@@ -124,6 +124,9 @@ final class EmailEvents
     /** Annonce plateforme diffusée par e-mail aux membres. */
     public const PLATFORM_ALERT_BROADCAST = 'PLATFORM_ALERT_BROADCAST';
 
+    /** Nouvelle communauté créée — alerte à la boîte technique des incidents. */
+    public const PLATFORM_NEW_COMMUNITY = 'PLATFORM_NEW_COMMUNITY';
+
 
     /** Notification envoyée quand un membre est marqué comme déployé. */
     public const PERSONNEL_DEPLOYMENT_ASSIGNED = 'PERSONNEL_DEPLOYMENT_ASSIGNED';
@@ -209,6 +212,7 @@ final class EmailEvents
         self::TENANT_EMAIL_CUSTOM,
         self::MAINTENANCE_MEMBER_BROADCAST,
         self::PLATFORM_ALERT_BROADCAST,
+        self::PLATFORM_NEW_COMMUNITY,
         self::PERSONNEL_DEPLOYMENT_ASSIGNED,
         self::PERSONNEL_DEPLOYMENT_CHECKUP_VALIDATED,
         self::PERSONNEL_STRUCTURE_CHANGED,

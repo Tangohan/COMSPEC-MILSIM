@@ -131,6 +131,7 @@ $visibleNow = (int) ($stats['visible_now'] ?? 0);
                     <span class="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-900"><span class="h-2 w-2 rounded-full bg-amber-500"></span>Barre Attention</span>
                     <span class="inline-flex items-center gap-1.5 rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-bold text-rose-800"><span class="h-2 w-2 rounded-full bg-rose-500"></span>Barre Critique</span>
                     <span class="inline-flex items-center gap-1.5 rounded-md border border-red-300 bg-red-50 px-2 py-1 text-[10px] font-bold text-red-900"><span class="h-2 w-2 rounded-full bg-red-700"></span>Attention</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2 py-1 text-[10px] font-bold text-slate-700"><span class="h-2 w-2 rounded-full bg-slate-700"></span>Pop-up</span>
                 </div>
             </div>
 
@@ -192,20 +193,30 @@ $visibleNow = (int) ($stats['visible_now'] ?? 0);
                                         </span>
                                     </td>
                                     <td>
+                                        <div class="flex flex-wrap gap-1">
                                         <?php
-                                        $ds = \App\Support\AlertDisplayStyle::sanitizePlatform(isset($r['display_style']) ? (string) $r['display_style'] : null);
-                                        $dsShort = match ($ds) {
-                                            'mini_info' => ['Barre Info', 'bg-indigo-50 text-indigo-900 ring-indigo-200'],
-                                            'mini_success' => ['Barre Succès', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
-                                            'mini_warning' => ['Barre Attention', 'bg-amber-50 text-amber-950 ring-amber-200'],
-                                            'mini_danger' => ['Barre Critique', 'bg-rose-50 text-rose-900 ring-rose-200'],
-                                            'breaking' => ['Attention', 'bg-red-50 text-red-900 ring-red-200'],
-                                            default => ['Classique', 'bg-slate-100 text-slate-800 ring-slate-200'],
-                                        };
+                                        $dsList = \App\Support\AlertDisplayStyle::parsePlatformList(
+                                            isset($r['display_style']) ? (string) $r['display_style'] : null
+                                        );
+                                        if ($dsList === []) {
+                                            $dsList = ['classic'];
+                                        }
+                                        foreach ($dsList as $ds):
+                                            $dsShort = match ($ds) {
+                                                'mini_info' => ['Barre Info', 'bg-indigo-50 text-indigo-900 ring-indigo-200'],
+                                                'mini_success' => ['Barre Succès', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
+                                                'mini_warning' => ['Barre Attention', 'bg-amber-50 text-amber-950 ring-amber-200'],
+                                                'mini_danger' => ['Barre Critique', 'bg-rose-50 text-rose-900 ring-rose-200'],
+                                                'breaking' => ['Attention', 'bg-red-50 text-red-900 ring-red-200'],
+                                                'popup' => ['Pop-up', 'bg-slate-100 text-slate-800 ring-slate-300'],
+                                                default => ['Classique', 'bg-slate-100 text-slate-800 ring-slate-200'],
+                                            };
                                         ?>
-                                        <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($dsShort[1], ENT_QUOTES, 'UTF-8') ?>">
-                                            <?= htmlspecialchars($dsShort[0], ENT_QUOTES, 'UTF-8') ?>
-                                        </span>
+                                            <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($dsShort[1], ENT_QUOTES, 'UTF-8') ?>">
+                                                <?= htmlspecialchars($dsShort[0], ENT_QUOTES, 'UTF-8') ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                        </div>
                                     </td>
                                     <td>
                                         <?php if ($isVisibleNow): ?>

@@ -55,6 +55,50 @@ class UserAdminController
         return OrganizationRoleLabels::mode($community, $tenant);
     }
 
+    /**
+     * @return array{
+     *   unit_name: string,
+     *   seniority_label: string,
+     *   enlistment_date: string,
+     *   pre_platform_start: string,
+     *   org_founded_on: string
+     * }
+     */
+    private function buildRhSituationForUser(int $tenantId, int $userId): array
+    {
+        $out = [
+            'unit_name' => '',
+            'seniority_label' => '',
+            'enlistment_date' => '',
+            'pre_platform_start' => '',
+            'org_founded_on' => '',
+        ];
+        try {
+            $profile = $this->personnelProfileRepository->getByUserId($userId);
+            $enlist = trim((string) ($profile['enlistment_date'] ?? ''));
+            if ($enlist !== '' && !str_starts_with($enlist, '0000-00-00')) {
+                $out['enlistment_date'] = substr($enlist, 0, 10);
+            }
+            $unitId = (int) ($profile['primary_unit_id'] ?? 0);
+            if ($unitId > 0) {
+                $unit = \App\Core\Container::get(\App\Repositories\UnitRepository::class)->findById($unitId, $tenantId);
+                if (is_array($unit)) {
+                    $out['unit_name'] = trim((string) ($unit['name'] ?? ''));
+                }
+            }
+            $pre = \App\Core\Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class);
+            $out['pre_platform_start'] = (string) ($pre->getPersonStartDate($tenantId, $userId) ?? '');
+            $out['org_founded_on'] = (string) ($pre->getOrgFoundingDate($tenantId) ?? '');
+            $packs = \App\Core\Container::get(\App\Services\Personnel\SenioritySummaryService::class)
+                ->dashboardLabelsByUsers($tenantId, [$userId], $out['enlistment_date'] !== '' ? [$userId => $out['enlistment_date']] : []);
+            $out['seniority_label'] = trim((string) ($packs[$userId]['label'] ?? ''));
+        } catch (\Throwable) {
+            // La page compte reste utilisable si le référentiel d’ancienneté est partiel.
+        }
+
+        return $out;
+    }
+
     /** URL de retour après erreur de création (évite le hub structure bloqué en profil Carte ATAK). */
     private function memberCreateEntryUrl(int $tenantId): string
     {
@@ -691,6 +735,7 @@ class UserAdminController
         $positions = $this->positionRepository->listForTenant($tenantId);
         $userActivePositions = $this->positionRepository->listActiveForUser($tenantId, $id);
         $roleSets = $this->roleSetRepository->listForTenant($tenantId);
+        $rhSituation = $this->buildRhSituationForUser($tenantId, $id);
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.edit',
@@ -709,6 +754,7 @@ class UserAdminController
             'roleSetsList' => $roleSets,
             'organizationRoleLabelMode' => $this->organizationRoleLabelModeForTenant($tenantId),
             'steamWebConfigured' => $this->steamWebApiService->isConfigured(),
+            'rhSituation' => $rhSituation,
             'backOfficePageCss' => ['back-office-users.css'],
             'showPortalFooter' => false,
         ]);

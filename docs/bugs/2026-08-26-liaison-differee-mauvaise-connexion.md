@@ -37,4 +37,4 @@ Tests unitaires (échelle, libellé HUD, catalogue). Recette : carte du poste �
 
 ## Statut
 
-corrigé (sources) — pack Overwatch 1.4.84 à reconstruire pour le jeu
+corrigé (pack Overwatch 1.4.95)

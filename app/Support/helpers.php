@@ -925,6 +925,12 @@ if (!function_exists('back_office_nav_permission_rules')) {
             'admin/system/retours-interface' => [
                 'any_permissions' => ['admin.system'],
             ],
+            'back-office/organisation/catalogue' => [
+                'any_permissions' => [
+                    'organization.catalog.manage', 'organization.orbat.manage',
+                    'admin.organization', 'admin.access',
+                ],
+            ],
             'back-office/alerts' => [
                 'any_permissions' => ['admin.organization', 'admin.access'],
             ],

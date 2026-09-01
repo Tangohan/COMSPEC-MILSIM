@@ -102,6 +102,7 @@ $boNavRoleplayFollowup = (str_starts_with($p, 'back-office/roleplay-followup') &
 $boNavRoleplayImmersion = str_starts_with($p, 'back-office/roleplay/immersion');
 $boNavRoleplaySection = $boNavRoleplayFollowup || $boNavRoleplayDeadlines || $boNavRoleplayImmersion || str_starts_with($p, 'back-office/roleplay/');
 $boNavEff = str_starts_with($p, 'back-office/organisation-effectifs');
+$boNavCatalog = $p === 'back-office/organisation/catalogue' || str_starts_with($p, 'back-office/organisation/catalogue/');
 $boNavEffWorkspace = $p === $ewPath || str_starts_with($p, $ewPath . '/');
 $boNavOrgSettings = str_starts_with($p, 'back-office/organisation/parametres') || $p === 'back-office/community';
 $boNavInitialSetup = $p === 'back-office/configuration-initiale' || str_starts_with($p, 'back-office/configuration-initiale/');

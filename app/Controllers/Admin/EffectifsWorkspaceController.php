@@ -56,11 +56,20 @@ class EffectifsWorkspaceController
         private ?PersonnelQualificationRepository $personnelQualificationRepository = null,
         private ?PersonnelDuplicateDetectionService $duplicateDetection = null,
         private ?TenantAdminSettingsRepository $adminSettings = null,
+        private ?\App\Services\Personnel\SenioritySummaryService $senioritySummary = null,
+        private ?\App\Services\Personnel\SeniorityPrePlatformService $seniorityPrePlatform = null,
+        private ?\App\Services\Personnel\SeniorityEnrollmentBootstrapService $seniorityEnrollment = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
         $this->personnelQualificationRepository ??= new PersonnelQualificationRepository();
         $this->duplicateDetection ??= new PersonnelDuplicateDetectionService();
         $this->adminSettings ??= new TenantAdminSettingsRepository();
+        $this->senioritySummary ??= new \App\Services\Personnel\SenioritySummaryService(
+            new SeniorityRepository(),
+            new \App\Services\Personnel\SeniorityEngine()
+        );
+        $this->seniorityPrePlatform ??= \App\Core\Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class);
+        $this->seniorityEnrollment ??= \App\Core\Container::get(\App\Services\Personnel\SeniorityEnrollmentBootstrapService::class);
     }
 
     /**
@@ -251,6 +260,7 @@ class EffectifsWorkspaceController
             'csrfToken' => Csrf::token(),
             'personnelDuplicateScan' => $this->duplicateDetection->scan($tenantId),
             'personnelDuplicateFieldLabels' => PersonnelDuplicateDetectionService::FIELD_LABELS,
+            'orgFoundingDate' => $this->seniorityPrePlatform->getOrgFoundingDate($tenantId),
         ]);
     }
 
@@ -463,6 +473,8 @@ class EffectifsWorkspaceController
             'elevationNoRecipients' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients === [],
             'elevationCatalog' => $this->elevationCatalogForTenant($tenantId),
             'csrfToken' => Csrf::token(),
+            'orgFoundingDate' => $this->seniorityPrePlatform->getOrgFoundingDate($tenantId),
+            'memberRoleIds' => $roleIds,
         ]);
     }
 
@@ -811,6 +823,241 @@ class EffectifsWorkspaceController
         Session::flash('success', 'Statut mis à jour : ' . $label . '.');
 
         return Response::redirect(effectifs_workspace_url('membres/' . $id));
+    }
+
+    public function updateOrgFounding(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canEditProfiles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier l’ancienneté.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $raw = trim((string) $request->input('org_founded_on', ''));
+        $stats = $this->seniorityPrePlatform->syncOrgFoundingForAllActiveMembers(
+            $tenantId,
+            $raw !== '' ? $raw : null
+        );
+        if (($stats['invalid_date'] ?? 0) > 0 && ($stats['members'] ?? 0) === 0) {
+            Session::flash('error', 'La date de création de l’organisation n’est pas valide.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+        if ($raw === '') {
+            Session::flash('success', 'Date de création de l’organisation retirée pour les membres actifs.');
+        } else {
+            Session::flash(
+                'success',
+                'Date de création de l’organisation enregistrée. Elle s’applique à tous les membres actifs, y compris les nouveaux arrivants.'
+            );
+        }
+
+        return Response::redirect($this->redirectBackToRoster($request));
+    }
+
+    public function updateMemberSeniority(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canEditProfiles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier l’ancienneté.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1 || !$this->userRepository->findById($id, $tenantId)) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+
+        $enlistRaw = trim((string) $request->input('enlistment_date', ''));
+        $preRaw = trim((string) $request->input('pre_platform_start_date', ''));
+        $this->personnelProfileRepository->ensureRecord($id);
+        $this->personnelProfileRepository->update($id, [
+            'enlistment_date' => $enlistRaw !== '' ? $enlistRaw : null,
+        ]);
+        try {
+            $this->seniorityEnrollment->alignTenureCommunityFromStaffEdit($tenantId, $id);
+        } catch (\Throwable) {
+        }
+        $preResult = $this->seniorityPrePlatform->upsertPersonStartDate(
+            $tenantId,
+            $id,
+            $preRaw !== '' ? $preRaw : null
+        );
+        if ($preResult === 'invalid_date') {
+            Session::flash('error', 'La date d’arrivée avant le site n’est pas valide.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $this->adminAuditService->logUserUpdated(
+            $tenantId,
+            $actorId,
+            $id,
+            'anciennete',
+            'enlistment:' . ($enlistRaw !== '' ? $enlistRaw : 'vide') . ';pre:' . ($preRaw !== '' ? $preRaw : 'vide')
+        );
+        Session::flash('success', 'Ancienneté mise à jour.');
+
+        return Response::redirect($this->redirectAfterMemberAction($request, $id));
+    }
+
+    public function updateMemberRoles(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier les rôles.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($this->redirectAfterMemberAction($request, (int) ($params['id'] ?? 0)));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1 || !$this->userRepository->findById($id, $tenantId)) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $raw = $request->input('role_ids', []);
+        $roleIds = [];
+        if (is_array($raw)) {
+            foreach ($raw as $rid) {
+                $r = (int) $rid;
+                if ($r > 0) {
+                    $roleIds[] = $r;
+                }
+            }
+        }
+        $roleIds = array_values(array_unique($roleIds));
+        $oldRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
+        foreach ($roleIds as $rid) {
+            if (!$this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
+                Session::flash('error', 'Un rôle sélectionné ne peut pas être attribué depuis Effectifs.');
+
+                return Response::redirect($this->redirectAfterMemberAction($request, $id));
+            }
+        }
+        $ownerRoleId = $this->roleRepository->getIdBySlug($tenantId, 'community_owner');
+        if ($ownerRoleId !== null) {
+            $hadOwner = in_array($ownerRoleId, $oldRoleIds, true);
+            $hasOwnerNew = in_array($ownerRoleId, $roleIds, true);
+            if ($hadOwner && !$hasOwnerNew) {
+                $count = $this->userRepository->countUsersWithRole($ownerRoleId);
+                if ($count <= 1) {
+                    Session::flash('error', 'Impossible de retirer le rôle de responsable de communauté au dernier titulaire.');
+
+                    return Response::redirect($this->redirectAfterMemberAction($request, $id));
+                }
+            }
+        }
+        try {
+            $this->userRepository->syncOrganizationRoles($id, $tenantId, $roleIds, $actorId);
+        } catch (\InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect($this->redirectAfterMemberAction($request, $id));
+        }
+        $this->adminAuditService->logUserUpdated(
+            $tenantId,
+            $actorId,
+            $id,
+            'roles',
+            implode(',', $roleIds)
+        );
+        Session::flash('success', 'Rôles mis à jour.');
+
+        return Response::redirect($this->redirectAfterMemberAction($request, $id));
+    }
+
+    public function updateMemberGrade(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canManageGrades(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier le grade.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($this->redirectAfterMemberAction($request, (int) ($params['id'] ?? 0)));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        $id = (int) ($params['id'] ?? 0);
+        $user = $id > 0 ? $this->userRepository->findById($id, $tenantId) : null;
+        if ($user === null) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $raw = trim((string) $request->input('grade_id', ''));
+        $gradeId = $raw !== '' ? (int) $raw : 0;
+        $newGrade = $gradeId > 0 ? $gradeId : null;
+        if ($newGrade !== null) {
+            $found = false;
+            foreach ($this->gradeRepository->listForTenant($tenantId) as $g) {
+                if ((int) ($g['id'] ?? 0) === $newGrade) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                Session::flash('error', 'Ce grade n’appartient pas à la communauté.');
+
+                return Response::redirect($this->redirectAfterMemberAction($request, $id));
+            }
+        }
+        $before = isset($user['grade_id']) && $user['grade_id'] !== '' && $user['grade_id'] !== null
+            ? (int) $user['grade_id']
+            : null;
+        if ($before === $newGrade) {
+            Session::flash('success', 'Grade inchangé.');
+
+            return Response::redirect($this->redirectAfterMemberAction($request, $id));
+        }
+        $this->userRepository->update($id, $tenantId, ['grade_id' => $newGrade]);
+        $this->adminAuditService->logUserUpdated(
+            $tenantId,
+            $actorId,
+            $id,
+            'grade',
+            (string) ($newGrade ?? 'aucun')
+        );
+        Session::flash('success', 'Grade mis à jour.');
+
+        return Response::redirect($this->redirectAfterMemberAction($request, $id));
     }
 
     public function quickAssignment(Request $request, array $params = []): Response
@@ -1482,12 +1729,40 @@ class EffectifsWorkspaceController
 
     private function redirectBackToRoster(Request $request): string
     {
+        return $this->redirectAfterMemberAction($request, 0);
+    }
+
+    private function redirectAfterMemberAction(Request $request, int $memberId): string
+    {
         $returnUrl = trim((string) $request->input('return_url', ''));
-        if ($returnUrl !== '' && str_starts_with($returnUrl, effectifs_workspace_url())) {
+        if ($this->isAllowedMemberReturnUrl($returnUrl, $memberId)) {
             return $returnUrl;
+        }
+        if ($memberId > 0 && trim((string) $request->input('return_to', '')) === 'member') {
+            return effectifs_workspace_url('membres/' . $memberId);
         }
 
         return effectifs_workspace_url();
+    }
+
+    private function isAllowedMemberReturnUrl(string $returnUrl, int $memberId): bool
+    {
+        if ($returnUrl === '') {
+            return false;
+        }
+        $allowed = [effectifs_workspace_url()];
+        if ($memberId > 0) {
+            $allowed[] = url('back-office/users/' . $memberId);
+            $allowed[] = url('personnel/' . $memberId);
+            $allowed[] = effectifs_workspace_url('membres/' . $memberId);
+        }
+        foreach ($allowed as $prefix) {
+            if ($prefix !== '' && str_starts_with($returnUrl, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -1513,7 +1788,7 @@ class EffectifsWorkspaceController
         $readinessByUser = $ids !== []
             ? $this->unitRepository->readinessByUsersForTenant($tenantId, $ids)
             : [];
-        $seniorityDaysByUser = $this->rosterSeniorityDaysByUser($tenantId, $ids, $richById);
+        $seniorityByUser = $this->rosterSeniorityPacksByUser($tenantId, $ids, $richById);
         $communityFallback = $this->communityNameForTenant($tenantId);
         $out = [];
         foreach ($users as $u) {
@@ -1537,8 +1812,10 @@ class EffectifsWorkspaceController
             if ($readinessScoreProfile > 0) {
                 $availabilityScore = max($availabilityScore, $readinessScoreProfile);
             }
-            $seniorityDays = (int) ($seniorityDaysByUser[$id] ?? 0);
+            $pack = is_array($seniorityByUser[$id] ?? null) ? $seniorityByUser[$id] : [];
+            $seniorityDays = (int) ($pack['days'] ?? 0);
             $completionScore = $this->rosterCompletionScore($u, $rich, $path !== '');
+            $enlistmentResolved = trim((string) ($rich['enlistment_date_resolved'] ?? ($pack['community_start'] ?? '')));
             $out[] = array_merge($u, [
                 'grade_short' => $rich['grade_short'] ?? null,
                 'grade_long' => $rich['grade_long'] ?? null,
@@ -1554,9 +1831,12 @@ class EffectifsWorkspaceController
                 'job_role_display' => $rich['job_role_display'] ?? null,
                 'character_name' => $rich['character_name'] ?? null,
                 'matricule_internal' => $rich['matricule_internal'] ?? null,
-                'enlistment_date_resolved' => $rich['enlistment_date_resolved'] ?? null,
+                'enlistment_date_resolved' => $enlistmentResolved !== '' ? $enlistmentResolved : null,
+                'pre_platform_start' => trim((string) ($pack['pre_platform_start'] ?? '')) ?: null,
                 'seniority_days' => $seniorityDays,
                 'seniority_label' => $this->formatSeniorityDays($seniorityDays),
+                'seniority_community_label' => (string) ($pack['community_label'] ?? ''),
+                'seniority_pre_platform_label' => (string) ($pack['pre_platform_label'] ?? ''),
                 'availability_score' => $availabilityScore,
                 'presence_score' => $presenceScore,
                 'completion_score' => $completionScore,
@@ -1625,35 +1905,22 @@ class EffectifsWorkspaceController
     /**
      * @param list<int> $userIds
      * @param array<int, array<string, mixed>> $richById
-     * @return array<int, int>
+     * @return array<int, array<string, mixed>>
      */
-    private function rosterSeniorityDaysByUser(int $tenantId, array $userIds, array $richById): array
+    private function rosterSeniorityPacksByUser(int $tenantId, array $userIds, array $richById): array
     {
-        $out = [];
-        $today = new DateTimeImmutable('today');
-        $seniorityRepo = new SeniorityRepository();
-        $defId = $seniorityRepo->findDefinitionIdByTenantAndCode($tenantId, 'tenure_community');
-        $fromModule = $defId !== null
-            ? $seniorityRepo->earliestStartByUsersForDefinition($defId, $userIds)
-            : [];
+        $enlistmentByUser = [];
         foreach ($userIds as $uid) {
-            $start = trim((string) ($fromModule[$uid] ?? ''));
-            if ($start === '') {
-                $start = trim((string) ($richById[$uid]['enlistment_date_resolved'] ?? ''));
-            }
-            if ($start === '') {
-                $out[$uid] = 0;
-                continue;
-            }
-            try {
-                $startDt = new DateTimeImmutable($start);
-                $out[$uid] = max(0, (int) $startDt->diff($today)->days);
-            } catch (\Throwable) {
-                $out[$uid] = 0;
+            $start = trim((string) ($richById[$uid]['enlistment_date_resolved'] ?? ''));
+            if ($start !== '') {
+                $enlistmentByUser[$uid] = $start;
             }
         }
-
-        return $out;
+        try {
+            return $this->senioritySummary->dashboardLabelsByUsers($tenantId, $userIds, $enlistmentByUser);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**

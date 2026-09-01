@@ -22,7 +22,15 @@ class OrganizationAdminMiddleware
         $scopedOrgAccess = $gate->allows('admin.organization') || $gate->allows('admin.access')
             || $gate->allows('site.support');
         if (!$scopedOrgAccess) {
-            if (str_starts_with($path, '/back-office/ressources/recrutement') && $gate->allows('organization.recruitment.manage')) {
+            if (str_starts_with($path, '/api/back-office/search') && (
+                $gate->allows('organization.effectifs.hub.view')
+                || $gate->allows('personnel.profile.update')
+                || $gate->allows('personnel.assignments.manage')
+                || $gate->allows('personnel.grades.manage')
+                || $gate->allows('personnel.status.manage')
+            )) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/ressources/recrutement') && $gate->allows('organization.recruitment.manage')) {
                 $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/recruitments') && $gate->allows('organization.recruitment.manage')) {
                 $scopedOrgAccess = true;
@@ -40,6 +48,24 @@ class OrganizationAdminMiddleware
                 || $gate->allows('personnel.assignments.manage')
                 || $gate->allows('personnel.grades.manage')
                 || $gate->allows('personnel.status.manage')
+            )) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/organisation/progression') && (
+                $gate->allows('personnel.progression.view')
+                || $gate->allows('personnel.progression.manage')
+                || $gate->allows('personnel.progression.configure')
+            )) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/organisation/matricules') && (
+                $gate->allows('personnel.member_number.manage')
+                || $gate->allows('admin.members.manage')
+            )) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/organisation/indicatifs') && $gate->allows('personnel.callsign.manage')) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/organisation/catalogue') && (
+                $gate->allows('organization.catalog.manage')
+                || $gate->allows('organization.orbat.manage')
             )) {
                 $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/positions') && (

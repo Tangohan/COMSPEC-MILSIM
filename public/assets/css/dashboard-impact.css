@@ -2064,12 +2064,14 @@ body.dashboard-shell main {
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.04);
   color: #e2e8f0;
+  font-family: inherit;
   font-size: 0.5625rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
@@ -2205,3 +2207,191 @@ body.dashboard-shell main {
 .dash-idstrip__trial:hover {
   text-decoration: underline;
 }
+
+/* Tuile « Signaler une anomalie » — visible dans le flux ; formulaire mobile, ouverture du rail en bureau. */
+.dash-org-anomaly-tile {
+  background: #050505;
+  color: #fff;
+  border-bottom: 1px solid #111;
+  padding: 0.85rem 1rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .dash-org-anomaly-tile {
+    padding: 1rem 1.5rem 1.15rem;
+  }
+}
+
+.dash-org-anomaly-tile__shell {
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.dash-org-anomaly-tile__kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #34d399;
+}
+
+.dash-org-anomaly-tile__title {
+  margin: 0;
+  display: block;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.dash-org-anomaly-tile__hint {
+  display: block;
+  margin: 0.35rem 0 0.7rem;
+  font-size: 0.8125rem;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.dash-org-anomaly-tile__cta {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #34d399;
+}
+
+.dash-org-anomaly-tile__open {
+  display: none;
+  width: 100%;
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.dash-org-anomaly-tile__open:hover,
+.dash-org-anomaly-tile__open:focus-visible {
+  outline: none;
+  border-color: rgba(5, 150, 105, 0.55);
+  background: rgba(5, 150, 105, 0.12);
+}
+
+.dash-org-anomaly-tile__form {
+  padding: 0.15rem 0 0;
+}
+
+.dash-rail__anomaly,
+.dash-org-anomaly-tile .dash-rail__anomaly {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.dash-rail__anomaly-lead {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dash-rail__anomaly-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.dash-rail__anomaly-label span {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.dash-rail__anomaly-label select,
+.dash-rail__anomaly-label input,
+.dash-rail__anomaly-label textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.dash-rail__anomaly-label select option {
+  color: #111;
+}
+
+.dash-rail__anomaly-label textarea {
+  min-height: 6.5rem;
+  resize: vertical;
+}
+
+.dash-rail__anomaly-status {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.dash-rail__anomaly-status.is-ok { color: #6ee7b7; }
+.dash-rail__anomaly-status.is-err { color: #fda4af; }
+
+.dash-rail__anomaly-submit {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0.55rem 0.9rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #059669;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.dash-rail__anomaly-submit:hover,
+.dash-rail__anomaly-submit:focus-visible {
+  background: #047857;
+  outline: none;
+}
+
+.dash-rail__anomaly-submit:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+@media (min-width: 1024px) {
+  .dash-org-anomaly-tile__open { display: block; }
+  .dash-org-anomaly-tile__form { display: none; }
+}
+

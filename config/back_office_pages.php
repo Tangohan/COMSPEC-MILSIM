@@ -80,6 +80,17 @@ return [
             ['label' => 'Centre de pilotage', 'href' => 'back-office'],
         ]],
         ['path' => 'back-office/ressources/effectifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Bureau effectifs', 'css' => ['back-office-effectifs-hub.css']],
+        ['path' => 'back-office/organisation/catalogue', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Catalogue de l’organisation', 'subtitle' => 'Administrez l’organigramme, les grades, les fonctions et les rôles, ou copiez un modèle.', 'css' => ['back-office-catalog.css'], 'quick' => [
+            ['label' => 'Structure', 'href' => 'back-office/organisation/structure'],
+            ['label' => 'Journal', 'href' => 'back-office/organisation/catalogue/historique'],
+            ['label' => 'Rôles', 'href' => 'back-office/roles'],
+            ['label' => 'Fonctions', 'href' => 'back-office/personnel-job-roles'],
+        ]],
+        ['path' => 'back-office/organisation/catalogue/historique', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Journal du catalogue', 'subtitle' => 'Toutes les applications de modèles dans cette communauté.', 'css' => ['back-office-catalog.css'], 'quick' => [
+            ['label' => 'Catalogue', 'href' => 'back-office/organisation/catalogue'],
+        ]],
+        ['path' => 'back-office/organisation/catalogue/modele', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Modèle d’organisation', 'css' => ['back-office-catalog.css']],
+        ['path' => 'back-office/organisation/catalogue/apercu', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Aperçu du modèle', 'css' => ['back-office-catalog.css']],
         ['path' => 'back-office/organisation/structure', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Structure & recrutement'],
         ['path' => 'back-office/organisation/anciennete', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Ancienneté', 'css' => ['back-office-seniority.css']],
         ['path' => 'back-office/organisation/progression', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Progression & carrière', 'subtitle' => 'Parcours, validations, qualifications et règles d’indicatifs.'],

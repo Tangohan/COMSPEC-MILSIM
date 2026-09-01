@@ -4727,3 +4727,114 @@ body:not(.ath-shell) .pjr-assign-slot {
   border-top: 1px solid var(--ath-line);
   padding: 13px 15px 15px;
 }
+
+.ath-bo-search {
+  width: min(100vw - 1.5rem, 36rem);
+  max-height: min(90vh, 32rem);
+  overflow: hidden;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+  padding: 0;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+}
+.ath-bo-search::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+.ath-bo-search__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem 0;
+}
+.ath-bo-search__kicker {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5c6b73;
+}
+.ath-bo-search__esc {
+  border: 0;
+  background: #f2f5f6;
+  color: #5c6b73;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+.ath-bo-search__label {
+  display: block;
+  padding: 0.65rem 1rem 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #3c474c;
+}
+.ath-bo-search input[type="search"] {
+  display: block;
+  width: calc(100% - 2rem);
+  margin: 0.4rem 1rem 0;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #f8fafb;
+  padding: 0.65rem 0.75rem;
+  font-size: 14px;
+  font-family: inherit;
+}
+.ath-bo-search input[type="search"]:focus {
+  outline: 2px solid #12d18e;
+  outline-offset: 1px;
+  background: #fff;
+}
+.ath-bo-search__hint {
+  margin: 0.4rem 1rem 0.75rem;
+  font-size: 11px;
+  color: #7a868c;
+}
+.ath-bo-search__results {
+  max-height: min(50vh, 18rem);
+  overflow-y: auto;
+  border-top: 1px solid var(--ath-line, #e3e8ea);
+  padding: 0.65rem 0.75rem 0.9rem;
+}
+.ath-bo-search__results section {
+  margin-bottom: 0.85rem;
+}
+.ath-bo-search__results h3 {
+  margin: 0 0 0.35rem;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a868c;
+}
+.ath-bo-search__results ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ath-bo-search__results a {
+  display: block;
+  padding: 0.45rem 0.55rem;
+  color: #161616;
+  text-decoration: none;
+  border-radius: 4px;
+}
+.ath-bo-search__results a:hover,
+.ath-bo-search__results a:focus {
+  background: #ecfdf5;
+}
+.ath-bo-search__results strong {
+  display: block;
+  font-size: 13px;
+}
+.ath-bo-search__sub {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 11px;
+  color: #5c6b73;
+}
+.ath-bo-search__empty {
+  margin: 0.5rem 0.25rem;
+  font-size: 13px;
+  color: #5c6b73;
+}

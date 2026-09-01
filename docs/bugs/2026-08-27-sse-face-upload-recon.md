@@ -38,4 +38,4 @@ Tests unitaires `TerrainUploadedImageTest` et `SseFacePhotoRoutingAssetTest`. D�
 
 ## Statut
 
-corrigé (portail) — pack jeu à reconstruire pour le filtre côté poste
+corrigé (portail + pack Overwatch 1.4.95)

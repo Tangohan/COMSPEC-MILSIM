@@ -138,6 +138,16 @@ final class CommunityOnboardingValidationService
             $step = $step ?? 'roles';
         }
 
+        $kitCode = trim((string) ($wizard['catalog_kit_code'] ?? $wizard['wizard_catalog_kit_code'] ?? ''));
+        if ($kitCode === 'none') {
+            $kitCode = '';
+        }
+        $allowedKits = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::officialCodes();
+        if ($kitCode !== '' && !in_array($kitCode, $allowedKits, true)) {
+            $errors[] = 'Choisissez un modèle d’organisation reconnu, ou aucun.';
+            $step = $step ?? 'roles';
+        }
+
         if ($errors !== []) {
             return ['ok' => false, 'errors' => $errors, 'step' => $step];
         }
@@ -150,6 +160,7 @@ final class CommunityOnboardingValidationService
             'units' => $this->normalizeUnits($units),
             'founder_grade_id' => $founderGradeId,
             'roles_template' => $rolesTemplate,
+            'catalog_kit_code' => $kitCode,
             'grade_overrides' => $this->normalizeGradeOverrides($wizard['grade_overrides'] ?? []),
             'community_profile' => $this->normalizeCommunityProfile($wizard),
             'custom_roles' => $this->normalizeCustomRoles($customRoles),

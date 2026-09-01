@@ -1,5 +1,18 @@
 # Changelog COMSPEC SSE
 
+## 0.7.18 — 30/08/2026
+
+- SEEK : un relevé biométrique demande le kit correspondant et joue l’animation à genoux
+- Relancer Arma complètement après la mise à jour
+
+## 0.7.17 — 28/08/2026
+
+- Zeus : le nom et le prénom saisis sur un profil sont bien ceux de la personne
+
+## 0.7.16 — 28/08/2026
+
+- Resynch : plus d’incident sur la file hors-ligne
+
 ## 0.7.15 — Pack Workshop prêt à publier
 
 - Dossier de publication `publisher/@COMSPEC_SSE` : même flux que Overwatch (compiler, assembler un pack propre, envoyer)

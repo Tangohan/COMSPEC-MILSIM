@@ -29,7 +29,7 @@ public static class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.17.8";
+    private const string ExtensionVersion = "1.17.9";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -2873,6 +2873,51 @@ public static class Extension
                     token
                 );
             }
+            // Zones tactiques Athena. Args : [mapId, limit?]
+            // Lignes : id\tzone_type\tgeom_type\tcx\tcy\tradius\tthreat\tlabel\talert_on_entry\tpoly
+            if (function == "GetTacticalZones")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var limit = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]!.Trim() : "80";
+                var url = _baseUrl + "/api/atak/zones?mapId=" + Uri.EscapeDataString(mapId)
+                    + "&only_active=1&limit=" + Uri.EscapeDataString(limit);
+                return ServePollGet("GetTacticalZones:" + mapId, url, (body, code) =>
+                {
+                    if (code >= 200 && code < 300)
+                        return PollOkClipped(SimplifyTacticalZonesJson(body));
+                    try
+                    {
+                        var tid = string.IsNullOrWhiteSpace(_tenantId) ? "1" : _tenantId.Trim();
+                        var missionId = "mission_" + tid + "_map_" + mapId;
+                        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                        var fallbackUrl = _baseUrl + "/api/danger-zones?missionId=" + Uri.EscapeDataString(missionId);
+                        using var resp = SendGet(fallbackUrl, cts.Token);
+                        var fbBody = ReadContentUtf8(resp, cts.Token);
+                        var fbCode = (int)resp.StatusCode;
+                        if (fbCode >= 200 && fbCode < 300)
+                            return PollOkClipped(SimplifyLegacyDangerZonesJson(fbBody));
+                    }
+                    catch { }
+                    return PollHttpErr(code);
+                });
+            }
+            // Entrée de zone (alerte TOC). Args : [mapId, posX, posY, callsign?]
+            if (function == "CheckZonePosition" && args.Length >= 3)
+            {
+                var mapId = (args[0] ?? "1").Trim();
+                var posX = (args[1] ?? "0").Trim().Replace(',', '.');
+                var posY = (args[2] ?? "0").Trim().Replace(',', '.');
+                var byCs = args.Length > 3 ? (args[3] ?? "").Trim() : _callSign;
+                if (mapId.Length == 0) mapId = "1";
+                var steamJson = _steamUid.Length > 0
+                    ? $",\"steam_id\":\"{EscapeJson(_steamUid)}\""
+                    : "";
+                var csJson = byCs.Length > 0
+                    ? $",\"callsign\":\"{EscapeJson(byCs)}\""
+                    : "";
+                var payload = $"{{\"mapId\":{mapId},\"pos_x\":{posX},\"pos_y\":{posY}{csJson}{steamJson}}}";
+                return PostAtakJsonSync("/api/atak/zones/check-position", payload, token);
+            }
             // Ordre de mission (objectifs, LD, H). Lecture seule. Args : [mapId]
             // Lignes : P\tcode\ttitle\tstatus\th_hour\tsentence\tphase\tclock
             //          G\tid\tcode\tlabel\tkind\tx\ty\tstate
@@ -4576,6 +4621,260 @@ public static class Extension
         }
         catch { return ""; }
     }
+
+    /// <summary>
+    /// Simplifie GET /api/atak/zones pour SQF.
+    /// Lignes : id\tzone_type\tgeom_type\tcx\tcy\tradius\tthreat\tlabel\talert_on_entry\tpoly
+    /// poly = x1,y1;x2,y2;… ou -
+    /// </summary>
+    private static string SimplifyTacticalZonesJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            JsonElement zones;
+            if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                zones = doc.RootElement;
+            else if (!doc.RootElement.TryGetProperty("zones", out zones) || zones.ValueKind != JsonValueKind.Array)
+                return "";
+            var sb = new StringBuilder();
+            foreach (var el in zones.EnumerateArray())
+                AppendTacticalZoneRow(sb, el);
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
+    /// Repli GET /api/danger-zones (tableau brut) vers le même TSV que les zones ATAK.
+    /// </summary>
+    private static string SimplifyLegacyDangerZonesJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array)
+                return "";
+            var sb = new StringBuilder();
+            foreach (var el in doc.RootElement.EnumerateArray())
+                AppendLegacyDangerZoneRow(sb, el);
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    private static void AppendTacticalZoneRow(StringBuilder sb, JsonElement el)
+    {
+        var id = JsonIdCell(el);
+        if (string.IsNullOrEmpty(id)) return;
+        var zoneType = JsonStr(el, "zone_type");
+        if (zoneType.Length == 0) zoneType = "OTHER";
+        var geom = JsonStr(el, "geometry_type").ToUpperInvariant();
+        if (geom.Length == 0) geom = "CIRCLE";
+        var cx = JsonNum(el, "center_x");
+        var cy = JsonNum(el, "center_y");
+        var radius = JsonNum(el, "radius");
+        if (radius == "0") radius = JsonNum(el, "radius_m");
+        var threat = JsonStr(el, "threat_level");
+        if (threat.Length == 0) threat = "MEDIUM";
+        var label = JsonStr(el, "zone_name");
+        if (label.Length == 0) label = JsonStr(el, "label");
+        var alert = JsonBool01(el, "alert_on_entry");
+        var poly = FormatPolygonCell(el, geom, cx, cy);
+        sb.Append(TsvCell(id)).Append('\t')
+          .Append(TsvCell(zoneType)).Append('\t')
+          .Append(TsvCell(geom)).Append('\t')
+          .Append(TsvCell(cx)).Append('\t')
+          .Append(TsvCell(cy)).Append('\t')
+          .Append(TsvCell(radius)).Append('\t')
+          .Append(TsvCell(threat)).Append('\t')
+          .Append(TsvCell(label)).Append('\t')
+          .Append(TsvCell(alert)).Append('\t')
+          .Append(TsvCell(poly)).Append('\n');
+    }
+
+    private static void AppendLegacyDangerZoneRow(StringBuilder sb, JsonElement el)
+    {
+        var id = JsonIdCell(el);
+        if (string.IsNullOrEmpty(id)) return;
+        var zoneType = JsonStr(el, "zone_type");
+        if (zoneType.Length == 0) zoneType = "RESTRICTED_AREA";
+        var geom = JsonStr(el, "geometry_type").ToUpperInvariant();
+        if (geom.Length == 0) geom = "CIRCLE";
+        var cx = "0";
+        var cy = "0";
+        var radius = "0";
+        var poly = "-";
+        if (el.TryGetProperty("geometry_json", out var geoEl))
+        {
+            try
+            {
+                JsonElement geo = geoEl;
+                if (geoEl.ValueKind == JsonValueKind.String)
+                {
+                    var raw = geoEl.GetString() ?? "";
+                    if (raw.Length > 0)
+                    {
+                        using var geoDoc = JsonDocument.Parse(raw);
+                        geo = geoDoc.RootElement.Clone();
+                    }
+                }
+                if (geo.ValueKind == JsonValueKind.Object)
+                {
+                    if (geo.TryGetProperty("center", out var center) && center.ValueKind == JsonValueKind.Array)
+                    {
+                        var i = 0;
+                        foreach (var n in center.EnumerateArray())
+                        {
+                            var s = n.ValueKind == JsonValueKind.Number
+                                ? n.GetDouble().ToString(CultureInfo.InvariantCulture)
+                                : (n.GetString() ?? "0");
+                            if (i == 0) cx = s;
+                            if (i == 1) cy = s;
+                            i++;
+                        }
+                    }
+                    if (geo.TryGetProperty("radius", out var rEl))
+                    {
+                        radius = rEl.ValueKind == JsonValueKind.Number
+                            ? rEl.GetDouble().ToString(CultureInfo.InvariantCulture)
+                            : (rEl.GetString() ?? "0");
+                    }
+                    if (geo.TryGetProperty("points", out var pts) && pts.ValueKind == JsonValueKind.Array)
+                        poly = FlattenPointsArray(pts);
+                }
+            }
+            catch { }
+        }
+        if (cx == "0") cx = JsonNum(el, "center_x");
+        if (cy == "0") cy = JsonNum(el, "center_y");
+        if (radius == "0") radius = JsonNum(el, "radius");
+        var threat = JsonStr(el, "threat_level");
+        if (threat.Length == 0) threat = "MEDIUM";
+        var label = JsonStr(el, "label");
+        if (label.Length == 0) label = JsonStr(el, "zone_name");
+        var alert = zoneType is "DANGER_ZONE" or "NO_GO_AREA" or "RESTRICTED_AREA" ? "1" : JsonBool01(el, "alert_on_entry");
+        sb.Append(TsvCell(id)).Append('\t')
+          .Append(TsvCell(zoneType)).Append('\t')
+          .Append(TsvCell(geom)).Append('\t')
+          .Append(TsvCell(cx)).Append('\t')
+          .Append(TsvCell(cy)).Append('\t')
+          .Append(TsvCell(radius)).Append('\t')
+          .Append(TsvCell(threat)).Append('\t')
+          .Append(TsvCell(label)).Append('\t')
+          .Append(TsvCell(alert)).Append('\t')
+          .Append(TsvCell(poly)).Append('\n');
+    }
+
+    private static string FormatPolygonCell(JsonElement el, string geom, string cx, string cy)
+    {
+        if (el.TryGetProperty("polygon_points", out var pts) && pts.ValueKind == JsonValueKind.Array)
+        {
+            var flat = FlattenPointsArray(pts);
+            if (flat != "-") return flat;
+        }
+        if (geom is "RECTANGLE" or "RECT")
+        {
+            var w = ParseInv(JsonNum(el, "width"));
+            var h = ParseInv(JsonNum(el, "height"));
+            var x = ParseInv(cx);
+            var y = ParseInv(cy);
+            if (w > 0 && h > 0)
+            {
+                var hw = w / 2.0;
+                var hh = h / 2.0;
+                return string.Join(";", new[]
+                {
+                    Inv(x - hw) + "," + Inv(y - hh),
+                    Inv(x + hw) + "," + Inv(y - hh),
+                    Inv(x + hw) + "," + Inv(y + hh),
+                    Inv(x - hw) + "," + Inv(y + hh)
+                });
+            }
+        }
+        return "-";
+    }
+
+    private static string FlattenPointsArray(JsonElement pts)
+    {
+        var parts = new List<string>();
+        foreach (var p in pts.EnumerateArray())
+        {
+            if (p.ValueKind == JsonValueKind.Array)
+            {
+                double px = 0, py = 0;
+                var i = 0;
+                foreach (var n in p.EnumerateArray())
+                {
+                    var v = n.ValueKind == JsonValueKind.Number ? n.GetDouble() : ParseInv(n.GetString() ?? "0");
+                    if (i == 0) px = v;
+                    if (i == 1) py = v;
+                    i++;
+                }
+                if (i >= 2) parts.Add(Inv(px) + "," + Inv(py));
+            }
+        }
+        return parts.Count >= 3 ? string.Join(";", parts) : "-";
+    }
+
+    private static string TsvCell(string s)
+    {
+        var c = (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+        return c.Length == 0 ? "-" : c;
+    }
+
+    private static string JsonStr(JsonElement el, string name)
+    {
+        if (!el.TryGetProperty(name, out var p)) return "";
+        if (p.ValueKind == JsonValueKind.String) return p.GetString() ?? "";
+        if (p.ValueKind == JsonValueKind.Number) return p.GetRawText();
+        if (p.ValueKind == JsonValueKind.True) return "1";
+        if (p.ValueKind == JsonValueKind.False) return "0";
+        return "";
+    }
+
+    private static string JsonNum(JsonElement el, string name)
+    {
+        if (!el.TryGetProperty(name, out var p)) return "0";
+        if (p.ValueKind == JsonValueKind.Number)
+            return p.GetDouble().ToString(CultureInfo.InvariantCulture);
+        if (p.ValueKind == JsonValueKind.String)
+        {
+            var s = p.GetString() ?? "0";
+            return s.Length == 0 ? "0" : s.Replace(',', '.');
+        }
+        return "0";
+    }
+
+    private static string JsonIdCell(JsonElement el)
+    {
+        if (!el.TryGetProperty("id", out var i)) return "";
+        if (i.ValueKind == JsonValueKind.Number) return i.GetInt64().ToString(CultureInfo.InvariantCulture);
+        return i.GetString() ?? "";
+    }
+
+    private static string JsonBool01(JsonElement el, string name)
+    {
+        if (!el.TryGetProperty(name, out var p)) return "0";
+        if (p.ValueKind == JsonValueKind.True) return "1";
+        if (p.ValueKind == JsonValueKind.False) return "0";
+        if (p.ValueKind == JsonValueKind.Number) return p.GetInt32() != 0 ? "1" : "0";
+        if (p.ValueKind == JsonValueKind.String)
+        {
+            var s = p.GetString() ?? "";
+            return (s == "1" || s.Equals("true", StringComparison.OrdinalIgnoreCase)) ? "1" : "0";
+        }
+        return "0";
+    }
+
+    private static double ParseInv(string s)
+    {
+        if (double.TryParse((s ?? "0").Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var v))
+            return v;
+        return 0;
+    }
+
+    private static string Inv(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Ordres de déplacement IA : id, type, cible, statut, coordonnées (pas le payload tronqué).

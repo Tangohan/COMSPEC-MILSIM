@@ -6,7 +6,7 @@ $canTba = !empty($canTba);
 $pref = (string) ($preferredPortal ?? '');
 $prefLabel = match ($pref) {
     'tba' => 'Tableau de bord administratif',
-    'jnet' => 'JNET Extranet',
+    'jnet' => 'Accueil Athena',
     default => 'Aucun (choix à chaque connexion)',
 };
 ?>

@@ -49,6 +49,8 @@ if (!$gate->allows('admin.system')) {
                 <a href="<?= url('admin/system/storage') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800">Espace disque et historiques</a>
                 <a href="<?= url('admin/maintenance') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Fenêtre de maintenance</a>
                 <a href="<?= url('admin/system/cron') ?>" class="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100">Tâches automatiques</a>
+                <a href="<?= url('admin/system/demo-nda') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Accès démo du site</a>
+                <a href="<?= url('admin/newsletter') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Lettre d’information</a>
                 <a href="<?= url('admin/ops-center') ?>" class="inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-xs font-semibold text-indigo-900 hover:bg-indigo-100">Ops Center rôles</a>
                 <a href="<?= url('admin/command-center') ?>" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs font-semibold text-rose-900 hover:bg-rose-100">Command Center (undo)</a>
                 <a href="<?= url('admin/analytics') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Indicateurs transverses</a>
@@ -63,6 +65,8 @@ if (!$gate->allows('admin.system')) {
                 <a href="<?= url('admin/tenants') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Annuaire des communautés</a>
                 <a href="<?= url('admin/system/deployment') ?>" class="inline-flex items-center justify-center rounded-lg bg-amber-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-amber-700">Tableau des publications</a>
                 <a href="<?= url('admin/system/deployment/communities') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Communautés de test</a>
+                <a href="<?= url('admin/system/updates') ?>" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-white px-3 py-2.5 text-xs font-semibold text-amber-950 hover:bg-amber-50">Mises à jour plateforme</a>
+                <a href="<?= url('admin/system/advanced-fiche-edit') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Édition avancée de fiche</a>
             </div>
         </div>
     </div>

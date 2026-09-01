@@ -33,7 +33,7 @@ final class SseFieldNoteThemeTaxonomyAssetTest extends TestCase
         self::assertStringContainsString('idc = 9676', $contents);
         self::assertStringContainsString('[16] call comspec_overwatch_connect_fnc_intelNoteToggleTheme', $contents);
         self::assertStringContainsString('idc = 9658', $contents);
-        self::assertStringContainsString('1.4.94', (string) file_get_contents(
+        self::assertStringContainsString('1.4.95', (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp'
         ));
     }

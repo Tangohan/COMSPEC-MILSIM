@@ -9,6 +9,14 @@ Journal développeur (style Bohemia) : [SPOTREP #00001](docs/dev/SPOTREP-00001.m
 
 ---
 
+## [1.5.48] / Overwatch 1.4.95 / liaison 1.17.9 — 2026-08-30
+
+### Pack Overwatch 1.4.95 — guidage GPS + zones ATAK
+
+Itinéraire posé au poste : points numérotés et trait visibles en jeu. Zones tactiques (poser, danger, ralliement) synchronisées ; alerte à l’entrée d’une zone dangereuse. Relancer Arma complètement.
+
+---
+
 ## [1.5.34] / Overwatch 1.4.67 / extension 2.0.14 — 2026-08-24
 
 ### Corrigé — météo en erreur rouge au spawn

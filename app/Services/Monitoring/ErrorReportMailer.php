@@ -62,7 +62,7 @@ final class ErrorReportMailer
             return;
         }
 
-        $to = $this->resolveAlertRecipient();
+        $to = self::resolveAlertRecipient();
         if ($to === null) {
             $this->auditSkip('no_recipient', $kind, $message, $file, $line);
 
@@ -188,7 +188,7 @@ final class ErrorReportMailer
     /**
      * Destinataire : ERROR_ALERT_EMAIL, sinon premier SECURITY_ALERT_EMAILS.
      */
-    private function resolveAlertRecipient(): ?string
+    public static function resolveAlertRecipient(): ?string
     {
         $primary = trim((string) env('ERROR_ALERT_EMAIL', ''));
         if ($primary !== '' && filter_var($primary, FILTER_VALIDATE_EMAIL)) {
@@ -204,6 +204,134 @@ final class ErrorReportMailer
         }
 
         return null;
+    }
+
+    /**
+     * Alerte exploitation : une communauté vient d’être créée (même boîte que les incidents 500).
+     *
+     * @param array{
+     *   tenant_id: int,
+     *   name: string,
+     *   slug: string,
+     *   community_code?: string,
+     *   plan_slug?: string,
+     *   tenant_type?: string,
+     *   creator_user_id?: int
+     * } $info
+     */
+    public function notifyCommunityCreated(array $info): void
+    {
+        $to = self::resolveAlertRecipient();
+        if ($to === null) {
+            $this->auditSkip('no_recipient', 'community_created', (string) ($info['name'] ?? ''), __FILE__, __LINE__);
+
+            return;
+        }
+
+        $tenantId = (int) ($info['tenant_id'] ?? 0);
+        $name = trim((string) ($info['name'] ?? ''));
+        if ($name === '') {
+            $name = 'Communauté sans nom';
+        }
+        $slug = trim((string) ($info['slug'] ?? ''));
+        $code = trim((string) ($info['community_code'] ?? ''));
+        $planSlug = strtolower(trim((string) ($info['plan_slug'] ?? '')));
+        $tenantType = trim((string) ($info['tenant_type'] ?? ''));
+        $creatorId = (int) ($info['creator_user_id'] ?? 0);
+
+        $founderName = 'Non renseigné';
+        $founderEmail = '';
+        if ($creatorId > 0) {
+            try {
+                $user = (new \App\Repositories\UserRepository())->findById($creatorId);
+                if (is_array($user)) {
+                    $dn = trim((string) ($user['display_name'] ?? ''));
+                    $em = trim((string) ($user['email'] ?? ''));
+                    $founderName = $dn !== '' ? $dn : ($em !== '' ? $em : 'Un membre');
+                    $founderEmail = $em;
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        $planLabel = match ($planSlug) {
+            'standard' => 'Standard',
+            'pro' => 'Pro',
+            'pro_plus' => 'Pro+',
+            'free' => 'Gratuit',
+            default => $planSlug !== '' ? $planSlug : 'Non précisée',
+        };
+        $typeLabel = 'Complet';
+        try {
+            if ($tenantType !== '') {
+                $typeLabel = \App\Services\Community\TenantTypeConfig::label($tenantType);
+            }
+        } catch (\Throwable) {
+        }
+
+        $publicUrl = $slug !== '' ? url('c/' . $slug) : url('communities');
+        $adminUrl = $tenantId > 0 ? url('admin/tenants/' . $tenantId . '/edit') : url('admin/tenants');
+        $when = date('d/m/Y H:i');
+
+        $brand = function_exists('email_brand_name') ? email_brand_name() : 'Application';
+        $subject = '[' . $brand . '] Nouvelle communauté — ' . $name;
+
+        $textLines = [
+            'Une nouvelle communauté vient d’être créée sur la plateforme.',
+            '',
+            'Nom : ' . $name,
+            'Page publique : ' . $publicUrl,
+            $code !== '' ? 'Code communauté : ' . $code : null,
+            'Formule : ' . $planLabel,
+            'Profil d’outils : ' . $typeLabel,
+            'Créée le : ' . $when,
+            '',
+            'Fondateur : ' . $founderName,
+            $founderEmail !== '' ? 'Adresse du fondateur : ' . $founderEmail : null,
+            '',
+            'Fiche d’administration plateforme : ' . $adminUrl,
+            '',
+            'Ce message est envoyé à la même boîte que les incidents techniques.',
+        ];
+        $text = implode("\n", array_values(array_filter($textLines, static fn ($line): bool => $line !== null)));
+
+        $html = $this->buildCommunityCreatedHtml(
+            $name,
+            $publicUrl,
+            $adminUrl,
+            $code,
+            $planLabel,
+            $typeLabel,
+            $when,
+            $founderName,
+            $founderEmail
+        );
+
+        $this->persistIncidentCopy($subject, $text, 'community_created', '/communities/create');
+
+        try {
+            $mailer = \App\Core\Container::get(\App\Services\EmailService::class);
+            $ok = $mailer->send(
+                \App\Services\Email\EmailEvents::PLATFORM_NEW_COMMUNITY,
+                $to,
+                $subject,
+                $html,
+                $text,
+                $tenantId > 0 ? $tenantId : null,
+                null,
+                ['kind' => 'community_created', 'name' => $name],
+                null,
+                true
+            );
+            if (!$ok) {
+                $err = $mailer->getLastSendError() ?? 'échec transport';
+                $this->auditSkip('send_failed:' . $err, 'community_created', $name, __FILE__, __LINE__, $to);
+                $this->fallbackPhpMail($to, $subject, $text);
+            }
+        } catch (\Throwable $mailEx) {
+            $this->auditSkip('mailer_exception:' . $mailEx->getMessage(), 'community_created', $name, __FILE__, __LINE__, $to);
+            $this->fallbackPhpMail($to, $subject, $text);
+        }
     }
 
     private function persistIncidentCopy(string $subject, string $text, string $kind, string $path): void
@@ -479,6 +607,62 @@ final class ErrorReportMailer
                 'accent' => 'rose',
                 'footer_note' => 'Message généré automatiquement — ne répondez pas à cette adresse. '
                     . 'Pour la maintenance, utilisez vos canaux internes ou la documentation d’exploitation.',
+            ]
+        );
+    }
+
+    private function buildCommunityCreatedHtml(
+        string $name,
+        string $publicUrl,
+        string $adminUrl,
+        string $code,
+        string $planLabel,
+        string $typeLabel,
+        string $when,
+        string $founderName,
+        string $founderEmail
+    ): string {
+        $h = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        if (!function_exists('email_html_layout')) {
+            return '<pre>' . $h($name . "\n" . $publicUrl) . '</pre>';
+        }
+
+        $rows = [
+            ['Nom', $h($name)],
+            ['Page publique', '<a href="' . $h($publicUrl) . '" style="color:#059669;font-weight:700;">' . $h($publicUrl) . '</a>'],
+        ];
+        if ($code !== '') {
+            $rows[] = ['Code communauté', $h($code)];
+        }
+        $rows[] = ['Formule', $h($planLabel)];
+        $rows[] = ['Profil d’outils', $h($typeLabel)];
+        $rows[] = ['Créée le', $h($when)];
+        $rows[] = ['Fondateur', $h($founderName)];
+        if ($founderEmail !== '') {
+            $rows[] = ['Adresse du fondateur', $h($founderEmail)];
+        }
+        $rows[] = ['Administration plateforme', '<a href="' . $h($adminUrl) . '" style="color:#059669;font-weight:700;">Ouvrir la fiche</a>'];
+
+        $table = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;font-size:14px;color:#334155;">';
+        foreach ($rows as [$label, $val]) {
+            $table .= '<tr>'
+                . '<td style="padding:10px 12px 10px 0;vertical-align:top;width:38%;border-bottom:1px solid #e2e8f0;color:#64748b;font-weight:600;">' . $h($label) . '</td>'
+                . '<td style="padding:10px 0;vertical-align:top;border-bottom:1px solid #e2e8f0;word-break:break-word;">' . $val . '</td>'
+                . '</tr>';
+        }
+        $table .= '</table>';
+
+        $intro = '<p style="margin:0 0 14px;">Bonjour,</p>'
+            . '<p style="margin:0 0 18px;">Une <strong>nouvelle communauté</strong> vient d’être créée. Ce message part vers la même boîte que les incidents techniques, pour le suivi d’exploitation.</p>'
+            . $table;
+
+        return email_html_layout(
+            'Nouvelle communauté — ' . $name,
+            'Nouvelle communauté',
+            $intro,
+            [
+                'accent' => 'emerald',
+                'footer_note' => 'Message généré automatiquement — ne répondez pas à cette adresse.',
             ]
         );
     }

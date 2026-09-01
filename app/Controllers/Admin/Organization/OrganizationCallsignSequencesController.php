@@ -22,7 +22,7 @@ final class OrganizationCallsignSequencesController
     ) {
         $this->authService ??= Container::get(AuthService::class);
         $this->callsignService ??= Container::get(CallsignSequenceService::class);
-        $this->gate ??= Container::get(Gate::class);
+        $this->gate ??= Gate::getInstance();
     }
 
     public function index(Request $request, array $params = []): Response

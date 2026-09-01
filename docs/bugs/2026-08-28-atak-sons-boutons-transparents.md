@@ -28,4 +28,4 @@ Tests `AtakSoundButtonsAssetTest`. Pack Athena 1.0.56, relancer Arma, ouvrir Son
 
 ## Statut
 
-corrigé — pack jeu à reconstruire
+corrigé (pack Overwatch 1.4.95)

@@ -18,7 +18,7 @@ if ($sys || $org || $support) {
 }
 if ($sys || $org || $support) {
     $links[] = ['href' => url('back-office/ressources/modpacks'), 'label' => 'Modpacks', 'desc' => 'Packs mods de la communauté sélectionnée'];
-    $links[] = ['href' => url('back-office/ressources/atak-config'), 'label' => 'Configuration ATAK / Tacmap', 'desc' => 'Carte et paramètres tactiques pour ce tenant'];
+    $links[] = ['href' => url('back-office/ressources/atak-config'), 'label' => 'Configuration ATAK / Tacmap', 'desc' => 'Carte et paramètres tactiques pour cette communauté'];
     $links[] = ['href' => url('back-office/ressources/atak-mod-blocks'), 'label' => 'Restrictions d’accès au mod', 'desc' => 'Bloquer un Steam ou une adresse réseau côté Overwatch'];
     $links[] = ['href' => url('back-office/ressources/atak-beta'), 'label' => 'Accès anticipé Overwatch', 'desc' => 'Joueurs ayant lancé le pack bêta et accepté la note d’accès'];
     $links[] = ['href' => url('back-office/ressources/atak-mod'), 'label' => 'Mod ATAK (Overwatch)', 'desc' => 'Fichiers mod côté communauté'];
@@ -26,7 +26,7 @@ if ($sys || $org || $support) {
     $links[] = ['href' => cooperation_mission_index_url(), 'label' => 'Coopérations inter-unités', 'desc' => 'Propositions, validation mutuelle, espace commun sur le brief et coordination opérationnelle'];
 }
 if ($training) {
-    $links[] = ['href' => training_lms_admin_url(), 'label' => 'Formations (LMS)', 'desc' => 'Catalogue, inscriptions et suivi pour ce tenant'];
+    $links[] = ['href' => training_lms_admin_url(), 'label' => 'Formations (LMS)', 'desc' => 'Catalogue, inscriptions et suivi pour cette communauté'];
 }
 if ($sys || $docs || ($support && $docsView)) {
     $links[] = ['href' => url('documents/gestion'), 'label' => 'Gestion documentaire', 'desc' => 'Bibliothèque documentaire de la communauté courante'];
@@ -40,7 +40,7 @@ if ($links === []) {
     <h2 id="tenant-mod-heading" class="text-lg font-bold text-slate-900 mb-1">Raccourcis · modules de la communauté active</h2>
     <p class="text-sm text-slate-600 mb-4 max-w-3xl">
         Ces outils s’appliquent à la <strong class="font-semibold text-slate-800">communauté de votre session</strong>, pas à la plateforme entière.
-        Ce n’est <strong class="font-semibold text-slate-800">pas</strong> l’administration globale du site (rôles système, tenants, audit global — voir la section « Modules plateforme » ci-dessus lorsque vous avez ces droits).
+        Ce n’est <strong class="font-semibold text-slate-800">pas</strong> l’administration globale du site (rôles système, communautés, journal d’activité — voir la section « Modules plateforme » ci-dessus lorsque vous avez ces droits).
         Ouvrez plutôt le <strong class="font-semibold text-slate-800">back-office</strong>, rubrique <strong class="font-semibold text-slate-800">Ressources</strong>, pour retrouver ces modules avec le même périmètre.
     </p>
     <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3">

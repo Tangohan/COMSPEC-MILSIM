@@ -12,6 +12,37 @@ final class ContainerIntegrations
     public static function tryResolve(string $id): ?object
     {
         return match ($id) {
+            Gate::class => Gate::getInstance(),
+            \App\Controllers\Admin\Organization\OrganizationProgressionHubController::class => new \App\Controllers\Admin\Organization\OrganizationProgressionHubController(
+                Container::get(\App\Services\Auth\AuthService::class),
+                Gate::getInstance(),
+            ),
+            \App\Controllers\Admin\Organization\OrganizationMemberNumberController::class => new \App\Controllers\Admin\Organization\OrganizationMemberNumberController(
+                Container::get(\App\Services\Auth\AuthService::class),
+                Container::get(\App\Services\Personnel\TenantMemberNumberService::class),
+                Container::get(\App\Repositories\UserRepository::class),
+                Gate::getInstance(),
+            ),
+            \App\Controllers\Admin\Organization\OrganizationCallsignSequencesController::class => new \App\Controllers\Admin\Organization\OrganizationCallsignSequencesController(
+                Container::get(\App\Services\Auth\AuthService::class),
+                Container::get(\App\Services\Personnel\CallsignSequenceService::class),
+                Gate::getInstance(),
+            ),
+            \App\Repositories\OrganizationCatalogRepository::class => new \App\Repositories\OrganizationCatalogRepository(),
+            \App\Services\OrganizationCatalog\OrganizationCatalogService::class => new \App\Services\OrganizationCatalog\OrganizationCatalogService(
+                Container::get(\App\Repositories\OrganizationCatalogRepository::class),
+                Container::get(\App\Repositories\UnitRepository::class),
+                Container::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                Container::get(\App\Repositories\RoleRepository::class),
+                Container::get(\App\Repositories\PermissionRepository::class),
+                Container::get(\App\Services\Admin\TenantRolePermissionPresetService::class),
+                Container::get(\App\Repositories\TenantRepository::class),
+            ),
+            \App\Controllers\Admin\Organization\OrganizationCatalogController::class => new \App\Controllers\Admin\Organization\OrganizationCatalogController(
+                Container::get(\App\Services\Auth\AuthService::class),
+                Container::get(\App\Services\OrganizationCatalog\OrganizationCatalogService::class),
+                Gate::getInstance(),
+            ),
             \App\Services\Notifications\ActivityHubPresentationService::class => new \App\Services\Notifications\ActivityHubPresentationService(),
             \App\Repositories\AsyncJobRepository::class => new \App\Repositories\AsyncJobRepository(),
             \App\Repositories\TenantApiKeyRepository::class => new \App\Repositories\TenantApiKeyRepository(),

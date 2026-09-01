@@ -74,4 +74,57 @@ final class CommunityReportServiceTest extends TestCase
         self::assertFalse($result['ok']);
         self::assertSame('Le lien ciblé doit appartenir à ce site.', $result['error']);
     }
+
+    public function testOrgAnomalyIsForwardedToOrganizationManagement(): void
+    {
+        $reports = $this->createMock(ForumReportRepository::class);
+        $courses = $this->createMock(TrainingCourseRepository::class);
+        $users = $this->createMock(UserRepository::class);
+
+        $reports->expects(self::once())
+            ->method('create')
+            ->with(
+                10,
+                22,
+                null,
+                null,
+                self::stringContains('Anomalie transmise à la gestion — thème : Fiche, grade ou unité'),
+                'other',
+                self::anything(),
+                'https://milsim.test/dashboard',
+                'org_anomaly'
+            )
+            ->willReturn(612);
+
+        $service = new CommunityReportService($reports, $courses, $users);
+        $result = $service->submit(10, 22, 'org_anomaly', [
+            'help_subject' => 'fiche',
+            'reference_note' => 'grade incorrect sur la fiche',
+            'reason' => 'other',
+            'details' => 'Le grade affiché ne correspond plus à la situation actuelle du membre.',
+            'page_url' => 'https://milsim.test/dashboard',
+        ], 'milsim.test');
+
+        self::assertTrue($result['ok']);
+        self::assertSame(612, $result['report_id']);
+    }
+
+    public function testOrgAnomalyRejectsUnknownSubject(): void
+    {
+        $reports = $this->createMock(ForumReportRepository::class);
+        $courses = $this->createMock(TrainingCourseRepository::class);
+        $users = $this->createMock(UserRepository::class);
+
+        $reports->expects(self::never())->method('create');
+
+        $service = new CommunityReportService($reports, $courses, $users);
+        $result = $service->submit(10, 22, 'org_anomaly', [
+            'help_subject' => 'sql_dump',
+            'details' => 'Description suffisamment longue pour passer.',
+            'page_url' => 'https://milsim.test/dashboard',
+        ], 'milsim.test');
+
+        self::assertFalse($result['ok']);
+        self::assertSame('Indiquez de quel type d’anomalie il s’agit.', $result['error']);
+    }
 }

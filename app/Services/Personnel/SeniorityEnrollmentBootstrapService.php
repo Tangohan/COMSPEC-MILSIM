@@ -131,6 +131,49 @@ final class SeniorityEnrollmentBootstrapService
     }
 
     /**
+     * Saisie RH (Effectifs) : aligne l’ancienneté communauté sur la date d’arrivée, y compris si une période existe déjà.
+     *
+     * @return non-empty-string
+     */
+    public function alignTenureCommunityFromStaffEdit(int $tenantId, int $userId): string
+    {
+        if (!$this->seniorityRepository->schemaReady() || $tenantId < 1 || $userId < 1) {
+            return 'skipped_schema';
+        }
+        $this->tenantDefaultsService->ensureStandardPack($tenantId);
+        $defId = $this->seniorityRepository->findDefinitionIdByTenantAndCode($tenantId, 'tenure_community');
+        if ($defId === null) {
+            return 'skipped_no_definition';
+        }
+        $resolved = $this->resolveEnrollmentStartDate($tenantId, $userId, null);
+        if ($resolved === null) {
+            return 'skipped_no_date';
+        }
+        $bootstrapId = $this->seniorityRepository->findPeriodIdByRelatedType(
+            $tenantId,
+            $userId,
+            $defId,
+            self::BOOTSTRAP_RELATED_TYPE
+        );
+        if ($bootstrapId !== null) {
+            $ok = $this->seniorityRepository->updatePeriodStartDate($bootstrapId, $tenantId, $userId, $resolved);
+
+            return $ok ? 'updated' : 'unchanged';
+        }
+        $periods = $this->seniorityRepository->listPeriodsForUserAndDefinition($userId, $defId);
+        if ($periods !== []) {
+            $firstId = (int) ($periods[0]['id'] ?? 0);
+            if ($firstId > 0) {
+                $ok = $this->seniorityRepository->updatePeriodStartDate($firstId, $tenantId, $userId, $resolved);
+
+                return $ok ? 'updated' : 'unchanged';
+            }
+        }
+
+        return $this->syncTenureCommunityFromEnrollment($tenantId, $userId, null, true);
+    }
+
+    /**
      * Même logique d’affichage que la fiche personnel (profil dossier, puis extra, puis candidature acceptée, puis compte).
      */
     private function resolveEnrollmentStartDate(int $tenantId, int $userId, ?array $userRow): ?string

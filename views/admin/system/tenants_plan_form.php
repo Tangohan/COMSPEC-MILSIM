@@ -2,10 +2,26 @@
 declare(strict_types=1);
 $tenant = is_array($platformTenant ?? null) ? $platformTenant : [];
 $plans = is_array($platformSubscriptionPlans ?? null) ? $platformSubscriptionPlans : [];
+$plansError = isset($platformSubscriptionPlansError) ? (string) $platformSubscriptionPlansError : '';
 $statusLabels = is_array($platformSubscriptionStatusLabels ?? null) ? $platformSubscriptionStatusLabels : [];
+$typeOptions = is_array($platformTenantTypes ?? null) ? $platformTenantTypes : [];
+$currentType = (string) ($platformTenantCurrentType ?? 'full');
+$identityAction = (string) ($platformTenantIdentityFormAction ?? '');
+$typeAction = (string) ($platformTenantTypeFormAction ?? '');
 $formAction = (string) ($platformTenantPlanFormAction ?? '');
 $founderTrialEndsAt = isset($platformFounderTrialEndsAt) ? (string) $platformFounderTrialEndsAt : '';
 $name = (string) ($tenant['name'] ?? '');
+$slug = (string) ($tenant['slug'] ?? '');
+$communityCode = trim((string) ($tenant['community_code'] ?? ''));
+$createdAt = isset($tenant['created_at']) && $tenant['created_at'] !== null && $tenant['created_at'] !== ''
+    ? (string) $tenant['created_at']
+    : '';
+$createdLabel = '—';
+if ($createdAt !== '') {
+    $createdTs = strtotime($createdAt);
+    $createdLabel = $createdTs ? date('d/m/Y', $createdTs) : $createdAt;
+}
+$tenantId = (int) ($tenant['id'] ?? 0);
 $currentPlan = (string) ($tenant['plan_slug'] ?? 'free');
 $currentStatus = (string) ($tenant['subscription_status'] ?? 'none');
 $periodEnd = isset($tenant['subscription_current_period_end']) && $tenant['subscription_current_period_end'] !== null && $tenant['subscription_current_period_end'] !== ''
@@ -18,134 +34,202 @@ if ($founderTrialEndsAt !== '') {
     $trialTs = strtotime($founderTrialEndsAt);
     $trialActive = $trialTs !== false && $trialTs > time();
 }
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$publicUrl = $slug !== '' ? url('c/' . rawurlencode($slug)) : '';
+$usersUrl = $tenantId > 0 ? url('admin/users') . '?tenant_id=' . $tenantId : url('admin/users');
+$currentPlanLabel = $currentPlan;
+foreach ($plans as $p) {
+    if ((string) ($p['slug'] ?? '') === $currentPlan) {
+        $currentPlanLabel = (string) ($p['name'] ?? $currentPlan);
+        break;
+    }
+}
+$currentTypeLabel = (string) ($typeOptions[$currentType]['label'] ?? $currentType);
+$ok = \App\Core\Session::getFlash('success');
+$err = \App\Core\Session::getFlash('error');
 ?>
-<div class="min-h-0 flex-1 bg-slate-50">
-    <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-        <nav class="text-sm text-slate-500">
-            <a href="<?= htmlspecialchars(url('admin'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 hover:text-emerald-950">Administration plateforme</a>
-            <span class="mx-2" aria-hidden="true">/</span>
-            <a href="<?= htmlspecialchars(url('admin/tenants'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 hover:text-emerald-950">Communautés</a>
-            <span class="mx-2" aria-hidden="true">/</span>
-            <span class="text-slate-800">Formule d’accès</span>
-        </nav>
-
-        <?php $err = \App\Core\Session::getFlash('error'); ?>
-        <?php if ($err): ?>
-            <p class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900"><?= htmlspecialchars((string) $err, ENT_QUOTES, 'UTF-8') ?></p>
-        <?php endif; ?>
-
-        <header>
-            <h1 class="text-2xl font-black text-slate-900">Formule d’accès</h1>
-            <p class="mt-2 text-sm text-slate-600 leading-relaxed">
-                Choisissez le palier proposé à <strong class="font-semibold text-slate-800"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></strong>
-                et le statut d’abonnement associé. Les capacités du portail (effectifs max, modules, quotas) suivent immédiatement cette formule.
+<div class="pa">
+    <div class="pa__frame">
+        <header class="pa-hero">
+            <p class="pa-crumb">
+                <a href="<?= $h(url('admin')) ?>">Administration du site</a>
+                <span aria-hidden="true"> / </span>
+                <a href="<?= $h(url('admin/tenants')) ?>">Communautés</a>
+                <span aria-hidden="true"> / </span>
+                Fiche communauté
             </p>
+            <h1 class="pa-hero__title"><?= $h($name !== '' ? $name : 'Communauté') ?></h1>
+            <p class="pa-hero__lead">
+                Identité, profil d’outils et formule d’accès. Membres, unités et recrutement se gèrent dans le back-office de cette communauté.
+            </p>
+            <div class="pa-chips">
+                <span class="pa-pill pa-pill--slate"><?= $h($currentTypeLabel) ?></span>
+                <span class="pa-pill pa-pill--mint"><?= $h($currentPlanLabel) ?></span>
+                <span class="pa-pill pa-pill--amber"><?= $h((string) ($statusLabels[$currentStatus] ?? 'Inconnu')) ?></span>
+                <?php if ($trialActive): ?>
+                    <span class="pa-pill pa-pill--mint">Essai fondateur en cours</span>
+                <?php endif; ?>
+            </div>
+            <div class="pa-hero__actions">
+                <?php if ($publicUrl !== ''): ?>
+                    <a class="pa-btn pa-btn--solid" href="<?= $h($publicUrl) ?>" target="_blank" rel="noopener">Page publique</a>
+                <?php endif; ?>
+                <a class="pa-btn pa-btn--ghost" href="<?= $h($usersUrl) ?>">Comptes</a>
+                <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/audit')) ?>">Journal d’audit</a>
+            </div>
         </header>
 
-        <?php if ($hasStripe): ?>
-            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 leading-relaxed" role="status">
-                Cette communauté a déjà un abonnement lié au prestataire de paiement.
-                Un changement manuel peut être écrasé lors du prochain renouvellement ou événement de facturation.
-                Préférez un acompte / crédit côté prestataire si la facturation doit rester synchronisée.
-            </div>
-        <?php endif; ?>
+        <div class="pa-panel">
+            <div class="pa-narrow">
+                <?php if ($ok): ?>
+                    <p class="pa-flash pa-flash--ok"><?= $h((string) $ok) ?></p>
+                <?php endif; ?>
+                <?php if ($err): ?>
+                    <p class="pa-flash pa-flash--err"><?= $h((string) $err) ?></p>
+                <?php endif; ?>
 
-        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm text-sm">
-            <div>
-                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Formule actuelle</dt>
-                <dd class="mt-1 font-semibold text-slate-900">
-                    <?php
-                    $currentPlanLabel = $currentPlan;
-                    foreach ($plans as $p) {
-                        if ((string) ($p['slug'] ?? '') === $currentPlan) {
-                            $currentPlanLabel = (string) ($p['name'] ?? $currentPlan);
-                            break;
-                        }
-                    }
-                    echo htmlspecialchars($currentPlanLabel, ENT_QUOTES, 'UTF-8');
-                    ?>
-                </dd>
-            </div>
-            <div>
-                <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Statut actuel</dt>
-                <dd class="mt-1 font-semibold text-slate-900"><?= htmlspecialchars($statusLabels[$currentStatus] ?? 'Inconnu', ENT_QUOTES, 'UTF-8') ?></dd>
-            </div>
-            <?php if ($periodEnd !== ''): ?>
-                <div>
-                    <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Fin de période</dt>
-                    <dd class="mt-1 text-slate-800"><?= htmlspecialchars($periodEnd, ENT_QUOTES, 'UTF-8') ?></dd>
-                </div>
-            <?php endif; ?>
-            <?php if ($trialActive): ?>
-                <div>
-                    <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">Essai fondateur</dt>
-                    <dd class="mt-1 text-emerald-800 font-medium">Actif jusqu’au <?= htmlspecialchars($founderTrialEndsAt, ENT_QUOTES, 'UTF-8') ?></dd>
-                </div>
-            <?php endif; ?>
-        </dl>
-
-        <form method="post" action="<?= htmlspecialchars($formAction, ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-8">
-            <?= \App\Core\Csrf::field() ?>
-
-            <div>
-                <label for="plan_slug" class="block text-sm font-semibold text-slate-800">Formule d’accès</label>
-                <p class="mt-1 text-xs text-slate-500">Le palier détermine les modules et les plafonds disponibles pour la communauté.</p>
-                <select id="plan_slug" name="plan_slug" required class="mt-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
-                    <?php if ($plans === []): ?>
-                        <option value="">Aucune formule disponible</option>
-                    <?php else: ?>
-                        <?php foreach ($plans as $p): ?>
-                            <?php
-                            $slug = (string) ($p['slug'] ?? '');
-                            $label = (string) ($p['name'] ?? $slug);
-                            if ($slug === '') {
-                                continue;
-                            }
-                            ?>
-                            <option value="<?= htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') ?>" <?= $slug === $currentPlan ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
-                            </option>
-                        <?php endforeach; ?>
+                <dl class="pa-stats">
+                    <div class="pa-stat">
+                        <dt>Création</dt>
+                        <dd style="font-size:1rem;"><?= $h($createdLabel) ?></dd>
+                    </div>
+                    <?php if ($communityCode !== ''): ?>
+                        <div class="pa-stat">
+                            <dt>Code pour rejoindre</dt>
+                            <dd style="font-size:1rem;"><?= $h($communityCode) ?></dd>
+                        </div>
                     <?php endif; ?>
-                </select>
-            </div>
+                    <?php if ($periodEnd !== ''): ?>
+                        <div class="pa-stat">
+                            <dt>Fin de période</dt>
+                            <dd style="font-size:1rem;"><?= $h($periodEnd) ?></dd>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($trialActive): ?>
+                        <div class="pa-stat">
+                            <dt>Essai fondateur</dt>
+                            <dd style="font-size:1rem;">Jusqu’au <?= $h($founderTrialEndsAt) ?></dd>
+                        </div>
+                    <?php endif; ?>
+                </dl>
 
-            <div>
-                <label for="subscription_status" class="block text-sm font-semibold text-slate-800">Statut d’abonnement</label>
-                <p class="mt-1 text-xs text-slate-500">
-                    Pour une attribution gratuite ou de courtoisie, choisissez « Abonnement actif » ou « Sans abonnement payant » selon le cas.
-                </p>
-                <select id="subscription_status" name="subscription_status" required class="mt-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
-                    <?php foreach ($statusLabels as $value => $label): ?>
-                        <option value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?>" <?= (string) $value === $currentStatus ? 'selected' : '' ?>>
-                            <?= htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8') ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                <form id="identite" class="pa-card scroll-mt-24" method="post" action="<?= $h($identityAction) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <p class="pa-card__kicker">01 · Identité</p>
+                    <h2 class="pa-card__title">Nom et page publique</h2>
+                    <p class="pa-card__help">Changer l’adresse courte casse les anciens liens vers cette communauté.</p>
+                    <div class="pa-field">
+                        <label for="tenant_name">Nom affiché</label>
+                        <input id="tenant_name" name="tenant_name" type="text" required maxlength="255" value="<?= $h($name) ?>">
+                    </div>
+                    <div class="pa-field">
+                        <label for="tenant_slug">Adresse courte de la page publique</label>
+                        <p class="pa-hint">Lettres minuscules, chiffres et tirets, 50 caractères au plus.</p>
+                        <input id="tenant_slug" name="tenant_slug" type="text" required maxlength="50" pattern="[a-z0-9]([-a-z0-9]*[a-z0-9])?" value="<?= $h($slug) ?>">
+                    </div>
+                    <div class="pa-actions">
+                        <button type="submit" class="pa-btn pa-btn--ink">Enregistrer l’identité</button>
+                    </div>
+                </form>
 
-            <?php if ($trialActive): ?>
-                <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
-                    <label class="flex items-start gap-3 cursor-pointer">
-                        <input type="checkbox" name="end_founder_trial" value="1" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500">
+                <form id="profil" class="pa-card scroll-mt-24" method="post" action="<?= $h($typeAction) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <p class="pa-card__kicker">02 · Profil</p>
+                    <h2 class="pa-card__title">Profil d’outils</h2>
+                    <p class="pa-card__help">Le profil détermine les outils visibles pour tous les membres. Changer ou réappliquer ajuste les menus, sans effacer les données.</p>
+                    <fieldset style="border:0;margin:1rem 0 0;padding:0;">
+                        <legend class="sr-only">Profil de la communauté</legend>
+                        <?php foreach ($typeOptions as $typeKey => $typeMeta): ?>
+                            <?php
+                            $typeKey = (string) $typeKey;
+                            $isCurrent = $typeKey === $currentType;
+                            $inputId = 'tenant_type_' . preg_replace('/[^a-z0-9_-]/i', '', $typeKey);
+                            ?>
+                            <label class="pa-choice" for="<?= $h($inputId) ?>">
+                                <input id="<?= $h($inputId) ?>" type="radio" name="tenant_type" value="<?= $h($typeKey) ?>" <?= $isCurrent ? 'checked' : '' ?>>
+                                <span>
+                                    <strong><?= $h((string) ($typeMeta['label'] ?? $typeKey)) ?><?= $isCurrent ? ' · actuel' : '' ?></strong>
+                                    <em><?= $h((string) ($typeMeta['description'] ?? '')) ?></em>
+                                    <?php if (!empty($typeMeta['consequences'])): ?>
+                                        <em><?= $h((string) $typeMeta['consequences']) ?></em>
+                                    <?php endif; ?>
+                                </span>
+                            </label>
+                        <?php endforeach; ?>
+                    </fieldset>
+                    <label class="pa-choice" style="margin-top:0.85rem;">
+                        <input type="checkbox" name="confirm_type_change" value="1" required>
                         <span>
-                            <span class="block text-sm font-semibold text-slate-800">Clôturer l’essai fondateur</span>
-                            <span class="mt-1 block text-xs text-slate-600 leading-relaxed">
-                                L’essai Pro fondateur ne s’appliquera plus : seule la formule choisie ci-dessus comptera.
-                            </span>
+                            <strong>Confirmation</strong>
+                            <em>J’applique (ou réapplique) ce profil pour toute la communauté.</em>
                         </span>
                     </label>
-                </div>
-            <?php endif; ?>
+                    <div class="pa-actions">
+                        <button type="submit" class="pa-btn pa-btn--ink">Appliquer le profil</button>
+                    </div>
+                </form>
 
-            <div class="flex flex-wrap items-center gap-3 pt-2">
-                <button type="submit" class="inline-flex rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
-                    Enregistrer la formule
-                </button>
-                <a href="<?= htmlspecialchars(url('admin/tenants'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">
-                    Annuler
-                </a>
+                <section id="formule" class="pa-card scroll-mt-24">
+                    <p class="pa-card__kicker">03 · Formule</p>
+                    <h2 class="pa-card__title">Formule d’accès</h2>
+                    <p class="pa-card__help">Le palier détermine les modules et les plafonds. Le changement s’applique immédiatement.</p>
+
+                    <?php if ($plansError !== ''): ?>
+                        <p class="pa-flash pa-flash--warn" style="margin-top:1rem;"><?= $h($plansError) ?></p>
+                    <?php else: ?>
+                        <?php if ($hasStripe): ?>
+                            <p class="pa-flash pa-flash--warn" style="margin-top:1rem;">
+                                Un abonnement est déjà lié au prestataire de paiement. Un changement manuel peut être écrasé au prochain renouvellement.
+                            </p>
+                        <?php endif; ?>
+
+                        <form method="post" action="<?= $h($formAction) ?>">
+                            <?= \App\Core\Csrf::field() ?>
+                            <div class="pa-field">
+                                <label for="plan_slug">Formule d’accès</label>
+                                <select id="plan_slug" name="plan_slug" required>
+                                    <?php if ($plans === []): ?>
+                                        <option value="">Aucune formule disponible</option>
+                                    <?php else: ?>
+                                        <?php foreach ($plans as $p): ?>
+                                            <?php
+                                            $planValue = (string) ($p['slug'] ?? '');
+                                            $label = (string) ($p['name'] ?? $planValue);
+                                            if ($planValue === '') {
+                                                continue;
+                                            }
+                                            ?>
+                                            <option value="<?= $h($planValue) ?>" <?= $planValue === $currentPlan ? 'selected' : '' ?>><?= $h($label) ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div class="pa-field">
+                                <label for="subscription_status">Statut d’abonnement</label>
+                                <p class="pa-hint">Pour une attribution de courtoisie, choisissez « Abonnement actif » ou « Sans abonnement payant ».</p>
+                                <select id="subscription_status" name="subscription_status" required>
+                                    <?php foreach ($statusLabels as $value => $label): ?>
+                                        <option value="<?= $h((string) $value) ?>" <?= (string) $value === $currentStatus ? 'selected' : '' ?>><?= $h((string) $label) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <?php if ($trialActive): ?>
+                                <label class="pa-choice" style="margin-top:1rem;">
+                                    <input type="checkbox" name="end_founder_trial" value="1">
+                                    <span>
+                                        <strong>Clôturer l’essai fondateur</strong>
+                                        <em>Seule la formule choisie ci-dessus comptera ensuite.</em>
+                                    </span>
+                                </label>
+                            <?php endif; ?>
+                            <div class="pa-actions">
+                                <button type="submit" class="pa-btn pa-btn--ink">Enregistrer la formule</button>
+                                <a class="pa-btn pa-btn--line" href="<?= $h(url('admin/tenants')) ?>">Retour à l’annuaire</a>
+                            </div>
+                        </form>
+                    <?php endif; ?>
+                </section>
             </div>
-        </form>
+        </div>
     </div>
 </div>

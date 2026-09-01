@@ -196,6 +196,47 @@
     // provoquait une fermeture immédiate (clic « mort »). Fermeture via Retour,
     // Escape, ou clic hors du rail uniquement.
 
+    function openFromExternal(id) {
+      if (!id) {
+        return;
+      }
+      var desktop = window.matchMedia('(min-width: 1024px)').matches;
+      if (!desktop) {
+        var card = document.getElementById('signaler-anomalie');
+        if (card && typeof card.scrollIntoView === 'function') {
+          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        return;
+      }
+      var btn = rail.querySelector('[data-dash-rail-open="' + id + '"]');
+      if (!btn || btn.disabled) {
+        return;
+      }
+      lockCloseBriefly(500);
+      if (drillOpenId === id) {
+        return;
+      }
+      openDrill(id, btn);
+    }
+
+    document.querySelectorAll('[data-dash-rail-open-external]').forEach(function (el) {
+      el.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        openFromExternal(el.getAttribute('data-dash-rail-open-external'));
+      });
+    });
+
+    function openFromHash() {
+      var hash = (window.location.hash || '').replace(/^#/, '');
+      if (hash === 'signaler-anomalie') {
+        openFromExternal('org-anomaly');
+      }
+    }
+
+    openFromHash();
+    window.addEventListener('hashchange', openFromHash);
+
     // Back-office / pages avec data-dash-rail-autoload : ouvrir la rubrique active.
     if (rail.hasAttribute('data-dash-rail-autoload')) {
       var activeBtn = rail.querySelector('[data-dash-rail-open].is-active');

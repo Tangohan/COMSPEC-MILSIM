@@ -10,7 +10,7 @@ use App\Repositories\UserRepository;
 use App\Support\ForumReportReason;
 
 /**
- * Signalements membres hors fil de forum (formations, fiches, images, pages d’aide).
+ * Signalements membres hors fil de forum (formations, fiches, images, pages d’aide, anomalies d’organisation).
  */
 final class CommunityReportService
 {
@@ -171,6 +171,33 @@ final class CommunityReportService
                 }
             }
             $urlForDb = $selectedTargetUrl !== '' ? $selectedTargetUrl : ($pageUrl !== '' ? $pageUrl : null);
+        } elseif ($targetType === 'org_anomaly') {
+            $subject = strtolower(trim((string) ($input['help_subject'] ?? $input['anomaly_subject'] ?? '')));
+            $allowedSubjects = [
+                'fiche' => 'Fiche, grade ou unité',
+                'compte' => 'Compte, connexion ou droits',
+                'planning' => 'Planning, manœuvres ou événements',
+                'formation' => 'Formations',
+                'documents' => 'Documents',
+                'atak' => 'Carte et liaisons',
+                'acces' => 'Accès à un espace',
+                'autre' => 'Autre',
+            ];
+            if (!isset($allowedSubjects[$subject])) {
+                return ['ok' => false, 'error' => 'Indiquez de quel type d’anomalie il s’agit.'];
+            }
+            if (mb_strlen($details) < 10) {
+                return ['ok' => false, 'error' => 'Décrivez l’anomalie en quelques phrases.'];
+            }
+            $ref = trim((string) ($input['reference_note'] ?? ''));
+            if (strlen($ref) > 500) {
+                return ['ok' => false, 'error' => 'Le repère indiqué est trop long (500 caractères maximum).'];
+            }
+            $reasonPrefix = 'Anomalie transmise à la gestion — thème : ' . $allowedSubjects[$subject];
+            if ($ref !== '') {
+                $reasonPrefix .= "\nRepère : " . $ref;
+            }
+            $urlForDb = $pageUrl !== '' ? $pageUrl : null;
         } else {
             return ['ok' => false, 'error' => 'Type de signalement non pris en charge.'];
         }

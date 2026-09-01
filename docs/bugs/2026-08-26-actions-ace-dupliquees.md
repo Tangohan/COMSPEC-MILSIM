@@ -52,4 +52,4 @@ Les libellés photo / relais / carte d’autres packs (cTab, bibliothèque photo
 
 ## Statut
 
-corrigé à rebuild (pack Overwatch 1.4.86)
+corrigé (pack Overwatch 1.4.95)

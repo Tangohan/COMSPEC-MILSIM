@@ -23,6 +23,13 @@ final class AuditAction
     public const TENANT_CREATED = 'tenant.created';
     public const TENANT_SETUP_COMPLETED = 'tenant.setup_completed';
 
+    public const ORGANIZATION_CATALOG_APPLIED = 'organization.catalog.applied';
+    public const ORGANIZATION_CATALOG_SNAPSHOT = 'organization.catalog.snapshot';
+    public const ORGANIZATION_CATALOG_RENAMED = 'organization.catalog.renamed';
+    public const ORGANIZATION_CATALOG_REFRESHED = 'organization.catalog.refreshed';
+    public const ORGANIZATION_CATALOG_ARCHIVED = 'organization.catalog.archived';
+    public const ORGANIZATION_CATALOG_RESTORED = 'organization.catalog.restored';
+
     public const CONFIGURATION_UPDATE_SEEN = 'configuration_update.seen';
     public const CONFIGURATION_UPDATE_STARTED = 'configuration_update.started';
     public const CONFIGURATION_UPDATE_COMPLETED = 'configuration_update.completed';
@@ -68,6 +75,12 @@ final class AuditAction
 
     /** Affectation manuelle d’une formule à une communauté (opérateur plateforme). */
     public const TENANT_PLAN_ASSIGNED = 'platform.tenant_plan_assigned';
+
+    /** Identité d’une communauté (nom, adresse publique) depuis l’administration du site. */
+    public const TENANT_IDENTITY_UPDATED = 'platform.tenant_identity_updated';
+
+    /** Profil d’outils d’une communauté (Complet / Effectifs / ATAK) depuis l’administration du site. */
+    public const TENANT_TYPE_ASSIGNED = 'platform.tenant_type_assigned';
 
     public const DEPLOYMENT_MODULE_CREATED = 'deployment.module_created';
     public const DEPLOYMENT_MODULE_UPDATED = 'deployment.module_updated';

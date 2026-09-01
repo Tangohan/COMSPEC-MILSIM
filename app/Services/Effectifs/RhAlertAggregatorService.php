@@ -96,8 +96,8 @@ final class RhAlertAggregatorService
         $vacantBillets = $this->countVacantBillets($tenantId);
         $items[] = [
             'id' => 'vacant_billets',
-            'severity' => 'ORBAT',
-            'label' => 'Poste / billet sous-pourvu',
+            'severity' => 'Organigramme',
+            'label' => 'Poste sous-pourvu',
             'count' => $vacantBillets,
             'href' => effectifs_workspace_url('alertes'),
             'tone' => $vacantBillets > 0 ? 'warn' : 'ok',

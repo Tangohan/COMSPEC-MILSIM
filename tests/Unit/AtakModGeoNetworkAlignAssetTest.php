@@ -58,6 +58,8 @@ final class AtakModGeoNetworkAlignAssetTest extends TestCase
         self::assertStringContainsString('GetWaypoints', $gps);
         self::assertStringContainsString('MarkWaypointReached', $gps);
         self::assertStringContainsString('gps_navigation', $gps);
+        self::assertStringContainsString('count _cols) >= 8', $gps);
+        self::assertStringContainsString('COMSPEC_GPS_WP_', $gps);
         self::assertStringContainsString('pollGpsNavigation', $loops);
         self::assertStringContainsString('eta_seconds', $pos);
         self::assertStringContainsString('distance_to_destination_m', $pos);

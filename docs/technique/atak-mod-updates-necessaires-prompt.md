@@ -47,14 +47,14 @@ Références obligatoires avant de coder :
 
 ## Priorités d’exécution
 
-### P0 — Rebuild et publication cohérente
+### P0 — Rebuild et publication cohérente ✅
 
 1. Vérifier versions dans `Sources/.../connect/config.cpp` (et addons liés) vs `mod.cpp` / hub.
 2. Rebuild : `mod/UptoDate/build_mod.bat` puis extension `COMSPECExtension` ; packager avec `workshop-pack.ps1` si le flux habituel le demande.
-3. Mettre à jour `mod/UptoDate/@COMSPECOverwatch/CHANGELOG.md` (et miroir docs pack) pour couvrir **1.4.87 → version cible** en langage opérateur (pas de jargon de fichiers).
-4. Critère : un joueur qui charge le nouveau pack voit la version attendue ; les bugs « pack à reconstruire » listés dans `docs/bugs/` passent en « corrigé (pack publié) » ou équivalent.
+3. Mettre à jour `mod/UptoDate/@COMSPECOverwatch/CHANGELOG.md` (et miroir docs pack) pour couvrir **1.4.87 → 1.4.95** en langage opérateur (pas de jargon de fichiers).
+4. Critère : un joueur qui charge le nouveau pack voit **1.4.95** ; les bugs « pack à reconstruire » listés dans `docs/bugs/` passent en « corrigé (pack Overwatch 1.4.95) ».
 
-### P1 — Guidage GPS visible (marqueurs numérotés + itinéraire)
+### P1 — Guidage GPS visible (marqueurs numérotés + itinéraire) ✅
 
 **Contrat API (déjà livré portail)**  
 - `GET /api/atak/waypoints?mapId=&reached=0`  
@@ -83,7 +83,7 @@ Lignes `GetWaypoints` :
 - `POST /api/atak/position` continue d’embarquer `eta_seconds`, `distance_to_destination_m`, `active_route_id`, `active_waypoint_id` quand un WP est actif.  
 - Aucune erreur SQF si la 8ᵉ colonne `sequence` est absente (défaut = ordre de réception).
 
-### P2 — Zones tactiques Athena (`/api/atak/zones`)
+### P2 — Zones tactiques Athena (`/api/atak/zones`) ✅
 
 **Contrat**
 
@@ -105,7 +105,7 @@ Lignes `GetWaypoints` :
 - Entrée dans la zone → alerte locale (comportement déjà prévu par `fn_warnDangerZoneEntry`).  
 - Pas de double application avec une zone roleplay du même polygone.
 
-### P3 — Qualité C2 / relief (suite align geo)
+### P3 — Qualité C2 / relief (suite align geo) ✅
 
 1. `platform` / `affiliation` stables pour `atak-c2-bridge.js` :  
    `FIXED_WING` → AIR ; APC/IFV/TRUCK → VEHICLE ; affiliation normalisée `friend|hostile|neutral|unknown`.

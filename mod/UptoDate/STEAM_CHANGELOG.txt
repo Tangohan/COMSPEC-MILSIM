@@ -1,3 +1,77 @@
+================================================================================
+NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
+================================================================================
+
+[h1]COMSPEC Overwatch 1.4.95[/h1]
+[b]30/08/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
+
+[h2]Guidage GPS et zones du poste[/h2]
+[list]
+[*] Un itinéraire tracé au poste apparaît en jeu : points numérotés et trait d’itinéraire
+[*] En s’approchant d’un point, le poste le marque atteint, le marqueur passe en gris, une annonce le confirme
+[*] Les zones posées au poste (poser, largage, danger, ralliement…) se voient en jeu
+[*] Entrer dans une zone dangereuse déclenche une alerte locale ; une zone de poser n’applique pas les effets radio
+[/list]
+
+[h2]Correctifs déjà prêts, publiés avec ce pack[/h2]
+[list]
+[*] PANIC : un opérateur inconscient ou hors combat apparaît dans la liste d’alerte, avec sa position
+[*] SEEK : relevé biométrique avec le kit correspondant et animation à genoux ; page Contexte lisible
+[*] Zeus : le nom et le prénom saisis sur un profil SSE sont bien ceux de la personne
+[*] Téléphone ATAK : Accepter / Refuser restent visibles ; écran Sons lisible ; Vibrer lève l’écran « liaison perdue » simulé
+[*] Photo de visage SEEK : part sur la fiche
+[*] Lieux, routes et suivi d’itinéraire actif vers le poste
+[*] Tenues du poste depuis l’arsenal ACE
+[/list]
+
+================================================================================
+HISTORIQUE (fiche Workshop / archive)
+================================================================================
+
+COMSPEC Overwatch 1.4.95 / Athena ATAK 1.5.48 / liaison 1.17.9 — 30/08/2026
+
+Guidage GPS et zones du poste
+
+• Un itinéraire tracé au poste apparaît en jeu : points numérotés et trait d’itinéraire
+• En s’approchant d’un point, le poste le marque atteint, le marqueur passe en gris, une annonce le confirme
+• Les zones posées au poste (poser, largage, danger, ralliement…) se voient en jeu
+• Entrer dans une zone dangereuse déclenche une alerte locale ; une zone de poser n’applique pas les effets radio
+• Relier le compte, recharger le pack, relancer Arma complètement
+
+COMSPEC Overwatch 1.4.94 / Athena ATAK 1.5.48 / liaison 1.17.8 — 28/08/2026
+
+• PANIC : un opérateur inconscient ou hors combat apparaît dans la liste d’alerte, avec sa position
+
+COMSPEC Overwatch 1.4.93 / Athena ATAK 1.5.48 / liaison 1.17.8 — 28/08/2026
+
+• SEEK : un relevé biométrique demande le kit correspondant et joue l’animation à genoux
+
+COMSPEC Overwatch 1.4.92 / Athena ATAK 1.5.48 / liaison 1.17.8 — 28/08/2026
+
+• SEEK : la page Contexte se lit à bout de bras (textes et champs plus grands)
+
+COMSPEC Overwatch 1.4.91 / Athena ATAK 1.5.48 / liaison 1.17.8 — 28/08/2026
+
+• Zeus : le nom et le prénom saisis sur un profil SSE sont bien ceux de la personne, plus un nom inventé
+
+COMSPEC Overwatch 1.4.90 / Athena ATAK 1.5.48 / liaison 1.17.8 — 28/08/2026
+
+• Téléphone ATAK : Accepter et Refuser restent visibles sur un ordre remis ; les textes Athena se lisent à nouveau
+• Écran Sons : les boutons ont retrouvé un fond lisible
+• Vibrer depuis le poste lève l’écran « liaison perdue » simulé
+
+COMSPEC Overwatch 1.4.89 / Athena ATAK 1.5.48 / liaison 1.17.8 — 27/08/2026
+
+• La photo de visage SEEK part sur la fiche, plus vers le canal reconnaissance
+
+COMSPEC Overwatch 1.4.88 / Athena ATAK 1.5.48 / liaison 1.17.8 — 26/08/2026
+
+• Lieux, routes et navigation GPS du poste : le jeu remonte les villes et le réseau, et suit l’itinéraire actif
+
+COMSPEC Overwatch 1.4.87 / Athena ATAK 1.5.48 / liaison 1.17.7 — 26/08/2026
+
+• Wardrobes ACE Arsenal : les tenues du poste se poussent et se tirent depuis le menu d’arsenal
+
 COMSPEC Overwatch 1.4.50 / extension 2.0.10 — 23/08/2026
 
 Correctifs — lancement et signalement
@@ -37,93 +111,4 @@ Médical ACE / KAT, carte web, photos recon
 • Détections médicales auto retirées quand l’opérateur est hors liaison
 • Correctifs upload photos, marqueurs web, scroll page statut ATAK
 
-COMSPEC Overwatch 1.4.7 — 29/07/2026
-
-Correctif — icônes bureau ATAK et bouton Tester Sons
-
-• Icônes bureau : superposition corrigée (Sons et Photos Athena avaient le même xOff)
-• Libellés centrés sous chaque icône (plus de décalage ni chevauchement)
-• Bouton « Tester » de l'app Sons : joue maintenant directement le son (contournement du blocage dialog cTab)
-
-COMSPEC Overwatch 1.4.6 — 29/07/2026
-
-Correctif — messages web → chat groupe in-game
-
-• Les messages envoyés depuis le portail web (tchat groupe) s'affichent maintenant en jeu via systemChat
-• Correction charabia : les messages lus par le serveur de jeu ne subissaient pas le chiffrement intel (aucun certificat requis côté serveur)
-
-COMSPEC Overwatch 1.4.5 — 29/07/2026
-
-Correctif critique — zones brouillage / intensité / casse
-
-• Les zones Zeus (brouilleur, interférence, dégradé, sans couverture) appliquent enfin leurs effets
-• Intensité : perte de paquets, coupures, latence et effets visuels proportionnels
-• Brouilleur fort : coupures intermittentes + gel terminal (« casse »)
-• Correction stop effets PP + activation auto du mode roleplay à la pose de zone
-
-COMSPEC Overwatch 1.4.4 — 29/07/2026
-
-Correctif — manifeste de vol
-
-• Le journal Athena affiche l’indicatif réel (ex. N-10) au lieu de « Unknown »
-• À pied : plus de modèle fantassin (« Artilleur GMG ») — « Déclaration sol » + champs modifiables
-• Envoi JSON robuste (hashmap) + normalisation côté extension
-
-COMSPEC Overwatch 1.4.3 / Athena 1.0.16 — 29/07/2026
-
-Correctif — layout ATAK « _fade » indéfini
-
-• Plus d’erreur SQF à l’ouverture du menu ATAK (fn_ATAK_Check_Layout)
-• Rechargement forcé de la fonction au démarrage (évite le cache Arma / BCE)
-• Quitter complètement Arma (pas seulement la mission) après mise à jour
-
-Correctif — modules zones roleplay (Zeus / Eden)
-
-• Plus d’erreur SQF « Type Chaîne, Objet attendu » sur fn_moduleApplyRoleplayZone
-• Cause : appel module avec un libellé d’événement (chaîne) en premier argument au lieu de l’objet logique
-• Entrée souple : logic seul, [logic, unités, activé], ou [événement, logic, …]
-
-COMSPEC Overwatch 1.4.2 — 29/07/2026
-
-Correctif — État ATAK vide
-
-• L’app État ATAK affiche de nouveau latence / liaison / certificats (plus d’écran noir)
-• Cause : BCE expose la page « AtakStatus » alors que le refresh n’acceptait que « COMSPEC_ATAK_Status »
-
-Correctif critique — messagerie TOC → jeu
-
-• Les messages envoyés depuis ATAK web (tchat) arrivent de nouveau dans l’inbox Athena en jeu
-• Cause : la limite 8 Ko de l’extension coupait les messages les plus récents
-• Poll incrémental (after id) + anti-écho par empreinte (plus de blocage si même indicatif TOC/joueur)
-
-Correctifs ATAK (1.4.1 — rebuild requis)
-
-• Layout Athena : plus de fond bleu Desktop à gauche — carte + panneau se repositionnent correctement
-• Layout Athena : correctif erreur SQF « _fade » indéfini à l’ouverture du menu
-• Journal : tentatives / échecs de transmission, erreurs ACE Overwatch et POST HTTP async
-• Photos ATAK : recherche élargie Screenshots (profil / jpg↔png), attente écriture, repli capture native
-• Vibrations / notifs : ne se rejouent plus à chaque reconnexion une fois confirmées
-• IDC boutons Appui aérien / Manifeste / Briefing (conflit avec les onglets)
-
-Renseignement interpersonnel (SSE)
-
-• Terminal « Renseignement interpersonnel » : enregistrez une personne contrôlée (identité, statut, circonstances)
-• Photo du visage jointe à la fiche (capture récente ou Photothèque)
-• Empreintes / iris en simulation (gameplay) — aucune biométrie réelle
-• Armement et équipement détectés sur la cible (préremplissage inventaire)
-• Remontée automatique vers le poste de commandement Athena (onglet Personnes)
-• Menu ACE : ATAK Tactique → Enregistrer une personne
-• Module activable par communauté (configuration ATAK / Overwatch)
-
-Portail Athena (compagnon)
-
-• Portail classifié /atak/sse : dossiers d’affaire, notes, preuves, croisements
-• Codes d’accès temporaires délivrés par le commandement (membre ou invité)
-• Export PDF classifié + sélection « Accès renseignement » dans le profil de session ATAK web
-
-Rappel — déjà en place (1.3.x)
-
-• Réalisme liaison, messagerie Groups ↔ TOC, photos auto, marqueurs Marker Widget, FRAGO lisibles
-• Terminal & certificat, zones Zeus, reprise de session
-
-Après mise à jour : relancez Arma complètement. Rebuild : connect.pbo + main.pbo + mavik_compat.pbo + atak_athena.pbo + COMSPECExtension_x64.dll. Hard-refresh sur le portail Athena. Déployer aussi le PHP Athena (API chat ?after=).
+Après mise à jour : relancez Arma complètement.

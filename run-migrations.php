@@ -2519,6 +2519,14 @@ try {
 
 require_once $root . '/bootstrap/autoload.php';
 
+$organizationCatalogMigrate = require $root . '/bootstrap/organization_catalog_migration.php';
+try {
+    echo "Migration catalogue d’organisation (modèles et applications)...\n";
+    $organizationCatalogMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] organization_catalog : ' . $e->getMessage() . "\n";
+}
+
 try {
     \App\Services\Rbac\MilitaryRoleCatalogSyncService::syncAllTenants($pdo);
     echo "Catalogue rôles militaires (synchronisation tenants) OK.\n";
