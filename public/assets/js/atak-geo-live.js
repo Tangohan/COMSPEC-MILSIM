@@ -47,7 +47,8 @@
       '<span>Villes et villages</span></label>' +
       '<label class="atak-map-look__check" for="atak-geo-roads">' +
       '<input type="checkbox" id="atak-geo-roads" />' +
-      '<span>Routes</span></label>';
+      '<span>Routes</span></label>' +
+      '<p class="atak-terrain-3d-hint atak-geo-live-hint">Affiche les villes et les routes relevées en mission. L’outil Itinéraire s’appuie sur les routes lorsqu’elles sont disponibles.</p>';
 
     var hint = mount.querySelector('.atak-terrain-3d-hint');
     if (hint && hint.parentNode === mount) mount.insertBefore(wrap, hint);

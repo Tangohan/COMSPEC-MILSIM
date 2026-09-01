@@ -760,7 +760,12 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             </section>
             <?php endif; ?>
 
-            <?php require base_path('views/partials/dashboard_rh_parcours.php'); ?>
+            <?php
+            if (is_array($dashboard_rh_parcours ?? null)) {
+                $dashboard_rh_parcours['show_offers'] = false;
+            }
+            require base_path('views/partials/dashboard_rh_parcours.php');
+            ?>
         </div>
 
         <!-- Modal situation tactique -->

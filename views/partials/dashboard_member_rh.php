@@ -49,7 +49,7 @@ $elevStatusLabel = static function (string $status): string {
     </div>
 
     <div class="dash-rh-grid">
-        <div class="dash-rh-col" id="elevation">
+        <div class="dash-rh-col" id="dash-hub-elevation">
             <h3 class="dash-rh-col__title">Demande d’élévation</h3>
             <p class="dash-rh-col__hint">Grade, rôle, fonction ou affectation — transmis aux personnes habilitées de la communauté.</p>
 

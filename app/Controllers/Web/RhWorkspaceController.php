@@ -392,7 +392,7 @@ final class RhWorkspaceController
     private function rhFormRedirect(Request $request, string $workspaceHash, ?string $forceDashboardStep = null): Response
     {
         $returnTo = trim((string) $request->input('return_to', ''));
-        if ($returnTo === 'dashboard') { // return_to === 'dashboard'
+        if ($returnTo === 'dashboard') {
             $step = $forceDashboardStep ?? trim((string) $request->input('return_step', 'mon-dossier-rh'));
             if (!in_array($step, ['absence', 'elevation', 'avancement', 'mon-dossier-rh', 'dashboard-member-rh'], true)) {
                 $step = 'mon-dossier-rh';
