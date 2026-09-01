@@ -19,9 +19,21 @@ if (!hasInterface) exitWith { false };
 
 // Sans session Athena, NotifyNewPhoto échoue (not_connected) puis un retry
 // reclichait un PNG toutes les ~2 s — spam journal + disque.
-if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
+if (
+    !(missionNamespace getVariable ["COMSPEC_AthenaReady", false])
+    || {
+        !isNil "comspec_overwatch_connect_fnc_isReady"
+        && {!([] call comspec_overwatch_connect_fnc_isReady)}
+    }
+) exitWith {
     missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
     missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|not_connected", false];
+    private _hintAt = missionNamespace getVariable ["COMSPEC_ReconNotReadyHintAt", 0];
+    if (!(_hintAt isEqualType 0)) then { _hintAt = 0; };
+    if (diag_tickTime > _hintAt) then {
+        missionNamespace setVariable ["COMSPEC_ReconNotReadyHintAt", diag_tickTime + 30, false];
+        ["COMSPEC_Warning", ["Session Athena pas encore prête — réessayez après la connexion"]] call comspec_overwatch_connect_fnc_showNotification;
+    };
     false
 };
 

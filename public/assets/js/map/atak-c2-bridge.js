@@ -320,7 +320,7 @@
       perimeter: 'perimeter',
       marker: 'note',
       search: 'search-zone',
-      layers: 'cop',
+      layers: null,
       goto: 'goto',
       follow: 'follow',
       route: 'route',
@@ -332,8 +332,24 @@
       && window.ATAKGpsRoutes && window.ATAKGpsRoutes.isPlacing && window.ATAKGpsRoutes.isPlacing()) {
       window.ATAKGpsRoutes.stop();
     }
+    if (tool === 'layers') {
+      revealEffectifsDrawer();
+      return;
+    }
     var legacy = map[tool];
     if (legacy) triggerLegacyTool(legacy);
+  }
+
+  function revealEffectifsDrawer() {
+    if (window.ATAKSectionNav && typeof window.ATAKSectionNav.setDrawerOpen === 'function') {
+      window.ATAKSectionNav.setDrawerOpen(true);
+    } else {
+      document.body.classList.remove('atak-drawer-collapsed');
+    }
+    var drawer = document.getElementById('atak-effectifs-drawer');
+    if (drawer && typeof drawer.scrollIntoView === 'function') {
+      drawer.scrollIntoView({ block: 'end', behavior: 'smooth' });
+    }
   }
 
   function triggerLegacyTool(tool, forceOn) {

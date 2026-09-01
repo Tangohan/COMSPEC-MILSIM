@@ -19,6 +19,12 @@ final class OverwatchPhotoNotConnectedSpamAssetTest extends TestCase
             return "ERR|not_connected";',
             $cs
         );
+        self::assertStringContainsString('return "ERR|not_connected";', $cs);
+        $enqueue = strstr($cs, 'private static string EnqueueReconImage');
+        self::assertNotFalse($enqueue);
+        $head = substr((string) $enqueue, 0, 600);
+        self::assertStringContainsString('HasPortalAuth()', $head);
+        self::assertStringNotContainsString('_apiKey.Length == 0', $head);
     }
 
     public function testCaptureDoesNotRetryScreenshotsWhenAthenaIsDown(): void
@@ -31,8 +37,19 @@ final class OverwatchPhotoNotConnectedSpamAssetTest extends TestCase
         $boot = (string) file_get_contents($root . '/connect/functions/auth/fn_applyBootstrap.sqf');
 
         self::assertStringContainsString('COMSPEC_AthenaReady', $capture);
+        self::assertStringContainsString('comspec_overwatch_connect_fnc_isReady', $capture);
+        self::assertStringContainsString('COMSPEC_ReconNotReadyHintAt', $capture);
+        self::assertStringContainsString('Session Athena pas encore prête', $capture);
         self::assertStringContainsString('_fnc_isConnErr', $capture);
         self::assertStringContainsString('if (!_ok && {[] call _fnc_isConnErr}) exitWith { false };', $capture);
+        self::assertStringContainsString(
+            '[_path, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage',
+            $capture
+        );
+        self::assertStringContainsString(
+            '[_png, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage',
+            $capture
+        );
         self::assertStringContainsString('COMSPEC_AthenaReady', $poll);
         self::assertStringContainsString('COMSPEC_HandshakeQuiet', $poll);
         self::assertStringContainsString('COMSPEC_AthenaReady', $bridge);
