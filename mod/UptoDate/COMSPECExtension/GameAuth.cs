@@ -23,6 +23,8 @@ public static partial class Extension
     private static string _gameTenantName = "";
     private static string _gameTenantSlug = "";
     private static string _gameBrandingUrl = "";
+    private static string _gameSteamLinked = "";
+    private static string _gameSteamNotice = "";
     private static int _gameProfileRevision;
     private static string _gameDeviceId = "";
     private static string _minModRequired = "";
@@ -154,7 +156,9 @@ public static partial class Extension
                 TabCell(_minModRequired),
                 TabCell(_gameProfileAvatar),
                 IdentityCell(_gameProfileRole),
-                IdentityCell(_gameProfileFunction));
+                IdentityCell(_gameProfileFunction),
+                TabCell(_gameSteamLinked),
+                TabCell(_gameSteamNotice));
         }
     }
 
@@ -373,6 +377,8 @@ public static partial class Extension
         _gameTenantName = "";
         _gameTenantSlug = "";
         _gameBrandingUrl = "";
+        _gameSteamLinked = "";
+        _gameSteamNotice = "";
         _minModRequired = "";
         return "OK|logged_out";
     }
@@ -430,6 +436,17 @@ public static partial class Extension
             SetGameAuth("SYNCING_PROFILE", 68, "");
             if (root.TryGetProperty("profile", out var prof))
                 ApplyGameProfile(prof);
+            if (root.TryGetProperty("notices", out var notices))
+            {
+                var linked = false;
+                if (notices.TryGetProperty("steam_linked", out var slEl))
+                    linked = slEl.ValueKind == JsonValueKind.True
+                        || (slEl.ValueKind == JsonValueKind.String && slEl.GetString() == "1");
+                _gameSteamLinked = linked ? "1" : "0";
+                _gameSteamNotice = notices.TryGetProperty("steam_message", out var smEl)
+                    ? (smEl.GetString() ?? "")
+                    : "";
+            }
             SetGameAuth("LOADING_BRANDING", 74, "");
             if (root.TryGetProperty("branding", out var brand))
             {

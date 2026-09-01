@@ -74,11 +74,23 @@ final class GameAuthAssetTest extends TestCase
 
     public function testPasswordAuthDoesNotRequireASteamIdToIssueTokens(): void
     {
-        $svc = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Game/GameAuthService.php');
+        $root = dirname(__DIR__, 2);
+        $svc = (string) file_get_contents($root . '/app/Services/Game/GameAuthService.php');
+        $repo = (string) file_get_contents($root . '/app/Repositories/AthenaAccountRepository.php');
         self::assertStringContainsString('function resolveSteamId(array $body, array $account): string', $svc);
         self::assertStringContainsString('$steamId = $this->resolveSteamId($body, $account);', $svc);
-        self::assertStringContainsString('if ($steamId !== \'\') {', $svc);
+        self::assertStringContainsString('if ($this->hasSteamId($steamId)) {', $svc);
+        self::assertStringNotContainsString('if ($steamId !== \'\') {', $svc);
         self::assertStringContainsString('upsertPairing((int) $account[\'id\'], $deviceId, $steamId, $pairingHash)', $svc);
+        self::assertStringContainsString('carrySteamIdFromSession', $svc);
+        self::assertStringContainsString('function upsertPairing(int $accountId, string $deviceId, ?string $steamId, string $tokenHash)', $repo);
+        self::assertStringContainsString('if ($accountId <= 0 || $deviceId === \'\' || $steamId === \'\' || $tokenHash === \'\')', $repo);
+        self::assertStringContainsString('function assignSteamIdIfEmpty(int $accountId, string $steamId): bool', $repo);
+        self::assertStringContainsString('attachSteamFromEmailLogin', $svc);
+        self::assertStringContainsString('GAME_STEAM_LINKED_MEMBER', $svc);
+        self::assertStringContainsString('GAME_STEAM_LINKED_STAFF', $svc);
+        self::assertStringContainsString('issueForAccount($account, $body, null, true)', $svc);
+        self::assertStringContainsString("'steam_message'", $svc);
     }
 
     public function testResolveSteamIdReturnsEmptyStringWhenMissingOrInvalid(): void
@@ -101,5 +113,35 @@ final class GameAuthAssetTest extends TestCase
             '76561198000000000',
             $method->invoke($svc, ['steam_id' => '_SP_player'], ['steam_id' => '76561198000000000'])
         );
+    }
+
+    public function testNullSteamIdIsNotTreatedAsPresent(): void
+    {
+        $ref = new \ReflectionClass(\App\Services\Game\GameAuthService::class);
+        $svc = $ref->newInstanceWithoutConstructor();
+        $has = $ref->getMethod('hasSteamId');
+        $has->setAccessible(true);
+
+        self::assertFalse($has->invoke($svc, null));
+        self::assertFalse($has->invoke($svc, ''));
+        self::assertFalse($has->invoke($svc, 76561198000000000));
+        self::assertTrue($has->invoke($svc, '76561198000000000'));
+        self::assertTrue(null !== '');
+    }
+
+    public function testRestoreReusesSessionSteamIdWhenTheClientOmitsIt(): void
+    {
+        $ref = new \ReflectionClass(\App\Services\Game\GameAuthService::class);
+        $svc = $ref->newInstanceWithoutConstructor();
+        $method = $ref->getMethod('carrySteamIdFromSession');
+        $method->setAccessible(true);
+
+        $body = [];
+        $method->invokeArgs($svc, [&$body, ['steam_id' => '76561198000000000']]);
+        self::assertSame('76561198000000000', $body['steam_id']);
+
+        $body = ['steam_id' => ''];
+        $method->invokeArgs($svc, [&$body, ['steam_id' => null]]);
+        self::assertSame('', $body['steam_id']);
     }
 }

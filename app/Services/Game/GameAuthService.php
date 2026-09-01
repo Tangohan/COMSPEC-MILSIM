@@ -8,6 +8,7 @@ use App\Repositories\AthenaAccountRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\TenantBrandingRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
@@ -34,9 +35,11 @@ final class GameAuthService
         private GameOverwatchExperienceService $experience,
         private ?UserProfileRepository $profiles = null,
         private ?TenantBrandingRepository $branding = null,
+        private ?UserNotificationPreferencesRepository $notificationPreferences = null,
     ) {
         $this->profiles ??= new UserProfileRepository();
         $this->branding ??= new TenantBrandingRepository();
+        $this->notificationPreferences ??= new UserNotificationPreferencesRepository();
         SilentSchemaMigration::run(base_path('bootstrap/athena_game_auth_migration.php'));
     }
 
@@ -59,7 +62,7 @@ final class GameAuthService
             return $this->fail('ACCOUNT_DISABLED', 403);
         }
 
-        return $this->issueForAccount($account, $body);
+        return $this->issueForAccount($account, $body, null, true);
     }
 
     /**
@@ -142,7 +145,7 @@ final class GameAuthService
             return $this->fail('ACCOUNT_DISABLED', 403);
         }
 
-        return $this->issueForAccount($account, $body);
+        return $this->issueForAccount($account, $body, null, true);
     }
 
     /**
@@ -153,7 +156,7 @@ final class GameAuthService
     {
         $deviceId = $this->sanitizeDeviceId((string) ($body['device_id'] ?? ''));
         $steamId = SteamId::normalize((string) ($body['steam_id'] ?? $body['steam_uid'] ?? ''));
-        if ($deviceId === '' || $steamId === '') {
+        if ($deviceId === '' || !$this->hasSteamId($steamId)) {
             return $this->fail('STEAM_NOT_LINKED', 400);
         }
         $nonce = bin2hex(random_bytes(16));
@@ -180,7 +183,7 @@ final class GameAuthService
         $deviceId = $this->sanitizeDeviceId((string) ($body['device_id'] ?? ''));
         $steamId = SteamId::normalize((string) ($body['steam_id'] ?? $body['steam_uid'] ?? ''));
         $pairing = trim((string) ($body['pairing_token'] ?? ''));
-        if ($deviceId === '' || $steamId === '' || strlen($pairing) < 32) {
+        if ($deviceId === '' || !$this->hasSteamId($steamId) || strlen($pairing) < 32) {
             return $this->fail('STEAM_NOT_LINKED', 401);
         }
         $account = $this->accounts->findBySteamId($steamId);
@@ -226,6 +229,7 @@ final class GameAuthService
         }
         $body['device_id'] = (string) ($session['device_id'] ?? $body['device_id'] ?? '');
         $body['preferred_tenant_id'] = (int) $session['tenant_id'];
+        $this->carrySteamIdFromSession($body, $session);
 
         return $this->issueForAccount($account, $body, (int) $session['id']);
     }
@@ -242,6 +246,7 @@ final class GameAuthService
         }
         $body['device_id'] = (string) ($session['device_id'] ?? '');
         $body['preferred_tenant_id'] = (int) $session['tenant_id'];
+        $this->carrySteamIdFromSession($body, $session);
 
         return $this->issueForAccount($account, $body, (int) $session['id']);
     }
@@ -350,7 +355,7 @@ final class GameAuthService
      * @param array<string, mixed> $body
      * @return array{ok: bool, status: int, payload: array<string, mixed>}
      */
-    private function issueForAccount(array $account, array $body, ?int $rotateSessionId = null): array
+    private function issueForAccount(array $account, array $body, ?int $rotateSessionId = null, bool $fromEmailLogin = false): array
     {
         $memberships = $this->accounts->listActiveMemberships((int) $account['id']);
         if ($memberships === []) {
@@ -375,12 +380,21 @@ final class GameAuthService
         if ($deviceId === '') {
             $deviceId = bin2hex(random_bytes(16));
         }
+        $steamLink = ['status' => 'none', 'notice' => '', 'linked_now' => false];
+        if ($fromEmailLogin) {
+            $steamLink = $this->attachSteamFromEmailLogin($account, $chosen, $this->clientSteamFromBody($body));
+            if (in_array((string) $steamLink['status'], ['conflict', 'mismatch'], true)) {
+                unset($body['steam_id'], $body['steam_uid']);
+            }
+        }
         $steamId = $this->resolveSteamId($body, $account);
         $access = bin2hex(random_bytes(32));
         $refresh = bin2hex(random_bytes(32));
         $pairingPlain = null;
         $pairingHash = null;
-        if ($steamId !== '') {
+        // SteamId::normalize() renvoie null, pas ''. `!== ''` laisserait passer null
+        // jusqu’à upsertPairing(string) — TypeError en production au restore.
+        if ($this->hasSteamId($steamId)) {
             $pairingPlain = bin2hex(random_bytes(32));
             $pairingHash = hash('sha256', $pairingPlain);
             $this->accounts->upsertPairing((int) $account['id'], $deviceId, $steamId, $pairingHash);
@@ -403,7 +417,7 @@ final class GameAuthService
                 'device_id' => $deviceId,
                 'access_token_hash' => hash('sha256', $access),
                 'refresh_token_hash' => hash('sha256', $refresh),
-                'steam_id' => $steamId !== '' ? $steamId : null,
+                'steam_id' => $this->hasSteamId($steamId) ? $steamId : null,
                 'pairing_token_hash' => $pairingHash,
                 'mod_version' => $modVersion !== '' ? $modVersion : null,
                 'extension_version' => trim((string) ($body['extension_version'] ?? '')) ?: null,
@@ -427,6 +441,11 @@ final class GameAuthService
             'refresh_token' => $refresh,
             'device_id' => $deviceId,
             'pairing_token' => $pairingPlain,
+        ];
+        $payload['notices'] = [
+            'steam_status' => (string) ($steamLink['status'] ?? 'none'),
+            'steam_linked' => $this->hasSteamId($steamId) || !empty($steamLink['linked_now']),
+            'steam_message' => (string) ($steamLink['notice'] ?? ''),
         ];
 
         return ['ok' => true, 'status' => 200, 'payload' => $payload];
@@ -633,7 +652,7 @@ final class GameAuthService
         $steam = null;
         foreach ($users as $row) {
             $sid = SteamId::normalize((string) ($row['steam_id'] ?? ''));
-            if ($sid !== '') {
+            if ($this->hasSteamId($sid)) {
                 $steam = $sid;
                 break;
             }
@@ -876,8 +895,283 @@ final class GameAuthService
     }
 
     /**
+     * Identifiant Steam envoyé par le jeu pour cette requête, ou chaîne vide.
+     *
+     * @param array<string, mixed> $body
+     */
+    private function clientSteamFromBody(array $body): string
+    {
+        $fromClient = SteamId::normalize((string) ($body['steam_id'] ?? $body['steam_uid'] ?? ''));
+
+        return $this->hasSteamId($fromClient) ? $fromClient : '';
+    }
+
+    /**
+     * Après une connexion e-mail / code : associe l’identifiant Steam envoyé par le jeu
+     * s’il n’était pas encore enregistré. N’écrase jamais un identifiant déjà présent.
+     *
+     * @param array<string, mixed> $account
+     * @param array<string, mixed> $chosen
+     * @return array{status: string, notice: string, linked_now: bool}
+     */
+    private function attachSteamFromEmailLogin(array &$account, array $chosen, string $clientSteam): array
+    {
+        $empty = ['status' => 'none', 'notice' => '', 'linked_now' => false];
+        if (!$this->hasSteamId($clientSteam)) {
+            return $empty;
+        }
+        $accountId = (int) ($account['id'] ?? 0);
+        $userId = (int) ($chosen['user_id'] ?? 0);
+        $tenantId = (int) ($chosen['tenant_id'] ?? 0);
+        if ($accountId < 1 || $userId < 1 || $tenantId < 1) {
+            return $empty;
+        }
+        $accountSteam = SteamId::normalize(isset($account['steam_id']) ? (string) $account['steam_id'] : null);
+        $userSteam = SteamId::normalize((string) ($chosen['user_steam_id'] ?? ''));
+        if (!$this->hasSteamId($userSteam)) {
+            $userRow = $this->users->findById($userId, $tenantId) ?? [];
+            $userSteam = SteamId::normalize(isset($userRow['steam_id']) ? (string) $userRow['steam_id'] : null);
+        }
+
+        if ($this->hasSteamId($accountSteam) && $accountSteam === $clientSteam) {
+            if (!$this->hasSteamId($userSteam)) {
+                $this->trySetUserSteam($userId, $tenantId, $clientSteam);
+            }
+
+            return ['status' => 'already', 'notice' => '', 'linked_now' => false];
+        }
+        if ($this->hasSteamId($userSteam) && $userSteam === $clientSteam && !$this->hasSteamId($accountSteam)) {
+            if ($this->accounts->assignSteamIdIfEmpty($accountId, $clientSteam)) {
+                $account['steam_id'] = $clientSteam;
+            }
+
+            return ['status' => 'already', 'notice' => '', 'linked_now' => false];
+        }
+        if ($this->hasSteamId($accountSteam) && $accountSteam !== $clientSteam) {
+            $notice = 'Ce compte est déjà associé à un autre identifiant Steam. L’encadrement a été informé.';
+            $this->notifySteamLinkOutcome($account, $chosen, $clientSteam, 'mismatch');
+
+            return ['status' => 'mismatch', 'notice' => $notice, 'linked_now' => false];
+        }
+        if ($this->hasSteamId($userSteam) && $userSteam !== $clientSteam) {
+            $notice = 'Ce compte est déjà associé à un autre identifiant Steam. L’encadrement a été informé.';
+            $this->notifySteamLinkOutcome($account, $chosen, $clientSteam, 'mismatch');
+
+            return ['status' => 'mismatch', 'notice' => $notice, 'linked_now' => false];
+        }
+
+        $takenAccount = $this->accounts->findBySteamId($clientSteam);
+        if ($takenAccount !== null && (int) ($takenAccount['id'] ?? 0) !== $accountId) {
+            $notice = 'Cet identifiant Steam est déjà associé à un autre compte. L’encadrement a été informé.';
+            $this->notifySteamLinkOutcome($account, $chosen, $clientSteam, 'conflict');
+
+            return ['status' => 'conflict', 'notice' => $notice, 'linked_now' => false];
+        }
+        $takenUser = $this->users->findBySteamId($clientSteam);
+        if ($takenUser !== null && (int) ($takenUser['id'] ?? 0) !== $userId) {
+            $takenEmail = strtolower(trim((string) ($takenUser['email'] ?? '')));
+            $accountEmail = strtolower(trim((string) ($account['email'] ?? '')));
+            if ($takenEmail === '' || $accountEmail === '' || $takenEmail !== $accountEmail) {
+                $notice = 'Cet identifiant Steam est déjà associé à un autre compte. L’encadrement a été informé.';
+                $this->notifySteamLinkOutcome($account, $chosen, $clientSteam, 'conflict');
+
+                return ['status' => 'conflict', 'notice' => $notice, 'linked_now' => false];
+            }
+        }
+
+        if (!$this->accounts->assignSteamIdIfEmpty($accountId, $clientSteam)) {
+            $notice = 'Cet identifiant Steam est déjà associé à un autre compte. L’encadrement a été informé.';
+            $this->notifySteamLinkOutcome($account, $chosen, $clientSteam, 'conflict');
+
+            return ['status' => 'conflict', 'notice' => $notice, 'linked_now' => false];
+        }
+        $account['steam_id'] = $clientSteam;
+        $this->trySetUserSteam($userId, $tenantId, $clientSteam);
+        $this->notifySteamLinkOutcome($account, $chosen, $clientSteam, 'linked');
+
+        return [
+            'status' => 'linked',
+            'notice' => 'Votre identifiant Steam a été associé à votre compte. Un courriel de confirmation vous a été envoyé.',
+            'linked_now' => true,
+        ];
+    }
+
+    private function trySetUserSteam(int $userId, int $tenantId, string $steamId): void
+    {
+        if ($userId < 1 || $tenantId < 1 || !$this->hasSteamId($steamId)) {
+            return;
+        }
+        try {
+            $this->users->update($userId, $tenantId, ['steam_id' => $steamId]);
+        } catch (\Throwable) {
+            // Contrainte ou fiche déjà renseignée : le compte Athena reste associé.
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $account
+     * @param array<string, mixed> $chosen
+     */
+    private function notifySteamLinkOutcome(array $account, array $chosen, string $steamId, string $outcome): void
+    {
+        $tenantId = (int) ($chosen['tenant_id'] ?? 0);
+        $userId = (int) ($chosen['user_id'] ?? 0);
+        $email = strtolower(trim((string) ($account['email'] ?? '')));
+        $tenant = $tenantId > 0 ? ($this->tenants->findById($tenantId) ?? []) : [];
+        $tenantName = trim((string) ($tenant['name'] ?? $chosen['tenant_name'] ?? 'Athena'));
+        $user = $userId > 0 ? ($this->users->findById($userId, $tenantId) ?? []) : [];
+        $displayName = trim((string) ($user['display_name'] ?? $chosen['display_name'] ?? ''));
+        if ($displayName === '') {
+            $displayName = trim((string) ($chosen['callsign'] ?? ''));
+        }
+        if ($displayName === '') {
+            $displayName = $email !== '' ? $email : 'Opérateur';
+        }
+        $callsign = trim((string) ($user['callsign'] ?? $chosen['callsign'] ?? ''));
+        $safeName = htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8');
+        $safeTenant = htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8');
+        $safeSteam = htmlspecialchars($steamId, ENT_QUOTES, 'UTF-8');
+        $safeCallsign = htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8');
+        $safeEmail = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
+
+        if ($outcome === 'linked') {
+            $memberSubject = 'Votre identifiant Steam a été associé — ' . $tenantName;
+            $memberHtml = '<p>Bonjour ' . $safeName . ',</p>'
+                . '<p>Lors de votre connexion Athena en jeu, votre identifiant Steam a été associé à votre compte pour la communauté <strong>'
+                . $safeTenant . '</strong>.</p>'
+                . '<p>Identifiant associé : <strong>' . $safeSteam . '</strong></p>'
+                . '<p>Les prochaines connexions en jeu pourront utiliser Steam, sans retaper votre e-mail. Si vous n’êtes pas à l’origine de cette connexion, contactez l’encadrement de votre communauté.</p>';
+            $memberText = 'Lors de votre connexion Athena en jeu, votre identifiant Steam '
+                . $steamId . ' a été associé à votre compte (' . $tenantName . ').';
+            $staffSubject = 'Identifiant Steam associé — ' . $displayName . ' — ' . $tenantName;
+            $staffHtml = '<p>Un opérateur a associé son identifiant Steam depuis Overwatch.</p>'
+                . '<p>Communauté : <strong>' . $safeTenant . '</strong><br>'
+                . 'Opérateur : <strong>' . $safeName . '</strong>'
+                . ($callsign !== '' ? '<br>Indicatif : <strong>' . $safeCallsign . '</strong>' : '')
+                . '<br>Courriel : ' . $safeEmail
+                . '<br>Identifiant Steam : <strong>' . $safeSteam . '</strong></p>';
+            $staffText = 'Opérateur ' . $displayName
+                . ($callsign !== '' ? ' (' . $callsign . ')' : '')
+                . ' — ' . $email . ' — identifiant Steam ' . $steamId
+                . ' associé depuis le jeu (' . $tenantName . ').';
+        } elseif ($outcome === 'conflict') {
+            $memberSubject = 'Association Steam impossible — ' . $tenantName;
+            $memberHtml = '<p>Bonjour ' . $safeName . ',</p>'
+                . '<p>Lors de votre connexion Athena en jeu, l’identifiant Steam de cette session n’a pas pu être associé : il est déjà rattaché à un autre compte.</p>'
+                . '<p>Votre session Athena reste ouverte. Contactez l’encadrement si vous pensez qu’il s’agit d’une erreur.</p>';
+            $memberText = 'L’identifiant Steam de cette session n’a pas pu être associé : il est déjà rattaché à un autre compte.';
+            $staffSubject = 'Association Steam en conflit — ' . $displayName . ' — ' . $tenantName;
+            $staffHtml = '<p>Une connexion Athena en jeu n’a pas pu associer l’identifiant Steam : il est déjà rattaché à un autre compte.</p>'
+                . '<p>Communauté : <strong>' . $safeTenant . '</strong><br>'
+                . 'Opérateur : <strong>' . $safeName . '</strong>'
+                . ($callsign !== '' ? '<br>Indicatif : <strong>' . $safeCallsign . '</strong>' : '')
+                . '<br>Courriel : ' . $safeEmail
+                . '<br>Identifiant Steam refusé : <strong>' . $safeSteam . '</strong></p>';
+            $staffText = 'Conflit Steam pour ' . $displayName . ' — ' . $email . ' — identifiant ' . $steamId . ' (' . $tenantName . ').';
+        } else {
+            $memberSubject = 'Identifiant Steam déjà associé — ' . $tenantName;
+            $memberHtml = '<p>Bonjour ' . $safeName . ',</p>'
+                . '<p>Lors de votre connexion Athena en jeu, l’identifiant Steam de cette session n’a pas été enregistré : votre compte est déjà associé à un autre identifiant.</p>'
+                . '<p>Votre session Athena reste ouverte. Contactez l’encadrement si vous devez le mettre à jour.</p>';
+            $memberText = 'Votre compte est déjà associé à un autre identifiant Steam. La session reste ouverte.';
+            $staffSubject = 'Identifiant Steam différent en jeu — ' . $displayName . ' — ' . $tenantName;
+            $staffHtml = '<p>Un opérateur s’est connecté en jeu avec un identifiant Steam différent de celui déjà enregistré sur son compte.</p>'
+                . '<p>Communauté : <strong>' . $safeTenant . '</strong><br>'
+                . 'Opérateur : <strong>' . $safeName . '</strong>'
+                . ($callsign !== '' ? '<br>Indicatif : <strong>' . $safeCallsign . '</strong>' : '')
+                . '<br>Courriel : ' . $safeEmail
+                . '<br>Identifiant présenté en jeu : <strong>' . $safeSteam . '</strong></p>'
+                . '<p>Le compte n’a pas été modifié.</p>';
+            $staffText = 'Steam différent en jeu pour ' . $displayName . ' — ' . $email . ' — présenté : ' . $steamId . ' (' . $tenantName . ').';
+        }
+
+        $this->sendSteamLinkMemberEmail($userId, $email, $tenantId, $memberSubject, $memberHtml, $memberText);
+        $this->sendSteamLinkStaffEmails($tenantId, $email, $staffSubject, $staffHtml, $staffText);
+    }
+
+    private function sendSteamLinkMemberEmail(
+        int $userId,
+        string $email,
+        int $tenantId,
+        string $subject,
+        string $html,
+        string $text
+    ): void {
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+        if ($userId > 0
+            && !$this->notificationPreferences?->isEmailEventEnabled($userId, EmailEvents::GAME_STEAM_LINKED_MEMBER)
+        ) {
+            return;
+        }
+        try {
+            $this->email->send(
+                EmailEvents::GAME_STEAM_LINKED_MEMBER,
+                $email,
+                $subject,
+                $html,
+                $text,
+                $tenantId > 0 ? $tenantId : null,
+                null,
+                ['channel' => 'game_steam_link', 'to' => 'member'],
+                null,
+                true
+            );
+        } catch (\Throwable) {
+            // La session reste ouverte même si le courriel échoue.
+        }
+    }
+
+    private function sendSteamLinkStaffEmails(
+        int $tenantId,
+        string $memberEmail,
+        string $subject,
+        string $html,
+        string $text
+    ): void {
+        if ($tenantId < 1) {
+            return;
+        }
+        $recipients = $this->users->listGovernanceEmailsForTenant($tenantId);
+        foreach ($recipients as $toRaw) {
+            $to = strtolower(trim((string) $toRaw));
+            if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+            if ($memberEmail !== '' && strcasecmp($to, $memberEmail) === 0) {
+                continue;
+            }
+            $staff = $this->users->findByEmail($tenantId, $to);
+            $staffId = (int) ($staff['id'] ?? 0);
+            if ($staffId > 0
+                && !$this->notificationPreferences?->isEmailEventEnabled($staffId, EmailEvents::GAME_STEAM_LINKED_STAFF)
+            ) {
+                continue;
+            }
+            try {
+                $this->email->send(
+                    EmailEvents::GAME_STEAM_LINKED_STAFF,
+                    $to,
+                    $subject,
+                    $html,
+                    $text,
+                    $tenantId,
+                    null,
+                    ['channel' => 'game_steam_link', 'to' => 'staff'],
+                    null,
+                    true
+                );
+            } catch (\Throwable) {
+                // Continuer les autres destinataires.
+            }
+        }
+    }
+
+    /**
      * SteamID64 connu, ou chaîne vide. Jamais null : un identifiant absent ou
-     * rejeté (partie solo, placeholder) ne doit pas bloquer e-mail / mot de passe.
+     * rejeté (partie solo, placeholder) ne doit pas bloquer e-mail / mot de passe
+     * ni la restauration de session.
      *
      * @param array<string, mixed> $body
      * @param array<string, mixed> $account
@@ -885,14 +1179,32 @@ final class GameAuthService
     private function resolveSteamId(array $body, array $account): string
     {
         $fromClient = SteamId::normalize((string) ($body['steam_id'] ?? $body['steam_uid'] ?? ''));
-        if ($fromClient !== null && $fromClient !== '') {
+        if ($this->hasSteamId($fromClient)) {
             return $fromClient;
         }
         $fromAccount = SteamId::normalize(
             isset($account['steam_id']) ? (string) $account['steam_id'] : null
         );
 
-        return ($fromAccount !== null && $fromAccount !== '') ? $fromAccount : '';
+        return $this->hasSteamId($fromAccount) ? $fromAccount : '';
+    }
+
+    /** @param array<string, mixed> $body */
+    private function carrySteamIdFromSession(array &$body, array $session): void
+    {
+        if (trim((string) ($body['steam_id'] ?? $body['steam_uid'] ?? '')) !== '') {
+            return;
+        }
+        $fromSession = SteamId::normalize(isset($session['steam_id']) ? (string) $session['steam_id'] : null);
+        if ($this->hasSteamId($fromSession)) {
+            $body['steam_id'] = $fromSession;
+        }
+    }
+
+    /** True seulement pour un SteamID64 réel. `null !== ''` est vrai en PHP. */
+    private function hasSteamId(mixed $steamId): bool
+    {
+        return is_string($steamId) && $steamId !== '';
     }
 
     private function sanitizeDeviceId(string $raw): string

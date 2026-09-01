@@ -661,6 +661,18 @@ class AccountController
                 'group' => 'Sécurité',
             ],
             [
+                'key' => EmailEvents::GAME_STEAM_LINKED_MEMBER,
+                'label' => 'Association Steam depuis le jeu',
+                'hint' => 'Lorsque votre identifiant Steam est associé à votre compte après une connexion Athena en jeu.',
+                'group' => 'Sécurité',
+            ],
+            [
+                'key' => EmailEvents::GAME_STEAM_LINKED_STAFF,
+                'label' => 'Association Steam d’un opérateur (encadrement)',
+                'hint' => 'Lorsqu’un opérateur associe son identifiant Steam depuis le jeu, ou lorsqu’une association est impossible.',
+                'group' => 'Sécurité',
+            ],
+            [
                 'key' => EmailEvents::MULTIPLE_LOGIN_ATTEMPTS,
                 'label' => 'Tentatives de connexion multiples',
                 'hint' => 'Alerter en cas d’échecs répétés sur votre identifiant.',
