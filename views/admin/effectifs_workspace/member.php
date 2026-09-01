@@ -70,7 +70,9 @@ $fmtDate = static function (?string $raw): string {
 $status = (string) ($m['status'] ?? '');
 $display = trim((string) ($m['display_name'] ?? ''));
 $callsign = trim((string) ($m['callsign'] ?? ''));
-$email = (string) ($m['email'] ?? '');
+$email = function_exists('email_for_display')
+    ? email_for_display((string) ($m['email'] ?? ''))
+    : (string) ($m['email'] ?? '');
 $name = $display !== '' ? $display : ($callsign !== '' ? $callsign : $email);
 $grade = trim((string) ($m['grade_short'] ?? ''));
 if ($grade === '') {

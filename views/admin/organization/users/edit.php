@@ -83,7 +83,7 @@ $formatDateFr = static function (?string $raw): string {
                         <h1 class="bo-user-edit__title">
                             <?= htmlspecialchars($displayName !== '' ? $displayName : 'Compte membre', ENT_QUOTES, 'UTF-8') ?>
                         </h1>
-                        <p class="bo-user-edit__email"><?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?></p>
+                        <p class="bo-user-edit__email"><?= htmlspecialchars(function_exists('email_for_display') ? email_for_display($email) : $email, ENT_QUOTES, 'UTF-8') ?></p>
                         <div class="bo-user-edit__badges">
                             <span class="bo-user-edit__badge <?= htmlspecialchars($statusBadgeMod, ENT_QUOTES, 'UTF-8') ?>">
                                 <?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?>
@@ -210,8 +210,13 @@ $formatDateFr = static function (?string $raw): string {
                     <p class="bo-user-edit__panel-lead">Adresse de connexion, mot de passe, état du compte et rattachement Steam pour la carte.</p>
                     <div class="bo-user-edit__grid">
                         <div>
-                            <label for="email" class="bo-user-edit__label">Adresse e-mail <span class="req">*</span></label>
+                            <label for="email" class="bo-user-edit__label">Adresse e-mail<?php if (function_exists('viewer_can_see_emails') && viewer_can_see_emails()): ?> <span class="req">*</span><?php endif; ?></label>
+                            <?php if (function_exists('viewer_can_see_emails') && viewer_can_see_emails()): ?>
                             <input type="email" id="email" name="email" required class="bo-user-edit__input" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>" autocomplete="email" maxlength="190">
+                            <?php else: ?>
+                            <p class="bo-user-edit__input" style="display:flex;align-items:center;min-height:2.5rem;background:#f8fafc;color:#334155;"><?= htmlspecialchars(function_exists('email_for_display') ? email_for_display($email) : '—', ENT_QUOTES, 'UTF-8') ?></p>
+                            <p class="bo-user-edit__hint">L’adresse de connexion n’est visible et modifiable que par l’administration du site.</p>
+                            <?php endif; ?>
                         </div>
                         <div>
                             <label for="password" class="bo-user-edit__label">Nouveau mot de passe</label>

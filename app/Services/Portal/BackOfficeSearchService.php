@@ -178,8 +178,8 @@ final class BackOfficeSearchService
                 continue;
             }
             $callsign = trim((string) ($u['callsign'] ?? ''));
-            $email = trim((string) ($u['email'] ?? ''));
-            $sub = $callsign !== '' ? $callsign : $email;
+            $display = trim((string) ($u['display_name'] ?? ''));
+            $sub = $callsign !== '' ? $callsign : $display;
             $out[] = [
                 'title' => (string) ($u['display_name'] ?? 'Membre'),
                 'subtitle' => $sub,

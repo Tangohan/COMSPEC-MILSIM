@@ -56,7 +56,7 @@ if (!empty($canViewCivilSection)) {
     if (!empty($showEmailInContact)) {
         $pushRow($sheetRows, 'Compte', 'E-mail', (string) ($targetUser['email'] ?? ''));
     } else {
-        $pushRow($sheetRows, 'Compte', 'E-mail', 'Masqué — réservé à l’administration');
+        $pushRow($sheetRows, 'Compte', 'E-mail', 'Masqué — réservé à l’administration du site');
     }
 }
 

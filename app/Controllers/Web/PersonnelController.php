@@ -546,7 +546,14 @@ class PersonnelController
         if ($rpTutorId > 0) {
             $rpTutor = $this->userRepository->findById($rpTutorId, (int) $tenantId);
             if ($rpTutor) {
-                $rpTutorLabel = trim((string) ($rpTutor['display_name'] ?? '')) ?: (trim((string) ($rpTutor['callsign'] ?? '')) ?: trim((string) ($rpTutor['email'] ?? '')));
+                $rpTutorLabel = trim((string) ($rpTutor['display_name'] ?? ''))
+                    ?: trim((string) ($rpTutor['callsign'] ?? ''));
+                if ($rpTutorLabel === '') {
+                    $rpTutorLabel = \App\Support\EmailPrivacy::display(trim((string) ($rpTutor['email'] ?? '')));
+                    if ($rpTutorLabel === '—') {
+                        $rpTutorLabel = 'Membre';
+                    }
+                }
             }
         }
         $grades = $this->gradeRepository->listForTenant((int) $tenantId);
@@ -590,11 +597,10 @@ class PersonnelController
         $redactPersonalPresentation = $hidePersonalInfo && !$viewerPrivilegedForPersonal;
         $canViewCivilSection = $canViewCivil && !$redactPersonalPresentation;
         $gateInst = Gate::getInstance();
-        /** E-mail : titulaire, RH sensible, ou admin organisation — pas la lecture d’annuaire ni la seule édition de fiche. */
+        /** E-mail : titulaire du dossier, ou administration du site — jamais un admin de communauté. */
         $canViewMemberEmail = !$redactPersonalPresentation && (
             $isSelf
-            || $canSensitive
-            || $gateInst->allows('admin.organization')
+            || $gateInst->allows('admin.system')
         );
         $showEmailInContact = $canViewMemberEmail;
         $showMatriculePublic = $isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_matricule_to_others'] ?? 1) === 1;

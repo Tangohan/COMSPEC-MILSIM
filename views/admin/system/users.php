@@ -123,12 +123,12 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
         <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-4" aria-labelledby="purge-requests-title">
             <div>
                 <h2 id="purge-requests-title" class="text-base font-semibold text-amber-950">
-                    Demandes de suppression définitive
+                    Demandes de suppression de compte
                     <span class="ml-2 inline-flex rounded-md bg-amber-200 px-2 py-0.5 text-xs font-bold text-amber-950"><?= $pendingPurgeRequestsCount ?></span>
                 </h2>
                 <p class="mt-2 max-w-3xl text-sm text-amber-900">
-                    Émises par des organisateurs pour des fiches déjà anonymisées (« Compte supprimé ») dans leur communauté.
-                    Approuver retire la fiche des annuaires tout en conservant l’historique sous « Ancien membre ».
+                    Émises par des organisateurs pour retirer un compte de leur communauté.
+                    Approuver anonymise le compte s’il est encore actif, puis le retire des annuaires tout en conservant l’historique sous « Ancien membre ».
                 </p>
             </div>
             <ul class="space-y-3">

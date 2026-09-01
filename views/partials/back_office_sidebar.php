@@ -168,7 +168,7 @@ try {
     $boTidSide = (int) \App\Core\Session::get('tenant_id');
     $boUserName = trim((string) (\App\Core\Session::get('display_name') ?? \App\Core\Session::get('callsign') ?? ''));
     if ($boUserName === '') {
-        $boUserName = trim((string) (\App\Core\Session::get('email') ?? 'Administrateur'));
+        $boUserName = 'Administrateur';
     }
     $parts = preg_split('/\s+/u', $boUserName) ?: [];
     if (count($parts) >= 2) {

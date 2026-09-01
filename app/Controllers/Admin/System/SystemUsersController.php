@@ -555,12 +555,12 @@ final class SystemUsersController
             return Response::redirect($this->backUrl($request));
         }
         if (!AccountDeletionService::isAnonymizedUser($target)) {
-            Session::flash(
-                'error',
-                'La fiche n’est plus anonymisée (« Compte supprimé »). Refusez la demande ou anonymisez d’abord le compte.'
-            );
+            $anon = $this->deletionService()->softDeleteMembership($targetUserId, $tenantId, $actorId);
+            if (!$anon['ok']) {
+                Session::flash('error', 'Impossible d’anonymiser ce compte avant de le retirer de la communauté.');
 
-            return Response::redirect($this->backUrl($request));
+                return Response::redirect($this->backUrl($request));
+            }
         }
 
         $resolutionNote = trim((string) $request->input('resolution_note', ''));
