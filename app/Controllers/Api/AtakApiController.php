@@ -44,6 +44,7 @@ use App\Support\AtakGameSession;
 use App\Support\ChatMentionParser;
 use App\Support\GroupMessageParser;
 use App\Support\MpMessageParser;
+use App\Support\OperatorTacticalIdentity;
 use App\Support\MedicalAlertParser;
 use App\Support\TacticalAlertParser;
 use App\Support\SteamId;
@@ -388,6 +389,31 @@ class AtakApiController
         }
 
         $callsign = trim((string) ($user['callsign'] ?? ''));
+        $personnelCs = '';
+        try {
+            $personnel = (new \App\Repositories\PersonnelProfileRepository())->getByUserId($userId) ?? [];
+            $personnelCs = trim((string) ($personnel['callsign'] ?? ''));
+            $profileUnitId = (int) ($personnel['primary_unit_id'] ?? 0);
+            if ($unitName === '' && $profileUnitId > 0) {
+                $fromProfile = $this->unitRepository->findById($profileUnitId, $tenantId);
+                if ($fromProfile) {
+                    $unitName = trim((string) ($fromProfile['name'] ?? ''));
+                }
+            }
+        } catch (\Throwable) {
+        }
+        $tenantName = '';
+        try {
+            $tenantRow = $this->tenantRepository->findById($tenantId);
+            if (is_array($tenantRow)) {
+                $tenantName = function_exists('community_display_name')
+                    ? community_display_name($tenantRow)
+                    : trim((string) ($tenantRow['name'] ?? ''));
+            }
+        } catch (\Throwable) {
+        }
+        $callsign = OperatorTacticalIdentity::callsign([$personnelCs, $callsign], $tenantName, $tenantName);
+        $unitName = OperatorTacticalIdentity::unitAssignment($unitName, $tenantName, $tenantName);
         // Identifiant ATAK stable : le callsign s'il est renseigné, sinon un identifiant technique
         // dérivé du compte — jamais l'état civil, jamais réutilisable pour retrouver un autre joueur.
         $atakId = $callsign !== '' ? $callsign : sprintf('U-%05d', $userId);
@@ -2148,11 +2174,16 @@ class AtakApiController
                 'include_archived' => $includeArchived || $archivedOnly,
                 'archived_only' => $archivedOnly,
             ];
-            // Sync BFT hors journal par défaut (sauf filtre explicite « position »).
+            // Sync BFT et « Position reçue » hors journal par défaut (sauf filtre explicite).
             $typeStr = is_string($type) ? strtolower($type) : '';
+            $wantPositionTrail = str_contains($typeStr, 'position')
+                || $typeStr === AtakActivityLogService::TYPE_POSITION
+                || str_contains($typeStr, 'donnees')
+                || str_contains($typeStr, 'ingest');
             if ($typeStr === '' || (!str_contains($typeStr, 'position') && $typeStr !== AtakActivityLogService::TYPE_POSITION)) {
                 $opts['exclude_types'] = [AtakActivityLogService::TYPE_POSITION];
             }
+            $opts['exclude_position_ingest'] = !$wantPositionTrail;
             $result = $this->activityLog->listFiltered($tenantId, $mapId, $opts);
             $events = $result['events'];
 
@@ -5305,14 +5336,6 @@ class AtakApiController
                             (string) $callSign,
                             $extra
                         )
-                    );
-                    $this->activityLog->recordIngest(
-                        $tenantId,
-                        $mapId,
-                        'position',
-                        'Position reçue — ' . $callSign,
-                        (string) $callSign,
-                        ['source' => 'terrain']
                     );
                 }
             }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Support\OperationLabels;
 use App\Support\TacticalGraphicsCatalog;
 use PHPUnit\Framework\TestCase;
 
@@ -31,6 +32,36 @@ final class OperationsWorkspaceAssetTest extends TestCase
         self::assertStringContainsString('Publier sur la vue terrain', $show);
         self::assertStringNotContainsString('endpoint', $index);
         self::assertStringNotContainsString('JSON', $show);
+    }
+
+    public function testIndexMatchesLightPortalAndHasAProperEmptyState(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $index = (string) file_get_contents($root . '/views/operations/workspace/index.php');
+        $css = (string) file_get_contents($root . '/public/assets/css/ops-workspace.css');
+        $ctrl = (string) file_get_contents($root . '/app/Controllers/Web/OperationWorkspaceController.php');
+        $dispatch = (string) file_get_contents($root . '/app/Support/DevDispatchCatalog.php');
+
+        self::assertStringContainsString('ops-ws--index', $index);
+        self::assertStringContainsString('ops-ws__empty-card', $index);
+        self::assertStringContainsString('Aucune opération n’est ouverte pour le moment', $index);
+        self::assertStringContainsString('name="indicatif"', $index);
+        self::assertStringContainsString('Pas le nom de la communauté', $index);
+        self::assertStringContainsString('placeholder="AEGIS"', $index);
+        self::assertStringContainsString('bo-select', $index);
+        self::assertStringNotContainsString('name="code"', $index);
+        self::assertStringNotContainsString('slug', strtolower($index));
+
+        self::assertStringContainsString('--ops-bg: #f8fafc', $css);
+        self::assertStringContainsString('.ops-ws__empty-card', $css);
+        self::assertStringContainsString('.ops-ws__op', $css);
+        self::assertStringNotContainsString('--ops-bg: #070b12', $css);
+
+        self::assertStringContainsString("\$request->input('indicatif')", $ctrl);
+        self::assertStringContainsString('Les espaces opérationnels se lisent comme le reste du portail', $dispatch);
+        self::assertSame('AEGIS', OperationLabels::suggestCode('Opération Aegis'));
+        self::assertSame('AEGIS', OperationLabels::suggestCode('Aegis'));
+        self::assertSame('OPS', OperationLabels::suggestCode('Opération'));
     }
 
     public function testGraphicsCatalogHasSemanticManeuverObjects(): void

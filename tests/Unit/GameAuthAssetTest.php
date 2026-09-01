@@ -41,6 +41,8 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringNotContainsString('LinkBySteam', $sqfConnect);
         self::assertStringContainsString('CryptProtectData', $dll);
         self::assertStringContainsString('AuthPassword', $dll);
+        self::assertStringContainsString('CallsignCell', $dll);
+        self::assertStringContainsString('OperatorTacticalIdentity', $svc);
         self::assertStringContainsString('comspec_overwatch_connect_fnc_isReady', $pos);
         self::assertStringContainsString('Pas de session', $wait);
         self::assertStringContainsString('Expérience en jeu', $bo);
@@ -48,6 +50,9 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('detected_mod_version', $svc);
         self::assertStringContainsString('Pack actuel', $sqfPoll);
         self::assertStringContainsString('version exigée', $sqfPoll);
+        self::assertStringContainsString('authStateCells', $sqfPoll);
+        self::assertStringContainsString('Communauté :', $sqfPoll);
+        self::assertStringNotContainsString('_s = str _s', $sqfPoll);
         self::assertStringContainsString('_minModRequired', $dll);
         self::assertStringContainsString('CaptureVersionHints', $dll);
         self::assertStringContainsString('fnc_packVersion', $sqfRestore);

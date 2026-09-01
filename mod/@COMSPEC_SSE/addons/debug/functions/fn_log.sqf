@@ -42,10 +42,6 @@ if (_force || {_level in ["ERROR", "CRITICAL"]} || {_debugOn && {_level in ["WAR
     diag_log text _line;
 };
 
-if (_debugOn && {hasInterface} && {_level in ["WARN", "ERROR", "CRITICAL"]}) then {
-    systemChat _line;
-};
-
 private _buf = missionNamespace getVariable ["COMSPEC_DEBUG_LOG_BUFFER", []];
 if (!(_buf isEqualType [])) then { _buf = []; };
 _buf pushBack [_level, _module, _event, _message, diag_tickTime];

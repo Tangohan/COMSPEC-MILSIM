@@ -2,8 +2,8 @@
  * Pont live ATAK → refonte C2 (symbologie, rail, contrôles, panneau unité).
  * Activé par window.ATAK_MAP_C2_V2 = true (défini dans views/atak.php).
  *
- * Ne recrée pas la carte Leaflet : réutilise ATAKMap + flux WebSocket/polling
- * via l’interception de setUnitsMarkers (alimenté par atak-units.js / socket).
+ * Ne recrée pas la carte Leaflet : réutilise ATAKMap + le flux d’unités
+ * (événement atak:units-updated, alimenté par atak-map.js / polling).
  */
 (function () {
   'use strict';
@@ -11,13 +11,24 @@
   if (!window.ATAK_MAP_C2_V2) return;
 
   var assetBase = (window.ATAK_C2_ASSET_BASE || '').replace(/\/$/, '');
+  var cacheBust = '';
   if (!assetBase) {
     try {
       var scripts = document.querySelectorAll('script[src*="atak-c2-bridge"]');
       if (scripts.length) {
-        assetBase = scripts[scripts.length - 1].src.replace(/\/assets\/js\/map\/atak-c2-bridge\.js.*$/, '');
+        var src = scripts[scripts.length - 1].src;
+        assetBase = src.replace(/\/assets\/js\/map\/atak-c2-bridge\.js.*$/, '');
+        if (src.indexOf('?') >= 0) cacheBust = src.replace(/^[^?]*/, '');
       }
     } catch (e) { /* ignore */ }
+  }
+  if (!cacheBust) {
+    try {
+      var bridge = document.querySelector('script[src*="atak-c2-bridge"]');
+      if (bridge && bridge.src && bridge.src.indexOf('?') >= 0) {
+        cacheBust = bridge.src.replace(/^[^?]*/, '');
+      }
+    } catch (e2) { /* ignore */ }
   }
   if (!assetBase) assetBase = '';
 
@@ -48,11 +59,11 @@
     state.ready = true;
 
     Promise.all([
-      import(assetBase + '/assets/js/map/MarkerManager.js'),
-      import(assetBase + '/assets/js/map/TrackRenderer.js'),
-      import(assetBase + '/assets/js/map/MapControls.js'),
-      import(assetBase + '/assets/js/map/MapUI.js'),
-      import(assetBase + '/assets/js/map/SelectedEntityPanel.js'),
+      import(assetBase + '/assets/js/map/MarkerManager.js' + cacheBust),
+      import(assetBase + '/assets/js/map/TrackRenderer.js' + cacheBust),
+      import(assetBase + '/assets/js/map/MapControls.js' + cacheBust),
+      import(assetBase + '/assets/js/map/MapUI.js' + cacheBust),
+      import(assetBase + '/assets/js/map/SelectedEntityPanel.js' + cacheBust),
     ]).then(function (mods) {
       var MarkerManager = mods[0].MarkerManager || window.MarkerManager;
       var TrackRenderer = mods[1].TrackRenderer || window.TrackRenderer;
@@ -60,7 +71,7 @@
       var MapUI = mods[3].MapUI || window.MapUI;
       var SelectedEntityPanel = mods[4].SelectedEntityPanel || window.SelectedEntityPanel;
 
-      state.manager = new MarkerManager({ map: map, clustering: true });
+      state.manager = new MarkerManager({ map: map, clustering: false });
       window.ATAKMarkerManagerC2 = state.manager;
 
       var trackLayer = window.L.layerGroup().addTo(map);
@@ -69,6 +80,11 @@
       window.ATAKTrackRendererC2 = state.tracks;
 
       wireUnitFeed();
+      window.addEventListener('atak:display-prefs-changed', function () {
+        if (state.manager && state.lastUnits && state.lastUnits.length) {
+          pushUnits(state.lastUnits);
+        }
+      });
       wireControls(MapControls, map);
       wireToolRail(MapUI);
       wireEntityPanel(SelectedEntityPanel);
@@ -103,18 +119,6 @@
       var units = (ev.detail && ev.detail.units) || [];
       pushUnits(units);
     });
-
-    if (!window.ATAKMap || typeof window.ATAKMap.setUnitsMarkers !== 'function') return;
-    if (window.ATAKMap._setUnitsMarkersC2Wrapped) return;
-    window.ATAKMap._setUnitsMarkersC2Wrapped = true;
-    window.ATAKMap._setUnitsMarkersOrig = window.ATAKMap.setUnitsMarkers;
-
-    window.ATAKMap.setUnitsMarkers = function (units, opts) {
-      /* atak-map.js (mode C2) stocke la liste + émet atak:units-updated ; on pousse aussi ici
-         au cas où le gestionnaire C2 est déjà prêt avant l’événement. */
-      pushUnits(units);
-      return window.ATAKMap._setUnitsMarkersOrig(units, opts);
-    };
   }
 
   function pushUnits(units) {
@@ -163,6 +167,15 @@
       ? String(u.id)
       : String(u.call_sign || u.callsign || u.steam_uid || '').trim();
 
+    var headingRaw = u.heading != null ? u.heading : (u.movement_heading != null ? u.movement_heading : extra.heading);
+    var headingNum = headingRaw != null && headingRaw !== '' ? Number(headingRaw) : NaN;
+    var headingRounded = isFinite(headingNum) ? Math.round(headingNum / 15) * 15 : null;
+
+    var csKey = String(u.call_sign || u.callsign || '').toUpperCase().trim();
+    var profile = (window.ATAK_CALLSIGN_TO_USER && csKey) ? window.ATAK_CALLSIGN_TO_USER[csKey] : null;
+    var ftColor = String(u.fire_team_color || extra.fire_team_color || '').trim();
+    if (!/^#[0-9A-Fa-f]{6}$/.test(ftColor)) ftColor = '';
+
     return {
       id: id,
       callsign: u.call_sign || u.callsign || extra.callsign || id,
@@ -170,12 +183,14 @@
       affiliation: normalizeAffiliation(extra.affiliation || extra.affil || u.affiliation || u.side || 'friend'),
       type: mapPlatformType(u, extra),
       status: live,
-      heading: u.heading != null ? u.heading : (u.movement_heading != null ? u.movement_heading : extra.heading),
-      speed: u.speed != null ? u.speed : extra.speed,
+      heading: headingRounded,
+      speed: u.speed != null ? Math.round(Number(u.speed) || 0) : extra.speed,
       altitude: u.asl_z != null ? u.asl_z : (u.altitude != null ? u.altitude : extra.asl_z),
       x: isNaN(x) ? null : x,
       y: isNaN(y) ? null : y,
       grid: u.grid_ref || '',
+      ftColor: ftColor,
+      avatarUrl: (profile && profile.avatarUrl) ? profile.avatarUrl : '',
     };
   }
 
@@ -392,7 +407,7 @@
     if (document.querySelector('link[data-atak-c2-css]')) return;
     var link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = href + (href.indexOf('?') >= 0 ? '&' : '?') + 'v=c2live';
+    link.href = href + (href.indexOf('?') >= 0 ? '&' : '?') + 'v=c2look2';
     link.setAttribute('data-atak-c2-css', '1');
     document.head.appendChild(link);
   }

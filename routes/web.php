@@ -859,6 +859,7 @@ return function (Router $router) {
     $router->get('/atak/mod/download', [AtakController::class, 'downloadMod'], $mwAtakMemberOnly);
     $router->get('/atak/tuto', [AtakController::class, 'tuto'], $mwAtakWeb);
     $router->post('/atak/game-link', [AtakController::class, 'createGameLink'], $mwAtakMemberOnly);
+    $router->post('/atak/demande-acces', [AtakController::class, 'requestMapAccess'], $mwAtakMemberOnly);
     $router->get('/tacmap', [HomeController::class, 'tacmap'], [AuthMiddleware::class]);
     $router->get('/overwatch', [HomeController::class, 'overwatch'], [AuthMiddleware::class]);
     // Administration plateforme (super-admin) — préfixe /admin

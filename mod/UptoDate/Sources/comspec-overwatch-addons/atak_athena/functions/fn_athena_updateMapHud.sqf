@@ -269,7 +269,7 @@ if (_unit isEqualTo _player) then {
 };
 
 private _uPos = getPosASLVisual _unit;
-private _grpName = groupId (group _unit);
+private _grpName = [_unit] call comspec_overwatch_connect_fnc_inGameGroupLabel;
 if (!(_grpName isEqualType "") || {_grpName isEqualTo ""}) then { _grpName = "—"; };
 
 private _man = _unit;
@@ -281,14 +281,16 @@ if (!(_unit isKindOf "CAManBase")) then {
 private _cs = "";
 if (_man isEqualTo player) then {
     if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
-        _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+        _cs = [true] call comspec_overwatch_connect_fnc_getCallsign;
     };
 } else {
     _cs = _man getVariable ["COMSPEC_Callsign", ""];
 };
 if (!(_cs isEqualType "")) then { _cs = str _cs; };
 _cs = trim _cs;
-if (_cs isEqualTo "") then { _cs = name _man; };
+if (!isNil "comspec_overwatch_connect_fnc_isUsableCallsign") then {
+    if (!([_cs] call comspec_overwatch_connect_fnc_isUsableCallsign)) then { _cs = ""; };
+};
 if (_cs isEqualTo "") then { _cs = "—"; };
 
 private _role = "";

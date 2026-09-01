@@ -654,7 +654,7 @@ if (!isNull _listCtrl) then {
                 };
             };
             _detailCtrl ctrlSetStructuredText parseText format [
-                "<t size='0.95' color='#e8f4f0'>%1</t><br/><br/><t color='#9aa4aa'>%2</t>",
+                "<t size='1.05' color='#e8f4f0'>%1</t><br/><br/><t size='0.95' color='#c8d0d6'>%2</t>",
                 _empty,
                 _hint
             ];

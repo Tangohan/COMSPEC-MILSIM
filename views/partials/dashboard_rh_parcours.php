@@ -55,7 +55,7 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
 ?>
 <div class="dash-rh-foot" id="mon-dossier-rh">
     <?php if ($showOffers): ?>
-    <section class="cc-card dash-rh-offers" aria-labelledby="dash-rh-offers-title">
+    <section class="cc-card dash-rh-offers" id="dashboard-org-offers" aria-labelledby="dash-rh-offers-title">
         <p class="cc-kicker cc-kicker--primary">Recrutement</p>
         <h2 id="dash-rh-offers-title" class="dash-rh-foot__title">Offres de l’organisation</h2>
         <p class="dash-rh-foot__lead">Les postes ouverts dans la communauté apparaissent ici. Vous pouvez consulter une offre et, le cas échéant, postuler.</p>
@@ -87,7 +87,7 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
     <?php endif; ?>
 
     <?php if ($showPersonnel): ?>
-    <section class="cc-card dash-rh-parcours" aria-labelledby="dash-rh-parcours-title">
+    <section class="cc-card dash-rh-parcours" id="dashboard-member-rh" aria-labelledby="dash-rh-parcours-title">
         <div class="dash-rh-parcours__head">
             <div>
                 <p class="cc-kicker cc-kicker--primary">Personnel</p>

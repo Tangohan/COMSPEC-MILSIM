@@ -35,8 +35,8 @@ window.ATAKMap = (function () {
   var DISPLAY_PREFS_KEY = 'atak_map_display_prefs';
   var DISPLAY_PREFS_DEFAULT = {
     styleMode: 'nato',
-    iconSize: 17,
-    labelSize: 7,
+    iconSize: 20,
+    labelSize: 11,
     showFtFrame: true,
     markerDepth: true,
     markerMotion: true,
@@ -120,8 +120,8 @@ window.ATAKMap = (function () {
     var src = raw && typeof raw === 'object' ? raw : {};
     return {
       styleMode: normalizeStyleMode(src.styleMode),
-      iconSize: clampNum(src.iconSize, (window.ATAKMarkerSizes && window.ATAKMarkerSizes.PREF_MIN) || 10, (window.ATAKMarkerSizes && window.ATAKMarkerSizes.PREF_MAX) || 22, DISPLAY_PREFS_DEFAULT.iconSize),
-      labelSize: clampNum(src.labelSize, 6, 16, DISPLAY_PREFS_DEFAULT.labelSize),
+      iconSize: clampNum(src.iconSize, 12, 28, DISPLAY_PREFS_DEFAULT.iconSize),
+      labelSize: clampNum(src.labelSize, 9, 16, DISPLAY_PREFS_DEFAULT.labelSize),
       showFtFrame: src.showFtFrame !== false,
       markerDepth: src.markerDepth !== false,
       markerMotion: src.markerMotion !== false,

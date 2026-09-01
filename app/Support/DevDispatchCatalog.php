@@ -584,6 +584,87 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(316, '2026-09-01', 'Overwatch 1.5.0 : votre identité, plus le nom de la communauté', 'Le pack jeu affiche l’opérateur, pas le titre de la communauté. L’indicatif vient de la fiche Effectifs. Les messages du poste restent dans le téléphone et le journal, plus dans le chat de bord d’Arma. Sur le téléphone, le journal Athena se lit enfin', [
+                'Écran prêt : photo si elle existe, prénom, nom, indicatif, rôle, grade et fonction',
+            ], [
+                'Paramètres du téléphone et bandeau de carte : même indicatif que les Effectifs',
+            ], [
+                'Le chat de bord d’Arma ne recopie plus les messages du poste',
+                'Le journal du téléphone n’est plus un rectangle noir',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement. Connectez-vous : l’écran prêt et Paramètres doivent coller à votre fiche. Un message du poste n’apparaît plus dans le chat latéral.',
+            ], 'Overwatch 1.5.0 · Athena 1.0.63'),
+            $pr(308, '2026-09-01', 'Le point carte Zeus se pose sans erreur', 'Depuis Intelligence numérique ou le module Poser un point carte, le formulaire s’ouvre. Le point apparaît sur la carte du bureau, pas sur celle des joueurs', [], [], [
+                'Un message d’erreur apparaissait en posant un point carte, et le point n’était pas créé',
+            ], ['command'], [
+                'Rechargez le pack SSE, relancez Arma complètement, ouvrez Zeus, puis Intelligence numérique → Poser un point carte.',
+            ], 'SSE'),
+            $pr(307, '2026-09-01', 'Le journal Athena du téléphone se lit enfin', 'Sur le téléphone, l’application Athena affiche le filtre, la liste et le détail. Plus de grand rectangle noir : même sans message, une phrase l’indique. Contact, comptes-rendus et compte restent chacun sur leur écran', [
+                'Liste et détail lisibles dès l’ouverture du journal',
+            ], [], [
+                'Le journal n’affichait plus que deux zones noires, avec seulement la flèche du filtre',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement, ouvrez le téléphone puis Athena. Le journal doit montrer le filtre et le texte, même s’il est vide.',
+            ], 'Overwatch'),
+            $pr(305, '2026-09-01', 'Les modèles d’arrivée se lisent comme le reste du bureau', 'La liste des modèles de parcours et le formulaire de création ou de modification reprennent le bureau clair : texte sombre sur fond blanc, tableau lisible, cartes d’étapes nettement séparées. La durée en jours tient sur une courte case, les cases à cocher restent visibles', [], [
+                'Liste des modèles, création et modification alignées sur le bureau effectifs',
+            ], [
+                'Les noms de parcours et les libellés du formulaire étaient gris pâle, presque invisibles',
+            ], ['personnel'], [
+                'Ouvrez Intégration des nouveaux membres, puis Modèles. Les lignes du tableau se lisent. Ouvrez un modèle : chaque étape est un bloc distinct, la durée n’occupe plus toute la largeur.',
+            ], 'Portail'),
+            $pr(306, '2026-09-01', 'Les espaces opérationnels se lisent comme le reste du portail', 'La page des opérations a le même fond clair que le tableau de bord. Quand aucune opération n’est ouverte, un encadré l’explique. Le formulaire d’ouverture reste à côté, avec un indicatif court du type AEGIS, pas le nom de la communauté', [], [], [
+                'La page était presque noire, avec une phrase isolée au milieu du vide',
+            ], ['platform'], [
+                'Ouvrez Opérations dans le menu. Le fond est clair. Sans opération, l’encadré d’accueil et le formulaire se lisent ensemble.',
+            ], 'Portail'),
+            $pr(304, '2026-09-01', 'Les symboles des opérateurs suivent l’apparence de la carte', 'Dans Réglages du poste, la taille des icônes et des libellés s’applique enfin aux opérateurs. L’indicatif se lit sous le symbole, sans clignoter à chaque mise à jour de position. Le rôle et l’état de liaison s’affichent au survol', [
+                'Indicatif lisible sous le symbole, détail au survol',
+            ], [
+                'Taille des icônes et des libellés depuis Apparence de la carte',
+            ], [
+                'Les symboles apparaissaient et disparaissaient, et les trois lignes sous l’opérateur étaient illisibles',
+            ], ['atak'], [
+                'Ouvrez la carte du poste, Réglages, Apparence de la carte. Déplacez Icônes et Libellés des unités : les opérateurs changent tout de suite, sans clignoter.',
+            ], 'Portail'),
+            $pr(303, '2026-09-01', 'Le téléphone ATAK reprend l’indicatif des Effectifs', 'Sur Paramètres, l’indicatif est celui de votre fiche (YB1, TA1…), pas le nom de la communauté. Le groupe en jeu reste votre groupe Arma, ou « groupe actuel » s’il n’a pas d’équipe. Le bandeau de la carte suit la même lecture', [], [], [
+                'Indicatif et groupe affichaient le titre de la communauté, y compris en bas de la carte',
+            ], ['atak'], [
+                'Ouvrez le téléphone, Paramètres. L’indicatif doit coller à la colonne Indicatif des Effectifs. Relancez Arma complètement après un nouveau pack jeu.',
+            ], 'Overwatch'),
+            $pr(302, '2026-09-01', 'Le chat du jeu reste silencieux pour le poste', 'Un message envoyé depuis le poste, Overwatch ou ATAK n’apparaît plus dans le chat de bord d’Arma. Il reste dans le téléphone, les messages de groupe et le journal ATAK. Les messages que vous tapez vous-même dans le chat du jeu ne changent pas', [], [], [
+                'Un message du poste s’écrivait dans le chat latéral, souvent avec le nom de la communauté et la mention TOC, comme un indicatif radio',
+            ], ['atak'], [
+                'Envoyez un message depuis le poste pendant une mission. Le chat d’Arma reste vide. Ouvrez le téléphone : le fil est bien là. Rechargez le pack jeu, puis relancez Arma complètement.',
+            ], 'Overwatch'),
+            $pr(301, '2026-09-01', 'Demander un accès quand la carte reste fermée', 'Si vous êtes bien en liaison en jeu mais que votre grade, votre rôle ou votre fonction n’ouvrent pas certaines vues de la carte, une fenêtre l’explique. Vous pouvez demander les autorisations : l’encadrement reçoit le courrier et valide depuis le bureau effectifs', [
+                'Fenêtre sur la carte du poste, uniquement en liaison, uniquement s’il manque un accès',
+            ], [], [], ['atak', 'personnel'], [
+                'Ouvrez la carte du poste une fois en liaison. Si des vues restent fermées, Demander les autorisations d’accès transmet la demande à l’encadrement.',
+            ], 'Portail'),
+            $pr(300, '2026-09-01', 'L’écran prêt Overwatch affiche votre identité', 'Quand l’environnement est prêt, vous voyez votre photo si elle existe, votre prénom et votre nom, votre indicatif, puis le rôle, le grade et la fonction. Le nom de la communauté reste à part, et le pied de fenêtre indique le pack en service', [], [], [
+                'L’indicatif affichait le nom de la communauté, et l’unité une adresse interne',
+                'Le pied de fenêtre montrait des versions vides',
+            ], ['atak'], [
+                'Reconnectez-vous depuis Overwatch. Sur Environnement prêt : photo (si vous en avez une), nom, indicatif, rôle, grade et fonction. Relancez Arma complètement après un nouveau pack jeu.',
+            ], 'Overwatch'),
+            $pr(299, '2026-09-01', 'Les listes Serveur et Carte se lisent clairement', 'Dans le bandeau de la carte du poste, ouvrir Serveur ou Carte affiche chaque théâtre (Altis, Stratis, Malden…) de façon lisible. Plus de texte blanc sur fond gris clair', [], [], [
+                'Les lignes non sélectionnées étaient presque invisibles dans la liste déroulante',
+            ], ['atak'], [
+                'Ouvrez la carte du poste, puis Serveur. Chaque théâtre se lit sans survol.',
+            ], 'Portail'),
+            $pr(298, '2026-09-01', 'Une seule démarche RH à la fois sur le tableau de bord', 'En bas de page, vous choisissez d’abord Absence, Élévation ou Avancement. Les deux formulaires ne s’affichent plus côte à côte au milieu de l’écran', [], [], [
+                'Les demandes d’élévation et d’avancement occupaient toute la largeur, en même temps, au-dessus du reste du tableau de bord',
+            ], ['personnel'], [
+                'Ouvrez le tableau de bord, descendez jusqu’à Mon dossier RH. Trois cartes, puis un seul formulaire.',
+            ], 'Portail'),
+            $pr(297, '2026-09-01', 'Les positions en mission ne remplissent plus le journal', 'Sur la carte du poste, le panneau d’activité ne crée plus une carte à chaque position reçue. La carte et les effectifs restent à jour ; le journal garde les connexions, les messages et les vrais événements.', [], [
+                'Une connexion ou un changement d’indicatif continue d’apparaître',
+            ], [
+                'Une carte « Position reçue » s’ajoutait environ toutes les trente secondes pour le même opérateur',
+            ], ['atak', 'command'], [
+                'Ouvrez la carte du poste pendant une mission. Le panneau d’activité ne se remplit plus de positions répétées. L’opérateur reste visible sur la carte.',
+            ], 'Portail 1.5.98'),
             $pr(296, '2026-09-01', 'La connexion Athena n’exige plus Steam pour le mot de passe', 'Un opérateur peut ouvrir Overwatch avec son e-mail et son mot de passe, même si Steam n’est pas encore associé au compte', [], [], [
                 'La fenêtre de connexion se fermait en incident dès qu’aucun identifiant Steam n’était connu',
             ], ['atak'], [

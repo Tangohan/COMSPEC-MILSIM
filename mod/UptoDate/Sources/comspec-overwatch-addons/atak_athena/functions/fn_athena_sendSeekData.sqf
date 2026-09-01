@@ -20,8 +20,6 @@ private _setFb = {
     params ["_msg", ["_kind", "info"], ["_dur", 6]];
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback") then {
         [_msg, _kind, _dur] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
-    } else {
-        systemChat _msg;
     };
 };
 

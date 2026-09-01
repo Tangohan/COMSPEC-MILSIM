@@ -347,6 +347,7 @@ final class MemberIntegrationAdminController
 
         return Response::view('layout.main', [
             'title' => $tpl ? 'Modifier le parcours' : 'Nouveau parcours',
+            'boPageTitle' => $tpl ? 'Modifier le parcours' : 'Nouveau modèle de parcours',
             'content' => 'admin.member_integration.template_form',
             'template' => $tpl,
             'steps' => $tpl ? $this->templates->listSteps($tenantId, (int) $tpl['id']) : [],

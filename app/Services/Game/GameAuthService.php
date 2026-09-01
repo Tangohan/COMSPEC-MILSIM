@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\Services\Game;
 
 use App\Repositories\AthenaAccountRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\TenantBrandingRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Support\CommunityMediaDetails;
+use App\Support\OperatorTacticalIdentity;
 use App\Support\SilentSchemaMigration;
 use App\Support\SteamId;
 
@@ -479,27 +482,17 @@ final class GameAuthService
         }
         $brandRow = $this->branding?->findByTenantId($tenantId);
         $mergedBrand = $this->branding?->mergeWithTenantLogo($tenant, $brandRow) ?? [];
-        $displayName = trim((string) ($exp['display_name'] ?: ($tenant['name'] ?? 'Athena')));
-        $first = trim((string) ($profileRow['first_name'] ?? ''));
-        $last = trim((string) ($profileRow['last_name'] ?? ''));
-        if ($first === '' && $last === '') {
-            $bits = preg_split('/\s+/', trim((string) ($user['display_name'] ?? '')), 2) ?: [];
-            $first = (string) ($bits[0] ?? '');
-            $last = (string) ($bits[1] ?? '');
-        }
-        $grade = trim((string) ($user['grade_short'] ?? $user['grade_label'] ?? ''));
-        $unit = trim((string) ($user['unit_name'] ?? $membership['unit_name'] ?? ''));
-        if ($grade === '' || $unit === '') {
-            $extras = $this->loadOperatorExtras($userId, $tenantId);
-            if ($grade === '') {
-                $grade = $extras['grade'];
-            }
-            if ($unit === '') {
-                $unit = $extras['unit'];
-            }
-        }
-        $callsign = trim((string) ($user['callsign'] ?? $membership['callsign'] ?? ''));
-        $avatar = trim((string) ($user['avatar_url'] ?? ''));
+        $tenantName = trim((string) ($tenant['name'] ?? $membership['tenant_name'] ?? ''));
+        $displayName = trim((string) ($exp['display_name'] ?: ($tenantName !== '' ? $tenantName : 'Athena')));
+        $identity = $this->resolveOperatorIdentity($user, $profileRow, $membership, $userId, $tenantId);
+        $first = $identity['first_name'];
+        $last = $identity['last_name'];
+        $grade = $identity['grade'];
+        $unit = OperatorTacticalIdentity::unitAssignment($identity['unit'], $tenantName, $displayName);
+        $callsign = OperatorTacticalIdentity::sanitizeCallsign($identity['callsign'], $tenantName, $displayName);
+        $avatar = $identity['avatar'];
+        $role = $identity['role'];
+        $function = $identity['function'];
         $rev = $this->profileRevision($user, $profileRow);
         $loginImage = $this->experience->loginImageUrl(
             $tenantId,
@@ -521,7 +514,7 @@ final class GameAuthService
             'tenant' => [
                 'id' => $tenantId,
                 'slug' => (string) ($tenant['slug'] ?? $membership['tenant_slug'] ?? ''),
-                'name' => (string) ($tenant['name'] ?? $membership['tenant_name'] ?? ''),
+                'name' => $tenantName,
                 'short_name' => $displayName,
             ],
             'profile' => [
@@ -531,6 +524,8 @@ final class GameAuthService
                 'grade' => $grade,
                 'callsign' => $callsign,
                 'unit' => $unit,
+                'role' => $role,
+                'function' => $function,
                 'avatar' => $avatar,
                 'revision' => $rev,
             ],
@@ -660,33 +655,220 @@ final class GameAuthService
     }
 
     /**
-     * @return array{grade: string, unit: string}
+     * Texte d’identité joueur : jamais une adresse interne ni un champ vide.
+     */
+    public static function usableIdentityText(?string $value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '' || $value === '-') {
+            return '';
+        }
+        $lower = strtolower($value);
+        if (str_starts_with($lower, 'http://') || str_starts_with($lower, 'https://')) {
+            return '';
+        }
+        if (str_contains($lower, '/api/')) {
+            return '';
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param array<string, mixed> $user
+     * @param array<string, mixed> $profileRow
+     * @param array<string, mixed> $membership
+     * @return array{first_name: string, last_name: string, callsign: string, grade: string, unit: string, role: string, function: string, avatar: string}
+     */
+    private function resolveOperatorIdentity(array $user, array $profileRow, array $membership, int $userId, int $tenantId): array
+    {
+        $personnel = [];
+        try {
+            $personnel = (new PersonnelProfileRepository())->getByUserId($userId) ?? [];
+        } catch (\Throwable) {
+            $personnel = [];
+        }
+
+        $first = trim((string) ($profileRow['first_name'] ?? ''));
+        $last = trim((string) ($profileRow['last_name'] ?? ''));
+        if ($first === '' && $last === '') {
+            $bits = preg_split('/\s+/', trim((string) ($user['display_name'] ?? '')), 2) ?: [];
+            $first = (string) ($bits[0] ?? '');
+            $last = (string) ($bits[1] ?? '');
+        }
+        if ($first === '' && $last === '') {
+            $character = trim((string) ($personnel['character_name'] ?? ''));
+            if ($character !== '') {
+                $bits = preg_split('/\s+/', $character, 2) ?: [];
+                $first = (string) ($bits[0] ?? '');
+                $last = (string) ($bits[1] ?? '');
+            }
+        }
+
+        $callsign = OperatorTacticalIdentity::callsign(
+            [
+                (string) ($personnel['callsign'] ?? ''),
+                (string) ($user['callsign'] ?? ''),
+                (string) ($membership['callsign'] ?? ''),
+            ]
+        );
+
+        $extras = $this->loadOperatorExtras($userId, $tenantId);
+        $grade = self::usableIdentityText((string) ($user['grade_short'] ?? $user['grade_label'] ?? ''));
+        if ($grade === '') {
+            $gradeRow = [
+                'grade_long' => $extras['grade_long'],
+                'grade_short' => $extras['grade_short'],
+                'rank_display' => (string) ($personnel['rank_display'] ?? ''),
+                'role_name' => $extras['role'],
+            ];
+            $grade = function_exists('personnel_assigned_grade_label')
+                ? self::usableIdentityText(personnel_assigned_grade_label($gradeRow, $extras['role']))
+                : self::usableIdentityText($extras['grade_short'] !== '' ? $extras['grade_short'] : $extras['grade_long']);
+        }
+        $unit = self::usableIdentityText((string) ($user['unit_name'] ?? $membership['unit_name'] ?? ''));
+        if ($unit === '') {
+            $unit = self::usableIdentityText($extras['unit']);
+        }
+        $role = self::usableRoleLabel($extras['role'], $extras['role_slug']);
+        $function = self::usableIdentityText((string) ($personnel['primary_role'] ?? ''));
+        if ($function === '') {
+            $function = self::usableIdentityText($extras['function']);
+        }
+
+        $displaySettings = null;
+        try {
+            $displaySettings = (new UserProfileDisplaySettingsRepository())->getByUserId($userId);
+        } catch (\Throwable) {
+            $displaySettings = null;
+        }
+        $avatar = '';
+        if (function_exists('user_site_avatar_url')) {
+            $picked = user_site_avatar_url($user, $personnel, is_array($displaySettings) ? $displaySettings : null);
+            $avatar = is_string($picked) ? trim($picked) : '';
+        }
+        if ($avatar === '' && function_exists('personnel_operator_portrait_url')) {
+            $row = $user;
+            $row['character_portrait_path'] = (string) ($personnel['character_portrait_path'] ?? '');
+            $picked = personnel_operator_portrait_url($row);
+            $avatar = is_string($picked) ? trim($picked) : '';
+        }
+        if ($avatar === '') {
+            $raw = trim((string) ($user['avatar_url'] ?? ''));
+            if ($raw !== '' && function_exists('user_media_public_url')) {
+                $avatar = (string) (user_media_public_url($raw) ?? '');
+            } else {
+                $avatar = $raw;
+            }
+        }
+
+        return [
+            'first_name' => $first,
+            'last_name' => $last,
+            'callsign' => $callsign,
+            'grade' => $grade,
+            'unit' => $unit,
+            'role' => $role,
+            'function' => $function,
+            'avatar' => $avatar,
+        ];
+    }
+
+    /**
+     * Intitulé de rôle lisible. Un slug technique n’est pas un libellé joueur.
+     */
+    public static function usableRoleLabel(?string $name, ?string $slug = ''): string
+    {
+        $name = self::usableIdentityText($name);
+        $slug = trim((string) $slug);
+        if ($name === '') {
+            return '';
+        }
+        if ($slug !== '' && strcasecmp($name, $slug) === 0 && preg_match('/^[a-z0-9_]+$/', $name) === 1) {
+            return '';
+        }
+        if (preg_match('/^[a-z0-9_]+$/', $name) === 1) {
+            return '';
+        }
+
+        return $name;
+    }
+
+    /**
+     * @return array{grade_short: string, grade_long: string, unit: string, role: string, role_slug: string, function: string}
      */
     private function loadOperatorExtras(int $userId, int $tenantId): array
     {
-        $out = ['grade' => '', 'unit' => ''];
+        $out = [
+            'grade_short' => '',
+            'grade_long' => '',
+            'unit' => '',
+            'role' => '',
+            'role_slug' => '',
+            'function' => '',
+        ];
         try {
             $pdo = \App\Core\Database::getPdo();
             $st = $pdo->prepare(
-                'SELECT COALESCE(g.label_short, g.short_name, \'\') AS grade_short
+                'SELECT COALESCE(g.label_short, \'\') AS grade_short,
+                        COALESCE(g.label_long, \'\') AS grade_long,
+                        COALESCE(r.name, \'\') AS role_name,
+                        COALESCE(r.slug, \'\') AS role_slug
                  FROM users u
                  LEFT JOIN grades g ON g.id = u.grade_id
+                 LEFT JOIN roles r ON r.id = u.role_id
                  WHERE u.id = ? AND u.tenant_id = ? LIMIT 1'
             );
             $st->execute([$userId, $tenantId]);
-            $out['grade'] = trim((string) ($st->fetchColumn() ?: ''));
+            $row = $st->fetch(\PDO::FETCH_ASSOC) ?: [];
+            $out['grade_short'] = trim((string) ($row['grade_short'] ?? ''));
+            $out['grade_long'] = trim((string) ($row['grade_long'] ?? ''));
+            $out['role'] = trim((string) ($row['role_name'] ?? ''));
+            $out['role_slug'] = trim((string) ($row['role_slug'] ?? ''));
         } catch (\Throwable) {
         }
         try {
             $pdo = \App\Core\Database::getPdo();
             $st = $pdo->prepare(
-                'SELECT un.name FROM user_units uu
-                 INNER JOIN units un ON un.id = uu.unit_id
-                 WHERE uu.user_id = ? AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
-                 ORDER BY uu.id ASC LIMIT 1'
+                'SELECT un.name FROM personnel_profiles pp
+                 INNER JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = ?
+                 WHERE pp.user_id = ? LIMIT 1'
             );
-            $st->execute([$userId]);
+            $st->execute([$tenantId, $userId]);
             $out['unit'] = trim((string) ($st->fetchColumn() ?: ''));
+        } catch (\Throwable) {
+        }
+        if ($out['unit'] === '') {
+            try {
+                $pdo = \App\Core\Database::getPdo();
+                $st = $pdo->prepare(
+                    'SELECT un.name FROM user_units uu
+                     INNER JOIN units un ON un.id = uu.unit_id
+                     WHERE uu.user_id = ? AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+                     ORDER BY uu.id ASC LIMIT 1'
+                );
+                $st->execute([$userId]);
+                $out['unit'] = trim((string) ($st->fetchColumn() ?: ''));
+            } catch (\Throwable) {
+            }
+        }
+        try {
+            $pdo = \App\Core\Database::getPdo();
+            $st = $pdo->prepare(
+                'SELECT r.name AS role_name, pj.role_detail
+                 FROM personnel_profile_job_roles pj
+                 INNER JOIN personnel_job_roles r ON r.id = pj.personnel_job_role_id AND r.tenant_id = pj.tenant_id
+                 WHERE pj.tenant_id = ? AND pj.user_id = ?
+                 ORDER BY pj.is_primary DESC, pj.sort_order ASC, pj.id ASC
+                 LIMIT 1'
+            );
+            $st->execute([$tenantId, $userId]);
+            $job = $st->fetch(\PDO::FETCH_ASSOC) ?: [];
+            $name = trim((string) ($job['role_name'] ?? ''));
+            $detail = trim((string) ($job['role_detail'] ?? ''));
+            if ($name !== '' || $detail !== '') {
+                $out['function'] = $detail !== '' && $name !== '' ? $name . ' — ' . $detail : ($name !== '' ? $name : $detail);
+            }
         } catch (\Throwable) {
         }
 

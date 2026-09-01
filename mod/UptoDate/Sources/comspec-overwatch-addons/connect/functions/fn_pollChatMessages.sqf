@@ -2,6 +2,9 @@
     Interroge Athena (GetChatMessages) et pousse les messages web / TOC
     vers l’inbox Athena (app Messages) ET vers l’UI Iceman « Group Messages ».
 
+    Jamais de chat natif Arma (systemChat / sideChat / …) : le fil reste
+    dans le téléphone, le journal ATAK et Group Messages.
+
     Les envois locaux (empreinte COMSPEC_ChatSentFingerprints) sont ignorés
     pour éviter les doublons jeu→web→jeu. On n’émet PAS d’événement CBA
     Iceman_ATAK_GroupMessage (sinon re-bridge Athena en boucle).
@@ -174,7 +177,6 @@ if (!_bootstrapped) exitWith {
                 if ((toUpper _fromLabel) isEqualTo _myCsU) then {
                     _fromLabel = format ["%1 (TOC)", _fromLabel];
                 };
-                systemChat format ["[%1] %2", _fromLabel, _gText];
                 _inbox pushBack ["GROUP", "Message de groupe", _gText, _gGrid, _timeStr, _fromLabel];
                 if ([_fromLabel, _myGroupId, _gGrid, _gText, _timeStr] call _fnPushIcemanGroup) then {
                     _groupPanelDirty = true;

@@ -60,6 +60,14 @@ return [
         ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres avancés'],
         ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Relais Discord par événement, transmissions terrain et jetons d’accès.'],
         ['path' => 'back-office/dashboard-pins', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Raccourcis du portail'],
+        ['path' => 'back-office/integration-membres/modeles/nouveau', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · INTÉGRATION', 'title' => 'Nouveau modèle de parcours', 'subtitle' => 'Nom, durée, règle de référent et étapes proposées aux nouvelles arrivées.', 'css' => ['member-integration.css'], 'quick' => [
+            ['label' => 'Modèles', 'href' => 'back-office/integration-membres/modeles'],
+            ['label' => 'Parcours', 'href' => 'back-office/integration-membres'],
+        ]],
+        ['path' => 'back-office/integration-membres/modeles', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · INTÉGRATION', 'title' => 'Modèles de parcours', 'subtitle' => 'Un modèle publié s’applique aux nouvelles arrivées. Les suivis déjà commencés conservent leur version.', 'css' => ['member-integration.css'], 'quick' => [
+            ['label' => 'Parcours', 'href' => 'back-office/integration-membres'],
+            ['label' => 'Reprise', 'href' => 'back-office/integration-membres/reprise'],
+        ]],
         ['path' => 'back-office/integration-membres', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégration des nouveaux membres', 'subtitle' => 'Parcours d’arrivée, référents, rendez-vous et dossier personnel.', 'css' => ['member-integration.css'], 'quick' => [
             ['label' => 'Modèles', 'href' => 'back-office/integration-membres/modeles'],
             ['label' => 'Reprise', 'href' => 'back-office/integration-membres/reprise'],

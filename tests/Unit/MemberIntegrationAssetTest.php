@@ -117,6 +117,44 @@ final class MemberIntegrationAssetTest extends TestCase
         self::assertSame(MemberIntegrationCatalog::RSVP_ACCEPTED, 'accepted');
     }
 
+    public function testTemplateAdminScreensUseLightBackOfficeChrome(): void
+    {
+        $css = (string) file_get_contents($this->root() . '/public/assets/css/member-integration.css');
+        $list = (string) file_get_contents($this->root() . '/views/admin/member_integration/templates.php');
+        $form = (string) file_get_contents($this->root() . '/views/admin/member_integration/template_form.php');
+        $pages = (string) file_get_contents($this->root() . '/config/back_office_pages.php');
+        $ctrl = (string) file_get_contents($this->root() . '/app/Controllers/Admin/MemberIntegrationAdminController.php');
+
+        self::assertStringContainsString('--mi-ink: var(--ath-ink, #0c1116)', $css);
+        self::assertStringContainsString('.mi-table td', $css);
+        self::assertStringContainsString('color: var(--mi-ink)', $css);
+        self::assertStringContainsString('.mi-step-card', $css);
+        self::assertStringContainsString('.mi-field--days', $css);
+        self::assertStringContainsString('.mi-empty', $css);
+        self::assertStringNotContainsString('background: #0f172a', $css);
+        self::assertStringNotContainsString('color: #e2e8f0', $css);
+
+        self::assertStringContainsString('ath-table-panel', $list);
+        self::assertStringContainsString('ath-table-toolbar__title', $list);
+        self::assertStringContainsString('Nouveau modèle', $list);
+        self::assertStringContainsString('mi-empty', $list);
+        self::assertStringContainsString('ath-tag--ok', $list);
+        self::assertStringNotContainsString('<h1>', $list);
+
+        self::assertStringContainsString('ath-form', $form);
+        self::assertStringContainsString('ath-field__label', $form);
+        self::assertStringContainsString('Nom du parcours', $form);
+        self::assertStringContainsString('mi-step-card', $form);
+        self::assertStringContainsString('ath-check', $form);
+        self::assertStringContainsString('mi-field--days', $form);
+        self::assertStringNotContainsString('mi-panel', $form);
+        self::assertStringNotContainsString('<h1>', $form);
+
+        self::assertStringContainsString('back-office/integration-membres/modeles/nouveau', $pages);
+        self::assertStringContainsString('Modèles de parcours', $pages);
+        self::assertStringContainsString("'boPageTitle'", $ctrl);
+    }
+
     public function testConfigurationUpdateAndCronAreDeclared(): void
     {
         $cat = (string) file_get_contents($this->root() . '/app/Services/ConfigurationUpdate/ConfigurationUpdateCatalog.php');

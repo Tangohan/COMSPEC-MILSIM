@@ -60,9 +60,6 @@ private _msg = format [
 ];
 
 ["COMSPEC_Info", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
-if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
-    systemChat format ["[COMSPEC] %1", _msg];
-};
 [_msg, "orders"] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 private _applied = missionNamespace getVariable ["COMSPEC_OrderWaypointsApplied", []];

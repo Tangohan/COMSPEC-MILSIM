@@ -145,7 +145,7 @@ $navTiles = [
         ['label' => 'Tableau de bord', 'href' => url('dashboard'), 'hint' => 'Briefing et indicateurs'],
         ['label' => 'Annonces', 'href' => url('dashboard') . '#dashboard-announce', 'hint' => 'Alertes et annonces'],
         ['label' => 'Offres de l’organisation', 'href' => url('dashboard') . '#dashboard-org-offers', 'hint' => 'Postes actuellement ouverts'],
-        ['label' => 'Mon dossier RH', 'href' => url('dashboard') . '#dashboard-member-rh', 'hint' => 'Élévation et avancement'],
+        ['label' => 'Mon dossier RH', 'href' => url('dashboard') . '#mon-dossier-rh', 'hint' => 'Absence, élévation ou avancement'],
         (function_exists('can') && (can('admin.organization') || can('admin.access') || can('site.support')))
             ? ['label' => 'Rédiger un article', 'href' => url('dashboard') . '#dashboard-quick-articles', 'hint' => 'Annonce pour les membres']
             : null,

@@ -1,0 +1,68 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit;
+
+use PHPUnit\Framework\TestCase;
+
+final class AtakPhoneSettingsIdentityAssetTest extends TestCase
+{
+    public function testSettingsAndHudRejectCommunityTitleAsCallsign(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $get = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_getCallsign.sqf'
+        );
+        $usable = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_isUsableCallsign.sqf'
+        );
+        $set = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_setCallsign.sqf'
+        );
+        $boot = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_applyBootstrap.sqf'
+        );
+        $settings = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_updateSettings.sqf'
+        );
+        $hud = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_updateMapHud.sqf'
+        );
+        $sync = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_syncCallsignFromAthena.sqf'
+        );
+        $cfg = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp'
+        );
+        $dll = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/GameAuth.cs');
+        $php = (string) file_get_contents($root . '/app/Services/Game/GameAuthService.php');
+        $web = (string) file_get_contents($root . '/app/Controllers/Web/AtakController.php');
+        $api = (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php');
+
+        self::assertStringContainsString('class isUsableCallsign', $cfg);
+        self::assertStringContainsString('class inGameGroupLabel', $cfg);
+        self::assertStringContainsString('class splitKeepEmpty', $cfg);
+        self::assertStringContainsString('comspec_tenant_name', $usable);
+        self::assertStringContainsString('count _cs) > 40', $usable);
+        self::assertStringContainsString('_allowEmpty', $get);
+        self::assertStringNotContainsString('groupId (group player)', $get);
+        self::assertStringNotContainsString('name player', $get);
+        self::assertStringNotContainsString('setGroupIdGlobal', $set);
+        self::assertStringContainsString('isUsableCallsign', $set);
+        self::assertStringContainsString('splitKeepEmpty', $boot);
+        self::assertStringContainsString('isUsableCallsign', $boot);
+        self::assertStringContainsString('[true] call comspec_overwatch_connect_fnc_getCallsign', $settings);
+        self::assertStringContainsString('inGameGroupLabel', $settings);
+        self::assertStringContainsString('Rester dans le groupe actuel', $settings);
+        self::assertStringContainsString('[true] call comspec_overwatch_connect_fnc_getCallsign', $hud);
+        self::assertStringContainsString('inGameGroupLabel', $hud);
+        self::assertStringNotContainsString('name _man', $hud);
+        self::assertStringContainsString('Ne reprend jamais le nom de communauté', $sync);
+        self::assertStringContainsString('CallsignCell', $dll);
+        self::assertStringContainsString('OperatorTacticalIdentity', $php);
+        self::assertStringContainsString('OperatorTacticalIdentity', $web);
+        self::assertStringContainsString('OperatorTacticalIdentity::callsign', $api);
+        self::assertFileExists($root . '/docs/bugs/2026-09-01-atak-parametres-indicatif-communaute.md');
+    }
+}

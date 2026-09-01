@@ -68,7 +68,7 @@ final class OperationWorkspaceController
             (int) Session::get('user_id'),
             [
                 'name' => (string) $request->input('name'),
-                'code' => (string) $request->input('code'),
+                'code' => (string) ($request->input('indicatif') ?: $request->input('code')),
                 'classification' => (string) $request->input('classification'),
                 'status' => (string) $request->input('status'),
                 'description' => (string) $request->input('description'),

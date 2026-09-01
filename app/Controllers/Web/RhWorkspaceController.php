@@ -409,7 +409,7 @@ final class RhWorkspaceController
     {
         $returnTo = trim((string) $request->input('return_to', ''));
         if ($returnTo === 'dashboard') {
-            return url('dashboard') . '#dashboard-member-rh';
+            return url('dashboard') . '#mon-dossier-rh';
         }
 
         return url('personnel/mon-espace-rh') . $anchor;

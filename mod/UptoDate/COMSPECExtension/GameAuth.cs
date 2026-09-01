@@ -17,6 +17,9 @@ public static partial class Extension
     private static string _gameProfileCallsign = "";
     private static string _gameProfileGrade = "";
     private static string _gameProfileUnit = "";
+    private static string _gameProfileRole = "";
+    private static string _gameProfileFunction = "";
+    private static string _gameProfileAvatar = "";
     private static string _gameTenantName = "";
     private static string _gameTenantSlug = "";
     private static string _gameBrandingUrl = "";
@@ -131,22 +134,27 @@ public static partial class Extension
     {
         lock (GameAuthLock)
         {
+            // TabCell("-") pour les vides : splitString d’Arma ignore les cellules vides
+            // et décalerait indicatif / communauté / unité / versions.
             return string.Join("\t",
                 "OK",
-                _gameAuthState,
-                _gameAuthProgress.ToString(CultureInfo.InvariantCulture),
-                _gameAuthStep,
-                _gameAuthError,
-                TabCell(_gameProfileName),
-                TabCell(_gameProfileCallsign),
-                TabCell(_gameTenantName),
-                TabCell(_gameProfileUnit),
-                TabCell(_gameProfileGrade),
+                TabCell(_gameAuthState),
+                TabCell(_gameAuthProgress.ToString(CultureInfo.InvariantCulture)),
+                TabCell(_gameAuthStep),
+                TabCell(_gameAuthError),
+                IdentityCell(_gameProfileName),
+                CallsignCell(_gameProfileCallsign),
+                IdentityCell(_gameTenantName),
+                IdentityCell(_gameProfileUnit),
+                IdentityCell(_gameProfileGrade),
                 TabCell(_gameBrandingUrl),
-                TabCell(_gameTenantSlug),
+                IdentityCell(_gameTenantSlug),
                 TabCell(_modVersion),
                 TabCell(ExtensionVersion),
-                TabCell(_minModRequired));
+                TabCell(_minModRequired),
+                TabCell(_gameProfileAvatar),
+                IdentityCell(_gameProfileRole),
+                IdentityCell(_gameProfileFunction));
         }
     }
 
@@ -154,6 +162,31 @@ public static partial class Extension
     {
         if (string.IsNullOrEmpty(s)) return "-";
         return s.Replace('\t', ' ').Replace('\n', ' ');
+    }
+
+    private static string IdentityCell(string s)
+    {
+        return LooksLikeInternalUrl(s) ? "-" : TabCell(s);
+    }
+
+    private static string CallsignCell(string s)
+    {
+        if (LooksLikeInternalUrl(s)) return "-";
+        var t = (s ?? "").Trim();
+        if (t.Length > 40) return "-";
+        if (_gameTenantName.Length > 0 && t.Equals(_gameTenantName.Trim(), StringComparison.OrdinalIgnoreCase))
+            return "-";
+        return TabCell(t);
+    }
+
+    private static bool LooksLikeInternalUrl(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return false;
+        var t = s.Trim();
+        if (t.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || t.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return true;
+        return t.Contains("/api/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void RememberDetectedMod(string modVersion)
@@ -332,7 +365,14 @@ public static partial class Extension
         SetGameAuth("INITIALIZING", 0, "");
         _gameProfileName = "";
         _gameProfileCallsign = "";
+        _gameProfileGrade = "";
+        _gameProfileUnit = "";
+        _gameProfileRole = "";
+        _gameProfileFunction = "";
+        _gameProfileAvatar = "";
         _gameTenantName = "";
+        _gameTenantSlug = "";
+        _gameBrandingUrl = "";
         _minModRequired = "";
         return "OK|logged_out";
     }
@@ -430,13 +470,29 @@ public static partial class Extension
         var first = prof.TryGetProperty("first_name", out var fn) ? (fn.GetString() ?? "") : "";
         var last = prof.TryGetProperty("last_name", out var ln) ? (ln.GetString() ?? "") : "";
         _gameProfileName = (first + " " + last).Trim();
-        _gameProfileCallsign = prof.TryGetProperty("callsign", out var cs) ? (cs.GetString() ?? "") : "";
-        _gameProfileGrade = prof.TryGetProperty("grade", out var gr) ? (gr.GetString() ?? "") : "";
-        _gameProfileUnit = prof.TryGetProperty("unit", out var un) ? (un.GetString() ?? "") : "";
+        _gameProfileCallsign = ReadProfileText(prof, "callsign");
+        _gameProfileGrade = ReadProfileText(prof, "grade");
+        _gameProfileUnit = ReadProfileText(prof, "unit");
+        _gameProfileRole = ReadProfileText(prof, "role");
+        _gameProfileFunction = ReadProfileText(prof, "function");
+        _gameProfileAvatar = prof.TryGetProperty("avatar", out var av) ? (av.GetString() ?? "") : "";
+        if (LooksLikeInternalUrl(_gameProfileUnit))
+            _gameProfileUnit = "";
+        if (_gameProfileCallsign.Length > 40
+            || (_gameTenantName.Length > 0
+                && _gameProfileCallsign.Equals(_gameTenantName, StringComparison.OrdinalIgnoreCase)))
+            _gameProfileCallsign = "";
         if (prof.TryGetProperty("revision", out var rv) && rv.TryGetInt32(out var n))
             _gameProfileRevision = n;
         if (_gameProfileCallsign.Length > 0)
             _callSign = _gameProfileCallsign;
+    }
+
+    private static string ReadProfileText(JsonElement prof, string key)
+    {
+        if (!prof.TryGetProperty(key, out var el)) return "";
+        var s = el.GetString() ?? "";
+        return LooksLikeInternalUrl(s) ? "" : s;
     }
 
     private static string MapGameError(string code, string raw)

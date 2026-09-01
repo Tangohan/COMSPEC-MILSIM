@@ -30,6 +30,12 @@ $phoneOperatorSession = $phoneOperatorSession ?? null;
 $atakTenantMarkerIcons = $atakTenantMarkerIcons ?? ['assignments' => [], 'library' => []];
 $atakTenantLabel = trim((string) ($atakTenantLabel ?? ''));
 $atakCommunityMemberships = is_array($atakCommunityMemberships ?? null) ? $atakCommunityMemberships : [];
+$atakAccessGap = is_array($atakAccessGap ?? null) ? $atakAccessGap : [
+    'offer' => false,
+    'pending' => false,
+    'requestUrl' => '',
+    'gaps' => [],
+];
 $atakMultiCommunity = count($atakCommunityMemberships) > 1;
 $hasGameConfig = $atakConfig && ($atakConfig['arma_server_host'] ?? $atakConfig['arma_mod_credentials'] ?? $atakConfig['instructions'] ?? null);
 $atakPopoutRaw = isset($_GET['popout']) ? strtolower(trim((string) $_GET['popout'])) : '';
@@ -133,6 +139,7 @@ if ($atakMapConfig) {
         'hasSuggestionBasis' => false,
     ]) ?>;
     window.ATAK_PHONE_SESSION = <?= json_encode($phoneOperatorSession ?: null) ?>;
+    window.ATAK_ACCESS_GAP = <?= json_encode($atakAccessGap, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?>;
     window.ATAK_REPORT_CATALOG = <?= json_encode(\App\Support\AtakIcemanReportCatalog::forFrontend(), JSON_UNESCAPED_UNICODE) ?>;
     window.APP_VERSION = <?= json_encode($assetVer, JSON_UNESCAPED_UNICODE) ?>;
     window.APP_BASE_URL = <?= json_encode(rtrim((string) $base, '/'), JSON_UNESCAPED_UNICODE) ?>;
@@ -456,7 +463,7 @@ if ($atakMapConfig) {
         <h3 class="atak-account-section-title">Compte</h3>
         <p><strong>E-mail :</strong> <?= htmlspecialchars($currentUser['email'] ?? '') ?></p>
         <p><strong>Prénom et nom :</strong> <?= htmlspecialchars($currentUser['display_name'] ?? '') ?></p>
-        <p><strong>Indicatif :</strong> <?= htmlspecialchars($currentUser['callsign'] ?? '—') ?></p>
+        <p><strong>Indicatif :</strong> <?= htmlspecialchars(trim((string) ($currentUser['callsign'] ?? '')) !== '' ? (string) $currentUser['callsign'] : '—') ?></p>
         <?php if ($atakTenantLabel !== ''): ?>
         <p><strong>Communauté affichée :</strong> <?= htmlspecialchars($atakTenantLabel, ENT_QUOTES, 'UTF-8') ?></p>
         <?php endif; ?>
@@ -653,12 +660,12 @@ if ($atakMapConfig) {
           </select>
         </label>
         <label class="atak-sound-pref-label" for="atak-unit-icon-size">
-            <span class="atak-sound-pref-key">Taille des icônes <span class="atak-sound-pref-val" id="atak-unit-icon-size-val">17</span></span>
-          <input type="range" id="atak-unit-icon-size" class="atak-sound-pref-slider" min="10" max="22" step="1" value="17" title="Taille des icônes sur la carte" aria-valuemin="10" aria-valuemax="22" aria-valuenow="17" />
+            <span class="atak-sound-pref-key">Taille des icônes <span class="atak-sound-pref-val" id="atak-unit-icon-size-val">20</span></span>
+          <input type="range" id="atak-unit-icon-size" class="atak-sound-pref-slider" min="12" max="28" step="1" value="20" title="Taille des icônes sur la carte" aria-valuemin="12" aria-valuemax="28" aria-valuenow="20" />
         </label>
         <label class="atak-sound-pref-label" for="atak-unit-label-size">
-          <span class="atak-sound-pref-key">Taille des libellés <span class="atak-sound-pref-val" id="atak-unit-label-size-val">7</span></span>
-          <input type="range" id="atak-unit-label-size" class="atak-sound-pref-slider" min="6" max="16" step="1" value="7" title="Taille des indicatifs sous les marqueurs" aria-valuemin="6" aria-valuemax="16" aria-valuenow="7" />
+          <span class="atak-sound-pref-key">Taille des libellés <span class="atak-sound-pref-val" id="atak-unit-label-size-val">11</span></span>
+          <input type="range" id="atak-unit-label-size" class="atak-sound-pref-slider" min="9" max="16" step="1" value="11" title="Taille des indicatifs sous les marqueurs" aria-valuemin="9" aria-valuemax="16" aria-valuenow="11" />
         </label>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-unit-marker-depth">
           <span class="atak-sound-pref-key">Relief des marqueurs</span>
@@ -976,6 +983,32 @@ if ($atakMapConfig) {
     <div class="atak-connection-lost__panel">
       <p class="atak-connection-lost__title">Liaison perdue</p>
       <p class="atak-connection-lost__timer" id="atak-connection-lost-msg">Reconnexion en cours…</p>
+    </div>
+  </div>
+  <div
+    class="atak-session-profile-overlay atak-access-gap-modal"
+    id="atak-access-gap-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="atak-access-gap-title"
+    hidden
+  >
+    <div class="atak-session-profile-backdrop" data-access-gap-dismiss="1"></div>
+    <div class="atak-session-profile-card atak-access-gap-card">
+      <p class="atak-access-gap-kicker">Carte du poste</p>
+      <h2 id="atak-access-gap-title" class="atak-session-profile-title">Certaines vues ne vous sont pas ouvertes</h2>
+      <p class="atak-session-profile-lead" id="atak-access-gap-lead">
+        Votre liaison en jeu fonctionne. En revanche, votre grade, votre rôle ou votre fonction actuels n’ouvrent pas toutes les vues et actions de la carte.
+      </p>
+      <ul class="atak-access-gap-list" id="atak-access-gap-list"></ul>
+      <p class="atak-access-gap-follow" id="atak-access-gap-follow">
+        Vous pouvez demander à l’encadrement d’ouvrir ces accès. La demande part par courrier aux personnes habilitées de votre communauté ; elles valident ensuite depuis le bureau effectifs.
+      </p>
+      <p class="atak-access-gap-status" id="atak-access-gap-status" role="status"></p>
+      <div class="atak-session-profile-actions atak-access-gap-actions">
+        <button type="button" class="atak-session-profile-btn atak-session-profile-btn--ghost" id="atak-access-gap-dismiss">Continuer sans demander</button>
+        <button type="button" class="atak-session-profile-btn atak-session-profile-btn--primary" id="atak-access-gap-request">Demander les autorisations d’accès</button>
+      </div>
     </div>
   </div>
   <div class="atak-error-toast" id="atak-error-toast" role="alert" aria-live="polite"></div>
@@ -1431,7 +1464,7 @@ if ($atakMapConfig) {
         </div>
         <section class="atak-settings-block" id="atak-settings-look" aria-label="Apparence de la carte">
           <h3 class="atak-rail-audio-title">Apparence de la carte</h3>
-          <p class="atak-settings-copy">Taille et style des symboles. Les informations détaillées s’affichent au survol ou au clic.</p>
+          <p class="atak-settings-copy">Taille et style des symboles des opérateurs. L’indicatif reste sous le symbole ; le détail (rôle, liaison, grille) s’affiche au survol.</p>
           <label class="atak-map-look__row" for="atak-settings-look-style">
             <span class="atak-map-look__key">Positions</span>
             <select id="atak-settings-look-style" class="atak-header-select atak-map-look__select" title="Style des marqueurs d’unités">
@@ -1442,12 +1475,12 @@ if ($atakMapConfig) {
             </select>
           </label>
           <label class="atak-map-look__row" for="atak-settings-look-icon-size">
-            <span class="atak-map-look__key">Icônes <span class="atak-sound-pref-val" id="atak-settings-look-icon-size-val">17</span></span>
-            <input type="range" id="atak-settings-look-icon-size" class="atak-sound-pref-slider" min="10" max="22" step="1" value="17" aria-valuemin="10" aria-valuemax="22" aria-valuenow="17" />
+            <span class="atak-map-look__key">Icônes <span class="atak-sound-pref-val" id="atak-settings-look-icon-size-val">20</span></span>
+            <input type="range" id="atak-settings-look-icon-size" class="atak-sound-pref-slider" min="12" max="28" step="1" value="20" aria-valuemin="12" aria-valuemax="28" aria-valuenow="20" />
           </label>
           <label class="atak-map-look__row" for="atak-settings-look-label-size">
-            <span class="atak-map-look__key">Libellés infobulle <span class="atak-sound-pref-val" id="atak-settings-look-label-size-val">7</span></span>
-            <input type="range" id="atak-settings-look-label-size" class="atak-sound-pref-slider" min="6" max="16" step="1" value="7" aria-valuemin="6" aria-valuemax="16" aria-valuenow="7" />
+            <span class="atak-map-look__key">Libellés des unités <span class="atak-sound-pref-val" id="atak-settings-look-label-size-val">11</span></span>
+            <input type="range" id="atak-settings-look-label-size" class="atak-sound-pref-slider" min="9" max="16" step="1" value="11" aria-valuemin="9" aria-valuemax="16" aria-valuenow="11" />
           </label>
           <label class="atak-map-look__check" for="atak-settings-look-depth">
             <input type="checkbox" id="atak-settings-look-depth" checked />
@@ -2728,10 +2761,10 @@ if ($atakMapConfig) {
           <!-- Miroirs legacy pour sync UI (cachés) — les contrôles actifs sont dans #atak-settings-aside -->
           <div class="atak-map-look-legacy-mirrors" hidden aria-hidden="true">
             <select id="atak-map-look-style"><option value="nato" selected>nato</option><option value="intel_dot">intel_dot</option><option value="dot">dot</option><option value="team_dot">team_dot</option></select>
-            <input type="range" id="atak-map-look-icon-size" min="10" max="22" value="17" />
-            <span id="atak-map-look-icon-size-val">17</span>
-            <input type="range" id="atak-map-look-label-size" min="6" max="16" value="7" />
-            <span id="atak-map-look-label-size-val">7</span>
+            <input type="range" id="atak-map-look-icon-size" min="12" max="28" value="20" />
+            <span id="atak-map-look-icon-size-val">20</span>
+            <input type="range" id="atak-map-look-label-size" min="9" max="16" value="11" />
+            <span id="atak-map-look-label-size-val">11</span>
             <input type="checkbox" id="atak-map-look-depth" checked />
             <input type="checkbox" id="atak-map-look-motion" checked />
             <input type="checkbox" id="atak-map-look-ft-frame" checked />
@@ -3073,6 +3106,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-laser-codes.js"></script>
   <script src="<?= $base ?>/assets/js/atak-activity.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-arma-offline.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-access-gap.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sounds.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-phone-proximity.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-panel-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>

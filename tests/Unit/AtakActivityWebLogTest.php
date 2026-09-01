@@ -64,9 +64,9 @@ final class AtakActivityWebLogTest extends TestCase
 
     public function testRecordIngestIsThrottledByKindAndActor(): void
     {
-        $this->svc->recordIngest($this->tenantId, $this->mapId, 'position', 'Position reçue — HAWK-1', 'HAWK-1');
-        $this->svc->recordIngest($this->tenantId, $this->mapId, 'position', 'Position reçue — HAWK-1', 'HAWK-1');
-        $this->svc->recordIngest($this->tenantId, $this->mapId, 'position', 'Position reçue — VIPER-2', 'VIPER-2');
+        $this->svc->recordIngest($this->tenantId, $this->mapId, 'web', 'Données transmises au poste', 'Carte web');
+        $this->svc->recordIngest($this->tenantId, $this->mapId, 'web', 'Données transmises au poste', 'Carte web');
+        $this->svc->recordIngest($this->tenantId, $this->mapId, 'web', 'Effectifs reçus', 'TOC');
 
         $list = $this->svc->listFiltered($this->tenantId, $this->mapId, [
             'type' => 'donnees',
@@ -76,7 +76,71 @@ final class AtakActivityWebLogTest extends TestCase
         self::assertCount(2, $list['events']);
         $actors = array_map(static fn (array $e): string => (string) ($e['actor'] ?? ''), $list['events']);
         sort($actors);
-        self::assertSame(['HAWK-1', 'VIPER-2'], $actors);
+        self::assertSame(['Carte web', 'TOC'], $actors);
+    }
+
+    public function testPositionIngestHeartbeatsAreNotJournalised(): void
+    {
+        $this->svc->recordIngest($this->tenantId, $this->mapId, 'position', 'Position reçue — HAWK-1', 'HAWK-1');
+        $this->svc->record($this->tenantId, $this->mapId, AtakActivityLogService::TYPE_CLIENT_INIT, 'Connexion établie — HAWK-1', 'HAWK-1');
+
+        $donnees = $this->svc->listFiltered($this->tenantId, $this->mapId, [
+            'type' => 'donnees',
+            'limit' => 20,
+        ]);
+        self::assertSame([], $donnees['events']);
+
+        $recent = $this->svc->listRecent($this->tenantId, $this->mapId, 20);
+        self::assertCount(1, $recent);
+        self::assertSame(AtakActivityLogService::TYPE_CLIENT_INIT, $recent[0]['type']);
+    }
+
+    public function testListRecentHidesLegacyPositionIngestCards(): void
+    {
+        $dir = dirname(__DIR__, 2) . '/storage/cache/atak-activity';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+        $path = $dir . '/t' . $this->tenantId . '_m' . $this->mapId . '.json';
+        $now = date('c');
+        file_put_contents($path, json_encode([
+            'next_id' => 4,
+            'events' => [
+                [
+                    'id' => 1,
+                    'type' => AtakActivityLogService::TYPE_INGEST,
+                    'label' => 'Position reçue — YA1 / Bravo',
+                    'actor' => 'YA1 / Bravo',
+                    'at' => $now,
+                    'meta' => ['kind' => 'position', 'source' => 'terrain'],
+                ],
+                [
+                    'id' => 2,
+                    'type' => AtakActivityLogService::TYPE_INGEST,
+                    'label' => 'Position reçue — YA1 / Bravo',
+                    'actor' => 'YA1 / Bravo',
+                    'at' => $now,
+                    'meta' => ['kind' => 'position'],
+                ],
+                [
+                    'id' => 3,
+                    'type' => AtakActivityLogService::TYPE_CLIENT_INIT,
+                    'label' => 'Connexion établie — YA1 / Bravo',
+                    'actor' => 'YA1 / Bravo',
+                    'at' => $now,
+                ],
+            ],
+        ], JSON_UNESCAPED_UNICODE));
+
+        $recent = $this->svc->listRecent($this->tenantId, $this->mapId, 20);
+        self::assertCount(1, $recent);
+        self::assertSame('Connexion établie — YA1 / Bravo', $recent[0]['label']);
+
+        $donnees = $this->svc->listFiltered($this->tenantId, $this->mapId, [
+            'type' => 'donnees',
+            'limit' => 20,
+        ]);
+        self::assertCount(2, $donnees['events']);
     }
 
     public function testUrlsAreStrippedFromLabels(): void

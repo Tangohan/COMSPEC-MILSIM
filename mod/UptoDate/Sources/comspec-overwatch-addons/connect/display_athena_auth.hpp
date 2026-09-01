@@ -124,6 +124,16 @@ class COMSPEC_AthenaAuth_Dialog {
             h = 0.034 * safezoneH;
             action = "[] call comspec_overwatch_connect_fnc_loginSteam;";
         };
+        class OperatorPortrait: RscPictureKeepAspect {
+            idc = 9431;
+            text = "";
+            x = 0.452 * safezoneW + safezoneX;
+            y = 0.318 * safezoneH + safezoneY;
+            w = 0.056 * safezoneW;
+            h = 0.092 * safezoneH;
+            colorBackground[] = {0.03, 0.07, 0.10, 0};
+            show = 0;
+        };
         class Loader: RscStructuredText {
             idc = 9413;
             text = "";

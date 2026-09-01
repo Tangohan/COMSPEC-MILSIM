@@ -81,8 +81,4 @@ private _teams = missionNamespace getVariable ["COMSPEC_FireTeams", []];
 
 if (!(_result isEqualTo "")) exitWith { _result };
 
-// 4) Nom de groupe Arma
-private _gid = trim (groupId (group _unit));
-if (!(_gid isEqualTo "") && {!((toLower _gid) in ["error", "grpnull"])}) exitWith { _gid };
-
 "Operator"
