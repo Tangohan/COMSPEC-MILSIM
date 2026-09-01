@@ -23,6 +23,15 @@ final class PersonnelMobilityRequestRepository
         'career_wish' => 'Souhait d’évolution',
     ];
 
+    /** @var array<string, string> */
+    public const STATUS_LABELS = [
+        'pending' => 'En attente',
+        'approved' => 'Acceptée',
+        'rejected' => 'Refusée',
+        'cancelled' => 'Annulée',
+        'applied' => 'Prise en compte',
+    ];
+
     /** @var list<string> */
     public const STATUSES = ['pending', 'approved', 'rejected', 'cancelled', 'applied'];
 

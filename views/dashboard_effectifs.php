@@ -38,6 +38,9 @@ $unitLabel = ($dashboard_tenant_label !== null && $dashboard_tenant_label !== ''
     <?php if (is_file(base_path('public/assets/css/athena-header.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/athena-header.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/dashboard-impact.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/dashboard-impact.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/navbar-info-banners.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/navbar-info-banners.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
@@ -91,6 +94,25 @@ require base_path('views/partials/alert_banners.php');
             </div>
         </div>
     </section>
+
+    <?php
+    $dashTenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
+        (string) ($dashboard_tenant_type ?? 'effectifs')
+    );
+    $showDashOrgOffers = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashTenantType, 'recruitment');
+    $showDashMemberRh = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashTenantType, 'personnel');
+    if ($showDashOrgOffers || $showDashMemberRh || !empty($can_publish_dashboard_articles)):
+    ?>
+    <div class="dash-hub-stack" aria-label="Dossier RH et publications">
+        <?php if ($showDashOrgOffers) {
+            require base_path('views/partials/dashboard_org_offers.php');
+        } ?>
+        <?php if ($showDashMemberRh) {
+            require base_path('views/partials/dashboard_member_rh.php');
+        } ?>
+        <?php require base_path('views/partials/dashboard_quick_articles.php'); ?>
+    </div>
+    <?php endif; ?>
 
     <section class="border-b border-slate-200 bg-white">
         <div class="mx-auto grid max-w-6xl gap-4 px-6 py-10 md:grid-cols-3 md:px-10">

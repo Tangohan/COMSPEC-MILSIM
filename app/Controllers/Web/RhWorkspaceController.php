@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Container;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
@@ -16,6 +17,8 @@ use App\Repositories\PersonnelMobilityRequestRepository;
 use App\Repositories\PlatformModuleReleaseRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Effectifs\EffectifsStaffAlertService;
+use App\Services\Effectifs\ElevationCatalogService;
 use App\Services\Personnel\SeniorityDossierInferenceSyncService;
 use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 use App\Services\Personnel\SenioritySummaryService;
@@ -132,6 +135,7 @@ final class RhWorkspaceController
             'rhMobilitySchemaReady' => $mobilitySchemaReady,
             'rhMyMobility' => $myMobility,
             'rhMobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
+            'rhMobilityStatusLabels' => PersonnelMobilityRequestRepository::STATUS_LABELS,
             'rhHrDocsSchemaReady' => $hrDocsSchemaReady,
             'rhMyHrDocs' => $myHrDocs,
             'rhHrDocTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
@@ -149,12 +153,12 @@ final class RhWorkspaceController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
+            return Response::redirect($this->redirectAfterMemberRh($request, '#mobilite'));
         }
         if (!$this->mobilityRequests->tableExists()) {
             Session::flash('error', 'Les souhaits d’évolution ne sont pas encore disponibles.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
+            return Response::redirect($this->redirectAfterMemberRh($request, '#mobilite'));
         }
         $type = trim((string) $request->input('request_type', 'career_wish'));
         if (!in_array($type, PersonnelMobilityRequestRepository::TYPES, true)) {
@@ -165,7 +169,7 @@ final class RhWorkspaceController
         if ($targetLabel === '' && $motivation === '') {
             Session::flash('error', 'Indiquez au moins un poste ou une motivation.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
+            return Response::redirect($this->redirectAfterMemberRh($request, '#mobilite'));
         }
         $id = $this->mobilityRequests->create(
             $tenantId,
@@ -181,7 +185,52 @@ final class RhWorkspaceController
             ? 'Votre demande a été transmise à l’encadrement.'
             : 'La demande n’a pas pu être enregistrée.');
 
-        return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
+        return Response::redirect($this->redirectAfterMemberRh($request, '#mobilite'));
+    }
+
+    /**
+     * Demande d’élévation concernant le membre connecté (pas le tableur S1).
+     */
+    public function requestSelfElevation(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$user || $tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
+
+            return Response::redirect($this->redirectAfterMemberRh($request, '#elevation'));
+        }
+
+        /** @var ElevationCatalogService $catalog */
+        $catalog = Container::get(ElevationCatalogService::class);
+        /** @var EffectifsStaffAlertService $staffAlert */
+        $staffAlert = Container::get(EffectifsStaffAlertService::class);
+
+        $kind = trim((string) $request->input('elevation_kind', 'general'));
+        $note = trim((string) $request->input('elevation_note', ''));
+        $proposal = $catalog->readProposalFromRequest($request);
+        $validated = $catalog->validateProposal($tenantId, $proposal);
+        if ($validated['error'] !== null) {
+            Session::flash('error', $validated['error']);
+
+            return Response::redirect($this->redirectAfterMemberRh($request, '#elevation'));
+        }
+
+        $result = $staffAlert->requestElevation(
+            $tenantId,
+            $userId,
+            $user,
+            $kind,
+            $note,
+            $validated['proposal']
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect($this->redirectAfterMemberRh($request, '#elevation'));
     }
 
     public function storeAbsence(Request $request, array $params = []): Response
@@ -333,5 +382,15 @@ final class RhWorkspaceController
             'deny_community' => 'Restriction liée à votre programme',
             default => 'Règle associée à votre programme',
         };
+    }
+
+    private function redirectAfterMemberRh(Request $request, string $anchor): string
+    {
+        $returnTo = trim((string) $request->input('return_to', ''));
+        if ($returnTo === 'dashboard') {
+            return url('dashboard') . '#dashboard-member-rh';
+        }
+
+        return url('personnel/mon-espace-rh') . $anchor;
     }
 }

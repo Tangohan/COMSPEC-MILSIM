@@ -1879,6 +1879,9 @@ body.dashboard-shell main {
  * Mobile : wrap acceptable.
  * -------------------------------------------------------------------------- */
 .dash-idstrip {
+  position: sticky;
+  top: var(--athena-header-h, 4rem);
+  z-index: 95;
   background: #050505;
   color: #fff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -2385,7 +2388,7 @@ body.dashboard-shell main {
   outline: none;
 }
 
-.dash-rail__anomaly-submit:disabled {
+  .dash-rail__anomaly-submit:disabled {
   opacity: 0.55;
   cursor: wait;
 }
@@ -2393,5 +2396,271 @@ body.dashboard-shell main {
 @media (min-width: 1024px) {
   .dash-org-anomaly-tile__open { display: block; }
   .dash-org-anomaly-tile__form { display: none; }
+}
+
+/* --------------------------------------------------------------------------
+ * Offres, dossier RH membre, articles organisateur
+ * -------------------------------------------------------------------------- */
+.dash-hub-stack {
+  display: grid;
+  gap: 1rem;
+  max-width: 100rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .dash-hub-stack {
+    padding: 1.5rem 1.15rem 0.75rem;
+    gap: 1.15rem;
+  }
+}
+
+.dash-hub-panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+  padding: 1.25rem 1.2rem 1.35rem;
+}
+
+.dash-hub-panel--organizer {
+  border-color: #d1fae5;
+  background: linear-gradient(180deg, #ecfdf5 0%, #fff 42%);
+}
+
+.dash-hub-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.dash-hub-panel__kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #059669;
+}
+
+.dash-hub-panel__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.dash-hub-panel__lead {
+  margin: 0.4rem 0 0;
+  max-width: 42rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.dash-hub-panel__empty,
+.dash-hub-panel__hint {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.dash-hub-panel__hint {
+  margin-top: 0.85rem;
+}
+
+.dash-hub-panel__hint a,
+.dash-hub-panel__ghost {
+  color: #047857;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.dash-hub-panel__ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.7rem;
+  background: #fff;
+  color: #0f172a;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.dash-hub-panel__ghost:hover,
+.dash-hub-panel__ghost:focus-visible {
+  border-color: #059669;
+  color: #047857;
+  outline: none;
+}
+
+.dash-hub-panel__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-radius: 0.7rem;
+  background: #059669;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dash-hub-panel__cta:hover,
+.dash-hub-panel__cta:focus-visible {
+  background: #047857;
+  outline: none;
+}
+
+.dash-offer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 900px) {
+  .dash-offer-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dash-offer-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  padding: 1rem 1.05rem 1.1rem;
+}
+
+.dash-offer-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.dash-offer-card__title {
+  margin: 0.45rem 0 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.dash-offer-card__sum {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.dash-offer-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.dash-rh-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 900px) {
+  .dash-rh-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+.dash-rh-col__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.dash-rh-col__hint {
+  margin: 0.3rem 0 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.dash-rh-form label {
+  display: block;
+  margin: 0.7rem 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.dash-rh-form label:first-of-type {
+  margin-top: 0;
+}
+
+.dash-rh-form select,
+.dash-rh-form textarea,
+.dash-rh-form input[type="text"] {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.55rem;
+  background: #fff;
+  padding: 0.5rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: #0f172a;
+}
+
+.dash-rh-form .dash-hub-panel__cta {
+  margin-top: 0.9rem;
+}
+
+.dash-rh-form p {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.dash-rh-history {
+  list-style: none;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.dash-rh-history li {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.55rem;
+  background: #f8fafc;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.8rem;
+  color: #334155;
 }
 
