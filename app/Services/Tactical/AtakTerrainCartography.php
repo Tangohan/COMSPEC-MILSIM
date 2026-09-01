@@ -18,7 +18,7 @@ final class AtakTerrainCartography
 
     public function dir(int $tenantId, int $mapId): string
     {
-        return base_path('storage/atak_terrain/' . $tenantId . '/' . $mapId);
+        return base_path('storage/atak_terrain/shared/' . $mapId);
     }
 
     /**
