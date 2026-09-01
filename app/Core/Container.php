@@ -1420,6 +1420,12 @@ class Container
                 self::get(\App\Repositories\TrainingCourseRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
             ),
+            \App\Services\Effectifs\ElevationCatalogService::class => new \App\Services\Effectifs\ElevationCatalogService(
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+            ),
             \App\Services\Effectifs\EffectifsStaffAlertService::class => new \App\Services\Effectifs\EffectifsStaffAlertService(
                 self::get(\App\Repositories\TenantCommunityFeedRepository::class),
                 self::get(\App\Repositories\TrainingStaffPingRepository::class),
