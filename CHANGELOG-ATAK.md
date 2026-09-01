@@ -5,7 +5,32 @@ Toutes les modifications notables des features ATAK sont documentées ici.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Journal développeur (style Bohemia) : [SPOTREP #00001](docs/dev/SPOTREP-00001.md) · [TECHREP #00001](docs/dev/TECHREP-00001.md).
+Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
+
+---
+
+## [1.5.48] / Overwatch 1.4.97 / Athena 1.0.58 — 2026-09-01
+
+### Nouveau — Lecture de la tablette ATAK (IceMan)
+
+Sur la tablette ATAK Enhanced, la carte se lit désormais comme un poste de terrain : fond charbon, chiffres cyan, cartouches sous le curseur et sur l’unité suivie. Le tiroir d’applications à droite n’est pas recouvert. Relancer Arma complètement.
+
+- Sous le curseur : grille, distance, altitude du sol, gisement, portée et écart d’altitude.
+- Sur l’unité suivie : groupe, indicatif, grille, altitude, vitesse et heure.
+- Cap en degrés vrais en haut à gauche, zoom plus et moins sur le bord de la carte.
+- Le tiroir d’applications, Drone Ops et les fenêtres caméra déjà présentes reprennent le même charbon / cyan.
+
+### Nouveau — Connexion Athena avant la session
+
+Au menu principal, l’opérateur s’identifie (e-mail, code temporaire, ou Steam déjà associé). La communauté, l’indicatif et les habilitations arrivent tout seuls. Rien n’est transmis tant que l’environnement n’est pas prêt.
+
+### Carte du poste (web)
+
+- Les rapports (observation, situation, renseignement immédiat, contact) apparaissent en pastilles compactes, comme en mission : type en capitales, barre colorée, temps écoulé.
+- L’outil Route trace un itinéraire : les opérateurs le voient en jeu, les points déjà atteints passent en gris.
+- La barre Position / Annoter / Tracer reste visible ; seul Masquer la replie, Outils la ramène.
+- Réglages du poste : icônes de la communauté visibles ; le gestionnaire ouvre la bibliothèque pour en choisir ou en ajouter.
+- Terminaux : l’état de liaison reste calé à droite ; la version Overwatch se lit sur sa propre ligne.
 
 ---
 

@@ -449,6 +449,11 @@ window.ATAKTerrainTools = (function () {
     if (window.ATAKMapTools) {
       if (window.ATAKMapTools.startMeasure && mode) { /* already handled */ }
     }
+    if (window.ATAKGpsRoutes && window.ATAKGpsRoutes.isPlacing && window.ATAKGpsRoutes.isPlacing()) {
+      window.ATAKGpsRoutes.stop();
+    }
+    var gpsBox = document.getElementById('atak-gps-route-box');
+    if (gpsBox) gpsBox.hidden = true;
     vertices = [];
     lastResult = null;
     mode = next;

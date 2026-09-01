@@ -781,6 +781,10 @@ window.ArmaMapMarkers = (function () {
 
   function leafletDivIcon(L, data) {
     if (!L) return null;
+    var Chip = window.TacticalMarkerChip;
+    if (Chip && Chip.shouldUseChip && Chip.shouldUseChip(data) && Chip.leafletDivIcon) {
+      return Chip.leafletDivIcon(L, Chip.fromMarkerData(data));
+    }
     var spec = buildIconSpec(data);
     var S = window.ATAKMarkerSizes;
     var box = S ? S.square('normal') : { size: spec.iconSize, anchor: spec.iconAnchor, popup: [0, -8] };

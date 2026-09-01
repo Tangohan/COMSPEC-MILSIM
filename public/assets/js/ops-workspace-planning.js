@@ -46,13 +46,40 @@
     el.setAttribute('stroke-width', '2');
     if (!el.getAttribute('fill')) el.setAttribute('fill', color);
     g.appendChild(el);
-    var label = document.createElementNS(svgNs, 'text');
-    label.setAttribute('x', pts[0][0] + 10);
-    label.setAttribute('y', pts[0][1] - 10);
-    label.setAttribute('fill', '#e8eef7');
-    label.setAttribute('font-size', '12');
-    label.textContent = obj.name || '';
-    g.appendChild(label);
+    var chipKind = window.TacticalMarkerChip && window.TacticalMarkerChip.detectKind
+      ? window.TacticalMarkerChip.detectKind({ name: obj.name, graphic_type: obj.graphic_type, kind: obj.graphic_type })
+      : '';
+    var intelGraphic = /^(nai|tai|hide|obs_post|contact_point)$/.test(String(obj.graphic_type || ''));
+    if (window.TacticalMarkerChip && window.TacticalMarkerChip.html && (chipKind || intelGraphic)) {
+      var fo = document.createElementNS(svgNs, 'foreignObject');
+      fo.setAttribute('x', String((pts[0][0] || 0) - 70));
+      fo.setAttribute('y', String((pts[0][1] || 0) - 44));
+      fo.setAttribute('width', '140');
+      fo.setAttribute('height', '42');
+      fo.setAttribute('class', 'ops-tac__chip-host');
+      var wrap = document.createElement('div');
+      wrap.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+      var opts = chipKind
+        ? window.TacticalMarkerChip.fromMarkerData({ name: obj.name, graphic_type: obj.graphic_type }, { billboard: false })
+        : {
+          kind: 'OTHER',
+          title: String(obj.graphic_label || obj.name || 'OBS').toUpperCase().slice(0, 14),
+          color: color,
+          subtitle: obj.name || '',
+          billboard: false
+        };
+      wrap.innerHTML = window.TacticalMarkerChip.html(opts);
+      fo.appendChild(wrap);
+      g.appendChild(fo);
+    } else {
+      var label = document.createElementNS(svgNs, 'text');
+      label.setAttribute('x', pts[0][0] + 10);
+      label.setAttribute('y', pts[0][1] - 10);
+      label.setAttribute('fill', '#e8eef7');
+      label.setAttribute('font-size', '12');
+      label.textContent = obj.name || '';
+      g.appendChild(label);
+    }
     return g;
   }
 

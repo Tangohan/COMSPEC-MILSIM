@@ -26,7 +26,7 @@ final class AtakCommunitySwitchAssetTest extends TestCase
 
         self::assertStringContainsString("returnTo === 'atak'", $ctrl);
         self::assertStringContainsString('Vous êtes maintenant sur', $ctrl);
-        $dash = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/dashboard_command_center.php');
+        $dash = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/dashboard_idstrip.php');
         self::assertStringContainsString('Vous êtes sur', $dash);
         self::assertStringContainsString('return_to', $dash);
         self::assertStringContainsString('value="atak"', $dash);

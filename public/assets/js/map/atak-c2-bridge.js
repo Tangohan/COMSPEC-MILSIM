@@ -73,7 +73,7 @@
       wireToolRail(MapUI);
       wireEntityPanel(SelectedEntityPanel);
       wireEntityFocus(map);
-      hideLegacyToolbarChrome();
+      keepLegacyToolbarChrome();
 
       /* Premier sync si unités déjà en mémoire */
       if (window.ATAKUnits && typeof window.ATAKUnits.getUnits === 'function') {
@@ -312,6 +312,11 @@
       los: 'los',
       nvg: 'nvg',
     };
+    var stopGps = ['select', 'pan', 'measure', 'draw', 'perimeter', 'marker', 'search', 'goto', 'follow', 'los'];
+    if (tool && stopGps.indexOf(tool) >= 0
+      && window.ATAKGpsRoutes && window.ATAKGpsRoutes.isPlacing && window.ATAKGpsRoutes.isPlacing()) {
+      window.ATAKGpsRoutes.stop();
+    }
     var legacy = map[tool];
     if (legacy) triggerLegacyTool(legacy);
   }
@@ -368,14 +373,18 @@
     });
   }
 
-  function hideLegacyToolbarChrome() {
+  /**
+   * La barre d’outils classique (#atak-map-tools) reste visible avec le rail C2.
+   * Seul « Masquer » (atak-map-tools.js / atak_map_tools_collapsed) la replie.
+   */
+  function keepLegacyToolbarChrome() {
     var tools = document.getElementById('atak-map-tools');
     if (tools) {
-      tools.classList.add('atak-map-tools--c2-legacy');
-      tools.setAttribute('aria-hidden', 'true');
+      tools.classList.remove('atak-map-tools--c2-legacy');
+      if (tools.getAttribute('aria-hidden') === 'true' && !tools.classList.contains('is-collapsed')) {
+        tools.setAttribute('aria-hidden', 'false');
+      }
     }
-    var fab = document.getElementById('atak-map-tools-fab');
-    if (fab) fab.hidden = true;
   }
 
   function ensureCss(href) {

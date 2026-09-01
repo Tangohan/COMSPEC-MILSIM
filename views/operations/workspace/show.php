@@ -216,6 +216,7 @@ $versions = $workspace['versions'] ?? [];
             <script>
             window.OPS_PLANNING = <?= $planningJson ?? '{}' ?>;
             </script>
+            <script src="<?= htmlspecialchars(asset_url('assets/js/tactical-marker-chip.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
             <script src="<?= htmlspecialchars(asset_url('assets/js/ops-workspace-planning.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
         <?php elseif ($tab === 'intel' && $canIntel): ?>
             <section class="ops-ws__panel">

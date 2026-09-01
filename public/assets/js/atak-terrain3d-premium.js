@@ -473,8 +473,8 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
       button.setAttribute('aria-pressed', state.enabled ? 'true' : 'false');
       button.textContent = state.enabled ? '3D actif' : '3D';
       button.title = state.enabled
-        ? 'Revenir à la carte 2D'
-        : 'Vue topo premium (relief Three.js)';
+        ? 'Revenir à la carte à plat'
+        : 'Vue de la carte en relief';
     }
     if (nav) nav.hidden = !state.enabled;
     if (settings) {
@@ -490,11 +490,11 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
     if (pitchValue) pitchValue.textContent = state.pitch + '°';
     const exaggerationValue = document.getElementById('atak-terrain-exaggeration-val');
     if (exaggerationValue) exaggerationValue.textContent = state.verticalExaggeration.toFixed(1) + '×';
-    const hint = document.querySelector('.atak-terrain-3d-hint');
+    const hint = document.querySelector('#atak-terrain-3d-settings > .atak-terrain-3d-hint');
     if (hint && !hint.dataset.premiumHint) {
       hint.dataset.premiumHint = '1';
       hint.textContent =
-        'Vue topo premium : mesh Three.js drapé sur le relevé d’altitudes. Amplifiez le relief, ajustez l’inclinaison, orientez avec la souris. Le rendu CSS-pitch legacy est désactivé.';
+        'Vue en relief : le sol se soulève selon le relevé d’altitudes. Amplifiez le relief, ajustez l’inclinaison, orientez avec la souris. Sans relevé, le relief n’a pas d’effet.';
     }
     window.dispatchEvent(new CustomEvent('atak:terrain3dchange', {
       detail: { enabled: state.enabled, premium: true },
