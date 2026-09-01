@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(329, '2026-09-01', 'Les cartes Absence, Élévation et Avancement s’ouvrent', 'Sur le tableau de bord, un clic sur Absence, Élévation ou Avancement ouvre le formulaire correspondant. Le parcours ne reste plus bloqué sur le choix de la démarche', [], [], [
+                'Cliquer sur une des trois cartes n’ouvrait pas le formulaire',
+            ], ['personnel'], [
+                'Ouvrez le tableau de bord, descendez jusqu’à Mon dossier RH, puis cliquez sur Absence, Élévation ou Avancement.',
+            ], 'Portail'),
             $pr(326, '2026-09-01', 'Connexion Steam depuis le tableau de bord', 'Une tuile Connexion Steam ouvre Steam pour associer votre compte au portail. Après validation, Overwatch vous reconnaît en jeu. Si Steam est déjà associé, la tuile le confirme et permet de changer de compte', [
                 'Tuile Connexion Steam sur le tableau de bord, et le même accès dans Mon compte',
             ], [], [], ['atak', 'platform'], [

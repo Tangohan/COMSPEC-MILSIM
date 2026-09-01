@@ -51,10 +51,18 @@ if (!is_string($showcase_json) || $showcase_json === '') {
     <link href="<?= htmlspecialchars(asset_url('assets/css/portal-footer.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php
-    $loadAlpineDashboard = (!empty($showcase_training_feature) && !empty($showcase_items))
+    $alpineSrc = '';
+    if (is_file(base_path('public/assets/vendor/alpinejs/alpine.min.js'))) {
+        $alpineSrc = asset_url('assets/vendor/alpinejs/alpine.min.js');
+    } elseif (is_file(base_path('public/assets/js/alpine.min.js'))) {
+        $alpineSrc = asset_url('assets/js/alpine.min.js');
+    }
+    $loadAlpineDashboard = $alpineSrc !== '' && (
+        (!empty($showcase_training_feature) && !empty($showcase_items))
         || !$dashboard_is_default_tenant
         || !empty($candidate_enlistment_tracking ?? [])
-        || !empty($my_applications_all ?? []);
+        || !empty($my_applications_all ?? [])
+    );
     ?>
     <?php if (!empty($showcase_training_feature) && !empty($showcase_items)): ?>
     <script>
@@ -80,7 +88,7 @@ if (!is_string($showcase_json) || $showcase_json === '') {
     </script>
     <?php endif; ?>
     <?php if ($loadAlpineDashboard): ?>
-    <script defer src="https://unpkg.com/alpinejs@3/dist/cdn.min.js"></script>
+    <script defer src="<?= htmlspecialchars($alpineSrc, ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
 </head>
 <body class="dashboard-shell layout-light text-slate-900 selection:bg-emerald-500/25 selection:text-slate-900 antialiased" style="background:#f8fafc;">
