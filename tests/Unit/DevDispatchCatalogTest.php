@@ -364,10 +364,10 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($overwatch150);
         self::assertSame('00318', $overwatch150['number_pad']);
         self::assertStringContainsString('identité', strtolower((string) $overwatch150['title']));
-        $sharedRelief = DevDispatchCatalog::find('update', '322');
-        self::assertNotNull($sharedRelief);
-        self::assertSame('00322', $sharedRelief['number_pad']);
-        self::assertStringContainsString('ombrage', strtolower((string) $sharedRelief['title']));
+        $steamDash = DevDispatchCatalog::find('update', '326');
+        self::assertNotNull($steamDash);
+        self::assertSame('00326', $steamDash['number_pad']);
+        self::assertStringContainsString('tableau de bord', strtolower((string) $steamDash['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

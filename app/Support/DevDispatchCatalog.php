@@ -584,10 +584,10 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
-            $pr(322, '2026-09-01', 'L’ombrage d’un théâtre est le même pour toutes les communautés', 'Le sol, l’ombrage et les volumes du jeu relevés sur un théâtre — Altis, Malden, Stratis… — apparaissent désormais sur le poste de chaque communauté. Une communauté n’a plus à tout relever à nouveau si une autre l’a déjà fait. Les positions, les notes et les effectifs restent propres à chacune', [], [], [
-                'Deux communautés sur le même théâtre : l’une voyait l’ombrage et le relief, l’autre « pas encore sur le poste »',
-            ], ['atak'], [
-                'Rechargez la carte du poste. Pas de nouveau pack jeu. Les positions et les notes restent propres à chaque communauté.',
+            $pr(326, '2026-09-01', 'Connexion Steam depuis le tableau de bord', 'Une tuile Connexion Steam ouvre Steam pour associer votre compte au portail. Après validation, Overwatch vous reconnaît en jeu. Si Steam est déjà associé, la tuile le confirme et permet de changer de compte', [
+                'Tuile Connexion Steam sur le tableau de bord, et le même accès dans Mon compte',
+            ], [], [], ['atak', 'platform'], [
+                'Ouvrez le tableau de bord. Tuile Connexion Steam : connectez-vous sur Steam, puis revenez. Un message confirme l’association. Pas de pack jeu.',
             ], 'Portail'),
             $pr(318, '2026-09-01', 'Overwatch 1.5.0 : votre identité, plus le nom de la communauté', 'Le pack jeu affiche l’opérateur, pas le titre de la communauté. L’indicatif vient de la fiche Effectifs. Les messages du poste restent dans le téléphone et le journal, plus dans le chat de bord d’Arma. Sur le téléphone, le journal Athena se lit enfin', [
                 'Écran prêt : photo si elle existe, prénom, nom, indicatif, rôle, grade et fonction',
