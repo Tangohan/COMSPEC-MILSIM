@@ -57,10 +57,14 @@ final class PersonnelCorrectionController
             'targetUser' => $target,
             'snapshot' => $snapshot,
             'fieldLabels' => PersonnelCorrectionRequestService::fieldLabels(),
+            'fieldCatalog' => PersonnelCorrectionRequestService::fieldCatalog(),
+            'fieldGroups' => PersonnelCorrectionRequestService::FIELD_GROUPS,
+            'choiceCatalog' => PersonnelCorrectionRequestService::choiceCatalog(),
             'pending' => $pending,
             'hasOpen' => $hasOpen,
             'isSelf' => $isSelf,
             'csrf' => Csrf::token(),
+            'backOfficePageCss' => ['personnel-dossier.css'],
         ]);
     }
 
