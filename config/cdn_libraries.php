@@ -14,11 +14,15 @@ declare(strict_types=1);
 return [
     'version' => '2026.07',
 
-    /** Packs activés par défaut sur le layout portail (léger). */
-    'defaults' => ['icons', 'animation'],
+    /**
+     * Packs activés par défaut sur le layout portail.
+     * Vide : Lucide, Iconify, Animate.css et AOS n’étaient pas utilisés
+     * et violaient la CSP (pas de cdn.jsdelivr.net).
+     */
+    'defaults' => [],
 
     /** Packs activés par défaut sur le forum (messagerie / réactions). */
-    'defaults_forum' => ['icons', 'emoji', 'gif', 'flags', 'animation'],
+    'defaults_forum' => ['emoji', 'gif', 'flags'],
 
     /**
      * Définition des assets par pack.
@@ -27,21 +31,9 @@ return [
      */
     'packs' => [
         'icons' => [
-            'label' => 'Icônes (Lucide + Iconify)',
-            'assets' => [
-                [
-                    'type' => 'js',
-                    'phase' => 'body',
-                    'src' => 'https://cdn.jsdelivr.net/npm/lucide@0.525.0/dist/umd/lucide.min.js',
-                    'attrs' => ['defer' => true],
-                ],
-                [
-                    'type' => 'js',
-                    'phase' => 'body',
-                    'src' => 'https://cdn.jsdelivr.net/npm/iconify-icon@2.3.0/dist/iconify-icon.min.js',
-                    'attrs' => ['defer' => true],
-                ],
-            ],
+            'label' => 'Icônes (Lucide + Iconify) — retiré (CSP, non utilisé)',
+            'assets' => [],
+            'note' => 'Ne pas recharger depuis jsDelivr. Utiliser les icônes SVG / CSS du site.',
         ],
 
         'hero' => [
@@ -108,25 +100,9 @@ return [
         ],
 
         'animation' => [
-            'label' => 'Animations CSS (Animate.css + AOS)',
-            'assets' => [
-                [
-                    'type' => 'css',
-                    'phase' => 'head',
-                    'href' => 'https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css',
-                ],
-                [
-                    'type' => 'css',
-                    'phase' => 'head',
-                    'href' => 'https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css',
-                ],
-                [
-                    'type' => 'js',
-                    'phase' => 'body',
-                    'src' => 'https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js',
-                    'attrs' => ['defer' => true],
-                ],
-            ],
+            'label' => 'Animations CSS (Animate.css + AOS) — retiré (CSP, décoratif)',
+            'assets' => [],
+            'note' => 'Ne pas recharger depuis jsDelivr. Animations décoratives non utilisées sur le portail.',
         ],
 
         'lottie' => [

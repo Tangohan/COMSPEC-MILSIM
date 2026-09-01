@@ -87,7 +87,7 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
 <?php
     $cdnPhase = 'head';
     $cdnPreset = 'portal';
-    // $cdnLibs : null = défauts (icons + animation) ; false/'none' = désactivé ; array = packs explicites
+    // $cdnLibs : null = défauts portail (aucun pack CDN) ; false/'none' = désactivé ; array = packs explicites
     require base_path('views/partials/cdn_media_libs.php');
 ?>
     <?php if ($communityShowcasePage || $communityRecruitmentOpeningPage || $communityRegistryPage || $communityReelsPage): ?>
@@ -178,15 +178,25 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php endif; ?>
     <?php if (!empty($opsWorkspacePage) && is_file(base_path('public/assets/css/ops-workspace.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/ops-workspace.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/tactical-marker-chip.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php if (!empty($equipmentHubPage) && is_file(base_path('public/assets/css/equipment-hub.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/equipment-hub.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (!empty($personnelFilePage) && is_file(base_path('public/assets/css/personnel-file.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/personnel-file.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php
-    $alpineLocal = base_path('public/assets/js/alpine.min.js');
-    $alpineSrc = is_file($alpineLocal) ? asset_url('assets/js/alpine.min.js') : 'https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js';
+    $alpineSrc = '';
+    if (is_file(base_path('public/assets/vendor/alpinejs/alpine.min.js'))) {
+        $alpineSrc = asset_url('assets/vendor/alpinejs/alpine.min.js');
+    } elseif (is_file(base_path('public/assets/js/alpine.min.js'))) {
+        $alpineSrc = asset_url('assets/js/alpine.min.js');
+    }
+    if ($alpineSrc !== ''):
 ?>
-    <script defer src="<?= htmlspecialchars($alpineSrc) ?>"></script>
+    <script defer src="<?= htmlspecialchars($alpineSrc, ENT_QUOTES, 'UTF-8') ?>"></script>
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/js/img-fallback.js'))): ?>
     <script src="<?= htmlspecialchars(asset_url('assets/js/img-fallback.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
@@ -342,7 +352,7 @@ if (!empty($isBackOfficeShell)) {
     <?php if (empty($usesAdminSidebarShell)): ?>
     <?php require base_path('views/partials/advanced_fiche_edit_banner.php'); ?>
     <?php endif; ?>
-    <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? (!empty($isBackOfficeShell) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : 'min-h-[80vh]') ?>">
+    <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? (!empty($isBackOfficeShell) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : (!empty($compactPortalMain) ? 'personnel-file-portal-main' : 'min-h-[80vh]')) ?>">
         <?php if (empty($communityReelsPage) && empty($isBackOfficeShell)): ?>
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
         <?php endif; ?>
