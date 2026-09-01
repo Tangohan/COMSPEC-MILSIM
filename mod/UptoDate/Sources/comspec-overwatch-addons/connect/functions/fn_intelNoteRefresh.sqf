@@ -27,7 +27,7 @@ if (!(_pieces isEqualType [])) then { _pieces = []; };
 private _dateText = trim (["value", "date"] call comspec_overwatch_connect_fnc_intelNoteCache);
 if (_dateText isEqualTo "") then { _dateText = "DATE À PRÉCISER"; };
 (_disp displayCtrl 9611) ctrlSetStructuredText parseText format [
-    "<t size='0.44' color='#f4f5f6'>%1</t>",
+    "<t size='0.72' color='#f4f5f6'>%1</t>",
     _dateText
 ];
 
@@ -37,7 +37,7 @@ if (_placeText isEqualTo "") then {
     _placeText = if (_grid isEqualTo "") then { "LIEU À PRÉCISER" } else { "REPÈRE " + _grid };
 };
 (_disp displayCtrl 9612) ctrlSetStructuredText parseText format [
-    "<t size='0.44' align='right' color='#f4f5f6'>%1</t>",
+    "<t size='0.72' align='right' color='#f4f5f6'>%1</t>",
     _placeText
 ];
 
@@ -96,8 +96,8 @@ if (_signature isNotEqualTo (_disp getVariable ["COMSPEC_IntelNote_ChipsKey", ""
         _frame = [safezoneX, safezoneY, safezoneW, safezoneH, 1, 1];
     };
     _frame params ["_frameX", "_frameY", "_frameW", "_frameH", ["_size", 1], ["_ui", 1]];
-    private _chipH = 0.019 * _frameH;
-    private _chipY = _frameY + (0.030 * _frameH) + (0.004 * _frameH);
+    private _chipH = 0.026 * _frameH;
+    private _chipY = _frameY + (0.038 * _frameH) + (0.004 * _frameH);
     private _chipX = _frameX + 0.008 * _frameW;
     private _chipGap = 0.005 * _frameW;
     private _chips = [];
@@ -105,13 +105,13 @@ if (_signature isNotEqualTo (_disp getVariable ["COMSPEC_IntelNote_ChipsKey", ""
         _x params ["_label", "_hex"];
         // Largeur estimée sur le nombre de caractères : Arma ne mesure un texte
         // qu'une fois le contrôle posé, ce qui imposerait un second passage.
-        private _chipW = (0.0042 * _frameW) * (count _label) + (0.010 * _frameW);
+        private _chipW = (0.0052 * _frameW) * (count _label) + (0.014 * _frameW);
         private _ctrl = _disp ctrlCreate ["RscText", -1];
         if (isNull _ctrl) then { continue };
         _ctrl ctrlSetPosition [_chipX, _chipY, _chipW, _chipH];
         _ctrl ctrlSetBackgroundColor ([_hex] call _fnc_hexToRgba);
         _ctrl ctrlSetTextColor [1, 1, 1, 1];
-        _ctrl ctrlSetFontHeight ((0.014 * _frameH) * _ui);
+        _ctrl ctrlSetFontHeight ((0.020 * _frameH) * _ui);
         _ctrl ctrlSetText ("  " + _label);
         _ctrl ctrlCommit 0;
         _chips pushBack _ctrl;
@@ -130,7 +130,7 @@ _counter ctrlSetBackgroundColor (
     }
 );
 _counter ctrlSetStructuredText parseText format [
-    "<t size='0.40' align='center' color='#ffffff'>%1/%2</t>",
+    "<t size='0.64' align='center' color='#ffffff'>%1/%2</t>",
     _length,
     _bodyMax
 ];
@@ -159,7 +159,7 @@ for "_i" from 0 to 16 do {
 
 // --- Emplacements de pièces jointes ---
 (_disp displayCtrl 9630) ctrlSetStructuredText parseText format [
-    "<t size='0.50' color='#f4f5f6'>Pièce(s) jointe(s) (%1/%2)</t>",
+    "<t size='0.78' color='#f4f5f6'>Pièce(s) jointe(s) (%1/%2)</t>",
     count _pieces,
     _piecesMax
 ];
@@ -186,7 +186,7 @@ for "_i" from 0 to (_piecesMax - 1) do {
         };
         if (_name isEqualTo "") then { _name = "capture à la validation"; };
         _slot ctrlSetStructuredText parseText format [
-            "<t size='0.36' color='#f4f5f6'>%1</t><br/><t size='0.32' color='#8b929c'>%2</t>",
+            "<t size='0.58' color='#f4f5f6'>%1</t><br/><t size='0.52' color='#8b929c'>%2</t>",
             _kindLabel,
             if (_caption isEqualTo "") then { _name } else { _caption }
         ];
@@ -207,7 +207,7 @@ for "_i" from 0 to (_piecesMax - 1) do {
         };
     } else {
         _slot ctrlSetStructuredText parseText
-            "<t size='0.36' align='center' color='#565c66'>Libre</t>";
+            "<t size='0.58' align='center' color='#565c66'>Libre</t>";
         if (!isNull _pic) then {
             _pic ctrlSetText "";
             _pic ctrlShow false;

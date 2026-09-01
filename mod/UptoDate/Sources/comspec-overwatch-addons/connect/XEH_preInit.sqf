@@ -505,7 +505,7 @@ private _fnc_applyNet = {
     "comspec_overwatch_frs_ui", "SLIDER",
     ["Texte et boutons de la fiche", "Agrandit ou réduit le texte, les boutons et les pastilles de la fiche, sans changer le cadre. Utile si le rédacteur est trop petit ou trop dense."],
     ["COMSPEC Overwatch", "ATAK — fiches FRS / FRM"],
-    [0.75, 1.45, 1, 0, true],
+    [0.75, 1.75, 1.20, 0, true],
     false,
     {
         if (!hasInterface) exitWith {};
