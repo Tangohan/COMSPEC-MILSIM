@@ -93,6 +93,32 @@ final class EnlistmentRecruitmentEngagementRepository
         return $out;
     }
 
+    /**
+     * Bilans de candidature déjà saisis pour le membre (lecture, pas de duplication).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRetrosForSubmitter(int $tenantId, int $submitterUserId, int $limit = 20): array
+    {
+        if (!$this->retroTableExists() || $tenantId < 1 || $submitterUserId < 1) {
+            return [];
+        }
+        $lim = max(1, min(50, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT r.id, r.enlistment_id, r.feedback_scope, r.created_at, r.submitted_at,
+                    e.first_name, e.last_name
+             FROM enlistment_retro_feedbacks r
+             INNER JOIN enlistments e ON e.id = r.enlistment_id AND e.tenant_id = r.tenant_id
+             WHERE r.tenant_id = ?
+               AND e.submitter_user_id = ?
+             ORDER BY COALESCE(r.submitted_at, r.created_at) DESC, r.id DESC
+             LIMIT {$lim}"
+        );
+        $stmt->execute([$tenantId, $submitterUserId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function addPick(int $tenantId, int $enlistmentId, int $userId): bool
     {
         if (!$this->picksTableExists() || $tenantId < 1 || $enlistmentId < 1 || $userId < 1) {

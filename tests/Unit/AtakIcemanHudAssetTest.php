@@ -37,15 +37,19 @@ final class AtakIcemanHudAssetTest extends TestCase
         self::assertStringContainsString('athena_installMapHud', $cfg);
         self::assertStringContainsString('athena_updateMapHud', $cfg);
         self::assertStringContainsString('athena_mapHudZoom', $cfg);
-        self::assertStringContainsString('1.0.58', $cfg);
+        self::assertStringContainsString('1.0.61', $cfg);
         self::assertStringContainsString('athena_installMapHud', $post);
         self::assertStringContainsString('athena_updateMapHud', $layout);
 
-        self::assertStringContainsString('DST', $upd);
-        self::assertStringContainsString('ELEV', $upd);
-        self::assertStringContainsString('BRG', $upd);
-        self::assertStringContainsString('GROUP', $upd);
-        self::assertStringContainsString('CALLSIGN', $upd);
+        self::assertStringContainsString('GRILLE', $upd);
+        self::assertStringContainsString('DIST', $upd);
+        self::assertStringContainsString('GIS', $upd);
+        self::assertStringContainsString('INDICATIF', $upd);
+        self::assertStringContainsString('GROUPE', $upd);
+        self::assertStringContainsString('RÔLE', $upd);
+        self::assertStringContainsString('getCallsign', $upd);
+        self::assertStringNotContainsString('CALLSIGN', $upd);
+        self::assertStringNotContainsString('GROUP     ', $upd);
         self::assertStringContainsString('#5EC7F2', $upd);
         self::assertStringContainsString('99887811', $upd);
         self::assertStringContainsString('_mx + _pad', $upd);

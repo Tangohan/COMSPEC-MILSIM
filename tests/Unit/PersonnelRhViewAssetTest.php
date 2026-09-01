@@ -19,6 +19,8 @@ final class PersonnelRhViewAssetTest extends TestCase
 
         self::assertStringContainsString('personnelFileIsRhFull', $file);
         self::assertStringContainsString('personnelFileRhContext', $file);
+        self::assertStringContainsString('personnel-file--rh-gate', $file);
+        self::assertStringNotContainsString('min-h-screen pt-20 pb-24', $file);
         self::assertStringNotContainsString('getFlash(\'success\')', $file);
 
         self::assertStringContainsString('<details', $rh);
@@ -34,8 +36,20 @@ final class PersonnelRhViewAssetTest extends TestCase
         self::assertStringContainsString('personnelShowRedirectUrl', $controller);
         self::assertStringContainsString("return_view === 'rh'", $controller);
         self::assertStringContainsString('$canSensitive || $isForumMod', $controller);
+        self::assertStringContainsString('layoutMainCompact', $controller);
 
         self::assertStringContainsString('return_view', $edit);
         self::assertStringContainsString('name="return_view" value="rh"', $edit);
+
+        $gate = (string) file_get_contents($root . '/views/partials/personnel/file_view_gate.php');
+        $layout = (string) file_get_contents($root . '/views/layout/main.php');
+        $footerCss = (string) file_get_contents($root . '/public/assets/css/portal-footer.css');
+        self::assertStringContainsString('personnel-file-gate__hero', $gate);
+        self::assertStringContainsString('personnel-file-gate__choices', $gate);
+        self::assertStringNotContainsString('py-14 md:py-20', $gate);
+        self::assertStringContainsString('layout-page-compact', $layout);
+        self::assertStringContainsString('layoutMainCompact', $layout);
+        self::assertStringContainsString('min-h-0', $layout);
+        self::assertStringContainsString('body.layout-page-compact .portal-footer', $footerCss);
     }
 }

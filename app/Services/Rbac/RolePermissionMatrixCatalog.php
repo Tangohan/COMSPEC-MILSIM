@@ -152,6 +152,8 @@ final class RolePermissionMatrixCatalog
                     'admin.members.view', 'admin.members.manage', 'admin.members.invite', 'admin.members.moderate',
                     'organization.effectifs.hub.view', 'organization.recruitment.manage',
                     'organization.recruitment.openings.manage', 'invitations.send',
+                    'member_integration.view', 'member_integration.manage', 'member_integration.assign',
+                    'member_integration.note', 'member_integration.template_manage',
                 ],
                 self::LEVEL_SA_SECTION => [
                     'personnel.profile.view', 'personnel.profile.update', 'personnel.assignments.manage',

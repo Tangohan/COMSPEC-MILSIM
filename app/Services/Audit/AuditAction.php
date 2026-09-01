@@ -63,6 +63,11 @@ final class AuditAction
      */
     public const USER_PURGED = 'user.purged';
 
+    public const MEMBER_INTEGRATION_CREATED = 'member_integration.created';
+    public const MEMBER_INTEGRATION_STEP_FORCED = 'member_integration.step_forced';
+    public const MEMBER_INTEGRATION_APPOINTMENT = 'member_integration.appointment';
+    public const MEMBER_INTEGRATION_CANCELLED = 'member_integration.cancelled';
+
     /** Journalisation convention slugs site.* / community.* / intra.* (migration progressive). */
     public const PERMISSION_SCOPE_MIGRATION = 'permission.scope_migration';
 

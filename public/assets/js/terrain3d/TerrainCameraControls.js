@@ -100,6 +100,87 @@ export class TerrainCameraControls {
     c.update();
   }
 
+  /**
+   * Distance caméra à partir du zoom carte 2D (même cadrage au passage 2D ↔ 3D).
+   * @param {number} zoom
+   * @returns {number}
+   */
+  distanceFromZoom(zoom) {
+    const w = Math.max(256, this.bounds.worldWidth || 1024);
+    const d = Math.max(256, this.bounds.worldDepth || 1024);
+    const worldSize = Math.max(w, d);
+    const z = Number.isFinite(Number(zoom)) ? Number(zoom) : 0;
+    const visible = worldSize / Math.pow(2, Math.max(0, z));
+    const minD = this.controls.minDistance || 80;
+    const maxD = this.controls.maxDistance || 2800;
+    return clamp(visible * 0.9, minD, maxD);
+  }
+
+  /**
+   * Zoom carte 2D inverse de distanceFromZoom.
+   * @param {number} dist
+   * @returns {number}
+   */
+  zoomFromDistance(dist) {
+    const w = Math.max(256, this.bounds.worldWidth || 1024);
+    const d = Math.max(256, this.bounds.worldDepth || 1024);
+    const worldSize = Math.max(w, d);
+    const minD = this.controls.minDistance || 80;
+    const maxD = this.controls.maxDistance || 2800;
+    const visible = clamp(Number(dist) || 0, minD, maxD) / 0.9;
+    const z = Math.log(worldSize / Math.max(1, visible)) / Math.log(2);
+    return clamp(z, 0, 12);
+  }
+
+  /**
+   * Cible + distance + inclinaison dans le repère grille (x/y mètres Arma, 0..world).
+   * @param {{ x?: number, y?: number, zoom?: number, pitch?: number, bearing?: number }} view
+   */
+  setTacticalView(view) {
+    view = view || {};
+    const w = Math.max(256, this.bounds.worldWidth || 1024);
+    const d = Math.max(256, this.bounds.worldDepth || 1024);
+    const gx = Number(view.x);
+    const gy = Number(view.y);
+    const wx = Number.isFinite(gx) ? gx - w / 2 : this.controls.target.x;
+    const wz = Number.isFinite(gy) ? gy - d / 2 : this.controls.target.z;
+    const pitch = clamp(view.pitch != null ? view.pitch : 48, 25, 65);
+    const polar = ((90 - pitch) * Math.PI) / 180;
+    const dist = this.distanceFromZoom(view.zoom);
+    this._dollyTargetDist = null;
+    this.controls.target.set(wx, 0, wz);
+    this.perspectiveCamera.position.set(
+      wx,
+      Math.cos(polar) * dist,
+      wz + Math.sin(polar) * dist
+    );
+    this.controls.update();
+    this._framed = true;
+  }
+
+  /**
+   * @returns {{ x: number, y: number, zoom: number, pitch: number, bearing: number }}
+   */
+  getTacticalView() {
+    const w = Math.max(256, this.bounds.worldWidth || 1024);
+    const d = Math.max(256, this.bounds.worldDepth || 1024);
+    const t = this.controls.target;
+    const cam = this.perspectiveCamera;
+    const dist = cam && t ? cam.position.distanceTo(t) : this.distanceFromZoom(0);
+    const dx = cam.position.x - t.x;
+    const dy = cam.position.y - t.y;
+    const dz = cam.position.z - t.z;
+    const horiz = Math.sqrt(dx * dx + dz * dz) || 1;
+    const pitch = clamp(90 - (Math.atan2(horiz, Math.max(1, dy)) * 180) / Math.PI, 25, 65);
+    return {
+      x: t.x + w / 2,
+      y: t.z + d / 2,
+      zoom: this.zoomFromDistance(dist),
+      pitch: pitch,
+      bearing: 0,
+    };
+  }
+
   /** Position initiale type C2 incliné — cadrée sur la taille monde. */
   setDefault3DView() {
     const w = Math.max(256, this.bounds.worldWidth || 1024);

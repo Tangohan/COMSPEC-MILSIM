@@ -237,4 +237,91 @@ export class TerrainGeometryBuilder {
     geometry.computeVertexNormals();
     geometry.computeBoundingSphere();
   }
+
+  /**
+   * Grille tactique (mètres Arma) légèrement au-dessus du relief — évite le z-fighting
+   * et les bandes de tuiles CSS. Enfant du mesh terrain (repère local identique).
+   * @returns {{ geometry: THREE.BufferGeometry, material: THREE.LineBasicMaterial }|null}
+   */
+  static buildTacticalGrid(THREE, params) {
+    const grid = params.grid;
+    if (!grid || !grid.data) return null;
+    const worldWidth = Math.max(64, Number(params.worldWidth) || 1024);
+    const worldDepth = Math.max(64, Number(params.worldDepth) || 1024);
+    const heightScale = params.heightScale != null ? params.heightScale : 1;
+    const minAlt = Number.isFinite(params.minAltitude) ? params.minAltitude : (grid.minAlt || 0);
+    const maxAlt = Number.isFinite(params.maxAltitude) ? params.maxAltitude : (grid.maxAlt || 400);
+    const span = maxAlt - minAlt || 1;
+    const flattenSea = params.flattenSea !== false;
+    const seaSlack = params.seaSlack != null ? Number(params.seaSlack) : Math.max(1.5, span * 0.02);
+    const seaCeil = minAlt + seaSlack;
+    const crop = params.crop || null;
+    const u0 = crop ? crop.u0 : 0;
+    const u1 = crop ? crop.u1 : 1;
+    const v0 = crop ? crop.v0 : 0;
+    const v1 = crop ? crop.v1 : 1;
+    const cropW = crop && crop.width ? crop.width : worldWidth;
+    const cropD = crop && crop.depth ? crop.depth : worldDepth;
+    const lift = params.gridLift != null ? Number(params.gridLift) : 0.5;
+    const spacing = Math.max(250, Number(params.gridSpacing) || 1000);
+    const sampleStep = Math.min(250, spacing / 4);
+
+    function heightAtUv(u, v) {
+      let h = sampleHeightGrid(grid, u, v);
+      if (grid.normalized) h = minAlt + h * span;
+      if (flattenSea && h <= seaCeil) h = minAlt;
+      return h * heightScale + lift;
+    }
+
+    function worldToLocal(worldX, worldY) {
+      const u = worldX / worldWidth;
+      const v = worldY / worldDepth;
+      const du = (u1 - u0) || 1;
+      const dv = (v1 - v0) || 1;
+      const lu = (u - u0) / du;
+      const lv = (v - v0) / dv;
+      return {
+        x: (lu - 0.5) * cropW,
+        y: heightAtUv(u, v),
+        z: (lv - 0.5) * cropD,
+      };
+    }
+
+    const positions = [];
+    const x0 = u0 * worldWidth;
+    const x1 = u1 * worldWidth;
+    const y0w = v0 * worldDepth;
+    const y1w = v1 * worldDepth;
+
+    function pushSegment(ax, ay, bx, by) {
+      const a = worldToLocal(ax, ay);
+      const b = worldToLocal(bx, by);
+      positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
+    }
+
+    const firstNorth = Math.ceil(y0w / spacing) * spacing;
+    for (let north = firstNorth; north <= y1w + 0.01; north += spacing) {
+      for (let east = x0; east < x1; east += sampleStep) {
+        pushSegment(east, north, Math.min(east + sampleStep, x1), north);
+      }
+    }
+    const firstEast = Math.ceil(x0 / spacing) * spacing;
+    for (let east = firstEast; east <= x1 + 0.01; east += spacing) {
+      for (let north = y0w; north < y1w; north += sampleStep) {
+        pushSegment(east, north, east, Math.min(north + sampleStep, y1w));
+      }
+    }
+
+    if (positions.length < 12) return null;
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    const material = new THREE.LineBasicMaterial({
+      color: 0x7e9a88,
+      transparent: true,
+      opacity: 0.38,
+      depthWrite: false,
+    });
+    return { geometry: geometry, material: material };
+  }
 }

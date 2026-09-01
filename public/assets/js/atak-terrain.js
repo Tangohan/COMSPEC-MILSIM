@@ -113,14 +113,28 @@ window.ATAKTerrain = (function () {
     return 'Données terrain — couverture ' + Math.round(pct) + ' %' + world;
   }
 
+  function hasVolumeSurvey(cov) {
+    cov = cov || {};
+    return Number(cov.buildings) > 0 || Number(cov.forests) > 0;
+  }
+
   function setStatusFromSurvey(fallback) {
-    var fromInv = coverageLabelFromInventory(lastCoverage);
+    var cov = lastCoverage || {};
+    var fromInv = coverageLabelFromInventory(cov);
     if (fromInv) {
       setStatus(fromInv);
       return;
     }
     if (meta && (Number(meta.coverage_pct) > 0 || Number(meta.filled_cells) > 0)) {
       setStatus(coverageLabel());
+      return;
+    }
+    if (Number(cov.terrain_chunks) > 0 || Number(cov.terrain_filled) > 0) {
+      setStatus('Relevé du sol reçu. L’ombrage se prépare.');
+      return;
+    }
+    if (hasVolumeSurvey(cov)) {
+      setStatus('Bâtiments et forêts reçus. L’ombrage du sol n’est pas encore sur le poste.');
       return;
     }
     setStatus(fallback || 'Relief du théâtre non encore relevé.');
@@ -138,10 +152,12 @@ window.ATAKTerrain = (function () {
     if (el) el.textContent = text || '';
   }
 
-  function overlayPresence(pct, filled) {
+  function overlayPresence(pct, filled, chunks) {
     pct = Number(pct) || 0;
     filled = Number(filled) || 0;
-    if (pct <= 0 && filled <= 0) return 'Pas encore sur le poste';
+    chunks = Number(chunks) || 0;
+    if (pct <= 0 && filled <= 0 && chunks <= 0) return 'Pas encore sur le poste';
+    if (pct <= 0 && filled <= 0 && chunks > 0) return 'Relevé reçu, ombrage en préparation';
     if (pct > 0 && pct < 100) return 'Présent · couverture ' + Math.round(pct) + ' %';
     return 'Présent';
   }
@@ -187,7 +203,8 @@ window.ATAKTerrain = (function () {
     if (pct == null && meta && meta.coverage_pct != null) pct = meta.coverage_pct;
     var filled = cov.terrain_filled;
     if (filled == null && meta) filled = meta.filled_cells;
-    var overlay = overlayPresence(pct, filled);
+    var chunks = cov.terrain_chunks;
+    var overlay = overlayPresence(pct, filled, chunks);
     setInventoryValue('atak-terrain-inv-hillshade', overlay);
     setInventoryValue('atak-terrain-inv-survey', overlay);
     if (countStatus === 'missing') {
@@ -202,8 +219,7 @@ window.ATAKTerrain = (function () {
     }
     var last = cov.last_survey_at || (meta && meta.sampled_at) || null;
     setInventoryValue('atak-terrain-inv-last', lastSurveyLabel(last));
-    var surveyed = coverageLabelFromInventory(cov);
-    if (surveyed) setStatus(surveyed);
+    setStatusFromSurvey();
   }
 
   function loadCoverage() {
@@ -398,7 +414,7 @@ window.ATAKTerrain = (function () {
       if (prevStamp !== j.sampled_at) lastPaintKey = '';
       if (Number(j.coverage_pct) > 0 || Number(j.filled_cells) > 0) {
         setStatus(coverageLabel());
-        var overlayFromMeta = overlayPresence(j.coverage_pct, j.filled_cells);
+        var overlayFromMeta = overlayPresence(j.coverage_pct, j.filled_cells, 0);
         setInventoryValue('atak-terrain-inv-hillshade', overlayFromMeta);
         setInventoryValue('atak-terrain-inv-survey', overlayFromMeta);
       } else {

@@ -6,17 +6,18 @@ La section **Équipement** est le catalogue des **tenues** envoyées depuis l’
 
 - Créez une collection : nom, présentation, qui peut s’en servir (vous, votre unité, ou toute la communauté), et une photo.
 - Chaque tenue peut recevoir sa propre photo, une note, et rejoindre une collection.
-- Les tenues arrivent depuis le jeu : bandeau Athena en haut de l’arsenal.
+- Les tenues arrivent depuis le jeu : petit bouton Athena à l’arsenal.
 
 ### Envoyer et récupérer les tenues
 
 En jeu (pack Overwatch, compte identifié) :
 
-1. Ouvrez l’arsenal : un bandeau **Athena · Tenues de la communauté** apparaît en haut, sans masquer « Mes équipements ».
-2. **Envoyer vers Athena** enregistre vos tenues locales. Elles apparaissent ensuite sur la page Équipement du portail.
-3. **Récupérer** ajoute dans votre arsenal les tenues déjà enregistrées par les autres.
-4. Double-clic sur une ligne pour l’enfiler tout de suite.
-5. Menu personnel ACE → COMSPEC Overwatch : les mêmes actions, sans ouvrir l’arsenal.
+1. Ouvrez l’arsenal : un petit bouton **Athena** apparaît en haut, à côté de « Mes équipements ». La fenêtre des tenues n’est pas ouverte toute seule.
+2. Cliquez **Athena** pour afficher les tenues de la communauté. **Fermer** range la fenêtre.
+3. **Envoyer vers Athena** enregistre vos tenues locales. Elles apparaissent ensuite sur la page Équipement du portail.
+4. **Récupérer** ajoute dans votre arsenal les tenues déjà enregistrées par les autres.
+5. Double-clic sur une ligne pour l’enfiler tout de suite.
+6. Menu personnel ACE → COMSPEC Overwatch : les mêmes actions, sans ouvrir l’arsenal.
 
 ## Modpacks
 

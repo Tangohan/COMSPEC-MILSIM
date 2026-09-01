@@ -28,7 +28,7 @@ $shortcuts = [
     ['href' => url('back-office/configuration-initiale'), 'title' => 'Configuration initiale', 'desc' => 'Logo, contact, inscription et modules visibles.'],
     ['href' => url('back-office/community'), 'title' => 'Identité de la communauté', 'desc' => 'Nom, langue, visibilité et options générales.'],
     ['href' => url('back-office/organisation-effectifs'), 'title' => 'Structure des effectifs', 'desc' => 'Organigramme, groupes, sections et équipes.'],
-    ['href' => url('back-office/onboarding-members'), 'title' => 'Accueil des nouveaux membres', 'desc' => 'Suivi des arrivants et relances utiles.'],
+    ['href' => url('back-office/integration-membres'), 'title' => 'Accueil des nouveaux membres', 'desc' => 'Suivi des arrivants, étapes et rendez-vous.'],
 ];
 ?>
 
@@ -101,7 +101,7 @@ $shortcuts = [
                     </p>
                     <div class="bo-recovery__success-actions">
                         <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="bo-recovery__btn bo-recovery__btn--ink">Retour au centre de pilotage</a>
-                        <a href="<?= htmlspecialchars(url('back-office/onboarding-members'), ENT_QUOTES, 'UTF-8') ?>" class="bo-recovery__btn bo-recovery__btn--quiet">Accueil des nouveaux membres</a>
+                        <a href="<?= htmlspecialchars(url('back-office/integration-membres'), ENT_QUOTES, 'UTF-8') ?>" class="bo-recovery__btn bo-recovery__btn--quiet">Accueil des nouveaux membres</a>
                     </div>
                 </div>
             </section>

@@ -39,6 +39,15 @@ if (!(_max isEqualType 0) || { _max < 1 }) then { _max = 50; };
 
 private _queue = profileNamespace getVariable ["COMSPEC_Outbox", []];
 if (!(_queue isEqualType [])) then { _queue = []; };
+_queue = _queue select {
+    !((toLower (_x param [0, ""])) in ["syncwardrobe", "syncwardrobesbatch"])
+};
+
+if ((toLower _cmd) in ["syncwardrobe", "syncwardrobesbatch"]) exitWith {
+    profileNamespace setVariable ["COMSPEC_Outbox", _queue];
+    saveProfileNamespace;
+    false
+};
 
 // Plafond : une coupure longue ne doit pas construire un tampon sans fin. On
 // écarte la plus ancienne plutôt que de refuser la nouvelle — ce que l'opérateur
@@ -47,11 +56,17 @@ if ((count _queue) >= _max) then {
     private _dropped = _queue select 0;
     _queue deleteAt 0;
     [
-        "WARN",
+        "DEBUG",
         "Outbox",
         format ["Tampon plein (%1) — transmission la plus ancienne écartée : %2", _max, _dropped param [2, "?"]]
     ] call comspec_overwatch_connect_fnc_log;
 };
+
+private _dup = _queue findIf {
+    (_x param [0, ""]) isEqualTo _cmd
+    && { (_x param [2, ""]) isEqualTo _label }
+};
+if (_dup >= 0) exitWith { true };
 
 // Horloge murale et non `time` : le tampon vit dans le profil, il traverse les
 // missions. Un horodatage de temps de mission relu à la session suivante donne un
@@ -61,12 +76,16 @@ _queue pushBack [_cmd, _args, _label, _linkCat, _now, 0];
 profileNamespace setVariable ["COMSPEC_Outbox", _queue];
 saveProfileNamespace;
 
-[
-    format ["Liaison indisponible — « %1 » sera transmis au rétablissement (%2 en attente).", _label, count _queue],
-    "tactical",
-    "warn"
-] call comspec_overwatch_connect_fnc_announce;
+["DEBUG", "Outbox", format ["En attente : %1 (%2 au total)", _label, count _queue]] call comspec_overwatch_connect_fnc_log;
 
-["INFO", "Outbox", format ["En attente : %1 (%2 au total)", _label, count _queue]] call comspec_overwatch_connect_fnc_log;
+private _lastAnn = missionNamespace getVariable ["COMSPEC_OutboxLastAnnounce", -1e9];
+if ((diag_tickTime - _lastAnn) > 8) then {
+    missionNamespace setVariable ["COMSPEC_OutboxLastAnnounce", diag_tickTime];
+    [
+        format ["Liaison indisponible — « %1 » sera transmis au rétablissement (%2 en attente).", _label, count _queue],
+        "tactical",
+        "warn"
+    ] call comspec_overwatch_connect_fnc_announce;
+};
 
 true

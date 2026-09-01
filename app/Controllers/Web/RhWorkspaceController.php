@@ -153,12 +153,12 @@ final class RhWorkspaceController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
 
-            return Response::redirect($this->redirectAfterMemberRh($request, '#mobilite'));
+            return $this->rhFormRedirect($request, 'mobilite');
         }
         if (!$this->mobilityRequests->tableExists()) {
             Session::flash('error', 'Les souhaits d’évolution ne sont pas encore disponibles.');
 
-            return Response::redirect($this->redirectAfterMemberRh($request, '#mobilite'));
+            return $this->rhFormRedirect($request, 'mobilite');
         }
         $type = trim((string) $request->input('request_type', 'career_wish'));
         if (!in_array($type, PersonnelMobilityRequestRepository::TYPES, true)) {
@@ -169,7 +169,7 @@ final class RhWorkspaceController
         if ($targetLabel === '' && $motivation === '') {
             Session::flash('error', 'Indiquez au moins un poste ou une motivation.');
 
-            return Response::redirect($this->redirectAfterMemberRh($request, '#mobilite'));
+            return $this->rhFormRedirect($request, 'mobilite');
         }
         $id = $this->mobilityRequests->create(
             $tenantId,
@@ -185,13 +185,18 @@ final class RhWorkspaceController
             ? 'Votre demande a été transmise à l’encadrement.'
             : 'La demande n’a pas pu être enregistrée.');
 
-        return Response::redirect($this->redirectAfterMemberRh($request, '#mobilite'));
+        return $this->rhFormRedirect($request, 'mobilite', $id > 0 ? 'mon-dossier-rh' : null);
     }
 
     /**
      * Demande d’élévation concernant le membre connecté (pas le tableur S1).
      */
     public function requestSelfElevation(Request $request, array $params = []): Response
+    {
+        return $this->storeElevation($request, $params);
+    }
+
+    public function storeElevation(Request $request, array $params = []): Response
     {
         $user = $this->authService->user();
         $tenantId = (int) Session::get('tenant_id');
@@ -202,7 +207,7 @@ final class RhWorkspaceController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
 
-            return Response::redirect($this->redirectAfterMemberRh($request, '#elevation'));
+            return $this->rhFormRedirect($request, 'elevation', 'elevation');
         }
 
         /** @var ElevationCatalogService $catalog */
@@ -217,7 +222,7 @@ final class RhWorkspaceController
         if ($validated['error'] !== null) {
             Session::flash('error', $validated['error']);
 
-            return Response::redirect($this->redirectAfterMemberRh($request, '#elevation'));
+            return $this->rhFormRedirect($request, 'elevation', 'elevation');
         }
 
         $result = $staffAlert->requestElevation(
@@ -230,7 +235,7 @@ final class RhWorkspaceController
         );
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
-        return Response::redirect($this->redirectAfterMemberRh($request, '#elevation'));
+        return $this->rhFormRedirect($request, 'elevation', $result['ok'] ? 'mon-dossier-rh' : 'elevation');
     }
 
     public function storeAbsence(Request $request, array $params = []): Response
@@ -244,12 +249,12 @@ final class RhWorkspaceController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
         if (!$this->personnelAbsenceRepository->tableExists()) {
             Session::flash('error', 'L’enregistrement des absences n’est pas encore disponible. Contactez l’encadrement si le problème persiste.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
 
         $startsOn = trim((string) $request->input('starts_on', ''));
@@ -264,17 +269,17 @@ final class RhWorkspaceController
         if ($startsOn === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $startsOn)) {
             Session::flash('error', 'Indiquez une date de début valide.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
         if ($hasDuration && ($endsOn === null || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endsOn))) {
             Session::flash('error', 'Indiquez une date de fin, ou choisissez une absence sans durée précisée.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
         if ($endsOn !== null && $endsOn < $startsOn) {
             Session::flash('error', 'La date de fin doit être postérieure ou égale à la date de début.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
 
         $id = $this->personnelAbsenceRepository->create(
@@ -289,14 +294,14 @@ final class RhWorkspaceController
         if ($id === null) {
             Session::flash('error', 'L’absence n’a pas pu être enregistrée. Vérifiez les dates puis réessayez.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
 
         Session::flash('success', $endsOn === null
             ? 'Absence enregistrée sans durée précisée. Vous pourrez l’interrompre quand vous serez de retour.'
             : 'Absence enregistrée pour la période indiquée.');
 
-        return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        return $this->rhFormRedirect($request, 'absences', 'mon-dossier-rh');
     }
 
     public function cancelAbsence(Request $request, array $params = []): Response
@@ -310,18 +315,18 @@ final class RhWorkspaceController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
         $absenceId = (int) $request->input('absence_id', 0);
         if ($absenceId < 1 || !$this->personnelAbsenceRepository->cancel($tenantId, $userId, $absenceId)) {
             Session::flash('error', 'Cette absence n’a pas pu être annulée. Elle est peut-être déjà clôturée.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
 
         Session::flash('success', 'Absence annulée. Vous êtes de nouveau indiqué comme disponible.');
 
-        return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        return $this->rhFormRedirect($request, 'absences', 'mon-dossier-rh');
     }
 
     public function refreshFromDossier(Request $request, array $params = []): Response
@@ -382,6 +387,22 @@ final class RhWorkspaceController
             'deny_community' => 'Restriction liée à votre programme',
             default => 'Règle associée à votre programme',
         };
+    }
+
+    private function rhFormRedirect(Request $request, string $workspaceHash, ?string $forceDashboardStep = null): Response
+    {
+        $returnTo = trim((string) $request->input('return_to', ''));
+        if ($returnTo === 'dashboard') { // return_to === 'dashboard'
+            $step = $forceDashboardStep ?? trim((string) $request->input('return_step', 'mon-dossier-rh'));
+            if (!in_array($step, ['absence', 'elevation', 'avancement', 'mon-dossier-rh', 'dashboard-member-rh'], true)) {
+                $step = 'mon-dossier-rh';
+            }
+
+            return Response::redirect(url('dashboard') . '#' . $step);
+        }
+        $hash = $workspaceHash !== '' ? '#' . ltrim($workspaceHash, '#') : '';
+
+        return Response::redirect(url('personnel/mon-espace-rh') . $hash);
     }
 
     private function redirectAfterMemberRh(Request $request, string $anchor): string

@@ -1,3 +1,24 @@
+COMSPEC Overwatch 1.4.98 / Athena ATAK 1.0.61 — 01/09/2026
+
+Correction — Comptes-rendus du téléphone
+
+• Titre, reçus, liste, Localiser / Effacer et le détail ne se marchent plus dessus
+• Sans message, le texte d’absence est sous les boutons, plus un grand cadre noir au milieu
+• Retour, Localiser et Effacer restent alignés en bas
+
+Nouveau — Écran Athena du téléphone
+
+• Quatre vues : Journal, Alerter, Rapporter, Poste — plus d’empilement de filtres et de boutons
+• Le journal se filtre dans une liste, le détail se lit sous la ligne choisie
+• Contact, comptes-rendus, appui et compte n’apparaissent que sur leur écran
+• Relancer Arma complètement après le nouveau pack
+
+Correction — Cartouche carte
+
+• Indicatif, rôle, groupe et grille : les mêmes intitulés que dans Paramètres
+• L’indicatif est celui enregistré, plus le nom de profil
+• La grille a enfin son titre ; vitesse et altitude tiennent sur une ligne
+
 COMSPEC Overwatch 1.4.97 / Athena ATAK 1.0.58 — 01/09/2026
 
 Nouveau — Lecture de la tablette ATAK
@@ -17,7 +38,8 @@ Correction — Tablette, Zeus et arsenal
 
 • La tablette ATAK Enhanced se charge à nouveau
 • Zeus : SSE, ATAK et OVERWATCH en haut du panneau d’édition d’une unité
-• Arsenal : bandeau des tenues Athena en haut, sans masquer la liste locale
+• À l’arsenal, un petit bouton Athena ouvre les tenues de la communauté : plus de bandeau ouvert tout seul
+• Le menu Échap en session n’affiche plus le bandeau du pack
 • Relancer Arma complètement après le nouveau pack
 
 COMSPEC Overwatch 1.4.96 / Athena ATAK 1.5.48 / liaison 1.17.9 — 01/09/2026

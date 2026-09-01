@@ -1,0 +1,27 @@
+.mi-toolbar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; margin-bottom: 1.25rem; }
+.mi-toolbar label { display: flex; flex-direction: column; gap: .25rem; font-size: .75rem; color: #94a3b8; }
+.mi-toolbar input, .mi-toolbar select { background: #0f172a; border: 1px solid rgba(255,255,255,.12); color: #e2e8f0; border-radius: .35rem; padding: .4rem .55rem; min-width: 9rem; }
+.mi-toolbar button, .mi-btn { background: #0b8a5c; color: #fff; border: 0; border-radius: .35rem; padding: .45rem .8rem; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; }
+.mi-btn--ghost { background: transparent; border: 1px solid rgba(255,255,255,.2); color: #e2e8f0; }
+.mi-btn--warn { background: #c98a12; }
+.mi-btn--danger { background: #9b1c1c; }
+.mi-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+.mi-table th, .mi-table td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid rgba(255,255,255,.08); color: #e2e8f0; }
+.mi-table th { font-size: .7rem; letter-spacing: .04em; color: #94a3b8; }
+.mi-kanban { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem; }
+.mi-kanban__col { background: rgba(15,23,42,.7); border: 1px solid rgba(255,255,255,.08); border-radius: .5rem; padding: .75rem; }
+.mi-kanban__col h3 { margin: 0 0 .75rem; font-size: .8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+.mi-card { display: block; background: #0f172a; border: 1px solid rgba(255,255,255,.1); border-radius: .4rem; padding: .7rem; margin-bottom: .6rem; color: inherit; text-decoration: none; }
+.mi-card strong { display: block; margin-bottom: .2rem; }
+.mi-muted { color: #94a3b8; font-size: .8rem; }
+.mi-progress { height: .45rem; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; }
+.mi-progress > span { display: block; height: 100%; background: #0b8a5c; }
+.mi-grid { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
+@media (min-width: 960px) { .mi-grid--2 { grid-template-columns: 1.4fr .8fr; } }
+.mi-panel { background: rgba(15,23,42,.55); border: 1px solid rgba(255,255,255,.08); border-radius: .5rem; padding: 1rem; }
+.mi-panel h2 { margin: 0 0 .75rem; font-size: 1rem; }
+.mi-step { border-bottom: 1px solid rgba(255,255,255,.06); padding: .6rem 0; }
+.mi-badge { display: inline-block; font-size: .7rem; padding: .15rem .45rem; border-radius: 99px; background: rgba(255,255,255,.1); }
+.mi-form label { display: block; margin: .65rem 0 .25rem; font-size: .8rem; color: #94a3b8; }
+.mi-form input, .mi-form select, .mi-form textarea { width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,.12); color: #e2e8f0; border-radius: .35rem; padding: .45rem .55rem; }
+.mi-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }

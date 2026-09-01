@@ -172,7 +172,19 @@ final class EnlistmentAcceptanceProvisioningService
             return ['ok' => false, 'message' => 'Seules les candidatures déjà acceptées peuvent être finalisées.'];
         }
 
-        return $this->runMembershipSync($tenantId, $enlistmentId, $row, $actorUserId, null, false);
+        $result = $this->runMembershipSync($tenantId, $enlistmentId, $row, $actorUserId, null, false);
+        if (!empty($result['ok'])) {
+            $fresh = $this->enlistmentRepository->findForTenant($tenantId, $enlistmentId) ?? $row;
+            $uid = (int) ($fresh['submitter_user_id'] ?? 0);
+            \App\Services\MemberIntegration\MemberIntegrationEntryHook::afterAccountReady(
+                $tenantId,
+                $uid,
+                $actorUserId,
+                \App\Support\MemberIntegrationCatalog::SOURCE_RECRUITMENT
+            );
+        }
+
+        return $result;
     }
 
     /**
@@ -293,6 +305,19 @@ final class EnlistmentAcceptanceProvisioningService
         $this->provisionSeniorityAfterAcceptance($tenantId, $userId, $fresh);
 
         $this->enlistmentRepository->updatePipelineStage($tenantId, $enlistmentId, 'accepted');
+
+        \App\Services\MemberIntegration\MemberIntegrationEntryHook::afterAccountReady(
+            $tenantId,
+            $userId,
+            $actorUserId,
+            \App\Support\MemberIntegrationCatalog::SOURCE_RECRUITMENT,
+            [
+                'role_ids' => $this->normalizeAssignableRoleIds($tenantId, $options['role_ids'] ?? []),
+                'unit_ids' => isset($options['unit_id']) && (int) $options['unit_id'] > 0
+                    ? [(int) $options['unit_id']]
+                    : [],
+            ]
+        );
 
         $warn = trim((string) ($sync['message'] ?? ''));
         $extraWarn = trim((string) ($extras['message'] ?? ''));

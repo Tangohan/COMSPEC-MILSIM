@@ -308,6 +308,9 @@ if ($communityReelsPage) {
 if ($communityShowcasePage) {
     $bodyClasses .= ' community-showcase-page';
 }
+if (!empty($layoutMainCompact) || !empty($compactPortalMain)) {
+    $bodyClasses .= ' layout-page-compact';
+}
 if ($showBottomNav) {
     $bodyClasses .= ' athena-has-bottom-nav';
 }
@@ -352,7 +355,7 @@ if (!empty($isBackOfficeShell)) {
     <?php if (empty($usesAdminSidebarShell)): ?>
     <?php require base_path('views/partials/advanced_fiche_edit_banner.php'); ?>
     <?php endif; ?>
-    <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? (!empty($isBackOfficeShell) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : (!empty($compactPortalMain) ? 'personnel-file-portal-main' : 'min-h-[80vh]')) ?>">
+    <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? (!empty($isBackOfficeShell) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : ((!empty($layoutMainCompact) || !empty($compactPortalMain)) ? 'min-h-0 personnel-file-portal-main' : 'min-h-[80vh]')) ?>">
         <?php if (empty($communityReelsPage) && empty($isBackOfficeShell)): ?>
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
         <?php endif; ?>

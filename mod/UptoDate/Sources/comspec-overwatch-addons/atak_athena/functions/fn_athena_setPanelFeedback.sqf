@@ -37,7 +37,7 @@ missionNamespace setVariable [
     false
 ];
 
-private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
+private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;
 if (!isNull _group) then {
     private _fb = _group controlsGroupCtrl 9712;
     if (!isNull _fb) then {
@@ -58,7 +58,7 @@ if (_duration <= 0) exitWith {};
     if ((count _cur) < 4) exitWith {};
     if ((_cur select 3) isNotEqualTo _token) exitWith {};
     missionNamespace setVariable ["COMSPEC_Athena_PanelFeedback", nil, false];
-    private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
+    private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;
     if (isNull _group) exitWith {};
     private _fb = _group controlsGroupCtrl 9712;
     if (isNull _fb) exitWith {};

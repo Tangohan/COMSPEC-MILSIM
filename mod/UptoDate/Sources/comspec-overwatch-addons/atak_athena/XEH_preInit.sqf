@@ -3,6 +3,7 @@ if (!isServer && !hasInterface) exitWith {};
 
 missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", false, false];
 missionNamespace setVariable ["COMSPEC_Athena_PanelTab", "all", false];
+missionNamespace setVariable ["COMSPEC_Athena_HomeSection", "fil", false];
 if (isNil { missionNamespace getVariable "COMSPEC_Athena_AlertInbox" }) then {
     missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", [], false];
 };

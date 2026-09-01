@@ -119,7 +119,7 @@ final class BackOfficeSearchService
             ['title' => 'Page d’accueil publique', 'subtitle' => 'Vitrine de la communauté', 'href' => url('back-office/community/presentation'), 'keywords' => 'présentation page publique vitrine', 'ok' => $org],
             ['title' => 'Médias', 'subtitle' => 'Galerie de la communauté', 'href' => url('back-office/media'), 'keywords' => 'médias photos galerie', 'ok' => $org],
             ['title' => 'Annonces et alertes', 'subtitle' => 'Messages affichés aux membres', 'href' => url('back-office/alerts'), 'keywords' => 'annonces alertes bandeau', 'ok' => $org],
-            ['title' => 'Onboarding des membres', 'subtitle' => 'Parcours d’arrivée', 'href' => url('back-office/onboarding-members'), 'keywords' => 'onboarding arrivée parcours', 'ok' => $org],
+            ['title' => 'Intégration des nouveaux membres', 'subtitle' => 'Parcours d’arrivée', 'href' => url('back-office/integration-membres'), 'keywords' => 'intégration arrivée parcours onboarding membres', 'ok' => $org],
             ['title' => 'Indicateurs d’usage', 'subtitle' => 'Activité de la communauté', 'href' => url('back-office/analytics'), 'keywords' => 'indicateurs usage statistiques', 'ok' => $org],
             ['title' => 'Configuration initiale', 'subtitle' => 'Premiers réglages', 'href' => url('back-office/configuration-initiale'), 'keywords' => 'configuration initiale wizard', 'ok' => $org],
             ['title' => 'Opérations', 'subtitle' => 'Espaces de mission, plan et vue terrain', 'href' => url('operations'), 'keywords' => 'opérations mission plan ordres vue terrain', 'ok' => true],

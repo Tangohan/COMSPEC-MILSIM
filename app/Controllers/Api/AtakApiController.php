@@ -806,7 +806,7 @@ class AtakApiController
         );
         $generator = new QrPngGenerator();
         // pngOnly : Arma RscPicture n’affiche pas de SVG — forcer un PNG binaire (Endroid, GD ou zlib).
-        $png = $generator->png($pairUrl, 400, 12, true);
+        $png = $generator->png($pairUrl, 512, 16, true);
         if ($png === null || strncmp($png['body'], "\x89PNG", 4) !== 0) {
             // Le code court reste affiché côté Tacmap / jeu ; détail technique en log seulement.
             error_log('[atak_phone_pairing_qr] unavailable token=' . substr($token, 0, 8)
@@ -832,7 +832,7 @@ class AtakApiController
     {
         try {
             $generator = new QrPngGenerator();
-            $png = $generator->png($connectUrl, 400, 12, true);
+            $png = $generator->png($connectUrl, 512, 16, true);
             if ($png === null || strncmp($png['body'], "\x89PNG", 4) !== 0) {
                 error_log('[atak_phone_pairing_qr] create_inline_unavailable attempts='
                     . implode('|', $generator->attempts()));

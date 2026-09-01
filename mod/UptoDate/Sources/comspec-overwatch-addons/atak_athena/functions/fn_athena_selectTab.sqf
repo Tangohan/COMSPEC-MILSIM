@@ -25,8 +25,23 @@ if (_tab isEqualTo "photos") then { _tab = "photo"; };
 if !(_tab in ["all", "bda", "photo", "order", "messages", "urgences", "liaison", "modules", "notif", "alert"]) then { _tab = "all"; };
 missionNamespace setVariable ["COMSPEC_Athena_PanelTab", _tab, false];
 
-if (_tab isEqualTo "liaison") then {
-    [] call comspec_overwatch_atak_athena_fnc_athena_showPhoneConnect;
+if (!(missionNamespace getVariable ["COMSPEC_Athena_FilterFromCombo", false])) then {
+    switch (_tab) do {
+        case "urgences";
+        case "alert";
+        case "notif": {
+            missionNamespace setVariable ["COMSPEC_Athena_HomeSection", "alerter", false];
+        };
+        case "liaison";
+        case "modules": {
+            missionNamespace setVariable ["COMSPEC_Athena_HomeSection", "poste", false];
+        };
+        default {
+            if (_tab in ["all", "photo", "order", "messages", "bda"]) then {
+                missionNamespace setVariable ["COMSPEC_Athena_HomeSection", "fil", false];
+            };
+        };
+    };
 };
 
 [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;

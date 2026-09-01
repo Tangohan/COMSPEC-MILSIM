@@ -183,6 +183,13 @@ final class InvitationAcceptController
 
         $this->invitations->markAccepted((int) $inv['id'], $newId);
         $this->auditService->log(AuditAction::INVITATION_ACCEPTED, $tenantId, $newId, 'invitation', (int) $inv['id']);
+        \App\Services\MemberIntegration\MemberIntegrationEntryHook::afterAccountReady(
+            $tenantId,
+            $newId,
+            $newId,
+            \App\Support\MemberIntegrationCatalog::SOURCE_INVITATION,
+            ['role_ids' => [$roleId]]
+        );
 
         $tenantRow = $this->tenantRepository->findById($tenantId);
         $tenantName = (string) ($tenantRow['name'] ?? '');

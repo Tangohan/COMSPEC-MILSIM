@@ -191,6 +191,7 @@ class HomeController
         $armaPlaytimeLabel = null;
         $armaPlaytimeSeconds = 0;
         $dashboardTenantType = \App\Services\Community\TenantTypeConfig::TYPE_FULL;
+        $dashboardRhParcours = null;
         $dashboardPublishedOpenings = [];
         $dashboardTenantSlug = '';
         $canManageRecruitmentOffers = false;
@@ -588,6 +589,21 @@ class HomeController
                     $dashboardTesterProgram = null;
                 }
 
+                if (!$dashboardIsDefaultTenant && ($allowsPersonnel || $allowsRecruitment)) {
+                    try {
+                        $tenantSlug = is_array($tenantRow) ? (string) ($tenantRow['slug'] ?? '') : '';
+                        $dashboardRhParcours = \App\Support\DashboardRhParcours::build(
+                            $tid,
+                            $uid,
+                            $tenantSlug,
+                            $allowsPersonnel,
+                            $allowsRecruitment
+                        );
+                    } catch (\Throwable) {
+                        $dashboardRhParcours = null;
+                    }
+                }
+
                 if (!$dashboardIsDefaultTenant && $allowsRecruitment) {
                     try {
                         $openingRepo = \App\Core\Container::get(\App\Repositories\RecruitmentOpeningRepository::class);
@@ -694,6 +710,7 @@ class HomeController
             'can_see_inactive_effectifs' => $canSeeInactiveEffectifs,
             'arma_playtime_label' => $armaPlaytimeLabel,
             'arma_playtime_seconds' => $armaPlaytimeSeconds,
+            'dashboard_rh_parcours' => $dashboardRhParcours,
             'dashboard_published_openings' => $dashboardPublishedOpenings,
             'dashboard_tenant_slug' => $dashboardTenantSlug,
             'can_manage_recruitment_offers' => $canManageRecruitmentOffers,

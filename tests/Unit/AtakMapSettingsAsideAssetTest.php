@@ -21,6 +21,10 @@ final class AtakMapSettingsAsideAssetTest extends TestCase
         self::assertStringContainsString('id="atak-settings-map-data"', $view);
         self::assertStringContainsString('Données carte sur ce poste', $view);
         self::assertStringContainsString('id="atak-map-look-motion-arrows"', $view);
+        self::assertStringNotContainsString('geo_places', $view);
+        self::assertStringNotContainsString('Three.js', $view);
+        self::assertStringNotContainsString('CSS-pitch', $view);
+        self::assertStringNotContainsString('atak-terrain-3d-hint', $view);
         // Contrôles terrain actifs dans Réglages, pas dupliqués dans le popup Affichage.
         self::assertSame(1, substr_count($view, 'id="atak-terrain-hillshade"'));
         self::assertSame(1, substr_count($view, 'id="atak-terrain-3d-settings"'));

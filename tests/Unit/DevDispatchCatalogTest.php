@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(99, $byKind['update']);
-        self::assertCount(105, $all);
+        self::assertSame(111, $byKind['update']);
+        self::assertCount(117, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -260,6 +260,54 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($packVersions);
         self::assertSame('00283', $packVersions['number_pad']);
         self::assertStringContainsString('pack actuel', strtolower((string) $packVersions['title']));
+        $qrReadable = DevDispatchCatalog::find('update', '284');
+        self::assertNotNull($qrReadable);
+        self::assertSame('00284', $qrReadable['number_pad']);
+        self::assertStringContainsString('qr', strtolower((string) $qrReadable['title']));
+        $escBanner = DevDispatchCatalog::find('update', '285');
+        self::assertNotNull($escBanner);
+        self::assertSame('00285', $escBanner['number_pad']);
+        self::assertStringContainsString('bandeau', strtolower((string) $escBanner['title']));
+        $arsenalDrawer = DevDispatchCatalog::find('update', '286');
+        self::assertNotNull($arsenalDrawer);
+        self::assertSame('00286', $arsenalDrawer['number_pad']);
+        self::assertStringContainsString('tenues', strtolower((string) $arsenalDrawer['title']));
+        $reliefSplit = DevDispatchCatalog::find('update', '287');
+        self::assertNotNull($reliefSplit);
+        self::assertSame('00287', $reliefSplit['number_pad']);
+        self::assertStringContainsString('relief', strtolower((string) $reliefSplit['title']));
+        $wardrobeQueue = DevDispatchCatalog::find('update', '288');
+        self::assertNotNull($wardrobeQueue);
+        self::assertSame('00288', $wardrobeQueue['number_pad']);
+        self::assertStringContainsString('tenues hors liaison', strtolower((string) $wardrobeQueue['title']));
+        $athenaHome = DevDispatchCatalog::find('update', '289');
+        self::assertNotNull($athenaHome);
+        self::assertSame('00289', $athenaHome['number_pad']);
+        self::assertStringContainsString('quatre vues', strtolower((string) $athenaHome['title']));
+        $hudLabels = DevDispatchCatalog::find('update', '290');
+        self::assertNotNull($hudLabels);
+        self::assertSame('00290', $hudLabels['number_pad']);
+        self::assertStringContainsString('vocabulaire', strtolower((string) $hudLabels['title']));
+        $reportsUi = DevDispatchCatalog::find('update', '291');
+        self::assertNotNull($reportsUi);
+        self::assertSame('00291', $reportsUi['number_pad']);
+        self::assertStringContainsString('comptes-rendus', strtolower((string) $reportsUi['title']));
+        $integration = DevDispatchCatalog::find('update', '292');
+        self::assertNotNull($integration);
+        self::assertSame('00292', $integration['number_pad']);
+        self::assertStringContainsString('parcours d’arrivée', strtolower((string) $integration['title']));
+        $mapInventory = DevDispatchCatalog::find('update', '293');
+        self::assertNotNull($mapInventory);
+        self::assertSame('00293', $mapInventory['number_pad']);
+        self::assertStringContainsString('affichage', strtolower((string) $mapInventory['title']));
+        $rhParcours = DevDispatchCatalog::find('update', '294');
+        self::assertNotNull($rhParcours);
+        self::assertSame('00294', $rhParcours['number_pad']);
+        self::assertStringContainsString('dossier rh', strtolower((string) $rhParcours['title']));
+        $fileGateSpace = DevDispatchCatalog::find('update', '295');
+        self::assertNotNull($fileGateSpace);
+        self::assertSame('00295', $fileGateSpace['number_pad']);
+        self::assertStringContainsString('dossier', strtolower((string) $fileGateSpace['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

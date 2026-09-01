@@ -17,6 +17,9 @@ export class TerrainMaterialFactory {
       metalness: 0.02,
       flatShading: false,
       wireframe: !!opts.wireframe,
+      polygonOffset: true,
+      polygonOffsetFactor: 1,
+      polygonOffsetUnits: 1,
     });
   }
 

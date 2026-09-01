@@ -355,6 +355,11 @@ final class TenantPermissionCatalog
             ['slug' => 'personnel.qualification.grant', 'module' => 'personnel', 'action' => 'grant', 'name' => 'Attribuer une qualification'],
             ['slug' => 'personnel.callsign.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer les indicatifs / séquences'],
             ['slug' => 'personnel.member_number.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer les matricules d’organisation'],
+            ['slug' => 'member_integration.view', 'module' => 'personnel', 'action' => 'view', 'name' => 'Voir l’intégration des nouveaux membres'],
+            ['slug' => 'member_integration.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Piloter l’intégration des nouveaux membres'],
+            ['slug' => 'member_integration.assign', 'module' => 'personnel', 'action' => 'assign', 'name' => 'Affecter un parcours ou un référent d’intégration'],
+            ['slug' => 'member_integration.note', 'module' => 'personnel', 'action' => 'create', 'name' => 'Laisser une note sur un parcours d’intégration'],
+            ['slug' => 'member_integration.template_manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer les modèles de parcours d’intégration'],
         ];
     }
 

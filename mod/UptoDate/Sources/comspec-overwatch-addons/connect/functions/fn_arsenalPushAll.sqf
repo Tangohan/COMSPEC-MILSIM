@@ -9,6 +9,17 @@ if (_key isEqualTo "") exitWith {
     false
 };
 
+if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
+    ["Compte Athena non relié — les tenues ne partent pas.", "arsenal", "warn", true] call comspec_overwatch_connect_fnc_announce;
+    false
+};
+
+private _tx = [false] call comspec_overwatch_connect_fnc_canTransmit;
+if (!(_tx getOrDefault ["can_transmit", false])) exitWith {
+    ["Liaison indisponible — les tenues ne sont pas mises en attente.", "arsenal", "warn", true] call comspec_overwatch_connect_fnc_announce;
+    false
+};
+
 private _entries = [] call comspec_overwatch_connect_fnc_arsenalLocalLoadouts;
 if (_entries isEqualTo []) exitWith {
     ["Aucune tenue locale à envoyer.", "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
@@ -25,7 +36,7 @@ private _fail = 0;
         continue;
     };
     private _payload = str _loadout;
-    private _parsed = ["SyncWardrobe", [_name, _payload], "SyncWardrobe", false, true, "arsenal", true]
+    private _parsed = ["SyncWardrobe", [_name, _payload], "SyncWardrobe", false, false, "arsenal", false]
         call comspec_overwatch_connect_fnc_callExtLogged;
     _parsed params [["_success", false], ["_status", ""], ["_detail", ""]];
     if (_success || {_status isEqualTo "QUEUED"}) then {

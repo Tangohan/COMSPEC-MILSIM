@@ -2,36 +2,41 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
-[h1]COMSPEC Overwatch 1.4.97[/h1]
+[h1]COMSPEC Overwatch 1.4.98[/h1]
 [b]01/09/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
 
-[h2]Nouveau — Lecture de la tablette ATAK[/h2]
-Sur la tablette ATAK Enhanced, la carte se lit comme un poste de terrain : fond charbon, chiffres cyan. Les cartouches restent sur la carte, jamais sur le tiroir d’applications.
+[h2]Correction — Comptes-rendus du téléphone[/h2]
+La page Comptes-rendus n’empile plus la liste sur Localiser et Effacer. Titre, reçus, liste, actions et détail tiennent chacun leur ligne. Sans message, le texte d’absence est lisible, plus un grand cadre noir au milieu.
+
+[h2]Nouveau — Écran Athena du téléphone[/h2]
+Sur le téléphone ATAK, l’application Athena a quatre vues distinctes. On ne fait plus défiler un mur de boutons sous des listes vides.
 
 [list]
-[*] Sous le curseur : grille, distance, altitude du sol, gisement, portée et écart d’altitude
-[*] Sur l’unité suivie : groupe, indicatif, grille, altitude, vitesse et heure
-[*] Cap en degrés vrais en haut à gauche, et zoom plus / moins sur le bord de la carte
-[*] Le tiroir d’applications, Drone Ops et les fenêtres caméra déjà présentes reprennent le même charbon et cyan
+[*] Journal : lire alertes, ordres, photos et messages, avec un filtre en haut
+[*] Alerter : contact, fin de contact, opérateur à terre, et triage médical
+[*] Rapporter : FRAGO, bilan, SALUTE, photo et relevé SEEK
+[*] Poste : appui aérien, manifeste, briefing, compte Athena et adresse mobile
 [/list]
 
-[h2]Nouveau — Connexion Athena avant la session[/h2]
-[list]
-[*] Au menu principal, identifiez-vous (e-mail, code temporaire, ou Steam déjà associé à ce poste)
-[*] Votre communauté, votre indicatif et vos habilitations arrivent tout seuls
-[*] Rien n’est transmis (position, photos, messages) tant que l’environnement n’est pas prêt
-[/list]
-
-[h2]Correction — Tablette, Zeus et arsenal[/h2]
-[list]
-[*] La tablette ATAK Enhanced se charge à nouveau
-[*] Zeus : SSE, ATAK et OVERWATCH en haut du panneau d’édition d’une unité — plus de superposition sur les filtres
-[*] Arsenal ACE : bandeau des tenues Athena en haut, sans masquer « Mes équipements »
-[/list]
+[h2]Correction — Cartouche de la carte[/h2]
+Le cartouche de l’unité reprend les intitulés des paramètres du terminal : indicatif, rôle, groupe et grille. L’indicatif est celui que vous enregistrez, pas le nom du personnage.
 
 ================================================================================
 HISTORIQUE (fiche Workshop / archive)
 ================================================================================
+
+COMSPEC Overwatch 1.4.98 / Athena ATAK 1.0.61 — 01/09/2026
+
+Correction — Comptes-rendus du téléphone
+
+• Titre, reçus, liste, Localiser / Effacer et le détail ne se marchent plus dessus
+• Sans message, le texte d’absence est sous les boutons, plus un grand cadre noir au milieu
+
+Nouveau — Écran Athena du téléphone
+
+• Quatre vues : Journal, Alerter, Rapporter, Poste
+• Le journal se filtre dans une liste ; le détail se lit sous la ligne choisie
+• Contact, comptes-rendus, appui et compte n’apparaissent que sur leur écran
 
 COMSPEC Overwatch 1.4.97 / Athena ATAK 1.0.58 — 01/09/2026
 

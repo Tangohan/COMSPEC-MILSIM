@@ -48,16 +48,15 @@ final class AtakMarkerIconsAssetTest extends TestCase
         self::assertStringContainsString('Déjà dans la bibliothèque', $view);
         self::assertStringContainsString('.atak-settings-icons__cta', $css);
         self::assertStringContainsString("can('admin.organization')", $controller);
-        self::assertStringContainsString('Villes et lieux', $geo);
+        self::assertStringContainsString('Villes et villages', $geo);
         self::assertStringContainsString('>Routes</span>', $geo);
         self::assertStringNotContainsString('geo_places', $geo);
         self::assertStringNotContainsString('geo_roads', $geo);
         self::assertStringNotContainsString('réseau geo', $geo);
-        self::assertStringContainsString('Vue de la carte en relief', $view);
-        self::assertStringContainsString('Vue en relief : le sol se soulève', $premium);
+        self::assertStringContainsString('Vue relief du théâtre', $view);
+        self::assertStringContainsString("querySelectorAll('.atak-terrain-3d-hint, .atak-geo-live-hint')", $premium);
         self::assertStringNotContainsString('relief Three.js', $view);
         self::assertStringNotContainsString('relief Three.js', $premium);
         self::assertStringNotContainsString('mesh Three.js', $premium);
-        self::assertStringContainsString("querySelector('#atak-terrain-3d-settings > .atak-terrain-3d-hint')", $premium);
     }
 }

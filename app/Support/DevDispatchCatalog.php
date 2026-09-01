@@ -584,6 +584,101 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(295, '2026-09-01', 'Le choix de vue du dossier ne laisse plus de vide', 'Sur le dossier personnel, après Vue publique et Vue RH, le pied de page arrive tout de suite : plus de bande blanche ni de trou sous les cartes', [], [], [
+                'Grand vide entre le choix de vue et le pied de page',
+            ], ['personnel'], [
+                'Ouvrez un dossier personnel avec un accès RH. Les deux cartes restent, le pied de page est collé dessous.',
+            ], 'Portail 1.5.92'),
+            $pr(294, '2026-09-01', 'Le dossier RH se choisit en trois étapes', 'En bas du tableau de bord, une seule démarche à la fois : d’abord Absence, Élévation ou Avancement, puis le formulaire', [
+                'Trois cartes de choix en bas de page, puis le formulaire correspondant',
+                'Déclaration d’absence, demande d’élévation et souhait d’avancement depuis le tableau de bord',
+            ], [
+                'Le lien vers l’espace RH complet reste disponible à côté du parcours',
+            ], [
+                'Les deux formulaires n’apparaissent plus en même temps, avec l’absence reléguée en bas de carte',
+            ], ['personnel'], [
+                'Ouvrez le tableau de bord, descendez jusqu’à Mon dossier RH, choisissez Absence, Élévation ou Avancement, puis transmettez.',
+            ], 'Portail 1.5.91'),
+            $pr(293, '2026-09-01', 'Affichage dit vraiment ce qui est sur le poste', 'Dans Réglages carte, plus de texte d’atelier. Si les bâtiments sont déjà là et pas l’ombrage, le poste le dit clairement, au lieu de prétendre que rien n’a été relevé', [], [
+                'Les cases Villes et villages, Routes, sans notice technique',
+            ], [
+                'Deux pavés d’atelier au milieu des réglages',
+                'Ombrage et relevé du sol affichés absents alors que bâtiments, forêts et une date de relevé étaient déjà là',
+            ], ['atak'], [
+                'Ouvrez Réglages → Carte. Plus de pavé gris sous la vue relief. S’il y a des bâtiments sans ombrage, le bandeau le dit : bâtiments reçus, ombrage du sol pas encore sur le poste.',
+            ], 'Portail 1.5.90'),
+            $pr(292, '2026-09-01', 'Un vrai parcours d’arrivée pour les nouveaux membres', 'Après l’acceptation d’une candidature, la création d’un compte ou une invitation, l’encadrement suit l’arrivée : étapes, dossier personnel, rendez-vous et référent. Le membre voit son propre parcours, sans les notes internes', [
+                'Tableau de suivi des arrivées, avec filtres et vue par étape en cours',
+                'Fiche de parcours : dossier personnel, groupes de suivi, bilans, rendez-vous et journal',
+                'Modèles de parcours publiés, repris à l’identique pour chaque nouvel arrivant',
+                'Page « Mon intégration » : étapes visibles, invitations et message du référent',
+                'Invitation par e-mail avec réponse Oui / Peut-être / Non et ajout au calendrier personnel',
+            ], [
+                'L’ancien écran d’accueil des arrivants ouvre désormais ce suivi',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez Intégration des nouveaux membres dans le back-office. Vérifiez le modèle Intégration recrue, puis acceptez une candidature ou créez un compte : le parcours s’ouvre. Le membre consulte Mon intégration.',
+            ], 'Portail 1.5.97'),
+            $pr(291, '2026-09-01', 'Les comptes-rendus du téléphone ne se chevauchent plus', 'Sur le téléphone, la page Comptes-rendus aligne titre, reçus, liste, Localiser / Effacer et le détail. Plus de rectangle noir ni de boutons coupés en deux', [], [
+                'Reçus, Nouveau, liste et détail tiennent chacun leur ligne',
+                'Retour, Localiser et Effacer restent lisibles en bas du téléphone',
+            ], [
+                'La liste recouvrait Localiser et Effacer, et un grand cadre vide masquait le milieu de l’écran',
+            ], ['atak'], [
+                'Ouvrez le téléphone, application Comptes-rendus. Sans message reçu, le texte d’absence est sous les boutons, pas dessus. Relancer Arma après le nouveau pack.',
+            ], 'Overwatch 1.4.98 · Athena 1.0.61'),
+            $pr(290, '2026-09-01', 'Même vocabulaire sur la carte et dans les paramètres', 'Sur le téléphone, le cartouche de l’unité reprend les intitulés des paramètres : indicatif, rôle, groupe et grille. Plus de titres anglais, plus de chiffre sans nom', [
+                'Indicatif, rôle, groupe et grille, comme dans Paramètres',
+                'L’indicatif affiché est celui enregistré, pas le nom de profil',
+            ], [], [
+                'Le cartouche disait GROUP et CALLSIGN, la grille n’avait pas de titre, et l’indicatif montrait le nom du personnage',
+            ], ['atak'], [
+                'Ouvrez le téléphone sur la carte. Le cartouche de droite reprend Indicatif, Rôle, Groupe et Grille. Vérifiez dans Paramètres que l’indicatif est le même.',
+            ], 'Overwatch 1.4.98 · Athena 1.0.60'),
+            $pr(289, '2026-09-01', 'L’écran Athena du téléphone a quatre vues claires', 'Sur le téléphone ATAK, Athena n’empile plus tout. Journal, alertes, comptes-rendus et poste sont quatre écrans distincts, avec un vrai fil de lecture', [
+                'Quatre boutons en haut : Journal, Alerter, Rapporter, Poste',
+                'Le journal se filtre dans une liste, et le détail se lit sous la ligne choisie',
+            ], [
+                'Les boutons d’alerte, de compte rendu et de liaison n’apparaissent que sur leur écran',
+            ], [
+                'Tout était visible en même temps : huit filtres, trois zones vides, puis une file de boutons hors écran',
+            ], ['atak'], [
+                'Ouvrez le téléphone, application Athena. Journal pour lire. Alerter pour un contact ou un opérateur à terre. Rapporter pour un FRAGO ou une photo. Poste pour le compte et l’appui.',
+            ], 'Overwatch 1.4.98 · Athena 1.0.59'),
+            $pr(288, '2026-09-01', 'Plus de file d’attente pour les tenues hors liaison', 'Sans compte relié, l’envoi des tenues depuis l’arsenal ne remplit plus une file inutile. Un seul message l’indique, et le tampon reste libre pour les vrais comptes rendus', [], [], [
+                'Sans liaison, chaque tenue locale était mise en attente l’une après l’autre jusqu’à saturer le tampon',
+            ], ['atak'], [
+                'Rechargez le pack. Sans session Athena, Envoyer les tenues affiche un seul avertissement. Le journal de session ne se remplit plus de transmissions hors ligne.',
+            ], 'Overwatch 1.4.98'),
+            $pr(287, '2026-09-01', 'La vue relief n’incline plus le plan de la carte', 'La carte à plat reste un plan ; le relief se voit dans une vue séparée, collines et unités posées sur le sol', [
+                'La carte à plat reste parfaitement plane : plus de trapèze ni de bandes étirées',
+                'La vue relief montre le sol relevé, avec la grille et les unités posées sur le terrain',
+            ], [
+                'Passer de la carte à plat au relief reprend le même cadrage',
+            ], [
+                'L’ancienne vue inclinée déformait tout le plan, sans collines réelles',
+            ], ['atak'], [
+                'Sur la carte du poste, choisissez À plat pour le plan, ou Relief 3D pour voir le sol relevé. Le cadrage suit le centre déjà affiché.',
+            ], 'Portail 1.5.96'),
+            $pr(286, '2026-09-01', 'Les tenues Athena à l’arsenal tiennent dans un tiroir', 'À l’arsenal, un petit bouton Athena ouvre les tenues de la communauté. La fenêtre n’apparaît plus toute seule, et les textes se lisent correctement', [], [
+                'La fenêtre est plus étroite, collée à côté de Mes équipements, sans barrer le personnage',
+                'Les intitulés et la liste ont une taille de texte lisible',
+            ], [
+                'Un bandeau trop large s’ouvrait dès l’entrée à l’arsenal, avec un texte d’aide presque illisible',
+            ], ['atak'], [
+                'Ouvrez l’arsenal. Cliquez Athena en haut à droite du centre. Envoyez ou récupérez les tenues, puis Fermer.',
+            ], 'Overwatch 1.4.97'),
+            $pr(285, '2026-09-01', 'Plus de bandeau Overwatch dans le menu pause', 'Le menu Échap en session ne montre plus le bandeau du pack en haut de l’écran', [], [], [
+                'Le nom du pack s’affichait en bandeau au-dessus du menu pause, sans action utile',
+            ], ['atak'], [
+                'Rechargez le pack Overwatch, relancez Arma, puis ouvrez Échap en session : le bandeau a disparu. Le bouton de gestion du pack reste disponible.',
+            ], 'Overwatch 1.4.97'),
+            $pr(284, '2026-09-01', 'Le QR de la fenêtre détachée se scanne enfin', 'Pour ouvrir un module sur le téléphone, le code à scanner est désormais grand, sur fond blanc, à côté du visuel', [
+                'Le code occupe un carré lisible, avec une marge claire autour',
+            ], [], [
+                'Le code était collé sur l’écran du téléphone dessiné : trop petit pour l’appareil photo',
+            ], ['atak'], [
+                'Sur la carte du poste, ouvrez Affichage déporté, puis Fenêtre détachée sur téléphone. Présentez le grand carré blanc à l’appareil photo.',
+            ], 'Portail 1.5.95'),
             $pr(283, '2026-09-01', 'Pack actuel et pack exigé, visibles à l’écran', 'Si la communauté n’accepte plus ce pack, la fenêtre de connexion indique le pack installé et celui qui est demandé', [
                 'Message clair : pack actuel et version exigée par la communauté',
                 'Pied de fenêtre : liaison, pack actuel, et pack exigé dès que la communauté en a fixé un',

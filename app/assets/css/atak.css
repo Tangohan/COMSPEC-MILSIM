@@ -4129,27 +4129,13 @@ body.atak-theme-light .atak-chat-messages {
   border: 1px solid var(--atak-border);
 }
 
-/* Vue tactique inclinée — conserve la pile Leaflet afin que les unités et tracés
-   restent exactement calés sur la cartographie. */
+/* Carte 2D : plan Leaflet, sans perspective CSS. La vue relief est un hôte WebGL séparé. */
 .atak-map-stage {
-  perspective: 1350px;
-  perspective-origin: 50% 42%;
   overflow: hidden;
 }
 
 #atak-map {
-  transform-origin: 50% 58%;
-  transition: transform 420ms cubic-bezier(.2,.75,.2,1), filter 240ms ease;
-}
-
-.atak-map-stage.atak-map-stage--3d #atak-map {
-  transform: scale(1.18) rotateX(var(--atak-map-pitch, 48deg)) rotateZ(var(--atak-map-bearing, 0deg));
-  filter: saturate(1.08) contrast(1.06);
-}
-
-.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-tile-pane,
-.atak-map-stage.atak-map-stage--3d #atak-map .leaflet-overlay-pane {
-  filter: drop-shadow(0 14px 11px rgba(0, 0, 0, .42));
+  transform: none;
 }
 
 .atak-map-tools__btn--view3d.is-active {

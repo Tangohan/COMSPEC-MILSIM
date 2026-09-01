@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.58;
-        versionStr = "1.0.58";
-        versionAr[] = {1, 0, 58};
+        version = 1.0.61;
+        versionStr = "1.0.61";
+        versionAr[] = {1, 0, 61};
     };
 };
 
@@ -38,6 +38,12 @@ class CfgFunctions
             class athena_selectNotif {};
             class athena_pushNotification {};
             class athena_selectTab {};
+            class athena_selectHome {};
+            class athena_selectFilter {};
+            class athena_applyHomeLayout {};
+            class athena_resolveAthenaGroup {};
+            class athena_fixReportsLayout {};
+            class athena_installReportsLayout {};
             class athena_sendPhoto {};
             class athena_sendSeekData {};
             class athena_resynchAll {};

@@ -7,7 +7,6 @@
   overflow: hidden;
   isolation: isolate;
   contain: layout paint;
-  transform: translateZ(0);
   pointer-events: none;
 }
 .terrain3d-host[hidden] {

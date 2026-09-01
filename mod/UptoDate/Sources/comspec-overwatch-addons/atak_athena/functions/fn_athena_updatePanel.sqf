@@ -1,25 +1,17 @@
 /*
     Rafraîchit statut + inbox (alertes, ordres, BDA Iceman, photos locales).
 */
-private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
-if (isNull _group) then {
-    {
-        private _title = _x displayCtrl 9700;
-        if (isNull _title) then { continue };
-        private _parent = ctrlParentControlsGroup _title;
-        if (!isNull _parent) then {
-            _group = _parent;
-            uiNamespace setVariable ["COMSPEC_ATAK_Athena_group", _group];
-        };
-        if (!isNull _group) exitWith {};
-    } forEach allDisplays;
-};
+private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;
 if (isNull _group) exitWith {};
+
+[] call comspec_overwatch_atak_athena_fnc_athena_applyHomeLayout;
 
 private _statusCtrl = _group controlsGroupCtrl 9701;
 private _listCtrl = _group controlsGroupCtrl 9710;
 private _detailCtrl = _group controlsGroupCtrl 9711;
 private _tab = missionNamespace getVariable ["COMSPEC_Athena_PanelTab", "all"];
+private _home = missionNamespace getVariable ["COMSPEC_Athena_HomeSection", "fil"];
+if (_tab isEqualTo "notif" || {_tab isEqualTo "alert"}) then { _tab = "urgences"; };
 
 private _linked = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
 private _cs = "";
@@ -28,117 +20,46 @@ if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
 };
 if (_cs isEqualTo "") then { _cs = name player; };
 
-private _hasBda = !isNil "Iceman_fnc_bda_receive" || {!isNil { missionNamespace getVariable "Iceman_ATAK_BDA_reports" }};
-private _hasPhoto = !isNil "Iceman_fnc_photo_getRecords";
-
-// Onglets : tuile grise / sélection verte (style terrain)
-private _tabIdle = [0.145, 0.145, 0.145, 1];
-private _tabActive = [0.06, 0.22, 0.12, 1];
-private _tabMap = [
-    ["all", 9740],
-    ["messages", 9741],
-    ["photo", 9742],
-    ["order", 9743],
-    ["bda", 9744],
-    ["urgences", 9745],
-    ["liaison", 9746],
-    ["modules", 9747]
-];
-{
-    _x params ["_id", "_idc"];
-    private _ctrl = _group controlsGroupCtrl _idc;
-    if (!isNull _ctrl) then {
-        private _col = if (_tab isEqualTo _id) then { _tabActive } else { _tabIdle };
-        _ctrl ctrlSetBackgroundColor _col;
-    };
-} forEach _tabMap;
-
-// Compteur non lus sur Urgences
+// Compteur non lus sur Alerter
 private _notifs = missionNamespace getVariable ["COMSPEC_Athena_Notifications", []];
 if (!(_notifs isEqualType [])) then { _notifs = []; };
 private _unreadCount = {_x select 5} count _notifs;
-private _tabUrgCtrl = _group controlsGroupCtrl 9745;
+private _tabUrgCtrl = _group controlsGroupCtrl 9762;
 if (!isNull _tabUrgCtrl) then {
     private _tabTxt = if (_unreadCount > 0) then {
-        format ["Urgences (%1)", _unreadCount]
+        format ["Alerter (%1)", _unreadCount]
     } else {
-        "Urgences"
+        "Alerter"
     };
     _tabUrgCtrl ctrlSetText _tabTxt;
 };
 
-// Zone notifications (fil compact, plus récent en haut)
-private _notifCtrl = _group controlsGroupCtrl 9715;
-if (!isNull _notifCtrl) then {
-    private _notifPrev = lbCurSel _notifCtrl;
-    _notifCtrl setVariable ["COMSPEC_AthenaNotifUpdating", true];
-    lbClear _notifCtrl;
-    private _notifDisp = +_notifs;
-    reverse _notifDisp;
-    private _maxNotif = 5;
-    private _shown = 0;
+private _combo = _group controlsGroupCtrl 9760;
+if (!isNull _combo && {_home isEqualTo "fil"}) then {
+    _combo setVariable ["COMSPEC_AthenaFilterUpdating", true];
+    lbClear _combo;
+    private _filterTab = _tab;
+    if (_filterTab in ["notif", "alert"]) then { _filterTab = "urgences"; };
     {
-        if (_shown >= _maxNotif) exitWith {};
-        _x params ["_nid", "_nkind", "_ntype", "_nbrief", "_ntime", "_nunread"];
-        private _prefix = if (_nunread) then { "● " } else { "  " };
-        private _line = format ["%1%2 · %3 · %4", _prefix, _ntype, _ntime, _nbrief];
-        if ((count _line) > 52) then { _line = (_line select [0, 49]) + "…"; };
-        private _idx = _notifCtrl lbAdd _line;
-        _notifCtrl lbSetData [_idx, str _forEachIndex];
-        private _col = switch (_nkind) do {
-            case "order": { [0.55, 0.78, 0.92, 1] };
-            case "bda": { [0.92, 0.72, 0.48, 1] };
-            case "photo": { [0.7, 0.84, 0.9, 1] };
-            case "group";
-            case "messages";
-            case "notify": { [0.75, 0.9, 0.75, 1] };
-            case "vibrate": { [0.95, 0.8, 0.45, 1] };
-            case "system": { [0.75, 0.82, 0.88, 1] };
-            default { [0.95, 0.86, 0.62, 1] };
-        };
-        _notifCtrl lbSetColor [_idx, _col];
-        if (_nunread) then {
-            _notifCtrl lbSetColorRight [_idx, [0.35, 0.95, 0.65, 1]];
-        };
-        _shown = _shown + 1;
-    } forEach _notifDisp;
-    _notifCtrl setVariable ["COMSPEC_AthenaNotifUpdating", false];
-    if ((count _notifDisp) == 0) then {
-        private _idx = _notifCtrl lbAdd "Aucune notification récente";
-        _notifCtrl lbSetColor [_idx, [0.55, 0.62, 0.68, 0.85]];
-        _notifCtrl lbSetCurSel -1;
-    } else {
-        if (_notifPrev >= 0 && {_notifPrev < _shown}) then {
-            _notifCtrl lbSetCurSel _notifPrev;
-        } else {
-            _notifCtrl lbSetCurSel -1;
-        };
-    };
+        _x params ["_id", "_lab"];
+        private _i = _combo lbAdd _lab;
+        _combo lbSetData [_i, _id];
+        if (_id isEqualTo _filterTab) then { _combo lbSetCurSel _i; };
+    } forEach [
+        ["all", "Tout le journal"],
+        ["photo", "Photos"],
+        ["order", "Ordres"],
+        ["messages", "Messages"],
+        ["urgences", "Urgences"],
+        ["bda", "Bilans"]
+    ];
+    _combo setVariable ["COMSPEC_AthenaFilterUpdating", false];
 };
 
 private _statusTxt = if (_linked) then {
-    private _ms = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
-    private _msPart = if (_ms >= 0) then { format [" · <t color='#9aa4aa'>%1 ms</t>", _ms] } else { "" };
-    private _pkt = [] call comspec_overwatch_connect_fnc_getPacketLossStats;
-    private _loss = _pkt getOrDefault ["packet_loss_percent", 0];
-    private _lossPart = format [" · <t color='#9aa4aa'>pertes %1%%</t>", (_loss toFixed 1)];
-    private _mapId = missionNamespace getVariable ["comspec_overwatch_map_id", 1];
-    private _dataCh = ((floor ((abs _mapId) mod 11)) + 1);
-    private _dataMhz = 2400 + (_dataCh * 5);
-    private _freqPart = format [" · <t color='#9aa4aa'>%1 MHz</t>", _dataMhz];
-    private _bdaPart = if (_hasBda) then { "<t color='#7dffb0'>BDA prêt</t>" } else { "<t color='#6a7c90'>BDA —</t>" };
-    private _photoPart = if (_hasPhoto) then { "<t color='#7dffb0'>Photos prêtes</t>" } else { "<t color='#6a7c90'>Photos —</t>" };
-    format [
-        "<t color='#7dffb0'>●</t> <t color='#e8f4f0'>%1</t>%2%3%4<br/><t size='0.9'>%5 · %6</t>",
-        _cs,
-        _msPart,
-        _lossPart,
-        _freqPart,
-        _bdaPart,
-        _photoPart
-    ]
+    format ["<t color='#7dffb0'>●</t> <t color='#e8f4f0'>En liaison — %1</t>", _cs]
 } else {
-    "<t color='#ffd27a'>● Liaison en attente</t><br/><t size='0.9' color='#8aa0b4'>Onglet Liaison ou icône Compte sur le bureau ATAK</t>"
+    "<t color='#ffd27a'>● Hors liaison</t>  <t color='#8aa0b4'>Poste → Compte Athena</t>"
 };
 if (!isNull _statusCtrl) then {
     _statusCtrl ctrlSetStructuredText parseText _statusTxt;
@@ -513,6 +434,36 @@ if (!(_medAlerts isEqualType [])) then { _medAlerts = []; };
 
 reverse _entries;
 
+private _notifyEntries = [];
+{
+    if (!(_x isEqualType [])) then { continue };
+    _x params [
+        ["_nid", "", [""]],
+        ["_nkind", "notify", [""]],
+        ["_ntype", "Avis", [""]],
+        ["_nbrief", "", [""]],
+        ["_ntime", "", [""]],
+        ["_nunread", false, [true]],
+        ["_ndetail", "", [""]]
+    ];
+    private _title = format ["%1%2 · %3", if (_nunread) then { "● " } else { "" }, _ntype, _nbrief];
+    if ((count _title) > 52) then { _title = (_title select [0, 49]) + "…"; };
+    private _detail = if (_ndetail isNotEqualTo "") then {
+        _ndetail
+    } else {
+        format [
+            "<t color='#e8f4f0'>%1</t><br/><t color='#8aa0b4'>Heure</t>  %2<br/><br/>%3",
+            _ntype,
+            if (_ntime isEqualTo "") then { "—" } else { _ntime },
+            _nbrief
+        ]
+    };
+    _notifyEntries pushBack ["notify", _title, _detail, _nid, []];
+} forEach (reverse (+_notifs));
+if (_tab in ["all", "urgences", "notif", "alert"] || {_home isEqualTo "alerter"}) then {
+    _entries = _notifyEntries + _entries;
+};
+
 // --- Onglet Modules : état + journal données ---
 if (_tab isEqualTo "modules") then {
     _entries = [];
@@ -577,7 +528,7 @@ if (_tab isEqualTo "modules") then {
 
 // Filtre onglet
 if (_tab isEqualTo "urgences" || {_tab isEqualTo "notif"} || {_tab isEqualTo "alert"}) then {
-    _entries = _entries select { (_x select 0) in ["alert", "order", "medical", "messages"] };
+    _entries = _entries select { (_x select 0) in ["alert", "order", "medical", "messages", "notify"] };
 } else {
     if (_tab isEqualTo "liaison") then {
         private _linkState = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
@@ -659,6 +610,7 @@ if (!isNull _listCtrl) then {
             case "bda": { _listCtrl lbSetColor [_idx, [0.92, 0.72, 0.48, 1]]; };
             case "photo": { _listCtrl lbSetColor [_idx, [0.7, 0.84, 0.9, 1]]; };
             case "medical": { _listCtrl lbSetColor [_idx, [0.95, 0.55, 0.45, 1]]; };
+            case "notify": { _listCtrl lbSetColor [_idx, [0.75, 0.9, 0.75, 1]]; };
             case "modules": { _listCtrl lbSetColor [_idx, [0.55, 0.88, 0.68, 1]]; };
             default { _listCtrl lbSetColor [_idx, [0.95, 0.86, 0.62, 1]]; };
         };
@@ -670,27 +622,39 @@ if (!isNull _listCtrl) then {
         _listCtrl lbSetCurSel _sel;
         [_listCtrl, _sel] call comspec_overwatch_atak_athena_fnc_athena_selectInbox;
     } else {
-        private _emptyIdx = _listCtrl lbAdd "Aucune entrée pour le moment";
+        private _emptyIdx = _listCtrl lbAdd "Rien pour le moment";
         _listCtrl lbSetColor [_emptyIdx, [0.55, 0.62, 0.68, 0.85]];
         _listCtrl lbSetCurSel -1;
         if (!isNull _detailCtrl) then {
-            private _empty = switch (_tab) do {
-                case "bda": { "Aucun bilan des dégâts pour le moment." };
-                case "photo": { "Aucune photo récente pour le moment." };
-                case "order": { "Aucun ordre reçu pour le moment." };
-                case "urgences";
-                case "alert";
-                case "notif": { "Aucune urgence ni alerte médicale pour le moment." };
-                case "modules": { "Aucun module synchronisé pour le moment." };
-                default { "Aucune alerte, ordre, bilan ni photo pour le moment." };
+            private _empty = switch (_home) do {
+                case "alerter": { "Aucune alerte ni urgence médicale pour le moment." };
+                case "rapporter": { "Aucun compte rendu ni photo pour le moment." };
+                case "poste": { "Compte, adresse mobile et appui aérien se commandent ci-dessus." };
+                default {
+                    switch (_tab) do {
+                        case "bda": { "Aucun bilan des dégâts pour le moment." };
+                        case "photo": { "Aucune photo récente pour le moment." };
+                        case "order": { "Aucun ordre reçu pour le moment." };
+                        case "urgences": { "Aucune urgence pour le moment." };
+                        case "messages": { "Aucun message pour le moment." };
+                        default { "Le journal est vide pour le moment." };
+                    };
+                };
             };
-            private _hint = switch (_tab) do {
-                case "photo": { "Ouvrez l’app Photos d’ATAK et prenez une vue : elle remonte seule vers ATAK web." };
-                case "notif": { "Les nouveaux ordres et alertes apparaissent dans la zone ci-dessus." };
-                default { "Sélectionnez une entrée du journal ci-dessous." };
+            private _hint = switch (_home) do {
+                case "alerter": { "Contact, fin de contact et opérateur à terre se transmettent par les boutons du haut." };
+                case "rapporter": { "FRAGO, bilan, SALUTE et photos se préparent depuis les boutons du haut." };
+                case "poste": { "Touchez une ligne pour lire le détail de la liaison." };
+                default {
+                    if (_tab isEqualTo "photo") then {
+                        "Prenez une vue dans Photos : elle remonte seule vers le poste."
+                    } else {
+                        "Touchez une ligne pour la lire ici. Filtrez le journal dans la liste du haut."
+                    };
+                };
             };
             _detailCtrl ctrlSetStructuredText parseText format [
-                "<t size='0.88' color='#e8f4f0'>%1</t><br/><br/><t color='#9aa4aa'>%2</t>",
+                "<t size='0.95' color='#e8f4f0'>%1</t><br/><br/><t color='#9aa4aa'>%2</t>",
                 _empty,
                 _hint
             ];

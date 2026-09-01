@@ -24,7 +24,7 @@ final class AtakZeusEditButtonsAssetTest extends TestCase
         self::assertStringContainsString('false, false, false] call comspec_overwatch_connect_fnc_captureReconImage', $photo);
         self::assertStringContainsString('comspec_sse_face', $photo);
         $ath = (string) file_get_contents($root . '/atak_athena/config.cpp');
-        self::assertStringContainsString('1.0.58', $ath);
+        self::assertStringContainsString('1.0.61', $ath);
         self::assertStringContainsString('1.5.0', $cfg);
         self::assertStringContainsString('"BCE_cTab_ATAK"', $ath);
         self::assertDoesNotMatchRegularExpression('/"BCE_cTab"/', $ath);

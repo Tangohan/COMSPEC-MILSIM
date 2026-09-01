@@ -322,6 +322,28 @@ final class TrainingCompetencyRepository
         return $st->rowCount() > 0;
     }
 
+    /**
+     * Groupes de suivi déjà assignés à un membre.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listAssignmentsForUser(int $tenantId, int $userId): array
+    {
+        if (!$this->hasTable('training_competency_matrix_assignments') || $tenantId < 1 || $userId < 1) {
+            return [];
+        }
+        $st = $this->pdo->prepare(
+            'SELECT a.matrix_id, a.source, a.created_at, a.assigned_by_user_id, m.name, m.description
+             FROM training_competency_matrix_assignments a
+             INNER JOIN training_competency_matrices m ON m.id = a.matrix_id AND m.tenant_id = a.tenant_id
+             WHERE a.tenant_id = ? AND a.user_id = ?
+             ORDER BY m.name ASC'
+        );
+        $st->execute([$tenantId, $userId]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function deleteMatrix(int $tenantId, int $matrixId): bool
     {
         if (!$this->hasTable('training_competency_matrices') || $matrixId < 1) {

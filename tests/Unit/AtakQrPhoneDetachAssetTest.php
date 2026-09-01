@@ -28,7 +28,9 @@ final class AtakQrPhoneDetachAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC', $partial);
         self::assertStringContainsString('atak-qr-phone__topbar', $partial);
         self::assertStringContainsString('data-skin="sitac"', $partial);
-        self::assertStringContainsString('atak-qr-phone__qr-overlay', $partial);
+        self::assertStringContainsString('atak-qr-scan-pack__code', $partial);
+        self::assertStringContainsString('atak-qr-scan-pack', $css);
+        self::assertStringContainsString('image-rendering: pixelated', $css);
         self::assertStringContainsString('.atak-qr-phone__mobile', $css);
         self::assertStringContainsString('paintPhone', $hub);
         self::assertStringContainsString("sitac: 'SITAC'", $hub);

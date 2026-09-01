@@ -564,16 +564,16 @@ $personnelFileRhContext = $personnelFileIsRhFull || $personnelFileIsRhGate;
 $personnelFileShell = $personnelFileIsRhFull
     ? 'w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12'
     : 'max-w-7xl mx-auto px-6 md:px-8';
-$personnelFileWrapClass = 'personnel-file';
-if ($personnelFileIsRhFull) {
-    $personnelFileWrapClass .= ' personnel-file--rh-full';
-} elseif ($personnelFileIsRhGate) {
-    $personnelFileWrapClass .= ' personnel-file--gate';
+$personnelFileRootClass = 'personnel-file-root personnel-file pt-20';
+if ($personnelFileIsRhGate) {
+    $personnelFileRootClass .= ' personnel-file--rh-gate personnel-file--gate pb-6';
+} elseif ($personnelFileIsRhFull) {
+    $personnelFileRootClass .= ' personnel-file--rh-full pb-10';
 } else {
-    $personnelFileWrapClass .= ' personnel-file--public';
+    $personnelFileRootClass .= ' personnel-file--public pb-10';
 }
 ?>
-<div class="<?= htmlspecialchars($personnelFileWrapClass, ENT_QUOTES, 'UTF-8') ?>">
+<div class="<?= htmlspecialchars($personnelFileRootClass, ENT_QUOTES, 'UTF-8') ?>">
     <?php if (!$personnelFileIsRhFull && $personnelModerationStaffLines !== []): ?>
     <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
         <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" role="region" aria-label="Restrictions d’accès">
