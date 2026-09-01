@@ -117,6 +117,7 @@ class CfgFunctions {
             class arsenalInitOverlay {};
             class sendIntel {};
             class initACE {};
+            class initACEAthena {};
             class initExplosiveTimers {};
             class initChargeAceActions {};
             class reportExplosiveTimer {};

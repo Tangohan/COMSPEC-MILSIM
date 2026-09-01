@@ -33,7 +33,7 @@ private _condSync = {
 private _noChildren = { [] };
 
 private _mainAction = [
-    "COMSPEC_Main", "COMSPEC Overwatch", "", {}, _condEnabled, _noChildren
+    "COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_mainAction, ["ACE_SelfActions"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 

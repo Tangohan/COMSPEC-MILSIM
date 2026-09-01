@@ -584,6 +584,16 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(331, '2026-09-01', 'Le parcours d’intégration des nouveaux membres s’installe correctement', 'Sur les communautés déjà en place, le suivi d’intégration des nouveaux membres se pose maintenant sans erreur. Relancez la mise à jour du portail pour activer les tables manquantes', [], [], [
+                'La mise à jour du portail n’installait pas le suivi d’intégration sur certaines communautés',
+            ], ['personnel'], [
+                'Relancez la mise à jour du portail (même procédure que d’habitude). Pas de pack jeu.',
+            ], 'Portail'),
+            $pr(330, '2026-09-01', 'COMSPEC Athena reste dans le menu ACE', 'Dans le menu d’interaction ACE (sur soi), l’entrée COMSPEC Athena est de nouveau visible : Compte Athena et ouverture du téléphone. Les rapports ATAK supplémentaires restent un réglage optionnel', [], [], [
+                'Le menu ACE ne montrait plus COMSPEC Athena, sauf si un réglage étendu était activé',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement. ACE sur soi : COMSPEC Athena, puis Compte Athena. Pas besoin d’activer les menus étendus.',
+            ], 'Overwatch'),
             $pr(324, '2026-09-01', 'Le texte des fiches en jeu se lit enfin', 'Dans le rédacteur de fiche ATAK, titres, libellés, thèmes et boutons sont plus grands. La phrase sous le dossier se distingue du fond. Un réglage « Texte et boutons de la fiche » permet encore d’agrandir', [], [
                 'Libellés, thèmes et bandeau date / lieu plus lisibles',
             ], [
@@ -596,10 +606,11 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Rechargez le pack jeu, relancez Arma complètement, connectez-vous, puis prenez une photo. Un seul envoi, pas de rafale dans le journal.',
             ], 'Overwatch'),
-            $pr(326, '2026-09-01', 'Connexion Steam depuis le tableau de bord', 'Une tuile Connexion Steam ouvre Steam pour associer votre compte au portail. Après validation, Overwatch vous reconnaît en jeu. Si Steam est déjà associé, la tuile le confirme et permet de changer de compte', [
-                'Tuile Connexion Steam sur le tableau de bord, et le même accès dans Mon compte',
+            $pr(326, '2026-09-01', 'Connexion Steam depuis le tableau de bord', 'Une tuile Connexion Steam ouvre Steam pour associer votre compte au portail. Après validation, Overwatch vous reconnaît en jeu. Une fois Steam associé, la tuile disparaît ; vous pouvez encore changer de compte depuis Mon compte', [
+                'Tuile Connexion Steam sur le tableau de bord tant que Steam n’est pas associé',
+                'Changement de compte Steam depuis Mon compte',
             ], [], [], ['atak', 'platform'], [
-                'Ouvrez le tableau de bord. Tuile Connexion Steam : connectez-vous sur Steam, puis revenez. Un message confirme l’association. Pas de pack jeu.',
+                'Ouvrez le tableau de bord. Si Steam n’est pas encore associé, la tuile Connexion Steam apparaît. Une fois lié, elle disparaît. Pour changer de compte, ouvrez Mon compte. Pas de pack jeu.',
             ], 'Portail'),
             $pr(325, '2026-09-01', 'La connexion Athena en jeu associe Steam toute seule', 'Si Steam n’était pas encore enregistré sur le compte, la connexion par e-mail en jeu l’associe à partir de la session. L’opérateur est prévenu à l’écran et par courriel ; l’encadrement reçoit aussi un courriel', [
                 'Connexion par e-mail en jeu : l’identifiant Steam de la session est enregistré s’il manquait',

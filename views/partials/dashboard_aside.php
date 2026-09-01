@@ -392,16 +392,21 @@ $acctInitials = function_exists('user_display_initials') ? user_display_initials
 <?php
 $accountExtraHtml = (string) ob_get_clean();
 
+$acctSteamLinked = \App\Support\SteamId::normalize(is_array($acctUser) ? (string) ($acctUser['steam_id'] ?? '') : '') !== null;
+$accountLinks = [
+    ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'hint' => 'Identité et grade'],
+    ['label' => 'Modifier le dossier', 'href' => url('personnel/me/edit'), 'hint' => 'Mise à jour'],
+    ['label' => 'Compte', 'href' => url('account'), 'hint' => 'Sécurité et médias'],
+    ['label' => 'Préférences', 'href' => url('account/preferences'), 'hint' => 'Langue, affichage et e-mail'],
+];
+if (!$acctSteamLinked) {
+    $accountLinks[] = ['label' => 'Connexion Steam', 'href' => url('account/steam/connect'), 'hint' => 'Associer le compte Steam'];
+}
+$accountLinks[] = ['label' => 'Mes données', 'href' => url('account/donnees'), 'hint' => 'Export RGPD'];
+$accountLinks[] = ['label' => 'Tutoriels', 'href' => url('personnel/tutorials'), 'hint' => 'Guides'];
+
 $accountTiles = [
-    $tile('profile', 'Mon compte', 'Identité et préférences', 'accent', null, $links([
-        ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'hint' => 'Identité et grade'],
-        ['label' => 'Modifier le dossier', 'href' => url('personnel/me/edit'), 'hint' => 'Mise à jour'],
-        ['label' => 'Compte', 'href' => url('account'), 'hint' => 'Sécurité et médias'],
-        ['label' => 'Préférences', 'href' => url('account/preferences'), 'hint' => 'Langue, affichage et e-mail'],
-        ['label' => 'Connexion Steam', 'href' => url('account/steam/connect'), 'hint' => 'Associer le compte Steam'],
-        ['label' => 'Mes données', 'href' => url('account/donnees'), 'hint' => 'Export RGPD'],
-        ['label' => 'Tutoriels', 'href' => url('personnel/tutorials'), 'hint' => 'Guides'],
-    ]), 'profile', $accountExtraHtml),
+    $tile('profile', 'Mon compte', 'Identité et préférences', 'accent', null, $links($accountLinks), 'profile', $accountExtraHtml),
 ];
 
 $renderLinks = static function (array $item) use ($h): void {
