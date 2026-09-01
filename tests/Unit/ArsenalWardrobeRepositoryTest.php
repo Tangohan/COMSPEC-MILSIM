@@ -63,7 +63,9 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         );
         self::assertStringContainsString('Tenues de la communauté', $overlay);
         self::assertStringContainsString('13 * _gridW', $overlay);
-        self::assertStringContainsString('0.118', $overlay);
+        self::assertStringContainsString('ctrlShow false', $overlay);
+        self::assertStringContainsString('Athena', $overlay);
+        self::assertStringContainsString('884400', $overlay);
         self::assertStringContainsString('arsenalPullAll', $overlay);
         self::assertStringNotContainsString('safeZoneW - 0.28', $overlay);
         self::assertStringNotContainsString('WARDROBES', $overlay);
@@ -81,6 +83,20 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         self::assertFileExists(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalPushAll.sqf'
         );
+        $pushAll = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalPushAll.sqf'
+        );
+        self::assertStringContainsString('COMSPEC_AthenaReady', $pushAll);
+        self::assertStringContainsString('false, false, "arsenal", false', $pushAll);
+        $outbox = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_outboxPush.sqf'
+        );
+        self::assertStringContainsString('syncwardrobe', $outbox);
+        self::assertStringNotContainsString('["INFO", "Outbox"', $outbox);
+        $pause = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_pauseManagerShow.sqf'
+        );
+        self::assertStringNotContainsString('pause-open', $pause);
     }
 
     public function testNavigationExposesEquipmentHub(): void

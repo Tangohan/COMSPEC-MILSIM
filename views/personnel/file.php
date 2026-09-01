@@ -564,8 +564,16 @@ $personnelFileRhContext = $personnelFileIsRhFull || $personnelFileIsRhGate;
 $personnelFileShell = $personnelFileIsRhFull
     ? 'w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12'
     : 'max-w-7xl mx-auto px-6 md:px-8';
+$personnelFileRootClass = 'personnel-file-root pt-20';
+if ($personnelFileIsRhGate) {
+    $personnelFileRootClass .= ' personnel-file--rh-gate pb-6';
+} elseif ($personnelFileIsRhFull) {
+    $personnelFileRootClass .= ' personnel-file--rh-full pb-10';
+} else {
+    $personnelFileRootClass .= ' pb-10';
+}
 ?>
-<main class="min-h-screen pt-20 pb-24<?= $personnelFileIsRhFull ? ' personnel-file--rh-full' : '' ?>">
+<div class="<?= htmlspecialchars($personnelFileRootClass, ENT_QUOTES, 'UTF-8') ?>">
     <?php if (!$personnelFileIsRhFull && $personnelModerationStaffLines !== []): ?>
     <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
         <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" role="region" aria-label="Restrictions d’accès">
@@ -635,12 +643,12 @@ $personnelFileShell = $personnelFileIsRhFull
     <?php
     if ($canAccessRhView && $personnelViewMode === '') {
         require base_path('views/partials/personnel/file_view_gate.php');
-        echo '</main>';
+        echo '</div>';
         return;
     }
     if ($personnelFileIsRhFull) {
         require base_path('views/partials/personnel/file_rh_view.php');
-        echo '</main>';
+        echo '</div>';
         return;
     }
     ?>
@@ -2081,4 +2089,4 @@ $personnelFileShell = $personnelFileIsRhFull
             </div>
         </div>
     </div>
-</main>
+</div>

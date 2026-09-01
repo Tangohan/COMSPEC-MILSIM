@@ -191,6 +191,7 @@ class HomeController
         $armaPlaytimeLabel = null;
         $armaPlaytimeSeconds = 0;
         $dashboardTenantType = \App\Services\Community\TenantTypeConfig::TYPE_FULL;
+        $dashboardRhParcours = null;
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
@@ -576,6 +577,21 @@ class HomeController
                 } catch (\Throwable) {
                     $dashboardTesterProgram = null;
                 }
+
+                if (!$dashboardIsDefaultTenant && ($allowsPersonnel || $allowsRecruitment)) {
+                    try {
+                        $tenantSlug = is_array($tenantRow) ? (string) ($tenantRow['slug'] ?? '') : '';
+                        $dashboardRhParcours = \App\Support\DashboardRhParcours::build(
+                            $tid,
+                            $uid,
+                            $tenantSlug,
+                            $allowsPersonnel,
+                            $allowsRecruitment
+                        );
+                    } catch (\Throwable) {
+                        $dashboardRhParcours = null;
+                    }
+                }
             }
         }
 
@@ -635,6 +651,7 @@ class HomeController
             'can_see_inactive_effectifs' => $canSeeInactiveEffectifs,
             'arma_playtime_label' => $armaPlaytimeLabel,
             'arma_playtime_seconds' => $armaPlaytimeSeconds,
+            'dashboard_rh_parcours' => $dashboardRhParcours,
         ]);
     }
 

@@ -12,7 +12,6 @@ if (!isNull (findDisplay 9979)) exitWith {
 };
 
 ["INFO", "Pause", "Ouverture panneau Gestion du mod"] call comspec_overwatch_connect_fnc_log;
-["pause-open"] call comspec_overwatch_connect_fnc_logDump;
 
 private _ok = createDialog "COMSPEC_PauseManager_Dialog";
 if (!_ok) exitWith {

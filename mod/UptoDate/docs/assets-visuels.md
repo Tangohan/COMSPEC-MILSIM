@@ -54,24 +54,15 @@ Les placeholders dev sont des **rectangles colorés + texte** : OK pour tester l
 
 ---
 
-## SSE (1.4.x)
+## SSE (prévu 1.4.x)
 
-| Asset | Usage | Dimensions cibles | État |
-|---|---|---|---|
-| Cadre laptop rugged | Fond terminal « Renseignement interpersonnel » | Zone écran utile 1024×768 | À produire |
-| Cadre mugshot | Overlay capture photo visage (guides yeux / épaules) | 512×640 portrait | À produire |
-| Icône enregistrer personne | Hub ACE / barre apps Athena | 128×128 PNG → `.paa` `_ca` | À produire |
-| Icône saisie / preuve | Liste saisies site | 64×64 | À produire (1.4.1) |
-| Icône site exploité | Dossier site | 128×128 | À produire (1.4.1) |
-| Icône liste surveillance | Watchlist / alerte match | 64×64 | À produire (1.4.2) |
-| Badge TOC « Personne identifiée » | Pastille liste Athena | 24×24 + variante alerte | À produire |
-| Overlay biométrie sim | Barre progression empreinte / iris | 512×64 | Placeholder OK |
+Assets à prévoir :
 
-Palette SSE (cohérente avec le terminal) : fond `#0a1628`, accent liaison `#33d9a5`, alerte watchlist `#ff8a4a`, accent secondaire `#e8b84a`.
+- Cadre laptop rugged (1024×768 zone écran)
+- Icônes : enregistrer personne, saisie, site exploité, liste surveillance
+- Badge TOC « Personne identifiée »
 
-Emplacement sources : `Sources/.../connect/img/sse/` (à créer au premier asset). Conversion PNG → `.paa` via TexView 2.
-
-Voir [terminal-sse-renseignement.md](terminal-sse-renseignement.md) et [contrat-api-sse.md](contrat-api-sse.md).
+Voir [terminal-sse-renseignement.md](terminal-sse-renseignement.md).
 
 ---
 

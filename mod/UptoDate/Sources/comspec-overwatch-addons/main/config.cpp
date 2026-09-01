@@ -25,6 +25,8 @@ class CfgMods {
         overview = "Accès anticipé — Reliez Arma 3 à Athena : carte tactique, messagerie, tablette et téléphone.";
         tooltip = "COMSPEC Overwatch · BÊTA";
         author = "COMSPEC";
+        hideName = 1;
+        hidePicture = 1;
     };
 };
 

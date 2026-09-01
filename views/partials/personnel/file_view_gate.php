@@ -10,7 +10,7 @@ $gatePublicUrl = $personnelFileBaseUrl . '?view=public';
 $gateRhUrl = $personnelFileBaseUrl . '?view=rh';
 ?>
 <section class="w-full bg-slate-900 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950/30 border-b border-slate-700/50">
-    <div class="max-w-4xl mx-auto px-6 md:px-8 py-14 md:py-20 text-center">
+    <div class="max-w-4xl mx-auto px-6 md:px-8 py-8 md:py-10 text-center">
         <p class="text-[9px] font-black uppercase tracking-[0.4em] text-emerald-400/90 italic mb-3">Dossier personnel</p>
         <div class="flex items-center justify-center gap-4">
             <div class="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-slate-600/50 bg-slate-800">
@@ -30,9 +30,9 @@ $gateRhUrl = $personnelFileBaseUrl . '?view=rh';
     </div>
 </section>
 <section class="w-full bg-white">
-    <div class="max-w-4xl mx-auto px-6 md:px-8 py-12 md:py-16">
-        <div class="grid gap-6 sm:grid-cols-2">
-            <a href="<?= htmlspecialchars($gatePublicUrl, ENT_QUOTES, 'UTF-8') ?>" class="group flex flex-col rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition hover:border-emerald-300 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+    <div class="max-w-4xl mx-auto px-6 md:px-8 py-6 md:py-8">
+        <div class="grid gap-4 sm:grid-cols-2">
+            <a href="<?= htmlspecialchars($gatePublicUrl, ENT_QUOTES, 'UTF-8') ?>" class="group flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-emerald-300 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
                 <div class="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 </div>
@@ -43,7 +43,7 @@ $gateRhUrl = $personnelFileBaseUrl . '?view=rh';
                     <svg class="h-3.5 w-3.5 transition group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
                 </span>
             </a>
-            <a href="<?= htmlspecialchars($gateRhUrl, ENT_QUOTES, 'UTF-8') ?>" class="group flex flex-col rounded-3xl border border-violet-200 bg-violet-50/40 p-8 shadow-sm transition hover:border-violet-400 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
+            <a href="<?= htmlspecialchars($gateRhUrl, ENT_QUOTES, 'UTF-8') ?>" class="group flex flex-col rounded-3xl border border-violet-200 bg-violet-50/40 p-6 shadow-sm transition hover:border-violet-400 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
                 <div class="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/></svg>
                 </div>

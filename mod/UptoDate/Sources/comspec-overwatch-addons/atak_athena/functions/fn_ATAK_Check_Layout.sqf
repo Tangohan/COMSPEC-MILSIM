@@ -158,9 +158,12 @@ if (!isNull _toolBnt) then {
     ] call BCE_fnc_Anim_CustomOffset;
 };
 
-if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateMapHud") then {
-    [_disp] spawn {
-        uiSleep 0.05;
+[_disp] spawn {
+    uiSleep 0.05;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateMapHud") then {
         [] call comspec_overwatch_atak_athena_fnc_athena_updateMapHud;
+    };
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_fixReportsLayout") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_fixReportsLayout;
     };
 };

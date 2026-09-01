@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /**
  * Aperçu « fenêtre détachée dans le téléphone » (QR hub / modal Écran 2).
- * Inspiré de la démo mobile COMSPEC ATAK.
+ * Le QR à scanner est hors du visuel téléphone : grand, fond blanc, lisible à l’appareil photo.
  *
  * @var string $atakPhoneBezelUrl
  * @var string $qrImgId
@@ -24,6 +24,10 @@ $modLabels = [
 ];
 $defaultTitle = $modLabels[$defaultModule] ?? 'C2 OVERVIEW';
 ?>
+<div class="atak-qr-scan-pack">
+<figure class="atak-qr-scan-pack__code">
+  <img id="<?= $h($qrImgId) ?>" alt="<?= $h($qrImgAlt) ?>" width="280" height="280" />
+</figure>
 <div class="atak-qr-phone<?= $phoneModifier !== '' ? ' ' . $h($phoneModifier) : '' ?>" data-atak-qr-phone data-module="<?= $h($defaultModule) ?>">
   <div class="atak-qr-phone__screen">
     <div class="atak-qr-phone__mobile">
@@ -72,13 +76,6 @@ $defaultTitle = $modLabels[$defaultModule] ?? 'C2 OVERVIEW';
             <small>Minuterie active</small>
           </div>
         </div>
-
-        <div class="atak-qr-phone__qr-overlay">
-          <div class="atak-qr-phone__qr">
-            <img id="<?= $h($qrImgId) ?>" alt="<?= $h($qrImgAlt) ?>" width="240" height="240" />
-          </div>
-          <span class="atak-qr-phone__scan-hint">Scanner pour ouvrir</span>
-        </div>
       </div>
 
       <nav class="atak-qr-phone__nav" aria-hidden="true">
@@ -99,4 +96,5 @@ $defaultTitle = $modLabels[$defaultModule] ?? 'C2 OVERVIEW';
     decoding="async"
     draggable="false"
   />
+</div>
 </div>

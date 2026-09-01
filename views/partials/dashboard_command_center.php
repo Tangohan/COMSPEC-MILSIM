@@ -273,7 +273,17 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 <div class="dash-cc dash-cc--rail">
     <?php require base_path('views/partials/dashboard_aside.php'); ?>
 
-    <div class="dash-cc__main" x-data="{ tacticalOpen: false, calendarOpen: false }">
+    <div class="dash-cc__main" x-data="{
+        tacticalOpen: false,
+        calendarOpen: false,
+        rhStep: 'choice',
+        init() {
+            var h = (window.location.hash || '').replace('#', '');
+            if (h === 'absence' || h === 'elevation' || h === 'avancement') {
+                this.rhStep = h;
+            }
+        }
+    }">
         <?php require base_path('views/partials/header_dashboard.php'); ?>
 
         <!-- Hero sombre (réf. Caverne) — catalogue immédiatement après -->
@@ -858,6 +868,8 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 </ul>
             </section>
             <?php endif; ?>
+
+            <?php require base_path('views/partials/dashboard_rh_parcours.php'); ?>
         </div>
 
         <!-- Modal situation tactique -->

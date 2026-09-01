@@ -1,7 +1,7 @@
 /*
     Tick HUD carte ATAK Enhanced :
-    - cartouche curseur (GRID, DST, ELEV, RNG, BRG, dEL)
-    - cartouche unite suivie (GROUP, CALLSIGN, GRID, ALT, SPD, horodatage)
+    - cartouche curseur (GRILLE, DIST, SOL, GIS, PORTÉE, écart d’altitude)
+    - cartouche unité suivie (Indicatif, Rôle, Groupe, Grille, altitude, vitesse)
     - cap en degres vrais, zoom +/−
     - restyle charbon / cyan du tiroir IceMan (fond, cases indicatif, outils)
     Les cartouches restent DANS le rectangle carte (jamais sur le tiroir droit).
@@ -170,9 +170,9 @@ if (isNil {_zoomOut getVariable "COMSPEC_ATAK_ZoomWired"}) then {
     }];
 };
 
-private _boxW = (_mw * 0.34) min 0.28;
-if (_boxW < 0.12) then { _boxW = (_mw * 0.42) max 0.10; };
-private _boxH = (_mh * 0.195) max 0.072;
+private _boxW = (_mw * 0.38) min 0.32;
+if (_boxW < 0.12) then { _boxW = (_mw * 0.46) max 0.10; };
+private _boxH = (_mh * 0.22) max 0.082;
 private _boxY = _my + _mh - _boxH - _pad;
 _cursorBox ctrlSetPosition [_mx + _pad, _boxY, _boxW, _boxH];
 _cursorBox ctrlSetBackgroundColor _bgPanel;
@@ -209,9 +209,9 @@ private _fncKm = {
     params ["_m"];
     if (!(_m isEqualType 0)) exitWith { "--" };
     if (_m >= 1000) exitWith {
-        format ["%1 KM", ((round (_m / 100)) / 10)]
+        format ["%1 km", ((round (_m / 100)) / 10)]
     };
-    format ["%1 M", round _m]
+    format ["%1 m", round _m]
 };
 
 private _player = if (!isNil "cTab_player" && {!isNull cTab_player}) then { cTab_player } else { player };
@@ -240,11 +240,11 @@ if (_brg < 0) then { _brg = _brg + 360; };
 private _rng = _playerPos distance _cursorPos;
 
 private _cursorHtml = format [
-    "<t font='EtelkaMonospacePro' size='0.68' color='#5EC7F2' align='left'>" +
-    "%1<br/>" +
-    "DST  %2<br/>" +
-    "ELEV %3 M    BRG %4%5T<br/>" +
-    "RNG  %6    dEL %7%8 M</t>",
+    "<t font='EtelkaMonospacePro' size='0.64' color='#5EC7F2' align='left'>" +
+    "GRILLE  %1<br/>" +
+    "DIST    %2<br/>" +
+    "SOL     %3 m    GIS %4%5<br/>" +
+    "PORTÉE  %6    ΔALT %7%8 m</t>",
     [_cursorPos] call _fncGrid,
     [_dst] call _fncKm,
     _elev,
@@ -270,36 +270,51 @@ if (_unit isEqualTo _player) then {
 
 private _uPos = getPosASLVisual _unit;
 private _grpName = groupId (group _unit);
-if (!(_grpName isEqualType "") || {_grpName isEqualTo ""}) then { _grpName = "---"; };
-private _cs = name _unit;
-if (_unit isKindOf "AllVehicles" && {!(_unit isKindOf "CAManBase")}) then {
+if (!(_grpName isEqualType "") || {_grpName isEqualTo ""}) then { _grpName = "—"; };
+
+private _man = _unit;
+if (!(_unit isKindOf "CAManBase")) then {
     private _crew = crew _unit;
-    if (_crew isNotEqualTo []) then { _cs = name (_crew select 0); };
+    if (_crew isNotEqualTo []) then { _man = _crew select 0; };
 };
-if (!(_cs isEqualType "") || {_cs isEqualTo ""}) then { _cs = "---"; };
+
+private _cs = "";
+if (_man isEqualTo player) then {
+    if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
+        _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+    };
+} else {
+    _cs = _man getVariable ["COMSPEC_Callsign", ""];
+};
+if (!(_cs isEqualType "")) then { _cs = str _cs; };
+_cs = trim _cs;
+if (_cs isEqualTo "") then { _cs = name _man; };
+if (_cs isEqualTo "") then { _cs = "—"; };
+
+private _role = "";
+if (!isNil "comspec_overwatch_connect_fnc_getUnitRole") then {
+    _role = [_man] call comspec_overwatch_connect_fnc_getUnitRole;
+};
+if (!(_role isEqualType "")) then { _role = str _role; };
+_role = trim _role;
+if (_role isEqualTo "" || {(toLower _role) in ["operator", "operateur"]}) then { _role = "—"; };
+
 private _alt = round (_uPos select 2);
 private _spd = round (abs (speed _unit));
-private _now = date;
-private _zulu = format [
-    "%1%2%3Z",
-    [_now select 2, 2] call (missionNamespace getVariable ["CBA_fnc_formatNumber", {str (_this select 0)}]),
-    [_now select 3, 2] call (missionNamespace getVariable ["CBA_fnc_formatNumber", {str (_this select 0)}]),
-    [_now select 4, 2] call (missionNamespace getVariable ["CBA_fnc_formatNumber", {str (_this select 0)}])
-];
 
 private _unitHtml = format [
-    "<t font='EtelkaMonospacePro' size='0.66' color='#5EC7F2' align='left'>" +
-    "GROUP     %1<br/>" +
-    "CALLSIGN  %2<br/>" +
-    "%3<br/>" +
-    "ALT %4 M     SPD %5 KM/H<br/>" +
-    "%6</t>",
-    _grpName,
+    "<t font='EtelkaMonospacePro' size='0.62' color='#5EC7F2' align='left'>" +
+    "INDICATIF  %1<br/>" +
+    "RÔLE       %2<br/>" +
+    "GROUPE     %3<br/>" +
+    "GRILLE     %4<br/>" +
+    "ALT %5 m    VIT %6 km/h</t>",
     _cs,
+    _role,
+    _grpName,
     [_uPos] call _fncGrid,
     _alt,
-    _spd,
-    _zulu
+    _spd
 ];
 
 private _hdgHtml = format [

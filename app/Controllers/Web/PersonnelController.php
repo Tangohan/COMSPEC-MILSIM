@@ -866,6 +866,7 @@ class PersonnelController
             'personnelAbsenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
             'canAccessRhView' => $canAccessRhView,
             'personnelViewMode' => $personnelViewMode,
+            'layoutMainCompact' => $canAccessRhView && $personnelViewMode === '',
         ]);
     }
 

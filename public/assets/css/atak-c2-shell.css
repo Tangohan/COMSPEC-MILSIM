@@ -1656,10 +1656,48 @@ body.atak-page .atak-order-suivi em {
 .atak-qr-destination:hover, .atak-qr-destination.is-active { border-color: #43d4ad; background: rgba(40, 118, 99, .25); box-shadow: inset 3px 0 #43d4ad; }
 .atak-qr-generate { min-height: 42px; border: 1px solid #49d9b4; border-radius: 3px; background: #2f9f84; color: #07120f; font: 800 12px/1 var(--atak-font-mono, monospace); letter-spacing: .06em; cursor: pointer; }
 .atak-qr-generate:disabled { opacity: .55; cursor: wait; }
-.atak-qr-result { display: grid; grid-template-columns: minmax(180px, 260px) 1fr; gap: 18px; padding: 16px; border: 1px solid rgba(73, 217, 180, .28); background: rgba(7, 16, 20, .8); align-items: center; }
+.atak-qr-result { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: 18px; padding: 16px; border: 1px solid rgba(73, 217, 180, .28); background: rgba(7, 16, 20, .8); align-items: center; }
 .atak-qr-result__phone { display: flex; justify-content: center; }
 .atak-qr-result__image { padding: 10px; border-radius: 4px; background: #fff; }
 .atak-qr-result__image img { display: block; width: 100%; height: auto; }
+
+.atak-qr-scan-pack {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.atak-qr-scan-pack__code {
+  flex: 0 0 auto;
+  width: min(260px, 70vw);
+  min-height: 232px;
+  margin: 0;
+  padding: 14px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(15, 23, 32, 0.35);
+}
+.atak-qr-scan-pack__code img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  background: #fff;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.atak-qr-scan-pack__code img[hidden] {
+  opacity: 0;
+}
+.atak-qr-result__phone .atak-qr-scan-pack {
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+}
+.atak-qr-result__phone .atak-qr-scan-pack__code {
+  width: 100%;
+  max-width: 280px;
+  margin-inline: auto;
+}
 .atak-qr-status { color: #55dab7; font: 700 9px/1 var(--atak-font-mono, monospace); letter-spacing: .12em; }
 .atak-qr-result h4 { margin: 8px 0; color: #edf7f4; font-size: 18px; }
 .atak-qr-code-row { display: flex; gap: 8px; margin: 14px 0 8px; }
@@ -1679,7 +1717,7 @@ body.atak-page .atak-order-suivi em {
   aspect-ratio: 1 / 1;
   filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
 }
-.atak-qr-phone--modal { width: min(100%, 240px); }
+.atak-qr-phone--modal { width: min(100%, 132px); }
 .atak-qr-phone__bezel {
   position: absolute;
   inset: 0;

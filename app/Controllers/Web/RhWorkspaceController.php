@@ -149,12 +149,12 @@ final class RhWorkspaceController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
+            return $this->rhFormRedirect($request, 'mobilite');
         }
         if (!$this->mobilityRequests->tableExists()) {
             Session::flash('error', 'Les souhaits d’évolution ne sont pas encore disponibles.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
+            return $this->rhFormRedirect($request, 'mobilite');
         }
         $type = trim((string) $request->input('request_type', 'career_wish'));
         if (!in_array($type, PersonnelMobilityRequestRepository::TYPES, true)) {
@@ -165,7 +165,7 @@ final class RhWorkspaceController
         if ($targetLabel === '' && $motivation === '') {
             Session::flash('error', 'Indiquez au moins un poste ou une motivation.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
+            return $this->rhFormRedirect($request, 'mobilite');
         }
         $id = $this->mobilityRequests->create(
             $tenantId,
@@ -181,7 +181,50 @@ final class RhWorkspaceController
             ? 'Votre demande a été transmise à l’encadrement.'
             : 'La demande n’a pas pu être enregistrée.');
 
-        return Response::redirect(url('personnel/mon-espace-rh') . '#mobilite');
+        return $this->rhFormRedirect($request, 'mobilite', $id > 0 ? 'mon-dossier-rh' : null);
+    }
+
+    public function storeElevation(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$user || $tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
+
+            return $this->rhFormRedirect($request, '');
+        }
+
+        $kind = trim((string) $request->input('elevation_kind', 'general'));
+        $note = trim((string) $request->input('elevation_note', ''));
+        $proposal = $this->readElevationProposalFromRequest($request);
+        $validated = $this->validateElevationProposal($tenantId, $proposal);
+        if ($validated['error'] !== null) {
+            Session::flash('error', $validated['error']);
+
+            return $this->rhFormRedirect($request, '');
+        }
+        $proposal = $validated['proposal'];
+        $hasChange = ($proposal['grade_id'] ?? null) !== null
+            || ($proposal['role_id'] ?? null) !== null
+            || ($proposal['job_role_id'] ?? null) !== null
+            || ($proposal['unit_id'] ?? null) !== null
+            || ($proposal['clearance_level'] ?? null) !== null
+            || $note !== '';
+        if (!$hasChange) {
+            Session::flash('error', 'Indiquez au moins un changement ou un message pour l’encadrement.');
+
+            return $this->rhFormRedirect($request, '');
+        }
+
+        $alerts = \App\Core\Container::get(\App\Services\Effectifs\EffectifsStaffAlertService::class);
+        $result = $alerts->requestElevation($tenantId, $userId, $user, $kind, $note, $proposal);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return $this->rhFormRedirect($request, '', $result['ok'] ? 'mon-dossier-rh' : null);
     }
 
     public function storeAbsence(Request $request, array $params = []): Response
@@ -195,12 +238,12 @@ final class RhWorkspaceController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
         if (!$this->personnelAbsenceRepository->tableExists()) {
             Session::flash('error', 'L’enregistrement des absences n’est pas encore disponible. Contactez l’encadrement si le problème persiste.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
 
         $startsOn = trim((string) $request->input('starts_on', ''));
@@ -215,17 +258,17 @@ final class RhWorkspaceController
         if ($startsOn === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $startsOn)) {
             Session::flash('error', 'Indiquez une date de début valide.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
         if ($hasDuration && ($endsOn === null || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endsOn))) {
             Session::flash('error', 'Indiquez une date de fin, ou choisissez une absence sans durée précisée.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
         if ($endsOn !== null && $endsOn < $startsOn) {
             Session::flash('error', 'La date de fin doit être postérieure ou égale à la date de début.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
 
         $id = $this->personnelAbsenceRepository->create(
@@ -240,14 +283,14 @@ final class RhWorkspaceController
         if ($id === null) {
             Session::flash('error', 'L’absence n’a pas pu être enregistrée. Vérifiez les dates puis réessayez.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
 
         Session::flash('success', $endsOn === null
             ? 'Absence enregistrée sans durée précisée. Vous pourrez l’interrompre quand vous serez de retour.'
             : 'Absence enregistrée pour la période indiquée.');
 
-        return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        return $this->rhFormRedirect($request, 'absences', 'mon-dossier-rh');
     }
 
     public function cancelAbsence(Request $request, array $params = []): Response
@@ -261,18 +304,18 @@ final class RhWorkspaceController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
         $absenceId = (int) $request->input('absence_id', 0);
         if ($absenceId < 1 || !$this->personnelAbsenceRepository->cancel($tenantId, $userId, $absenceId)) {
             Session::flash('error', 'Cette absence n’a pas pu être annulée. Elle est peut-être déjà clôturée.');
 
-            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+            return $this->rhFormRedirect($request, 'absences');
         }
 
         Session::flash('success', 'Absence annulée. Vous êtes de nouveau indiqué comme disponible.');
 
-        return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        return $this->rhFormRedirect($request, 'absences', 'mon-dossier-rh');
     }
 
     public function refreshFromDossier(Request $request, array $params = []): Response
@@ -333,5 +376,95 @@ final class RhWorkspaceController
             'deny_community' => 'Restriction liée à votre programme',
             default => 'Règle associée à votre programme',
         };
+    }
+
+    private function rhFormRedirect(Request $request, string $workspaceHash, ?string $forceDashboardStep = null): Response
+    {
+        if (trim((string) $request->input('return_to', '')) === 'dashboard') {
+            $step = $forceDashboardStep ?? trim((string) $request->input('return_step', 'mon-dossier-rh'));
+            if (!in_array($step, ['absence', 'elevation', 'avancement', 'mon-dossier-rh'], true)) {
+                $step = 'mon-dossier-rh';
+            }
+
+            return Response::redirect(url('dashboard') . '#' . $step);
+        }
+        $hash = $workspaceHash !== '' ? '#' . ltrim($workspaceHash, '#') : '';
+
+        return Response::redirect(url('personnel/mon-espace-rh') . $hash);
+    }
+
+    /**
+     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string,role_apply_mode:string}
+     */
+    private function readElevationProposalFromRequest(Request $request): array
+    {
+        $intOrNull = static function (mixed $raw): ?int {
+            if ($raw === null || $raw === '') {
+                return null;
+            }
+            $id = (int) $raw;
+
+            return $id > 0 ? $id : null;
+        };
+        $clearance = trim((string) $request->input('proposed_clearance_level', $request->input('elevation_clearance_level', '')));
+
+        return [
+            'grade_id' => $intOrNull($request->input('proposed_grade_id', $request->input('elevation_grade_id'))),
+            'role_id' => $intOrNull($request->input('proposed_role_id', $request->input('elevation_role_id'))),
+            'job_role_id' => $intOrNull($request->input('proposed_job_role_id', $request->input('elevation_job_role_id'))),
+            'unit_id' => $intOrNull($request->input('proposed_unit_id', $request->input('elevation_unit_id'))),
+            'clearance_level' => $clearance !== '' ? $clearance : null,
+            'role_apply_mode' => \App\Services\Effectifs\ElevationApprovalService::normalizeRoleApplyMode(
+                (string) $request->input('role_apply_mode', \App\Services\Effectifs\ElevationApprovalService::ROLE_APPLY_REPLACE)
+            ),
+        ];
+    }
+
+    /**
+     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level?:?string,role_apply_mode?:string} $proposal
+     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string,role_apply_mode:string}, error:?string}
+     */
+    private function validateElevationProposal(int $tenantId, array $proposal): array
+    {
+        $proposal['clearance_level'] = $proposal['clearance_level'] ?? null;
+        $proposal['role_apply_mode'] = \App\Services\Effectifs\ElevationApprovalService::normalizeRoleApplyMode(
+            isset($proposal['role_apply_mode']) ? (string) $proposal['role_apply_mode'] : \App\Services\Effectifs\ElevationApprovalService::ROLE_APPLY_REPLACE
+        );
+        $gradeId = $proposal['grade_id'] ?? null;
+        if ($gradeId !== null) {
+            $allowed = array_map(
+                static fn (array $g): int => (int) ($g['id'] ?? 0),
+                \App\Core\Container::get(\App\Repositories\GradeRepository::class)->listForTenant($tenantId)
+            );
+            if (!in_array($gradeId, $allowed, true)) {
+                return ['proposal' => $proposal, 'error' => 'Le grade sélectionné n’est pas disponible pour cette communauté.'];
+            }
+        }
+
+        $roleId = $proposal['role_id'] ?? null;
+        if ($roleId !== null && !\App\Core\Container::get(\App\Repositories\RoleRepository::class)->canAssignInTenantAdminContext($roleId, $tenantId)) {
+            return ['proposal' => $proposal, 'error' => 'Ce rôle ne peut pas être demandé dans cette communauté.'];
+        }
+
+        $jobRoleId = $proposal['job_role_id'] ?? null;
+        if ($jobRoleId !== null) {
+            $jobRepo = \App\Core\Container::get(\App\Repositories\PersonnelJobRoleRepository::class);
+            if (!$jobRepo->tablesExist() || !$jobRepo->findRoleById($jobRoleId, $tenantId)) {
+                return ['proposal' => $proposal, 'error' => 'La fonction sélectionnée est introuvable.'];
+            }
+        }
+
+        $unitId = $proposal['unit_id'] ?? null;
+        if ($unitId !== null && !\App\Core\Container::get(\App\Repositories\UnitRepository::class)->findById($unitId, $tenantId)) {
+            return ['proposal' => $proposal, 'error' => 'L’affectation sélectionnée est introuvable.'];
+        }
+
+        $clearanceLevel = $proposal['clearance_level'] ?? null;
+        if ($clearanceLevel !== null
+            && !array_key_exists($clearanceLevel, \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels())) {
+            return ['proposal' => $proposal, 'error' => 'Le niveau d’habilitation sélectionné n’est pas reconnu.'];
+        }
+
+        return ['proposal' => $proposal, 'error' => null];
     }
 }

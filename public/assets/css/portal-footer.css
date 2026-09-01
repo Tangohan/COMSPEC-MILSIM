@@ -278,6 +278,10 @@
   font-weight: 500;
 }
 
+body.layout-page-compact .portal-footer {
+  margin-top: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .portal-footer__btn,
   .portal-footer__list a,

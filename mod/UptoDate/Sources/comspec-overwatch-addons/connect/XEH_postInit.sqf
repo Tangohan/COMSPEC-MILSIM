@@ -309,6 +309,16 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     // Tampon hors ligne : rejeu des transmissions mises en attente. La boucle est
     // lente à dessein — c'est fn_outboxFlush qui porte la temporisation, ici on ne
     // fait que lui donner l'occasion de regarder si la liaison est revenue.
+    private _outboxNow = profileNamespace getVariable ["COMSPEC_Outbox", []];
+    if (_outboxNow isEqualType []) then {
+        private _outboxKeep = _outboxNow select {
+            !((toLower (_x param [0, ""])) in ["syncwardrobe", "syncwardrobesbatch"])
+        };
+        if ((count _outboxKeep) isNotEqualTo (count _outboxNow)) then {
+            profileNamespace setVariable ["COMSPEC_Outbox", _outboxKeep];
+            saveProfileNamespace;
+        };
+    };
     if (isNil "COMSPEC_OutboxFlushPFH") then {
         COMSPEC_OutboxFlushPFH = [{
             [] call comspec_overwatch_connect_fnc_outboxFlush;

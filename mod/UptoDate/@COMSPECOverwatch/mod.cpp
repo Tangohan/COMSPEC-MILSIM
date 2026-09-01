@@ -10,5 +10,5 @@ tooltip = "COMSPEC Overwatch · BÊTA";
 tooltipOwned = "COMSPEC Overwatch";
 overview = "Accès anticipé — Reliez Arma 3 à Athena : carte tactique, messagerie, tablette et téléphone.";
 overviewPicture = "logoSmall.paa";
-hideName = 0;
-hidePicture = 0;
+hideName = 1;
+hidePicture = 1;

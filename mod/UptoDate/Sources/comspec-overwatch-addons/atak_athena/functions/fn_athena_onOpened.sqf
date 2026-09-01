@@ -4,7 +4,7 @@
 */
 params ["_group", ["_interfaceInit", false], "_isDialog", "_settings"];
 
-if (!isNull _group) then {
+if (!isNull _group && {((ctrlClassName _group) find "COMSPEC_ATAK_Athena") >= 0}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_Athena_group", _group];
 };
 
@@ -29,7 +29,7 @@ private _paint = {
     params ["_token"];
     while { (uiNamespace getVariable ["COMSPEC_ATAK_Athena_token", -1]) isEqualTo _token } do {
         uiSleep 6;
-        private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
+        private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;
         if (isNull _group || {!ctrlShown _group}) exitWith {};
         [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
     };

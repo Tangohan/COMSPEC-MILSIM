@@ -9447,7 +9447,7 @@ body.atak-screen-modal-open { overflow: hidden; }
 }
 .atak-screen-modal__panel {
   position: relative;
-  width: min(620px, 100%);
+  width: min(760px, 100%);
   max-height: calc(100vh - 2rem);
   overflow: auto;
   padding: 1.5rem;
@@ -9510,16 +9510,23 @@ body.atak-screen-modal-open { overflow: hidden; }
   background: rgba(2, 6, 12, 0.48);
 }
 .atak-screen-modal__phone[hidden] { display: none !important; }
+.atak-screen-modal__phone .atak-qr-scan-pack { flex: 1 1 auto; min-width: 0; }
+.atak-screen-modal__phone .atak-qr-scan-pack__code {
+  width: min(260px, 100%);
+  min-width: 220px;
+}
 .atak-screen-modal__phone .atak-qr-phone { flex: 0 0 auto; }
-.atak-screen-modal__qr-frame { flex: 0 0 150px; min-height: 150px; display: grid; place-items: center; background: #fff; padding: 6px; }
-.atak-screen-modal__qr-frame img { display: block; width: 150px; height: 150px; }
-.atak-screen-modal__phone-copy { min-width: 0; }
+.atak-screen-modal__qr-frame { flex: 0 0 260px; min-height: 260px; display: grid; place-items: center; background: #fff; padding: 14px; }
+.atak-screen-modal__qr-frame img { display: block; width: 232px; height: 232px; image-rendering: pixelated; image-rendering: crisp-edges; }
+.atak-screen-modal__phone-copy { min-width: 0; flex: 1 1 12rem; }
 .atak-screen-modal__phone-copy strong { display: block; margin-bottom: 0.35rem; color: #e2e8f0; font-size: 0.88rem; }
 .atak-screen-modal__phone-copy p { color: #94a3b8; font-size: 0.78rem; line-height: 1.45; }
 .atak-screen-modal__phone-copy a { color: var(--atak-accent, #34d399); font-size: 0.78rem; font-weight: 700; }
 @media (max-width: 560px) {
   .atak-screen-modal__choices { grid-template-columns: 1fr; }
   .atak-screen-modal__phone { flex-direction: column; text-align: center; }
+  .atak-screen-modal__phone .atak-qr-scan-pack { flex-direction: column; }
+  .atak-screen-modal__phone .atak-qr-scan-pack__code { width: min(280px, 86vw); min-width: 0; }
 }
 
 .atak-resize-handle {

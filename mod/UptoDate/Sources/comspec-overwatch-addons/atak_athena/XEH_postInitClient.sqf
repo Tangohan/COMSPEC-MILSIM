@@ -40,6 +40,10 @@ call _forceCamCapture;
 
 [] call comspec_overwatch_atak_athena_fnc_athena_installPhoneGeolocMap;
 [] call comspec_overwatch_atak_athena_fnc_athena_installMapHud;
+[] call comspec_overwatch_atak_athena_fnc_athena_installReportsLayout;
+[{ [] call comspec_overwatch_atak_athena_fnc_athena_installReportsLayout; }, [], 1] call CBA_fnc_waitAndExecute;
+[{ [] call comspec_overwatch_atak_athena_fnc_athena_installReportsLayout; }, [], 3] call CBA_fnc_waitAndExecute;
+[{ [] call comspec_overwatch_atak_athena_fnc_athena_installReportsLayout; }, [], 8] call CBA_fnc_waitAndExecute;
 
 // Photo souris aussi depuis la vue casque plein écran (amont : téléphone seulement).
 [
@@ -221,7 +225,7 @@ private _ensureAtakApps = {
 
 // Rafraîchir le panneau si ouvert
 ["COMSPEC_AthenaInboxUpdated", {
-    private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
+    private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;
     if (!isNull _group && {ctrlShown _group}) then {
         [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
     };

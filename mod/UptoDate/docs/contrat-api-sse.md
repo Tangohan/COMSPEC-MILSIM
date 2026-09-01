@@ -131,10 +131,8 @@ Fiche complète + photos.
 | Commande | Cible |
 |---|---|
 | `SubmitSsePerson` | `POST /api/sse/persons` (JSON sync) |
-| `UploadSsePhoto` | file async → multipart `POST /api/sse/persons/{id}/photos` (photo visage SEEK) |
+| `UploadSsePhoto` | multipart `POST /api/sse/persons/{id}/photos` |
 | `SubmitSseBiometricsSim` | `POST /api/sse/persons/{id}/biometrics-sim` |
-| `SubmitSseFieldNote` | `POST /api/sse/notes` (JSON sync) |
-| `UploadSseNoteAttachment` | multipart `POST /api/sse/notes/{id}/pieces` |
 
 Hors couverture : file SQF locale puis flush (même principe que rapports / photos recon).
 
@@ -565,72 +563,3 @@ Non couverts : registre des sites, fiche site, écran de croisement.
 La bascule `POST /atak/sse/dossiers/verrou-classification` porte un champ `reglage`
 (`verrou` | `ecrans`) : les deux réglages se décident au même endroit mais ne
 s'arment pas ensemble.
----
-
-## Fiches de renseignement simplifiées (1.4.19)
-
-Marche la plus basse du renseignement : un texte libre daté et situé, des thèmes,
-des pièces jointes. Aucune identité, aucune conclusion.
-
-Le rédacteur occupe **toute la surface de l'ATAK** (`COMSPEC_IntelNote_Dialog`,
-idd 9982, enfant de `cTab_Android_dlg`), ouvert par le menu **RENS** du tiroir,
-l'icône « Fiche RENS » de l'écran d'accueil ou l'action ACE dédiée.
-
-### `POST /api/sse/notes`
-
-Obligatoires : `body` (1000 caractères utiles), `themes` (1 à 4 codes connus).
-
-Optionnels : `note_kind` (`FRM` | `FRO` | `FRC` | `FRA` | `FRT`), `urgency`
-(`routine` | `priorite` | `immediate`), `observed_at`, `place_label`,
-`grid_reference`, `pos_x` / `pos_y` / `pos_z`, `lat` / `lng`, `author_label`,
-`author_unit`, `author_steam_id`, `case_code`, `idempotency_key`, `origin`.
-
-| Réponse | Cas |
-|---|---|
-| `201` `{ok, created: true, id, reference_code, note}` | fiche créée |
-| `200` `created: false` | `idempotency_key` déjà vue, fiche existante renvoyée |
-| `422` `body_required` / `theme_required` | saisie incomplète |
-| `401` / `403` | authentification terrain ou communauté non identifiée |
-| `503` `maintenance` | renseignement suspendu par le commandement |
-
-`SubmitSseFieldNote` retourne `["OK", "<id>|<référence>"]` : le SQF garde l'id
-pour les pièces jointes, affiche la référence à l'opérateur.
-
-### `POST /api/sse/notes/{id}/pieces`
-
-Multipart, fichier sous `piece` (alias `image`, `photo`, `file`). Champs :
-`kind` (`photo` | `capture` | `document` | `croquis`), `caption`,
-`grid_reference`, `pos_x` / `pos_y` / `pos_z`, `author`.
-
-Images JPEG / PNG / WebP / GIF (compressées au-delà de 5 Mo), PDF et texte
-jusqu'à 8 Mo. Quatre pièces au maximum par fiche, refus en `422` au-delà.
-
-### `GET /api/sse/notes` · `GET /api/sse/notes/{id}` · `GET /api/sse/notes/catalogue`
-
-Relecture (`steam_uid` filtre « mes fiches ») et référentiel des libellés. Le
-segment `catalogue` est déclaré **avant** `/{id}` : le routeur retient le premier
-motif correspondant, et le lirait sinon comme un identifiant.
-
-### Tables
-
-`sse_field_notes` (référence `FR-<année>-<séquence>`, unicité sur
-`idempotency_key` par communauté) et `sse_field_note_attachments`
-(`uploads/sse/fiches/`). Détail :
-[`docs/sse/09-fiches-renseignement/dictionnaire-donnees.md`](../../docs/sse/09-fiches-renseignement/dictionnaire-donnees.md).
-
-Chaque fiche écrit aussi un événement `REPORT_RECEIVED` dans `sse_intel_events`
-(visible dans *Transmissions terrain*) et une entrée `SSE_FIELD_NOTE` au journal
-d'activité.
-
-### Référentiel dupliqué
-
-`fn_intelNoteCatalog.sqf` recopie `App\Support\SseFieldNoteCatalog` pour rester
-lisible liaison coupée. **L'ordre des thèmes est contractuel** : chaque bascule du
-rédacteur est câblée sur un rang, pas sur un code. Un test PHPUnit compare les
-deux référentiels, ordre compris.
-
-### Portail
-
-`/atak/sse/fiches` (file et filtres), `/atak/sse/fiches/nouvelle` (rédacteur
-plein écran, même disposition que l'ATAK), `/atak/sse/fiches/{id}` (fiche,
-pièces jointes, suivi, rattachement).

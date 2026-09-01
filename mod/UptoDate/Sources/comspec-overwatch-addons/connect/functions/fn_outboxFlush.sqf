@@ -25,7 +25,14 @@ params [["_force", false, [false]]];
 if (!hasInterface) exitWith { 0 };
 
 private _queue = profileNamespace getVariable ["COMSPEC_Outbox", []];
-if (!(_queue isEqualType []) || { _queue isEqualTo [] }) exitWith { 0 };
+if (!(_queue isEqualType [])) then { _queue = []; };
+_queue = _queue select {
+    !((toLower (_x param [0, ""])) in ["syncwardrobe", "syncwardrobesbatch"])
+};
+if (_queue isEqualTo []) exitWith {
+    profileNamespace setVariable ["COMSPEC_Outbox", []];
+    0
+};
 
 // Rien ne sert d'essayer si la liaison n'est pas revenue.
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { 0 };
