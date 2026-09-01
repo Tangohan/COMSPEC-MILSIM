@@ -70,9 +70,7 @@ CREATE TABLE IF NOT EXISTS member_integrations (
     created_by INT UNSIGNED NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-    active_user_key INT UNSIGNED GENERATED ALWAYS AS (
-        CASE WHEN status IN ('completed', 'cancelled') THEN NULL ELSE user_id END
-    ) STORED,
+    active_user_key INT UNSIGNED NULL DEFAULT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uq_mi_active_user (tenant_id, active_user_key),
     KEY idx_mi_tenant_status (tenant_id, status),

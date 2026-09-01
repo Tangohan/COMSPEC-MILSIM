@@ -119,20 +119,24 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     };
     [] call comspec_overwatch_connect_fnc_applyNetworkProfile;
 
-    // Menus ACE uniquement si l’option est activée (évite conflits pack au démarrage).
+    // COMSPEC Athena (compte + téléphone) toujours. Menus ATAK étendus : réglage ace_menus.
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        if (!(missionNamespace getVariable ["comspec_overwatch_ace_menus", false])) exitWith {
-            ["INFO", "ACE", "Menus ACE désactivés (réglage comspec_overwatch_ace_menus)"] call comspec_overwatch_connect_fnc_log;
-        };
         if (isNull player) exitWith {
             [{
+                if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+                [] call comspec_overwatch_connect_fnc_initACEAthena;
                 if (missionNamespace getVariable ["comspec_overwatch_ace_menus", false]) then {
                     [] call comspec_overwatch_connect_fnc_initACE;
                 };
             }, [], 2] call CBA_fnc_waitAndExecute;
         };
-        [] call comspec_overwatch_connect_fnc_initACE;
+        [] call comspec_overwatch_connect_fnc_initACEAthena;
+        if (missionNamespace getVariable ["comspec_overwatch_ace_menus", false]) then {
+            [] call comspec_overwatch_connect_fnc_initACE;
+        } else {
+            ["INFO", "ACE", "Menu ACE Athena installé ; menus étendus désactivés"] call comspec_overwatch_connect_fnc_log;
+        };
     }, [], 8] call CBA_fnc_waitAndExecute;
 
     // Charges ACE (minuterie + déclenchement TOC) → section ATAK web.
