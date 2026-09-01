@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(326, '2026-09-01', 'Connexion Steam depuis le tableau de bord', 'Une tuile Connexion Steam ouvre Steam pour associer votre compte au portail. Après validation, Overwatch vous reconnaît en jeu. Si Steam est déjà associé, la tuile le confirme et permet de changer de compte', [
+                'Tuile Connexion Steam sur le tableau de bord, et le même accès dans Mon compte',
+            ], [], [], ['atak', 'platform'], [
+                'Ouvrez le tableau de bord. Tuile Connexion Steam : connectez-vous sur Steam, puis revenez. Un message confirme l’association. Pas de pack jeu.',
+            ], 'Portail'),
             $pr(325, '2026-09-01', 'La connexion Athena en jeu associe Steam toute seule', 'Si Steam n’était pas encore enregistré sur le compte, la connexion par e-mail en jeu l’associe à partir de la session. L’opérateur est prévenu à l’écran et par courriel ; l’encadrement reçoit aussi un courriel', [
                 'Connexion par e-mail en jeu : l’identifiant Steam de la session est enregistré s’il manquait',
                 'L’opérateur voit la confirmation à l’écran et reçoit un courriel ; l’encadrement est informé',

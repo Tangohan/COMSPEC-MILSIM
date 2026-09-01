@@ -2292,6 +2292,84 @@ body.dashboard-shell main {
   background: rgba(5, 150, 105, 0.12);
 }
 
+.dash-steam-tile {
+  background: #071018;
+  color: #fff;
+  border-bottom: 1px solid #111;
+  padding: 0.85rem 1rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .dash-steam-tile {
+    padding: 1rem 1.5rem 1.15rem;
+  }
+}
+
+.dash-steam-tile__shell {
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.dash-steam-tile__open {
+  display: block;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  background: #0c1a24;
+  border: 1px solid rgba(102, 192, 244, 0.28);
+  border-radius: 0.7rem;
+  padding: 1rem 1.1rem 1.05rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.dash-steam-tile__open:hover,
+.dash-steam-tile__open:focus-visible {
+  outline: none;
+  border-color: rgba(102, 192, 244, 0.7);
+  background: #102230;
+}
+
+.dash-steam-tile__kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #66c0f4;
+}
+
+.dash-steam-tile__title {
+  margin: 0;
+  display: block;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #f8fafc;
+}
+
+.dash-steam-tile__hint {
+  margin: 0.45rem 0 0;
+  display: block;
+  font-size: 0.875rem;
+  font-style: normal;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+.dash-steam-tile__cta {
+  margin-top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #66c0f4;
+}
+
 .dash-org-anomaly-tile__form {
   padding: 0.15rem 0 0;
 }
