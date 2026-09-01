@@ -147,9 +147,6 @@ private _msg = if (_hasWp && {(toUpper _type) isEqualTo "MOVE"}) then {
 ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
 [_msg, "orders"] call comspec_overwatch_connect_fnc_appendLinkLog;
 ["COMSPEC_OrderReceived", [_order]] call CBA_fnc_localEvent;
-if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
-    systemChat format ["[COMSPEC] %1", _msg];
-};
 
 // Si l’app Athena cTab est ouverte : rester sur le panneau (pas de Chromium forcé).
 private _athenaGroup = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];

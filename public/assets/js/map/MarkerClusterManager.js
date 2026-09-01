@@ -21,8 +21,8 @@ export class MarkerClusterManager {
    */
   cluster(entities, zoom) {
     if (!entities || !entities.length) return { singles: [], clusters: [] };
-    /* Pas de cluster en zoom rapproché. */
-    if (Number(zoom) >= 5) return { singles: entities.slice(), clusters: [] };
+    /* Uniquement à très petite échelle : un groupe au sol ne doit pas clignoter. */
+    if (Number(zoom) >= 2) return { singles: entities.slice(), clusters: [] };
 
     const cell = this.cellSize * (Number(zoom) <= 2 ? 1.6 : 1);
     const buckets = new Map();

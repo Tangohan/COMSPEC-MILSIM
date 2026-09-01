@@ -265,7 +265,7 @@ private _fnc_applyNet = {
 
 [
     "comspec_overwatch_screen_notifications", "CHECKBOX",
-    ["Afficher les notifications à l’écran", "Affiche les bandeaux Overwatch et les lignes de chat système (ex. « Alerte médicale transmise… ») en bas à gauche de la carte. Désactivé par défaut pour une immersion plus calme. Les sons suivent le réglage « Son des notifications ». Les alertes restent disponibles dans la tablette (cloche / journal Alertes)."],
+    ["Afficher les notifications à l’écran", "Affiche les bandeaux Overwatch en bas à gauche de la carte (ex. « Alerte médicale transmise… »). Désactivé par défaut. N’écrit jamais dans le chat du jeu : les messages du poste restent dans le téléphone et le journal ATAK. Les sons suivent le réglage « Son des notifications ». Les alertes restent dans la tablette (cloche / journal Alertes)."],
     "COMSPEC Overwatch", false
 ] call CBA_fnc_addSetting;
 
@@ -277,7 +277,7 @@ private _fnc_applyNet = {
 
 [
     "comspec_overwatch_milsim_ui", "CHECKBOX",
-    ["Mode milsim — désactiver les aides d’interface", "Immersion : coupe les anomalies de suivi (ex. immobile), les messages système de confort et les bandeaux / chat Overwatch (même si « Afficher les notifications à l’écran » est activé). La liaison Athena, la synchronisation de position et la tablette restent actives. Les alertes médicales et les ordres restent dans la tablette (sons selon le réglage « Son des notifications »)."],
+    ["Mode milsim — désactiver les aides d’interface", "Immersion : coupe les anomalies de suivi (ex. immobile), les messages de confort et les bandeaux à l’écran (même si « Afficher les notifications à l’écran » est activé). La liaison Athena, la synchronisation de position et la tablette restent actives. Les alertes médicales et les ordres restent dans la tablette (sons selon le réglage « Son des notifications »)."],
     "COMSPEC Overwatch", false
 ] call CBA_fnc_addSetting;
 

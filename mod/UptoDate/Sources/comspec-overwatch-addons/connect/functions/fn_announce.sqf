@@ -1,8 +1,10 @@
 /*
-    Annonce métier : journal HTML + (si notifications à l’écran) chat système.
+    Annonce métier : journal HTML tablette / téléphone uniquement.
+    Jamais de chat natif Arma. Les bandeaux BIS passent par showNotification.
     Params: [_message, _type, _priority, _forceGameUi]
       type     : link | medical | order | ping | system | tactical
       priority : info | warn | critical
+      _forceGameUi : conservé pour compatibilité, ignoré (pas de chat jeu).
 */
 params [
     ["_message", "", [""]],
@@ -26,14 +28,3 @@ private _titles = createHashMapFromArray [
 private _title = _titles getOrDefault [toLower _type, "Overwatch"];
 
 [_type, _title, _message, _priority] call comspec_overwatch_connect_fnc_pushHtmlAlert;
-
-// Milsim / réalisme / discret / notifs OFF → pas de chat confort (journal tablette seulement).
-if !([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) exitWith {};
-
-private _prefix = switch (toLower _type) do {
-    case "link": { "[Athena] " };
-    case "medical": { "[COMSPEC] " };
-    case "tactical": { "[Situation] " };
-    default { "[COMSPEC] " };
-};
-systemChat (_prefix + _message);

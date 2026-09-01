@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -15,9 +16,12 @@ use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\UserUiPreferencesRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Platform\FeatureGateService;
+use App\Services\Tactical\AtakMapAccessGapService;
 use App\Services\Tactical\AtakSessionProfileHintService;
 use App\Services\Tactical\AtakTokenService;
+use App\Support\OperatorTacticalIdentity;
 
 class AtakController
 {
@@ -31,9 +35,12 @@ class AtakController
         private FeatureGateService $featureGate,
         private ?TacticalGameLinkRepository $gameLinkRepository = null,
         private ?UserUiPreferencesRepository $userUiPreferencesRepository = null,
+        private ?AtakMapAccessGapService $accessGapService = null,
+        private ?EffectifsStaffAlertService $staffAlertService = null,
     ) {
         $this->gameLinkRepository ??= new TacticalGameLinkRepository();
         $this->userUiPreferencesRepository ??= new UserUiPreferencesRepository();
+        $this->accessGapService ??= new AtakMapAccessGapService($this->userRepository);
     }
 
     public function index(Request $request, array $params = []): Response
@@ -222,6 +229,28 @@ class AtakController
             }
         }
 
+        if (is_array($currentUser) && (int) ($currentUser['id'] ?? 0) > 0) {
+            $personnelCs = '';
+            try {
+                $pp = (new \App\Repositories\PersonnelProfileRepository())->getByUserId((int) $currentUser['id']);
+                $personnelCs = trim((string) ($pp['callsign'] ?? ''));
+            } catch (\Throwable) {
+            }
+            $resolvedCs = OperatorTacticalIdentity::callsign(
+                [
+                    $personnelCs,
+                    (string) ($currentUser['callsign'] ?? ''),
+                    (string) ($currentUser['arma_callsign'] ?? ''),
+                ],
+                $atakTenantLabel,
+                $atakTenantLabel
+            );
+            $currentUser['callsign'] = $resolvedCs;
+            if (is_array($atakUserForJs) && empty($atakUserForJs['phoneSession'])) {
+                $atakUserForJs['callsign'] = $resolvedCs;
+            }
+        }
+
         $phoneOperatorSession = null;
         $phoneToken = trim((string) Session::get('atak_phone_pairing_token', ''));
         if ($phoneToken !== '' && !$currentUser) {
@@ -285,6 +314,7 @@ class AtakController
                 : ['assignments' => [], 'library' => []],
             'atakTenantLabel' => $atakTenantLabel,
             'atakCommunityMemberships' => $atakCommunityMemberships,
+            'atakAccessGap' => $this->accessGapPayload($tenantId, $currentUser, $phoneOperatorSession),
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate')
             ->header('Pragma', 'no-cache');
     }
@@ -325,6 +355,110 @@ class AtakController
             'api_url' => atak_client_base_url($this->atakConfigRepository->getByTenantId($tenantId)),
             'hint' => 'Dans Arma : touche K → Compte Athena (saisir un code), puis entrez ce code.',
         ]);
+    }
+
+    /**
+     * Demande d’accès carte (grade / rôle / fonction) — même circuit que l’élévation RH.
+     */
+    public function requestMapAccess(Request $request, array $params = []): Response
+    {
+        $block = $this->requireAtakFeature();
+        if ($block !== null) {
+            return $block;
+        }
+        $user = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$user || $tenantId < 1 || $userId < 1) {
+            return Response::json([
+                'ok' => false,
+                'message' => 'Connectez-vous pour demander un accès.',
+            ], 401);
+        }
+
+        $body = $this->jsonBody($request);
+        $token = $request->input('_csrf_token')
+            ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null)
+            ?? ($body['_csrf_token'] ?? null);
+        if (!is_string($token) || !Csrf::validate($token)) {
+            return Response::json([
+                'ok' => false,
+                'message' => 'Votre session a expiré. Rechargez la page puis réessayez.',
+            ], 403);
+        }
+
+        $payload = $this->accessGapService->webPayload($tenantId, $user);
+        if (empty($payload['offer']) || empty($payload['gaps'])) {
+            return Response::json([
+                'ok' => false,
+                'message' => 'Votre accès actuel couvre déjà les vues de la carte pour votre profil.',
+            ], 422);
+        }
+        if (!empty($payload['pending'])) {
+            return Response::json([
+                'ok' => false,
+                'message' => 'Une demande est déjà en cours d’examen par l’encadrement.',
+            ], 409);
+        }
+
+        $note = AtakMapAccessGapService::formatRequestNote($payload['gaps']);
+        $staffAlert = $this->staffAlert();
+        $result = $staffAlert->requestElevation(
+            $tenantId,
+            $userId,
+            $user,
+            'droits',
+            $note
+        );
+
+        return Response::json([
+            'ok' => !empty($result['ok']),
+            'message' => (string) ($result['message'] ?? ''),
+            'recipient_names' => $result['recipient_names'] ?? [],
+        ], !empty($result['ok']) ? 200 : 422);
+    }
+
+    /**
+     * @param array<string, mixed>|null $currentUser
+     * @param array<string, mixed>|null $phoneOperatorSession
+     * @return array<string, mixed>
+     */
+    private function accessGapPayload(int $tenantId, ?array $currentUser, ?array $phoneOperatorSession): array
+    {
+        if ($phoneOperatorSession) {
+            return [
+                'offer' => false,
+                'pending' => false,
+                'requestUrl' => url('atak/demande-acces'),
+                'gaps' => [],
+            ];
+        }
+
+        return $this->accessGapService->webPayload($tenantId, $currentUser);
+    }
+
+    private function staffAlert(): EffectifsStaffAlertService
+    {
+        if ($this->staffAlertService instanceof EffectifsStaffAlertService) {
+            return $this->staffAlertService;
+        }
+        $this->staffAlertService = \App\Core\Container::get(EffectifsStaffAlertService::class);
+
+        return $this->staffAlertService;
+    }
+
+    /** @return array<string, mixed> */
+    private function jsonBody(Request $request): array
+    {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+        if (str_contains((string) $contentType, 'application/json')) {
+            $raw = file_get_contents('php://input');
+            $decoded = json_decode($raw ?: '[]', true);
+
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return array_merge($request->all(), $_POST);
     }
 
     private function requireAtakFeature(): ?Response

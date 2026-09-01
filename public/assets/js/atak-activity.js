@@ -200,6 +200,19 @@ window.ATAKActivity = (function () {
     }
   }
 
+  function isRoutinePositionIngest(ev) {
+    if (!ev || String(ev.type || '').toLowerCase() !== 'ingest') return false;
+    var kind = String((ev.meta && ev.meta.kind) || '').toLowerCase();
+    if (kind === 'position') return true;
+    var label = String(ev.label || '').toLowerCase();
+    return label.indexOf('position reçue') === 0;
+  }
+
+  function dropRoutinePositionIngest(list) {
+    if (!list || !list.length) return [];
+    return list.filter(function (ev) { return !isRoutinePositionIngest(ev); });
+  }
+
   /** Résumé d’une ligne, coupé sur un mot (pas au milieu). */
   function summaryLine(text, maxLen) {
     var s = String(text || '').replace(/\s+/g, ' ').trim();
@@ -1200,7 +1213,7 @@ window.ATAKActivity = (function () {
         return r.json();
       })
       .then(function (data) {
-        var events = (data && data.events) ? data.events : [];
+        var events = dropRoutinePositionIngest((data && data.events) ? data.events : []);
         var cursor = (data && data.cursor != null) ? Number(data.cursor) : null;
         if (!incremental) {
           knownIds = {};

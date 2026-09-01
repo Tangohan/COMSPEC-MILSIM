@@ -102,10 +102,11 @@ final class OperationWorkspaceService
         if ($name === '') {
             return ['ok' => false, 'error' => 'Indiquez le nom de l’opération.'];
         }
-        $code = strtoupper(preg_replace('/[^A-Z0-9\-]/i', '', (string) ($input['code'] ?? '')) ?? '');
+        $code = strtoupper(preg_replace('/[^A-Z0-9\-]/i', '', (string) ($input['code'] ?? $input['indicatif'] ?? '')) ?? '');
         if ($code === '') {
-            $code = strtoupper(substr(preg_replace('/[^A-Z0-9]/i', '', $name) ?? 'OPS', 0, 12));
+            $code = OperationLabels::suggestCode($name);
         }
+        $code = substr($code, 0, 12);
         if ($code === '') {
             $code = 'OPS';
         }

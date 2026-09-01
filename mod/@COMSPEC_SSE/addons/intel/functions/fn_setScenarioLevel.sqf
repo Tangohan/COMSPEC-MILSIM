@@ -14,7 +14,6 @@ private _labels = ["Surface", "Tactique", "Terrain", "Vérité complète"];
 private _label = _labels select _level;
 
 if (_announce && {hasInterface}) then {
-    systemChat format ["[SSE] Niveau scénario : %1 (%2)", _level, _label];
     hint format ["Scenario Director\nNiveau %1 — %2", _level, _label];
 };
 

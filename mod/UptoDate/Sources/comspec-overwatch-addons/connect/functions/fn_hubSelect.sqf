@@ -61,9 +61,6 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
                     default { "Stable" };
                 };
                 [player, "CHAT", format ["WIA|%1|sang≈%2%%|FC=%3", _status, _blood, _hr], "", "INFANTRY", 0.9] call comspec_overwatch_connect_fnc_sendIntel;
-                if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
-                    systemChat "Bilan de santé transmis.";
-                };
                 ["status"] call comspec_overwatch_connect_fnc_openTabletView;
             };
         };

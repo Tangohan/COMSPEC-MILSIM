@@ -113,6 +113,31 @@ final class OperationLabels
     }
 
     /**
+     * Indicatif court d’opération (AEGIS), jamais un nom de communauté collé.
+     */
+    public static function suggestCode(string $name): string
+    {
+        $folded = mb_strtoupper($name, 'UTF-8');
+        $folded = strtr($folded, [
+            'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'Ë' => 'E',
+            'À' => 'A', 'Â' => 'A', 'Ä' => 'A',
+            'Ù' => 'U', 'Û' => 'U', 'Ü' => 'U',
+            'Î' => 'I', 'Ï' => 'I',
+            'Ô' => 'O', 'Ö' => 'O',
+            'Ç' => 'C',
+        ]);
+        $folded = (string) preg_replace('/^(OPERATION|MISSION|OP|OPS)\b[\s\-:]*/', '', $folded);
+        $parts = preg_split('/[^A-Z0-9]+/', $folded, -1, PREG_SPLIT_NO_EMPTY);
+        if (!is_array($parts) || $parts === []) {
+            return 'OPS';
+        }
+        $pick = (string) $parts[count($parts) - 1];
+        $pick = substr($pick, 0, 12);
+
+        return $pick !== '' ? $pick : 'OPS';
+    }
+
+    /**
      * @return list<array{value: string, label: string}>
      */
     public static function statusOptions(): array

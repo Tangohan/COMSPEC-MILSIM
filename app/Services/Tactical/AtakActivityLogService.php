@@ -178,6 +178,9 @@ final class AtakActivityLogService
         if ($kind === '') {
             $kind = 'data';
         }
+        if ($kind === 'position') {
+            return;
+        }
         if ($actor !== null && $actor !== '') {
             $actor = Utf8Text::normalize($actor);
         }
@@ -569,8 +572,9 @@ final class AtakActivityLogService
             'after_id' => $afterId,
             'include_archived' => $includeArchived,
             'archived_only' => false,
-            // Heartbeats BFT historiques : hors panneau Activité (filtre « position » page dédiée OK).
+            // Heartbeats BFT historiques : hors panneau Activité (filtre « position » / « données » page dédiée OK).
             'exclude_types' => [self::TYPE_POSITION],
+            'exclude_position_ingest' => true,
         ]);
 
         return $result['events'];
@@ -585,6 +589,7 @@ final class AtakActivityLogService
      *   after_id?: int|null,
      *   type?: string|list<string>|null,
      *   exclude_types?: list<string>|null,
+     *   exclude_position_ingest?: bool,
      *   q?: string|null,
      *   from?: string|null,
      *   to?: string|null,
@@ -658,6 +663,9 @@ final class AtakActivityLogService
                 continue;
             }
             if ($typeFilter !== null && !in_array($type, $typeFilter, true)) {
+                continue;
+            }
+            if (!empty($opts['exclude_position_ingest']) && $this->isRoutinePositionIngest($e)) {
                 continue;
             }
             $at = (string) ($e['at'] ?? '');
@@ -761,6 +769,26 @@ final class AtakActivityLogService
         return $out === [] ? null : $out;
     }
 
+    /**
+     * Heartbeat BFT journalisé comme « Remontée / Position reçue » — hors panneau d’activité.
+     *
+     * @param array<string, mixed> $e
+     */
+    private function isRoutinePositionIngest(array $e): bool
+    {
+        if (strtolower((string) ($e['type'] ?? '')) !== self::TYPE_INGEST) {
+            return false;
+        }
+        $meta = isset($e['meta']) && is_array($e['meta']) ? $e['meta'] : [];
+        $kind = strtolower(trim((string) ($meta['kind'] ?? '')));
+        if ($kind === 'position') {
+            return true;
+        }
+        $label = mb_strtolower(trim((string) ($e['label'] ?? '')), 'UTF-8');
+
+        return str_starts_with($label, 'position reçue');
+    }
+
     private function parseBoundTs(?string $raw, bool $endOfDay): ?int
     {
         if ($raw === null || trim($raw) === '') {
@@ -854,7 +882,6 @@ final class AtakActivityLogService
             ['type' => self::TYPE_AUTH, 'label' => 'Liaison en jeu réussie — code accepté', 'actor' => 'HAWK-1', 'offset_sec' => 15],
             ['type' => self::TYPE_NINE_LINE, 'label' => '9-Line CAS transmise', 'actor' => 'JTAC-1', 'offset_sec' => 10],
             ['type' => self::TYPE_ERROR, 'label' => 'Le poste est momentanément injoignable.', 'actor' => 'Carte web', 'offset_sec' => 8],
-            ['type' => self::TYPE_INGEST, 'label' => 'Position reçue — HAWK-1', 'actor' => 'HAWK-1', 'offset_sec' => 6],
             ['type' => self::TYPE_DISCONNECT, 'label' => 'Déconnexion jeu — GHOST-3', 'actor' => 'GHOST-3', 'offset_sec' => 5],
             // Hier
             ['type' => self::TYPE_CLIENT_INIT, 'label' => 'Connexion établie — RAVEN', 'actor' => 'RAVEN', 'offset_sec' => $day + 3600],

@@ -9,6 +9,25 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## [1.5.50] / Overwatch 1.5.0 / Athena 1.0.63 — 2026-09-01
+
+### Corrigé — Identité, chat et journal
+
+Le pack affiche l’opérateur, pas le titre de la communauté. Relancer Arma complètement.
+
+- Écran Environnement prêt : photo si elle existe, prénom et nom, indicatif, rôle, grade et fonction.
+- Téléphone Paramètres et bandeau de carte : indicatif de la fiche Effectifs.
+- Les messages du poste restent dans le téléphone et le journal ; le chat de bord d’Arma n’est plus recopié.
+- Journal Athena du téléphone : filtre, liste et détail lisibles.
+
+### Carte du poste (web)
+
+- Les symboles des opérateurs suivent la taille d’icône et de libellé des réglages.
+- Le journal d’activité n’ajoute plus une carte à chaque position reçue.
+- Si la liaison est bonne mais qu’un accès manque, une fenêtre permet de demander les autorisations.
+
+---
+
 ## [1.5.48] / Overwatch 1.4.97 / Athena 1.0.58 — 2026-09-01
 
 ### Nouveau — Lecture de la tablette ATAK (IceMan)

@@ -108,6 +108,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             colorText[] = {0.95, 0.98, 0.9, 1};
             sizeEx = QUOTE(COMSPEC_SET_H(0.28));
             autocomplete = "";
+            tooltip = "Indicatif court de votre fiche Effectifs, par exemple YB1. Pas le nom de la communauté.";
         };
 
         class LblRole: LblCallsign
@@ -168,7 +169,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             y = QUOTE(COMSPEC_SET_H(5.50));
             w = QUOTE(COMSPEC_SET_W(2.84));
             h = QUOTE(COMSPEC_SET_H(0.48));
-            text = "Indiquez votre indicatif et votre rôle. L’équipe de feu et le groupe choisis apparaissent ensuite sur ATAK.";
+            text = "Indiquez votre indicatif d’opérateur (ex. YB1). Laissez vide si la fiche Effectifs n’en a pas. Ne saisissez pas le nom de la communauté.";
             colorBackground[] = SET_BG_BODY;
             class Attributes
             {

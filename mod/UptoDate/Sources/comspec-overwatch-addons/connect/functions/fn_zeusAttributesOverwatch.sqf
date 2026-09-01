@@ -59,7 +59,6 @@ if (_isVeh && {isNull _unit}) exitWith {
     };
     if (_opened isEqualTo false && {_retried}) then {
         ["Fenêtre Overwatch indisponible — fermez l’édition puis réessayez.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
-        systemChat "[COMSPEC] OVERWATCH : la fenêtre ne s’est pas ouverte. Fermez l’édition puis recliquez.";
     };
     true
 };
@@ -136,7 +135,6 @@ if (_opened isEqualTo false) exitWith {
         [{ [_this, 0, true] call comspec_overwatch_connect_fnc_zeusAttributesOverwatch }, _obj, 0.45] call CBA_fnc_waitAndExecute;
     } else {
         ["Fenêtre Overwatch indisponible — fermez l’édition puis réessayez.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
-        systemChat "[COMSPEC] OVERWATCH : la fenêtre ne s’est pas ouverte. Fermez l’édition puis recliquez.";
     };
     true
 };

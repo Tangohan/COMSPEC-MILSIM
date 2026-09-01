@@ -33,7 +33,7 @@ final class AtakExperienceService
             [
                 'id' => 'screen_notifications',
                 'label' => 'Notifications à l’écran',
-                'description' => 'Bandeaux et messages système en bas de la carte en jeu.',
+                'description' => 'Bandeaux d’information en bas de la carte en jeu. N’écrit pas dans le chat du jeu.',
                 'type' => 'tri',
                 'default' => 'player',
                 'choices' => [

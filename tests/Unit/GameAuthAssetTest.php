@@ -41,6 +41,8 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringNotContainsString('LinkBySteam', $sqfConnect);
         self::assertStringContainsString('CryptProtectData', $dll);
         self::assertStringContainsString('AuthPassword', $dll);
+        self::assertStringContainsString('CallsignCell', $dll);
+        self::assertStringContainsString('OperatorTacticalIdentity', $svc);
         self::assertStringContainsString('comspec_overwatch_connect_fnc_isReady', $pos);
         self::assertStringContainsString('Pas de session', $wait);
         self::assertStringContainsString('Expérience en jeu', $bo);
@@ -48,6 +50,9 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('detected_mod_version', $svc);
         self::assertStringContainsString('Pack actuel', $sqfPoll);
         self::assertStringContainsString('version exigée', $sqfPoll);
+        self::assertStringContainsString('authStateCells', $sqfPoll);
+        self::assertStringContainsString('Communauté :', $sqfPoll);
+        self::assertStringNotContainsString('_s = str _s', $sqfPoll);
         self::assertStringContainsString('_minModRequired', $dll);
         self::assertStringContainsString('CaptureVersionHints', $dll);
         self::assertStringContainsString('fnc_packVersion', $sqfRestore);
@@ -65,5 +70,36 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('SteamID seul n’est jamais une preuve', $svc);
         self::assertStringContainsString('pairing_token', $svc);
         self::assertStringContainsString('findPairing', $svc);
+    }
+
+    public function testPasswordAuthDoesNotRequireASteamIdToIssueTokens(): void
+    {
+        $svc = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Game/GameAuthService.php');
+        self::assertStringContainsString('function resolveSteamId(array $body, array $account): string', $svc);
+        self::assertStringContainsString('$steamId = $this->resolveSteamId($body, $account);', $svc);
+        self::assertStringContainsString('if ($steamId !== \'\') {', $svc);
+        self::assertStringContainsString('upsertPairing((int) $account[\'id\'], $deviceId, $steamId, $pairingHash)', $svc);
+    }
+
+    public function testResolveSteamIdReturnsEmptyStringWhenMissingOrInvalid(): void
+    {
+        $ref = new \ReflectionClass(\App\Services\Game\GameAuthService::class);
+        $svc = $ref->newInstanceWithoutConstructor();
+        $method = $ref->getMethod('resolveSteamId');
+        $method->setAccessible(true);
+
+        self::assertSame('', $method->invoke($svc, [], []));
+        self::assertSame('', $method->invoke($svc, ['steam_id' => ''], []));
+        self::assertSame('', $method->invoke($svc, ['steam_id' => '_SP_player'], []));
+        self::assertSame('', $method->invoke($svc, ['steam_id' => 'LOCAL'], ['steam_id' => null]));
+        self::assertSame('76561198000000000', $method->invoke($svc, ['steam_id' => '76561198000000000'], []));
+        self::assertSame(
+            '76561198000000000',
+            $method->invoke($svc, ['steam_id' => ''], ['steam_id' => '76561198000000000'])
+        );
+        self::assertSame(
+            '76561198000000000',
+            $method->invoke($svc, ['steam_id' => '_SP_player'], ['steam_id' => '76561198000000000'])
+        );
     }
 }

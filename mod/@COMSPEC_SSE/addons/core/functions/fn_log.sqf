@@ -1,7 +1,7 @@
 /*
     Journalisation SSE.
     - ERROR / WARN : toujours RPT + tampon + fichier
-    - INFO : fichier (comme Overwatch) ; RPT / chat seulement si debug
+    - INFO : fichier (comme Overwatch) ; RPT seulement si debug
 
     Usage: ["message"] call comspec_sse_fnc_log;
            ["message", "WARN"] call comspec_sse_fnc_log;
@@ -20,10 +20,6 @@ private _alwaysRpt = _level in ["WARN", "ERROR"];
 
 if (_alwaysRpt || {_debug}) then {
     diag_log text _text;
-};
-
-if (_debug && {hasInterface}) then {
-    systemChat _text;
 };
 
 private _buf = missionNamespace getVariable ["comspec_sse_logBuffer", []];

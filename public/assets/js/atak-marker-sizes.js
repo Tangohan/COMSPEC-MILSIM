@@ -10,11 +10,12 @@ window.ATAKMarkerSizes = (function () {
     small: 14,
     normal: 17,
     tactical: 19,
-    important: 22
+    important: 22,
+    large: 28
   };
 
   var PREF_MIN = PX.micro;
-  var PREF_MAX = PX.important;
+  var PREF_MAX = PX.large;
 
   function clampPref(n) {
     n = Number(n);

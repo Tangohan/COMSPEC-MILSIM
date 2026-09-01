@@ -99,7 +99,6 @@ if (_isVeh) exitWith {
     };
     if (_opened isEqualTo false && {_retried}) then {
         ["Fenêtre ATAK indisponible — fermez l’édition puis réessayez.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
-        systemChat "[COMSPEC] ATAK : la fenêtre ne s’est pas ouverte. Fermez l’édition puis recliquez.";
     };
     true
 };
@@ -192,7 +191,6 @@ if (_opened isEqualTo false) exitWith {
         [{ [_this, 0, true] call comspec_overwatch_connect_fnc_zeusAttributesAtak }, _obj, 0.45] call CBA_fnc_waitAndExecute;
     } else {
         ["Fenêtre ATAK indisponible — fermez l’édition puis réessayez.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
-        systemChat "[COMSPEC] ATAK : la fenêtre ne s’est pas ouverte. Fermez l’édition puis recliquez.";
     };
     true
 };

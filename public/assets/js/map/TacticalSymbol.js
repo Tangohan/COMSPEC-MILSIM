@@ -15,6 +15,14 @@ export const AFFILIATION_COLORS = {
   NEUTRAL: { fill: '#1a3a28', stroke: '#6ecf98', glyph: '#a8e8c0', label: '#d0ebe0' },
 };
 
+export function affiliationKey(raw) {
+  const a = String(raw || 'FRIENDLY').toUpperCase();
+  if (a === 'HOSTILE' || a === 'ENEMY' || a === 'H' || a === 'RED' || a === 'EAST' || a === 'OPFOR') return 'HOSTILE';
+  if (a === 'NEUTRAL' || a === 'N' || a === 'CIV' || a === 'CIVILIAN') return 'NEUTRAL';
+  if (a === 'UNKNOWN' || a === 'U' || a === 'GUER' || a === 'INDEP' || a === 'RESISTANCE' || a === 'SUSPECT') return 'UNKNOWN';
+  return 'FRIENDLY';
+}
+
 export const UNIT_TYPES = [
   'INFANTRY', 'VEHICLE', 'AIR', 'UAV', 'COMMAND', 'MEDICAL', 'OBSERVATION', 'STATIC_POSITION',
 ];
@@ -99,15 +107,18 @@ export function headingIndicator(headingDeg, speed) {
  * @param {object} entity
  * @param {number} sizePx — taille cible en pixels
  */
-export function renderSymbolSvg(entity, sizePx) {
+export function renderSymbolSvg(entity, sizePx, opts) {
   entity = entity || {};
-  const aff = String(entity.affiliation || 'FRIENDLY').toUpperCase();
+  opts = opts || {};
+  const aff = affiliationKey(entity.affiliation);
   const colors = AFFILIATION_COLORS[aff] || AFFILIATION_COLORS.FRIENDLY;
   const st = statusStyle(entity.status || entity.linkStatus || 'ONLINE');
-  const size = clamp(sizePx || 20, 16, 32);
+  const size = clamp(sizePx || 20, 12, 40);
   const frame = framePath(aff);
   const glyph = innerGlyph(entity.type || entity.unitType || 'INFANTRY');
-  const heading = entity.heading != null ? headingIndicator(entity.heading, entity.speed) : '';
+  const heading = opts.showHeading !== false && entity.heading != null
+    ? headingIndicator(entity.heading, entity.speed)
+    : '';
 
   let strike = '';
   if (st.strike) {
@@ -134,23 +145,65 @@ export function renderSymbolSvg(entity, sizePx) {
 export function renderMarkerHtml(entity, lod) {
   entity = entity || {};
   lod = lod || { size: 20, showCallsign: true, showRole: false, showStatus: false };
-  const aff = String(entity.affiliation || 'FRIENDLY').toUpperCase();
-  const colors = AFFILIATION_COLORS[aff] || AFFILIATION_COLORS.FRIENDLY;
-  const sym = renderSymbolSvg(entity, lod.size);
-  let html = '<div class="tac-marker" data-id="' + escapeAttr(entity.id) + '">';
-  html += '<div class="tac-marker__symbol">' + sym + '</div>';
+  const style = String(lod.styleMode || entity.styleMode || 'nato');
+  const showHeading = lod.showHeading !== false;
+  const ft = lod.showFtFrame && entity.ftColor ? String(entity.ftColor) : '';
+  let inner = '';
+  if (style === 'intel_dot' || style === 'dot' || style === 'team_dot') {
+    inner = renderDotInner(entity, lod, style);
+  } else if (lod.preferAvatar && entity.avatarUrl) {
+    inner = renderAvatarInner(entity, lod);
+  } else {
+    inner = '<div class="tac-marker__symbol">' + renderSymbolSvg(entity, lod.size, { showHeading: showHeading }) + '</div>';
+  }
+  if (ft) {
+    inner = '<div class="tac-marker__ft" style="--ft-color:' + escapeAttr(ft) + '">' + inner + '</div>';
+  }
+  return '<div class="tac-marker" data-id="' + escapeAttr(entity.id) + '">' + inner + callsignLabel(entity, lod) + '</div>';
+}
 
-  if (lod.showCallsign && entity.callsign) {
-    html += '<div class="tac-marker__callsign mono">' + escapeHtml(entity.callsign) + '</div>';
+function callsignLabel(entity, lod) {
+  if (!lod.showCallsign || !entity.callsign) return '';
+  return '<div class="tac-marker__callsign mono">' + escapeHtml(entity.callsign) + '</div>';
+}
+
+function renderDotInner(entity, lod, style) {
+  const d = Math.max(10, Math.round(lod.size || 16));
+  let color = '#22c55e';
+  if (style === 'intel_dot') color = '#94a3b8';
+  if (style === 'team_dot' && entity.ftColor) color = entity.ftColor;
+  else if (style !== 'intel_dot') {
+    const aff = affiliationKey(entity.affiliation);
+    color = (AFFILIATION_COLORS[aff] || AFFILIATION_COLORS.FRIENDLY).stroke;
   }
-  if (lod.showRole && entity.role) {
-    html += '<div class="tac-marker__role">' + escapeHtml(entity.role) + '</div>';
-  }
-  if (lod.showStatus && entity.status) {
-    html += '<div class="tac-marker__status" style="color:' + colors.label + '">' + escapeHtml(entity.status) + '</div>';
-  }
-  html += '</div>';
-  return html;
+  const cls = style === 'intel_dot' ? 'tac-marker__dot tac-marker__dot--intel' : 'tac-marker__dot';
+  return '<span class="' + cls + '" style="width:' + d + 'px;height:' + d + 'px;background:' + escapeAttr(color) + ';"></span>';
+}
+
+function renderAvatarInner(entity, lod) {
+  const d = Math.max(12, Math.round(lod.size || 20));
+  const src = String(entity.avatarUrl || '').replace(/"/g, '&quot;');
+  return '<img class="tac-marker__avatar" src="' + src + '" alt="" width="' + d + '" height="' + d + '" style="width:' + d + 'px;height:' + d + 'px;"/>';
+}
+
+/** Lignes d’infobulle (rôle, état, grille) — pas collées sous le symbole. */
+export function markerHoverLines(entity) {
+  entity = entity || {};
+  const lines = [];
+  if (entity.role) lines.push(entity.role);
+  if (entity.status) lines.push(statusLabelFr(entity.status));
+  if (entity.grid) lines.push(entity.grid);
+  return lines;
+}
+
+function statusLabelFr(status) {
+  const s = String(status || '').toUpperCase();
+  if (s === 'ONLINE') return 'En liaison';
+  if (s === 'DEGRADED') return 'Liaison dégradée';
+  if (s === 'STALE') return 'Position en retard';
+  if (s === 'LOST') return 'Hors liaison';
+  if (s === 'KIA') return 'Hors combat';
+  return status;
 }
 
 /** Marqueur 3D avec ligne d'ancrage et point au sol. */

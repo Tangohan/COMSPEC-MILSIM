@@ -15,6 +15,7 @@ final class DashboardMemberHubAssetTest extends TestCase
         $cc = (string) file_get_contents($root . '/views/partials/dashboard_command_center.php');
         $offers = (string) file_get_contents($root . '/views/partials/dashboard_org_offers.php');
         $rh = (string) file_get_contents($root . '/views/partials/dashboard_member_rh.php');
+        $parcours = (string) file_get_contents($root . '/views/partials/dashboard_rh_parcours.php');
         $articles = (string) file_get_contents($root . '/views/partials/dashboard_quick_articles.php');
         $aside = (string) file_get_contents($root . '/views/partials/dashboard_aside.php');
         $home = (string) file_get_contents($root . '/app/Controllers/Web/HomeController.php');
@@ -23,16 +24,20 @@ final class DashboardMemberHubAssetTest extends TestCase
         $launcher = (string) file_get_contents($root . '/app/Controllers/Web/PublicationLauncherController.php');
         $css = (string) file_get_contents($root . '/public/assets/css/dashboard-impact.css');
 
-        self::assertStringContainsString('dashboard_org_offers.php', $cc);
-        self::assertStringContainsString('dashboard_member_rh.php', $cc);
+        self::assertStringNotContainsString('dashboard_org_offers.php', $cc);
+        self::assertStringNotContainsString('dashboard_member_rh.php', $cc);
+        self::assertStringContainsString('dashboard_rh_parcours.php', $cc);
         self::assertStringContainsString('dashboard_quick_articles.php', $cc);
         self::assertStringContainsString('id="dashboard-org-offers"', $offers);
+        self::assertStringContainsString('id="dashboard-org-offers"', $parcours);
         self::assertStringContainsString('Offres de l’organisation', $offers);
+        self::assertStringContainsString('Offres de l’organisation', $parcours);
         self::assertStringContainsString('listPublishedForTenant', $home);
         self::assertStringContainsString('Candidater', $offers);
         self::assertStringNotContainsString('endpoint', $offers);
 
         self::assertStringContainsString('id="dashboard-member-rh"', $rh);
+        self::assertStringContainsString('id="dashboard-member-rh"', $parcours);
         self::assertStringContainsString('Demande d’élévation', $rh);
         self::assertStringContainsString('Demande d’avancement', $rh);
         self::assertStringContainsString('personnel/mon-espace-rh/elevation', $rh);
@@ -52,7 +57,8 @@ final class DashboardMemberHubAssetTest extends TestCase
         self::assertStringNotContainsString('CMS', $articles);
 
         self::assertStringContainsString('#dashboard-org-offers', $aside);
-        self::assertStringContainsString('#dashboard-member-rh', $aside);
+        self::assertStringContainsString('#mon-dossier-rh', $aside);
+        self::assertStringNotContainsString('#dashboard-member-rh', $aside);
         self::assertStringContainsString('#dashboard-quick-articles', $aside);
         self::assertStringContainsString('.dash-hub-stack', $css);
         self::assertStringContainsString('.dash-rh-form', $css);

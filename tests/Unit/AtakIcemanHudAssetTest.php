@@ -37,7 +37,7 @@ final class AtakIcemanHudAssetTest extends TestCase
         self::assertStringContainsString('athena_installMapHud', $cfg);
         self::assertStringContainsString('athena_updateMapHud', $cfg);
         self::assertStringContainsString('athena_mapHudZoom', $cfg);
-        self::assertStringContainsString('1.0.61', $cfg);
+        self::assertStringContainsString('1.0.63', $cfg);
         self::assertStringContainsString('athena_installMapHud', $post);
         self::assertStringContainsString('athena_updateMapHud', $layout);
 

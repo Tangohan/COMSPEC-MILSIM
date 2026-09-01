@@ -1,27 +1,372 @@
-.mi-toolbar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; margin-bottom: 1.25rem; }
-.mi-toolbar label { display: flex; flex-direction: column; gap: .25rem; font-size: .75rem; color: #94a3b8; }
-.mi-toolbar input, .mi-toolbar select { background: #0f172a; border: 1px solid rgba(255,255,255,.12); color: #e2e8f0; border-radius: .35rem; padding: .4rem .55rem; min-width: 9rem; }
-.mi-toolbar button, .mi-btn { background: #0b8a5c; color: #fff; border: 0; border-radius: .35rem; padding: .45rem .8rem; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; }
-.mi-btn--ghost { background: transparent; border: 1px solid rgba(255,255,255,.2); color: #e2e8f0; }
-.mi-btn--warn { background: #c98a12; }
-.mi-btn--danger { background: #9b1c1c; }
-.mi-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
-.mi-table th, .mi-table td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid rgba(255,255,255,.08); color: #e2e8f0; }
-.mi-table th { font-size: .7rem; letter-spacing: .04em; color: #94a3b8; }
-.mi-kanban { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem; }
-.mi-kanban__col { background: rgba(15,23,42,.7); border: 1px solid rgba(255,255,255,.08); border-radius: .5rem; padding: .75rem; }
-.mi-kanban__col h3 { margin: 0 0 .75rem; font-size: .8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
-.mi-card { display: block; background: #0f172a; border: 1px solid rgba(255,255,255,.1); border-radius: .4rem; padding: .7rem; margin-bottom: .6rem; color: inherit; text-decoration: none; }
-.mi-card strong { display: block; margin-bottom: .2rem; }
-.mi-muted { color: #94a3b8; font-size: .8rem; }
-.mi-progress { height: .45rem; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; }
-.mi-progress > span { display: block; height: 100%; background: #0b8a5c; }
-.mi-grid { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
-@media (min-width: 960px) { .mi-grid--2 { grid-template-columns: 1.4fr .8fr; } }
-.mi-panel { background: rgba(15,23,42,.55); border: 1px solid rgba(255,255,255,.08); border-radius: .5rem; padding: 1rem; }
-.mi-panel h2 { margin: 0 0 .75rem; font-size: 1rem; }
-.mi-step { border-bottom: 1px solid rgba(255,255,255,.06); padding: .6rem 0; }
-.mi-badge { display: inline-block; font-size: .7rem; padding: .15rem .45rem; border-radius: 99px; background: rgba(255,255,255,.1); }
-.mi-form label { display: block; margin: .65rem 0 .25rem; font-size: .8rem; color: #94a3b8; }
-.mi-form input, .mi-form select, .mi-form textarea { width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,.12); color: #e2e8f0; border-radius: .35rem; padding: .45rem .55rem; }
-.mi-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+/**
+ * Intégration des nouveaux membres — charte claire Athena
+ * (back-office effectifs / personnel : encre sombre, surface blanche).
+ */
+.mi-admin,
+.mi-toolbar,
+.mi-table,
+.mi-panel,
+.mi-form,
+.mi-kanban {
+  --mi-ink: var(--ath-ink, #0c1116);
+  --mi-muted: var(--ath-muted, #6d7a80);
+  --mi-subtle: var(--ath-subtle, #8c979b);
+  --mi-line: var(--ath-line, #e3e8ea);
+  --mi-line-soft: var(--ath-line-soft, #f1f4f5);
+  --mi-bg: var(--ath-bg, #f6f8f9);
+  --mi-surface: var(--ath-surface, #ffffff);
+  --mi-accent: var(--ath-accent, #0b8a5c);
+  --mi-row-hover: var(--ath-row-hover, #f2fbf7);
+  color: var(--mi-ink);
+}
+
+.mi-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1.25rem;
+}
+
+.mi-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #3c474c;
+}
+
+.mi-toolbar input,
+.mi-toolbar select {
+  background: var(--mi-surface);
+  border: 1px solid var(--mi-line);
+  color: var(--mi-ink);
+  border-radius: 0;
+  padding: 0.4rem 0.55rem;
+  min-width: 9rem;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mi-toolbar button,
+.mi-btn {
+  background: var(--mi-accent);
+  color: #fff;
+  border: 0;
+  border-radius: 0;
+  padding: 0.45rem 0.8rem;
+  font-weight: 800;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.mi-btn--ghost {
+  background: var(--mi-surface);
+  border: 1px solid var(--mi-line);
+  color: var(--mi-ink);
+}
+
+.mi-btn--ghost:hover {
+  border-color: var(--mi-ink);
+}
+
+.mi-btn--warn {
+  background: #c98a12;
+  color: #fff;
+}
+
+.mi-btn--danger {
+  background: #9b1c1c;
+  color: #fff;
+}
+
+.mi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.mi-table th,
+.mi-table td {
+  text-align: left;
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--mi-line-soft);
+  color: var(--mi-ink);
+}
+
+.mi-table th {
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--mi-subtle);
+  font-weight: 800;
+  text-transform: uppercase;
+  background: var(--ath-table-head, #fafcfc);
+}
+
+.mi-table tbody tr:hover td {
+  background: var(--mi-row-hover);
+}
+
+.mi-kanban {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.mi-kanban__col {
+  background: var(--mi-surface);
+  border: 1px solid var(--mi-line);
+  border-radius: 0;
+  padding: 0.75rem;
+}
+
+.mi-kanban__col h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  color: var(--mi-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mi-card {
+  display: block;
+  background: var(--mi-surface);
+  border: 1px solid var(--mi-line);
+  border-radius: 0;
+  padding: 0.7rem;
+  margin-bottom: 0.6rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.mi-card:hover {
+  background: var(--mi-row-hover);
+}
+
+.mi-card strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--mi-ink);
+}
+
+.mi-muted {
+  color: var(--mi-muted);
+  font-size: 0.8rem;
+}
+
+.mi-progress {
+  height: 0.45rem;
+  background: var(--mi-line-soft);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.mi-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--mi-accent);
+}
+
+.mi-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 960px) {
+  .mi-grid--2 {
+    grid-template-columns: 1.4fr 0.8fr;
+  }
+}
+
+.mi-panel {
+  background: var(--mi-surface);
+  border: 1px solid var(--mi-line);
+  border-radius: 0;
+  padding: 1rem;
+}
+
+.mi-panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: var(--mi-ink);
+}
+
+.mi-step {
+  border-bottom: 1px solid var(--mi-line-soft);
+  padding: 0.6rem 0;
+}
+
+.mi-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0;
+  background: var(--mi-bg);
+  border: 1px solid var(--mi-line);
+  color: #3c474c;
+  font-weight: 700;
+}
+
+.mi-form label {
+  display: block;
+  margin: 0.65rem 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #3c474c;
+}
+
+.mi-form input,
+.mi-form select,
+.mi-form textarea {
+  width: 100%;
+  background: var(--mi-bg);
+  border: 1px solid var(--mi-line);
+  color: var(--mi-ink);
+  border-radius: 0;
+  padding: 0.45rem 0.55rem;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.mi-form input:focus,
+.mi-form select:focus,
+.mi-form textarea:focus {
+  background: var(--mi-surface);
+  border-color: var(--mi-accent);
+  outline: none;
+}
+
+.mi-form input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  accent-color: var(--mi-accent);
+}
+
+.mi-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+/* ——— Liste / formulaire modèles (back-office) ——— */
+.mi-admin .ath-field__label {
+  color: #3c474c;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.mi-admin .ath-table tbody td {
+  color: var(--mi-ink);
+  font-weight: 600;
+}
+
+.mi-admin .ath-table tbody td a {
+  color: var(--mi-ink);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.mi-admin .ath-table tbody td a:hover {
+  color: var(--mi-accent);
+}
+
+.mi-empty {
+  padding: 28px 16px;
+  text-align: center;
+}
+
+.mi-empty strong {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 900;
+  color: var(--mi-ink);
+}
+
+.mi-empty p {
+  margin: 6px 0 14px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--mi-muted);
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mi-step-card {
+  border: 1px solid var(--mi-line);
+  background: var(--mi-bg);
+  margin: 0 0 12px;
+  padding: 14px 16px 16px;
+  min-width: 0;
+}
+
+.mi-step-card > legend {
+  float: none;
+  width: auto;
+  font-size: 12.5px;
+  font-weight: 900;
+  color: var(--mi-ink);
+  padding: 0 6px;
+  margin-bottom: 10px;
+}
+
+.mi-field--days {
+  max-width: 8.5rem;
+}
+
+.mi-field--days .ath-field__input,
+.mi-admin .mi-field--days input[type="number"] {
+  width: 100%;
+  max-width: 8.5rem;
+}
+
+.mi-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mi-admin .ath-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--mi-accent);
+}
+
+.mi-admin .ath-table tbody td.ath-td-num {
+  color: var(--mi-ink);
+}
+
+.mi-admin .ath-table .ath-btn {
+  height: 28px;
+  padding: 0 11px;
+  font-size: 10.5px;
+}
+
+.mi-admin .ath-table tbody td {
+  height: auto;
+  min-height: 35px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.mi-admin .ath-table tbody td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.mi-admin .ath-table thead th:last-child {
+  text-align: right;
+}

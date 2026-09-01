@@ -152,7 +152,6 @@ hint parseText format [
     _name,
     _info replaceString [toString [10], "<br/>"]
 ];
-systemChat format ["[COMSPEC ATAK] %1 | Steam %2 | Terminal %3 | ATAK %4 | État %5", _name, _steam, _terminal, _atakId, _stateTxt];
 
 private _okJam = ["Brouiller ce joueur 45 s ? (Annuler = infos seulement)", "COMSPEC ATAK", true, true, findDisplay 312] call BIS_fnc_guiMessage;
 if (_okJam) then {

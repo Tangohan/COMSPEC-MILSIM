@@ -58,7 +58,7 @@ final class AtakReportsLayoutAssetTest extends TestCase
         self::assertStringContainsString('athena_fixReportsLayout', $cfg);
         self::assertStringContainsString('athena_installReportsLayout', $cfg);
         self::assertStringContainsString('athena_resolveAthenaGroup', $cfg);
-        self::assertStringContainsString('1.0.61', $cfg);
+        self::assertStringContainsString('1.0.63', $cfg);
         self::assertStringContainsString('athena_installReportsLayout', $post);
         self::assertStringContainsString('athena_fixReportsLayout', $check);
 

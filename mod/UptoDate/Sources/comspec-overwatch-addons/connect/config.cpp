@@ -274,6 +274,9 @@ class CfgFunctions {
             class registerBetaClient {};
             class onMainMenuLoad {};
             class getCallsign {};
+            class isUsableCallsign {};
+            class inGameGroupLabel {};
+            class splitKeepEmpty {};
             class getBloodType {};
             class setCallsign {};
             
@@ -465,6 +468,7 @@ class CfgFunctions {
             class loginSteam {};
             class restoreSession {};
             class packVersion {};
+            class authStateCells {};
             class pollAuth {};
             class applyBootstrap {};
             class syncProfile {};

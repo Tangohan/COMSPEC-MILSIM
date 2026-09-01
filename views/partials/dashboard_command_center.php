@@ -281,6 +281,8 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             var h = (window.location.hash || '').replace('#', '');
             if (h === 'absence' || h === 'elevation' || h === 'avancement') {
                 this.rhStep = h;
+            } else if (h === 'mon-dossier-rh' || h === 'dashboard-member-rh' || h === 'dashboard-org-offers') {
+                this.rhStep = 'choice';
             }
         }
     }">
@@ -368,21 +370,8 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         require base_path('views/partials/dashboard_popup_modal.php');
         ?>
 
-        <?php
-        $dashTenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
-            (string) ($dashboard_tenant_type ?? 'full')
-        );
-        $showDashOrgOffers = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashTenantType, 'recruitment');
-        $showDashMemberRh = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashTenantType, 'personnel');
-        ?>
-        <?php if ($showDashOrgOffers || $showDashMemberRh || !empty($can_publish_dashboard_articles)): ?>
-        <div class="dash-hub-stack" aria-label="Offres, dossier RH et publications">
-            <?php if ($showDashOrgOffers) {
-                require base_path('views/partials/dashboard_org_offers.php');
-            } ?>
-            <?php if ($showDashMemberRh) {
-                require base_path('views/partials/dashboard_member_rh.php');
-            } ?>
+        <?php if (!empty($can_publish_dashboard_articles)): ?>
+        <div class="dash-hub-stack" aria-label="Publications">
             <?php require base_path('views/partials/dashboard_quick_articles.php'); ?>
         </div>
         <?php endif; ?>

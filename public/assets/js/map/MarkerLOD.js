@@ -1,6 +1,6 @@
 /**
  * LOD marqueurs — taille et labels selon le niveau de zoom.
- * Les symboles ne dépassent jamais 32 px.
+ * La taille utilisateur (réglages d’apparence) prime ; le zoom ne fait qu’un léger facteur.
  */
 
 /** @typedef {{ band: string, size: number, showCallsign: boolean, showRole: boolean, showStatus: boolean, zoom: number }} LODLevel */
@@ -36,21 +36,35 @@ export function computeLODFromDistance(normalizedDistance) {
 function lodForBand(band, zoom) {
   switch (band) {
     case 'theatre':
-      return { band: band, size: 18, showCallsign: false, showRole: false, showStatus: false, zoom: zoom };
+      return { band: band, size: 18, showCallsign: true, showRole: false, showStatus: false, zoom: zoom };
     case 'ops':
       return { band: band, size: 20, showCallsign: true, showRole: false, showStatus: false, zoom: zoom };
     case 'tac':
-      return { band: band, size: 24, showCallsign: true, showRole: true, showStatus: false, zoom: zoom };
+      return { band: band, size: 24, showCallsign: true, showRole: false, showStatus: false, zoom: zoom };
     case 'close':
     default:
-      return { band: band, size: 28, showCallsign: true, showRole: true, showStatus: true, zoom: zoom };
+      return { band: band, size: 28, showCallsign: true, showRole: false, showStatus: false, zoom: zoom };
   }
 }
 
-/** Taille max absolue — jamais plus grand. */
-export const MAX_SYMBOL_PX = 32;
-export const MIN_SYMBOL_PX = 16;
+/** Taille max / min si aucun réglage utilisateur. */
+export const MAX_SYMBOL_PX = 40;
+export const MIN_SYMBOL_PX = 12;
 
 export function clampSymbolSize(px) {
   return Math.max(MIN_SYMBOL_PX, Math.min(MAX_SYMBOL_PX, Math.round(px)));
+}
+
+/**
+ * Applique la taille d’icône des réglages d’apparence, avec un léger facteur de zoom.
+ * @param {LODLevel} lod
+ * @param {number} iconSize — curseur 12–28
+ */
+export function applyDisplaySize(lod, iconSize) {
+  const band = lod && lod.band ? lod.band : 'ops';
+  const fallback = lod && lod.size ? lod.size : 20;
+  const n = Number(iconSize);
+  const base = isFinite(n) ? n : fallback;
+  const factor = band === 'theatre' ? 0.95 : band === 'ops' ? 1 : band === 'tac' ? 1.08 : 1.16;
+  return clampSymbolSize(base * factor);
 }

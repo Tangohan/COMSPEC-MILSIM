@@ -87,7 +87,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             y = QUOTE(COMSPEC_ATHENA_H(0.74));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(0.42));
-            size = QUOTE(COMSPEC_ATHENA_H(0.30));
+            size = QUOTE(0.030);
             text = "";
             colorBackground[] = ATHENA_BG_STRIP;
             class Attributes
@@ -153,9 +153,11 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             y = QUOTE(COMSPEC_ATHENA_H(1.82));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(0.42));
-            sizeEx = QUOTE(COMSPEC_ATHENA_H(0.28));
+            sizeEx = QUOTE(0.032);
             colorBackground[] = ATAK_BG_EDIT;
             colorSelectBackground[] = ATHENA_TAB_ACTIVE;
+            colorText[] = ATAK_LIST_TEXT;
+            colorSelect[] = {0.94, 0.95, 0.96, 1};
             onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_selectFilter";
         };
 
@@ -168,12 +170,12 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             h = QUOTE(COMSPEC_ATHENA_H(3.55));
             colorBackground[] = ATHENA_BG_LIST;
             colorText[] = ATAK_LIST_TEXT;
-            colorSelect[] = ATAK_LIST_SEL;
-            colorSelect2[] = ATAK_LIST_SEL;
+            colorSelect[] = ATAK_LIST_TEXT;
+            colorSelect2[] = ATAK_LIST_TEXT;
             colorSelectBackground[] = ATAK_LIST_SEL_BG;
             colorSelectBackground2[] = ATAK_LIST_SEL_BG;
-            sizeEx = QUOTE(COMSPEC_ATHENA_H(0.42));
-            rowHeight = QUOTE(COMSPEC_ATHENA_H(0.54));
+            sizeEx = QUOTE(0.034);
+            rowHeight = QUOTE(0.038);
             onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_selectInbox";
         };
 
@@ -184,7 +186,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             y = QUOTE(COMSPEC_ATHENA_H(5.95));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(2.35));
-            size = QUOTE(COMSPEC_ATHENA_H(0.32));
+            size = QUOTE(0.030);
             text = "";
             colorBackground[] = ATHENA_BG_DETAIL;
             class Attributes
@@ -205,7 +207,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             y = QUOTE(COMSPEC_ATHENA_H(8.38));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(0.36));
-            size = QUOTE(COMSPEC_ATHENA_H(0.28));
+            size = QUOTE(0.028);
             text = "";
             show = 0;
             colorBackground[] = {0.04, 0.12, 0.14, 0.96};

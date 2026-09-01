@@ -55,7 +55,7 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
 ?>
 <div class="dash-rh-foot" id="mon-dossier-rh">
     <?php if ($showOffers): ?>
-    <section class="cc-card dash-rh-offers" aria-labelledby="dash-rh-offers-title">
+    <section class="cc-card dash-rh-offers" id="dashboard-org-offers" aria-labelledby="dash-rh-offers-title">
         <p class="cc-kicker cc-kicker--primary">Recrutement</p>
         <h2 id="dash-rh-offers-title" class="dash-rh-foot__title">Offres de l’organisation</h2>
         <p class="dash-rh-foot__lead">Les postes ouverts dans la communauté apparaissent ici. Vous pouvez consulter une offre et, le cas échéant, postuler.</p>
@@ -87,7 +87,7 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
     <?php endif; ?>
 
     <?php if ($showPersonnel): ?>
-    <section class="cc-card dash-rh-parcours" aria-labelledby="dash-rh-parcours-title">
+    <section class="cc-card dash-rh-parcours" id="dashboard-member-rh" aria-labelledby="dash-rh-parcours-title">
         <div class="dash-rh-parcours__head">
             <div>
                 <p class="cc-kicker cc-kicker--primary">Personnel</p>
@@ -117,7 +117,7 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
             </button>
         </div>
 
-        <div class="dash-rh-parcours__panel" x-show="rhStep === 'absence'" x-cloak>
+        <div class="dash-rh-parcours__panel" id="absence" x-show="rhStep === 'absence'" x-cloak>
             <button type="button" class="dash-rh-back" @click="rhStep = 'choice'; history.replaceState(null, '', '#mon-dossier-rh')">← Retour au choix</button>
             <h3 class="dash-rh-parcours__panel-title">Déclarer une absence</h3>
             <?php if (!$absenceReady): ?>
@@ -181,7 +181,7 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
             <?php endif; ?>
         </div>
 
-        <div class="dash-rh-parcours__panel" x-show="rhStep === 'elevation'" x-cloak>
+        <div class="dash-rh-parcours__panel" id="elevation" x-show="rhStep === 'elevation'" x-cloak>
             <button type="button" class="dash-rh-back" @click="rhStep = 'choice'; history.replaceState(null, '', '#mon-dossier-rh')">← Retour au choix</button>
             <h3 class="dash-rh-parcours__panel-title">Demande d’élévation</h3>
             <?php if (is_int($elevationCooldown) && $elevationCooldown > 0): ?>
@@ -205,7 +205,7 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
             <?php endif; ?>
         </div>
 
-        <div class="dash-rh-parcours__panel" x-show="rhStep === 'avancement'" x-cloak>
+        <div class="dash-rh-parcours__panel" id="avancement" x-show="rhStep === 'avancement'" x-cloak>
             <button type="button" class="dash-rh-back" @click="rhStep = 'choice'; history.replaceState(null, '', '#mon-dossier-rh')">← Retour au choix</button>
             <h3 class="dash-rh-parcours__panel-title">Demande d’avancement</h3>
             <?php if (!$mobilityReady): ?>

@@ -25,7 +25,6 @@ switch (_function) do {
             !(missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false])
             && {[] call comspec_overwatch_connect_fnc_shouldShowScreenNotification}
         ) then {
-            systemChat format ["[Athena] Connecte a %1", _label];
             ["COMSPEC_Info", [format ["Connecte a %1", _label]]] call comspec_overwatch_connect_fnc_showNotification;
         };
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;
@@ -38,9 +37,6 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_LinkDetail", _msg, false];
         ["WARN", "Athena", format ["Extension Error: %1", _msg]] call comspec_overwatch_connect_fnc_log;
         [format ["[Athena] %1", _msg], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
-            systemChat format ["[Athena] %1", _msg];
-        };
         ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
@@ -75,9 +71,6 @@ switch (_function) do {
         if (!(_data isEqualTo "") && {_fromDll <= 0}) then { _msg = _data; };
         ["WARN", "Tx", format ["Rate limit — pause %1 s", round _next], _msg] call comspec_overwatch_connect_fnc_log;
         [format ["[Athena] %1 (pause %2 s)", _msg, round _next], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
-            systemChat format ["[Athena] Synchronisation ralentie (%1 s).", round _next];
-        };
     };
     case "RateLimitClear": {
         missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];
@@ -138,21 +131,10 @@ switch (_function) do {
             missionNamespace setVariable ["COMSPEC_BftId", _mid, false];
             profileNamespace setVariable ["COMSPEC_MilitaryId", _mid];
         };
-        if (_cs != "" && {!((toLower _cs) in ["unknown", "inconnu", "operateur"])}) then {
-            private _local = trim (missionNamespace getVariable ["COMSPEC_Callsign", ""]);
-            if (_local isEqualTo "" || {(toLower _local) in ["unknown", "inconnu", "operateur"]} || {_local isEqualTo (name player)}) then {
+        if (_cs != "" && {[_cs] call comspec_overwatch_connect_fnc_isUsableCallsign}) then {
+            private _local = [true] call comspec_overwatch_connect_fnc_getCallsign;
+            if (_local isEqualTo "") then {
                 [_cs, true, "bft_athena"] call comspec_overwatch_connect_fnc_setCallsign;
-            } else {
-                // Indicatif déjà choisi : aligner seulement le groupe BFT si besoin
-                if (!isNull player && {local player}) then {
-                    private _grp = group player;
-                    if (!isNull _grp && {local _grp}) then {
-                        private _gid = trim (groupId _grp);
-                        if (!(_gid isEqualTo _local)) then {
-                            _grp setGroupIdGlobal [_local];
-                        };
-                    };
-                };
             };
         };
     };

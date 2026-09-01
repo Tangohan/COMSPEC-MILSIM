@@ -1,8 +1,8 @@
 /**
  * MarkerManager — symboles tactiques 2D (Leaflet) avec LOD, statut, clustering.
  */
-import { renderMarkerHtml, renderClusterHtml } from './TacticalSymbol.js';
-import { computeLOD, clampSymbolSize } from './MarkerLOD.js';
+import { renderMarkerHtml, renderClusterHtml, markerHoverLines } from './TacticalSymbol.js';
+import { computeLOD, applyDisplaySize } from './MarkerLOD.js';
 import { MarkerClusterManager } from './MarkerClusterManager.js';
 
 export class MarkerManager {
@@ -18,8 +18,8 @@ export class MarkerManager {
     this.layerGroup = opts.layerGroup || this.L.layerGroup().addTo(this.map);
     this.markers = new Map();
     this.entities = [];
-    this.clusterManager = new MarkerClusterManager({ cellSize: 72, minCluster: 4 });
-    this.clusteringEnabled = opts.clustering !== false;
+    this.clusterManager = new MarkerClusterManager({ cellSize: 96, minCluster: 6 });
+    this.clusteringEnabled = opts.clustering === true;
     this._lastZoom = this.map ? this.map.getZoom() : 3;
     this._bindZoom();
   }
@@ -28,7 +28,8 @@ export class MarkerManager {
     const self = this;
     if (!this.map || this.map._tacMarkerZoomBound) return;
     this.map._tacMarkerZoomBound = true;
-    this.map.on('zoomend moveend', function () {
+    /* Pan seul : pas de rebuild (évite le pop des symboles). Le zoom change le LOD. */
+    this.map.on('zoomend', function () {
       self._lastZoom = self.map.getZoom();
       self.render(self.entities);
     });
@@ -53,6 +54,7 @@ export class MarkerManager {
     const self = this;
     const zoom = this._lastZoom;
     const lod = computeLOD(zoom);
+    const prefs = this._readPrefs();
     const withScreen = [];
 
     (entities || []).forEach(function (e) {
@@ -76,7 +78,7 @@ export class MarkerManager {
 
     toDraw.forEach(function (e) {
       seen.add(String(e.id));
-      self._upsertMarker(e, lod, e._latlng);
+      self._upsertMarker(e, lod, e._latlng, prefs);
     });
 
     clusters.forEach(function (c) {
@@ -90,6 +92,25 @@ export class MarkerManager {
         self.markers.delete(id);
       }
     });
+  }
+
+  _readPrefs() {
+    try {
+      if (window.ATAKMap && typeof window.ATAKMap.getDisplayPrefs === 'function') {
+        return window.ATAKMap.getDisplayPrefs() || {};
+      }
+    } catch (e) { /* ignore */ }
+    return {};
+  }
+
+  _preferAvatar(prefs) {
+    if (!prefs || prefs.styleMode !== 'nato') return false;
+    try {
+      return !!(window.ATAKMap && window.ATAKMap.getUnitMarkerPriority
+        && window.ATAKMap.getUnitMarkerPriority() === 'avatar');
+    } catch (e) {
+      return false;
+    }
   }
 
   _entityLatLng(e) {
@@ -107,16 +128,53 @@ export class MarkerManager {
     return null;
   }
 
-  _upsertMarker(entity, lod, latlng) {
+  _upsertMarker(entity, lod, latlng, prefs) {
     const id = String(entity.id);
-    const size = clampSymbolSize(lod.size);
-    const html = renderMarkerHtml(entity, Object.assign({}, lod, { size: size }));
+    prefs = prefs || {};
+    const size = applyDisplaySize(lod, prefs.iconSize);
+    const labelPx = Math.max(9, Math.min(16, Math.round(Number(prefs.labelSize) || 11)));
+    const styleMode = prefs.styleMode || 'nato';
+    const showHeading = prefs.showMotionArrows !== false;
+    const showFt = prefs.showFtFrame !== false;
+    const preferAvatar = this._preferAvatar(prefs) && !!entity.avatarUrl;
+    const headingRounded = showHeading && entity.heading != null && entity.heading !== ''
+      ? Math.round(Number(entity.heading) / 15) * 15
+      : '';
+
+    const lodOpts = Object.assign({}, lod, {
+      size: size,
+      showCallsign: lod.showCallsign !== false,
+      showRole: false,
+      showStatus: false,
+      styleMode: styleMode,
+      showHeading: showHeading && headingRounded !== '',
+      showFtFrame: showFt,
+      preferAvatar: preferAvatar,
+    });
+    const entityForIcon = Object.assign({}, entity, {
+      heading: headingRounded === '' ? null : headingRounded,
+    });
+    const html = renderMarkerHtml(entityForIcon, lodOpts);
+    const extraH = lodOpts.showCallsign ? Math.round(labelPx * 1.7 + 10) : 8;
+    const sig = html + '|' + size + '|' + extraH;
+    const posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
+
     let marker = this.markers.get(id);
 
+    if (marker && marker._tacSig === sig) {
+      if (marker._tacPosSig !== posSig) {
+        marker.setLatLng(latlng);
+        marker._tacPosSig = posSig;
+      }
+      marker._tacEntity = entity;
+      this._bindHover(marker, entity);
+      return;
+    }
+
     const icon = this.L.divIcon({
-      className: 'tac-leaflet-marker',
+      className: 'tac-leaflet-marker atak-compact-marker',
       html: html,
-      iconSize: [size, size + (lod.showCallsign ? 28 : 8)],
+      iconSize: [size, size + extraH],
       iconAnchor: [size / 2, size / 2],
     });
 
@@ -124,20 +182,34 @@ export class MarkerManager {
       marker.setLatLng(latlng);
       marker.setIcon(icon);
     } else {
-      marker = this.L.marker(latlng, { icon: icon, interactive: true });
+      marker = this.L.marker(latlng, { icon: icon, interactive: true, zIndexOffset: 400 });
       marker.on('click', () => {
         this._emitSelect(entity);
       });
       marker.addTo(this.layerGroup);
       this.markers.set(id, marker);
     }
+    marker._tacSig = sig;
+    marker._tacPosSig = posSig;
     marker._tacEntity = entity;
+    this._bindHover(marker, entity);
+    if (window.ATAKMarkerSizes && window.ATAKMarkerSizes.bindSelectVisual) {
+      window.ATAKMarkerSizes.bindSelectVisual(marker);
+    }
+  }
+
+  _bindHover(marker, entity) {
+    if (!marker || !window.ATAKMarkerSizes || !window.ATAKMarkerSizes.bindHoverTip) return;
+    const title = entity.callsign || entity.id || '';
+    const html = window.ATAKMarkerSizes.hoverTipHtml(title, markerHoverLines(entity));
+    window.ATAKMarkerSizes.bindHoverTip(marker, html);
   }
 
   _upsertCluster(cluster) {
     const id = String(cluster.id);
     const latlng = this.map.containerPointToLatLng([cluster.screenX, cluster.screenY]);
     const html = cluster.html || renderClusterHtml(cluster.count, cluster.breakdown);
+    const sig = 'cl|' + html;
     const icon = this.L.divIcon({
       className: 'tac-leaflet-cluster',
       html: html,
@@ -145,6 +217,10 @@ export class MarkerManager {
       iconAnchor: [20, 20],
     });
     let marker = this.markers.get(id);
+    if (marker && marker._tacSig === sig) {
+      marker.setLatLng(latlng);
+      return;
+    }
     if (marker) {
       marker.setLatLng(latlng);
       marker.setIcon(icon);
@@ -156,6 +232,7 @@ export class MarkerManager {
       marker.addTo(this.layerGroup);
       this.markers.set(id, marker);
     }
+    marker._tacSig = sig;
   }
 
   _emitSelect(entity) {

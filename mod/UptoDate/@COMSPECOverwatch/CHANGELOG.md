@@ -1,3 +1,31 @@
+COMSPEC Overwatch 1.5.0 / Athena ATAK 1.0.63 — 01/09/2026
+
+Correction — Identité de l’opérateur
+
+• Écran prêt : photo si elle existe, prénom et nom, indicatif, rôle, grade et fonction. La communauté reste à part
+• Téléphone Paramètres et bandeau de carte : indicatif de la fiche Effectifs, pas le titre de la communauté
+• Le groupe Arma n’est plus renommé avec le nom de l’organisation
+• Connexion e-mail / mot de passe possible sans Steam associé
+• Relancer Arma complètement après le nouveau pack
+
+Correction — Chat du jeu
+
+• Un message du poste, d’Overwatch ou du téléphone n’apparaît plus dans le chat de bord d’Arma
+• Il reste dans le téléphone, les messages de groupe et le journal ATAK
+
+Correction — Journal Athena du téléphone
+
+• Le journal affiche le filtre, la liste et le détail, plus un rectangle noir
+• Même sans message, une phrase l’indique
+
+COMSPEC Overwatch 1.4.98 / Athena ATAK 1.0.62 — 01/09/2026
+
+Correction — Journal Athena du téléphone
+
+• Le journal affiche le filtre, la liste et le détail, plus un rectangle noir
+• Même sans message, une phrase l’indique
+• Relancer Arma complètement après le nouveau pack
+
 COMSPEC Overwatch 1.4.98 / Athena ATAK 1.0.61 — 01/09/2026
 
 Correction — Comptes-rendus du téléphone

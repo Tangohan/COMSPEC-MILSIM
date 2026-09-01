@@ -28,7 +28,7 @@ private _ctrl = {
     _c
 };
 
-private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+private _cs = [true] call comspec_overwatch_connect_fnc_getCallsign;
 private _role = [player] call comspec_overwatch_connect_fnc_getUnitRole;
 private _atakId = trim (missionNamespace getVariable ["COMSPEC_AtakId", ""]);
 if (_atakId isEqualTo "") then {
@@ -42,9 +42,12 @@ if (!isNil "comspec_overwatch_connect_fnc_getTerminalUid") then {
     _terminal = [] call comspec_overwatch_connect_fnc_getTerminalUid;
 };
 private _idLine = if (_atakId isEqualTo "") then { "non attribué" } else { _atakId };
+if (_idLine isNotEqualTo "non attribué" && {!([_idLine] call comspec_overwatch_connect_fnc_isUsableCallsign)} && {(count _idLine) > 24}) then {
+    _idLine = "non attribué";
+};
 private _termLine = if (_terminal isEqualTo "") then { "—" } else { _terminal };
-private _gid = trim (groupId (group player));
-if (_gid isEqualTo "") then { _gid = "Sans nom"; };
+private _gid = [player] call comspec_overwatch_connect_fnc_inGameGroupLabel;
+if (_gid isEqualTo "") then { _gid = "groupe actuel"; };
 private _teamColor = assignedTeam player;
 private _teamFr = switch (toUpper _teamColor) do {
     case "RED": { "Rouge" };
@@ -143,7 +146,12 @@ private _cbGrp = [9845] call _ctrl;
 if (!isNull _cbGrp) then {
     lbClear _cbGrp;
     private _myGrp = group player;
-    private _iStay = _cbGrp lbAdd format ["Rester dans %1", _gid];
+    private _stayLabel = if (_gid isEqualTo "groupe actuel") then {
+        "Rester dans le groupe actuel"
+    } else {
+        format ["Rester dans %1", _gid]
+    };
+    private _iStay = _cbGrp lbAdd _stayLabel;
     _cbGrp lbSetData [_iStay, ""];
     private _selG = 0;
     private _side = side _myGrp;
@@ -153,8 +161,10 @@ if (!isNull _cbGrp) then {
         if (side _g isNotEqualTo _side) then { continue };
         private _units = units _g select { isPlayer _x || {alive _x} };
         if ((count _units) < 1) then { continue };
-        private _nameG = trim (groupId _g);
-        if (_nameG isEqualTo "") then { _nameG = "Groupe"; };
+        private _lead = leader _g;
+        if (isNull _lead) then { _lead = _units select 0; };
+        private _nameG = [_lead] call comspec_overwatch_connect_fnc_inGameGroupLabel;
+        if (_nameG isEqualTo "") then { continue };
         private _nid = netId _g;
         if (_nid isEqualTo "") then { continue };
         private _i = _cbGrp lbAdd format ["%1 (%2)", _nameG, count _units];
@@ -191,5 +201,10 @@ if (!isNull _cbProx) then {
 
 private _fb = [9847] call _ctrl;
 if (!isNull _fb && {ctrlText _fb isEqualTo ""}) then {
-    _fb ctrlSetStructuredText parseText "<t size='0.9'>Indiquez votre indicatif et votre rôle. L’équipe de feu et le groupe choisis apparaissent ensuite sur ATAK.</t>";
+    private _hint = if (_cs isEqualTo "") then {
+        "Indiquez votre indicatif d’opérateur (ex. YB1). Laissez vide si vous n’en avez pas encore. Ne saisissez pas le nom de la communauté."
+    } else {
+        "Indiquez votre indicatif et votre rôle. L’équipe de feu et le groupe choisis apparaissent ensuite sur ATAK."
+    };
+    _fb ctrlSetStructuredText parseText format ["<t size='0.9'>%1</t>", _hint];
 };

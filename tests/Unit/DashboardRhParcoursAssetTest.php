@@ -19,6 +19,8 @@ final class DashboardRhParcoursAssetTest extends TestCase
         $css = (string) file_get_contents($root . '/public/assets/css/dashboard-impact.css');
 
         self::assertStringContainsString("require base_path('views/partials/dashboard_rh_parcours.php')", $cc);
+        self::assertStringNotContainsString('dashboard_member_rh.php', $cc);
+        self::assertStringNotContainsString("['show_offers'] = false", $cc);
         $requirePos = strpos($cc, "dashboard_rh_parcours.php");
         $channelsPos = strpos($cc, 'Mes salons suivis');
         self::assertNotFalse($requirePos);
@@ -56,5 +58,9 @@ final class DashboardRhParcoursAssetTest extends TestCase
         self::assertStringContainsString("x-show=\"rhStep === 'avancement'\"", $view);
         self::assertStringContainsString('Retour au choix', $view);
         self::assertStringNotContainsString('lg:grid-cols-2', $view);
+        self::assertStringContainsString('id="dashboard-org-offers"', $view);
+        self::assertStringContainsString('id="dashboard-member-rh"', $view);
+        $cc = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/dashboard_command_center.php');
+        self::assertStringNotContainsString('dash-rh-grid', $cc);
     }
 }

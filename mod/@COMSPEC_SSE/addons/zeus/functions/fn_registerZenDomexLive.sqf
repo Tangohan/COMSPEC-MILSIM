@@ -5,6 +5,28 @@
 if (!hasInterface) exitWith {};
 if (missionNamespace getVariable ["comspec_sse_zenDomexLiveRegistered", false]) exitWith {};
 
+uiNamespace setVariable ["COMSPEC_SSE_DomexResolveZenArgs", {
+    params [["_a", objNull], ["_b", []], ["_c", []], ["_d", []], ["_e", []]];
+    private _asObject = {
+        params ["_v"];
+        if (_v isEqualType objNull) exitWith { _v };
+        if (!(_v isEqualType []) || {count _v == 0}) exitWith { objNull };
+        private _first = _v select 0;
+        if (_first isEqualType objNull) then { _first } else { objNull }
+    };
+    private _asPos = {
+        params ["_v"];
+        if (_v isEqualType [] && {count _v >= 2} && {(_v select 0) isEqualType 0}) exitWith { _v };
+        []
+    };
+    private _pos = [_a] call _asPos;
+    if (_pos isEqualTo []) then { _pos = [_b] call _asPos; };
+    if (_pos isEqualTo []) then { _pos = [_e] call _asPos; };
+    private _obj = [_b] call _asObject;
+    if (isNull _obj) then { _obj = [_a] call _asObject; };
+    [_obj, _pos]
+}];
+
 private _openAddIntel = {
     params [["_obj", objNull], ["_pos", []]];
     private _entity = [_obj, _pos] call comspec_sse_fnc_domexPickObject;
@@ -104,10 +126,17 @@ private _openStage = {
 
 private _openMapPoint = {
     params [["_obj", objNull], ["_pos", []]];
-    if (!(_pos isEqualType []) || {count _pos < 2}) then {
-        if (!isNull _obj) then { _pos = getPosATL _obj; };
+    if (!(_obj isEqualType objNull)) then {
+        if (_obj isEqualType [] && {count _obj > 0} && {(_obj select 0) isEqualType objNull}) then {
+            _obj = _obj select 0;
+        } else {
+            _obj = objNull;
+        };
     };
-    if (!(_pos isEqualType []) || {count _pos < 2}) exitWith {
+    if (!(_pos isEqualType []) || {count _pos < 2} || {!((_pos select 0) isEqualType 0)}) then {
+        if (_obj isEqualType objNull && {!isNull _obj}) then { _pos = getPosATL _obj; } else { _pos = []; };
+    };
+    if (!(_pos isEqualType []) || {count _pos < 2} || {!((_pos select 0) isEqualType 0)}) exitWith {
         hint "Posez le module sur la carte, à l’endroit du point.";
     };
     if (isNil "zen_dialog_fnc_create") exitWith {
@@ -117,7 +146,10 @@ private _openMapPoint = {
 
     private _qVals = ["complet", "fragment", "leurre_possible"];
     private _qLabs = ["Complet", "Fragment (à croiser)", "Peut être un leurre"];
-    private _entity = if (!isNull _obj && {!(_obj isKindOf "CAManBase")}) then { _obj } else { objNull };
+    private _entity = objNull;
+    if (_obj isEqualType objNull && {!isNull _obj} && {!(_obj isKindOf "CAManBase")}) then {
+        _entity = _obj;
+    };
 
     [
         "Poser un point carte",
@@ -141,14 +173,23 @@ uiNamespace setVariable ["COMSPEC_SSE_DomexOpenAddIntel", _openAddIntel];
 uiNamespace setVariable ["COMSPEC_SSE_DomexOpenStage", _openStage];
 uiNamespace setVariable ["COMSPEC_SSE_DomexOpenMapPoint", _openMapPoint];
 
+private _invokeOpener = {
+    params ["_key"];
+    private _resolved = _this select [1, 5];
+    if (_resolved isEqualTo []) then { _resolved = _this };
+    _resolved = _resolved call (uiNamespace getVariable ["COMSPEC_SSE_DomexResolveZenArgs", { [objNull, []] }]);
+    _resolved params ["_obj", "_pos"];
+    [_obj, _pos] call (uiNamespace getVariable [_key, {}]);
+};
+uiNamespace setVariable ["COMSPEC_SSE_DomexInvokeOpener", _invokeOpener];
+
 if (!isNil "zen_custom_modules_fnc_register") then {
     private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
     [
         "COMSPEC SSE",
         "Ajouter un renseignement",
         {
-            params ["_pos", "_obj"];
-            [_obj, _pos] call (uiNamespace getVariable ["COMSPEC_SSE_DomexOpenAddIntel", {}]);
+            (["COMSPEC_SSE_DomexOpenAddIntel"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         _icon
     ] call zen_custom_modules_fnc_register;
@@ -157,8 +198,7 @@ if (!isNil "zen_custom_modules_fnc_register") then {
         "COMSPEC SSE",
         "Fixer le palier d’accès",
         {
-            params ["_pos", "_obj"];
-            [_obj, _pos] call (uiNamespace getVariable ["COMSPEC_SSE_DomexOpenStage", {}]);
+            (["COMSPEC_SSE_DomexOpenStage"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         "\A3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa"
     ] call zen_custom_modules_fnc_register;
@@ -167,8 +207,7 @@ if (!isNil "zen_custom_modules_fnc_register") then {
         "COMSPEC SSE",
         "Poser un point carte",
         {
-            params ["_pos", "_obj"];
-            [_obj, _pos] call (uiNamespace getVariable ["COMSPEC_SSE_DomexOpenMapPoint", {}]);
+            (["COMSPEC_SSE_DomexOpenMapPoint"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa"
     ] call zen_custom_modules_fnc_register;
@@ -195,8 +234,7 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
         "Ajouter un renseignement",
         _icon,
         {
-            params ["_pos", "_obj"];
-            [_obj, _pos] call (uiNamespace getVariable ["COMSPEC_SSE_DomexOpenAddIntel", {}]);
+            (["COMSPEC_SSE_DomexOpenAddIntel"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         _hasObj
     ] call zen_context_menu_fnc_createAction;
@@ -207,8 +245,7 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
         "Fixer le palier d’accès",
         "",
         {
-            params ["_pos", "_obj"];
-            [_obj, _pos] call (uiNamespace getVariable ["COMSPEC_SSE_DomexOpenStage", {}]);
+            (["COMSPEC_SSE_DomexOpenStage"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         _hasObj
     ] call zen_context_menu_fnc_createAction;
@@ -219,8 +256,7 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
         "Poser un point carte",
         "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa",
         {
-            params ["_pos", "_obj"];
-            [_obj, _pos] call (uiNamespace getVariable ["COMSPEC_SSE_DomexOpenMapPoint", {}]);
+            (["COMSPEC_SSE_DomexOpenMapPoint"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         { true }
     ] call zen_context_menu_fnc_createAction;
