@@ -27,38 +27,22 @@ final class AtakTerrainRepository
      */
     public function getGrid(int $tenantId, int $mapId, bool $withHeights = true): ?array
     {
-        if ($tenantId < 1 || $mapId < 1) {
+        if ($mapId < 1) {
             return null;
         }
-        $rowCol = $this->rowCountColumn();
-        $cols = [
-            'id', 'tenant_id', 'map_id', 'world_name', 'world_size',
-            'origin_x', 'origin_y', 'cell_m', 'cols', $rowCol,
-            'min_z', 'max_z', 'filled_cells', 'ready', 'sampled_at', 'updated_at',
-        ];
-        if ($withHeights) {
-            $cols[] = 'heights';
+        $own = $tenantId >= 1 ? $this->getOwnGrid($tenantId, $mapId, $withHeights) : null;
+        $shared = $this->fetchBestGridForMap($mapId, $withHeights);
+        if ($shared === null) {
+            return $own;
         }
-        $select = implode(', ', array_map(static function (string $c): string {
-            $safe = str_replace('`', '', $c);
-            $expr = '`' . $safe . '`';
-            if ($safe === 'rows') {
-                return $expr . ' AS `grid_rows`';
-            }
-
-            return $expr;
-        }, $cols));
-        try {
-            $st = $this->pdo()->prepare(
-                "SELECT {$select} FROM `atak_terrain_grids` WHERE `tenant_id` = ? AND `map_id` = ? LIMIT 1"
-            );
-            $st->execute([$tenantId, $mapId]);
-            $row = $st->fetch(PDO::FETCH_ASSOC);
-        } catch (Throwable) {
-            return null;
+        if ($own === null) {
+            return $shared;
+        }
+        if ((int) ($shared['filled_cells'] ?? 0) > (int) ($own['filled_cells'] ?? 0)) {
+            return $shared;
         }
 
-        return is_array($row) ? $this->normalizeGridRow($row) : null;
+        return $own;
     }
 
     /** @return array{terrain_filled: int, terrain_total: int, terrain_chunks: int, terrain_coverage_pct: int, sampled_at: ?string} */
@@ -86,9 +70,9 @@ final class AtakTerrainRepository
         $chunkLast = null;
         try {
             $st = $this->pdo()->prepare(
-                'SELECT COUNT(*) AS n, MAX(`received_at`) AS last_at FROM `atak_terrain_chunks` WHERE `tenant_id` = ? AND `map_id` = ?'
+                'SELECT COUNT(*) AS n, MAX(`received_at`) AS last_at FROM `atak_terrain_chunks` WHERE `grid_id` = ?'
             );
-            $st->execute([$tenantId, $mapId]);
+            $st->execute([(int) ($grid['id'] ?? 0)]);
             $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
             $chunks = (int) ($row['n'] ?? 0);
             if (!empty($row['last_at'])) {
@@ -163,7 +147,7 @@ final class AtakTerrainRepository
         $pdo = $this->pdo();
         $pdo->beginTransaction();
         try {
-            $grid = $this->getGrid($tenantId, $mapId, true);
+            $grid = $this->gridForWrite($tenantId, $mapId);
             if ($grid === null) {
                 $blob = AtakTerrainMath::emptyBlob($cols * $rows);
                 $rowCol = $this->rowCountColumn();
@@ -174,7 +158,7 @@ final class AtakTerrainRepository
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)"
                 );
                 $ins->execute([$tenantId, $mapId, $worldName, $worldSize, $ox, $oy, $cell, $cols, $rows, $blob]);
-                $grid = $this->getGrid($tenantId, $mapId, true);
+                $grid = $this->getOwnGrid($tenantId, $mapId, true);
             }
             if (!is_array($grid)) {
                 $pdo->rollBack();
@@ -228,14 +212,15 @@ final class AtakTerrainRepository
                      `world_name` = IF(`world_name` = "", ?, `world_name`)
                  WHERE `id` = ? AND `tenant_id` = ?'
             );
-            $upd->execute([$blob, $minZ, $maxZ, $filled, $ready, $worldName, $gridId, $tenantId]);
+            $writeTenantId = (int) ($grid['tenant_id'] ?? $tenantId);
+            $upd->execute([$blob, $minZ, $maxZ, $filled, $ready, $worldName, $gridId, $writeTenantId]);
 
             $chk = $pdo->prepare(
                 'INSERT INTO `atak_terrain_chunks` (`tenant_id`, `map_id`, `grid_id`, `col0`, `row0`, `cw`, `rh`)
                  VALUES (?, ?, ?, ?, ?, ?, ?)
                  ON DUPLICATE KEY UPDATE `cw` = VALUES(`cw`), `rh` = VALUES(`rh`), `received_at` = CURRENT_TIMESTAMP'
             );
-            $chk->execute([$tenantId, $mapId, $gridId, $col0, $row0, $cw, $rh]);
+            $chk->execute([$writeTenantId, $mapId, $gridId, $col0, $row0, $cw, $rh]);
 
             $pdo->commit();
 
@@ -349,6 +334,91 @@ final class AtakTerrainRepository
         $last['points'] = count($points);
 
         return $last;
+    }
+
+    /**
+     * Grille de la communauté courante, sans repli sur les autres.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function getOwnGrid(int $tenantId, int $mapId, bool $withHeights = true): ?array
+    {
+        if ($tenantId < 1 || $mapId < 1) {
+            return null;
+        }
+
+        return $this->fetchGridWhere('`tenant_id` = ? AND `map_id` = ? LIMIT 1', [$tenantId, $mapId], $withHeights);
+    }
+
+    /**
+     * Plus riche grille déjà relevée pour ce théâtre, toutes communautés confondues.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function fetchBestGridForMap(int $mapId, bool $withHeights): ?array
+    {
+        if ($mapId < 1) {
+            return null;
+        }
+
+        return $this->fetchGridWhere(
+            '`map_id` = ? ORDER BY `filled_cells` DESC, `updated_at` DESC LIMIT 1',
+            [$mapId],
+            $withHeights
+        );
+    }
+
+    /**
+     * Écrit dans la grille déjà remplie du théâtre, pour que le relevé serve à tout le monde.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function gridForWrite(int $tenantId, int $mapId): ?array
+    {
+        $own = $this->getOwnGrid($tenantId, $mapId, true);
+        $shared = $this->fetchBestGridForMap($mapId, true);
+        $ownFilled = (int) ($own['filled_cells'] ?? 0);
+        $sharedFilled = (int) ($shared['filled_cells'] ?? 0);
+        if ($shared !== null && $sharedFilled > 0 && $sharedFilled >= $ownFilled) {
+            return $shared;
+        }
+
+        return $own;
+    }
+
+    /**
+     * @param list<mixed> $params
+     * @return array<string, mixed>|null
+     */
+    private function fetchGridWhere(string $whereSql, array $params, bool $withHeights): ?array
+    {
+        $rowCol = $this->rowCountColumn();
+        $cols = [
+            'id', 'tenant_id', 'map_id', 'world_name', 'world_size',
+            'origin_x', 'origin_y', 'cell_m', 'cols', $rowCol,
+            'min_z', 'max_z', 'filled_cells', 'ready', 'sampled_at', 'updated_at',
+        ];
+        if ($withHeights) {
+            $cols[] = 'heights';
+        }
+        $select = implode(', ', array_map(static function (string $c): string {
+            $safe = str_replace('`', '', $c);
+            $expr = '`' . $safe . '`';
+            if ($safe === 'rows') {
+                return $expr . ' AS `grid_rows`';
+            }
+
+            return $expr;
+        }, $cols));
+        try {
+            $st = $this->pdo()->prepare("SELECT {$select} FROM `atak_terrain_grids` WHERE {$whereSql}");
+            $st->execute($params);
+            $row = $st->fetch(PDO::FETCH_ASSOC);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return is_array($row) ? $this->normalizeGridRow($row) : null;
     }
 
     /**
