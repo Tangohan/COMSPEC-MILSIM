@@ -2898,7 +2898,7 @@ if ($atakMapConfig) {
         </div>
         <div class="atak-mission-board__body" id="atak-mission-board-body"></div>
       </div>
-      <details class="atak-timeline" id="atak-intel-timeline" open>
+      <details class="atak-timeline" id="atak-intel-timeline">
         <summary>Journal d’analyse</summary>
         <p class="atak-timeline__empty" id="atak-intel-timeline-empty">Les mouvements, tirs, impacts et alertes analysés apparaîtront ici.</p>
         <ul class="atak-timeline__list" id="atak-intel-timeline-list"></ul>

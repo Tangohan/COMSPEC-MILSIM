@@ -14,7 +14,11 @@ body.atak-map-c2-v2 .atak-map-tools:not(.is-collapsed) {
 
 #atak-c2-live-shell {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* S’arrête au-dessus du tableau des effectifs — ne plus le recouvrir. */
+  bottom: var(--atak-effectifs-drawer-h, 250px);
   z-index: 12;
   pointer-events: none;
   display: grid;
@@ -23,6 +27,31 @@ body.atak-map-c2-v2 .atak-map-tools:not(.is-collapsed) {
   grid-template-areas:
     "rail map"
     "ctx ctx";
+}
+
+html.atak-map-c2-v2 body.atak-drawer-collapsed #atak-c2-live-shell,
+body.atak-map-c2-v2.atak-drawer-collapsed #atak-c2-live-shell {
+  bottom: 38px;
+}
+
+html.atak-map-c2-v2 .atak-map-wrap > .atak-drawer,
+body.atak-map-c2-v2 .atak-map-wrap > .atak-drawer {
+  position: relative;
+  z-index: 40;
+}
+
+/* Journal d’analyse : compact, dans la carte, pas sur le tableau. */
+html.atak-map-c2-v2 .atak-timeline,
+body.atak-map-c2-v2 .atak-timeline {
+  left: calc(var(--c2-rail-w, 72px) + 10px);
+  bottom: 8px;
+  width: min(320px, calc(100% - 16rem));
+  max-height: 9.5rem;
+  z-index: 14;
+}
+html.atak-map-c2-v2 .atak-timeline__list,
+body.atak-map-c2-v2 .atak-timeline__list {
+  max-height: 6.5rem;
 }
 
 #atak-c2-live-shell .tac-c2-rail,
