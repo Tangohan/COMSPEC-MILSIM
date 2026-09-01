@@ -14,7 +14,9 @@ final class DiscordWebhookCatalogAssetTest extends TestCase
     public function testCatalogCoversPortalStaffAndSseEvents(): void
     {
         $keys = DiscordWebhookCatalog::keys();
-        self::assertContains(DiscordWebhookCatalog::KEY_ANNOUNCEMENTS, $keys);
+        self::assertContains(DiscordWebhookCatalog::KEY_OPERATION_STATUS, $keys);
+        self::assertContains(DiscordWebhookCatalog::KEY_OVERLAY_PUBLISHED, $keys);
+        self::assertContains(DiscordWebhookCatalog::KEY_ORDER_PUBLISHED, $keys);
         self::assertContains(DiscordWebhookCatalog::KEY_OVERWATCH_PACK, $keys);
         self::assertContains(EmailEvents::NEW_COMMUNITY_MEMBER, $keys);
         self::assertContains(EmailEvents::ENLISTMENT_SUBMITTED_STAFF, $keys);

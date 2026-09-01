@@ -8,6 +8,7 @@ use App\Repositories\PersonnelHrDocumentRepository;
 use App\Repositories\PersonnelMobilityRequestRepository;
 use App\Repositories\PersonnelSuccessionRepository;
 use App\Services\Effectifs\RhAlertAggregatorService;
+use App\Support\PersonnelHrDocumentStorage;
 use PHPUnit\Framework\TestCase;
 
 final class RhDossierIndividuelAssetTest extends TestCase
@@ -27,6 +28,9 @@ final class RhDossierIndividuelAssetTest extends TestCase
 
         self::assertSame(45, RhAlertAggregatorService::INACTIVITY_DAYS);
         self::assertSame(14, RhAlertAggregatorService::PROLONGED_ABSENCE_DAYS);
+        self::assertTrue(PersonnelHrDocumentStorage::isStoredPath('hr-documents/1/2/abc.pdf'));
+        self::assertFalse(PersonnelHrDocumentStorage::isStoredPath('https://example.invalid/doc.pdf'));
+        self::assertFalse(PersonnelHrDocumentStorage::isStoredPath('hr-documents/../secret.pdf'));
     }
 
     public function testRoutesViewsAndMigrationArePresent(): void
@@ -35,7 +39,13 @@ final class RhDossierIndividuelAssetTest extends TestCase
 
         self::assertFileExists($root . '/bootstrap/rh_dossier_individuel_migration.php');
         self::assertFileExists($root . '/migrations/20260829190000_rh_dossier_individuel.sql');
-        self::assertFileExists($root . '/app/Controllers/Admin/RhDossierWorkspaceController.php');
+        self::assertFileExists($root . '/app/Support/PersonnelHrDocumentStorage.php');
+        $storage = (string) file_get_contents($root . '/app/Support/PersonnelHrDocumentStorage.php');
+        self::assertStringContainsString('hr-documents/', $storage);
+        self::assertStringContainsString('storeFromUpload', $storage);
+        $ctrl = (string) file_get_contents($root . '/app/Controllers/Admin/RhDossierWorkspaceController.php');
+        self::assertStringContainsString('$_FILES[\'document\']', $ctrl);
+        self::assertStringContainsString('downloadDocument', $ctrl);
         self::assertFileExists($root . '/app/Services/Effectifs/RhAlertAggregatorService.php');
 
         $migrate = (string) file_get_contents($root . '/run-migrations.php');
@@ -43,6 +53,8 @@ final class RhDossierIndividuelAssetTest extends TestCase
 
         $routes = (string) file_get_contents($root . '/routes/web.php');
         self::assertStringContainsString('documents-rh', $routes);
+        self::assertStringContainsString('documents-rh/{id}/fichier', $routes);
+        self::assertStringContainsString('mon-espace-rh/documents/{id}/fichier', $routes);
         self::assertStringContainsString('mobilite', $routes);
         self::assertStringContainsString('vivier', $routes);
         self::assertStringContainsString('alertes', $routes);
@@ -79,6 +91,10 @@ final class RhDossierIndividuelAssetTest extends TestCase
         self::assertStringContainsString('eff-rh-hero', $alerts);
         self::assertStringContainsString('eff-rh-tip', $docs);
         self::assertStringContainsString('Visible du membre', $docs);
+        self::assertStringContainsString('enctype="multipart/form-data"', $docs);
+        self::assertStringContainsString('name="document"', $docs);
+        self::assertStringContainsString('Déposez le fichier', $docs);
+        self::assertStringContainsString('Ouvrir', $docs);
         self::assertStringNotContainsString('Chemin / URL', $docs);
         self::assertStringNotContainsString('Schéma non migrée', $docs);
         self::assertStringContainsString('Approuver', $mob);

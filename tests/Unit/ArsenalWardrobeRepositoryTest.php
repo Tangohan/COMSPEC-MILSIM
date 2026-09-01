@@ -23,7 +23,8 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         self::assertStringContainsString("/api/atak/wardrobes", $routes);
         self::assertStringContainsString("/api/atak/wardrobes/sync", $routes);
         self::assertStringContainsString("/api/atak/wardrobe-collections", $routes);
-        self::assertStringContainsString("equipment/wardrobes", $routes);
+        self::assertStringContainsString("equipment/collections", $routes);
+        self::assertStringContainsString("equipment/tenues", $routes);
         self::assertStringContainsString('AtakWardrobeApiController', $routes);
         self::assertStringContainsString('ArsenalWardrobeController', $routes);
     }
@@ -38,6 +39,7 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         self::assertIsString($sqlBody);
         self::assertStringContainsString('arsenal_wardrobes', $sqlBody);
         self::assertStringContainsString('arsenal_equipment_collections', $sqlBody);
+        self::assertStringContainsString('cover_image_path', $sqlBody);
     }
 
     public function testModExtensionAndSqfWired(): void
@@ -56,18 +58,37 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         self::assertStringContainsString('class arsenalPushAll', $cfg);
         self::assertStringContainsString('class arsenalInitOverlay', $cfg);
 
-        self::assertFileExists(
+        $overlay = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalOverlayShow.sqf'
         );
+        self::assertStringContainsString('Tenues de la communauté', $overlay);
+        self::assertStringContainsString('13 * _gridW', $overlay);
+        self::assertStringContainsString('0.118', $overlay);
+        self::assertStringContainsString('arsenalPullAll', $overlay);
+        self::assertStringNotContainsString('safeZoneW - 0.28', $overlay);
+        self::assertStringNotContainsString('WARDROBES', $overlay);
+        $refresh = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalOverlayRefresh.sqf'
+        );
+        self::assertStringContainsString('aucune tenue dans la communauté', $refresh);
+        self::assertStringContainsString('_parts select 7', $refresh);
+        $repo = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/ArsenalWardrobeRepository.php');
+        self::assertStringContainsString('owner_label', $repo);
+        self::assertStringContainsString('WHERE w.tenant_id = ?', $repo);
+        self::assertStringContainsString('LEFT JOIN users u ON u.id = w.user_id', $repo);
+        $ext = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension.cs');
+        self::assertStringContainsString('owner_label', $ext);
         self::assertFileExists(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalPushAll.sqf'
         );
     }
 
-    public function testNavigationExposesWardrobesPage(): void
+    public function testNavigationExposesEquipmentHub(): void
     {
         $nav = file_get_contents(dirname(__DIR__, 2) . '/config/navigation.php');
         self::assertIsString($nav);
-        self::assertStringContainsString('equipment/wardrobes', $nav);
+        self::assertStringContainsString("'path' => 'equipment'", $nav);
+        self::assertStringContainsString('Collections, tenues et fiches matériel', $nav);
+        self::assertStringNotContainsString('equipment/wardrobes', $nav);
     }
 }

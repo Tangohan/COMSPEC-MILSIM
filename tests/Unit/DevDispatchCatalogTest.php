@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(2, $byKind['spotrep']);
         self::assertSame(2, $byKind['techrep']);
-        self::assertSame(76, $byKind['update']);
-        self::assertCount(80, $all);
+        self::assertSame(86, $byKind['update']);
+        self::assertCount(90, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -176,6 +176,38 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($platformAdmin);
         self::assertSame('00261', $platformAdmin['number_pad']);
         self::assertStringContainsString('administration du site', strtolower((string) $platformAdmin['title']));
+        $overwatchUi = DevDispatchCatalog::find('update', '262');
+        self::assertNotNull($overwatchUi);
+        self::assertSame('00262', $overwatchUi['number_pad']);
+        self::assertStringContainsString('zeus', strtolower((string) $overwatchUi['title']));
+        $athenaGate = DevDispatchCatalog::find('update', '263');
+        self::assertNotNull($athenaGate);
+        self::assertSame('00263', $athenaGate['number_pad']);
+        self::assertStringContainsString('athena', strtolower((string) $athenaGate['title']));
+        $equipmentHub = DevDispatchCatalog::find('update', '265');
+        self::assertNotNull($equipmentHub);
+        self::assertSame('00265', $equipmentHub['number_pad']);
+        self::assertStringContainsString('tenues', strtolower((string) $equipmentHub['title']));
+        $effectifsGrade = DevDispatchCatalog::find('update', '266');
+        self::assertNotNull($effectifsGrade);
+        self::assertSame('00266', $effectifsGrade['number_pad']);
+        self::assertStringContainsString('grade', strtolower((string) $effectifsGrade['title']));
+        $dupUi = DevDispatchCatalog::find('update', '267');
+        self::assertNotNull($dupUi);
+        self::assertSame('00267', $dupUi['number_pad']);
+        self::assertStringContainsString('fiches jumelles', strtolower((string) $dupUi['title']));
+        $hrVault = DevDispatchCatalog::find('update', '268');
+        self::assertNotNull($hrVault);
+        self::assertSame('00268', $hrVault['number_pad']);
+        self::assertStringContainsString('pièces rh', strtolower((string) $hrVault['title']));
+        $charterUi = DevDispatchCatalog::find('update', '269');
+        self::assertNotNull($charterUi);
+        self::assertSame('00269', $charterUi['number_pad']);
+        self::assertStringContainsString('charte', strtolower((string) $charterUi['title']));
+        $rolesAir = DevDispatchCatalog::find('update', '270');
+        self::assertNotNull($rolesAir);
+        self::assertSame('00270', $rolesAir['number_pad']);
+        self::assertStringContainsString('rôles', strtolower((string) $rolesAir['title']));
         $update249 = strtolower(DevDispatchCatalog::publicCorpus());
         self::assertStringContainsString('mot de passe s’affichait en clair', $update249);
         self::assertStringContainsString('inclinaison, amplification du relief', $update249);

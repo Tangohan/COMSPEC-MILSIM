@@ -20,6 +20,7 @@ use App\Repositories\UserRepository;
 use App\Services\Effectifs\RhAlertAggregatorService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Support\EffectifsLmsAccess;
+use App\Support\PersonnelHrDocumentStorage;
 
 /**
  * Dossier RH individuel : documents, mobilité, vivier, alertes agrégées.
@@ -86,7 +87,7 @@ final class RhDossierWorkspaceController
             return Response::redirect(effectifs_workspace_url('documents-rh'));
         }
         if (!$this->hrDocuments->tableExists()) {
-            Session::flash('error', 'Schéma documents RH indisponible. Relancez les migrations.');
+            Session::flash('error', 'L’enregistrement des pièces n’est pas encore disponible. Contactez l’encadrement si le problème persiste.');
 
             return Response::redirect(effectifs_workspace_url('documents-rh'));
         }
@@ -95,7 +96,13 @@ final class RhDossierWorkspaceController
         $docType = trim((string) $request->input('doc_type', 'autre'));
         $title = trim((string) $request->input('title', ''));
         $description = trim((string) $request->input('description', ''));
-        $filePath = trim((string) $request->input('file_path', ''));
+        $locationNote = trim((string) $request->input('location_note', ''));
+        if ($locationNote === '') {
+            $locationNote = trim((string) $request->input('file_path', ''));
+        }
+        if (PersonnelHrDocumentStorage::isStoredPath($locationNote)) {
+            $locationNote = '';
+        }
         $visibility = trim((string) $request->input('visibility', 'STAFF')) === 'MEMBER' ? 'MEMBER' : 'STAFF';
         if ($userId < 1 || $this->userRepository->findById($userId, $tenantId) === null) {
             Session::flash('error', 'Membre introuvable.');
@@ -108,14 +115,30 @@ final class RhDossierWorkspaceController
         if ($title === '') {
             $title = PersonnelHrDocumentRepository::DOC_TYPE_LABELS[$docType] ?? 'Document RH';
         }
+        $stored = PersonnelHrDocumentStorage::storeFromUpload($tenantId, $userId, $_FILES['document'] ?? []);
+        if ($stored['error'] !== null) {
+            Session::flash('error', $stored['error']);
+
+            return Response::redirect(effectifs_workspace_url('documents-rh'));
+        }
+        $filePath = $stored['path'];
+        $originalName = $stored['original_name'];
+        if ($filePath === null && $locationNote !== '') {
+            $filePath = mb_substr($locationNote, 0, 500);
+        }
+        if ($filePath === null) {
+            Session::flash('error', 'Déposez un fichier ou indiquez où retrouver la pièce.');
+
+            return Response::redirect(effectifs_workspace_url('documents-rh'));
+        }
         $id = $this->hrDocuments->create(
             $tenantId,
             $userId,
             $docType,
             $title,
             $description !== '' ? $description : null,
-            $filePath !== '' ? mb_substr($filePath, 0, 500) : null,
-            $filePath !== '' ? basename($filePath) : null,
+            $filePath,
+            $originalName,
             $visibility,
             (int) Session::get('user_id')
         );
@@ -124,6 +147,24 @@ final class RhDossierWorkspaceController
             : 'Impossible d’enregistrer le document.');
 
         return Response::redirect(effectifs_workspace_url('documents-rh'));
+    }
+
+    public function downloadDocument(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        $row = $id > 0 ? $this->hrDocuments->findById($id, $tenantId) : null;
+        if ($row === null || !PersonnelHrDocumentStorage::isStoredPath((string) ($row['file_path'] ?? ''))) {
+            Session::flash('error', 'Cette pièce n’a pas de fichier à ouvrir.');
+
+            return Response::redirect(effectifs_workspace_url('documents-rh'));
+        }
+
+        return PersonnelHrDocumentStorage::downloadResponse($row);
     }
 
     public function mobility(Request $request, array $params = []): Response

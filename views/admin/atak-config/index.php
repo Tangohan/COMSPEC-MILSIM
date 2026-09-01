@@ -144,6 +144,8 @@ foreach ($dataSummary as $k => $v) {
         </div>
     </div>
 
+    <?php require __DIR__ . '/_game_experience.php'; ?>
+
     <div class="mb-8 border border-violet-200 rounded-xl p-5 bg-violet-50/30 shadow-sm">
         <h2 class="text-sm font-bold text-violet-950 mb-1">Expérience en jeu (réalisme, troll, personnalisation)</h2>
         <p class="text-xs text-violet-900/80 mb-4 leading-relaxed">

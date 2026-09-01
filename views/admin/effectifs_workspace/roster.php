@@ -163,18 +163,18 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
     </div>
 
     <?php if ($canEditProfiles): ?>
-    <div class="eff-panel" style="margin:0 0 1rem;padding:1rem 1.1rem">
+    <div class="eff-catalog__notice">
         <p class="eff-catalog__kicker">Ancienneté réelle</p>
-        <p style="margin:0.35rem 0 0.75rem;font-size:13px;color:#475569;max-width:46rem">
+        <p class="eff-catalog__notice-lead">
             Date de création de l’organisation, même si elle est antérieure à l’arrivée sur Athena.
             Pour chaque membre, indiquez aussi s’il était déjà là avant le site (colonne Indicateurs).
         </p>
-        <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('anciennete-entite'), ENT_QUOTES, 'UTF-8') ?>" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:end">
+        <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('anciennete-entite'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__notice-form">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl ?? effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">
-            <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:12px;font-weight:700;color:#334155">
+            <label>
                 Création de l’organisation
-                <input type="date" name="org_founded_on" value="<?= htmlspecialchars($orgFoundingDate, ENT_QUOTES, 'UTF-8') ?>" style="height:2.1rem;padding:0 0.55rem;border:1px solid #cbd5e1;background:#fff">
+                <input type="date" name="org_founded_on" value="<?= htmlspecialchars($orgFoundingDate, ENT_QUOTES, 'UTF-8') ?>">
             </label>
             <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" style="height:2.1rem">Enregistrer pour tous les membres</button>
         </form>
@@ -329,10 +329,11 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                     $email = (string) ($row['email'] ?? '');
                     $name = $display !== '' ? $display : ($callsign !== '' ? $callsign : $email);
                     $status = (string) ($row['status'] ?? '');
-                    $grade = trim((string) ($row['grade_short'] ?? ''));
-                    if ($grade === '') {
-                        $grade = trim((string) ($row['grade_long'] ?? ''));
-                    }
+                    $grade = function_exists('personnel_assigned_grade_label')
+                        ? personnel_assigned_grade_label($row)
+                        : (trim((string) ($row['grade_long'] ?? '')) !== ''
+                            ? trim((string) ($row['grade_long'] ?? ''))
+                            : trim((string) ($row['grade_short'] ?? '')));
                     $fonction = trim((string) ($row['job_role_display'] ?? ''));
                     $unit = trim((string) ($row['unit_name'] ?? ''));
                     $assignmentPath = trim((string) ($row['assignment_path'] ?? ''));
@@ -348,9 +349,11 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                     $editUrl = url('back-office/users/' . $id . '/edit');
                     $personnelUrl = url('personnel/' . $id);
                     $personnelEditUrl = url('personnel/' . $id . '/edit');
-                    $avatarUrl = function_exists('user_media_public_url')
-                        ? (user_media_public_url($row['avatar_url'] ?? null) ?? '')
-                        : trim((string) ($row['avatar_url'] ?? ''));
+                    $avatarUrl = function_exists('personnel_operator_portrait_url')
+                        ? (string) (personnel_operator_portrait_url($row) ?? '')
+                        : (function_exists('user_media_public_url')
+                            ? (user_media_public_url($row['avatar_url'] ?? null) ?? '')
+                            : trim((string) ($row['avatar_url'] ?? '')));
                     $seniorityLabel = trim((string) ($row['seniority_label'] ?? '—'));
                     $prePlatformStart = trim((string) ($row['pre_platform_start'] ?? ''));
                     $enlistmentStart = trim((string) ($row['enlistment_date_resolved'] ?? ''));

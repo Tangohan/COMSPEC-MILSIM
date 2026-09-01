@@ -41,13 +41,8 @@ $initialsOf = static function (string $name): string {
 };
 
 $gradeLabelFor = static function (array $row): string {
-    $override = trim((string) ($row['rank_display_override'] ?? ''));
-    if ($override !== '') {
-        return $override;
-    }
-    $rp = trim((string) ($row['rank_display'] ?? ''));
-    if ($rp !== '') {
-        return $rp;
+    if (function_exists('personnel_assigned_grade_label')) {
+        return personnel_assigned_grade_label($row);
     }
     $long = trim((string) ($row['grade_long'] ?? ''));
     if ($long !== '') {
@@ -126,10 +121,10 @@ $rowCount = count($rows);
                     $slug = trim((string) ($row['profile_slug'] ?? ''));
                     $target = $slug !== '' ? $slug : (string) $uid;
                     $ficheUrl = url('personnel/' . $target);
-                    $avatarRaw = trim((string) ($row['avatar_url'] ?? ''));
-                    $avatar = $avatarRaw !== '' && function_exists('user_media_public_url')
-                        ? (string) (user_media_public_url($avatarRaw) ?? '')
-                        : $avatarRaw;
+                    $avatarRaw = function_exists('personnel_operator_portrait_url')
+                        ? (string) (personnel_operator_portrait_url($row) ?? '')
+                        : trim((string) ($row['avatar_url'] ?? ''));
+                    $avatar = $avatarRaw;
                     $gradeLabel = $gradeLabelFor($row);
                     $unitName = trim((string) ($row['unit_name'] ?? ''));
                     $unitCode = trim((string) ($row['unit_code'] ?? ''));
@@ -241,10 +236,10 @@ $rowCount = count($rows);
                             $slug = trim((string) ($row['profile_slug'] ?? ''));
                             $target = $slug !== '' ? $slug : (string) $uid;
                             $ficheUrl = url('personnel/' . $target);
-                            $avatarRaw = trim((string) ($row['avatar_url'] ?? ''));
-                            $avatar = $avatarRaw !== '' && function_exists('user_media_public_url')
-                                ? (string) (user_media_public_url($avatarRaw) ?? '')
-                                : $avatarRaw;
+                            $avatarRaw = function_exists('personnel_operator_portrait_url')
+                                ? (string) (personnel_operator_portrait_url($row) ?? '')
+                                : trim((string) ($row['avatar_url'] ?? ''));
+                            $avatar = $avatarRaw;
                             $gradeLabel = $gradeLabelFor($row);
                             $unitName = trim((string) ($row['unit_name'] ?? ''));
                             $unitCode = trim((string) ($row['unit_code'] ?? ''));
@@ -605,9 +600,9 @@ $rowCount = count($rows);
 
 .dash-eff-id { display: flex; align-items: center; gap: 0.55rem; min-width: 0; }
 .dash-eff-id__avatar {
-    width: 1.85rem;
-    height: 1.85rem;
-    border-radius: 0.45rem;
+    width: 2.85rem;
+    height: 3.5rem;
+    border-radius: 0.4rem;
     border: 1px solid #cbd5e1;
     background: #f1f5f9;
     overflow: hidden;

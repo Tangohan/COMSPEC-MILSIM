@@ -442,17 +442,22 @@ if (is_array($grade)) {
 }
 $rankOverride = trim((string) ($personnelProfile['rank_display_override'] ?? ''));
 $rankDisplayRp = trim((string) ($personnelProfile['rank_display'] ?? ''));
-// Affichage principal : override dossier → titre RP → libellé court / long du grade.
-$effectiveRankDisplay = $rankOverride !== ''
-    ? $rankOverride
-    : ($rankDisplayRp !== ''
-        ? $rankDisplayRp
-        : ($gradeShortLabel !== '' ? $gradeShortLabel : $gradeLabel));
+$platformRoleName = trim((string) ($targetUser['role_name'] ?? ''));
+// Rang / grade : libellé du grade attribué (Colonel), pas le rôle plateforme ni le code court (O-5).
+$effectiveRankDisplay = function_exists('personnel_assigned_grade_label')
+    ? personnel_assigned_grade_label([
+        'grade_long' => $gradeLabel,
+        'grade_short' => $gradeShortLabel,
+        'rank_display' => $rankDisplayRp,
+        'role_name' => $platformRoleName,
+    ], $platformRoleName)
+    : ($gradeLabel !== '' ? $gradeLabel : $gradeShortLabel);
+$gradeCodeBeside = $rankOverride !== '' ? $rankOverride : $gradeOtanCode;
 // Libellé de référence (toujours le long si dispo) pour la colonne Détail.
 $gradeReferenceLabel = $gradeLabel !== '' ? $gradeLabel : $gradeShortLabel;
-$showGradeReferenceBeside = $gradeReferenceLabel !== ''
+$showGradeReferenceBeside = $gradeCodeBeside !== ''
     && $effectiveRankDisplay !== ''
-    && strcasecmp($gradeReferenceLabel, $effectiveRankDisplay) !== 0;
+    && strcasecmp($gradeCodeBeside, $effectiveRankDisplay) !== 0;
 $personnelModerationStaffLines = is_array($personnelModerationStaffLines ?? null) ? $personnelModerationStaffLines : [];
 $personnelModerationMemberBrief = isset($personnelModerationMemberBrief) && is_string($personnelModerationMemberBrief) && trim($personnelModerationMemberBrief) !== ''
     ? trim($personnelModerationMemberBrief)
@@ -795,7 +800,7 @@ $personnelFileShell = $personnelFileIsRhFull
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Rang</p>
                     <p class="text-sm font-black text-slate-900 italic"><?= $effectiveRankDisplay !== '' ? htmlspecialchars($effectiveRankDisplay) : htmlspecialchars($missingLabel ?? 'Donnée manquante') ?></p>
                     <?php if (!empty($showGradeReferenceBeside)): ?>
-                    <p class="text-[11px] text-slate-600 mt-0.5"><?= htmlspecialchars($gradeReferenceLabel) ?></p>
+                    <p class="text-[11px] text-slate-600 mt-0.5"><?= htmlspecialchars($gradeCodeBeside) ?></p>
                     <?php endif; ?>
                 </div>
                 <div>
@@ -1285,7 +1290,7 @@ $personnelFileShell = $personnelFileIsRhFull
                             <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Grade</p>
                             <p class="text-sm font-black text-slate-900"><?= $effectiveRankDisplay !== '' ? htmlspecialchars($effectiveRankDisplay) : htmlspecialchars($missingLabel) ?></p>
                             <?php if ($showGradeReferenceBeside): ?>
-                            <p class="mt-0.5 text-[11px] text-slate-600">Libellé : <?= htmlspecialchars($gradeReferenceLabel) ?><?php if ($gradeOtanCode !== '' && strcasecmp($gradeOtanCode, $effectiveRankDisplay) !== 0): ?> · <?= htmlspecialchars($gradeOtanCode) ?><?php endif; ?></p>
+                            <p class="mt-0.5 text-[11px] text-slate-600">Code : <?= htmlspecialchars($gradeCodeBeside) ?><?php if ($gradeOtanCode !== '' && strcasecmp($gradeOtanCode, $gradeCodeBeside) !== 0): ?> · <?= htmlspecialchars($gradeOtanCode) ?><?php endif; ?></p>
                             <?php elseif ($gradeOtanCode !== '' && $effectiveRankDisplay !== '' && strcasecmp($gradeOtanCode, $effectiveRankDisplay) !== 0): ?>
                             <p class="mt-0.5 text-[11px] text-slate-600">Code : <?= htmlspecialchars($gradeOtanCode) ?></p>
                             <?php endif; ?>

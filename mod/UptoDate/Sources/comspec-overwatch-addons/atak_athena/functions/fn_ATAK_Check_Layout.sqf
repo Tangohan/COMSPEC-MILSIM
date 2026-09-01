@@ -1,5 +1,5 @@
 /*
-  COMSPEC workaround for BCE upstream bug (BCE_cTab / Compat).
+  COMSPEC workaround for BCE upstream bug (BCE_cTab_ATAK / Compat).
   Compat updateInterface calls Check_Layout without defining `_line`.
 
   Keep upstream layout behaviour, but recover `_line` from `_subInfos` /

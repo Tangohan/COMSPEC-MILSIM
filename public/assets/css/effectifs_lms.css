@@ -437,7 +437,7 @@ body.eff-body::before {
 
 /* Page chrome */
 .eff-page-head {
-    margin-bottom: 1.35rem;
+    margin-bottom: 1.75rem;
 }
 
 .eff-page-kicker {
@@ -530,8 +530,8 @@ body.eff-body::before {
 .eff-metrics {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.55rem;
-    margin-bottom: 1.15rem;
+    gap: 0.9rem;
+    margin-bottom: 1.5rem;
 }
 
 @media (min-width: 720px) {
@@ -542,7 +542,7 @@ body.eff-body::before {
 
 .eff-metric {
     margin: 0;
-    padding: 0.75rem 0.9rem;
+    padding: 1rem 1.15rem;
     border: 1px solid var(--eff-line);
     background: rgba(242, 244, 243, 0.03);
     text-decoration: none;
@@ -763,7 +763,7 @@ body.eff-body::before {
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    margin-bottom: 0.65rem;
+    margin-bottom: 1rem;
 }
 
 .eff-list-count {
@@ -1373,9 +1373,9 @@ body.eff-body::before {
     flex-wrap: wrap;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.15rem;
-    padding: 1rem 1.15rem;
+    gap: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem 1.4rem;
     border: 1px solid var(--eff-line);
     border-radius: 1rem;
     background: linear-gradient(135deg, rgba(71, 85, 105, 0.12), rgba(8, 11, 10, 0.72));
@@ -1401,24 +1401,32 @@ body.eff-body::before {
 .eff-toolbar__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.7rem;
     align-items: center;
 }
 
 /* Grille cartes rôles */
-.eff-role-grid {
+.eff-role-grid--cards,
+div.eff-role-grid {
     display: grid;
-    gap: 0.85rem;
+    gap: 1.25rem;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    margin: 0 0 0.25rem;
 }
 
 @media (min-width: 720px) {
-    .eff-role-grid {
+    .eff-role-grid--cards,
+    div.eff-role-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
-@media (min-width: 1180px) {
-    .eff-role-grid {
+@media (min-width: 1400px) {
+    .eff-role-grid--cards,
+    div.eff-role-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
@@ -1426,11 +1434,11 @@ body.eff-body::before {
 .eff-role-card {
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
+    gap: 1.1rem;
     min-height: 100%;
-    padding: 1.15rem 1.2rem 1rem;
+    padding: 1.4rem 1.45rem 1.25rem;
     border: 1px solid var(--eff-line);
-    border-radius: 1rem;
+    border-radius: 1.15rem;
     background: rgba(8, 11, 10, 0.88);
     box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
     transition: border-color 0.2s, background 0.2s, transform 0.2s;
@@ -1445,7 +1453,7 @@ body.eff-body::before {
 .eff-role-card__head {
     display: flex;
     align-items: flex-start;
-    gap: 0.85rem;
+    gap: 1rem;
 }
 
 .eff-role-card__titles {
@@ -1456,10 +1464,10 @@ body.eff-body::before {
 .eff-role-card__name {
     margin: 0;
     font-family: var(--eff-display);
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     font-weight: 800;
     letter-spacing: -0.01em;
-    line-height: 1.25;
+    line-height: 1.35;
     color: #fff;
     text-wrap: balance;
 }
@@ -1467,15 +1475,15 @@ body.eff-body::before {
 .eff-role-card__badges {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-top: 0.45rem;
+    gap: 0.45rem;
+    margin-top: 0.6rem;
 }
 
 .eff-role-card__desc {
     margin: 0;
     flex: 1;
-    font-size: 0.8125rem;
-    line-height: 1.55;
+    font-size: 0.875rem;
+    line-height: 1.65;
     color: rgba(242, 244, 243, 0.58);
 }
 
@@ -1486,8 +1494,17 @@ body.eff-body::before {
 
 .eff-role-card__foot {
     margin-top: auto;
-    padding-top: 0.75rem;
+    padding-top: 1rem;
     border-top: 1px solid rgba(242, 244, 243, 0.07);
+}
+
+.eff-role-card .eff-actions {
+    gap: 0.55rem;
+}
+.eff-role-card .eff-act {
+    min-height: 2.15rem;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.625rem;
 }
 
 .eff-badge--community {
@@ -1517,9 +1534,9 @@ body.eff-body::before {
 .eff-hint-panel {
     display: flex;
     align-items: flex-start;
-    gap: 0.85rem;
-    margin-top: 1.25rem;
-    padding: 1rem 1.15rem;
+    gap: 1.1rem;
+    margin-top: 1.75rem;
+    padding: 1.25rem 1.4rem;
     border: 1px dashed rgba(148, 163, 184, 0.28);
     border-radius: 1rem;
     background: rgba(71, 85, 105, 0.06);
@@ -1556,6 +1573,115 @@ body.eff-body::before {
 .eff-hint-panel__text strong {
     color: rgba(242, 244, 243, 0.85);
     font-weight: 700;
+}
+
+/* Gouvernance / Rôles — plus d’air (page trop serrée en thème sombre) */
+.eff-roles-page {
+    padding-inline: clamp(0.75rem, 2.2vw, 1.85rem);
+    padding-bottom: 1.5rem;
+}
+
+.eff-roles-page .eff-page-head {
+    margin-bottom: 2.15rem;
+}
+
+.eff-roles-page .eff-page-title {
+    margin-top: 0.6rem;
+}
+
+.eff-roles-page .eff-page-lead {
+    margin-top: 0.95rem;
+    line-height: 1.65;
+}
+
+.eff-roles-page .eff-metrics {
+    gap: 1.15rem;
+    margin-bottom: 1.85rem;
+}
+
+.eff-roles-page .eff-metric {
+    padding: 1.4rem 1.45rem 1.3rem;
+}
+
+.eff-roles-page .eff-metric__k {
+    margin: 0 0 0.65rem;
+}
+
+.eff-roles-page .eff-toolbar {
+    gap: 1.5rem 1.85rem;
+    margin-bottom: 2rem;
+    padding: 1.55rem 1.7rem;
+}
+
+.eff-roles-page .eff-toolbar__sub {
+    margin: 0.5rem 0 0;
+    line-height: 1.55;
+}
+
+.eff-roles-page .eff-toolbar__actions {
+    gap: 0.9rem;
+}
+
+.eff-roles-page .eff-btn {
+    min-height: 2.9rem;
+    padding: 0.75rem 1.2rem;
+}
+
+.eff-roles-page .eff-list-meta {
+    margin-bottom: 1.4rem;
+    margin-top: 0.15rem;
+}
+
+.eff-roles-page .eff-role-grid--cards,
+.eff-roles-page div.eff-role-grid {
+    gap: 1.7rem;
+}
+
+.eff-roles-page .eff-role-card {
+    gap: 1.3rem;
+    padding: 1.8rem 1.75rem 1.55rem;
+}
+
+.eff-roles-page .eff-role-card__head {
+    gap: 1.15rem;
+}
+
+.eff-roles-page .eff-role-card__badges {
+    gap: 0.55rem;
+    margin-top: 0.8rem;
+}
+
+.eff-roles-page .eff-role-card__foot {
+    padding-top: 1.2rem;
+}
+
+.eff-roles-page .eff-role-card .eff-actions {
+    gap: 0.75rem;
+}
+
+.eff-roles-page .eff-role-card .eff-act {
+    min-height: 2.4rem;
+    padding: 0.55rem 1rem;
+}
+
+.eff-roles-page .eff-hint-panel {
+    align-items: center;
+    gap: 1.3rem;
+    margin-top: 2.35rem;
+    padding: 1.7rem 1.8rem;
+}
+
+.eff-roles-page .eff-hint-panel__title {
+    margin: 0 0 0.15rem;
+}
+
+.eff-roles-page .eff-hint-panel__text {
+    margin: 0.5rem 0 0;
+    line-height: 1.6;
+}
+
+.eff-roles-page .eff-empty {
+    padding: 3.25rem 2rem 2.75rem;
 }
 
 /* =============================================================================
@@ -1605,6 +1731,42 @@ body.eff-body::before {
     line-height: 1.45;
     color: #64748b;
     max-width: 42rem;
+}
+
+.eff-catalog__notice {
+    margin: 0;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+.eff-catalog__notice-lead {
+    margin: 0.3rem 0 0.7rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: #475569;
+    max-width: 46rem;
+}
+.eff-catalog__notice-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+.eff-catalog__notice-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #334155;
+}
+.eff-catalog__notice-form input[type="date"] {
+    height: 2.1rem;
+    padding: 0 0.55rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.4rem;
+    background: #fff;
+    color: #0f172a;
 }
 
 .eff-catalog__tools {
@@ -1909,9 +2071,9 @@ body.eff-sheets--resizing iframe {
 }
 
 .eff-sheets__avatar {
-    width: 1.65rem;
-    height: 1.65rem;
-    border-radius: 0.3rem;
+    width: 3.25rem;
+    height: 4.15rem;
+    border-radius: 0.4rem;
     overflow: hidden;
     display: inline-flex;
     align-items: center;
@@ -2679,7 +2841,7 @@ body.eff-sheets--resizing iframe {
     margin-top: 0.9rem;
 }
 .eff-card__form label,
-.eff-role-grid legend {
+fieldset.eff-role-grid legend {
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.1em;
@@ -2714,16 +2876,16 @@ body.eff-sheets--resizing iframe {
     color: #e8eeec !important;
 }
 .eff-card__check input { width: auto !important; }
-.eff-role-grid {
+fieldset.eff-role-grid {
     margin: 0;
     padding: 0;
     border: 0;
     display: grid;
-    gap: 0.35rem;
+    gap: 0.45rem;
     max-height: 14rem;
     overflow: auto;
 }
-.eff-role-grid label {
+fieldset.eff-role-grid label {
     display: flex;
     align-items: center;
     gap: 0.45rem;
@@ -2733,7 +2895,7 @@ body.eff-sheets--resizing iframe {
     font-weight: 600;
     color: #e8eeec;
 }
-.eff-role-grid input { width: auto; }
+fieldset.eff-role-grid input { width: auto; }
 
 .member-hub-nav { margin-top: 0.35rem; }
 .member-hub-nav__lead {
@@ -3203,4 +3365,148 @@ body.eff-sheets--resizing iframe {
     font-size: 0.75rem;
     color: var(--eff-muted);
 }
+
+.eff-rh-dup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.95rem;
+}
+.eff-rh-switch {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding: 0.85rem 0.9rem;
+    border: 1px solid var(--eff-line);
+    background: rgba(8, 11, 12, 0.55);
+    cursor: pointer;
+}
+.eff-rh-switch input {
+    margin-top: 0.2rem;
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: #6ee7b7;
+    flex-shrink: 0;
+}
+.eff-rh-switch strong {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 800;
+    color: #fff;
+}
+.eff-rh-switch em {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+    font-style: normal;
+    color: var(--eff-muted);
+    line-height: 1.4;
+}
+.eff-rh-checks {
+    display: grid;
+    gap: 0.55rem;
+    grid-template-columns: 1fr;
+}
+@media (min-width: 720px) {
+    .eff-rh-checks { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1100px) {
+    .eff-rh-checks { grid-template-columns: 1fr 1fr 1fr; }
+}
+.eff-rh-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    min-height: 4.5rem;
+    padding: 0.75rem 0.8rem;
+    border: 1px solid var(--eff-line);
+    background: rgba(8, 11, 12, 0.55);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.eff-rh-check:hover,
+.eff-rh-check:has(input:checked),
+.eff-rh-check.is-on {
+    border-color: rgba(110, 231, 183, 0.4);
+    background: rgba(6, 95, 70, 0.22);
+}
+.eff-rh-check input {
+    margin-top: 0.15rem;
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: #6ee7b7;
+    flex-shrink: 0;
+}
+.eff-rh-check strong {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: #fff;
+}
+.eff-rh-check em {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+    font-style: normal;
+    line-height: 1.35;
+    color: var(--eff-muted);
+}
+.eff-rh-dup-groups {
+    list-style: none;
+    margin: 0.4rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+.eff-rh-dup-group {
+    padding: 0.8rem 0.85rem 0.9rem;
+    border: 1px solid rgba(251, 191, 36, 0.28);
+    background: rgba(120, 53, 15, 0.16);
+}
+.eff-rh-dup-group__meta {
+    margin: 0 0 0.55rem;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #fde68a;
+}
+.eff-rh-dup-group__meta span {
+    display: inline;
+    margin-left: 0.35rem;
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 700;
+    color: #fff;
+}
+.eff-rh-dup-group__people {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+.eff-rh-dup-group__people a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.4rem 0.65rem;
+    border: 1px solid var(--eff-line);
+    background: rgba(12, 16, 18, 0.72);
+    color: #fff;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+.eff-rh-dup-group__people a:hover {
+    border-color: rgba(226, 232, 240, 0.4);
+    background: rgba(148, 163, 184, 0.12);
+}
+.eff-rh-dup-group__people span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--eff-muted);
+}
+
 

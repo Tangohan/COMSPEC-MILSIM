@@ -1,5 +1,7 @@
 /*
-    Enregistre l’injection des boutons SSE / ATAK / OVERWATCH sur les panneaux Zeus.
+    Injection des boutons SSE / ATAK / OVERWATCH : fiches d’édition
+    personne / véhicule / groupe seulement. Pas de balayage des autres
+    fenêtres Zeus (objets éditables, modules, filtres).
 */
 if (!hasInterface) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_ZeusAttrButtonsRegistered", false]) exitWith {};
@@ -9,7 +11,7 @@ private _hook = {
     if (isNull _display) exitWith {};
     [{
         [_this] call comspec_overwatch_connect_fnc_zeusAttributesInject;
-    }, _display, 0.05] call CBA_fnc_waitAndExecute;
+    }, _display, 0.12] call CBA_fnc_waitAndExecute;
 };
 
 {
@@ -18,31 +20,8 @@ private _hook = {
     "RscDisplayAttributesMan",
     "RscDisplayAttributesVehicle",
     "RscDisplayAttributesVehicleEmpty",
-    "RscDisplayAttributesGroup",
-    "RscDisplayAttributes"
+    "RscDisplayAttributesGroup"
 ];
-
-private _scan = {
-    if (!hasInterface) exitWith {};
-    if (isNull (findDisplay 312)) exitWith {};
-    private _candidates = [findDisplay 315];
-    _candidates append allDisplays;
-    {
-        if (isNull _x) then { continue };
-        if (ctrlIDD _x == 312) then { continue };
-        if (!isNull (_x displayCtrl 86101)) then { continue };
-        private _ok = _x displayCtrl 1;
-        if (isNull _ok) then { continue };
-        private _py = (ctrlPosition _ok) select 1;
-        if (_py < (safezoneY + 0.62 * safezoneH)) then { continue };
-        [_x] call comspec_overwatch_connect_fnc_zeusAttributesInject;
-    } forEach _candidates;
-};
-missionNamespace setVariable ["COMSPEC_ZeusAttrScan", _scan];
-
-[{
-    [] call (missionNamespace getVariable ["COMSPEC_ZeusAttrScan", {}]);
-}, 0.4, []] call CBA_fnc_addPerFrameHandler;
 
 missionNamespace setVariable ["COMSPEC_ZeusAttrButtonsRegistered", true];
 ["INFO", "Zeus", "Boutons SSE / ATAK / OVERWATCH du panneau Éditer enregistrés"] call comspec_overwatch_connect_fnc_log;

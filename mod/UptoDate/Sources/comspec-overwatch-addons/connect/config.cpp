@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.495;
-        versionStr = "1.4.95";
-        versionAr[] = {1, 4, 95};
+        version = 1.500;
+        versionStr = "1.5.0";
+        versionAr[] = {1, 5, 0};
     };
 };
 
@@ -455,6 +455,22 @@ class CfgFunctions {
             class zeusAttributesAtak {};
             class zeusAttributesOverwatch {};
         };
+        class auth {
+            file = "z\comspec_overwatch\addons\connect\functions\auth";
+            class initAuth {};
+            class openLogin {};
+            class submitPassword {};
+            class requestOTP {};
+            class submitOTP {};
+            class loginSteam {};
+            class restoreSession {};
+            class pollAuth {};
+            class applyBootstrap {};
+            class syncProfile {};
+            class logout {};
+            class portalUrl {};
+            class isReady {};
+        };
     };
 };
 
@@ -659,6 +675,7 @@ class CfgFactionClasses
 #include "display_briefing.hpp"
 #include "display_phone_connect.hpp"
 #include "display_account_link.hpp"
+#include "display_athena_auth.hpp"
 #include "display_nda.hpp"
 #include "display_callsign.hpp"
 #include "display_salute.hpp"

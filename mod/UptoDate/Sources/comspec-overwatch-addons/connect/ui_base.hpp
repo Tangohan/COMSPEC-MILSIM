@@ -10,6 +10,7 @@ class RscListBox;
 class RscCombo;
 class RscWebBrowser;
 class RscMapControl;
+class RscHTML;
 class RscControlsGroup;
 
 class COMSPEC_RscButton: RscButton {

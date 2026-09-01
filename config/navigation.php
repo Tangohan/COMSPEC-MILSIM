@@ -59,6 +59,7 @@ return [
                     'slot' => 'primary',
                     'links' => [
                         ['label' => 'Centre de commandement', 'path' => 'hub', 'description' => 'Modules, raccourcis et synthèse'],
+                        ['label' => 'Opérations', 'path' => 'operations', 'description' => 'Espaces de mission : plan, renseignement, ordres et vue terrain'],
                         ['label' => 'Briefing', 'path' => 'dashboard', 'description' => 'Synthèse personnelle et actualités'],
                         ['label' => 'Boîte de réception', 'path' => 'boite-reception', 'description' => 'Messages, activité et éléments à traiter'],
                         ['label' => 'Manœuvres', 'path' => 'manoeuvres', 'description' => 'Présences et confirmations aux créneaux'],
@@ -80,6 +81,7 @@ return [
                     'slot' => 'center',
                     'links' => [
                         ['label' => 'Poste de commandement', 'path' => 'c2', 'description' => 'Accès aux modes de coordination'],
+                        ['label' => 'Opérations', 'path' => 'operations', 'description' => 'Dossier de mission, plan et vue terrain'],
                         ['label' => 'Situation tactique (ATAK)', 'path' => 'atak', 'description' => 'Vue opérationnelle'],
                         ['label' => 'Poste ATAK', 'path' => 'back-office/atak', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Dossiers SSE identifiés et localisation téléphone'],
                         ['label' => 'Effectifs en liaison', 'path' => 'back-office/atak/operateurs', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Tableur des opérateurs connectés'],
@@ -96,8 +98,7 @@ return [
                     'title' => 'Logistique & salle',
                     'slot' => 'secondary',
                     'links' => [
-                        ['label' => 'Équipement', 'path' => 'equipment', 'description' => 'Manuels et fiches matériel'],
-                        ['label' => 'Wardrobes ACE Arsenal', 'path' => 'equipment/wardrobes', 'description' => 'Loadouts synchronisés et collections'],
+                        ['label' => 'Équipement', 'path' => 'equipment', 'description' => 'Collections, tenues et fiches matériel'],
                         ['label' => 'Modpacks', 'path' => 'modpacks', 'description' => 'Mods et paquets de la communauté'],
                         ['label' => 'Salle de guerre', 'path' => 'salle-de-guerre', 'description' => 'Espace de briefing collectif'],
                     ],

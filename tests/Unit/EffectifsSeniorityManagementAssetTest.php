@@ -17,6 +17,8 @@ final class EffectifsSeniorityManagementAssetTest extends TestCase
         $pre = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Personnel/SeniorityPrePlatformService.php');
 
         self::assertStringContainsString('anciennete-entite', $roster);
+        self::assertStringContainsString('eff-catalog__notice', $roster);
+        self::assertStringNotContainsString('class="eff-panel"', $roster);
         self::assertStringContainsString('pre_platform_start_date', $roster);
         self::assertStringContainsString('Arrivée avant le site', $roster);
         self::assertStringContainsString('pre_platform_start_date', $member);

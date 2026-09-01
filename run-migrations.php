@@ -2239,6 +2239,14 @@ try {
     echo '  [ATTENTION] configuration_updates : ' . $e->getMessage() . "\n";
 }
 
+$operationsWorkspaceMigrate = require $root . '/bootstrap/operations_workspace_migration.php';
+try {
+    echo "Migration espaces opérationnels (operations, calques, tâches, objectifs)...\n";
+    $operationsWorkspaceMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] operations_workspace : ' . $e->getMessage() . "\n";
+}
+
 $communityMediaReelsMigrate = require $root . '/bootstrap/community_media_reels_migration.php';
 try {
     echo "Migration community_media reels (feed / social)...\n";

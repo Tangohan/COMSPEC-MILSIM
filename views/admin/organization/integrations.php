@@ -113,6 +113,15 @@ $flashSuccess = \App\Core\Session::getFlash('success');
     </p>
 </div>
 
+<section id="arma-overwatch" class="ath-card ath-rise" style="padding:18px 20px;margin-bottom:22px;">
+    <h2 class="ath-section-title" style="margin-top:0;">Arma 3 / Overwatch</h2>
+    <p class="ath-item__meta" style="margin:0 0 12px;">
+        L’expérience en jeu (image de connexion, méthodes d’accès, fonctions Overwatch) se règle dans la configuration ATAK.
+        Les opérateurs s’identifient avec leur compte Athena : la communauté n’est plus saisie dans le jeu.
+    </p>
+    <a class="ath-btn ath-btn--solid" href="<?= $h(url('admin/atak-config')) ?>#overwatch-game-experience">Ouvrir l’expérience en jeu</a>
+</section>
+
 <section id="relais-discord" class="ath-card ath-rise" style="padding:18px 20px;margin-bottom:22px;">
     <h2 class="ath-section-title" style="margin-top:0;">Relais Discord</h2>
     <p class="ath-item__meta" style="margin:0 0 14px;">

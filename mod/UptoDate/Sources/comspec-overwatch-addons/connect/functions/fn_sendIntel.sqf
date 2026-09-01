@@ -10,6 +10,7 @@ params [
     ["_source", "INFANTRY"],
     ["_credibility", -1]
 ];
+if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
 
 private _validIntelTypes = ["PING", "CHAT", "PHOTO", "ENEMY_INF", "VEH", "AIR", "IED", "SIGNAL", "HUMINT"];
 if !(_type in _validIntelTypes) then { _type = "HUMINT"; };

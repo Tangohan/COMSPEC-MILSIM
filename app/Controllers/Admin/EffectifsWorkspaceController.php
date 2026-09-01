@@ -276,7 +276,7 @@ class EffectifsWorkspaceController
         $dup = is_array($settings['personnel_duplicates'] ?? null) ? $settings['personnel_duplicates'] : [];
 
         return $this->shell('admin.effectifs_workspace.duplicates', [
-            'title' => 'Doublons de fiches',
+            'title' => 'Fiches jumelles',
             'effectifsNav' => 'duplicates',
             'duplicateSettings' => $dup,
             'duplicateFieldLabels' => PersonnelDuplicateDetectionService::FIELD_LABELS,

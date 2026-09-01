@@ -134,6 +134,12 @@ final class TenantPermissionCatalog
         return [
             ['slug' => 'operations.missions.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter les missions opérationnelles'],
             ['slug' => 'operations.missions.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Piloter les missions opérationnelles'],
+            ['slug' => 'operations.tactical.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter la vue terrain d’une opération'],
+            ['slug' => 'operations.planning.edit', 'module' => 'operations', 'action' => 'manage', 'name' => 'Éditer le plan et les calques d’une opération'],
+            ['slug' => 'operations.intel.product', 'module' => 'operations', 'action' => 'manage', 'name' => 'Produire le renseignement d’objectifs'],
+            ['slug' => 'operations.orders.edit', 'module' => 'operations', 'action' => 'manage', 'name' => 'Rédiger les ordres d’opération'],
+            ['slug' => 'operations.overlay.publish', 'module' => 'operations', 'action' => 'manage', 'name' => 'Publier un calque sur la vue terrain'],
+            ['slug' => 'operations.phase.change', 'module' => 'operations', 'action' => 'manage', 'name' => 'Changer la phase en cours d’une opération'],
             ['slug' => 'operations.sitrep.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter les SITREP fusionnés'],
             ['slug' => 'operations.sitrep.create', 'module' => 'operations', 'action' => 'create', 'name' => 'Publier des SITREP'],
             ['slug' => 'operations.aar.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter les AAR / RETEX'],

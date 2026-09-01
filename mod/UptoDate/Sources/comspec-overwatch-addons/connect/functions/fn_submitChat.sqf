@@ -4,6 +4,7 @@ if (isNull _display) exitWith {};
 private _ctrl = _display displayCtrl 1400;
 private _msg = trim (ctrlText _ctrl);
 if (_msg == "") exitWith { closeDialog 0; };
+if !([] call comspec_overwatch_connect_fnc_isReady) exitWith { closeDialog 0; };
 
 private _channel = missionNamespace getVariable ["COMSPEC_Comms_Channel", "SQUAD"];
 private _priority = missionNamespace getVariable ["COMSPEC_Comms_Priority", "ROUTINE"];

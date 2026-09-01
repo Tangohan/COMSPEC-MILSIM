@@ -176,6 +176,12 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (!empty($accountHubPage) && is_file(base_path('public/assets/css/account-hub.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/account-hub.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (!empty($opsWorkspacePage) && is_file(base_path('public/assets/css/ops-workspace.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/ops-workspace.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
+    <?php if (!empty($equipmentHubPage) && is_file(base_path('public/assets/css/equipment-hub.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/equipment-hub.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php
     $alpineLocal = base_path('public/assets/js/alpine.min.js');
     $alpineSrc = is_file($alpineLocal) ? asset_url('assets/js/alpine.min.js') : 'https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js';

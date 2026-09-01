@@ -55,7 +55,7 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "comspec_overwatch_tenant_id", "EDITBOX",
-    ["Community identifier", "Leave empty if Athena server already has a default community. Otherwise, numeric value provided by admin."],
+    ["Community identifier (ignored)", "Ignored. Athena chooses your community after you sign in."],
     "COMSPEC Overwatch", ""
 ] call CBA_fnc_addSetting;
 

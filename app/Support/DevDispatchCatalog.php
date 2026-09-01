@@ -491,6 +491,87 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(270, '2026-09-01', 'La page des rôles a plus d’air', 'Dans le bureau effectifs, la liste des rôles n’est plus collée : cartes, indicateurs et boutons se lisent sans se serrer', [], [
+                'Les indicateurs (nombre de rôles, communauté, intra-unité) ont plus d’espace entre le libellé et la valeur',
+                'Le bandeau de pilotage et les cartes de rôles ont davantage de marge intérieure, et les cartes sont plus écartées les unes des autres',
+                'Le rappel « Deux couches, un même principe » n’est plus collé au texte',
+            ], [], ['personnel'], [
+                'Ouvrez Bureau effectifs, puis Rôles. Aucune action n’est demandée : la page se parcourt simplement plus confortablement.',
+            ], 'Portail 1.5.94'),
+            $pr(269, '2026-09-01', 'La charte des formations se lit comme un vrai document', 'La page d’engagement rejoint l’espace compte : lecture plus claire, parcours, puis confirmation', [
+                'La charte s’affiche dans l’espace personnel, avec la durée de lecture et l’état de confirmation',
+                'Une barre de parcours suit la lecture ; la case s’active une fois le texte parcouru',
+            ], [
+                'Après confirmation, le texte reste relisible, et le catalogue des formations est à un clic',
+            ], [], ['personnel'], [
+                'Ouvrez Mon compte, puis Charte des formations. Lisez jusqu’en bas, cochez, enregistrez. Le catalogue s’ouvre ensuite.',
+            ], 'Portail 1.5.94'),
+            $pr(268, '2026-09-01', 'Les pièces RH se déposent dans le coffre', 'Sur Documents RH, vous pouvez désormais déposer le fichier, pas seulement indiquer où le retrouver', [
+                'Dépôt d’une pièce (PDF, image ou document Word) dans le coffre du dossier',
+                'Ouverture depuis le registre, réservée à l’état-major — et au membre si la pièce lui est visible',
+            ], [
+                'Vous pouvez toujours indiquer un emplacement si le document n’est pas déposé ici',
+            ], [], ['personnel'], [
+                'Ouvrez Effectifs, puis Documents RH. Choisissez le membre, déposez le fichier, puis ajoutez-le au dossier.',
+            ], 'Portail 1.5.93'),
+            $pr(267, '2026-09-01', 'Les fiches jumelles se lisent comme le reste du bureau', 'La page des dossiers identiques reprend le langage du bureau effectifs : synthèse, réglage, puis liste à traiter', [
+                'Synthèse : détection active ou en pause, champs retenus, groupes à relire',
+                'Chaque champ se choisit sur une carte, avec une phrase d’aide',
+            ], [
+                'Les fiches jumelles s’ouvrent directement dans le bureau, pas sur une fiche isolée',
+            ], [], ['personnel'], [
+                'Ouvrez Bureau effectifs, puis Fiches jumelles. Cochez ce qui ne doit jamais se répéter, enregistrez, et relisez les groupes s’il y en a.',
+            ], 'Portail 1.5.91'),
+            $pr(266, '2026-09-01', 'Le grade et le portrait opérateur se lisent enfin', 'Dans les effectifs, le grade affiché est celui attribué par la communauté, et la photo est le portrait opérateur', [
+                'Le grade du tableau et de la fiche reprend le grade attribué (par exemple Colonel), pas le rôle d’administration',
+                'Le portrait opérateur s’affiche dans le tableau des effectifs',
+            ], [], [
+                'Un code court personnalisé ne remplace plus le grade dans la colonne Grade',
+            ], ['personnel'], [
+                'Ouvrez Effectifs. Le grade est celui du dossier, la photo est celle du portrait opérateur. Le rôle d’accès reste une information à part.',
+            ], 'Portail 1.5.91'),
+            $pr(265, '2026-09-01', 'Les tenues se rangent en collections', 'La page Équipement devient un catalogue : collections, photos de présentation, et tenues envoyées depuis l’arsenal', [
+                'Collections de tenues, avec une photo de présentation',
+                'Chaque tenue peut recevoir sa propre photo, une note, et une collection',
+                'Qui peut s’en servir : vous, votre unité, ou toute la communauté',
+            ], [
+                'Les fiches matériel restent accessibles depuis la même page',
+            ], [], ['platform'], [
+                'Ouvrez Équipement. Créez une collection, ajoutez une photo, rangez-y les tenues envoyées depuis l’arsenal. En jeu, le bandeau Athena en haut de l’arsenal envoie et récupère ces tenues.',
+            ], 'Portail 1.5.90'),
+            $pr(264, '2026-09-01', 'L’opération devient le dossier de mission', 'Plan, renseignement, ordres et vue terrain se retrouvent dans un même espace : la carte ne montre plus que ce que le commandement a publié', [
+                'Espace opérationnel : synthèse, plan, objectifs, ordres, personnel et tâches, rattachés à une même mission',
+                'Graphiques de manœuvre, d’appuis et de mesures de contrôle, posés sur le plan',
+                'Calques en brouillon, en revue, approuvés, puis publiés sur la vue terrain — y compris en session',
+                'Vue terrain simplifiée sur téléphone, avec les tâches de la phase en cours',
+            ], [
+                'Le poste de situation reste la représentation temps réel du plan, pas un outil séparé',
+                'Un ordre d’opération cite un calque : s’il a évolué depuis, Athena signale l’annexe périmée',
+            ], [], ['atak'], [
+                'Ouvrez Commandement, puis Opérations. Créez un espace, posez les graphiques sur le plan, publiez uniquement ce que les opérateurs doivent voir. La vue terrain et la session reçoivent ces calques publiés.',
+            ], 'Portail 1.5.89'),
+            $pr(263, '2026-09-01', 'Connexion Athena avant d’entrer en session', 'Le pack Overwatch s’ouvre sur votre compte Athena : votre communauté, votre indicatif et vos habilitations arrivent tout seuls', [
+                'Fenêtre de connexion Athena au lancement : e-mail, code temporaire, ou Steam déjà associé à ce poste',
+                'Chargement réel de l’environnement : identité, communauté, profil, puis services Overwatch',
+                'Personnalisation de la fenêtre en jeu depuis le back-office (image, message, fonctions autorisées)',
+            ], [
+                'La communauté n’est plus une saisie dans les réglages du jeu : Athena la choisit d’après votre compte',
+                'Le suivi, la messagerie et le renseignement ne partent qu’une fois l’environnement prêt',
+            ], [], ['atak'], [
+                'Relancer Arma après le pack Overwatch 1.5.0. Au menu, identifiez-vous. En session, rien n’est transmis tant que la fenêtre n’affiche pas l’environnement prêt.',
+            ], 'Overwatch 1.5.0 · Extension 1.18.0'),
+            $pr(262, '2026-09-01', 'Tablette, Zeus et arsenal : plus de recouvrement', 'La tablette ATAK Enhanced se charge à nouveau, et les boutons COMSPEC ne recouvrent plus les fenêtres Zeus ni la liste des tenues', [
+                'Tablette ATAK Enhanced compatible avec le pack actuel',
+                'Bandeau des tenues Athena en haut de l’arsenal : toute la communauté, sans masquer la liste locale',
+                'Barre SSE, ATAK et Overwatch au-dessus du titre, sur une personne ou un véhicule seulement',
+            ], [
+                'Les tenues enregistrées par les membres se lisent dans l’arsenal et sur le portail',
+                'Les mêmes actions restent disponibles au clic droit Zeus',
+            ], [
+                'Les boutons COMSPEC recouvraient les filtres Zeus, le titre de la fiche, et la liste des tenues à l’arsenal',
+            ], ['atak'], [
+                'Recharger le pack jeu Overwatch 1.4.96, puis relancer Arma complètement. Double-clic une personne : la barre est au-dessus du titre. Les autres écrans Zeus n’affichent plus ces boutons.',
+            ], 'Overwatch 1.4.96 · Athena 1.0.57'),
             $pr(261, '2026-09-01', 'Administration du site, enfin complète', 'Le centre opérateur du site liste tous les outils de gestion, et chaque communauté s’administre depuis une fiche : nom, profil d’outils et formule d’accès', [
                 'Carte complète des écrans d’administration du site : communautés, comptes, communication, référentiels et exploitation',
                 'Fiche d’une communauté : identité, profil Complet / Effectifs / carte ATAK, et formule d’accès',

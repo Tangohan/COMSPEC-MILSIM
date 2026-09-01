@@ -161,6 +161,14 @@ class HubController
 
         $terrainEntries = [
             [
+                'label' => 'Opérations',
+                'url' => url('operations'),
+                'description' => 'Dossier de mission : plan, renseignement, ordres et vue terrain.',
+                'icon' => 'atak',
+                'accent' => 'sky',
+                'featured' => true,
+            ],
+            [
                 'label' => 'Carte tactique',
                 'url' => url('atak'),
                 'description' => 'Carte, marqueurs et outils de coordination sur le terrain.',
@@ -170,16 +178,9 @@ class HubController
             [
                 'label' => 'Équipement',
                 'url' => url('equipment'),
-                'description' => 'Classes d’équipement et fiches matériel.',
+                'description' => 'Collections, tenues envoyées depuis l’arsenal, et fiches matériel.',
                 'icon' => 'equipment',
                 'accent' => 'stone',
-            ],
-            [
-                'label' => 'Wardrobes ACE Arsenal',
-                'url' => url('equipment/wardrobes'),
-                'description' => 'Loadouts synchronisés en ligne et collections d’équipement.',
-                'icon' => 'equipment',
-                'accent' => 'amber',
             ],
         ];
         if ($gate->allows('intel.transmission.view')) {

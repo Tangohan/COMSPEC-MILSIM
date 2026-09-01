@@ -10,6 +10,12 @@ if (isNull _display) exitWith {};
 
 [_display] call comspec_overwatch_connect_fnc_decorateMainMenu;
 
+0 spawn {
+    uiSleep 0.6;
+    if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+    [] call comspec_overwatch_connect_fnc_initAuth;
+};
+
 if (uiNamespace getVariable ["COMSPEC_MainMenuBetaBooted", false]) exitWith {};
 uiNamespace setVariable ["COMSPEC_MainMenuBetaBooted", true];
 

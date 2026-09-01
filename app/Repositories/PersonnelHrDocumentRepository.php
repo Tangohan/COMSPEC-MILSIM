@@ -111,6 +111,23 @@ final class PersonnelHrDocumentRepository
         return (int) $st->fetchColumn();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findById(int $id, int $tenantId): ?array
+    {
+        if (!$this->tableExists() || $id < 1 || $tenantId < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT * FROM personnel_hr_documents WHERE id = ? AND tenant_id = ? AND archived_at IS NULL LIMIT 1'
+        );
+        $st->execute([$id, $tenantId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function create(
         int $tenantId,
         int $userId,

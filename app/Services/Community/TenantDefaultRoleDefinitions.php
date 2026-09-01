@@ -302,6 +302,8 @@ final class TenantDefaultRoleDefinitions
             'member' => [
                 'operational.board.view',
                 'organization.orbat.view',
+                'operations.tactical.view',
+                'operations.missions.view',
             ],
             'hr' => [
                 'documents.view', 'forum.view', 'forum.create_topic', 'forum.reply', 'training.view',
@@ -464,6 +466,8 @@ final class TenantDefaultRoleDefinitions
             'operations_officer' => array_values(array_unique(array_merge($officerCore, [
                 'operational.board.edit',
                 'operations.missions.view', 'operations.missions.manage',
+                'operations.tactical.view', 'operations.planning.edit',
+                'operations.orders.edit', 'operations.overlay.publish', 'operations.phase.change',
                 'operations.sitrep.view', 'operations.sitrep.create',
                 'operations.aar.view',
                 'operations.readiness.view', 'operations.readiness.manage',
@@ -488,6 +492,8 @@ final class TenantDefaultRoleDefinitions
             'intelligence_officer' => array_values(array_unique(array_merge($officerCore, [
                 'operations.sitrep.view', 'operations.sitrep.create',
                 'operations.doctrine.view',
+                'operations.intel.product',
+                'operations.tactical.view',
                 'documents.upload',
                 'documents.sensitive.view',
             ]))),

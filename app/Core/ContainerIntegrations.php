@@ -120,6 +120,30 @@ final class ContainerIntegrations
                 Container::get(\App\Repositories\UserRepository::class),
                 Container::get(\App\Repositories\RoleRepository::class),
             ),
+            \App\Services\Game\GameOverwatchExperienceService::class => new \App\Services\Game\GameOverwatchExperienceService(),
+            \App\Repositories\AthenaAccountRepository::class => new \App\Repositories\AthenaAccountRepository(),
+            \App\Services\Game\GameAuthService::class => new \App\Services\Game\GameAuthService(
+                Container::get(\App\Repositories\AthenaAccountRepository::class),
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Services\EmailService::class),
+                Container::get(\App\Services\Game\GameOverwatchExperienceService::class),
+            ),
+            \App\Controllers\Api\Game\GameAuthApiController::class => new \App\Controllers\Api\Game\GameAuthApiController(
+                Container::get(\App\Services\Game\GameAuthService::class),
+            ),
+            \App\Repositories\OperationWorkspaceRepository::class => new \App\Repositories\OperationWorkspaceRepository(),
+            \App\Services\Operations\OperationWorkspaceService::class => new \App\Services\Operations\OperationWorkspaceService(
+                Container::get(\App\Repositories\OperationWorkspaceRepository::class),
+            ),
+            \App\Controllers\Web\OperationWorkspaceController::class => new \App\Controllers\Web\OperationWorkspaceController(
+                Container::get(\App\Services\Operations\OperationWorkspaceService::class),
+                Container::get(\App\Repositories\OperationWorkspaceRepository::class),
+            ),
+            \App\Controllers\Api\Game\GameOperationsApiController::class => new \App\Controllers\Api\Game\GameOperationsApiController(
+                Container::get(\App\Services\Game\GameAuthService::class),
+                Container::get(\App\Services\Operations\OperationWorkspaceService::class),
+            ),
             default => null,
         };
     }

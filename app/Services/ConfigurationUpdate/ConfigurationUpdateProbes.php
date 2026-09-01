@@ -430,4 +430,30 @@ final class ConfigurationUpdateProbes
 
         return false;
     }
+
+    public function hasOverwatchGameExperienceReviewed(int $tenantId): bool
+    {
+        try {
+            $raw = (new \App\Repositories\TenantAtakConfigRepository())->getOverwatchGameExperienceRaw($tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
+        if (!is_array($raw)) {
+            return false;
+        }
+
+        return !empty($raw['reviewed']);
+    }
+
+    public function hasOpenedOperationWorkspace(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            return (new \App\Repositories\OperationWorkspaceRepository())->countForTenant($tenantId) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 }

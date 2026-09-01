@@ -60,15 +60,8 @@ if (
 if (!(_key isEqualTo "")) then {
     missionNamespace setVariable ["comspec_overwatch_api_key", _key];
 };
-private _tenant = [missionNamespace getVariable ["comspec_overwatch_tenant_id", ""]] call _cleanSecret;
-if (_tenant isEqualTo "") then {
-    _tenant = [profileNamespace getVariable ["comspec_overwatch_saved_tenant_id", ""]] call _cleanSecret;
-    if (!(_tenant isEqualTo "")) then {
-        missionNamespace setVariable ["comspec_overwatch_tenant_id", _tenant];
-    };
-} else {
-    missionNamespace setVariable ["comspec_overwatch_tenant_id", _tenant];
-};
+private _tenant = "";
+// La communauté n’est plus une saisie joueur : Athena la détermine après authentification.
 
 _url = [_url] call _cleanSecret;
 if (_url isEqualTo "") exitWith {
@@ -102,63 +95,9 @@ if (
 if (!(_key isEqualTo "")) then {
     missionNamespace setVariable ["comspec_overwatch_api_key", _key];
 };
-_tenant = [missionNamespace getVariable ["comspec_overwatch_tenant_id", ""]] call _cleanSecret;
-if (_tenant isEqualTo "") then {
-    _tenant = [profileNamespace getVariable ["comspec_overwatch_saved_tenant_id", ""]] call _cleanSecret;
-};
-if (_key isEqualTo "") then {
-    // Tentative automatique : Steam deja lie sur Athena → recupere la cle sans code.
-    private _steamUid = getPlayerUID player;
-    if ((count _steamUid) < 15) then {
-        _steamUid = profileNamespace getVariable ["comspec_overwatch_saved_steam_uid", ""];
-    };
-    if (!(_steamUid isEqualTo "") && {(count _steamUid) >= 15 || {(toUpper _steamUid) find "STEAM_" == 0}}) then {
-        ["[Athena] Cle absente — tentative de liaison via Steam…"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        [format ["[Athena] Steam UID detecte : '%1' (longueur %2)", _steamUid, count _steamUid]] call comspec_overwatch_connect_fnc_appendLinkLog;
-        private _steamRaw = ["COMSPECExtension" callExtension ["LinkBySteam", [_url, _steamUid]]] call comspec_overwatch_connect_fnc_extResult;
-        private _steamParts = _steamRaw splitString "|";
-        if ((count _steamParts >= 2) && {(_steamParts select 0) isEqualTo "OK"}) then {
-            // Format 1.12+ : OK|url|key|tenant — legacy : OK|url\tkey\ttenant
-            private _apiUrl = "";
-            private _apiKey = "";
-            private _tenantId = "";
-            if (count _steamParts >= 4) then {
-                _apiUrl = [_steamParts select 1] call _cleanSecret;
-                _apiKey = [_steamParts select 2] call _cleanSecret;
-                _tenantId = [_steamParts select 3] call _cleanSecret;
-            } else {
-                private _steamCols = (_steamParts select 1) splitString "\t";
-                if (count _steamCols >= 2) then {
-                    _apiUrl = [_steamCols select 0] call _cleanSecret;
-                    _apiKey = [_steamCols select 1] call _cleanSecret;
-                    _tenantId = if (count _steamCols >= 3) then { [_steamCols select 2] call _cleanSecret } else { "" };
-                };
-            };
-            if ((count _apiKey) >= 4) then {
-                if ([_apiUrl] call _urlLooksValid) then {
-                    _url = _apiUrl;
-                    missionNamespace setVariable ["comspec_overwatch_api_url", _apiUrl];
-                    profileNamespace setVariable ["comspec_overwatch_saved_api_url", _apiUrl];
-                };
-                _key = _apiKey;
-                missionNamespace setVariable ["comspec_overwatch_api_key", _apiKey];
-                profileNamespace setVariable ["comspec_overwatch_saved_api_key", _apiKey];
-                if (!(_tenantId isEqualTo "")) then {
-                    _tenant = _tenantId;
-                    missionNamespace setVariable ["comspec_overwatch_tenant_id", _tenantId];
-                    profileNamespace setVariable ["comspec_overwatch_saved_tenant_id", _tenantId];
-                };
-                saveProfileNamespace;
-                ["[Athena] Steam reconnu — cle de liaison obtenue."] call comspec_overwatch_connect_fnc_appendLinkLog;
-            };
-        } else {
-            private _steamErr = if (count _steamParts >= 2) then { _steamParts select 1 } else { _steamRaw };
-            [format ["[Athena] Liaison Steam indisponible (%1) — utilisez K → Compte Athena (code ou Steam lie).", _steamErr]] call comspec_overwatch_connect_fnc_appendLinkLog;
-        };
-    };
-};
-if (_key isEqualTo "") then {
-    ["[Athena] Cle absente — liez votre compte : K → Compte Athena (Steam deja lie sur le site, ou code genere)."] call comspec_overwatch_connect_fnc_appendLinkLog;
+_tenant = "";
+if (_key isEqualTo "" && {!([] call comspec_overwatch_connect_fnc_isReady)}) then {
+    ["[Athena] Session Athena requise — ouvrez la fenêtre de connexion."] call comspec_overwatch_connect_fnc_appendLinkLog;
 };
 
 // Verifie que l'extension repond. Reponse vide ≠ stub 32 Ko : souvent BattlEye (voir RPT).

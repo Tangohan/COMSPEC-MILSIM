@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\EquipmentCoverStorage;
+use App\Support\SilentSchemaMigration;
 use PDO;
 
 final class ArsenalWardrobeRepository
@@ -19,6 +21,7 @@ final class ArsenalWardrobeRepository
     public function tablesReady(): bool
     {
         try {
+            SilentSchemaMigration::run(base_path('bootstrap/arsenal_wardrobe_migration.php'), $this->pdo);
             $st = $this->pdo->query(
                 "SELECT 1 FROM information_schema.TABLES
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'arsenal_wardrobes' LIMIT 1"
@@ -61,29 +64,33 @@ final class ArsenalWardrobeRepository
     }
 
     /**
-     * Wardrobes personnelles + collections unit/tenant visibles.
+     * Tenues de toute la communauté (même locataire), avec le nom du membre.
      *
      * @return list<array<string, mixed>>
      */
     public function listAccessibleWardrobes(int $tenantId, int $userId): array
     {
         $st = $this->pdo->prepare(
-            'SELECT DISTINCT w.*, c.name AS collection_name, c.slug AS collection_slug, c.visibility AS collection_visibility
+            'SELECT w.id, w.tenant_id, w.user_id, w.steam_uid, w.collection_id, w.name, w.slug,
+                    w.source, w.payload_format, w.payload_sha256, CHAR_LENGTH(w.payload_text) AS payload_bytes,
+                    w.notes, w.cover_image_path, w.is_favorite, w.last_synced_at, w.created_at, w.updated_at,
+                    c.name AS collection_name, c.slug AS collection_slug, c.visibility AS collection_visibility,
+                    COALESCE(NULLIF(TRIM(u.callsign), \'\'), NULLIF(TRIM(u.display_name), \'\'), \'Membre\') AS owner_label
              FROM arsenal_wardrobes w
              LEFT JOIN arsenal_equipment_collections c ON c.id = w.collection_id
-             LEFT JOIN arsenal_collection_wardrobes cw ON cw.wardrobe_id = w.id
-             LEFT JOIN arsenal_equipment_collections c2 ON c2.id = cw.collection_id
+             LEFT JOIN users u ON u.id = w.user_id
              WHERE w.tenant_id = ?
-               AND (
-                 w.user_id = ?
-                 OR (c.visibility IN (\'unit\', \'tenant\') AND c.tenant_id = ?)
-                 OR (c2.visibility IN (\'unit\', \'tenant\') AND c2.tenant_id = ?)
-               )
-             ORDER BY w.is_favorite DESC, w.name ASC'
+             ORDER BY w.is_favorite DESC, w.name ASC, w.id ASC'
         );
-        $st->execute([$tenantId, $userId, $tenantId, $tenantId]);
+        $st->execute([$tenantId]);
 
-        return array_map([$this, 'mapWardrobe'], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        $rows = array_map([$this, 'mapWardrobe'], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        foreach ($rows as &$row) {
+            $row['mine'] = (int) ($row['user_id'] ?? 0) === $userId;
+        }
+        unset($row);
+
+        return $rows;
     }
 
     public function findWardrobe(int $tenantId, int $id, ?int $userId = null): ?array
@@ -243,7 +250,7 @@ final class ArsenalWardrobeRepository
         $st->execute([$tenantId, $userId]);
         $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        return array_map(static function (array $row): array {
+        return array_map(static function (array $row) use ($userId): array {
             $tags = $row['tags_json'] ?? null;
             if (is_string($tags) && $tags !== '') {
                 $decoded = json_decode($tags, true);
@@ -254,6 +261,10 @@ final class ArsenalWardrobeRepository
             unset($row['tags_json']);
             $row['id'] = (int) ($row['id'] ?? 0);
             $row['wardrobe_count'] = (int) ($row['wardrobe_count'] ?? 0);
+            $row['cover_url'] = EquipmentCoverStorage::publicUrl(
+                isset($row['cover_image_path']) ? (string) $row['cover_image_path'] : null
+            );
+            $row['mine'] = (int) ($row['owner_user_id'] ?? 0) === $userId;
 
             return $row;
         }, $rows);
@@ -355,6 +366,9 @@ final class ArsenalWardrobeRepository
         }
         unset($row['tags_json']);
         $row['id'] = (int) $row['id'];
+        $row['cover_url'] = EquipmentCoverStorage::publicUrl(
+            isset($row['cover_image_path']) ? (string) $row['cover_image_path'] : null
+        );
 
         return $row;
     }
@@ -375,24 +389,125 @@ final class ArsenalWardrobeRepository
      */
     public function setCollectionWardrobes(int $tenantId, int $userId, int $collectionId, array $wardrobeIds): void
     {
-        $this->pdo->prepare('DELETE FROM arsenal_collection_wardrobes WHERE collection_id = ?')
-            ->execute([$collectionId]);
+        $ids = [];
+        foreach ($wardrobeIds as $wid) {
+            $wid = (int) $wid;
+            if ($wid > 0) {
+                $ids[$wid] = $wid;
+            }
+        }
+        $ids = array_values($ids);
+
+        $clearSql = 'UPDATE arsenal_wardrobes SET collection_id = NULL, updated_at = NOW()
+                     WHERE tenant_id = ? AND user_id = ? AND collection_id = ?';
+        $clearParams = [$tenantId, $userId, $collectionId];
+        if ($ids !== []) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $clearSql .= ' AND id NOT IN (' . $placeholders . ')';
+            $clearParams = array_merge($clearParams, $ids);
+        }
+        $this->pdo->prepare($clearSql)->execute($clearParams);
+
+        $this->pdo->prepare(
+            'DELETE cw FROM arsenal_collection_wardrobes cw
+             INNER JOIN arsenal_wardrobes w ON w.id = cw.wardrobe_id
+             WHERE cw.collection_id = ? AND w.tenant_id = ? AND w.user_id = ?'
+        )->execute([$collectionId, $tenantId, $userId]);
+
+        if ($ids === []) {
+            return;
+        }
         $ins = $this->pdo->prepare(
             'INSERT INTO arsenal_collection_wardrobes (collection_id, wardrobe_id, sort_order)
              SELECT ?, w.id, ? FROM arsenal_wardrobes w
              WHERE w.tenant_id = ? AND w.user_id = ? AND w.id = ?'
         );
-        $order = 0;
-        foreach ($wardrobeIds as $wid) {
-            $wid = (int) $wid;
-            if ($wid < 1) {
-                continue;
-            }
-            $ins->execute([$collectionId, $order++, $tenantId, $userId, $wid]);
-            $this->pdo->prepare(
-                'UPDATE arsenal_wardrobes SET collection_id = ? WHERE id = ? AND tenant_id = ? AND user_id = ?'
-            )->execute([$collectionId, $wid, $tenantId, $userId]);
+        $assign = $this->pdo->prepare(
+            'UPDATE arsenal_wardrobes SET collection_id = ?, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ? AND user_id = ?'
+        );
+        foreach ($ids as $order => $wid) {
+            $ins->execute([$collectionId, $order, $tenantId, $userId, $wid]);
+            $assign->execute([$collectionId, $wid, $tenantId, $userId]);
         }
+    }
+
+    public function setCollectionCover(int $tenantId, int $userId, int $id, ?string $path): bool
+    {
+        $current = $this->findCollection($tenantId, $id);
+        if ($current === null) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE arsenal_equipment_collections
+             SET cover_image_path = ?, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ? AND (owner_user_id = ? OR owner_user_id IS NULL)'
+        );
+        $st->execute([$path, $id, $tenantId, $userId]);
+        if ($st->rowCount() > 0 && $path !== ($current['cover_image_path'] ?? null)) {
+            EquipmentCoverStorage::delete(isset($current['cover_image_path']) ? (string) $current['cover_image_path'] : null);
+        }
+
+        return $st->rowCount() > 0;
+    }
+
+    public function setWardrobeCover(int $tenantId, int $userId, int $id, ?string $path): bool
+    {
+        $current = $this->findWardrobe($tenantId, $id, $userId);
+        if ($current === null) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE arsenal_wardrobes SET cover_image_path = ?, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ? AND user_id = ?'
+        );
+        $st->execute([$path, $id, $tenantId, $userId]);
+        if ($st->rowCount() > 0) {
+            EquipmentCoverStorage::delete(isset($current['cover_image_path']) ? (string) $current['cover_image_path'] : null);
+        }
+
+        return $st->rowCount() > 0;
+    }
+
+    public function assignWardrobeCollection(int $tenantId, int $userId, int $wardrobeId, ?int $collectionId): bool
+    {
+        if ($collectionId !== null && $collectionId > 0) {
+            if ($this->findCollection($tenantId, $collectionId) === null) {
+                return false;
+            }
+        } else {
+            $collectionId = null;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE arsenal_wardrobes SET collection_id = ?, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ? AND user_id = ?'
+        );
+        $st->execute([$collectionId, $wardrobeId, $tenantId, $userId]);
+        if ($st->rowCount() < 1) {
+            return false;
+        }
+        $this->pdo->prepare('DELETE FROM arsenal_collection_wardrobes WHERE wardrobe_id = ?')
+            ->execute([$wardrobeId]);
+        if ($collectionId !== null) {
+            $this->pdo->prepare(
+                'INSERT INTO arsenal_collection_wardrobes (collection_id, wardrobe_id, sort_order)
+                 VALUES (?, ?, 0)'
+            )->execute([$collectionId, $wardrobeId]);
+        }
+
+        return true;
+    }
+
+    public function updateWardrobeNotes(int $tenantId, int $userId, int $id, ?string $notes): bool
+    {
+        $notes = $notes !== null && $notes !== '' ? substr($notes, 0, 255) : null;
+        $st = $this->pdo->prepare(
+            'UPDATE arsenal_wardrobes SET notes = ?, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ? AND user_id = ?'
+        );
+        $st->execute([$notes, $id, $tenantId, $userId]);
+
+        return $st->rowCount() > 0;
     }
 
     private function findBySlug(int $tenantId, int $userId, string $slug): ?array
@@ -419,7 +534,14 @@ final class ArsenalWardrobeRepository
             ? (int) $row['collection_id']
             : null;
         $row['is_favorite'] = !empty($row['is_favorite']);
-        $row['payload_bytes'] = isset($row['payload_text']) ? strlen((string) $row['payload_text']) : 0;
+        $row['payload_bytes'] = isset($row['payload_bytes'])
+            ? (int) $row['payload_bytes']
+            : (isset($row['payload_text']) ? strlen((string) $row['payload_text']) : 0);
+        $row['owner_label'] = trim((string) ($row['owner_label'] ?? ''));
+        $row['mine'] = !empty($row['mine']);
+        $row['cover_url'] = EquipmentCoverStorage::publicUrl(
+            isset($row['cover_image_path']) ? (string) $row['cover_image_path'] : null
+        );
 
         return $row;
     }

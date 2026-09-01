@@ -14,6 +14,15 @@ return static function (PDO $pdo): void {
 
         return (bool) $st->fetchColumn();
     };
+    $columnExists = static function (string $table, string $column) use ($pdo): bool {
+        $st = $pdo->prepare(
+            'SELECT 1 FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+        );
+        $st->execute([$table, $column]);
+
+        return (bool) $st->fetchColumn();
+    };
 
     if (!$tableExists('arsenal_equipment_collections')) {
         $pdo->exec(
@@ -24,6 +33,7 @@ return static function (PDO $pdo): void {
                 name VARCHAR(120) NOT NULL,
                 slug VARCHAR(140) NOT NULL,
                 description VARCHAR(500) DEFAULT NULL,
+                cover_image_path VARCHAR(255) DEFAULT NULL,
                 visibility ENUM('personal','unit','tenant') NOT NULL DEFAULT 'personal',
                 tags_json JSON DEFAULT NULL,
                 sort_order INT NOT NULL DEFAULT 0,
@@ -54,6 +64,7 @@ return static function (PDO $pdo): void {
                 payload_text MEDIUMTEXT NOT NULL,
                 payload_sha256 CHAR(64) NOT NULL,
                 notes VARCHAR(255) DEFAULT NULL,
+                cover_image_path VARCHAR(255) DEFAULT NULL,
                 is_favorite TINYINT(1) NOT NULL DEFAULT 0,
                 last_synced_at DATETIME DEFAULT NULL,
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -82,5 +93,12 @@ return static function (PDO $pdo): void {
                 CONSTRAINT fk_arsenal_cw_wardrobe FOREIGN KEY (wardrobe_id) REFERENCES arsenal_wardrobes (id) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
+    }
+
+    if ($tableExists('arsenal_equipment_collections') && !$columnExists('arsenal_equipment_collections', 'cover_image_path')) {
+        $pdo->exec('ALTER TABLE arsenal_equipment_collections ADD COLUMN cover_image_path VARCHAR(255) DEFAULT NULL AFTER description');
+    }
+    if ($tableExists('arsenal_wardrobes') && !$columnExists('arsenal_wardrobes', 'cover_image_path')) {
+        $pdo->exec('ALTER TABLE arsenal_wardrobes ADD COLUMN cover_image_path VARCHAR(255) DEFAULT NULL AFTER notes');
     }
 };

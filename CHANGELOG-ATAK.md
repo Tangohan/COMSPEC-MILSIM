@@ -9,6 +9,17 @@ Journal développeur (style Bohemia) : [SPOTREP #00001](docs/dev/SPOTREP-00001.m
 
 ---
 
+## [1.5.48] / Overwatch 1.4.96 / liaison 1.17.9 — 2026-09-01
+
+### Pack Overwatch 1.4.96 — tablette, Zeus, arsenal
+
+- La tablette ATAK Enhanced se charge à nouveau avec le pack actuel.
+- Zeus : SSE, ATAK et OVERWATCH tiennent en haut du panneau d’édition d’une unité, plus sur les filtres des objets éditables.
+- Arsenal ACE : bandeau des tenues Athena en haut de l’écran, sans masquer « Mes équipements ».
+- Relancer Arma complètement.
+
+---
+
 ## [1.5.48] / Overwatch 1.4.95 / liaison 1.17.9 — 2026-08-30
 
 ### Pack Overwatch 1.4.95 — guidage GPS + zones ATAK

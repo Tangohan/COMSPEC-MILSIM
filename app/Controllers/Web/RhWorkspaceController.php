@@ -21,6 +21,7 @@ use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Platform\FeatureGateService;
 use App\Support\PersonnelDossierCompleteness;
+use App\Support\PersonnelHrDocumentStorage;
 
 final class RhWorkspaceController
 {
@@ -299,6 +300,30 @@ final class RhWorkspaceController
         }
 
         return Response::redirect(url('personnel/mon-espace-rh'));
+    }
+
+    public function downloadHrDocument(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$user || $tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $row = $id > 0 ? $this->hrDocuments->findById($id, $tenantId) : null;
+        if (
+            $row === null
+            || (int) ($row['user_id'] ?? 0) !== $userId
+            || ($row['visibility'] ?? '') !== 'MEMBER'
+            || !PersonnelHrDocumentStorage::isStoredPath((string) ($row['file_path'] ?? ''))
+        ) {
+            Session::flash('error', 'Cette pièce n’est pas disponible.');
+
+            return Response::redirect(url('personnel/mon-espace-rh'));
+        }
+
+        return PersonnelHrDocumentStorage::downloadResponse($row);
     }
 
     private function accessRuleLabel(string $ruleType): string

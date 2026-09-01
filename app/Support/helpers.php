@@ -259,6 +259,52 @@ if (!function_exists('user_display_initials')) {
     }
 }
 
+if (!function_exists('personnel_assigned_grade_label')) {
+    /**
+     * Grade militaire attribué (référentiel communauté), pour les colonnes « Grade » / « Rang ».
+     * Ne pas utiliser le rôle plateforme ni le code court personnalisé (O-5) comme libellé principal.
+     *
+     * @param array<string, mixed> $row
+     */
+    function personnel_assigned_grade_label(array $row, ?string $platformRoleName = null): string
+    {
+        $long = trim((string) ($row['grade_long'] ?? $row['label_long'] ?? ''));
+        if ($long !== '') {
+            return $long;
+        }
+        $short = trim((string) ($row['grade_short'] ?? $row['label_short'] ?? ''));
+        if ($short !== '') {
+            return $short;
+        }
+        $custom = trim((string) ($row['rank_display'] ?? ''));
+        if ($custom === '') {
+            return '';
+        }
+        $role = trim((string) ($platformRoleName ?? $row['role_name'] ?? ''));
+        if ($role !== '' && strcasecmp($custom, $role) === 0) {
+            return '';
+        }
+
+        return $custom;
+    }
+}
+
+if (!function_exists('personnel_operator_portrait_url')) {
+    /**
+     * Photo opérateur (portrait) en priorité, sinon photo de compte.
+     *
+     * @param array<string, mixed> $row
+     */
+    function personnel_operator_portrait_url(array $row): ?string
+    {
+        return user_site_avatar_url(
+            $row,
+            ['character_portrait_path' => (string) ($row['character_portrait_path'] ?? '')],
+            ['site_photo_priority' => 'operator']
+        );
+    }
+}
+
 if (!function_exists('config')) {
     function config(string $key, mixed $default = null): mixed
     {
