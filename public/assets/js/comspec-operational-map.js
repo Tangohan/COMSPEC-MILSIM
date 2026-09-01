@@ -466,16 +466,42 @@
     });
   }
 
+  function reportsApiUrl(apiBase, mapId) {
+    var base = String(apiBase || '').replace(/\/$/, '');
+    var path = /\/atak$/i.test(base) ? '/reports' : '/atak/reports';
+    return base + path + '?mapId=' + encodeURIComponent(mapId) + '&limit=80';
+  }
+
+  function intelTargetLabelFr(t) {
+    var k = String(t || '').toUpperCase();
+    if (k === 'INFANTRY') return 'Infanterie';
+    if (k === 'VEHICLE') return 'Véhicule';
+    if (k === 'ARMOR') return 'Blindé';
+    if (k === 'AIR_DEFENSE') return 'Défense antiaérienne';
+    if (k === 'UNKNOWN') return 'Non identifié';
+    return t || 'Indice';
+  }
+
   function renderIntelFusedMarkers(layerGroup, reports, isWorld) {
     if (!layerGroup) return;
     layerGroup.clearLayers();
+    var Chip = window.TacticalMarkerChip;
     (reports || []).forEach(function (r) {
       var lat = isWorld ? (r.pos_y != null ? r.pos_y : 0) / WORLD_SCALE : (r.pos_y != null ? r.pos_y : 0);
       var lng = isWorld ? (r.pos_x != null ? r.pos_x : 0) / WORLD_SCALE : (r.pos_x != null ? r.pos_x : 0);
       var status = r.status || 'TEMPORARY';
+      var statusFr = status === 'CONFIRMED' ? 'Confirmé' : status === 'CORROBORATED' ? 'Corroboré' : 'Provisoire';
+      var popup = intelTargetLabelFr(r.target_type) + ' — ' + statusFr;
+      if (Chip && Chip.leafletDivIcon && typeof L !== 'undefined' && L.marker) {
+        var chipOpts = Chip.fromIntel(r);
+        L.marker([lat, lng], { icon: Chip.leafletDivIcon(L, chipOpts), zIndexOffset: 380 })
+          .bindPopup(popup)
+          .addTo(layerGroup);
+        return;
+      }
       var col = status === 'CONFIRMED' ? '#dc2626' : status === 'CORROBORATED' ? '#d97706' : '#eab308';
       L.circleMarker([lat, lng], { radius: 9, color: col, fillOpacity: 0.85, weight: 2 })
-        .bindPopup((r.target_type || 'Indice') + ' — ' + status)
+        .bindPopup(popup)
         .addTo(layerGroup);
     });
   }
@@ -630,7 +656,7 @@
         ['markers', layerGroups.markers], ['pings', layerGroups.pings], ['sigint', layerGroups.sigint],
         ['intel', layerGroups.intel], ['air', layerGroups.air], ['sse', layerGroups.sse],
         ['elevation', layerGroups.elevation], ['route', layerGroups.route],
-        ['tactical', layerGroups.tactical], ['recon', layerGroups.recon]].forEach(function (pair) {
+        ['tactical', layerGroups.tactical], ['tactical', layerGroups.reports], ['recon', layerGroups.recon]].forEach(function (pair) {
         var key = pair[0];
         var lg = pair[1];
         if (!lg) return;
@@ -874,8 +900,19 @@
           .catch(function () {});
       }
       if (state.layers.danger) loadDangerZones();
-      if (state.layers.tactical) refreshTacticalPanel();
-      else if (layerGroups.tactical) layerGroups.tactical.clearLayers();
+      if (state.layers.tactical) {
+        refreshTacticalPanel();
+        fetch(reportsApiUrl(apiBase, state.currentMapId), { credentials: 'include' })
+          .then(function (r) { return r.ok ? r.json() : { reports: [] }; })
+          .then(function (payload) {
+            var rows = Array.isArray(payload) ? payload : (payload && payload.reports) || [];
+            renderTacticalReportChips(layerGroups.reports, rows, isWorld);
+          })
+          .catch(function () {});
+      } else {
+        if (layerGroups.tactical) layerGroups.tactical.clearLayers();
+        if (layerGroups.reports) layerGroups.reports.clearLayers();
+      }
       if (state.layers.recon) refreshReconPanel();
       else if (layerGroups.recon) layerGroups.recon.clearLayers();
     }
@@ -890,17 +927,23 @@
         var y = parseFloat(a.pos_y);
         var latlng = L.latLng(y, x);
         var kind = String(a.kind || '').toLowerCase();
-        var color = kind === 'eagle_down' || kind === 'tic' ? '#ef4444'
-          : (kind === 'bda' ? '#ea580c' : (kind === 'tic_clear' ? '#22c55e' : '#f59e0b'));
+        var Chip = window.TacticalMarkerChip;
         var label = escapeHtml(a.kind_label || 'Alerte');
-        var icon = L.divIcon({
-          className: 'tacmap-talert-marker',
-          html: '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.6rem;height:1.6rem;padding:0 4px;border-radius:999px;background:' +
-            color + ';color:#fff;font-size:9px;font-weight:700;box-shadow:0 0 0 2px rgba(0,0,0,.35);">' +
-            (kind === 'bda' ? 'BDA' : (kind === 'eagle_down' ? '!' : 'S')) + '</span>',
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
-        });
+        var icon;
+        if (Chip && Chip.leafletDivIcon && kind !== 'tic_clear') {
+          icon = Chip.leafletDivIcon(L, Chip.fromAlert(a));
+        } else {
+          var color = kind === 'eagle_down' || kind === 'tic' ? '#ef4444'
+            : (kind === 'bda' ? '#ea580c' : (kind === 'tic_clear' ? '#22c55e' : '#f59e0b'));
+          icon = L.divIcon({
+            className: 'tacmap-talert-marker',
+            html: '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.6rem;height:1.6rem;padding:0 4px;border-radius:999px;background:' +
+              color + ';color:#fff;font-size:9px;font-weight:700;box-shadow:0 0 0 2px rgba(0,0,0,.35);">' +
+              (kind === 'bda' ? 'BDA' : (kind === 'eagle_down' ? '!' : 'S')) + '</span>',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+          });
+        }
         var popup = '<strong>' + label + '</strong><br/>' +
           escapeHtml(a.call_sign || a.author || '') +
           (a.grid ? '<br/>Grille ' + escapeHtml(a.grid) : '') +
@@ -908,6 +951,27 @@
         L.marker(latlng, { icon: icon, zIndexOffset: 350 })
           .bindPopup(popup)
           .addTo(layerGroups.tactical);
+      });
+    }
+
+    function renderTacticalReportChips(layerGroup, rows, isWorld) {
+      if (!layerGroup) return;
+      layerGroup.clearLayers();
+      var Chip = window.TacticalMarkerChip;
+      if (!Chip || !Chip.leafletDivIcon) return;
+      (rows || []).forEach(function (row) {
+        var x = parseFloat(row.pos_x);
+        var y = parseFloat(row.pos_y);
+        if (isNaN(x) || isNaN(y)) return;
+        var latlng = isWorld ? L.latLng(x / WORLD_SCALE, y / WORLD_SCALE) : L.latLng(y, x);
+        var chipOpts = Chip.fromReport(row);
+        var spec = Chip.specFor(chipOpts.kind);
+        var popup = '<strong>' + escapeHtml(spec.labelFr || spec.title) + '</strong>';
+        if (row.submitter_callsign) popup += '<br/>' + escapeHtml(row.submitter_callsign);
+        if (row.summary) popup += '<br/>' + escapeHtml(String(row.summary).slice(0, 160));
+        L.marker(latlng, { icon: Chip.leafletDivIcon(L, chipOpts), zIndexOffset: 420 })
+          .bindPopup(popup)
+          .addTo(layerGroup);
       });
     }
 
@@ -1449,6 +1513,7 @@
         layerGroups.route = L.layerGroup();
         layerGroups.geo = L.layerGroup();
         layerGroups.tactical = L.layerGroup();
+        layerGroups.reports = L.layerGroup();
         layerGroups.recon = L.layerGroup();
         map.on('contextmenu', function (e) {
           if (L.DomEvent) L.DomEvent.preventDefault(e);

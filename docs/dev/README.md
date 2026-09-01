@@ -14,6 +14,8 @@ Numérotation à cinq chiffres, comme Bohemia (`SPOTREP #00002`, `UPDATE #00198`
 
 ## Vague actuelle
 
+- [SPOTREP #00003](SPOTREP-00003.md) — 1er septembre 2026 — dossier de mission, tablette IceMan, bureau
+- [TECHREP #00003](TECHREP-00003.md) — 1er septembre 2026 — pack 1.4.97 et outils (sans jargon d’atelier)
 - [SPOTREP #00002](SPOTREP-00002.md) — 24 août 2026 — relief, rôles, terminaux, comptes rendus
 - [TECHREP #00002](TECHREP-00002.md) — 24 août 2026 — outils (sans jargon d’atelier)
 - [SPOTREP #00001](SPOTREP-00001.md) — 24 août 2026 — vague 2026.08c

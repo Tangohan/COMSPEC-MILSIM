@@ -18,6 +18,7 @@ $absenceReasonLabels = is_array($rhAbsenceReasonLabels ?? null) ? $rhAbsenceReas
 $mobilitySchemaReady = !empty($rhMobilitySchemaReady);
 $myMobility = is_array($rhMyMobility ?? null) ? $rhMyMobility : [];
 $mobilityTypeLabels = is_array($rhMobilityTypeLabels ?? null) ? $rhMobilityTypeLabels : [];
+$mobilityStatusLabels = is_array($rhMobilityStatusLabels ?? null) ? $rhMobilityStatusLabels : [];
 $hrDocsSchemaReady = !empty($rhHrDocsSchemaReady);
 $myHrDocs = is_array($rhMyHrDocs ?? null) ? $rhMyHrDocs : [];
 $hrDocTypeLabels = is_array($rhHrDocTypeLabels ?? null) ? $rhHrDocTypeLabels : [];
@@ -575,7 +576,7 @@ $cDoss = $statusToneClasses($statusDossierTone);
                         <?php foreach ($myMobility as $m): ?>
                             <li class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
                                 <?= htmlspecialchars((string) ($mobilityTypeLabels[$m['request_type'] ?? ''] ?? $m['request_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                                — <?= htmlspecialchars((string) ($m['status'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                — <?= htmlspecialchars((string) ($mobilityStatusLabels[$m['status'] ?? ''] ?? $m['status'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
                                 <?php $tl = trim((string) ($m['target_label'] ?? '')); if ($tl !== ''): ?>
                                     · <?= htmlspecialchars($tl, ENT_QUOTES, 'UTF-8') ?>
                                 <?php endif; ?>
@@ -597,7 +598,7 @@ $cDoss = $statusToneClasses($statusDossierTone);
                                     <?= htmlspecialchars((string) ($hrDocTypeLabels[$doc['doc_type'] ?? ''] ?? $doc['doc_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
                                     — <?= htmlspecialchars((string) ($doc['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
                                     <?php if ($stored && $docId > 0): ?>
-                                        · <a class="font-semibold text-emerald-800 underline" href="<?= htmlspecialchars(url('personnel/mon-espace-rh/documents/' . $docId . '/fichier'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir</a>
+                                        · <a class="font-semibold text-emerald-800 underline" href="<?= htmlspecialchars(url('personnel/mon-espace-rh/documents/' . $docId . '/fichier'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir la pièce</a>
                                     <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>

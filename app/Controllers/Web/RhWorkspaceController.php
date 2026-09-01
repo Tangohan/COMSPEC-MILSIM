@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Container;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
@@ -16,6 +17,8 @@ use App\Repositories\PersonnelMobilityRequestRepository;
 use App\Repositories\PlatformModuleReleaseRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Effectifs\EffectifsStaffAlertService;
+use App\Services\Effectifs\ElevationCatalogService;
 use App\Services\Personnel\SeniorityDossierInferenceSyncService;
 use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 use App\Services\Personnel\SenioritySummaryService;
@@ -132,6 +135,7 @@ final class RhWorkspaceController
             'rhMobilitySchemaReady' => $mobilitySchemaReady,
             'rhMyMobility' => $myMobility,
             'rhMobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
+            'rhMobilityStatusLabels' => PersonnelMobilityRequestRepository::STATUS_LABELS,
             'rhHrDocsSchemaReady' => $hrDocsSchemaReady,
             'rhMyHrDocs' => $myHrDocs,
             'rhHrDocTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
@@ -184,6 +188,14 @@ final class RhWorkspaceController
         return $this->rhFormRedirect($request, 'mobilite', $id > 0 ? 'mon-dossier-rh' : null);
     }
 
+    /**
+     * Demande d’élévation concernant le membre connecté (pas le tableur S1).
+     */
+    public function requestSelfElevation(Request $request, array $params = []): Response
+    {
+        return $this->storeElevation($request, $params);
+    }
+
     public function storeElevation(Request $request, array $params = []): Response
     {
         $user = $this->authService->user();
@@ -195,36 +207,35 @@ final class RhWorkspaceController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
 
-            return $this->rhFormRedirect($request, '');
+            return $this->rhFormRedirect($request, 'elevation', 'elevation');
         }
+
+        /** @var ElevationCatalogService $catalog */
+        $catalog = Container::get(ElevationCatalogService::class);
+        /** @var EffectifsStaffAlertService $staffAlert */
+        $staffAlert = Container::get(EffectifsStaffAlertService::class);
 
         $kind = trim((string) $request->input('elevation_kind', 'general'));
         $note = trim((string) $request->input('elevation_note', ''));
-        $proposal = $this->readElevationProposalFromRequest($request);
-        $validated = $this->validateElevationProposal($tenantId, $proposal);
+        $proposal = $catalog->readProposalFromRequest($request);
+        $validated = $catalog->validateProposal($tenantId, $proposal);
         if ($validated['error'] !== null) {
             Session::flash('error', $validated['error']);
 
-            return $this->rhFormRedirect($request, '');
-        }
-        $proposal = $validated['proposal'];
-        $hasChange = ($proposal['grade_id'] ?? null) !== null
-            || ($proposal['role_id'] ?? null) !== null
-            || ($proposal['job_role_id'] ?? null) !== null
-            || ($proposal['unit_id'] ?? null) !== null
-            || ($proposal['clearance_level'] ?? null) !== null
-            || $note !== '';
-        if (!$hasChange) {
-            Session::flash('error', 'Indiquez au moins un changement ou un message pour l’encadrement.');
-
-            return $this->rhFormRedirect($request, '');
+            return $this->rhFormRedirect($request, 'elevation', 'elevation');
         }
 
-        $alerts = \App\Core\Container::get(\App\Services\Effectifs\EffectifsStaffAlertService::class);
-        $result = $alerts->requestElevation($tenantId, $userId, $user, $kind, $note, $proposal);
+        $result = $staffAlert->requestElevation(
+            $tenantId,
+            $userId,
+            $user,
+            $kind,
+            $note,
+            $validated['proposal']
+        );
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
-        return $this->rhFormRedirect($request, '', $result['ok'] ? 'mon-dossier-rh' : null);
+        return $this->rhFormRedirect($request, 'elevation', $result['ok'] ? 'mon-dossier-rh' : 'elevation');
     }
 
     public function storeAbsence(Request $request, array $params = []): Response
@@ -380,9 +391,10 @@ final class RhWorkspaceController
 
     private function rhFormRedirect(Request $request, string $workspaceHash, ?string $forceDashboardStep = null): Response
     {
-        if (trim((string) $request->input('return_to', '')) === 'dashboard') {
+        $returnTo = trim((string) $request->input('return_to', ''));
+        if ($returnTo === 'dashboard') { // return_to === 'dashboard'
             $step = $forceDashboardStep ?? trim((string) $request->input('return_step', 'mon-dossier-rh'));
-            if (!in_array($step, ['absence', 'elevation', 'avancement', 'mon-dossier-rh'], true)) {
+            if (!in_array($step, ['absence', 'elevation', 'avancement', 'mon-dossier-rh', 'dashboard-member-rh'], true)) {
                 $step = 'mon-dossier-rh';
             }
 
@@ -393,78 +405,13 @@ final class RhWorkspaceController
         return Response::redirect(url('personnel/mon-espace-rh') . $hash);
     }
 
-    /**
-     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string,role_apply_mode:string}
-     */
-    private function readElevationProposalFromRequest(Request $request): array
+    private function redirectAfterMemberRh(Request $request, string $anchor): string
     {
-        $intOrNull = static function (mixed $raw): ?int {
-            if ($raw === null || $raw === '') {
-                return null;
-            }
-            $id = (int) $raw;
-
-            return $id > 0 ? $id : null;
-        };
-        $clearance = trim((string) $request->input('proposed_clearance_level', $request->input('elevation_clearance_level', '')));
-
-        return [
-            'grade_id' => $intOrNull($request->input('proposed_grade_id', $request->input('elevation_grade_id'))),
-            'role_id' => $intOrNull($request->input('proposed_role_id', $request->input('elevation_role_id'))),
-            'job_role_id' => $intOrNull($request->input('proposed_job_role_id', $request->input('elevation_job_role_id'))),
-            'unit_id' => $intOrNull($request->input('proposed_unit_id', $request->input('elevation_unit_id'))),
-            'clearance_level' => $clearance !== '' ? $clearance : null,
-            'role_apply_mode' => \App\Services\Effectifs\ElevationApprovalService::normalizeRoleApplyMode(
-                (string) $request->input('role_apply_mode', \App\Services\Effectifs\ElevationApprovalService::ROLE_APPLY_REPLACE)
-            ),
-        ];
-    }
-
-    /**
-     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level?:?string,role_apply_mode?:string} $proposal
-     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string,role_apply_mode:string}, error:?string}
-     */
-    private function validateElevationProposal(int $tenantId, array $proposal): array
-    {
-        $proposal['clearance_level'] = $proposal['clearance_level'] ?? null;
-        $proposal['role_apply_mode'] = \App\Services\Effectifs\ElevationApprovalService::normalizeRoleApplyMode(
-            isset($proposal['role_apply_mode']) ? (string) $proposal['role_apply_mode'] : \App\Services\Effectifs\ElevationApprovalService::ROLE_APPLY_REPLACE
-        );
-        $gradeId = $proposal['grade_id'] ?? null;
-        if ($gradeId !== null) {
-            $allowed = array_map(
-                static fn (array $g): int => (int) ($g['id'] ?? 0),
-                \App\Core\Container::get(\App\Repositories\GradeRepository::class)->listForTenant($tenantId)
-            );
-            if (!in_array($gradeId, $allowed, true)) {
-                return ['proposal' => $proposal, 'error' => 'Le grade sélectionné n’est pas disponible pour cette communauté.'];
-            }
+        $returnTo = trim((string) $request->input('return_to', ''));
+        if ($returnTo === 'dashboard') {
+            return url('dashboard') . '#dashboard-member-rh';
         }
 
-        $roleId = $proposal['role_id'] ?? null;
-        if ($roleId !== null && !\App\Core\Container::get(\App\Repositories\RoleRepository::class)->canAssignInTenantAdminContext($roleId, $tenantId)) {
-            return ['proposal' => $proposal, 'error' => 'Ce rôle ne peut pas être demandé dans cette communauté.'];
-        }
-
-        $jobRoleId = $proposal['job_role_id'] ?? null;
-        if ($jobRoleId !== null) {
-            $jobRepo = \App\Core\Container::get(\App\Repositories\PersonnelJobRoleRepository::class);
-            if (!$jobRepo->tablesExist() || !$jobRepo->findRoleById($jobRoleId, $tenantId)) {
-                return ['proposal' => $proposal, 'error' => 'La fonction sélectionnée est introuvable.'];
-            }
-        }
-
-        $unitId = $proposal['unit_id'] ?? null;
-        if ($unitId !== null && !\App\Core\Container::get(\App\Repositories\UnitRepository::class)->findById($unitId, $tenantId)) {
-            return ['proposal' => $proposal, 'error' => 'L’affectation sélectionnée est introuvable.'];
-        }
-
-        $clearanceLevel = $proposal['clearance_level'] ?? null;
-        if ($clearanceLevel !== null
-            && !array_key_exists($clearanceLevel, \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels())) {
-            return ['proposal' => $proposal, 'error' => 'Le niveau d’habilitation sélectionné n’est pas reconnu.'];
-        }
-
-        return ['proposal' => $proposal, 'error' => null];
+        return url('personnel/mon-espace-rh') . $anchor;
     }
 }

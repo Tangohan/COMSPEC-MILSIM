@@ -852,6 +852,7 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Repositories\UserProfileRepository::class),
             ),
             \App\Controllers\Web\PersonnelCorrectionController::class => new \App\Controllers\Web\PersonnelCorrectionController(
                 self::get(AuthService::class),
@@ -1420,6 +1421,12 @@ class Container
                 self::get(\App\Services\Training\TrainingEnrollmentPolicyService::class),
                 self::get(\App\Repositories\TrainingCourseRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+            ),
+            \App\Services\Effectifs\ElevationCatalogService::class => new \App\Services\Effectifs\ElevationCatalogService(
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
             ),
             \App\Services\Effectifs\EffectifsStaffAlertService::class => new \App\Services\Effectifs\EffectifsStaffAlertService(
                 self::get(\App\Repositories\TenantCommunityFeedRepository::class),

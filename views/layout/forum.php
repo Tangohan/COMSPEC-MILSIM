@@ -38,7 +38,7 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
 <?php
     $cdnPhase = 'head';
     $cdnPreset = 'forum';
-    // Forum : icons, emoji, gif, flags, animation (voir config/cdn_libraries.php)
+    // Forum : emoji, gif, flags (voir config/cdn_libraries.php)
     require base_path('views/partials/cdn_media_libs.php');
 ?>
 </head>

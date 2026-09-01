@@ -564,13 +564,13 @@ $personnelFileRhContext = $personnelFileIsRhFull || $personnelFileIsRhGate;
 $personnelFileShell = $personnelFileIsRhFull
     ? 'w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12'
     : 'max-w-7xl mx-auto px-6 md:px-8';
-$personnelFileRootClass = 'personnel-file-root pt-20';
+$personnelFileRootClass = 'personnel-file-root personnel-file pt-20';
 if ($personnelFileIsRhGate) {
-    $personnelFileRootClass .= ' personnel-file--rh-gate pb-6';
+    $personnelFileRootClass .= ' personnel-file--rh-gate personnel-file--gate pb-6';
 } elseif ($personnelFileIsRhFull) {
     $personnelFileRootClass .= ' personnel-file--rh-full pb-10';
 } else {
-    $personnelFileRootClass .= ' pb-10';
+    $personnelFileRootClass .= ' personnel-file--public pb-10';
 }
 ?>
 <div class="<?= htmlspecialchars($personnelFileRootClass, ENT_QUOTES, 'UTF-8') ?>">
@@ -631,7 +631,7 @@ if ($personnelFileIsRhGate) {
         </div>
     </div>
     <?php endif; ?>
-    <?php if (!$personnelFileRhContext): ?>
+    <?php if (!$personnelFileRhContext && !empty($viewerIsPersonnelSubject)): ?>
     <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
         <?php
         $active_tab = 'identity';
@@ -664,126 +664,127 @@ if ($personnelFileIsRhGate) {
     </div>
     <?php endif; ?>
     <!-- Hero -->
-    <section class="w-full bg-slate-900 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950/30 border-b border-slate-700/50">
-        <div class="max-w-7xl mx-auto px-6 md:px-8 py-12 md:py-16">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-                <div class="space-y-2">
-                    <p class="text-[9px] font-black uppercase tracking-[0.4em] text-emerald-400/90 italic">Dossier personnel</p>
-                    <h1 class="text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tighter text-white italic">
-                        <?= htmlspecialchars($displayName) ?>
-                    </h1>
-                    <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1">
-                        <?php if ($callsign): ?>
-                        <span class="text-lg md:text-xl font-black text-slate-300 italic"><?= htmlspecialchars($callsign) ?></span>
-                        <?php endif; ?>
-                        <?php if ($nicknamePrimary !== ''): ?>
-                        <span class="text-[11px] font-black uppercase tracking-[0.24em] text-amber-200/90">Surnom <?= htmlspecialchars($nicknamePrimary, ENT_QUOTES, 'UTF-8') ?></span>
-                        <?php endif; ?>
-                        <?php if ($matricule && !empty($showMatriculePublic)): ?>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-500"><?= htmlspecialchars($tenantMemberNumber !== '' ? $tenantMemberNumberLabel : 'Matricule', ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($matricule) ?></span>
-                        <?php endif; ?>
-                    </div>
+    <section class="personnel-file-hero" aria-label="Présentation du dossier">
+        <div class="personnel-file-hero__inner">
+            <div class="personnel-file-hero__identity">
+                <p class="personnel-file-hero__eyebrow">Dossier personnel</p>
+                <h1 class="personnel-file-hero__name"><?= htmlspecialchars($displayName) ?></h1>
+                <?php if ($callsign || $nicknamePrimary !== '' || ($matricule && !empty($showMatriculePublic))): ?>
+                <ul class="personnel-file-hero__meta">
+                    <?php if ($callsign): ?>
+                    <li>
+                        <span class="personnel-file-hero__meta-label">Indicatif</span>
+                        <p class="personnel-file-hero__meta-value"><?= htmlspecialchars($callsign) ?></p>
+                    </li>
+                    <?php endif; ?>
+                    <?php if ($nicknamePrimary !== ''): ?>
+                    <li>
+                        <span class="personnel-file-hero__meta-label">Surnom</span>
+                        <p class="personnel-file-hero__meta-value personnel-file-hero__meta-value--nick"><?= htmlspecialchars($nicknamePrimary, ENT_QUOTES, 'UTF-8') ?></p>
+                    </li>
+                    <?php endif; ?>
+                    <?php if ($matricule && !empty($showMatriculePublic)): ?>
+                    <li>
+                        <span class="personnel-file-hero__meta-label"><?= htmlspecialchars($tenantMemberNumber !== '' ? $tenantMemberNumberLabel : 'Matricule', ENT_QUOTES, 'UTF-8') ?></span>
+                        <p class="personnel-file-hero__meta-value personnel-file-hero__meta-value--id"><?= htmlspecialchars($matricule) ?></p>
+                    </li>
+                    <?php endif; ?>
+                </ul>
+                <?php endif; ?>
+                <?php if ($unitName || $publicFlagEmoji !== ''): ?>
+                <p class="personnel-file-hero__unit">
+                    <?php if ($publicFlagEmoji !== ''): ?>
+                    <span class="personnel-file-hero__flag" title="Pavillon"><?= htmlspecialchars($publicFlagEmoji, ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
                     <?php if ($unitName): ?>
-                    <p class="text-sm text-slate-400"><?= htmlspecialchars($unitName) ?></p>
+                    <span><?= htmlspecialchars($unitName) ?></span>
                     <?php endif; ?>
-                    <div class="flex flex-wrap gap-2 mt-2">
-                        <?php if ($privatePersonnelIdentity): ?>
-                        <?php $rawAccountStatus = (string) ($targetUser['status'] ?? ''); ?>
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-black uppercase <?= $rawAccountStatus === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600/30 text-slate-400' ?>">
-                            <span class="w-1.5 h-1.5 rounded-full <?= $rawAccountStatus === 'active' ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500' ?>"></span>
-                            <?= htmlspecialchars($accountStatusFr($rawAccountStatus)) ?>
-                        </span>
-                        <?php endif; ?>
-                        <?php if ($clearanceLevel): ?>
-                        <span class="inline-flex px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-slate-600/30 text-slate-300">Clearance <?= htmlspecialchars($clearanceLevel) ?></span>
-                        <?php endif; ?>
-                        <?php if ($isDeployableFile): ?>
-                        <span class="inline-flex px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400">Déployable</span>
-                        <?php else: ?>
-                        <span class="inline-flex px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-amber-500/15 text-amber-200">Non déployable</span>
-                        <?php endif; ?>
-                    </div>
-                    <?php if (\App\Core\Session::get('user_id')): ?>
-                    <?php $reportUid = (int) ($targetUser['id'] ?? 0); ?>
-                    <details class="relative mt-5 max-w-md group">
-                        <summary class="flex cursor-pointer list-none items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-sm backdrop-blur-sm transition hover:border-white/35 hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 [&::-webkit-details-marker]:hidden">
-                            <svg class="h-4 w-4 shrink-0 text-rose-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-                            Signaler un problème
-                            <svg class="h-3.5 w-3.5 shrink-0 text-white/70 transition group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
-                        </summary>
-                        <div class="absolute left-0 top-[calc(100%+0.5rem)] z-30 min-w-[min(100%,17rem)] overflow-hidden rounded-xl border border-white/15 bg-slate-950/95 py-1 shadow-2xl shadow-black/40 backdrop-blur-md ring-1 ring-white/10" role="menu">
-                            <button type="button" role="menuitem" data-community-report data-cr-type="member_profile" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant cette fiche personnelle." class="flex w-full items-center gap-2 border-b border-white/10 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
-                                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
-                                La fiche affichée
-                            </button>
-                            <?php
-                            $viewerIdForCorrection = (int) (\App\Core\Session::get('user_id') ?? 0);
-                            $canProposeCorrection = $viewerIdForCorrection > 0 && (
-                                $viewerIdForCorrection === $reportUid
-                                || !empty($canEditProfile)
-                                || !empty($canAccessRhView)
-                            );
-                            ?>
-                            <?php if ($canProposeCorrection): ?>
-                            <a role="menuitem" href="<?= htmlspecialchars(url('personnel/' . $reportUid . '/correction'), ENT_QUOTES, 'UTF-8') ?>" class="flex w-full items-center gap-2 border-b border-white/10 px-4 py-3 text-left text-xs font-semibold text-emerald-200 transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/60">
-                                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true"></span>
-                                Anomalie / correction RH
-                            </a>
-                            <?php endif; ?>
-                            <?php if (!empty($avatarUrl)): ?>
-                            <button type="button" role="menuitem" data-community-report data-cr-type="profile_picture" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant la photo de compte affichée." class="flex w-full items-center gap-2 border-b border-white/10 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
-                                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
-                                La photo de compte
-                            </button>
-                            <?php endif; ?>
-                            <?php if (!empty($portraitUrl)): ?>
-                            <button type="button" role="menuitem" data-community-report data-cr-type="operator_visual" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant le portrait opérateur affiché." class="flex w-full items-center gap-2 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
-                                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
-                                Le portrait opérateur
-                            </button>
-                            <?php endif; ?>
-                        </div>
-                    </details>
+                </p>
+                <?php endif; ?>
+                <div class="personnel-file-hero__badges">
+                    <?php if ($privatePersonnelIdentity): ?>
+                    <?php $rawAccountStatus = (string) ($targetUser['status'] ?? ''); ?>
+                    <span class="personnel-file-hero__badge<?= $rawAccountStatus === 'active' ? '' : ' personnel-file-hero__badge--muted' ?>">
+                        <span class="personnel-file-hero__badge-dot" aria-hidden="true"></span>
+                        <?= htmlspecialchars($accountStatusFr($rawAccountStatus)) ?>
+                    </span>
+                    <?php endif; ?>
+                    <?php if ($clearanceLevel): ?>
+                    <span class="personnel-file-hero__badge personnel-file-hero__badge--muted">Habilitation <?= htmlspecialchars($clearanceLevel) ?></span>
+                    <?php endif; ?>
+                    <?php if ($isDeployableFile): ?>
+                    <span class="personnel-file-hero__badge">Déployable</span>
+                    <?php else: ?>
+                    <span class="personnel-file-hero__badge personnel-file-hero__badge--warn">Non déployable</span>
                     <?php endif; ?>
                 </div>
-                <div class="flex items-end gap-4 md:gap-6">
-                    <div class="relative w-20 h-20 md:w-24 md:h-24 shrink-0 overflow-hidden rounded-2xl border-2 border-slate-600/50 bg-slate-800" title="Avatar compte" x-data="{ ready: false }">
-                        <?php if ($avatarUrl): ?>
-                        <div class="absolute inset-0 z-0 bg-slate-700 animate-pulse" x-show="!ready" x-transition.opacity.duration.200ms></div>
-                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Photo de compte" loading="eager" decoding="async" draggable="false" width="96" height="96" @load="ready = true" @error="ready = true" class="relative z-[1] h-full w-full object-cover transition-opacity duration-300" :class="ready ? 'opacity-100' : 'opacity-0'" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible" />
-                        <?php else: ?>
-                        <div class="flex h-full w-full items-center justify-center text-slate-500">
-                            <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                        </div>
+                <?php if (\App\Core\Session::get('user_id')): ?>
+                <?php $reportUid = (int) ($targetUser['id'] ?? 0); ?>
+                <details class="personnel-file-hero__report group">
+                    <summary>
+                        <svg class="h-3.5 w-3.5 shrink-0 text-rose-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                        Signaler un problème
+                        <svg class="h-3 w-3 shrink-0 text-white/70 transition group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+                    </summary>
+                    <div class="personnel-file-hero__report-menu" role="menu">
+                        <button type="button" role="menuitem" data-community-report data-cr-type="member_profile" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant cette fiche personnelle." class="flex w-full items-center gap-2 border-b border-white/10 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
+                            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
+                            La fiche affichée
+                        </button>
+                        <?php
+                        $viewerIdForCorrection = (int) (\App\Core\Session::get('user_id') ?? 0);
+                        $canProposeCorrection = $viewerIdForCorrection > 0 && (
+                            $viewerIdForCorrection === $reportUid
+                            || !empty($canEditProfile)
+                            || !empty($canAccessRhView)
+                        );
+                        ?>
+                        <?php if ($canProposeCorrection): ?>
+                        <a role="menuitem" href="<?= htmlspecialchars(url('personnel/' . $reportUid . '/correction'), ENT_QUOTES, 'UTF-8') ?>" class="flex w-full items-center gap-2 border-b border-white/10 px-4 py-3 text-left text-xs font-semibold text-emerald-200 transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/60">
+                            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true"></span>
+                            Anomalie / correction RH
+                        </a>
+                        <?php endif; ?>
+                        <?php if (!empty($avatarUrl)): ?>
+                        <button type="button" role="menuitem" data-community-report data-cr-type="profile_picture" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant la photo de compte affichée." class="flex w-full items-center gap-2 border-b border-white/10 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
+                            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
+                            La photo de compte
+                        </button>
+                        <?php endif; ?>
+                        <?php if (!empty($portraitUrl)): ?>
+                        <button type="button" role="menuitem" data-community-report data-cr-type="operator_visual" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant le portrait opérateur affiché." class="flex w-full items-center gap-2 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
+                            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
+                            Le portrait opérateur
+                        </button>
                         <?php endif; ?>
                     </div>
-                    <div class="flex shrink-0 flex-col items-end gap-2">
-                        <?php if ($heroFlagLine !== ''): ?>
-                        <p class="line-clamp-2 max-w-[10.5rem] text-right text-[9px] font-black uppercase tracking-[0.22em] text-white/90 md:max-w-[13rem]"><?= htmlspecialchars($heroFlagLine, ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php endif; ?>
-                        <div class="relative aspect-[3/5] w-[10.5rem] max-h-[min(22rem,52vh)] overflow-hidden rounded-2xl border-2 border-slate-600/50 bg-slate-900 shadow-lg shadow-black/40 md:w-[12rem]" title="Portrait opérateur" x-data="{ ready: false }">
-                            <?php if ($publicFlagEmoji !== ''): ?>
-                            <div class="pointer-events-none absolute inset-0 flex select-none items-end justify-center pb-5 text-[min(7rem,30vw)] leading-none text-white/90 opacity-[0.42] contrast-[1.05] saturate-[0.82] brightness-[0.92] blur-[0.5px]" aria-hidden="true"><?= htmlspecialchars($publicFlagEmoji, ENT_QUOTES, 'UTF-8') ?></div>
-                            <?php else: ?>
-                            <div class="absolute inset-0 bg-gradient-to-b from-slate-700 to-slate-950" aria-hidden="true"></div>
-                            <?php endif; ?>
-                            <div class="pointer-events-none absolute inset-0 opacity-[0.38] mix-blend-overlay" style="background-image:repeating-linear-gradient(-33deg,transparent,transparent 5px,rgba(0,0,0,0.22) 5px,rgba(0,0,0,0.22) 6px)" aria-hidden="true"></div>
-                            <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" aria-hidden="true"></div>
-                            <?php if ($portraitUrl): ?>
-                            <div class="absolute inset-0 z-0 bg-slate-800 animate-pulse" x-show="!ready" x-transition.opacity.duration.200ms></div>
-                            <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur" loading="eager" decoding="async" draggable="false" width="280" height="420" @load="ready = true" @error="ready = true" class="relative z-[1] h-full w-full object-contain object-bottom transition-opacity duration-300 drop-shadow-[0_8px_24px_rgba(0,0,0,0.65)]" :class="ready ? 'opacity-100' : 'opacity-0'" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible" />
-                            <?php else: ?>
-                            <div class="relative z-[1] flex h-full w-full items-center justify-center text-slate-500">
-                                <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                            </div>
-                            <?php endif; ?>
-                        </div>
+                </details>
+                <?php endif; ?>
+            </div>
+            <div class="personnel-file-hero__visual">
+                <figure class="personnel-file-hero__portrait" title="Portrait opérateur" x-data="{ ready: false }">
+                    <div class="absolute inset-0 bg-gradient-to-b from-slate-700 to-slate-950" aria-hidden="true"></div>
+                    <div class="personnel-file-hero__portrait-shade" aria-hidden="true"></div>
+                    <?php if ($portraitUrl): ?>
+                    <div class="absolute inset-0 z-0 bg-slate-800 animate-pulse" x-show="!ready" x-transition.opacity.duration.200ms></div>
+                    <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur" loading="eager" decoding="async" draggable="false" width="280" height="420" @load="ready = true" @error="ready = true" class="personnel-file-hero__portrait-img transition-opacity duration-300" :class="ready ? 'opacity-100' : 'opacity-0'" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible" />
+                    <?php else: ?>
+                    <div class="personnel-file-hero__portrait-empty">
+                        <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                     </div>
-                </div>
+                    <?php endif; ?>
+                    <?php if ($avatarUrl): ?>
+                    <div class="personnel-file-hero__avatar-inset" title="Photo de compte">
+                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Photo de compte" loading="eager" decoding="async" draggable="false" width="48" height="48" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible" />
+                        <span class="personnel-file-hero__avatar-inset-label">Compte</span>
+                    </div>
+                    <?php endif; ?>
+                </figure>
             </div>
         </div>
     </section>
 
+    <?php if (!empty($viewerIsPersonnelSubject) || !empty($canEditProfile)): ?>
     <!-- Complétude -->
     <section class="w-full border-b border-slate-200 bg-white">
         <div class="max-w-7xl mx-auto px-6 md:px-8 py-4">
@@ -799,6 +800,7 @@ if ($personnelFileIsRhGate) {
             </div>
         </div>
     </section>
+    <?php endif; ?>
 
     <!-- Récap -->
     <section class="w-full border-b border-slate-200 bg-gradient-to-r from-white via-emerald-50/40 to-white">
@@ -886,33 +888,12 @@ if ($personnelFileIsRhGate) {
                             <?php else: ?>
                             <p class="text-xs text-slate-400 italic">Non attribué</p>
                             <?php endif; ?>
-                            <?php if ($canManageMemberNumber && $tenantMemberNumberEnabled): ?>
-                            <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/member-number'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 space-y-1">
-                                <?= \App\Core\Csrf::field() ?>
-                                <input type="text" name="tenant_member_number" maxlength="100"
-                                       value="<?= htmlspecialchars($tenantMemberNumber, ENT_QUOTES, 'UTF-8') ?>"
-                                       placeholder="<?= $tenantMemberNumberPreview !== '' ? htmlspecialchars($tenantMemberNumberPreview, ENT_QUOTES, 'UTF-8') : 'Ex. OPS-0048' ?>"
-                                       class="w-full rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-xs">
-                                <input type="text" name="member_number_reason" maxlength="255" placeholder="Motif (facultatif)"
-                                       class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs">
-                                <button type="submit" class="text-[9px] font-black uppercase text-emerald-700 hover:text-emerald-800">Enregistrer</button>
-                            </form>
-                            <?php if (in_array($tenantMemberNumberMode, ['automatic', 'assisted'], true)): ?>
-                            <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/member-number/regenerate'), ENT_QUOTES, 'UTF-8') ?>"
-                                  class="mt-1"
-                                  onsubmit="return confirm('Régénérer le matricule d\'organisation ? L\'ancien sera remplacé.');">
-                                <?= \App\Core\Csrf::field() ?>
-                                <input type="hidden" name="confirm_regenerate" value="1">
-                                <input type="hidden" name="member_number_reason" value="Régénération">
-                                <button type="submit" class="text-[9px] font-black uppercase text-amber-700 hover:text-amber-800">Régénérer le matricule</button>
-                            </form>
-                            <?php endif; ?>
-                            <?php endif; ?>
+                            <?php /* Attribution du matricule : édition du dossier, pas la vue publique. */ ?>
                         </div>
                         <?php endif; ?>
                         <?php if ($callsign): ?>
                         <div>
-                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Callsign</p>
+                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Indicatif</p>
                             <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($callsign) ?></p>
                         </div>
                         <?php endif; ?>
@@ -923,9 +904,9 @@ if ($personnelFileIsRhGate) {
                         </div>
                         <?php endif; ?>
                         <div>
-                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Identifiant plateforme</p>
+                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Identifiant Athena</p>
                             <p class="text-sm font-semibold text-slate-700 font-mono"><?= $athenaIdentifier !== '' ? htmlspecialchars($athenaIdentifier) : '—' ?></p>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Identifiant permanent attribué par la plateforme</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Numéro de compte attribué une fois pour toutes</p>
                         </div>
                         <?php if ($unitName): ?>
                         <div>
@@ -947,7 +928,7 @@ if ($personnelFileIsRhGate) {
                         <?php endif; ?>
                     </div>
                 </div>
-                <?php if ($canEditProfile): ?>
+                <?php if ($canEditProfile && !empty($viewerIsPersonnelSubject)): ?>
                 <div class="flex flex-col gap-2">
                     <a href="<?= url('personnel/' . (int)$targetUser['id'] . '/edit') ?>" class="text-[9px] font-black uppercase tracking-widest text-[#059669] hover:text-emerald-800">Éditer le dossier</a>
                     <a href="<?= url('account/image') ?>" class="text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-slate-900">Photo de compte</a>

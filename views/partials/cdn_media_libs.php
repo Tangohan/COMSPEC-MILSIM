@@ -30,14 +30,31 @@ $assets = cdn_collect_assets($resolvedPacks, $cdnPhase);
 $baseUrlCdn = rtrim((string) ($baseUrl ?? url('')), '/');
 $hasPacks = $resolvedPacks !== [];
 
+$cdnAssetUrls = [];
+foreach (array_merge(
+    cdn_collect_assets($resolvedPacks, 'head'),
+    cdn_collect_assets($resolvedPacks, 'body')
+) as $cdnScanAsset) {
+    $cdnAssetUrls[] = (string) ($cdnScanAsset['href'] ?? $cdnScanAsset['src'] ?? '');
+}
+$cdnAssetBlob = implode("\n", $cdnAssetUrls);
+$needsJsdelivrPreconnect = str_contains($cdnAssetBlob, 'cdn.jsdelivr.net');
+$needsFlagcdnPreconnect = str_contains($cdnAssetBlob, 'flagcdn.com') || in_array('flags', $resolvedPacks, true);
+$needsTenorPrefetch = in_array('gif', $resolvedPacks, true);
+
 if ($cdnPhase === 'head'):
     if ($hasPacks):
-    // Preconnect vers les CDN utilisés
-    ?>
+    // Preconnect uniquement vers les hôtes réellement demandés (CSP portail sans jsDelivr)
+    if ($needsJsdelivrPreconnect): ?>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <?php endif; ?>
+    <?php if ($needsFlagcdnPreconnect): ?>
     <link rel="preconnect" href="https://flagcdn.com" crossorigin>
+    <?php endif; ?>
+    <?php if ($needsTenorPrefetch): ?>
     <link rel="dns-prefetch" href="https://tenor.googleapis.com">
     <link rel="dns-prefetch" href="https://media.tenor.com">
+    <?php endif; ?>
     <?php if (!$cdnSkipLocal && is_file(base_path('public/assets/css/athena_media.css'))): ?>
     <link href="<?= htmlspecialchars($baseUrlCdn, ENT_QUOTES, 'UTF-8') ?>/assets/css/athena_media.css" rel="stylesheet">
     <?php endif; ?>

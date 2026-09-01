@@ -2719,7 +2719,8 @@ body.atak-hints-hidden .atak-panel-hint {
 #atak-map .leaflet-div-icon.atak-designator-marker,
 #atak-map .leaflet-div-icon.atak-intel-marker,
 #atak-map .leaflet-div-icon.atak-sse-layer-marker,
-#atak-map .leaflet-div-icon.atak-trail-loss {
+#atak-map .leaflet-div-icon.atak-trail-loss,
+#atak-map .leaflet-div-icon.tactical-marker-chip-icon {
   background: transparent !important;
   border: none !important;
 }
@@ -5024,6 +5025,70 @@ body.atak-theme-light .atak-chat-messages {
 .atak-map--measuring,
 .atak-map--routing {
   cursor: crosshair !important;
+}
+
+.atak-map--gps-route {
+  cursor: crosshair !important;
+}
+.atak-gps-wp-wrap {
+  background: none !important;
+  border: 0 !important;
+}
+.atak-gps-wp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #eab308;
+  color: #111827;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1;
+  border: 2px solid #0b1118;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}
+.atak-gps-wp.is-reached {
+  background: #6b7280;
+  color: #e5e7eb;
+  opacity: 0.8;
+}
+.atak-gps-wp.is-draft {
+  background: #38bdf8;
+}
+.atak-gps-route-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+.atak-gps-popup {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+}
+.atak-gps-popup__del {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid rgba(220, 93, 93, 0.45);
+  background: transparent;
+  color: #fca5a5;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+#atak-gps-route-box .atak-route-panel__field input {
+  width: 100%;
+  margin-top: 0.2rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid rgba(150, 180, 200, 0.25);
+  background: rgba(8, 12, 18, 0.8);
+  color: inherit;
+}
+#atak-gps-route-send {
+  border-color: rgba(62, 207, 180, 0.45);
+  color: #5eead4;
 }
 
 .atak-route-panel {
@@ -11537,22 +11602,36 @@ body.atak-light .atak-sse-person-card-meta {
 }
 .atak-terminal-card__head {
   display: flex;
-  align-items: baseline;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   margin-bottom: 0.35rem;
+  min-width: 0;
 }
 .atak-terminal-card__call {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font: 800 12px/1.2 var(--atak-font-tactical);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #e8eef2;
 }
 .atak-terminal-card__state {
+  flex: 0 0 8.25rem;
+  width: 8.25rem;
+  max-width: 8.25rem;
+  box-sizing: border-box;
+  white-space: nowrap;
+  text-align: center;
+  overflow: hidden;
   font: 700 10px/1 var(--atak-font-secondary, var(--atak-font-ui));
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 0.15rem 0.4rem;
+  padding: 0.22rem 0.35rem;
   border-radius: 3px;
 }
 .atak-terminal-card__state--ok {
@@ -11566,7 +11645,11 @@ body.atak-light .atak-sse-person-card-meta {
 .atak-terminal-card__state--danger {
   background: rgba(220, 93, 93, 0.18);
   color: #f0a0a0;
-  animation: atak-badge-pulse 1.6s ease-in-out infinite;
+  animation: atak-terminal-state-pulse 1.6s ease-in-out infinite;
+}
+@keyframes atak-terminal-state-pulse {
+  0%, 100% { opacity: 1; box-shadow: none; }
+  50% { opacity: 0.88; box-shadow: 0 0 0 1px rgba(220, 93, 93, 0.35); }
 }
 .atak-terminal-card__rows {
   display: grid;

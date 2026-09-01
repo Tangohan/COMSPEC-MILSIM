@@ -39,8 +39,9 @@ final class DashboardRhParcoursAssetTest extends TestCase
         self::assertStringNotContainsString('endpoint', strtolower($view));
 
         self::assertStringContainsString('DashboardRhParcours::build', $home);
-        self::assertStringContainsString('storeElevation', $routes);
+        self::assertStringContainsString('requestSelfElevation', $routes);
         self::assertStringContainsString('function storeElevation', $ctrl);
+        self::assertStringContainsString('function requestSelfElevation', $ctrl);
         self::assertStringContainsString('dash-rh-parcours__choice', $css);
         self::assertStringContainsString('grid-template-columns: repeat(3, minmax(0, 1fr))', $css);
     }

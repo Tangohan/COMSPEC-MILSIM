@@ -8,6 +8,7 @@ use App\Repositories\PersonnelCorrectionRequestRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
+use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
@@ -18,31 +19,58 @@ use App\Services\EmailService;
 final class PersonnelCorrectionRequestService
 {
     /**
-     * Champs corrigibles par le membre (hors clearance / grade / rôles — circuit élévation).
+     * Champs de la fiche que le membre peut proposer (hors habilitation, grade attribué, rôles, e-mail).
      *
      * @var array<string, string>
      */
     public const CORRECTABLE_FIELDS = [
+        'first_name' => 'Prénom',
+        'last_name' => 'Nom',
         'callsign' => 'Indicatif radio',
         'nickname_primary' => 'Surnom principal',
+        'extra_callsigns' => 'Indicatifs secondaires',
+        'nicknames' => 'Autres surnoms',
         'motto' => 'Devise',
-        'languages' => 'Langues',
-        'nationality' => 'Nationalité (RP)',
+        'bio' => 'Présentation du personnage',
+        'languages' => 'Langues parlées',
+        'nationality' => 'Nationalité (personnage)',
         'blood_type' => 'Groupe sanguin',
-        'birth_place' => 'Lieu de naissance',
         'sex' => 'Sexe',
+        'birth_place' => 'Lieu de naissance',
         'family_situation' => 'Situation familiale',
         'weight_kg' => 'Poids (kg)',
+        'operator_status' => 'Statut opérateur',
+        'operator_tags' => 'Spécialités',
+        'enlistment_date' => 'Date d’engagement',
+        'rp_medical_due_date' => 'Échéance visite médicale',
+        'rp_operational_function' => 'Fonction sur le dossier',
+        'rank_display' => 'Grade ou titre affiché',
         'equipment_class' => 'Classe d’équipement',
         'kit_assigned' => 'Kit attribué',
         'radio_assigned' => 'Radio attribuée',
         'vehicle_authorized' => 'Véhicule autorisé',
-        'weapon_specialty' => 'Spécialité arme',
-        'operator_status' => 'Statut opérateur',
-        'operator_tags' => 'Tags opérateur',
-        'rank_display' => 'Rang affiché',
-        'enlistment_date' => 'Date d’engagement',
+        'weapon_specialty' => 'Spécialité armement',
     ];
+
+    /** @var array<string, string> */
+    public const FIELD_GROUPS = [
+        'identity' => 'Identité du personnage',
+        'details' => 'Détails du personnage',
+        'engagement' => 'Engagement et statut',
+        'equipment' => 'Équipement',
+    ];
+
+    /** @var list<string> */
+    private const USER_PROFILE_KEYS = ['first_name', 'last_name', 'bio'];
+
+    /** @var array<string, string> extra_callsigns|nicknames → colonne JSON personnel_profiles */
+    private const LINE_LIST_COLUMNS = [
+        'extra_callsigns' => 'extra_callsigns_json',
+        'nicknames' => 'nicknames_json',
+    ];
+
+    /** @var list<string> */
+    private const DATE_KEYS = ['enlistment_date', 'rp_medical_due_date'];
 
     /** @var list<string> */
     private const STAFF_PERMISSION_SLUGS = [
@@ -62,6 +90,7 @@ final class PersonnelCorrectionRequestService
         private TenantRepository $tenantRepository,
         private EmailService $emailService,
         private UserNotificationPreferencesRepository $notificationPreferences,
+        private UserProfileRepository $userProfiles,
     ) {
     }
 
@@ -72,16 +101,80 @@ final class PersonnelCorrectionRequestService
     }
 
     /**
+     * Métadonnées de saisie pour le formulaire membre (type, groupe, listes).
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function fieldCatalog(): array
+    {
+        $out = [];
+        foreach (self::CORRECTABLE_FIELDS as $key => $label) {
+            $out[$key] = array_merge(self::fieldMeta($key), ['label' => $label]);
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array<string, list<array{value: string, label: string}>>
+     */
+    public static function choiceCatalog(): array
+    {
+        return [
+            'blood_type' => self::choicePairs(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Inconnu']),
+            'sex' => [
+                ['value' => 'Homme', 'label' => 'Homme'],
+                ['value' => 'Femme', 'label' => 'Femme'],
+                ['value' => 'Autre', 'label' => 'Autre'],
+            ],
+            'family_situation' => [
+                ['value' => 'Célibataire', 'label' => 'Célibataire'],
+                ['value' => 'En couple', 'label' => 'En couple'],
+                ['value' => 'Marié(e)', 'label' => 'Marié(e)'],
+                ['value' => 'Pacsé(e)', 'label' => 'Pacsé(e)'],
+                ['value' => 'Divorcé(e)', 'label' => 'Divorcé(e)'],
+                ['value' => 'Veuf / Veuve', 'label' => 'Veuf / Veuve'],
+            ],
+            'operator_status' => [
+                ['value' => 'Actif', 'label' => 'Actif'],
+                ['value' => 'Disponible', 'label' => 'Disponible'],
+                ['value' => 'En formation', 'label' => 'En formation'],
+                ['value' => 'Réserve', 'label' => 'Réserve'],
+                ['value' => 'Indisponible', 'label' => 'Indisponible'],
+            ],
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function currentSnapshot(int $userId): array
     {
         $profile = $this->profiles->getByUserId($userId) ?? [];
+        $userProfile = $this->userProfiles->getByUserId($userId) ?? [];
         $out = [];
         foreach (array_keys(self::CORRECTABLE_FIELDS) as $key) {
+            if (in_array($key, self::USER_PROFILE_KEYS, true)) {
+                $val = $userProfile[$key] ?? null;
+                $out[$key] = is_scalar($val) ? trim((string) $val) : '';
+                continue;
+            }
+            if ($key === 'extra_callsigns') {
+                $list = function_exists('personnel_decode_extra_callsigns')
+                    ? personnel_decode_extra_callsigns($profile['extra_callsigns_json'] ?? null)
+                    : [];
+                $out[$key] = implode("\n", $list);
+                continue;
+            }
+            if ($key === 'nicknames') {
+                $out[$key] = $this->jsonListToLines($profile['nicknames_json'] ?? null);
+                continue;
+            }
             $val = $profile[$key] ?? null;
             if ($val === null) {
                 $out[$key] = '';
+            } elseif (in_array($key, self::DATE_KEYS, true)) {
+                $out[$key] = substr(trim((string) $val), 0, 10);
             } else {
                 $out[$key] = is_scalar($val) ? (string) $val : '';
             }
@@ -194,24 +287,12 @@ final class PersonnelCorrectionRequestService
 
         if ($decision === 'approved') {
             $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
-            $payload = $this->normalizeProposed($proposed, $this->currentSnapshot((int) $row['target_user_id']));
+            $targetUserId = (int) $row['target_user_id'];
+            $payload = $this->normalizeProposed($proposed, $this->currentSnapshot($targetUserId));
             if ($payload === []) {
                 return ['ok' => false, 'message' => 'Aucune champ valide à appliquer.'];
             }
-            if (isset($payload['weight_kg']) && $payload['weight_kg'] !== '' && $payload['weight_kg'] !== null) {
-                $payload['weight_kg'] = max(20, min(300, (int) $payload['weight_kg']));
-            } elseif (array_key_exists('weight_kg', $payload) && ($payload['weight_kg'] === '' || $payload['weight_kg'] === null)) {
-                $payload['weight_kg'] = null;
-            }
-            foreach ($payload as $k => $v) {
-                if ($k === 'weight_kg') {
-                    continue;
-                }
-                if ($v === '') {
-                    $payload[$k] = null;
-                }
-            }
-            $this->profiles->update((int) $row['target_user_id'], $payload);
+            $this->applyApprovedPayload($tenantId, $targetUserId, $payload);
         }
 
         if (!$this->requests->resolve($requestId, $tenantId, $decision, $resolverUserId, $resolutionNote)) {
@@ -281,27 +362,203 @@ final class PersonnelCorrectionRequestService
             if (!array_key_exists($key, $raw)) {
                 continue;
             }
-            $new = is_scalar($raw[$key]) ? trim((string) $raw[$key]) : '';
-            if ($key === 'weight_kg' && $new !== '') {
-                $new = (string) max(20, min(300, (int) $new));
-            }
-            if ($key === 'enlistment_date' && $new !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $new)) {
+            $new = $this->normalizeIncomingValue($key, $raw[$key]);
+            if (in_array($key, self::DATE_KEYS, true) && $new !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $new)) {
                 continue;
             }
             $old = isset($before[$key]) ? trim((string) $before[$key]) : '';
+            if ($key === 'extra_callsigns' || $key === 'nicknames') {
+                $old = $this->normalizeIncomingValue($key, $old);
+            }
             if ($new === $old) {
                 continue;
             }
             $max = match ($key) {
-                'motto', 'languages', 'operator_tags', 'weapon_specialty', 'kit_assigned' => 255,
-                'operator_status' => 160,
-                'callsign', 'nickname_primary', 'rank_display' => 120,
+                'bio' => 2000,
+                'extra_callsigns', 'nicknames' => 800,
+                'motto', 'languages', 'operator_tags', 'weapon_specialty', 'kit_assigned', 'vehicle_authorized' => 255,
+                'operator_status', 'rp_operational_function' => 160,
+                'callsign', 'nickname_primary', 'rank_display', 'first_name', 'last_name' => 120,
                 default => 150,
             };
             $out[$key] = mb_substr($new, 0, $max);
         }
 
         return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function applyApprovedPayload(int $tenantId, int $targetUserId, array $payload): void
+    {
+        if (isset($payload['weight_kg']) && $payload['weight_kg'] !== '' && $payload['weight_kg'] !== null) {
+            $payload['weight_kg'] = max(20, min(300, (int) $payload['weight_kg']));
+        } elseif (array_key_exists('weight_kg', $payload) && ($payload['weight_kg'] === '' || $payload['weight_kg'] === null)) {
+            $payload['weight_kg'] = null;
+        }
+
+        $userProfilePatch = [];
+        $personnelPatch = [];
+        foreach ($payload as $key => $value) {
+            if ($key !== 'weight_kg' && $value === '') {
+                $value = null;
+            }
+            if (in_array($key, self::USER_PROFILE_KEYS, true)) {
+                $userProfilePatch[$key] = $value;
+                continue;
+            }
+            if (isset(self::LINE_LIST_COLUMNS[$key])) {
+                $lines = ($value === null || $value === '')
+                    ? []
+                    : (preg_split('/\r\n|\r|\n/', (string) $value) ?: []);
+                if ($key === 'extra_callsigns' && function_exists('personnel_normalize_extra_callsigns')) {
+                    $lines = personnel_normalize_extra_callsigns($lines, null, 5, 100);
+                } else {
+                    $clean = [];
+                    foreach ($lines as $line) {
+                        $line = mb_substr(trim((string) $line), 0, 120);
+                        if ($line !== '' && !in_array($line, $clean, true)) {
+                            $clean[] = $line;
+                        }
+                    }
+                    $lines = array_slice($clean, 0, 12);
+                }
+                $personnelPatch[self::LINE_LIST_COLUMNS[$key]] = $lines === []
+                    ? null
+                    : json_encode($lines, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                continue;
+            }
+            $personnelPatch[$key] = $value;
+        }
+
+        if ($userProfilePatch !== []) {
+            $this->userProfiles->ensureRow($targetUserId);
+            $this->userProfiles->upsert($targetUserId, $userProfilePatch);
+            if (isset($userProfilePatch['first_name']) || isset($userProfilePatch['last_name'])) {
+                $current = $this->userProfiles->getByUserId($targetUserId) ?? [];
+                $derived = trim(
+                    (string) ($current['first_name'] ?? '') . ' ' . (string) ($current['last_name'] ?? '')
+                );
+                if ($derived !== '') {
+                    $this->profiles->update($targetUserId, ['character_name' => $derived]);
+                    $this->userRepository->update($targetUserId, $tenantId, ['display_name' => $derived]);
+                }
+            }
+        }
+
+        if (array_key_exists('callsign', $personnelPatch)) {
+            $cs = trim((string) ($personnelPatch['callsign'] ?? ''));
+            $this->userRepository->update($targetUserId, $tenantId, [
+                'callsign' => $cs !== '' ? $cs : null,
+            ]);
+        }
+
+        if ($personnelPatch !== []) {
+            $this->profiles->update($targetUserId, $personnelPatch);
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private static function fieldMeta(string $key): array
+    {
+        return match ($key) {
+            'bio' => ['type' => 'textarea', 'group' => 'identity', 'span' => 2, 'rows' => 3],
+            'extra_callsigns' => [
+                'type' => 'textarea',
+                'group' => 'identity',
+                'span' => 2,
+                'rows' => 2,
+                'help' => 'Un indicatif par ligne.',
+            ],
+            'nicknames' => [
+                'type' => 'textarea',
+                'group' => 'identity',
+                'span' => 2,
+                'rows' => 2,
+                'help' => 'Un surnom par ligne.',
+            ],
+            'motto' => ['type' => 'text', 'group' => 'identity', 'span' => 2],
+            'first_name', 'last_name', 'callsign', 'nickname_primary' => ['type' => 'text', 'group' => 'identity'],
+            'blood_type' => ['type' => 'select', 'group' => 'details', 'choices' => 'blood_type'],
+            'sex' => ['type' => 'select', 'group' => 'details', 'choices' => 'sex'],
+            'family_situation' => ['type' => 'select', 'group' => 'details', 'choices' => 'family_situation'],
+            'operator_status' => ['type' => 'select', 'group' => 'details', 'choices' => 'operator_status'],
+            'weight_kg' => ['type' => 'number', 'group' => 'details', 'min' => 20, 'max_num' => 300],
+            'languages', 'nationality', 'birth_place' => ['type' => 'text', 'group' => 'details'],
+            'operator_tags' => ['type' => 'text', 'group' => 'details', 'span' => 2],
+            'enlistment_date', 'rp_medical_due_date' => ['type' => 'date', 'group' => 'engagement'],
+            'rp_operational_function', 'rank_display' => ['type' => 'text', 'group' => 'engagement'],
+            'weapon_specialty' => ['type' => 'text', 'group' => 'equipment', 'span' => 2],
+            default => ['type' => 'text', 'group' => 'equipment'],
+        };
+    }
+
+    /**
+     * @param list<string> $values
+     * @return list<array{value: string, label: string}>
+     */
+    private static function choicePairs(array $values): array
+    {
+        $out = [];
+        foreach ($values as $value) {
+            $out[] = ['value' => $value, 'label' => $value];
+        }
+
+        return $out;
+    }
+
+    private function normalizeIncomingValue(string $key, mixed $raw): string
+    {
+        if (is_array($raw)) {
+            $lines = [];
+            foreach ($raw as $item) {
+                $item = trim((string) $item);
+                if ($item !== '') {
+                    $lines[] = $item;
+                }
+            }
+            $raw = implode("\n", $lines);
+        }
+        $new = trim((string) $raw);
+        if ($key === 'weight_kg' && $new !== '') {
+            return (string) max(20, min(300, (int) $new));
+        }
+        if ($key === 'extra_callsigns' || $key === 'nicknames') {
+            $parts = preg_split('/\r\n|\r|\n/', $new) ?: [];
+            $clean = [];
+            foreach ($parts as $line) {
+                $line = trim((string) $line);
+                if ($line !== '' && !in_array($line, $clean, true)) {
+                    $clean[] = $line;
+                }
+            }
+
+            return implode("\n", $clean);
+        }
+
+        return $new;
+    }
+
+    private function jsonListToLines(mixed $json): string
+    {
+        if (is_array($json)) {
+            $raw = $json;
+        } elseif (is_string($json) && $json !== '') {
+            $decoded = json_decode($json, true);
+            $raw = is_array($decoded) ? $decoded : [];
+        } else {
+            $raw = [];
+        }
+        $items = [];
+        foreach ($raw as $item) {
+            $item = trim((string) $item);
+            if ($item !== '' && !in_array($item, $items, true)) {
+                $items[] = $item;
+            }
+        }
+
+        return implode("\n", $items);
     }
 
     /**
@@ -448,12 +705,22 @@ final class PersonnelCorrectionRequestService
         $lines = [];
         foreach ($proposed as $key => $newVal) {
             $label = self::CORRECTABLE_FIELDS[$key] ?? $key;
-            $old = array_key_exists($key, $before) ? trim((string) $before[$key]) : '';
-            $new = trim((string) $newVal);
+            $old = array_key_exists($key, $before) ? $this->diffDisplayValue($before[$key]) : '';
+            $new = $this->diffDisplayValue($newVal);
             $lines[] = $label . ' : « ' . ($old !== '' ? $old : '—') . ' » → « ' . ($new !== '' ? $new : '—') . ' »';
         }
 
         return $lines;
+    }
+
+    private function diffDisplayValue(mixed $value): string
+    {
+        $text = trim((string) $value);
+        if ($text === '') {
+            return '';
+        }
+
+        return trim((string) preg_replace('/\s+/u', ' ', str_replace(["\r\n", "\r", "\n"], ' · ', $text)));
     }
 
     private function wantsEmail(int $userId, string $event): bool

@@ -546,7 +546,7 @@ return function (Router $router) {
     $router->post('/personnel/mon-espace-rh/absences', [RhWorkspaceController::class, 'storeAbsence'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/absences/annuler', [RhWorkspaceController::class, 'cancelAbsence'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/mobilite', [RhWorkspaceController::class, 'storeCareerWish'], [AuthMiddleware::class]);
-    $router->post('/personnel/mon-espace-rh/elevation', [RhWorkspaceController::class, 'storeElevation'], [AuthMiddleware::class]);
+    $router->post('/personnel/mon-espace-rh/elevation', [RhWorkspaceController::class, 'requestSelfElevation'], [AuthMiddleware::class]);
     $router->get('/personnel/mon-espace-rh/documents/{id}/fichier', [RhWorkspaceController::class, 'downloadHrDocument'], [AuthMiddleware::class]);
     $router->get('/personnel/mon-espace-rh', [RhWorkspaceController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/personnel/{id}', [PersonnelController::class, 'show'], [AuthMiddleware::class]);

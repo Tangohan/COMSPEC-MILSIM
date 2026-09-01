@@ -41,9 +41,9 @@ if (!function_exists('cdn_resolve_packs')) {
 
         if ($requested === null || $requested === '') {
             if ($preset === 'forum') {
-                $requested = $cfg['defaults_forum'] ?? ['icons', 'emoji', 'animation'];
+                $requested = $cfg['defaults_forum'] ?? ['emoji', 'gif', 'flags'];
             } else {
-                $requested = $cfg['defaults'] ?? ['icons', 'animation'];
+                $requested = $cfg['defaults'] ?? [];
             }
         }
 

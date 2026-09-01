@@ -270,6 +270,99 @@ final class DevDispatchCatalog
         return array_merge([
             [
                 'kind' => self::KIND_SPOTREP,
+                'number' => 3,
+                'date' => '2026-09-01',
+                'from' => 'État-major COMSPEC',
+                'to' => 'Communautés Athena, opérateurs ATAK, cellule S1, Zeus, commandement',
+                'category' => 'Opérations et poste',
+                'activity' => 'Dossier de mission, tablette lisible, bureau plus clair',
+                'size' => 'Overwatch 1.4.97 · Athena 1.0.58',
+                'title' => 'Le plan se publie, la tablette se lit, le bureau s’aère',
+                'featured' => true,
+                'companion_kind' => self::KIND_TECHREP,
+                'companion_number' => 3,
+                'groups' => ['atak', 'command', 'personnel'],
+                'notes' => [
+                    'Le commandement prépare plan, renseignement et ordres dans un même espace : les opérateurs ne voient que ce qui a été publié.',
+                    'Sur la tablette ATAK Enhanced, la carte se lit en charbon et cyan : grille, distance, cap et unité suivie, sans recouvrir le tiroir d’applications.',
+                    'Au lancement, Overwatch demande le compte Athena. Rien n’est transmis tant que l’environnement n’est pas prêt.',
+                    'Rechargez le pack jeu, puis relancez Arma complètement (pas seulement la mission).',
+                ],
+                'sections' => [
+                    [
+                        'title' => 'CARTE TACTIQUE',
+                        'items' => [
+                            ['verb' => 'Added', 'text' => 'Tablette IceMan : fond charbon, chiffres cyan, cartouches curseur et unité suivie sur la carte'],
+                            ['verb' => 'Added', 'text' => 'Cap en degrés vrais et zoom plus / moins sur le bord de la carte'],
+                            ['verb' => 'Tweaked', 'text' => 'Le tiroir d’applications, Drone Ops et les fenêtres caméra déjà présentes reprennent la même lecture'],
+                            ['verb' => 'Added', 'text' => 'Rapports du théâtre en pastilles compactes sur la carte du poste, comme en mission'],
+                            ['verb' => 'Added', 'text' => 'Outil Route : itinéraire transmis aux opérateurs, points atteints en gris'],
+                            ['verb' => 'Fixed', 'text' => 'La barre Position / Annoter / Tracer reste visible ; seul Masquer la replie'],
+                        ],
+                    ],
+                    [
+                        'title' => 'OVERWATCH',
+                        'items' => [
+                            ['verb' => 'Added', 'text' => 'Connexion Athena au menu : e-mail, code temporaire, ou Steam déjà associé'],
+                            ['verb' => 'Changed', 'text' => 'La communauté n’est plus saisie dans le jeu : Athena la choisit d’après le compte'],
+                            ['verb' => 'Fixed', 'text' => 'La tablette ATAK Enhanced se charge à nouveau'],
+                            ['verb' => 'Fixed', 'text' => 'Zeus : SSE, ATAK et OVERWATCH en haut du panneau d’une unité, plus sur les filtres'],
+                            ['verb' => 'Fixed', 'text' => 'Arsenal : bandeau des tenues Athena en haut, sans masquer Mes équipements'],
+                        ],
+                    ],
+                    [
+                        'title' => 'EFFECTIFS ET ÉQUIPEMENT',
+                        'items' => [
+                            ['verb' => 'Added', 'text' => 'Espace opération : synthèse, plan, objectifs et ordres rattachés à une même mission'],
+                            ['verb' => 'Added', 'text' => 'Collections de tenues, photos de présentation, tenues envoyées depuis l’arsenal'],
+                            ['verb' => 'Added', 'text' => 'Dépôt des pièces RH dans le coffre du dossier'],
+                            ['verb' => 'Added', 'text' => 'Charte des formations dans l’espace compte : parcours, puis confirmation'],
+                            ['verb' => 'Tweaked', 'text' => 'Grade attribué et portrait opérateur dans les effectifs ; page des rôles plus aérée'],
+                            ['verb' => 'Tweaked', 'text' => 'Fiches jumelles, dossier public et correction de fiche se lisent comme le reste du bureau'],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'kind' => self::KIND_TECHREP,
+                'number' => 3,
+                'date' => '2026-09-01',
+                'from' => 'Commissaire outils',
+                'to' => 'Intégrateurs Athena, responsables de pack',
+                'category' => 'Outils',
+                'activity' => 'Pack 1.4.97, tablette IceMan, espace opération, bureau effectifs',
+                'size' => 'Overwatch 1.4.97 · Athena 1.0.58',
+                'title' => 'Outils — tablette lisible et dossier de mission',
+                'companion_kind' => self::KIND_SPOTREP,
+                'companion_number' => 3,
+                'groups' => ['atak', 'platform', 'personnel'],
+                'notes' => [
+                    'Charger le pack Overwatch 1.4.97, puis relancer Arma complètement. La tablette IceMan affiche les cartouches sur la carte, jamais sur le tiroir.',
+                    'La connexion Athena précède toute transmission. Steam exige un poste déjà associé, pas seulement l’identifiant.',
+                    'Les communautés déjà en place n’ont rien à reconfigurer de force pour l’espace opération, les collections de tenues ou le coffre RH.',
+                ],
+                'sections' => [
+                    [
+                        'title' => 'SESSION ARMA',
+                        'items' => [
+                            ['verb' => 'Added', 'text' => 'Lecture IceMan : grille, distance, altitude, gisement, portée, unité suivie, cap et zoom'],
+                            ['verb' => 'Added', 'text' => 'Identification Athena avant le suivi, la messagerie et le renseignement'],
+                            ['verb' => 'Fixed', 'text' => 'Chargement de la tablette, boutons Zeus et bandeau d’arsenal sans recouvrement'],
+                        ],
+                    ],
+                    [
+                        'title' => 'PORTAIL',
+                        'items' => [
+                            ['verb' => 'Added', 'text' => 'Dossier de mission : calques en brouillon, revue, approuvés, puis publiés sur la vue terrain'],
+                            ['verb' => 'Added', 'text' => 'Pastilles de rapports, icônes de communauté et barre d’outils de la carte du poste'],
+                            ['verb' => 'Added', 'text' => 'Collections d’équipement, coffre de pièces, charte des formations'],
+                            ['verb' => 'Tweaked', 'text' => 'Tableau de bord : offres, dossier RH, barre d’identité sous le menu, invitation à actualiser'],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'kind' => self::KIND_SPOTREP,
                 'number' => 2,
                 'date' => '2026-08-24',
                 'from' => 'État-major COMSPEC',
@@ -278,7 +371,7 @@ final class DevDispatchCatalog
                 'activity' => 'Relief lisible, carte des rôles, parc de terminaux, comptes rendus',
                 'size' => 'Portail 1.5.38',
                 'title' => 'Le relief se dessine, les rôles se lisent',
-                'featured' => true,
+                'featured' => false,
                 'companion_kind' => self::KIND_TECHREP,
                 'companion_number' => 2,
                 'groups' => ['atak', 'command', 'personnel'],
@@ -491,12 +584,12 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
-            $pr(283, '2026-09-01', 'Le choix de vue du dossier ne laisse plus de vide', 'Sur le dossier personnel, après Vue publique et Vue RH, le pied de page arrive tout de suite : plus de bande blanche ni de trou sous les cartes', [], [], [
+            $pr(295, '2026-09-01', 'Le choix de vue du dossier ne laisse plus de vide', 'Sur le dossier personnel, après Vue publique et Vue RH, le pied de page arrive tout de suite : plus de bande blanche ni de trou sous les cartes', [], [], [
                 'Grand vide entre le choix de vue et le pied de page',
             ], ['personnel'], [
                 'Ouvrez un dossier personnel avec un accès RH. Les deux cartes restent, le pied de page est collé dessous.',
             ], 'Portail 1.5.92'),
-            $pr(282, '2026-09-01', 'Le dossier RH se choisit en trois étapes', 'En bas du tableau de bord, une seule démarche à la fois : d’abord Absence, Élévation ou Avancement, puis le formulaire', [
+            $pr(294, '2026-09-01', 'Le dossier RH se choisit en trois étapes', 'En bas du tableau de bord, une seule démarche à la fois : d’abord Absence, Élévation ou Avancement, puis le formulaire', [
                 'Trois cartes de choix en bas de page, puis le formulaire correspondant',
                 'Déclaration d’absence, demande d’élévation et souhait d’avancement depuis le tableau de bord',
             ], [
@@ -506,7 +599,7 @@ final class DevDispatchCatalog
             ], ['personnel'], [
                 'Ouvrez le tableau de bord, descendez jusqu’à Mon dossier RH, choisissez Absence, Élévation ou Avancement, puis transmettez.',
             ], 'Portail 1.5.91'),
-            $pr(281, '2026-09-01', 'Affichage dit vraiment ce qui est sur le poste', 'Dans Réglages carte, plus de texte d’atelier. Si les bâtiments sont déjà là et pas l’ombrage, le poste le dit clairement, au lieu de prétendre que rien n’a été relevé', [], [
+            $pr(293, '2026-09-01', 'Affichage dit vraiment ce qui est sur le poste', 'Dans Réglages carte, plus de texte d’atelier. Si les bâtiments sont déjà là et pas l’ombrage, le poste le dit clairement, au lieu de prétendre que rien n’a été relevé', [], [
                 'Les cases Villes et villages, Routes, sans notice technique',
             ], [
                 'Deux pavés d’atelier au milieu des réglages',
@@ -514,15 +607,7 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Ouvrez Réglages → Carte. Plus de pavé gris sous la vue relief. S’il y a des bâtiments sans ombrage, le bandeau le dit : bâtiments reçus, ombrage du sol pas encore sur le poste.',
             ], 'Portail 1.5.90'),
-            $pr(279, '2026-09-01', 'Les comptes-rendus du téléphone ne se chevauchent plus', 'Sur le téléphone, la page Comptes-rendus aligne titre, reçus, liste, Localiser / Effacer et le détail. Plus de rectangle noir ni de boutons coupés en deux', [], [
-                'Reçus, Nouveau, liste et détail tiennent chacun leur ligne',
-                'Retour, Localiser et Effacer restent lisibles en bas du téléphone',
-            ], [
-                'La liste recouvrait Localiser et Effacer, et un grand cadre vide masquait le milieu de l’écran',
-            ], ['atak'], [
-                'Ouvrez le téléphone, application Comptes-rendus. Sans message reçu, le texte d’absence est sous les boutons, pas dessus. Relancer Arma après le nouveau pack.',
-            ], 'Overwatch 1.4.98 · Athena 1.0.61'),
-            $pr(280, '2026-09-01', 'Un vrai parcours d’arrivée pour les nouveaux membres', 'Après l’acceptation d’une candidature, la création d’un compte ou une invitation, l’encadrement suit l’arrivée : étapes, dossier personnel, rendez-vous et référent. Le membre voit son propre parcours, sans les notes internes', [
+            $pr(292, '2026-09-01', 'Un vrai parcours d’arrivée pour les nouveaux membres', 'Après l’acceptation d’une candidature, la création d’un compte ou une invitation, l’encadrement suit l’arrivée : étapes, dossier personnel, rendez-vous et référent. Le membre voit son propre parcours, sans les notes internes', [
                 'Tableau de suivi des arrivées, avec filtres et vue par étape en cours',
                 'Fiche de parcours : dossier personnel, groupes de suivi, bilans, rendez-vous et journal',
                 'Modèles de parcours publiés, repris à l’identique pour chaque nouvel arrivant',
@@ -533,7 +618,15 @@ final class DevDispatchCatalog
             ], [], ['personnel', 'command'], [
                 'Ouvrez Intégration des nouveaux membres dans le back-office. Vérifiez le modèle Intégration recrue, puis acceptez une candidature ou créez un compte : le parcours s’ouvre. Le membre consulte Mon intégration.',
             ], 'Portail 1.5.97'),
-            $pr(278, '2026-09-01', 'Même vocabulaire sur la carte et dans les paramètres', 'Sur le téléphone, le cartouche de l’unité reprend les intitulés des paramètres : indicatif, rôle, groupe et grille. Plus de titres anglais, plus de chiffre sans nom', [
+            $pr(291, '2026-09-01', 'Les comptes-rendus du téléphone ne se chevauchent plus', 'Sur le téléphone, la page Comptes-rendus aligne titre, reçus, liste, Localiser / Effacer et le détail. Plus de rectangle noir ni de boutons coupés en deux', [], [
+                'Reçus, Nouveau, liste et détail tiennent chacun leur ligne',
+                'Retour, Localiser et Effacer restent lisibles en bas du téléphone',
+            ], [
+                'La liste recouvrait Localiser et Effacer, et un grand cadre vide masquait le milieu de l’écran',
+            ], ['atak'], [
+                'Ouvrez le téléphone, application Comptes-rendus. Sans message reçu, le texte d’absence est sous les boutons, pas dessus. Relancer Arma après le nouveau pack.',
+            ], 'Overwatch 1.4.98 · Athena 1.0.61'),
+            $pr(290, '2026-09-01', 'Même vocabulaire sur la carte et dans les paramètres', 'Sur le téléphone, le cartouche de l’unité reprend les intitulés des paramètres : indicatif, rôle, groupe et grille. Plus de titres anglais, plus de chiffre sans nom', [
                 'Indicatif, rôle, groupe et grille, comme dans Paramètres',
                 'L’indicatif affiché est celui enregistré, pas le nom de profil',
             ], [], [
@@ -541,7 +634,7 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Ouvrez le téléphone sur la carte. Le cartouche de droite reprend Indicatif, Rôle, Groupe et Grille. Vérifiez dans Paramètres que l’indicatif est le même.',
             ], 'Overwatch 1.4.98 · Athena 1.0.60'),
-            $pr(277, '2026-09-01', 'L’écran Athena du téléphone a quatre vues claires', 'Sur le téléphone ATAK, Athena n’empile plus tout. Journal, alertes, comptes-rendus et poste sont quatre écrans distincts, avec un vrai fil de lecture', [
+            $pr(289, '2026-09-01', 'L’écran Athena du téléphone a quatre vues claires', 'Sur le téléphone ATAK, Athena n’empile plus tout. Journal, alertes, comptes-rendus et poste sont quatre écrans distincts, avec un vrai fil de lecture', [
                 'Quatre boutons en haut : Journal, Alerter, Rapporter, Poste',
                 'Le journal se filtre dans une liste, et le détail se lit sous la ligne choisie',
             ], [
@@ -551,20 +644,12 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Ouvrez le téléphone, application Athena. Journal pour lire. Alerter pour un contact ou un opérateur à terre. Rapporter pour un FRAGO ou une photo. Poste pour le compte et l’appui.',
             ], 'Overwatch 1.4.98 · Athena 1.0.59'),
-            $pr(276, '2026-09-01', 'Plus de file d’attente pour les tenues hors liaison', 'Sans compte relié, l’envoi des tenues depuis l’arsenal ne remplit plus une file inutile. Un seul message l’indique, et le tampon reste libre pour les vrais comptes rendus', [], [], [
+            $pr(288, '2026-09-01', 'Plus de file d’attente pour les tenues hors liaison', 'Sans compte relié, l’envoi des tenues depuis l’arsenal ne remplit plus une file inutile. Un seul message l’indique, et le tampon reste libre pour les vrais comptes rendus', [], [], [
                 'Sans liaison, chaque tenue locale était mise en attente l’une après l’autre jusqu’à saturer le tampon',
             ], ['atak'], [
                 'Rechargez le pack. Sans session Athena, Envoyer les tenues affiche un seul avertissement. Le journal de session ne se remplit plus de transmissions hors ligne.',
             ], 'Overwatch 1.4.98'),
-            $pr(274, '2026-09-01', 'Les tenues Athena à l’arsenal tiennent dans un tiroir', 'À l’arsenal, un petit bouton Athena ouvre les tenues de la communauté. La fenêtre n’apparaît plus toute seule, et les textes se lisent correctement', [], [
-                'La fenêtre est plus étroite, collée à côté de Mes équipements, sans barrer le personnage',
-                'Les intitulés et la liste ont une taille de texte lisible',
-            ], [
-                'Un bandeau trop large s’ouvrait dès l’entrée à l’arsenal, avec un texte d’aide presque illisible',
-            ], ['atak'], [
-                'Ouvrez l’arsenal. Cliquez Athena en haut à droite du centre. Envoyez ou récupérez les tenues, puis Fermer.',
-            ], 'Overwatch 1.4.97'),
-            $pr(275, '2026-09-01', 'La vue relief n’incline plus le plan de la carte', 'La carte à plat reste un plan ; le relief se voit dans une vue séparée, collines et unités posées sur le sol', [
+            $pr(287, '2026-09-01', 'La vue relief n’incline plus le plan de la carte', 'La carte à plat reste un plan ; le relief se voit dans une vue séparée, collines et unités posées sur le sol', [
                 'La carte à plat reste parfaitement plane : plus de trapèze ni de bandes étirées',
                 'La vue relief montre le sol relevé, avec la grille et les unités posées sur le terrain',
             ], [
@@ -574,19 +659,27 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Sur la carte du poste, choisissez À plat pour le plan, ou Relief 3D pour voir le sol relevé. Le cadrage suit le centre déjà affiché.',
             ], 'Portail 1.5.96'),
-            $pr(273, '2026-09-01', 'Plus de bandeau Overwatch dans le menu pause', 'Le menu Échap en session ne montre plus le bandeau du pack en haut de l’écran', [], [], [
+            $pr(286, '2026-09-01', 'Les tenues Athena à l’arsenal tiennent dans un tiroir', 'À l’arsenal, un petit bouton Athena ouvre les tenues de la communauté. La fenêtre n’apparaît plus toute seule, et les textes se lisent correctement', [], [
+                'La fenêtre est plus étroite, collée à côté de Mes équipements, sans barrer le personnage',
+                'Les intitulés et la liste ont une taille de texte lisible',
+            ], [
+                'Un bandeau trop large s’ouvrait dès l’entrée à l’arsenal, avec un texte d’aide presque illisible',
+            ], ['atak'], [
+                'Ouvrez l’arsenal. Cliquez Athena en haut à droite du centre. Envoyez ou récupérez les tenues, puis Fermer.',
+            ], 'Overwatch 1.4.97'),
+            $pr(285, '2026-09-01', 'Plus de bandeau Overwatch dans le menu pause', 'Le menu Échap en session ne montre plus le bandeau du pack en haut de l’écran', [], [], [
                 'Le nom du pack s’affichait en bandeau au-dessus du menu pause, sans action utile',
             ], ['atak'], [
                 'Rechargez le pack Overwatch, relancez Arma, puis ouvrez Échap en session : le bandeau a disparu. Le bouton de gestion du pack reste disponible.',
             ], 'Overwatch 1.4.97'),
-            $pr(272, '2026-09-01', 'Le QR de la fenêtre détachée se scanne enfin', 'Pour ouvrir un module sur le téléphone, le code à scanner est désormais grand, sur fond blanc, à côté du visuel', [
+            $pr(284, '2026-09-01', 'Le QR de la fenêtre détachée se scanne enfin', 'Pour ouvrir un module sur le téléphone, le code à scanner est désormais grand, sur fond blanc, à côté du visuel', [
                 'Le code occupe un carré lisible, avec une marge claire autour',
             ], [], [
                 'Le code était collé sur l’écran du téléphone dessiné : trop petit pour l’appareil photo',
             ], ['atak'], [
                 'Sur la carte du poste, ouvrez Affichage déporté, puis Fenêtre détachée sur téléphone. Présentez le grand carré blanc à l’appareil photo.',
             ], 'Portail 1.5.95'),
-            $pr(271, '2026-09-01', 'Pack actuel et pack exigé, visibles à l’écran', 'Si la communauté n’accepte plus ce pack, la fenêtre de connexion indique le pack installé et celui qui est demandé', [
+            $pr(283, '2026-09-01', 'Pack actuel et pack exigé, visibles à l’écran', 'Si la communauté n’accepte plus ce pack, la fenêtre de connexion indique le pack installé et celui qui est demandé', [
                 'Message clair : pack actuel et version exigée par la communauté',
                 'Pied de fenêtre : liaison, pack actuel, et pack exigé dès que la communauté en a fixé un',
             ], [], [
@@ -594,6 +687,100 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Après le prochain pack Overwatch, relancez Arma. Si la connexion est refusée pour le pack, lisez les deux numéros. Le gestionnaire peut baisser l’exigence dans Cartographie, Expérience en jeu, Pack Overwatch minimal.',
             ], 'Overwatch 1.5.0 · Extension 1.18.0'),
+            $pr(282, '2026-09-01', 'Une fenêtre propose d’actualiser après une mise à jour', 'Sur le tableau de bord, comme ailleurs sur le site, une fenêtre invite à actualiser la page lorsqu’une nouvelle version du portail est en place', [
+                'La fenêtre propose Actualiser ou Plus tard, sans bloquer la navigation',
+            ], [], [], ['platform'], [
+                'Laissez le tableau de bord ouvert pendant une mise à jour, ou rechargez-le : la fenêtre apparaît comme sur le reste du site.',
+            ], 'Portail 1.5.95'),
+            $pr(281, '2026-09-01', 'La barre d’identité reste collée sous le menu', 'Sur le tableau de bord, communauté, grade, matricule et raccourcis restent sous le menu principal, y compris au défilement', [], [
+                'Les raccourcis (fiche, demande à l’encadrement, signaler une anomalie) restent au même endroit',
+            ], [
+                'La barre d’identité n’apparaît plus après le visuel de briefing'
+            ], ['personnel'], [
+                'Ouvrez le tableau de bord. La barre d’identité se trouve juste sous Dashboard / Hub / Forum.',
+            ], 'Portail 1.5.95'),
+            $pr(276, '2026-09-01', 'La barre d’outils de la carte reste visible', 'Sur la carte du poste, la barre Position, Annoter, Tracer, Analyse et Vue ne disparaît plus à chaque visite', [
+                'Le bouton Outils ramène la barre si elle a été repliée',
+            ], [
+                'Le choix Masquer est mémorisé : au prochain chargement, la barre reste repliée tant qu’on ne la rappelle pas',
+            ], [
+                'La barre disparaissait dès l’ouverture, sans moyen de la faire revenir',
+            ], ['atak'], [
+                'Ouvrez la carte du poste. La barre d’outils reste. Masquer la replie ; Outils la fait réapparaître.',
+            ], 'Portail 1.5.95'),
+            $pr(280, '2026-09-01', 'Les rapports se lisent comme en mission sur la carte du poste', 'Observation, situation et renseignement immédiat apparaissent en pastilles compactes, comme les libellés que les opérateurs voient déjà dans Arma', [
+                'Chaque rapport posé sur le théâtre affiche son type en capitales (SPOTREP, SITREP, IMINI, CONTACT…) et le temps écoulé depuis l’émission',
+                'La barre colorée en tête distingue d’un coup d’œil une observation, un renseignement immédiat ou un contact',
+                'Les pastilles se superposent quand plusieurs signalements sont proches, sans masquer le terrain',
+            ], [], [], ['atak', 'command'], [
+                'Ouvrez la carte du poste. Un rapport transmis depuis le jeu apparaît à sa position, avec le même langage visuel qu’en mission. Pas besoin d’un nouveau pack jeu.',
+            ], 'Portail 1.5.95'),
+            $pr(279, '2026-09-01', 'Le tableau de bord réunit offres, dossier RH et annonces', 'Depuis le tableau de bord, les membres voient les postes ouverts de la communauté, gèrent leur propre dossier RH, et les organisateurs rédigent une annonce sans quitter cet écran', [
+                'Les offres actuellement publiées de l’organisation s’affichent, avec un accès à la fiche publique et à la candidature',
+                'Chaque membre peut demander une élévation (grade, rôle, fonction) ou un avancement, sans passer par le tableur des effectifs',
+                'Les organisateurs habilités ouvrent le formulaire d’annonce déjà en place, pour un article court visible des membres',
+            ], [
+                'L’espace RH complet, les absences et le suivi des accès restent accessibles en un clic',
+            ], [], ['personnel'], [
+                'Ouvrez le tableau de bord. Les offres, votre dossier RH et, si vous organisez la communauté, la rédaction d’une annonce se trouvent sous les transmissions.',
+            ], 'Portail 1.5.95'),
+            $pr(277, '2026-09-01', 'Le dossier public se lit d’un coup d’œil', 'Sur la fiche d’un opérateur, le nom, l’indicatif et le portrait se tiennent : la photo de compte n’erre plus à côté, et Signaler un problème reste discret', [], [
+                'Le nom, l’indicatif, le surnom et le matricule se lisent l’un sous l’autre, avec l’unité juste en dessous',
+                'Les pastilles (compte, habilitation, déploiement) restent sur une ligne lisible',
+            ], [
+                'La photo de compte est collée au portrait opérateur, dans le même cadre',
+                'Le signalement d’un problème n’occupe plus toute la largeur du bandeau',
+                'Les onglets de votre espace (compétences, formations, compte) n’apparaissent plus sur la fiche d’un autre membre',
+                'À l’arrivée sur une fiche, les annonces, le bandeau et le choix de vue s’enchaînent sans grand vide blanc',
+            ], ['personnel'], [
+                'Ouvrez une fiche depuis l’annuaire. Aucune action n’est demandée : le bandeau se lit simplement plus clairement.',
+            ], 'Portail 1.5.95'),
+            $pr(275, '2026-09-01', 'La tablette ATAK se lit comme un vrai poste de terrain', 'Sur la tablette IceMan, la carte passe en charbon et cyan : grille, distance, cap et unité suivie se lisent d’un coup d’œil, sans recouvrir le tiroir d’applications', [
+                'Sous le curseur : grille, distance, altitude du sol, gisement, portée et écart d’altitude',
+                'Sur l’unité suivie : groupe, indicatif, grille, altitude, vitesse et heure',
+                'Cap en degrés vrais en haut à gauche, et zoom plus / moins sur le bord de la carte',
+            ], [
+                'Le tiroir d’applications, Drone Ops et les fenêtres caméra déjà présentes reprennent le même charbon / cyan',
+            ], [], ['atak'], [
+                'Rechargez le pack jeu Overwatch, puis relancez Arma complètement. Ouvrez la tablette ATAK Enhanced : les cartouches sont sur la carte, jamais sur le tiroir de droite.',
+            ], 'Overwatch 1.4.97 · Athena 1.0.58'),
+            $pr(274, '2026-09-01', 'Les icônes de la communauté se règlent depuis le poste', 'Dans Réglages du poste, on voit les icônes en vigueur ; le gestionnaire ouvre la bibliothèque pour en choisir ou en ajouter', [
+                'Le panneau Réglages du poste montre les icônes choisies pour les opérateurs, les véhicules, les aéronefs et les téléphones',
+                'Le gestionnaire poursuit vers la bibliothèque de la communauté : envoi d’une image, ou choix parmi celles déjà présentes',
+            ], [
+                'Les calques villes et routes, et la vue en relief, se lisent en langage de poste',
+            ], [], ['atak'], [
+                'Ouvrez la carte, puis Réglages du poste. Les icônes de la communauté sont sous Apparence de la carte. Le gestionnaire peut les changer dans la bibliothèque, puis recharger la carte.',
+            ], 'Portail 1.5.95'),
+            $pr(273, '2026-09-01', 'Les fiches jumelles occupent enfin le bureau', 'La page des dossiers identiques se lit comme les rôles : indicateurs, réglage compact, puis un vrai panneau de résultat', [
+                'Les champs à surveiller se choisissent sur des cartes courtes, collées au texte, pas sur des bandes trop larges',
+                'Le résultat — aucune fiche jumelle, ou les groupes à relire — tient un panneau à côté du réglage',
+            ], [
+                'La détection active ou en pause, le nombre de critères et les groupes à traiter se lisent d’emblée',
+            ], [], ['personnel'], [
+                'Ouvrez Bureau effectifs, puis Fiches jumelles. Cochez ce qui ne doit jamais se répéter, enregistrez, et relisez le panneau résultat.',
+            ], 'Portail 1.5.95'),
+            $pr(278, '2026-09-01', 'Corriger sa fiche se lit enfin', 'Le signalement d’anomalie reprend la présentation du dossier, et le prénom, le nom et la présentation du personnage peuvent être proposés', [
+                'Le formulaire de correction RH se lit comme le reste du dossier : titre visible, champs clairs, sans trou dans la grille',
+                'Le membre peut proposer le prénom, le nom, la présentation, les indicatifs secondaires, les autres surnoms, la fonction du dossier et l’échéance de visite médicale',
+                'Le groupe sanguin, le sexe, la situation familiale et le statut opérateur se choisissent dans une liste',
+            ], [], [], ['personnel'], [
+                'Ouvrez votre fiche, puis Signaler un problème. Proposez les corrections, envoyez : rien n’est écrit tant qu’un organisateur n’a pas confirmé.',
+            ], 'Portail 1.5.95'),
+            $pr(272, '2026-09-01', 'Itinéraire du poste vers les opérateurs', 'L’outil Route du poste trace un itinéraire : les opérateurs le voient en jeu, avec les points déjà atteints', [
+                'Depuis la barre d’outils de la carte, Route pose des points de passage numérotés',
+                'Une fois transmis, l’itinéraire apparaît sur la carte des opérateurs en mission',
+                'Les points déjà atteints passent en gris sur le poste comme en jeu',
+            ], [], [], ['atak'], [
+                'Rechargez la carte du poste. Tracez au moins deux points, puis transmettez. En jeu : pack Overwatch déjà à jour pour le guidage.',
+            ], 'Portail 1.5.95'),
+            $pr(271, '2026-09-01', 'Les fiches terminal affichent le pack en clair', 'Dans Terminaux, l’état de liaison reste calé à droite, et la version Overwatch se lit sur sa propre ligne', [
+                'La version Overwatch (et la liaison Athena si elle est connue) apparaît sous le type d’appareil, plus collée dans la même phrase',
+            ], [], [
+                'Le bandeau Hors liaison ne saute plus quand l’indicatif est court ou long',
+            ], ['atak'], [
+                'Ouvrez la carte du poste, puis l’onglet Terminaux. Rechargez la page. Pas besoin d’un nouveau pack jeu.',
+            ], 'Portail 1.5.95'),
             $pr(270, '2026-09-01', 'La page des rôles a plus d’air', 'Dans le bureau effectifs, la liste des rôles n’est plus collée : cartes, indicateurs et boutons se lisent sans se serrer', [], [
                 'Les indicateurs (nombre de rôles, communauté, intra-unité) ont plus d’espace entre le libellé et la valeur',
                 'Le bandeau de pilotage et les cartes de rôles ont davantage de marge intérieure, et les cartes sont plus écartées les unes des autres',

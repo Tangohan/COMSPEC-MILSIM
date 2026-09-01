@@ -144,6 +144,11 @@ $navTiles = [
     $tile('overview', 'Vue d’ensemble', 'Synthèse du jour', 'default', null, $links([
         ['label' => 'Tableau de bord', 'href' => url('dashboard'), 'hint' => 'Briefing et indicateurs'],
         ['label' => 'Annonces', 'href' => url('dashboard') . '#dashboard-announce', 'hint' => 'Alertes et annonces'],
+        ['label' => 'Offres de l’organisation', 'href' => url('dashboard') . '#dashboard-org-offers', 'hint' => 'Postes actuellement ouverts'],
+        ['label' => 'Mon dossier RH', 'href' => url('dashboard') . '#dashboard-member-rh', 'hint' => 'Élévation et avancement'],
+        (function_exists('can') && (can('admin.organization') || can('admin.access') || can('site.support')))
+            ? ['label' => 'Rédiger un article', 'href' => url('dashboard') . '#dashboard-quick-articles', 'hint' => 'Annonce pour les membres']
+            : null,
         ['label' => 'Signaler une anomalie', 'href' => url('dashboard') . '#signaler-anomalie', 'hint' => 'À la gestion de l’organisation'],
         ['label' => 'Boîte de réception', 'href' => url('boite-reception'), 'hint' => 'Messages et éléments à traiter'],
     ]), 'overview'),

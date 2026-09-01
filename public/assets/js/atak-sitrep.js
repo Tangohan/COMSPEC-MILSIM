@@ -124,15 +124,22 @@ window.ATAKSitrep = (function () {
     var x = parseFloat(report.pos_x);
     var y = parseFloat(report.pos_y);
     if (isNaN(x) || isNaN(y)) return;
-    var tone = statusTone(report.status);
-    var col = tone === 'err' ? '#f87171' : (tone === 'warn' ? '#fbbf24' : '#eab308');
-    var layer = L.circleMarker([y, x], {
-      radius: 9,
-      color: col,
-      weight: 2,
-      fillColor: col,
-      fillOpacity: 0.55
-    });
+    var Chip = window.TacticalMarkerChip;
+    var layer;
+    if (Chip && Chip.leafletDivIcon) {
+      var chipOpts = Chip.fromIntel(report);
+      layer = L.marker([y, x], { icon: Chip.leafletDivIcon(L, chipOpts), zIndexOffset: 380 });
+    } else {
+      var tone = statusTone(report.status);
+      var col = tone === 'err' ? '#f87171' : (tone === 'warn' ? '#fbbf24' : '#eab308');
+      layer = L.circleMarker([y, x], {
+        radius: 9,
+        color: col,
+        weight: 2,
+        fillColor: col,
+        fillOpacity: 0.55
+      });
+    }
     layer._sitrepId = String(report.id || '');
     layer.bindPopup(
       '<strong>' + escapeHtml(targetLabel(report.target_type)) + '</strong><br>' +

@@ -52,6 +52,12 @@ return static function (PDO $pdo): void {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
         echo "  personnel_hr_documents : table créée.\n";
+    } elseif (!$hasColumn('personnel_hr_documents', 'original_name')) {
+        $pdo->exec(
+            'ALTER TABLE `personnel_hr_documents`
+             ADD COLUMN `original_name` varchar(255) DEFAULT NULL AFTER `file_path`'
+        );
+        echo "  personnel_hr_documents : colonne original_name ajoutée.\n";
     }
 
     if (!$hasTable('personnel_mobility_requests')) {

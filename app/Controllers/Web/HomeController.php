@@ -192,6 +192,17 @@ class HomeController
         $armaPlaytimeSeconds = 0;
         $dashboardTenantType = \App\Services\Community\TenantTypeConfig::TYPE_FULL;
         $dashboardRhParcours = null;
+        $dashboardPublishedOpenings = [];
+        $dashboardTenantSlug = '';
+        $canManageRecruitmentOffers = false;
+        $dashboardElevationCatalog = ['grades' => [], 'roles' => [], 'job_roles' => [], 'units' => [], 'clearance_levels' => []];
+        $canRequestSelfElevation = false;
+        $elevationNoRecipients = false;
+        $elevationCooldownSeconds = 0;
+        $elevationHistoryMine = [];
+        $rhMyMobility = [];
+        $rhMobilitySchemaReady = false;
+        $canPublishDashboardArticles = false;
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
@@ -592,6 +603,54 @@ class HomeController
                         $dashboardRhParcours = null;
                     }
                 }
+
+                if (!$dashboardIsDefaultTenant && $allowsRecruitment) {
+                    try {
+                        $openingRepo = \App\Core\Container::get(\App\Repositories\RecruitmentOpeningRepository::class);
+                        $dashboardPublishedOpenings = $openingRepo->listPublishedForTenant($tid);
+                        $dashboardTenantSlug = is_array($tenantRow)
+                            ? trim((string) ($tenantRow['slug'] ?? ''))
+                            : '';
+                        $canManageRecruitmentOffers = $gate->allows('organization.recruitment.openings.manage')
+                            || $gate->allows('organization.recruitment.manage')
+                            || $gate->allows('admin.organization')
+                            || $gate->allows('admin.access');
+                    } catch (\Throwable) {
+                        $dashboardPublishedOpenings = [];
+                    }
+                }
+
+                if (!$dashboardIsDefaultTenant && $allowsPersonnel) {
+                    try {
+                        $staffAlert = \App\Core\Container::get(\App\Services\Effectifs\EffectifsStaffAlertService::class);
+                        $elevationRecipients = $staffAlert->listElevationRecipients($tid, $uid);
+                        $canRequestSelfElevation = $elevationRecipients !== [];
+                        $elevationNoRecipients = $elevationRecipients === [];
+                        $wait = $staffAlert->secondsBeforeNextElevationRequest($uid, $uid);
+                        $elevationCooldownSeconds = $wait !== null ? (int) $wait : 0;
+                        $elevationRepo = \App\Core\Container::get(\App\Repositories\ElevationRequestRepository::class);
+                        $elevationHistoryMine = $elevationRepo->listForTarget($tid, $uid, 8);
+                        $catalogService = \App\Core\Container::get(\App\Services\Effectifs\ElevationCatalogService::class);
+                        $dashboardElevationCatalog = $catalogService->catalogForTenant($tid);
+                    } catch (\Throwable) {
+                        $canRequestSelfElevation = false;
+                        $elevationNoRecipients = true;
+                    }
+                    try {
+                        $mobilityRepo = \App\Core\Container::get(\App\Repositories\PersonnelMobilityRequestRepository::class);
+                        $rhMobilitySchemaReady = $mobilityRepo->tableExists();
+                        $rhMyMobility = $rhMobilitySchemaReady
+                            ? $mobilityRepo->listForUser($tid, $uid, 8)
+                            : [];
+                    } catch (\Throwable) {
+                        $rhMobilitySchemaReady = false;
+                        $rhMyMobility = [];
+                    }
+                }
+
+                $canPublishDashboardArticles = $gate->allows('admin.organization')
+                    || $gate->allows('admin.access')
+                    || $gate->allows('site.support');
             }
         }
 
@@ -652,6 +711,17 @@ class HomeController
             'arma_playtime_label' => $armaPlaytimeLabel,
             'arma_playtime_seconds' => $armaPlaytimeSeconds,
             'dashboard_rh_parcours' => $dashboardRhParcours,
+            'dashboard_published_openings' => $dashboardPublishedOpenings,
+            'dashboard_tenant_slug' => $dashboardTenantSlug,
+            'can_manage_recruitment_offers' => $canManageRecruitmentOffers,
+            'dashboard_elevation_catalog' => $dashboardElevationCatalog,
+            'can_request_self_elevation' => $canRequestSelfElevation,
+            'elevation_no_recipients' => $elevationNoRecipients,
+            'elevation_cooldown_seconds' => $elevationCooldownSeconds,
+            'elevation_history_mine' => $elevationHistoryMine,
+            'rh_my_mobility' => $rhMyMobility,
+            'rh_mobility_schema_ready' => $rhMobilitySchemaReady,
+            'can_publish_dashboard_articles' => $canPublishDashboardArticles,
         ]);
     }
 

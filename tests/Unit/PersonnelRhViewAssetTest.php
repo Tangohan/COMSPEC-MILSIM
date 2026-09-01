@@ -44,8 +44,8 @@ final class PersonnelRhViewAssetTest extends TestCase
         $gate = (string) file_get_contents($root . '/views/partials/personnel/file_view_gate.php');
         $layout = (string) file_get_contents($root . '/views/layout/main.php');
         $footerCss = (string) file_get_contents($root . '/public/assets/css/portal-footer.css');
-        self::assertStringContainsString('py-8 md:py-10', $gate);
-        self::assertStringContainsString('py-6 md:py-8', $gate);
+        self::assertStringContainsString('personnel-file-gate__hero', $gate);
+        self::assertStringContainsString('personnel-file-gate__choices', $gate);
         self::assertStringNotContainsString('py-14 md:py-20', $gate);
         self::assertStringContainsString('layout-page-compact', $layout);
         self::assertStringContainsString('layoutMainCompact', $layout);
