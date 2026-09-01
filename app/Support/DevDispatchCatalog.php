@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(323, '2026-09-01', 'Les photos ne saturent plus le journal au lancement', 'Tant que la session Athena n’est pas prête, Overwatch n’essaie plus d’envoyer les photos en boucle. Après connexion, une photo part une fois, même sans l’ancienne clé de liaison', [], [], [
+                'Le journal se remplissait de photos refusées toutes les secondes, y compris après « session prête »',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement, connectez-vous, puis prenez une photo. Un seul envoi, pas de rafale dans le journal.',
+            ], 'Overwatch'),
             $pr(318, '2026-09-01', 'Overwatch 1.5.0 : votre identité, plus le nom de la communauté', 'Le pack jeu affiche l’opérateur, pas le titre de la communauté. L’indicatif vient de la fiche Effectifs. Les messages du poste restent dans le téléphone et le journal, plus dans le chat de bord d’Arma. Sur le téléphone, le journal Athena se lit enfin', [
                 'Écran prêt : photo si elle existe, prénom, nom, indicatif, rôle, grade et fonction',
             ], [
