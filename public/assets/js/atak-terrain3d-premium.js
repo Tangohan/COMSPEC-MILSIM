@@ -547,7 +547,7 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
       button.textContent = state.enabled ? '3D actif' : '3D';
       button.title = state.enabled
         ? 'Revenir à la carte 2D'
-        : 'Vue topo premium (relief Three.js)';
+        : 'Vue relief';
     }
     if (nav) nav.hidden = !state.enabled;
     if (settings) {
@@ -563,12 +563,9 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
     if (pitchValue) pitchValue.textContent = state.pitch + '°';
     const exaggerationValue = document.getElementById('atak-terrain-exaggeration-val');
     if (exaggerationValue) exaggerationValue.textContent = state.verticalExaggeration.toFixed(1) + '×';
-    const hint = document.querySelector('.atak-terrain-3d-hint');
-    if (hint && !hint.dataset.premiumHint) {
-      hint.dataset.premiumHint = '1';
-      hint.textContent =
-        'La carte à plat reste un plan. La vue relief montre le sol relevé : collines, vallées, et les unités posées dessus. Le cadrage de la carte à plat est repris.';
-    }
+    document.querySelectorAll('.atak-terrain-3d-hint, .atak-geo-live-hint').forEach(function (el) {
+      el.remove();
+    });
     window.dispatchEvent(new CustomEvent('atak:terrain3dchange', {
       detail: { enabled: state.enabled, premium: true },
     }));

@@ -44,11 +44,10 @@
     wrap.innerHTML =
       '<label class="atak-map-look__check" for="atak-geo-places">' +
       '<input type="checkbox" id="atak-geo-places" />' +
-      '<span>Villes (réseau geo)</span></label>' +
+      '<span>Villes et villages</span></label>' +
       '<label class="atak-map-look__check" for="atak-geo-roads">' +
       '<input type="checkbox" id="atak-geo-roads" />' +
-      '<span>Routes (réseau geo)</span></label>' +
-      '<p class="atak-terrain-3d-hint atak-geo-live-hint">Calques issus du relevé Arma (modules pont geo_places / geo_roads). L’outil Itinéraire utilise le graphe routier quand disponible.</p>';
+      '<span>Routes</span></label>';
 
     var hint = mount.querySelector('.atak-terrain-3d-hint');
     if (hint && hint.parentNode === mount) mount.insertBefore(wrap, hint);

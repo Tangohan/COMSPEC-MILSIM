@@ -97,7 +97,10 @@ final class AtakTerrainCoverageStatusAssetTest extends TestCase
 
         self::assertStringContainsString('function coverageLabelFromInventory', $javascript);
         self::assertStringContainsString('function setStatusFromSurvey', $javascript);
-        self::assertStringContainsString('if (surveyed) setStatus(surveyed)', $javascript);
+        self::assertStringContainsString('function hasVolumeSurvey', $javascript);
+        self::assertStringContainsString('setStatusFromSurvey()', $javascript);
+        self::assertStringContainsString('Bâtiments et forêts reçus. L’ombrage du sol n’est pas encore sur le poste.', $javascript);
+        self::assertStringContainsString('terrain_chunks', $javascript);
         self::assertStringContainsString('Number(j.coverage_pct) > 0 || Number(j.filled_cells) > 0', $javascript);
         self::assertStringContainsString("\$filled > 0 && is_string(\$grid['heights'] ?? null)", $api);
         self::assertStringNotContainsString("include') === 'heights' && \$ready && is_string", $api);

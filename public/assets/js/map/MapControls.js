@@ -21,7 +21,7 @@ export class MapControls {
       + group('Vue', [
           btn('nord', 'N', 'Nord', 'Remettre le nord en haut'),
           btn('toggle-2d', '2D', '2D', 'Vue carte à plat', 'tac-ctrl-mode tac-ctrl-2d is-active'),
-          btn('toggle-3d', '3D', '3D', 'Vue topo premium 3D', 'tac-ctrl-mode tac-ctrl-3d'),
+          btn('toggle-3d', '3D', '3D', 'Vue relief', 'tac-ctrl-mode tac-ctrl-3d'),
         ])
       + group('Zoom', [
           btn('zoom-in', '+', 'Zoom +', 'Zoom avant'),

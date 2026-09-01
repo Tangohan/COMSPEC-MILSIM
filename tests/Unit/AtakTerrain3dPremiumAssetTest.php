@@ -46,6 +46,9 @@ final class AtakTerrain3dPremiumAssetTest extends TestCase
         self::assertStringContainsString('ATAKTacticalView', $js);
         self::assertStringContainsString("classList.add('atak-map-stage--premium-3d')", $js);
         self::assertStringNotContainsString("classList.add('atak-map-stage--premium-3d', 'atak-map-stage--3d')", $js);
+        self::assertStringContainsString("querySelectorAll('.atak-terrain-3d-hint, .atak-geo-live-hint')", $js);
+        self::assertStringNotContainsString('Vue topo premium (relief Three.js)', $js);
+        self::assertStringNotContainsString('CSS-pitch', $js);
     }
 
     public function testWebGlTerrainProjectsGridAndMarkersOnTheMesh(): void
@@ -82,6 +85,11 @@ final class AtakTerrain3dPremiumAssetTest extends TestCase
         self::assertStringContainsString('AtakGeoNetwork.create', $js);
         self::assertStringContainsString('AtakRoutePlanner.create', $js);
         self::assertStringContainsString('atak-geo-places', $js);
+        self::assertStringContainsString('Villes et villages', $js);
+        self::assertStringContainsString('>Routes</span>', $js);
+        self::assertStringNotContainsString('geo_places', $js);
+        self::assertStringNotContainsString('graphe routier', $js);
+        self::assertStringNotContainsString('réseau geo', $js);
         self::assertStringContainsString('ATAKGeoLive', $js);
         self::assertStringContainsString('maybeSnapRoadRoute', $tools);
         self::assertStringContainsString('ATAKGeoLive.planRoadRoute', $tools);

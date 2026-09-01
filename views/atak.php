@@ -1523,7 +1523,6 @@ if ($atakMapConfig) {
               <span class="atak-map-look__key">Inclinaison <span class="atak-sound-pref-val" id="atak-terrain-pitch-val">48°</span></span>
               <input type="range" id="atak-terrain-pitch" class="atak-sound-pref-slider" min="25" max="65" step="1" value="48" />
             </label>
-            <p class="atak-terrain-3d-hint">La carte à plat reste un plan. La vue relief montre le sol relevé : collines, vallées, et les unités posées dessus. Le cadrage de la carte à plat est repris.</p>
           </div>
 
           <div class="atak-settings-map-data" id="atak-settings-map-data">
@@ -2627,7 +2626,7 @@ if ($atakMapConfig) {
             <div class="atak-map-tools__cluster-btns" id="atak-tool-group-view">
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-in" data-tool-slot="zoom" title="Zoom avant">+</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-out" data-tool-slot="zoom" title="Zoom arrière">−</button>
-              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--view3d" id="atak-view-3d" data-tool-slot="view3d" title="Vue topo premium (relief Three.js)" aria-pressed="false">3D</button>
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--view3d" id="atak-view-3d" data-tool-slot="view3d" title="Vue relief" aria-pressed="false">3D</button>
               <button type="button" class="atak-map-tools__btn" data-tool="nvg" data-tool-slot="nvg" title="Vision nocturne (N)" aria-pressed="false">NVG</button>
               <button type="button" class="atak-map-tools__btn" data-tool="cop" data-tool-slot="cop" title="Tableau tactique des unités">Unités</button>
             </div>

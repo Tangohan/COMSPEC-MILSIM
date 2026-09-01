@@ -491,6 +491,14 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(281, '2026-09-01', 'Affichage dit vraiment ce qui est sur le poste', 'Dans Réglages carte, plus de texte d’atelier. Si les bâtiments sont déjà là et pas l’ombrage, le poste le dit clairement, au lieu de prétendre que rien n’a été relevé', [], [
+                'Les cases Villes et villages, Routes, sans notice technique',
+            ], [
+                'Deux pavés d’atelier au milieu des réglages',
+                'Ombrage et relevé du sol affichés absents alors que bâtiments, forêts et une date de relevé étaient déjà là',
+            ], ['atak'], [
+                'Ouvrez Réglages → Carte. Plus de pavé gris sous la vue relief. S’il y a des bâtiments sans ombrage, le bandeau le dit : bâtiments reçus, ombrage du sol pas encore sur le poste.',
+            ], 'Portail 1.5.90'),
             $pr(275, '2026-09-01', 'La vue relief n’incline plus le plan de la carte', 'La carte à plat reste un plan ; le relief se voit dans une vue séparée, collines et unités posées sur le sol', [
                 'La carte à plat reste parfaitement plane : plus de trapèze ni de bandes étirées',
                 'La vue relief montre le sol relevé, avec la grille et les unités posées sur le terrain',

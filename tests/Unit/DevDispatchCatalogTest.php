@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(2, $byKind['spotrep']);
         self::assertSame(2, $byKind['techrep']);
-        self::assertSame(87, $byKind['update']);
-        self::assertCount(91, $all);
+        self::assertSame(88, $byKind['update']);
+        self::assertCount(92, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -212,6 +212,10 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($reliefSplit);
         self::assertSame('00275', $reliefSplit['number_pad']);
         self::assertStringContainsString('relief', strtolower((string) $reliefSplit['title']));
+        $mapInventory = DevDispatchCatalog::find('update', '281');
+        self::assertNotNull($mapInventory);
+        self::assertSame('00281', $mapInventory['number_pad']);
+        self::assertStringContainsString('affichage', strtolower((string) $mapInventory['title']));
         $update249 = strtolower(DevDispatchCatalog::publicCorpus());
         self::assertStringContainsString('mot de passe s’affichait en clair', $update249);
         self::assertStringContainsString('inclinaison, amplification du relief', $update249);
