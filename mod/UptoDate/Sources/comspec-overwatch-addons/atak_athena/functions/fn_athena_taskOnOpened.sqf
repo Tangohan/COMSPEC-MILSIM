@@ -6,6 +6,7 @@ params ["_group", ["_interfaceInit", false], "_isDialog", "_settings"];
 if (isNull _group) exitWith {};
 
 uiNamespace setVariable ["COMSPEC_ATAK_Task_group", _group];
+["task"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
 private _token = diag_tickTime + random 1;
 uiNamespace setVariable ["COMSPEC_ATAK_Task_token", _token];
 uiNamespace setVariable ["COMSPEC_ATAK_Task_selectedId", ""];

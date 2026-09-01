@@ -2,7 +2,9 @@
     Rafraîchit statut + inbox (alertes, ordres, BDA Iceman, photos locales).
 */
 private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;
-if (isNull _group) exitWith {};
+if (isNull _group || {!ctrlShown _group}) exitWith {};
+private _pageNow = toLower ((["cTab_Android_dlg", "showMenu"] call cTab_fnc_getSettings) param [0, ""]);
+if (_pageNow isNotEqualTo "" && {_pageNow isNotEqualTo "athena"}) exitWith {};
 
 [] call comspec_overwatch_atak_athena_fnc_athena_applyHomeLayout;
 

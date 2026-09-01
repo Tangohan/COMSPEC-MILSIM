@@ -1,6 +1,6 @@
 /*
-    Menu ACE minimal toujours présent : COMSPEC Athena (compte + téléphone).
-    Les menus ATAK étendus restent derrière le réglage « Menus ACE Overwatch ».
+    Menu ACE toujours présent : COMSPEC Athena (connexion e-mail + téléphone).
+    Les rapports, l’appui et la réparation sont installés à part (initACE / initATAKMenu).
 */
 if (!hasInterface) exitWith {};
 if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith {};
@@ -27,8 +27,8 @@ private _mainAction = [
 [_mainAction, ["ACE_SelfActions"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _accountAction = [
-    "COMSPEC_Account", "Compte Athena", "", {
-        [] call comspec_overwatch_connect_fnc_accountLinkShow;
+    "COMSPEC_Account", "Connexion Athena", "", {
+        [] call comspec_overwatch_connect_fnc_openLogin;
     }, _condEnabled, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_accountAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;

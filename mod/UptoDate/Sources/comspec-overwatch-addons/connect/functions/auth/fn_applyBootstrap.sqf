@@ -44,6 +44,8 @@ if ([_cs] call comspec_overwatch_connect_fnc_isUsableCallsign) then {
 };
 
 if (_state isEqualTo "READY") then {
+    private _wasReady = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
+    if (!(_wasReady isEqualType true)) then { _wasReady = false; };
     missionNamespace setVariable ["COMSPEC_AthenaReady", true, false];
     missionNamespace setVariable ["COMSPEC_AthenaReadyAt", diag_tickTime, false];
     missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
@@ -56,5 +58,7 @@ if (_state isEqualTo "READY") then {
     };
     missionNamespace setVariable ["COMSPEC_LinkDetail", _detail, false];
     [] call comspec_overwatch_connect_fnc_updateStatusBadges;
-    ["COMSPEC_AthenaLinkChanged", ["ready"]] call CBA_fnc_localEvent;
+    if (!_wasReady) then {
+        ["COMSPEC_AthenaLinkChanged", ["ready"]] call CBA_fnc_localEvent;
+    };
 };

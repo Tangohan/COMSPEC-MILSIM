@@ -9,13 +9,18 @@ if (!hasInterface) exitWith { [objNull, objNull, "", ""] };
 private _stored = localNamespace getVariable ["COMSPEC_OverlayCaptureCam", objNull];
 if (!(_stored isEqualType objNull)) then { _stored = objNull; };
 
+private _storedRtt = localNamespace getVariable ["COMSPEC_OverlayCaptureRtt", ""];
+if (!(_storedRtt isEqualType "")) then { _storedRtt = ""; };
+
 private _phoneOn = !isNull (uiNamespace getVariable ["BCE_PhoneCAM_View", displayNull]);
 private _hcamOn = !isNull (uiNamespace getVariable ["BCE_HCAM_View", displayNull]);
 
 if (!_phoneOn && {!_hcamOn} && {!isNull _stored}) then {
     localNamespace setVariable ["COMSPEC_OverlayCaptureCam", objNull];
     localNamespace setVariable ["COMSPEC_OverlayCaptureKind", ""];
+    localNamespace setVariable ["COMSPEC_OverlayCaptureRtt", ""];
     _stored = objNull;
+    _storedRtt = "";
 };
 
 if ((_phoneOn || {_hcamOn}) && {!isNull _stored}) exitWith {
@@ -25,23 +30,27 @@ if ((_phoneOn || {_hcamOn}) && {!isNull _stored}) exitWith {
     if (!(_kind isEqualType "") || {_kind isEqualTo ""}) then {
         _kind = ["phone", "hcam"] select _hcamOn;
     };
-    [_stored, _host, "", _kind]
+    private _rtt = _storedRtt;
+    if (_rtt isEqualTo "" && {_kind isEqualTo "phone"}) then { _rtt = "rttN"; };
+    [_stored, _host, _rtt, _kind]
 };
 
 if (_phoneOn || {_hcamOn}) exitWith {
     private _host = objNull;
     private _kind = "phone";
+    private _rtt = "";
     if (_hcamOn && {!isNil "cTabHcams"} && {cTabHcams isEqualType []} && {(count cTabHcams) > 1}) then {
         _host = cTabHcams param [1, objNull];
         _kind = "hcam";
     };
+    if (_kind isEqualTo "phone") then { _rtt = "rttN"; };
     if (isNull _host) then { _host = focusOn; };
     if (isNull _host) then { _host = player; };
     private _found = objNull;
     {
         if (!isNull _x && {attachedTo _x isEqualTo _host}) exitWith { _found = _x; };
     } forEach (allMissionObjects "camera");
-    [_found, _host, "", _kind]
+    [_found, _host, _rtt, _kind]
 };
 
 private _tgp = missionNamespace getVariable ["TGP_View_Camera", []];

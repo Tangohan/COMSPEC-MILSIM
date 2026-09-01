@@ -190,7 +190,7 @@ private _lastVehSig = missionNamespace getVariable ["COMSPEC_lastVehSig", ""];
 private _lastSendTime = missionNamespace getVariable ["COMSPEC_lastSendTime", 0];
 private _now = diag_tickTime;
 
-private _groupName = trim (groupId (group _unit));
+private _groupName = [_unit] call comspec_overwatch_connect_fnc_inGameGroupLabel;
 if (!(_groupName isEqualType "")) then { _groupName = str _groupName; };
 _groupName = trim _groupName;
 

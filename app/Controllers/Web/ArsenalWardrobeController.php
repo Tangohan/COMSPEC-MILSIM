@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\ArsenalWardrobeRepository;
 use App\Repositories\EquipmentClassRepository;
 use App\Services\Platform\FeatureGateService;
+use App\Support\ArsenalLoadoutItems;
 use App\Support\EquipmentCoverStorage;
 use App\Support\PlanFeatureDenial;
 
@@ -114,12 +115,15 @@ class ArsenalWardrobeController
         }
         $row['mine'] = (int) ($row['user_id'] ?? 0) === $userId;
         $collections = $this->repo->listCollections($tenantId, $userId);
+        $loadoutItems = ArsenalLoadoutItems::grouped((string) ($row['payload_text'] ?? ''));
+        unset($row['payload_text']);
 
         return Response::view('layout.main', [
             'content' => 'equipment.tenue',
             'title' => (string) ($row['name'] ?? 'Tenue'),
             'equipmentHubPage' => true,
             'wardrobe' => $row,
+            'loadoutItems' => $loadoutItems,
             'collections' => $collections,
             'csrfToken' => Csrf::token(),
             'flash_success' => Session::getFlash('success'),

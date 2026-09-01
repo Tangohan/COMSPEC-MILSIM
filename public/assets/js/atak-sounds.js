@@ -18,15 +18,15 @@ window.ATAKSounds = (function () {
   /** Sons liés à un événement précis (indépendants du style d'alerte choisi, sauf modes silencieux). */
   var EVENTS = {
     start: { file: 'atak_start.ogg', cooldown: 2500 },
-    disconnect: { file: 'atak_disconnect.ogg', cooldown: 2500 },
-    unconscious: { file: 'atak_alert_2.ogg', cooldown: 4000 },
-    death: { file: 'atak_death.ogg', cooldown: 4000 },
+    disconnect: { file: 'atak_beep.ogg', cooldown: 2500 },
+    unconscious: { file: 'atak_no_activyt_health.ogg', cooldown: 4000 },
+    death: { file: 'atak_no_activyt_health.ogg', cooldown: 4000 },
     order: { file: 'atak_order_receive.ogg', cooldown: 1200 },
     order_priority: { file: 'atak_order_receive.ogg', cooldown: 1200 },
     order_ack: { file: 'atak_deep_chime.ogg', cooldown: 1200 },
     intel: { file: 'atak_deep_chime.ogg', cooldown: 1200 },
     beep: { file: 'atak_beep.ogg', cooldown: 450 },
-    medevac: { file: 'medevac.mp3', cooldown: 2500 }
+    medevac: { file: 'atak_no_activyt_health.ogg', cooldown: 2500 }
   };
   var DEFAULT_PREF = 'stalker';
   var DEFAULT_AUDIBLE = 'stalker';
@@ -231,8 +231,9 @@ window.ATAKSounds = (function () {
       audioCache[id].volume = gain();
       return audioCache[id];
     }
-    var a = new Audio(soundUrl(file));
-    a.preload = 'auto';
+    var a = new Audio();
+    a.preload = 'none';
+    a.src = soundUrl(file);
     a.volume = gain();
     audioCache[id] = a;
     return a;
@@ -293,57 +294,32 @@ window.ATAKSounds = (function () {
     hint.hidden = false;
     hint.textContent = reason;
   }
+  function primeClip(a) {
+    if (!a) return;
+    try {
+      a.muted = true;
+      var p = a.play();
+      if (p && typeof p.then === 'function') {
+        p.then(function () {
+          a.pause();
+          a.currentTime = 0;
+          a.muted = false;
+        }).catch(function () {
+          a.muted = false;
+        });
+      } else {
+        a.pause();
+        a.currentTime = 0;
+        a.muted = false;
+      }
+    } catch (e) {
+      a.muted = false;
+    }
+  }
   function unlock() {
     if (unlocked) return;
     unlocked = true;
-    Object.keys(PREFS).forEach(function (key) {
-      var a = getAudio(key);
-      if (!a) return;
-      try {
-        a.muted = true;
-        var p = a.play();
-        if (p && typeof p.then === 'function') {
-          p.then(function () {
-            a.pause();
-            a.currentTime = 0;
-            a.muted = false;
-          }).catch(function () {
-            a.muted = false;
-          });
-        } else {
-          a.pause();
-          a.currentTime = 0;
-          a.muted = false;
-        }
-      } catch (e) {
-        a.muted = false;
-      }
-    });
-    Object.keys(EVENTS).forEach(function (key) {
-      var meta = EVENTS[key];
-      if (!meta || !meta.file) return;
-      var a = getAudioByFile(meta.file, cacheKey('event', key));
-      if (!a) return;
-      try {
-        a.muted = true;
-        var p = a.play();
-        if (p && typeof p.then === 'function') {
-          p.then(function () {
-            a.pause();
-            a.currentTime = 0;
-            a.muted = false;
-          }).catch(function () {
-            a.muted = false;
-          });
-        } else {
-          a.pause();
-          a.currentTime = 0;
-          a.muted = false;
-        }
-      } catch (e) {
-        a.muted = false;
-      }
-    });
+    primeClip(getAudio(pref));
   }
   function bindUnlock() {
     var once = function () {

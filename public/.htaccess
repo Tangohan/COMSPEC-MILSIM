@@ -56,6 +56,13 @@
     AddType application/manifest+json .webmanifest
     AddType video/mp4 .mp4
     AddType video/webm .webm
+    AddType audio/ogg .ogg
+    AddType audio/mpeg .mp3
+    AddType audio/wav .wav
+    AddType image/png .png
+    AddType image/jpeg .jpg .jpeg
+    AddType image/webp .webp
+    AddType image/svg+xml .svg
 </IfModule>
 
 # ——— Sécurité ———

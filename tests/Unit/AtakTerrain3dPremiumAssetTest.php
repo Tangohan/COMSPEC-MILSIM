@@ -46,6 +46,9 @@ final class AtakTerrain3dPremiumAssetTest extends TestCase
         self::assertStringContainsString('ATAKTacticalView', $js);
         self::assertStringContainsString("classList.add('atak-map-stage--premium-3d')", $js);
         self::assertStringNotContainsString("classList.add('atak-map-stage--premium-3d', 'atak-map-stage--3d')", $js);
+        self::assertStringContainsString('refreshLeafletUnitMarkers', $js);
+        self::assertStringContainsString('Ne pas retirer Leaflet du flux', $js);
+        self::assertStringNotContainsString('mapEl.hidden = true', $js);
         self::assertStringContainsString("querySelectorAll('.atak-terrain-3d-hint, .atak-geo-live-hint')", $js);
         self::assertStringNotContainsString('Vue topo premium (relief Three.js)', $js);
         self::assertStringNotContainsString('CSS-pitch', $js);

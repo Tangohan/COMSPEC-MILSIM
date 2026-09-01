@@ -12,6 +12,11 @@
 $h = static fn ($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $base = rtrim((string) ($apiBase ?? url('')), '/');
 $ver = rawurlencode((string) ($assetVer ?? '1'));
+$jsM = @filemtime(dirname(__DIR__, 2) . '/public/assets/js/atak-mobile/atak-mobile.js');
+$cssM = @filemtime(dirname(__DIR__, 2) . '/public/assets/css/atak-mobile.css');
+if ($jsM || $cssM) {
+    $ver .= '.' . (int) $jsM . '.' . (int) $cssM;
+}
 $module = (string) ($mobileModule ?? 'c2');
 ?>
 <!DOCTYPE html>
@@ -49,7 +54,17 @@ $module = (string) ($mobileModule ?? 'c2');
       <div class="am-map-chips" id="am-map-chips"></div>
       <div class="am-map-tools" id="am-map-tools"></div>
     </section>
-    <section class="am-screen" data-screen="chat" id="am-screen-chat" hidden></section>
+    <section class="am-screen" data-screen="chat" id="am-screen-chat" hidden>
+      <div class="am-chat">
+        <div class="am-chat__channels" id="am-chat-channels"></div>
+        <div class="am-chat__messages" id="am-chat-list" role="log" aria-live="polite"></div>
+        <form class="am-chat__composer" id="am-chat-form">
+          <button type="button" id="am-chat-plus" aria-label="Joindre">+</button>
+          <textarea id="am-chat-input" name="message" rows="1" maxlength="2000" placeholder="Écrire un message…" autocomplete="off" enterkeyhint="enter"></textarea>
+          <button type="submit" aria-label="Envoyer">➤</button>
+        </form>
+      </div>
+    </section>
     <section class="am-screen" data-screen="bft" id="am-screen-bft" hidden></section>
     <section class="am-screen" data-screen="status" id="am-screen-status" hidden></section>
     <section class="am-screen" data-screen="pings" id="am-screen-pings" hidden></section>

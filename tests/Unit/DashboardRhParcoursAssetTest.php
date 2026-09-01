@@ -27,12 +27,18 @@ final class DashboardRhParcoursAssetTest extends TestCase
         self::assertNotFalse($channelsPos);
         self::assertGreaterThan($channelsPos, $requirePos);
 
-        self::assertStringContainsString('rhStep === \'choice\'', $view);
+        self::assertStringContainsString('data-rh-go="absence"', $view);
+        self::assertStringContainsString('data-rh-go="elevation"', $view);
+        self::assertStringContainsString('data-rh-go="avancement"', $view);
         self::assertStringContainsString('Absence', $view);
         self::assertStringContainsString('Élévation', $view);
         self::assertStringContainsString('Avancement', $view);
         self::assertStringContainsString('Étape 1 sur 2', $view);
         self::assertStringContainsString('dash-rh-parcours__choice', $view);
+        self::assertStringNotContainsString('unpkg.com/alpinejs', $home);
+        $dash = (string) file_get_contents($root . '/views/dashboard.php');
+        self::assertStringNotContainsString('unpkg.com/alpinejs', $dash);
+        self::assertStringContainsString('assets/vendor/alpinejs/alpine.min.js', $dash);
         self::assertStringContainsString('return_to" value="dashboard"', $view);
         self::assertStringContainsString('personnel/mon-espace-rh/elevation', $view);
         self::assertStringContainsString('personnel/mon-espace-rh/absences', $view);
@@ -46,16 +52,20 @@ final class DashboardRhParcoursAssetTest extends TestCase
         self::assertStringContainsString('function requestSelfElevation', $ctrl);
         self::assertStringContainsString('dash-rh-parcours__choice', $css);
         self::assertStringContainsString('grid-template-columns: repeat(3, minmax(0, 1fr))', $css);
+        self::assertStringContainsString('.dash-rh-parcours__choice[hidden]', $css);
+        self::assertStringNotContainsString('rhStep', $cc);
     }
 
     public function testChoiceSlideDoesNotRenderBothFormsTogether(): void
     {
         $root = dirname(__DIR__, 2);
         $view = (string) file_get_contents($root . '/views/partials/dashboard_rh_parcours.php');
-        self::assertStringContainsString("x-show=\"rhStep === 'choice'\"", $view);
-        self::assertStringContainsString("x-show=\"rhStep === 'absence'\"", $view);
-        self::assertStringContainsString("x-show=\"rhStep === 'elevation'\"", $view);
-        self::assertStringContainsString("x-show=\"rhStep === 'avancement'\"", $view);
+        self::assertStringContainsString('data-rh-choice', $view);
+        self::assertStringContainsString('data-rh-panel="absence"', $view);
+        self::assertStringContainsString('data-rh-panel="elevation"', $view);
+        self::assertStringContainsString('data-rh-panel="avancement"', $view);
+        self::assertStringContainsString('data-rh-go', $view);
+        self::assertStringNotContainsString('rhStep', $view);
         self::assertStringContainsString('Retour au choix', $view);
         self::assertStringNotContainsString('lg:grid-cols-2', $view);
         self::assertStringContainsString('id="dashboard-org-offers"', $view);

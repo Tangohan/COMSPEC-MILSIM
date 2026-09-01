@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Services\Tactical;
 
 use App\Repositories\AtakTerrainRepository;
+use Throwable;
 
 /**
  * Produits cartographiques (hillshade PNG, pentes PNG, isolignes GeoJSON) mis en cache.
  */
 final class AtakTerrainCartography
 {
+    private const MAX_RASTER_EDGE = 512;
+
     public function __construct(private ?AtakTerrainRepository $terrain = null)
     {
         $this->terrain ??= new AtakTerrainRepository();
@@ -46,10 +49,19 @@ final class AtakTerrainCartography
         if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
             return $grid;
         }
-        $this->writeHillshade($dir . '/hillshade.png', $grid);
-        $this->writeSlope($dir . '/slope.png', $grid);
-        $geo = AtakTerrainIsolines::geoJson($grid, 10, 50);
-        @file_put_contents($dir . '/contours.json', json_encode($geo, JSON_UNESCAPED_UNICODE));
+        try {
+            $this->writeHillshade($dir . '/hillshade.png', $grid);
+        } catch (Throwable) {
+        }
+        try {
+            $this->writeSlope($dir . '/slope.png', $grid);
+        } catch (Throwable) {
+        }
+        try {
+            $geo = AtakTerrainIsolines::geoJson($grid, 10, 50);
+            @file_put_contents($dir . '/contours.json', json_encode($geo, JSON_UNESCAPED_UNICODE));
+        } catch (Throwable) {
+        }
         @file_put_contents($stampFile, $stamp);
 
         return $grid;
@@ -57,7 +69,10 @@ final class AtakTerrainCartography
 
     public function hillshadePath(int $tenantId, int $mapId): ?string
     {
-        $this->ensure($tenantId, $mapId);
+        try {
+            $this->ensure($tenantId, $mapId);
+        } catch (Throwable) {
+        }
         $path = $this->dir($tenantId, $mapId) . '/hillshade.png';
 
         return is_file($path) ? $path : null;
@@ -65,7 +80,10 @@ final class AtakTerrainCartography
 
     public function slopePath(int $tenantId, int $mapId): ?string
     {
-        $this->ensure($tenantId, $mapId);
+        try {
+            $this->ensure($tenantId, $mapId);
+        } catch (Throwable) {
+        }
         $path = $this->dir($tenantId, $mapId) . '/slope.png';
 
         return is_file($path) ? $path : null;
@@ -76,7 +94,10 @@ final class AtakTerrainCartography
      */
     public function contours(int $tenantId, int $mapId): array
     {
-        $this->ensure($tenantId, $mapId);
+        try {
+            $this->ensure($tenantId, $mapId);
+        } catch (Throwable) {
+        }
         $path = $this->dir($tenantId, $mapId) . '/contours.json';
         if (is_file($path)) {
             $raw = @file_get_contents($path);
@@ -120,26 +141,39 @@ final class AtakTerrainCartography
         if ($cols < 3 || $rows < 3) {
             return;
         }
-        $im = imagecreatetruecolor($cols, $rows);
+        $step = max(1, (int) ceil(max($cols, $rows) / self::MAX_RASTER_EDGE));
+        $outW = (int) ceil($cols / $step);
+        $outH = (int) ceil($rows / $step);
+        if ($outW < 1 || $outH < 1) {
+            return;
+        }
+        $im = @imagecreatetruecolor($outW, $outH);
         if ($im === false) {
             return;
         }
         imagealphablending($im, false);
         imagesavealpha($im, true);
         $transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
-        imagefilledrectangle($im, 0, 0, $cols - 1, $rows - 1, $transparent);
+        imagefilledrectangle($im, 0, 0, $outW - 1, $outH - 1, $transparent);
 
-        $slopeRgb = [
-            'praticable' => [46, 120, 62],
-            'moderee' => [140, 160, 55],
-            'forte' => [196, 150, 48],
-            'tres_forte' => [196, 92, 36],
-            'critique' => [168, 36, 36],
+        $grey = [];
+        for ($i = 0; $i <= 255; $i++) {
+            $grey[$i] = imagecolorallocatealpha($im, $i, $i, $i, 0);
+        }
+        $slopeColors = [
+            'praticable' => imagecolorallocatealpha($im, 46, 120, 62, 20),
+            'moderee' => imagecolorallocatealpha($im, 140, 160, 55, 20),
+            'forte' => imagecolorallocatealpha($im, 196, 150, 48, 20),
+            'tres_forte' => imagecolorallocatealpha($im, 196, 92, 36, 20),
+            'critique' => imagecolorallocatealpha($im, 168, 36, 36, 20),
         ];
+        $slopeFallback = imagecolorallocatealpha($im, 80, 80, 80, 20);
 
-        for ($r = 0; $r < $rows; $r++) {
-            $pr = $rows - 1 - $r;
-            for ($c = 0; $c < $cols; $c++) {
+        for ($or = 0; $or < $outH; $or++) {
+            $r = min($rows - 1, $or * $step);
+            $pr = $outH - 1 - $or;
+            for ($oc = 0; $oc < $outW; $oc++) {
+                $c = min($cols - 1, $oc * $step);
                 $z = AtakTerrainMath::cellZ($blob, $cols, $c, $r);
                 if ($z === null) {
                     continue;
@@ -150,18 +184,18 @@ final class AtakTerrainCartography
                 }
                 if ($kind === 'slope') {
                     $cls = AtakTerrainMath::slopeClass($hs['slope_deg']);
-                    $rgb = $slopeRgb[$cls] ?? [80, 80, 80];
-                    $col = imagecolorallocatealpha($im, $rgb[0], $rgb[1], $rgb[2], 20);
+                    $col = $slopeColors[$cls] ?? $slopeFallback;
                 } else {
                     $v = (int) round(18 + $hs['shade'] * 210);
-                    $col = imagecolorallocatealpha($im, $v, $v, $v, 0);
+                    $v = max(0, min(255, $v));
+                    $col = $grey[$v];
                 }
                 if ($col !== false) {
-                    imagesetpixel($im, $c, $pr, $col);
+                    imagesetpixel($im, $oc, $pr, $col);
                 }
             }
         }
-        imagepng($im, $path, 6);
+        @imagepng($im, $path, 6);
         imagedestroy($im);
     }
 }

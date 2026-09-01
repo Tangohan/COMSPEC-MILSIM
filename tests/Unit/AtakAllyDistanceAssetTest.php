@@ -27,6 +27,6 @@ final class AtakAllyDistanceAssetTest extends TestCase
         self::assertStringContainsString('isTrackedAi', $map);
         self::assertStringContainsString('nato-sidc--last-known', $map);
         self::assertStringContainsString('nato-sidc--last-known', $css);
-        self::assertStringContainsString('1.5.0', $cfg);
+        self::assertStringContainsString('1.5.5', $cfg);
     }
 }

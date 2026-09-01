@@ -185,7 +185,12 @@ class DocumentRepository
             $data['status'] ?? 'draft',
             isset($data['created_by']) ? (int) $data['created_by'] : null,
         ]);
-        return (int) $this->pdo->lastInsertId();
+        $id = (int) $this->pdo->lastInsertId();
+        if (array_key_exists('origin', $data) || array_key_exists('authored_json', $data)) {
+            $this->persistManuscript($id, (int) $data['tenant_id'], $data);
+        }
+
+        return $id;
     }
 
     public function update(int $id, int $tenantId, array $data): bool
@@ -196,7 +201,7 @@ class DocumentRepository
             'parent_document_id', 'relation_type', 'version_label', 'sort_order', 'current_file_id',
             'formation_id', 'equipment_class_id', 'unit_id', 'operator_id', 'mission_id',
             'effective_at', 'review_due_at', 'expires_at', 'download_allowed', 'print_allowed',
-            'locked', 'tags', 'inherit_parent_security', 'require_access_code', 'access_code_hash', 'require_account_signature', 'signature_mandatory_before_download', 'updated_at',
+            'locked', 'tags', 'inherit_parent_security', 'require_access_code', 'access_code_hash', 'require_account_signature', 'signature_mandatory_before_download', 'origin', 'authored_json', 'updated_at',
         ];
         $fields = [];
         $params = [];
@@ -226,6 +231,37 @@ class DocumentRepository
         $stmt = $this->pdo->prepare('UPDATE documents SET ' . implode(', ', $fields) . ' WHERE id = ? AND tenant_id = ?');
         $stmt->execute($params);
         return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function persistManuscript(int $id, int $tenantId, array $data): void
+    {
+        $fields = [];
+        $params = [];
+        if (array_key_exists('origin', $data)) {
+            $fields[] = 'origin = ?';
+            $params[] = (string) $data['origin'] !== '' ? (string) $data['origin'] : 'upload';
+        }
+        if (array_key_exists('authored_json', $data)) {
+            $fields[] = 'authored_json = ?';
+            $json = $data['authored_json'];
+            $params[] = $json === null || $json === '' ? null : (is_string($json) ? $json : json_encode($json));
+        }
+        if ($fields === []) {
+            return;
+        }
+        $params[] = $id;
+        $params[] = $tenantId;
+        try {
+            $stmt = $this->pdo->prepare('UPDATE documents SET ' . implode(', ', $fields) . ', updated_at = NOW() WHERE id = ? AND tenant_id = ?');
+            $stmt->execute($params);
+        } catch (\PDOException $e) {
+            if (($data['origin'] ?? '') === 'authored') {
+                throw $e;
+            }
+        }
     }
 
     public function getVersions(int $documentId): array

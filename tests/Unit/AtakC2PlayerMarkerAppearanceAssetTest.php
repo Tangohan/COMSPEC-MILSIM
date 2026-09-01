@@ -29,6 +29,8 @@ final class AtakC2PlayerMarkerAppearanceAssetTest extends TestCase
         self::assertStringNotContainsString("map.on('zoomend moveend'", $manager);
         self::assertStringContainsString('marker._tacSig === sig', $manager);
         self::assertStringContainsString('getDisplayPrefs', $manager);
+        self::assertStringContainsString('getSize', $manager);
+        self::assertStringContainsString('size.x < 8', $manager);
 
         self::assertStringContainsString('export function applyDisplaySize', $lod);
         self::assertStringContainsString('showCallsign: true', $lod);

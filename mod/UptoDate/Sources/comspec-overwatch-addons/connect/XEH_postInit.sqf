@@ -119,24 +119,31 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     };
     [] call comspec_overwatch_connect_fnc_applyNetworkProfile;
 
-    // COMSPEC Athena (compte + téléphone) toujours. Menus ATAK étendus : réglage ace_menus.
+    if (isNil "COMSPEC_AthenaLoginSyncEH") then {
+        COMSPEC_AthenaLoginSyncEH = ["COMSPEC_AthenaLinkChanged", {
+            params ["_st"];
+            if (!(_st in ["ready", "linked"])) exitWith {};
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_BootHandshakeDone", false])) exitWith {};
+            missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", true, false];
+            [] call comspec_overwatch_connect_fnc_startSyncLoops;
+        }] call CBA_fnc_addEventHandler;
+    };
+
+    // COMSPEC Athena (connexion + téléphone) et menus ATAK (rapports, appui, réparation).
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if (isNull player) exitWith {
             [{
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
                 [] call comspec_overwatch_connect_fnc_initACEAthena;
-                if (missionNamespace getVariable ["comspec_overwatch_ace_menus", false]) then {
-                    [] call comspec_overwatch_connect_fnc_initACE;
-                };
+                [] call comspec_overwatch_connect_fnc_initACE;
+                [] call comspec_overwatch_connect_fnc_initATAKMenu;
             }, [], 2] call CBA_fnc_waitAndExecute;
         };
         [] call comspec_overwatch_connect_fnc_initACEAthena;
-        if (missionNamespace getVariable ["comspec_overwatch_ace_menus", false]) then {
-            [] call comspec_overwatch_connect_fnc_initACE;
-        } else {
-            ["INFO", "ACE", "Menu ACE Athena installé ; menus étendus désactivés"] call comspec_overwatch_connect_fnc_log;
-        };
+        [] call comspec_overwatch_connect_fnc_initACE;
+        [] call comspec_overwatch_connect_fnc_initATAKMenu;
     }, [], 8] call CBA_fnc_waitAndExecute;
 
     // Charges ACE (minuterie + déclenchement TOC) → section ATAK web.
@@ -153,9 +160,10 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         ["INFO", "Athena", "Handshake démarré"] call comspec_overwatch_connect_fnc_log;
         private _ok = [] call comspec_overwatch_connect_fnc_waitAthenaReady;
         ["INFO", "Athena", format ["Handshake terminé ok=%1", _ok]] call comspec_overwatch_connect_fnc_log;
+        missionNamespace setVariable ["COMSPEC_BootHandshakeDone", true, false];
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {
-            ["WARN", "Boot", "Session Athena absente — sync non démarrée"] call comspec_overwatch_connect_fnc_log;
+            ["WARN", "Boot", "Session Athena absente — sync au prochain login"] call comspec_overwatch_connect_fnc_log;
         };
 
         private _deadline = diag_tickTime + 90;
@@ -349,11 +357,9 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         }, 10, []] call CBA_fnc_addPerFrameHandler;
     };
 
-    // Actions réparation ATAK — seulement si menus ACE activés
+    // Actions réparation ATAK (ACE Équipement)
     [{
-        if (missionNamespace getVariable ["comspec_overwatch_ace_menus", false]) then {
-            [] call comspec_overwatch_connect_fnc_addAtakRepairAction;
-        };
+        [] call comspec_overwatch_connect_fnc_addAtakRepairAction;
     }, [], 9] call CBA_fnc_waitAndExecute;
 
     // Déconnexion ATAK à la sortie mission / quit Arma (sync extension, timeout court).

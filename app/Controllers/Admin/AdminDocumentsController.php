@@ -24,6 +24,7 @@ use App\Repositories\DocumentRepository;
 use App\Repositories\DocumentSecurityRepository;
 use App\Repositories\EquipmentClassRepository;
 use App\Repositories\RoleRepository;
+use App\Repositories\TenantRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\TrainingRepository;
 use App\Repositories\UnitRepository;
@@ -33,6 +34,7 @@ use App\Services\Documents\DocumentAccessService;
 use App\Services\Documents\DocumentUploadService;
 use App\Services\Moderation\ModerationBlockedException;
 use App\Services\Moderation\ModerationQuarantineException;
+use App\Support\DocumentManuscript;
 
 class AdminDocumentsController
 {
@@ -130,9 +132,14 @@ class AdminDocumentsController
         $tenantId = (int) $tenantId;
         $userId = (int) Session::get('user_id');
         $allDocuments = $this->documentRepository->listForTenant($tenantId, null, null);
+        $tenant = (new TenantRepository())->findById($tenantId);
+        $issuing = is_array($tenant) ? trim((string) ($tenant['name'] ?? '')) : '';
+        if ($issuing === '') {
+            $issuing = 'Headquarters';
+        }
         return Response::view('layout.main', [
             'content' => 'admin.documents.upload',
-            'title' => 'Upload document',
+            'title' => 'Nouveau document',
             'categories' => $this->categoryRepository->listForTenant($tenantId),
             'trainings' => $this->trainingLinkSelectOptions($tenantId),
             'equipmentClasses' => $this->equipmentRepository->listForTenant($tenantId),
@@ -142,6 +149,10 @@ class AdminDocumentsController
             'currentUserId' => $userId,
             'tenantRoles' => $this->roleRepository->forTenantOrganization($tenantId),
             'permissionAccessLevels' => DocumentPermissionRepository::getAccessLevels(),
+            'documentOrigin' => DocumentManuscript::ORIGIN_UPLOAD,
+            'manuscript' => DocumentManuscript::defaults('', $issuing),
+            'issuingAuthorityDefault' => $issuing,
+            'documentFmPage' => true,
         ]);
     }
 
@@ -170,7 +181,7 @@ class AdminDocumentsController
         $slug = trim((string) $request->input('slug'));
         $effectiveSlug = $slug !== '' ? $slug : $this->documentRepository->slugify($title);
         if ($this->documentRepository->slugExists($tenantId, $effectiveSlug)) {
-            Session::set('error', 'Ce slug existe déjà.');
+            Session::set('error', 'Cette adresse courte est déjà utilisée.');
             return Response::redirect(url('documents/gestion/ajout'));
         }
         $visibilityScope = trim((string) $request->input('visibility_scope')) ?: 'private';
@@ -186,9 +197,10 @@ class AdminDocumentsController
             return Response::redirect(url('documents/gestion/ajout'));
         }
         $file = $_FILES['file'] ?? null;
-        $documentWithoutFile = (bool) $request->input('document_without_file');
+        $origin = DocumentManuscript::originFromRequest($request->input('document_origin'));
+        $documentWithoutFile = (bool) $request->input('document_without_file') || $origin === DocumentManuscript::ORIGIN_AUTHORED;
         if (!$documentWithoutFile && (!$file || ($file['error'] ?? 0) !== UPLOAD_ERR_OK)) {
-            Session::set('error', 'Veuillez sélectionner un fichier ou cocher « Document sans fichier ».');
+            Session::set('error', 'Joignez un fichier, cochez « Document sans fichier », ou choisissez « Rédiger le document ».');
             return Response::redirect(url('documents/gestion/ajout'));
         }
         if ($file && ($file['error'] ?? 0) === UPLOAD_ERR_OK) {
@@ -209,6 +221,16 @@ class AdminDocumentsController
         $documentData['created_by'] = $userId;
         $documentData['owner_user_id'] = $documentData['owner_user_id'] ?? $userId;
         $documentData['author_user_id'] = $documentData['author_user_id'] ?? $userId;
+        $documentData['origin'] = $origin;
+        if ($origin === DocumentManuscript::ORIGIN_AUTHORED) {
+            $tenantRow = (new TenantRepository())->findById($tenantId);
+            $issuing = is_array($tenantRow) ? trim((string) ($tenantRow['name'] ?? '')) : '';
+            $manuscript = DocumentManuscript::fromRequest($request, $title, $issuing);
+            $documentData['authored_json'] = DocumentManuscript::encode($manuscript);
+            if (($documentData['document_type'] ?? null) === null || $documentData['document_type'] === '') {
+                $documentData['document_type'] = 'manuel';
+            }
+        }
 
         $documentId = $this->documentRepository->create($documentData);
 
@@ -284,6 +306,7 @@ class AdminDocumentsController
         }
         $accessSessions = $this->documentSecurityRepository->latestStatsForDocument($id, 25);
         $accessEvents = $this->documentSecurityRepository->latestEventsForDocument($id, 80);
+        $authored = DocumentManuscript::isAuthored($doc);
 
         return Response::view('layout.main', [
             'content' => 'admin.documents.show',
@@ -296,6 +319,8 @@ class AdminDocumentsController
             'usersMap' => $usersMap,
             'accessSessions' => $accessSessions,
             'accessEvents' => $accessEvents,
+            'manuscript' => $authored ? DocumentManuscript::forView($doc) : null,
+            'documentFmPage' => $authored,
         ]);
     }
 
@@ -325,6 +350,8 @@ class AdminDocumentsController
         $children = $this->documentRepository->listChildren($id, (int) $tenantId);
         $allDocuments = $this->documentRepository->listForTenant((int) $tenantId, null, null);
         $tenantId = (int) $tenantId;
+        $tenantRow = (new TenantRepository())->findById($tenantId);
+        $issuing = is_array($tenantRow) ? trim((string) ($tenantRow['name'] ?? '')) : '';
         return Response::view('layout.main', [
             'content' => 'admin.documents.edit',
             'title' => 'Modifier le document',
@@ -342,6 +369,10 @@ class AdminDocumentsController
             'users' => $this->userRepository->allForTenant($tenantId),
             'tenantRoles' => $this->roleRepository->forTenantOrganization($tenantId),
             'permissionAccessLevels' => DocumentPermissionRepository::getAccessLevels(),
+            'documentOrigin' => DocumentManuscript::isAuthored($doc) ? DocumentManuscript::ORIGIN_AUTHORED : DocumentManuscript::ORIGIN_UPLOAD,
+            'manuscript' => DocumentManuscript::forView($doc, $issuing),
+            'issuingAuthorityDefault' => $issuing,
+            'documentFmPage' => true,
         ]);
     }
 
@@ -371,7 +402,7 @@ class AdminDocumentsController
         $slug = trim((string) $request->input('slug'));
         $effectiveSlug = $slug !== '' ? $slug : $this->documentRepository->slugify(trim((string) $request->input('title')));
         if ($this->documentRepository->slugExists((int) $tenantId, $effectiveSlug, $id)) {
-            Session::set('error', 'Ce slug existe déjà.');
+            Session::set('error', 'Cette adresse courte est déjà utilisée.');
             return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
         }
 
@@ -394,6 +425,22 @@ class AdminDocumentsController
         $updateData['description'] = trim((string) $request->input('description')) ?: null;
         $updateData['document_category_id'] = $request->input('category') ? (int) $request->input('category') : null;
         $updateData['status'] = $request->input('status') ?: 'draft';
+        $originRaw = $request->input('document_origin');
+        if ($originRaw === null || $originRaw === '') {
+            $origin = DocumentManuscript::isAuthored($doc)
+                ? DocumentManuscript::ORIGIN_AUTHORED
+                : DocumentManuscript::ORIGIN_UPLOAD;
+        } else {
+            $origin = DocumentManuscript::originFromRequest($originRaw);
+        }
+        $updateData['origin'] = $origin;
+        if ($origin === DocumentManuscript::ORIGIN_AUTHORED) {
+            $tenantRow = (new TenantRepository())->findById((int) $tenantId);
+            $issuing = is_array($tenantRow) ? trim((string) ($tenantRow['name'] ?? '')) : '';
+            $updateData['authored_json'] = DocumentManuscript::encode(
+                DocumentManuscript::fromRequest($request, (string) $updateData['title'], $issuing)
+            );
+        }
 
         $oldValues = [];
         foreach (array_keys($updateData) as $key) {

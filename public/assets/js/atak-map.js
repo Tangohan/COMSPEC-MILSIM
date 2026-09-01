@@ -758,6 +758,15 @@ window.ATAKMap = (function () {
       errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
     });
     tileFailCount = 0;
+    tileLayer.on('tileloadstart', function (ev) {
+      var img = ev && (ev.tile || (ev.el && ev.el.tagName === 'IMG' ? ev.el : null));
+      if (!img) return;
+      try {
+        img.loading = 'eager';
+        img.setAttribute('loading', 'eager');
+        img.setAttribute('fetchpriority', 'high');
+      } catch (e) {}
+    });
     tileLayer.on('tileerror', function (ev) {
       var img = ev && (ev.tile || (ev.el && ev.el.tagName === 'IMG' ? ev.el : null));
       if (img && img.style) img.style.visibility = 'hidden';

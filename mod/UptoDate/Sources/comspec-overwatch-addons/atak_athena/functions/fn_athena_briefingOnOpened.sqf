@@ -6,6 +6,7 @@ params ["_group", ["_interfaceInit", false], "_isDialog", "_settings"];
 if (isNull _group) exitWith {};
 
 uiNamespace setVariable ["COMSPEC_ATAK_Briefing_group", _group];
+["briefing"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
 
 // Fermer l’ancien dialog plein écran s’il est encore ouvert
 private _legacy = findDisplay 9970;

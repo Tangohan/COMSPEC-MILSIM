@@ -1,14 +1,18 @@
 /*
     Tire la liste cloud + fusionne dans ace_arsenal_saved_loadouts (profile).
-    params: [applyId optional]
+    params: [applyId optional, onlyIds optional] — onlyIds vide = toutes.
 */
-params [["_applyId", "", [""]]];
+params [["_applyId", "", [""]], ["_onlyIds", [], [[]]]];
 
 if (!hasInterface) exitWith { false };
 
-private _key = missionNamespace getVariable ["comspec_overwatch_api_key", ""];
-if (_key isEqualTo "") exitWith {
+if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
     ["Liaison Athena requise pour récupérer les tenues.", "arsenal", "warn", true] call comspec_overwatch_connect_fnc_announce;
+    false
+};
+
+if (missionNamespace getVariable ["COMSPEC_ArsenalPullBusy", false]) exitWith {
+    ["Récupération des tenues déjà en cours.", "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
     false
 };
 
@@ -36,7 +40,22 @@ private _meta = [];
     ];
 } forEach _lines;
 
+if (_onlyIds isNotEqualTo []) then {
+    _meta = _meta select { (_x select 0) in _onlyIds };
+};
+
+if (_meta isEqualTo []) exitWith {
+    [
+        if (_onlyIds isEqualTo []) then { "Aucune tenue dans la communauté." } else { "Cette tenue n’est plus disponible." },
+        "arsenal",
+        "info",
+        true
+    ] call comspec_overwatch_connect_fnc_announce;
+    false
+};
+
 missionNamespace setVariable ["COMSPEC_ArsenalCloudMeta", _meta, false];
+missionNamespace setVariable ["COMSPEC_ArsenalPullBusy", true, false];
 
 private _merged = [] call comspec_overwatch_connect_fnc_arsenalLocalLoadouts;
 private _names = _merged apply { toLower (_x select 0) };
@@ -53,6 +72,13 @@ private _pulled = 0;
     private _loadout = [_payload] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout;
     if (_loadout isEqualTo []) then { continue };
 
+    private _cache = missionNamespace getVariable ["COMSPEC_ArsenalCloudLoadouts", nil];
+    if (isNil "_cache") then {
+        _cache = createHashMap;
+        missionNamespace setVariable ["COMSPEC_ArsenalCloudLoadouts", _cache, false];
+    };
+    _cache set [_id, _loadout];
+
     private _idx = _names find toLower _name;
     if (_idx >= 0) then {
         _merged set [_idx, [_name, _loadout]];
@@ -66,6 +92,7 @@ private _pulled = 0;
 profileNamespace setVariable ["ace_arsenal_saved_loadouts", _merged];
 saveProfileNamespace;
 missionNamespace setVariable ["COMSPEC_ArsenalLastPullAt", diag_tickTime, false];
+missionNamespace setVariable ["COMSPEC_ArsenalPullBusy", false, false];
 
 [format ["%1 tenue(s) de la communauté ajoutée(s) à l’arsenal.", _pulled], "arsenal", "ok", true] call comspec_overwatch_connect_fnc_announce;
 

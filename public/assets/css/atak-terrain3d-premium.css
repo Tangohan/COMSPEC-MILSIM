@@ -104,8 +104,15 @@
 .terrain3d-marker--neutral { --marker-color: #d4a017; }
 .terrain3d-marker--objective { --marker-color: #68a5d8; }
 
+/* Leaflet reste dimensionné sous le relief (pas de display:none). */
+.atak-map-stage--premium-3d #atak-map.atak-map-2d-fallback {
+  visibility: hidden;
+  pointer-events: none;
+}
 .atak-map-stage--premium-3d #atak-map.atak-map-2d-fallback[hidden] {
-  display: none !important;
+  display: block !important;
+  visibility: hidden;
+  pointer-events: none;
 }
 .atak-map-stage--premium-3d .atak-map-3d-nav {
   z-index: 6;

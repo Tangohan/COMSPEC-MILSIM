@@ -97,28 +97,28 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
             <a class="dash-rh-parcours__full" href="<?= htmlspecialchars($workspaceUrl, ENT_QUOTES, 'UTF-8') ?>">Espace RH complet</a>
         </div>
 
-        <p class="dash-rh-parcours__step" x-text="rhStep === 'choice' ? 'Étape 1 sur 2 — Choisissez une démarche' : 'Étape 2 sur 2 — Complétez la demande'">Étape 1 sur 2 — Choisissez une démarche</p>
+        <p class="dash-rh-parcours__step" data-rh-step-label>Étape 1 sur 2 — Choisissez une démarche</p>
 
-        <div class="dash-rh-parcours__choice" x-show="rhStep === 'choice'">
-            <button type="button" class="dash-rh-choice" @click="rhStep = 'absence'; history.replaceState(null, '', '#absence')">
+        <div class="dash-rh-parcours__choice" data-rh-choice>
+            <button type="button" class="dash-rh-choice" data-rh-go="absence">
                 <span class="dash-rh-choice__kicker">Indisponibilité</span>
                 <strong>Absence</strong>
                 <span class="dash-rh-choice__hint">Prévenir l’encadrement d’une période d’indisponibilité, datée ou jusqu’à votre retour.</span>
             </button>
-            <button type="button" class="dash-rh-choice" @click="rhStep = 'elevation'; history.replaceState(null, '', '#elevation')">
+            <button type="button" class="dash-rh-choice" data-rh-go="elevation">
                 <span class="dash-rh-choice__kicker">Situation</span>
                 <strong>Élévation</strong>
                 <span class="dash-rh-choice__hint">Proposer un changement de grade, de rôle, de fonction, d’affectation ou d’habilitation.</span>
             </button>
-            <button type="button" class="dash-rh-choice" @click="rhStep = 'avancement'; history.replaceState(null, '', '#avancement')">
+            <button type="button" class="dash-rh-choice" data-rh-go="avancement">
                 <span class="dash-rh-choice__kicker">Mobilité</span>
                 <strong>Avancement</strong>
                 <span class="dash-rh-choice__hint">Exprimer un souhait d’évolution, un poste visé ou un changement d’unité.</span>
             </button>
         </div>
 
-        <div class="dash-rh-parcours__panel" id="absence" x-show="rhStep === 'absence'" x-cloak>
-            <button type="button" class="dash-rh-back" @click="rhStep = 'choice'; history.replaceState(null, '', '#mon-dossier-rh')">← Retour au choix</button>
+        <div class="dash-rh-parcours__panel" id="absence" data-rh-panel="absence" hidden>
+            <button type="button" class="dash-rh-back" data-rh-go="choice">← Retour au choix</button>
             <h3 class="dash-rh-parcours__panel-title">Déclarer une absence</h3>
             <?php if (!$absenceReady): ?>
                 <p class="dash-rh-foot__empty">Les déclarations d’absence ne sont pas encore ouvertes. Contactez l’encadrement si vous devez vous signaler dès maintenant.</p>
@@ -181,8 +181,8 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
             <?php endif; ?>
         </div>
 
-        <div class="dash-rh-parcours__panel" id="elevation" x-show="rhStep === 'elevation'" x-cloak>
-            <button type="button" class="dash-rh-back" @click="rhStep = 'choice'; history.replaceState(null, '', '#mon-dossier-rh')">← Retour au choix</button>
+        <div class="dash-rh-parcours__panel" id="elevation" data-rh-panel="elevation" hidden>
+            <button type="button" class="dash-rh-back" data-rh-go="choice">← Retour au choix</button>
             <h3 class="dash-rh-parcours__panel-title">Demande d’élévation</h3>
             <?php if (is_int($elevationCooldown) && $elevationCooldown > 0): ?>
                 <?php $hours = max(1, (int) ceil($elevationCooldown / 3600)); ?>
@@ -205,8 +205,8 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
             <?php endif; ?>
         </div>
 
-        <div class="dash-rh-parcours__panel" id="avancement" x-show="rhStep === 'avancement'" x-cloak>
-            <button type="button" class="dash-rh-back" @click="rhStep = 'choice'; history.replaceState(null, '', '#mon-dossier-rh')">← Retour au choix</button>
+        <div class="dash-rh-parcours__panel" id="avancement" data-rh-panel="avancement" hidden>
+            <button type="button" class="dash-rh-back" data-rh-go="choice">← Retour au choix</button>
             <h3 class="dash-rh-parcours__panel-title">Demande d’avancement</h3>
             <?php if (!$mobilityReady): ?>
                 <p class="dash-rh-foot__empty">Les souhaits d’évolution ne sont pas encore ouverts. Contactez l’encadrement si vous devez signaler un mouvement dès maintenant.</p>
@@ -251,6 +251,35 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
     </section>
     <script>
     (function () {
+        var root = document.getElementById('dashboard-member-rh');
+        if (root) {
+            var choice = root.querySelector('[data-rh-choice]');
+            var label = root.querySelector('[data-rh-step-label]');
+            var panels = root.querySelectorAll('[data-rh-panel]');
+            var allowed = { absence: true, elevation: true, avancement: true };
+            function show(step) {
+                var isChoice = step === 'choice' || !allowed[step];
+                if (choice) choice.hidden = !isChoice;
+                panels.forEach(function (panel) {
+                    panel.hidden = isChoice || panel.getAttribute('data-rh-panel') !== step;
+                });
+                if (label) {
+                    label.textContent = isChoice
+                        ? 'Étape 1 sur 2 — Choisissez une démarche'
+                        : 'Étape 2 sur 2 — Complétez la demande';
+                }
+            }
+            root.addEventListener('click', function (event) {
+                var btn = event.target.closest('[data-rh-go]');
+                if (!btn || !root.contains(btn)) return;
+                var step = btn.getAttribute('data-rh-go') || 'choice';
+                show(step);
+                history.replaceState(null, '', step === 'choice' ? '#mon-dossier-rh' : '#' + step);
+            });
+            var hash = (window.location.hash || '').replace('#', '');
+            show(allowed[hash] ? hash : 'choice');
+        }
+
         var form = document.getElementById('dash-rh-absence-form');
         if (!form) return;
         var wrap = document.getElementById('dash-rh-absence-ends-wrap');

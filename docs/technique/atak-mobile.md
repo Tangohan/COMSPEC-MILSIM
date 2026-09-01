@@ -42,6 +42,7 @@ PLUS / ☰ ouvre un drawer modules. Header : COMSPEC, module, LIVE/STALE/OFFLINE
 - `GET /api/atak/orders`, `/api/atak/explosive-timers`
 
 Polling décalé par module ; suspendu si `document.hidden`.
+Le tchat ne reconstruit pas la zone de saisie : seule la liste des messages est mise à jour.
 
 ## SITAC
 

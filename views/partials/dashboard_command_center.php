@@ -277,16 +277,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 
     <div class="dash-cc__main" x-data="{
         tacticalOpen: false,
-        calendarOpen: false,
-        rhStep: 'choice',
-        init() {
-            var h = (window.location.hash || '').replace('#', '');
-            if (h === 'absence' || h === 'elevation' || h === 'avancement') {
-                this.rhStep = h;
-            } else if (h === 'mon-dossier-rh' || h === 'dashboard-member-rh' || h === 'dashboard-org-offers') {
-                this.rhStep = 'choice';
-            }
-        }
+        calendarOpen: false
     }">
         <?php
         $athena_header_skip_banners = true;

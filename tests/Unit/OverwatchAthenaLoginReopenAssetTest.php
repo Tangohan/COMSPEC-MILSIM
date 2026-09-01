@@ -37,7 +37,9 @@ final class OverwatchAthenaLoginReopenAssetTest extends TestCase
         self::assertStringContainsString('comspec_overwatch_connect_fnc_openLogin', $esc);
         self::assertStringContainsString('9606', $esc);
         self::assertStringContainsString('createDialog "COMSPEC_AthenaAuth_Dialog"', $open);
-        self::assertStringContainsString('COMSPEC_AthenaLogin', $ace);
+        self::assertStringContainsString('COMSPEC_Account', $ace);
+        self::assertStringContainsString('Connexion Athena', $ace);
+        self::assertStringContainsString('openLogin', $ace);
         self::assertStringContainsString('tool:openlogin', $pm);
         self::assertStringContainsString('Ouvrir la connexion Athena', $pm);
         self::assertStringContainsString('tool:openlogin', $pmJs);

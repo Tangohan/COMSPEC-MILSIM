@@ -21,7 +21,7 @@ final class SseZeusAuthoredNameAssetTest extends TestCase
         self::assertStringContainsString('["name", _full]', $sqf);
         self::assertStringContainsString('["first_name", _first]', $sqf);
         self::assertStringContainsString('["last_name", _last]', $sqf);
-        self::assertStringContainsString('1.5.0', (string) file_get_contents(
+        self::assertStringContainsString('1.5.5', (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp'
         ));
     }

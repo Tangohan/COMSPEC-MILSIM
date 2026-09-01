@@ -4,7 +4,9 @@
     rendait le journal invisible (flèche du filtre seule, rectangles noirs).
 */
 private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;
-if (isNull _group) exitWith {};
+if (isNull _group || {!ctrlShown _group}) exitWith {};
+private _page = toLower ((["cTab_Android_dlg", "showMenu"] call cTab_fnc_getSettings) param [0, ""]);
+if (_page isNotEqualTo "" && {_page isNotEqualTo "athena"}) exitWith {};
 
 private _home = missionNamespace getVariable ["COMSPEC_Athena_HomeSection", "fil"];
 if !(_home in ["fil", "alerter", "rapporter", "poste"]) then { _home = "fil"; };

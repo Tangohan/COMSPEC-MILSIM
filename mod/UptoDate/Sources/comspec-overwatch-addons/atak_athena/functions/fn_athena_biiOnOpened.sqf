@@ -6,6 +6,7 @@ params ["_group", ["_interfaceInit", false], "_isDialog", "_settings"];
 if (isNull _group) exitWith {};
 
 uiNamespace setVariable ["COMSPEC_ATAK_BII_group", _group];
+["bii"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
 
 private _body = _group controlsGroupCtrl 9801;
 if (isNull _body) exitWith {};

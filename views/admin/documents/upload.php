@@ -6,6 +6,9 @@ $units = $units ?? [];
 $users = $users ?? [];
 $tenantRoles = $tenantRoles ?? [];
 $permissionAccessLevels = $permissionAccessLevels ?? ['read', 'comment', 'edit', 'approve', 'manage'];
+$documentOrigin = $documentOrigin ?? \App\Support\DocumentManuscript::ORIGIN_UPLOAD;
+$manuscript = $manuscript ?? \App\Support\DocumentManuscript::defaults('', (string) ($issuingAuthorityDefault ?? ''));
+$issuingAuthorityDefault = $issuingAuthorityDefault ?? '';
 $documentTypes = [
     'manuel' => 'Manuel',
     'procedure' => 'Procédure',
@@ -87,7 +90,7 @@ $permTypeLabels = [
         <div>
           <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700">Gestion documentaire</p>
           <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900">Créer un document</h1>
-          <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Métadonnées, classification, visibilité réelle (rôles, unité, règles fines) et cycle de vie.</p>
+          <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Joindre un fichier existant, ou rédiger un manuel avec page de garde et signatures. Classification et visibilité restent les mêmes dans les deux cas.</p>
         </div>
       </div>
     </div>
@@ -111,7 +114,7 @@ $permTypeLabels = [
           <span class="ml-auto shrink-0 text-indigo-400 transition group-open:rotate-180" aria-hidden="true">▼</span>
         </summary>
         <div class="space-y-4 border-t border-indigo-100/80 px-4 pb-5 pt-2 text-[13px] leading-relaxed text-slate-700 sm:px-5">
-          <p><strong class="text-slate-900">Ordre recommandé.</strong> (1) Identité et fichier — (2) Classification &amp; visibilité — (3) Liaisons métier si besoin — (4) Hiérarchie / propriétaire — (5) Statut et dates. Rien n’est définitif : vous pourrez modifier la fiche après création.</p>
+          <p><strong class="text-slate-900">Ordre recommandé.</strong> (1) Identité — (2) Fichier joint ou rédaction — (3) Classification &amp; visibilité — (4) Liaisons métier si besoin — (5) Statut et dates. Rien n’est définitif : vous pourrez modifier la fiche après création.</p>
           <ul class="list-inside list-disc space-y-2 pl-1 text-slate-700">
             <li><strong>Classification</strong> : sensibilité du contenu (qui a le « droit » de voir ce niveau de secret).</li>
             <li><strong>Visibilité</strong> : à qui s’adresse le document une fois publié (privé, unité, rôles, toute l’org, règles fines).</li>
@@ -123,7 +126,7 @@ $permTypeLabels = [
       </details>
     </div>
 
-    <form action="<?= url('documents/gestion/ajout') ?>" method="post" enctype="multipart/form-data" id="document-upload-form" class="space-y-8">
+    <form action="<?= url('documents/gestion/ajout') ?>" method="post" enctype="multipart/form-data" id="doc-create-form" class="space-y-8">
         <?= \App\Core\Csrf::field() ?>
         <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <div class="space-y-6">
@@ -180,21 +183,38 @@ $permTypeLabels = [
                     <div class="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                           <div>
-                            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Fichier</h2>
-                            <p class="mt-1 text-xs text-slate-500">Pièce jointe ou fiche sans fichier.</p>
+                            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Contenu</h2>
+                            <p class="mt-1 text-xs text-slate-500">Joindre un fichier, ou rédiger un manuel (page de garde puis signatures).</p>
                           </div>
                           <details class="doc-help-details max-w-full sm:max-w-md">
                             <summary class="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-slate-600 shadow-sm hover:border-emerald-300">
                               <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-[11px] text-white">?</span> Aide
                             </summary>
                             <div class="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-[12px] leading-relaxed text-slate-600 shadow-sm">
-                              <p>Cochez <strong>Document sans fichier</strong> pour créer uniquement la fiche (métadonnées, liaisons) — utile pour un document « logique » ou en attente de version.</p>
-                              <p class="mt-2">Sinon, joignez un PDF, une image ou une vidéo selon les formats acceptés par le serveur. Le fichier devient la <strong>version courante</strong> du document à l’enregistrement.</p>
+                              <p><strong>Joindre un fichier</strong> : PDF, image ou vidéo déjà prêt. Vous pouvez aussi créer uniquement la fiche, sans pièce jointe, en attendant une version.</p>
+                              <p class="mt-2"><strong>Rédiger</strong> : le document s’écrit ici. La première page reprend les numéros de publication, le titre et les mentions de diffusion ; la deuxième page porte l’avant-propos et les signatures.</p>
                             </div>
                           </details>
                         </div>
                     </div>
                     <div class="space-y-4 p-5">
+                        <div class="fm-origin-choice">
+                            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition hover:border-emerald-300 <?= $documentOrigin !== 'authored' ? 'ring-2 ring-emerald-500/20 border-emerald-300' : '' ?>">
+                                <input type="radio" name="document_origin" value="upload" class="mt-1 h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= $documentOrigin !== 'authored' ? 'checked' : '' ?> />
+                                <span>
+                                    <span class="block font-semibold text-slate-900">Joindre un fichier</span>
+                                    <span class="mt-0.5 block text-[11px] text-slate-500">PDF, image ou vidéo déjà prêt.</span>
+                                </span>
+                            </label>
+                            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition hover:border-emerald-300 <?= $documentOrigin === 'authored' ? 'ring-2 ring-emerald-500/20 border-emerald-300' : '' ?>">
+                                <input type="radio" name="document_origin" value="authored" class="mt-1 h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= $documentOrigin === 'authored' ? 'checked' : '' ?> />
+                                <span>
+                                    <span class="block font-semibold text-slate-900">Rédiger le document</span>
+                                    <span class="mt-0.5 block text-[11px] text-slate-500">Page de garde, signatures, puis le corps du texte.</span>
+                                </span>
+                            </label>
+                        </div>
+                        <div id="doc-origin-upload" class="<?= $documentOrigin === 'authored' ? 'hidden' : '' ?>">
                         <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-700 transition hover:border-emerald-300">
                             <input type="checkbox" name="document_without_file" value="1" id="doc-without-file" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                             <span>Document sans fichier (fiche métier uniquement)</span>
@@ -209,6 +229,18 @@ $permTypeLabels = [
                             <div id="file-meta" class="mt-3 hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"></div>
                             <img id="file-preview-image" alt="Prévisualisation image" class="mt-3 hidden max-h-56 rounded-xl border border-slate-200 object-contain" />
                             <p class="mt-2 text-[11px] text-slate-500">La modération automatique vérifie le binaire avant publication.</p>
+                        </div>
+                        </div>
+                        <div id="doc-origin-authored" class="<?= $documentOrigin === 'authored' ? '' : 'hidden' ?>">
+                            <?php
+                            $documentTitle = 'Titre du document';
+                            $fmLivePreview = true;
+                            require base_path('views/partials/document_manuscript_fields.php');
+                            ?>
+                            <div class="mt-5">
+                                <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-600">Aperçu</p>
+                                <?php require base_path('views/partials/document_fm_paper.php'); ?>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -695,3 +727,4 @@ $permTypeLabels = [
   }
 })();
 </script>
+<script src="<?= htmlspecialchars(asset_url('assets/js/document-fm-preview.js'), ENT_QUOTES, 'UTF-8') ?>"></script>

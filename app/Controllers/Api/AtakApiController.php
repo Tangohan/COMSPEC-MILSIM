@@ -5215,18 +5215,35 @@ class AtakApiController
         if ($terrainZ !== null) {
             $extra['terrain_z'] = round($terrainZ, 1);
         }
-        // Groupe Arma (groupId) — top-level ou déjà dans extra
+        // Groupe : indicatif + affectation — jamais le titre de communauté (groupId Arma)
         $groupName = trim((string) ($body['group_name'] ?? $body['groupName'] ?? $body['group'] ?? $extra['group_name'] ?? $extra['groupName'] ?? $extra['group'] ?? ''));
+        $groupId = trim((string) ($body['group_id'] ?? $body['groupId'] ?? $extra['group_id'] ?? $extra['groupId'] ?? ''));
+        $tenantName = '';
+        try {
+            $tenantRow = $this->tenantRepository->findById($tenantId);
+            if (is_array($tenantRow)) {
+                $tenantName = function_exists('community_display_name')
+                    ? community_display_name($tenantRow)
+                    : trim((string) ($tenantRow['name'] ?? ''));
+            }
+        } catch (\Throwable) {
+        }
+        $groupName = OperatorTacticalIdentity::groupLabel(
+            $callSign,
+            (string) ($extra['unit'] ?? $extra['unit_name'] ?? $extra['assignment'] ?? ''),
+            $tenantName,
+            $tenantName,
+            $groupName !== '' ? $groupName : $groupId
+        );
         if ($groupName !== '') {
             $extra['group_name'] = $groupName;
             $extra['group'] = $groupName;
         }
-        $groupId = trim((string) ($body['group_id'] ?? $body['groupId'] ?? $extra['group_id'] ?? $extra['groupId'] ?? ''));
         if ($groupId !== '') {
             $extra['group_id'] = $groupId;
-            if ($groupName === '') {
-                $extra['group_name'] = $groupId;
-                $extra['group'] = $groupId;
+            if (($extra['group_name'] ?? '') === '') {
+                $extra['group_name'] = $groupName;
+                $extra['group'] = $groupName;
             }
         }
         if ($steamNorm !== null && $steamNorm !== '') {

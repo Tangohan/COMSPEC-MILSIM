@@ -41,6 +41,7 @@ if (!(missionNamespace getVariable ["COMSPEC_ReportsOpenedWrapped", false]) && {
     Iceman_fnc_alerts_onOpened = {
         private _r = _this call (missionNamespace getVariable ["COMSPEC_Prev_Iceman_alerts_onOpened", {}]);
         [] call (missionNamespace getVariable ["COMSPEC_ReportsSnapshot", {}]);
+        ["reports"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
         private _ag = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
         if (!isNull _ag && {((ctrlClassName _ag) find "COMSPEC_ATAK_Athena") < 0}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_Athena_group", controlNull];

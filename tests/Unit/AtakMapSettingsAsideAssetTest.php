@@ -47,5 +47,7 @@ final class AtakMapSettingsAsideAssetTest extends TestCase
         self::assertStringContainsString('invalidateLeafletSoon', $premium);
         self::assertStringContainsString('.terrain3d-host.is-booting', $css);
         self::assertStringContainsString('isolation: isolate', $css);
+        self::assertStringContainsString('visibility: hidden', $css);
+        self::assertStringContainsString('#atak-map.atak-map-2d-fallback', $css);
     }
 }

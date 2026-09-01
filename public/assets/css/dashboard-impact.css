@@ -2836,6 +2836,10 @@ body.dashboard-shell main {
   gap: 0.75rem;
   margin-top: 0.9rem;
 }
+.dash-rh-parcours__choice[hidden],
+.dash-rh-parcours__panel[hidden] {
+  display: none !important;
+}
 @media (min-width: 768px) {
   .dash-rh-parcours__choice { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

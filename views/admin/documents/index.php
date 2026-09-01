@@ -93,7 +93,7 @@ $latestLabel = $latestAt ? date('d.m.Y', strtotime($latestAt)) : '—';
                         <div class="mt-5 grid gap-3">
                             <a href="<?= url('documents/gestion/ajout') ?>"
                                class="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-slate-800">
-                                Upload document
+                                Ajouter un document
                             </a>
 
                             <a href="<?= url('documents/gestion/arborescence') ?>"
@@ -225,7 +225,7 @@ $latestLabel = $latestAt ? date('d.m.Y', strtotime($latestAt)) : '—';
             <div class="px-6 py-12 text-center lg:px-8">
                 <p class="text-slate-600">Aucun document ne correspond aux critères.</p>
                 <p class="mt-2 text-sm text-slate-500">
-                    <a href="<?= url('documents/gestion/ajout') ?>" class="font-semibold text-slate-800 underline decoration-slate-300 underline-offset-2 hover:text-slate-950">Uploader un document</a>
+                    <a href="<?= url('documents/gestion/ajout') ?>" class="font-semibold text-slate-800 underline decoration-slate-300 underline-offset-2 hover:text-slate-950">Ajouter un document</a>
                 </p>
             </div>
             <?php else: ?>

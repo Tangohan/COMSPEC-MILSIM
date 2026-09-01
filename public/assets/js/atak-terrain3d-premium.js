@@ -486,13 +486,31 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
     applyTacticalViewToRenderer(lastLeafletView);
   }
 
+  function refreshLeafletUnitMarkers() {
+    var map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
+    if (map && map.invalidateSize) {
+      try { map.invalidateSize(false); } catch (e) { /* ignore */ }
+    }
+    try {
+      if (window.ATAKMarkerManagerC2 && typeof window.ATAKMarkerManagerC2.setEntities === 'function') {
+        window.ATAKMarkerManagerC2.setEntities(window.ATAKMarkerManagerC2.entities || []);
+      }
+    } catch (e2) { /* ignore */ }
+    try {
+      if (window.ATAKMap && typeof window.ATAKMap.refreshUnitMarkerIcons === 'function') {
+        window.ATAKMap.refreshUnitMarkerIcons();
+      }
+    } catch (e3) { /* ignore */ }
+  }
+
   function setMapHidden(hidden) {
     if (!mapEl) mapEl = document.getElementById('atak-map');
     if (!stage) stage = document.querySelector('.atak-map-stage');
     if (!host) host = document.getElementById('terrain3d-container');
 
     if (hidden) {
-      /* Afficher d’abord l’hôte 3D, puis masquer Leaflet — évite le flash gris vide. */
+      /* Afficher d’abord l’hôte 3D. Ne pas retirer Leaflet du flux (display:none) :
+         une carte à taille nulle perd les pastilles 2D au retour à plat. */
       if (host) {
         host.hidden = false;
         host.classList.add('is-active', 'is-booting');
@@ -506,7 +524,8 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
         if (!state.enabled) return;
         if (mapEl) {
           mapEl.classList.add('atak-map-2d-fallback');
-          mapEl.hidden = true;
+          mapEl.removeAttribute('hidden');
+          mapEl.hidden = false;
           mapEl.setAttribute('aria-hidden', 'true');
         }
         if (host) host.classList.remove('is-booting');
@@ -516,6 +535,7 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
 
     if (mapEl) {
       mapEl.classList.remove('atak-map-2d-fallback');
+      mapEl.removeAttribute('hidden');
       mapEl.hidden = false;
       mapEl.setAttribute('aria-hidden', 'false');
     }
@@ -588,6 +608,9 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
         try { renderer.toggle2D3D('2d'); } catch (e) { /* ignore */ }
       }
       invalidateLeafletSoon();
+      refreshLeafletUnitMarkers();
+      window.setTimeout(refreshLeafletUnitMarkers, 80);
+      window.setTimeout(refreshLeafletUnitMarkers, 260);
       return;
     }
 

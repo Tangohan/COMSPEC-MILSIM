@@ -9,9 +9,8 @@ if (isNil "Iceman_fnc_photo_getRecords") exitWith {};
 if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith {};
 if (!(["iceman_photo"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {};
 
-private _link = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
-private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
-if (!_ready && {_link isNotEqualTo "linked"}) exitWith {};
+if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
 
 private _seen = missionNamespace getVariable ["COMSPEC_Athena_PhotoSeen", []];
 if (!(_seen isEqualType [])) then { _seen = []; };
@@ -64,4 +63,4 @@ private _started = 0;
     // Signal unique — pas de spawn retry / pas d’attente fichier côté SQF.
     [_filePath, _fileName, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
 } forEach _records;
-
+

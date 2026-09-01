@@ -18,9 +18,13 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 if (!hasInterface) exitWith { false };
 
 // Sans session Athena, NotifyNewPhoto échoue (not_connected) puis un retry
-// reclichait un PNG toutes les ~3 s — spam journal + disque.
-if (!isNil "comspec_overwatch_connect_fnc_isReady"
-    && {!([] call comspec_overwatch_connect_fnc_isReady)}
+// reclichait un PNG toutes les ~2 s — spam journal + disque.
+if (
+    !(missionNamespace getVariable ["COMSPEC_AthenaReady", false])
+    || {
+        !isNil "comspec_overwatch_connect_fnc_isReady"
+        && {!([] call comspec_overwatch_connect_fnc_isReady)}
+    }
 ) exitWith {
     missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
     missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|not_connected", false];
@@ -202,6 +206,13 @@ private _fnc_stripExtQuotes = {
     _text
 };
 
+private _fnc_isConnErr = {
+    private _d = toLower ([missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]] call _fnc_stripExtQuotes);
+    (_d find "not_connected") >= 0
+    || {(_d find "unauthorized") >= 0}
+    || {(_d find "queue_full") >= 0}
+};
+
 private _fnc_notifyPath = {
     params ["_uploadPath"];
     if (!(_uploadPath isEqualType "") || {_uploadPath isEqualTo ""}) exitWith { false };
@@ -263,13 +274,17 @@ private _fnc_armaPngCapture = {
 };
 
 // Overlay ATAK / casque / tourelle : le JPEG BCE peut être la vue soldat si la
-// caméra regardée est en rendu vers texture. Forcer un cliché scène.
+// caméra regardée est en rendu vers texture. Forcer un cliché scène — sauf si
+// le JPEG vient déjà du cliché overlay (TakePicture a promu avant SOAR).
 if (
     !isNull _overlayCam
     && {_skipArmaShot}
     && {!(missionNamespace getVariable ["COMSPEC_OverlayCamPromoted", false])}
 ) then {
-    _skipArmaShot = false;
+    private _lowGiven = toLower _path;
+    if ((_lowGiven find ".jpg") < 0 && {(_lowGiven find ".jpeg") < 0}) then {
+        _skipArmaShot = false;
+    };
 };
 
 if (
@@ -412,11 +427,19 @@ if (_path isNotEqualTo "") exitWith {
     if (!_ok && {_path isNotEqualTo _png}) then {
         _ok = [_path] call _fnc_notifyPath;
     };
+    // not_connected / unauthorized : ne pas reclicher ni relancer — ça inonde le journal.
+    if (!_ok && {[] call _fnc_isConnErr}) exitWith { false };
     if (!_ok && {_skipArmaShot} && {_jpegRetryOnce}) then {
         [_path, _caption, _device, _feedId] spawn {
             params ["_path", "_caption", "_device", "_feedId"];
             uiSleep 0.45;
-            [_path, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+            private _retry = [_path, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+            if (!(_retry isEqualType true) || {!_retry}) then {
+                private _detail = toLower (str (missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]));
+                if ((_detail find "not_connected") >= 0 || {(_detail find "unauthorized") >= 0}) exitWith {};
+                uiSleep 0.2;
+                [_path, _caption, _device, _feedId, false, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+            };
         };
         true
     } else {
@@ -501,7 +524,7 @@ if (_path isEqualTo "") exitWith {
     if (!_ok && {_resolved isNotEqualTo ""}) then {
         _ok = [_resolved] call _fnc_notifyPath;
     };
-    if (!_ok && {!_skipArmaShot}) then {
+    if (!_ok && {!_skipArmaShot} && {!([ ] call _fnc_isConnErr)}) then {
         [_png, _caption, _device, _feedId] spawn {
             params ["_png", "_caption", "_device", "_feedId"];
             uiSleep 2.4;

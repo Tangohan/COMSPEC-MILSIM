@@ -407,12 +407,12 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             w = QUOTE(COMSPEC_ATHENA_W(0.92));
             h = QUOTE(COMSPEC_ATHENA_H(0.50));
             size = QUOTE(COMSPEC_ATHENA_H(0.32));
-            text = "Compte Athena";
+            text = "Connexion Athena";
             show = 0;
             colorBackground[] = ATHENA_BTN_ACCENT;
             colorBackground2[] = ATHENA_BTN_ACCENT;
             colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
-            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_showLinkDialog";
+            onButtonClick = "[] call comspec_overwatch_connect_fnc_openLogin";
         };
         class BtnPhoneQr: BtnLink
         {

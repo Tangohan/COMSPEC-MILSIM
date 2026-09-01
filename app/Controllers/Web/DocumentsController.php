@@ -19,6 +19,7 @@ use App\Services\Audit\AuditService;
 use App\Services\Documents\DocumentAccessService;
 use App\Services\Documents\DocumentTrainingReferencesService;
 use App\Services\Moderation\ModerationArtifactState;
+use App\Support\DocumentManuscript;
 
 class DocumentsController
 {
@@ -200,14 +201,17 @@ class DocumentsController
         if ($this->isDocumentLifecycleBlocked($doc) && !$this->viewerMayBypassLifecycleBlock()) {
             return (new Response())->setStatusCode(423)->setBody('Document bloqué : revue/correction/suppression requise.');
         }
-        if (empty($doc['file_path']) || empty($doc['mime_type'])) {
+        $authored = DocumentManuscript::isAuthored($doc);
+        if (!$authored && (empty($doc['file_path']) || empty($doc['mime_type']))) {
             return (new Response())->setStatusCode(404)->setBody('Aucune version de fichier.');
         }
-        if ($this->isDocumentFileBlockedForViewer($doc)) {
+        if (!$authored && $this->isDocumentFileBlockedForViewer($doc)) {
             return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération).');
         }
         $viewType = 'pdf';
-        if (str_starts_with($doc['mime_type'], 'image/')) {
+        if ($authored) {
+            $viewType = 'manuscript';
+        } elseif (str_starts_with((string) ($doc['mime_type'] ?? ''), 'image/')) {
             $viewType = 'image';
         }
         $userId = (int) Session::get('user_id');
@@ -220,6 +224,8 @@ class DocumentsController
             'title' => $doc['title'],
             'document' => $doc,
             'viewType' => $viewType,
+            'manuscript' => $authored ? DocumentManuscript::forView($doc) : null,
+            'documentFmPage' => $authored,
             'lifecycleBlocked' => $this->isDocumentLifecycleBlocked($doc),
             'securitySessionToken' => $sessionToken,
             'requiresAccessCode' => !empty($doc['require_access_code']),

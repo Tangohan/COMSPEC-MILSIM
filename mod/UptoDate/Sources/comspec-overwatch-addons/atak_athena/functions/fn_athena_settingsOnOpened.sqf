@@ -9,7 +9,11 @@ if (!isNull _group) then {
     uiNamespace setVariable ["COMSPEC_ATAK_Settings_group", _group];
 };
 
+["settings"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
+
 private _paint = {
+    private _page = toLower ((["cTab_Android_dlg", "showMenu"] call cTab_fnc_getSettings) param [0, ""]);
+    if (_page isNotEqualTo "" && {!(_page in ["ataksettings", "settings"])}) exitWith {};
     [] call comspec_overwatch_atak_athena_fnc_athena_updateSettings;
 };
 

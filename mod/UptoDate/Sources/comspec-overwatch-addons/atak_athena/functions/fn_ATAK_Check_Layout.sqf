@@ -99,7 +99,18 @@ private _batX = if (isNull _bat) then { _MapX } else { (ctrlPosition _bat) selec
 
 private _callSign = _disp displayCtrl (17000 + 2620);
 if (!isNull _callSign && {!isNil "cTab_player"} && {!isNull cTab_player}) then {
-    _callSign ctrlSetText ([groupId group cTab_player, [cTab_player] call CBA_fnc_getGroupIndex] joinString ":");
+    private _bftGrp = "";
+    if (!isNil "comspec_overwatch_connect_fnc_inGameGroupLabel") then {
+        _bftGrp = [cTab_player] call comspec_overwatch_connect_fnc_inGameGroupLabel;
+    };
+    if (!(_bftGrp isEqualType "")) then { _bftGrp = str _bftGrp; };
+    _bftGrp = trim _bftGrp;
+    if (_bftGrp isEqualTo "") then { _bftGrp = "—"; };
+    private _bftIdx = 1;
+    if (!isNil "CBA_fnc_getGroupIndex") then {
+        _bftIdx = [cTab_player] call CBA_fnc_getGroupIndex;
+    };
+    _callSign ctrlSetText (format ["%1:%2", _bftGrp, _bftIdx]);
 };
 
 private _tool = _disp displayCtrl (17000 + 1300);
@@ -162,6 +173,9 @@ if (!isNull _toolBnt) then {
     uiSleep 0.05;
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateMapHud") then {
         [] call comspec_overwatch_atak_athena_fnc_athena_updateMapHud;
+    };
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_hideForeignPages") then {
+        [""] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
     };
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_fixReportsLayout") then {
         [] call comspec_overwatch_atak_athena_fnc_athena_fixReportsLayout;

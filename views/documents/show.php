@@ -33,21 +33,32 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
             <?php endif; ?>
             <div class="mt-3 flex flex-wrap gap-2 text-xs">
                 <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">Ouverture sécurisée</span>
-                <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-slate-700 font-medium"><?= $viewType === 'image' ? 'Aperçu image' : 'Aperçu PDF' ?></span>
+                <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-slate-700 font-medium"><?= $viewType === 'image' ? 'Aperçu image' : ($viewType === 'manuscript' ? 'Manuel rédigé' : 'Aperçu PDF') ?></span>
             </div>
         </div>
         <div class="flex items-center gap-2">
+            <?php if ($viewType === 'manuscript'): ?>
+            <button type="button" onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-colors">Imprimer</button>
+            <?php elseif (!empty($document['file_path'])): ?>
             <a id="doc-download-link" href="<?= $downloadUrl . '?security_session_token=' . rawurlencode($securitySessionToken) ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Télécharger
             </a>
+            <?php endif; ?>
         </div>
     </div>
     </div>
 
     <div class="grid gap-6 xl:grid-cols-[1fr_320px]">
     <div>
-    <?php if ($viewType === 'image'): ?>
+    <?php if ($viewType === 'manuscript'): ?>
+    <?php
+        $documentTitle = (string) ($document['title'] ?? '');
+        $fmLivePreview = false;
+        $manuscript = $manuscript ?? \App\Support\DocumentManuscript::forView($document);
+        require base_path('views/partials/document_fm_paper.php');
+    ?>
+    <?php elseif ($viewType === 'image'): ?>
     <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         <div class="relative p-4 flex justify-center bg-slate-50 min-h-[60vh]" data-doc-viewport x-data="{ open: false }">
             <div class="doc-viewport-inner relative w-full flex justify-center min-h-[50vh]">
@@ -253,7 +264,7 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
     <aside class="rounded-2xl border border-slate-200 bg-white p-4 h-fit xl:sticky xl:top-6">
         <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Métadonnées</p>
         <dl class="mt-3 space-y-3 text-sm">
-            <div><dt class="text-slate-500">Type d'aperçu</dt><dd class="font-semibold text-slate-900"><?= $viewType === 'image' ? 'Image' : 'PDF' ?></dd></div>
+            <div><dt class="text-slate-500">Type d'aperçu</dt><dd class="font-semibold text-slate-900"><?= $viewType === 'image' ? 'Image' : ($viewType === 'manuscript' ? 'Manuel rédigé' : 'PDF') ?></dd></div>
             <div><dt class="text-slate-500">Dernière mise à jour</dt><dd class="font-semibold text-slate-900"><?= htmlspecialchars($updatedAt) ?></dd></div>
             <div><dt class="text-slate-500">Revue prévue</dt><dd class="font-semibold text-slate-900"><?= htmlspecialchars($reviewDueAt) ?></dd></div>
             <div><dt class="text-slate-500">Expiration</dt><dd class="font-semibold text-slate-900"><?= htmlspecialchars($expiresAt) ?></dd></div>

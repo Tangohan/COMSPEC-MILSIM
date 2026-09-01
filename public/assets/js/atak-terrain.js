@@ -296,6 +296,25 @@ window.ATAKTerrain = (function () {
     }
   }
 
+  function markImgEager(img) {
+    if (!img) return;
+    try {
+      img.loading = 'eager';
+      img.setAttribute('loading', 'eager');
+      img.setAttribute('fetchpriority', 'high');
+    } catch (e) {}
+  }
+  function bindImageOverlay(layer, onFail) {
+    if (!layer) return layer;
+    layer.on('add', function () {
+      markImgEager(layer.getElement && layer.getElement());
+    });
+    layer.on('error', function () {
+      if (typeof onFail === 'function') onFail();
+    });
+    return layer;
+  }
+
   function paintOverlays() {
     var map = leafletMap();
     if (!map || !window.L || !isReady()) {
@@ -319,10 +338,12 @@ window.ATAKTerrain = (function () {
 
     if (flags.hillshade) {
       if (hillshade) hillshade = removeLayer(hillshade);
-      hillshade = window.L.imageOverlay(overlayUrl('hillshade', stamp), b, {
+      hillshade = bindImageOverlay(window.L.imageOverlay(overlayUrl('hillshade', stamp), b, {
         opacity: opacity,
         pane: 'atakHillshadePane',
         interactive: false
+      }), function () {
+        hillshade = removeLayer(hillshade);
       });
       hillshade.addTo(map);
     } else {
@@ -331,10 +352,12 @@ window.ATAKTerrain = (function () {
 
     if (flags.slope) {
       if (slopeLayer) slopeLayer = removeLayer(slopeLayer);
-      slopeLayer = window.L.imageOverlay(overlayUrl('slope', stamp), b, {
+      slopeLayer = bindImageOverlay(window.L.imageOverlay(overlayUrl('slope', stamp), b, {
         opacity: Math.min(0.55, opacity + 0.12),
         pane: 'atakSlopePane',
         interactive: false
+      }), function () {
+        slopeLayer = removeLayer(slopeLayer);
       });
       slopeLayer.addTo(map);
     } else {

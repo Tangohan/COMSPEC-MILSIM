@@ -37,4 +37,23 @@ final class OperatorTacticalIdentityTest extends TestCase
         self::assertSame('', OperatorTacticalIdentity::unitAssignment($tenant, $tenant));
         self::assertSame('', OperatorTacticalIdentity::unitAssignment('https://athena.ttrd.fr/public/api/game/v1/branding/render/soar'));
     }
+
+    public function testGroupLabelUsesCallsignAndAssignmentNeverTenant(): void
+    {
+        $tenant = 'S.O.A.R - (The Special Operations Action Regiments) SOF MilSim Group';
+
+        self::assertSame(
+            'YB1 · 24th STS Gold Team SOF TACP',
+            OperatorTacticalIdentity::groupLabel('YB1', '24th STS Gold Team SOF TACP', $tenant, $tenant, $tenant)
+        );
+        self::assertSame(
+            'Alpha 1-2',
+            OperatorTacticalIdentity::groupLabel('', '', $tenant, $tenant, 'Alpha 1-2')
+        );
+        self::assertSame(
+            'TA1',
+            OperatorTacticalIdentity::groupLabel('TA1', $tenant, $tenant, $tenant, $tenant)
+        );
+        self::assertSame('', OperatorTacticalIdentity::groupLabel($tenant, $tenant, $tenant, $tenant, $tenant));
+    }
 }

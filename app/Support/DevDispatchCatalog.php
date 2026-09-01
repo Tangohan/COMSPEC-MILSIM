@@ -584,6 +584,111 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(348, '2026-09-01', 'Les manuels se rédigent dans Athena, avec page de garde et signatures', 'Dans la bibliothèque, un document peut désormais s’écrire directement : page de garde, avant-propos avec signatures, puis le texte. Joindre un fichier déjà prêt reste possible', [
+                'Choix Joindre un fichier ou Rédiger le document à la création',
+                'Page de garde : numéros de publication, titre, date, diffusion, destruction, autorité émettrice',
+                'Page des signatures, puis le corps du texte',
+            ], [], [
+                'La création n’offrait qu’un dépôt de fichier, sans rédaction',
+            ], ['platform'], [
+                'Ouvrez la gestion documentaire, puis Ajouter un document. Choisissez Rédiger le document. Les lecteurs voient le manuel comme un document imprimé.',
+            ], 'Athena Documents'),
+            $pr(347, '2026-09-01', 'Le journal radio aligne toutes les bulles', 'Dans le journal radio du poste, les messages de groupe, les messages du poste et la zone d’écriture occupent la même largeur, sans décalage', [], [
+                'Même marge à gauche pour toutes les bulles et la zone d’écriture',
+            ], [
+                'Les messages du poste étaient décalés vers la droite par rapport aux messages de groupe',
+            ], ['atak'], [
+                'Rechargez la page ATAK du poste. Ouvrez le journal radio : les bulles et le champ d’émission doivent démarrer sur la même ligne à gauche.',
+            ], 'Athena ATAK'),
+            $pr(346, '2026-09-01', 'Le tchat du téléphone reste lisible pendant la saisie', 'Sur le tchat du téléphone, la zone d’écriture n’est plus vidée pendant le suivi des messages. Les messages de groupe et les alertes médicales s’affichent en clair, avec un texte plus grand', [], [
+                'Zone d’écriture plus haute, pour un message long',
+            ], [
+                'La saisie disparaissait toutes les quelques secondes, sur téléphone comme sur ordinateur',
+                'Les messages de groupe et les alertes médicales s’affichaient en une ligne illisible',
+            ], ['atak'], [
+                'Rechargez la page tchat du téléphone. Écrivez un message long : le texte doit rester. Les messages de groupe montrent l’indicatif et le texte, pas une ligne technique.',
+            ], 'Athena ATAK'),
+            $pr(345, '2026-09-01', 'Les rapports, l’appui et la réparation reviennent dans ACE', 'Dans ACE (sur soi), sous COMSPEC Athena, le menu ATAK Tactique est de nouveau là : rapports, demande d’appui, service véhicule. La réparation du téléphone est dans ACE, rubrique Équipement. Connexion Athena reste en tête', [], [], [
+                'Les rapports, l’appui et la réparation du téléphone n’apparaissaient plus dans ACE',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. ACE sur soi : COMSPEC Athena, puis ATAK Tactique. Équipement : rallumer / réparer l’écran du téléphone.',
+            ], 'Overwatch 1.5.5'),
+            $pr(344, '2026-09-01', 'Le menu ACE ouvre la vraie connexion Athena', 'Dans ACE (sur soi), COMSPEC Athena → Connexion Athena ouvre l’écran avec l’e-mail et le mot de passe, comme la tuile du téléphone. Ce n’est plus l’écran de code court', [], [], [
+                'ACE Compte Athena ouvrait l’écran de liaison par code, sans e-mail ni mot de passe',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. ACE sur soi : COMSPEC Athena, puis Connexion Athena. Vous devez voir les champs e-mail et mot de passe.',
+            ], 'Overwatch'),
+            $pr(343, '2026-09-01', 'La connexion Athena s’ouvre depuis le téléphone, plus au lancement', 'La fenêtre de connexion n’apparaît plus toute seule en début de mission. Sur le bureau du téléphone, la tuile Connexion Athena ouvre l’écran de liaison', [], [
+                'Tuile Connexion Athena sur le bureau du téléphone',
+            ], [
+                'La fenêtre de connexion s’ouvrait dès le début de mission',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. La mission démarre sans écran de connexion. Ouvrez le téléphone, tuile Connexion Athena.',
+            ], 'Overwatch 1.5.4'),
+            $pr(342, '2026-09-01', 'Le suivi d’effectif affiche l’indicatif et l’affectation, pas le nom de la communauté', 'Sur le téléphone et au poste, le groupe du suivi d’effectif reprend l’indicatif et l’affectation de la fiche, pas le titre de la communauté', [], [], [
+                'Le suivi d’effectif prenait le nom de la communauté comme nom de groupe',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Sur le téléphone, le groupe du suivi doit coller à l’indicatif et à l’affectation du tableau Effectifs.',
+            ], 'Overwatch 1.5.3 · Liaison 1.18.2'),
+            $pr(341, '2026-09-01', 'Sons d’ordre et ombrage du relief : la carte du poste reste utilisable', 'Les sons d’ordre et d’accusé se jouent au poste. Si l’ombrage du sol n’est pas prêt, la carte reste affichée, sans écran bloqué', [], [], [
+                'Les sons d’ordre et d’accusé ne se chargeaient pas',
+                'L’ombrage du relief faisait échouer le chargement de la carte',
+            ], ['atak'], [
+                'Rechargez la page ATAK du poste. Les alertes sonores et l’ombrage du sol doivent se charger sans bloquer la carte.',
+            ], 'Athena ATAK'),
+            $pr(340, '2026-09-01', 'Les fiches FRS/FRM se rédigent dans le téléphone, texte lisible', 'Une tuile FRS/FRM ouvre le rédacteur de fiche à la taille de l’écran du téléphone. Le bouton Valider et transmettre et les champs de contexte se lisent clairement', [
+                'Tuile FRS/FRM sur le bureau du téléphone',
+            ], [], [
+                'Le texte de validation et le contexte étaient trop petits',
+                'La fiche s’ouvrait hors du téléphone, en overlay',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Sur le bureau du téléphone : tuile FRS/FRM. La fiche tient dans l’écran. Valider et transmettre doit se lire sans zoomer.',
+            ], 'Overwatch 1.5.2'),
+            $pr(339, '2026-09-01', 'Caméra du téléphone : on marche encore, les photos arrivent au poste', 'En caméra plein écran du téléphone, l’opérateur peut se déplacer. La photo prise part vers le poste au lieu de rester bloquée', [], [], [
+                'Une fois la caméra ouverte, le déplacement était bloqué',
+                'Les photos prises depuis cette caméra n’apparaissaient pas au poste',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Ouvrez le téléphone, caméra plein écran : marchez, prenez une photo, elle doit apparaître au poste.',
+            ], 'Overwatch 1.5.1 · Extension 1.18.1'),
+            $pr(338, '2026-09-01', 'Les contacts restent visibles en passant de la vue relief à la carte à plat', 'Un effectif affiché sur le relief reste sur la carte à plat. Le point ne clignote plus pour disparaître au changement de vue', [], [], [
+                'En quittant la vue relief, le point d’un contact apparaissait un instant puis disparaissait, alors qu’il restait en liaison',
+            ], ['atak'], [
+                'Rechargez la page du poste. Passez de 3D à 2D : le contact doit rester à sa place.',
+            ], 'Overwatch'),
+            $pr(337, '2026-09-01', 'Les écrans du téléphone ne se marchent plus dessus', 'Athena ne reste plus collée sur Comptes-rendus, RENS ou le bureau. Un compte rendu n’affiche plus tous les formulaires à la fois. Le menu RENS ouvre bien le rédacteur de fiche', [], [], [
+                'Athena recouvrait les autres applications du téléphone',
+                'L’onglet Nouveau empilait TIC, Eagle Down et le bilan sur le même écran',
+                'Le menu RENS n’ouvrait pas le rédacteur de fiche',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement. Sur le téléphone : Athena, puis Comptes-rendus (Nouveau / TIC), puis RENS.',
+            ], 'Overwatch'),
+            $pr(336, '2026-09-01', 'La fiche d’une tenue liste son équipement', 'Sur la page d’une tenue, l’arme, les vêtements, le gilet, le sac et le contenu des poches s’affichent, tels qu’envoyés depuis l’arsenal', [
+                'Liste de l’équipement sur la fiche d’une tenue',
+            ], [], [], ['atak'], [
+                'Ouvrez Équipement, puis une tenue : l’équipement apparaît sous la photo de présentation.',
+            ], 'Portail'),
+            $pr(335, '2026-09-01', 'La photo de présentation d’une collection s’enregistre', 'Lorsque vous créez une collection avec une photo, celle-ci est conservée. Si le fichier est trop lourd ou vient d’un iPhone, un message indique clairement comment le renvoyer', [], [], [
+                'La collection était créée mais la photo de présentation échouait, avec un message trop vague',
+            ], ['atak'], [
+                'Sur Équipement, ouvrez la collection, puis Modifier : ajoutez de nouveau la photo en JPG ou PNG. Si le message indique que le fichier est trop lourd, choisissez une image plus légère.',
+            ], 'Portail'),
+            $pr(334, '2026-09-01', 'À l’arsenal, les tenues Athena s’ouvrent en grand', 'Le bouton Athena ouvre une fenêtre large : vos tenues d’un côté, celles de la communauté de l’autre, avec les icônes d’équipement. Vous pouvez envoyer ou récupérer une seule tenue, ou toutes', [
+                'Fenêtre large au clic Athena, sans recouvrir la liste Mes équipements',
+                'Aperçu des icônes d’arme, tenue, gilet, casque et sac au clic d’une tenue',
+                'Envoyer cette tenue ou toutes ; récupérer cette tenue ou toutes',
+            ], [], [], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement. Ouvrez l’arsenal, cliquez Athena : deux colonnes, icônes, puis Envoyer cette / Envoyer toutes et Récupérer cette / Récupérer toutes.',
+            ], 'Overwatch'),
+            $pr(333, '2026-09-01', 'L’envoi des tenues depuis l’arsenal fonctionne à nouveau', 'Depuis l’arsenal, Envoyer vers Athena enregistre les tenues de la communauté. Le journal ne se remplit plus d’échecs à chaque tenue', [], [], [
+                'Le bouton Envoyer vers Athena n’enregistrait aucune tenue et le journal se remplissait d’échecs',
+            ], ['atak'], [
+                'Rechargez le pack jeu, relancez Arma complètement. Ouvrez l’arsenal, Athena en haut à droite, puis Envoyer vers Athena. Les tenues apparaissent dans l’espace équipement du poste.',
+            ], 'Overwatch'),
+            $pr(332, '2026-09-01', 'Les photos ne saturent plus le journal à la connexion', 'À l’entrée en mission, Overwatch n’essaie plus d’envoyer les captures tant que la session Athena n’est pas ouverte. Une photo prise ensuite part une seule fois, sans relance en boucle', [], [], [
+                'À la connexion, le journal se remplissait d’échecs d’envoi de photos, y compris après l’ouverture de session',
+            ], ['atak'], [
+                'Rechargez le pack jeu, puis relancez Arma complètement. À l’entrée en mission, le journal ne doit plus défiler d’envois de photos tant que la session n’est pas prête.',
+            ], 'Overwatch'),
             $pr(331, '2026-09-01', 'Le parcours d’intégration des nouveaux membres s’installe correctement', 'Sur les communautés déjà en place, le suivi d’intégration des nouveaux membres se pose maintenant sans erreur. Relancez la mise à jour du portail pour activer les tables manquantes', [], [], [
                 'La mise à jour du portail n’installait pas le suivi d’intégration sur certaines communautés',
             ], ['personnel'], [
@@ -594,18 +699,23 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Rechargez le pack jeu, relancez Arma complètement. ACE sur soi : COMSPEC Athena, puis Compte Athena. Pas besoin d’activer les menus étendus.',
             ], 'Overwatch'),
-            $pr(324, '2026-09-01', 'Le texte des fiches en jeu se lit enfin', 'Dans le rédacteur de fiche ATAK, titres, libellés, thèmes et boutons sont plus grands. La phrase sous le dossier se distingue du fond. Un réglage « Texte et boutons de la fiche » permet encore d’agrandir', [], [
-                'Libellés, thèmes et bandeau date / lieu plus lisibles',
-            ], [
-                'Les intitulés étaient trop petits, surtout dans Contexte de la fiche',
+            $pr(328, '2026-09-01', 'Le tableau des effectifs reste visible sous la carte', 'Sur la carte du poste, le journal d’analyse et le bandeau du bas ne recouvrent plus le tableau des effectifs. Le journal démarre replié. Le bouton Unités à gauche de la carte ouvre ce tableau', [], [], [
+                'Le journal d’analyse et le bandeau de contexte masquaient le tableau des contacts',
+            ], ['atak', 'command'], [
+                'Ouvrez la carte du poste. Le tableau des effectifs est sous la carte. Unités à gauche l’affiche s’il était réduit. Le journal d’analyse s’ouvre seulement si vous cliquez son titre.',
+            ], 'Portail'),
+            $pr(329, '2026-09-01', 'Les cartes Absence, Élévation et Avancement s’ouvrent', 'Sur le tableau de bord, un clic sur Absence, Élévation ou Avancement ouvre le formulaire correspondant. Le parcours ne reste plus bloqué sur le choix de la démarche', [], [], [
+                'Cliquer sur une des trois cartes n’ouvrait pas le formulaire',
+            ], ['personnel'], [
+                'Ouvrez le tableau de bord, descendez jusqu’à Mon dossier RH, puis cliquez sur Absence, Élévation ou Avancement.',
+            ], 'Portail'),
+            $pr(327, '2026-09-01', 'Les opérateurs en liaison restent visibles sur la carte', 'Un opérateur présent dans les effectifs et en liaison disparaissait parfois de la carte d’un coup, puis réapparaissait. La liste des effectifs et la carte restent désormais alignées : tant qu’il est en liaison, son symbole reste affiché', [
+                'Les opérateurs en liaison restent visibles sur la carte, même quand le poste actualise les effectifs',
+            ], [], [
+                'Le symbole d’un opérateur en liaison clignotait ou disparaissait alors qu’il figurait encore dans les effectifs',
             ], ['atak'], [
-                'Rechargez le pack jeu, relancez Arma complètement, ouvrez une fiche puis Contexte. Les libellés doivent se lire sans se pencher. Menu Overwatch → ATAK — fiches : Texte et boutons si besoin.',
-            ], 'Overwatch'),
-            $pr(323, '2026-09-01', 'Les photos ne saturent plus le journal au lancement', 'Tant que la session Athena n’est pas prête, Overwatch n’essaie plus d’envoyer les photos en boucle. Après connexion, une photo part une fois, même sans l’ancienne clé de liaison', [], [], [
-                'Le journal se remplissait de photos refusées toutes les secondes, y compris après « session prête »',
-            ], ['atak'], [
-                'Rechargez le pack jeu, relancez Arma complètement, connectez-vous, puis prenez une photo. Un seul envoi, pas de rafale dans le journal.',
-            ], 'Overwatch'),
+                'Rechargez la page ATAK du poste. Pas de pack jeu.',
+            ], 'ATAK'),
             $pr(326, '2026-09-01', 'Connexion Steam depuis le tableau de bord', 'Une tuile Connexion Steam ouvre Steam pour associer votre compte au portail. Après validation, Overwatch vous reconnaît en jeu. Une fois Steam associé, la tuile disparaît ; vous pouvez encore changer de compte depuis Mon compte', [
                 'Tuile Connexion Steam sur le tableau de bord tant que Steam n’est pas associé',
                 'Changement de compte Steam depuis Mon compte',
@@ -620,18 +730,16 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Rechargez le pack jeu, relancez Arma complètement, connectez-vous avec votre e-mail. Si Steam n’était pas associé, il l’est après cette connexion.',
             ], 'Overwatch'),
+            $pr(322, '2026-09-01', 'L’ombrage d’un théâtre est le même pour toutes les communautés', 'Le sol, l’ombrage et les volumes du jeu relevés sur un théâtre — Altis, Malden, Stratis… — apparaissent désormais sur le poste de chaque communauté. Une communauté n’a plus à tout relever à nouveau si une autre l’a déjà fait. Les positions, les notes et les effectifs restent propres à chacune', [], [], [
+                'Deux communautés sur le même théâtre : l’une voyait l’ombrage et le relief, l’autre « pas encore sur le poste »',
+            ], ['atak'], [
+                'Rechargez la carte du poste. Pas de nouveau pack jeu. Les positions et les notes restent propres à chaque communauté.',
+            ], 'Portail'),
             $pr(321, '2026-09-01', 'La session Overwatch se rouvre même sans Steam', 'Au relancement d’Arma, Overwatch retrouve la session Athena même si Steam n’est pas associé au compte. Plus d’incident qui referme la connexion', [], [], [
                 'Au relancement, la session enregistrée plantait dès qu’aucun identifiant Steam n’était connu',
             ], ['atak'], [
                 'Relancez Arma avec Overwatch. Si vous étiez déjà connecté à Athena sans Steam associé, la session se rouvre. Pas besoin d’un nouveau pack jeu.',
             ], 'Athena'),
-            $pr(320, '2026-09-01', 'Le tableau des effectifs reste visible sur la carte', 'Sur la carte du poste, le tableau des effectifs reste sous la carte. Le journal d’analyse démarre replié. Le bouton Unités à gauche réaffiche le tableau s’il était réduit', [], [
-                'Le calque de suivi s’arrête au-dessus du tableau des effectifs',
-            ], [
-                'Le tableau des effectifs disparaissait sous le journal d’analyse et le calque de suivi',
-            ], ['atak'], [
-                'Ouvrez la carte du poste. Le tableau des effectifs est sous la carte. Unités à gauche le réaffiche s’il était réduit. Le journal d’analyse ne s’ouvre que si vous cliquez dessus.',
-            ], 'Carte du poste'),
             $pr(318, '2026-09-01', 'Overwatch 1.5.0 : votre identité, plus le nom de la communauté', 'Le pack jeu affiche l’opérateur, pas le titre de la communauté. L’indicatif vient de la fiche Effectifs. Les messages du poste restent dans le téléphone et le journal, plus dans le chat de bord d’Arma. Sur le téléphone, le journal Athena se lit enfin', [
                 'Écran prêt : photo si elle existe, prénom, nom, indicatif, rôle, grade et fonction',
             ], [

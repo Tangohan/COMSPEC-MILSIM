@@ -33,12 +33,25 @@ $docId = (int)$document['id'];
             <?php if (!empty($document['file_path'])): ?>
             <a href="<?= url('documents/' . $docId . '/file') ?>" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50" target="_blank">Ouvrir le fichier</a>
             <a href="<?= url('documents/' . $docId . '/download') ?>" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Télécharger</a>
+            <?php elseif (!empty($manuscript)): ?>
+            <button type="button" onclick="window.print()" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Imprimer</button>
             <?php endif; ?>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div class="space-y-6">
+            <?php if (!empty($manuscript)): ?>
+            <section class="bg-white border border-slate-200 rounded-lg p-4 overflow-hidden">
+                <h2 class="text-sm font-bold text-slate-800 mb-3">Aperçu du manuel</h2>
+                <?php
+                $documentTitle = (string) ($document['title'] ?? '');
+                $fmLivePreview = true;
+                require base_path('views/partials/document_fm_paper.php');
+                ?>
+            </section>
+            <?php endif; ?>
+
             <?php if (!empty($document['description'])): ?>
             <section class="bg-white border border-slate-200 rounded-lg p-4">
                 <h2 class="text-sm font-bold text-slate-800 mb-2">Description</h2>

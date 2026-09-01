@@ -1,5 +1,5 @@
 /*
-    BOOT → restore session ou fenêtre de connexion. Ne démarre pas les flux opérationnels.
+    BOOT → restaure la session enregistrée si elle existe. Pas de fenêtre de connexion ici.
 */
 if (!hasInterface) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_AuthInitStarted", false]) exitWith {};

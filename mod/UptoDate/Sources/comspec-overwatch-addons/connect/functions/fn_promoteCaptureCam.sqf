@@ -2,7 +2,7 @@
     Bascule la caméra regardée en vue scène (pas de rendu vers texture).
     `screenshot` et l’extension BCE clichent alors CE point de vue.
 
-    Params: [_restorePip] — true = le caller restaurera un PiP après le cliché.
+    Params: [_restorePip] — true = le caller restaurera un PiP / rttN après le cliché.
     Retour: [cam, rtt, kind] à passer à restoreCaptureCam, ou [].
 */
 params [["_restorePip", true]];
@@ -22,7 +22,8 @@ showCinemaBorder false;
 missionNamespace setVariable ["COMSPEC_OverlayCamPromoted", true, false];
 
 if (!_restorePip) exitWith { [] };
+if (_rtt isEqualTo "" && {_kind isEqualTo "phone"}) then { _rtt = "rttN"; };
 if (_rtt isEqualTo "") exitWith { [] };
-if (!(_kind in ["hcam_pip", "uav_pip"])) exitWith { [] };
+if (!(_kind in ["hcam_pip", "uav_pip", "phone"])) exitWith { [] };
 
 [_cam, _rtt, _kind]
