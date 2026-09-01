@@ -1,3 +1,25 @@
+COMSPEC Overwatch 1.4.97 / Athena ATAK 1.0.58 — 01/09/2026
+
+Nouveau — Lecture de la tablette ATAK
+
+• Fond charbon, chiffres cyan : sous le curseur, grille, distance, altitude du sol, gisement, portée et écart d’altitude
+• Sur l’unité suivie : groupe, indicatif, grille, altitude, vitesse et heure
+• Cap en degrés vrais, zoom plus / moins ; le tiroir d’applications, Drone Ops et les fenêtres caméra déjà présentes suivent la même lecture
+• Les cartouches restent sur la carte, sans recouvrir le tiroir d’applications
+
+Nouveau — Connexion Athena avant la session
+
+• Au menu principal : e-mail, code temporaire, ou Steam déjà associé à ce poste
+• La communauté, l’indicatif et les habilitations arrivent tout seuls
+• Rien n’est transmis tant que l’environnement n’est pas prêt
+
+Correction — Tablette, Zeus et arsenal
+
+• La tablette ATAK Enhanced se charge à nouveau
+• Zeus : SSE, ATAK et OVERWATCH en haut du panneau d’édition d’une unité
+• Arsenal : bandeau des tenues Athena en haut, sans masquer la liste locale
+• Relancer Arma complètement après le nouveau pack
+
 COMSPEC Overwatch 1.4.96 / Athena ATAK 1.5.48 / liaison 1.17.9 — 01/09/2026
 
 Tablette, Zeus et arsenal

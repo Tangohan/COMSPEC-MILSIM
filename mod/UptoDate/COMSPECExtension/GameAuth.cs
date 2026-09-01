@@ -20,6 +20,7 @@ public static partial class Extension
     private static string _gameBrandingUrl = "";
     private static int _gameProfileRevision;
     private static string _gameDeviceId = "";
+    private static string _minModRequired = "";
     private static readonly object GameAuthLock = new();
 
     private static string HandleGameAuth(string function, string[] args)
@@ -50,6 +51,7 @@ public static partial class Extension
             if (url.Length > 0)
                 _baseUrl = url;
             var modVer = args.Length > 1 ? ArmaString(args[1]) : "";
+            RememberDetectedMod(modVer);
             return RestoreGameSession(modVer);
         }
 
@@ -58,7 +60,9 @@ public static partial class Extension
             var url = NormalizeBaseUrl(args[0]);
             if (url.Length > 0)
                 _baseUrl = url;
-            return GameAuthPassword(args[1], args.Length > 2 ? args[2] : "", args.Length > 3 ? args[3] : "");
+            var modVer = args.Length > 3 ? ArmaString(args[3]) : "";
+            RememberDetectedMod(modVer);
+            return GameAuthPassword(args[1], args.Length > 2 ? args[2] : "", modVer);
         }
 
         if (function == "RequestOtp" && args.Length >= 2)
@@ -74,7 +78,9 @@ public static partial class Extension
             var url = NormalizeBaseUrl(args[0]);
             if (url.Length > 0)
                 _baseUrl = url;
-            return GameVerifyOtp(args[1], args[2], args.Length > 3 ? args[3] : "");
+            var modVer = args.Length > 3 ? ArmaString(args[3]) : "";
+            RememberDetectedMod(modVer);
+            return GameVerifyOtp(args[1], args[2], modVer);
         }
 
         if (function == "AuthSteam" && args.Length >= 2)
@@ -82,7 +88,9 @@ public static partial class Extension
             var url = NormalizeBaseUrl(args[0]);
             if (url.Length > 0)
                 _baseUrl = url;
-            return GameAuthSteam(args[1], args.Length > 2 ? args[2] : "");
+            var steamMod = args.Length > 2 ? ArmaString(args[2]) : "";
+            RememberDetectedMod(steamMod);
+            return GameAuthSteam(args[1], steamMod);
         }
 
         if (function == "GetBootstrap")
@@ -127,13 +135,53 @@ public static partial class Extension
                 _gameAuthProgress.ToString(CultureInfo.InvariantCulture),
                 _gameAuthStep,
                 _gameAuthError,
-                _gameProfileName,
-                _gameProfileCallsign,
-                _gameTenantName,
-                _gameProfileUnit,
-                _gameProfileGrade,
-                _gameBrandingUrl,
-                _gameTenantSlug);
+                TabCell(_gameProfileName),
+                TabCell(_gameProfileCallsign),
+                TabCell(_gameTenantName),
+                TabCell(_gameProfileUnit),
+                TabCell(_gameProfileGrade),
+                TabCell(_gameBrandingUrl),
+                TabCell(_gameTenantSlug),
+                TabCell(_modVersion),
+                TabCell(ExtensionVersion),
+                TabCell(_minModRequired));
+        }
+    }
+
+    private static string TabCell(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return "-";
+        return s.Replace('\t', ' ').Replace('\n', ' ');
+    }
+
+    private static void RememberDetectedMod(string modVersion)
+    {
+        var v = ArmaString(modVersion);
+        if (v.Length == 0) return;
+        _modVersion = v;
+    }
+
+    private static void CaptureVersionHints(string body)
+    {
+        if (string.IsNullOrEmpty(body) || body[0] != '{') return;
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("min_mod_version", out var minEl))
+            {
+                var min = minEl.GetString() ?? "";
+                if (min.Length > 0) _minModRequired = min;
+            }
+            if (root.TryGetProperty("detected_mod_version", out var detEl))
+            {
+                var det = detEl.GetString() ?? "";
+                if (det.Length > 0) _modVersion = det;
+            }
+        }
+        catch
+        {
+            // corps non JSON
         }
     }
 
@@ -283,6 +331,7 @@ public static partial class Extension
         _gameProfileName = "";
         _gameProfileCallsign = "";
         _gameTenantName = "";
+        _minModRequired = "";
         return "OK|logged_out";
     }
 
@@ -299,6 +348,7 @@ public static partial class Extension
             var root = doc.RootElement;
             if (root.TryGetProperty("error", out var errEl))
             {
+                CaptureVersionHints(json);
                 var code = errEl.GetString() ?? "NETWORK_ERROR";
                 return FailGameAuth(code);
             }
@@ -418,6 +468,7 @@ public static partial class Extension
             var body = ReadContentUtf8(resp, cts.Token);
             if (!resp.IsSuccessStatusCode)
             {
+                CaptureVersionHints(body);
                 var mapped = MapGameError("", body);
                 if (mapped != "NETWORK_ERROR")
                     return "ERR|" + mapped;
@@ -444,7 +495,10 @@ public static partial class Extension
             var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
             var body = ReadContentUtf8(resp, cts.Token);
             if (!resp.IsSuccessStatusCode)
+            {
+                CaptureVersionHints(body);
                 return "ERR|http_" + ((int)resp.StatusCode).ToString(CultureInfo.InvariantCulture);
+            }
             return body;
         }
         catch

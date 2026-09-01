@@ -39,6 +39,7 @@ call _forceCamCapture;
 { [_forceCamCapture, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8];
 
 [] call comspec_overwatch_atak_athena_fnc_athena_installPhoneGeolocMap;
+[] call comspec_overwatch_atak_athena_fnc_athena_installMapHud;
 
 // Photo souris aussi depuis la vue casque plein écran (amont : téléphone seulement).
 [

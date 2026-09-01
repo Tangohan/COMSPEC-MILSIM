@@ -22,6 +22,9 @@ final class GameAuthAssetTest extends TestCase
         $wait = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_waitAthenaReady.sqf');
         $bo = (string) file_get_contents($root . '/views/admin/atak-config/_game_experience.php');
         $catalog = (string) file_get_contents($root . '/app/Services/ConfigurationUpdate/ConfigurationUpdateCatalog.php');
+        $sqfPoll = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_pollAuth.sqf');
+        $sqfRestore = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_restoreSession.sqf');
+        $exp = (string) file_get_contents($root . '/app/Services/Game/GameOverwatchExperienceService.php');
 
         self::assertStringContainsString('/api/game/v1/auth/password', $routes);
         self::assertStringContainsString('/api/game/v1/auth/otp/request', $routes);
@@ -42,8 +45,17 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('Pas de session', $wait);
         self::assertStringContainsString('Expérience en jeu', $bo);
         self::assertStringContainsString('OVERWATCH_GAME_AUTH_V1', $catalog);
+        self::assertStringContainsString('detected_mod_version', $svc);
+        self::assertStringContainsString('Pack actuel', $sqfPoll);
+        self::assertStringContainsString('version exigée', $sqfPoll);
+        self::assertStringContainsString('_minModRequired', $dll);
+        self::assertStringContainsString('CaptureVersionHints', $dll);
+        self::assertStringContainsString('fnc_packVersion', $sqfRestore);
+        self::assertStringContainsString('Pack Overwatch minimal', $bo);
+        self::assertStringContainsString("'min_mod_version' => '1.5.0'", $exp);
         self::assertFileExists($root . '/bootstrap/athena_game_auth_migration.php');
         self::assertFileExists($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/display_athena_auth.hpp');
+        self::assertFileExists($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_packVersion.sqf');
         self::assertStringNotContainsString('php://input', $ctrl);
     }
 

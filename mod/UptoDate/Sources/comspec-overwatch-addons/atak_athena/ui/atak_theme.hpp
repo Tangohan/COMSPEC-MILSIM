@@ -1,6 +1,7 @@
 // Charte visuelle des apps COMSPEC dans le tiroir ATAK (Iceman / BCE).
 // Objectif : panneau type SkyFi / Attack Profile — charbon, tuiles, cyan, GO/critique.
-// Ne pas restyler le chrome carte / barre d’outils Iceman.
+// Chrome carte IceMan (cartouches GRID / unité, cap, zoom) : restyle runtime
+// dans fn_athena_updateMapHud.sqf — on n’écrase pas les hpp IceMan / BCE.
 
 #ifndef COMSPEC_ATAK_THEME_HPP
 #define COMSPEC_ATAK_THEME_HPP

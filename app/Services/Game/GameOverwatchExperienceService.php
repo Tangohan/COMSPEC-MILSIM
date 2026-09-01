@@ -34,7 +34,7 @@ final class GameOverwatchExperienceService
             'sync_avatar' => true,
             'sync_clearances' => true,
             'sync_c2' => true,
-            'min_mod_version' => '2.3.0',
+            'min_mod_version' => '1.5.0',
             'channel' => 'PROD',
             'update_interval' => 5,
             'bft_enabled' => true,
