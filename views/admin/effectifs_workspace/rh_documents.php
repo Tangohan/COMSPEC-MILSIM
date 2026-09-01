@@ -68,7 +68,7 @@ foreach ($docs as $d) {
     <section class="eff-rh-form" aria-labelledby="eff-docs-add-title">
         <div class="eff-rh-form__head">
             <h2 id="eff-docs-add-title" class="eff-rh-form__title">Ajouter une pièce</h2>
-            <p class="eff-rh-form__lead">Déposez le fichier, indiquez qui peut le voir, puis donnez un titre clair.</p>
+            <p class="eff-rh-form__lead">Déposez le fichier, indiquez qui peut le voir, puis donnez un titre clair. Si la pièce reste ailleurs, notez simplement l’emplacement.</p>
         </div>
         <form method="post" action="<?= $h(effectifs_workspace_url('documents-rh')) ?>" class="eff-rh-form__grid" enctype="multipart/form-data">
             <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
@@ -96,17 +96,24 @@ foreach ($docs as $d) {
                 <span class="eff-rh-field__label">Titre</span>
                 <input type="text" name="title" maxlength="200" placeholder="Ex. Charte signée 2026" aria-label="Titre">
             </div>
-            <div class="eff-rh-field">
+            <div class="eff-rh-field eff-rh-field--wide">
                 <span class="eff-rh-field__label">
-                    Fichier
-                    <?php $rhTip('tip-docs-file', 'À propos du fichier', 'Déposez la pièce ici (PDF, image ou document Word, 15 Mo maximum). Elle reste dans le coffre : seuls les gestionnaires, et le membre si vous le choisissez, peuvent l’ouvrir.'); ?>
+                    Pièce jointe
+                    <?php $rhTip('tip-docs-file', 'À propos de la pièce jointe', 'Déposez la pièce ici (PDF, image ou document Word, 15 Mo maximum). Elle reste dans le coffre : seuls les gestionnaires, et le membre si vous le choisissez, peuvent l’ouvrir.'); ?>
                 </span>
-                <input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.doc,.docx,.odt,application/pdf,image/jpeg,image/png,image/webp,application/msword" aria-label="Fichier">
+                <label class="eff-rh-deposit">
+                    <input type="file" name="document" class="eff-rh-deposit__input" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.doc,.docx,.odt,application/pdf,image/jpeg,image/png,image/webp,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text" aria-label="Déposer le fichier">
+                    <span class="eff-rh-deposit__ui">
+                        <span class="eff-rh-deposit__action">Déposer le fichier</span>
+                        <span class="eff-rh-deposit__hint">PDF, image ou document Word, 15 Mo maximum. Cliquez ou glissez le document ici.</span>
+                        <span class="eff-rh-deposit__name" data-deposit-name>Aucun fichier choisi</span>
+                    </span>
+                </label>
             </div>
             <div class="eff-rh-field">
                 <span class="eff-rh-field__label">
                     Emplacement
-                    <?php $rhTip('tip-docs-loc', 'À propos de l’emplacement', 'Si le document n’est pas déposé ici, indiquez où le retrouver : dossier partagé de la communauté, archives, ou lien interne déjà publié.'); ?>
+                    <?php $rhTip('tip-docs-loc', 'À propos de l’emplacement', 'Facultatif si vous déposez le fichier. Sinon, indiquez où le retrouver : dossier partagé de la communauté, archives, ou lien interne déjà publié.'); ?>
                 </span>
                 <input type="text" name="location_note" maxlength="500" placeholder="Dossier partagé, archives, lien interne…" aria-label="Emplacement">
             </div>
@@ -136,7 +143,7 @@ foreach ($docs as $d) {
             <div class="min-w-0">
                 <p class="eff-catalog__kicker">Registre</p>
                 <h2 class="eff-catalog__title">Pièces enregistrées</h2>
-                <p class="eff-catalog__lead">Les plus récentes d’abord. Ouvrez la fiche pour le dossier complet du membre.</p>
+                <p class="eff-catalog__lead">Les plus récentes d’abord. Ouvrez la pièce déposée, ou la fiche pour le dossier complet du membre.</p>
             </div>
         </div>
         <?php if ($docs === []): ?>
@@ -170,21 +177,23 @@ foreach ($docs as $d) {
                             <td><span class="eff-rh-chip"><?= $h((string) ($typeLabels[$type] ?? $type)) ?></span></td>
                             <td>
                                 <?= $h((string) ($d['title'] ?? '')) ?>
-                                <?php if ($stored && $orig !== ''): ?>
-                                    <br><span class="eff-sheets__meta"><?= $h($orig) ?></span>
-                                <?php elseif (!$stored && $path !== ''): ?>
-                                    <br><span class="eff-sheets__meta"><?= $h($path) ?></span>
+                                <?php if ($stored): ?>
+                                    <br><span class="eff-sheets__meta">Pièce jointe<?= $orig !== '' ? ' · ' . $h($orig) : '' ?></span>
+                                <?php elseif ($path !== ''): ?>
+                                    <br><span class="eff-sheets__meta">Emplacement · <?= $h($path) ?></span>
                                 <?php endif; ?>
                             </td>
                             <td><span class="eff-rh-chip <?= $visMember ? 'eff-rh-chip--info' : '' ?>"><?= $visMember ? 'Visible du membre' : 'État-major' ?></span></td>
                             <td><?= $h($rhWhen((string) ($d['created_at'] ?? ''))) ?></td>
                             <td>
-                                <?php if ($stored): ?>
-                                    <a class="is-primary" href="<?= $h(effectifs_workspace_url('documents-rh/' . (int) ($d['id'] ?? 0) . '/fichier')) ?>">Ouvrir</a>
-                                <?php endif; ?>
-                                <?php if ($uid > 0): ?>
-                                    <a href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>">Fiche</a>
-                                <?php endif; ?>
+                                <div class="eff-sheets__actions">
+                                    <?php if ($stored): ?>
+                                        <a class="is-primary" href="<?= $h(effectifs_workspace_url('documents-rh/' . (int) ($d['id'] ?? 0) . '/fichier')) ?>">Ouvrir la pièce</a>
+                                    <?php endif; ?>
+                                    <?php if ($uid > 0): ?>
+                                        <a href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>">Fiche</a>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -196,3 +205,17 @@ foreach ($docs as $d) {
 <?php endif; ?>
 
 <?php $rhShortcutCurrent = 'documents'; require base_path('views/admin/effectifs_workspace/partials/rh_shortcuts.php'); ?>
+<script>
+(function () {
+    var input = document.querySelector('.eff-rh-deposit__input');
+    var nameEl = document.querySelector('[data-deposit-name]');
+    if (!input || !nameEl) {
+        return;
+    }
+    input.addEventListener('change', function () {
+        var file = input.files && input.files[0];
+        nameEl.textContent = file ? file.name : 'Aucun fichier choisi';
+        nameEl.classList.toggle('is-set', !!file);
+    });
+})();
+</script>
