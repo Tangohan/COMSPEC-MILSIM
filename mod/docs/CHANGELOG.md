@@ -1,5 +1,10 @@
 # Changelog COMSPEC SSE
 
+## 0.7.19 — 01/09/2026
+
+- Zeus : Poser un point carte ouvre le formulaire, sans message d’erreur
+- Relancer Arma complètement après la mise à jour
+
 ## 0.7.18 — 30/08/2026
 
 - SEEK : un relevé biométrique demande le kit correspondant et joue l’animation à genoux

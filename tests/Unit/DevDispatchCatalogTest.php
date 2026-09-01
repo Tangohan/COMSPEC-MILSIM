@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(124, $byKind['update']);
-        self::assertCount(130, $all);
+        self::assertSame(125, $byKind['update']);
+        self::assertCount(131, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
