@@ -584,6 +584,16 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(393, '2026-09-02', 'L’enregistrement du dossier opérateur reprend tous les onglets', 'Sur la page d’édition du dossier, Enregistrer enregistre l’identité, l’affectation, le forum, l’équipement et les notes, même lorsqu’un matricule d’organisation est proposé sur la même page. Les titres des sections restent visibles. Décocher Déployable est pris en compte. Rechargez la page d’édition du dossier', [
+                'Situation familiale, statut opérateur, fuseau horaire et langue se choisissent dans une liste',
+            ], [], [
+                'L’enregistrement ne s’arrêtait plus après le bloc du matricule d’organisation',
+                'Décocher Déployable était bien pris en compte',
+                'L’affectation ou la fonction principale restait celle cochée, même si une ligne vide figurait au-dessus',
+                'Les titres des sections d’édition restaient visibles',
+            ], ['personnel'], [
+                'Ouvrez Éditer le dossier. Les titres des onglets doivent apparaître. Enregistrez depuis n’importe quel onglet : forum, équipement et notes sont conservés. Décocher Déployable, puis enregistrer, retire bien la disponibilité.',
+            ], 'Portail'),
             $pr(392, '2026-09-02', 'Le cartouche d’identité revient sur la carte du téléphone', 'Sur la carte du téléphone, l’indicatif, le rôle, le groupe et la grille s’affichent de nouveau en bas à gauche. Le cartouche n’est plus masqué par le tiroir d’applications. Relancer Arma complètement', [], [], [
                 'Le cartouche d’identité n’était plus visible : il avait été poussé sous le tiroir de droite',
             ], ['atak'], [

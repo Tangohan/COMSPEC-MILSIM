@@ -53,6 +53,8 @@ use App\Core\Gate;
 use App\Support\EffectifsLmsAccess;
 use App\Support\OrbatRosterPayload;
 use App\Support\Profile\PublicFlagCountryCatalog;
+use App\Services\Admin\PlatformUserProfileService;
+use App\Services\Personnel\PersonnelCorrectionRequestService;
 
 class PersonnelController
 {
@@ -1002,6 +1004,10 @@ class PersonnelController
                 ? ('Nouveau matricule : ' . ($result['value'] ?? ''))
                 : ($result['error'] ?? 'Échec de régénération.')
         );
+        $returnTo = trim((string) ($request->input('return_to') ?? ''));
+        if ($returnTo === 'edit') {
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+        }
 
         return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
     }
@@ -1404,8 +1410,9 @@ class PersonnelController
 
         $unitAssignmentsParsed = [];
         $rowsIn = $request->input('unit_assignments');
+        $primaryAssignmentIdx = (int) $request->input('unit_assignments_primary', 0);
         if (is_array($rowsIn)) {
-            foreach ($rowsIn as $row) {
+            foreach ($rowsIn as $origIdx => $row) {
                 if (!is_array($row)) {
                     continue;
                 }
@@ -1421,7 +1428,7 @@ class PersonnelController
                 $unitAssignmentsParsed[] = [
                     'unit_id' => $unitId,
                     'role_name' => mb_substr(trim((string) ($row['role_name'] ?? '')), 0, 120),
-                    'is_primary' => false,
+                    'is_primary' => !empty($row['is_primary']) || ((int) $origIdx === $primaryAssignmentIdx),
                     'change_reason' => $assignmentReason,
                 ];
             }
@@ -1444,20 +1451,7 @@ class PersonnelController
             }
         }
 
-        $primaryUnitId = null;
-        $primaryAssignmentIdx = (int) $request->input('unit_assignments_primary', 0);
-        if ($unitAssignmentsParsed !== []) {
-            if ($primaryAssignmentIdx < 0 || $primaryAssignmentIdx >= count($unitAssignmentsParsed)) {
-                $primaryAssignmentIdx = 0;
-            }
-            foreach ($unitAssignmentsParsed as $idx => &$assignment) {
-                $assignment['is_primary'] = ($idx === $primaryAssignmentIdx);
-                if ($assignment['is_primary']) {
-                    $primaryUnitId = (int) $assignment['unit_id'];
-                }
-            }
-            unset($assignment);
-        }
+        $primaryUnitId = $this->ensureSinglePrimaryFlag($unitAssignmentsParsed);
 
         $jobRolesEnabled = $this->personnelJobRoleRepository->tablesExist() && $this->personnelJobRoleRepository->pivotTableExists();
         $primaryRoleStr = '';
@@ -1469,7 +1463,8 @@ class PersonnelController
             if (!is_array($rowsIn)) {
                 $rowsIn = [];
             }
-            foreach ($rowsIn as $r) {
+            $primaryIdx = (int) $request->input('job_roles_primary', 0);
+            foreach ($rowsIn as $origIdx => $r) {
                 if (!is_array($r)) {
                     continue;
                 }
@@ -1483,22 +1478,13 @@ class PersonnelController
                 $jobRolesParsed[] = [
                     'personnel_job_role_id' => $rid,
                     'role_detail' => trim((string) ($r['detail'] ?? '')),
-                    'is_primary' => false,
+                    'is_primary' => !empty($r['is_primary']) || ((int) $origIdx === $primaryIdx),
                 ];
             }
             if (count($jobRolesParsed) > $maxJobRoles) {
                 $jobRolesParsed = array_slice($jobRolesParsed, 0, $maxJobRoles);
             }
-            $primaryIdx = (int) $request->input('job_roles_primary', 0);
-            if ($jobRolesParsed !== []) {
-                if ($primaryIdx < 0 || $primaryIdx >= count($jobRolesParsed)) {
-                    $primaryIdx = 0;
-                }
-                foreach ($jobRolesParsed as $i => &$jrp) {
-                    $jrp['is_primary'] = ($i === $primaryIdx);
-                }
-                unset($jrp);
-            }
+            $this->ensureSinglePrimaryFlag($jobRolesParsed, 'personnel_job_role_id');
         }
 
         $rpFirstForIdentity = trim((string) $request->input('rp_first_name'));
@@ -1540,7 +1526,7 @@ class PersonnelController
             'radio_assigned' => trim((string) $request->input('radio_assigned')),
             'vehicle_authorized' => trim((string) $request->input('vehicle_authorized')),
             'weapon_specialty' => trim((string) $request->input('weapon_specialty')),
-            'deployable' => (int) $request->input('deployable', 1) ? 1 : 0,
+            'deployable' => $request->input('deployable') ? 1 : 0,
             'rank_display' => trim((string) $request->input('rank_display')) ?: null,
             'rank_display_override' => trim((string) $request->input('rank_display_override')) ?: null,
             'motto' => trim((string) $request->input('motto')) ?: null,
@@ -1549,8 +1535,16 @@ class PersonnelController
             'blood_type' => trim((string) $request->input('blood_type')) ?: null,
             'birth_place' => mb_substr(trim((string) $request->input('birth_place')), 0, 150) ?: null,
             'sex' => mb_substr(trim((string) $request->input('sex')), 0, 20) ?: null,
-            'family_situation' => mb_substr(trim((string) $request->input('family_situation')), 0, 100) ?: null,
-            'operator_status' => mb_substr(trim((string) $request->input('operator_status')), 0, 160) ?: null,
+            'family_situation' => $this->allowedOrPreviousSelect(
+                mb_substr(trim((string) $request->input('family_situation')), 0, 100),
+                PlatformUserProfileService::familySituationOptions(),
+                (string) ($existingProfile['family_situation'] ?? '')
+            ),
+            'operator_status' => $this->allowedOrPreviousSelect(
+                mb_substr(trim((string) $request->input('operator_status')), 0, 160),
+                $this->operatorStatusSelectOptions(),
+                (string) ($existingProfile['operator_status'] ?? '')
+            ),
             'operator_tags' => mb_substr(trim((string) $request->input('operator_tags')), 0, 255) ?: null,
         ];
         $weightRaw = $request->input('weight_kg');
@@ -1857,8 +1851,17 @@ class PersonnelController
                 'bio' => trim((string) $request->input('rp_bio')) ?: null,
             ];
             if ($isSelf) {
-                $profileUpsert['timezone'] = trim((string) $request->input('civil_timezone')) ?: null;
-                $profileUpsert['language'] = trim((string) $request->input('civil_language')) ?: null;
+                $existingUserProfile = $this->userProfileRepository->getByUserId((int) $target['id']) ?? [];
+                $profileUpsert['timezone'] = $this->allowedOrPreviousSelect(
+                    trim((string) $request->input('civil_timezone')),
+                    PlatformUserProfileService::timezoneOptions(),
+                    (string) ($existingUserProfile['timezone'] ?? '')
+                );
+                $profileUpsert['language'] = $this->allowedOrPreviousSelect(
+                    trim((string) $request->input('civil_language')),
+                    PlatformUserProfileService::interfaceLanguageOptions(),
+                    (string) ($existingUserProfile['language'] ?? '')
+                );
             }
             $this->userProfileRepository->upsert((int) $target['id'], $profileUpsert);
             $derivedDn = trim($firstName . ' ' . $lastName);
@@ -2036,5 +2039,70 @@ class PersonnelController
     private function canViewSensitivePersonnel(): bool
     {
         return Gate::getInstance()->allows('personnel.sensitive.view');
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private function ensureSinglePrimaryFlag(array &$rows, string $idKey = 'unit_id'): ?int
+    {
+        $primaryId = null;
+        $found = false;
+        foreach ($rows as &$row) {
+            if (!$found && !empty($row['is_primary'])) {
+                $found = true;
+                $row['is_primary'] = true;
+                $primaryId = (int) ($row[$idKey] ?? 0);
+            } else {
+                $row['is_primary'] = false;
+            }
+        }
+        unset($row);
+        if (!$found && $rows !== []) {
+            $rows[0]['is_primary'] = true;
+            $primaryId = (int) ($rows[0][$idKey] ?? 0);
+        }
+        if ($primaryId === null || $primaryId <= 0) {
+            return null;
+        }
+
+        return $primaryId;
+    }
+
+    /**
+     * @param array<string, string> $options
+     */
+    private function allowedOrPreviousSelect(string $incoming, array $options, string $previous): ?string
+    {
+        $incoming = trim($incoming);
+        if ($incoming === '') {
+            return null;
+        }
+        if (array_key_exists($incoming, $options)) {
+            return $incoming;
+        }
+        $previous = trim($previous);
+        if ($previous !== '' && $incoming === $previous) {
+            return $incoming;
+        }
+
+        return $previous !== '' ? $previous : null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function operatorStatusSelectOptions(): array
+    {
+        $out = ['' => '— Non renseigné —'];
+        foreach (PersonnelCorrectionRequestService::choiceCatalog()['operator_status'] as $pair) {
+            $val = trim((string) ($pair['value'] ?? ''));
+            $lab = trim((string) ($pair['label'] ?? $val));
+            if ($val !== '') {
+                $out[$val] = $lab !== '' ? $lab : $val;
+            }
+        }
+
+        return $out;
     }
 }

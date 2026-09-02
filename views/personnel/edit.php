@@ -77,6 +77,24 @@ $nicknamesText = implode("\n", array_map(static fn ($item) => trim((string) $ite
 $medalRackText = implode("\n", array_map(static fn ($item) => trim((string) $item), $medalRackItems));
 $advancedEditActive = !empty($advancedEditActive);
 $athenaIdDisplay = trim((string) ($targetUser['athena_identifier'] ?? ''));
+$tzOptions = \App\Services\Admin\PlatformUserProfileService::timezoneOptions();
+$langOptions = \App\Services\Admin\PlatformUserProfileService::interfaceLanguageOptions();
+$familyOptions = \App\Services\Admin\PlatformUserProfileService::familySituationOptions();
+$operatorStatusOptions = ['' => '— Non renseigné —'];
+foreach (\App\Services\Personnel\PersonnelCorrectionRequestService::choiceCatalog()['operator_status'] as $pair) {
+    $osVal = trim((string) ($pair['value'] ?? ''));
+    $osLab = trim((string) ($pair['label'] ?? $osVal));
+    if ($osVal !== '') {
+        $operatorStatusOptions[$osVal] = $osLab !== '' ? $osLab : $osVal;
+    }
+}
+$keepSelectOption = static function (array $options, string $current): array {
+    if ($current !== '' && !array_key_exists($current, $options)) {
+        $options[$current] = $current;
+    }
+
+    return $options;
+};
 
 $editNavGroups = [
     [
@@ -112,6 +130,14 @@ foreach ($editNavGroups as $grp) {
     }
 }
 $editDefaultTab = $editNavFlat[0]['id'] ?? '';
+if (($forumQuickMode !== '' || $forumFocus !== '' || $forumPreHideLevel) && $isMe) {
+    foreach ($editNavFlat as $ni) {
+        if (($ni['id'] ?? '') === 'forum-community-settings') {
+            $editDefaultTab = 'forum-community-settings';
+            break;
+        }
+    }
+}
 $editValidTabIds = implode(',', array_map(
     static fn ($ni) => "'" . addslashes((string) $ni['id']) . "'",
     $editNavFlat
@@ -203,12 +229,28 @@ $editValidTabIds = implode(',', array_map(
               <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label for="civil_timezone" class="mb-1 block text-xs font-bold text-slate-600">Fuseau horaire</label>
-                  <input type="text" name="civil_timezone" id="civil_timezone" value="<?= htmlspecialchars((string) ($up['timezone'] ?? '')) ?>" placeholder="Europe/Paris" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="50">
+                  <select name="civil_timezone" id="civil_timezone" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <?php
+                    $tzCur = trim((string) ($up['timezone'] ?? ''));
+                    foreach ($keepSelectOption($tzOptions, $tzCur) as $tzVal => $tzLab) {
+                        $sel = ($tzCur === (string) $tzVal) ? ' selected' : '';
+                        echo '<option value="' . htmlspecialchars((string) $tzVal, ENT_QUOTES, 'UTF-8') . '"' . $sel . '>' . htmlspecialchars((string) $tzLab, ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
+                    ?>
+                  </select>
                 </div>
                 <div>
                   <label for="civil_language" class="mb-1 block text-xs font-bold text-slate-600">Langue de l’interface</label>
-                  <input type="text" name="civil_language" id="civil_language" value="<?= htmlspecialchars((string) ($up['language'] ?? '')) ?>" placeholder="fr" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="10">
-                  <p class="mt-1 text-[11px] text-slate-500">Ex. fr ou en. Vous pouvez aussi le régler dans les préférences du compte.</p>
+                  <select name="civil_language" id="civil_language" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <?php
+                    $langCur = trim((string) ($up['language'] ?? ''));
+                    foreach ($keepSelectOption($langOptions, $langCur) as $langVal => $langLab) {
+                        $sel = ($langCur === (string) $langVal) ? ' selected' : '';
+                        echo '<option value="' . htmlspecialchars((string) $langVal, ENT_QUOTES, 'UTF-8') . '"' . $sel . '>' . htmlspecialchars((string) $langLab, ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
+                    ?>
+                  </select>
+                  <p class="mt-1 text-[11px] text-slate-500">Vous pouvez aussi le régler dans les préférences du compte.</p>
                 </div>
               </div>
             </div>
@@ -351,42 +393,55 @@ $editValidTabIds = implode(',', array_map(
                   <p class="mt-1 text-[11px] leading-relaxed text-amber-800">En jeu actuellement : <?= htmlspecialchars($armaBt) ?>. À confirmer lors du prochain bilan médical.</p>
                   <?php endif; ?>
                 </div>
+                <div>
+                  <label for="sex" class="mb-1 block text-xs font-bold text-slate-600">Sexe</label>
+                  <select name="sex" id="sex" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <?php
+                    $sexCur = trim((string) ($p['sex'] ?? ''));
+                    foreach ($keepSelectOption(['' => '— Non renseigné —', 'Homme' => 'Homme', 'Femme' => 'Femme', 'Autre' => 'Autre'], $sexCur) as $sv => $sl) {
+                        $sel = ($sexCur === (string) $sv) ? ' selected' : '';
+                        echo '<option value="' . htmlspecialchars((string) $sv) . '"' . $sel . '>' . htmlspecialchars((string) $sl) . '</option>';
+                    }
+                    ?>
+                  </select>
+                </div>
+                <div>
+                  <label for="birth_place" class="mb-1 block text-xs font-bold text-slate-600">Lieu de naissance (RP)</label>
+                  <input type="text" name="birth_place" id="birth_place" value="<?= htmlspecialchars((string) ($p['birth_place'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="150">
+                </div>
+                <div>
+                  <label for="family_situation" class="mb-1 block text-xs font-bold text-slate-600">Situation familiale (RP)</label>
+                  <select name="family_situation" id="family_situation" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <?php
+                    $famCur = trim((string) ($p['family_situation'] ?? ''));
+                    foreach ($keepSelectOption($familyOptions, $famCur) as $fv => $fl) {
+                        $sel = ($famCur === (string) $fv) ? ' selected' : '';
+                        echo '<option value="' . htmlspecialchars((string) $fv, ENT_QUOTES, 'UTF-8') . '"' . $sel . '>' . htmlspecialchars((string) $fl, ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
+                    ?>
+                  </select>
+                </div>
+                <div>
+                  <label for="weight_kg" class="mb-1 block text-xs font-bold text-slate-600">Poids (kg, RP)</label>
+                  <input type="number" name="weight_kg" id="weight_kg" value="<?= htmlspecialchars((string) ($p['weight_kg'] ?? '')) ?>" min="20" max="300" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                  <label for="operator_status" class="mb-1 block text-xs font-bold text-slate-600">Statut opérateur</label>
+                  <select name="operator_status" id="operator_status" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <?php
+                    $opStCur = trim((string) ($p['operator_status'] ?? ''));
+                    foreach ($keepSelectOption($operatorStatusOptions, $opStCur) as $osv => $osl) {
+                        $sel = ($opStCur === (string) $osv) ? ' selected' : '';
+                        echo '<option value="' . htmlspecialchars((string) $osv, ENT_QUOTES, 'UTF-8') . '"' . $sel . '>' . htmlspecialchars((string) $osl, ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
+                    ?>
+                  </select>
+                </div>
+                <div class="md:col-span-2">
+                  <label for="operator_tags" class="mb-1 block text-xs font-bold text-slate-600">Spécialités</label>
+                  <input type="text" name="operator_tags" id="operator_tags" value="<?= htmlspecialchars((string) ($p['operator_tags'] ?? '')) ?>" placeholder="Ex. Breacher / Team Lead / Squad Lead" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
+                </div>
               </div>
-            </div>
-            <div>
-              <label for="sex" class="mb-1 block text-xs font-bold text-slate-600">Sexe</label>
-              <select name="sex" id="sex" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                <?php
-                $sexCur = trim((string) ($p['sex'] ?? ''));
-                foreach (['' => '— Non renseigné —', 'Homme' => 'Homme', 'Femme' => 'Femme', 'Autre' => 'Autre'] as $sv => $sl) {
-                    $sel = ($sexCur === $sv) ? ' selected' : '';
-                    echo '<option value="' . htmlspecialchars($sv) . '"' . $sel . '>' . htmlspecialchars($sl) . '</option>';
-                }
-                if ($sexCur !== '' && !in_array($sexCur, ['Homme', 'Femme', 'Autre'], true)) {
-                    echo '<option value="' . htmlspecialchars($sexCur) . '" selected>' . htmlspecialchars($sexCur) . '</option>';
-                }
-                ?>
-              </select>
-            </div>
-            <div>
-              <label for="birth_place" class="mb-1 block text-xs font-bold text-slate-600">Lieu de naissance (RP)</label>
-              <input type="text" name="birth_place" id="birth_place" value="<?= htmlspecialchars((string) ($p['birth_place'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="150">
-            </div>
-            <div>
-              <label for="family_situation" class="mb-1 block text-xs font-bold text-slate-600">Situation familiale (RP)</label>
-              <input type="text" name="family_situation" id="family_situation" value="<?= htmlspecialchars((string) ($p['family_situation'] ?? '')) ?>" placeholder="Célibataire, marié(e)…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-            </div>
-            <div>
-              <label for="weight_kg" class="mb-1 block text-xs font-bold text-slate-600">Poids (kg, RP)</label>
-              <input type="number" name="weight_kg" id="weight_kg" value="<?= htmlspecialchars((string) ($p['weight_kg'] ?? '')) ?>" min="20" max="300" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-            </div>
-            <div>
-              <label for="operator_status" class="mb-1 block text-xs font-bold text-slate-600">Statut opérateur</label>
-              <input type="text" name="operator_status" id="operator_status" value="<?= htmlspecialchars((string) ($p['operator_status'] ?? '')) ?>" placeholder="Ex. Opérateur Leader // Senior Instructor" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="160">
-            </div>
-            <div class="md:col-span-2">
-              <label for="operator_tags" class="mb-1 block text-xs font-bold text-slate-600">Spécialités / tags (RP)</label>
-              <input type="text" name="operator_tags" id="operator_tags" value="<?= htmlspecialchars((string) ($p['operator_tags'] ?? '')) ?>" placeholder="Ex. Breacher / Team Lead / Squad Lead" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
             </div>
           </div>
         </section>
@@ -468,6 +523,7 @@ $editValidTabIds = implode(',', array_map(
                     <div class="rounded-2xl border border-cyan-200 bg-cyan-50/30 p-4">
                       <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
                         <label class="flex shrink-0 items-center gap-2 text-xs font-bold text-slate-700">
+                          <input type="hidden" :name="'unit_assignments[' + idx + '][is_primary]'" :value="primaryIdx === idx ? '1' : '0'">
                           <input type="radio" name="unit_assignments_primary" :value="idx" x-model.number="primaryIdx" class="text-emerald-600">
                           Affectation principale
                         </label>
@@ -502,6 +558,7 @@ $editValidTabIds = implode(',', array_map(
                     <template x-for="(row, idx) in roles" :key="row.key">
                       <div class="flex flex-col gap-2 rounded-xl border border-cyan-200 bg-white p-3 sm:flex-row sm:flex-wrap sm:items-end">
                         <label class="flex shrink-0 items-center gap-1.5 text-[10px] font-bold text-slate-600">
+                          <input type="hidden" :name="'job_roles[' + idx + '][is_primary]'" :value="primaryIdx === idx ? '1' : '0'">
                           <input type="radio" name="job_roles_primary" :value="idx" x-model.number="primaryIdx" class="text-emerald-600">
                           Principal
                         </label>
@@ -626,28 +683,22 @@ $editValidTabIds = implode(',', array_map(
             <div class="md:col-span-2 rounded-xl border border-emerald-100 bg-emerald-50/40 px-4 py-3">
               <p class="text-[10px] font-black uppercase tracking-wider text-emerald-800"><?= htmlspecialchars($tmnLabel !== '' ? $tmnLabel : "Matricule d'organisation", ENT_QUOTES, 'UTF-8') ?></p>
               <?php if ($tmnCanManage): ?>
-              <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/member-number'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 space-y-2">
-                <?= \App\Core\Csrf::field() ?>
-                <input type="hidden" name="return_to" value="edit">
-                <input type="text" name="tenant_member_number" maxlength="100"
+              <div class="mt-2 space-y-2">
+                <input form="personnel-member-number-form" type="text" name="tenant_member_number" maxlength="100"
                        value="<?= htmlspecialchars($tmnValue, ENT_QUOTES, 'UTF-8') ?>"
                        placeholder="<?= $tmnPreview !== '' ? htmlspecialchars($tmnPreview, ENT_QUOTES, 'UTF-8') : 'Ex. GEND-0458' ?>"
                        class="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 font-mono text-sm">
-                <input type="text" name="member_number_reason" maxlength="255" placeholder="Motif (facultatif)"
+                <input form="personnel-member-number-form" type="text" name="member_number_reason" maxlength="255" placeholder="Motif (facultatif)"
                        class="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm">
                 <div class="flex flex-wrap gap-2">
-                  <button type="submit" class="rounded-xl bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800">Enregistrer le matricule</button>
+                  <button form="personnel-member-number-form" type="submit" class="rounded-xl bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800">Enregistrer le matricule</button>
                 </div>
-              </form>
+              </div>
               <?php if (in_array($tmnMode, ['automatic', 'assisted'], true)): ?>
-              <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/member-number/regenerate'), ENT_QUOTES, 'UTF-8') ?>"
-                    class="mt-2"
-                    onsubmit="return confirm('Régénérer le matricule d\'organisation ?');">
-                <?= \App\Core\Csrf::field() ?>
-                <input type="hidden" name="confirm_regenerate" value="1">
-                <input type="hidden" name="member_number_reason" value="Régénération">
-                <button type="submit" class="text-xs font-bold text-amber-800 hover:underline">Régénérer le matricule</button>
-              </form>
+              <div class="mt-2">
+                <button form="personnel-member-number-regen-form" type="submit" class="text-xs font-bold text-amber-800 hover:underline"
+                        onclick="return confirm('Régénérer le matricule d\'organisation ?');">Régénérer le matricule</button>
+              </div>
               <?php endif; ?>
               <?php else: ?>
               <p class="mt-1 font-mono text-sm font-bold text-slate-900"><?= $tmnValue !== '' ? htmlspecialchars($tmnValue, ENT_QUOTES, 'UTF-8') : '— non attribué —' ?></p>
@@ -939,6 +990,7 @@ $editValidTabIds = implode(',', array_map(
               <input type="text" name="weapon_specialty" id="weapon_specialty" value="<?= htmlspecialchars($p['weapon_specialty'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
             </div>
             <div class="flex items-center gap-3 md:col-span-2">
+              <input type="hidden" name="deployable" value="0">
               <input type="checkbox" name="deployable" id="deployable" value="1" <?= ($p['deployable'] ?? 1) ? 'checked' : '' ?> class="h-4 w-4 rounded border-slate-300 text-emerald-600">
               <label for="deployable" class="text-sm font-semibold text-slate-800">Déployable</label>
             </div>
@@ -968,6 +1020,20 @@ $editValidTabIds = implode(',', array_map(
           <a href="<?= htmlspecialchars($personnelBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">Annuler</a>
         </div>
     </form>
+    <?php if (!empty($canManageMemberNumber)): ?>
+    <form id="personnel-member-number-form" method="post" action="<?= htmlspecialchars(url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/member-number'), ENT_QUOTES, 'UTF-8') ?>">
+      <?= \App\Core\Csrf::field() ?>
+      <input type="hidden" name="return_to" value="edit">
+    </form>
+    <?php if (in_array((string) ($tenantMemberNumberMode ?? 'free'), ['automatic', 'assisted'], true)): ?>
+    <form id="personnel-member-number-regen-form" method="post" action="<?= htmlspecialchars(url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/member-number/regenerate'), ENT_QUOTES, 'UTF-8') ?>">
+      <?= \App\Core\Csrf::field() ?>
+      <input type="hidden" name="return_to" value="edit">
+      <input type="hidden" name="confirm_regenerate" value="1">
+      <input type="hidden" name="member_number_reason" value="Régénération">
+    </form>
+    <?php endif; ?>
+    <?php endif; ?>
     </div>
 
     <?php if (!$matriculeDisplay): ?>
