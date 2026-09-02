@@ -166,9 +166,9 @@ if ($canRecruit) {
 }
 if ($canAdmin) {
     $espaceLinks[] = [
-        'abbr' => 'CMD',
-        'label' => 'Commandement',
-        'desc' => 'Espace état-major',
+        'abbr' => 'BO',
+        'label' => 'Back-office',
+        'desc' => 'Administration de la communauté',
         'href' => url('back-office'),
         'path' => 'back-office',
     ];
@@ -503,33 +503,6 @@ $profileMenuItems = array_values(array_filter(
                 </div>
             </div>
 
-            <div class="relative hidden md:block">
-                <button
-                    type="button"
-                    class="athena-header__icon-btn"
-                    data-athena-toggle="quick"
-                    aria-label="Navigation rapide"
-                    aria-expanded="false"
-                    aria-controls="athena-header-quick"
-                >
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                    <span class="athena-header__menu-label">Menu</span>
-                </button>
-                <div class="athena-header__panel athena-header__panel--quick hidden" id="athena-header-quick" data-athena-panel="quick">
-                    <div class="athena-header__quick-head">
-                        <strong>Navigation rapide</strong>
-                        <span><?= count($quickLinks) ?></span>
-                    </div>
-                    <div class="athena-header__quick-grid">
-                        <?php foreach ($quickLinks as $ql): ?>
-                            <a href="<?= $h((string) $ql['href']) ?>"><?= $h((string) $ql['label']) ?></a>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
-
             <div class="relative">
                 <button
                     type="button"
@@ -700,6 +673,32 @@ $profileMenuItems = array_values(array_filter(
                     </div>
                 </div>
             </div>
+            <div class="relative hidden md:block">
+                <button
+                    type="button"
+                    class="athena-header__icon-btn"
+                    data-athena-toggle="quick"
+                    aria-label="Navigation rapide"
+                    aria-expanded="false"
+                    aria-controls="athena-header-quick"
+                >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="athena-header__panel athena-header__panel--quick hidden" id="athena-header-quick" data-athena-panel="quick">
+                    <div class="athena-header__quick-head">
+                        <strong>Navigation rapide</strong>
+                        <span><?= count($quickLinks) ?></span>
+                    </div>
+                    <div class="athena-header__quick-grid">
+                        <?php foreach ($quickLinks as $ql): ?>
+                            <a href="<?= $h((string) $ql['href']) ?>"><?= $h((string) $ql['label']) ?></a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </nav>
