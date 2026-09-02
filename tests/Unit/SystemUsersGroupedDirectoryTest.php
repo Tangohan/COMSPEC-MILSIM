@@ -28,4 +28,28 @@ final class SystemUsersGroupedDirectoryTest extends TestCase
         self::assertStringContainsString('Anonymiser (site)', $view);
         self::assertStringContainsString('Supprimer définitivement (site)', $view);
     }
+
+    public function testPlatformDirectoryUsesMembershipRowsWhenAvailable(): void
+    {
+        $repo = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
+        self::assertStringContainsString('fetchPlatformDirectoryMembershipRowsByEmails', $repo);
+        self::assertStringContainsString('user_community_memberships m ON m.user_id = u.id', $repo);
+        if (!preg_match('/function listGroupedAccountsForPlatformDirectory\b.*?^\    \}/ms', $repo, $match)) {
+            self::fail('listGroupedAccountsForPlatformDirectory introuvable.');
+        }
+        $body = $match[0];
+        self::assertStringContainsString('NOT ' . "SqlText::inLiterals(\$pdo, 'u.status', ['merged'])", $body);
+        self::assertStringNotContainsString("t.slug <> 'default' OR NOT EXISTS", $body);
+    }
+
+    public function testSoftDeleteMembershipDoesNotAnonymizeGlobalIdentity(): void
+    {
+        $svc = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Account/AccountDeletionService.php');
+        if (!preg_match('/function softDeleteMembership\b.*?^\    \}/ms', $svc, $match)) {
+            self::fail('softDeleteMembership introuvable.');
+        }
+        $body = $match[0];
+        self::assertStringContainsString('communityMemberships()->leave', $body);
+        self::assertStringNotContainsString('anonymizeUserIdentity', $body);
+    }
 }

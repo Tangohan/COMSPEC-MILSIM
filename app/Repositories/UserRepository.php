@@ -2600,7 +2600,7 @@ class UserRepository
 
     /**
      * Annuaire plateforme regroupé par personne (e-mail) : une entrée = toutes les
-     * appartenances communautaires (une ligne users par tenant).
+     * appartenances communautaires (ligne users unique + memberships multi-communautés).
      *
      * @return array{groups: list<array<string, mixed>>, total: int}
      */
@@ -2614,18 +2614,36 @@ class UserRepository
         $page = max(1, $page);
         $perPage = max(10, min(100, $perPage));
         $offset = ($page - 1) * $perPage;
+        $pdo = $this->pdo();
+        $hasMemberships = $this->hasCommunityMembershipTable();
+        $hasDeletedAt = $this->hasDeletedAtColumn();
         $pack = $this->technicalAccountExclusionPredicate('u');
         $parts = [$pack['sql']];
         $params = $pack['params'];
-        $hasDeletedAt = $this->hasDeletedAtColumn();
+
+        $parts[] = 'NOT ' . SqlText::inLiterals($pdo, 'u.status', ['merged']);
+        $parts[] = SqlText::normalizedNotLikeLiteral($pdo, 'u.email', '%@deleted.invalid');
+        $parts[] = SqlText::normalizedNotLikeLiteral($pdo, 'u.email', '%@merged.invalid');
 
         $search = $search !== null ? trim($search) : '';
         if ($search !== '') {
             $term = '%' . (function_exists('mb_substr') ? mb_substr($search, 0, 120) : substr($search, 0, 120)) . '%';
-            $parts[] = '(u.email LIKE ? OR u.display_name LIKE ? OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?))';
+            $communitySearch = $hasMemberships
+                ? ' OR EXISTS (
+                    SELECT 1 FROM user_community_profiles cp
+                    WHERE cp.user_id = u.id
+                      AND (cp.display_name LIKE ? OR (cp.callsign IS NOT NULL AND cp.callsign LIKE ?))
+                )'
+                : '';
+            $parts[] = '(u.email LIKE ? OR u.display_name LIKE ? OR (u.callsign IS NOT NULL AND '
+                . SqlText::trimIsNotEmpty($pdo, 'u.callsign') . ' AND u.callsign LIKE ?)' . $communitySearch . ')';
             $params[] = $term;
             $params[] = $term;
             $params[] = $term;
+            if ($hasMemberships) {
+                $params[] = $term;
+                $params[] = $term;
+            }
         }
         if ($status === 'deleted' && $hasDeletedAt) {
             $parts[] = 'u.deleted_at IS NOT NULL';
@@ -2634,32 +2652,36 @@ class UserRepository
                 $parts[] = 'u.deleted_at IS NULL';
             }
             if ($status !== null && $status !== '' && in_array($status, ['active', 'inactive', 'pending_verification'], true)) {
-                $parts[] = 'u.status = ?';
-                $params[] = $status;
+                if ($hasMemberships) {
+                    $parts[] = '((' . SqlText::equals($pdo, 'u.status') . ') OR EXISTS (
+                        SELECT 1 FROM user_community_memberships m
+                        LEFT JOIN user_community_profiles p ON p.user_id = m.user_id AND p.tenant_id = m.tenant_id
+                        WHERE m.user_id = u.id
+                          AND ' . SqlText::coalesceEquals($pdo, 'p.status', 'u.status') . '
+                    ))';
+                    $params[] = $status;
+                    $params[] = $status;
+                } else {
+                    $parts[] = SqlText::equals($pdo, 'u.status');
+                    $params[] = $status;
+                }
             }
         }
         if ($tenantId !== null && $tenantId > 0) {
             $parts[] = $this->sqlMemberOfTenantPredicate('u', $tenantId);
-        } else {
-            $siblingAlive = $hasDeletedAt ? 'AND u2.deleted_at IS NULL' : '';
-            $parts[] = "(t.slug <> 'default' OR NOT EXISTS (
-                SELECT 1 FROM users u2
-                INNER JOIN tenants t2 ON t2.id = u2.tenant_id AND t2.slug <> 'default'
-                WHERE LOWER(TRIM(u2.email)) = LOWER(TRIM(u.email))
-                  AND TRIM(u.email) <> ''
-                  AND " . SqlText::normalizedNotLikeLiteral($this->pdo(), 'u.email', '%@deleted.invalid') . "
-                  AND u2.id <> u.id
-                  {$siblingAlive}
-            ))";
+        } elseif (!$hasMemberships) {
+            $parts[] = $this->sqlLegacyPlatformDirectorySiblingFilter('u', $hasDeletedAt);
         }
 
         $where = implode(' AND ', $parts);
+        $fromUsers = $hasMemberships
+            ? 'FROM users u'
+            : 'FROM users u INNER JOIN tenants t ON t.id = u.tenant_id';
 
         $countStmt = $this->pdo()->prepare(
             "SELECT COUNT(*) FROM (
                 SELECT 1
-                FROM users u
-                INNER JOIN tenants t ON t.id = u.tenant_id
+                {$fromUsers}
                 WHERE {$where}
                 GROUP BY LOWER(TRIM(u.email))
             ) grouped_accounts"
@@ -2669,8 +2691,7 @@ class UserRepository
 
         $emailStmt = $this->pdo()->prepare(
             "SELECT LOWER(TRIM(u.email)) AS email_key, MAX(u.updated_at) AS sort_at
-             FROM users u
-             INNER JOIN tenants t ON t.id = u.tenant_id
+             {$fromUsers}
              WHERE {$where}
              GROUP BY LOWER(TRIM(u.email))
              ORDER BY sort_at DESC
@@ -2689,42 +2710,9 @@ class UserRepository
             return ['groups' => [], 'total' => $total];
         }
 
-        $memberWhere = $parts;
-        // Remonter toutes les appartenances des e-mails de la page (même si filtre statut
-        // ne matchait qu’une fiche) pour afficher le panel multi-communautés complet.
-        $memberParts = [$pack['sql']];
-        $memberParams = $pack['params'];
-        $memberParts[] = SqlText::normalizedInPlaceholders($this->pdo(), 'u.email', count($emailKeys));
-        $memberParams = array_merge($memberParams, $emailKeys);
-        if ($tenantId !== null && $tenantId > 0) {
-            // Si on filtre une communauté, on garde quand même les sœurs pour le regroupement,
-            // mais on n’affiche que les groupes qui ont au moins un match (déjà garanti par emailKeys).
-        } else {
-            $siblingAlive = $hasDeletedAt ? 'AND u2.deleted_at IS NULL' : '';
-            $memberParts[] = "(t.slug <> 'default' OR NOT EXISTS (
-                SELECT 1 FROM users u2
-                INNER JOIN tenants t2 ON t2.id = u2.tenant_id AND t2.slug <> 'default'
-                WHERE LOWER(TRIM(u2.email)) = LOWER(TRIM(u.email))
-                  AND TRIM(u.email) <> ''
-                  AND " . SqlText::normalizedNotLikeLiteral($this->pdo(), 'u.email', '%@deleted.invalid') . "
-                  AND u2.id <> u.id
-                  {$siblingAlive}
-            ))";
-        }
-        $memberWhereSql = implode(' AND ', $memberParts);
-
-        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.created_at, u.updated_at,
-                       " . ($hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at') . ",
-                       t.name AS tenant_name, t.slug AS tenant_slug,
-                       r.name AS role_name
-                FROM users u
-                INNER JOIN tenants t ON t.id = u.tenant_id
-                LEFT JOIN roles r ON r.id = u.role_id
-                WHERE {$memberWhereSql}
-                ORDER BY u.updated_at DESC, u.id DESC";
-        $stmt = $this->pdo()->prepare($sql);
-        $stmt->execute($memberParams);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $rows = $hasMemberships
+            ? $this->fetchPlatformDirectoryMembershipRowsByEmails($emailKeys, $pack)
+            : $this->fetchPlatformDirectoryLegacyRowsByEmails($emailKeys, $tenantId, $hasDeletedAt, $pack);
 
         $byEmail = [];
         foreach ($rows as $row) {
@@ -2747,7 +2735,6 @@ class UserRepository
                     'memberships' => [],
                 ];
             }
-            // Préférer un indicatif / nom non anonymisé pour l’en-tête personne.
             $dn = trim((string) ($row['display_name'] ?? ''));
             $cs = trim((string) ($row['callsign'] ?? ''));
             if ($cs !== '' && trim((string) ($byEmail[$key]['callsign'] ?? '')) === '') {
@@ -2773,6 +2760,131 @@ class UserRepository
             'groups' => $groups,
             'total' => $total,
         ];
+    }
+
+    /**
+     * Filtre historique (plusieurs lignes users par e-mail) : masquer le tenant système
+     * dès qu’une vraie communauté existe pour la même adresse.
+     */
+    private function sqlLegacyPlatformDirectorySiblingFilter(string $alias, bool $hasDeletedAt): string
+    {
+        $pdo = $this->pdo();
+        $a = $alias !== '' ? $alias : 'u';
+        $siblingAlive = $hasDeletedAt ? 'AND u2.deleted_at IS NULL' : '';
+        $notDefault = SqlText::notEqualsLiteral($pdo, 't.slug', 'default');
+
+        return '(' . $notDefault . ' OR NOT EXISTS (
+            SELECT 1 FROM users u2
+            INNER JOIN tenants t2 ON t2.id = u2.tenant_id AND ' . SqlText::notEqualsLiteral($pdo, 't2.slug', 'default') . '
+            WHERE LOWER(TRIM(u2.email)) = LOWER(TRIM(' . $a . '.email))
+              AND ' . SqlText::trimIsNotEmpty($pdo, $a . '.email') . '
+              AND ' . SqlText::normalizedNotLikeLiteral($pdo, $a . '.email', '%@deleted.invalid') . "
+              AND u2.id <> {$a}.id
+              {$siblingAlive}
+        ))";
+    }
+
+    /**
+     * @param list<string> $emailKeys
+     * @param array{sql: string, params: list<mixed>} $pack
+     * @return list<array<string, mixed>>
+     */
+    private function fetchPlatformDirectoryMembershipRowsByEmails(array $emailKeys, array $pack): array
+    {
+        if ($emailKeys === []) {
+            return [];
+        }
+        $pdo = $this->pdo();
+        $hasDeletedAt = $this->hasDeletedAtColumn();
+        $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
+        $emailIn = SqlText::normalizedInPlaceholders($pdo, 'u.email', count($emailKeys));
+        $params = array_merge($emailKeys, $pack['params']);
+
+        $sql = "SELECT u.id, m.tenant_id, u.email,
+                       COALESCE(p.display_name, u.display_name) AS display_name,
+                       COALESCE(p.callsign, u.callsign) AS callsign,
+                       COALESCE(p.status, u.status) AS status,
+                       u.created_at, u.updated_at, {$deletedSelect},
+                       t.name AS tenant_name, t.slug AS tenant_slug,
+                       r.name AS role_name
+                FROM users u
+                INNER JOIN user_community_memberships m ON m.user_id = u.id
+                INNER JOIN tenants t ON t.id = m.tenant_id
+                LEFT JOIN user_community_profiles p ON p.user_id = u.id AND p.tenant_id = m.tenant_id
+                LEFT JOIN roles r ON r.id = COALESCE(p.role_id, u.role_id)
+                WHERE {$emailIn} AND {$pack['sql']}
+                ORDER BY u.updated_at DESC, t.name ASC, u.id DESC";
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $seen = [];
+        foreach ($rows as $row) {
+            $seen[strtolower(trim((string) ($row['email'] ?? '')))] = true;
+        }
+
+        $missing = array_values(array_filter($emailKeys, static fn (string $key): bool => !isset($seen[$key])));
+        if ($missing === []) {
+            return $rows;
+        }
+
+        $fallbackIn = SqlText::normalizedInPlaceholders($pdo, 'u.email', count($missing));
+        $fallbackParams = array_merge($missing, $pack['params']);
+        $fallbackSql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status,
+                               u.created_at, u.updated_at, {$deletedSelect},
+                               t.name AS tenant_name, t.slug AS tenant_slug,
+                               r.name AS role_name
+                        FROM users u
+                        INNER JOIN tenants t ON t.id = u.tenant_id
+                        LEFT JOIN roles r ON r.id = u.role_id
+                        WHERE {$fallbackIn} AND {$pack['sql']}
+                          AND NOT EXISTS (
+                            SELECT 1 FROM user_community_memberships m WHERE m.user_id = u.id
+                          )
+                        ORDER BY u.updated_at DESC, u.id DESC";
+        $fallbackStmt = $this->pdo()->prepare($fallbackSql);
+        $fallbackStmt->execute($fallbackParams);
+
+        return array_merge($rows, $fallbackStmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+    }
+
+    /**
+     * @param list<string> $emailKeys
+     * @param array{sql: string, params: list<mixed>} $pack
+     * @return list<array<string, mixed>>
+     */
+    private function fetchPlatformDirectoryLegacyRowsByEmails(
+        array $emailKeys,
+        ?int $tenantId,
+        bool $hasDeletedAt,
+        array $pack
+    ): array {
+        if ($emailKeys === []) {
+            return [];
+        }
+        $pdo = $this->pdo();
+        $memberParts = [$pack['sql']];
+        $memberParams = $pack['params'];
+        $memberParts[] = SqlText::normalizedInPlaceholders($pdo, 'u.email', count($emailKeys));
+        $memberParams = array_merge($memberParams, $emailKeys);
+        if ($tenantId === null || $tenantId < 1) {
+            $memberParts[] = $this->sqlLegacyPlatformDirectorySiblingFilter('u', $hasDeletedAt);
+        }
+        $memberWhereSql = implode(' AND ', $memberParts);
+        $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
+        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.created_at, u.updated_at,
+                       {$deletedSelect},
+                       t.name AS tenant_name, t.slug AS tenant_slug,
+                       r.name AS role_name
+                FROM users u
+                INNER JOIN tenants t ON t.id = u.tenant_id
+                LEFT JOIN roles r ON r.id = u.role_id
+                WHERE {$memberWhereSql}
+                ORDER BY u.updated_at DESC, u.id DESC";
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute($memberParams);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     /** @return list<int> User IDs ayant le rôle donné (pour assignation formation par rôle). */
