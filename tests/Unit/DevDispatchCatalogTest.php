@@ -557,7 +557,7 @@ final class DevDispatchCatalogTest extends TestCase
         $functionKits = DevDispatchCatalog::find('update', '370');
         self::assertNotNull($functionKits);
         self::assertSame('00370', $functionKits['number_pad']);
-        self::assertStringContainsString('fonctions', strtolower((string) $functionKits['title']));
+        self::assertStringContainsString('accès', strtolower((string) $functionKits['title']));
         $coverStorage = DevDispatchCatalog::find('update', '371');
         self::assertNotNull($coverStorage);
         self::assertSame('00371', $coverStorage['number_pad']);

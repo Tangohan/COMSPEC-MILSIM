@@ -141,22 +141,22 @@ return [
         ['path' => 'back-office/roles-functions', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CELLULE S1', 'title' => 'Doctrine des fonctions', 'subtitle' => 'Référentiel des fonctions, relations de commandement entre les rôles de la communauté et suivi des postes qui doivent être pourvus.', 'css' => ['back-office-doctrine.css'], 'quick' => [
             ['label' => 'Référentiel', 'href' => 'back-office/roles-functions/referentiel'],
             ['label' => 'Catalogue', 'href' => 'back-office/roles-functions/catalogue'],
-            ['label' => 'Kits', 'href' => 'back-office/personnel-job-roles/kits'],
+            ['label' => 'Kits d’accès', 'href' => 'back-office/personnel-job-roles/kits'],
             ['label' => 'Obligatoires', 'href' => 'back-office/roles-functions#rf-obligatoires'],
             ['label' => 'Graphe', 'href' => 'back-office/roles-functions#rf-graphe'],
         ]],
         ['path' => 'back-office/roles', 'group' => 'Système', 'kicker' => 'RÔLES · TABLE', 'title' => 'Table des rôles', 'subtitle' => 'Liste structurée par famille opérationnelle.', 'css' => ['back-office-roles.css']],
-        ['path' => 'back-office/personnel-job-roles/kits', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Kits de fonctions', 'subtitle' => 'Choisissez les domaines de votre communauté, puis désignez qui les assure.', 'css' => ['back-office-catalog.css'], 'quick' => [
+        ['path' => 'back-office/personnel-job-roles/kits', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · ACCÈS', 'title' => 'Kits d’accès', 'subtitle' => 'Packs simples : lecture, modification, recrutement, paramètres — multi-sélectionnables et attribuables.', 'css' => ['back-office-catalog.css'], 'quick' => [
             ['label' => 'Attributions', 'href' => 'back-office/personnel-job-roles/assignments'],
             ['label' => 'Référentiel', 'href' => 'back-office/personnel-job-roles'],
         ]],
         ['path' => 'back-office/personnel-job-roles/assignments', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Attributions métier', 'subtitle' => 'Attribuez les emplois du référentiel à chaque membre de l’effectif.', 'quick' => [
-            ['label' => 'Kits de fonctions', 'href' => 'back-office/personnel-job-roles/kits'],
+            ['label' => 'Kits d’accès', 'href' => 'back-office/personnel-job-roles/kits'],
             ['label' => 'Référentiel', 'href' => 'back-office/personnel-job-roles'],
             ['label' => 'Nouvel emploi', 'href' => 'back-office/personnel-job-roles/roles/create'],
         ]],
         ['path' => 'back-office/personnel-job-roles', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Emplois & missions', 'subtitle' => 'Référentiel des emplois métier, catégories et droits associés.', 'quick' => [
-            ['label' => 'Kits de fonctions', 'href' => 'back-office/personnel-job-roles/kits'],
+            ['label' => 'Kits d’accès', 'href' => 'back-office/personnel-job-roles/kits'],
             ['label' => 'Affectations', 'href' => 'back-office/personnel-job-roles/assignments'],
             ['label' => 'Nouvel emploi', 'href' => 'back-office/personnel-job-roles/roles/create'],
         ]],
