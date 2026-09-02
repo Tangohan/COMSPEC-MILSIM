@@ -217,13 +217,34 @@
 
 .pd-tabs {
   display: flex;
-  gap: 0;
+  gap: 0.25rem;
   overflow-x: auto;
   border-bottom: 1px solid var(--pd-border);
   background: #f8fafc;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
+
+.pd-tabs__group {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.35rem 0;
+  border-right: 1px solid var(--pd-border);
+}
+
+.pd-tabs__group:last-child { border-right: 0; }
+
+.pd-tabs__group-label {
+  display: block;
+  padding: 0 0.65rem 0.15rem;
+  color: var(--pd-dim);
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.pd-tabs__group-items { display: flex; }
 
 .pd-tabs__btn {
   flex: 0 0 auto;
@@ -239,6 +260,11 @@
   font-family: inherit;
   cursor: pointer;
   white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .pd-tabs__group-label { position: sticky; left: 0; }
+  .pd-tabs__btn { padding-inline: 0.7rem; }
 }
 
 .pd-tabs__btn:hover { color: var(--pd-text); background: rgba(15, 23, 42, 0.03); }
