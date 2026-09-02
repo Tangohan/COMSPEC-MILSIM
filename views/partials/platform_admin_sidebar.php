@@ -28,11 +28,44 @@ $link = static function (string $path, string $label, string $ico, bool $isActiv
     </a>
 <?php };
 
-$userName = trim((string) (\App\Core\Session::get('display_name') ?? \App\Core\Session::get('callsign') ?? 'Administrateur')) ?: 'Administrateur';
-$words = preg_split('/\s+/u', $userName) ?: [];
-$initials = count($words) > 1
-    ? mb_strtoupper(mb_substr($words[0], 0, 1) . mb_substr($words[1], 0, 1))
-    : mb_strtoupper(mb_substr($userName, 0, 2));
+$paSubLink = static function (string $path, string $label, bool $active): void {
+    $cls = $active
+        ? 'block rounded-md bg-slate-800/90 px-3 py-2 text-xs font-semibold text-white'
+        : 'block rounded-md px-3 py-2 text-xs font-medium text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-100';
+    echo '<a href="' . htmlspecialchars(url($path), ENT_QUOTES, 'UTF-8') . '" class="' . $cls . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+};
+
+$navDash = $p === 'admin';
+$navTenants = $p === 'admin/tenants' || str_starts_with($p, 'admin/tenants/');
+$navTenantRecovery = str_starts_with($p, 'admin/system/tenant-recovery');
+$navAnalytics = $p === 'admin/analytics';
+$navNewsletter = $p === 'admin/newsletter';
+$navOps = $p === 'admin/ops-center';
+$navAudit = $p === 'admin/audit' || str_starts_with($p, 'admin/audit/');
+$navMaint = $p === 'admin/maintenance' || str_starts_with($p, 'admin/maintenance/');
+$navStorage = str_starts_with($p, 'admin/system/storage');
+$navRoles = $p === 'admin/roles' || str_starts_with($p, 'admin/roles/');
+$navSiteRoles = $p === 'admin/site-roles' || str_starts_with($p, 'admin/site-roles/');
+$navSettings = $p === 'admin/settings';
+$navBlocklist = str_starts_with($p, 'admin/system/blocklist');
+$navSanctions = str_starts_with($p, 'admin/system/member-sanctions');
+$navAdvancedFiche = str_starts_with($p, 'admin/system/advanced-fiche-edit');
+$navPlatformUsers = $p === 'admin/users' || str_starts_with($p, 'admin/users/');
+$navBrief = str_starts_with($p, 'admin/system/brief');
+$navCron = str_starts_with($p, 'admin/system/cron');
+$navUxFeedback = str_starts_with($p, 'admin/system/retours-interface');
+$navDeployment = str_starts_with($p, 'admin/system/deployment');
+$navUpdates = str_starts_with($p, 'admin/system/updates');
+$navAlerts = str_starts_with($p, 'admin/system/alerts');
+$navDemoNda = str_starts_with($p, 'admin/system/demo-nda');
+$navRecruitTools = str_starts_with($p, 'admin/system/recruitment-portal-tools');
+$navPlans = str_starts_with($p, 'admin/system/subscription-plans');
+$navCoopCatalog = str_starts_with($p, 'admin/system/cooperation/catalog');
+$navCoopAnnounce = str_starts_with($p, 'admin/system/cooperation/announcements');
+$navMilitaryRef = str_starts_with($p, 'admin/system/military-referential');
+$alertsCreateActive = $p === 'admin/system/alerts/create';
+$alertsListActive = $navAlerts && !$alertsCreateActive;
+$alertsOpen = $navAlerts;
 ?>
 <nav class="ath-sidebar" id="ath-sidebar" aria-label="Navigation administration plateforme">
     <div class="ath-sidebar__head">
@@ -46,14 +79,59 @@ $initials = count($words) > 1
         </button>
     </div>
 
-    <div class="ath-sidebar__nav" id="ath-sidebar-nav">
-        <div class="ath-sidebar__group is-open" data-ath-nav-group="pilotage">
-            <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="true"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="m9 18 6-6-6-6"></path></svg><span class="ath-sidebar__group-label">PILOTAGE</span></button>
-            <div class="ath-sidebar__group-body">
-                <?php $link('admin', 'Tableau de bord', 'dash', $active('admin', true)); ?>
-                <?php $link('admin/analytics', 'Indicateurs transverses', 'chart', $active('admin/analytics')); ?>
-                <?php $link('admin/ops-center', 'Synthèse opérationnelle', 'chart', $active('admin/ops-center')); ?>
-                <?php if ($isPlatformAdmin) $link('admin/system/retours-interface', 'Retours interface', 'book', $active('admin/system/retours-interface')); ?>
+    <nav class="pa-side-scroll min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-5" aria-label="Navigation administration plateforme">
+        <?php $paSection('Vue d’ensemble'); ?>
+        <?php $paLink('admin', 'Tableau de bord', $navDash); ?>
+        <?php if ($isPlatformAdmin): ?>
+            <?php $paSection('Communautés'); ?>
+            <?php $paLink('admin/tenants', 'Annuaire des communautés', $navTenants); ?>
+            <?php $paLink('admin/system/tenant-recovery', 'Récupération communauté', $navTenantRecovery); ?>
+            <?php $paLink('admin/system/subscription-plans', 'Formules d’accès', $navPlans); ?>
+            <?php $paLink('admin/newsletter', 'Lettre d’information du site', $navNewsletter); ?>
+            <?php $paLink('admin/system/demo-nda', 'Accès démo du site', $navDemoNda); ?>
+        <?php endif; ?>
+        <?php $paLink('admin/analytics', 'Indicateurs transverses', $navAnalytics); ?>
+        <?php if ($isPlatformAdmin): ?>
+            <?php $paLink('admin/system/retours-interface', 'Retours interface', $navUxFeedback); ?>
+        <?php endif; ?>
+        <?php $paLink('admin/ops-center', 'Synthèse opérationnelle', $navOps); ?>
+
+        <?php if ($isPlatformAdmin): ?>
+            <?php $paSection('Sécurité & accès'); ?>
+            <?php $paLink('admin/users', 'Comptes utilisateurs', $navPlatformUsers); ?>
+            <?php $paLink('admin/system/advanced-fiche-edit', 'Édition avancée de fiche', $navAdvancedFiche); ?>
+            <?php $paLink('admin/roles', 'Rôles système', $navRoles); ?>
+            <?php $paLink('admin/site-roles', 'Affectations rôles site', $navSiteRoles); ?>
+            <?php $paLink('admin/system/blocklist', 'Liste de restriction (site entier)', $navBlocklist); ?>
+            <?php $paLink('admin/system/member-sanctions', 'Sanctions à l’échelle du site', $navSanctions); ?>
+            <?php $paLink('admin/system/recruitment-portal-tools', 'Outils du portail candidatures', $navRecruitTools); ?>
+
+            <?php $paSection('Configuration'); ?>
+            <?php $paLink('admin/settings', 'Paramètres système', $navSettings); ?>
+            <?php $paLink('admin/system/brief', 'Brief (accès membres)', $navBrief); ?>
+            <?php $paLink('admin/system/cron', 'Tâches automatiques', $navCron); ?>
+
+            <?php $paSection('Référentiels du site'); ?>
+            <?php $paLink('admin/system/cooperation/catalog', 'Types de coopération', $navCoopCatalog); ?>
+            <?php $paLink('admin/system/cooperation/announcements', 'Annonces de coopération', $navCoopAnnounce); ?>
+            <?php $paLink('admin/system/military-referential', 'Référentiel militaire', $navMilitaryRef); ?>
+
+            <?php $paSection('Déploiement et préqualification'); ?>
+            <?php $paLink('admin/system/updates', 'Mises à jour plateforme', $navUpdates); ?>
+            <?php $paLink('admin/system/deployment', 'Publications & canaux', $navDeployment && !str_starts_with($p, 'admin/system/deployment/communities')); ?>
+            <?php $paLink('admin/system/deployment/communities', 'Communautés de test', str_starts_with($p, 'admin/system/deployment/communities')); ?>
+
+            <div class="pa-submenu mt-2 px-1">
+                <details class="group rounded-lg border border-slate-800/80 bg-slate-900/40" <?= $alertsOpen ? 'open' : '' ?>>
+                    <summary class="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-800/50">
+                        <span>Alertes plateforme</span>
+                        <svg class="h-4 w-4 shrink-0 text-slate-500 transition group-open:rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                    </summary>
+                    <div class="space-y-0.5 border-t border-slate-800/80 px-2 py-2">
+                        <?php $paSubLink('admin/system/alerts', 'Toutes les alertes', $alertsListActive); ?>
+                        <?php $paSubLink('admin/system/alerts/create', 'Nouvelle alerte', $alertsCreateActive); ?>
+                    </div>
+                </details>
             </div>
         </div>
         <?php if ($isPlatformAdmin): ?>
