@@ -294,6 +294,12 @@ class Container
             \App\Services\Email\SecurityAlertService::class => new \App\Services\Email\SecurityAlertService(
                 self::get(\App\Services\EmailService::class)
             ),
+            \App\Services\Auth\PasswordResetService::class => new \App\Services\Auth\PasswordResetService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PasswordResetRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Services\Audit\AuditService::class)
+            ),
             \App\Controllers\Auth\AuthController::class => new \App\Controllers\Auth\AuthController(
                 self::get(AuthService::class),
                 self::get(RbacService::class),
@@ -307,6 +313,7 @@ class Container
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Services\Auth\LoginSecurityOtpService::class),
                 self::get(\App\Services\Auth\LoginWelcomeProfileService::class),
+                self::get(\App\Services\Auth\PasswordResetService::class),
             ),
             \App\Services\Auth\LoginWelcomeProfileService::class => new \App\Services\Auth\LoginWelcomeProfileService(
                 self::get(\App\Repositories\PersonnelProfileRepository::class),

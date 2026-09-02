@@ -2099,6 +2099,39 @@ class UserRepository
         return $ok;
     }
 
+    /** Mot de passe du compte plateforme (toutes communautés), sans filtre de communauté. */
+    public function updatePasswordHash(int $userId, string $passwordHash): bool
+    {
+        if ($userId < 1 || $passwordHash === '') {
+            return false;
+        }
+        $stmt = $this->pdo()->prepare('UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?');
+
+        return $stmt->execute([$passwordHash, $userId]);
+    }
+
+    /** Confirme l’e-mail et active un compte encore en attente, par identifiant seul. */
+    public function activatePendingById(int $userId): void
+    {
+        if ($userId < 1) {
+            return;
+        }
+        if ($this->hasEmailVerifiedColumn()) {
+            $this->pdo()->prepare(
+                "UPDATE users
+                 SET email_verified_at = COALESCE(email_verified_at, NOW()),
+                     status = 'active',
+                     updated_at = NOW()
+                 WHERE id = ? AND status = 'pending_verification'"
+            )->execute([$userId]);
+
+            return;
+        }
+        $this->pdo()->prepare(
+            "UPDATE users SET status = 'active', updated_at = NOW() WHERE id = ? AND status = 'pending_verification'"
+        )->execute([$userId]);
+    }
+
     /**
      * Suppression douce (anonymisation) d'un compte depuis l'annuaire plateforme.
      * Ne supprime jamais la ligne : ~99 clés étrangères (posts forum, dossiers personnel,

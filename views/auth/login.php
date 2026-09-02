@@ -24,10 +24,8 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
     <link href="<?= htmlspecialchars(asset_url('assets/css/athena-header.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/dsfr-service.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php $GLOBALS['__dsfr_service_css'] = true; ?>
-    <script defer src="https://unpkg.com/alpinejs@3/dist/cdn.min.js"></script>
-    <style>[x-cloak] { display: none !important; }</style>
 </head>
-<body class="ds-page ds-page--split" x-data="{ view: 'login', showPassword: false }">
+<body class="ds-page ds-page--split">
 <a class="ds-skip" href="#contenu"><?= htmlspecialchars(__('common.skip_to_content'), ENT_QUOTES, 'UTF-8') ?></a>
 <?php require base_path('views/partials/athena_header_guest.php'); ?>
 
@@ -75,60 +73,40 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
     </div>
     <?php endif; ?>
 
-    <div x-show="view === 'login'">
-        <form method="post" action="<?= url('login') ?>" class="ds-form">
-            <?= \App\Core\Csrf::field() ?>
-            <div>
-                <label for="email" class="ds-label"><?= htmlspecialchars(__('auth.email'), ENT_QUOTES, 'UTF-8') ?></label>
-                <p class="ds-hint" id="email-hint"><?= htmlspecialchars(__('auth.email_hint'), ENT_QUOTES, 'UTF-8') ?></p>
-                <input type="email" name="email" id="email" required autocomplete="email" autocapitalize="none" spellcheck="false"
-                       class="ds-input"
-                       aria-describedby="email-hint"
-                       data-lowercase="email">
+    <form method="post" action="<?= url('login') ?>" class="ds-form">
+        <?= \App\Core\Csrf::field() ?>
+        <div>
+            <label for="email" class="ds-label"><?= htmlspecialchars(__('auth.email'), ENT_QUOTES, 'UTF-8') ?></label>
+            <p class="ds-hint" id="email-hint"><?= htmlspecialchars(__('auth.email_hint'), ENT_QUOTES, 'UTF-8') ?></p>
+            <input type="email" name="email" id="email" required autocomplete="email" autocapitalize="none" spellcheck="false"
+                   class="ds-input"
+                   aria-describedby="email-hint"
+                   data-lowercase="email">
+        </div>
+        <div>
+            <div class="ds-label-row">
+                <label for="password" class="ds-label"><?= htmlspecialchars(__('auth.password'), ENT_QUOTES, 'UTF-8') ?></label>
+                <a class="ds-link-muted" href="<?= url('forgot-password') ?>">
+                    <?= htmlspecialchars(__('auth.forgot_link'), ENT_QUOTES, 'UTF-8') ?>
+                </a>
             </div>
-            <div>
-                <div class="ds-label-row">
-                    <label for="password" class="ds-label"><?= htmlspecialchars(__('auth.password'), ENT_QUOTES, 'UTF-8') ?></label>
-                    <a class="ds-link-muted" href="<?= url('forgot-password') ?>">
-                        <?= htmlspecialchars(__('auth.forgot_link'), ENT_QUOTES, 'UTF-8') ?>
-                    </a>
-                </div>
-                <p class="ds-hint" id="password-hint"><?= htmlspecialchars(__('auth.password_hint'), ENT_QUOTES, 'UTF-8') ?></p>
-                <div class="ds-password">
-                    <input type="password" name="password" id="password" required autocomplete="current-password"
-                           class="ds-password__field"
-                           aria-describedby="password-hint"
-                           data-password-input>
-                    <button type="button" class="ds-password__toggle" data-password-toggle="password"
-                            aria-controls="password"
-                            data-label-show="<?= htmlspecialchars(__('auth.show_password'), ENT_QUOTES, 'UTF-8') ?>"
-                            data-label-hide="<?= htmlspecialchars(__('auth.hide_password'), ENT_QUOTES, 'UTF-8') ?>"
-                            aria-label="<?= htmlspecialchars(__('auth.show_password'), ENT_QUOTES, 'UTF-8') ?>">
-                        <span data-password-toggle-label><?= htmlspecialchars(__('auth.show_password'), ENT_QUOTES, 'UTF-8') ?></span>
-                    </button>
-                </div>
+            <p class="ds-hint" id="password-hint"><?= htmlspecialchars(__('auth.password_hint'), ENT_QUOTES, 'UTF-8') ?></p>
+            <div class="ds-password">
+                <input type="password" name="password" id="password" required autocomplete="current-password"
+                       class="ds-password__field"
+                       aria-describedby="password-hint"
+                       data-password-input>
+                <button type="button" class="ds-password__toggle" data-password-toggle="password"
+                        aria-controls="password"
+                        data-label-show="<?= htmlspecialchars(__('auth.show_password'), ENT_QUOTES, 'UTF-8') ?>"
+                        data-label-hide="<?= htmlspecialchars(__('auth.hide_password'), ENT_QUOTES, 'UTF-8') ?>"
+                        aria-label="<?= htmlspecialchars(__('auth.show_password'), ENT_QUOTES, 'UTF-8') ?>">
+                    <span data-password-toggle-label><?= htmlspecialchars(__('auth.show_password'), ENT_QUOTES, 'UTF-8') ?></span>
+                </button>
             </div>
-            <button type="submit" class="ds-btn ds-btn--primary ds-btn--block"><?= htmlspecialchars(__('auth.submit_login'), ENT_QUOTES, 'UTF-8') ?></button>
-        </form>
-    </div>
-
-    <div x-show="view === 'forgot'" x-cloak>
-        <h2 class="ds-title" style="font-size:1.5rem;margin-top:1.75rem"><?= htmlspecialchars(__('auth.recovery'), ENT_QUOTES, 'UTF-8') ?></h2>
-        <p class="ds-lead" style="font-size:1rem"><?= htmlspecialchars(__('auth.recovery_hint'), ENT_QUOTES, 'UTF-8') ?></p>
-        <form method="post" action="<?= url('forgot-password') ?>" class="ds-form">
-            <?= \App\Core\Csrf::field() ?>
-            <div>
-                <label for="forgot-email" class="ds-label"><?= htmlspecialchars(__('auth.email'), ENT_QUOTES, 'UTF-8') ?></label>
-                <input type="email" name="email" id="forgot-email" required autocomplete="email" autocapitalize="none" spellcheck="false"
-                       class="ds-input"
-                       data-lowercase="email">
-            </div>
-            <div class="ds-btn-row">
-                <button type="submit" class="ds-btn ds-btn--primary"><?= htmlspecialchars(__('auth.send_link'), ENT_QUOTES, 'UTF-8') ?></button>
-                <button type="button" class="ds-btn ds-btn--secondary" @click.prevent="view = 'login'"><?= htmlspecialchars(__('auth.back_to_login'), ENT_QUOTES, 'UTF-8') ?></button>
-            </div>
-        </form>
-    </div>
+        </div>
+        <button type="submit" class="ds-btn ds-btn--primary ds-btn--block"><?= htmlspecialchars(__('auth.submit_login'), ENT_QUOTES, 'UTF-8') ?></button>
+    </form>
 
     <div class="ds-alt">
         <p>
