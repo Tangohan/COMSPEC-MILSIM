@@ -374,6 +374,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             : null;
         require base_path('views/partials/announce_tiles.php');
         require base_path('views/partials/dashboard_popup_modal.php');
+        require base_path('views/partials/dashboard_mini_articles.php');
         ?>
 
         <?php if (!empty($can_publish_dashboard_articles)): ?>
