@@ -21,10 +21,18 @@ final class HubPortalHeroAssetTest extends TestCase
         self::assertStringContainsString('announce_tiles.php', $hub);
         self::assertStringContainsString('hub_announce_items', $ctrl);
         self::assertStringContainsString('AlertPresentationService', $ctrl);
-        self::assertStringContainsString("url('dashboard')", $home);
-        self::assertStringContainsString("__('common.ops')", $home);
-        self::assertStringNotContainsString("url('hub') \" class=\"text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400", $home);
-        self::assertStringContainsString("url('dashboard')", $marketing);
+        self::assertMatchesRegularExpression(
+            "/url\\('dashboard'\\)[^>]*>\\s*<\\?= htmlspecialchars\\(__\\('common\\.ops'\\)/",
+            $home
+        );
+        self::assertDoesNotMatchRegularExpression(
+            "/url\\('hub'\\)[^>]*>\\s*<\\?= htmlspecialchars\\(__\\('common\\.ops'\\)/",
+            $home
+        );
+        self::assertMatchesRegularExpression(
+            "/url\\('dashboard'\\)[^>]*site-marketing__ops[^>]*>\\s*<\\?= htmlspecialchars\\(__\\('common\\.ops'\\)/",
+            $marketing
+        );
         self::assertStringContainsString('Athena Comspec — Portail MILSIM', $frHome);
         self::assertStringNotContainsString('Athena Compsec', $frHome);
     }
