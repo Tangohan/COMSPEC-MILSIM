@@ -375,6 +375,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             ? url('back-office/alerts')
             : null;
         require base_path('views/partials/announce_tiles.php');
+        $doctrine_pending = is_array($doctrine_pending ?? null) ? $doctrine_pending : [];
         require base_path('views/partials/dashboard_doctrine_pending.php');
         require base_path('views/partials/dashboard_popup_modal.php');
         require base_path('views/partials/dashboard_mini_articles.php');
