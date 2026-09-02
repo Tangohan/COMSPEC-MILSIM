@@ -9,6 +9,7 @@ $can_manage_kit_pins = !empty($can_manage_kit_pins);
 $dashboard_tenant_label = $dashboard_tenant_label ?? null;
 $dashboard_is_default_tenant = !empty($dashboard_is_default_tenant);
 $dashboard_tester_program = $dashboard_tester_program ?? null;
+$doctrine_pending = is_array($doctrine_pending ?? null) ? $doctrine_pending : [];
 $showcaseJsonFlags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
 if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
     $showcaseJsonFlags |= JSON_INVALID_UTF8_SUBSTITUTE;
