@@ -140,6 +140,7 @@ class UserRepository
     public function sqlMemberOfTenantPredicate(string $alias = 'u', int $tenantId = 0): string
     {
         $a = $alias !== '' ? $alias : 'u';
+        $activeMembership = SqlText::equalsLiteral($this->pdo(), '__ucm.status', 'active');
         if ($tenantId < 1) {
             if (!$this->hasCommunityMembershipTable()) {
                 return $a . '.tenant_id = ?';
@@ -147,7 +148,7 @@ class UserRepository
 
             return 'EXISTS (
             SELECT 1 FROM user_community_memberships __ucm
-            WHERE __ucm.user_id = ' . $a . '.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\'
+            WHERE __ucm.user_id = ' . $a . '.id AND __ucm.tenant_id = ? AND ' . $activeMembership . '
         )';
         }
         if (!$this->hasCommunityMembershipTable()) {
@@ -156,7 +157,7 @@ class UserRepository
 
         return '(EXISTS (
             SELECT 1 FROM user_community_memberships __ucm
-            WHERE __ucm.user_id = ' . $a . '.id AND __ucm.tenant_id = ' . $tenantId . ' AND __ucm.status = \'active\'
+            WHERE __ucm.user_id = ' . $a . '.id AND __ucm.tenant_id = ' . $tenantId . ' AND ' . $activeMembership . '
         ) OR ' . $a . '.tenant_id = ' . $tenantId . ')';
     }
 
@@ -1594,14 +1595,24 @@ class UserRepository
 
         $where = [$this->sqlMemberOfTenantPredicate('u', $tenantId), $pack['sql']];
         $params = $pack['params'];
+        $pdo = $this->pdo();
 
         if (!$includeInactiveAndDeleted) {
-            $statusExpr = $hasUcp ? 'COALESCE(ucp.status, u.status)' : 'u.status';
-            $where[] = $statusExpr . " = 'active'";
+            if ($hasUcp) {
+                $where[] = SqlText::coalesceEqualsLiteral($pdo, 'ucp.status', 'u.status', 'active');
+                $where[] = SqlText::isNullOrCoalesceTrimNotEqualsLiteral(
+                    $pdo,
+                    'ucp.display_name',
+                    'u.display_name',
+                    'Compte supprimé'
+                );
+            } else {
+                $where[] = SqlText::equalsLiteral($pdo, 'u.status', 'active');
+                $where[] = SqlText::isNullOrTrimNotEqualsLiteral($pdo, 'u.display_name', 'Compte supprimé');
+            }
             if ($this->hasDeletedAtColumn()) {
                 $where[] = 'u.deleted_at IS NULL';
             }
-            $where[] = '(' . $displayNameExpr . " IS NULL OR TRIM(" . $displayNameExpr . ") <> 'Compte supprimé')";
         }
 
         $q = trim($query);
@@ -1609,13 +1620,21 @@ class UserRepository
             $term = '%' . $q . '%';
             $athenaFilter = $hasAthenaIdentifier
                 ? ($hasUcp
-                    ? " OR (COALESCE(ucp.athena_identifier, u.athena_identifier) IS NOT NULL AND TRIM(COALESCE(ucp.athena_identifier, u.athena_identifier)) <> '' AND COALESCE(ucp.athena_identifier, u.athena_identifier) LIKE ?)"
-                    : " OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)")
+                    ? ' OR (COALESCE(ucp.athena_identifier, u.athena_identifier) IS NOT NULL AND '
+                        . SqlText::coalesceTrimIsNotEmpty($pdo, 'ucp.athena_identifier', 'u.athena_identifier')
+                        . ' AND COALESCE(ucp.athena_identifier, u.athena_identifier) LIKE ?)'
+                    : ' OR (u.athena_identifier IS NOT NULL AND '
+                        . SqlText::trimIsNotEmpty($pdo, 'u.athena_identifier')
+                        . ' AND u.athena_identifier LIKE ?)')
                 : '';
             $tmnFilter = $hasTenantMemberNumber
                 ? ($hasUcp
-                    ? ' OR (COALESCE(ucp.tenant_member_number, u.tenant_member_number) IS NOT NULL AND TRIM(COALESCE(ucp.tenant_member_number, u.tenant_member_number)) <> \'\' AND COALESCE(ucp.tenant_member_number, u.tenant_member_number) LIKE ?)'
-                    : " OR (u.tenant_member_number IS NOT NULL AND TRIM(u.tenant_member_number) <> '' AND u.tenant_member_number LIKE ?)")
+                    ? ' OR (COALESCE(ucp.tenant_member_number, u.tenant_member_number) IS NOT NULL AND '
+                        . SqlText::coalesceTrimIsNotEmpty($pdo, 'ucp.tenant_member_number', 'u.tenant_member_number')
+                        . ' AND COALESCE(ucp.tenant_member_number, u.tenant_member_number) LIKE ?)'
+                    : ' OR (u.tenant_member_number IS NOT NULL AND '
+                        . SqlText::trimIsNotEmpty($pdo, 'u.tenant_member_number')
+                        . ' AND u.tenant_member_number LIKE ?)')
                 : '';
             $legalFilter = $legal['searchable']
                 ? ' OR (uli.first_name IS NOT NULL AND uli.first_name LIKE ?)
@@ -1623,9 +1642,15 @@ class UserRepository
                  OR (CONCAT(TRIM(COALESCE(uli.first_name, \'\')), \' \', TRIM(COALESCE(uli.last_name, \'\'))) LIKE ?)'
                 : '';
             $slugExpr = $hasUcp ? 'COALESCE(ucp.profile_slug, u.profile_slug)' : 'u.profile_slug';
+            $callsignNotEmpty = $hasUcp
+                ? SqlText::coalesceTrimIsNotEmpty($pdo, 'ucp.callsign', 'u.callsign')
+                : SqlText::trimIsNotEmpty($pdo, 'u.callsign');
+            $slugNotEmpty = $hasUcp
+                ? SqlText::coalesceTrimIsNotEmpty($pdo, 'ucp.profile_slug', 'u.profile_slug')
+                : SqlText::trimIsNotEmpty($pdo, 'u.profile_slug');
             $where[] = '(' . $displayNameExpr . ' LIKE ?' . $legalFilter . '
-                 OR (' . $callsignExpr . ' IS NOT NULL AND TRIM(' . $callsignExpr . ') <> \'\' AND ' . $callsignExpr . ' LIKE ?)
-                 OR (' . $slugExpr . ' IS NOT NULL AND TRIM(' . $slugExpr . ') <> \'\' AND ' . $slugExpr . ' LIKE ?)
+                 OR (' . $callsignExpr . ' IS NOT NULL AND ' . $callsignNotEmpty . ' AND ' . $callsignExpr . ' LIKE ?)
+                 OR (' . $slugExpr . ' IS NOT NULL AND ' . $slugNotEmpty . ' AND ' . $slugExpr . ' LIKE ?)
                  OR (pp.character_name IS NOT NULL AND pp.character_name LIKE ?)' . $athenaFilter . $tmnFilter . ')';
             $params[] = $term;
             if ($legal['searchable']) {

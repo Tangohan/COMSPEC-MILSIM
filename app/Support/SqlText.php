@@ -189,6 +189,85 @@ final class SqlText
     }
 
     /**
+     * TRIM(colonne) <> 'valeur' (littéral affichage — espaces, accents autorisés).
+     */
+    public static function trimNotEqualsLiteral(PDO $pdo, string $columnExpr, string $value): string
+    {
+        self::assertColumnExpr($columnExpr);
+        self::assertFreeTextLiteral($value);
+        $quoted = "'" . str_replace("'", "''", $value) . "'";
+        if (!self::isMysqlFamily($pdo)) {
+            return 'TRIM(' . $columnExpr . ') <> ' . $quoted;
+        }
+
+        return 'TRIM(' . $columnExpr . ') COLLATE ' . self::COLLATION
+            . ' <> ' . $quoted . ' COLLATE ' . self::COLLATION;
+    }
+
+    /**
+     * colonne IS NULL OR TRIM(colonne) <> 'valeur'.
+     */
+    public static function isNullOrTrimNotEqualsLiteral(PDO $pdo, string $columnExpr, string $value): string
+    {
+        return '(' . $columnExpr . ' IS NULL OR ' . self::trimNotEqualsLiteral($pdo, $columnExpr, $value) . ')';
+    }
+
+    /**
+     * TRIM(COALESCE(a, b)) <> 'valeur'.
+     */
+    public static function coalesceTrimNotEqualsLiteral(PDO $pdo, string $first, string $second, string $value): string
+    {
+        self::assertColumnExpr($first);
+        self::assertColumnExpr($second);
+        self::assertFreeTextLiteral($value);
+        $expr = 'TRIM(COALESCE(' . $first . ', ' . $second . '))';
+        $quoted = "'" . str_replace("'", "''", $value) . "'";
+        if (!self::isMysqlFamily($pdo)) {
+            return $expr . ' <> ' . $quoted;
+        }
+
+        return $expr . ' COLLATE ' . self::COLLATION . ' <> ' . $quoted . ' COLLATE ' . self::COLLATION;
+    }
+
+    /**
+     * COALESCE(a, b) IS NULL OR TRIM(COALESCE(a, b)) <> 'valeur'.
+     */
+    public static function isNullOrCoalesceTrimNotEqualsLiteral(PDO $pdo, string $first, string $second, string $value): string
+    {
+        $coalesce = 'COALESCE(' . $first . ', ' . $second . ')';
+
+        return '(' . $coalesce . ' IS NULL OR ' . self::coalesceTrimNotEqualsLiteral($pdo, $first, $second, $value) . ')';
+    }
+
+    /**
+     * TRIM(colonne) <> ''.
+     */
+    public static function trimIsNotEmpty(PDO $pdo, string $columnExpr): string
+    {
+        self::assertColumnExpr($columnExpr);
+        if (!self::isMysqlFamily($pdo)) {
+            return "TRIM(" . $columnExpr . ") <> ''";
+        }
+
+        return 'TRIM(' . $columnExpr . ') COLLATE ' . self::COLLATION . " <> '' COLLATE " . self::COLLATION;
+    }
+
+    /**
+     * TRIM(COALESCE(a, b)) <> ''.
+     */
+    public static function coalesceTrimIsNotEmpty(PDO $pdo, string $first, string $second): string
+    {
+        self::assertColumnExpr($first);
+        self::assertColumnExpr($second);
+        $expr = 'TRIM(COALESCE(' . $first . ', ' . $second . '))';
+        if (!self::isMysqlFamily($pdo)) {
+            return $expr . " <> ''";
+        }
+
+        return $expr . ' COLLATE ' . self::COLLATION . " <> '' COLLATE " . self::COLLATION;
+    }
+
+    /**
      * COALESCE(a, b) = ? — un placeholder.
      */
     public static function coalesceEquals(PDO $pdo, string $first, string $second): string
@@ -277,6 +356,13 @@ final class SqlText
     {
         if ($value === '' || !preg_match('/^[a-z][a-z0-9_]*$/', $value)) {
             throw new InvalidArgumentException('Littéral texte invalide.');
+        }
+    }
+
+    private static function assertFreeTextLiteral(string $value): void
+    {
+        if ($value === '' || strlen($value) > 128 || preg_match("/['\\\\]/", $value)) {
+            throw new InvalidArgumentException('Littéral texte libre invalide.');
         }
     }
 }
