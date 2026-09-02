@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(376, '2026-09-02', 'Le suivi d’arrivée des nouveaux membres s’ouvre à nouveau', 'La page d’intégration des nouveaux membres se charge. Les photos de compte déjà enregistrées restent associées aux fiches. Rechargez la page Intégration des nouveaux membres', [], [], [
+                'La liste des nouveaux membres ne s’ouvrait plus',
+            ], ['personnel'], [
+                'Ouvrez le bureau, Intégration des nouveaux membres. La liste des parcours s’affiche.',
+            ], 'Portail 1.6.03'),
             $pr(374, '2026-09-02', 'Le tableau des effectifs affiche la disponibilité sur 90 jours', 'Sur le tableau rapide du tableau de bord, chaque membre montre son taux de disponibilité : participations annoncées et présences validées sur les trois derniers mois, sous forme de barre colorée. Rechargez le tableau de bord', [
                 'Colonne Disponibilité, avec le pourcentage et une barre du rouge au vert',
                 'Un membre sans activité récente affiche un tiret, pas un taux à zéro',
