@@ -55,6 +55,7 @@ use App\Repositories\AtakDeviceLogRepository;
 use App\Repositories\AtakRealismRepository;
 use App\Services\Tactical\MissionDisplaySettingsService;
 use App\Repositories\OperatorGameProfileRepository;
+use App\Services\OperatorGame\OperatorGameObservationNormalizer;
 use App\Services\OperatorGame\OperatorGameReconciliationService;
 
 class AtakApiController
@@ -152,33 +153,58 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
-        $body = $this->jsonBody($request);
-        $steamId = SteamId::normalize((string) ($body['steam_id'] ?? $body['steam_uid'] ?? $body['player_uid'] ?? ''));
+        $normalizer = new OperatorGameObservationNormalizer();
+        $payload = $normalizer->normalize($this->jsonBody($request));
+        $steamId = SteamId::normalize((string) ($payload['steam_id'] ?? $payload['steam_uid'] ?? $payload['player_uid'] ?? ''));
         if ($steamId === null) {
             return Response::json(['status' => 'error', 'error' => 'valid_steam_id_required'], 422);
         }
         $repo = $this->operatorGameProfiles ??= new OperatorGameProfileRepository();
         $reference = $repo->referenceForSteam($tenantId, $steamId);
-        if ($reference === null) {
-            $repo->event($tenantId, null, $steamId, 'STEAM_ACCOUNT_NOT_FOUND', ['server' => $body['server_name'] ?? null]);
-            return Response::json(['status' => 'ok', 'operator_linked' => false, 'sync_status' => 'NOT_LINKED', 'event' => 'UNLINKED_ARMA_OPERATOR']);
+        $linked = $reference !== null;
+        if (!$linked) {
+            $reference = [];
         }
-        $observed = array_merge(is_array($body['identity'] ?? null) ? $body['identity'] : [], [
-            'steam_id' => $steamId,
-            'blood_type' => is_array($body['medical'] ?? null) ? ($body['medical']['blood_type'] ?? null) : null,
-            'versions' => is_array($body['versions'] ?? null) ? $body['versions'] : [],
-        ]);
-        $profile = $repo->upsertProfile($tenantId, $reference, $steamId, $body);
+        $profile = $repo->upsertProfile($tenantId, $reference, $steamId, $payload);
+        if (!$linked) {
+            if ($profile['first_seen']) {
+                $repo->event($tenantId, $profile['id'], $steamId, 'STEAM_ACCOUNT_NOT_FOUND', [
+                    'server' => $payload['server_name'] ?? null,
+                ]);
+            }
+            if ($profile['changed'] || $profile['first_seen']) {
+                $repo->snapshot($tenantId, $profile['id'], $profile['first_seen'] ? 'FIRST_SEEN' : $reason, $payload);
+            }
+            $repo->event($tenantId, $profile['id'], $steamId, $profile['first_seen'] ? 'FIRST_SEEN' : 'PROFILE_SYNC', [
+                'linked' => false,
+            ]);
+            return Response::json([
+                'status' => 'ok',
+                'operator_linked' => false,
+                'profile_id' => $profile['id'],
+                'discrepancies' => 0,
+                'update_required' => false,
+                'sync_status' => 'NOT_LINKED',
+                'event' => 'UNLINKED_ARMA_OPERATOR',
+            ]);
+        }
+        $observed = $normalizer->observedForReconcile($payload, $steamId);
         $discrepancies = (new OperatorGameReconciliationService())->reconcile($reference, $observed, $repo->versionPolicies($tenantId));
         $snapshotId = null;
         if ($profile['changed'] || $discrepancies !== []) {
-            $snapshotId = $repo->snapshot($tenantId, $profile['id'], $profile['first_seen'] ? 'FIRST_SEEN' : $reason, $body);
+            $snapshotId = $repo->snapshot($tenantId, $profile['id'], $profile['first_seen'] ? 'FIRST_SEEN' : $reason, $payload);
         }
         foreach ($discrepancies as $discrepancy) {
             $repo->recordDiscrepancy($tenantId, (int) $reference['user_id'], $profile['id'], $snapshotId, $discrepancy);
         }
         $repo->event($tenantId, $profile['id'], $steamId, $profile['first_seen'] ? 'FIRST_SEEN' : 'PROFILE_SYNC', ['discrepancies' => count($discrepancies)]);
-        $updateRequired = array_any($discrepancies, static fn (array $d): bool => $d['category'] === 'SOFTWARE' && in_array($d['severity'], ['ERROR','CRITICAL'], true));
+        $updateRequired = false;
+        foreach ($discrepancies as $discrepancy) {
+            if (($discrepancy['category'] ?? '') === 'SOFTWARE' && in_array($discrepancy['severity'] ?? '', ['ERROR', 'CRITICAL'], true)) {
+                $updateRequired = true;
+                break;
+            }
+        }
         return Response::json([
             'status' => 'ok', 'operator_linked' => true, 'profile_id' => $profile['id'],
             'discrepancies' => count($discrepancies), 'update_required' => $updateRequired,

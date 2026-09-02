@@ -69,4 +69,7 @@ missionNamespace setVariable ["COMSPEC_RespawnGraceToken", _token, false];
     missionNamespace setVariable ["COMSPEC_DeathThenRespawn", false, false];
     missionNamespace setVariable ["COMSPEC_CancelPendingAthenaHelp", false, false];
     ["INFO", "Respawn", "Grâce terminée — alertes médicales réarmées"] call comspec_overwatch_connect_fnc_log;
+    if (!isNil "comspec_overwatch_connect_fnc_operatorProfileTick") then {
+        ["identity_changed"] call comspec_overwatch_connect_fnc_operatorProfileTick;
+    };
 }, [_token], _graceSec + 0.5] call CBA_fnc_waitAndExecute;

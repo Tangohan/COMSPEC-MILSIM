@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(396, '2026-09-02', 'Le choix d’étape du suivi roleplay reste lisible en bas de tableau', 'Sur le bureau de suivi, le menu Étape (et Tuteur) d’une ligne en bas de liste s’ouvre entièrement, au-dessus du tableau. Rechargez la page de suivi', [], [], [
+                'Le menu disparaissait sous le tableau sur les dernières lignes',
+            ], ['personnel'], [
+                'Ouvrez le bureau de suivi roleplay. Sur la dernière ligne, cliquez Étape : la liste et Enregistrer restent visibles.',
+            ], 'Portail'),
             $pr(393, '2026-09-02', 'L’enregistrement du dossier opérateur reprend tous les onglets', 'Sur la page d’édition du dossier, Enregistrer enregistre l’identité, l’affectation, le forum, l’équipement et les notes, même lorsqu’un matricule d’organisation est proposé sur la même page. Les titres des sections restent visibles. Décocher Déployable est pris en compte. Rechargez la page d’édition du dossier', [
                 'Situation familiale, statut opérateur, fuseau horaire et langue se choisissent dans une liste',
             ], [], [

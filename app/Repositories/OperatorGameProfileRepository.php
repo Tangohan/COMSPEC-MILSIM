@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SteamId;
 use PDO;
 
 final class OperatorGameProfileRepository
@@ -16,16 +17,37 @@ final class OperatorGameProfileRepository
     /** @return array<string, mixed>|null */
     public function referenceForSteam(int $tenantId, string $steamId): ?array
     {
-        $sql = 'SELECT u.id user_id, u.steam_id, u.display_name, u.callsign,
-                       pp.id personnel_id, pp.blood_type, pp.sex, NULL face_class
-                FROM users u LEFT JOIN personnel_profiles pp ON pp.user_id = u.id AND pp.tenant_id = u.tenant_id
-                WHERE u.tenant_id = ? AND u.steam_id = ? LIMIT 1';
+        $sid = SteamId::normalize($steamId);
+        if ($sid === null) {
+            return null;
+        }
+        $userId = $this->findLinkedUserId($tenantId, $sid);
+        if ($userId === null) {
+            return null;
+        }
+
+        $sql = 'SELECT u.id AS user_id, u.steam_id,
+                       COALESCE(NULLIF(TRIM(ucp.display_name), \'\'), u.display_name) AS display_name,
+                       COALESCE(NULLIF(TRIM(ucp.callsign), \'\'), u.callsign) AS callsign,
+                       pp.id AS personnel_id, pp.blood_type, pp.sex, NULL AS face_class
+                FROM users u
+                LEFT JOIN user_community_profiles ucp ON ucp.user_id = u.id AND ucp.tenant_id = u.tenant_id
+                LEFT JOIN personnel_profiles pp ON pp.user_id = u.id AND pp.tenant_id = u.tenant_id
+                WHERE u.tenant_id = ? AND u.id = ?
+                LIMIT 1';
         $st = $this->pdo()->prepare($sql);
-        $st->execute([$tenantId, $steamId]);
+        $st->execute([$tenantId, $userId]);
+
         return $st->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    /** @return array{id:int, first_seen:bool, changed:bool} */
+    /**
+     * Persist an observation even when no Athena account is linked (user_id NULL).
+     *
+     * @param array<string, mixed> $reference
+     * @param array<string, mixed> $payload
+     * @return array{id:int, first_seen:bool, changed:bool}
+     */
     public function upsertProfile(int $tenantId, array $reference, string $steamId, array $payload): array
     {
         $identity = is_array($payload['identity'] ?? null) ? $payload['identity'] : [];
@@ -37,13 +59,19 @@ final class OperatorGameProfileRepository
         $st->execute([$tenantId, $steamId]);
         $old = $st->fetch(PDO::FETCH_ASSOC) ?: null;
         $hash = hash('sha256', $json([$identity, $equipment, $versions, $medical, $payload['mission_id'] ?? null]));
+        $userId = $this->positiveInt($reference['user_id'] ?? null);
+        $personnelId = $this->positiveInt($reference['personnel_id'] ?? null);
         $values = [
-            (int) $reference['user_id'], $reference['personnel_id'] ?: null,
-            $identity['player_uid'] ?? $steamId, $identity['player_name'] ?? null, $identity['callsign'] ?? null,
-            $identity['display_name'] ?? null, $identity['sex'] ?? null, $medical['blood_type'] ?? null,
+            $userId, $personnelId,
+            $identity['player_uid'] ?? $identity['arma_player_uid'] ?? $steamId,
+            $identity['player_name'] ?? $identity['arma_player_name'] ?? null,
+            $identity['callsign'] ?? null,
+            $identity['display_name'] ?? null,
+            $identity['sex'] ?? $identity['sex_detected'] ?? null,
+            $medical['blood_type'] ?? null,
             $identity['face_class'] ?? null, $identity['face_texture'] ?? null, $identity['role'] ?? null,
             $identity['group_name'] ?? null, $identity['faction'] ?? null, $identity['side'] ?? null,
-            $json($payload['loadout'] ?? []), $json($equipment), $json($medical), $json($versions),
+            $json($payload['loadout'] ?? $equipment['loadout'] ?? []), $json($equipment), $json($medical), $json($versions),
             $versions['overwatch'] ?? null, $versions['atak'] ?? null, $versions['arma'] ?? null,
             $payload['server_name'] ?? null, $payload['mission_name'] ?? null, $payload['mission_id'] ?? null,
             $payload['world_name'] ?? null, $json($payload), $hash, $tenantId, $steamId,
@@ -74,13 +102,29 @@ final class OperatorGameProfileRepository
         return (int) $this->pdo()->lastInsertId();
     }
 
-    public function recordDiscrepancy(int $tenantId, int $userId, int $profileId, ?int $snapshotId, array $d): void
+    public function recordDiscrepancy(int $tenantId, ?int $userId, int $profileId, ?int $snapshotId, array $d): void
     {
-        $fingerprint = hash('sha256', implode('|', [$tenantId,$profileId,$d['field'],$d['ne'],$d['no']]));
+        $fingerprint = hash('sha256', implode('|', [$tenantId, $profileId, $d['field'], $d['ne'], $d['no']]));
         $sql = "INSERT INTO operator_game_discrepancies (tenant_id,user_id,operator_game_profile_id,snapshot_id,field_key,category,expected_value,observed_value,normalized_expected,normalized_observed,severity,status,fingerprint,detected_at,last_detected_at,occurrence_count)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),1)
-                ON DUPLICATE KEY UPDATE snapshot_id=VALUES(snapshot_id),last_detected_at=NOW(),occurrence_count=occurrence_count+1,severity=VALUES(severity)";
-        $this->pdo()->prepare($sql)->execute([$tenantId,$userId,$profileId,$snapshotId,$d['field'],$d['category'],$d['expected'],$d['actual'],$d['ne'],$d['no'],$d['severity'],'OPEN',$fingerprint]);
+                ON DUPLICATE KEY UPDATE snapshot_id=VALUES(snapshot_id),last_detected_at=NOW(),
+                 occurrence_count=IF(status='OPEN', occurrence_count+1, 1),
+                 severity=VALUES(severity), status='OPEN', resolved_at=NULL, resolved_by=NULL, resolution_type=NULL";
+        $this->pdo()->prepare($sql)->execute([
+            $tenantId,
+            $this->positiveInt($userId),
+            $profileId,
+            $snapshotId,
+            $d['field'],
+            $d['category'],
+            $d['expected'],
+            $d['actual'],
+            $d['ne'],
+            $d['no'],
+            $d['severity'],
+            'OPEN',
+            $fingerprint,
+        ]);
     }
 
     public function event(int $tenantId, ?int $profileId, string $steamId, string $type, array $metadata = []): void
@@ -99,5 +143,41 @@ final class OperatorGameProfileRepository
             $out[(string) $row['component']] = ['minimum' => $row['minimum_version'], 'recommended' => $row['recommended_version']];
         }
         return $out;
+    }
+
+    private function findLinkedUserId(int $tenantId, string $sid): ?int
+    {
+        $st = $this->pdo()->prepare('SELECT id FROM users WHERE tenant_id = ? AND steam_id = ? LIMIT 1');
+        $st->execute([$tenantId, $sid]);
+        $id = $st->fetchColumn();
+        if ($id !== false && (int) $id > 0) {
+            return (int) $id;
+        }
+
+        $st = $this->pdo()->prepare(
+            "SELECT id, steam_id FROM users
+             WHERE tenant_id = ? AND steam_id IS NOT NULL AND TRIM(steam_id) <> ''
+             ORDER BY id DESC
+             LIMIT 80"
+        );
+        $st->execute([$tenantId]);
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $normalized = SteamId::normalize((string) ($row['steam_id'] ?? ''));
+            if ($normalized === $sid) {
+                return (int) $row['id'];
+            }
+        }
+
+        return null;
+    }
+
+    private function positiveInt(mixed $value): ?int
+    {
+        if ($value === null || $value === '' || $value === false) {
+            return null;
+        }
+        $n = (int) $value;
+
+        return $n > 0 ? $n : null;
     }
 }

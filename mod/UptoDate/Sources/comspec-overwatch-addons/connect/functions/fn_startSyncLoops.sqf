@@ -10,6 +10,7 @@ if (missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {
 missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 
 [] call comspec_overwatch_connect_fnc_sendFactionSettings;
+[] call comspec_overwatch_connect_fnc_initOperatorProfileSync;
 [] call comspec_overwatch_connect_fnc_pollModModules;
 [] call comspec_overwatch_connect_fnc_pollExperience;
 // Les GET d’Athena sont asynchrones (cache) : relancer vite après le premier tick vide.

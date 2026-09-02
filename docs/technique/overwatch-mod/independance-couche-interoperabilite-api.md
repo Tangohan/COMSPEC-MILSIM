@@ -29,6 +29,7 @@ Tout le reste est **optionnel** ou **addon séparé**.
 Sans cTab ni BCE, un opérateur peut déjà :
 
 - se connecter à Athena (handshake, clé communauté, Steam) ;
+- remonter une **fiche opérateur observée** (identité Steam, visage, équipement, versions), distincte de la position ;
 - remonter position et métadonnées BFT ;
 - utiliser le **hub**, la **tablette** et le **téléphone** Overwatch (UI COMSPEC) ;
 - envoyer rapports SALUTE / SPOTREP, POI, MEDEVAC, QRF, ordres, chat ;

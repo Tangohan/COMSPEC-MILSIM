@@ -49,6 +49,9 @@ if (_steamUid != "") then {
     if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) then {
         [] call comspec_overwatch_connect_fnc_resyncAllMapMarkers;
         [player, true] call comspec_overwatch_connect_fnc_updatePosition;
+        if (!isNil "comspec_overwatch_connect_fnc_syncOperatorProfile") then {
+            ["sync", "session_restore", true] call comspec_overwatch_connect_fnc_syncOperatorProfile;
+        };
     };
 };
 

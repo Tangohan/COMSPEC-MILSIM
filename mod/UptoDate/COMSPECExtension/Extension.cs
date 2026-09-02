@@ -29,7 +29,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.18.6";
+    private const string ExtensionVersion = "1.18.7";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -575,6 +575,8 @@ public static partial class Extension
             || url.Contains("/api/atak/video-feeds", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/flight-manifest", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/explosive-timers", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/operator/register", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/operator/sync", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -2106,6 +2108,13 @@ public static partial class Extension
                 });
             }
             return "OK";
+        }
+
+        // Fiche opérateur observée (identité / visage / loadout / versions) — distincte de UpdatePosition.
+        // OperatorProfile = alias Codex [reason, json, uid] ; Register/Sync = [json, steam].
+        if (function is "OperatorRegister" or "OperatorSync" or "OperatorProfile")
+        {
+            return HandleOperatorProfile(function, args);
         }
 
         // Déconnexion explicite (sortie mission / quit) — sync court avant mort du process.
@@ -5688,13 +5697,9 @@ public static partial class Extension
                 return;
             }
 
-            if (function == "OperatorProfile" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
+            if (function == "OperatorProfile")
             {
-                // SQF owns collection; the DLL owns authenticated transport and tenant headers.
-                var reason = (args[0] ?? "SYNC").Equals("REGISTER", StringComparison.OrdinalIgnoreCase) ? "register" : "sync";
-                var payload = args[1] ?? "";
-                if (payload.Length > 2 && payload.StartsWith('{') && payload.EndsWith('}'))
-                    EnqueueOrSend(_baseUrl + "/api/atak/operator/" + reason, payload);
+                // Accusé synchrone dans TryGetSyncResponse (HandleOperatorProfile).
                 return;
             }
 
@@ -8228,6 +8233,183 @@ public static partial class Extension
         catch
         {
             return trimmed;
+        }
+    }
+
+    /// <summary>
+    /// POST /api/atak/operator/register|sync — fiche observée, distincte de la position.
+    /// 404 = portail pas encore déployé : OK|pending (le jeu continue).
+    /// Steam mémorisé côté DLL est l’autorité ; le nom / indicatif ne lient jamais un compte.
+    /// </summary>
+    private static string HandleOperatorProfile(string function, string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl))
+            return FormatAtakExtArray("ERROR", "not_connected");
+        if (_apiKey.Length == 0 && _gameAccessToken.Length == 0)
+            return FormatAtakExtArray("ERROR", "unauthorized");
+
+        string json;
+        if (string.Equals(function, "OperatorProfile", StringComparison.Ordinal))
+        {
+            // Codex stub : [reason, json, uid]
+            var reason = args.Length > 0 ? (args[0] ?? "SYNC") : "SYNC";
+            json = args.Length > 1 ? (args[1] ?? "") : "";
+            if (args.Length > 2)
+                ApplySteamUid(args[2]);
+            function = reason.Equals("REGISTER", StringComparison.OrdinalIgnoreCase)
+                ? "OperatorRegister"
+                : "OperatorSync";
+        }
+        else
+        {
+            json = args.Length > 0 ? (args[0] ?? "") : "";
+            if (args.Length > 1)
+                ApplySteamUid(args[1]);
+        }
+
+        if (string.IsNullOrWhiteSpace(json))
+            return FormatAtakExtArray("ERROR", "payload empty");
+        if (_steamUid.Length == 0)
+            return FormatAtakExtArray("ERROR", "steam_required");
+
+        var path = string.Equals(function, "OperatorRegister", StringComparison.Ordinal)
+            ? "/api/atak/operator/register"
+            : "/api/atak/operator/sync";
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+        try
+        {
+            if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var err) || uri is null)
+                return FormatAtakExtArray("ERROR", err);
+            var payload = EnrichOperatorProfilePayload(json);
+            var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token);
+            var body = ReadContentUtf8(resp, cts.Token);
+            if (resp.IsSuccessStatusCode)
+                return FormatOperatorProfileResponse(body);
+            var code = (int)resp.StatusCode;
+            var modBlock = MapModAccessBlockError(body);
+            if (modBlock != null)
+                return FormatAtakExtArray("ERROR", modBlock.Replace("ERR|", "", StringComparison.Ordinal));
+            if (code == 404)
+                return FormatAtakExtArray("OK", "pending");
+            if (code == 401 || code == 403)
+                return FormatAtakExtArray("ERROR", "unauthorized");
+            if (code == 503 && body.Contains("migration", StringComparison.OrdinalIgnoreCase))
+                return FormatAtakExtArray("ERROR", "migration_required");
+            var errMsg = body.Length > 240 ? $"HTTP {code}" : body;
+            return FormatAtakExtArray("ERROR", $"HTTP {code}: {errMsg}");
+        }
+        catch (OperationCanceledException)
+        {
+            return FormatAtakExtArray("TIMEOUT", "Request timeout");
+        }
+        catch (HttpRequestException ex)
+        {
+            return FormatAtakExtArray("NETWORK_ERROR", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return FormatAtakExtArray("ERROR", ex.Message);
+        }
+    }
+
+    private static string EnrichOperatorProfilePayload(string jsonBody)
+    {
+        var enriched = EnrichAtakPayload(jsonBody);
+        try
+        {
+            using var doc = JsonDocument.Parse(enriched);
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                writer.WriteStartObject();
+                var hasTenant = false;
+                var hasSteamUid = false;
+                var hasSteamId = false;
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    if (prop.NameEquals("tenant_id")) hasTenant = true;
+                    if (prop.NameEquals("steam_uid")) hasSteamUid = true;
+                    if (prop.NameEquals("steam_id")) hasSteamId = true;
+                    prop.WriteTo(writer);
+                }
+                if (!hasTenant && _tenantId.Length > 0)
+                {
+                    if (long.TryParse(_tenantId, out var tid) && tid > 0)
+                        writer.WriteNumber("tenant_id", tid);
+                    else
+                        writer.WriteString("tenant_id", _tenantId);
+                }
+                if (_steamUid.Length > 0)
+                {
+                    if (!hasSteamUid)
+                        writer.WriteString("steam_uid", _steamUid);
+                    if (!hasSteamId)
+                        writer.WriteString("steam_id", _steamUid);
+                    writer.WriteString("steam_uid_session", _steamUid);
+                }
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(stream.ToArray());
+        }
+        catch
+        {
+            return enriched;
+        }
+    }
+
+    private static string FormatOperatorProfileResponse(string body)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+            var linked = true;
+            if (root.TryGetProperty("operator_linked", out var ol))
+            {
+                linked = ol.ValueKind switch
+                {
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    JsonValueKind.Number => ol.GetInt32() != 0,
+                    JsonValueKind.String => ol.GetString() is "1" or "true" or "True",
+                    _ => true
+                };
+            }
+            var profileId = 0;
+            if (root.TryGetProperty("profile_id", out var pid))
+            {
+                if (pid.ValueKind == JsonValueKind.Number)
+                    profileId = pid.GetInt32();
+                else
+                    int.TryParse(pid.GetString(), out profileId);
+            }
+            var disc = 0;
+            if (root.TryGetProperty("discrepancies", out var d))
+            {
+                if (d.ValueKind == JsonValueKind.Number)
+                    disc = d.GetInt32();
+                else
+                    int.TryParse(d.GetString(), out disc);
+            }
+            var update = false;
+            if (root.TryGetProperty("update_required", out var ur))
+            {
+                update = ur.ValueKind switch
+                {
+                    JsonValueKind.True => true,
+                    JsonValueKind.Number => ur.GetInt32() != 0,
+                    JsonValueKind.String => ur.GetString() is "1" or "true" or "True",
+                    _ => false
+                };
+            }
+            var detail =
+                $"linked={(linked ? 1 : 0)};profile_id={profileId};discrepancies={disc};update_required={(update ? 1 : 0)}";
+            return FormatAtakExtArray("OK", detail);
+        }
+        catch
+        {
+            return FormatAtakExtArray("OK", "linked=1;profile_id=0;discrepancies=0;update_required=0");
         }
     }
 

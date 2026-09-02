@@ -4,7 +4,7 @@ Documentation destinée aux **moddeurs** et **intégrateurs** du pack Arma **@CO
 
 **Références officielles ATHENA C2 :** COMSPEC Overwatch Technical Manual — **TM-A3-11** ; Interface Control Document — **ICD-A3-01** ; Capability Registry — **REG-A3-01**. Index : `docs/README.md`.
 
-Les numéros d’addon ci-dessous peuvent laguer par rapport à `connect/config.cpp` (**1.5.13**) et l’extension (**1.18.6**). Pour le contrat d’interface, utiliser TM-A3-11 / ICD-A3-01.
+Les numéros d’addon ci-dessous peuvent laguer par rapport à `connect/config.cpp` (**1.5.13**) et l’extension (**1.18.7**). Pour le contrat d’interface, utiliser TM-A3-11 / ICD-A3-01.
 
 Cette page décrit l’architecture côté jeu (addons SQF + extension native), les dépendances et les notes de compilation. Elle ne remplace pas les publications contrôlées.
 
@@ -14,6 +14,7 @@ Cette page décrit l’architecture côté jeu (addons SQF + extension native), 
 |---|---|
 | **Indépendance, couche addons, interop, API** | Moddeurs, intégrateurs, dev portail |
 | Architecture & addons | Moddeurs, intégrateurs |
+| Fiche opérateur jeu | Moddeurs, équipe portail |
 | Bibliothèques & mods utilisés | Intégrateurs, staff serveur |
 | Compilation & publication | Build local, Workshop |
 | Guide joueur (portail) | Opérateurs — voir le guide Overwatch intégré |
@@ -28,6 +29,7 @@ Cette page décrit l’architecture côté jeu (addons SQF + extension native), 
 - **Renseignement interpersonnel (SSE)** : fiches personnes, photo du visage → onglet Personnes Athena
 - Tablette / téléphone tactique in-game
 - Réalisme liaison (coupures, zones sans couverture, dommages terminal)
+- **Fiche opérateur observée** : identité Steam, visage, équipement et versions, distincte du suivi de position
 - Pont optionnel **ATAK Enhanced / cTab / BCE** (addon `atak_athena`)
 
 Le mod **ne remplace pas** cTab ou BCE : il les **complète**.
@@ -54,7 +56,11 @@ Le mod **ne remplace pas** cTab ou BCE : il les **complète**.
 
 ## Périmètre de cette documentation
 
-**Inclus :** structure des addons, conventions SQF, catalogue des mods tiers, build / Workshop.
+- [Architecture](architecture.md) — addons, flux, conventions
+- [Fiche opérateur jeu](fiche-operateur-jeu.md) — identité observée (Steam, visage, équipement, versions)
+- [Bibliothèques & dépendances](bibliotheques-et-dependances.md)
+- [Compilation](compilation.md)
+- [Indépendance / interop](independance-couche-interoperabilite-api.md)
 
 **Exclu volontairement :** détails d’attaque, secrets, jetons, et toute description des interfaces réseau du portail (chemins, formats d’échange, clés).
 
