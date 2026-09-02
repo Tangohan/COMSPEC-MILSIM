@@ -606,13 +606,13 @@ final class DevDispatchCatalog
             ], ['platform'], [
                 'Ouvrez Équipement, une collection, puis Modifier. Envoyez de nouveau la photo en JPG ou PNG.',
             ], 'Portail 1.5.99'),
-            $pr(370, '2026-09-02', 'Des kits de fonctions pour choisir qui fait quoi en quelques clics', 'Les responsables d’effectifs cochent les domaines de la communauté — infanterie, santé, logistique, commandement. Les listes d’attribution se limitent à ces fonctions, et un tableau indique qui les assure. Si aucun domaine n’est choisi, le catalogue complet reste disponible. Rechargez la page Effectifs', [
-                'Choix des domaines de fonctions depuis Effectifs, en un enregistrement',
-                'Tableau Qui assure quoi pour désigner un membre à chaque fonction clé',
+            $pr(370, '2026-09-02', 'Des kits d’accès pour choisir qui peut faire quoi', 'Les responsables cochent des packs simples — lecture, modification, recrutement, paramètres — puis les attribuent aux membres. Plusieurs kits se cumulent. Rechargez la page Kits d’accès', [
+                'Packs lecture / modification / recrutement / paramètres, multi-sélectionnables',
+                'Attribution directe aux membres : les droits s’ajoutent à leurs accès',
             ], [
-                'Les listes d’emplois se limitent aux domaines retenus, sans masquer une fonction déjà attribuée',
+                'Les listes d’emplois métier ne sont plus filtrées par domaine militaire',
             ], [], ['personnel'], [
-                'Ouvrez Effectifs, Fonctions, puis Kits de fonctions. Cochez les domaines, enregistrez, puis désignez qui les assure.',
+                'Ouvrez Effectifs, puis Kits d’accès. Cochez les kits, enregistrez, puis attribuez-les aux membres.',
             ], 'Portail 1.5.98'),
             $pr(369, '2026-09-02', 'L’avancement du dossier ne demande plus un second prénom et nom', 'Sur la fiche, l’avancement du dossier ne signale plus Prénom et nom à compléter lorsque le prénom et le nom du personnage sont déjà renseignés. Rechargez la page du dossier', [], [], [
                 'Un second point Prénom et nom restait à compléter alors que l’identité du personnage était déjà remplie',

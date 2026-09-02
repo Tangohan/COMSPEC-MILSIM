@@ -41,22 +41,28 @@ final class PersonnelFunctionKitAssetTest extends TestCase
         $boot = (string) file_get_contents($root . '/app/Services/Community/TenantBootstrapService.php');
         self::assertStringContainsString('FUNCTION_KITS_V1', $catalog);
         self::assertStringContainsString('back-office/personnel-job-roles/kits', $catalog);
+        self::assertStringContainsString('Kits d’accès', $catalog);
         self::assertStringContainsString('hasFunctionKitsReviewed', $probe);
         self::assertStringContainsString('FUNCTION_KITS_V1', $seed);
         self::assertStringContainsString('markReviewedKeepingFullCatalog', $boot);
     }
 
-    public function testUiAvoidsInternalJargonAndUsesClosedChoices(): void
+    public function testUiUsesAccessKitsAndClosedChoices(): void
     {
         $root = $this->root();
         $view = (string) file_get_contents($root . '/views/admin/organization/personnel_job_roles/kits.php');
-        self::assertStringContainsString('Choisissez ce que fait votre communauté', $view);
-        self::assertStringContainsString('Qui assure quoi', $view);
-        self::assertStringContainsString('Enregistrer', $view);
+        self::assertStringContainsString('Qui peut faire quoi', $view);
+        self::assertStringContainsString('Attribuer les kits', $view);
+        self::assertStringContainsString('Enregistrer les kits', $view);
         self::assertStringContainsString('type="checkbox"', $view);
-        self::assertStringContainsString('Qui l’assure ?', $view);
+        self::assertStringContainsString('Qui l’obtient ?', $view);
+        self::assertStringContainsString('multi-sélection', $view);
+        self::assertStringContainsString('kit_id', $view);
+        self::assertStringContainsString('Paramètres de la communauté', file_get_contents($root . '/app/Services/Personnel/PersonnelFunctionKitCatalog.php'));
+        self::assertStringContainsString('Lecture et modification', file_get_contents($root . '/app/Services/Personnel/PersonnelFunctionKitCatalog.php'));
+        self::assertStringContainsString('Recruter', file_get_contents($root . '/app/Services/Personnel/PersonnelFunctionKitCatalog.php'));
         $body = strtolower($view);
-        foreach (['json', 'slug', 'sql', 'endpoint', 'schema', 'tenant_id'] as $banned) {
+        foreach (['json', 'sql', 'endpoint', 'schema', 'tenant_id', 'infanterie', 'slug'] as $banned) {
             self::assertStringNotContainsString($banned, $body, $banned);
         }
     }
@@ -68,9 +74,9 @@ final class PersonnelFunctionKitAssetTest extends TestCase
         $search = (string) file_get_contents($root . '/app/Services/Portal/BackOfficeSearchService.php');
         $pages = (string) file_get_contents($root . '/config/back_office_pages.php');
         $fonctions = (string) file_get_contents($root . '/views/admin/effectifs_workspace/fonctions.php');
-        self::assertStringContainsString('Kits de fonctions', $sidebar);
-        self::assertStringContainsString('Kits de fonctions', $search);
+        self::assertStringContainsString('Kits d’accès', $sidebar);
+        self::assertStringContainsString('Kits d’accès', $search);
         self::assertStringContainsString('back-office/personnel-job-roles/kits', $pages);
-        self::assertStringContainsString('Kits de fonctions', $fonctions);
+        self::assertStringContainsString('Kits d’accès', $fonctions);
     }
 }

@@ -530,3 +530,25 @@
   padding: 0.45rem 0.6rem;
   font-size: 0.9rem;
 }
+.bo-kits__card--lecture .bo-kits__card-kicker,
+.bo-kits__post--lecture .bo-kits__post-kicker {
+  color: #0369a1;
+}
+.bo-kits__card--modification .bo-kits__card-kicker,
+.bo-kits__post--modification .bo-kits__post-kicker {
+  color: #0f766e;
+}
+.bo-kits__card--admin .bo-kits__card-kicker,
+.bo-kits__post--admin .bo-kits__post-kicker {
+  color: #b45309;
+}
+.bo-kits__card--admin.is-on,
+.bo-kits__card--admin:has(input:checked) {
+  border-color: #d97706;
+  background: linear-gradient(180deg, #fffbeb 0%, #fff 55%);
+}
+.bo-kits__card--lecture.is-on,
+.bo-kits__card--lecture:has(input:checked) {
+  border-color: #0284c7;
+  background: linear-gradient(180deg, #f0f9ff 0%, #fff 55%);
+}
