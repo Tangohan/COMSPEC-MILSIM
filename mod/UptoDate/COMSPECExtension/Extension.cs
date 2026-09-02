@@ -5688,6 +5688,16 @@ public static partial class Extension
                 return;
             }
 
+            if (function == "OperatorProfile" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
+            {
+                // SQF owns collection; the DLL owns authenticated transport and tenant headers.
+                var reason = (args[0] ?? "SYNC").Equals("REGISTER", StringComparison.OrdinalIgnoreCase) ? "register" : "sync";
+                var payload = args[1] ?? "";
+                if (payload.Length > 2 && payload.StartsWith('{') && payload.EndsWith('}'))
+                    EnqueueOrSend(_baseUrl + "/api/atak/operator/" + reason, payload);
+                return;
+            }
+
             if (function == "Terrain.Chunk")
             {
                 // Acquittement synchrone dans TryGetSyncResponse (HandleTerrainChunk).

@@ -81,6 +81,11 @@ if (!([_url] call _urlLooksValid)) exitWith {
 missionNamespace setVariable ["COMSPEC_LinkState", "connecting", false];
 missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+
+// One rich profile snapshot after connection; positions remain lightweight.
+if ([] call comspec_overwatch_connect_fnc_isReady) then {
+    ["REGISTER"] call comspec_overwatch_connect_fnc_syncOperatorProfile;
+};
 [format ["[Athena] Connexion vers %1…", [_url] call comspec_overwatch_connect_fnc_portalLabel]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 // Re-appliquer la clé déjà résolue (évite qu’un EDITBOX CBA ait écrasé missionNamespace entre-temps).
