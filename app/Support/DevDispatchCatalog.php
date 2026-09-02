@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(381, '2026-09-02', 'Le fichier joint se consulte et se retire depuis la fiche', 'Sur la page de modification d’un document, le fichier actuellement joint s’ouvre ou se télécharge. On peut le retirer sans supprimer la fiche. Rechargez la page du document', [], [], [
+                'Le fichier joint n’était ni consultable ni retirable depuis la modification de la fiche',
+            ], ['platform'], [
+                'Ouvrez Gestion documentaire, puis Modifier sur une fiche. Si un fichier est joint, utilisez Ouvrir le fichier, Télécharger ou Retirer le fichier.',
+            ], 'Portail'),
             $pr(375, '2026-09-02', 'Les kits d’accès se cochent clairement avant l’enregistrement', 'Sur la page Kits d’accès, chaque carte affiche une case. Une carte retenue passe en Sélectionné et le pied de page indique combien de kits sont cochés. Enregistrez ensuite pour les attribuer aux membres', [], [], [
                 'Cliquer une carte ne changeait pas l’affichage : pas de case visible, le pied de page restait sur Aucun kit coché',
             ], ['personnel'], [

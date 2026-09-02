@@ -113,6 +113,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | GET | `/documents/gestion/{id}/modifier` | AdminDocumentsController::edit | ✅ | |
 | POST | `/documents/gestion/{id}/modifier` | AdminDocumentsController::update | ✅ | |
 | POST | `/documents/gestion/{id}/nouvelle-version` | AdminDocumentsController::newVersion | ✅ | |
+| POST | `/documents/gestion/{id}/retirer-fichier` | AdminDocumentsController::detachFile | ✅ | |
 | POST | `/documents/gestion/{id}/archiver` | AdminDocumentsController::archive | ✅ | |
 | GET | `/documents/gestion/{id}/historique` | AdminDocumentsController::history | ✅ | |
 | GET | `/documents/gestion/{id}/acces` | AdminDocumentsController::access | ✅ | |

@@ -135,6 +135,7 @@ $bootstrapFiles = [
     'personnel_stage_bilans_migration.php',
     'member_integration_migration.php',
     'personnel_function_kits_migration.php',
+    'document_versions_file_path_nullable_migration.php',
     'personnel_absences_migration.php',
     'positions_admin_category_migration.php',
     'personnel_profile_extended_details_migration.php',
@@ -275,6 +276,7 @@ run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
 run_member_integration_migration($pdo);
 run_personnel_function_kits_migration($pdo);
+run_document_versions_file_path_nullable_migration($pdo);
 run_personnel_absences_migration($pdo);
 run_personnel_profile_extended_details_migration($pdo);
 run_personnel_profile_rp_identity_migration($pdo);
@@ -1540,6 +1542,17 @@ $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TA
 if ($stmt && !$stmt->fetch()) {
     echo "Refonte module documentaire : extension document_versions...\n";
     $pdo->exec("ALTER TABLE document_versions ADD COLUMN original_name VARCHAR(255) NULL AFTER file_path, ADD COLUMN version_label VARCHAR(50) NULL AFTER change_notes");
+}
+$stmt = $pdo->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_versions' AND COLUMN_NAME = 'file_path'");
+$filePathNullable = $stmt ? $stmt->fetchColumn() : null;
+if (is_string($filePathNullable) && strtoupper($filePathNullable) === 'NO') {
+    echo "document_versions.file_path : NULL autorisé (retrait de pièce jointe)...\n";
+    try {
+        $pdo->exec('ALTER TABLE document_versions MODIFY file_path VARCHAR(500) NULL');
+        echo "  [OK] document_versions.file_path nullable\n";
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] document_versions.file_path nullable : ' . $e->getMessage() . "\n";
+    }
 }
 $stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_collaborators'");
 if ($stmt && !$stmt->fetch()) {

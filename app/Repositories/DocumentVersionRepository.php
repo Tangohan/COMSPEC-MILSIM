@@ -92,6 +92,27 @@ class DocumentVersionRepository
         return $row ?: null;
     }
 
+    /**
+     * Retire le pointeur de fichier d’une version. La version reste (historique).
+     * NULL est l’état attendu ; si la colonne n’accepte pas encore NULL, chaîne vide.
+     */
+    public function clearFilePointer(int $versionId): void
+    {
+        try {
+            $this->pdo->prepare(
+                'UPDATE document_versions
+                 SET file_path = NULL, original_name = NULL, checksum = NULL, mime_type = NULL, size = NULL
+                 WHERE id = ?'
+            )->execute([$versionId]);
+        } catch (\PDOException) {
+            $this->pdo->prepare(
+                "UPDATE document_versions
+                 SET file_path = '', original_name = NULL, checksum = NULL, mime_type = NULL, size = NULL
+                 WHERE id = ?"
+            )->execute([$versionId]);
+        }
+    }
+
     /** @return list<array<string, mixed>> */
     public function listForDocument(int $documentId): array
     {
