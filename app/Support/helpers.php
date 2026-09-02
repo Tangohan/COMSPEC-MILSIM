@@ -1087,6 +1087,34 @@ if (!function_exists('back_office_nav_href_permission_allowed')) {
     }
 }
 
+if (!function_exists('portal_nav_href_permission_allowed')) {
+    /**
+     * Filtre commun des liens du chrome membre.
+     *
+     * La navbar principale, ses menus secondaires et le rail du dashboard doivent
+     * tous retirer une destination interdite, plutôt que d'en révéler le libellé
+     * avant de laisser le contrôleur répondre 403. Les règles proviennent de la
+     * même configuration de navigation que la navbar et incluent le profil de
+     * communauté courant (Complet / Effectifs / ATAK).
+     */
+    function portal_nav_href_permission_allowed(string $href): bool
+    {
+        $path = back_office_nav_href_to_path($href);
+        if ($path === '') {
+            return true;
+        }
+
+        if (function_exists('navigation_current_tenant_type')) {
+            $tenantType = navigation_current_tenant_type();
+            if (!\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)) {
+                return false;
+            }
+        }
+
+        return back_office_nav_href_permission_allowed($href);
+    }
+}
+
 if (!function_exists('back_office_nav_path_match_score')) {
     /**
      * Score de correspondance chemin courant ↔ entrée de menu (exact > préfixe le plus long).
