@@ -285,6 +285,31 @@ function run_user_community_identity_migration(PDO $pdo, ?callable $log = null):
              WHERE u.tenant_id IS NOT NULL AND u.tenant_id > 0"
         );
     }
+
+    // Réparation idempotente : comptes visibles via users.tenant_id mais sans appartenance active.
+    if ($tableExists('users') && $tableExists('user_community_memberships')) {
+        $pdo->exec(
+            "INSERT IGNORE INTO user_community_memberships (user_id, tenant_id, status, source_user_id, joined_at)
+             SELECT u.id, u.tenant_id,
+                    CASE WHEN u.status IN ('inactive', 'deleted', 'merged') THEN 'left' ELSE 'active' END,
+                    u.id,
+                    COALESCE(u.created_at, NOW())
+             FROM users u
+             WHERE u.tenant_id IS NOT NULL AND u.tenant_id > 0"
+        );
+        $deletedFilter = $columnExists('users', 'deleted_at')
+            ? ' AND (u.deleted_at IS NULL)'
+            : '';
+        $pdo->exec(
+            "UPDATE user_community_memberships m
+             INNER JOIN users u ON u.id = m.user_id AND u.tenant_id = m.tenant_id
+             SET m.status = 'active', m.left_at = NULL, m.updated_at = NOW()
+             WHERE m.status = 'left'
+               AND u.status = 'active'
+               {$deletedFilter}"
+        );
+        $say('user_community_memberships repaired (backfill + reactivate active users)');
+    }
 }
 }
 

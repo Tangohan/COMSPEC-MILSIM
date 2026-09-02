@@ -136,18 +136,28 @@ class UserRepository
         return (bool) $st->fetchColumn();
     }
 
-    /** Prédicat SQL à un seul `?` (tenant_id) : appartenance ou users.tenant_id historique. */
-    public function sqlMemberOfTenantPredicate(string $alias = 'u'): string
+    /** Prédicat SQL : appartenance active OU users.tenant_id historique (compat multi-communautés). */
+    public function sqlMemberOfTenantPredicate(string $alias = 'u', int $tenantId = 0): string
     {
         $a = $alias !== '' ? $alias : 'u';
-        if (!$this->hasCommunityMembershipTable()) {
-            return $a . '.tenant_id = ?';
-        }
+        if ($tenantId < 1) {
+            if (!$this->hasCommunityMembershipTable()) {
+                return $a . '.tenant_id = ?';
+            }
 
-        return 'EXISTS (
+            return 'EXISTS (
             SELECT 1 FROM user_community_memberships __ucm
             WHERE __ucm.user_id = ' . $a . '.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\'
         )';
+        }
+        if (!$this->hasCommunityMembershipTable()) {
+            return $a . '.tenant_id = ' . $tenantId;
+        }
+
+        return '(EXISTS (
+            SELECT 1 FROM user_community_memberships __ucm
+            WHERE __ucm.user_id = ' . $a . '.id AND __ucm.tenant_id = ' . $tenantId . ' AND __ucm.status = \'active\'
+        ) OR ' . $a . '.tenant_id = ' . $tenantId . ')';
     }
 
     private function hasProfileSlugColumn(): bool
@@ -455,7 +465,7 @@ class UserRepository
      *
      * @return array{join: string, select_as_primary_role: string, select_as_job_role_display: string}
      */
-    private function primaryJobRoleJoinFragments(string $userAlias = 'u'): array
+    private function primaryJobRoleJoinFragments(string $userAlias = 'u', ?int $tenantId = null): array
     {
         $empty = [
             'join' => '',
@@ -467,18 +477,69 @@ class UserRepository
         }
 
         $displayExpr = "TRIM(CONCAT(COALESCE(pjr.name, ''), IF(pjrole.role_detail IS NOT NULL AND pjrole.role_detail <> '', CONCAT(' — ', pjrole.role_detail), '')))";
+        $tenantScope = $tenantId !== null && $tenantId > 0
+            ? (string) (int) $tenantId
+            : $userAlias . '.tenant_id';
 
         return [
             'join' => 'LEFT JOIN personnel_profile_job_roles pjrole ON pjrole.id = (
                     SELECT pj2.id FROM personnel_profile_job_roles pj2
-                    WHERE pj2.user_id = ' . $userAlias . '.id AND pj2.tenant_id = ' . $userAlias . '.tenant_id
+                    WHERE pj2.user_id = ' . $userAlias . '.id AND pj2.tenant_id = ' . $tenantScope . '
                     ORDER BY pj2.is_primary DESC, pj2.sort_order ASC, pj2.id ASC
                     LIMIT 1
                 )
-                LEFT JOIN personnel_job_roles pjr ON pjr.id = pjrole.personnel_job_role_id AND pjr.tenant_id = ' . $userAlias . '.tenant_id',
+                LEFT JOIN personnel_job_roles pjr ON pjr.id = pjrole.personnel_job_role_id AND pjr.tenant_id = ' . $tenantScope,
             'select_as_primary_role' => $displayExpr . ' AS primary_role',
             'select_as_job_role_display' => $displayExpr . ' AS job_role_display',
         ];
+    }
+
+    /**
+     * @return array{join: string, select: string}
+     */
+    private function gradesJoinForTenant(int $tenantId, string $gradeIdExpr): array
+    {
+        $stmt = $this->pdo()->query(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME IN ('name', 'label_long', 'tenant_id')"
+        );
+        $columns = $stmt ? array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'COLUMN_NAME') : [];
+        $hasLabelLong = in_array('label_long', $columns, true);
+        $hasTenantId = in_array('tenant_id', $columns, true);
+        $tenantLit = (string) (int) $tenantId;
+        if ($hasLabelLong) {
+            return [
+                'select' => 'g.label_short AS grade_short, g.label_long AS grade_long, COALESCE(g.sort_order, 999) AS grade_sort_order',
+                'join' => $hasTenantId
+                    ? 'LEFT JOIN grades g ON g.id = ' . $gradeIdExpr . ' AND g.tenant_id = ' . $tenantLit
+                    : 'LEFT JOIN grades g ON g.id = ' . $gradeIdExpr,
+            ];
+        }
+
+        return [
+            'select' => 'g.short_name AS grade_short, g.name AS grade_long, COALESCE(g.rank_order, 999) AS grade_sort_order',
+            'join' => 'LEFT JOIN grades g ON g.id = ' . $gradeIdExpr . ' AND g.tenant_id = ' . $tenantLit,
+        ];
+    }
+
+    private function personnelProfilesJoinSql(int $tenantId): string
+    {
+        if ($this->personnelProfilesHasColumn('tenant_id')) {
+            return 'LEFT JOIN personnel_profiles pp ON pp.user_id = u.id AND pp.tenant_id = ' . (int) $tenantId;
+        }
+
+        return 'LEFT JOIN personnel_profiles pp ON pp.user_id = u.id';
+    }
+
+    private function personnelExtrasJoinSql(int $tenantId): string
+    {
+        if (!$this->tableExists('personnel_extras')) {
+            return '';
+        }
+        if ($this->columnExists('personnel_extras', 'tenant_id')) {
+            return 'LEFT JOIN personnel_extras pex ON pex.user_id = u.id AND pex.tenant_id = ' . (int) $tenantId;
+        }
+
+        return 'LEFT JOIN personnel_extras pex ON pex.user_id = u.id';
     }
 
     /**
@@ -1449,11 +1510,11 @@ class UserRepository
                     p.character_name
              FROM users u
              LEFT JOIN personnel_profiles p ON p.user_id = u.id
-             WHERE ' . $this->sqlMemberOfTenantPredicate('u') . ' AND ' . $pack['sql'] . '
+             WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND ' . $pack['sql'] . '
              ORDER BY u.display_name ASC
              LIMIT ?'
         );
-        $stmt->execute(array_merge([$tenantId], $pack['params'], [$limit]));
+        $stmt->execute(array_merge($pack['params'], [$limit]));
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
@@ -1503,43 +1564,68 @@ class UserRepository
      */
     public function listPersonnelDirectoryRich(int $tenantId, string $query, int $limit = 150, bool $includeInactiveAndDeleted = false): array
     {
+        if ($tenantId < 1) {
+            return [];
+        }
         $limit = max(10, min(300, $limit));
         $hasAthenaIdentifier = $this->hasAthenaIdentifierColumn();
         $hasTenantMemberNumber = $this->hasTenantMemberNumberColumn();
+        $hasUcp = $this->hasCommunityMembershipTable() && $this->tableExists('user_community_profiles');
         $pack = $this->technicalAccountExclusionPredicate('u');
-        $athenaSelect = $hasAthenaIdentifier ? 'u.athena_identifier' : "'' AS athena_identifier";
-        $tmnSelect = $hasTenantMemberNumber ? 'u.tenant_member_number' : 'NULL AS tenant_member_number';
-        $gc = $this->getGradesConfigForDirectory();
+        $tenantLit = (int) $tenantId;
+
+        $displayNameExpr = $hasUcp ? 'COALESCE(ucp.display_name, u.display_name)' : 'u.display_name';
+        $callsignExpr = $hasUcp ? 'COALESCE(ucp.callsign, u.callsign)' : 'u.callsign';
+        $gradeIdExpr = $hasUcp ? 'COALESCE(ucp.grade_id, u.grade_id)' : 'u.grade_id';
+        $athenaSelect = $hasAthenaIdentifier
+            ? ($hasUcp ? 'COALESCE(ucp.athena_identifier, u.athena_identifier) AS athena_identifier' : 'u.athena_identifier')
+            : "'' AS athena_identifier";
+        $tmnSelect = $hasTenantMemberNumber
+            ? ($hasUcp
+                ? 'COALESCE(ucp.tenant_member_number, u.tenant_member_number) AS tenant_member_number'
+                : 'u.tenant_member_number')
+            : 'NULL AS tenant_member_number';
+        $ucpJoin = $hasUcp
+            ? 'LEFT JOIN user_community_profiles ucp ON ucp.user_id = u.id AND ucp.tenant_id = ' . $tenantLit
+            : '';
+
+        $gc = $this->gradesJoinForTenant($tenantId, $gradeIdExpr);
         $legal = $this->legalIdentityJoinFragments('uli', 'u');
 
-        $where = [$this->sqlMemberOfTenantPredicate('u'), $pack['sql']];
-        $params = array_merge([$tenantId], $pack['params']);
+        $where = [$this->sqlMemberOfTenantPredicate('u', $tenantId), $pack['sql']];
+        $params = $pack['params'];
 
         if (!$includeInactiveAndDeleted) {
-            $where[] = "u.status = 'active'";
+            $statusExpr = $hasUcp ? 'COALESCE(ucp.status, u.status)' : 'u.status';
+            $where[] = $statusExpr . " = 'active'";
             if ($this->hasDeletedAtColumn()) {
                 $where[] = 'u.deleted_at IS NULL';
             }
-            $where[] = "(u.display_name IS NULL OR TRIM(u.display_name) <> 'Compte supprimé')";
+            $where[] = '(' . $displayNameExpr . " IS NULL OR TRIM(" . $displayNameExpr . ") <> 'Compte supprimé')";
         }
 
         $q = trim($query);
         if ($q !== '') {
             $term = '%' . $q . '%';
             $athenaFilter = $hasAthenaIdentifier
-                ? " OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)"
+                ? ($hasUcp
+                    ? " OR (COALESCE(ucp.athena_identifier, u.athena_identifier) IS NOT NULL AND TRIM(COALESCE(ucp.athena_identifier, u.athena_identifier)) <> '' AND COALESCE(ucp.athena_identifier, u.athena_identifier) LIKE ?)"
+                    : " OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)")
                 : '';
             $tmnFilter = $hasTenantMemberNumber
-                ? " OR (u.tenant_member_number IS NOT NULL AND TRIM(u.tenant_member_number) <> '' AND u.tenant_member_number LIKE ?)"
+                ? ($hasUcp
+                    ? ' OR (COALESCE(ucp.tenant_member_number, u.tenant_member_number) IS NOT NULL AND TRIM(COALESCE(ucp.tenant_member_number, u.tenant_member_number)) <> \'\' AND COALESCE(ucp.tenant_member_number, u.tenant_member_number) LIKE ?)'
+                    : " OR (u.tenant_member_number IS NOT NULL AND TRIM(u.tenant_member_number) <> '' AND u.tenant_member_number LIKE ?)")
                 : '';
             $legalFilter = $legal['searchable']
                 ? ' OR (uli.first_name IS NOT NULL AND uli.first_name LIKE ?)
                  OR (uli.last_name IS NOT NULL AND uli.last_name LIKE ?)
                  OR (CONCAT(TRIM(COALESCE(uli.first_name, \'\')), \' \', TRIM(COALESCE(uli.last_name, \'\'))) LIKE ?)'
                 : '';
-            $where[] = '(u.display_name LIKE ?' . $legalFilter . '
-                 OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
-                 OR (u.profile_slug IS NOT NULL AND TRIM(u.profile_slug) <> \'\' AND u.profile_slug LIKE ?)
+            $slugExpr = $hasUcp ? 'COALESCE(ucp.profile_slug, u.profile_slug)' : 'u.profile_slug';
+            $where[] = '(' . $displayNameExpr . ' LIKE ?' . $legalFilter . '
+                 OR (' . $callsignExpr . ' IS NOT NULL AND TRIM(' . $callsignExpr . ') <> \'\' AND ' . $callsignExpr . ' LIKE ?)
+                 OR (' . $slugExpr . ' IS NOT NULL AND TRIM(' . $slugExpr . ') <> \'\' AND ' . $slugExpr . ' LIKE ?)
                  OR (pp.character_name IS NOT NULL AND pp.character_name LIKE ?)' . $athenaFilter . $tmnFilter . ')';
             $params[] = $term;
             if ($legal['searchable']) {
@@ -1558,19 +1644,26 @@ class UserRepository
             }
         }
 
-        $jobRole = $this->primaryJobRoleJoinFragments('u');
+        $jobRole = $this->primaryJobRoleJoinFragments('u', $tenantId);
         $deployableSelect = $this->personnelProfilesHasColumn('deployable') ? 'pp.deployable' : 'NULL AS deployable';
         $portraitSelect = $this->personnelProfilesHasColumn('character_portrait_path')
             ? 'pp.character_portrait_path'
             : "'' AS character_portrait_path";
         $hasExtras = $this->tableExists('personnel_extras');
         $extrasSelect = $hasExtras ? 'pex.service_number, pex.date_of_enlistment' : 'NULL AS service_number, NULL AS date_of_enlistment';
-        $extrasJoin = $hasExtras ? 'LEFT JOIN personnel_extras pex ON pex.user_id = u.id' : '';
+        $extrasJoin = $this->personnelExtrasJoinSql($tenantId);
+        $ppJoin = $this->personnelProfilesJoinSql($tenantId);
         $unitBlurbSelect = $this->unitsHasColumn('public_blurb')
             ? 'un.public_blurb AS unit_blurb'
             : 'NULL AS unit_blurb';
 
-        $sql = 'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', ' . $tmnSelect . ', u.avatar_url, u.status, u.role_id,
+        $profileSlugSelect = $hasUcp ? 'COALESCE(ucp.profile_slug, u.profile_slug) AS profile_slug' : 'u.profile_slug';
+        $statusSelect = $hasUcp ? 'COALESCE(ucp.status, u.status) AS status' : 'u.status';
+        $roleSelect = $hasUcp ? 'COALESCE(ucp.role_id, u.role_id) AS role_id' : 'u.role_id';
+
+        $sql = 'SELECT u.id, ' . $displayNameExpr . ' AS display_name, ' . $callsignExpr . ' AS callsign,
+                       ' . $profileSlugSelect . ', ' . $athenaSelect . ', ' . $tmnSelect . ',
+                       u.avatar_url, ' . $statusSelect . ', ' . $roleSelect . ',
                        ' . $legal['select'] . ',
                        ' . $gc['select'] . ',
                        un.name AS unit_name, un.code AS unit_code, ' . $unitBlurbSelect . ', pp.primary_unit_id,
@@ -1578,14 +1671,15 @@ class UserRepository
                        pp.radio_assigned, pp.readiness_score, pp.rank_display, pp.rank_display_override, ' . $portraitSelect . ', ' . $deployableSelect . ',
                        ' . $extrasSelect . '
                 FROM users u
+                ' . $ucpJoin . '
                 ' . $legal['join'] . '
-                LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+                ' . $ppJoin . '
                 ' . $extrasJoin . '
                 ' . $gc['join'] . '
                 ' . $jobRole['join'] . '
-                LEFT JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = u.tenant_id
+                LEFT JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = ' . $tenantLit . '
                 WHERE ' . implode(' AND ', $where) . '
-                ORDER BY u.display_name ASC
+                ORDER BY display_name ASC
                 LIMIT ?';
         $params[] = $limit;
 
@@ -1594,6 +1688,9 @@ class UserRepository
 
         $rows = $this->dedupeRowsByUserId($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
         foreach ($rows as &$row) {
+            if ($hasUcp) {
+                $row = $this->overlayCommunityProfile($row, $tenantId);
+            }
             $enlist = trim((string) ($row['enlistment_date'] ?? ''));
             if ($enlist === '') {
                 $enlist = trim((string) ($row['date_of_enlistment'] ?? ''));
@@ -1681,9 +1778,9 @@ class UserRepository
                 ' . $gc['join'] . '
                 LEFT JOIN units un_pp ON un_pp.id = pp.primary_unit_id AND un_pp.tenant_id = u.tenant_id
                 ' . $extraJoins . '
-                WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.id IN (' . $ph . ')';
+                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.id IN (' . $ph . ')';
         $stmt = $this->pdo()->prepare($sql);
-        $stmt->execute(array_merge([$tenantId], $userIds));
+        $stmt->execute($userIds);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         foreach ($rows as &$row) {
             $tenantLabel = trim((string) ($row['tenant_name'] ?? ''));
@@ -1763,9 +1860,9 @@ class UserRepository
              FROM users u
              LEFT JOIN roles r ON r.id = u.role_id
              LEFT JOIN user_profiles up ON up.user_id = u.id
-             WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND ' . $pack['sql'] . ' ORDER BY u.email ASC'
+             WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND ' . $pack['sql'] . ' ORDER BY u.email ASC'
         );
-        $stmt->execute(array_merge([$tenantId], $pack['params']));
+        $stmt->execute($pack['params']);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -1780,8 +1877,8 @@ class UserRepository
         if ($tenantId < 1) {
             return [];
         }
-        $parts = [$this->sqlMemberOfTenantPredicate('u'), "u.status = 'active'"];
-        $params = [$tenantId];
+        $parts = [$this->sqlMemberOfTenantPredicate('u', $tenantId), "u.status = 'active'"];
+        $params = [];
         $pack = $this->technicalAccountExclusionPredicate('u');
         $parts[] = $pack['sql'];
         $params = array_merge($params, $pack['params']);
@@ -1828,8 +1925,8 @@ class UserRepository
      */
     private function buildUserListWhere(int $tenantId, ?string $search, ?string $status, ?int $roleId, bool $excludeServiceAccounts = true, ?bool $onlyWithoutUnit = null, ?bool $onlyWithoutRole = null): array
     {
-        $parts = [$this->sqlMemberOfTenantPredicate('u')];
-        $params = [$tenantId];
+        $parts = [$this->sqlMemberOfTenantPredicate('u', $tenantId)];
+        $params = [];
         if ($search !== null && $search !== '') {
             $term = '%' . trim($search) . '%';
             $searchBits = 'u.email LIKE ? OR u.display_name LIKE ? OR u.callsign LIKE ?';
@@ -2225,7 +2322,7 @@ class UserRepository
             : '';
         $stmt = $this->pdo()->prepare(
             'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', ' . $tmnSelect . ', u.avatar_url FROM users u
-             WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\')
+             WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . '
              AND ' . $pack['sql'] . '
              AND (
                  u.display_name LIKE ?
@@ -2237,7 +2334,7 @@ class UserRepository
              ORDER BY u.display_name ASC
              LIMIT ?'
         );
-        $params = array_merge([$tenantId], $pack['params'], [$term, $term, $term]);
+        $params = array_merge($pack['params'], [$term, $term, $term]);
         if ($hasAthenaIdentifier) {
             $params[] = $term;
         }
@@ -2368,7 +2465,7 @@ class UserRepository
         $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = 'SELECT u.id, u.display_name, u.callsign, u.email, u.steam_id, u.status
              FROM users u
-             WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\')
+             WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . '
              AND ' . $pack['sql'] . '
              AND (
                  u.display_name LIKE ?
@@ -2379,7 +2476,7 @@ class UserRepository
              ORDER BY u.display_name ASC
              LIMIT ' . $limit;
         $stmt = $this->pdo()->prepare($sql);
-        $stmt->execute(array_merge([$tenantId], $pack['params'], [$term, $term, $term, $term]));
+        $stmt->execute(array_merge($pack['params'], [$term, $term, $term, $term]));
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -2424,8 +2521,7 @@ class UserRepository
             }
         }
         if ($tenantId !== null && $tenantId > 0) {
-            $parts[] = $this->sqlMemberOfTenantPredicate('u');
-            $params[] = $tenantId;
+            $parts[] = $this->sqlMemberOfTenantPredicate('u', $tenantId);
         } else {
             // Masquer le compte « tenant système » dès qu’une vraie communauté existe pour le même e-mail
             // (évite les doublons Oliver / Aucune organisation + régiment dans l’annuaire plateforme).
@@ -2518,8 +2614,7 @@ class UserRepository
             }
         }
         if ($tenantId !== null && $tenantId > 0) {
-            $parts[] = $this->sqlMemberOfTenantPredicate('u');
-            $params[] = $tenantId;
+            $parts[] = $this->sqlMemberOfTenantPredicate('u', $tenantId);
         } else {
             $siblingAlive = $hasDeletedAt ? 'AND u2.deleted_at IS NULL' : '';
             $parts[] = "(t.slug <> 'default' OR NOT EXISTS (
@@ -2661,7 +2756,7 @@ class UserRepository
         if ($this->hasUserRolesTable()) {
             $stmt = $this->pdo()->prepare(
                 'SELECT DISTINCT u.id FROM users u
-                 WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\')
+                 WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . '
                  AND (u.role_id = ? OR EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = ?))'
             );
             $stmt->execute([$tenantId, $roleId, $roleId]);
@@ -3138,11 +3233,11 @@ class UserRepository
             $stmt = $this->pdo()->prepare(
                 "SELECT COUNT(DISTINCT u.id)
                  FROM users u
-                 INNER JOIN user_community_memberships m ON m.user_id = u.id AND m.tenant_id = ? AND m.status = 'active'
-                 LEFT JOIN user_community_profiles p ON p.user_id = u.id AND p.tenant_id = m.tenant_id
-                 WHERE COALESCE(p.status, u.status) = 'active'"
+                 LEFT JOIN user_community_profiles p ON p.user_id = u.id AND p.tenant_id = " . (int) $tenantId . "
+                 WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . "
+                   AND COALESCE(p.status, u.status) = 'active'"
             );
-            $stmt->execute([$tenantId]);
+            $stmt->execute([]);
 
             return (int) $stmt->fetchColumn();
         }
@@ -3187,9 +3282,9 @@ class UserRepository
         $stmt = $this->pdo()->prepare(
             'SELECT COUNT(*) FROM users u
              INNER JOIN user_profile_display_settings ups ON ups.user_id = u.id AND ups.public_roster_opt_in = 1
-             WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = \'active\''
+             WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = \'active\''
         );
-        $stmt->execute([$tenantId]);
+        $stmt->execute([]);
 
         return (int) $stmt->fetchColumn();
     }
@@ -3261,7 +3356,7 @@ class UserRepository
                 LEFT JOIN user_units uu ON uu.user_id = u.id AND uu.is_primary = 1
                     AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
                 LEFT JOIN units un ON un.id = uu.unit_id AND un.tenant_id = u.tenant_id
-                WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active'
+                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active'
                 ORDER BY {$orderGrade}, u.display_name ASC, u.callsign ASC
                 LIMIT {$limit}";
         $stmt = $this->pdo()->prepare($sql);
@@ -3314,10 +3409,10 @@ class UserRepository
         $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']}
+            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ('tenant_admin', 'community_owner')";
         $stmt = $this->pdo()->prepare($sql);
-        $stmt->execute(array_merge([$tenantId], $pack['params']));
+        $stmt->execute($pack['params']);
         $emails = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $e = strtolower(trim((string) ($row['email'] ?? '')));
@@ -3329,11 +3424,11 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.email FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']}
+                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ('tenant_admin', 'community_owner')";
             try {
                 $st = $this->pdo()->prepare($sql2);
-                $st->execute(array_merge([$tenantId], $pack['params']));
+                $st->execute($pack['params']);
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $e = strtolower(trim((string) ($row['email'] ?? '')));
                     if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
@@ -3360,11 +3455,11 @@ class UserRepository
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             INNER JOIN role_permissions rp ON rp.role_id = r.id
             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-            WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']}
+            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
             AND p.slug IN ('admin.organization', 'admin.access')";
         try {
             $stmt = $this->pdo()->prepare($sql);
-            $stmt->execute(array_merge([$tenantId], $pack['params']));
+            $stmt->execute($pack['params']);
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $e = strtolower(trim((string) ($row['email'] ?? '')));
                 if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
@@ -3379,11 +3474,11 @@ class UserRepository
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
                 INNER JOIN role_permissions rp ON rp.role_id = r.id
                 INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-                WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']}
+                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
                 AND p.slug IN ('admin.organization', 'admin.access')";
             try {
                 $st = $this->pdo()->prepare($sql2);
-                $st->execute(array_merge([$tenantId], $pack['params']));
+                $st->execute($pack['params']);
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $e = strtolower(trim((string) ($row['email'] ?? '')));
                     if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
@@ -3407,10 +3502,10 @@ class UserRepository
         $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']}
+            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ('recruiter', 'community_owner', 'hr')";
         $stmt = $this->pdo()->prepare($sql);
-        $stmt->execute(array_merge([$tenantId], $pack['params']));
+        $stmt->execute($pack['params']);
         $emails = [];
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $e = strtolower(trim((string) ($row['email'] ?? '')));
@@ -3422,11 +3517,11 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.email FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']}
+                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ('recruiter', 'community_owner', 'hr')";
             try {
                 $st = $this->pdo()->prepare($sql2);
-                $st->execute(array_merge([$tenantId], $pack['params']));
+                $st->execute($pack['params']);
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $e = strtolower(trim((string) ($row['email'] ?? '')));
                     if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
@@ -3450,10 +3545,10 @@ class UserRepository
         $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']}
+            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ('administrator')";
         $stmt = $this->pdo()->prepare($sql);
-        $stmt->execute(array_merge([$tenantId], $pack['params']));
+        $stmt->execute($pack['params']);
         $emails = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $e = strtolower(trim((string) ($row['email'] ?? '')));
@@ -3465,11 +3560,11 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.email FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']}
+                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ('administrator')";
             try {
                 $st = $this->pdo()->prepare($sql2);
-                $st->execute(array_merge([$tenantId], $pack['params']));
+                $st->execute($pack['params']);
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $e = strtolower(trim((string) ($row['email'] ?? '')));
                     if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
@@ -3495,11 +3590,11 @@ class UserRepository
         $slugs = "'tenant_admin', 'community_owner', 'forum_moderator', 'administrator'";
         $sql = "SELECT DISTINCT u.id FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']}
+            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ({$slugs})";
         try {
             $stmt = $this->pdo()->prepare($sql);
-            $stmt->execute(array_merge([$tenantId], $pack['params']));
+            $stmt->execute($pack['params']);
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $ids[] = (int) ($row['id'] ?? 0);
             }
@@ -3510,11 +3605,11 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.id FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']}
+                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ({$slugs})";
             try {
                 $st = $this->pdo()->prepare($sql2);
-                $st->execute(array_merge([$tenantId], $pack['params']));
+                $st->execute($pack['params']);
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $ids[] = (int) ($row['id'] ?? 0);
                 }
@@ -3537,12 +3632,12 @@ class UserRepository
         }
         $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT u.id FROM users u
-            WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']}
+            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
             AND u.email IS NOT NULL AND TRIM(u.email) <> ''
             AND u.email LIKE '%@%'";
         try {
             $stmt = $this->pdo()->prepare($sql);
-            $stmt->execute(array_merge([$tenantId], $pack['params']));
+            $stmt->execute($pack['params']);
             $ids = [];
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $ids[] = (int) ($row['id'] ?? 0);
@@ -3629,11 +3724,11 @@ class UserRepository
         }
         $placeholders = implode(',', array_fill(0, count($roleSlugs), '?'));
         $pack = $this->technicalAccountExclusionPredicate('u');
-        $params = array_merge([$tenantId], $pack['params'], $roleSlugs);
+        $params = array_merge($pack['params'], $roleSlugs);
         $ids = [];
         $sql = "SELECT DISTINCT u.id FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
+            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
         try {
             $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
@@ -3647,7 +3742,7 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.id FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id AND tur.org_unit_id IS NULL
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
+                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($params);
@@ -3693,7 +3788,7 @@ class UserRepository
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = ?
             INNER JOIN role_permissions rp ON rp.role_id = r.id
             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
-            WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
+            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
         try {
             $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
@@ -3711,7 +3806,7 @@ class UserRepository
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = ?
                 INNER JOIN role_permissions rp ON rp.role_id = r.id
                 INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
-                WHERE EXISTS (SELECT 1 FROM user_community_memberships __ucm WHERE __ucm.user_id = u.id AND __ucm.tenant_id = ? AND __ucm.status = \'active\') AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
+                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($params2);
