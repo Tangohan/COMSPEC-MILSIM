@@ -122,4 +122,69 @@ final class UserIdentityMergeRulesTest extends TestCase
         self::assertFalse(UserIdentityMergeRules::isLiveHumanEmail($email));
         self::assertTrue(UserIdentityMergeRules::isLiveHumanEmail('pilot@example.test'));
     }
+
+    public function testPickPreferredDossierPrefersSessionTenantThenRichestRow(): void
+    {
+        $empty = [
+            'id' => 1,
+            'user_id' => 10,
+            'tenant_id' => 1,
+            'character_name' => '',
+            'callsign' => '',
+        ];
+        $filled = [
+            'id' => 2,
+            'user_id' => 10,
+            'tenant_id' => 7,
+            'character_name' => 'Jean Dupont',
+            'callsign' => 'FALCON',
+        ];
+        $pickedTenant = UserIdentityMergeRules::pickPreferredDossierRow([$empty, $filled], 7);
+        self::assertNotNull($pickedTenant);
+        self::assertSame(2, (int) $pickedTenant['id']);
+
+        $skippedEmptyPreferred = UserIdentityMergeRules::pickPreferredDossierRow([$empty, $filled], 1);
+        self::assertNotNull($skippedEmptyPreferred);
+        self::assertSame(2, (int) $skippedEmptyPreferred['id']);
+
+        $pickedRichest = UserIdentityMergeRules::pickPreferredDossierRow([$empty, $filled], 99);
+        self::assertNotNull($pickedRichest);
+        self::assertSame(2, (int) $pickedRichest['id']);
+    }
+
+    public function testFillEmptyKeysNeverCopiesMergedStubNameOrOverwritesFilledFields(): void
+    {
+        $target = ['first_name' => '', 'last_name' => 'Survivant', 'display_name' => ''];
+        $source = [
+            'first_name' => 'Marie',
+            'last_name' => 'Absorbee',
+            'display_name' => 'Compte fusionné',
+            'bio' => 'Ancien dossier',
+        ];
+        $fill = UserIdentityMergeRules::fillEmptyKeys($target, $source);
+        self::assertSame('Marie', $fill['first_name']);
+        self::assertArrayNotHasKey('last_name', $fill);
+        self::assertArrayNotHasKey('display_name', $fill);
+        self::assertSame('Ancien dossier', $fill['bio']);
+    }
+
+    public function testOverlaySkipsEmptyCommunityFieldsAndPendingShell(): void
+    {
+        $user = ['status' => 'active', 'callsign' => 'WOLF', 'role_id' => 4];
+        $emptyProfile = [
+            'display_name' => '',
+            'callsign' => null,
+            'role_id' => 0,
+            'status' => 'pending',
+        ];
+        self::assertFalse(UserIdentityMergeRules::shouldOverlayCommunityField('callsign', null, $emptyProfile, $user));
+        self::assertFalse(UserIdentityMergeRules::shouldOverlayCommunityField('role_id', 0, $emptyProfile, $user));
+        self::assertFalse(UserIdentityMergeRules::shouldOverlayCommunityField('status', 'pending', $emptyProfile, $user));
+        self::assertTrue(UserIdentityMergeRules::shouldOverlayCommunityField(
+            'callsign',
+            'EAGLE',
+            ['callsign' => 'EAGLE', 'status' => 'active'],
+            $user
+        ));
+    }
 }
