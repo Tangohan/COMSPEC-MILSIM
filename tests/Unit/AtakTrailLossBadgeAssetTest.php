@@ -34,6 +34,6 @@ final class AtakTrailLossBadgeAssetTest extends TestCase
         self::assertStringNotContainsString('width: 18px;', $css);
 
         self::assertStringContainsString('#atak-map .leaflet-div-icon.atak-trail-loss', $mapCss);
-        self::assertStringContainsString('.atak-trail-loss .atak-marker-billboard', $mapCss);
+        self::assertStringNotContainsString('.atak-trail-loss .atak-marker-billboard', $mapCss);
     }
 }

@@ -44,7 +44,7 @@ final class DashboardMemberHubAssetTest extends TestCase
         self::assertStringContainsString('personnel/mon-espace-rh/mobilite', $rh);
         self::assertStringContainsString('elevation_request_fields.php', $rh);
         self::assertStringContainsString('requestSelfElevation', $rhCtrl);
-        self::assertStringContainsString("return_to === 'dashboard'", $rhCtrl);
+        self::assertStringContainsString("\$returnTo === 'dashboard'", $rhCtrl);
         self::assertStringContainsString("'/personnel/mon-espace-rh/elevation'", $routes);
         self::assertSame('En attente', PersonnelMobilityRequestRepository::STATUS_LABELS['pending']);
         self::assertContains('career_wish', PersonnelMobilityRequestRepository::TYPES);
@@ -79,7 +79,7 @@ final class DashboardMemberHubAssetTest extends TestCase
         self::assertStringContainsString("allows('admin.organization')", $home);
         self::assertStringContainsString("allows('admin.access')", $home);
         self::assertStringContainsString("allows('site.support')", $home);
-        self::assertStringContainsString('back-office/alerts/create', $articles);
+        self::assertStringContainsString('publier', $articles);
         self::assertStringNotContainsString('forum/new-topic', $articles);
     }
 }

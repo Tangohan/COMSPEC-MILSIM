@@ -92,8 +92,19 @@ final class TenantPublicListingCollationTest extends TestCase
                 }
                 foreach ($matches[0] as [, $offset]) {
                     $before = substr($src, max(0, $offset - 280), 280);
-                    $lastSet = strripos($before, 'SET ');
-                    $lastWhere = strripos($before, 'WHERE ');
+                    if (!preg_match('/\bSET\b/i', $before, $setMatch, PREG_OFFSET_CAPTURE)) {
+                        $lastSet = false;
+                    } else {
+                        // Dernière occurrence de SET (y compris « SET\n » sans espace).
+                        $lastSet = false;
+                        if (preg_match_all('/\bSET\b/i', $before, $allSets, PREG_OFFSET_CAPTURE)) {
+                            $lastSet = (int) $allSets[0][count($allSets[0]) - 1][1];
+                        }
+                    }
+                    $lastWhere = false;
+                    if (preg_match_all('/\bWHERE\b/i', $before, $allWhere, PREG_OFFSET_CAPTURE)) {
+                        $lastWhere = (int) $allWhere[0][count($allWhere[0]) - 1][1];
+                    }
                     $isAssignment = $lastSet !== false && ($lastWhere === false || $lastSet > $lastWhere);
                     if (!$isAssignment) {
                         $offenders[] = str_replace('\\', '/', substr($file->getPathname(), strlen(dirname(__DIR__, 2)) + 1))

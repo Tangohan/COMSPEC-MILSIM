@@ -33,7 +33,6 @@ final class SeniorityPrePlatformService
         private UserRepository $userRepository,
         private ?\App\Repositories\TenantRepository $tenantRepository = null,
     ) {
-        $this->tenantRepository ??= new \App\Repositories\TenantRepository();
     }
 
     public function getPersonStartDate(int $tenantId, int $userId): ?string

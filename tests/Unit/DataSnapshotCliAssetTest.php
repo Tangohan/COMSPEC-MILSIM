@@ -17,7 +17,7 @@ final class DataSnapshotCliAssetTest extends TestCase
         self::assertStringContainsString('restore', $src);
         self::assertStringContainsString('--yes', $src);
         self::assertStringContainsString('CompleteDataSnapshotService', $src);
-        self::assertStringContainsString('CLI uniquement', $src);
+        self::assertStringContainsString('ligne de commande uniquement', $src);
         self::assertStringContainsString('écrase les données actuelles', $src);
     }
 }
