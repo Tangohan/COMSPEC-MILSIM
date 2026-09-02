@@ -115,6 +115,8 @@ final class AccountPurgeService
     private const SKIP_TABLES = [
         'users',
         'migrations',
+        // La colonne owner_user_id ne doit jamais supprimer une communauté entière.
+        'tenants',
     ];
 
     /**

@@ -350,6 +350,7 @@ return [
                         ['label' => 'Tableau de bord plateforme', 'path' => 'admin', 'permission' => 'admin.system'],
                         ['label' => 'Synthèse opérationnelle', 'path' => 'admin/ops-center', 'permission' => 'admin.system', 'description' => 'Signaux critiques et vue transversale'],
                         ['label' => 'Annuaire des communautés', 'path' => 'admin/tenants', 'permission' => 'admin.system', 'description' => 'Liste des organisations et effectifs comptes'],
+                        ['label' => 'Récupération communauté', 'path' => 'admin/system/tenant-recovery', 'permission' => 'admin.system', 'description' => 'Recréer une fiche tenants orpheline sans restore complet'],
                         ['label' => 'Indicateurs transverses', 'path' => 'admin/analytics', 'permission' => 'admin.system', 'description' => 'Usage, volumes et répartition sur plusieurs fenêtres de temps'],
                         ['label' => 'Formules d’accès (paliers)', 'path' => 'admin/system/subscription-plans', 'permission' => 'admin.system', 'description' => 'Noms, ordre, fonctionnalités et quotas par offre'],
                         ['label' => 'Comptes utilisateurs (site)', 'path' => 'admin/users', 'permission' => 'admin.system', 'description' => 'Annuaire de tous les comptes, filtres et activation / désactivation'],

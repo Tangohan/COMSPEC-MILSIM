@@ -107,6 +107,7 @@ use App\Controllers\Courrier\CourrierSignatureController;
 use App\Controllers\Courrier\CourrierNotificationController;
 use App\Controllers\Admin\System\SystemDashboardController;
 use App\Controllers\Admin\System\SystemTenantsController;
+use App\Controllers\Admin\System\SystemTenantRecoveryController;
 use App\Controllers\Admin\System\SystemAnalyticsController;
 use App\Controllers\Admin\System\SystemNewsletterAdminController;
 use App\Controllers\Admin\System\SystemOpsCenterController;
@@ -956,6 +957,9 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/identity', [SystemTenantsController::class, 'updateIdentity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/profil', [SystemTenantsController::class, 'updateType'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/plan', [SystemTenantsController::class, 'updatePlan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/tenant-recovery', [SystemTenantRecoveryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/tenant-recovery/parse-dump', [SystemTenantRecoveryController::class, 'parseDump'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/tenant-recovery/restore', [SystemTenantRecoveryController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/audit', [SystemAuditController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     $router->get('/admin/audit/{id}', [SystemAuditController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/audit/{id}/rollback', [SystemAuditController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
