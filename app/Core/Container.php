@@ -2145,6 +2145,7 @@ class Container
             ),
             \App\Repositories\PlatformAlertRepository::class => new \App\Repositories\PlatformAlertRepository(),
             \App\Repositories\TenantAlertRepository::class => new \App\Repositories\TenantAlertRepository(),
+            \App\Repositories\TenantMiniArticleRepository::class => new \App\Repositories\TenantMiniArticleRepository(),
             \App\Repositories\TenantCustomMapRepository::class => new \App\Repositories\TenantCustomMapRepository(),
             \App\Services\Maps\TenantCustomMapStorage::class => new \App\Services\Maps\TenantCustomMapStorage(),
             \App\Controllers\Api\CustomMapsApiController::class => new \App\Controllers\Api\CustomMapsApiController(

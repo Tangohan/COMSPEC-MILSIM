@@ -62,7 +62,7 @@ class HomeController
         }
 
         return Response::view('home.index', [
-            'title' => 'Athena Compsec — Portail MILSIM',
+            'title' => 'Athena Comspec — Portail MILSIM',
             'platformKpis' => $platformKpis,
             'platformKpiDays' => $days,
             'featuredUnits' => $featuredUnits,
@@ -174,6 +174,7 @@ class HomeController
         $dashboardPins = [];
         $dashboardAnnounceItems = [];
         $dashboardPopupItems = [];
+        $dashboardMiniArticles = [];
         $followedChannels = [];
         $missionBriefing = null;
         $dashboardTesterProgram = null;
@@ -721,6 +722,41 @@ class HomeController
                         $doctrinePending = [];
                     }
                 }
+
+                try {
+                    $miniRows = \App\Core\Container::get(\App\Repositories\TenantMiniArticleRepository::class)
+                        ->listPublishedForTenant($tid, 6);
+                    foreach ($miniRows as $miniRow) {
+                        $tags = [];
+                        $rawTags = $miniRow['tags_json'] ?? null;
+                        if (is_string($rawTags) && $rawTags !== '') {
+                            $decoded = json_decode($rawTags, true);
+                            if (is_array($decoded)) {
+                                foreach ($decoded as $t) {
+                                    $t = trim((string) $t);
+                                    if ($t !== '') {
+                                        $tags[] = $t;
+                                    }
+                                }
+                            }
+                        }
+                        $dashboardMiniArticles[] = [
+                            'id' => (int) ($miniRow['id'] ?? 0),
+                            'title' => (string) ($miniRow['title'] ?? ''),
+                            'slug' => (string) ($miniRow['slug'] ?? ''),
+                            'excerpt' => trim((string) ($miniRow['excerpt'] ?? '')),
+                            'tags' => $tags,
+                            'cover_url' => \App\Support\MiniArticleHtml::publicUrl(
+                                isset($miniRow['cover_path']) ? (string) $miniRow['cover_path'] : null
+                            ),
+                            'pinned' => !empty($miniRow['pinned']),
+                            'published_at' => isset($miniRow['published_at']) ? (string) $miniRow['published_at'] : null,
+                            'href' => url('articles/' . rawurlencode((string) ($miniRow['slug'] ?? ''))),
+                        ];
+                    }
+                } catch (\Throwable) {
+                    $dashboardMiniArticles = [];
+                }
             }
         }
 
@@ -796,6 +832,7 @@ class HomeController
             'rh_mobility_schema_ready' => $rhMobilitySchemaReady,
             'can_publish_dashboard_articles' => $canPublishDashboardArticles,
             'doctrine_pending' => $doctrinePending,
+            'dashboard_mini_articles' => $dashboardMiniArticles,
         ]);
     }
 

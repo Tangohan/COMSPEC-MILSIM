@@ -30,8 +30,15 @@ final class PublicationLauncherController
 
         $options = [
             [
+                'key' => 'article',
+                'label' => 'Mini-article',
+                'description' => 'Contenu permanent : titre, tags, description, images et HTML. Idéal pour doctrine, notes et infos durables.',
+                'href' => url('back-office/articles/create'),
+                'enabled' => $canAlerts,
+            ],
+            [
                 'key' => 'alert',
-                'label' => 'Annonce (dashboard)',
+                'label' => 'Annonce (bandeau)',
                 'description' => 'Message affiché aux membres sur le tableau de bord, avec bandeau ou popup selon l’importance.',
                 'href' => url('back-office/alerts/create'),
                 'enabled' => $canAlerts,
