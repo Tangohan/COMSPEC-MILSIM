@@ -99,7 +99,14 @@ $headerAllowsPath = static function (string $path) use ($headerTenantType): bool
         return false;
     }
 
-    return \App\Services\Community\TenantTypeConfig::uriAllowed($headerTenantType, $path);
+    if (!\App\Services\Community\TenantTypeConfig::uriAllowed($headerTenantType, $path)) {
+        return false;
+    }
+
+    // Même politique que le menu portail : une entrée sans droit disparaît du
+    // chrome (barre haute, menu Espaces et menu compact), sans fuite de libellé.
+    return !function_exists('portal_nav_href_permission_allowed')
+        || portal_nav_href_permission_allowed(url($path));
 };
 
 $navItems = [

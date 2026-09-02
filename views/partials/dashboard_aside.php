@@ -106,9 +106,16 @@ $icon = static function (string $key): string {
 $links = static function (array $items): array {
     $out = [];
     foreach ($items as $item) {
-        if (is_array($item) && isset($item['label'], $item['href']) && $item['href'] !== '') {
-            $out[] = $item;
+        if (!is_array($item) || !isset($item['label'], $item['href']) || $item['href'] === '') {
+            continue;
         }
+        // Ne pas exposer dans le rail une destination que la navbar a déjà
+        // retirée faute de permission ou à cause du profil de communauté.
+        if (function_exists('portal_nav_href_permission_allowed')
+            && !portal_nav_href_permission_allowed((string) $item['href'])) {
+            continue;
+        }
+        $out[] = $item;
     }
 
     return $out;
