@@ -37,7 +37,9 @@ final class ElevationRecipientTenantScopeTest extends TestCase
         $end = (int) $method->getEndLine();
         $body = implode('', array_slice(file($file) ?: [], $start - 1, $end - $start + 1));
 
-        self::assertStringContainsString('u.tenant_id = ?', $body);
+        // Appartenance via prédicat (concaténation PHP réelle, pas interpolation de propriété).
+        self::assertStringContainsString("\$this->sqlMemberOfTenantPredicate('u', \$tenantId)", $body);
+        self::assertStringNotContainsString("WHERE ' . \$this->sqlMemberOfTenantPredicate", $body);
         self::assertStringContainsString('r.tenant_id = ?', $body);
         self::assertStringContainsString('p.tenant_id = ?', $body);
         self::assertStringContainsString('tur.tenant_id = ?', $body);
