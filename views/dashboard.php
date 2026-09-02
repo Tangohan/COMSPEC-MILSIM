@@ -124,6 +124,7 @@ if (!is_string($showcase_kit_json) || $showcase_kit_json === '') {
     <?php endif; ?>
 </head>
 <body class="dashboard-shell layout-light text-slate-900 selection:bg-emerald-500/25 selection:text-slate-900 antialiased" style="background:#f8fafc;">
+<?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
 <?php $baseUrl = $base; ?>
 <?php require base_path('views/partials/app_update_check.php'); ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>

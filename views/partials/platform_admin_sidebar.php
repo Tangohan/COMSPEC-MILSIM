@@ -22,11 +22,10 @@ $icons = [
 ];
 $icon = static fn (string $key): string => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' . ($icons[$key] ?? $icons['gear']) . '"></path></svg>';
 $active = static fn (string $path, bool $exact = false): bool => $exact ? $p === $path : ($p === $path || str_starts_with($p, $path . '/'));
-$link = static function (string $path, string $label, string $ico, bool $isActive) use ($h, $icon): void { ?>
-    <a href="<?= $h(url($path)) ?>" class="ath-sidebar__item<?= $isActive ? ' is-active' : '' ?>" title="<?= $h($label) ?>">
-        <?= $icon($ico) ?><span class="ath-sidebar__item-label"><?= $h($label) ?></span>
-    </a>
-<?php };
+$link = static function (string $path, string $label, string $ico, bool $isActive) use ($h, $icon): void {
+    echo '<a href="' . $h(url($path)) . '" class="ath-sidebar__item' . ($isActive ? ' is-active' : '') . '" title="' . $h($label) . '">';
+    echo $icon($ico) . '<span class="ath-sidebar__item-label">' . $h($label) . '</span></a>';
+};
 
 $userName = trim((string) (\App\Core\Session::get('display_name') ?? \App\Core\Session::get('callsign') ?? 'Administrateur')) ?: 'Administrateur';
 $words = preg_split('/\s+/u', $userName) ?: [];
@@ -53,10 +52,10 @@ $initials = count($words) > 1
                 <?php $link('admin', 'Tableau de bord', 'dash', $active('admin', true)); ?>
                 <?php $link('admin/analytics', 'Indicateurs transverses', 'chart', $active('admin/analytics')); ?>
                 <?php $link('admin/ops-center', 'Synthèse opérationnelle', 'chart', $active('admin/ops-center')); ?>
-                <?php if ($isPlatformAdmin) $link('admin/system/retours-interface', 'Retours interface', 'book', $active('admin/system/retours-interface')); ?>
+                <?php if ($isPlatformAdmin) { $link('admin/system/retours-interface', 'Retours interface', 'book', $active('admin/system/retours-interface')); } ?>
             </div>
         </div>
-        <?php if ($isPlatformAdmin): ?>
+        <?php if ($isPlatformAdmin) { ?>
         <div class="ath-sidebar__group is-open" data-ath-nav-group="communautes">
             <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="true"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="m9 18 6-6-6-6"></path></svg><span class="ath-sidebar__group-label">COMMUNAUTÉS</span></button>
             <div class="ath-sidebar__group-body">
@@ -92,15 +91,15 @@ $initials = count($words) > 1
                 <?php $link('admin/system/alerts', 'Alertes plateforme', 'shield', $active('admin/system/alerts')); ?>
             </div>
         </div>
-        <?php endif; ?>
+        <?php } ?>
         <div class="ath-sidebar__group is-open" data-ath-nav-group="exploitation">
             <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="true"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="m9 18 6-6-6-6"></path></svg><span class="ath-sidebar__group-label">EXPLOITATION</span></button>
             <div class="ath-sidebar__group-body">
-                <?php if ($isPlatformAdmin) $link('admin/system/storage', 'Espace disque', 'gear', $active('admin/system/storage')); ?>
+                <?php if ($isPlatformAdmin) { $link('admin/system/storage', 'Espace disque', 'gear', $active('admin/system/storage')); } ?>
                 <?php $link('admin/maintenance', 'Maintenance des données', 'gear', $active('admin/maintenance')); ?>
                 <?php $link('admin/audit', 'Journal d’audit', 'audit', $active('admin/audit')); ?>
-                <?php if ($hasOrgPath) $link('back-office', 'Back-office communauté', 'dash', str_starts_with($p, 'back-office')); ?>
-                <?php if ($canForumModConsole) $link('admin/content-moderation', 'Modération des fichiers', 'shield', $active('admin/content-moderation')); ?>
+                <?php if ($hasOrgPath) { $link('back-office', 'Back-office communauté', 'dash', str_starts_with($p, 'back-office')); } ?>
+                <?php if ($canForumModConsole) { $link('admin/content-moderation', 'Modération des fichiers', 'shield', $active('admin/content-moderation')); } ?>
             </div>
         </div>
     </div>

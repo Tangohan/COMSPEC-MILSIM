@@ -49,6 +49,11 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertStringContainsString('class="pa"', $dash);
         self::assertStringContainsString('platform-admin.css', $dashCtrl);
         self::assertStringNotContainsString('quick_actions_system.php', $dash);
+        self::assertDoesNotMatchRegularExpression('/<\?php\s+if\b[^;{]*:/', $sidebar);
+        $lint = [];
+        $code = 0;
+        exec('php -l ' . escapeshellarg($root . '/views/partials/platform_admin_sidebar.php') . ' 2>&1', $lint, $code);
+        self::assertSame(0, $code, implode("\n", $lint));
     }
 
     public function testCommunityFicheCoversIdentityTypeAndPlan(): void

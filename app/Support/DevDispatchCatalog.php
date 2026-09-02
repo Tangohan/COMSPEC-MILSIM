@@ -589,6 +589,18 @@ final class DevDispatchCatalog
             ], ['personnel'], [
                 'Ouvrez le bureau de suivi roleplay. Sur la dernière ligne, cliquez Étape : la liste et Enregistrer restent visibles.',
             ], 'Portail'),
+            $pr(395, '2026-09-02', 'Le journal d’intervention s’ouvre de nouveau', 'Pendant une intervention sur une organisation, Journal, Changements et Erreurs s’ouvrent à nouveau depuis le bandeau ambre. Rechargez la page', [], [], [
+                'La page du journal ne s’affichait plus',
+            ], ['personnel'], [
+                'Depuis l’administration du site, entrez dans une organisation, puis ouvrez Journal depuis le bandeau : la page doit s’afficher.',
+            ], 'Portail'),
+            $pr(394, '2026-09-02', 'Le bandeau d’intervention s’affiche aussi sur le tableau de bord', 'Pendant une intervention sur une organisation, le bandeau ambre apparaît en haut du tableau de bord, comme sur les autres pages du portail. Il rappelle l’organisation concernée et donne accès au journal, aux changements et à la sortie. Rechargez le tableau de bord', [
+                'Bandeau d’administration de l’organisation en haut du tableau de bord, du bureau des effectifs et de la carte',
+            ], [], [
+                'Le tableau de bord n’affichait pas ce bandeau, contrairement aux autres pages du portail',
+            ], ['personnel'], [
+                'Depuis l’administration du site, entrez dans une organisation. Ouvrez le tableau de bord : le bandeau ambre indique l’organisation et propose Journal et Quitter l’organisation.',
+            ], 'Portail'),
             $pr(393, '2026-09-02', 'L’enregistrement du dossier opérateur reprend tous les onglets', 'Sur la page d’édition du dossier, Enregistrer enregistre l’identité, l’affectation, le forum, l’équipement et les notes, même lorsqu’un matricule d’organisation est proposé sur la même page. Les titres des sections restent visibles. Décocher Déployable est pris en compte. Rechargez la page d’édition du dossier', [
                 'Situation familiale, statut opérateur, fuseau horaire et langue se choisissent dans une liste',
             ], [], [

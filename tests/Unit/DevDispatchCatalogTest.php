@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(194, $byKind['update']);
-        self::assertCount(200, $all);
+        self::assertSame(196, $byKind['update']);
+        self::assertCount(202, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -638,6 +638,15 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($dossierEdit);
         self::assertSame('00393', $dossierEdit['number_pad']);
         self::assertStringContainsString('dossier', strtolower((string) $dossierEdit['title']));
+        $dashBanner = DevDispatchCatalog::find('update', '394');
+        self::assertNotNull($dashBanner);
+        self::assertSame('00394', $dashBanner['number_pad']);
+        self::assertStringContainsString('bandeau', strtolower((string) $dashBanner['title']));
+        self::assertStringContainsString('tableau de bord', strtolower((string) $dashBanner['title']));
+        $journalFix = DevDispatchCatalog::find('update', '395');
+        self::assertNotNull($journalFix);
+        self::assertSame('00395', $journalFix['number_pad']);
+        self::assertStringContainsString('journal', strtolower((string) $journalFix['title']));
         $rpMenu = DevDispatchCatalog::find('update', '396');
         self::assertNotNull($rpMenu);
         self::assertSame('00396', $rpMenu['number_pad']);

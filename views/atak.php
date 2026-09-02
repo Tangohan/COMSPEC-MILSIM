@@ -168,6 +168,7 @@ if ($atakMapConfig) {
   </script>
 </head>
 <body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed atak-page--device' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
+<?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
   <?php
   $baseUrl = $base;
   $haloLoaderHint = 'Préparation de la carte tactique…';
