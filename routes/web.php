@@ -9,6 +9,7 @@ use App\Controllers\Web\PersonnelController;
 use App\Controllers\Web\EnlistmentController;
 use App\Controllers\Web\EnlistmentCandidatePortalController;
 use App\Controllers\Web\DocumentsController;
+use App\Controllers\Web\DoctrineDocumentsController;
 use App\Controllers\Web\EquipmentController;
 use App\Controllers\Web\ArsenalWardrobeController;
 use App\Controllers\Web\TrainingController;
@@ -620,6 +621,8 @@ return function (Router $router) {
     $router->post('/documents/gestion/{id}/archiver', [AdminDocumentsController::class, 'archive'], $mwDocuments);
     $router->get('/documents/gestion/{id}/historique', [AdminDocumentsController::class, 'history'], $mwDocuments);
     $router->get('/documents/gestion/{id}/acces', [AdminDocumentsController::class, 'access'], $mwDocuments);
+    $router->get('/documents/doctrine/{id}', [DoctrineDocumentsController::class, 'show'], $mwDocuments);
+    $router->post('/documents/doctrine/{id}/acknowledge', [DoctrineDocumentsController::class, 'acknowledge'], $mwDocuments);
     $router->post('/documents/{id}/unlock', [DocumentsController::class, 'unlock'], $mwDocuments);
     $router->post('/documents/{id}/signature', [DocumentsController::class, 'signature'], $mwDocuments);
     $router->post('/documents/{id}/access-track', [DocumentsController::class, 'accessTrack'], $mwDocuments);
@@ -1108,6 +1111,9 @@ return function (Router $router) {
     $router->get('/back-office/doctrine', [DoctrineAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine', [DoctrineAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/versions/{versionId}/activate', [DoctrineAdminController::class, 'activate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclature'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclatureSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/compliance', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'compliance'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys', [OrganizationIntegrationsController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys/{id}/update', [OrganizationIntegrationsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys/{id}/rotate', [OrganizationIntegrationsController::class, 'rotate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

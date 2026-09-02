@@ -1,0 +1,329 @@
+/* Référentiel doctrinal ATHENA */
+.doctrine-ref__hero {
+  margin-bottom: 1.5rem;
+  padding: 2rem 2.25rem;
+  border-radius: 1.25rem;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #fff 0%, #f8fafc 55%, #ecfdf5 100%);
+}
+.doctrine-ref__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.doctrine-ref__title {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+.doctrine-ref__lead {
+  margin: 0.75rem 0 0;
+  max-width: 46rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: #475569;
+}
+.doctrine-ref__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+.doctrine-ref__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.doctrine-ref__type-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.doctrine-ref__type-link {
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #475569;
+  text-decoration: none;
+}
+.doctrine-ref__type-link.is-active {
+  border-color: #0f172a;
+  background: #0f172a;
+  color: #fff;
+}
+.doctrine-ref__search {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 16rem;
+  max-width: 28rem;
+}
+.doctrine-ref__search-input {
+  flex: 1;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+}
+.doctrine-ref__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+.doctrine-ref__quick-link {
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.5rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #334155;
+  text-decoration: none;
+}
+.doctrine-ref__quick-link.is-active {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #065f46;
+}
+.doctrine-ref__table-wrap {
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 12px 40px -24px rgba(15, 23, 42, 0.18);
+}
+.doctrine-ref__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.doctrine-ref__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc;
+}
+.doctrine-ref__table th,
+.doctrine-ref__table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+.doctrine-ref__table th {
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+  cursor: pointer;
+}
+.doctrine-ref__row:hover {
+  background: #f8fafc;
+}
+.doctrine-ref__cell-ref code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.doctrine-ref__badge {
+  display: inline-flex;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.doctrine-ref__badge--emerald { background: #ecfdf5; color: #047857; }
+.doctrine-ref__badge--rose { background: #fff1f2; color: #be123c; }
+.doctrine-ref__badge--amber { background: #fffbeb; color: #b45309; }
+.doctrine-ref__badge--violet { background: #f5f3ff; color: #6d28d9; }
+.doctrine-ref__badge--red { background: #fef2f2; color: #b91c1c; }
+.doctrine-ref__badge--slate { background: #f1f5f9; color: #475569; }
+.doctrine-ref__badge--neutral { background: #f8fafc; color: #64748b; }
+.doctrine-ref__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.65rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #334155;
+  text-decoration: none;
+  cursor: pointer;
+}
+.doctrine-ref__btn--primary {
+  border-color: #0f172a;
+  background: #0f172a;
+  color: #fff;
+}
+.doctrine-ref__link {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #047857;
+  text-decoration: none;
+}
+.doctrine-ref__empty {
+  padding: 2rem !important;
+  text-align: center;
+  color: #64748b;
+}
+.doctrine-ref__mobile-list { display: none; }
+@media (max-width: 1023px) {
+  .doctrine-ref__table-wrap { display: none; }
+  .doctrine-ref__mobile-list { display: grid; gap: 0.75rem; }
+}
+.doctrine-ref__card {
+  padding: 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+.doctrine-ref__card-ref {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.doctrine-ref__card-title {
+  margin: 0.35rem 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+.doctrine-ref__card-meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.doctrine-show__kicker {
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.doctrine-show__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin: 0.5rem 0 1.25rem;
+}
+.doctrine-show__ref {
+  font-size: 1rem;
+  font-weight: 800;
+}
+.doctrine-show__title {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  font-weight: 900;
+}
+.doctrine-show__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+.doctrine-show__meta dt {
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+.doctrine-show__meta dd {
+  margin: 0.15rem 0 0;
+  font-weight: 700;
+  color: #0f172a;
+}
+.doctrine-show__summary,
+.doctrine-show__file,
+.doctrine-show__history {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: 0.85rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+.doctrine-show__version-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.doctrine-ack-modal[hidden] { display: none !important; }
+.doctrine-ack-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+.doctrine-ack-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+}
+.doctrine-ack-modal__panel {
+  position: relative;
+  width: min(100%, 32rem);
+  padding: 1.25rem 1.35rem;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 24px 60px -20px rgba(15, 23, 42, 0.45);
+}
+.doctrine-ack-modal__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+.doctrine-ack-modal__meta {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+}
+.doctrine-ack-modal__text {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-style: italic;
+  color: #334155;
+}
+.doctrine-ack-modal__check {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.doctrine-ack-modal__status.is-err { color: #b91c1c; }
+.doctrine-ack-modal__status.is-ok { color: #047857; }

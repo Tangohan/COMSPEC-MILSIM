@@ -19,6 +19,8 @@ use App\Services\Audit\AuditService;
 use App\Services\Documents\DocumentAccessService;
 use App\Services\Documents\DocumentTrainingReferencesService;
 use App\Services\Moderation\ModerationArtifactState;
+use App\Repositories\Doctrine\DocumentDoctrineRepository;
+use App\Services\Doctrine\DocumentComplianceService;
 use App\Support\DocumentManuscript;
 
 class DocumentsController
@@ -34,7 +36,9 @@ class DocumentsController
         private ModerationArtifactRepository $moderationArtifactRepository,
         private DocumentTrainingReferencesService $documentTrainingReferencesService,
         private PersonnelProfileRepository $personnelProfileRepository,
-        private DocumentSecurityRepository $documentSecurityRepository
+        private DocumentSecurityRepository $documentSecurityRepository,
+        private DocumentDoctrineRepository $documentDoctrineRepository,
+        private DocumentComplianceService $documentComplianceService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -57,6 +61,8 @@ class DocumentsController
             ]);
         }
         $categoryId = $request->input('category') ? (int) $request->input('category') : null;
+        $categorySlugFilter = trim((string) ($request->input('category_slug') ?? ''));
+        $doctrineQuick = trim((string) ($request->input('doctrine_filter') ?? ''));
         $search = $request->input('q') ? trim((string) $request->input('q')) : null;
         $documentType = $request->input('document_type') ? trim((string) $request->input('document_type')) : null;
         if ($documentType === '') {
@@ -67,6 +73,17 @@ class DocumentsController
         $sort = in_array($sortRaw, $allowedSort, true) ? $sortRaw : 'title_asc';
         $entityType = $request->input('entity_type') ? trim((string) $request->input('entity_type')) : null;
         $entityId = $request->input('entity_id') ? (int) $request->input('entity_id') : null;
+        $userId = (int) Session::get('user_id');
+        $canManageCollections = Gate::getInstance()->allows('documents.upload') || Gate::getInstance()->allows('admin.access');
+        $categoriesList = $this->categoryRepository->listForTenant($tenantId);
+        $doctrineCategory = $this->categoryRepository->findBySlug('doctrine', $tenantId);
+        $isDoctrineView = ($categoryId !== null && $doctrineCategory !== null && (int) ($doctrineCategory['id'] ?? 0) === $categoryId)
+            || $categorySlugFilter === 'doctrine';
+
+        if ($isDoctrineView && $this->documentDoctrineRepository->tableExists()) {
+            return $this->doctrineReferentialIndex($tenantId, $userId, $search, $doctrineQuick, $categoriesList, $doctrineCategory, $canManageCollections);
+        }
+
         $docs = $this->documentRepository->listForTenant(
             $tenantId,
             $categoryId,
@@ -78,7 +95,6 @@ class DocumentsController
             null,
             $sort
         );
-        $userId = (int) Session::get('user_id');
         $docs = array_values(array_filter($docs, function ($d) use ($userId, $tenantId) {
             if (!$this->documentAccessService->canRead($d, $userId, $tenantId)) {
                 return false;
@@ -86,11 +102,9 @@ class DocumentsController
 
             return !$this->isDocumentLifecycleBlocked($d) || $this->viewerMayBypassLifecycleBlock();
         }));
-        $categoriesList = $this->categoryRepository->listForTenant($tenantId);
         $documentTrainingRefs = $this->documentTrainingReferencesService->mapByDocumentId($tenantId, $docs);
         $collections = $this->buildCollections($docs, $categoriesList);
         $accreditation = $this->personnelProfileRepository->getByUserId($userId);
-        $canManageCollections = Gate::getInstance()->allows('documents.upload') || Gate::getInstance()->allows('admin.access');
         return Response::view('layout.main', [
             'content' => 'documents.index',
             'title' => 'Documents',
@@ -550,5 +564,93 @@ class DocumentsController
             || $gate->allows('admin.organization')
             || $gate->allows('admin.access')
             || $gate->allows('admin.system');
+    }
+
+    /**
+     * @param list<array<string, mixed>> $categoriesList
+     * @param array<string, mixed>|null $doctrineCategory
+     */
+    private function doctrineReferentialIndex(
+        int $tenantId,
+        int $userId,
+        ?string $search,
+        string $doctrineQuick,
+        array $categoriesList,
+        ?array $doctrineCategory,
+        bool $canManage,
+    ): Response {
+        $rows = $this->documentDoctrineRepository->listPublishedForTenant(
+            $tenantId,
+            $doctrineQuick === 'archived' ? 'archived' : null,
+            $search
+        );
+
+        $tableRows = [];
+        foreach ($rows as $row) {
+            $documentId = (int) ($row['document_id'] ?? 0);
+            $versionId = (int) ($row['version_id'] ?? 0);
+            $doc = $this->documentRepository->findById($documentId, null);
+            if ($doc === null || !$this->documentAccessService->canRead($doc, $userId, $tenantId)) {
+                continue;
+            }
+            $badge = $versionId > 0
+                ? $this->documentComplianceService->memberBadge($tenantId, $userId, $row, $versionId)
+                : ['badge' => 'NOT_APPLICABLE', 'label' => '—', 'tone' => 'neutral', 'sort_priority' => 9];
+
+            if ($doctrineQuick === 'action' && !in_array($badge['badge'], ['ACK_REQUIRED', 'ACK_OUTDATED', 'OVERDUE', 'UNREAD'], true)) {
+                continue;
+            }
+            if ($doctrineQuick === 'current' && !in_array($badge['badge'], ['ACKNOWLEDGED', 'READ'], true)) {
+                continue;
+            }
+            if ($doctrineQuick === 'new' && $badge['badge'] !== 'UNREAD' && $badge['badge'] !== 'ACK_REQUIRED') {
+                continue;
+            }
+
+            $domainLabel = trim((string) ($row['domain_prefix'] ?? '') . ' / ' . (string) ($row['subdomain_code'] ?? ''));
+            $domainLabel = trim($domainLabel, ' /');
+            $versionLabel = trim((string) ($row['version_label'] ?? ''));
+            if ($versionLabel === '' && isset($row['version_major'], $row['version_minor'])) {
+                $versionLabel = 'v' . (int) $row['version_major'] . '.' . (int) $row['version_minor'];
+            }
+
+            $tableRows[] = [
+                'document_id' => $documentId,
+                'reference' => (string) ($row['reference_code'] ?? ''),
+                'title' => (string) ($row['title'] ?? ''),
+                'domain' => $domainLabel !== '' ? $domainLabel : (string) ($row['domain_label'] ?? ''),
+                'version' => $versionLabel !== '' ? $versionLabel : '—',
+                'authority' => (string) ($row['issuing_label'] ?? '—'),
+                'diffusion' => (string) ($row['diffusion_label'] ?? '—'),
+                'published_at' => (string) ($row['published_at'] ?? $row['effective_at'] ?? ''),
+                'updated_at' => (string) ($row['document_updated_at'] ?? ''),
+                'reading_required' => !empty($row['reading_required']) || !empty($row['acknowledgment_required']),
+                'requirement_level' => (string) ($row['requirement_level'] ?? 'informative'),
+                'status_badge' => $badge,
+                'scope' => (string) ($row['scope'] ?? 'tenant'),
+                'href' => url('documents/doctrine/' . $documentId),
+            ];
+        }
+
+        usort($tableRows, static function (array $a, array $b): int {
+            $pa = (int) ($a['status_badge']['sort_priority'] ?? 9);
+            $pb = (int) ($b['status_badge']['sort_priority'] ?? 9);
+            if ($pa !== $pb) {
+                return $pa <=> $pb;
+            }
+
+            return strcmp((string) ($a['reference'] ?? ''), (string) ($b['reference'] ?? ''));
+        });
+
+        return Response::view('layout.main', [
+            'content' => 'documents/doctrine_index',
+            'title' => 'Référentiel doctrinal',
+            'doctrineRows' => $tableRows,
+            'categories' => $categoriesList,
+            'doctrineCategory' => $doctrineCategory,
+            'search' => $search ?? '',
+            'doctrineQuick' => $doctrineQuick,
+            'canManage' => $canManage,
+        ]);
     }
 }

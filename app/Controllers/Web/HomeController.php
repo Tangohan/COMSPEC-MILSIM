@@ -206,6 +206,7 @@ class HomeController
         $rhMyMobility = [];
         $rhMobilitySchemaReady = false;
         $canPublishDashboardArticles = false;
+        $doctrinePending = [];
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
@@ -711,6 +712,15 @@ class HomeController
                 $canPublishDashboardArticles = $gate->allows('admin.organization')
                     || $gate->allows('admin.access')
                     || $gate->allows('site.support');
+
+                if ($gate->allows('documents.view') || $gate->allows('doctrine.view')) {
+                    try {
+                        $doctrinePending = \App\Core\Container::get(\App\Services\Doctrine\DocumentComplianceService::class)
+                            ->listPendingActionsForUser($tid, $uid, 6);
+                    } catch (\Throwable) {
+                        $doctrinePending = [];
+                    }
+                }
             }
         }
 
@@ -785,6 +795,7 @@ class HomeController
             'rh_my_mobility' => $rhMyMobility,
             'rh_mobility_schema_ready' => $rhMobilitySchemaReady,
             'can_publish_dashboard_articles' => $canPublishDashboardArticles,
+            'doctrine_pending' => $doctrinePending,
         ]);
     }
 

@@ -373,6 +373,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             ? url('back-office/alerts')
             : null;
         require base_path('views/partials/announce_tiles.php');
+        require base_path('views/partials/dashboard_doctrine_pending.php');
         require base_path('views/partials/dashboard_popup_modal.php');
         ?>
 
