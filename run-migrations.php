@@ -2508,6 +2508,13 @@ try {
     echo '  [ATTENTION] tenant_community_feed : ' . $e->getMessage() . "\n";
 }
 
+$tenantMiniArticlesMigrate = require $root . '/bootstrap/tenant_mini_articles_migration.php';
+try {
+    $tenantMiniArticlesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_mini_articles : ' . $e->getMessage() . "\n";
+}
+
 $briefPlatformInterteamMigrate = require $root . '/bootstrap/brief_platform_interteam_migration.php';
 try {
     $briefPlatformInterteamMigrate($pdo);

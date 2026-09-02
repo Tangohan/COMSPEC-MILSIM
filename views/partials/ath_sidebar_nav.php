@@ -208,6 +208,7 @@ $athNavGroups = [
                 'children' => $communityChildren,
             ],
             ['label' => 'Annonces & alertes', 'href' => url('back-office/alerts'), 'icon' => 'mail', 'active' => $boNavAlerts],
+            ['label' => 'Mini-articles', 'href' => url('back-office/articles'), 'icon' => 'book', 'active' => !empty($boNavArticles)],
             ['label' => 'Intégration des nouveaux membres', 'href' => url('back-office/integration-membres'), 'icon' => 'path', 'active' => $boNavOnbMembers],
             ['label' => 'Indicateurs d’usage', 'href' => url('back-office/analytics'), 'icon' => 'chart', 'active' => $boNavAnalytics],
         ], static fn (?array $row): bool => is_array($row))),

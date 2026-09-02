@@ -57,6 +57,14 @@ return [
         ['path' => 'back-office/alerts', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Annonces & alertes', 'subtitle' => 'Bandeaux visibles par les membres connectés de votre communauté.', 'css' => ['back-office-alerts.css'], 'quick' => [
             ['label' => 'Nouvelle annonce', 'href' => 'back-office/alerts/create'],
         ]],
+        ['path' => 'back-office/articles/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ARTICLES', 'title' => 'Nouveau mini-article', 'subtitle' => 'Titre, tags, description, images et contenu HTML permanent.', 'quick' => [
+            ['label' => 'Liste', 'href' => 'back-office/articles'],
+            ['label' => 'Voir côté membres', 'href' => 'articles'],
+        ]],
+        ['path' => 'back-office/articles', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Mini-articles', 'subtitle' => 'Contenus permanents publiés rapidement pour la communauté.', 'quick' => [
+            ['label' => 'Nouvel article', 'href' => 'back-office/articles/create'],
+            ['label' => 'Voir côté membres', 'href' => 'articles'],
+        ]],
         ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres avancés'],
         ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Relais Discord par événement, transmissions terrain et jetons d’accès.'],
         ['path' => 'back-office/dashboard-pins', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Raccourcis du portail'],

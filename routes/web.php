@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\Web\HomeController;
 use App\Controllers\Web\HubController;
+use App\Controllers\Web\MiniArticlesController;
 use App\Controllers\Web\OperationWorkspaceController;
 use App\Controllers\Web\PersonnelController;
 use App\Controllers\Web\EnlistmentController;
@@ -116,6 +117,7 @@ use App\Controllers\Admin\System\SystemMilitaryReferentialController;
 use App\Controllers\Admin\System\SystemCooperationAnnouncementsController;
 use App\Controllers\Admin\System\SystemSubscriptionPlansController;
 use App\Controllers\Admin\Organization\TenantAlertsController;
+use App\Controllers\Admin\Organization\TenantMiniArticlesController;
 use App\Controllers\Api\AlertDismissController;
 use App\Controllers\Api\MePreferencesApiController;
 use App\Controllers\Api\PlatformUxFeedbackApiController;
@@ -392,6 +394,8 @@ return function (Router $router) {
     $router->get('/jnet/effectifs', [JnetPortalController::class, 'roster'], [AuthMiddleware::class]);
     $router->get('/jnet/applications', [JnetPortalController::class, 'apps'], [AuthMiddleware::class]);
     $router->get('/publier', [\App\Controllers\Web\PublicationLauncherController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/articles', [MiniArticlesController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/articles/{slug}', [MiniArticlesController::class, 'show'], [AuthMiddleware::class]);
     $router->get('/roleplay', [\App\Controllers\Web\RoleplayPageController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/alertes', [MemberAlertsController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/deploiement', [PersonnelDeploymentController::class, 'index'], [AuthMiddleware::class]);
@@ -1277,6 +1281,13 @@ return function (Router $router) {
     $router->post('/back-office/alerts/{id}/delete', [TenantAlertsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/alerts/affichage-a-venir', [TenantAlertsController::class, 'updateUpcomingVisibility'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/alerts', [TenantAlertsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+
+    $router->get('/back-office/articles/create', [TenantMiniArticlesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/articles', [TenantMiniArticlesController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/articles/{id}/edit', [TenantMiniArticlesController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/articles/{id}/update', [TenantMiniArticlesController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/articles/{id}/delete', [TenantMiniArticlesController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/articles', [TenantMiniArticlesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/recrutement', [RecruitmentWorkspaceController::class, 'dashboard'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/recrutement/analyses', [RecruitmentWorkspaceController::class, 'analytics'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/recrutement/automod/restore-access', [RecruitmentWorkspaceController::class, 'automodRestoreAccess'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
