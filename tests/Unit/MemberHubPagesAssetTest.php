@@ -19,8 +19,9 @@ final class MemberHubPagesAssetTest extends TestCase
         self::assertStringContainsString('member_hub_nav.php', $member);
         self::assertStringContainsString('member_hub_nav.php', $edit);
         self::assertStringContainsString('Fiche Effectifs', $nav);
-        self::assertStringContainsString('Compte', $nav);
-        self::assertStringContainsString('Dossier personnel', $nav);
+        self::assertStringContainsString('Point d’entrée unique', $nav);
+        self::assertStringNotContainsString("url('back-office/users/' . \$memberHubUserId . '/edit')", $nav);
+        self::assertStringNotContainsString("url('personnel/' . \$memberHubUserId . '/edit')", $nav);
         self::assertStringContainsString('eff-fiche-hero', $member);
         self::assertStringContainsString('id="anciennete"', $member);
         self::assertStringContainsString('updateMemberRoles', $ctrl);

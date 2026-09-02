@@ -24,6 +24,16 @@ $elevationCooldownSeconds = (int) ($elevationCooldownSeconds ?? 0);
 $elevationHistory = is_array($elevationHistory ?? null) ? $elevationHistory : [];
 $latestDeparture = is_array($latestDeparture ?? null) ? $latestDeparture : null;
 $orgFoundingDate = trim((string) ($orgFoundingDate ?? ''));
+$qualifications = is_array($memberQualifications ?? null) ? $memberQualifications : [];
+$absences = is_array($memberAbsences ?? null) ? $memberAbsences : [];
+$hrDocuments = is_array($memberHrDocuments ?? null) ? $memberHrDocuments : [];
+$mobilityRequests = is_array($memberMobilityRequests ?? null) ? $memberMobilityRequests : [];
+$orgHistory = is_array($memberOrgHistory ?? null) ? $memberOrgHistory : [];
+$serviceHistory = is_array($memberServiceHistory ?? null) ? $memberServiceHistory : [];
+$stageBilans = is_array($memberStageBilans ?? null) ? $memberStageBilans : [];
+$hrDocumentTypeLabels = is_array($hrDocumentTypeLabels ?? null) ? $hrDocumentTypeLabels : [];
+$mobilityTypeLabels = is_array($mobilityTypeLabels ?? null) ? $mobilityTypeLabels : [];
+$absenceReasonLabels = is_array($absenceReasonLabels ?? null) ? $absenceReasonLabels : [];
 
 $elevationCooldownLabel = static function (int $seconds): string {
     $hours = max(1, (int) ceil($seconds / 3600));
@@ -168,6 +178,17 @@ $memberHubTheme = 'lms';
 </section>
 
 <div class="eff-fiche-grid">
+    <article class="eff-card" style="grid-column:1/-1">
+        <h2 class="eff-card__title">Dossier RH complet</h2>
+        <p class="eff-card__lead">Toutes les informations et toutes les actions RH de ce membre sont réunies sur cette fiche Effectifs. Les espaces transverses restent accessibles pour ajouter une pièce ou traiter une demande, sans quitter le bureau Effectifs.</p>
+        <div class="eff-tags">
+            <a class="eff-btn eff-btn--ghost" href="#qualifications">Qualifications</a>
+            <a class="eff-btn eff-btn--ghost" href="#absences">Absences</a>
+            <a class="eff-btn eff-btn--ghost" href="#documents-rh">Documents RH</a>
+            <a class="eff-btn eff-btn--ghost" href="#mobilite">Mobilité</a>
+            <a class="eff-btn eff-btn--ghost" href="#historique-rh">Historique</a>
+        </div>
+    </article>
     <article class="eff-card">
         <h2 class="eff-card__title">Situation</h2>
         <dl class="eff-dl">
@@ -470,4 +491,66 @@ $memberHubTheme = 'lms';
         </form>
     </article>
     <?php endif; ?>
+
+    <?php
+    $renderRhList = static function (array $rows, callable $label): void {
+        if ($rows === []) {
+            echo '<p class="eff-card__lead">Aucune donnée enregistrée.</p>';
+            return;
+        }
+        echo '<ul class="eff-card__list">';
+        foreach ($rows as $row) {
+            echo '<li>' . htmlspecialchars($label($row), ENT_QUOTES, 'UTF-8') . '</li>';
+        }
+        echo '</ul>';
+    };
+    ?>
+    <article class="eff-card" id="qualifications">
+        <h2 class="eff-card__title">Qualifications</h2>
+        <?php $renderRhList($qualifications, static function (array $q) use ($fmtDate): string {
+            $name = trim((string) ($q['qualification_name'] ?? $q['name'] ?? $q['title'] ?? 'Qualification'));
+            $expiry = $fmtDate((string) ($q['expires_at'] ?? ''));
+            return $name . ($expiry !== '' ? ' · échéance ' . $expiry : '');
+        }); ?>
+        <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('qualifications'), ENT_QUOTES, 'UTF-8') ?>">Piloter les qualifications</a>
+    </article>
+
+    <article class="eff-card" id="absences">
+        <h2 class="eff-card__title">Absences</h2>
+        <?php $renderRhList($absences, static function (array $a) use ($fmtDate, $absenceReasonLabels): string {
+            $reason = (string) ($a['reason'] ?? 'other');
+            $period = $fmtDate((string) ($a['starts_at'] ?? $a['start_date'] ?? '')) . ' → ' . $fmtDate((string) ($a['ends_at'] ?? $a['end_date'] ?? ''));
+            return ($absenceReasonLabels[$reason] ?? $reason) . ' · ' . $period;
+        }); ?>
+    </article>
+
+    <article class="eff-card" id="documents-rh">
+        <h2 class="eff-card__title">Documents RH</h2>
+        <?php $renderRhList($hrDocuments, static function (array $d) use ($hrDocumentTypeLabels, $fmtDate): string {
+            $type = (string) ($d['doc_type'] ?? 'autre');
+            $title = trim((string) ($d['title'] ?? '')) ?: ($hrDocumentTypeLabels[$type] ?? 'Document RH');
+            return $title . ' · ' . ($fmtDate((string) ($d['created_at'] ?? '')) ?: 'date inconnue');
+        }); ?>
+        <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('documents-rh?user_id=' . $id), ENT_QUOTES, 'UTF-8') ?>">Ajouter ou ouvrir une pièce</a>
+    </article>
+
+    <article class="eff-card" id="mobilite">
+        <h2 class="eff-card__title">Mobilité et souhaits</h2>
+        <?php $renderRhList($mobilityRequests, static function (array $r) use ($mobilityTypeLabels, $fmtDate): string {
+            $type = (string) ($r['request_type'] ?? 'career_wish');
+            $status = trim((string) ($r['status'] ?? 'pending'));
+            return ($mobilityTypeLabels[$type] ?? $type) . ' · ' . $status . ' · ' . ($fmtDate((string) ($r['created_at'] ?? '')) ?: 'date inconnue');
+        }); ?>
+        <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('mobilite?user_id=' . $id), ENT_QUOTES, 'UTF-8') ?>">Traiter la mobilité</a>
+    </article>
+
+    <article class="eff-card" id="historique-rh" style="grid-column:1/-1">
+        <h2 class="eff-card__title">Historique RH et bilans</h2>
+        <?php $combinedHistory = array_merge($orgHistory, $serviceHistory, $stageBilans); ?>
+        <?php $renderRhList($combinedHistory, static function (array $h) use ($fmtDate): string {
+            $label = trim((string) ($h['title'] ?? $h['event_label'] ?? $h['event_type'] ?? $h['stage_label'] ?? $h['summary'] ?? 'Événement RH'));
+            $date = $fmtDate((string) ($h['event_date'] ?? $h['occurred_at'] ?? $h['created_at'] ?? ''));
+            return ($date !== '' ? $date . ' · ' : '') . $label;
+        }); ?>
+    </article>
 </div>
