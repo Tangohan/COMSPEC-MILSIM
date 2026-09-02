@@ -312,8 +312,7 @@
   max-width: 42rem;
 }
 
-.pd-page .pd-card__body section > div:first-child p.text-\[10px\],
-.pd-page .pd-card__body section > div:first-child [class*="tracking"] {
+.pd-page .pd-card__body section > div:first-child p.text-\[10px\] {
   display: none;
 }
 
