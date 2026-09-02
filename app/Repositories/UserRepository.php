@@ -3526,11 +3526,11 @@ class UserRepository
                 LEFT JOIN user_units uu ON uu.user_id = u.id AND uu.is_primary = 1
                     AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
                 LEFT JOIN units un ON un.id = uu.unit_id AND un.tenant_id = u.tenant_id
-                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active'
+                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active'
                 ORDER BY {$orderGrade}, u.display_name ASC, u.callsign ASC
                 LIMIT {$limit}";
         $stmt = $this->pdo()->prepare($sql);
-        $stmt->execute([$tenantId]);
+        $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -3579,7 +3579,7 @@ class UserRepository
         $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ('tenant_admin', 'community_owner')";
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($pack['params']);
@@ -3594,7 +3594,7 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.email FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
+                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ('tenant_admin', 'community_owner')";
             try {
                 $st = $this->pdo()->prepare($sql2);
@@ -3625,7 +3625,7 @@ class UserRepository
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             INNER JOIN role_permissions rp ON rp.role_id = r.id
             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
             AND p.slug IN ('admin.organization', 'admin.access')";
         try {
             $stmt = $this->pdo()->prepare($sql);
@@ -3644,7 +3644,7 @@ class UserRepository
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
                 INNER JOIN role_permissions rp ON rp.role_id = r.id
                 INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
+                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
                 AND p.slug IN ('admin.organization', 'admin.access')";
             try {
                 $st = $this->pdo()->prepare($sql2);
@@ -3672,7 +3672,7 @@ class UserRepository
         $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ('recruiter', 'community_owner', 'hr')";
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($pack['params']);
@@ -3687,7 +3687,7 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.email FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
+                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ('recruiter', 'community_owner', 'hr')";
             try {
                 $st = $this->pdo()->prepare($sql2);
@@ -3715,7 +3715,7 @@ class UserRepository
         $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ('administrator')";
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($pack['params']);
@@ -3730,7 +3730,7 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.email FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
+                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ('administrator')";
             try {
                 $st = $this->pdo()->prepare($sql2);
@@ -3760,7 +3760,7 @@ class UserRepository
         $slugs = "'tenant_admin', 'community_owner', 'forum_moderator', 'administrator'";
         $sql = "SELECT DISTINCT u.id FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
             AND r.slug IN ({$slugs})";
         try {
             $stmt = $this->pdo()->prepare($sql);
@@ -3775,7 +3775,7 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.id FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
+                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
                 AND r.slug IN ({$slugs})";
             try {
                 $st = $this->pdo()->prepare($sql2);
@@ -3802,7 +3802,7 @@ class UserRepository
         }
         $pack = $this->technicalAccountExclusionPredicate('u');
         $sql = "SELECT u.id FROM users u
-            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']}
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
             AND u.email IS NOT NULL AND TRIM(u.email) <> ''
             AND u.email LIKE '%@%'";
         try {
@@ -3898,7 +3898,7 @@ class UserRepository
         $ids = [];
         $sql = "SELECT DISTINCT u.id FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
         try {
             $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
@@ -3912,7 +3912,7 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.id FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id AND tur.org_unit_id IS NULL
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
+                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($params);
@@ -3950,15 +3950,15 @@ class UserRepository
         }
         $placeholders = implode(',', array_fill(0, count($permissionSlugs), '?'));
         $pack = $this->technicalAccountExclusionPredicate('u');
-        // Ordre des ? (dans l’ordre d’apparition SQL) : roles.tenant_id, permissions.tenant_id,
-        // users.tenant_id, exclusion technique, puis slugs. Jamais de permission site (tenant_id NULL).
-        $params = array_merge([$tenantId, $tenantId, $tenantId], $pack['params'], $permissionSlugs);
+        // Ordre des ? : roles.tenant_id, permissions.tenant_id, exclusion technique, puis slugs.
+        // Le prédicat d’appartenance inline le tenant (plus de ? users.tenant_id).
+        $params = array_merge([$tenantId, $tenantId], $pack['params'], $permissionSlugs);
         $ids = [];
         $sql = "SELECT DISTINCT u.id FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = ?
             INNER JOIN role_permissions rp ON rp.role_id = r.id
             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
-            WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
         try {
             $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
@@ -3969,14 +3969,14 @@ class UserRepository
             return [];
         }
         if ($this->hasTenantUserRolesTable()) {
-            // Ordre : tur.tenant_id, roles.tenant_id, permissions.tenant_id, users.tenant_id, exclusion, slugs
-            $params2 = array_merge([$tenantId, $tenantId, $tenantId, $tenantId], $pack['params'], $permissionSlugs);
+            // Ordre : tur.tenant_id, roles.tenant_id, permissions.tenant_id, exclusion, slugs
+            $params2 = array_merge([$tenantId, $tenantId, $tenantId], $pack['params'], $permissionSlugs);
             $sql2 = "SELECT DISTINCT u.id FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = ?
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = ?
                 INNER JOIN role_permissions rp ON rp.role_id = r.id
                 INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
-                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
+                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($params2);

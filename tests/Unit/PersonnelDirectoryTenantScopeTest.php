@@ -30,4 +30,23 @@ final class PersonnelDirectoryTenantScopeTest extends TestCase
         $src = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/user_community_identity_migration.php');
         self::assertStringContainsString("SET m.status = 'active', m.left_at = NULL", $src);
     }
+
+    /**
+     * Régression prod : dans une chaîne double-quote, `$this->sqlMemberOfTenantPredicate`
+     * est lu comme propriété (Undefined property), pas comme appel de méthode.
+     */
+    public function testMemberPredicateNeverInterpolatedAsPropertyInDoubleQuotedSql(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
+        // Motif cassé typique après remplacement mécanique dans des "…".
+        self::assertStringNotContainsString(
+            "WHERE ' . \$this->sqlMemberOfTenantPredicate('u', \$tenantId) . ' AND u.status = 'active'",
+            $src
+        );
+        // Forme correcte : fermeture de chaîne puis concaténation réelle.
+        self::assertStringContainsString(
+            'WHERE " . $this->sqlMemberOfTenantPredicate(\'u\', $tenantId) . " AND u.status = \'active\'',
+            $src
+        );
+    }
 }
