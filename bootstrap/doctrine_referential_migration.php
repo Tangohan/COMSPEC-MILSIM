@@ -55,9 +55,9 @@ return function (PDO $pdo): void {
 
     seedDefaultDoctrineCatalog($pdo);
 
-    $demoSeed = require dirname(__DIR__) . '/bootstrap/doctrine_demo_seed.php';
-    if (is_callable($demoSeed)) {
-        $demoSeed($pdo);
+    $demoCleanup = require dirname(__DIR__) . '/bootstrap/doctrine_demo_cleanup.php';
+    if (is_callable($demoCleanup)) {
+        $demoCleanup($pdo);
     }
 
     $atakSeed = require dirname(__DIR__) . '/bootstrap/doctrine_atak_employment_seed.php';

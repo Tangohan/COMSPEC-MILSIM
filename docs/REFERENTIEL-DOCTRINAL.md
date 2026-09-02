@@ -103,11 +103,15 @@ Exécuter `run-migrations.php` (bootstrap `doctrine_referential_migration.php`).
 
 Fichier SQL : `migrations/20260902120000_doctrine_referential.sql`
 
-## Données de démonstration
+## Seed ATAK et nettoyage des exemples
 
-Le bootstrap `doctrine_demo_seed.php` crée des doctrines réalistes (EM/DOCTR, OPS/SEC, DRH/PERS, etc.) si aucune doctrine n’existe encore pour le tenant.
+`doctrine_demo_seed.php` n’insère plus de documents : c’est le catalogue des paires référence / titre de l’ancien seed (hors SIC/ATAK).
 
-Le bootstrap `doctrine_atak_employment_seed.php` ajoute idempotemment la doctrine **SIC/ATAK/2026-001** (*Doctrine d’emploi d’ATAK / Overwatch Athena*) pour tous les tenants, avec fichier source `storage/documents/doctrine/sic-atak-2026-001.md`.
+`doctrine_demo_cleanup.php` archive, pour chaque tenant, uniquement ces documents (référence **et** titre ou slug). Idempotent. Ne touche pas SIC/ATAK/2026-001, ni un dépôt utilisateur dont la référence ou le titre diffère, ni un média pédagogique (catégorie `media`).
+
+`doctrine_atak_employment_seed.php` ajoute idempotemment la doctrine **SIC/ATAK/2026-001** (*Doctrine d’emploi d’ATAK / Overwatch Athena*). Si un stub de démonstration existe déjà (résumé « Document de démonstration » ou fichier `storage/documents/demo/`), le texte officiel est substitué sans créer de prises en compte.
+
+Déploiement : `php run-migrations.php` (ou `setup-database.php`). Un rechargement de page ne suffit pas.
 
 ## Évolutions prévues
 

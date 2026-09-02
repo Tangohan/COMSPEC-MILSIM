@@ -402,11 +402,23 @@
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
-.bo-kits__card input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
+.bo-kits__card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.bo-kits__card input[type="checkbox"] {
+  position: static;
+  inset: auto;
+  flex-shrink: 0;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+  opacity: 1;
   cursor: pointer;
+  accent-color: #059669;
+  -webkit-appearance: checkbox;
+  appearance: auto;
 }
 .bo-kits__card:hover,
 .bo-kits__card:focus-within {
@@ -417,6 +429,7 @@
 .bo-kits__card:has(input:checked) {
   border-color: #059669;
   background: linear-gradient(180deg, #ecfdf5 0%, #fff 55%);
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.18), 0 12px 24px rgba(5, 150, 105, 0.1);
 }
 .bo-kits__card-kicker {
   font-size: 0.68rem;
@@ -440,6 +453,17 @@
   font-size: 0.75rem;
   font-weight: 800;
   color: #059669;
+}
+.bo-kits__card-state-on {
+  display: none;
+}
+.bo-kits__card.is-on .bo-kits__card-state-off,
+.bo-kits__card:has(input:checked) .bo-kits__card-state-off {
+  display: none;
+}
+.bo-kits__card.is-on .bo-kits__card-state-on,
+.bo-kits__card:has(input:checked) .bo-kits__card-state-on {
+  display: inline;
 }
 .bo-kits__card:not(.is-on):not(:has(input:checked)) .bo-kits__card-state {
   color: #94a3b8;

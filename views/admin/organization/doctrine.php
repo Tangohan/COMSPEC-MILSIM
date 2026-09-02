@@ -152,11 +152,18 @@ require base_path('views/partials/ath_kpis.php');
             <span class="ath-field__help">Format libre, par exemple 1.0.0 ou 2026-A.</span>
         </label>
     </div>
-    <div class="ath-form__grid ath-form__grid--wide" style="margin-top:14px;">
+    <div class="ath-form__grid ath-form__grid--wide writing-assistant-layout" style="margin-top:14px;">
         <label class="ath-field">
-            <span class="ath-field__label">Contenu (Markdown)</span>
-            <textarea name="content_markdown" rows="8" required class="ath-field__textarea" placeholder="# Objet&#10;## Procédure&#10;- Étape 1&#10;- Étape 2"></textarea>
+            <span class="ath-field__label">Corps du document</span>
+            <textarea id="doctrine-content-markdown" name="content_markdown" rows="12" required class="ath-field__textarea" placeholder="Objet&#10;&#10;Procédure&#10;- Étape 1&#10;- Étape 2"></textarea>
+            <span class="ath-field__help">Rédigez le texte. L’assistant à droite insère une formule à l’endroit du curseur.</span>
         </label>
+        <?php
+        $assistantTarget = 'doctrine-content-markdown';
+        $assistantInsertMode = 'markdown';
+        $assistantLocked = false;
+        require base_path('views/partials/writing_assistant.php');
+        ?>
     </div>
     <div class="ath-form__actions">
         <button type="submit" class="ath-btn ath-btn--solid">Créer le document</button>

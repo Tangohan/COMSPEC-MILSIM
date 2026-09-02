@@ -66,17 +66,22 @@ $toneLabel = static function (string $tone): string {
                 $permCount = (int) ($kit['permission_count'] ?? $kit['key_count'] ?? 0);
                 ?>
             <label class="bo-kits__card<?= $checked ? ' is-on' : '' ?><?= $tone !== '' ? ' bo-kits__card--' . $h($tone) : '' ?>">
-                <input type="checkbox" name="kit_ids[]" value="<?= $h($kid) ?>"<?= $checked ? ' checked' : '' ?>>
-                <span class="bo-kits__card-kicker"><?= $h($toneLabel($tone)) ?> · <?= $permCount ?> droit<?= $permCount > 1 ? 's' : '' ?></span>
+                <span class="bo-kits__card-top">
+                    <input type="checkbox" name="kit_ids[]" value="<?= $h($kid) ?>"<?= $checked ? ' checked' : '' ?>>
+                    <span class="bo-kits__card-kicker"><?= $h($toneLabel($tone)) ?> · <?= $permCount ?> droit<?= $permCount > 1 ? 's' : '' ?></span>
+                </span>
                 <strong class="bo-kits__card-title"><?= $h((string) ($kit['label'] ?? '')) ?></strong>
                 <span class="bo-kits__card-text"><?= $h((string) ($kit['summary'] ?? '')) ?></span>
-                <span class="bo-kits__card-state"><?= $checked ? 'Activé' : 'Disponible' ?></span>
+                <span class="bo-kits__card-state">
+                    <span class="bo-kits__card-state-off">Disponible</span>
+                    <span class="bo-kits__card-state-on">Sélectionné</span>
+                </span>
             </label>
             <?php endforeach; ?>
         </div>
         <div class="bo-kits__actions">
             <button type="submit" class="ath-btn ath-btn--solid">Enregistrer les kits</button>
-            <p class="bo-kits__hint">
+            <p class="bo-kits__hint" data-bo-kits-hint>
                 <?= $enabledCount > 0
                     ? $enabledCount . ' kit' . ($enabledCount > 1 ? 's' : '') . ' sélectionné' . ($enabledCount > 1 ? 's' : '') . ' — multi-sélection possible.'
                     : 'Aucun kit coché pour l’instant.' ?>
@@ -155,3 +160,6 @@ $toneLabel = static function (string $tone): string {
     <p class="bo-kits__next">Cochez au moins un kit puis enregistrez pour l’attribuer aux membres.</p>
     <?php endif; ?>
 </div>
+<?php if (is_file(base_path('public/assets/js/bo-kits-selection.js'))): ?>
+<script defer src="<?= $h(asset_url('assets/js/bo-kits-selection.js')) ?>"></script>
+<?php endif; ?>

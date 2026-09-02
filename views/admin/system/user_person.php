@@ -16,9 +16,9 @@ $empty = static function (?string $v) use ($h): string {
 };
 $statusLabel = static function (string $status): string {
     return match ($status) {
-        'active' => 'Actif',
-        'inactive' => 'Désactivé',
-        'pending_verification' => 'E-mail à vérifier',
+        'active' => 'Compte actif',
+        'inactive' => 'Compte inactif',
+        'pending_verification' => 'En attente de vérification de l’e-mail',
         default => $status !== '' ? $status : 'Inconnu',
     };
 };
@@ -168,10 +168,13 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                             <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Créé / MAJ</p>
                             <p class="text-xs text-slate-600"><?= $h((string) ($m['created_at'] ?? '—')) ?> · <?= $h((string) ($m['updated_at'] ?? '—')) ?></p>
                         </div>
-                        <?php if (!$isDeleted && !$isDefault && $uid > 0): ?>
+                        <?php if (!$isDeleted && $uid > 0): ?>
                         <div class="sm:col-span-2 lg:col-span-3 flex flex-wrap gap-2 pt-1">
+                            <a href="<?= $h(url('admin/users/' . $uid . '/edit')) ?>" class="inline-flex rounded-lg bg-emerald-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-900">Modifier la fiche</a>
+                            <?php if (!$isDefault): ?>
                             <a href="<?= $h(url('personnel/' . $uid)) ?>" class="text-xs font-semibold text-emerald-800 hover:underline">Fiche personnel</a>
-                            <a href="<?= $h(url('back-office/users/' . $uid)) ?>" class="text-xs font-semibold text-slate-600 hover:underline">Fiche BO communauté</a>
+                            <a href="<?= $h(url('back-office/users/' . $uid)) ?>" class="text-xs font-semibold text-slate-600 hover:underline">Fiche communauté</a>
+                            <?php endif; ?>
                         </div>
                         <?php endif; ?>
                     </div>
