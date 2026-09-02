@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(179, $byKind['update']);
-        self::assertCount(185, $all);
+        self::assertSame(178, $byKind['update']);
+        self::assertCount(184, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -574,15 +574,10 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($availDash);
         self::assertSame('00374', $availDash['number_pad']);
         self::assertStringContainsString('disponibilité', strtolower((string) $availDash['title']));
-        $doctrineUi = DevDispatchCatalog::find('update', '375');
-        self::assertNotNull($doctrineUi);
-        self::assertSame('00375', $doctrineUi['number_pad']);
-        self::assertStringContainsString('doctrinal', strtolower((string) $doctrineUi['title']));
-        $doctrineDemo = DevDispatchCatalog::find('update', '376');
-        self::assertNotNull($doctrineDemo);
-        self::assertSame('00376', $doctrineDemo['number_pad']);
-        self::assertStringContainsString('atak', strtolower((string) $doctrineDemo['title']));
-        self::assertStringContainsString('exemple', strtolower((string) $doctrineDemo['activity']));
+        $kitsPick = DevDispatchCatalog::find('update', '375');
+        self::assertNotNull($kitsPick);
+        self::assertSame('00375', $kitsPick['number_pad']);
+        self::assertStringContainsString('kits', strtolower((string) $kitsPick['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

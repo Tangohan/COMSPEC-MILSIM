@@ -584,23 +584,10 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
-            $pr(376, '2026-09-02', 'Le référentiel doctrinal ne garde que la doctrine d’emploi ATAK', 'Les documents d’exemple du référentiel Doctrine sortent du catalogue publié. Reste la doctrine d’emploi d’ATAK / Overwatch Athena. Un média pédagogique déjà en place n’est pas concerné. Après la mise à jour du portail, ouvrez Documents, puis Doctrine', [
-                'Sortie du catalogue publié : doctrine générale, mesures de sûreté, transmissions, disponibilité du personnel, maintien des compétences, matériels sensibles, conduite du blessé, renseignement terrain',
-                'Conservation de la doctrine d’emploi d’ATAK / Overwatch Athena, avec le texte officiel s’il n’était encore qu’un exemple',
-                'Les documents que vous avez déposés vous-mêmes restent en place, y compris un média pédagogique tel qu’une bibliothèque JTAC',
-            ], [], [
-                'Des documents d’exemple figuraient dans le référentiel doctrinal publié',
-            ], ['platform'], [
-                'Après la mise à jour du portail, ouvrez Documents, puis Doctrine. Un simple rechargement de page ne retire pas les exemples : la mise à jour du portail doit d’abord être appliquée.',
-            ], 'Portail 1.6.04'),
-            $pr(375, '2026-09-02', 'Le référentiel doctrinal se consulte et se signe clairement', 'Les doctrines publiées apparaissent dans un tableau. La fiche se lit mieux. La prise en compte tient en une confirmation. Si le fichier n’est pas encore déposé, un écran indique comment revenir. À la rédaction, l’assistant propose des formules. Rechargez Documents', [
-                'Tableau des doctrines : référence, version, diffusion et votre état de lecture',
-                'Fiche document : résumé, ouverture, historique des versions',
-                'Prise en compte : une seule confirmation, bouton actif après la case',
-                'Si le fichier n’est pas consultable, retour à la fiche ou au référentiel',
-                'À la rédaction d’une doctrine, l’assistant insère des formules dans le texte',
-            ], [], [], ['platform'], [
-                'Ouvrez Documents, puis Doctrine. Pour signer : un document à prendre en compte. Pour rédiger : Doctrine et SOP, nouveau document.',
+            $pr(375, '2026-09-02', 'Les kits d’accès se cochent clairement avant l’enregistrement', 'Sur la page Kits d’accès, chaque carte affiche une case. Une carte retenue passe en Sélectionné et le pied de page indique combien de kits sont cochés. Enregistrez ensuite pour les attribuer aux membres', [], [], [
+                'Cliquer une carte ne changeait pas l’affichage : pas de case visible, le pied de page restait sur Aucun kit coché',
+            ], ['personnel'], [
+                'Ouvrez Effectifs, puis Kits d’accès. Cochez les packs voulus : le compteur se met à jour, puis Enregistrer les kits.',
             ], 'Portail 1.6.03'),
             $pr(374, '2026-09-02', 'Le tableau des effectifs affiche la disponibilité sur 90 jours', 'Sur le tableau rapide du tableau de bord, chaque membre montre son taux de disponibilité : participations annoncées et présences validées sur les trois derniers mois, sous forme de barre colorée. Rechargez le tableau de bord', [
                 'Colonne Disponibilité, avec le pourcentage et une barre du rouge au vert',
