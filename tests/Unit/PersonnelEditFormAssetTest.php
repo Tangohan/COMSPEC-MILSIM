@@ -65,6 +65,11 @@ final class PersonnelEditFormAssetTest extends TestCase
         self::assertStringContainsString('opt.search || opt.label || opt.name', $edit);
         self::assertStringContainsString('$knownValue($up[\'first_name\']', $edit);
         self::assertStringContainsString('.pd-tabs__group-label', $css);
+        self::assertStringContainsString('class="pd-savebar"', $edit);
+        self::assertStringContainsString('@input="dirty = true"', $edit);
+        self::assertStringContainsString('Modifications non enregistrées', $edit);
+        self::assertStringContainsString('.pd-savebar {', $css);
+        self::assertStringContainsString('position: sticky;', $css);
     }
 
     public function testEditAndUpdateKeepTheSameStaffRbacGuard(): void

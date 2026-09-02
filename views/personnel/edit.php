@@ -152,7 +152,7 @@ $editValidTabIds = implode(',', array_map(
     $editNavFlat
 ));
 ?>
-<div class="pd-page" x-data="{ tab: '<?= htmlspecialchars($editDefaultTab, ENT_QUOTES, 'UTF-8') ?>' }" x-init="const h = window.location.hash.slice(1); if ([<?= $editValidTabIds ?>].includes(h)) { tab = h }; $watch('tab', v => { if (v) history.replaceState(null, '', '#' + v) })">
+<div class="pd-page" x-data="{ tab: '<?= htmlspecialchars($editDefaultTab, ENT_QUOTES, 'UTF-8') ?>', dirty: false }" x-init="const h = window.location.hash.slice(1); if ([<?= $editValidTabIds ?>].includes(h)) { tab = h }; $watch('tab', v => { if (v) history.replaceState(null, '', '#' + v) })">
   <div class="pd-container">
     <header class="pd-header">
       <div>
@@ -228,11 +228,18 @@ $editValidTabIds = implode(',', array_map(
       </div>
       <?php endif; ?>
 
-      <form method="post" action="<?= htmlspecialchars($formAction) ?>">
+      <form method="post" action="<?= htmlspecialchars($formAction) ?>" @input="dirty = true" @change="dirty = true" @submit="dirty = false">
         <?= \App\Core\Csrf::field() ?>
         <?php if ($returnViewRh): ?>
         <input type="hidden" name="return_view" value="rh">
         <?php endif; ?>
+        <div class="pd-savebar" role="region" aria-label="Enregistrement du dossier">
+          <p class="pd-savebar__status" aria-live="polite">
+            <span x-show="!dirty">Modifiez les champs, puis enregistrez le dossier.</span>
+            <span x-cloak x-show="dirty" class="pd-savebar__status--dirty">Modifications non enregistrées</span>
+          </p>
+          <button type="submit" class="pd-btn pd-btn--primary">Enregistrer les modifications</button>
+        </div>
         <div class="pd-card__body">
 
         <?php if ($isMe): ?>
