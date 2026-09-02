@@ -49,4 +49,29 @@ final class PersonnelEditFormAssetTest extends TestCase
         self::assertStringContainsString('$editDefaultTab = \'forum-community-settings\'', $edit);
         self::assertStringContainsString("returnTo === 'edit'", $controller);
     }
+
+    public function testEditNavigationAndLargeReferenceListsAreSearchableAndGrouped(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $edit = (string) file_get_contents($root . '/views/personnel/edit.php');
+        $css = (string) file_get_contents($root . '/public/assets/css/personnel-dossier.css');
+
+        self::assertStringContainsString('foreach ($editNavGroups as $grp)', $edit);
+        self::assertStringContainsString('pd-tabs__group-label', $edit);
+        self::assertStringContainsString('x-model.debounce.150ms="unitQuery"', $edit);
+        self::assertStringContainsString('filteredUnitOptions(row.unit_id)', $edit);
+        self::assertStringContainsString('x-model.debounce.150ms="roleQuery"', $edit);
+        self::assertStringContainsString('filteredJobRoleOptions(row.role_id)', $edit);
+        self::assertStringContainsString('opt.search || opt.label || opt.name', $edit);
+        self::assertStringContainsString('$knownValue($up[\'first_name\']', $edit);
+        self::assertStringContainsString('.pd-tabs__group-label', $css);
+    }
+
+    public function testEditAndUpdateKeepTheSameStaffRbacGuard(): void
+    {
+        $controller = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/PersonnelController.php');
+
+        self::assertStringContainsString('if (!$isSelf && !$this->canStaffEditPersonnel())', $controller);
+        self::assertStringContainsString('if (!$isSelf && !$canStaffEdit)', $controller);
+    }
 }

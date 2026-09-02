@@ -95,6 +95,15 @@ $keepSelectOption = static function (array $options, string $current): array {
 
     return $options;
 };
+$knownValue = static function (...$values): string {
+    foreach ($values as $value) {
+        if (trim((string) $value) !== '') {
+            return (string) $value;
+        }
+    }
+
+    return '';
+};
 
 $editNavGroups = [
     [
@@ -183,13 +192,23 @@ $editValidTabIds = implode(',', array_map(
 
     <div class="pd-card">
       <nav class="pd-tabs" aria-label="Sections du dossier">
-        <?php foreach ($editNavFlat as $ni): ?>
-        <button
-          type="button"
-          class="pd-tabs__btn"
-          :class="tab === '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>' ? 'is-active' : ''"
-          @click="tab = '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>'"
-        ><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?></button>
+        <?php foreach ($editNavGroups as $grp): ?>
+        <?php $visibleItems = array_values(array_filter($grp['items'], static fn ($item) => !empty($item['show']))); ?>
+        <?php if ($visibleItems !== []): ?>
+        <div class="pd-tabs__group">
+          <span class="pd-tabs__group-label"><?= htmlspecialchars($grp['title'], ENT_QUOTES, 'UTF-8') ?></span>
+          <div class="pd-tabs__group-items">
+            <?php foreach ($visibleItems as $ni): ?>
+            <button
+              type="button"
+              class="pd-tabs__btn"
+              :class="tab === '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>' ? 'is-active' : ''"
+              @click="tab = '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>'"
+            ><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?></button>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <?php endif; ?>
         <?php endforeach; ?>
       </nav>
 
@@ -277,12 +296,12 @@ $editValidTabIds = implode(',', array_map(
               <div class="grid gap-4 md:grid-cols-2">
                 <div>
                   <label for="rp_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom</label>
-                  <input type="text" name="rp_first_name" id="rp_first_name" value="<?= htmlspecialchars((string) ($up['first_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
+                  <input type="text" name="rp_first_name" id="rp_first_name" value="<?= htmlspecialchars($knownValue($up['first_name'] ?? '', $p['first_name'] ?? '', $targetUser['first_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
                   <p class="mt-1 text-[11px] text-slate-500">Prénom du personnage — identité unique (dossier, annuaire, forum).</p>
                 </div>
                 <div>
                   <label for="rp_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom</label>
-                  <input type="text" name="rp_last_name" id="rp_last_name" value="<?= htmlspecialchars((string) ($up['last_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
+                  <input type="text" name="rp_last_name" id="rp_last_name" value="<?= htmlspecialchars($knownValue($up['last_name'] ?? '', $p['last_name'] ?? '', $targetUser['last_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
                   <p class="mt-1 text-[11px] text-slate-500">Nom du personnage — utilisé partout (dossier, annuaire, forum).</p>
                 </div>
                 <div class="md:col-span-2">
@@ -518,6 +537,13 @@ $editValidTabIds = implode(',', array_map(
                     Aucune unité : créez la structure dans l’<a class="font-semibold underline" href="<?= htmlspecialchars(url('orbat')) ?>">organigramme</a>.
                   </p>
                   <?php endif; ?>
+                  <?php if (!empty($units)): ?>
+                  <label class="relative block">
+                    <span class="sr-only">Rechercher une unité</span>
+                    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400" aria-hidden="true">⌕</span>
+                    <input type="search" x-model.debounce.150ms="unitQuery" placeholder="Rechercher une unité…" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+                  </label>
+                  <?php endif; ?>
                   <input type="hidden" name="primary_unit_id" :value="primaryUnitId()">
                   <template x-for="(row, idx) in rows" :key="row.key">
                     <div class="rounded-2xl border border-cyan-200 bg-cyan-50/30 p-4">
@@ -531,7 +557,7 @@ $editValidTabIds = implode(',', array_map(
                           <label class="mb-1 block text-[11px] font-bold text-slate-600">Unité</label>
                           <select :name="'unit_assignments[' + idx + '][unit_id]'" x-model.number="row.unit_id" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
                             <option value="0">— Aucune —</option>
-                            <template x-for="unit in unitOptions" :key="unit.id">
+                            <template x-for="unit in filteredUnitOptions(row.unit_id)" :key="unit.id">
                               <option :value="unit.id" x-text="unit.name"></option>
                             </template>
                           </select>
@@ -553,7 +579,17 @@ $editValidTabIds = implode(',', array_map(
                 $currentJobRolesJson = htmlspecialchars(json_encode($currentJobRoles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]', ENT_QUOTES, 'UTF-8');
                 ?>
                 <div x-data="personnelJobRolesEditor(<?= $currentJobRolesJson ?>, <?= $jobRoleOptionsJson ?>, <?= (int) $maxJobRolesPerMember ?>)">
-                  <label class="mb-1 block text-xs font-bold text-slate-600">Rôle(s) métier (référentiel)</label>
+                  <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-600">Rôle(s) métier (référentiel)</label>
+                      <p class="mt-1 text-[11px] text-slate-500">Recherche dans les catégories, métiers, codes MOS et intitulés anglais.</p>
+                    </div>
+                    <label class="relative block sm:w-80">
+                      <span class="sr-only">Rechercher un rôle métier</span>
+                      <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400" aria-hidden="true">⌕</span>
+                      <input type="search" x-model.debounce.150ms="roleQuery" placeholder="Rechercher un métier…" autocomplete="off" class="w-full rounded-xl border border-cyan-200 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+                    </label>
+                  </div>
                   <div class="space-y-2">
                     <template x-for="(row, idx) in roles" :key="row.key">
                       <div class="flex flex-col gap-2 rounded-xl border border-cyan-200 bg-white p-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -566,10 +602,11 @@ $editValidTabIds = implode(',', array_map(
                           <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Emploi</label>
                           <select :name="'job_roles[' + idx + '][role_id]'" x-model.number="row.role_id" class="w-full rounded-lg border border-cyan-200 bg-white px-2.5 py-2 text-xs shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
                             <option value="0">— Non renseigné —</option>
-                            <template x-for="opt in jobRoleOptions" :key="opt.id">
+                            <template x-for="opt in filteredJobRoleOptions(row.role_id)" :key="opt.id">
                               <option :value="opt.id" x-text="opt.label"></option>
                             </template>
                           </select>
+                          <p x-show="roleQuery && matchingRoleCount() === 0" class="mt-1 text-[10px] font-semibold text-amber-700">Aucun rôle correspondant.</p>
                         </div>
                         <div class="min-w-[160px] flex-1">
                           <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Précision</label>
@@ -1081,7 +1118,7 @@ $editValidTabIds = implode(',', array_map(
 <script>
 function personnelJobRolesEditor(initialRows, jobRoleOptions, maxRoles) {
   var rows = (initialRows || []).map(function (r, i) {
-    return { key: i, role_id: r.role_id || 0, detail: r.detail || '' };
+    return { key: i, role_id: parseInt(r.role_id, 10) || 0, detail: r.detail || '' };
   });
   if (rows.length === 0) {
     rows = [{ key: 0, role_id: 0, detail: '' }];
@@ -1095,7 +1132,28 @@ function personnelJobRolesEditor(initialRows, jobRoleOptions, maxRoles) {
     primaryIdx: primaryIdx,
     maxRoles: maxRoles || 5,
     jobRoleOptions: jobRoleOptions || [],
+    roleQuery: '',
     nextKey: rows.length,
+    normalizeSearch: function (value) {
+      return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    },
+    roleMatches: function (opt) {
+      var query = this.normalizeSearch(this.roleQuery);
+      if (!query) return true;
+      var haystack = this.normalizeSearch(opt.search || opt.label || opt.name || '');
+      return query.split(/\s+/).every(function (part) { return haystack.indexOf(part) !== -1; });
+    },
+    matchingRoleCount: function () {
+      var self = this;
+      return this.jobRoleOptions.filter(function (opt) { return self.roleMatches(opt); }).length;
+    },
+    filteredJobRoleOptions: function (selectedId) {
+      var self = this;
+      var current = parseInt(selectedId, 10) || 0;
+      return this.jobRoleOptions.filter(function (opt) {
+        return self.roleMatches(opt) || parseInt(opt.id, 10) === current;
+      });
+    },
     addRow: function () {
       if (this.roles.length >= this.maxRoles) return;
       this.roles.push({ key: this.nextKey++, role_id: 0, detail: '' });
@@ -1127,7 +1185,7 @@ function personnelUnitAssignmentsEditor(initialRows, unitOptions, maxRows) {
   var rows = (initialRows || []).map(function (row, index) {
     return {
       key: index,
-      unit_id: row.unit_id || 0,
+      unit_id: parseInt(row.unit_id, 10) || 0,
       role_name: row.role_name || '',
       is_primary: !!row.is_primary
     };
@@ -1145,8 +1203,18 @@ function personnelUnitAssignmentsEditor(initialRows, unitOptions, maxRows) {
     rows: rows,
     unitOptions: unitOptions || [],
     maxRows: maxRows || 8,
+    unitQuery: '',
     primaryIdx: primaryIdx,
     nextKey: rows.length,
+    filteredUnitOptions: function (selectedId) {
+      var query = String(this.unitQuery || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      var current = parseInt(selectedId, 10) || 0;
+      if (!query) return this.unitOptions;
+      return this.unitOptions.filter(function (unit) {
+        var name = String(unit.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        return name.indexOf(query) !== -1 || parseInt(unit.id, 10) === current;
+      });
+    },
     addRow: function () {
       if (this.rows.length >= this.maxRows) return;
       this.rows.push({ key: this.nextKey++, unit_id: 0, role_name: '', is_primary: false });
