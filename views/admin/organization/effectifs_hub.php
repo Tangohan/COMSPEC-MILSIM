@@ -307,6 +307,33 @@ $athKpis = [
     class="bo-eff-hub ath-dash-page"
     x-data="boEffHub(<?= $h($rowsJson) ?>)"
 >
+    <section class="bo-eff-hub__intro ath-rise" aria-labelledby="bo-eff-hub-intro-title">
+        <div class="bo-eff-hub__intro-copy">
+            <span class="bo-eff-hub__eyebrow">Centre de pilotage · <?= $h((string) ($communityName ?? 'Communauté')) ?></span>
+            <h2 id="bo-eff-hub-intro-title">Organisez les personnes, les unités et les responsabilités</h2>
+            <p>
+                Cette page est le point de départ de votre organisation. Elle ne contient pas les fiches nominatives&nbsp;:
+                elle vous guide vers le bon espace selon que vous souhaitez <strong>gérer un membre</strong>,
+                <strong>dessiner la hiérarchie</strong> ou <strong>définir les règles communes</strong>.
+            </p>
+            <div class="bo-eff-hub__intro-actions">
+                <a href="<?= $h($effectifsUrl) ?>" class="ath-btn ath-btn--solid">Gérer les membres</a>
+                <?php if ($canStructureRecruitmentHub): ?>
+                    <a href="<?= $h(url('back-office/organisation/structure')) ?>" class="ath-btn">Voir l’organigramme</a>
+                <?php endif; ?>
+            </div>
+        </div>
+        <aside class="bo-eff-hub__orientation" aria-label="Choisir le bon espace">
+            <span class="bo-eff-hub__orientation-title">Quel espace ouvrir&nbsp;?</span>
+            <ul>
+                <li><strong>Une personne</strong><span>Tableur des effectifs</span></li>
+                <li><strong>Une unité ou une équipe</strong><span>Structure et recrutement</span></li>
+                <li><strong>Un niveau hiérarchique</strong><span>Référentiel des grades</span></li>
+                <li><strong>Des accès Athena</strong><span>Rôles et droits</span></li>
+            </ul>
+        </aside>
+    </section>
+
     <?php require base_path('views/partials/ath_kpis.php'); ?>
 
     <nav class="bo-eff-hub__shortcuts ath-rise" aria-label="Accès rapide">
@@ -333,9 +360,46 @@ $athKpis = [
         <?php endif; ?>
     </nav>
 
+    <section class="bo-eff-hub__guide ath-rise" aria-labelledby="bo-eff-hub-guide-title">
+        <div class="bo-eff-hub__section-heading">
+            <div>
+                <span class="bo-eff-hub__eyebrow">Méthode conseillée</span>
+                <h2 id="bo-eff-hub-guide-title">Construire votre organisation en 4 étapes</h2>
+            </div>
+            <p>Commencez par la structure, puis rattachez les personnes. Les rôles d’accès se règlent en dernier.</p>
+        </div>
+        <ol class="bo-eff-hub__steps">
+            <li>
+                <span class="bo-eff-hub__step-number">01</span>
+                <div><strong>Créer la structure</strong><span>Ajoutez regroupements et sous-unités dans l’organigramme.</span></div>
+            </li>
+            <li>
+                <span class="bo-eff-hub__step-number">02</span>
+                <div><strong>Préparer les référentiels</strong><span>Définissez les grades et fonctions utilisés par votre communauté.</span></div>
+            </li>
+            <li>
+                <span class="bo-eff-hub__step-number">03</span>
+                <div><strong>Affecter les membres</strong><span>Renseignez pour chacun une unité, un grade et une fonction.</span></div>
+            </li>
+            <li>
+                <span class="bo-eff-hub__step-number">04</span>
+                <div><strong>Accorder les droits</strong><span>Attribuez seulement les rôles nécessaires à l’administration.</span></div>
+            </li>
+        </ol>
+        <div class="bo-eff-hub__glossary">
+            <span class="bo-eff-hub__glossary-label">À ne pas confondre</span>
+            <dl>
+                <div><dt>Grade</dt><dd>niveau hiérarchique affiché sur le profil</dd></div>
+                <div><dt>Fonction</dt><dd>métier ou responsabilité exercée</dd></div>
+                <div><dt>Affectation</dt><dd>place du membre dans une unité</dd></div>
+                <div><dt>Rôle</dt><dd>ensemble de droits d’accès dans Athena</dd></div>
+            </dl>
+        </div>
+    </section>
+
     <div class="ath-table-panel ath-rise">
         <div class="ath-table-toolbar">
-            <span class="ath-table-toolbar__title">Catalogue des outils</span>
+            <span class="ath-table-toolbar__title">Tous les espaces de gestion</span>
             <span class="ath-table-toolbar__count" x-text="visibleCount + ' / <?= $toolsCount ?> affiché(s)'"></span>
             <span class="ath-table-toolbar__spacer" aria-hidden="true"></span>
             <label class="ath-table-toolbar__search">
