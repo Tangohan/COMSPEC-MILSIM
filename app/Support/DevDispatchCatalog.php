@@ -584,6 +584,12 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(383, '2026-09-02', 'L’aperçu des documents PDF s’affiche à nouveau', 'Dans la bibliothèque, un document PDF s’ouvre de nouveau à l’écran. Si l’aperçu ne peut pas s’afficher, un message propose de le télécharger. Rechargez la page du document', [], [], [
+                'L’aperçu d’un PDF publié restait vide',
+                'Un échec d’affichage n’affiche plus une page hors ligne à la place du document',
+            ], ['platform'], [
+                'Ouvrez un document PDF publié dans la bibliothèque : les pages s’affichent, avec page suivante et zoom. Si ce n’est pas le cas, utilisez Télécharger.',
+            ], 'Portail 1.6.05'),
             $pr(380, '2026-09-02', 'Les alertes du dossier s’affichent sous le bandeau d’identité', 'Sur un dossier personnel, l’absence en cours et les actions du dossier apparaissent sous le bandeau sombre, après le nom. L’annonce d’ancienneté de la plateforme reste en haut, sous le menu. Rechargez la page du dossier', [], [], [
                 'L’absence en cours et les actions du dossier passaient au-dessus du bandeau Dossier personnel',
             ], ['platform'], [
