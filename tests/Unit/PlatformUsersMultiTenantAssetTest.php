@@ -15,7 +15,8 @@ final class PlatformUsersMultiTenantAssetTest extends TestCase
         $repo = (string) file_get_contents($root . '/app/Repositories/UserRepository.php');
         self::assertStringContainsString('listAllMembershipsByEmail', $repo);
         self::assertStringContainsString('emailHasActiveNonDefaultMembership', $repo);
-        self::assertStringContainsString("t.slug <> 'default'", $repo);
+        self::assertStringContainsString("SqlText::notEqualsLiteral(\$pdo, 't.slug', 'default')", $repo);
+        self::assertStringContainsString("SqlText::equalsLiteral(\$pdo, 't.slug', 'default')", $repo);
         /* Les orphelins doivent rester visibles dans liste + recherche. */
         self::assertStringNotContainsString('shouldHideOrphanedPlatformAccounts', $repo);
         self::assertStringNotContainsString('hasActiveNonDefaultMembershipPredicate', $repo);

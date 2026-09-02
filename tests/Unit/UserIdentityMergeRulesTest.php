@@ -123,6 +123,30 @@ final class UserIdentityMergeRulesTest extends TestCase
         self::assertTrue(UserIdentityMergeRules::isLiveHumanEmail('pilot@example.test'));
     }
 
+    public function testMergeRowFieldsOnlyFillsEmptySurvivorColumns(): void
+    {
+        $survivor = ['first_name' => 'Jean', 'last_name' => '', 'phone' => null];
+        $incoming = ['first_name' => 'Jacques', 'last_name' => 'Dupont', 'phone' => '0600000000'];
+        $fills = UserIdentityMergeRules::mergeRowFieldsOntoSurvivor(
+            $survivor,
+            $incoming,
+            ['first_name', 'last_name', 'phone']
+        );
+        self::assertArrayNotHasKey('first_name', $fills);
+        self::assertSame('Dupont', $fills['last_name']);
+        self::assertSame('0600000000', $fills['phone']);
+    }
+
+    public function testCommunityProfileFillEmptySkipsAlreadySetValues(): void
+    {
+        $existing = ['callsign' => 'ALPHA', 'grade_id' => 5];
+        $incoming = ['callsign' => 'BRAVO', 'grade_id' => 9, 'display_name' => 'Opérateur'];
+        $fills = UserIdentityMergeRules::communityProfileFillEmpty($existing, $incoming);
+        self::assertArrayNotHasKey('callsign', $fills);
+        self::assertArrayNotHasKey('grade_id', $fills);
+        self::assertSame('Opérateur', $fills['display_name']);
+    }
+
     public function testPickPreferredDossierPrefersSessionTenantThenRichestRow(): void
     {
         $empty = [

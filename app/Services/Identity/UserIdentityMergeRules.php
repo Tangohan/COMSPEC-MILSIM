@@ -64,6 +64,17 @@ final class UserIdentityMergeRules
         'personnel_extras',
     ];
 
+    /** Colonnes fusionnables champ par champ si le survivant a déjà une ligne. */
+    public const IDENTITY_TABLE_MERGE_FIELDS = [
+        'user_profiles' => [
+            'first_name', 'last_name', 'birth_date', 'nationality', 'country_of_residence',
+            'public_flag_country_code', 'discord_handle', 'timezone', 'language', 'bio', 'phone',
+        ],
+        'user_legal_identities' => [
+            'first_name', 'last_name', 'birth_date', 'nationality', 'phone',
+        ],
+    ];
+
     /**
      * @param list<array<string, mixed>> $rows
      * @return array<string, mixed>
@@ -182,6 +193,52 @@ final class UserIdentityMergeRules
         }
 
         return $out;
+    }
+
+    /**
+     * Complète une ligne existante avec les champs non vides d’une autre (sans écraser).
+     *
+     * @param array<string, mixed> $survivorRow
+     * @param array<string, mixed> $incomingRow
+     * @param list<string>         $fields
+     * @return array<string, mixed>
+     */
+    public static function mergeRowFieldsOntoSurvivor(array $survivorRow, array $incomingRow, array $fields): array
+    {
+        $fills = [];
+        foreach ($fields as $key) {
+            $current = $survivorRow[$key] ?? null;
+            $incoming = $incomingRow[$key] ?? null;
+            if (self::isEmptyIdentityValue($current) && !self::isEmptyIdentityValue($incoming)) {
+                $fills[$key] = $incoming;
+            }
+        }
+
+        return $fills;
+    }
+
+    /**
+     * Profil communauté : ne retient que les champs utiles à combler sur une fiche existante.
+     *
+     * @param array<string, mixed> $existing
+     * @param array<string, mixed> $incoming
+     * @return array<string, mixed>
+     */
+    public static function communityProfileFillEmpty(array $existing, array $incoming): array
+    {
+        $fills = [];
+        foreach (self::COMMUNITY_PROFILE_FIELDS as $key) {
+            if (!array_key_exists($key, $incoming)) {
+                continue;
+            }
+            $current = $existing[$key] ?? null;
+            $value = $incoming[$key];
+            if (self::isEmptyIdentityValue($current) && !self::isEmptyIdentityValue($value)) {
+                $fills[$key] = $value;
+            }
+        }
+
+        return $fills;
     }
 
     public static function mergedStubEmail(int $absorbedUserId): string

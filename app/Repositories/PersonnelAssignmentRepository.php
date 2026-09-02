@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Services\Personnel\PersonnelAssignmentHistoryCoalescer;
+use App\Support\SqlText;
 use DateTimeImmutable;
 use PDO;
 
@@ -120,6 +121,7 @@ class PersonnelAssignmentRepository
 
     public function getPrimaryAssignment(int $userId, ?int $tenantId = null): ?array
     {
+        $statusEq = SqlText::equals($this->pdo, 'pa.status');
         $tenantSql = '';
         $params = [$userId, 'active'];
         if ($tenantId !== null && $tenantId > 0) {
@@ -130,7 +132,7 @@ class PersonnelAssignmentRepository
             'SELECT pa.*, u.name AS unit_name, u.slug AS unit_slug, u.commander_user_id
              FROM personnel_assignments pa
              JOIN units u ON u.id = pa.unit_id
-             WHERE pa.user_id = ? AND pa.is_primary = 1 AND pa.status = ? AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())
+             WHERE pa.user_id = ? AND pa.is_primary = 1 AND ' . $statusEq . ' AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())
              ' . $tenantSql . '
              LIMIT 1'
         );

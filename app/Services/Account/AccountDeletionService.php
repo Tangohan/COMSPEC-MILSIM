@@ -139,12 +139,14 @@ final class AccountDeletionService
             return ['ok' => false, 'anonymized_user_ids' => []];
         }
 
-        $ok = $this->users->anonymizeUserIdentity($userId, $actorUserId);
-        if ($ok) {
-            $this->scrubRelatedPersonalData($userId);
-        }
+        $this->users->communityMemberships()->leave($userId, $tenantId);
+        $this->users->communityMemberships()->upsertProfile($userId, $tenantId, [
+            'status' => 'inactive',
+            'display_name' => self::DELETED_DISPLAY_NAME,
+            'callsign' => null,
+        ]);
 
-        return ['ok' => $ok, 'anonymized_user_ids' => $ok ? [$userId] : []];
+        return ['ok' => true, 'anonymized_user_ids' => []];
     }
 
     /**

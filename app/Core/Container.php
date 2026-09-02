@@ -739,6 +739,10 @@ class Container
                 self::get(\App\Repositories\PersonnelExtrasRepository::class),
                 self::get(\App\Repositories\RecruitmentPresetRepository::class),
             ),
+            \App\Services\Identity\UserIdentityMergeService::class => new \App\Services\Identity\UserIdentityMergeService(
+                \App\Core\Database::getPdo(),
+                new \App\Repositories\UserCommunityMembershipRepository(\App\Core\Database::getPdo()),
+            ),
             \App\Controllers\Web\AccountPrivacyController::class => new \App\Controllers\Web\AccountPrivacyController(
                 self::get(AuthService::class),
                 self::get(\App\Services\Account\AccountDataExportService::class),

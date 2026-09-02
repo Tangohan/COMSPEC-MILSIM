@@ -74,6 +74,21 @@ final class SqlTextTest extends TestCase
         $aliasEq = SqlText::normalizedCoalesceEmptyEquals($pdo, 'alias');
         self::assertStringContainsString('COALESCE(alias', $aliasEq);
         self::assertStringContainsString('COLLATE utf8mb4_unicode_ci', $aliasEq);
+
+        $slugNotDefault = SqlText::notEqualsLiteral($pdo, 't.slug', 'default');
+        self::assertStringContainsString('t.slug COLLATE utf8mb4_unicode_ci', $slugNotDefault);
+        self::assertStringContainsString("'default' COLLATE utf8mb4_unicode_ci", $slugNotDefault);
+
+        $statusCase = SqlText::coalesceEqualsLiteral($pdo, 'p.status', 'u.status', 'active');
+        self::assertStringContainsString('COALESCE(p.status, u.status) COLLATE utf8mb4_unicode_ci', $statusCase);
+        self::assertStringContainsString("'active' COLLATE utf8mb4_unicode_ci", $statusCase);
+
+        $deletedName = SqlText::isNullOrCoalesceTrimNotEqualsLiteral($pdo, 'p.display_name', 'u.display_name', 'Compte supprimé');
+        self::assertStringContainsString('TRIM(COALESCE(p.display_name, u.display_name)) COLLATE utf8mb4_unicode_ci', $deletedName);
+        self::assertStringContainsString("'Compte supprimé' COLLATE utf8mb4_unicode_ci", $deletedName);
+
+        $trimNotEmpty = SqlText::coalesceTrimIsNotEmpty($pdo, 'ucp.callsign', 'u.callsign');
+        self::assertStringContainsString('TRIM(COALESCE(ucp.callsign, u.callsign)) COLLATE utf8mb4_unicode_ci', $trimNotEmpty);
     }
 
     public function testRejectsUnsafeColumnExpressions(): void
@@ -117,5 +132,50 @@ final class SqlTextTest extends TestCase
             'WHERE LOWER(TRIM(u.email)) = ? AND u.status = ?',
             $src
         );
+    }
+
+    public function testListAllMembershipsByEmailSourceUsesCollationSafeComparisons(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
+        self::assertStringContainsString('function listAllMembershipsByEmail', $src);
+        self::assertStringContainsString('SqlText::equalsLiteral($pdo, \'t.slug\', \'default\')', $src);
+        self::assertStringContainsString('SqlText::coalesceEqualsLiteral($pdo, \'p.status\', \'u.status\', \'active\')', $src);
+        self::assertStringNotContainsString("CASE WHEN t.slug = 'default' THEN 1 ELSE 0 END ASC", $src);
+    }
+
+    public function testEmailHasActiveNonDefaultMembershipUsesCollationSafeSlugFilter(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
+        self::assertStringContainsString('function emailHasActiveNonDefaultMembership', $src);
+        if (!preg_match('/function emailHasActiveNonDefaultMembership\b.*?^\    \}/ms', $src, $match)) {
+            self::fail('emailHasActiveNonDefaultMembership introuvable.');
+        }
+        $body = $match[0];
+        self::assertStringContainsString("SqlText::notEqualsLiteral(\$pdo, 't.slug', 'default')", $body);
+        self::assertStringNotContainsString("t.slug <> 'default'", $body);
+    }
+
+    public function testPersonnelDirectoryUsesCollationSafeStatusAndDeletedNameFilters(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
+        if (!preg_match('/function listPersonnelDirectoryRich\b.*?^\    \}/ms', $src, $match)) {
+            self::fail('listPersonnelDirectoryRich introuvable.');
+        }
+        $body = $match[0];
+        self::assertStringContainsString("SqlText::coalesceEqualsLiteral(\$pdo, 'ucp.status', 'u.status', 'active')", $body);
+        self::assertStringContainsString("SqlText::isNullOrCoalesceTrimNotEqualsLiteral", $body);
+        self::assertStringNotContainsString("COALESCE(ucp.status, u.status) = 'active'", $body);
+        self::assertStringNotContainsString("TRIM(" . '$displayNameExpr' . ") <> 'Compte supprimé'", $body);
+    }
+
+    public function testMemberPredicateUsesCollationSafeMembershipStatus(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
+        if (!preg_match('/function sqlMemberOfTenantPredicate\b.*?^\    \}/ms', $src, $match)) {
+            self::fail('sqlMemberOfTenantPredicate introuvable.');
+        }
+        $body = $match[0];
+        self::assertStringContainsString("SqlText::equalsLiteral(\$this->pdo(), '__ucm.status', 'active')", $body);
+        self::assertStringNotContainsString("__ucm.status = 'active'", $body);
     }
 }
