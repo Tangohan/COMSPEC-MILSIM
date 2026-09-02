@@ -14,8 +14,8 @@ use App\Repositories\DocumentVersionRepository;
 use App\Repositories\Doctrine\DocumentDoctrineRepository;
 use App\Repositories\Doctrine\DocumentViewRepository;
 use App\Services\Doctrine\DoctrineAcknowledgmentService;
+use App\Services\Doctrine\DoctrineDocumentAccessService;
 use App\Services\Doctrine\DocumentComplianceService;
-use App\Services\Documents\DocumentAccessService;
 use App\Support\Doctrine\DoctrineComplianceStatus;
 use App\Support\Doctrine\DoctrineWorkflowStatus;
 
@@ -25,7 +25,7 @@ final class DoctrineDocumentsController
         private DocumentRepository $documentRepository,
         private DocumentDoctrineRepository $doctrineRepository,
         private DocumentVersionRepository $versionRepository,
-        private DocumentAccessService $documentAccessService,
+        private DoctrineDocumentAccessService $doctrineDocumentAccessService,
         private DocumentComplianceService $complianceService,
         private DocumentViewRepository $viewRepository,
         private DoctrineAcknowledgmentService $acknowledgmentService,
@@ -57,13 +57,13 @@ final class DoctrineDocumentsController
             return (new Response())->setStatusCode(404)->setBody('Doctrine introuvable.');
         }
 
-        if (!$this->documentAccessService->canRead($doc, $userId, $tenantId)) {
-            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
-        }
-
         $doctrine = $this->doctrineRepository->findByDocumentId($documentId, $tenantId);
         if ($doctrine === null) {
             return (new Response())->setStatusCode(404)->setBody('Ce document n’est pas une doctrine référencée.');
+        }
+
+        if (!$this->doctrineDocumentAccessService->canMemberView($tenantId, $userId, $doc, $doctrine)) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
         }
 
         if ((string) ($doctrine['doctrine_status'] ?? '') !== DoctrineWorkflowStatus::PUBLISHED) {
@@ -149,6 +149,10 @@ final class DoctrineDocumentsController
         $doctrine = $this->doctrineRepository->findByDocumentId($documentId, $tenantId);
         if ($doctrine === null) {
             return Response::json(['success' => false, 'error' => 'Doctrine introuvable.'], 404);
+        }
+
+        if (!$this->doctrineDocumentAccessService->canMemberView($tenantId, $userId, $doc, $doctrine)) {
+            return Response::json(['success' => false, 'error' => 'Accès refusé.'], 403);
         }
 
         $versionId = (int) ($request->input('version_id') ?? $doc['version_id'] ?? 0);

@@ -67,8 +67,8 @@ function seedTenantDemo(PDO $pdo, int $tenantId): void
     foreach ($demos as [$ref, $svc, $dom, $title, $req, $major, $minor]) {
         $slug = strtolower(str_replace(['/', ' '], '-', $ref));
         $insDoc = $pdo->prepare(
-            'INSERT INTO documents (tenant_id, scope, title, slug, description, document_category_id, status, created_by, created_at, updated_at)
-             VALUES (?, \'tenant\', ?, ?, ?, ?, \'published\', ?, NOW(), NOW())'
+            'INSERT INTO documents (tenant_id, scope, title, slug, description, document_category_id, status, visibility_scope, created_by, created_at, updated_at)
+             VALUES (?, \'tenant\', ?, ?, ?, ?, \'published\', \'organization\', ?, NOW(), NOW())'
         );
         try {
             $insDoc->execute([$tenantId, $title, $slug, $title, $categoryId, $userId > 0 ? $userId : null]);
