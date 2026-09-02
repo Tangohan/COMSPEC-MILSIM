@@ -23,6 +23,9 @@ final class AtakPhoneSettingsIdentityAssetTest extends TestCase
         $boot = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_applyBootstrap.sqf'
         );
+        $authCells = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_authStateCells.sqf'
+        );
         $settings = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_updateSettings.sqf'
         );
@@ -50,8 +53,9 @@ final class AtakPhoneSettingsIdentityAssetTest extends TestCase
         self::assertStringNotContainsString('name player', $get);
         self::assertStringNotContainsString('setGroupIdGlobal', $set);
         self::assertStringContainsString('isUsableCallsign', $set);
-        self::assertStringContainsString('splitKeepEmpty', $boot);
+        self::assertStringContainsString('authStateCells', $boot);
         self::assertStringContainsString('isUsableCallsign', $boot);
+        self::assertStringContainsString('splitKeepEmpty', $authCells);
         self::assertStringContainsString('[true] call comspec_overwatch_connect_fnc_getCallsign', $settings);
         self::assertStringContainsString('inGameGroupLabel', $settings);
         self::assertStringContainsString('Rester dans le groupe actuel', $settings);
