@@ -348,7 +348,7 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                     $ficheUrl = effectifs_workspace_url('membres/' . $id);
                     $editUrl = url('back-office/users/' . $id . '/edit');
                     $personnelUrl = url('personnel/' . $id);
-                    $personnelEditUrl = url('personnel/' . $id . '/edit');
+                    $personnelEditUrl = effectifs_workspace_url('membres/' . $id . '/modifier');
                     $avatarUrl = function_exists('personnel_operator_portrait_url')
                         ? (string) (personnel_operator_portrait_url($row) ?? '')
                         : (function_exists('user_media_public_url')
