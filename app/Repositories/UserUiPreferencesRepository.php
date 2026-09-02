@@ -75,7 +75,10 @@ class UserUiPreferencesRepository
             foreach ($map as $key => $col) {
                 if (array_key_exists($key, $data)) {
                     $sets[] = "`$col` = ?";
-                    $params[] = $data[$key];
+                    // PDO binds bool false as '' ; MySQL TINYINT rejects that under strict mode.
+                    $params[] = $key === 'sidebar_collapsed'
+                        ? (int) (bool) $data[$key]
+                        : $data[$key];
                 }
             }
             if (array_key_exists('dashboard_layout_json', $data)) {
