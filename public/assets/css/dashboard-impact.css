@@ -2297,6 +2297,17 @@ body.dashboard-shell main {
   color: #34d399;
 }
 
+.dash-site-support-tile .dash-org-anomaly-tile__kicker,
+.dash-site-support-tile .dash-org-anomaly-tile__cta {
+  color: #38bdf8;
+}
+
+.dash-site-support-tile .dash-org-anomaly-tile__open:hover,
+.dash-site-support-tile .dash-org-anomaly-tile__open:focus-visible {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.12);
+}
+
 .dash-org-anomaly-tile__title {
   margin: 0;
   display: block;

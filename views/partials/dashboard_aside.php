@@ -150,6 +150,9 @@ $navTiles = [
             ? ['label' => 'Rédiger un article', 'href' => url('dashboard') . '#dashboard-quick-articles', 'hint' => 'Annonce pour les membres']
             : null,
         ['label' => 'Signaler une anomalie', 'href' => url('dashboard') . '#signaler-anomalie', 'hint' => 'À la gestion de l’organisation'],
+        $canAdmin
+            ? ['label' => 'Contacter l’administration du site', 'href' => url('dashboard') . '#contacter-admin-site', 'hint' => 'Problème transversal ou demande aux admins du site']
+            : null,
         ['label' => 'Boîte de réception', 'href' => url('boite-reception'), 'hint' => 'Messages et éléments à traiter'],
     ]), 'overview'),
     $tile('hub', 'Hub', 'Centre de commandement', 'default', null, $links([
@@ -173,6 +176,22 @@ $navTiles[] = $tile(
     'anomaly',
     $orgAnomalyExtra
 );
+
+if ($canAdmin) {
+    ob_start();
+    require base_path('views/partials/dashboard_site_support_form.php');
+    $siteSupportExtra = (string) ob_get_clean();
+    $navTiles[] = $tile(
+        'site-support',
+        'Administration du site',
+        'Demande aux admins du site',
+        'default',
+        null,
+        [],
+        'anomaly',
+        $siteSupportExtra
+    );
+}
 
 if ($canForum) {
     $navTiles[] = $tile('forum', 'Forum', 'Échanges de la communauté', 'default', null, $links([

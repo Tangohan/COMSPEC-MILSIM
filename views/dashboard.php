@@ -134,6 +134,9 @@ if (!is_string($showcase_kit_json) || $showcase_kit_json === '') {
 <?php if (is_file(base_path('public/assets/js/dashboard-org-anomaly.js'))): ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/dashboard-org-anomaly.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <?php endif; ?>
+<?php if (is_file(base_path('public/assets/js/dashboard-site-support.js'))): ?>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/dashboard-site-support.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php endif; ?>
 <?php if (is_file(base_path('public/assets/js/athena-header.js'))): ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/athena-header.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <?php endif; ?>
