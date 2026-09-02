@@ -62,7 +62,7 @@ class HomeController
         }
 
         return Response::view('home.index', [
-            'title' => 'Athena Compsec — Portail MILSIM',
+            'title' => 'Athena Comspec — Portail MILSIM',
             'platformKpis' => $platformKpis,
             'platformKpiDays' => $days,
             'featuredUnits' => $featuredUnits,

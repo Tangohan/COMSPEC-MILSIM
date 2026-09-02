@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 return [
-    'meta_title' => 'Athena Compsec — MILSIM portal',
-    'meta_description' => 'Athena Compsec: MILSIM portal for Arma 3 communities. Create your unit, manage training, recruitment, forum and field command (ATAK) in an isolated space.',
+    'meta_title' => 'Athena Comspec — MILSIM portal',
+    'meta_description' => 'Athena Comspec: MILSIM portal for Arma 3 communities. Create your unit, manage training, recruitment, forum and field command (ATAK) in an isolated space.',
     'nav_aria' => 'Portal navigation',
     'hero_kicker' => 'MILSIM portal · Unit command',
     'hero_body' => 'A foundation for your Arma community — from enlistment to the field. Organisation, attendance, doctrine and C2 in one place.',
@@ -102,7 +102,7 @@ return [
     'story_07_k' => 'Debrief',
     'story_07_t' => "Capture value\nafter\nthe action.",
     'story_07_d' => 'Documents, forum, awards and analysis to improve.',
-    'story_08_k' => 'Athena Compsec',
+    'story_08_k' => 'Athena Comspec',
     'story_08_t' => "Your unit\ndeserves better\nthan Discord / TS.",
     'story_08_d' => 'A portal built for command: clear, structured, field-ready.',
     'cta_create_account' => 'Create an account',
