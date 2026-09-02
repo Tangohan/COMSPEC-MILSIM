@@ -216,7 +216,63 @@
   color: #64748b;
 }
 
+.doctrine-ref {
+  min-height: 100vh;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.doctrine-ref__shell {
+  width: min(100%, 80rem);
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+@media (min-width: 768px) {
+  .doctrine-ref__shell { padding: 2.25rem 1.5rem 3.5rem; }
+}
+.doctrine-ref__count {
+  margin: 0.85rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #475569;
+}
+.doctrine-ref__table-head {
+  padding: 0.85rem 1rem 0.15rem;
+}
+.doctrine-ref__table-head h2 {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.doctrine-ref__cell-title {
+  white-space: normal;
+  min-width: 14rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.doctrine-ref__empty-card {
+  margin: 0;
+  padding: 1.25rem;
+  border-radius: 0.85rem;
+  border: 1px dashed #cbd5e1;
+  background: #fff;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.doctrine-show {
+  min-height: 70vh;
+  background: #f1f5f9;
+}
+.doctrine-show__shell {
+  width: min(100%, 52rem);
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
 .doctrine-show__kicker {
+  margin: 0;
   font-size: 0.625rem;
   font-weight: 900;
   letter-spacing: 0.28em;
@@ -228,24 +284,40 @@
   justify-content: space-between;
   gap: 1rem;
   align-items: flex-start;
-  margin: 0.5rem 0 1.25rem;
+  margin: 0.65rem 0 1.15rem;
+}
+.doctrine-show__ref-label {
+  margin: 0 0 0.2rem;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #94a3b8;
 }
 .doctrine-show__ref {
-  font-size: 1rem;
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.35rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  font-size: 0.8125rem;
   font-weight: 800;
 }
 .doctrine-show__title {
-  margin: 0.35rem 0 0;
+  margin: 0.45rem 0 0;
   font-size: clamp(1.35rem, 2.5vw, 1.85rem);
   font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: #0f172a;
 }
 .doctrine-show__meta {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  border-radius: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 0.9rem;
   border: 1px solid #e2e8f0;
   background: #fff;
 }
@@ -257,25 +329,73 @@
   color: #94a3b8;
 }
 .doctrine-show__meta dd {
-  margin: 0.15rem 0 0;
+  margin: 0.2rem 0 0;
   font-weight: 700;
   color: #0f172a;
 }
+.doctrine-show__deadline dd { color: #b45309; }
 .doctrine-show__summary,
 .doctrine-show__file,
 .doctrine-show__history {
-  margin-bottom: 1.25rem;
-  padding: 1rem 1.1rem;
-  border-radius: 0.85rem;
+  margin-bottom: 1rem;
+  padding: 1.05rem 1.15rem;
+  border-radius: 0.9rem;
   border: 1px solid #e2e8f0;
   background: #fff;
 }
+.doctrine-show__summary h2,
+.doctrine-show__file h2,
+.doctrine-show__history h2 {
+  margin: 0 0 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.doctrine-show__summary p,
+.doctrine-show__file-lead,
+.doctrine-show__empty {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: #334155;
+}
+.doctrine-show__file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
 .doctrine-show__version-list {
   margin: 0;
-  padding-left: 1.1rem;
-  font-size: 0.875rem;
-  line-height: 1.55;
+  padding: 0;
+  list-style: none;
 }
+.doctrine-show__version {
+  padding: 0.7rem 0;
+  border-top: 1px solid #f1f5f9;
+}
+.doctrine-show__version:first-child { border-top: 0; padding-top: 0; }
+.doctrine-show__version-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  align-items: baseline;
+}
+.doctrine-show__version-now {
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #047857;
+}
+.doctrine-show__version p {
+  margin: 0.3rem 0 0;
+  font-size: 0.8125rem;
+  color: #475569;
+}
+.doctrine-show__back { margin: 1.25rem 0 0; }
 
 .doctrine-ack-modal[hidden] { display: none !important; }
 .doctrine-ack-modal {
@@ -289,41 +409,245 @@
 .doctrine-ack-modal__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(4px);
 }
 .doctrine-ack-modal__panel {
   position: relative;
-  width: min(100%, 32rem);
-  padding: 1.25rem 1.35rem;
-  border-radius: 1rem;
+  width: min(100%, 34rem);
+  padding: 1.45rem 1.5rem 1.35rem;
+  border-radius: 1.15rem;
   background: #fff;
-  box-shadow: 0 24px 60px -20px rgba(15, 23, 42, 0.45);
+  box-shadow: 0 28px 70px -22px rgba(15, 23, 42, 0.5);
+}
+.doctrine-ack-modal__kicker {
+  margin: 0 0 0.3rem;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #b45309;
 }
 .doctrine-ack-modal__title {
-  margin: 0 0 0.75rem;
-  font-size: 1.05rem;
+  margin: 0;
+  font-size: 1.2rem;
   font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
 }
-.doctrine-ack-modal__meta {
-  display: grid;
-  gap: 0.35rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.8125rem;
-}
-.doctrine-ack-modal__text {
-  margin: 0 0 1rem;
+.doctrine-ack-modal__lead {
+  margin: 0.45rem 0 1rem;
   font-size: 0.875rem;
   line-height: 1.5;
-  font-style: italic;
-  color: #334155;
+  color: #475569;
+}
+.doctrine-ack-modal__doc {
+  margin: 0 0 1.1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+.doctrine-ack-modal__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+.doctrine-ack-modal__chip {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 7rem;
+}
+.doctrine-ack-modal__chip span {
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+.doctrine-ack-modal__chip code,
+.doctrine-ack-modal__chip strong {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.doctrine-ack-modal__doc-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: #0f172a;
+}
+.doctrine-ack-modal__deadline {
+  margin: 0.45rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #b45309;
 }
 .doctrine-ack-modal__check {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.65rem;
   align-items: flex-start;
-  margin-bottom: 0.75rem;
-  font-size: 0.8125rem;
+  margin: 0 0 0.85rem;
+  padding: 0.75rem 0.8rem;
+  border-radius: 0.75rem;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  font-size: 0.875rem;
   font-weight: 600;
+  line-height: 1.4;
+  color: #1e3a8a;
+  cursor: pointer;
 }
+.doctrine-ack-modal__check input { margin-top: 0.2rem; accent-color: #1d4ed8; }
+.doctrine-ack-modal__status { margin: 0 0 0.75rem; font-size: 0.8125rem; font-weight: 600; }
 .doctrine-ack-modal__status.is-err { color: #b91c1c; }
 .doctrine-ack-modal__status.is-ok { color: #047857; }
+.doctrine-ack-modal__submit {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-radius: 0.7rem;
+  background: #0f172a;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.doctrine-ack-modal__submit:hover,
+.doctrine-ack-modal__submit:focus-visible { background: #1e293b; outline: none; }
+.doctrine-ack-modal__submit:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.doc-missing {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(180deg, #0f172a 0%, #134e4a 55%, #ecfdf5 100%);
+}
+.doc-missing__card {
+  width: min(100%, 32rem);
+  padding: 1.75rem 1.6rem;
+  border-radius: 1.2rem;
+  background: #fff;
+  box-shadow: 0 24px 60px -24px rgba(15, 23, 42, 0.45);
+}
+.doc-missing__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #047857;
+}
+.doc-missing__title {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+}
+.doc-missing__lead {
+  margin: 0.65rem 0 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: #475569;
+}
+.doc-missing__meta {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0 0 1.15rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+.doc-missing__meta dt {
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+.doc-missing__meta dd { margin: 0.15rem 0 0; font-weight: 700; }
+.doc-missing__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.writing-assistant-layout {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+@media (min-width: 960px) {
+  .writing-assistant-layout { grid-template-columns: minmax(0, 1.4fr) minmax(16rem, 0.8fr); }
+}
+.writing-assistant {
+  padding: 1rem 1.05rem;
+  border-radius: 0.9rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 10px 28px -22px rgba(15, 23, 42, 0.35);
+}
+.writing-assistant__title {
+  margin: 0 0 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #334155;
+}
+.writing-assistant__hint,
+.writing-assistant__muted,
+.writing-assistant__tip {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+.writing-assistant__warn { margin: 0; font-size: 0.75rem; color: #b45309; }
+.writing-assistant__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.writing-assistant__chip {
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+}
+.writing-assistant__group { padding-top: 0.55rem; border-top: 1px solid #f1f5f9; }
+.writing-assistant__group:first-child { padding-top: 0; border-top: 0; }
+.writing-assistant__group-title {
+  margin: 0 0 0.3rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: #475569;
+}
+.writing-assistant__items { margin: 0; padding: 0; list-style: none; }
+.writing-assistant__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0.45rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: #1e293b;
+  cursor: pointer;
+}
+.writing-assistant__item:hover,
+.writing-assistant__item:focus-visible { background: #f1f5f9; outline: none; }
