@@ -107,6 +107,8 @@ Fichier SQL : `migrations/20260902120000_doctrine_referential.sql`
 
 Le bootstrap `doctrine_demo_seed.php` crée des doctrines réalistes (EM/DOCTR, OPS/SEC, DRH/PERS, etc.) si aucune doctrine n’existe encore pour le tenant.
 
+Le bootstrap `doctrine_atak_employment_seed.php` ajoute idempotemment la doctrine **SIC/ATAK/2026-001** (*Doctrine d’emploi d’ATAK / Overwatch Athena*) pour tous les tenants, avec fichier source `storage/documents/doctrine/sic-atak-2026-001.md`.
+
 ## Évolutions prévues
 
 - Assistant création 6 étapes complet (BO) ;

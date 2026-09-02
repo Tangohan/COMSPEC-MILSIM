@@ -61,6 +61,7 @@ function seedTenantDemo(PDO $pdo, int $tenantId): void
         ['LOG/MAT/2026-009', 'LOG', 'MAT', 'Perception, emploi et restitution des matériels sensibles', 'informative', 1, 0],
         ['MED/SAN/2026-006', 'MED', 'SAN', 'Conduite à tenir en cas de blessé au combat', 'mandatory', 1, 0],
         ['REN/PROC/2026-011', 'REN', 'PROC', 'Recueil, qualification et transmission du renseignement terrain', 'recommended', 1, 0],
+        ['SIC/ATAK/2026-001', 'SIC', 'ATAK', 'Doctrine d’emploi d’ATAK / Overwatch Athena', 'mandatory', 1, 0],
     ];
 
     foreach ($demos as [$ref, $svc, $dom, $title, $req, $major, $minor]) {
