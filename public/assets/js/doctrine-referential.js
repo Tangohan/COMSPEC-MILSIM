@@ -30,6 +30,22 @@
         /* Modal obligatoire : pas de fermeture sans signature */
       });
     });
+    var certify = modal.querySelector('[data-doctrine-ack-certify]');
+    var submit = modal.querySelector('[data-doctrine-ack-submit]');
+    function syncSubmit() {
+      if (submit) {
+        submit.disabled = !(certify && certify.checked);
+      }
+    }
+    if (certify) {
+      certify.addEventListener('change', syncSubmit);
+      syncSubmit();
+    }
+    var panel = modal.querySelector('.doctrine-ack-modal__panel');
+    if (panel && typeof panel.focus === 'function') {
+      panel.setAttribute('tabindex', '-1');
+      try { panel.focus({ preventScroll: true }); } catch (err) { panel.focus(); }
+    }
     if (form) {
       form.addEventListener('submit', function (e) {
         e.preventDefault();
