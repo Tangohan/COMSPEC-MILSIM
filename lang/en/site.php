@@ -169,7 +169,7 @@ return [
     'atak_loop_3_b' => 'The post sees what the field actually sent — not a decorative copy.',
 
     'about_meta_title' => 'About Athena — MILSIM portal',
-    'about_meta_description' => 'Athena Comspec is a portal for Arma 3 MILSIM units: organisation, training, recruitment, forum and field command.',
+    'about_meta_description' => 'Athena Compsec is a portal for Arma 3 MILSIM units: organisation, training, recruitment, forum and field command.',
     'about_kicker' => 'The platform',
     'about_title' => 'Built to command a unit',
     'about_lead' => 'Athena brings together what a MILSIM community needs day to day: people, doctrine, training and the link to the field.',
@@ -187,7 +187,7 @@ return [
     'about_cta_create' => 'Create a community',
     'about_cta_contact' => 'Contact us',
 
-    'contact_meta_title' => 'Contact — Athena Comspec',
+    'contact_meta_title' => 'Contact — Athena Compsec',
     'contact_meta_description' => 'Contact the Athena team about the platform, partnerships or support for your MILSIM unit.',
     'contact_kicker' => 'Write to Athena',
     'contact_title' => 'Contact',

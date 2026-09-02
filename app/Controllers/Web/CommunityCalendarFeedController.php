@@ -36,7 +36,7 @@ final class CommunityCalendarFeedController
         $lines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
-            'PRODID:-//Athena Comspec//Événements communauté//FR',
+            'PRODID:-//Athena Compsec//Événements communauté//FR',
             'CALSCALE:GREGORIAN',
             'METHOD:PUBLISH',
             'X-WR-CALNAME:Opérations — espace communautaire',

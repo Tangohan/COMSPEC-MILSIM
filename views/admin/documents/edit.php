@@ -447,38 +447,6 @@ $issuingAuthorityDefault = $issuingAuthorityDefault ?? '';
     </section>
     <?php endif; ?>
 
-    <?php
-    $hasAttachedFile = !empty($hasAttachedFile);
-    $attachedLabel = (string) ($attachedLabel ?? 'Fichier joint');
-    $attachedKind = (string) ($attachedKind ?? 'Fichier joint');
-    $attachedSize = (string) ($attachedSize ?? '');
-    ?>
-    <section class="border-t border-slate-200 pt-8 mb-8">
-        <h2 class="text-lg font-bold text-slate-900 mb-4">Fichier joint</h2>
-        <?php if ($hasAttachedFile): ?>
-        <div class="rounded-lg border border-slate-200 bg-white p-4">
-            <p class="text-sm text-slate-800">
-                <strong><?= htmlspecialchars($attachedLabel) ?></strong>
-                <span class="text-slate-500"> — <?= htmlspecialchars($attachedKind) ?><?= $attachedSize !== '' ? ' — ' . htmlspecialchars($attachedSize) : '' ?></span>
-            </p>
-            <div class="mt-3 flex flex-wrap gap-2">
-                <a href="<?= url('documents/' . $document['id'] . '/file') ?>" target="_blank" rel="noopener" class="px-3 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Ouvrir le fichier</a>
-                <a href="<?= url('documents/' . $document['id'] . '/download') ?>" class="px-3 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Télécharger</a>
-            </div>
-            <form action="<?= url('documents/gestion/' . $document['id'] . '/retirer-fichier') ?>" method="post" class="mt-4 border-t border-slate-100 pt-4" onsubmit="return confirm('Retirer le fichier joint de cette fiche ? La fiche reste enregistrée. Vous pourrez en joindre un autre ensuite.');">
-                <?= \App\Core\Csrf::field() ?>
-                <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-800">
-                    <input type="checkbox" name="confirm_detach" value="1" required class="mt-0.5 rounded border-slate-300" />
-                    <span>Je confirme le retrait du fichier joint. La fiche du document est conservée.</span>
-                </label>
-                <button type="submit" class="mt-3 px-3 py-2 border border-red-200 text-red-800 text-sm font-semibold rounded hover:bg-red-50">Retirer le fichier</button>
-            </form>
-        </div>
-        <?php else: ?>
-        <p class="text-sm text-slate-500">Aucun fichier n’est joint à cette fiche. Vous pouvez en ajouter un ci-dessous.</p>
-        <?php endif; ?>
-    </section>
-
     <section class="border-t border-slate-200 pt-8 mb-8">
         <h2 class="text-lg font-bold text-slate-900 mb-4">Versions</h2>
         <?php if (empty($versions)): ?>

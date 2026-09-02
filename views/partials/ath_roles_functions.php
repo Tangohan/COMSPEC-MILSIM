@@ -167,7 +167,7 @@ $athTableShowCheckbox = true;
 
 <div class="bo-rf ath-rise">
     <div class="ath-users-filters ath-rise">
-        <a href="<?= $h(url('back-office/personnel-job-roles/kits')) ?>" class="ath-btn ath-btn--solid">Kits d’accès</a>
+        <a href="<?= $h(url('back-office/personnel-job-roles/kits')) ?>" class="ath-btn ath-btn--solid">Kits de fonctions</a>
         <a href="<?= $h(url('back-office/roles-functions/referentiel')) ?>" class="ath-btn">Référentiel</a>
         <a href="<?= $h(url('back-office/roles-functions/catalogue')) ?>" class="ath-btn">Catalogue</a>
         <?php if ($requiredRoleDefinitionsFeature): ?>

@@ -60,16 +60,6 @@ class DocumentAccessService
         return $this->resolveAccess($document, $userId, $tenantId, 'read');
     }
 
-    /**
-     * Habilitation (niveau de classification) sans tenir compte de la visibilité document.
-     *
-     * @param array<string, mixed> $document
-     */
-    public function passesClassification(array $document, int $userId): bool
-    {
-        return $this->classificationAllows($userId, (string) ($document['classification_level'] ?? 'interne'));
-    }
-
     /** @param array<string, mixed> $document */
     public function canEdit(array $document, int $userId, int $tenantId): bool
     {

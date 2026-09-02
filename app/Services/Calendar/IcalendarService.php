@@ -30,7 +30,7 @@ final class IcalendarService
         $lines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
-            'PRODID:-//Athena Comspec//Intégration//FR',
+            'PRODID:-//Athena Compsec//Intégration//FR',
             'CALSCALE:GREGORIAN',
             'METHOD:PUBLISH',
             'X-WR-CALNAME:' . $this->escapeText($calendarName),

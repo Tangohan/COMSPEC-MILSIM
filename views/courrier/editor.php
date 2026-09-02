@@ -223,13 +223,19 @@ $hm = $c['header_meta'] ?? ['header_line1' => '', 'header_unit' => '', 'header_s
                     <?php endforeach; ?>
                 </ul>
             </div>
-            <?php
-            $assistantTarget = 'body-rendered';
-            $assistantInsertMode = 'html';
-            $assistantLocked = $isLocked;
-            $assistantDocId = $doc ? (int) $doc['id'] : 0;
-            require base_path('views/partials/writing_assistant.php');
-            ?>
+            <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-2">Assistant rédactionnel</h3>
+                <p class="text-xs text-slate-500 mb-3">Cliquez pour insérer à la position du curseur (corps du document).</p>
+                <?php if (!$isLocked): ?>
+                <div class="flex flex-wrap gap-2 mb-3" id="courrier-insert-toolbar">
+                    <button type="button" class="px-2 py-1 text-xs border border-slate-200 rounded hover:bg-slate-50 courrier-insert-btn" data-kind="para">Paragraphe</button>
+                    <button type="button" class="px-2 py-1 text-xs border border-slate-200 rounded hover:bg-slate-50 courrier-insert-btn" data-kind="alinea">Alinéa</button>
+                </div>
+                <?php endif; ?>
+                <div id="courrier-snippets-root" class="space-y-3 text-xs" data-locked="<?= $isLocked ? '1' : '0' ?>" data-doc-id="<?= $doc ? (int)$doc['id'] : '' ?>">
+                    <p class="text-slate-400">Chargement des formules…</p>
+                </div>
+            </div>
             <?php if ($doc && !empty($versions)): ?>
             <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
                 <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Historique</h3>
@@ -341,6 +347,8 @@ $hm = $c['header_meta'] ?? ['header_line1' => '', 'header_unit' => '', 'header_s
     ta.addEventListener('change', update);
 })();
 </script>
+<script src="<?= htmlspecialchars($baseUrl) ?>/assets/js/courrier-editor.js" defer></script>
 <script>
+window.COURRIER_SNIPPETS_API = <?= json_encode($baseUrl . '/courrier/api/snippets', JSON_UNESCAPED_SLASHES) ?>;
 window.COURRIER_DOC_ID = <?= $doc ? (int)$doc['id'] : 'null' ?>;
 </script>

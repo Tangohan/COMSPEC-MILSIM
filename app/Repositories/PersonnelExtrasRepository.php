@@ -21,29 +21,12 @@ class PersonnelExtrasRepository
         $this->pdo = Database::getPdo();
     }
 
-    public function getByUserId(int $userId, ?int $tenantId = null): ?array
+    public function getByUserId(int $userId): ?array
     {
-        if ($tenantId !== null && $tenantId > 0 && $this->hasTenantIdColumn()) {
-            $stmt = $this->pdo->prepare(
-                'SELECT * FROM personnel_extras WHERE user_id = ? AND tenant_id = ? LIMIT 1'
-            );
-            $stmt->execute([$userId, $tenantId]);
-        } else {
-            $stmt = $this->pdo->prepare('SELECT * FROM personnel_extras WHERE user_id = ? LIMIT 1');
-            $stmt->execute([$userId]);
-        }
+        $stmt = $this->pdo->prepare('SELECT * FROM personnel_extras WHERE user_id = ? LIMIT 1');
+        $stmt->execute([$userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
-    }
-
-    private function hasTenantIdColumn(): bool
-    {
-        $st = $this->pdo->query(
-            "SELECT 1 FROM information_schema.COLUMNS
-             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_extras' AND COLUMN_NAME = 'tenant_id' LIMIT 1"
-        );
-
-        return $st !== false && (bool) $st->fetchColumn();
     }
 
     public function getProfileByUserId(int $userId): ?array

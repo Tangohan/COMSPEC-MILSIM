@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 return [
-    'meta_title' => 'Athena Comspec — Portail MILSIM',
-    'meta_description' => 'Athena Comspec : portail MILSIM pour communautés Arma 3. Créez votre unité, gérez formations, recrutement, forum et commandement terrain (ATAK) dans un espace isolé.',
+    'meta_title' => 'Athena Compsec — Portail MILSIM',
+    'meta_description' => 'Athena Compsec : portail MILSIM pour communautés Arma 3. Créez votre unité, gérez formations, recrutement, forum et commandement terrain (ATAK) dans un espace isolé.',
     'nav_aria' => 'Navigation du portail',
     'hero_kicker' => 'Portail MILSIM · Commandement d’unité',
     'hero_body' => 'Une base pour votre communauté Arma — du recrutement au terrain. Organisation, présence, doctrine et C2 au même endroit.',
@@ -102,7 +102,7 @@ return [
     'story_07_k' => 'Debriefing',
     'story_07_t' => "Capitaliser\naprès\nl’action.",
     'story_07_d' => 'Documents, forum, distinctions et analyses pour progresser.',
-    'story_08_k' => 'Athena Comspec',
+    'story_08_k' => 'Athena Compsec',
     'story_08_t' => "Votre unité\nmérite mieux\nqu’un Discord / TS.",
     'story_08_d' => 'Un portail pensé pour le commandement : clair, structuré, prêt pour le terrain.',
     'cta_create_account' => 'Créer un compte',

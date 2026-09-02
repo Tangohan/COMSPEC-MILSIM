@@ -1,5 +1,5 @@
 /* Athena PWA — cache shell uniquement (jamais les pages HTML dynamiques). */
-const CACHE_NAME = 'athena-shell-v9';
+const CACHE_NAME = 'athena-shell-v8';
 const SHELL = [
   './manifest.webmanifest',
   './assets/css/design-system.css',
@@ -94,17 +94,8 @@ function shouldBypassServiceWorker(request) {
   if (path.indexOf('/assets/sounds/') !== -1 || url.indexOf('/assets/sounds/') !== -1) {
     return true;
   }
-  if (path.indexOf('/assets/vendor/pdfjs/') !== -1 || url.indexOf('/assets/vendor/pdfjs/') !== -1) {
-    return true;
-  }
-  if (path.indexOf('/documents/') !== -1 || url.indexOf('/documents/') !== -1) {
-    return true;
-  }
-  if (path.slice(-4) === '.mjs' || path.indexOf('.mjs?') !== -1) {
-    return true;
-  }
   var dest = request.destination || '';
-  if (dest === 'audio' || dest === 'video' || dest === 'worker' || dest === 'script') {
+  if (dest === 'audio' || dest === 'video') {
     return true;
   }
   try {

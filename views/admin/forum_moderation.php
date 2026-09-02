@@ -251,8 +251,6 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
                 'help_page' => 'Aide intégrée',
                 'site_image' => 'Visuel du site',
                 'portal_help' => 'Aide portail',
-                'org_anomaly' => 'Anomalie organisation',
-                'site_support_request' => 'Demande administration site',
                 default => '',
             };
             $hasPost = !empty($r['post_id']);

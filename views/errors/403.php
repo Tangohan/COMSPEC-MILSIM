@@ -88,7 +88,7 @@ $pageBody = isset($body) && trim((string) $body) !== ''
 
             <div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center text-center">
                 <a href="<?= htmlspecialchars($base) ?>/" class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-900 sm:tracking-[0.26em]">
-                    Athena Comspec
+                    Athena Compsec
                 </a>
                 <span class="mt-0.5 text-[6px] font-semibold uppercase tracking-[0.32em] text-slate-400"><?= htmlspecialchars(__('common.portal_milsim'), ENT_QUOTES, 'UTF-8') ?></span>
             </div>

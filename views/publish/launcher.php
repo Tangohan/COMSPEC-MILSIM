@@ -16,7 +16,6 @@ $icons = [
     'forum' => '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
     'briefing' => '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
     'event' => '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
-    'article' => '<path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M8 8h8M8 12h6M8 16h4"/>',
 ];
 ?>
 <div class="min-h-screen bg-slate-100">

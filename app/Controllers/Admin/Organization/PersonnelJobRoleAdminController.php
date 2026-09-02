@@ -611,7 +611,7 @@ class PersonnelJobRoleAdminController
             return Response::redirect(url('login'));
         }
         if (!$this->canManageAssignments()) {
-            Session::flash('error', 'Vous n’avez pas les droits pour choisir les kits d’accès.');
+            Session::flash('error', 'Vous n’avez pas les droits pour choisir les domaines de fonctions.');
 
             return Response::redirect(url('dashboard'));
         }
@@ -628,7 +628,7 @@ class PersonnelJobRoleAdminController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.personnel_job_roles.kits',
-            'title' => 'Kits d’accès',
+            'title' => 'Kits de fonctions',
             'kits' => $this->functionKits->kitsForDisplay($tenantId),
             'board' => $this->functionKits->boardForTenant($tenantId),
             'assignMembers' => $members,
@@ -659,8 +659,8 @@ class PersonnelJobRoleAdminController
         Session::flash(
             'success',
             $chosen === []
-                ? 'Aucun kit retenu : vous pourrez en activer à tout moment.'
-                : count($chosen) . ' kit' . (count($chosen) > 1 ? 's' : '') . ' d’accès prêt' . (count($chosen) > 1 ? 's' : '') . ' à attribuer.'
+                ? 'Choix enregistré : le catalogue complet reste disponible pour les attributions.'
+                : 'Les domaines de votre communauté sont enregistrés. Les listes d’attribution ne montrent plus que ces fonctions, ainsi que celles déjà attribuées.'
         );
 
         return Response::redirect(url('back-office/personnel-job-roles/kits'));
@@ -674,21 +674,20 @@ class PersonnelJobRoleAdminController
 
             return Response::redirect(url('back-office/personnel-job-roles/kits'));
         }
-        if (!$this->canManageAssignments() || $this->functionKits === null) {
+        if (!$this->canManageAssignments()) {
             Session::flash('error', 'Permission refusée.');
 
             return Response::redirect(url('dashboard'));
         }
         $userId = (int) $request->input('user_id', 0);
-        $kitId = trim((string) $request->input('kit_id', ''));
-        if ($userId < 1 || $kitId === '') {
-            Session::flash('error', 'Choisissez un membre et un kit.');
+        $roleId = (int) $request->input('job_role_id', 0);
+        if ($userId < 1 || $roleId < 1) {
+            Session::flash('error', 'Choisissez un membre et une fonction.');
 
             return Response::redirect(url('back-office/personnel-job-roles/kits'));
         }
 
-        $actorId = (int) Session::get('user_id');
-        $result = $this->functionKits->assignKitToUser($tenantId, $kitId, $userId, $actorId > 0 ? $actorId : null);
+        $result = $this->appendJobRoleToUser($tenantId, $userId, $roleId);
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect(url('back-office/personnel-job-roles/kits'));
@@ -702,21 +701,20 @@ class PersonnelJobRoleAdminController
 
             return Response::redirect(url('back-office/personnel-job-roles/kits'));
         }
-        if (!$this->canManageAssignments() || $this->functionKits === null) {
+        if (!$this->canManageAssignments()) {
             Session::flash('error', 'Permission refusée.');
 
             return Response::redirect(url('dashboard'));
         }
         $userId = (int) $request->input('user_id', 0);
-        $kitId = trim((string) $request->input('kit_id', ''));
-        if ($userId < 1 || $kitId === '') {
+        $roleId = (int) $request->input('job_role_id', 0);
+        if ($userId < 1 || $roleId < 1) {
             Session::flash('error', 'Retrait impossible.');
 
             return Response::redirect(url('back-office/personnel-job-roles/kits'));
         }
 
-        $actorId = (int) Session::get('user_id');
-        $result = $this->functionKits->unassignKitFromUser($tenantId, $kitId, $userId, $actorId > 0 ? $actorId : null);
+        $result = $this->removeJobRoleFromUser($tenantId, $userId, $roleId);
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect(url('back-office/personnel-job-roles/kits'));

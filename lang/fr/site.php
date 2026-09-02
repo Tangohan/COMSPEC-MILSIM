@@ -169,7 +169,7 @@ return [
     'atak_loop_3_b' => 'Le poste voit ce que le terrain a vraiment envoyé — pas une copie décorative.',
 
     'about_meta_title' => 'À propos d’Athena — Portail MILSIM',
-    'about_meta_description' => 'Athena Comspec est un portail pour unités MILSIM Arma 3 : organisation, formations, recrutement, forum et commandement terrain.',
+    'about_meta_description' => 'Athena Compsec est un portail pour unités MILSIM Arma 3 : organisation, formations, recrutement, forum et commandement terrain.',
     'about_kicker' => 'La plateforme',
     'about_title' => 'Conçue pour commander une unité',
     'about_lead' => 'Athena rassemble dans un même espace ce qu’une communauté MILSIM doit gérer au quotidien : les gens, la doctrine, les entraînements et la liaison avec le terrain.',
@@ -187,7 +187,7 @@ return [
     'about_cta_create' => 'Créer une communauté',
     'about_cta_contact' => 'Nous écrire',
 
-    'contact_meta_title' => 'Contact — Athena Comspec',
+    'contact_meta_title' => 'Contact — Athena Compsec',
     'contact_meta_description' => 'Contactez l’équipe Athena pour une question sur la plateforme, un partenariat ou un accompagnement d’unité MILSIM.',
     'contact_kicker' => 'Écrire à Athena',
     'contact_title' => 'Contact',

@@ -309,14 +309,6 @@ final class TenantPermissionCatalog
             ['slug' => 'documents.access.manage', 'module' => 'documents', 'action' => 'manage', 'name' => 'Gérer les droits d’accès documentaires'],
             ['slug' => 'documents.share.public', 'module' => 'documents', 'action' => 'manage', 'name' => 'Partager en lien public'],
             ['slug' => 'documents.publish', 'module' => 'documents', 'action' => 'approve', 'name' => 'Valider / publier un document'],
-            ['slug' => 'doctrine.view', 'module' => 'documents', 'action' => 'view', 'name' => 'Consulter le référentiel doctrinal'],
-            ['slug' => 'doctrine.create', 'module' => 'documents', 'action' => 'create', 'name' => 'Créer une doctrine'],
-            ['slug' => 'doctrine.edit', 'module' => 'documents', 'action' => 'update', 'name' => 'Modifier une doctrine'],
-            ['slug' => 'doctrine.publish', 'module' => 'documents', 'action' => 'approve', 'name' => 'Publier une doctrine'],
-            ['slug' => 'doctrine.archive', 'module' => 'documents', 'action' => 'archive', 'name' => 'Archiver / abroger une doctrine'],
-            ['slug' => 'doctrine.manage_audience', 'module' => 'documents', 'action' => 'manage', 'name' => 'Gérer la diffusion des doctrines'],
-            ['slug' => 'doctrine.view_compliance', 'module' => 'documents', 'action' => 'view', 'name' => 'Voir le suivi des prises en compte'],
-            ['slug' => 'doctrine.send_reminders', 'module' => 'documents', 'action' => 'manage', 'name' => 'Relancer les prises en compte'],
         ];
     }
 

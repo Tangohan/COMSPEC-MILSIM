@@ -21,9 +21,6 @@ final class AuditAction
     public const AUTH_PORTAL_SELECTED = 'auth.portal_selected';
     public const USER_STEAM_LINKED = 'user.steam_linked';
 
-    /** Fusion de fiches users partageant le même e-mail (un compte, plusieurs communautés). */
-    public const USER_IDENTITY_MERGED = 'user.identity_merged';
-
     public const TENANT_CREATED = 'tenant.created';
     public const TENANT_SETUP_COMPLETED = 'tenant.setup_completed';
 
@@ -57,9 +54,6 @@ final class AuditAction
 
     /** Changement de statut compte depuis l’annuaire plateforme. */
     public const USER_STATUS_UPDATED = 'user.status_updated';
-
-    /** Édition complète de fiche depuis l’annuaire plateforme. */
-    public const USER_PROFILE_UPDATED = 'user.profile_updated';
 
     /** Suppression (douce/anonymisation) d’un compte depuis l’annuaire plateforme. */
     public const USER_DELETED = 'user.deleted';

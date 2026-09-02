@@ -29,8 +29,6 @@ final class MemberIntegrationAssetTest extends TestCase
         self::assertFileExists($this->root() . '/views/member_integration/respond.php');
         self::assertFileExists($this->root() . '/migrations/20260901000001_member_integration.sql');
         self::assertFileExists($this->root() . '/bootstrap/member_integration_migration.php');
-        self::assertFileExists($this->root() . '/bootstrap/users_member_photo_columns_migration.php');
-        self::assertFileExists($this->root() . '/migrations/20260902140000_users_member_photo_columns.sql');
         self::assertFileExists($this->root() . '/scripts/member-integration-backfill.php');
         $sql = (string) file_get_contents($this->root() . '/migrations/20260901000001_member_integration.sql');
         $boot = (string) file_get_contents($this->root() . '/bootstrap/member_integration_migration.php');

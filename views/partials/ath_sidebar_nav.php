@@ -93,7 +93,7 @@ $roleplayChildren = array_values(array_filter([
 $orbatChildren = array_values(array_filter([
     ['label' => 'Structure & effectifs', 'href' => url('back-office/organisation-effectifs'), 'active' => $navOrbatActive],
     ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
-    ['label' => 'Kits d’accès', 'href' => url('back-office/personnel-job-roles/kits'), 'active' => !empty($navFunctionKitsActive)],
+    ['label' => 'Kits de fonctions', 'href' => url('back-office/personnel-job-roles/kits'), 'active' => !empty($navFunctionKitsActive)],
     ['label' => 'Doctrine des fonctions', 'href' => url('back-office/roles-functions'), 'active' => $navDoctrineActive],
     ['label' => 'Attributions métier', 'href' => url('back-office/personnel-job-roles/assignments'), 'active' => $navAttributionsActive],
 ], static fn (?array $row): bool => is_array($row)));
@@ -208,7 +208,6 @@ $athNavGroups = [
                 'children' => $communityChildren,
             ],
             ['label' => 'Annonces & alertes', 'href' => url('back-office/alerts'), 'icon' => 'mail', 'active' => $boNavAlerts],
-            ['label' => 'Mini-articles', 'href' => url('back-office/articles'), 'icon' => 'book', 'active' => !empty($boNavArticles)],
             ['label' => 'Intégration des nouveaux membres', 'href' => url('back-office/integration-membres'), 'icon' => 'path', 'active' => $boNavOnbMembers],
             ['label' => 'Indicateurs d’usage', 'href' => url('back-office/analytics'), 'icon' => 'chart', 'active' => $boNavAnalytics],
         ], static fn (?array $row): bool => is_array($row))),

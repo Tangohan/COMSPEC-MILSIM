@@ -717,8 +717,7 @@ class AuthController
             Session::flash('error', __('auth.flash_service_unavailable'));
             return Response::redirect(url('forgot-password'));
         }
-        $user = $this->userRepository->findFirstByEmailGlobal($email)
-            ?? $this->userRepository->findByEmail((int) $tenant['id'], $email);
+        $user = $this->userRepository->findByEmail((int) $tenant['id'], $email);
         if ($user && empty($user['is_service_account'])) {
             $this->passwordResetRepository->deleteExpired();
             $token = bin2hex(random_bytes(32));

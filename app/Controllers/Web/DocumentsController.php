@@ -19,9 +19,6 @@ use App\Services\Audit\AuditService;
 use App\Services\Documents\DocumentAccessService;
 use App\Services\Documents\DocumentTrainingReferencesService;
 use App\Services\Moderation\ModerationArtifactState;
-use App\Repositories\Doctrine\DocumentDoctrineRepository;
-use App\Services\Doctrine\DoctrineDocumentAccessService;
-use App\Services\Doctrine\DocumentComplianceService;
 use App\Support\DocumentManuscript;
 
 class DocumentsController
@@ -37,10 +34,7 @@ class DocumentsController
         private ModerationArtifactRepository $moderationArtifactRepository,
         private DocumentTrainingReferencesService $documentTrainingReferencesService,
         private PersonnelProfileRepository $personnelProfileRepository,
-        private DocumentSecurityRepository $documentSecurityRepository,
-        private DocumentDoctrineRepository $documentDoctrineRepository,
-        private DocumentComplianceService $documentComplianceService,
-        private DoctrineDocumentAccessService $doctrineDocumentAccessService,
+        private DocumentSecurityRepository $documentSecurityRepository
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -63,8 +57,6 @@ class DocumentsController
             ]);
         }
         $categoryId = $request->input('category') ? (int) $request->input('category') : null;
-        $categorySlugFilter = trim((string) ($request->input('category_slug') ?? ''));
-        $doctrineQuick = trim((string) ($request->input('doctrine_filter') ?? ''));
         $search = $request->input('q') ? trim((string) $request->input('q')) : null;
         $documentType = $request->input('document_type') ? trim((string) $request->input('document_type')) : null;
         if ($documentType === '') {
@@ -75,17 +67,6 @@ class DocumentsController
         $sort = in_array($sortRaw, $allowedSort, true) ? $sortRaw : 'title_asc';
         $entityType = $request->input('entity_type') ? trim((string) $request->input('entity_type')) : null;
         $entityId = $request->input('entity_id') ? (int) $request->input('entity_id') : null;
-        $userId = (int) Session::get('user_id');
-        $canManageCollections = Gate::getInstance()->allows('documents.upload') || Gate::getInstance()->allows('admin.access');
-        $categoriesList = $this->categoryRepository->listForTenant($tenantId);
-        $doctrineCategory = $this->categoryRepository->findBySlug('doctrine', $tenantId);
-        $isDoctrineView = ($categoryId !== null && $doctrineCategory !== null && (int) ($doctrineCategory['id'] ?? 0) === $categoryId)
-            || $categorySlugFilter === 'doctrine';
-
-        if ($isDoctrineView && $this->documentDoctrineRepository->tableExists()) {
-            return $this->doctrineReferentialIndex($tenantId, $userId, $search, $doctrineQuick, $categoriesList, $doctrineCategory, $canManageCollections);
-        }
-
         $docs = $this->documentRepository->listForTenant(
             $tenantId,
             $categoryId,
@@ -97,6 +78,7 @@ class DocumentsController
             null,
             $sort
         );
+        $userId = (int) Session::get('user_id');
         $docs = array_values(array_filter($docs, function ($d) use ($userId, $tenantId) {
             if (!$this->documentAccessService->canRead($d, $userId, $tenantId)) {
                 return false;
@@ -104,9 +86,11 @@ class DocumentsController
 
             return !$this->isDocumentLifecycleBlocked($d) || $this->viewerMayBypassLifecycleBlock();
         }));
+        $categoriesList = $this->categoryRepository->listForTenant($tenantId);
         $documentTrainingRefs = $this->documentTrainingReferencesService->mapByDocumentId($tenantId, $docs);
         $collections = $this->buildCollections($docs, $categoriesList);
         $accreditation = $this->personnelProfileRepository->getByUserId($userId);
+        $canManageCollections = Gate::getInstance()->allows('documents.upload') || Gate::getInstance()->allows('admin.access');
         return Response::view('layout.main', [
             'content' => 'documents.index',
             'title' => 'Documents',
@@ -258,29 +242,39 @@ class DocumentsController
         if (!$tenantId) {
             return (new Response())->setStatusCode(403)->setBody('Non autorisé');
         }
-        if ($this->denyAttachedFileGate()) {
+        if (Gate::getInstance()->deny('documents.view')) {
             return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
         }
         $id = (int) ($params['id'] ?? 0);
         $doc = $this->documentRepository->findById($id, (int) $tenantId);
-        if (!$doc) {
-            return $this->missingDocumentFilePage(null, $id);
+        if (!$doc || empty($doc['file_path'])) {
+            return (new Response())->setStatusCode(404)->setBody('Document non trouvé');
         }
-        if (empty($doc['file_path'])) {
-            return $this->missingDocumentFilePage($doc, $id);
+        if (!empty($doc['require_access_code']) && !$this->isAccessCodeUnlocked($id)) {
+            return (new Response())->setStatusCode(423)->setBody('Code d\'accès requis');
         }
-        $denied = $this->denyAttachedFileAccess($doc, $id, (int) $tenantId, false, '');
-        if ($denied !== null) {
-            return $denied;
+        if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
+            return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
+        }
+        if (!$this->documentAccessService->canRead($doc, (int) Session::get('user_id'), (int) $tenantId)) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé');
+        }
+        if (($doc['status'] ?? '') !== 'published') {
+            return (new Response())->setStatusCode(404)->setBody('Document non disponible');
+        }
+        if ($this->isDocumentLifecycleBlocked($doc) && !$this->viewerMayBypassLifecycleBlock()) {
+            return (new Response())->setStatusCode(423)->setBody('Document bloqué : revue/correction/suppression requise.');
+        }
+        if ($this->isDocumentFileBlockedForViewer($doc)) {
+            return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
         }
         $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
         if (!is_file($fullPath)) {
-            return $this->missingDocumentFilePage($doc, $id);
+            return (new Response())->setStatusCode(404)->setBody('Fichier absent');
         }
         $response = new Response();
-        $downloadName = basename((string) ($doc['original_name'] ?? '')) ?: basename((string) $doc['file_path']);
         $response->header('Content-Type', $doc['mime_type'] ?: 'application/octet-stream');
-        $response->header('Content-Disposition', 'inline; filename="' . $downloadName . '"');
+        $response->header('Content-Disposition', 'inline; filename="' . basename($doc['file_path']) . '"');
         $response->header('Content-Length', (string) filesize($fullPath));
         $response->setBodyStream(static function () use ($fullPath): void {
             $h = fopen($fullPath, 'rb');
@@ -299,35 +293,51 @@ class DocumentsController
         if (!$tenantId) {
             return (new Response())->setStatusCode(403)->setBody('Non autorisé');
         }
-        if ($this->denyAttachedFileGate()) {
+        if (Gate::getInstance()->deny('documents.view')) {
             return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
         }
         $id = (int) ($params['id'] ?? 0);
         $doc = $this->documentRepository->findById($id, (int) $tenantId);
-        if (!$doc) {
-            return $this->missingDocumentFilePage(null, $id);
+        if (!$doc || empty($doc['file_path'])) {
+            return (new Response())->setStatusCode(404)->setBody('Document non trouvé');
         }
-        if (empty($doc['file_path'])) {
-            return $this->missingDocumentFilePage($doc, $id);
+        if (!empty($doc['require_access_code']) && !$this->isAccessCodeUnlocked($id)) {
+            return (new Response())->setStatusCode(423)->setBody('Code d\'accès requis');
         }
-        $denied = $this->denyAttachedFileAccess($doc, $id, (int) $tenantId, true, trim((string) $request->input('security_session_token')));
-        if ($denied !== null) {
-            return $denied;
+        if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
+            return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
+        }
+        if (!$this->documentAccessService->canRead($doc, (int) Session::get('user_id'), (int) $tenantId)) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé');
+        }
+        if (($doc['status'] ?? '') !== 'published') {
+            return (new Response())->setStatusCode(404)->setBody('Document non disponible');
+        }
+        if ($this->isDocumentLifecycleBlocked($doc) && !$this->viewerMayBypassLifecycleBlock()) {
+            return (new Response())->setStatusCode(423)->setBody('Document bloqué : revue/correction/suppression requise.');
+        }
+        if ($this->isDocumentFileBlockedForViewer($doc)) {
+            return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
+        }
+        $securitySessionToken = trim((string) $request->input('security_session_token'));
+        if (!empty($doc['require_account_signature']) && !empty($doc['signature_mandatory_before_download'])) {
+            $session = $securitySessionToken !== '' ? $this->documentSecurityRepository->findSessionByToken($securitySessionToken) : null;
+            if (!$session || (int) ($session['document_id'] ?? 0) !== $id || empty($session['signature_completed_at'])) {
+                return (new Response())->setStatusCode(423)->setBody('Signature numérique requise avant téléchargement');
+            }
         }
         $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
         if (!is_file($fullPath)) {
-            return $this->missingDocumentFilePage($doc, $id);
+            return (new Response())->setStatusCode(404)->setBody('Fichier absent');
         }
         $this->auditService->logDocumentDownloaded((int) $tenantId, $userId ? (int) $userId : 0, $id);
-        $securitySessionToken = trim((string) $request->input('security_session_token'));
         if ($securitySessionToken !== '') {
             $this->documentSecurityRepository->markDownloaded($securitySessionToken);
             $this->documentSecurityRepository->logEvent($securitySessionToken, $id, $userId ? (int) $userId : null, 'document_downloaded');
         }
         $response = new Response();
-        $downloadName = basename((string) ($doc['original_name'] ?? '')) ?: basename((string) $doc['file_path']);
         $response->header('Content-Type', $doc['mime_type'] ?: 'application/octet-stream');
-        $response->header('Content-Disposition', 'attachment; filename="' . $downloadName . '"');
+        $response->header('Content-Disposition', 'attachment; filename="' . basename($doc['file_path']) . '"');
         $response->header('Content-Length', (string) filesize($fullPath));
         $response->setBodyStream(static function () use ($fullPath): void {
             $h = fopen($fullPath, 'rb');
@@ -522,74 +532,6 @@ class DocumentsController
         ], true);
     }
 
-    private function denyAttachedFileGate(): bool
-    {
-        $gate = Gate::getInstance();
-
-        return $gate->deny('documents.view')
-            && $gate->deny('documents.upload')
-            && $gate->deny('documents.update')
-            && $gate->deny('admin.access');
-    }
-
-    /**
-     * @param array<string, mixed> $doc
-     */
-    private function viewerMayManageAttachedFile(array $doc, int $userId, int $tenantId): bool
-    {
-        if ($this->viewerMayBypassLifecycleBlock()) {
-            return true;
-        }
-        if ($userId <= 0) {
-            return false;
-        }
-
-        return $this->documentAccessService->canEdit($doc, $userId, $tenantId);
-    }
-
-    /**
-     * Contrôles lecture publique. Les gestionnaires de la fiche (brouillon compris) passent.
-     *
-     * @param array<string, mixed> $doc
-     */
-    private function denyAttachedFileAccess(array $doc, int $id, int $tenantId, bool $forDownload, string $securitySessionToken): ?Response
-    {
-        $userId = (int) (Session::get('user_id') ?? 0);
-        if ($this->viewerMayManageAttachedFile($doc, $userId, $tenantId)) {
-            if ($this->isDocumentFileBlockedForViewer($doc)) {
-                return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
-            }
-
-            return null;
-        }
-        if (!empty($doc['require_access_code']) && !$this->isAccessCodeUnlocked($id)) {
-            return (new Response())->setStatusCode(423)->setBody('Code d\'accès requis');
-        }
-        if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
-            return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
-        }
-        if (!$this->canReadDocumentOrDoctrine($doc, $userId, $tenantId)) {
-            return (new Response())->setStatusCode(403)->setBody('Accès refusé');
-        }
-        if (($doc['status'] ?? '') !== 'published') {
-            return (new Response())->setStatusCode(404)->setBody('Document non disponible');
-        }
-        if ($this->isDocumentLifecycleBlocked($doc) && !$this->viewerMayBypassLifecycleBlock()) {
-            return (new Response())->setStatusCode(423)->setBody('Document bloqué : revue/correction/suppression requise.');
-        }
-        if ($this->isDocumentFileBlockedForViewer($doc)) {
-            return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
-        }
-        if ($forDownload && !empty($doc['require_account_signature']) && !empty($doc['signature_mandatory_before_download'])) {
-            $session = $securitySessionToken !== '' ? $this->documentSecurityRepository->findSessionByToken($securitySessionToken) : null;
-            if (!$session || (int) ($session['document_id'] ?? 0) !== $id || empty($session['signature_completed_at'])) {
-                return (new Response())->setStatusCode(423)->setBody('Signature numérique requise avant téléchargement');
-            }
-        }
-
-        return null;
-    }
-
     private function viewerMayBypassLifecycleBlock(): bool
     {
         $gate = Gate::getInstance();
@@ -608,147 +550,5 @@ class DocumentsController
             || $gate->allows('admin.organization')
             || $gate->allows('admin.access')
             || $gate->allows('admin.system');
-    }
-
-    /**
-     * @param list<array<string, mixed>> $categoriesList
-     * @param array<string, mixed>|null $doctrineCategory
-     */
-    private function doctrineReferentialIndex(
-        int $tenantId,
-        int $userId,
-        ?string $search,
-        string $doctrineQuick,
-        array $categoriesList,
-        ?array $doctrineCategory,
-        bool $canManage,
-    ): Response {
-        $rows = $this->documentDoctrineRepository->listPublishedForTenant(
-            $tenantId,
-            $doctrineQuick === 'archived' ? 'archived' : null,
-            $search
-        );
-
-        $tableRows = [];
-        foreach ($rows as $row) {
-            $documentId = (int) ($row['document_id'] ?? 0);
-            $versionId = (int) ($row['version_id'] ?? 0);
-            $doc = $this->documentRepository->findById($documentId, null);
-            if ($doc === null || !$this->canReadDocumentOrDoctrine($doc, $userId, $tenantId, $row)) {
-                continue;
-            }
-            $badge = $versionId > 0
-                ? $this->documentComplianceService->memberBadge($tenantId, $userId, $row, $versionId)
-                : ['badge' => 'NOT_APPLICABLE', 'label' => '—', 'tone' => 'neutral', 'sort_priority' => 9];
-
-            if ($doctrineQuick === 'action' && !in_array($badge['badge'], ['ACK_REQUIRED', 'ACK_OUTDATED', 'OVERDUE', 'UNREAD'], true)) {
-                continue;
-            }
-            if ($doctrineQuick === 'current' && !in_array($badge['badge'], ['ACKNOWLEDGED', 'READ'], true)) {
-                continue;
-            }
-            if ($doctrineQuick === 'new' && $badge['badge'] !== 'UNREAD' && $badge['badge'] !== 'ACK_REQUIRED') {
-                continue;
-            }
-
-            $domainLabel = trim((string) ($row['domain_prefix'] ?? '') . ' / ' . (string) ($row['subdomain_code'] ?? ''));
-            $domainLabel = trim($domainLabel, ' /');
-            $versionLabel = trim((string) ($row['version_label'] ?? ''));
-            if ($versionLabel === '' && isset($row['version_major'], $row['version_minor'])) {
-                $versionLabel = 'v' . (int) $row['version_major'] . '.' . (int) $row['version_minor'];
-            }
-
-            $tableRows[] = [
-                'document_id' => $documentId,
-                'reference' => (string) ($row['reference_code'] ?? ''),
-                'title' => (string) ($row['title'] ?? ''),
-                'domain' => $domainLabel !== '' ? $domainLabel : (string) ($row['domain_label'] ?? ''),
-                'version' => $versionLabel !== '' ? $versionLabel : '—',
-                'authority' => (string) ($row['issuing_label'] ?? '—'),
-                'diffusion' => (string) ($row['diffusion_label'] ?? '—'),
-                'published_at' => (string) ($row['published_at'] ?? $row['effective_at'] ?? ''),
-                'updated_at' => (string) ($row['document_updated_at'] ?? ''),
-                'reading_required' => !empty($row['reading_required']) || !empty($row['acknowledgment_required']),
-                'requirement_level' => (string) ($row['requirement_level'] ?? 'informative'),
-                'status_badge' => $badge,
-                'scope' => (string) ($row['scope'] ?? 'tenant'),
-                'href' => url('documents/doctrine/' . $documentId),
-            ];
-        }
-
-        usort($tableRows, static function (array $a, array $b): int {
-            $pa = (int) ($a['status_badge']['sort_priority'] ?? 9);
-            $pb = (int) ($b['status_badge']['sort_priority'] ?? 9);
-            if ($pa !== $pb) {
-                return $pa <=> $pb;
-            }
-
-            return strcmp((string) ($a['reference'] ?? ''), (string) ($b['reference'] ?? ''));
-        });
-
-        return Response::view('layout.main', [
-            'content' => 'documents/doctrine_index',
-            'title' => 'Référentiel doctrinal',
-            'doctrineRows' => $tableRows,
-            'categories' => $categoriesList,
-            'doctrineCategory' => $doctrineCategory,
-            'search' => $search ?? '',
-            'doctrineQuick' => $doctrineQuick,
-            'canManage' => $canManage,
-        ]);
-    }
-
-    /**
-     * @param array<string, mixed>|null $document
-     */
-    private function missingDocumentFilePage(?array $document, int $documentId): Response
-    {
-        $tenantId = (int) Session::get('tenant_id');
-        $doctrine = null;
-        if ($document !== null && $this->documentDoctrineRepository->tableExists()) {
-            $doctrine = $this->documentDoctrineRepository->findByDocumentId((int) ($document['id'] ?? $documentId), $tenantId);
-        }
-        $isDoctrine = is_array($doctrine);
-        $backHref = $isDoctrine
-            ? url('documents/doctrine/' . $documentId)
-            : ($documentId > 0 ? url('documents/' . $documentId) : url('documents'));
-        $response = Response::view('layout.main', [
-            'title' => 'Document indisponible',
-            'content' => 'documents/file_missing',
-            'missingHeading' => $document === null ? 'Document introuvable' : 'Fichier non consultable',
-            'missingLead' => $document === null
-                ? 'Cette fiche n’existe pas, ou elle n’est plus accessible dans votre communauté.'
-                : 'Le fichier n’est pas encore déposé, ou il n’est plus disponible. Vous pouvez revenir à la fiche ou ouvrir le référentiel.',
-            'missingTitle' => (string) ($document['title'] ?? ''),
-            'missingReference' => (string) ($doctrine['reference_code'] ?? ''),
-            'documentBackHref' => $backHref,
-            'referentialHref' => url('documents') . '?category_slug=doctrine',
-        ]);
-        $response->setStatusCode(404);
-
-        return $response;
-    }
-
-    /**
-     * @param array<string, mixed> $document
-     * @param array<string, mixed>|null $doctrineRow
-     */
-    private function canReadDocumentOrDoctrine(array $document, int $userId, int $tenantId, ?array $doctrineRow = null): bool
-    {
-        if ($this->documentAccessService->canRead($document, $userId, $tenantId)) {
-            return true;
-        }
-        if (!$this->documentDoctrineRepository->tableExists()) {
-            return false;
-        }
-        $doctrine = $doctrineRow;
-        if ($doctrine === null) {
-            $doctrine = $this->documentDoctrineRepository->findByDocumentId((int) ($document['id'] ?? 0), $tenantId);
-        }
-        if ($doctrine === null) {
-            return false;
-        }
-
-        return $this->doctrineDocumentAccessService->canMemberView($tenantId, $userId, $document, $doctrine);
     }
 }

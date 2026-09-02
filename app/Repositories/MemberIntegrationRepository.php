@@ -13,12 +13,6 @@ final class MemberIntegrationRepository
 {
     private PDO $pdo;
 
-    /** @var array<string, bool> */
-    private array $tableExistsCache = [];
-
-    /** @var array<string, bool> */
-    private array $columnExistsCache = [];
-
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo ?? Database::getPdo();
@@ -35,98 +29,13 @@ final class MemberIntegrationRepository
         if ($t === '') {
             return false;
         }
-        if (array_key_exists($t, $this->tableExistsCache)) {
-            return $this->tableExistsCache[$t];
-        }
         try {
-            $driver = (string) $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
-            if ($driver === 'sqlite') {
-                $st = $this->pdo->prepare(
-                    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1"
-                );
-                $st->execute([$t]);
-                $this->tableExistsCache[$t] = (bool) $st->fetchColumn();
-
-                return $this->tableExistsCache[$t];
-            }
             $st = $this->pdo->query('SHOW TABLES LIKE ' . $this->pdo->quote($t));
-            $this->tableExistsCache[$t] = $st !== false && (bool) $st->fetchColumn();
+
+            return $st !== false && (bool) $st->fetchColumn();
         } catch (PDOException) {
-            $this->tableExistsCache[$t] = false;
-        }
-
-        return $this->tableExistsCache[$t];
-    }
-
-    private function hasColumn(string $table, string $column): bool
-    {
-        $t = preg_replace('/[^a-zA-Z0-9_]/', '', $table) ?? '';
-        $c = preg_replace('/[^a-zA-Z0-9_]/', '', $column) ?? '';
-        if ($t === '' || $c === '') {
             return false;
         }
-        $key = $t . '.' . $c;
-        if (array_key_exists($key, $this->columnExistsCache)) {
-            return $this->columnExistsCache[$key];
-        }
-        try {
-            $driver = (string) $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
-            if ($driver === 'sqlite') {
-                $st = $this->pdo->query('PRAGMA table_info(' . $t . ')');
-                $found = false;
-                if ($st !== false) {
-                    while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
-                        if (strcasecmp((string) ($row['name'] ?? ''), $c) === 0) {
-                            $found = true;
-                            break;
-                        }
-                    }
-                }
-                $this->columnExistsCache[$key] = $found;
-
-                return $found;
-            }
-            $st = $this->pdo->prepare(
-                'SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
-            );
-            $st->execute([$t, $c]);
-            $this->columnExistsCache[$key] = (bool) $st->fetchColumn();
-        } catch (PDOException) {
-            $this->columnExistsCache[$key] = false;
-        }
-
-        return $this->columnExistsCache[$key];
-    }
-
-    /**
-     * Photo de compte (users.avatar_url) et portrait opérateur (personnel_profiles.character_portrait_path).
-     * La colonne users.avatar_path n’existe pas : ne jamais la sélectionner.
-     */
-    private function memberPhotoSelectSql(string $userAlias = 'u', string $profileAlias = 'pp'): string
-    {
-        $avatar = 'NULL AS avatar_url';
-        if ($this->hasColumn('users', 'avatar_url')) {
-            $avatar = $userAlias . '.avatar_url';
-        } elseif ($this->hasColumn('users', 'avatar_path')) {
-            $avatar = $userAlias . '.avatar_path AS avatar_url';
-        }
-
-        $portrait = 'NULL AS character_portrait_path';
-        if ($this->hasTable('personnel_profiles') && $this->hasColumn('personnel_profiles', 'character_portrait_path')) {
-            $portrait = $profileAlias . '.character_portrait_path';
-        }
-
-        return $avatar . ', ' . $portrait;
-    }
-
-    private function personnelProfileJoinSql(string $userAlias = 'u', string $profileAlias = 'pp'): string
-    {
-        if (!$this->hasTable('personnel_profiles')) {
-            return '';
-        }
-
-        return 'LEFT JOIN personnel_profiles ' . $profileAlias . ' ON ' . $profileAlias . '.user_id = ' . $userAlias . '.id';
     }
 
     public function findForTenant(int $tenantId, int $id): ?array
@@ -135,13 +44,11 @@ final class MemberIntegrationRepository
             return null;
         }
         $st = $this->pdo->prepare(
-            'SELECT i.*, u.display_name, u.callsign, u.email, u.created_at AS user_created_at, '
-            . $this->memberPhotoSelectSql() . ',
+            'SELECT i.*, u.display_name, u.callsign, u.email, u.created_at AS user_created_at, u.avatar_path,
                     t.name AS template_name,
                     ru.display_name AS referent_display_name, ru.callsign AS referent_callsign, ru.email AS referent_email
              FROM member_integrations i
              INNER JOIN users u ON u.id = i.user_id AND u.tenant_id = i.tenant_id
-             ' . $this->personnelProfileJoinSql() . '
              LEFT JOIN member_integration_templates t ON t.id = i.template_id AND t.tenant_id = i.tenant_id
              LEFT JOIN users ru ON ru.id = i.primary_referent_user_id
              WHERE i.tenant_id = ? AND i.id = ?
@@ -201,7 +108,7 @@ final class MemberIntegrationRepository
             $params[] = $referent;
         }
         $unitId = (int) ($filters['unit_id'] ?? 0);
-        if ($unitId > 0 && $this->hasTable('personnel_profiles')) {
+        if ($unitId > 0) {
             $where[] = 'pp.primary_unit_id = ?';
             $params[] = $unitId;
         }
@@ -233,23 +140,15 @@ final class MemberIntegrationRepository
             $where[] = 'i.overdue_count > 0';
         }
 
-        $hasProfiles = $this->hasTable('personnel_profiles');
-        $unitNameSelect = ($hasProfiles && $this->hasTable('units'))
-            ? 'un.name AS unit_name'
-            : 'NULL AS unit_name';
-        $unitsJoin = ($hasProfiles && $this->hasTable('units'))
-            ? 'LEFT JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = i.tenant_id'
-            : '';
-        $sql = 'SELECT i.*, u.display_name, u.callsign, u.email, u.created_at AS user_created_at, '
-            . $this->memberPhotoSelectSql() . ',
-                       u.role_id, r.name AS role_name, ' . $unitNameSelect . ',
+        $sql = 'SELECT i.*, u.display_name, u.callsign, u.email, u.created_at AS user_created_at, u.avatar_path,
+                       u.role_id, r.name AS role_name, un.name AS unit_name,
                        t.name AS template_name, cs.title AS current_step_title,
                        ru.display_name AS referent_display_name, ru.callsign AS referent_callsign
                 FROM member_integrations i
                 INNER JOIN users u ON u.id = i.user_id AND u.tenant_id = i.tenant_id
                 LEFT JOIN roles r ON r.id = u.role_id
-                ' . $this->personnelProfileJoinSql() . '
-                ' . $unitsJoin . '
+                LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+                LEFT JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = i.tenant_id
                 LEFT JOIN member_integration_templates t ON t.id = i.template_id AND t.tenant_id = i.tenant_id
                 LEFT JOIN member_integration_steps cs ON cs.id = i.current_step_id AND cs.tenant_id = i.tenant_id
                 LEFT JOIN users ru ON ru.id = i.primary_referent_user_id

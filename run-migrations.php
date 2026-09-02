@@ -135,7 +135,6 @@ $bootstrapFiles = [
     'personnel_stage_bilans_migration.php',
     'member_integration_migration.php',
     'personnel_function_kits_migration.php',
-    'document_versions_file_path_nullable_migration.php',
     'personnel_absences_migration.php',
     'positions_admin_category_migration.php',
     'personnel_profile_extended_details_migration.php',
@@ -277,7 +276,6 @@ run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
 run_member_integration_migration($pdo);
 run_personnel_function_kits_migration($pdo);
-run_document_versions_file_path_nullable_migration($pdo);
 run_personnel_absences_migration($pdo);
 run_personnel_profile_extended_details_migration($pdo);
 run_personnel_profile_rp_identity_migration($pdo);
@@ -1548,17 +1546,6 @@ if ($stmt && !$stmt->fetch()) {
     echo "Refonte module documentaire : extension document_versions...\n";
     $pdo->exec("ALTER TABLE document_versions ADD COLUMN original_name VARCHAR(255) NULL AFTER file_path, ADD COLUMN version_label VARCHAR(50) NULL AFTER change_notes");
 }
-$stmt = $pdo->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_versions' AND COLUMN_NAME = 'file_path'");
-$filePathNullable = $stmt ? $stmt->fetchColumn() : null;
-if (is_string($filePathNullable) && strtoupper($filePathNullable) === 'NO') {
-    echo "document_versions.file_path : NULL autorisé (retrait de pièce jointe)...\n";
-    try {
-        $pdo->exec('ALTER TABLE document_versions MODIFY file_path VARCHAR(500) NULL');
-        echo "  [OK] document_versions.file_path nullable\n";
-    } catch (Throwable $e) {
-        echo '  [ATTENTION] document_versions.file_path nullable : ' . $e->getMessage() . "\n";
-    }
-}
 $stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_collaborators'");
 if ($stmt && !$stmt->fetch()) {
     echo "Création table document_collaborators...\n";
@@ -2199,9 +2186,6 @@ $forumModerationBotMigrate($pdo);
 $alertsMigrate = require $root . '/bootstrap/alerts_migration.php';
 $alertsMigrate($pdo);
 
-$doctrineReferentialMigrate = require $root . '/bootstrap/doctrine_referential_migration.php';
-$doctrineReferentialMigrate($pdo);
-
 $tenantAlertsVisualMigrate = require $root . '/bootstrap/tenant_alerts_visual_migration.php';
 try {
     $tenantAlertsVisualMigrate($pdo);
@@ -2522,25 +2506,11 @@ try {
     echo '  [ATTENTION] user_profile_banner : ' . $e->getMessage() . "\n";
 }
 
-$usersMemberPhotoMigrate = require $root . '/bootstrap/users_member_photo_columns_migration.php';
-try {
-    $usersMemberPhotoMigrate($pdo);
-} catch (Throwable $e) {
-    echo '  [ATTENTION] users_member_photo : ' . $e->getMessage() . "\n";
-}
-
 $tenantCommunityFeedMigrate = require $root . '/bootstrap/tenant_community_feed_migration.php';
 try {
     $tenantCommunityFeedMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_community_feed : ' . $e->getMessage() . "\n";
-}
-
-$tenantMiniArticlesMigrate = require $root . '/bootstrap/tenant_mini_articles_migration.php';
-try {
-    $tenantMiniArticlesMigrate($pdo);
-} catch (Throwable $e) {
-    echo '  [ATTENTION] tenant_mini_articles : ' . $e->getMessage() . "\n";
 }
 
 $briefPlatformInterteamMigrate = require $root . '/bootstrap/brief_platform_interteam_migration.php';
@@ -2586,23 +2556,6 @@ try {
 }
 
 require_once $root . '/bootstrap/autoload.php';
-
-try {
-    echo "Fusion des comptes partageant le même e-mail (une identité, dossiers RH séparés)...\n";
-    $merge = new \App\Services\Identity\UserIdentityMergeService(
-        $pdo,
-        new \App\Repositories\UserCommunityMembershipRepository($pdo)
-    );
-    $mergeSummary = $merge->mergeAllDuplicateEmails();
-    echo '  groupes=' . (int) ($mergeSummary['groups'] ?? 0)
-        . ' fiches réunies=' . (int) ($mergeSummary['merged'] ?? 0)
-        . ' collisions Steam=' . (int) ($mergeSummary['collisions'] ?? 0) . "\n";
-    foreach ($mergeSummary['errors'] ?? [] as $err) {
-        echo '  [ATTENTION] fusion : ' . $err . "\n";
-    }
-} catch (Throwable $e) {
-    echo '  [ATTENTION] user_identity_merge : ' . $e->getMessage() . "\n";
-}
 
 $organizationCatalogMigrate = require $root . '/bootstrap/organization_catalog_migration.php';
 try {

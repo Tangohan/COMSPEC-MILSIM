@@ -21,67 +21,38 @@ final class PersonnelFunctionKitCatalogTest extends TestCase
             $ids[$id] = true;
             self::assertNotSame('', trim((string) ($kit['label'] ?? '')));
             self::assertNotSame('', trim((string) ($kit['summary'] ?? '')));
-            self::assertNotSame('', trim((string) ($kit['role_slug'] ?? '')));
-            self::assertTrue(PersonnelFunctionKitCatalog::isAccessKitRoleSlug($kit['role_slug']));
-            self::assertGreaterThanOrEqual(2, count($kit['permission_slugs']));
-            self::assertContains($kit['tone'], ['lecture', 'modification', 'admin']);
+            self::assertGreaterThanOrEqual(3, count($kit['key_slugs']));
+            self::assertLessThanOrEqual(8, count($kit['key_slugs']));
         }
         self::assertGreaterThanOrEqual(8, count($ids));
         self::assertLessThanOrEqual(14, count($ids));
-        self::assertArrayHasKey('lecture', $ids);
-        self::assertArrayHasKey('lecture_modification', $ids);
-        self::assertArrayHasKey('recrutement', $ids);
-        self::assertArrayHasKey('recrutement_lecture', $ids);
-        self::assertArrayHasKey('tenant_parametres', $ids);
     }
 
-    public function testPermissionSlugsAreKnownAndNonReserved(): void
+    public function testKeySlugsExistInMilitaryCatalog(): void
     {
-        $known = array_fill_keys(\App\Authorization\TenantPermissionCatalog::allSlugs(), true);
+        $catalog = MilitaryOperationalRoleCatalog::catalogSlugSet();
         foreach (PersonnelFunctionKitCatalog::all() as $kit) {
-            foreach ($kit['permission_slugs'] as $slug) {
-                self::assertArrayHasKey($slug, $known, $kit['id'] . ' ' . $slug);
-                self::assertFalse(
-                    \App\Authorization\SystemReservedPermissions::isReserved($slug),
-                    $kit['id'] . ' reserved ' . $slug
-                );
+            foreach ($kit['key_slugs'] as $slug) {
+                self::assertArrayHasKey($slug, $catalog, $kit['id'] . ' ' . $slug);
+            }
+            foreach ($kit['extra_slugs'] as $slug) {
+                self::assertArrayHasKey($slug, $catalog, $kit['id'] . ' extra ' . $slug);
             }
         }
     }
 
     public function testEmptyKitsMeanNoSlugUnion(): void
     {
-        self::assertSame([], PersonnelFunctionKitCatalog::permissionSlugsForKitIds([]));
+        self::assertSame([], PersonnelFunctionKitCatalog::slugsForKitIds([]));
         self::assertSame([], PersonnelFunctionKitCatalog::keyFunctionsForKitIds([]));
     }
 
-    public function testLectureKitResolvesViewSlugsOnly(): void
+    public function testInfantryKitResolvesKnownCombatSlugs(): void
     {
-        $slugs = PersonnelFunctionKitCatalog::permissionSlugsForKitIds(['lecture']);
-        self::assertContains('personnel.profile.view', $slugs);
-        self::assertContains('documents.view', $slugs);
-        self::assertNotContains('personnel.profile.update', $slugs);
-        self::assertNotContains('organization.recruitment.manage', $slugs);
-        self::assertNotContains('admin.settings.manage', $slugs);
-    }
-
-    public function testRecruitmentAndTenantKitsAreDistinct(): void
-    {
-        $recruit = PersonnelFunctionKitCatalog::permissionSlugsForKitIds(['recrutement']);
-        $tenant = PersonnelFunctionKitCatalog::permissionSlugsForKitIds(['tenant_parametres']);
-        self::assertContains('organization.recruitment.manage', $recruit);
-        self::assertContains('invitations.send', $recruit);
-        self::assertContains('admin.settings.manage', $tenant);
-        self::assertContains('admin.organization', $tenant);
-        self::assertNotContains('admin.settings.manage', $recruit);
-    }
-
-    public function testMultiSelectUnionsPermissions(): void
-    {
-        $slugs = PersonnelFunctionKitCatalog::permissionSlugsForKitIds(['lecture', 'recrutement_lecture']);
-        self::assertContains('forum.view', $slugs);
-        self::assertContains('admin.members.view', $slugs);
-        self::assertNotContains('organization.recruitment.manage', $slugs);
+        $slugs = PersonnelFunctionKitCatalog::slugsForKitIds(['infantry']);
+        self::assertContains('infantry_rifleman', $slugs);
+        self::assertContains('infantry_section_chief', $slugs);
+        self::assertNotContains('medical_officer', $slugs);
     }
 
     public function testFilterKeepsAssignedCustomAndCatalogHits(): void

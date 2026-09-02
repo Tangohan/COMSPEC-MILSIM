@@ -4,14 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
-use App\Authorization\DashboardPinsAccess;
-use App\Core\Container;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Gate;
-use App\Services\Alerts\AlertPresentationService;
 use App\Services\Portal\PortalNextStepsService;
-use App\Support\AlertDisplayStyle;
 
 class HubController
 {
@@ -20,28 +16,6 @@ class HubController
         $gate = Gate::getInstance();
 
         $sections = [];
-        $hubAnnounceItems = [];
-        try {
-            $alertRows = Container::get(AlertPresentationService::class)->forCurrentRequest();
-            foreach ($alertRows as $alert) {
-                $style = (string) ($alert['display_style'] ?? 'classic');
-                if (AlertDisplayStyle::isNavbarStyle($style) || AlertDisplayStyle::isPopupStyle($style)) {
-                    continue;
-                }
-                $hubAnnounceItems[] = [
-                    'scope' => (string) ($alert['scope'] ?? 'tenant'),
-                    'kind' => (string) ($alert['kind'] ?? 'info'),
-                    'title' => (string) ($alert['title'] ?? ''),
-                    'body' => (string) ($alert['body'] ?? ''),
-                    'cta_label' => $alert['cta_label'] ?? null,
-                    'cta_url' => $alert['cta_url'] ?? null,
-                    'accent_color' => $alert['accent_color'] ?? null,
-                    'image_url' => $alert['image_url'] ?? null,
-                ];
-            }
-        } catch (\Throwable) {
-            $hubAnnounceItems = [];
-        }
 
         $priorityEntries = [
             [
@@ -294,11 +268,6 @@ class HubController
             'title' => 'Centre de commandement',
             'hubSections' => $sections,
             'hub_next_steps' => PortalNextStepsService::forHub($gate),
-            'hub_announce_items' => $hubAnnounceItems,
-            'hub_announce_manage_url' => DashboardPinsAccess::canManage($gate)
-                ? url('back-office/alerts')
-                : null,
-            'backOfficePageCss' => ['announce-tiles.css'],
         ]);
     }
 }

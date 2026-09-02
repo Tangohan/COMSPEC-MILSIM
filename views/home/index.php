@@ -139,7 +139,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
     <script type="application/ld+json"><?= json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
-        'name' => 'Athena Comspec',
+        'name' => 'Athena Compsec',
         'url' => rtrim((string) url(''), '/'),
         'logo' => rtrim((string) url(''), '/') . '/assets/icons/athena-192.png',
         'description' => __('home.meta_description'),
@@ -204,7 +204,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 <?php if (!$loggedIn): ?>
                     <a href="<?= url('login') ?>" class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 transition hover:text-white"><?= htmlspecialchars(__('common.enter'), ENT_QUOTES, 'UTF-8') ?></a>
                 <?php else: ?>
-                    <a href="<?= url('dashboard') ?>" class="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400 transition hover:text-emerald-300"><?= htmlspecialchars(__('common.ops'), ENT_QUOTES, 'UTF-8') ?></a>
+                    <a href="<?= url('hub') ?>" class="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400 transition hover:text-emerald-300"><?= htmlspecialchars(__('common.ops'), ENT_QUOTES, 'UTF-8') ?></a>
                 <?php endif; ?>
             </div>
         </div>

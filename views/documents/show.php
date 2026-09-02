@@ -108,9 +108,8 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
         <?php require base_path('views/partials/document_screenshot_shield.php'); ?>
     </div>
     <script type="module">
-      const FALLBACK = 'Le document n’a pas pu s’afficher. Téléchargez-le.';
-      const libUrl = <?= json_encode(asset_url('assets/vendor/pdfjs/pdf.js')) ?>;
-      const workerUrl = <?= json_encode(asset_url('assets/vendor/pdfjs/pdf.worker.min.js')) ?>;
+      import { getDocument, GlobalWorkerOptions } from <?= json_encode(asset_url('assets/vendor/pdfjs/pdf.mjs')) ?>;
+      GlobalWorkerOptions.workerSrc = <?= json_encode(asset_url('assets/vendor/pdfjs/pdf.worker.min.mjs')) ?>;
       const url = <?= json_encode($fileUrl) ?>;
       const container = document.getElementById('doc-viewer');
       const pageCountEl = document.getElementById('doc-page-count');
@@ -188,20 +187,15 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
         });
       }
 
-      import(libUrl).then(function (mod) {
-        const getDocument = mod.getDocument;
-        const GlobalWorkerOptions = mod.GlobalWorkerOptions;
-        GlobalWorkerOptions.workerSrc = workerUrl;
-        return getDocument(url).promise;
-      }).then(function(pdf) {
+      getDocument(url).promise.then(function(pdf) {
         pdfDoc = pdf;
         pageCountEl.textContent = pdf.numPages;
         pageInput.max = String(pdf.numPages);
         syncControls();
         renderPage(pageNum);
-      }).catch(function() {
+      }).catch(function(err) {
         setLoading(false);
-        setError(FALLBACK);
+        setError('Impossible de charger le PDF.');
       });
 
       prevBtn.onclick = function() {

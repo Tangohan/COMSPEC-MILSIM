@@ -46,15 +46,6 @@ final class PersonnelRhViewAssetTest extends TestCase
         $footerCss = (string) file_get_contents($root . '/public/assets/css/portal-footer.css');
         self::assertStringContainsString('personnel-file-gate__hero', $gate);
         self::assertStringContainsString('personnel-file-gate__choices', $gate);
-        self::assertStringContainsString('file_page_notices.php', $gate);
-        $gateHeroPos = strpos($gate, 'personnel-file-gate__hero');
-        $gateNoticesPos = strpos($gate, 'file_page_notices.php');
-        $gateChoicesPos = strpos($gate, 'personnel-file-gate__choices');
-        self::assertNotFalse($gateHeroPos);
-        self::assertNotFalse($gateNoticesPos);
-        self::assertNotFalse($gateChoicesPos);
-        self::assertGreaterThan($gateHeroPos, $gateNoticesPos);
-        self::assertGreaterThan($gateNoticesPos, $gateChoicesPos);
         self::assertStringNotContainsString('py-14 md:py-20', $gate);
         self::assertStringContainsString('layout-page-compact', $layout);
         self::assertStringContainsString('layoutMainCompact', $layout);

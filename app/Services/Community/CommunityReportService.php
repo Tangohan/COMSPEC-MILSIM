@@ -198,32 +198,6 @@ final class CommunityReportService
                 $reasonPrefix .= "\nRepère : " . $ref;
             }
             $urlForDb = $pageUrl !== '' ? $pageUrl : null;
-        } elseif ($targetType === 'site_support_request') {
-            $subject = strtolower(trim((string) ($input['help_subject'] ?? $input['support_subject'] ?? '')));
-            $allowedSubjects = [
-                'compte_fantome' => 'Compte supprimé encore visible',
-                'dysfonctionnement' => 'Dysfonctionnement technique',
-                'rh' => 'Problème RH ou dossier personnel',
-                'droits' => 'Droits, rôles ou accès plateforme',
-                'abonnement' => 'Formule ou facturation',
-                'donnees' => 'Données, synchronisation ou export',
-                'autre' => 'Autre demande à l’administration',
-            ];
-            if (!isset($allowedSubjects[$subject])) {
-                return ['ok' => false, 'error' => 'Indiquez le type de demande à transmettre.'];
-            }
-            if (mb_strlen($details) < 10) {
-                return ['ok' => false, 'error' => 'Décrivez la demande en quelques phrases.'];
-            }
-            $ref = trim((string) ($input['reference_note'] ?? ''));
-            if (strlen($ref) > 500) {
-                return ['ok' => false, 'error' => 'Le repère indiqué est trop long (500 caractères maximum).'];
-            }
-            $reasonPrefix = 'Demande organisateur → administration site — thème : ' . $allowedSubjects[$subject];
-            if ($ref !== '') {
-                $reasonPrefix .= "\nRepère : " . $ref;
-            }
-            $urlForDb = $pageUrl !== '' ? $pageUrl : null;
         } else {
             return ['ok' => false, 'error' => 'Type de signalement non pris en charge.'];
         }

@@ -13,7 +13,6 @@ use App\Services\Moderation\ModerationArtifactState;
 use App\Services\Moderation\ModerationBlockedException;
 use App\Services\Moderation\ModerationQuarantineException;
 use App\Services\Moderation\ModerationSourceType;
-use App\Support\DocumentAttachedFile;
 
 class DocumentUploadService
 {
@@ -261,40 +260,6 @@ class DocumentUploadService
             'version_id' => $versionId,
             'version_number' => $versionNumber,
             'file_path' => $target,
-        ];
-    }
-
-    /**
-     * Retire la pièce jointe courante : la fiche reste, le pointeur est vidé.
-     * Si le fichier existe encore, il est rangé à part (pas de pièce inventée).
-     *
-     * @return array{had_file: bool, archived: bool}
-     */
-    public function detachCurrentFile(int $tenantId, int $documentId): array
-    {
-        $doc = $this->documentRepository->findById($documentId, $tenantId);
-        if (!$doc) {
-            throw new \RuntimeException('Document introuvable.');
-        }
-        $relative = trim((string) ($doc['file_path'] ?? ''));
-        $archived = false;
-        if (DocumentAttachedFile::hasPointer($relative)) {
-            $full = base_path('storage/documents/' . $relative);
-            if (is_file($full)) {
-                $archiveRel = DocumentAttachedFile::archiveRelativePath($tenantId, $documentId, $relative);
-                $dest = base_path('storage/documents/' . $archiveRel);
-                $archived = DocumentAttachedFile::moveAsideIfPresent($full, $dest);
-            }
-        }
-        $versionId = (int) ($doc['version_id'] ?? 0);
-        if ($versionId > 0) {
-            $this->versionRepository->clearFilePointer($versionId);
-        }
-        $this->documentRepository->update($documentId, $tenantId, ['current_file_id' => null]);
-
-        return [
-            'had_file' => DocumentAttachedFile::hasPointer($relative),
-            'archived' => $archived,
         ];
     }
 

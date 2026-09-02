@@ -50,14 +50,14 @@ $ogLocale = str_starts_with(strtolower($localeTag), 'en') ? 'en_US' : 'fr_FR';
 ?>
     <meta name="description" content="<?= htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="robots" content="<?= htmlspecialchars($robots, ENT_QUOTES, 'UTF-8') ?>">
-    <meta name="author" content="Athena Comspec">
+    <meta name="author" content="Athena Compsec">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Athena Comspec">
+    <meta property="og:site_name" content="Athena Compsec">
     <meta property="og:locale" content="<?= htmlspecialchars($ogLocale, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:title" content="<?= htmlspecialchars($ogTitle, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:description" content="<?= htmlspecialchars($ogDesc, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:image" content="<?= htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8') ?>">
-    <meta property="og:image:alt" content="Athena Comspec — portail MILSIM">
+    <meta property="og:image:alt" content="Athena Compsec — portail MILSIM">
 <?php if ($canonicalUrl !== ''): ?>
     <link rel="canonical" href="<?= htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8') ?>">
@@ -69,13 +69,13 @@ $ogLocale = str_starts_with(strtolower($localeTag), 'en') ? 'en_US' : 'fr_FR';
     <script type="application/ld+json"><?= json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'WebSite',
-        'name' => 'Athena Comspec',
+        'name' => 'Athena Compsec',
         'url' => $siteUrl !== '' ? $siteUrl : ($canonicalUrl !== '' ? $canonicalUrl : '/'),
         'description' => $desc,
         'inLanguage' => $ogLocale === 'en_US' ? 'en' : 'fr',
         'publisher' => [
             '@type' => 'Organization',
-            'name' => 'Athena Comspec',
+            'name' => 'Athena Compsec',
             'url' => $siteUrl !== '' ? $siteUrl : '/',
         ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>

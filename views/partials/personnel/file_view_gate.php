@@ -29,11 +29,6 @@ $gateRhUrl = $personnelFileBaseUrl . '?view=rh';
         <p class="personnel-file-gate__lead">Vous disposez d’un accès RH sur ce dossier. Choisissez la vue à afficher.</p>
     </div>
 </section>
-<?php
-$personnelFileNoticesIncludeRhSwitcher = false;
-$personnelFileNoticesIncludeOperatorTabs = false;
-require base_path('views/partials/personnel/file_page_notices.php');
-?>
 <section class="personnel-file-gate__choices">
     <div class="personnel-file-gate__choices-inner">
         <div class="grid gap-5 sm:grid-cols-2">

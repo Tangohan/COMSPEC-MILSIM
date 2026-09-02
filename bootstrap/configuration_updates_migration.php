@@ -361,8 +361,8 @@ SQL
         [
             'code' => 'FUNCTION_KITS_V1',
             'version' => '1',
-            'title' => 'Kits d’accès',
-            'description' => 'Activez des packs simples — lecture, modification, recrutement, paramètres du tenant — puis attribuez-les aux membres. Plusieurs kits peuvent se cumuler.',
+            'title' => 'Kits de fonctions',
+            'description' => 'Choisissez les domaines de votre communauté (infanterie, santé, logistique…) pour attribuer qui fait quoi sans parcourir tout le catalogue. Les fonctions déjà attribuées restent visibles.',
             'configuration_level' => 'recommended',
             'configure_path' => 'back-office/personnel-job-roles/kits',
             'estimate_minutes' => 5,

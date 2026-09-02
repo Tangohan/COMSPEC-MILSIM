@@ -582,7 +582,7 @@ CREATE TABLE IF NOT EXISTS `document_versions` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `document_id` int unsigned NOT NULL,
   `version_number` int unsigned NOT NULL DEFAULT 1,
-  `file_path` varchar(500) DEFAULT NULL,
+  `file_path` varchar(500) NOT NULL,
   `checksum` varchar(64) DEFAULT NULL,
   `mime_type` varchar(100) DEFAULT NULL,
   `size` int unsigned DEFAULT NULL,

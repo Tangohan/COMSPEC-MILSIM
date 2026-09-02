@@ -42,7 +42,6 @@ class AuthService
         Session::set('display_name', $user['display_name'] ?? '');
         Session::set('callsign', $user['callsign'] ?? '');
         Session::set('role_id', $user['role_id'] ? (int) $user['role_id'] : null);
-        $this->userRepository->setCurrentTenant((int) $user['id'], (int) $user['tenant_id']);
         $this->userRepository->updateLastLogin((int) $user['id']);
         try {
             $this->seniorityEnrollmentBootstrapService->syncTenureCommunityFromEnrollment(
@@ -87,7 +86,7 @@ class AuthService
     }
 
     /**
-     * Bascule la session vers une autre communauté du même compte (même user_id).
+     * Bascule la session vers le compte utilisateur du même email dans un autre tenant (multi-communautés).
      */
     public function switchToTenant(int $tenantId): bool
     {
@@ -99,8 +98,6 @@ class AuthService
         if (!$user || !empty($user['is_service_account']) || ($user['status'] ?? '') !== 'active') {
             return false;
         }
-        $this->userRepository->setCurrentTenant((int) $user['id'], $tenantId);
-        $user['tenant_id'] = $tenantId;
         $this->loginUser($user);
         return true;
     }
