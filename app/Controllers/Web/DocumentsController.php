@@ -20,6 +20,7 @@ use App\Services\Documents\DocumentAccessService;
 use App\Services\Documents\DocumentTrainingReferencesService;
 use App\Services\Moderation\ModerationArtifactState;
 use App\Repositories\Doctrine\DocumentDoctrineRepository;
+use App\Services\Doctrine\DoctrineDocumentAccessService;
 use App\Services\Doctrine\DocumentComplianceService;
 use App\Support\DocumentManuscript;
 
@@ -39,6 +40,7 @@ class DocumentsController
         private DocumentSecurityRepository $documentSecurityRepository,
         private DocumentDoctrineRepository $documentDoctrineRepository,
         private DocumentComplianceService $documentComplianceService,
+        private DoctrineDocumentAccessService $doctrineDocumentAccessService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -270,7 +272,7 @@ class DocumentsController
         if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
             return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
         }
-        if (!$this->documentAccessService->canRead($doc, (int) Session::get('user_id'), (int) $tenantId)) {
+        if (!$this->canReadDocumentOrDoctrine($doc, (int) Session::get('user_id'), (int) $tenantId)) {
             return (new Response())->setStatusCode(403)->setBody('Accès refusé');
         }
         if (($doc['status'] ?? '') !== 'published') {
@@ -321,7 +323,7 @@ class DocumentsController
         if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
             return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
         }
-        if (!$this->documentAccessService->canRead($doc, (int) Session::get('user_id'), (int) $tenantId)) {
+        if (!$this->canReadDocumentOrDoctrine($doc, (int) Session::get('user_id'), (int) $tenantId)) {
             return (new Response())->setStatusCode(403)->setBody('Accès refusé');
         }
         if (($doc['status'] ?? '') !== 'published') {
@@ -590,7 +592,7 @@ class DocumentsController
             $documentId = (int) ($row['document_id'] ?? 0);
             $versionId = (int) ($row['version_id'] ?? 0);
             $doc = $this->documentRepository->findById($documentId, null);
-            if ($doc === null || !$this->documentAccessService->canRead($doc, $userId, $tenantId)) {
+            if ($doc === null || !$this->canReadDocumentOrDoctrine($doc, $userId, $tenantId, $row)) {
                 continue;
             }
             $badge = $versionId > 0
@@ -652,5 +654,28 @@ class DocumentsController
             'doctrineQuick' => $doctrineQuick,
             'canManage' => $canManage,
         ]);
+    }
+
+    /**
+     * @param array<string, mixed> $document
+     * @param array<string, mixed>|null $doctrineRow
+     */
+    private function canReadDocumentOrDoctrine(array $document, int $userId, int $tenantId, ?array $doctrineRow = null): bool
+    {
+        if ($this->documentAccessService->canRead($document, $userId, $tenantId)) {
+            return true;
+        }
+        if (!$this->documentDoctrineRepository->tableExists()) {
+            return false;
+        }
+        $doctrine = $doctrineRow;
+        if ($doctrine === null) {
+            $doctrine = $this->documentDoctrineRepository->findByDocumentId((int) ($document['id'] ?? 0), $tenantId);
+        }
+        if ($doctrine === null) {
+            return false;
+        }
+
+        return $this->doctrineDocumentAccessService->canMemberView($tenantId, $userId, $document, $doctrine);
     }
 }

@@ -21,6 +21,7 @@ final class DoctrineReferentialAssetTest extends TestCase
         self::assertStringContainsString('doctrine-referential.css', $indexView);
         self::assertStringContainsString('data-doctrine-ack-form', $showView);
         self::assertStringContainsString('listPendingActionsForUser', $compliance);
+        self::assertStringContainsString('DoctrineDocumentAccessService', (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Doctrine/DoctrineDocumentAccessService.php'));
         self::assertStringContainsString('DoctrineDocumentsController', $routes);
         self::assertStringContainsString('back-office/documents/nomenclature', $routes);
     }
