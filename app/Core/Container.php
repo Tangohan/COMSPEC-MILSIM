@@ -1257,12 +1257,13 @@ class Container
                 self::get(\App\Repositories\DocumentSecurityRepository::class),
                 self::get(\App\Repositories\Doctrine\DocumentDoctrineRepository::class),
                 self::get(\App\Services\Doctrine\DocumentComplianceService::class),
+                self::get(\App\Services\Doctrine\DoctrineDocumentAccessService::class),
             ),
             \App\Controllers\Web\DoctrineDocumentsController::class => new \App\Controllers\Web\DoctrineDocumentsController(
                 self::get(\App\Repositories\DocumentRepository::class),
                 self::get(\App\Repositories\Doctrine\DocumentDoctrineRepository::class),
                 self::get(\App\Repositories\DocumentVersionRepository::class),
-                self::get(\App\Services\Documents\DocumentAccessService::class),
+                self::get(\App\Services\Doctrine\DoctrineDocumentAccessService::class),
                 self::get(\App\Services\Doctrine\DocumentComplianceService::class),
                 self::get(\App\Repositories\Doctrine\DocumentViewRepository::class),
                 self::get(\App\Services\Doctrine\DoctrineAcknowledgmentService::class),
@@ -1285,6 +1286,10 @@ class Container
                 self::get(\App\Repositories\Doctrine\DocumentAcknowledgmentRepository::class),
                 self::get(\App\Repositories\Doctrine\DocumentViewRepository::class),
                 self::get(\App\Repositories\Doctrine\DocumentDoctrineRepository::class),
+            ),
+            \App\Services\Doctrine\DoctrineDocumentAccessService::class => new \App\Services\Doctrine\DoctrineDocumentAccessService(
+                self::get(\App\Services\Documents\DocumentAccessService::class),
+                self::get(\App\Services\Doctrine\DocumentAudienceResolver::class),
             ),
             \App\Services\Doctrine\DoctrineReferenceService::class => new \App\Services\Doctrine\DoctrineReferenceService(
                 self::get(\App\Repositories\Doctrine\DocumentReferenceDomainRepository::class),
