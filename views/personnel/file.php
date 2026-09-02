@@ -485,6 +485,13 @@ $completenessCheckLabels = [
 $bannerPath = trim((string) ($personnelProfile['character_banner_path'] ?? ''));
 $bannerUrl = $bannerPath !== '' ? $baseUrl . '/' . ltrim($bannerPath, '/') : null;
 $isDeployableFile = ((int) ($personnelProfile['deployable'] ?? 1)) === 1;
+$personnelOperationalStatus = \App\Support\PersonnelOperationalStatus::assess([
+    'unit' => trim((string) ($unitName ?? '')) !== '',
+    'role' => trim((string) ($personnelPrimaryPositionLabel ?? $communityRoleLabel ?? '')) !== '' || $personnelJobRoleAssignments !== [],
+    'clearance' => trim((string) ($clearanceLevel ?? '')) !== '',
+    'qualification' => $qualifications !== [] || $trainingCertificates !== [] || $lmsEnrollmentsForPersonnel !== [],
+    'available' => empty($personnelActiveAbsences),
+], $isDeployableFile, (string) ($targetUser['status'] ?? '') === 'active');
 $steamId = trim((string) ($targetUser['steam_id'] ?? ''));
 $steamId = $steamId !== '' ? $steamId : null;
 $accountCreatedDisplay = null;
@@ -1027,10 +1034,10 @@ if ($personnelFileIsRhGate) {
                             <div class="sm:col-span-2 xl:col-span-3 rounded-2xl border border-violet-200/80 bg-gradient-to-br from-violet-50/90 to-white px-4 py-4 shadow-sm sm:px-5 sm:py-4">
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div class="min-w-0">
-                                        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-violet-700/90">Espace RH et formations</p>
-                                        <p class="mt-1 text-sm leading-snug text-slate-800">Charte, parcours, ancienneté affichée sur cette fiche et programmes de préqualification éventuels — au même endroit.</p>
+                                        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-violet-700/90">Dossier RH complet</p>
+                                        <p class="mt-1 text-sm leading-snug text-slate-800">Le suivi RH et les informations de cette fiche sont regroupés dans une seule vue, avec des intitulés expliqués.</p>
                                     </div>
-                                    <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 items-center justify-center self-start rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-violet-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 sm:self-center">Ouvrir l’espace RH</a>
+                                    <a href="<?= htmlspecialchars($personnelFileBaseUrl . '?view=rh', ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 items-center justify-center self-start rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-violet-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 sm:self-center">Ouvrir le dossier RH complet</a>
                                 </div>
                             </div>
                             <?php endif; ?>
@@ -1042,12 +1049,12 @@ if ($personnelFileIsRhGate) {
                                 <?php endif; ?>
                             </div>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Habilitation documentaire</p>
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Documents accessibles</p>
                                 <p class="mt-1 text-sm font-bold text-emerald-700"><?= $clearanceLevel ? htmlspecialchars($clearanceLevel) : '—' ?></p>
                             </div>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Préparation opérationnelle</p>
-                                <p class="mt-1 text-sm font-bold text-slate-900"><?= $readiness !== null ? $readiness . ' %' : '—' ?></p>
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Situation actuelle</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($personnelOperationalStatus['label'], ENT_QUOTES, 'UTF-8') ?></p>
                             </div>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Déployabilité</p>
