@@ -584,6 +584,24 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(377, '2026-09-02', 'La mise à jour du portail se termine à nouveau', 'L’écran de mise à niveau du portail s’arrêtait en cours de route. La mise à jour peut désormais aller jusqu’au bout, y compris lorsqu’un compte est rattaché à plusieurs communautés. Rechargez le portail', [], [], [
+                'L’écran de mise à jour du portail s’interrompait au milieu du parcours',
+            ], ['platform'], [
+                'Mise à jour du portail uniquement : rien à recharger en session. Relancez la mise à niveau depuis l’écran habituel si elle n’avait pas abouti.',
+            ], 'Portail 1.6.03'),
+            $pr(376, '2026-09-02', 'Le tableau de bord s’ouvre à nouveau après connexion', 'Après connexion, le tableau de bord se charge même lorsque le compte appartient à plusieurs communautés. Rechargez la page d’accueil', [], [], [
+                'Certains comptes ne pouvaient plus ouvrir le tableau de bord : la page restait bloquée sur une erreur',
+            ], ['platform'], [
+                'Connectez-vous, puis ouvrez le tableau de bord. Si une ancienne page d’erreur reste affichée, actualisez-la.',
+            ], 'Portail 1.6.03'),
+            $pr(375, '2026-09-02', 'Le tableau de bord Hatchet (H-60) se commande à nouveau', 'En s’asseyant aux commandes d’un hélicoptère Hatchet, le menu d’actions personnelles se referme. Clic et molette reviennent aux interrupteurs : la mise en route n’est plus bloquée par Overwatch ou le recueil SSE. Rechargez le pack jeu, puis relancez Arma complètement', [
+                'À l’embarquement, le menu d’actions se ferme tout seul',
+                'Tant que l’on est aux commandes d’un appareil Hatchet, le recueil sur l’équipage reste masqué',
+            ], [], [
+                'Les interrupteurs du cockpit ne répondaient plus : l’hélicoptère refusait de démarrer',
+            ], ['atak'], [
+                'Pack Overwatch 1.5.13 et SSE 0.7.20. Quittez Arma complètement, puis relancez. Aux commandes d’un H-60, suivez la mise en route habituelle (interrupteurs du tableau de bord).',
+            ], 'Overwatch 1.5.13 · SSE 0.7.20'),
             $pr(374, '2026-09-02', 'Le tableau des effectifs affiche la disponibilité sur 90 jours', 'Sur le tableau rapide du tableau de bord, chaque membre montre son taux de disponibilité : participations annoncées et présences validées sur les trois derniers mois, sous forme de barre colorée. Rechargez le tableau de bord', [
                 'Colonne Disponibilité, avec le pourcentage et une barre du rouge au vert',
                 'Un membre sans activité récente affiche un tiret, pas un taux à zéro',

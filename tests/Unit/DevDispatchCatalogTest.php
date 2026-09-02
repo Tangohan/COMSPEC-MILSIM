@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(177, $byKind['update']);
-        self::assertCount(183, $all);
+        self::assertSame(180, $byKind['update']);
+        self::assertCount(186, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -574,6 +574,18 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($availDash);
         self::assertSame('00374', $availDash['number_pad']);
         self::assertStringContainsString('disponibilité', strtolower((string) $availDash['title']));
+        $hatchetCockpit = DevDispatchCatalog::find('update', '375');
+        self::assertNotNull($hatchetCockpit);
+        self::assertSame('00375', $hatchetCockpit['number_pad']);
+        self::assertStringContainsString('hatchet', strtolower((string) $hatchetCockpit['title']));
+        $dashboardLogin = DevDispatchCatalog::find('update', '376');
+        self::assertNotNull($dashboardLogin);
+        self::assertSame('00376', $dashboardLogin['number_pad']);
+        self::assertStringContainsString('tableau de bord', strtolower((string) $dashboardLogin['title']));
+        $upgradeResume = DevDispatchCatalog::find('update', '377');
+        self::assertNotNull($upgradeResume);
+        self::assertSame('00377', $upgradeResume['number_pad']);
+        self::assertStringContainsString('mise à jour du portail', strtolower((string) $upgradeResume['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

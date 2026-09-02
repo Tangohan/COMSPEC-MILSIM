@@ -28,7 +28,11 @@ final class SilentSchemaMigration
         }
 
         try {
-            $migrate = require $absolutePath;
+            $migrate = require_once $absolutePath;
+            $named = 'run_' . basename($absolutePath, '.php');
+            if (!is_callable($migrate) && function_exists($named)) {
+                $migrate = $named;
+            }
             if (!is_callable($migrate)) {
                 return;
             }

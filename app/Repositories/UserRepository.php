@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SqlText;
 
 use App\Repositories\RoleAssignmentLogRepository;
 use App\Services\Rbac\RoleCoherenceValidator;
@@ -246,10 +247,13 @@ class UserRepository
      */
     public static function sqlLiteralExcludeTechnicalInternalEmails(string $alias = 'u'): string
     {
-        $a = $alias;
-        $lit = str_replace("'", "''", strtolower(self::SYSTEM_MODERATOR_EMAIL));
+        $a = $alias !== '' ? $alias : 'u';
+        $c = SqlText::COLLATION;
 
-        return "LOWER(TRIM({$a}.email)) <> '{$lit}' AND LOWER(TRIM({$a}.email)) NOT LIKE 'system.%@internal.local'";
+        return 'LOWER(TRIM(' . $a . '.email)) COLLATE ' . $c
+            . " <> '" . str_replace("'", "''", strtolower(self::SYSTEM_MODERATOR_EMAIL)) . "' COLLATE " . $c
+            . ' AND LOWER(TRIM(' . $a . '.email)) COLLATE ' . $c
+            . " NOT LIKE 'system.%@internal.local' COLLATE " . $c;
     }
 
     /**
@@ -264,11 +268,11 @@ class UserRepository
         if ($this->hasServiceAccountColumn()) {
             $fragments[] = "({$alias}.is_service_account IS NULL OR {$alias}.is_service_account = 0)";
         }
-        $fragments[] = "LOWER(TRIM({$alias}.email)) <> ?";
+        $fragments[] = SqlText::normalizedNotEquals($this->pdo(), "{$alias}.email");
         $params[] = strtolower(self::SYSTEM_MODERATOR_EMAIL);
-        $fragments[] = "LOWER(TRIM({$alias}.email)) NOT LIKE ?";
+        $fragments[] = SqlText::normalizedNotLike($this->pdo(), "{$alias}.email");
         $params[] = 'system.%@internal.local';
-        $fragments[] = "LOWER(TRIM({$alias}.email)) NOT LIKE ?";
+        $fragments[] = SqlText::normalizedNotLike($this->pdo(), "{$alias}.email");
         $params[] = 'history.%@internal.local';
 
         return ['sql' => '(' . implode(' AND ', $fragments) . ')', 'params' => $params];
@@ -863,7 +867,8 @@ class UserRepository
     {
         $email = strtolower(trim($email));
         $freed = $this->sqlEmailStillClaimedPredicate('users');
-        $sql = 'SELECT * FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ? AND ' . $freed['sql'] . ' LIMIT 1';
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'email');
+        $sql = 'SELECT * FROM users WHERE tenant_id = ? AND ' . $emailEq . ' AND ' . $freed['sql'] . ' LIMIT 1';
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute(array_merge([$tenantId, $email], $freed['params']));
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -883,8 +888,9 @@ class UserRepository
             return [];
         }
         $freed = $this->sqlEmailStillClaimedPredicate('users');
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'email');
         $stmt = $this->pdo()->prepare(
-            'SELECT id FROM users WHERE LOWER(TRIM(email)) = ? AND ' . $freed['sql']
+            'SELECT id FROM users WHERE ' . $emailEq . ' AND ' . $freed['sql']
         );
         $stmt->execute(array_merge([$email], $freed['params']));
         $out = [];
@@ -916,7 +922,8 @@ class UserRepository
         if ($this->hasDeletedAtColumn()) {
             $conditions[] = 'deleted_at IS NOT NULL';
         }
-        $sql = 'SELECT id FROM users WHERE LOWER(TRIM(email)) = ? AND (' . implode(' OR ', $conditions) . ')';
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'email');
+        $sql = 'SELECT id FROM users WHERE ' . $emailEq . ' AND (' . implode(' OR ', $conditions) . ')';
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute([$email]);
         $ids = [];
@@ -950,8 +957,9 @@ class UserRepository
             return false;
         }
         $freed = $this->sqlEmailStillClaimedPredicate('users');
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'email');
         $sql = 'SELECT 1 FROM users
-                WHERE LOWER(TRIM(email)) = ?
+                WHERE ' . $emailEq . '
                   AND deletion_requested_at IS NOT NULL
                   AND ' . $freed['sql'];
         $params = array_merge([$email], $freed['params']);
@@ -973,7 +981,7 @@ class UserRepository
     private function sqlEmailStillClaimedPredicate(string $alias = 'users'): array
     {
         $a = $alias !== '' ? $alias . '.' : '';
-        $fragments = ["LOWER(TRIM({$a}email)) NOT LIKE '%@deleted.invalid'"];
+        $fragments = [SqlText::normalizedNotLikeLiteral($this->pdo(), "{$a}email", '%@deleted.invalid')];
         $params = [];
         if ($this->hasDeletedAtColumn()) {
             $fragments[] = "{$a}deleted_at IS NULL";
@@ -1011,12 +1019,13 @@ class UserRepository
         if ($this->hasDeletedAtColumn()) {
             $extra = ' AND deleted_at IS NULL';
         }
+        $notDeleted = SqlText::normalizedNotLikeLiteral($this->pdo(), 'email', '%@deleted.invalid');
         $stmt = $this->pdo()->query(
             "SELECT id, tenant_id FROM users
              WHERE deletion_requested_at IS NOT NULL
                AND deletion_scheduled_at IS NOT NULL
                AND deletion_scheduled_at <= NOW()
-               AND LOWER(TRIM(email)) NOT LIKE '%@deleted.invalid'
+               AND {$notDeleted}
                {$extra}"
         );
 
@@ -1697,7 +1706,7 @@ class UserRepository
             $parts[] = 'u.status = ?';
             $params[] = $status;
         } else {
-            $parts[] = "LOWER(TRIM(u.email)) NOT LIKE '%@deleted.invalid'";
+            $parts[] = SqlText::normalizedNotLikeLiteral($this->pdo(), 'u.email', '%@deleted.invalid');
             $parts[] = "(u.display_name IS NULL OR TRIM(u.display_name) <> 'Compte supprimé')";
         }
         if ($roleId !== null && $roleId > 0) {
@@ -1918,7 +1927,8 @@ class UserRepository
     {
         $email = strtolower(trim($email));
         $freed = $this->sqlEmailStillClaimedPredicate('users');
-        $sql = 'SELECT 1 FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ? AND ' . $freed['sql'];
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'email');
+        $sql = 'SELECT 1 FROM users WHERE tenant_id = ? AND ' . $emailEq . ' AND ' . $freed['sql'];
         $params = array_merge([$tenantId, $email], $freed['params']);
         if ($excludeUserId !== null) {
             $sql .= ' AND id != ?';
@@ -1937,7 +1947,8 @@ class UserRepository
             return false;
         }
         $freed = $this->sqlEmailStillClaimedPredicate('users');
-        $sql = 'SELECT 1 FROM users WHERE LOWER(TRIM(email)) = ? AND ' . $freed['sql'];
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'email');
+        $sql = 'SELECT 1 FROM users WHERE ' . $emailEq . ' AND ' . $freed['sql'];
         $params = array_merge([$email], $freed['params']);
         if ($this->hasServiceAccountColumn()) {
             $sql .= ' AND (is_service_account IS NULL OR is_service_account = 0)';
@@ -1975,7 +1986,8 @@ class UserRepository
     public function searchForMention(int $tenantId, string $query, int $limit = 10): array
     {
         $term = '%' . trim($query) . '%';
-        $extra = " AND status = 'active' AND LOWER(TRIM(email)) NOT LIKE '%@deleted.invalid'";
+        $notDeleted = SqlText::normalizedNotLikeLiteral($this->pdo(), 'email', '%@deleted.invalid');
+        $extra = ' AND ' . SqlText::inLiterals($this->pdo(), 'status', ['active']) . ' AND ' . $notDeleted;
         if ($this->hasDeletedAtColumn()) {
             $extra .= ' AND deleted_at IS NULL';
         }
@@ -1998,7 +2010,8 @@ class UserRepository
         if ($token === '') {
             return null;
         }
-        $extra = " AND status = 'active' AND LOWER(TRIM(email)) NOT LIKE '%@deleted.invalid'";
+        $notDeleted = SqlText::normalizedNotLikeLiteral($this->pdo(), 'email', '%@deleted.invalid');
+        $extra = ' AND ' . SqlText::inLiterals($this->pdo(), 'status', ['active']) . ' AND ' . $notDeleted;
         if ($this->hasDeletedAtColumn()) {
             $extra .= ' AND deleted_at IS NULL';
         }
@@ -2127,7 +2140,7 @@ class UserRepository
                 INNER JOIN tenants t2 ON t2.id = u2.tenant_id AND t2.slug <> 'default'
                 WHERE LOWER(TRIM(u2.email)) = LOWER(TRIM(u.email))
                   AND TRIM(u.email) <> ''
-                  AND LOWER(TRIM(u.email)) NOT LIKE '%@deleted.invalid'
+                  AND " . SqlText::normalizedNotLikeLiteral($this->pdo(), 'u.email', '%@deleted.invalid') . "
                   AND u2.id <> u.id
                   {$siblingAlive}
              ))
@@ -2249,7 +2262,7 @@ class UserRepository
                 INNER JOIN tenants t2 ON t2.id = u2.tenant_id AND t2.slug <> 'default'
                 WHERE LOWER(TRIM(u2.email)) = LOWER(TRIM(u.email))
                   AND TRIM(u.email) <> ''
-                  AND LOWER(TRIM(u.email)) NOT LIKE '%@deleted.invalid'
+                  AND " . SqlText::normalizedNotLikeLiteral($this->pdo(), 'u.email', '%@deleted.invalid') . "
                   AND u2.id <> u.id
                   {$siblingAlive}
             ))";
@@ -2341,7 +2354,7 @@ class UserRepository
                 INNER JOIN tenants t2 ON t2.id = u2.tenant_id AND t2.slug <> 'default'
                 WHERE LOWER(TRIM(u2.email)) = LOWER(TRIM(u.email))
                   AND TRIM(u.email) <> ''
-                  AND LOWER(TRIM(u.email)) NOT LIKE '%@deleted.invalid'
+                  AND " . SqlText::normalizedNotLikeLiteral($this->pdo(), 'u.email', '%@deleted.invalid') . "
                   AND u2.id <> u.id
                   {$siblingAlive}
             ))";
@@ -2383,13 +2396,12 @@ class UserRepository
             return ['groups' => [], 'total' => $total];
         }
 
-        $ph = implode(',', array_fill(0, count($emailKeys), '?'));
         $memberWhere = $parts;
         // Remonter toutes les appartenances des e-mails de la page (même si filtre statut
         // ne matchait qu’une fiche) pour afficher le panel multi-communautés complet.
         $memberParts = [$pack['sql']];
         $memberParams = $pack['params'];
-        $memberParts[] = 'LOWER(TRIM(u.email)) IN (' . $ph . ')';
+        $memberParts[] = SqlText::normalizedInPlaceholders($this->pdo(), 'u.email', count($emailKeys));
         $memberParams = array_merge($memberParams, $emailKeys);
         if ($tenantId !== null && $tenantId > 0) {
             // Si on filtre une communauté, on garde quand même les sœurs pour le regroupement,
@@ -2401,7 +2413,7 @@ class UserRepository
                 INNER JOIN tenants t2 ON t2.id = u2.tenant_id AND t2.slug <> 'default'
                 WHERE LOWER(TRIM(u2.email)) = LOWER(TRIM(u.email))
                   AND TRIM(u.email) <> ''
-                  AND LOWER(TRIM(u.email)) NOT LIKE '%@deleted.invalid'
+                  AND " . SqlText::normalizedNotLikeLiteral($this->pdo(), 'u.email', '%@deleted.invalid') . "
                   AND u2.id <> u.id
                   {$siblingAlive}
             ))";
@@ -2557,6 +2569,7 @@ class UserRepository
         $hasAthena = $this->hasAthenaIdentifierColumn();
         $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
         $athenaSelect = $hasAthena ? 'u.athena_identifier' : "'' AS athena_identifier";
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'u.email');
         $stmt = $this->pdo()->prepare(
             "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.steam_id,
                     u.avatar_url, u.grade_id, u.role_id, u.created_at, u.updated_at, u.profile_slug,
@@ -2566,7 +2579,7 @@ class UserRepository
              FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id
              LEFT JOIN roles r ON r.id = u.role_id
-             WHERE LOWER(TRIM(u.email)) = ?
+             WHERE {$emailEq}
              ORDER BY
                 CASE WHEN t.slug = 'default' THEN 1 ELSE 0 END ASC,
                 CASE WHEN u.status = 'active' THEN 0 WHEN u.status = 'pending_verification' THEN 1 ELSE 2 END ASC,
@@ -2599,11 +2612,13 @@ class UserRepository
         }
         $hasDeletedAt = $this->hasDeletedAtColumn();
         $liveDeleted = $hasDeletedAt ? 'AND u.deleted_at IS NULL' : '';
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'u.email');
+        $statusActive = SqlText::inLiterals($this->pdo(), 'u.status', ['active']);
         $stmt = $this->pdo()->prepare(
             "SELECT 1 FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id AND t.slug <> 'default'
-             WHERE LOWER(TRIM(u.email)) = ?
-               AND u.status = 'active'
+             WHERE {$emailEq}
+               AND {$statusActive}
                {$liveDeleted}
              LIMIT 1"
         );
@@ -2617,9 +2632,11 @@ class UserRepository
      */
     public function listTenantsForEmail(string $email): array
     {
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'u.email');
+        $statusEq = SqlText::equals($this->pdo(), 'u.status');
         $stmt = $this->pdo()->prepare(
-            'SELECT u.id, u.tenant_id, t.name, t.slug FROM users u INNER JOIN tenants t ON t.id = u.tenant_id
-             WHERE LOWER(TRIM(u.email)) = ? AND u.status = ? ORDER BY t.name ASC'
+            "SELECT u.id, u.tenant_id, t.name, t.slug FROM users u INNER JOIN tenants t ON t.id = u.tenant_id
+             WHERE {$emailEq} AND {$statusEq} ORDER BY t.name ASC"
         );
         $stmt->execute([strtolower(trim($email)), 'active']);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2691,12 +2708,14 @@ class UserRepository
     public function listActiveUsersWithTenantForEmail(string $email): array
     {
         $email = strtolower(trim($email));
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'u.email');
+        $statusEq = SqlText::equals($this->pdo(), 'u.status');
         $stmt = $this->pdo()->prepare(
-            'SELECT u.*, t.name AS tenant_name, t.slug AS tenant_slug
+            "SELECT u.*, t.name AS tenant_name, t.slug AS tenant_slug
              FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id
-             WHERE LOWER(TRIM(u.email)) = ? AND u.status = ?
-             ORDER BY t.name ASC'
+             WHERE {$emailEq} AND {$statusEq}
+             ORDER BY t.name ASC"
         );
         $stmt->execute([$email, 'active']);
 
@@ -2711,11 +2730,13 @@ class UserRepository
     public function listUsersForLoginByEmail(string $email): array
     {
         $email = strtolower(trim($email));
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'u.email');
+        $statusIn = SqlText::inLiterals($this->pdo(), 'u.status', ['active', 'pending_verification']);
         $stmt = $this->pdo()->prepare(
             "SELECT u.*, t.name AS tenant_name, t.slug AS tenant_slug
              FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id
-             WHERE LOWER(TRIM(u.email)) = ? AND u.status IN ('active', 'pending_verification')
+             WHERE {$emailEq} AND {$statusIn}
              ORDER BY t.name ASC"
         );
         $stmt->execute([$email]);
@@ -2726,7 +2747,8 @@ class UserRepository
     public function findIdByTenantAndEmail(int $tenantId, string $email): ?int
     {
         $email = strtolower(trim($email));
-        $stmt = $this->pdo()->prepare('SELECT id FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ? LIMIT 1');
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'email');
+        $stmt = $this->pdo()->prepare('SELECT id FROM users WHERE tenant_id = ? AND ' . $emailEq . ' LIMIT 1');
         $stmt->execute([$tenantId, $email]);
         $id = $stmt->fetchColumn();
         return $id !== false ? (int) $id : null;
@@ -2739,7 +2761,7 @@ class UserRepository
         if ($email === '') {
             return null;
         }
-        $sql = 'SELECT * FROM users WHERE LOWER(TRIM(email)) = ?';
+        $sql = 'SELECT * FROM users WHERE ' . SqlText::normalizedEquals($this->pdo(), 'email');
         if ($this->hasServiceAccountColumn()) {
             $sql .= ' AND (is_service_account IS NULL OR is_service_account = 0)';
         }
