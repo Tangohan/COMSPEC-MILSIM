@@ -2504,6 +2504,13 @@ try {
     echo '  [ATTENTION] user_profile_banner : ' . $e->getMessage() . "\n";
 }
 
+$usersMemberPhotoMigrate = require $root . '/bootstrap/users_member_photo_columns_migration.php';
+try {
+    $usersMemberPhotoMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] users_member_photo : ' . $e->getMessage() . "\n";
+}
+
 $tenantCommunityFeedMigrate = require $root . '/bootstrap/tenant_community_feed_migration.php';
 try {
     $tenantCommunityFeedMigrate($pdo);
