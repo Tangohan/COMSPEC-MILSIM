@@ -87,6 +87,7 @@ final class AuditActionLabel
         'deployment.campaign_created' => 'Déploiement — campagne de publication créée',
         'deployment.campaign_failed' => 'Déploiement — campagne de publication en échec',
         'user.status_updated' => 'Statut du compte modifié',
+        'user.profile_updated' => 'Fiche complète mise à jour',
         'user.deleted' => 'Compte supprimé (anonymisé)',
         'user.purged' => 'Compte supprimé définitivement',
         'user_purge_requested' => 'Demande de suppression définitive (orga)',

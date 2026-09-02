@@ -584,19 +584,12 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
-            $pr(382, '2026-09-02', 'Les retours sur l’interface se lisent comme les autres pages d’administration', 'La page Retours sur l’interface reprend la présentation de l’administration du site : en-tête, synthèses, filtres et tableaux clairs. Chaque avis affiche un niveau de satisfaction. Vous pouvez filtrer par communauté, type de retour, écran et niveau, puis ouvrir les avis d’un écran', [
-                'Filtres communauté, type de retour, écran et niveau de satisfaction',
-                'Statut À améliorer, Correct ou Satisfaisant sur chaque note et chaque questionnaire',
-                'Action Voir les avis pour n’afficher que les retours d’un écran',
-            ], [
-                'La page quitte le fond sombre illisible : mêmes couleurs, tableaux et cartes que l’annuaire des communautés',
-            ], [], ['platform'], [
-                'Ouvrez Administration du site, puis Retours sur l’interface. Rien à recharger en session.',
-            ], 'Portail 1.6.03'),
-            $pr(375, '2026-09-02', 'Les kits d’accès se cochent clairement avant l’enregistrement', 'Sur la page Kits d’accès, chaque carte affiche une case. Une carte retenue passe en Sélectionné et le pied de page indique combien de kits sont cochés. Enregistrez ensuite pour les attribuer aux membres', [], [], [
-                'Cliquer une carte ne changeait pas l’affichage : pas de case visible, le pied de page restait sur Aucun kit coché',
-            ], ['personnel'], [
-                'Ouvrez Effectifs, puis Kits d’accès. Cochez les packs voulus : le compteur se met à jour, puis Enregistrer les kits.',
+            $pr(376, '2026-09-02', 'L’administration du site peut modifier toute la fiche d’un compte', 'Depuis Comptes utilisateurs, l’administration du site ouvre la fiche d’une personne et enregistre l’identité, le contact, le dossier, le grade, le statut, la présentation et la liaison Steam. L’adresse e-mail reste visible et modifiable ici, y compris lorsqu’elle est masquée dans la communauté. Rechargez la page Comptes utilisateurs', [
+                'Bouton Modifier sur l’annuaire et sur chaque appartenance du dossier',
+                'Formulaire unique : compte, personnage, identité civile, dossier, grade, unité, Steam, rôles et notes',
+                'Les valeurs déjà renseignées sont reprises telles quelles, sans invention',
+            ], [], [], ['platform', 'personnel'], [
+                'Administration du site → Comptes utilisateurs → rechercher la personne → Modifier la fiche.',
             ], 'Portail 1.6.03'),
             $pr(374, '2026-09-02', 'Le tableau des effectifs affiche la disponibilité sur 90 jours', 'Sur le tableau rapide du tableau de bord, chaque membre montre son taux de disponibilité : participations annoncées et présences validées sur les trois derniers mois, sous forme de barre colorée. Rechargez le tableau de bord', [
                 'Colonne Disponibilité, avec le pourcentage et une barre du rouge au vert',
