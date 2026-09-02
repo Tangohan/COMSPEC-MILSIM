@@ -62,7 +62,7 @@ final class OverwatchPhotoJpgAndNoteAttachAssetTest extends TestCase
         self::assertStringContainsString('newestFallback: null', $cs);
         self::assertStringContainsString('AddSeconds(-180)', $cs);
         self::assertStringNotContainsString('if (resolved != null || attempt >= 8)', $cs);
-        self::assertStringContainsString('pièce jointe', $note);
+        self::assertStringContainsString('Pièce jointe', $note);
         self::assertStringNotContainsString('endpoint', $note);
     }
 

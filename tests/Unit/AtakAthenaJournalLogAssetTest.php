@@ -74,8 +74,8 @@ final class AtakAthenaJournalLogAssetTest extends TestCase
         self::assertStringContainsString('manifeste de vol', $log);
         self::assertStringContainsString('COMSPEC_Athena_LogFilter', $filter);
 
-        self::assertStringContainsString('forcePhotoSend', $force);
         self::assertStringContainsString('bridgeIcemanPhoto', $force);
+        self::assertStringContainsString('COMSPEC_Athena_PhotoForceBusy', $force);
         self::assertStringContainsString('GetPhotoSaveDir', $folder);
         self::assertStringContainsString('copyToClipboard', $folder);
         self::assertStringContainsString('Arma 3 - COMSPEC', $folder);

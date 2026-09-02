@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Repositories\SeniorityRepository;
+use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Personnel\SeniorityPrePlatformService;
 use App\Services\Personnel\SeniorityTenantDefaultsService;
@@ -81,10 +82,15 @@ final class SeniorityPrePlatformServiceTest extends TestCase
         $users = $this->createMock(UserRepository::class);
         $users->method('listActiveUserIdsForTenant')->willReturn([10, 20]);
 
+        $tenants = $this->createMock(TenantRepository::class);
+        $tenants->method('getSettings')->willReturn([]);
+        $tenants->expects(self::once())->method('updateSettings');
+
         $svc = new SeniorityPrePlatformService(
             $seniority,
             new SeniorityTenantDefaultsService($seniority),
-            $users
+            $users,
+            $tenants
         );
 
         $stats = $svc->syncOrgFoundingForAllActiveMembers(3, '2018-01-15');

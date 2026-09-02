@@ -31,7 +31,8 @@ final class MiniArticleHtml
                 if ($href === '' || preg_match('#^(javascript|data|vbscript):#i', $href)) {
                     return '<a>';
                 }
-                if (!preg_match('#^(https?://|/|#|mailto:)#i', $href)) {
+                // Délimiteur ~ : un # dans le motif (ancre) ne doit pas clôturer le pattern.
+                if (!preg_match('~^(https?://|/|#|mailto:)~i', $href)) {
                     return '<a>';
                 }
 

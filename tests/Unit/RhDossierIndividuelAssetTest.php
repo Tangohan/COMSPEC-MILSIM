@@ -86,6 +86,7 @@ final class RhDossierIndividuelAssetTest extends TestCase
         }
 
         $docs = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_documents.php');
+        $helpers = (string) file_get_contents($root . '/views/admin/effectifs_workspace/partials/rh_ui_helpers.php');
         $mob = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_mobility.php');
         $viv = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_succession.php');
         $alerts = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_alerts.php');
@@ -96,7 +97,8 @@ final class RhDossierIndividuelAssetTest extends TestCase
         self::assertStringContainsString('eff-rh-hero', $mob);
         self::assertStringContainsString('eff-rh-hero', $viv);
         self::assertStringContainsString('eff-rh-hero', $alerts);
-        self::assertStringContainsString('eff-rh-tip', $docs);
+        self::assertStringContainsString('eff-rh-tip', $helpers);
+        self::assertStringContainsString('$rhTip(', $docs);
         self::assertStringContainsString('Visible du membre', $docs);
         self::assertStringContainsString('enctype="multipart/form-data"', $docs);
         self::assertStringContainsString('name="document"', $docs);

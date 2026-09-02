@@ -34,7 +34,7 @@ final class PersonnelRhViewAssetTest extends TestCase
         self::assertStringContainsString('character_name', $tableau);
 
         self::assertStringContainsString('personnelShowRedirectUrl', $controller);
-        self::assertStringContainsString("return_view === 'rh'", $controller);
+        self::assertStringContainsString("\$returnView === 'rh'", $controller);
         self::assertStringContainsString('$canSensitive || $isForumMod', $controller);
         self::assertStringContainsString('layoutMainCompact', $controller);
 

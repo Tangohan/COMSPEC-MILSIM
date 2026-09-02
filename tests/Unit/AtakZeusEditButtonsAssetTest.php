@@ -21,7 +21,7 @@ final class AtakZeusEditButtonsAssetTest extends TestCase
         self::assertStringContainsString('[_e, 0.32]', $inject);
         self::assertStringContainsString('Chef de section seulement', $ally);
         self::assertStringContainsString('Toute la section', $ally);
-        self::assertStringContainsString('false, false, false] call comspec_overwatch_connect_fnc_captureReconImage', $photo);
+        self::assertStringContainsString('false, true, false] call comspec_overwatch_connect_fnc_captureReconImage', $photo);
         self::assertStringContainsString('comspec_sse_face', $photo);
         $ath = (string) file_get_contents($root . '/atak_athena/config.cpp');
         self::assertStringContainsString('1.0.75', $ath);

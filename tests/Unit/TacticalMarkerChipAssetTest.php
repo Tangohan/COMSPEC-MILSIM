@@ -52,7 +52,7 @@ final class TacticalMarkerChipAssetTest extends TestCase
     public function testChipPreviewFixtureExists(): void
     {
         $root = dirname(__DIR__, 2);
-        $fixture = $root . '/tmp-tactical-marker-chips-preview.html';
+        $fixture = $root . '/tests/fixtures/tactical-marker-chips-preview.html';
         self::assertFileExists($fixture);
         $html = (string) file_get_contents($fixture);
         self::assertStringContainsString('SPOTREP', $html);
