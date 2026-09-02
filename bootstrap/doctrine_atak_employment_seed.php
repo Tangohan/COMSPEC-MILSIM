@@ -39,13 +39,16 @@ function seedAtakEmploymentDoctrine(PDO $pdo, int $tenantId): void
     $slug = 'sic-atak-2026-001';
 
     $exists = $pdo->prepare(
-        'SELECT dd.id FROM document_doctrines dd
+        'SELECT dd.document_id FROM document_doctrines dd
          INNER JOIN documents d ON d.id = dd.document_id
          WHERE dd.tenant_id = ? AND (dd.reference_code = ? OR d.slug = ?)
          LIMIT 1'
     );
     $exists->execute([$tenantId, $referenceCode, $slug]);
-    if ((int) ($exists->fetchColumn() ?: 0) > 0) {
+    $existingId = (int) ($exists->fetchColumn() ?: 0);
+    if ($existingId > 0) {
+        upgradeAtakEmploymentDoctrineIfDemoPlaceholder($pdo, $tenantId, $existingId);
+
         return;
     }
 
@@ -150,6 +153,76 @@ TXT;
     );
     try {
         $seq->execute([$tenantId, 'SIC', 'ATAK', 2026]);
+    } catch (\Throwable) {
+    }
+}
+
+/**
+ * Si la doctrine ATAK encore présente est le stub de démonstration
+ * (résumé « Document de démonstration » ou fichier demo/), la remplace
+ * par le texte officiel. Ne crée aucune prise en compte, ne change pas
+ * le statut publié ni les audiences.
+ */
+function upgradeAtakEmploymentDoctrineIfDemoPlaceholder(PDO $pdo, int $tenantId, int $documentId): void
+{
+    if ($documentId < 1 || $tenantId < 1) {
+        return;
+    }
+
+    $rowStmt = $pdo->prepare(
+        'SELECT dd.summary, dv.file_path
+         FROM document_doctrines dd
+         LEFT JOIN document_versions dv ON dv.document_id = dd.document_id AND dv.is_current = 1
+         WHERE dd.document_id = ? AND dd.tenant_id = ?
+         LIMIT 1'
+    );
+    $rowStmt->execute([$documentId, $tenantId]);
+    $row = $rowStmt->fetch(PDO::FETCH_ASSOC);
+    if (!is_array($row)) {
+        return;
+    }
+
+    $summary = trim((string) ($row['summary'] ?? ''));
+    $filePath = str_replace('\\', '/', (string) ($row['file_path'] ?? ''));
+    $isDemo = str_starts_with($summary, 'Document de démonstration')
+        || str_contains($filePath, 'storage/documents/demo/')
+        || str_contains($filePath, '/documents/demo/');
+    if (!$isDemo) {
+        return;
+    }
+
+    $officialSummary = <<<'TXT'
+Fixe les règles d’emploi du terminal tactique Overwatch (mod Arma) et du poste de commandement web Athena : prérequis de liaison, emploi carte/marqueurs/ordres/MEDEVAC en mission, responsabilités opérateur et SIC, OPSEC et maintien des compétences. Prise en compte obligatoire pour tous les membres autorisés à l’OP numérique.
+TXT;
+    $officialFile = 'doctrine/sic-atak-2026-001.md';
+    $checksum = is_file(dirname(__DIR__) . '/storage/documents/' . $officialFile)
+        ? hash_file('sha256', dirname(__DIR__) . '/storage/documents/' . $officialFile)
+        : hash('sha256', 'SIC/ATAK/2026-001v1.0');
+
+    try {
+        $pdo->prepare(
+            'UPDATE documents SET description = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?'
+        )->execute([$officialSummary, $documentId, $tenantId]);
+        $pdo->prepare(
+            'UPDATE document_doctrines SET summary = ?, issuing_label = ?, updated_at = NOW()
+             WHERE document_id = ? AND tenant_id = ?'
+        )->execute([
+            $officialSummary,
+            'Bureau SIC — Systèmes d’information et commandement',
+            $documentId,
+            $tenantId,
+        ]);
+        $pdo->prepare(
+            'UPDATE document_versions
+             SET file_path = ?, checksum = ?, mime_type = ?, change_summary = ?
+             WHERE document_id = ? AND is_current = 1'
+        )->execute([
+            $officialFile,
+            $checksum,
+            'text/markdown',
+            'Texte officiel de la doctrine d’emploi ATAK / Overwatch Athena.',
+            $documentId,
+        ]);
     } catch (\Throwable) {
     }
 }

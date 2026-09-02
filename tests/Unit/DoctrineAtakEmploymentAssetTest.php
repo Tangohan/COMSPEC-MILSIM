@@ -17,6 +17,7 @@ final class DoctrineAtakEmploymentAssetTest extends TestCase
         self::assertStringContainsString('Doctrine d’emploi d’ATAK / Overwatch Athena', $seed);
         self::assertStringContainsString('all_members', $seed);
         self::assertStringContainsString('mandatory', $seed);
+        self::assertStringContainsString('upgradeAtakEmploymentDoctrineIfDemoPlaceholder', $seed);
         self::assertStringContainsString('COMSPEC Overwatch', $markdown);
         self::assertStringContainsString('Prise en compte obligatoire', $markdown);
     }
