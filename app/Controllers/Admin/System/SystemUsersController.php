@@ -159,10 +159,10 @@ final class SystemUsersController
 
             $gradeId = (int) ($m['grade_id'] ?? 0);
             $grade = $gradeId > 0 ? $grades->findById($gradeId, $tid) : null;
-            $pp = $personnelProfiles->getByUserId($uid) ?? [];
-            $extras = $personnelExtras->getByUserId($uid) ?? [];
+            $pp = $personnelProfiles->getByUserId($uid, $tid) ?? [];
+            $extras = $personnelExtras->getByUserId($uid, $tid) ?? [];
             $primaryAssignment = $assignments->getPrimaryAssignment($uid);
-            $roleIds = $this->users->listOrganizationRoleIdsForUser($uid);
+            $roleIds = $this->users->listOrganizationRoleIdsForUser($uid, $tid);
             $roleNames = [];
             $roleName = trim((string) ($m['role_name'] ?? ''));
             if ($roleName !== '') {

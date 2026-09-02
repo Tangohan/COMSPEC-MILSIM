@@ -21,6 +21,9 @@ final class AuditAction
     public const AUTH_PORTAL_SELECTED = 'auth.portal_selected';
     public const USER_STEAM_LINKED = 'user.steam_linked';
 
+    /** Fusion de fiches users partageant le même e-mail (un compte, plusieurs communautés). */
+    public const USER_IDENTITY_MERGED = 'user.identity_merged';
+
     public const TENANT_CREATED = 'tenant.created';
     public const TENANT_SETUP_COMPLETED = 'tenant.setup_completed';
 

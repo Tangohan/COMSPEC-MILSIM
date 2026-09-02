@@ -584,12 +584,14 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
-            $pr(376, '2026-09-02', 'L’administration du site peut modifier toute la fiche d’un compte', 'Depuis Comptes utilisateurs, l’administration du site ouvre la fiche d’une personne et enregistre l’identité, le contact, le dossier, le grade, le statut, la présentation et la liaison Steam. L’adresse e-mail reste visible et modifiable ici, y compris lorsqu’elle est masquée dans la communauté. Rechargez la page Comptes utilisateurs', [
-                'Bouton Modifier sur l’annuaire et sur chaque appartenance du dossier',
-                'Formulaire unique : compte, personnage, identité civile, dossier, grade, unité, Steam, rôles et notes',
-                'Les valeurs déjà renseignées sont reprises telles quelles, sans invention',
-            ], [], [], ['platform', 'personnel'], [
-                'Administration du site → Comptes utilisateurs → rechercher la personne → Modifier la fiche.',
+            $pr(379, '2026-09-02', 'Un compte suffit pour plusieurs communautés', 'La même adresse e-mail n’ouvre plus plusieurs comptes. Vous vous connectez une fois, puis vous changez de communauté comme aujourd’hui. Chaque unité garde son propre dossier — grade, matricule, indicatif, fiche RH — sans mélange. Relancez la mise à jour du portail, puis reconnectez-vous', [
+                'Une seule identité de connexion : e-mail, mot de passe et Steam',
+                'Rejoindre une communauté ajoute une appartenance, sans créer un second compte',
+                'L’administration du site voit une personne, avec un dossier clairement nommé par communauté',
+            ], [], [
+                'Une même personne apparaissait comme plusieurs comptes, un par communauté, avec des mots de passe éventuellement différents',
+            ], ['platform', 'personnel'], [
+                'Les membres n’ont rien à ressaisir. L’administration du site ouvre le dossier de la communauté qu’elle veut modifier, pas les autres.',
             ], 'Portail 1.6.03'),
             $pr(374, '2026-09-02', 'Le tableau des effectifs affiche la disponibilité sur 90 jours', 'Sur le tableau rapide du tableau de bord, chaque membre montre son taux de disponibilité : participations annoncées et présences validées sur les trois derniers mois, sous forme de barre colorée. Rechargez le tableau de bord', [
                 'Colonne Disponibilité, avec le pourcentage et une barre du rouge au vert',

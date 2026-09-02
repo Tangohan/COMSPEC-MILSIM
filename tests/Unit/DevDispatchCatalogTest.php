@@ -574,10 +574,10 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($availDash);
         self::assertSame('00374', $availDash['number_pad']);
         self::assertStringContainsString('disponibilité', strtolower((string) $availDash['title']));
-        $adminUsersEdit = DevDispatchCatalog::find('update', '376');
-        self::assertNotNull($adminUsersEdit);
-        self::assertSame('00376', $adminUsersEdit['number_pad']);
-        self::assertStringContainsString('fiche', strtolower((string) $adminUsersEdit['title']));
+        $oneAccount = DevDispatchCatalog::find('update', '379');
+        self::assertNotNull($oneAccount);
+        self::assertSame('00379', $oneAccount['number_pad']);
+        self::assertStringContainsString('communaut', strtolower((string) $oneAccount['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

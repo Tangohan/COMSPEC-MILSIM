@@ -50,7 +50,7 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                     <?php else: ?>
                         <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Orphelin (plus d’orga active)</span>
                     <?php endif; ?>
-                    <p class="text-xs text-slate-500"><?= count($memberships) ?> fiche(s) communauté</p>
+                    <p class="text-xs text-slate-500"><?= count($memberships) ?> dossier(s) communautaire(s) — chacun reste séparé</p>
                 </div>
             </div>
 
@@ -109,8 +109,8 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                 <article class="rounded-xl border <?= $isDeleted ? 'border-rose-200 bg-rose-50/40' : ($isDefault ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white') ?> shadow-sm overflow-hidden">
                     <div class="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
                         <div>
-                            <h2 class="text-base font-bold text-slate-900"><?= $h($tenantName !== '' ? $tenantName : 'Communauté') ?></h2>
-                            <p class="text-xs text-slate-500">Fiche dans cette communauté</p>
+                            <h2 class="text-base font-bold text-slate-900">Dossier — <?= $h($tenantName !== '' ? $tenantName : 'Communauté') ?></h2>
+                            <p class="text-xs text-slate-500">Vous éditez le dossier de cette communauté uniquement. Grade, matricule et fiche RH des autres communautés ne sont pas concernés.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <?php if ($isDeleted): ?>
