@@ -375,11 +375,95 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             ? url('back-office/alerts')
             : null;
         require base_path('views/partials/announce_tiles.php');
-        $doctrine_pending = is_array($doctrine_pending ?? null) ? $doctrine_pending : [];
-        require base_path('views/partials/dashboard_doctrine_pending.php');
         require base_path('views/partials/dashboard_popup_modal.php');
         require base_path('views/partials/dashboard_mini_articles.php');
         ?>
+
+        <section class="dash-org-anomaly-tile dash-contact-choice-tile<?= !empty($canAdmin) ? ' dash-contact-choice-tile--admin' : '' ?>" aria-labelledby="dash-contact-choice-title">
+            <div class="dash-org-anomaly-tile__shell">
+                <button
+                    type="button"
+                    class="dash-org-anomaly-tile__open"
+                    data-dash-contact-choice-open
+                    <?php if (empty($canAdmin)): ?>
+                    data-dash-rail-open-external="org-anomaly"
+                    aria-controls="dash-rail-nested-org-anomaly"
+                    <?php else: ?>
+                    aria-haspopup="dialog"
+                    aria-controls="dash-contact-choice-modal"
+                    <?php endif; ?>
+                >
+                    <?php if (!empty($canAdmin)): ?>
+                    <span class="dash-org-anomaly-tile__kicker">Contact</span>
+                    <strong id="dash-contact-choice-title" class="dash-org-anomaly-tile__title">Signaler une anomalie ou contacter l’administration</strong>
+                    <em class="dash-org-anomaly-tile__hint">Un dysfonctionnement à transmettre à la gestion de l’organisation, ou une demande à l’administration du site.</em>
+                    <span class="dash-org-anomaly-tile__cta">Choisir le destinataire</span>
+                    <?php else: ?>
+                    <span class="dash-org-anomaly-tile__kicker">Gestion</span>
+                    <strong id="dash-contact-choice-title" class="dash-org-anomaly-tile__title">Signaler une anomalie</strong>
+                    <em class="dash-org-anomaly-tile__hint">Tout dysfonctionnement, erreur ou irrégularité à transmettre à la gestion de l’organisation.</em>
+                    <span class="dash-org-anomaly-tile__cta">Ouvrir le formulaire</span>
+                    <?php endif; ?>
+                </button>
+                <div class="dash-org-anomaly-tile__form" id="signaler-anomalie" data-dash-contact-form="org-anomaly" hidden>
+                    <p class="dash-org-anomaly-tile__kicker">Gestion</p>
+                    <h2 id="dash-org-anomaly-title" class="dash-org-anomaly-tile__title">Signaler une anomalie</h2>
+                    <?php require base_path('views/partials/dashboard_org_anomaly_form.php'); ?>
+                </div>
+                <?php if (!empty($canAdmin)): ?>
+                <div class="dash-org-anomaly-tile__form dash-site-support-tile" id="contacter-admin-site" data-dash-contact-form="site-support" hidden>
+                    <p class="dash-org-anomaly-tile__kicker">Administration site</p>
+                    <h2 id="dash-site-support-title" class="dash-org-anomaly-tile__title">Contacter l’administration du site</h2>
+                    <?php require base_path('views/partials/dashboard_site_support_form.php'); ?>
+                </div>
+                <?php endif; ?>
+            </div>
+        </section>
+
+        <div
+            id="dash-contact-choice-modal"
+            class="dash-contact-choice-modal"
+            hidden
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dash-contact-choice-modal-title"
+        >
+            <div class="dash-contact-choice-modal__backdrop" data-dash-contact-choice-close tabindex="-1"></div>
+            <div class="dash-contact-choice-modal__panel">
+                <button type="button" class="dash-contact-choice-modal__close" data-dash-contact-choice-close aria-label="Fermer">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+                </button>
+                <p class="dash-contact-choice-modal__kicker">Contact</p>
+                <h2 id="dash-contact-choice-modal-title" class="dash-contact-choice-modal__title">Quel destinataire ?</h2>
+                <p class="dash-contact-choice-modal__lead">Choisissez où envoyer votre message. Le formulaire s’ouvre ensuite.</p>
+                <div class="dash-contact-choice-modal__choices">
+                    <button
+                        type="button"
+                        class="dash-contact-choice-modal__choice"
+                        data-dash-contact-choice="org-anomaly"
+                        data-dash-rail-open-external="org-anomaly"
+                        aria-controls="dash-rail-nested-org-anomaly"
+                    >
+                        <span class="dash-contact-choice-modal__choice-kicker">Anomalie</span>
+                        <strong class="dash-contact-choice-modal__choice-title">Signaler une anomalie</strong>
+                        <em class="dash-contact-choice-modal__choice-hint">Dysfonctionnement, erreur ou irrégularité à la gestion de l’organisation.</em>
+                    </button>
+                    <?php if (!empty($canAdmin)): ?>
+                    <button
+                        type="button"
+                        class="dash-contact-choice-modal__choice dash-contact-choice-modal__choice--admin"
+                        data-dash-contact-choice="site-support"
+                        data-dash-rail-open-external="site-support"
+                        aria-controls="dash-rail-nested-site-support"
+                    >
+                        <span class="dash-contact-choice-modal__choice-kicker">Administration</span>
+                        <strong class="dash-contact-choice-modal__choice-title">Contacter l’administration</strong>
+                        <em class="dash-contact-choice-modal__choice-hint">Compte fantôme, problème RH ou demande transversale aux admins du site.</em>
+                    </button>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
 
         <?php if (!empty($can_publish_dashboard_articles)): ?>
         <div class="dash-hub-stack" aria-label="Publications">
@@ -387,49 +471,10 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         </div>
         <?php endif; ?>
 
-        <section class="dash-org-anomaly-tile" id="signaler-anomalie" aria-labelledby="dash-org-anomaly-title">
-            <div class="dash-org-anomaly-tile__shell">
-                <button
-                    type="button"
-                    class="dash-org-anomaly-tile__open"
-                    data-dash-rail-open-external="org-anomaly"
-                    aria-controls="dash-rail-nested-org-anomaly"
-                >
-                    <span class="dash-org-anomaly-tile__kicker">Gestion</span>
-                    <strong id="dash-org-anomaly-title" class="dash-org-anomaly-tile__title">Signaler une anomalie</strong>
-                    <em class="dash-org-anomaly-tile__hint">Tout dysfonctionnement, erreur ou irrégularité à transmettre à la gestion de l’organisation.</em>
-                    <span class="dash-org-anomaly-tile__cta">Ouvrir le formulaire</span>
-                </button>
-                <div class="dash-org-anomaly-tile__form">
-                    <p class="dash-org-anomaly-tile__kicker">Gestion</p>
-                    <h2 class="dash-org-anomaly-tile__title">Signaler une anomalie</h2>
-                    <?php require base_path('views/partials/dashboard_org_anomaly_form.php'); ?>
-                </div>
-            </div>
-        </section>
-
-        <?php if (!empty($canAdmin)): ?>
-        <section class="dash-org-anomaly-tile dash-site-support-tile" id="contacter-admin-site" aria-labelledby="dash-site-support-title">
-            <div class="dash-org-anomaly-tile__shell">
-                <button
-                    type="button"
-                    class="dash-org-anomaly-tile__open"
-                    data-dash-rail-open-external="site-support"
-                    aria-controls="dash-rail-nested-site-support"
-                >
-                    <span class="dash-org-anomaly-tile__kicker">Administration site</span>
-                    <strong id="dash-site-support-title" class="dash-org-anomaly-tile__title">Contacter l’administration du site</strong>
-                    <em class="dash-org-anomaly-tile__hint">Compte fantôme, dysfonctionnement, problème RH ou toute demande transversale aux admins du site.</em>
-                    <span class="dash-org-anomaly-tile__cta">Ouvrir le formulaire</span>
-                </button>
-                <div class="dash-org-anomaly-tile__form">
-                    <p class="dash-org-anomaly-tile__kicker">Administration site</p>
-                    <h2 class="dash-org-anomaly-tile__title">Contacter l’administration du site</h2>
-                    <?php require base_path('views/partials/dashboard_site_support_form.php'); ?>
-                </div>
-            </div>
-        </section>
-        <?php endif; ?>
+        <?php
+        $doctrine_pending = is_array($doctrine_pending ?? null) ? $doctrine_pending : [];
+        require base_path('views/partials/dashboard_doctrine_pending.php');
+        ?>
 
         <?php
         $showLiaisonStrip = $canViewAtakOperators;

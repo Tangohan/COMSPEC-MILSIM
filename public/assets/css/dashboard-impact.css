@@ -2544,6 +2544,161 @@ body.dashboard-shell main {
   .dash-org-anomaly-tile__form { display: none; }
 }
 
+/* Tuile unique anomalie / administration : bouton visible partout, formulaire après choix. */
+.dash-contact-choice-tile .dash-org-anomaly-tile__open {
+  display: block;
+}
+.dash-contact-choice-tile .dash-org-anomaly-tile__form {
+  display: none;
+}
+.dash-contact-choice-tile.is-inline-open .dash-org-anomaly-tile__open {
+  display: none;
+}
+.dash-contact-choice-tile.is-inline-open .dash-org-anomaly-tile__form.is-open {
+  display: block;
+}
+@media (min-width: 1024px) {
+  .dash-contact-choice-tile.is-inline-open .dash-org-anomaly-tile__open {
+    display: block;
+  }
+  .dash-contact-choice-tile.is-inline-open .dash-org-anomaly-tile__form {
+    display: none;
+  }
+}
+
+.dash-contact-choice-modal[hidden] {
+  display: none !important;
+}
+.dash-contact-choice-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.dash-contact-choice-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(4px);
+}
+.dash-contact-choice-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 32rem);
+  padding: 1.45rem 1.5rem 1.4rem;
+  border-radius: 1.15rem;
+  background: #fff;
+  box-shadow: 0 28px 70px -22px rgba(15, 23, 42, 0.5);
+}
+.dash-contact-choice-modal__close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 0.6rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+  cursor: pointer;
+}
+.dash-contact-choice-modal__close:hover,
+.dash-contact-choice-modal__close:focus-visible {
+  background: #f1f5f9;
+  outline: none;
+}
+.dash-contact-choice-modal__kicker {
+  margin: 0 0 0.3rem;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #059669;
+}
+.dash-contact-choice-modal__title {
+  margin: 0;
+  padding-right: 2.4rem;
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+.dash-contact-choice-modal__lead {
+  margin: 0.45rem 0 1.05rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #475569;
+}
+.dash-contact-choice-modal__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.dash-contact-choice-modal__choice {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.95rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+.dash-contact-choice-modal__choice:hover,
+.dash-contact-choice-modal__choice:focus-visible {
+  outline: none;
+  border-color: #6ee7b7;
+  background: #ecfdf5;
+  box-shadow: 0 8px 22px -16px rgba(5, 150, 105, 0.45);
+}
+.dash-contact-choice-modal__choice--admin:hover,
+.dash-contact-choice-modal__choice--admin:focus-visible {
+  border-color: #7dd3fc;
+  background: #f0f9ff;
+  box-shadow: 0 8px 22px -16px rgba(14, 165, 233, 0.45);
+}
+.dash-contact-choice-modal__choice-kicker {
+  display: block;
+  margin: 0 0 0.2rem;
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #059669;
+}
+.dash-contact-choice-modal__choice--admin .dash-contact-choice-modal__choice-kicker {
+  color: #0284c7;
+}
+.dash-contact-choice-modal__choice-title {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+.dash-contact-choice-modal__choice-hint {
+  display: block;
+  margin: 0.3rem 0 0;
+  font-size: 0.8125rem;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #64748b;
+}
+body.dash-contact-choice-modal-open {
+  overflow: hidden;
+}
+
 /* --------------------------------------------------------------------------
  * Offres, dossier RH membre, articles organisateur
  * -------------------------------------------------------------------------- */

@@ -584,6 +584,14 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(377, '2026-09-02', 'Une seule tuile pour signaler une anomalie ou contacter l’administration', 'Sur le tableau de bord, signaler une anomalie et contacter l’administration du site se trouvent dans une même tuile, en haut. On choisit ensuite le destinataire. Rédiger un article reste au milieu, les documents à prendre en compte en dessous. Rechargez le tableau de bord', [
+                'Une tuile unique pour l’anomalie et le contact à l’administration du site',
+                'Un choix Anomalie ou Contacter l’administration avant d’ouvrir le formulaire',
+            ], [
+                'L’ordre du tableau de bord : contact, puis rédaction d’article, puis documents à prendre en compte',
+            ], [], ['platform'], [
+                'Rechargez le tableau de bord. Les raccourcis Signaler une anomalie et Contacter l’administration du site ouvrent toujours le bon formulaire. Les organisateurs voient les deux destinations ; les autres membres signalent directement une anomalie.',
+            ], 'Portail 1.6.05'),
             $pr(376, '2026-09-02', 'Le référentiel doctrinal ne garde que la doctrine d’emploi ATAK', 'Les documents d’exemple du référentiel Doctrine sortent du catalogue publié. Reste la doctrine d’emploi d’ATAK / Overwatch Athena. Un média pédagogique déjà en place n’est pas concerné. Après la mise à jour du portail, ouvrez Documents, puis Doctrine', [
                 'Sortie du catalogue publié : doctrine générale, mesures de sûreté, transmissions, disponibilité du personnel, maintien des compétences, matériels sensibles, conduite du blessé, renseignement terrain',
                 'Conservation de la doctrine d’emploi d’ATAK / Overwatch Athena, avec le texte officiel s’il n’était encore qu’un exemple',

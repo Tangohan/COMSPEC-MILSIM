@@ -202,7 +202,8 @@
       }
       var desktop = window.matchMedia('(min-width: 1024px)').matches;
       if (!desktop) {
-        var card = document.getElementById('signaler-anomalie');
+        var cardId = id === 'site-support' ? 'contacter-admin-site' : 'signaler-anomalie';
+        var card = document.getElementById(cardId);
         if (card && typeof card.scrollIntoView === 'function') {
           card.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -231,6 +232,9 @@
       var hash = (window.location.hash || '').replace(/^#/, '');
       if (hash === 'signaler-anomalie') {
         openFromExternal('org-anomaly');
+      }
+      if (hash === 'contacter-admin-site') {
+        openFromExternal('site-support');
       }
     }
 

@@ -26,6 +26,12 @@ final class DashboardSiteSupportAssetTest extends TestCase
         self::assertStringContainsString('Transmettre à l’administration du site', $form);
         self::assertStringContainsString('id="contacter-admin-site"', $cc);
         self::assertStringContainsString('data-dash-rail-open-external="site-support"', $cc);
+        self::assertStringContainsString('data-dash-contact-choice="site-support"', $cc);
+        self::assertStringContainsString('$canAdmin', $cc);
+        $choicePos = strpos($cc, 'data-dash-contact-choice="site-support"');
+        $railPos = strpos($cc, 'data-dash-rail-open-external="site-support"', $choicePos !== false ? $choicePos : 0);
+        self::assertNotFalse($choicePos);
+        self::assertNotFalse($railPos);
         self::assertStringContainsString("target_type: 'site_support_request'", $js);
         self::assertStringContainsString("'site_support_request'", $service);
         self::assertStringContainsString('site_support_request', $notify);
