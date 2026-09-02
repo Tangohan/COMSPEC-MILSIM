@@ -15,6 +15,12 @@ use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelQualificationRepository;
+use App\Repositories\PersonnelAbsenceRepository;
+use App\Repositories\PersonnelHrDocumentRepository;
+use App\Repositories\PersonnelMobilityRequestRepository;
+use App\Repositories\PersonnelOrgHistoryRepository;
+use App\Repositories\PersonnelServiceHistoryRepository;
+use App\Repositories\PersonnelStageBilanRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\SeniorityRepository;
 use App\Repositories\TenantRepository;
@@ -59,6 +65,12 @@ class EffectifsWorkspaceController
         private ?\App\Services\Personnel\SenioritySummaryService $senioritySummary = null,
         private ?\App\Services\Personnel\SeniorityPrePlatformService $seniorityPrePlatform = null,
         private ?\App\Services\Personnel\SeniorityEnrollmentBootstrapService $seniorityEnrollment = null,
+        private ?PersonnelAbsenceRepository $personnelAbsenceRepository = null,
+        private ?PersonnelHrDocumentRepository $personnelHrDocumentRepository = null,
+        private ?PersonnelMobilityRequestRepository $personnelMobilityRequestRepository = null,
+        private ?PersonnelOrgHistoryRepository $personnelOrgHistoryRepository = null,
+        private ?PersonnelServiceHistoryRepository $personnelServiceHistoryRepository = null,
+        private ?PersonnelStageBilanRepository $personnelStageBilanRepository = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
         $this->personnelQualificationRepository ??= new PersonnelQualificationRepository();
@@ -70,6 +82,12 @@ class EffectifsWorkspaceController
         );
         $this->seniorityPrePlatform ??= \App\Core\Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class);
         $this->seniorityEnrollment ??= \App\Core\Container::get(\App\Services\Personnel\SeniorityEnrollmentBootstrapService::class);
+        $this->personnelAbsenceRepository ??= new PersonnelAbsenceRepository();
+        $this->personnelHrDocumentRepository ??= new PersonnelHrDocumentRepository();
+        $this->personnelMobilityRequestRepository ??= new PersonnelMobilityRequestRepository();
+        $this->personnelOrgHistoryRepository ??= new PersonnelOrgHistoryRepository();
+        $this->personnelServiceHistoryRepository ??= new PersonnelServiceHistoryRepository();
+        $this->personnelStageBilanRepository ??= new PersonnelStageBilanRepository();
     }
 
     /**
@@ -449,6 +467,25 @@ class EffectifsWorkspaceController
         $elevationCooldownSeconds = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequest($id, $viewerId);
         $elevationHistory = $this->elevationRequestRepository->listForTarget($tenantId, $id, 10);
         $latestDeparture = $this->memberDepartureRepository->findLatestForUser($tenantId, $id);
+        // La fiche Effectifs est le point d'entrée RH unique : elle charge également les
+        // volets auparavant dispersés dans le dossier personnel et les listes RH.
+        $qualifications = $this->personnelQualificationRepository->listForUser($id);
+        $absences = $this->personnelAbsenceRepository->tableExists()
+            ? $this->personnelAbsenceRepository->listForUser($tenantId, $id, 40)
+            : [];
+        $hrDocuments = $this->personnelHrDocumentRepository->tableExists()
+            ? $this->personnelHrDocumentRepository->listForUser($tenantId, $id, true)
+            : [];
+        $mobilityRequests = $this->personnelMobilityRequestRepository->tableExists()
+            ? $this->personnelMobilityRequestRepository->listForUser($tenantId, $id, 30)
+            : [];
+        $orgHistory = $this->personnelOrgHistoryRepository->schemaReady()
+            ? $this->personnelOrgHistoryRepository->listForUser($tenantId, $id, 30)
+            : [];
+        $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($id, 40);
+        $stageBilans = $this->personnelStageBilanRepository->tableExists()
+            ? $this->personnelStageBilanRepository->listForUser($tenantId, $id, 40)
+            : [];
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
@@ -475,6 +512,16 @@ class EffectifsWorkspaceController
             'csrfToken' => Csrf::token(),
             'orgFoundingDate' => $this->seniorityPrePlatform->getOrgFoundingDate($tenantId),
             'memberRoleIds' => $roleIds,
+            'memberQualifications' => $qualifications,
+            'memberAbsences' => $absences,
+            'memberHrDocuments' => $hrDocuments,
+            'memberMobilityRequests' => $mobilityRequests,
+            'memberOrgHistory' => $orgHistory,
+            'memberServiceHistory' => $serviceHistory,
+            'memberStageBilans' => $stageBilans,
+            'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
+            'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
+            'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
         ]);
     }
 
@@ -1960,4 +2007,3 @@ class EffectifsWorkspaceController
         return $years . ' an' . ($years > 1 ? 's' : '');
     }
 }
-
