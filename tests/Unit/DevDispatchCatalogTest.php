@@ -578,6 +578,14 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($kitsPick);
         self::assertSame('00375', $kitsPick['number_pad']);
         self::assertStringContainsString('kits', strtolower((string) $kitsPick['title']));
+        $dashboardLogin = DevDispatchCatalog::find('update', '376');
+        self::assertNotNull($dashboardLogin);
+        self::assertSame('00376', $dashboardLogin['number_pad']);
+        self::assertStringContainsString('tableau de bord', strtolower((string) $dashboardLogin['title']));
+        $upgradeResume = DevDispatchCatalog::find('update', '377');
+        self::assertNotNull($upgradeResume);
+        self::assertSame('00377', $upgradeResume['number_pad']);
+        self::assertStringContainsString('mise à jour du portail', strtolower((string) $upgradeResume['title']));
         $docEditFile = DevDispatchCatalog::find('update', '381');
         self::assertNotNull($docEditFile);
         self::assertSame('00381', $docEditFile['number_pad']);

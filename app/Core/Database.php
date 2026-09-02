@@ -31,6 +31,7 @@ final class Database
                     'username' => $cfg['username'],
                     'password' => $cfg['password'],
                     'charset'  => $cfg['charset'] ?? 'utf8mb4',
+                    'collation' => $cfg['collation'] ?? 'utf8mb4_unicode_ci',
                 ];
             }
         }
@@ -41,6 +42,7 @@ final class Database
         $pass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: '';
         $port = (int) ($_ENV['DB_PORT'] ?? getenv('DB_PORT') ?: 3306);
         $charset = $_ENV['DB_CHARSET'] ?? getenv('DB_CHARSET') ?: 'utf8mb4';
+        $collation = $_ENV['DB_COLLATION'] ?? getenv('DB_COLLATION') ?: 'utf8mb4_unicode_ci';
 
         return [
             'host'     => self::tcpHost((string) ($host ?: '127.0.0.1')),
@@ -49,6 +51,7 @@ final class Database
             'username' => $user,
             'password' => $pass,
             'charset'  => $charset,
+            'collation' => $collation,
         ];
     }
 
@@ -85,7 +88,13 @@ final class Database
         );
 
         try {
-            self::$pdo = self::connectPdo($dsn, $cfg['username'], $cfg['password']);
+            self::$pdo = self::connectPdo(
+                $dsn,
+                $cfg['username'],
+                $cfg['password'],
+                (string) $cfg['charset'],
+                (string) ($cfg['collation'] ?? 'utf8mb4_unicode_ci')
+            );
         } catch (PDOException $e) {
             $detail = $e->getMessage();
             $hint = '';
@@ -111,8 +120,14 @@ final class Database
         return $host;
     }
 
-    private static function connectPdo(string $dsn, string $username, string $password): PDO
-    {
+    private static function connectPdo(
+        string $dsn,
+        string $username,
+        string $password,
+        string $charset = 'utf8mb4',
+        string $collation = 'utf8mb4_unicode_ci'
+    ): PDO {
+        $sessionSql = self::sessionInitSql($charset, $collation);
         $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -124,14 +139,39 @@ final class Database
             $options[PDO::ATTR_TIMEOUT] = 3;
         }
         if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
-            $options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET time_zone = '+00:00'";
+            $options[PDO::MYSQL_ATTR_INIT_COMMAND] = $sessionSql;
         }
         $pdo = new ReconnectingPdo($dsn, $username, $password, $options);
         if (!defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
-            $pdo->exec("SET time_zone = '+00:00'");
+            $pdo->exec($sessionSql);
         }
 
         return $pdo;
+    }
+
+    /**
+     * Alignement charset / collation de session + fuseau UTC.
+     * Sans collation_connection, un paramètre PDO utf8mb4_general_ci mélangé à une
+     * colonne utf8mb4_bin (LOWER/TRIM) déclenche MariaDB 1267.
+     */
+    public static function sessionInitSql(string $charset = 'utf8mb4', string $collation = 'utf8mb4_unicode_ci'): string
+    {
+        $charset = self::mysqlCharsetOrCollation($charset, 'utf8mb4');
+        $collation = self::mysqlCharsetOrCollation($collation, 'utf8mb4_unicode_ci');
+
+        return "SET character_set_client = '{$charset}', character_set_connection = '{$charset}',"
+            . " character_set_results = '{$charset}', collation_connection = '{$collation}',"
+            . " time_zone = '+00:00'";
+    }
+
+    private static function mysqlCharsetOrCollation(string $value, string $fallback): string
+    {
+        $value = trim($value);
+        if ($value === '' || !preg_match('/^[a-zA-Z0-9_]+$/', $value)) {
+            return $fallback;
+        }
+
+        return $value;
     }
 
     /**
