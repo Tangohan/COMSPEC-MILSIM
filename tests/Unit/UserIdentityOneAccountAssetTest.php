@@ -13,6 +13,7 @@ final class UserIdentityOneAccountAssetTest extends TestCase
         $repo = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
         self::assertStringContainsString('function addMembershipToTenant', $repo);
         self::assertStringContainsString('return $this->addMembershipToTenant', $repo);
+        self::assertStringContainsString('leavePlaceholderMembershipsIfHasLiveOrg', $repo);
         self::assertStringContainsString('Un compte existe déjà avec cette adresse e-mail', $repo);
         self::assertStringContainsString('function overlayCommunityProfile', $repo);
         self::assertStringNotContainsString(
@@ -47,6 +48,10 @@ final class UserIdentityOneAccountAssetTest extends TestCase
         self::assertStringContainsString('AND tenant_id = ?', $pp);
         self::assertStringContainsString('getByUserId(int $userId, ?int $tenantId = null)', $ex);
         self::assertStringContainsString('getByUserId($uid, $tid)', $admin);
+        $assign = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/PersonnelAssignmentRepository.php');
+        self::assertStringContainsString('function getPrimaryAssignment(int $userId, ?int $tenantId = null)', $assign);
+        $memberships = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserCommunityMembershipRepository.php');
+        self::assertStringContainsString('function leavePlaceholderMembershipsIfHasLiveOrg', $memberships);
     }
 
     public function testMergeIsAuditedAndReversible(): void
@@ -56,7 +61,9 @@ final class UserIdentityOneAccountAssetTest extends TestCase
         $mig = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/user_community_identity_migration.php');
         self::assertStringContainsString('USER_IDENTITY_MERGED', $action);
         self::assertStringContainsString('user_identity_merges', $svc);
+        self::assertStringContainsString('leavePlaceholderMembershipsIfHasLiveOrg', $svc);
         self::assertStringContainsString('source_user_id', $mig);
+        self::assertStringContainsString("LOWER(TRIM(t.slug)) = 'default'", $mig);
         self::assertStringContainsString('personnel_profiles', $mig);
         self::assertFileExists(dirname(__DIR__, 2) . '/app/Services/Identity/UserIdentityProfileRestoreService.php');
         self::assertStringContainsString('UserIdentityProfileRestoreService', $svc);

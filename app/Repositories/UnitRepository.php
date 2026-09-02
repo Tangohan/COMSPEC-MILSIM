@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SqlText;
 
 use PDO;
 
@@ -56,11 +57,12 @@ class UnitRepository
     /** @return array<int, int> unit_id => effectif actif rattaché (affectations ouvertes) */
     public function countActiveMembersByUnitForTenant(int $tenantId): array
     {
-        $sql = 'SELECT uu.unit_id, COUNT(*) AS c
+        $statusActive = SqlText::inLiterals($this->pdo(), 'u.status', ['active']);
+        $sql = "SELECT uu.unit_id, COUNT(*) AS c
             FROM user_units uu
             INNER JOIN users u ON u.id = uu.user_id AND u.tenant_id = ?
-            WHERE u.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
-            GROUP BY uu.unit_id';
+            WHERE {$statusActive} AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+            GROUP BY uu.unit_id";
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute([$tenantId]);
         $out = [];
@@ -522,7 +524,8 @@ class UnitRepository
         if ($slug === '') {
             return null;
         }
-        $stmt = $this->pdo()->prepare('SELECT * FROM units WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo(), 'slug');
+        $stmt = $this->pdo()->prepare('SELECT * FROM units WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -941,7 +944,8 @@ class UnitRepository
 
     public function findIdByTenantAndSlug(int $tenantId, string $slug): ?int
     {
-        $stmt = $this->pdo()->prepare('SELECT id FROM units WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo(), 'slug');
+        $stmt = $this->pdo()->prepare('SELECT id FROM units WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $v = $stmt->fetchColumn();
 
@@ -950,7 +954,8 @@ class UnitRepository
 
     public function slugExists(int $tenantId, string $slug, ?int $excludeId = null): bool
     {
-        $sql = 'SELECT 1 FROM units WHERE tenant_id = ? AND slug = ?';
+        $slugEq = SqlText::equals($this->pdo(), 'slug');
+        $sql = 'SELECT 1 FROM units WHERE tenant_id = ? AND ' . $slugEq;
         $params = [$tenantId, $slug];
         if ($excludeId !== null) {
             $sql .= ' AND id != ?';

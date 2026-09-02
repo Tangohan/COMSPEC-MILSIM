@@ -488,9 +488,21 @@ $isDeployableFile = ((int) ($personnelProfile['deployable'] ?? 1)) === 1;
 $steamId = trim((string) ($targetUser['steam_id'] ?? ''));
 $steamId = $steamId !== '' ? $steamId : null;
 $accountCreatedDisplay = null;
+$membershipCandidates = [];
 if (!empty($targetUser['created_at'])) {
     $tsAcc = strtotime((string) $targetUser['created_at']);
-    $accountCreatedDisplay = $tsAcc ? date('d/m/Y', $tsAcc) : null;
+    if ($tsAcc) {
+        $membershipCandidates[] = $tsAcc;
+    }
+}
+if (!empty($enlistmentDate)) {
+    $tsEnlist = strtotime((string) $enlistmentDate);
+    if ($tsEnlist) {
+        $membershipCandidates[] = $tsEnlist;
+    }
+}
+if ($membershipCandidates !== []) {
+    $accountCreatedDisplay = date('d/m/Y', min($membershipCandidates));
 }
 $profilePublicSegment = trim((string) ($targetUser['profile_slug'] ?? ''));
 $profilePublicSegment = $profilePublicSegment !== '' ? $profilePublicSegment : null;
@@ -1382,7 +1394,7 @@ if ($personnelFileIsRhGate) {
                     <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-6">
                         <div>
                             <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Historique des affectations</h2>
-                            <p class="text-sm text-slate-600 max-w-3xl leading-relaxed">Toutes les périodes enregistrées dans le dossier (y compris les affectations terminées). Les durées sont en jours calendaires (début et fin inclus). Pour chaque ligne, le temps dans l’unité et le temps sur le poste affiché sont les mêmes ; si la personne a eu plusieurs passages dans la même unité, le cumul regroupe l’ensemble des périodes.</p>
+                            <p class="text-sm text-slate-600 max-w-3xl leading-relaxed">Périodes retenues pour le dossier (y compris les affectations terminées). Les allers-retours du même jour dans la même unité sont regroupés : seule une vraie mutation, ou un changement de fonction sur plusieurs jours, reste une ligne à part. Les durées sont en jours calendaires (début et fin inclus).</p>
                         </div>
                         <div class="grid grid-cols-2 gap-2 w-full md:w-auto md:min-w-[21rem]">
                             <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -1971,11 +1983,9 @@ if ($personnelFileIsRhGate) {
 
                 <?php foreach ($adminPanels as $panel): ?>
                 <?php $panelId = (int)$panel['id']; $data = $adminDataByPanel[$panelId] ?? []; ?>
+                <?php if (!is_array($data) || $data === []): continue; endif; ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6"><?= htmlspecialchars($panel['name']) ?></h2>
-                    <?php if (empty($data)): ?>
-                    <p class="text-sm text-slate-500">Aucune information saisie pour ce bloc.</p>
-                    <?php else: ?>
                     <div class="space-y-5">
                         <?php foreach ($data as $key => $value): ?>
                         <?php if ($value === null || $value === '') {
@@ -1987,7 +1997,6 @@ if ($personnelFileIsRhGate) {
                         </div>
                         <?php endforeach; ?>
                     </div>
-                    <?php endif; ?>
                 </section>
                 <?php endforeach; ?>
                 <div class="rounded-2xl border border-emerald-200/70 bg-emerald-50/50 px-4 py-3 flex flex-wrap items-center justify-between gap-2">

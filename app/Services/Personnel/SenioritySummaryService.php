@@ -83,28 +83,30 @@ final class SenioritySummaryService
             return ['global' => null, 'detail' => []];
         }
         $globalIndex = null;
-        $bestDays = -1;
         foreach ($rows as $i => $r) {
-            $code = (string) ($r['code'] ?? '');
-            if ($code !== 'tenure_community' && $code !== 'tenure_pre_platform') {
-                continue;
-            }
-            $days = (int) ($r['days'] ?? 0);
-            if ($days > $bestDays) {
-                $bestDays = $days;
+            if (($r['code'] ?? '') === 'tenure_community' && (int) ($r['days'] ?? 0) > 0) {
                 $globalIndex = $i;
+                break;
             }
         }
         if ($globalIndex === null) {
             foreach ($rows as $i => $r) {
-                if (($r['code'] ?? '') === 'tenure_community') {
+                if (($r['code'] ?? '') === 'tenure_pre_platform' && (int) ($r['days'] ?? 0) > 0) {
                     $globalIndex = $i;
                     break;
                 }
             }
         }
         if ($globalIndex === null) {
-            $globalIndex = 0;
+            foreach ($rows as $i => $r) {
+                if ((int) ($r['days'] ?? 0) > 0) {
+                    $globalIndex = $i;
+                    break;
+                }
+            }
+        }
+        if ($globalIndex === null) {
+            return ['global' => null, 'detail' => []];
         }
         $g = $rows[$globalIndex];
         $global = [
@@ -117,9 +119,13 @@ final class SenioritySummaryService
             if ($i === $globalIndex) {
                 continue;
             }
+            $formatted = trim((string) ($r['formatted'] ?? ''));
+            if ($formatted === '' || $formatted === '—' || (int) ($r['days'] ?? 0) < 1) {
+                continue;
+            }
             $detail[] = [
                 'label' => $r['label'],
-                'formatted' => $r['formatted'],
+                'formatted' => $formatted,
             ];
         }
 

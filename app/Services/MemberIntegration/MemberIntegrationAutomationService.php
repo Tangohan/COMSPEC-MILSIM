@@ -122,7 +122,15 @@ final class MemberIntegrationAutomationService
             }
         }
 
-        return ['refreshed' => $refreshed, 'reminded' => $reminded];
+        $backfilled = 0;
+        try {
+            $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+            $backfilled = $duty->backfillTenant($tenantId, 0);
+        } catch (Throwable) {
+            $backfilled = 0;
+        }
+
+        return ['refreshed' => $refreshed, 'reminded' => $reminded, 'duty_positions' => $backfilled];
     }
 
     /**

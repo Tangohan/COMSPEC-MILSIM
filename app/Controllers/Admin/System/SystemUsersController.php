@@ -22,6 +22,7 @@ use App\Services\Account\AccountPurgeService;
 use App\Services\Admin\PlatformUserProfileService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Support\PortalAccessChoice;
 use App\Repositories\AccountPurgeRequestRepository;
 
 /**
@@ -129,17 +130,13 @@ final class SystemUsersController
         /** @var GradeRepository $grades */
         $grades = Container::get(GradeRepository::class);
 
+        $visibleMemberships = PortalAccessChoice::personFileDossiers($memberships);
         $dossierMemberships = [];
         $globalSteam = '';
         $globalAthena = '';
         $displayName = '';
         $callsign = '';
         foreach ($memberships as $m) {
-            $uid = (int) ($m['id'] ?? 0);
-            $tid = (int) ($m['tenant_id'] ?? 0);
-            if ($uid < 1) {
-                continue;
-            }
             $steam = trim((string) ($m['steam_id'] ?? ''));
             if ($steam !== '' && $globalSteam === '') {
                 $globalSteam = $steam;
@@ -156,12 +153,19 @@ final class SystemUsersController
             if ($cs !== '' && $callsign === '') {
                 $callsign = $cs;
             }
+        }
+        foreach ($visibleMemberships as $m) {
+            $uid = (int) ($m['id'] ?? 0);
+            $tid = (int) ($m['tenant_id'] ?? 0);
+            if ($uid < 1) {
+                continue;
+            }
 
             $gradeId = (int) ($m['grade_id'] ?? 0);
             $grade = $gradeId > 0 ? $grades->findById($gradeId, $tid) : null;
             $pp = $personnelProfiles->getByUserId($uid, $tid) ?? [];
             $extras = $personnelExtras->getByUserId($uid, $tid) ?? [];
-            $primaryAssignment = $assignments->getPrimaryAssignment($uid);
+            $primaryAssignment = $assignments->getPrimaryAssignment($uid, $tid);
             $roleIds = $this->users->listOrganizationRoleIdsForUser($uid, $tid);
             $roleNames = [];
             $roleName = trim((string) ($m['role_name'] ?? ''));

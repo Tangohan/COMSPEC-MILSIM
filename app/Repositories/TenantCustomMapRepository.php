@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 final class TenantCustomMapRepository
@@ -45,7 +46,7 @@ final class TenantCustomMapRepository
     public function findBySlugForTenant(string $slug, int $tenantId): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM tenant_custom_maps WHERE slug = ? AND tenant_id = ? AND is_active = 1 LIMIT 1'
+            'SELECT * FROM tenant_custom_maps WHERE ' . SqlText::equals($this->pdo, 'slug') . ' AND tenant_id = ? AND is_active = 1 LIMIT 1'
         );
         $stmt->execute([$slug, $tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);

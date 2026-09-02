@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 final class NewsletterSubscriberRepository
@@ -25,7 +26,8 @@ final class NewsletterSubscriberRepository
 
     public function findByEmail(string $email): ?array
     {
-        $st = $this->pdo->prepare('SELECT * FROM newsletter_subscribers WHERE email = ? LIMIT 1');
+        $emailEq = SqlText::normalizedEquals($this->pdo, 'email');
+        $st = $this->pdo->prepare('SELECT * FROM newsletter_subscribers WHERE ' . $emailEq . ' LIMIT 1');
         $st->execute([mb_strtolower(trim($email))]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
 

@@ -6,6 +6,7 @@ namespace App\Services\Community;
 
 use App\Core\Database;
 use App\Repositories\TenantRepository;
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -79,8 +80,9 @@ final class TenantTypeSwitchService
         $roles = TenantTypeConfig::baseRolesByType()[$tenantType] ?? [];
 
         $permIds = [];
+        $slugEq = SqlText::equals($pdo, 'slug');
         foreach ($permissions as $p) {
-            $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
             $stmt->execute([$tenantId, $p['slug']]);
             $existing = $stmt->fetchColumn();
             if ($existing) {
@@ -95,7 +97,7 @@ final class TenantTypeSwitchService
         }
 
         foreach ($roles as $r) {
-            $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
             $stmt->execute([$tenantId, $r['slug']]);
             $roleId = (int) ($stmt->fetchColumn() ?: 0);
             if ($roleId < 1) {
@@ -120,7 +122,7 @@ final class TenantTypeSwitchService
 
         // Propriétaire / admin communauté : s’assurer qu’ils ont les permissions du profil.
         foreach (['community_owner', 'tenant_admin'] as $govSlug) {
-            $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
             $stmt->execute([$tenantId, $govSlug]);
             $govRoleId = (int) ($stmt->fetchColumn() ?: 0);
             if ($govRoleId < 1) {

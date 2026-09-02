@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantBrandingRepository;
+use App\Repositories\TenantLoginAccueilImageRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Admin\RolePermissionService;
 use App\Services\Auth\AuthService;
@@ -17,7 +18,9 @@ use App\Services\Community\TenantCommunityProfileService;
 use App\Services\Community\TenantSlugService;
 use App\Services\Community\TenantTypeConfig;
 use App\Services\Community\TenantTypeSwitchService;
+use App\Services\ConfigurationUpdate\ConfigurationUpdateService;
 use App\Services\Integrations\DiscordWebhookService;
+use App\Support\LoginAccueilImageStorage;
 use App\Support\OrganizationRoleLabels;
 
 /**
@@ -56,9 +59,11 @@ final class OrganizationSettingsController
         private DiscordWebhookService $discordWebhook,
         private ?TenantTypeSwitchService $tenantTypeSwitchService = null,
         private ?RolePermissionService $rolePermissionService = null,
+        private ?TenantLoginAccueilImageRepository $loginAccueilImages = null,
     ) {
         $this->tenantTypeSwitchService ??= new TenantTypeSwitchService($this->tenantRepository);
         $this->rolePermissionService ??= Container::get(RolePermissionService::class);
+        $this->loginAccueilImages ??= new TenantLoginAccueilImageRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -76,6 +81,18 @@ final class OrganizationSettingsController
         $integrations = is_array($settings['integrations'] ?? null) ? $settings['integrations'] : [];
         $branding = $this->brandingRepository->findByTenantId($tenantId) ?? [];
         $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
+        $loginAccueilRows = $this->loginAccueilImages->listForTenant($tenantId);
+        $loginAccueilImages = [];
+        foreach ($loginAccueilRows as $row) {
+            $url = LoginAccueilImageStorage::publicUrl(isset($row['storage_path']) ? (string) $row['storage_path'] : null);
+            $loginAccueilImages[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'url' => $url ?? '',
+                'alt' => trim((string) ($row['alt_text'] ?? '')),
+            ];
+        }
+        $slideshowRaw = $community['login_accueil_slideshow'] ?? true;
+        $loginAccueilSlideshow = !in_array($slideshowRaw, [false, 0, '0', 'false', 'off'], true);
 
         return Response::view('layout.main', [
             'title' => 'Paramètres de la communauté',
@@ -95,6 +112,11 @@ final class OrganizationSettingsController
             'tenantTypeFormAction' => url('back-office/organisation/profil'),
             'roleOptions' => $this->loadRoleOptions($tenantId, $tenant, $community),
             'defaultGuestRoleSlug' => trim((string) ($community['default_guest_role_slug'] ?? 'invite')),
+            'loginAccueilImages' => $loginAccueilImages,
+            'loginAccueilSlideshow' => $loginAccueilSlideshow,
+            'loginAccueilMaxImages' => TenantLoginAccueilImageRepository::MAX_IMAGES,
+            'loginAccueilDefaultUrl' => LoginAccueilImageStorage::defaultPublicUrl(),
+            'loginAccueilHint' => LoginAccueilImageStorage::hintText(),
         ]);
     }
 
@@ -253,6 +275,261 @@ final class OrganizationSettingsController
         Session::flash('success', implode(' ', $notices));
 
         return Response::redirect($redirectTo);
+    }
+
+    public function storeLoginAccueilImage(Request $request, array $params = []): Response
+    {
+        $back = $this->accueilSettingsUrl();
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        $files = $this->flattenUploadedFiles('login_accueil_images');
+        if ($files === []) {
+            Session::flash('error', 'Choisissez au moins une image à ajouter.');
+
+            return Response::redirect($back);
+        }
+        $remaining = TenantLoginAccueilImageRepository::MAX_IMAGES - $this->loginAccueilImages->countForTenant($tenantId);
+        if ($remaining < 1) {
+            Session::flash('error', 'Nombre maximum d’images d’accueil atteint (' . TenantLoginAccueilImageRepository::MAX_IMAGES . ').');
+
+            return Response::redirect($back);
+        }
+        $alt = $this->clip((string) $request->input('login_accueil_alt', ''), 200);
+        $alt = $alt !== '' ? $alt : null;
+        $added = 0;
+        $lastError = null;
+        foreach ($files as $file) {
+            if ($remaining < 1) {
+                break;
+            }
+            $stored = LoginAccueilImageStorage::storeFromUpload($tenantId, $file);
+            if (($stored['error'] ?? null) !== null) {
+                $lastError = $stored['error'];
+                continue;
+            }
+            $path = trim((string) ($stored['path'] ?? ''));
+            if ($path === '') {
+                continue;
+            }
+            $id = $this->loginAccueilImages->create($tenantId, $path, $alt, (int) Session::get('user_id') ?: null);
+            if ($id > 0) {
+                $added++;
+                $remaining--;
+            }
+        }
+        if ($added > 0) {
+            $this->markLoginAccueilConfigured($tenantId);
+            Session::flash('success', $added === 1 ? 'Image d’accueil ajoutée.' : $added . ' images d’accueil ajoutées.');
+            if ($lastError !== null) {
+                Session::flash('error', $lastError);
+            }
+        } else {
+            Session::flash('error', $lastError ?? 'Impossible d’enregistrer ces images.');
+        }
+
+        return Response::redirect($back);
+    }
+
+    public function replaceLoginAccueilImage(Request $request, array $params = []): Response
+    {
+        $back = $this->accueilSettingsUrl();
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        $existing = $this->loginAccueilImages->findById($id, $tenantId);
+        if ($existing === null) {
+            Session::flash('error', 'Cette image d’accueil n’existe plus.');
+
+            return Response::redirect($back);
+        }
+        $file = $_FILES['login_accueil_replace'] ?? null;
+        $hasFile = is_array($file) && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        $alt = $this->clip((string) $request->input('login_accueil_alt', ''), 200);
+        $alt = $alt !== '' ? $alt : null;
+        if ($hasFile) {
+            $stored = LoginAccueilImageStorage::storeFromUpload($tenantId, is_array($file) ? $file : []);
+            if (($stored['error'] ?? null) !== null) {
+                Session::flash('error', (string) $stored['error']);
+
+                return Response::redirect($back);
+            }
+            $path = trim((string) ($stored['path'] ?? ''));
+            if ($path === '') {
+                Session::flash('error', 'Impossible d’enregistrer cette image.');
+
+                return Response::redirect($back);
+            }
+            LoginAccueilImageStorage::delete(isset($existing['storage_path']) ? (string) $existing['storage_path'] : null);
+            $this->loginAccueilImages->updatePath($id, $tenantId, $path);
+        }
+        $this->loginAccueilImages->updateAlt($id, $tenantId, $alt);
+        $this->markLoginAccueilConfigured($tenantId);
+        Session::flash('success', $hasFile ? 'Image d’accueil remplacée.' : 'Description de l’image enregistrée.');
+
+        return Response::redirect($back);
+    }
+
+    public function deleteLoginAccueilImage(Request $request, array $params = []): Response
+    {
+        $back = $this->accueilSettingsUrl();
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        $removed = $this->loginAccueilImages->delete($id, $tenantId);
+        if ($removed !== null) {
+            LoginAccueilImageStorage::delete(isset($removed['storage_path']) ? (string) $removed['storage_path'] : null);
+            Session::flash('success', 'Image d’accueil retirée.');
+        } else {
+            Session::flash('error', 'Impossible de retirer cette image.');
+        }
+
+        return Response::redirect($back);
+    }
+
+    public function moveLoginAccueilImage(Request $request, array $params = []): Response
+    {
+        $back = $this->accueilSettingsUrl();
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        $dir = trim((string) $request->input('direction'));
+        $rows = $this->loginAccueilImages->listForTenant($tenantId);
+        $orderedIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows);
+        $idx = array_search($id, $orderedIds, true);
+        if ($idx === false) {
+            return Response::redirect($back);
+        }
+        if ($dir === 'up' && $idx > 0) {
+            $tmp = $orderedIds[$idx - 1];
+            $orderedIds[$idx - 1] = $orderedIds[$idx];
+            $orderedIds[$idx] = $tmp;
+        } elseif ($dir === 'down' && $idx < count($orderedIds) - 1) {
+            $tmp = $orderedIds[$idx + 1];
+            $orderedIds[$idx + 1] = $orderedIds[$idx];
+            $orderedIds[$idx] = $tmp;
+        }
+        $this->loginAccueilImages->reorder($tenantId, $orderedIds);
+        $this->markLoginAccueilConfigured($tenantId);
+        Session::flash('success', 'Ordre des images d’accueil mis à jour.');
+
+        return Response::redirect($back);
+    }
+
+    public function saveLoginAccueilSlideshow(Request $request, array $params = []): Response
+    {
+        $back = $this->accueilSettingsUrl();
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        $enabled = (string) $request->input('login_accueil_slideshow', '0') === '1';
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $community['login_accueil_slideshow'] = $enabled;
+        $this->tenantRepository->mergeSettings($tenantId, [
+            'community' => $community,
+        ]);
+        $this->markLoginAccueilConfigured($tenantId);
+        Session::flash('success', $enabled
+            ? 'Les images d’accueil défileront automatiquement.'
+            : 'La première image d’accueil restera affichée, sans défilement.');
+
+        return Response::redirect($back);
+    }
+
+    private function accueilSettingsUrl(): string
+    {
+        return url('back-office/organisation/parametres') . '#accueil-connexion';
+    }
+
+    private function markLoginAccueilConfigured(int $tenantId): void
+    {
+        try {
+            Container::get(ConfigurationUpdateService::class)->markCompleted(
+                $tenantId,
+                'LOGIN_ACCUEIL_IMAGES_V1',
+                (int) Session::get('user_id') ?: null
+            );
+        } catch (\Throwable) {
+            // Moteur de configuration absent : non bloquant
+        }
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function flattenUploadedFiles(string $field): array
+    {
+        $raw = $_FILES[$field] ?? null;
+        if (!is_array($raw)) {
+            return [];
+        }
+        if (isset($raw['tmp_name']) && is_string($raw['tmp_name'])) {
+            if ((int) ($raw['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                return [];
+            }
+
+            return [$raw];
+        }
+        $names = $raw['name'] ?? [];
+        if (!is_array($names)) {
+            return [];
+        }
+        $out = [];
+        foreach ($names as $i => $name) {
+            $err = (int) ($raw['error'][$i] ?? UPLOAD_ERR_NO_FILE);
+            if ($err === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            $out[] = [
+                'name' => (string) $name,
+                'type' => (string) ($raw['type'][$i] ?? ''),
+                'tmp_name' => (string) ($raw['tmp_name'][$i] ?? ''),
+                'error' => $err,
+                'size' => (int) ($raw['size'][$i] ?? 0),
+            ];
+        }
+
+        return array_values(array_filter($out, static fn (array $f): bool => $f !== []));
     }
 
     /** @param array<string, mixed> $tenant */

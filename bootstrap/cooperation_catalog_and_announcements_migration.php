@@ -6,6 +6,9 @@ declare(strict_types=1);
  * Catalogue des types de coopération (plateforme + communauté) et gabarits d’annonces (courriel, portail, forum).
  * Idempotent — invoqué depuis run-migrations.php.
  */
+
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 return function (PDO $pdo): void {
     $col = static function (PDO $pdo, string $table, string $column): bool {
         $st = $pdo->prepare(
@@ -112,7 +115,7 @@ return function (PDO $pdo): void {
                 continue;
             }
             $slug = 'modele_' . (int) ($r['id'] ?? 0);
-            $chk = $pdo->prepare('SELECT 1 FROM cooperation_catalog_entries WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $chk = $pdo->prepare('SELECT 1 FROM cooperation_catalog_entries WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $chk->execute([$tid, $slug]);
             if ($chk->fetchColumn()) {
                 continue;

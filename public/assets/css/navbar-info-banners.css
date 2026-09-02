@@ -38,6 +38,15 @@
   box-shadow: inset 4px 0 0 0 #0063cb;
 }
 
+.banner-end {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
+  align-self: center;
+}
+
 .banner-tag {
   font-size: 0.75rem;
   font-weight: 700;
@@ -98,6 +107,10 @@
   padding: 0 0.25rem;
   margin-left: auto;
   line-height: 1;
+}
+
+.banner-end .banner-close {
+  margin-left: 0;
 }
 
 .banner-close:hover {
@@ -276,11 +289,12 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  margin-left: 0.35rem;
+  margin-left: 0;
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
+  white-space: nowrap;
   color: #0b3d38;
 }
 
@@ -289,6 +303,9 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
+  }
+  .banner-end {
+    align-self: flex-end;
   }
   .banner-desc { font-size: 11px; }
   .nib-breaking-pill { padding: 0 10px; }

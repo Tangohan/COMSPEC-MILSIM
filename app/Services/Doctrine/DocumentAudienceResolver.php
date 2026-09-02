@@ -9,6 +9,7 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Support\SqlText;
 
 /**
  * Détermine si un utilisateur est dans le public cible d'une doctrine.
@@ -163,11 +164,14 @@ final class DocumentAudienceResolver
             return [];
         }
         $pdo = \App\Core\Database::getPdo();
+        $statusActive = SqlText::equalsLiteral($pdo, 'u.status', 'active');
+        $gradeEq = SqlText::equals($pdo, 'pp.grade_slug');
+        $rankEq = SqlText::equals($pdo, 'pp.rank');
         $stmt = $pdo->prepare(
             'SELECT pp.user_id FROM personnel_profiles pp
              INNER JOIN users u ON u.id = pp.user_id AND u.tenant_id = ?
-             WHERE u.tenant_id = ? AND u.status = \'active\'
-               AND (pp.grade_slug = ? OR pp.rank = ?)'
+             WHERE u.tenant_id = ? AND ' . $statusActive . '
+               AND (' . $gradeEq . ' OR ' . $rankEq . ')'
         );
         $stmt->execute([$tenantId, $tenantId, $gradeSlug, $gradeSlug]);
         $ids = [];

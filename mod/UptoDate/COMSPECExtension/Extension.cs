@@ -124,10 +124,12 @@ public static partial class Extension
         public string DedupKey = "";
         public bool NewestFallback;
         public DateTime EnqueuedUtc = DateTime.UtcNow;
-        /// <summary>recon = ATAK Photos ; sse_face = photo visage SEEK.</summary>
+        /// <summary>recon = ATAK Photos ; sse_face = photo visage SEEK ; sse_note = pièce de fiche.</summary>
         public string UploadKind = "recon";
         public string SsePersonId = "";
         public string SseAngle = "face";
+        public string SseNoteId = "";
+        public string SseNoteKind = "capture";
         public int Attempts;
     }
 
@@ -5929,7 +5931,7 @@ public static partial class Extension
 
             if (function == "UploadSseNoteAttachment" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
-                // Géré en synchrone par TryGetSyncResponse (BeginUploadSseNoteAttachment).
+                // Géré en sync court par TryGetSyncResponse (file + worker, comme NotifyNewPhoto).
                 return;
             }
 
@@ -5989,9 +5991,9 @@ public static partial class Extension
         EnsureScreenshotQuota();
 
         var rawPath = args.Length > 0 ? (args[0] ?? "") : "";
-        // Capture visage SEEK : canal fiche, pas reconnaissance. Avant le dédup
-        // pour ne pas bloquer UploadSsePhoto sur le même fichier.
-        if (IsSseIdentityCaptureName(rawPath))
+        // Capture visage SEEK / pièce de fiche : canal SSE, pas reconnaissance.
+        // Avant le dédup pour ne pas bloquer UploadSsePhoto / UploadSseNoteAttachment.
+        if (IsSseIdentityCaptureName(rawPath) || IsSseNoteCaptureName(rawPath))
             return "OK|ignored";
 
         var author = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1])
@@ -6179,9 +6181,11 @@ public static partial class Extension
     /// </summary>
     private static async Task ProcessReconPhotoJobAsync(ReconPhotoJob job)
     {
-        var cbName = string.Equals(job.UploadKind, "sse_face", StringComparison.OrdinalIgnoreCase)
+        var isSseFace = string.Equals(job.UploadKind, "sse_face", StringComparison.OrdinalIgnoreCase);
+        var isSseNote = string.Equals(job.UploadKind, "sse_note", StringComparison.OrdinalIgnoreCase);
+        var cbName = isSseFace
             ? "SsePhotoUpload"
-            : "PhotoUpload";
+            : (isSseNote ? "SseNoteAttachment" : "PhotoUpload");
 
         if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
         {
@@ -6199,13 +6203,14 @@ public static partial class Extension
         // Attente non bloquante du flush disque (BCE / Arma_ScreenShot) — max ~12 s.
         // Chemins Photo Library morts (srcdir_missing) : chercher par nom + captures
         // écrites depuis l’enqueue (screenshot Arma / watcher), sans abandon immédiat.
-        var isSseFace = string.Equals(job.UploadKind, "sse_face", StringComparison.OrdinalIgnoreCase);
         for (var attempt = 0; attempt < 25; attempt++)
         {
             var fb = newestFallback;
             if (job.NewestFallback && attempt >= 0)
                 fb = TimeSpan.FromSeconds(Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30));
-            resolved = ResolveLocalImagePath(job.RawPath, attempt >= 2 ? fb : newestFallback);
+            resolved = ResolveLocalImagePath(
+                job.RawPath,
+                (isSseFace || isSseNote) ? null : (attempt >= 2 ? fb : newestFallback));
             if (resolved == null && attempt >= 1)
             {
                 var leaf = Path.GetFileName((job.RawPath ?? "").Replace('/', '\\'));
@@ -6215,7 +6220,10 @@ public static partial class Extension
             if (resolved == null && isSseFace && attempt >= 2)
                 resolved = FindNewestMatchingPrefix("COMSPEC_SSE_Face", TimeSpan.FromSeconds(
                     Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30)));
-            if (resolved == null && attempt >= 1)
+            if (resolved == null && isSseNote && attempt >= 2)
+                resolved = FindNewestMatchingPrefix("COMSPEC_Fiche_", TimeSpan.FromSeconds(
+                    Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30)));
+            if (resolved == null && attempt >= 1 && !isSseFace && !isSseNote)
                 resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-180));
             if (resolved != null) break;
             try
@@ -6227,7 +6235,7 @@ public static partial class Extension
                 if (parentMissing && !string.IsNullOrWhiteSpace(orphan))
                 {
                     resolved = FindScreenshotByFileName(orphan);
-                    if (resolved == null && attempt >= 1)
+                    if (resolved == null && attempt >= 1 && !isSseFace && !isSseNote)
                         resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-180));
                     if (resolved != null)
                         break;
@@ -6298,7 +6306,14 @@ public static partial class Extension
             return;
         }
 
-        if (IsSseIdentityCaptureName(resolved) || IsSseIdentityCaptureName(job.RawPath))
+        if (isSseNote)
+        {
+            await ProcessSseNoteAttachmentUploadAsync(job, resolved, identityKey).ConfigureAwait(false);
+            return;
+        }
+
+        if (IsSseIdentityCaptureName(resolved) || IsSseIdentityCaptureName(job.RawPath)
+            || IsSseNoteCaptureName(resolved) || IsSseNoteCaptureName(job.RawPath))
         {
             InvokeCallback(cbName, "OK|ignored|" + (Path.GetFileName(resolved) ?? ""));
             return;
@@ -6448,6 +6463,7 @@ public static partial class Extension
         if (string.IsNullOrWhiteSpace(fullPath)) return;
         if (!IsImageExtension(Path.GetExtension(fullPath))) return;
         if (IsSseIdentityCaptureName(fullPath)) return;
+        if (IsSseNoteCaptureName(fullPath)) return;
         if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth()) return;
 
         // Debounce Created+Changed pendant l'écriture.
@@ -6705,30 +6721,85 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// Joint une capture ou un fichier local à une fiche de renseignement.
+    /// Joint une capture à une fiche de renseignement : même file que NotifyNewPhoto
+    /// (résolution, miroir Captures, attente disque hors thread jeu).
     /// Args : [noteId, cheminOuMotif, auteur, nature, posX, posY, posZ, légende, repère]
     /// </summary>
     private static string BeginUploadSseNoteAttachment(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
+            return "ERR|not_connected";
         var noteId = args.Length > 0 ? (args[0] ?? "").Trim() : "";
         if (string.IsNullOrEmpty(noteId)) return "ERR|note_id_empty";
+
+        EnsureScreenshotQuota();
+
         var rawPath = args.Length > 1 ? (args[1] ?? "") : "";
-        var author = args.Length > 2 && !string.IsNullOrEmpty(args[2]) ? args[2]! : "Terrain";
+        var author = args.Length > 2 && !string.IsNullOrWhiteSpace(args[2])
+            ? args[2]!.Trim()
+            : (_callSign.Length > 0 ? _callSign : "Terrain");
         var kind = args.Length > 3 && !string.IsNullOrEmpty(args[3]) ? args[3]! : "capture";
+        var trimmedPath = rawPath.Trim().Trim('"').Trim('\'');
 
-        string? resolved = null;
-        if (!string.IsNullOrWhiteSpace(rawPath))
-            resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(120));
-        if (resolved == null)
-            resolved = FindNewestScreenshot(TimeSpan.FromSeconds(90));
-        if (resolved == null) return "ERR|file_not_found";
+        var dedupKey = NormalizePhotoDedupKey("note|" + noteId + "|" + (trimmedPath.Length > 0 ? trimmedPath : "newest"));
+        if (!TryClaimPhotoDedup(dedupKey))
+            return "OK|duplicate";
+        if (PhotoJobs.Count >= PhotoQueueMax)
+            return "ERR|queue_full";
 
+        var meta = new string?[Math.Max(args.Length, 9)];
+        for (var i = 0; i < args.Length; i++)
+            meta[i] = args[i];
+        meta[0] = noteId;
+        meta[1] = trimmedPath;
+        meta[2] = author;
+        meta[3] = kind;
+
+        PhotoJobs.Enqueue(new ReconPhotoJob
+        {
+            RawPath = trimmedPath,
+            Author = author,
+            Meta = meta,
+            DedupKey = dedupKey,
+            NewestFallback = false,
+            EnqueuedUtc = DateTime.UtcNow,
+            UploadKind = "sse_note",
+            SseNoteId = noteId,
+            SseNoteKind = kind
+        });
+        EnsureScreenshotWatchers();
+        EnsurePhotoWorker();
+        return "OK|queued";
+    }
+
+    private static async Task ProcessSseNoteAttachmentUploadAsync(ReconPhotoJob job, string resolved, string? identityKey)
+    {
+        var noteId = !string.IsNullOrWhiteSpace(job.SseNoteId)
+            ? job.SseNoteId.Trim()
+            : (job.Meta.Length > 0 ? (job.Meta[0] ?? "").Trim() : "");
+        if (string.IsNullOrEmpty(noteId))
+        {
+            ReleasePhotoDedup(job.DedupKey);
+            ReleasePhotoDedup(identityKey);
+            InvokeCallback("SseNoteAttachment", "ERR|note_id_empty|" + Path.GetFileName(resolved));
+            return;
+        }
+
+        MultipartFormDataContent? multipart = null;
+        HttpRequestMessage? req = null;
         try
         {
             var bytes = ReadStableImageBytes(resolved, TimeSpan.FromSeconds(4));
-            if (bytes == null || bytes.Length < 32) return "ERR|file_empty";
-            var multipart = new MultipartFormDataContent();
+            if (bytes == null || bytes.Length < 32)
+            {
+                RequeuePhotoWaitingForFlush(job, "SseNoteAttachment", Path.GetFileName(resolved) ?? "");
+                return;
+            }
+
+            var args = job.Meta ?? Array.Empty<string?>();
+            var author = !string.IsNullOrWhiteSpace(job.Author) ? job.Author : "Terrain";
+            var kind = !string.IsNullOrWhiteSpace(job.SseNoteKind) ? job.SseNoteKind : "capture";
+            multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent(author), "author");
             multipart.Add(new StringContent(kind), "kind");
             AddOptionalForm(multipart, "pos_x", args, 4);
@@ -6742,12 +6813,51 @@ public static partial class Extension
             var fileContent = new ByteArrayContent(bytes);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, bytes));
             multipart.Add(fileContent, "piece", fileName);
-            var path = "/api/sse/notes/" + Uri.EscapeDataString(noteId) + "/pieces";
-            return QueueMultipartUpload(path, multipart);
+
+            var apiPath = "/api/sse/notes/" + Uri.EscapeDataString(noteId) + "/pieces";
+            if (!TryBuildRequestUri(_baseUrl, apiPath, out var uri, out var err) || uri is null)
+            {
+                ReleasePhotoDedup(job.DedupKey);
+                ReleasePhotoDedup(identityKey);
+                try { multipart.Dispose(); } catch { /* ignore */ }
+                InvokeCallback("SseNoteAttachment", "ERR|" + err + "|" + fileName);
+                return;
+            }
+
+            req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = multipart };
+            multipart = null;
+            AttachApiKeyHeader(req);
+            using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
+            var code = (int)resp.StatusCode;
+            if (resp.IsSuccessStatusCode)
+            {
+                NoteRateLimitCleared();
+                InvokeCallback("SseNoteAttachment", "OK|uploaded|" + fileName);
+                return;
+            }
+
+            NotePostError(code, uri.AbsoluteUri);
+            if (code == 503 || code == 429)
+            {
+                NoteRateLimited(resp);
+                RequeuePhotoAfterTransient(job, identityKey, "SseNoteAttachment", $"http_{code}", fileName);
+                return;
+            }
+            ReleasePhotoDedup(job.DedupKey);
+            ReleasePhotoDedup(identityKey);
+            if (code == 401 && _sessionToken.Length > 0)
+                _sessionToken = "";
+            InvokeCallback("SseNoteAttachment", $"ERR|http_{code}|{fileName}");
         }
         catch
         {
-            return "ERR|read_failed";
+            NoteNetworkHiccup();
+            RequeuePhotoAfterTransient(job, identityKey, "SseNoteAttachment", "network", Path.GetFileName(resolved) ?? "");
+        }
+        finally
+        {
+            try { req?.Dispose(); } catch { /* ignore */ }
+            try { multipart?.Dispose(); } catch { /* ignore */ }
         }
     }
 
@@ -6968,6 +7078,22 @@ public static partial class Extension
         {
             var n = Path.GetFileName(pathOrName ?? "") ?? "";
             return n.StartsWith("COMSPEC_SSE_Face", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Capture jointe à une fiche « COMSPEC_Fiche_… » : bureau SSE, pas galerie reconnaissance.
+    /// </summary>
+    private static bool IsSseNoteCaptureName(string? pathOrName)
+    {
+        try
+        {
+            var n = Path.GetFileName(pathOrName ?? "") ?? "";
+            return n.StartsWith("COMSPEC_Fiche_", StringComparison.OrdinalIgnoreCase);
         }
         catch
         {
@@ -7472,6 +7598,8 @@ public static partial class Extension
             var isJpeg = ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
                 || ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
 
+            var isSseNamed = IsSseIdentityCaptureName(raw) || IsSseNoteCaptureName(raw);
+
             if (!string.IsNullOrWhiteSpace(raw))
             {
                 if (isJpeg)
@@ -7482,13 +7610,18 @@ public static partial class Extension
                     if (!string.IsNullOrWhiteSpace(leaf))
                         resolved = FindScreenshotByFileName(leaf);
                 }
+                else if (isSseNamed)
+                {
+                    // Fiche / visage : uniquement ce nom, pas une autre capture récente.
+                    resolved = ResolveLocalImagePath(raw, newestFallback: null);
+                }
                 else
                 {
                     resolved = ResolveLocalImagePath(raw, TimeSpan.FromSeconds(45));
                 }
             }
 
-            if (resolved == null && !isJpeg)
+            if (resolved == null && !isJpeg && !isSseNamed)
                 resolved = FindNewestScreenshot(TimeSpan.FromSeconds(45));
             if (resolved == null)
                 return "ERR|file_not_found";

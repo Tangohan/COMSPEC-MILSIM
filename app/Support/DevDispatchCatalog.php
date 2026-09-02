@@ -584,6 +584,62 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(390, '2026-09-02', 'La position de service se pose toute seule, de la formation au service actif', 'Un membre qui rejoint la communauté est d’abord En formation. Quand l’accueil est terminé, il passe En service actif. L’annuaire sépare cette position des fonctions (opérateur, instructeur…). Les responsables peuvent attribuer les positions manquantes d’un clic, ou passer un membre en service actif depuis sa fiche. Rechargez l’annuaire', [
+                'Position En formation dès l’arrivée dans la communauté',
+                'Passage automatique en service actif à la fin de l’accueil',
+                'Bouton d’un clic pour les membres déjà présents',
+            ], [], [
+                'La colonne des fonctions mélangeait le statut de service et les métiers',
+                'Certains membres n’avaient ni En formation ni En service actif',
+            ], ['personnel'], [
+                'Ouvrez l’annuaire. La colonne Position affiche En formation ou En service actif. Sur une fiche encore en formation, Passer en service actif suffit. Les fonctions déjà attribuées restent en place.',
+            ], 'Portail'),
+            $pr(391, '2026-09-02', 'Le dossier sans communauté ne se dédouble plus', 'Lorsqu’une personne appartient déjà à une communauté, l’administration ne montre plus l’espace sans organisation comme un second dossier. Grade, matricule et affectation restent uniquement dans le dossier de la communauté. Les comptes sans unité conservent cet espace. Rechargez le dossier personne', [], [], [
+                'L’espace sans organisation n’apparaissait plus comme une copie du dossier de la communauté',
+                'Rejoindre une communauté ne recopiait plus le grade et le matricule dans l’espace sans organisation',
+            ], ['personnel'], [
+                'Ouvrez le dossier d’une personne déjà membre d’une communauté : seul le dossier de cette communauté doit apparaître. Un compte sans unité conserve l’espace d’accueil.',
+            ], 'Portail'),
+            $pr(389, '2026-09-02', 'L’ancienneté et les mouvements du dossier se relisent clairement', 'Sur la fiche, l’ancienneté dans la communauté, le service cumulé et l’historique d’affectation parlent le même langage. Les allers-retours du même jour dans la même unité sont regroupés. Rechargez la fiche', [], [
+                'L’ancienneté globale reprend le temps dans la communauté ; le temps avant l’arrivée sur le site reste un indicateur à part, s’il a été saisi',
+            ], [
+                'L’ancienneté de service ne restait plus à quelques jours alors que la date d’enrôlement datait de plusieurs mois',
+                'L’historique n’ajoutait plus une ligne à chaque enregistrement du dossier',
+                'Les rubriques administratives vides n’apparaissaient plus comme des informations manquantes',
+            ], ['personnel'], [
+                'Ouvrez la fiche d’un membre. L’ancienneté globale doit correspondre à la date d’enrôlement. L’historique d’affectation ne doit plus empiler le même jour plusieurs fois pour la même unité.',
+            ], 'Portail'),
+            $pr(387, '2026-09-02', 'Les photos jointes à une fiche passent par le même dossier que le téléphone', 'Une photo jointe à une fiche de renseignement, ou la photo du visage d’une identité, est recopiée dans Documents\Arma 3 - COMSPEC\Captures, comme les clichés du téléphone. Elle part ensuite au bureau. Le jeu ne se fige plus en attendant le fichier', [
+                'Photos de fiche et de visage recopiées dans le dossier de captures COMSPEC',
+                'Envoi en arrière-plan, comme les photos du téléphone',
+            ], [], [
+                'La pièce jointe d’une fiche partait trop tôt : le bureau la refusait',
+                'Les captures de fiche pouvaient se mélanger aux photos du téléphone au poste',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Envoyez une fiche avec photo : le cliché apparaît dans Documents\Arma 3 - COMSPEC\Captures, puis sur la fiche au bureau.',
+            ], 'Overwatch'),
+            $pr(388, '2026-09-02', 'L’écran de bienvenue peut montrer les photos de la communauté', 'Après connexion, l’écran de bienvenue affiche une nouvelle photo de nuit par défaut. Les responsables choisissent leurs propres photos dans les paramètres de la communauté : une ou plusieurs, qui défilent à tour de rôle. Rechargez l’écran de bienvenue', [
+                'Photo de bienvenue du portail, en vision nocturne',
+                'Photos d’accueil de la communauté, avec défilement si plusieurs sont déposées',
+            ], [], [], ['platform'], [
+                'Ouvrez Paramètres de la communauté, puis Images d’accueil. Sans photo déposée, la photo du portail reste affichée.',
+            ], 'Portail'),
+            $pr(385, '2026-09-02', 'Les formations, les rôles et l’administration s’ouvrent à nouveau', 'Les pages qui cherchent une formation, un rôle ou une permission par leur identifiant court s’affichent à nouveau. Rechargez la page concernée', [], [], [
+                'Certaines pages d’administration, de formations ou de rôles se fermaient sur une erreur au moment d’ouvrir une fiche',
+            ], ['platform'], [
+                'Mettez à jour le portail, puis rouvrez la page. Si une ancienne page d’erreur reste affichée, actualisez-la.',
+            ], 'Portail'),
+            $pr(386, '2026-09-02', 'Le tableau de bord se lit de haut en bas sans coupure claire', 'Le haut du tableau de bord reste sombre : briefing, alertes, signalement d’anomalie et contact administration. La connexion Steam vient ensuite, tant que Steam n’est pas encore associé. Les articles et le reste de la page claire se lisent en dernier. Rechargez le tableau de bord', [], [], [
+                'Une zone claire coupait le tableau de bord, et les signalements réapparaissaient en dessous',
+            ], ['platform'], [
+                'Ouvrez le tableau de bord. Si Steam n’est pas encore associé, Connexion Steam se trouve sous les cartes sombres, avant les articles.',
+            ], 'Portail'),
+            $pr(384, '2026-09-02', 'L’accueil et les fiches publiques des communautés sont à jour', 'La page d’accueil affiche toutes les communautés du registre. Chaque fiche publique s’ouvre à nouveau. Rechargez l’accueil, puis ouvrez une communauté', [], [], [
+                'Toutes les communautés n’apparaissaient pas sur l’accueil',
+                'Certaines fiches publiques se fermaient sur une erreur',
+            ], ['platform'], [
+                'Ouvrez l’accueil du site, puis une fiche communauté. Si une ancienne page d’erreur reste affichée, actualisez-la.',
+            ], 'Portail'),
             $pr(383, '2026-09-02', 'Le mot de passe oublié a une page complète', 'Depuis la connexion, Mot de passe oublié ouvre un écran du même style. Vous indiquez l’adresse du compte, recevez un lien valable deux heures, puis choisissez un nouveau mot de passe. Le mot de passe s’applique à toutes vos communautés. Rechargez la page de connexion', [], [], [
                 'La page de récupération ne ressemblait pas au reste du portail, et l’enregistrement du nouveau mot de passe pouvait échouer après la réunion des comptes',
             ], ['platform'], [

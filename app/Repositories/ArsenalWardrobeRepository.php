@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\Core\Database;
 use App\Support\EquipmentCoverStorage;
 use App\Support\SilentSchemaMigration;
+use App\Support\SqlText;
 use PDO;
 
 final class ArsenalWardrobeRepository
@@ -375,8 +376,9 @@ final class ArsenalWardrobeRepository
 
     public function findCollectionBySlug(int $tenantId, string $slug): ?array
     {
+        $slugEq = SqlText::equals($this->pdo, 'slug');
         $st = $this->pdo->prepare(
-            'SELECT * FROM arsenal_equipment_collections WHERE tenant_id = ? AND slug = ? LIMIT 1'
+            'SELECT * FROM arsenal_equipment_collections WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1'
         );
         $st->execute([$tenantId, $slug]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
@@ -512,8 +514,9 @@ final class ArsenalWardrobeRepository
 
     private function findBySlug(int $tenantId, int $userId, string $slug): ?array
     {
+        $slugEq = SqlText::equals($this->pdo, 'slug');
         $st = $this->pdo->prepare(
-            'SELECT * FROM arsenal_wardrobes WHERE tenant_id = ? AND user_id = ? AND slug = ? LIMIT 1'
+            'SELECT * FROM arsenal_wardrobes WHERE tenant_id = ? AND user_id = ? AND ' . $slugEq . ' LIMIT 1'
         );
         $st->execute([$tenantId, $userId, $slug]);
         $row = $st->fetch(PDO::FETCH_ASSOC);

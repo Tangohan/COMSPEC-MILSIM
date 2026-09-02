@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Identity;
 
+use App\Support\PortalAccessChoice;
 use PDO;
 use Throwable;
 
@@ -54,16 +55,19 @@ final class UserIdentityProfileRestoreService
             if ($survivorId < 1 || $absorbedId < 1) {
                 continue;
             }
-            $summary['personnel'] += $this->restoreRhTable('personnel_profiles', $survivorId, $absorbedId, $tenantId);
-            $summary['extras'] += $this->restoreRhTable('personnel_extras', $survivorId, $absorbedId, $tenantId);
+            $skipPlaceholder = $this->shouldSkipPlaceholderDossierCopy($survivorId, $tenantId);
+            if (!$skipPlaceholder) {
+                $summary['personnel'] += $this->restoreRhTable('personnel_profiles', $survivorId, $absorbedId, $tenantId);
+                $summary['extras'] += $this->restoreRhTable('personnel_extras', $survivorId, $absorbedId, $tenantId);
+                $summary['community_profiles'] += $this->restoreCommunityProfile(
+                    $survivorId,
+                    $absorbedId,
+                    $tenantId,
+                    $snapshot
+                );
+            }
             $summary['user_profiles'] += $this->restoreIdentityTable('user_profiles', $survivorId, $absorbedId);
             $summary['legal'] += $this->restoreIdentityTable('user_legal_identities', $survivorId, $absorbedId);
-            $summary['community_profiles'] += $this->restoreCommunityProfile(
-                $survivorId,
-                $absorbedId,
-                $tenantId,
-                $snapshot
-            );
         }
 
         return $summary;
@@ -430,6 +434,51 @@ final class UserIdentityProfileRestoreService
             $this->pdo->prepare($sql)->execute($params);
         } catch (Throwable) {
         }
+    }
+
+    private function shouldSkipPlaceholderDossierCopy(int $survivorId, int $tenantId): bool
+    {
+        if ($survivorId < 1 || $tenantId < 1 || !$this->tableExists('tenants')) {
+            return false;
+        }
+        $st = $this->pdo->prepare('SELECT slug, name FROM tenants WHERE id = ? LIMIT 1');
+        $st->execute([$tenantId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (!PortalAccessChoice::isPlaceholderTenant(is_array($row) ? $row : null)) {
+            return false;
+        }
+
+        return $this->survivorHasLiveOrg($survivorId);
+    }
+
+    private function survivorHasLiveOrg(int $userId): bool
+    {
+        if ($userId < 1 || !$this->tableExists('tenants')) {
+            return false;
+        }
+        if ($this->tableExists('user_community_memberships')) {
+            $st = $this->pdo->prepare(
+                "SELECT t.slug, t.name
+                 FROM user_community_memberships m
+                 INNER JOIN tenants t ON t.id = m.tenant_id
+                 WHERE m.user_id = ? AND m.status = 'active'"
+            );
+            $st->execute([$userId]);
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                if (!PortalAccessChoice::isPlaceholderTenant($row)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT t.slug, t.name FROM users u INNER JOIN tenants t ON t.id = u.tenant_id WHERE u.id = ? LIMIT 1'
+        );
+        $st->execute([$userId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) && !PortalAccessChoice::isPlaceholderTenant($row);
     }
 
     private function tableExists(string $table): bool

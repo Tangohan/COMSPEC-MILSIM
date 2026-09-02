@@ -80,8 +80,28 @@ function migration_reconnect_pdo(PDO &$pdo): void
 
     $dsn = migration_mysql_dsn();
     $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    migration_apply_session_collation($pdo);
     try {
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+    } catch (Throwable) {
+    }
+}
+
+function migration_session_init_sql(): string
+{
+    if (class_exists(\App\Core\Database::class)) {
+        return \App\Core\Database::sessionInitSql();
+    }
+
+    return "SET character_set_client = 'utf8mb4', character_set_connection = 'utf8mb4',"
+        . " character_set_results = 'utf8mb4', collation_connection = 'utf8mb4_unicode_ci',"
+        . " time_zone = '+00:00'";
+}
+
+function migration_apply_session_collation(PDO $pdo): void
+{
+    try {
+        $pdo->exec(migration_session_init_sql());
     } catch (Throwable) {
     }
 }

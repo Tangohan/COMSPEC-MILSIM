@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Services\Identity\UserIdentityMergeRules;
 use App\Support\LazyDatabaseConnection;
+use App\Support\PortalAccessChoice;
 use App\Support\SilentSchemaMigration;
 use PDO;
 
@@ -156,5 +157,82 @@ final class UserCommunityMembershipRepository
              SET status = 'left', left_at = NOW(), updated_at = NOW()
              WHERE user_id = ? AND tenant_id = ?"
         )->execute([$userId, $tenantId]);
+    }
+
+    /**
+     * Toutes les appartenances (y compris quittées) pour décider du sas « pas d’organisation ».
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listAllForUser(int $userId): array
+    {
+        if ($userId < 1 || !$this->tablesExist()) {
+            return [];
+        }
+        $st = $this->pdo()->prepare(
+            "SELECT m.*, t.name AS tenant_name, t.slug AS tenant_slug
+             FROM user_community_memberships m
+             INNER JOIN tenants t ON t.id = m.tenant_id
+             WHERE m.user_id = ?
+             ORDER BY t.name ASC"
+        );
+        $st->execute([$userId]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Dès qu’une vraie communauté existe, le sas « pas d’organisation » n’est plus
+     * une appartenance active et ne conserve pas de copie du dossier métier.
+     */
+    public function leavePlaceholderMembershipsIfHasLiveOrg(int $userId): void
+    {
+        if ($userId < 1 || !$this->tablesExist()) {
+            return;
+        }
+        $all = $this->listAllForUser($userId);
+        $hasLive = false;
+        foreach ($all as $row) {
+            if (($row['status'] ?? '') !== 'active') {
+                continue;
+            }
+            if (!PortalAccessChoice::membershipIsPlaceholder($row)) {
+                $hasLive = true;
+                break;
+            }
+        }
+        if (!$hasLive) {
+            return;
+        }
+        foreach ($all as $row) {
+            if (!PortalAccessChoice::membershipIsPlaceholder($row)) {
+                continue;
+            }
+            $tenantId = (int) ($row['tenant_id'] ?? 0);
+            if ($tenantId < 1) {
+                continue;
+            }
+            $this->leave($userId, $tenantId);
+            $this->clearCommunityProfileSubstance($userId, $tenantId);
+        }
+    }
+
+    private function clearCommunityProfileSubstance(int $userId, int $tenantId): void
+    {
+        if ($userId < 1 || $tenantId < 1 || !$this->tablesExist()) {
+            return;
+        }
+        try {
+            $this->pdo()->prepare(
+                "UPDATE user_community_profiles
+                 SET display_name = NULL, callsign = NULL, profile_slug = NULL,
+                     athena_identifier = NULL, role_id = NULL, grade_id = NULL,
+                     tenant_member_number = NULL, preferred_display_role_id = NULL,
+                     updated_at = NOW()
+                 WHERE user_id = ? AND tenant_id = ?"
+            )->execute([$userId, $tenantId]);
+        } catch (\Throwable) {
+            // Schéma partiel : l’appartenance a déjà été marquée comme quittée.
+        }
     }
 }

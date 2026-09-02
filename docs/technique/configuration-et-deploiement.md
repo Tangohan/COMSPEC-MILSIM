@@ -10,6 +10,7 @@ Le fichier **`.env`** (non versionné) reprend le modèle **`.env.example`**. Pr
 |---------|----------|------|
 | Application | `APP_NAME`, `APP_ENV`, `APP_DEBUG`, `APP_URL`, `APP_BASE_PATH`, `APP_LOCALE`, `APP_TIMEZONE` | Identité, URL publique, chemin si sous-dossier, fuseau horaire. |
 | Stockage relationnel | `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_CHARSET` | Connexion MySQL. |
+| Copies de données | `DATA_SNAPSHOT_DIR`, `DATA_SNAPSHOT_KEEP`, `MYSQLDUMP_BIN`, `MYSQL_BIN` | Rollback base + fichiers (`scripts/data-snapshot.php`). |
 | Session | `SESSION_LIFETIME`, `SESSION_SECURE_COOKIE` | Durée et cookie sécurisé (HTTPS). |
 | Sécurité | `JWT_SECRET` | Jetons signés si utilisés. |
 | Maintenance | `MAINTENANCE_ENABLED`, `MAINTENANCE_MESSAGE`, `MAINTENANCE_ALLOWED_IPS`, `MAINTENANCE_TOKEN` | Mode maintenance et contournements. |
@@ -25,7 +26,7 @@ Le bootstrap charge **`app/Config/*.php`** (app, database, auth, maintenance, un
 ## Migrations
 
 - Les scripts SQL sont dans **`migrations/`** ; des scripts PHP dans **`bootstrap/`** ou **`run-migrations.php`** peuvent orchestrer l’application des versions.
-- Toujours **sauvegarder** le stockage relationnel avant migration en production.
+- Toujours **sauvegarder** avant migration en production : `php scripts/data-snapshot.php create --label=avant-migration` (base + fichiers). Détail : [sauvegarde-donnees-completes.md](sauvegarde-donnees-completes.md).
 
 ## Déploiement type
 

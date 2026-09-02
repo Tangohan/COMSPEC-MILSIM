@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(183, $byKind['update']);
-        self::assertCount(189, $all);
+        self::assertSame(191, $byKind['update']);
+        self::assertCount(197, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -598,6 +598,38 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($forgotPwd);
         self::assertSame('00383', $forgotPwd['number_pad']);
         self::assertStringContainsString('mot de passe oublié', strtolower((string) $forgotPwd['title']));
+        $publicTenants = DevDispatchCatalog::find('update', '384');
+        self::assertNotNull($publicTenants);
+        self::assertSame('00384', $publicTenants['number_pad']);
+        self::assertStringContainsString('fiches publiques', strtolower((string) $publicTenants['title']));
+        $dashBands = DevDispatchCatalog::find('update', '386');
+        self::assertNotNull($dashBands);
+        self::assertSame('00386', $dashBands['number_pad']);
+        self::assertStringContainsString('tableau de bord', strtolower((string) $dashBands['title']));
+        $slugEverywhere = DevDispatchCatalog::find('update', '385');
+        self::assertNotNull($slugEverywhere);
+        self::assertSame('00385', $slugEverywhere['number_pad']);
+        self::assertStringContainsString('formations', strtolower((string) $slugEverywhere['title']));
+        $ficheCaptures = DevDispatchCatalog::find('update', '387');
+        self::assertNotNull($ficheCaptures);
+        self::assertSame('00387', $ficheCaptures['number_pad']);
+        self::assertStringContainsString('fiche', strtolower((string) $ficheCaptures['title']));
+        $welcomePhotos = DevDispatchCatalog::find('update', '388');
+        self::assertNotNull($welcomePhotos);
+        self::assertSame('00388', $welcomePhotos['number_pad']);
+        self::assertStringContainsString('bienvenue', strtolower((string) $welcomePhotos['title']));
+        $dossierTenure = DevDispatchCatalog::find('update', '389');
+        self::assertNotNull($dossierTenure);
+        self::assertSame('00389', $dossierTenure['number_pad']);
+        self::assertStringContainsString('ancienneté', strtolower((string) $dossierTenure['title']));
+        $noOrgDossier = DevDispatchCatalog::find('update', '391');
+        self::assertNotNull($noOrgDossier);
+        self::assertSame('00391', $noOrgDossier['number_pad']);
+        self::assertStringContainsString('communauté', strtolower((string) $noOrgDossier['title']));
+        $dutyPos = DevDispatchCatalog::find('update', '390');
+        self::assertNotNull($dutyPos);
+        self::assertSame('00390', $dutyPos['number_pad']);
+        self::assertStringContainsString('formation', strtolower((string) $dutyPos['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

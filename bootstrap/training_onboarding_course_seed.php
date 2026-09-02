@@ -14,6 +14,8 @@ declare(strict_types=1);
  * @param PDO $pdo Connexion SQL (comme run-migrations.php)
  */
 
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 /** Miniature catalogue / fiche (relatif à public/). */
 function training_onboarding_course_thumbnail_path(): string
 {
@@ -98,7 +100,7 @@ function training_onboarding_resolve_author_user_id(PDO $pdo, int $tenantId): in
 
 function training_onboarding_course_exists(PDO $pdo, int $tenantId, string $slug): bool
 {
-    $st = $pdo->prepare('SELECT 1 FROM training_courses WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $st = $pdo->prepare('SELECT 1 FROM training_courses WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $st->execute([$tenantId, $slug]);
 
     return (bool) $st->fetchColumn();
@@ -455,7 +457,7 @@ function training_onboarding_upgrade_portal_legacy_five_modules(PDO $pdo, int $c
 function training_onboarding_ensure_extended_parcours_portal(PDO $pdo, int $tenantId): void
 {
     $slug = 'parcours-portail';
-    $st = $pdo->prepare('SELECT id FROM training_courses WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $st = $pdo->prepare('SELECT id FROM training_courses WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $st->execute([$tenantId, $slug]);
     $row = $st->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
@@ -489,7 +491,7 @@ function training_onboarding_refresh_portal_canvas_for_tenant(PDO $pdo, int $ten
     training_onboarding_ensure_extended_parcours_portal($pdo, $tenantId);
 
     $slug = 'parcours-portail';
-    $st = $pdo->prepare('SELECT id FROM training_courses WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $st = $pdo->prepare('SELECT id FROM training_courses WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $st->execute([$tenantId, $slug]);
     $row = $st->fetch(PDO::FETCH_ASSOC);
     if (!$row) {

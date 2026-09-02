@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Rbac;
 
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -151,7 +152,7 @@ final class RoleDefinitionCatalog
         if ($tenantId <= 0) {
             return;
         }
-        $find = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $find = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $ins = $pdo->prepare(
             'INSERT IGNORE INTO role_relations (tenant_id, from_role_id, to_role_id, relation_type, created_at) VALUES (?, ?, ?, ?, NOW())'
         );

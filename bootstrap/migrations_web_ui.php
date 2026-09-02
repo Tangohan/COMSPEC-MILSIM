@@ -13,6 +13,8 @@ declare(strict_types=1);
  * Retourne seulement si l’opérateur a demandé l’exécution (POST run).
  */
 
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 function migrations_web_config(): array
 {
     static $cfg = null;
@@ -260,6 +262,14 @@ function migrations_web_collect_status(string $root): array
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_TIMEOUT => 5,
             ]);
+            if (function_exists('migration_apply_session_collation')) {
+                migration_apply_session_collation($pdo);
+            } elseif (class_exists(\App\Core\Database::class)) {
+                try {
+                    $pdo->exec(\App\Core\Database::sessionInitSql());
+                } catch (Throwable) {
+                }
+            }
             $status['database']['connected'] = true;
 
             $tables = (int) $pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()')->fetchColumn();
@@ -267,7 +277,7 @@ function migrations_web_collect_status(string $root): array
 
             try {
                 $status['database']['tenants'] = (int) $pdo->query('SELECT COUNT(*) FROM tenants')->fetchColumn();
-                $status['database']['has_default_tenant'] = (bool) $pdo->query("SELECT 1 FROM tenants WHERE slug = 'default' LIMIT 1")->fetchColumn();
+                $status['database']['has_default_tenant'] = (bool) $pdo->query('SELECT 1 FROM tenants WHERE ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'default') . ' LIMIT 1')->fetchColumn();
             } catch (Throwable $e) {
                 $status['database']['tenants'] = null;
             }

@@ -233,6 +233,44 @@ switch (_function) do {
         ["google_deck_error", _human, format ["%1|%2", _code, _message], "Athena", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
         ["COMSPEC_Warning", [_human]] call comspec_overwatch_connect_fnc_showNotification;
     };
+    case "SseNoteAttachment": {
+        private _parts = _data splitString "|";
+        private _status = if ((count _parts) > 0) then { _parts select 0 } else { "" };
+        private _detail = if ((count _parts) > 1) then { _parts select 1 } else { "" };
+        if (_status isEqualTo "OK" && {_detail in ["uploaded", "duplicate"]}) then {
+            ["UploadSseNoteAttachment", "ok", format ["%1 · %2", _detail, _data], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+            if (_detail isEqualTo "uploaded") then {
+                [
+                    "La photo jointe à la fiche est arrivée au bureau.",
+                    "tactical",
+                    "info"
+                ] call comspec_overwatch_connect_fnc_announce;
+            };
+        } else {
+            if (_status isEqualTo "ERR") then {
+                ["UploadSseNoteAttachment", "fail", _data, _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+                private _msg = switch (true) do {
+                    case ((_detail find "file_not_found") == 0): {
+                        "La photo jointe n’a pas été trouvée — reprenez-la depuis le terrain, puis renvoyez la fiche."
+                    };
+                    case ((_detail find "file_empty") == 0): {
+                        "La capture n’était pas encore prête — renvoyez la fiche avec une nouvelle photo."
+                    };
+                    case ((_detail find "not_connected") == 0): {
+                        "Pas de liaison — reconnectez-vous puis renvoyez la fiche avec la photo."
+                    };
+                    case ((_detail find "http_") == 0): {
+                        "Le bureau a refusé la photo jointe. Réessayez."
+                    };
+                    case ((_detail find "network") == 0): {
+                        "Liaison instable pendant l’envoi de la photo jointe."
+                    };
+                    default { "La photo jointe à la fiche n’a pas pu être transmise." };
+                };
+                [_msg, "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+            };
+        };
+    };
     case "SsePhotoUpload": {
         private _parts = _data splitString "|";
         private _status = if ((count _parts) > 0) then { _parts select 0 } else { "" };

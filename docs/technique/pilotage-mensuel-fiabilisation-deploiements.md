@@ -65,7 +65,10 @@ Planification recommandée (cron, le 1er de chaque mois à 02:15 UTC):
 
 ### Pré-prod
 
-1. Sauvegarde base pré-prod.
+1. Sauvegarde complète (base + fichiers) :
+   ```bash
+   php scripts/data-snapshot.php create --label=avant-migration
+   ```
 2. Exécution pipeline:
    ```bash
    php setup-database.php
@@ -82,7 +85,7 @@ Planification recommandée (cron, le 1er de chaque mois à 02:15 UTC):
 
 ### Prod
 
-1. Sauvegarde base prod + validation restore.
+1. Sauvegarde complète prod + `php scripts/data-snapshot.php verify <id>`.
 2. Fenêtre de déploiement courte.
 3. Exécution pipeline idempotent:
    ```bash

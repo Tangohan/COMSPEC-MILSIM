@@ -18,6 +18,8 @@ final class LoginWelcomeViewAssetTest extends TestCase
         $this->assertStringNotContainsString('unitLabel', $src);
         $this->assertStringContainsString('Appuyez sur Entrée', $src);
         $this->assertStringContainsString('Archivo', $src);
+        $this->assertStringContainsString('lock-slides', $src);
+        $this->assertStringContainsString('LoginAccueilImageStorage::defaultPublicUrl', $src);
 
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
         $this->assertStringContainsString("'/login/accueil'", $routes);

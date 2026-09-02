@@ -43,19 +43,16 @@ class HomeController
             /** @var \App\Repositories\TenantRepository $tenantRepo */
             $tenantRepo = \App\Core\Container::get(\App\Repositories\TenantRepository::class);
             foreach ($tenantRepo->listForRegistry() as $row) {
-                $logo = trim((string) ($row['logo_url'] ?? ''));
-                if ($logo === '') {
+                $slug = trim((string) ($row['slug'] ?? ''));
+                if ($slug === '') {
                     continue;
                 }
                 $featuredUnits[] = [
                     'name' => community_display_name($row),
-                    'slug' => (string) ($row['slug'] ?? ''),
-                    'logo_url' => $logo,
-                    'href' => url('c/' . rawurlencode((string) ($row['slug'] ?? ''))),
+                    'slug' => $slug,
+                    'logo_url' => trim((string) ($row['logo_url'] ?? '')),
+                    'href' => url('c/' . rawurlencode($slug)),
                 ];
-                if (count($featuredUnits) >= 10) {
-                    break;
-                }
             }
         } catch (\Throwable) {
             $featuredUnits = [];

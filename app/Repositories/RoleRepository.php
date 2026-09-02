@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use App\Services\Community\TenantDefaultRoleDefinitions;
 use PDO;
 
@@ -205,7 +206,8 @@ class RoleRepository
     /** @return int|null ID du rôle par slug dans le tenant. */
     public function getIdBySlug(int $tenantId, string $slug): ?int
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $stmt = $this->pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_COLUMN);
 
@@ -478,7 +480,8 @@ class RoleRepository
         } catch (\Throwable) {
             return null;
         }
-        $st = $this->pdo->prepare('SELECT id, name_fr, description FROM role_definitions WHERE slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $st = $this->pdo->prepare('SELECT id, name_fr, description FROM role_definitions WHERE ' . $slugEq . ' LIMIT 1');
         $st->execute([$slug]);
         $def = $st->fetch(PDO::FETCH_ASSOC);
         if (!$def) {

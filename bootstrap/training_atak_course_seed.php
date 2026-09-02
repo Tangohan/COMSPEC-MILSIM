@@ -9,6 +9,8 @@ declare(strict_types=1);
  * @param PDO $pdo Connexion SQL (comme run-migrations.php)
  */
 
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 function training_atak_course_thumbnail_path(): string
 {
     return 'assets/images/armee-de-terre-recrute-specialiste-systeme-information.jpg';
@@ -21,7 +23,7 @@ function training_atak_course_banner_path(): string
 
 function training_atak_sync_course_cover(PDO $pdo, int $tenantId, string $slug): void
 {
-    $st = $pdo->prepare('UPDATE training_courses SET thumbnail_path = ?, banner_path = ? WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $st = $pdo->prepare('UPDATE training_courses SET thumbnail_path = ?, banner_path = ? WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $st->execute([
         training_atak_course_thumbnail_path(),
         training_atak_course_banner_path(),
@@ -99,7 +101,7 @@ function training_atak_resolve_author_user_id(PDO $pdo, int $tenantId): int
 
 function training_atak_course_exists(PDO $pdo, int $tenantId, string $slug): bool
 {
-    $st = $pdo->prepare('SELECT 1 FROM training_courses WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $st = $pdo->prepare('SELECT 1 FROM training_courses WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $st->execute([$tenantId, $slug]);
 
     return (bool) $st->fetchColumn();

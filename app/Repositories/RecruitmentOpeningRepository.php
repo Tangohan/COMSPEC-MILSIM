@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use App\Services\Recruitment\RecruitmentOpeningReferenceService;
 use App\Services\Recruitment\TenantRecruitmentSettings;
 use PDO;
@@ -116,11 +117,13 @@ class RecruitmentOpeningRepository
         if (!$this->tablesExist() || $slug === '') {
             return null;
         }
+        $slugEq = SqlText::equals($this->pdo, 'ro.public_page_slug');
+        $statusPublished = SqlText::inLiterals($this->pdo, 'ro.status', ['published']);
         $stmt = $this->pdo->prepare(
             'SELECT ro.*, u.name AS unit_name, u.slug AS unit_slug, u.code AS unit_code
              FROM recruitment_openings ro
              INNER JOIN units u ON u.id = ro.unit_id AND u.tenant_id = ro.tenant_id
-             WHERE ro.tenant_id = ? AND ro.public_page_slug = ? AND ro.status = \'published\' LIMIT 1'
+             WHERE ro.tenant_id = ? AND ' . $slugEq . ' AND ' . $statusPublished . ' LIMIT 1'
         );
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -133,7 +136,8 @@ class RecruitmentOpeningRepository
         if (!$this->tablesExist() || $slug === '') {
             return false;
         }
-        $sql = 'SELECT 1 FROM recruitment_openings WHERE tenant_id = ? AND public_page_slug = ?';
+        $slugEq = SqlText::equals($this->pdo, 'public_page_slug');
+        $sql = 'SELECT 1 FROM recruitment_openings WHERE tenant_id = ? AND ' . $slugEq;
         $params = [$tenantId, $slug];
         if ($excludeId !== null) {
             $sql .= ' AND id <> ?';

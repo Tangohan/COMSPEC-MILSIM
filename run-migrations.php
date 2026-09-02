@@ -87,6 +87,7 @@ if ($name === '' || $user === '') {
 $dsn = migration_mysql_dsn();
 try {
     $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    migration_apply_session_collation($pdo);
 } catch (PDOException $e) {
     echo "Connexion impossible : " . $e->getMessage() . "\n";
     echo "Vérifiez DB_HOST, DB_NAME, DB_USER et DB_PASSWORD.\n";
@@ -94,6 +95,8 @@ try {
 }
 echo "[OK] Connexion base : $name\n";
 $migrationFlush();
+
+require_once $root . '/app/Support/SqlText.php';
 
 /** Recrée $pdo si la session MySQL est morte — TCP uniquement, pas de socket localhost. */
 $migrationEnsurePdo = static function () use (&$pdo, $migrationFlush): void {
@@ -1368,9 +1371,9 @@ $atakMapsSeed = [
     ],
 ];
 try {
-    $chkMap = $pdo->prepare('SELECT id, tile_pattern FROM atak_maps WHERE slug = ? LIMIT 1');
+    $chkMap = $pdo->prepare('SELECT id, tile_pattern FROM atak_maps WHERE ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $insMap = $pdo->prepare('INSERT INTO atak_maps (slug, label, world_name, tile_pattern, config, display_order) VALUES (?, ?, ?, ?, ?, ?)');
-    $updMap = $pdo->prepare('UPDATE atak_maps SET label = ?, world_name = ?, tile_pattern = ?, config = ?, display_order = ? WHERE slug = ?');
+    $updMap = $pdo->prepare('UPDATE atak_maps SET label = ?, world_name = ?, tile_pattern = ?, config = ?, display_order = ? WHERE ' . \App\Support\SqlText::equals($pdo, 'slug'));
     $seeded = 0;
     $updated = 0;
     foreach ($atakMapsSeed as $row) {
@@ -2466,6 +2469,13 @@ try {
     echo '  [ATTENTION] tenant_dashboard_wardrobe_pins : ' . $e->getMessage() . "\n";
 }
 
+$loginAccueilImagesMigrate = require $root . '/bootstrap/tenant_login_accueil_images_migration.php';
+try {
+    $loginAccueilImagesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_login_accueil_images : ' . $e->getMessage() . "\n";
+}
+
 $forumTopicPinOnDashboardMigrate = require $root . '/bootstrap/forum_topic_pin_on_dashboard_migration.php';
 try {
     $forumTopicPinOnDashboardMigrate($pdo);
@@ -2672,9 +2682,9 @@ try {
     $tStmt = $pdo->query('SELECT id FROM tenants');
     if ($tStmt) {
         $insPerm = $pdo->prepare('INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, ?, ?, ?, NOW())');
-        $chkPerm = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $chkPerm = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $insRp = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-        $roleIds = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug IN (\'tenant_admin\',\'community_owner\')');
+        $roleIds = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['tenant_admin', 'community_owner']));
         while ($tRow = $tStmt->fetch(PDO::FETCH_ASSOC)) {
             $tid = (int) ($tRow['id'] ?? 0);
             if ($tid < 1) {
@@ -2835,7 +2845,7 @@ if ($stmt && $stmt->fetch()) {
 
 // ----- Seed forum (permissions, rôles, catégories) — idempotent -----
 $run_forum_seed = function (PDO $pdo, int $tenantId): void {
-    $stmt = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'forum.view' LIMIT 1");
+    $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'forum.view') . ' LIMIT 1');
     $stmt->execute([$tenantId]);
     if ($stmt->fetch()) {
         echo "Forum seed déjà appliqué (permissions existantes).\n";
@@ -2863,7 +2873,7 @@ $run_forum_seed = function (PDO $pdo, int $tenantId): void {
         $permIds[$p[0]] = (int) $pdo->lastInsertId();
     }
 
-    $adminRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'tenant_admin' LIMIT 1");
+    $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'tenant_admin') . ' LIMIT 1');
     $adminRole->execute([$tenantId]);
     $adminRoleId = (int) ($adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
     if ($adminRoleId) {
@@ -2874,7 +2884,7 @@ $run_forum_seed = function (PDO $pdo, int $tenantId): void {
     }
 
     foreach (['forum_moderator' => 'Modérateur forum', 'member' => 'Membre', 'officer' => 'Officier'] as $slug => $roleName) {
-        $stmt = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1");
+        $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         if (!$stmt->fetch()) {
             $pdo->prepare("INSERT INTO roles (tenant_id, name, slug, description, is_system, created_at) VALUES (?, ?, ?, ?, 1, NOW())")
@@ -2882,7 +2892,7 @@ $run_forum_seed = function (PDO $pdo, int $tenantId): void {
         }
     }
 
-    $modRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'forum_moderator' LIMIT 1");
+    $modRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'forum_moderator') . ' LIMIT 1');
     $modRole->execute([$tenantId]);
     $modRoleId = (int) ($modRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
     if ($modRoleId) {
@@ -2894,7 +2904,7 @@ $run_forum_seed = function (PDO $pdo, int $tenantId): void {
         }
     }
 
-    $memberRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'member' LIMIT 1");
+    $memberRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'member') . ' LIMIT 1');
     $memberRole->execute([$tenantId]);
     $memberRoleId = (int) ($memberRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
     if ($memberRoleId) {
@@ -2930,12 +2940,12 @@ $run_forum_seed = function (PDO $pdo, int $tenantId): void {
 
 $run_documents_seed = function (PDO $pdo, int $tenantId): void {
     $docPermSlugs = ['documents.view', 'documents.upload', 'documents.update', 'documents.archive', 'documents.download_sensitive'];
-    $stmt = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'documents.view' LIMIT 1");
+    $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'documents.view') . ' LIMIT 1');
     $stmt->execute([$tenantId]);
     $docPermIds = [];
     if ($stmt->fetch()) {
         foreach ($docPermSlugs as $slug) {
-            $s = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1");
+            $s = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $s->execute([$tenantId, $slug]);
             $id = $s->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
             if ($id) {
@@ -2956,7 +2966,7 @@ $run_documents_seed = function (PDO $pdo, int $tenantId): void {
             $docPermIds[$p[0]] = (int) $pdo->lastInsertId();
         }
     }
-    $adminRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'tenant_admin' LIMIT 1");
+    $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'tenant_admin') . ' LIMIT 1');
     $adminRole->execute([$tenantId]);
     $adminRoleId = (int) ($adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
     if ($adminRoleId) {
@@ -2965,13 +2975,13 @@ $run_documents_seed = function (PDO $pdo, int $tenantId): void {
             $link->execute([$adminRoleId, $pid]);
         }
     }
-    $memberRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'member' LIMIT 1");
+    $memberRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'member') . ' LIMIT 1');
     $memberRole->execute([$tenantId]);
     $memberRoleId = (int) ($memberRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
     if ($memberRoleId && isset($docPermIds['documents.view'])) {
         $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)")->execute([$memberRoleId, $docPermIds['documents.view']]);
     }
-    $officerRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'officer' LIMIT 1");
+    $officerRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'officer') . ' LIMIT 1');
     $officerRole->execute([$tenantId]);
     $officerRoleId = (int) ($officerRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
     if (!$officerRoleId) {
@@ -3007,10 +3017,10 @@ $run_documents_seed = function (PDO $pdo, int $tenantId): void {
 };
 
 // ----- Seed : tenant + role + grade + admin (ou mise à jour) -----
-$stmt = $pdo->query("SELECT id FROM tenants WHERE slug = 'default' LIMIT 1");
+$stmt = $pdo->query('SELECT id FROM tenants WHERE ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'default') . ' LIMIT 1');
 if ($stmt && $stmt->fetch()) {
     echo "Seed déjà appliqué (tenant default existe).\n";
-    $row = $pdo->query("SELECT id FROM tenants WHERE slug = 'default' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    $row = $pdo->query('SELECT id FROM tenants WHERE ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'default') . ' LIMIT 1')->fetch(PDO::FETCH_ASSOC);
     $tenantId = (int) $row['id'];
 
     $stmt = $pdo->query("SELECT 1 FROM personnel_admin_panels WHERE tenant_id = $tenantId LIMIT 1");
@@ -3034,13 +3044,13 @@ if ($stmt && $stmt->fetch()) {
     $run_forum_seed($pdo, $tenantId);
 
     // S'assurer que la permission admin.access existe et est liée au rôle Administrator (menu Admin)
-    $stmt = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'admin.access' LIMIT 1");
+    $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'admin.access') . ' LIMIT 1');
     $stmt->execute([$tenantId]);
     if (!$stmt->fetch()) {
         $pdo->prepare("INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, 'Accès administration', 'admin.access', 'admin', NOW())")
             ->execute([$tenantId]);
         $permId = (int) $pdo->lastInsertId();
-        $adminRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'tenant_admin' LIMIT 1");
+        $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'tenant_admin') . ' LIMIT 1');
         $adminRole->execute([$tenantId]);
         $adminRoleId = $adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
         if ($adminRoleId && $permId) {
@@ -3050,17 +3060,17 @@ if ($stmt && $stmt->fetch()) {
     }
 
     // Permissions organisation (admin.system est réservé aux rôles site globaux)
-    $stmt = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'admin.organization' LIMIT 1");
+    $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'admin.organization') . ' LIMIT 1');
     $stmt->execute([$tenantId]);
     if (!$stmt->fetch()) {
         $pdo->prepare("INSERT INTO permissions (tenant_id, name, slug, module, scope, created_at) VALUES (?, 'Administration organisationnelle', 'admin.organization', 'admin', 'community', NOW())")->execute([$tenantId]);
     }
-    $stmt = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'community_owner' LIMIT 1");
+    $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'community_owner') . ' LIMIT 1');
     $stmt->execute([$tenantId]);
     if (!$stmt->fetch()) {
         $pdo->prepare("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, 'Propriétaire communauté', 'community_owner', 'Gouvernance complète de la communauté (sans administration plateforme)', 1, 1, 'community', NOW())")->execute([$tenantId]);
         $coId = (int) $pdo->lastInsertId();
-        $ta = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'tenant_admin' LIMIT 1");
+        $ta = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'tenant_admin') . ' LIMIT 1');
         $ta->execute([$tenantId]);
         $taId = $ta->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
         if ($taId) {
@@ -3079,7 +3089,7 @@ if ($stmt && $stmt->fetch()) {
             }
         }
         foreach (['admin.organization', 'admin.access'] as $permSlug) {
-            $p = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1");
+            $p = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $p->execute([$tenantId, $permSlug]);
             $permId = $p->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
             if ($permId) {
@@ -3088,10 +3098,10 @@ if ($stmt && $stmt->fetch()) {
         }
         echo "Rôle community_owner créé (permissions communauté, sans admin.system tenant).\n";
     }
-    $tenantAdminRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'tenant_admin' LIMIT 1");
+    $tenantAdminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'tenant_admin') . ' LIMIT 1');
     $tenantAdminRole->execute([$tenantId]);
     $tenantAdminRoleId = $tenantAdminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
-    $permOrg = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'admin.organization' LIMIT 1");
+    $permOrg = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'admin.organization') . ' LIMIT 1');
     $permOrg->execute([$tenantId]);
     $permOrgId = $permOrg->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
     if ($tenantAdminRoleId && $permOrgId) {
@@ -3099,17 +3109,17 @@ if ($stmt && $stmt->fetch()) {
     }
 
     // Permissions Formation (LMS)
-    $stmt = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'training.view' LIMIT 1");
+    $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'training.view') . ' LIMIT 1');
     $stmt->execute([$tenantId]);
     if (!$stmt->fetch()) {
         foreach ([['training.view', 'Voir les formations', 'training'], ['training.manage', 'Gérer les formations', 'training'], ['training.assign', 'Assigner des formations', 'training']] as $p) {
             $pdo->prepare("INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, ?, ?, ?, NOW())")->execute([$tenantId, $p[1], $p[0], $p[2]]);
         }
-        $adminRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'tenant_admin' LIMIT 1");
+        $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'tenant_admin') . ' LIMIT 1');
         $adminRole->execute([$tenantId]);
         $adminRoleId = $adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
         if ($adminRoleId) {
-            $trainPerms = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug IN ('training.view','training.manage','training.assign')");
+            $trainPerms = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['training.view', 'training.manage', 'training.assign']));
             $trainPerms->execute([$tenantId]);
             while ($row = $trainPerms->fetch(PDO::FETCH_ASSOC)) {
                 $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)")->execute([$adminRoleId, $row['id']]);
@@ -3121,27 +3131,27 @@ if ($stmt && $stmt->fetch()) {
     $run_documents_seed($pdo, $tenantId);
 
     // Permissions Bureau Courrier
-    $stmt = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'courrier.view' LIMIT 1");
+    $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'courrier.view') . ' LIMIT 1');
     $stmt->execute([$tenantId]);
     if (!$stmt->fetch()) {
         foreach ([['courrier.view', 'Voir le Bureau Courrier', 'courrier'], ['courrier.create', 'Créer des documents courrier', 'courrier'], ['courrier.validate', 'Valider des documents', 'courrier'], ['courrier.archive', 'Archiver des documents', 'courrier']] as $p) {
             $pdo->prepare("INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, ?, ?, ?, NOW())")->execute([$tenantId, $p[1], $p[0], $p[2]]);
         }
-        $adminRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'tenant_admin' LIMIT 1");
+        $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'tenant_admin') . ' LIMIT 1');
         $adminRole->execute([$tenantId]);
         $adminRoleId = $adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
         if ($adminRoleId) {
-            $courrierPerms = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug IN ('courrier.view','courrier.create','courrier.validate','courrier.archive')");
+            $courrierPerms = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['courrier.view', 'courrier.create', 'courrier.validate', 'courrier.archive']));
             $courrierPerms->execute([$tenantId]);
             while ($row = $courrierPerms->fetch(PDO::FETCH_ASSOC)) {
                 $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)")->execute([$adminRoleId, $row['id']]);
             }
         }
-        $memberRole = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'member' LIMIT 1");
+        $memberRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'member') . ' LIMIT 1');
         $memberRole->execute([$tenantId]);
         $memberRoleId = $memberRole->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
         if ($memberRoleId) {
-            $pid = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'courrier.view' LIMIT 1");
+            $pid = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'courrier.view') . ' LIMIT 1');
             $pid->execute([$tenantId]);
             $pidRow = $pid->fetch(PDO::FETCH_ASSOC);
             if ($pidRow) {
@@ -3251,7 +3261,7 @@ if ($stmt && $stmt->fetch()) {
     $pdo->prepare("INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at) VALUES (?, 'admin@athena.local', ?, 'Admin', 'ADMIN', ?, ?, 'active', NOW(), NOW())")
         ->execute([$tenantId, $hash, $roleId, $gradeId]);
 
-    $siteGlobalId = $pdo->query("SELECT id FROM roles WHERE tenant_id IS NULL AND slug = 'site_super_admin' LIMIT 1")->fetchColumn();
+    $siteGlobalId = $pdo->query('SELECT id FROM roles WHERE tenant_id IS NULL AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'site_super_admin') . ' LIMIT 1')->fetchColumn();
     if ($siteGlobalId) {
         $pdo->prepare('INSERT IGNORE INTO site_role_assignments (email_normalized, role_id, created_at) VALUES (?, ?, NOW())')
             ->execute(['admin@athena.local', (int) $siteGlobalId]);

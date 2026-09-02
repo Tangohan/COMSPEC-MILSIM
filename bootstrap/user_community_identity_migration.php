@@ -319,6 +319,42 @@ function run_user_community_identity_migration(PDO $pdo, ?callable $log = null):
              WHERE u.tenant_id IS NOT NULL AND u.tenant_id > 0"
         );
     }
+
+    if ($tableExists('user_community_memberships') && $tableExists('tenants')) {
+        try {
+            $pdo->exec(
+                "UPDATE user_community_memberships m
+                 INNER JOIN tenants t ON t.id = m.tenant_id
+                 INNER JOIN user_community_memberships live
+                    ON live.user_id = m.user_id AND live.status = 'active' AND live.id <> m.id
+                 INNER JOIN tenants lt ON lt.id = live.tenant_id AND LOWER(TRIM(lt.slug)) <> 'default'
+                 SET m.status = 'left', m.left_at = COALESCE(m.left_at, NOW()), m.updated_at = NOW()
+                 WHERE m.status = 'active'
+                   AND LOWER(TRIM(t.slug)) = 'default'"
+            );
+            $say('placeholder memberships left when a live community exists');
+        } catch (Throwable $e) {
+            $say('placeholder membership leave skipped: ' . $e->getMessage());
+        }
+    }
+    if ($tableExists('user_community_profiles') && $tableExists('tenants') && $tableExists('user_community_memberships')) {
+        try {
+            $pdo->exec(
+                "UPDATE user_community_profiles p
+                 INNER JOIN tenants t ON t.id = p.tenant_id
+                 INNER JOIN user_community_memberships live
+                    ON live.user_id = p.user_id AND live.status = 'active'
+                 INNER JOIN tenants lt ON lt.id = live.tenant_id AND LOWER(TRIM(lt.slug)) <> 'default'
+                 SET p.display_name = NULL, p.callsign = NULL, p.profile_slug = NULL,
+                     p.athena_identifier = NULL, p.role_id = NULL, p.grade_id = NULL,
+                     p.tenant_member_number = NULL, p.preferred_display_role_id = NULL,
+                     p.updated_at = NOW()
+                 WHERE LOWER(TRIM(t.slug)) = 'default'"
+            );
+        } catch (Throwable $e) {
+            $say('placeholder profile clear skipped: ' . $e->getMessage());
+        }
+    }
 }
 }
 

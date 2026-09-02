@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SqlText;
 
 use PDO;
 
@@ -49,22 +50,24 @@ class TenantRepository
 
     public function findBySlug(string $slug): ?array
     {
-        $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo(), 'slug');
+        $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
     }
 
     /**
-     * Registre des unités / communautés (hors tenant placeholder id = 1).
+     * Registre des unités / communautés (hors tenant système `default`).
      * Exclut les communautés avec `settings.community.registry_listed === false`.
+     * Le tenant id = 1 n’est plus exclu : en production ce n’est pas forcément le placeholder.
      *
      * @return list<array<string, mixed>>
      */
     public function listForRegistry(): array
     {
         $stmt = $this->pdo()->query(
-            'SELECT id, name, slug, community_code, logo_url, settings FROM tenants WHERE id != 1 ORDER BY name ASC'
+            'SELECT id, name, slug, community_code, logo_url, settings FROM tenants ORDER BY name ASC'
         );
         if ($stmt === false) {
             return [];
@@ -75,6 +78,9 @@ class TenantRepository
         }
         $out = [];
         foreach ($rows as $row) {
+            if (strtolower(trim((string) ($row['slug'] ?? ''))) === 'default') {
+                continue;
+            }
             $community = [];
             if (!empty($row['settings']) && is_string($row['settings'])) {
                 $decoded = json_decode($row['settings'], true);
@@ -130,7 +136,8 @@ class TenantRepository
         if ($norm === '' || strlen($norm) < 3) {
             return null;
         }
-        $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE community_code = ? LIMIT 1');
+        $codeEq = SqlText::equals($this->pdo(), 'community_code');
+        $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE ' . $codeEq . ' LIMIT 1');
         $stmt->execute([$norm]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -143,10 +150,12 @@ class TenantRepository
             return false;
         }
         if ($exceptTenantId !== null) {
-            $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE community_code = ? AND id != ? LIMIT 1');
+            $codeEq = SqlText::equals($this->pdo(), 'community_code');
+            $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE ' . $codeEq . ' AND id != ? LIMIT 1');
             $stmt->execute([$normalizedCode, $exceptTenantId]);
         } else {
-            $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE community_code = ? LIMIT 1');
+            $codeEq = SqlText::equals($this->pdo(), 'community_code');
+            $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE ' . $codeEq . ' LIMIT 1');
             $stmt->execute([$normalizedCode]);
         }
 
@@ -169,14 +178,16 @@ class TenantRepository
 
     public function slugExists(string $slug): bool
     {
-        $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo(), 'slug');
+        $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$slug]);
         return (bool) $stmt->fetchColumn();
     }
 
     public function isSlugTakenByOther(int $tenantId, string $slug): bool
     {
-        $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE slug = ? AND id != ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo(), 'slug');
+        $stmt = $this->pdo()->prepare('SELECT 1 FROM tenants WHERE ' . $slugEq . ' AND id != ? LIMIT 1');
         $stmt->execute([$slug, $tenantId]);
 
         return (bool) $stmt->fetchColumn();

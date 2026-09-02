@@ -154,6 +154,7 @@ tests/
 
 scripts/
 ├── cron-run.php
+├── data-snapshot.php       # Copie complète base + fichiers / rollback
 ├── install-system-cron.sh / .ps1
 └── post-deploy-smoke-tests.php
 
@@ -181,7 +182,7 @@ Traductions portail : `lang/fr/`, `lang/en/` (`site.php`, `auth.php`, `errors.ph
 | `mod/UptoDate/` | Seul chemin Overwatch à compiler. |
 | `mod/@COMSPEC_SSE/` | Sources et PBO SSE. |
 | `bootstrap/` + `migrations/` | Schéma et conversions sûres. |
-| `storage/` | Runtime (logs, `app_version.json`) ; uploads hors Git en prod. |
+| `storage/` | Runtime (logs, `app_version.json`, `snapshots/` copies de données) ; uploads hors Git en prod. |
 | `docs/bugs/` | Une note par bug identifié. |
 
 ---

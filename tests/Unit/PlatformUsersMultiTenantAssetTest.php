@@ -23,6 +23,7 @@ final class PlatformUsersMultiTenantAssetTest extends TestCase
         $controller = (string) file_get_contents($root . '/app/Controllers/Admin/System/SystemUsersController.php');
         self::assertStringContainsString('function showPerson', $controller);
         self::assertStringContainsString('listAllMembershipsByEmail', $controller);
+        self::assertStringContainsString('personFileDossiers', $controller);
         self::assertStringContainsString('admin.system.user_person', $controller);
 
         $routes = (string) file_get_contents($root . '/routes/web.php');
@@ -35,7 +36,9 @@ final class PlatformUsersMultiTenantAssetTest extends TestCase
         self::assertStringContainsString('Appartenance active', $view);
         self::assertStringContainsString('Orphelin', $view);
         self::assertStringContainsString('reste visible dans l’annuaire', $view);
+        self::assertStringContainsString('le dossier métier reste propre à chacune', $view);
         self::assertStringNotContainsString('masquée de l’annuaire', $view);
+        self::assertStringNotContainsString('Steam (fiche)', $view);
 
         $list = (string) file_get_contents($root . '/views/admin/system/users.php');
         self::assertStringContainsString('admin/users/person', $list);

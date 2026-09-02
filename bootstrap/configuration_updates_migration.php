@@ -384,6 +384,32 @@ SQL
             'dismissible' => 1,
             'sort_order' => 82,
         ],
+        [
+            'code' => 'LOGIN_ACCUEIL_IMAGES_V1',
+            'version' => '1',
+            'title' => 'Images de l’écran de bienvenue',
+            'description' => 'Choisissez les photos affichées après connexion, sur l’écran de bienvenue. Sans image personnalisée, la photo du portail reste utilisée. Plusieurs photos peuvent défiler à tour de rôle.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/organisation/parametres#accueil-connexion',
+            'estimate_minutes' => 5,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 83,
+        ],
+        [
+            'code' => 'DUTY_POSITION_V1',
+            'version' => '1',
+            'title' => 'Positions En formation et En service actif',
+            'description' => 'Chaque membre actif a une position : En formation à l’arrivée, puis En service actif une fois l’accueil terminé. Attribuez les positions manquantes depuis l’annuaire, d’un clic. Les fonctions (opérateur, instructeur…) ne sont pas retirées.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/users',
+            'estimate_minutes' => 2,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 84,
+        ],
     ];
 
     $upsert = $pdo->prepare(

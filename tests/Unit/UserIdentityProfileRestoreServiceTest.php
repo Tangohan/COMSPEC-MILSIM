@@ -106,4 +106,56 @@ final class UserIdentityProfileRestoreServiceTest extends TestCase
         self::assertSame('Keep', (string) $row['first_name']);
         self::assertSame('Name', (string) $row['last_name']);
     }
+
+    public function testRestoreDoesNotCopyCommunityDossierOntoPlaceholderWhenLiveOrgExists(): void
+    {
+        if (!extension_loaded('pdo_sqlite')) {
+            self::markTestSkipped('pdo_sqlite is required');
+        }
+        $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $pdo->exec('CREATE TABLE tenants (id INTEGER PRIMARY KEY, slug TEXT, name TEXT)');
+        $pdo->exec('CREATE TABLE user_community_memberships (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER,
+            tenant_id INTEGER,
+            status TEXT
+        )');
+        $pdo->exec('CREATE TABLE user_identity_merges (
+            id INTEGER PRIMARY KEY,
+            survivor_user_id INTEGER,
+            absorbed_user_id INTEGER,
+            email TEXT,
+            absorbed_tenant_id INTEGER,
+            steam_collision INTEGER DEFAULT 0,
+            absorbed_steam_id TEXT,
+            absorbed_snapshot TEXT
+        )');
+        $pdo->exec('CREATE TABLE personnel_profiles (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER,
+            tenant_id INTEGER,
+            character_name TEXT,
+            callsign TEXT
+        )');
+        $pdo->exec("INSERT INTO tenants (id, slug, name) VALUES
+            (1, 'default', 'Pas d''organisation'),
+            (7, 'soar', 'SOAR')");
+        $pdo->exec("INSERT INTO user_community_memberships (id, user_id, tenant_id, status) VALUES
+            (1, 1, 7, 'active'),
+            (2, 1, 1, 'active')");
+        $pdo->exec("INSERT INTO user_identity_merges (survivor_user_id, absorbed_user_id, email, absorbed_tenant_id)
+            VALUES (1, 2, 'a@example.test', 1)");
+        $pdo->exec("INSERT INTO personnel_profiles (id, user_id, tenant_id, character_name, callsign) VALUES
+            (11, 1, 1, '', ''),
+            (12, 2, 1, 'Clone RH', 'CLONE')");
+
+        $out = (new UserIdentityProfileRestoreService($pdo))->restoreAll();
+        self::assertSame(1, $out['merges']);
+        self::assertSame(0, $out['personnel']);
+
+        $placeholder = $pdo->query('SELECT * FROM personnel_profiles WHERE user_id = 1 AND tenant_id = 1')->fetch(PDO::FETCH_ASSOC);
+        self::assertNotFalse($placeholder);
+        self::assertSame('', (string) $placeholder['character_name']);
+        self::assertSame('', (string) $placeholder['callsign']);
+    }
 }

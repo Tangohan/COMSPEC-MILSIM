@@ -350,13 +350,31 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     <?php foreach ($featuredUnits as $unit): ?>
                         <?php
                         $logoSrc = $resolveLogo((string) ($unit['logo_url'] ?? ''));
-                        if ($logoSrc === '') {
-                            continue;
+                        $unitName = (string) ($unit['name'] ?? __('home.unit_fallback'));
+                        $initials = '';
+                        foreach (preg_split('/\s+/u', $unitName) ?: [] as $part) {
+                            $part = trim((string) $part);
+                            if ($part === '') {
+                                continue;
+                            }
+                            $initials .= function_exists('mb_strtoupper')
+                                ? mb_strtoupper(mb_substr($part, 0, 1))
+                                : strtoupper(substr($part, 0, 1));
+                            if ((function_exists('mb_strlen') ? mb_strlen($initials) : strlen($initials)) >= 2) {
+                                break;
+                            }
+                        }
+                        if ($initials === '') {
+                            $initials = 'C';
                         }
                         ?>
                         <a href="<?= htmlspecialchars((string) ($unit['href'] ?? url('communities')), ENT_QUOTES, 'UTF-8') ?>" class="who-item block no-underline transition hover:-translate-y-1">
+                            <?php if ($logoSrc !== ''): ?>
                             <img src="<?= htmlspecialchars($logoSrc, ENT_QUOTES, 'UTF-8') ?>" alt="" width="74" height="74" loading="lazy">
-                            <h4><?= htmlspecialchars((string) ($unit['name'] ?? __('home.unit_fallback')), ENT_QUOTES, 'UTF-8') ?></h4>
+                            <?php else: ?>
+                            <div class="who-item__initials" aria-hidden="true"><?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?></div>
+                            <?php endif; ?>
+                            <h4><?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></h4>
                             <span><?= htmlspecialchars(__('home.public_sheet'), ENT_QUOTES, 'UTF-8') ?></span>
                         </a>
                     <?php endforeach; ?>

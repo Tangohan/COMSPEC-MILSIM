@@ -18,6 +18,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
+use App\Support\SqlText;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\AuthService;
@@ -132,7 +133,7 @@ final class InvitationAcceptController
             return Response::redirect(url(''));
         }
 
-        $rstmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $rstmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $fallbackSlugs = ['member', 'atak_operator', 'personnel_manager'];
         $memberRoleId = 0;
         foreach ($fallbackSlugs as $slug) {

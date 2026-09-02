@@ -6,6 +6,9 @@ declare(strict_types=1);
  * RBAC 3 couches : role_layer / scope, rôles site globaux (tenant_id NULL), site_role_assignments.
  * Idempotent — appelée depuis run-migrations.php.
  */
+
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 function run_rbac_three_layer_migration(PDO $pdo): void
 {
     $check = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'roles' AND COLUMN_NAME = 'role_layer' LIMIT 1");
@@ -48,7 +51,7 @@ function run_rbac_three_layer_migration(PDO $pdo): void
     ];
     $insPerm = $pdo->prepare('INSERT INTO permissions (tenant_id, name, slug, module, scope, created_at) VALUES (NULL, ?, ?, ?, ?, NOW())');
     foreach ($sitePerms as $p) {
-        $st = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id IS NULL AND slug = ? LIMIT 1');
+        $st = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id IS NULL AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $st->execute([$p[0]]);
         if (!$st->fetch()) {
             $insPerm->execute([$p[1], $p[0], $p[2], $p[3]]);
@@ -57,7 +60,7 @@ function run_rbac_three_layer_migration(PDO $pdo): void
     }
 
     // --- Rôle site global site_super_admin ---
-    $st = $pdo->prepare("SELECT id FROM roles WHERE tenant_id IS NULL AND slug = 'site_super_admin' LIMIT 1");
+    $st = $pdo->prepare('SELECT id FROM roles WHERE tenant_id IS NULL AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'site_super_admin') . ' LIMIT 1');
     $st->execute();
     $globalSiteRoleRow = $st->fetch(PDO::FETCH_ASSOC);
     $globalSiteRoleId = $globalSiteRoleRow ? (int) $globalSiteRoleRow['id'] : 0;
@@ -72,7 +75,7 @@ function run_rbac_three_layer_migration(PDO $pdo): void
     }
 
     foreach (['admin.system', 'admin.access', 'site.tenants.manage'] as $slug) {
-        $p = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id IS NULL AND slug = ? LIMIT 1');
+        $p = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id IS NULL AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $p->execute([$slug]);
         $pid = $p->fetch(PDO::FETCH_ASSOC);
         if ($pid) {
@@ -86,20 +89,20 @@ function run_rbac_three_layer_migration(PDO $pdo): void
     }
 
     // Backfill scope sur permissions tenant existantes
-    $pdo->exec("UPDATE permissions SET scope = 'community' WHERE tenant_id IS NOT NULL AND slug IN ('admin.organization','admin.access')");
-    $pdo->exec("UPDATE permissions SET scope = 'intra' WHERE tenant_id IS NOT NULL AND slug IN ('forum.view','forum.reply','forum.create_topic','forum.edit_own','forum.delete_own')");
-    $pdo->exec("UPDATE permissions SET scope = 'community' WHERE tenant_id IS NOT NULL AND slug LIKE 'forum.%' AND scope = 'community'");
+    $pdo->exec('UPDATE permissions SET scope = \'community\' WHERE tenant_id IS NOT NULL AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['admin.organization', 'admin.access']));
+    $pdo->exec('UPDATE permissions SET scope = \'intra\' WHERE tenant_id IS NOT NULL AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['forum.view', 'forum.reply', 'forum.create_topic', 'forum.edit_own', 'forum.delete_own']));
+    $pdo->exec('UPDATE permissions SET scope = \'community\' WHERE tenant_id IS NOT NULL AND ' . \App\Support\SqlText::likeLiteral($pdo, 'slug', 'forum.%') . ' AND scope = \'community\'');
 
     // Couches par slug sur rôles tenant existants
-    $pdo->exec("UPDATE roles SET role_layer = 'intra' WHERE tenant_id IS NOT NULL AND slug IN ('member','officer','forum_moderator')");
-    $pdo->exec("UPDATE roles SET role_layer = 'community' WHERE tenant_id IS NOT NULL AND slug IN ('tenant_admin','community_owner')");
-    $pdo->exec("UPDATE roles SET role_layer = 'community' WHERE tenant_id IS NOT NULL AND slug = 'super_admin'");
+    $pdo->exec('UPDATE roles SET role_layer = \'intra\' WHERE tenant_id IS NOT NULL AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['member', 'officer', 'forum_moderator']));
+    $pdo->exec('UPDATE roles SET role_layer = \'community\' WHERE tenant_id IS NOT NULL AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['tenant_admin', 'community_owner']));
+    $pdo->exec('UPDATE roles SET role_layer = \'community\' WHERE tenant_id IS NOT NULL AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'super_admin'));
 
     // --- Migration super_admin (tenant) -> community_owner + site_role_assignments ---
     $tenants = $pdo->query('SELECT id FROM tenants')->fetchAll(PDO::FETCH_COLUMN);
     foreach ($tenants as $tid) {
         $tenantId = (int) $tid;
-        $sa = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'super_admin' LIMIT 1");
+        $sa = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'super_admin') . ' LIMIT 1');
         $sa->execute([$tenantId]);
         $saRow = $sa->fetch(PDO::FETCH_ASSOC);
         if (!$saRow) {
@@ -107,7 +110,7 @@ function run_rbac_three_layer_migration(PDO $pdo): void
         }
         $superAdminId = (int) $saRow['id'];
 
-        $co = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'community_owner' LIMIT 1");
+        $co = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'community_owner') . ' LIMIT 1');
         $co->execute([$tenantId]);
         $coRow = $co->fetch(PDO::FETCH_ASSOC);
         if (!$coRow) {
@@ -120,7 +123,7 @@ function run_rbac_three_layer_migration(PDO $pdo): void
             $coId = (int) $coRow['id'];
         }
 
-        $permSys = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'admin.system' LIMIT 1");
+        $permSys = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'admin.system') . ' LIMIT 1');
         $permSys->execute([$tenantId]);
         $sysPermId = $permSys->fetch(PDO::FETCH_ASSOC);
         $excludePid = $sysPermId ? (int) $sysPermId['id'] : 0;
@@ -153,10 +156,12 @@ function run_rbac_three_layer_migration(PDO $pdo): void
     }
 
     // Retirer admin.system des rôles tenant (tenant_admin) si encore lié par erreur
-    $bad = $pdo->query("SELECT rp.role_id, rp.permission_id FROM role_permissions rp
+    $bad = $pdo->query(
+        'SELECT rp.role_id, rp.permission_id FROM role_permissions rp
         INNER JOIN roles r ON r.id = rp.role_id
         INNER JOIN permissions p ON p.id = rp.permission_id
-        WHERE r.tenant_id IS NOT NULL AND p.tenant_id = r.tenant_id AND p.slug = 'admin.system'");
+        WHERE r.tenant_id IS NOT NULL AND p.tenant_id = r.tenant_id AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'p.slug', 'admin.system')
+    );
     if ($bad) {
         $del = $pdo->prepare('DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?');
         while ($row = $bad->fetch(PDO::FETCH_ASSOC)) {
@@ -167,12 +172,12 @@ function run_rbac_three_layer_migration(PDO $pdo): void
     // Tenants sans community_owner : créer à partir de tenant_admin (gouvernance communauté)
     foreach ($tenants as $tid) {
         $tenantId = (int) $tid;
-        $co = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'community_owner' LIMIT 1");
+        $co = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'community_owner') . ' LIMIT 1');
         $co->execute([$tenantId]);
         if ($co->fetch()) {
             continue;
         }
-        $ta = $pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'tenant_admin' LIMIT 1");
+        $ta = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'tenant_admin') . ' LIMIT 1');
         $ta->execute([$tenantId]);
         $taRow = $ta->fetch(PDO::FETCH_ASSOC);
         if (!$taRow) {

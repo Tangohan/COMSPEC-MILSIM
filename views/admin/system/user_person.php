@@ -50,7 +50,7 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                     <?php else: ?>
                         <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Orphelin (plus d’orga active)</span>
                     <?php endif; ?>
-                    <p class="text-xs text-slate-500"><?= count($memberships) ?> dossier(s) communautaire(s) — chacun reste séparé</p>
+                    <p class="text-xs text-slate-500"><?= count($memberships) ?> communauté(s) — le dossier métier reste propre à chacune</p>
                 </div>
             </div>
 
@@ -89,9 +89,7 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                 $ex = is_array($pack['personnel_extras'] ?? null) ? $pack['personnel_extras'] : [];
                 $grade = is_array($pack['grade'] ?? null) ? $pack['grade'] : null;
                 $assign = is_array($pack['primary_assignment'] ?? null) ? $pack['primary_assignment'] : null;
-                $legal = is_array($pack['legal'] ?? null) ? $pack['legal'] : [];
                 $uid = (int) ($m['id'] ?? 0);
-                $tid = (int) ($m['tenant_id'] ?? 0);
                 $tenantName = (string) ($m['tenant_name'] ?? '');
                 $tenantSlug = (string) ($m['tenant_slug'] ?? '');
                 $st = (string) ($m['status'] ?? '');
@@ -153,16 +151,8 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                             <p class="text-slate-900"><?= $empty($character) ?></p>
                         </div>
                         <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Athena ID (fiche)</p>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Indicatif Athena de la communauté</p>
                             <p class="font-mono text-slate-900"><?= $empty($m['athena_identifier'] ?? null) ?></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Steam (fiche)</p>
-                            <p class="font-mono text-slate-900"><?= $empty($m['steam_id'] ?? null) ?></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Identité civile (fiche)</p>
-                            <p class="text-slate-900"><?= $empty(trim(($legal['first_name'] ?? '') . ' ' . ($legal['last_name'] ?? ''))) ?></p>
                         </div>
                         <div>
                             <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Créé / MAJ</p>

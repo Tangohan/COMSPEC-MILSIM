@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class TenantMiniArticleRepository
@@ -105,9 +106,11 @@ class TenantMiniArticleRepository
             return null;
         }
         try {
+            $slugEq = SqlText::equals($this->pdo, 'slug');
+            $statusPublished = SqlText::inLiterals($this->pdo, 'status', ['published']);
             $stmt = $this->pdo->prepare(
                 "SELECT * FROM tenant_mini_articles
-                 WHERE tenant_id = ? AND slug = ? AND status = 'published'
+                 WHERE tenant_id = ? AND {$slugEq} AND {$statusPublished}
                  LIMIT 1"
             );
             $stmt->execute([$tenantId, $slug]);
@@ -126,13 +129,15 @@ class TenantMiniArticleRepository
         }
         try {
             if ($exceptId !== null && $exceptId > 0) {
+                $slugEq = SqlText::equals($this->pdo, 'slug');
                 $stmt = $this->pdo->prepare(
-                    'SELECT 1 FROM tenant_mini_articles WHERE tenant_id = ? AND slug = ? AND id <> ? LIMIT 1'
+                    'SELECT 1 FROM tenant_mini_articles WHERE tenant_id = ? AND ' . $slugEq . ' AND id <> ? LIMIT 1'
                 );
                 $stmt->execute([$tenantId, $slug, $exceptId]);
             } else {
+                $slugEq = SqlText::equals($this->pdo, 'slug');
                 $stmt = $this->pdo->prepare(
-                    'SELECT 1 FROM tenant_mini_articles WHERE tenant_id = ? AND slug = ? LIMIT 1'
+                    'SELECT 1 FROM tenant_mini_articles WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1'
                 );
                 $stmt->execute([$tenantId, $slug]);
             }

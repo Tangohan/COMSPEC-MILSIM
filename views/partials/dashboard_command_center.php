@@ -349,21 +349,6 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             </div>
         </section>
 
-        <?php if (!$dashSteamLinked): ?>
-        <section class="dash-steam-tile" id="connexion-steam" aria-labelledby="dash-steam-title">
-            <div class="dash-steam-tile__shell">
-                <a class="dash-steam-tile__open" href="<?= htmlspecialchars(url('account/steam/connect'), ENT_QUOTES, 'UTF-8') ?>">
-                    <span class="dash-steam-tile__kicker">Liaison</span>
-                    <strong id="dash-steam-title" class="dash-steam-tile__title">Connexion Steam</strong>
-                    <em class="dash-steam-tile__hint">
-                        Associez votre compte Steam pour être reconnu en jeu. Steam s’ouvre, vous vous connectez, puis vous revenez ici.
-                    </em>
-                    <span class="dash-steam-tile__cta">Se connecter avec Steam</span>
-                </a>
-            </div>
-        </section>
-        <?php endif; ?>
-
         <?php
         $announce_items = is_array($dashboard_announce_items ?? null) ? $dashboard_announce_items : [];
         $announce_heading = 'Alertes & annonces';
@@ -375,17 +360,8 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             ? url('back-office/alerts')
             : null;
         require base_path('views/partials/announce_tiles.php');
-        $doctrine_pending = is_array($doctrine_pending ?? null) ? $doctrine_pending : [];
-        require base_path('views/partials/dashboard_doctrine_pending.php');
         require base_path('views/partials/dashboard_popup_modal.php');
-        require base_path('views/partials/dashboard_mini_articles.php');
         ?>
-
-        <?php if (!empty($can_publish_dashboard_articles)): ?>
-        <div class="dash-hub-stack" aria-label="Publications">
-            <?php require base_path('views/partials/dashboard_quick_articles.php'); ?>
-        </div>
-        <?php endif; ?>
 
         <section class="dash-org-anomaly-tile" id="signaler-anomalie" aria-labelledby="dash-org-anomaly-title">
             <div class="dash-org-anomaly-tile__shell">
@@ -429,6 +405,33 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 </div>
             </div>
         </section>
+        <?php endif; ?>
+
+        <?php if (!$dashSteamLinked): ?>
+        <section class="dash-steam-tile" id="connexion-steam" aria-labelledby="dash-steam-title">
+            <div class="dash-steam-tile__shell">
+                <a class="dash-steam-tile__open" href="<?= htmlspecialchars(url('account/steam/connect'), ENT_QUOTES, 'UTF-8') ?>">
+                    <span class="dash-steam-tile__kicker">Liaison</span>
+                    <strong id="dash-steam-title" class="dash-steam-tile__title">Connexion Steam</strong>
+                    <em class="dash-steam-tile__hint">
+                        Associez votre compte Steam pour être reconnu en jeu. Steam s’ouvre, vous vous connectez, puis vous revenez ici.
+                    </em>
+                    <span class="dash-steam-tile__cta">Se connecter avec Steam</span>
+                </a>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <?php
+        $doctrine_pending = is_array($doctrine_pending ?? null) ? $doctrine_pending : [];
+        require base_path('views/partials/dashboard_doctrine_pending.php');
+        require base_path('views/partials/dashboard_mini_articles.php');
+        ?>
+
+        <?php if (!empty($can_publish_dashboard_articles)): ?>
+        <div class="dash-hub-stack" aria-label="Publications">
+            <?php require base_path('views/partials/dashboard_quick_articles.php'); ?>
+        </div>
         <?php endif; ?>
 
         <?php

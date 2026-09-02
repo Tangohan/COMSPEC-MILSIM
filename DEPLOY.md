@@ -634,8 +634,10 @@ Migration ultérieure possible page par page ; aucun blocage déploiement pour l
 
 ## 7. Rollback rapide
 
-1. Restaurer backup BDD si migrations exécutées.
-2. Restaurer `views/partials/ath_*`, vues `views/admin/organization/*`, `config/back_office_pages.php`, `app/Support/BackOfficePageContext.php`.
+1. Restaurer la copie de données (base + fichiers) :
+   `php scripts/data-snapshot.php restore <id> --yes`
+   (voir `docs/technique/sauvegarde-donnees-completes.md`).
+2. Restaurer `views/partials/ath_*`, vues `views/admin/organization/*`, `config/back_office_pages.php`, `app/Support/BackOfficePageContext.php` si le code a changé.
 3. Redémarrer PHP-FPM ou `opcache_reset`.
 
 ---

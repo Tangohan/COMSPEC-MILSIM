@@ -150,6 +150,18 @@ final class UserIdentityMergeRulesTest extends TestCase
         $pickedRichest = UserIdentityMergeRules::pickPreferredDossierRow([$empty, $filled], 99);
         self::assertNotNull($pickedRichest);
         self::assertSame(2, (int) $pickedRichest['id']);
+
+        $thinPreferred = [
+            'id' => 3,
+            'user_id' => 10,
+            'tenant_id' => 1,
+            'character_name' => '',
+            'callsign' => '',
+            'deployable' => 1,
+        ];
+        $pickedOverThinShell = UserIdentityMergeRules::pickPreferredDossierRow([$thinPreferred, $filled], 1);
+        self::assertNotNull($pickedOverThinShell);
+        self::assertSame(2, (int) $pickedOverThinShell['id']);
     }
 
     public function testFillEmptyKeysNeverCopiesMergedStubNameOrOverwritesFilledFields(): void

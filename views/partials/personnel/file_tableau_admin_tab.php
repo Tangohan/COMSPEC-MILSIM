@@ -330,7 +330,6 @@ foreach ($adminPanels as $panel) {
     $panelName = trim((string) ($panel['name'] ?? 'Bloc administratif'));
     $data = $adminDataByPanel[$panelId] ?? [];
     if (!is_array($data) || $data === []) {
-        $pushRow($sheetRows, $panelName, '(vide)', 'Aucune information saisie');
         continue;
     }
     foreach ($data as $key => $value) {

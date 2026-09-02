@@ -10,6 +10,9 @@ declare(strict_types=1);
  * **Point d’entrée unique** : un seul script à lancer pour tout mettre en place.
  * (Le détail technique reste dans `run-migrations.php`, appelé ci-dessous.)
  *
+ * Production : copier les données avant d’exécuter ce script :
+ *   php scripts/data-snapshot.php create --label=avant-migration
+ *
  * Enchaînement :
  *
  *  1. Chargement `.env` et connexion MySQL

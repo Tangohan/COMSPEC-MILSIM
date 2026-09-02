@@ -51,6 +51,52 @@ final class PortalAccessChoice
             || str_contains($name, "pas d'organisation");
     }
 
+    /**
+     * Appartenance / dossier dont le tenant est le sas « pas d’organisation ».
+     *
+     * @param array<string, mixed> $membership
+     */
+    public static function membershipIsPlaceholder(array $membership): bool
+    {
+        return self::isPlaceholderTenant([
+            'slug' => (string) ($membership['tenant_slug'] ?? $membership['slug'] ?? ''),
+            'name' => (string) ($membership['tenant_name'] ?? $membership['name'] ?? ''),
+        ]);
+    }
+
+    /**
+     * Dossiers à afficher sur la fiche personne : le tenant système disparaît
+     * dès qu’une communauté réelle existe ; il reste le dossier des orphelins.
+     *
+     * @param list<array<string, mixed>> $memberships
+     * @return list<array<string, mixed>>
+     */
+    public static function personFileDossiers(array $memberships): array
+    {
+        $live = [];
+        $placeholders = [];
+        foreach ($memberships as $membership) {
+            if (self::membershipIsPlaceholder($membership)) {
+                $placeholders[] = $membership;
+                continue;
+            }
+            $status = strtolower(trim((string) (
+                $membership['membership_status']
+                ?? $membership['status']
+                ?? 'active'
+            )));
+            if (in_array($status, ['left', 'inactive', 'merged'], true)) {
+                continue;
+            }
+            $live[] = $membership;
+        }
+        if ($live !== []) {
+            return array_values($live);
+        }
+
+        return array_values($placeholders);
+    }
+
     /** Session courante sur un compte sans organisation réelle. */
     public static function isNoOrganizationContext(): bool
     {

@@ -24,8 +24,10 @@ use App\Support\LoginIntendedDestination;
 use App\Support\LoginWelcomeGate;
 use App\Support\PortalAccessChoice;
 use App\Services\Auth\LoginSecurityOtpService;
+use App\Services\Auth\LoginAccueilBackgroundService;
 use App\Services\Auth\LoginWelcomeProfileService;
 use App\Services\Auth\PasswordResetService;
+use App\Support\LoginAccueilImageStorage;
 
 class AuthController
 {
@@ -49,6 +51,7 @@ class AuthController
         private LoginSecurityOtpService $loginSecurityOtpService,
         private LoginWelcomeProfileService $loginWelcomeProfileService,
         private PasswordResetService $passwordResetService,
+        private LoginAccueilBackgroundService $loginAccueilBackgroundService,
     ) {}
 
     /**
@@ -154,6 +157,13 @@ class AuthController
 
         $profile = $this->loginWelcomeProfileService->build($user);
         $brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
+        $tenantId = (int) ($user['tenant_id'] ?? Session::get('tenant_id') ?? 0);
+        $community = [];
+        if ($tenantId > 0) {
+            $settings = $this->tenantRepository->getSettings($tenantId);
+            $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        }
+        $background = $this->loginAccueilBackgroundService->forTenant($tenantId, $community);
 
         return Response::view('auth.welcome', [
             'title' => 'Bienvenue',
@@ -164,8 +174,23 @@ class AuthController
             'initials' => $profile['initials'],
             'accountFacts' => $profile['account_facts'],
             'enterUrl' => url('login/accueil'),
-            'lockBackgroundUrl' => asset_url('assets/images/WES_Operator_V2_re_05.jpg'),
+            'lockBackgroundUrls' => $background['urls'],
+            'lockBackgroundAlts' => $background['alts'],
+            'lockBackgroundRotate' => $background['rotate'],
+            'lockBackgroundIntervalMs' => $background['interval_ms'],
         ]);
+    }
+
+    public function streamWelcomeBackground(Request $request, array $params = []): Response
+    {
+        if (!$this->authService->check()) {
+            return (new Response())->setStatusCode(404)->setBody('Photo introuvable.');
+        }
+        $viewerTenantId = (int) Session::get('tenant_id');
+        $imageTenantId = (int) ($params['tenantId'] ?? 0);
+        $file = basename(rawurldecode((string) ($params['file'] ?? '')));
+
+        return LoginAccueilImageStorage::stream($viewerTenantId, $imageTenantId, $file);
     }
 
     public function enterWelcome(Request $request, array $params = []): Response

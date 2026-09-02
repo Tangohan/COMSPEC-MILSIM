@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 final class CooperationCatalogRepository
@@ -47,8 +48,9 @@ final class CooperationCatalogRepository
         if (!$this->tableExists() || $slug === '') {
             return null;
         }
+        $slugEq = SqlText::equals($this->pdo, 'slug');
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM cooperation_catalog_entries WHERE tenant_id = ? AND slug = ? LIMIT 1'
+            'SELECT * FROM cooperation_catalog_entries WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1'
         );
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);

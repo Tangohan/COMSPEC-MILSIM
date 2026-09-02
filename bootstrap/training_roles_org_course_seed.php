@@ -9,6 +9,8 @@ declare(strict_types=1);
  * @param PDO $pdo Connexion SQL (comme run-migrations.php)
  */
 
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 function training_roles_org_course_thumbnail_path(): string
 {
     return 'assets/images/armee-de-terre-recrute-chef-equipe-specialiste-terrain-infrastructure.jpg';
@@ -22,7 +24,7 @@ function training_roles_org_course_banner_path(): string
 /** Met à jour miniature et bannière pour un parcours déjà présent (ex. après ajout d’assets). */
 function training_roles_org_sync_course_cover(PDO $pdo, int $tenantId, string $slug): void
 {
-    $st = $pdo->prepare('UPDATE training_courses SET thumbnail_path = ?, banner_path = ? WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $st = $pdo->prepare('UPDATE training_courses SET thumbnail_path = ?, banner_path = ? WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $st->execute([
         training_roles_org_course_thumbnail_path(),
         training_roles_org_course_banner_path(),
@@ -103,7 +105,7 @@ function training_roles_org_resolve_author_user_id(PDO $pdo, int $tenantId): int
 
 function training_roles_org_course_exists(PDO $pdo, int $tenantId, string $slug): bool
 {
-    $st = $pdo->prepare('SELECT 1 FROM training_courses WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $st = $pdo->prepare('SELECT 1 FROM training_courses WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $st->execute([$tenantId, $slug]);
 
     return (bool) $st->fetchColumn();
