@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -45,7 +46,17 @@ final class CommunityReportController
         }
 
         $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
-        $targetType = (string) ($input['target_type'] ?? '');
+        $targetType = strtolower(trim((string) ($input['target_type'] ?? '')));
+
+        if ($targetType === 'site_support_request') {
+            $gate = Gate::getInstance();
+            if (!$gate->allows('admin.organization') && !$gate->allows('admin.access')) {
+                return Response::json([
+                    'success' => false,
+                    'error' => 'Seuls les organisateurs de la communauté peuvent contacter l’administration du site.',
+                ], 403);
+            }
+        }
 
         $result = $this->communityReportService->submit($tenantId, $userId, $targetType, $input, $host);
         if (!$result['ok']) {

@@ -34,6 +34,8 @@ declare(strict_types=1);
 
 $currentTid = (int) ($currentTid ?? \App\Core\Session::get('tenant_id') ?? 0);
 
+$canAdmin = function_exists('can') && (can('admin.organization') || can('admin.access'));
+
 $mb = is_array($mission_briefing ?? null) ? $mission_briefing : null;
 $mbOp = $mb['next_op'] ?? null;
 $mbOps = is_array($mb['upcoming_ops'] ?? null) ? $mb['upcoming_ops'] : [];
@@ -403,6 +405,29 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 </div>
             </div>
         </section>
+
+        <?php if (!empty($canAdmin)): ?>
+        <section class="dash-org-anomaly-tile dash-site-support-tile" id="contacter-admin-site" aria-labelledby="dash-site-support-title">
+            <div class="dash-org-anomaly-tile__shell">
+                <button
+                    type="button"
+                    class="dash-org-anomaly-tile__open"
+                    data-dash-rail-open-external="site-support"
+                    aria-controls="dash-rail-nested-site-support"
+                >
+                    <span class="dash-org-anomaly-tile__kicker">Administration site</span>
+                    <strong id="dash-site-support-title" class="dash-org-anomaly-tile__title">Contacter l’administration du site</strong>
+                    <em class="dash-org-anomaly-tile__hint">Compte fantôme, dysfonctionnement, problème RH ou toute demande transversale aux admins du site.</em>
+                    <span class="dash-org-anomaly-tile__cta">Ouvrir le formulaire</span>
+                </button>
+                <div class="dash-org-anomaly-tile__form">
+                    <p class="dash-org-anomaly-tile__kicker">Administration site</p>
+                    <h2 class="dash-org-anomaly-tile__title">Contacter l’administration du site</h2>
+                    <?php require base_path('views/partials/dashboard_site_support_form.php'); ?>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <?php
         $showLiaisonStrip = $canViewAtakOperators;
