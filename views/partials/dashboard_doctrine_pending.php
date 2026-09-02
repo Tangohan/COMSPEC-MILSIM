@@ -1,12 +1,16 @@
-$doctrinePending = $doctrine_pending ?? [];
+<?php
+declare(strict_types=1);
+
+$doctrinePending = is_array($doctrine_pending ?? null) ? $doctrine_pending : [];
 if ($doctrinePending === []) {
     return;
 }
+$doctrinePendingCount = count($doctrinePending);
 ?>
 <section class="dash-doctrine-pending" id="documents-a-prendre-en-compte" aria-labelledby="dash-doctrine-pending-title">
     <div class="rounded-2xl border border-amber-200 bg-amber-50/80 p-5 shadow-sm">
         <h2 id="dash-doctrine-pending-title" class="text-sm font-black uppercase tracking-[0.14em] text-amber-950">Documents à prendre en compte</h2>
-        <p class="mt-1 text-sm text-amber-900/90"><?= count($doctrinePending) ?> document<?= count($doctrinePending) > 1 ? 's' : '' ?> nécessite<?= count($doctrinePending) > 1 ? 'nt' : '' ?> votre attention.</p>
+        <p class="mt-1 text-sm text-amber-900/90"><?= $doctrinePendingCount ?> document<?= $doctrinePendingCount > 1 ? 's' : '' ?> nécessite<?= $doctrinePendingCount > 1 ? 'nt' : '' ?> votre attention.</p>
         <ul class="mt-4 space-y-2">
             <?php foreach ($doctrinePending as $item): ?>
             <li>
