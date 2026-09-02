@@ -7,6 +7,9 @@ declare(strict_types=1);
  * permission invitations.send, rôle recruiter.
  * Idempotent — appelée depuis run-migrations.php.
  */
+
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 function run_transactional_email_migration(PDO $pdo): void
 {
     $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'email_verified_at' LIMIT 1");
@@ -84,7 +87,7 @@ function run_transactional_email_migration(PDO $pdo): void
 
     while ($row = $tenants->fetch(PDO::FETCH_ASSOC)) {
         $tenantId = (int) $row['id'];
-        $st = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'invitations.send' LIMIT 1");
+        $st = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'invitations.send') . ' LIMIT 1');
         $st->execute([$tenantId]);
         $permRow = $st->fetch(PDO::FETCH_ASSOC);
         if (!$permRow) {
@@ -95,7 +98,7 @@ function run_transactional_email_migration(PDO $pdo): void
         }
 
         foreach (['tenant_admin', 'community_owner'] as $slug) {
-            $r = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $r = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $r->execute([$tenantId, $slug]);
             $rid = $r->fetchColumn();
             if ($rid) {
@@ -103,7 +106,7 @@ function run_transactional_email_migration(PDO $pdo): void
             }
         }
 
-        $recruiter = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $recruiter = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $recruiter->execute([$tenantId, 'recruiter']);
         $recruiterId = $recruiter->fetchColumn();
         if (!$recruiterId) {

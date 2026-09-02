@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class AtakMapRepository
@@ -31,7 +32,8 @@ class AtakMapRepository
 
     public function getBySlug(string $slug): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_maps WHERE slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $stmt = $this->pdo->prepare('SELECT * FROM atak_maps WHERE ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {

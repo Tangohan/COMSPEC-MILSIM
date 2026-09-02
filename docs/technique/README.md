@@ -29,6 +29,7 @@ Sources Markdown du dépôt mod : `mod/UptoDate/docs/`.
 | [Architecture applicative](architecture.md) | Point d’entrée HTTP, routage, middlewares, multi-tenant |
 | [Structure du dépôt](structure-du-depot.md) | Arborescence et rôles des répertoires |
 | [Configuration et déploiement](configuration-et-deploiement.md) | Variables d’environnement, migrations, production |
+| [Sauvegarde complète des données](sauvegarde-donnees-completes.md) | Copie base + fichiers et rollback (`scripts/data-snapshot.php`) |
 | [Pilotage mensuel & fiabilisation déploiements](pilotage-mensuel-fiabilisation-deploiements.md) | KPI mensuels, workflow idempotent pré-prod → prod, smoke tests et rollback minimal |
 | [Modules fonctionnels](modules-fonctionnels.md) | Cartographie fonctionnalités ↔ zones du code |
 | [Sécurité et permissions](securite-et-permissions.md) | Auth, RBAC, API tactiques, en-têtes |

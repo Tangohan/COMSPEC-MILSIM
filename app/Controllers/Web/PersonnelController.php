@@ -425,9 +425,9 @@ class PersonnelController
             $this->userProfileRepository->ensureRow($uid);
         }
 
-        $extras = $this->personnelExtrasRepository->getByUserId($uid) ?? [];
+        $extras = $this->personnelExtrasRepository->getByUserId($uid, (int) $tenantId) ?? [];
         $profile = $this->personnelExtrasRepository->getProfileByUserId($uid);
-        $personnelProfile = $this->personnelProfileRepository->getByUserId($uid);
+        $personnelProfile = $this->personnelProfileRepository->getByUserId($uid, (int) $tenantId);
         $latestEnlistment = $this->enlistmentRepository->findLatestBySubmitter((int) $tenantId, $uid);
         $civilIdentity = $this->resolveCivilIdentity($profile, $target, $latestEnlistment);
         $civilSourceLabel = match ($civilIdentity['source'] ?? null) {
@@ -460,6 +460,7 @@ class PersonnelController
         $personnelAssignmentHistoryUnitTotals = [];
         if ($this->personnelAssignmentRepository->personnelAssignmentsTableExists()) {
             $histRaw = $this->personnelAssignmentRepository->listAssignmentHistoryForTenantUser((int) $tenantId, $uid, 120);
+            $histRaw = \App\Services\Personnel\PersonnelAssignmentHistoryCoalescer::coalesceForDisplay($histRaw);
             $personnelAssignmentHistory = $this->personnelAssignmentRepository->enrichAssignmentHistoryWithDurations($histRaw);
             $personnelAssignmentHistoryUnitTotals = $this->personnelAssignmentRepository->sumDurationDaysByUnit($personnelAssignmentHistory);
         }
@@ -639,9 +640,16 @@ class PersonnelController
             || $gateInst->allows('admin.access')
             || $gateInst->allows('site.support');
 
-        $senioritySummary = ($isSelf || $canStaffView)
-            ? $this->senioritySummaryService->personnelSenioritySummary((int) $tenantId, $uid)
-            : ['global' => null, 'detail' => []];
+        if ($isSelf || $canStaffView) {
+            try {
+                Container::get(\App\Services\Personnel\SeniorityDossierInferenceSyncService::class)
+                    ->syncForUser((int) $tenantId, $uid, false);
+            } catch (\Throwable) {
+            }
+            $senioritySummary = $this->senioritySummaryService->personnelSenioritySummary((int) $tenantId, $uid);
+        } else {
+            $senioritySummary = ['global' => null, 'detail' => []];
+        }
         $seniorityGlobal = $senioritySummary['global'] ?? null;
         $seniorityDetailLines = is_array($senioritySummary['detail'] ?? null) ? $senioritySummary['detail'] : [];
 

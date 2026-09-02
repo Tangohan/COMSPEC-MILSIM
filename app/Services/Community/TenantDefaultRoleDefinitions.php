@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Community;
 
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -655,7 +656,7 @@ final class TenantDefaultRoleDefinitions
         if ($map === []) {
             return;
         }
-        $upd = $pdo->prepare('UPDATE roles SET label_en = ? WHERE tenant_id = ? AND slug = ? AND is_system = 1');
+        $upd = $pdo->prepare('UPDATE roles SET label_en = ? WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' AND is_system = 1');
         $run = static function (int $tid) use ($map, $upd): void {
             if ($tid <= 0) {
                 return;
@@ -686,7 +687,7 @@ final class TenantDefaultRoleDefinitions
         if ($tenantId <= 0) {
             return;
         }
-        $upd = $pdo->prepare('UPDATE roles SET name = ?, description = ? WHERE tenant_id = ? AND slug = ? AND is_system = 1');
+        $upd = $pdo->prepare('UPDATE roles SET name = ?, description = ? WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' AND is_system = 1');
         foreach (array_merge(self::governanceRoles(), self::operationalRoles(), self::organicStaffRoles()) as $row) {
             $upd->execute([
                 $row['name'],

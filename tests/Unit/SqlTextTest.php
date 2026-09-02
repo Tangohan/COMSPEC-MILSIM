@@ -21,6 +21,14 @@ final class SqlTextTest extends TestCase
             SqlText::normalizedEquals($pdo, 'u.email')
         );
         self::assertSame(
+            'r.slug IN (?, ?)',
+            SqlText::inPlaceholders($pdo, 'r.slug', 2)
+        );
+        self::assertSame(
+            'slug LIKE \'org-%\'',
+            SqlText::likeLiteral($pdo, 'slug', 'org-%')
+        );
+        self::assertSame(
             'u.status = ?',
             SqlText::equals($pdo, 'u.status')
         );
@@ -43,6 +51,29 @@ final class SqlTextTest extends TestCase
         $status = SqlText::equals($pdo, 'u.status');
         self::assertStringContainsString('u.status COLLATE utf8mb4_unicode_ci', $status);
         self::assertStringContainsString('CONVERT(? USING utf8mb4)', $status);
+
+        $like = SqlText::like($pdo, 'display_name');
+        self::assertStringContainsString('LIKE (CONVERT(? USING utf8mb4)', $like);
+
+        $slugLit = SqlText::equalsLiteral($pdo, 't.slug', 'default');
+        self::assertStringContainsString("'default' COLLATE utf8mb4_unicode_ci", $slugLit);
+
+        $permLit = SqlText::equalsLiteral($pdo, 'p.slug', 'admin.access');
+        self::assertStringContainsString("'admin.access' COLLATE utf8mb4_unicode_ci", $permLit);
+
+        $inPh = SqlText::inPlaceholders($pdo, 'r.slug', 2);
+        self::assertStringContainsString('r.slug COLLATE utf8mb4_unicode_ci', $inPh);
+        self::assertSame(2, substr_count($inPh, 'CONVERT(? USING utf8mb4)'));
+
+        $inLit = SqlText::inLiterals($pdo, 'p.slug', ['forum.view', 'training.manage']);
+        self::assertStringContainsString("'forum.view' COLLATE utf8mb4_unicode_ci", $inLit);
+
+        $likeLit = SqlText::likeLiteral($pdo, 'slug', 'org-%');
+        self::assertStringContainsString("'org-%' COLLATE utf8mb4_unicode_ci", $likeLit);
+
+        $aliasEq = SqlText::normalizedCoalesceEmptyEquals($pdo, 'alias');
+        self::assertStringContainsString('COALESCE(alias', $aliasEq);
+        self::assertStringContainsString('COLLATE utf8mb4_unicode_ci', $aliasEq);
 
         $slugNotDefault = SqlText::notEqualsLiteral($pdo, 't.slug', 'default');
         self::assertStringContainsString('t.slug COLLATE utf8mb4_unicode_ci', $slugNotDefault);

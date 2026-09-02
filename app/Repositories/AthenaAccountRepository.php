@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
 use App\Support\SilentSchemaMigration;
+use App\Support\SqlText;
 use PDO;
 
 final class AthenaAccountRepository
@@ -23,7 +24,8 @@ final class AthenaAccountRepository
         if ($email === '') {
             return null;
         }
-        $st = $this->pdo()->prepare('SELECT * FROM athena_accounts WHERE email = ? LIMIT 1');
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'email');
+        $st = $this->pdo()->prepare('SELECT * FROM athena_accounts WHERE ' . $emailEq . ' LIMIT 1');
         $st->execute([$email]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
 
@@ -203,10 +205,11 @@ final class AthenaAccountRepository
 
     public function findLatestOtp(string $email): ?array
     {
+        $emailEq = SqlText::normalizedEquals($this->pdo(), 'email');
         $st = $this->pdo()->prepare(
-            'SELECT * FROM game_auth_otps WHERE email = ? AND consumed_at IS NULL ORDER BY id DESC LIMIT 1'
+            'SELECT * FROM game_auth_otps WHERE ' . $emailEq . ' AND consumed_at IS NULL ORDER BY id DESC LIMIT 1'
         );
-        $st->execute([$email]);
+        $st->execute([strtolower(trim($email))]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;

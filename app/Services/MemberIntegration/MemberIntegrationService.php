@@ -216,6 +216,14 @@ final class MemberIntegrationService
         }
         $this->integrations->update($tenantId, $integrationId, $update);
 
+        if ($newStatus === MemberIntegrationCatalog::STATUS_COMPLETED && (string) $row['status'] !== MemberIntegrationCatalog::STATUS_COMPLETED) {
+            try {
+                $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+                $duty->applyActiveDuty($tenantId, $userId, $actorUserId ?? 0);
+            } catch (Throwable) {
+            }
+        }
+
         return $this->integrations->findForTenant($tenantId, $integrationId);
     }
 

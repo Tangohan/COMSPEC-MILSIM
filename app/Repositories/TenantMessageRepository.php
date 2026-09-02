@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class TenantMessageRepository
@@ -32,14 +33,16 @@ class TenantMessageRepository
     public function findStaffUserIdsForTenant(int $tenantId): array
     {
         $ids = [];
-        $slugPlaceholders = implode(',', array_fill(0, count(self::MESSAGE_STAFF_ROLE_SLUGS), '?'));
+        $slugIn = SqlText::inPlaceholders($this->pdo, 'r.slug', count(self::MESSAGE_STAFF_ROLE_SLUGS));
+        $statusActive = SqlText::equalsLiteral($this->pdo, 'u.status', 'active');
+        $permSlugEq = SqlText::equals($this->pdo, 'p.slug');
         $slugParams = self::MESSAGE_STAFF_ROLE_SLUGS;
         try {
             $stmt = $this->pdo->prepare(
                 "SELECT DISTINCT u.id FROM users u
                 INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-                WHERE u.tenant_id = ? AND u.status = 'active'
-                AND r.slug IN ({$slugPlaceholders})"
+                WHERE u.tenant_id = ? AND {$statusActive}
+                AND {$slugIn}"
             );
             $stmt->execute(array_merge([$tenantId], $slugParams));
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -59,8 +62,8 @@ class TenantMessageRepository
                     "SELECT DISTINCT u.id FROM users u
                     INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                     INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                    WHERE u.tenant_id = ? AND u.status = 'active'
-                    AND r.slug IN ({$slugPlaceholders})"
+                    WHERE u.tenant_id = ? AND {$statusActive}
+                    AND {$slugIn}"
                 );
                 $stmt->execute(array_merge([$tenantId], $slugParams));
                 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -77,7 +80,7 @@ class TenantMessageRepository
                 INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
                 INNER JOIN role_permissions rp ON rp.role_id = r.id
                 INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-                WHERE u.tenant_id = ? AND u.status = \'active\' AND p.slug = ?'
+                WHERE u.tenant_id = ? AND ' . $statusActive . ' AND ' . $permSlugEq
             );
             $stmt->execute([$tenantId, $permSlug]);
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -96,7 +99,7 @@ class TenantMessageRepository
                     INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
                     INNER JOIN role_permissions rp ON rp.role_id = r.id
                     INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-                    WHERE u.tenant_id = ? AND u.status = \'active\' AND p.slug = ?'
+                    WHERE u.tenant_id = ? AND ' . $statusActive . ' AND ' . $permSlugEq
                 );
                 $stmt->execute([$tenantId, $permSlug]);
                 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {

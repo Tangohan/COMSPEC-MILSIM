@@ -66,6 +66,7 @@ use App\Services\Community\TenantOnboardingHealthService;
 use App\Services\Personnel\MatriculeService;
 use App\Services\Training\TrainingService;
 use App\Support\DemoPortalAccounts;
+use App\Support\SqlText;
 
 const DEMO_TENANT_SLUG = DemoPortalAccounts::TENANT_SLUG;
 const DEMO_TENANT_NAME = DemoPortalAccounts::TENANT_NAME;
@@ -990,7 +991,7 @@ function demo_revoke_site_roles_for_demo_emails(PDO $pdo): void
  */
 function demo_ensure_unit(PDO $pdo, int $tenantId, ?int $parentId, string $name, string $slug, string $type, int $displayOrder = 0): int
 {
-    $chk = $pdo->prepare('SELECT id FROM units WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $chk = $pdo->prepare('SELECT id FROM units WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $chk->execute([$tenantId, $slug]);
     $id = (int) ($chk->fetchColumn() ?: 0);
     if ($id > 0) {
@@ -1818,7 +1819,7 @@ function demo_seed_announcements(
         $catId = (int) $root['id'];
         $title = '[Démo] Annonce — ouverture des postes';
         $slug = 'demo-annonce-ouverture-postes';
-        $chkT = $pdo->prepare('SELECT id FROM forum_topics WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $chkT = $pdo->prepare('SELECT id FROM forum_topics WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $chkT->execute([$tenantId, $slug]);
         if ($chkT->fetchColumn()) {
             echo "  [SKIP] Sujet forum « {$title} »\n";

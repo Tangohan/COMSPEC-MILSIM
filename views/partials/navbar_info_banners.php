@@ -139,13 +139,6 @@ if ($json === false) {
       desc.textContent = a.body;
       content.appendChild(desc);
     }
-    if (a.scope === 'platform') {
-      var v = document.createElement('span');
-      v.className = 'nib-verified';
-      v.title = 'Annonce officielle du site Athena';
-      v.innerHTML = '<svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Site vérifié';
-      content.appendChild(v);
-    }
     if (a.cta_url && a.cta_label) {
       var cta = document.createElement('a');
       cta.className = 'banner-cta';
@@ -155,8 +148,18 @@ if ($json === false) {
     }
     el.appendChild(content);
 
+    var end = document.createElement('div');
+    end.className = 'banner-end';
+    if (a.scope === 'platform') {
+      var v = document.createElement('span');
+      v.className = 'nib-verified';
+      v.title = 'Annonce officielle du site Athena';
+      v.innerHTML = '<svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Site vérifié';
+      end.appendChild(v);
+    }
     var canDismiss = a.dismissible !== false && a.dismissible !== 0;
-    if (canDismiss) el.appendChild(closeBtn(a, el));
+    if (canDismiss) end.appendChild(closeBtn(a, el));
+    if (end.childNodes.length) el.appendChild(end);
     return el;
   }
 

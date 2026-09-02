@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 final class TrainingFormationCustomPageRepository
@@ -24,7 +25,7 @@ final class TrainingFormationCustomPageRepository
 
         $q = trim((string) ($filters['q'] ?? ''));
         if ($q !== '') {
-            $sql .= ' AND (p.title LIKE ? OR p.slug LIKE ? OR p.summary LIKE ?)';
+            $sql .= ' AND (' . SqlText::like($this->pdo, 'p.title') . ' OR ' . SqlText::like($this->pdo, 'p.slug') . ' OR ' . SqlText::like($this->pdo, 'p.summary') . ')';
             $like = '%' . $q . '%';
             $params[] = $like;
             $params[] = $like;
@@ -116,7 +117,8 @@ final class TrainingFormationCustomPageRepository
 
     public function findPublishedBySlug(int $tenantId, string $slug): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM training_formation_custom_pages WHERE tenant_id = ? AND slug = ? AND is_published = 1 AND archived_at IS NULL LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $stmt = $this->pdo->prepare('SELECT * FROM training_formation_custom_pages WHERE tenant_id = ? AND ' . $slugEq . ' AND is_published = 1 AND archived_at IS NULL LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -125,11 +127,12 @@ final class TrainingFormationCustomPageRepository
 
     public function slugExistsForTenant(int $tenantId, string $slug, ?int $exceptId = null): bool
     {
+        $slugEq = SqlText::equals($this->pdo, 'slug');
         if ($exceptId !== null) {
-            $stmt = $this->pdo->prepare('SELECT 1 FROM training_formation_custom_pages WHERE tenant_id = ? AND slug = ? AND id <> ? LIMIT 1');
+            $stmt = $this->pdo->prepare('SELECT 1 FROM training_formation_custom_pages WHERE tenant_id = ? AND ' . $slugEq . ' AND id <> ? LIMIT 1');
             $stmt->execute([$tenantId, $slug, $exceptId]);
         } else {
-            $stmt = $this->pdo->prepare('SELECT 1 FROM training_formation_custom_pages WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $stmt = $this->pdo->prepare('SELECT 1 FROM training_formation_custom_pages WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
             $stmt->execute([$tenantId, $slug]);
         }
 

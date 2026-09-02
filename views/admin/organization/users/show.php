@@ -12,6 +12,8 @@ $showPlatformDiagnostics = $showPlatformDiagnostics ?? false;
 $isAnonymizedAccount = (bool) ($isAnonymizedAccount ?? false);
 $canRequestAccountDeletion = (bool) ($canRequestAccountDeletion ?? false);
 $pendingPurgeRequest = is_array($pendingPurgeRequest ?? null) ? $pendingPurgeRequest : null;
+$dutyPositionSlug = is_string($dutyPositionSlug ?? null) ? $dutyPositionSlug : null;
+$dutyPositionLabel = trim((string) ($dutyPositionLabel ?? ''));
 
 if (!$user) {
     echo '<p>Utilisateur introuvable.</p>';
@@ -86,7 +88,17 @@ foreach ($roles as $rr) {
         $roleNames[] = (string) ($rr['name'] ?? '');
     }
 }
-$roleNames = array_values(array_filter($roleNames, static fn (string $n): bool => trim($n) !== ''));
+$roleNames = array_values(array_filter($roleNames, static function (string $n) use ($dutyPositionLabel): bool {
+    $trimmed = trim($n);
+    if ($trimmed === '') {
+        return false;
+    }
+    if ($dutyPositionLabel !== '' && $trimmed === $dutyPositionLabel) {
+        return false;
+    }
+
+    return !in_array($trimmed, ['En formation', 'En service actif'], true);
+}));
 
 $accScore = (int) ($completenessAccount['score'] ?? 100);
 $pScore = $completenessPersonnel !== null ? (int) ($completenessPersonnel['score'] ?? 100) : null;
@@ -136,6 +148,9 @@ $flashWarn = \App\Core\Session::getFlash('warning');
                 <?php if ($profileIncomplete): ?>
                 <span class="ath-tag ath-tag--warn">Profil à compléter</span>
                 <?php endif; ?>
+                <?php if ($dutyPositionLabel !== ''): ?>
+                <span class="ath-tag ath-tag--ok"><?= $h($dutyPositionLabel) ?></span>
+                <?php endif; ?>
             </div>
         </div>
         <div class="ath-member-show__meta-actions">
@@ -167,6 +182,26 @@ $flashWarn = \App\Core\Session::getFlash('warning');
         <form method="post" action="<?= $h(url('back-office/users/' . $uid . '/resend-verification')) ?>" class="ath-member-show__inline-form">
             <?= \App\Core\Csrf::field() ?>
             <button type="submit" class="ath-btn ath-btn--solid">Renvoyer le lien de confirmation</button>
+        </form>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!$isServiceAccount && $dutyPositionSlug === \App\Services\Personnel\PersonnelDutyPositionService::SLUG_TRAINING): ?>
+    <div class="ath-banner-warn ath-member-show__callout">
+        <p class="ath-banner-warn__kicker">En formation</p>
+        <p class="ath-banner-warn__text">Ce membre a rejoint la communauté : sa position est « En formation » jusqu’à la fin de l’accueil. Quand il est opérationnel, passez-le en service actif. Les fonctions (opérateur, instructeur…) restent en place.</p>
+        <form method="post" action="<?= $h(url('back-office/users/' . $uid . '/duty-position')) ?>" class="ath-member-show__inline-form">
+            <?= \App\Core\Csrf::field() ?>
+            <button type="submit" class="ath-btn ath-btn--solid">Passer en service actif</button>
+        </form>
+    </div>
+    <?php elseif (!$isServiceAccount && $dutyPositionSlug === null): ?>
+    <div class="ath-banner-warn ath-member-show__callout">
+        <p class="ath-banner-warn__kicker">Position manquante</p>
+        <p class="ath-banner-warn__text">Ce membre n’a pas encore de position. Attribuez « En service actif » s’il est déjà opérationnel, ou laissez le parcours d’accueil le placer en formation.</p>
+        <form method="post" action="<?= $h(url('back-office/users/' . $uid . '/duty-position')) ?>" class="ath-member-show__inline-form">
+            <?= \App\Core\Csrf::field() ?>
+            <button type="submit" class="ath-btn ath-btn--solid">Passer en service actif</button>
         </form>
     </div>
     <?php endif; ?>
@@ -321,6 +356,10 @@ $flashWarn = \App\Core\Session::getFlash('warning');
                     <div class="ath-member-show__data-row">
                         <dt>Téléphone</dt>
                         <dd><?= $displayValue($userProfile['phone'] ?? null) ?></dd>
+                    </div>
+                    <div class="ath-member-show__data-row">
+                        <dt>Position</dt>
+                        <dd><?= $dutyPositionLabel !== '' ? $h($dutyPositionLabel) : '<span class="ath-member-show__empty">Non attribuée</span>' ?></dd>
                     </div>
                     <div class="ath-member-show__data-row">
                         <dt>Rôles dans l’unité</dt>

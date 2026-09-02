@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class CategoryRepository
@@ -94,7 +95,8 @@ class CategoryRepository
 
     public function slugExists(int $tenantId, string $slug, ?int $excludeId = null): bool
     {
-        $sql = 'SELECT 1 FROM categories WHERE tenant_id = ? AND slug = ?';
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $sql = 'SELECT 1 FROM categories WHERE tenant_id = ? AND ' . $slugEq;
         $params = [$tenantId, $slug];
         if ($excludeId !== null) {
             $sql .= ' AND id != ?';

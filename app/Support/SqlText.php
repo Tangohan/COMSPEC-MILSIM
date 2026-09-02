@@ -88,7 +88,7 @@ final class SqlText
     public static function equalsLiteral(PDO $pdo, string $columnExpr, string $value): string
     {
         self::assertColumnExpr($columnExpr);
-        self::assertTokenLiteral($value);
+        self::assertIdentifierLiteral($value);
         $quoted = "'" . str_replace("'", "''", $value) . "'";
         if (!self::isMysqlFamily($pdo)) {
             return $columnExpr . ' = ' . $quoted;
@@ -103,7 +103,7 @@ final class SqlText
     public static function notEqualsLiteral(PDO $pdo, string $columnExpr, string $value): string
     {
         self::assertColumnExpr($columnExpr);
-        self::assertTokenLiteral($value);
+        self::assertIdentifierLiteral($value);
         $quoted = "'" . str_replace("'", "''", $value) . "'";
         if (!self::isMysqlFamily($pdo)) {
             return $columnExpr . ' <> ' . $quoted;
@@ -119,7 +119,7 @@ final class SqlText
     {
         self::assertColumnExpr($first);
         self::assertColumnExpr($second);
-        self::assertTokenLiteral($value);
+        self::assertIdentifierLiteral($value);
         $expr = 'COALESCE(' . $first . ', ' . $second . ')';
         $quoted = "'" . str_replace("'", "''", $value) . "'";
         if (!self::isMysqlFamily($pdo)) {
@@ -172,7 +172,7 @@ final class SqlText
         }
         $quoted = [];
         foreach ($literals as $literal) {
-            if (!is_string($literal) || !preg_match('/^[a-z][a-z0-9_]*$/', $literal)) {
+            if (!is_string($literal) || !preg_match('/^[a-z][a-z0-9_.-]*$/', $literal)) {
                 throw new InvalidArgumentException('Littéral IN invalide.');
             }
             $quoted[] = "'" . $literal . "'";
@@ -268,6 +268,78 @@ final class SqlText
     }
 
     /**
+     * colonne LIKE ? — un placeholder.
+     */
+    public static function like(PDO $pdo, string $columnExpr): string
+    {
+        self::assertColumnExpr($columnExpr);
+        if (!self::isMysqlFamily($pdo)) {
+            return $columnExpr . ' LIKE ?';
+        }
+
+        return '(' . $columnExpr . ' COLLATE ' . self::COLLATION
+            . ') LIKE (CONVERT(? USING utf8mb4) COLLATE ' . self::COLLATION . ')';
+    }
+    /**
+     * colonne <> ? — un placeholder.
+     */
+    public static function notEquals(PDO $pdo, string $columnExpr): string
+    {
+        self::assertColumnExpr($columnExpr);
+        if (!self::isMysqlFamily($pdo)) {
+            return $columnExpr . ' <> ?';
+        }
+
+        return '(' . $columnExpr . ' COLLATE ' . self::COLLATION
+            . ') <> (CONVERT(? USING utf8mb4) COLLATE ' . self::COLLATION . ')';
+    }
+    /**
+     * colonne IN (?,?,…) — autant de placeholders que $count.
+     */
+    public static function inPlaceholders(PDO $pdo, string $columnExpr, int $count): string
+    {
+        self::assertColumnExpr($columnExpr);
+        if ($count < 1) {
+            throw new InvalidArgumentException('Liste IN vide.');
+        }
+        if (!self::isMysqlFamily($pdo)) {
+            return $columnExpr . ' IN (' . implode(', ', array_fill(0, $count, '?')) . ')';
+        }
+        $coerced = implode(', ', array_fill(0, $count, 'CONVERT(? USING utf8mb4) COLLATE ' . self::COLLATION));
+
+        return '(' . $columnExpr . ' COLLATE ' . self::COLLATION . ') IN (' . $coerced . ')';
+    }
+    /**
+     * colonne LIKE 'motif' (motif figé, pas un placeholder).
+     */
+    public static function likeLiteral(PDO $pdo, string $columnExpr, string $pattern): string
+    {
+        self::assertColumnExpr($columnExpr);
+        self::assertLikePattern($pattern);
+        $quoted = "'" . str_replace("'", "''", $pattern) . "'";
+        if (!self::isMysqlFamily($pdo)) {
+            return $columnExpr . ' LIKE ' . $quoted;
+        }
+
+        return '(' . $columnExpr . ' COLLATE ' . self::COLLATION
+            . ') LIKE (' . $quoted . ' COLLATE ' . self::COLLATION . ')';
+    }
+    /**
+     * LOWER(TRIM(COALESCE(colonne, ''))) = ? — un placeholder.
+     */
+    public static function normalizedCoalesceEmptyEquals(PDO $pdo, string $columnExpr): string
+    {
+        self::assertColumnExpr($columnExpr);
+        $inner = 'COALESCE(' . $columnExpr . ', \'\')';
+        if (!self::isMysqlFamily($pdo)) {
+            return 'LOWER(TRIM(' . $inner . ')) = ?';
+        }
+
+        return 'LOWER(TRIM(' . $inner . ')) COLLATE ' . self::COLLATION
+            . ' = CONVERT(? USING utf8mb4) COLLATE ' . self::COLLATION;
+    }
+
+    /**
      * COALESCE(a, b) = ? — un placeholder.
      */
     public static function coalesceEquals(PDO $pdo, string $first, string $second): string
@@ -298,7 +370,7 @@ final class SqlText
         }
         $quoted = [];
         foreach ($literals as $literal) {
-            if (!is_string($literal) || !preg_match('/^[a-z][a-z0-9_]*$/', $literal)) {
+            if (!is_string($literal) || !preg_match('/^[a-z][a-z0-9_.-]*$/', $literal)) {
                 throw new InvalidArgumentException('Littéral IN invalide.');
             }
             $quoted[] = "'" . $literal . "'";
@@ -349,6 +421,13 @@ final class SqlText
     {
         if ($value === '' || !preg_match('/^[A-Za-z0-9.@_+-]+$/', $value)) {
             throw new InvalidArgumentException('Littéral e-mail invalide.');
+        }
+    }
+
+    private static function assertIdentifierLiteral(string $value): void
+    {
+        if ($value === '' || !preg_match('/^[a-z][a-z0-9_.-]*$/', $value)) {
+            throw new InvalidArgumentException('Littéral identifiant invalide.');
         }
     }
 

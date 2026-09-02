@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class DocumentCategoryRepository
@@ -41,7 +42,8 @@ class DocumentCategoryRepository
 
     public function findBySlug(string $slug, int $tenantId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM document_categories WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $stmt = $this->pdo->prepare('SELECT * FROM document_categories WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;

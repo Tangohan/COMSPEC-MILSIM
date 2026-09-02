@@ -350,18 +350,17 @@ final class UserIdentityMergeRules
         if ($rows === []) {
             return null;
         }
-        if ($preferredTenantId > 0) {
-            foreach ($rows as $row) {
-                if ((int) ($row['tenant_id'] ?? 0) === $preferredTenantId
-                    && self::dossierCompletenessScore($row) > 0) {
-                    return $row;
-                }
-            }
-        }
-        usort($rows, static function (array $a, array $b): int {
+        usort($rows, static function (array $a, array $b) use ($preferredTenantId): int {
             $score = self::dossierCompletenessScore($b) <=> self::dossierCompletenessScore($a);
             if ($score !== 0) {
                 return $score;
+            }
+            if ($preferredTenantId > 0) {
+                $aPref = (int) ($a['tenant_id'] ?? 0) === $preferredTenantId ? 1 : 0;
+                $bPref = (int) ($b['tenant_id'] ?? 0) === $preferredTenantId ? 1 : 0;
+                if ($aPref !== $bPref) {
+                    return $bPref <=> $aPref;
+                }
             }
 
             return ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));

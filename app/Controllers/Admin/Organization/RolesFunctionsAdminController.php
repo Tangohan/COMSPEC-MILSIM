@@ -16,6 +16,7 @@ use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Services\Admin\TenantRolePermissionPresetService;
 use App\Support\RoleDoctrineUiLabels;
+use App\Support\SqlText;
 use InvalidArgumentException;
 use PDO;
 
@@ -306,7 +307,8 @@ class RolesFunctionsAdminController
 
         $pdo = Database::getPdo();
         try {
-            $check = $pdo->prepare('SELECT id FROM role_definitions WHERE slug = ? LIMIT 1');
+            $slugEq = SqlText::equals($pdo, 'slug');
+            $check = $pdo->prepare('SELECT id FROM role_definitions WHERE ' . $slugEq . ' LIMIT 1');
             $check->execute([$slug]);
             if ($check->fetchColumn()) {
                 Session::flash('error', 'Le slug de fonction existe déjà.');

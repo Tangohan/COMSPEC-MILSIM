@@ -155,6 +155,14 @@ if (!isNull _disp) then {
         "tactical",
         "info"
     ] call comspec_overwatch_connect_fnc_announce;
+
+    // Recopie hors fil jeu dans Documents\Arma 3 - COMSPEC\Captures (même dossier que le téléphone).
+    [_png] spawn {
+        params ["_hint"];
+        uiSleep 2.2;
+        if (isNil "comspec_overwatch_connect_fnc_extResult") exitWith {};
+        ["COMSPECExtension" callExtension ["StageCapture", [_hint]]] call comspec_overwatch_connect_fnc_extResult;
+    };
 };
 
 true

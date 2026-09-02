@@ -21,6 +21,7 @@ require_once $root . '/bootstrap/app.php';
 use App\Core\Container;
 use App\Core\Database;
 use App\Services\Training\TrainingCourseExchangeService;
+use App\Support\SqlText;
 
 $pdo = Database::getPdo();
 $tenantId = isset($argv[1]) ? (int) $argv[1] : 0;
@@ -33,7 +34,7 @@ if ($tenantId < 1) {
     exit(1);
 }
 
-$st = $pdo->prepare('SELECT id FROM training_courses WHERE tenant_id = ? AND slug = ? LIMIT 1');
+$st = $pdo->prepare('SELECT id FROM training_courses WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
 $st->execute([$tenantId, 'parcours-portail']);
 $courseId = (int) $st->fetchColumn();
 if ($courseId < 1) {

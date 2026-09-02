@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class TrainingCourseRepository
@@ -213,16 +214,20 @@ class TrainingCourseRepository
 
     public function findBySlug(string $slug, int $viewerTenantId): ?array
     {
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $visibilityPublished = SqlText::inLiterals($this->pdo, 'visibility', ['published']);
+        $lmsTenant = '(lms_scope IS NULL OR ' . SqlText::inLiterals($this->pdo, 'lms_scope', ['tenant']) . ')';
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM training_courses WHERE tenant_id = ? AND slug = ? AND COALESCE(lms_scope, 'tenant') = 'tenant' AND visibility = 'published' LIMIT 1"
+            "SELECT * FROM training_courses WHERE tenant_id = ? AND {$slugEq} AND {$lmsTenant} AND {$visibilityPublished} LIMIT 1"
         );
         $stmt->execute([$viewerTenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row) {
             return $row;
         }
+        $lmsPlatform = SqlText::inLiterals($this->pdo, 'lms_scope', ['platform']);
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM training_courses WHERE slug = ? AND lms_scope = 'platform' AND visibility = 'published' LIMIT 1"
+            "SELECT * FROM training_courses WHERE {$slugEq} AND {$lmsPlatform} AND {$visibilityPublished} LIMIT 1"
         );
         $stmt->execute([$slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -292,7 +297,9 @@ class TrainingCourseRepository
 
     public function slugExists(int $tenantId, string $slug, ?int $excludeId = null): bool
     {
-        $sql = "SELECT 1 FROM training_courses WHERE tenant_id = ? AND slug = ? AND COALESCE(lms_scope, 'tenant') = 'tenant'";
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $lmsTenant = '(lms_scope IS NULL OR ' . SqlText::inLiterals($this->pdo, 'lms_scope', ['tenant']) . ')';
+        $sql = "SELECT 1 FROM training_courses WHERE tenant_id = ? AND {$slugEq} AND {$lmsTenant}";
         $params = [$tenantId, $slug];
         if ($excludeId !== null) {
             $sql .= ' AND id != ?';
@@ -305,7 +312,9 @@ class TrainingCourseRepository
 
     public function platformSlugExists(string $slug, ?int $excludeId = null): bool
     {
-        $sql = "SELECT 1 FROM training_courses WHERE slug = ? AND lms_scope = 'platform'";
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $lmsPlatform = SqlText::inLiterals($this->pdo, 'lms_scope', ['platform']);
+        $sql = "SELECT 1 FROM training_courses WHERE {$slugEq} AND {$lmsPlatform}";
         $params = [$slug];
         if ($excludeId !== null) {
             $sql .= ' AND id != ?';

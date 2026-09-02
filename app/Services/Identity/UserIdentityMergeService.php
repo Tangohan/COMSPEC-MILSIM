@@ -7,6 +7,7 @@ namespace App\Services\Identity;
 use App\Repositories\UserCommunityMembershipRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Support\PortalAccessChoice;
 use App\Support\SilentSchemaMigration;
 use App\Support\SqlText;
 use InvalidArgumentException;
@@ -63,6 +64,8 @@ final class UserIdentityMergeService
      */
     public function listDuplicateEmailGroups(): array
     {
+        $notDeleted = SqlText::normalizedNotLikeLiteral($this->pdo, 'email', '%@deleted.invalid');
+        $notMerged = SqlText::normalizedNotLikeLiteral($this->pdo, 'email', '%@merged.invalid');
         $st = $this->pdo->query(
             "SELECT u.*
              FROM users u
@@ -70,8 +73,8 @@ final class UserIdentityMergeService
                 SELECT LOWER(TRIM(email)) AS email_key
                 FROM users
                 WHERE email IS NOT NULL AND TRIM(email) <> ''
-                  AND LOWER(TRIM(email)) NOT LIKE '%@deleted.invalid'
-                  AND LOWER(TRIM(email)) NOT LIKE '%@merged.invalid'
+                  AND {$notDeleted}
+                  AND {$notMerged}
                   AND (is_service_account IS NULL OR is_service_account = 0)
                 GROUP BY LOWER(TRIM(email))
                 HAVING COUNT(*) > 1
@@ -117,19 +120,25 @@ final class UserIdentityMergeService
         ));
 
         $identity = UserIdentityMergeRules::mergeIdentityOntoSurvivor($survivor, $absorbed);
+        $groupHasLiveOrg = $this->rowsIncludeLiveOrg($live);
         $this->pdo->beginTransaction();
         try {
             $this->applyIdentityFields($survivorId, $identity['fields']);
-            $this->ensureMembershipWithProfile(
-                $survivorId,
-                (int) $survivor['tenant_id'],
-                UserIdentityMergeRules::communityProfileFromUserRow($survivor),
-                $survivorId
-            );
+            $survivorTenantId = (int) $survivor['tenant_id'];
+            if (!($groupHasLiveOrg && $this->tenantIsPlaceholder($survivorTenantId))) {
+                $this->ensureMembershipWithProfile(
+                    $survivorId,
+                    $survivorTenantId,
+                    UserIdentityMergeRules::communityProfileFromUserRow($survivor),
+                    $survivorId
+                );
+            }
 
             foreach ($absorbed as $row) {
-                $this->absorbRow($survivor, $row, $identity['steam_collisions']);
+                $this->absorbRow($survivor, $row, $identity['steam_collisions'], $groupHasLiveOrg);
             }
+
+            $this->memberships->leavePlaceholderMembershipsIfHasLiveOrg($survivorId);
 
             $this->pdo->commit();
         } catch (Throwable $e) {
@@ -319,7 +328,7 @@ final class UserIdentityMergeService
      * @param array<string, mixed> $absorbed
      * @param list<array{absorbed_user_id: int, steam_id: string}> $collisions
      */
-    private function absorbRow(array $survivor, array $absorbed, array $collisions): void
+    private function absorbRow(array $survivor, array $absorbed, array $collisions, bool $groupHasLiveOrg = false): void
     {
         $survivorId = (int) $survivor['id'];
         $absorbedId = (int) $absorbed['id'];
@@ -328,14 +337,18 @@ final class UserIdentityMergeService
             return;
         }
 
-        $this->ensureMembershipWithProfile(
-            $survivorId,
-            $tenantId,
-            UserIdentityMergeRules::communityProfileFromUserRow($absorbed),
-            $absorbedId
-        );
-
-        $this->scopeRhThenRemap($absorbedId, $survivorId, $tenantId);
+        $skipPlaceholderDossier = $groupHasLiveOrg && $this->tenantIsPlaceholder($tenantId);
+        if ($skipPlaceholderDossier) {
+            $this->memberships->leave($survivorId, $tenantId);
+        } else {
+            $this->ensureMembershipWithProfile(
+                $survivorId,
+                $tenantId,
+                UserIdentityMergeRules::communityProfileFromUserRow($absorbed),
+                $absorbedId
+            );
+            $this->scopeRhThenRemap($absorbedId, $survivorId, $tenantId);
+        }
         $this->remapForeignKeys($absorbedId, $survivorId, $tenantId);
         $this->remapIdentityOneToOne($absorbedId, $survivorId);
 
@@ -588,11 +601,13 @@ final class UserIdentityMergeService
         if ($st->fetchColumn()) {
             return;
         }
+        $notDeleted = SqlText::normalizedNotLikeLiteral($this->pdo, 'email', '%@deleted.invalid');
+        $notMerged = SqlText::normalizedNotLikeLiteral($this->pdo, 'email', '%@merged.invalid');
         $dup = $this->pdo->query(
             "SELECT 1 FROM users
              WHERE (is_service_account IS NULL OR is_service_account = 0)
-               AND LOWER(TRIM(email)) NOT LIKE '%@deleted.invalid'
-               AND LOWER(TRIM(email)) NOT LIKE '%@merged.invalid'
+               AND {$notDeleted}
+               AND {$notMerged}
              GROUP BY LOWER(TRIM(email))
              HAVING COUNT(*) > 1
              LIMIT 1"
@@ -607,6 +622,32 @@ final class UserIdentityMergeService
             $this->pdo->exec('ALTER TABLE users ADD UNIQUE KEY uk_users_email_identity (email_identity)');
         } catch (Throwable) {
         }
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private function rowsIncludeLiveOrg(array $rows): bool
+    {
+        foreach ($rows as $row) {
+            if (!$this->tenantIsPlaceholder((int) ($row['tenant_id'] ?? 0))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function tenantIsPlaceholder(int $tenantId): bool
+    {
+        if ($tenantId < 1 || !$this->tableExists('tenants')) {
+            return false;
+        }
+        $st = $this->pdo->prepare('SELECT slug, name FROM tenants WHERE id = ? LIMIT 1');
+        $st->execute([$tenantId]);
+        $row = $st->fetch(\PDO::FETCH_ASSOC);
+
+        return PortalAccessChoice::isPlaceholderTenant(is_array($row) ? $row : null);
     }
 
     private function tableExists(string $table): bool

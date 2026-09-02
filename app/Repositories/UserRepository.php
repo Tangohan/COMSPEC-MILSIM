@@ -252,12 +252,13 @@ class UserRepository
         if ($number === '') {
             return false;
         }
+        $numberEq = SqlText::normalizedEquals($this->pdo(), 'tenant_member_number');
         $sql = 'SELECT 1 FROM users
                 WHERE tenant_id = ?
                   AND tenant_member_number IS NOT NULL
                   AND TRIM(tenant_member_number) <> \'\'
-                  AND LOWER(TRIM(tenant_member_number)) = LOWER(?)';
-        $params = [$tenantId, $number];
+                  AND ' . $numberEq;
+        $params = [$tenantId, strtolower($number)];
         if ($excludeUserId !== null && $excludeUserId > 0) {
             $sql .= ' AND id <> ?';
             $params[] = $excludeUserId;
@@ -279,15 +280,16 @@ class UserRepository
         if ($number === '') {
             return null;
         }
+        $numberEq = SqlText::normalizedEquals($this->pdo(), 'tenant_member_number');
         $stmt = $this->pdo()->prepare(
             'SELECT * FROM users
              WHERE tenant_id = ?
                AND tenant_member_number IS NOT NULL
                AND TRIM(tenant_member_number) <> \'\'
-               AND LOWER(TRIM(tenant_member_number)) = LOWER(?)
+               AND ' . $numberEq . '
              LIMIT 1'
         );
-        $stmt->execute([$tenantId, $number]);
+        $stmt->execute([$tenantId, strtolower($number)]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
@@ -2020,12 +2022,29 @@ class UserRepository
         [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId, $excludeServiceAccounts, $onlyWithoutUnit, $onlyWithoutRole);
         $extra = '';
         if ($this->hasUserRolesTable()) {
-            $extra = ', COALESCE(
-                (SELECT GROUP_CONCAT(DISTINCT r2.name ORDER BY r2.role_layer DESC, r2.name SEPARATOR \', \')
+            $dutySlugs = SqlText::inLiterals($this->pdo(), 'r3.slug', [
+                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_TRAINING,
+                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_ACTIVE,
+            ]);
+            $functionSlugs = SqlText::inLiterals($this->pdo(), 'r2.slug', [
+                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_TRAINING,
+                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_ACTIVE,
+            ]);
+            $activeFirst = SqlText::equalsLiteral(
+                $this->pdo(),
+                'r3.slug',
+                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_ACTIVE
+            );
+            $extra = ', (SELECT r3.name
+                 FROM user_roles ur3
+                 INNER JOIN roles r3 ON r3.id = ur3.role_id AND r3.tenant_id = u.tenant_id
+                 WHERE ur3.user_id = u.id AND ' . $dutySlugs . '
+                 ORDER BY CASE WHEN ' . $activeFirst . ' THEN 0 ELSE 1 END, r3.name ASC
+                 LIMIT 1) AS duty_position, (
+                SELECT GROUP_CONCAT(DISTINCT r2.name ORDER BY r2.role_layer DESC, r2.name SEPARATOR \', \')
                  FROM user_roles ur
                  INNER JOIN roles r2 ON r2.id = ur.role_id AND r2.tenant_id = u.tenant_id
-                 WHERE ur.user_id = u.id),
-                r.name
+                 WHERE ur.user_id = u.id AND NOT (' . $functionSlugs . ')
             ) AS roles_display';
         }
         $sql = 'SELECT u.*, r.name as role_name' . $extra . ' FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE ' . $whereSql;
@@ -2298,8 +2317,9 @@ class UserRepository
         if ($callsign === '') {
             return false;
         }
-        $sql = 'SELECT 1 FROM users WHERE tenant_id = ? AND callsign IS NOT NULL AND TRIM(callsign) <> \'\' AND LOWER(TRIM(callsign)) = LOWER(?)';
-        $params = [$tenantId, $callsign];
+        $callsignEq = SqlText::normalizedEquals($this->pdo(), 'callsign');
+        $sql = 'SELECT 1 FROM users WHERE tenant_id = ? AND callsign IS NOT NULL AND TRIM(callsign) <> \'\' AND ' . $callsignEq;
+        $params = [$tenantId, strtolower($callsign)];
         if ($excludeUserId !== null) {
             $sql .= ' AND id != ?';
             $params[] = $excludeUserId;
@@ -2343,13 +2363,16 @@ class UserRepository
         if ($this->hasDeletedAtColumn()) {
             $extra .= ' AND deleted_at IS NULL';
         }
+        $nameEq = SqlText::normalizedEquals($this->pdo(), 'display_name');
+        $callsignEq = SqlText::normalizedEquals($this->pdo(), 'callsign');
         $stmt = $this->pdo()->prepare(
             'SELECT id, display_name, callsign FROM users WHERE tenant_id = ? AND (
-                LOWER(display_name) = LOWER(?)
-                OR (callsign IS NOT NULL AND TRIM(callsign) <> \'\' AND LOWER(TRIM(callsign)) = LOWER(?))
+                ' . $nameEq . '
+                OR (callsign IS NOT NULL AND TRIM(callsign) <> \'\' AND ' . $callsignEq . ')
             )' . $extra . ' LIMIT 1'
         );
-        $stmt->execute([$tenantId, $token, $token]);
+        $tokenNorm = strtolower($token);
+        $stmt->execute([$tenantId, $tokenNorm, $tokenNorm]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
@@ -2385,7 +2408,7 @@ class UserRepository
              AND (
                  u.display_name LIKE ?
                  OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
-                 OR (u.profile_slug IS NOT NULL AND TRIM(u.profile_slug) <> \'\' AND u.profile_slug LIKE ?)
+                 OR (u.profile_slug IS NOT NULL AND TRIM(u.profile_slug) <> \'\' AND ' . SqlText::like($this->pdo(), 'u.profile_slug') . ')
                  ' . $athenaFilter . '
                  ' . $tmnFilter . '
              )
@@ -3028,7 +3051,8 @@ class UserRepository
                         COALESCE(p.profile_slug, u.profile_slug) AS profile_slug,
                         {$deletedSelect}, {$athenaSelect} AS athena_identifier,
                         t.name AS tenant_name, t.slug AS tenant_slug,
-                        r.name AS role_name
+                        r.name AS role_name,
+                        m.status AS membership_status
                  FROM users u
                  INNER JOIN user_community_memberships m ON m.user_id = u.id
                  INNER JOIN tenants t ON t.id = m.tenant_id
@@ -3064,7 +3088,8 @@ class UserRepository
                     u.avatar_url, u.grade_id, u.role_id, u.created_at, u.updated_at, u.profile_slug,
                     {$deletedSelect}, {$athenaSelect},
                     t.name AS tenant_name, t.slug AS tenant_slug,
-                    r.name AS role_name
+                    r.name AS role_name,
+                    u.status AS membership_status
              FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id
              LEFT JOIN roles r ON r.id = u.role_id
@@ -3377,6 +3402,7 @@ class UserRepository
             );
         }
         $this->communityMemberships()->ensureMembership($sourceUserId, $newTenantId, $profile, $sourceUserId);
+        $this->communityMemberships()->leavePlaceholderMembershipsIfHasLiveOrg($sourceUserId);
         if ($roleId > 0) {
             $this->syncOrganizationRoles($sourceUserId, $newTenantId, [$roleId], null, true);
         }
@@ -3400,18 +3426,21 @@ class UserRepository
     public function countActiveMembers(int $tenantId): int
     {
         if ($this->hasCommunityMembershipTable()) {
+            $membershipStatus = SqlText::inLiterals($this->pdo(), 'm.status', ['active']);
+            $profileStatus = SqlText::coalesceInLiterals($this->pdo(), 'p.status', 'u.status', ['active']);
             $stmt = $this->pdo()->prepare(
                 "SELECT COUNT(DISTINCT u.id)
                  FROM users u
                  LEFT JOIN user_community_profiles p ON p.user_id = u.id AND p.tenant_id = " . (int) $tenantId . "
                  WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . "
-                   AND COALESCE(p.status, u.status) = 'active'"
+                   AND " . SqlText::coalesceInLiterals($this->pdo(), 'p.status', 'u.status', ['active'])
             );
             $stmt->execute([]);
 
             return (int) $stmt->fetchColumn();
         }
-        $stmt = $this->pdo()->prepare("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'");
+        $statusActive = SqlText::inLiterals($this->pdo(), 'status', ['active']);
+        $stmt = $this->pdo()->prepare("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND {$statusActive}");
         $stmt->execute([$tenantId]);
 
         return (int) $stmt->fetchColumn();
@@ -3422,8 +3451,9 @@ class UserRepository
      */
     public function activityRateLast30DaysPercent(int $tenantId): ?int
     {
+        $statusActive = SqlText::inLiterals($this->pdo(), 'status', ['active']);
         $stmt = $this->pdo()->prepare(
-            "SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'"
+            "SELECT COUNT(*) FROM users WHERE tenant_id = ? AND {$statusActive}"
         );
         $stmt->execute([$tenantId]);
         $total = (int) $stmt->fetchColumn();
@@ -3431,7 +3461,7 @@ class UserRepository
             return null;
         }
         $stmt = $this->pdo()->prepare(
-            "SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'
+            "SELECT COUNT(*) FROM users WHERE tenant_id = ? AND {$statusActive}
              AND last_login_at IS NOT NULL AND last_login_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)"
         );
         $stmt->execute([$tenantId]);
@@ -3449,10 +3479,12 @@ class UserRepository
         if (!$stmt || !$stmt->fetchColumn()) {
             return 0;
         }
+        $memberStatus = SqlText::inLiterals($this->pdo(), '__ucm.status', ['active']);
+        $userStatus = SqlText::inLiterals($this->pdo(), 'u.status', ['active']);
         $stmt = $this->pdo()->prepare(
-            'SELECT COUNT(*) FROM users u
+            "SELECT COUNT(*) FROM users u
              INNER JOIN user_profile_display_settings ups ON ups.user_id = u.id AND ups.public_roster_opt_in = 1
-             WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.status = \'active\''
+             WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND {$userStatus}"
         );
         $stmt->execute([]);
 
@@ -3514,6 +3546,8 @@ class UserRepository
         $gradeJoin = $gc['join'];
         $gradeShort = $gc['grade_short'];
         $orderGrade = $gc['order_grade'];
+        $memberStatus = SqlText::inLiterals($this->pdo(), '__ucm.status', ['active']);
+        $userStatus = SqlText::inLiterals($this->pdo(), 'u.status', ['active']);
         $sql = "SELECT u.id, u.display_name, u.callsign, u.status,
                        {$gradeShort},
                        r.name AS role_name,
@@ -3526,7 +3560,7 @@ class UserRepository
                 LEFT JOIN user_units uu ON uu.user_id = u.id AND uu.is_primary = 1
                     AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
                 LEFT JOIN units un ON un.id = uu.unit_id AND un.tenant_id = u.tenant_id
-                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active'
+             WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND {$userStatus}
                 ORDER BY {$orderGrade}, u.display_name ASC, u.callsign ASC
                 LIMIT {$limit}";
         $stmt = $this->pdo()->prepare($sql);
@@ -3580,7 +3614,7 @@ class UserRepository
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-            AND r.slug IN ('tenant_admin', 'community_owner')";
+            AND " . SqlText::inLiterals($this->pdo(), 'r.slug', ['tenant_admin', 'community_owner']);
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($pack['params']);
         $emails = [];
@@ -3594,8 +3628,8 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.email FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-                AND r.slug IN ('tenant_admin', 'community_owner')";
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
+            AND " . SqlText::inLiterals($this->pdo(), 'r.slug', ['tenant_admin', 'community_owner']);
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($pack['params']);
@@ -3626,7 +3660,7 @@ class UserRepository
             INNER JOIN role_permissions rp ON rp.role_id = r.id
             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
             WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-            AND p.slug IN ('admin.organization', 'admin.access')";
+            AND " . SqlText::inLiterals($this->pdo(), 'p.slug', ['admin.organization', 'admin.access']);
         try {
             $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($pack['params']);
@@ -3644,8 +3678,8 @@ class UserRepository
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
                 INNER JOIN role_permissions rp ON rp.role_id = r.id
                 INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-                AND p.slug IN ('admin.organization', 'admin.access')";
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
+            AND " . SqlText::inLiterals($this->pdo(), 'p.slug', ['admin.organization', 'admin.access']);
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($pack['params']);
@@ -3673,7 +3707,7 @@ class UserRepository
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-            AND r.slug IN ('recruiter', 'community_owner', 'hr')";
+            AND " . SqlText::inLiterals($this->pdo(), 'r.slug', ['recruiter', 'community_owner', 'hr']);
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($pack['params']);
         $emails = [];
@@ -3687,8 +3721,8 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.email FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-                AND r.slug IN ('recruiter', 'community_owner', 'hr')";
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
+            AND " . SqlText::inLiterals($this->pdo(), 'r.slug', ['recruiter', 'community_owner', 'hr']);
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($pack['params']);
@@ -3716,7 +3750,7 @@ class UserRepository
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-            AND r.slug IN ('administrator')";
+            AND " . SqlText::inLiterals($this->pdo(), 'r.slug', ['administrator']);
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($pack['params']);
         $emails = [];
@@ -3730,8 +3764,8 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.email FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-                AND r.slug IN ('administrator')";
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
+            AND " . SqlText::inLiterals($this->pdo(), 'r.slug', ['administrator']);
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($pack['params']);
@@ -3757,11 +3791,10 @@ class UserRepository
     {
         $ids = [];
         $pack = $this->technicalAccountExclusionPredicate('u');
-        $slugs = "'tenant_admin', 'community_owner', 'forum_moderator', 'administrator'";
+        $slugIn = SqlText::inLiterals($this->pdo(), 'r.slug', ['tenant_admin', 'community_owner', 'forum_moderator', 'administrator']);
         $sql = "SELECT DISTINCT u.id FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-            AND r.slug IN ({$slugs})";
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND {$slugIn}";
         try {
             $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($pack['params']);
@@ -3775,8 +3808,7 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.id FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-                AND r.slug IN ({$slugs})";
+                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND {$slugIn}";
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($pack['params']);
@@ -3892,13 +3924,13 @@ class UserRepository
         if ($tenantId < 1 || $roleSlugs === []) {
             return [];
         }
-        $placeholders = implode(',', array_fill(0, count($roleSlugs), '?'));
+        $slugIn = SqlText::inPlaceholders($this->pdo(), 'r.slug', count($roleSlugs));
         $pack = $this->technicalAccountExclusionPredicate('u');
         $params = array_merge($pack['params'], $roleSlugs);
         $ids = [];
         $sql = "SELECT DISTINCT u.id FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
-            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND {$slugIn}";
         try {
             $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
@@ -3912,7 +3944,7 @@ class UserRepository
             $sql2 = "SELECT DISTINCT u.id FROM users u
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id AND tur.org_unit_id IS NULL
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
-                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND r.slug IN ({$placeholders})";
+                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND {$slugIn}";
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($params);
@@ -3948,7 +3980,7 @@ class UserRepository
         if ($permissionSlugs === []) {
             return [];
         }
-        $placeholders = implode(',', array_fill(0, count($permissionSlugs), '?'));
+        $slugIn = SqlText::inPlaceholders($this->pdo(), 'p.slug', count($permissionSlugs));
         $pack = $this->technicalAccountExclusionPredicate('u');
         // Ordre des ? : roles.tenant_id, permissions.tenant_id, exclusion technique, puis slugs.
         // Le prédicat d’appartenance inline le tenant (plus de ? users.tenant_id).
@@ -3958,7 +3990,7 @@ class UserRepository
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = ?
             INNER JOIN role_permissions rp ON rp.role_id = r.id
             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
-            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
+            WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND {$slugIn}";
         try {
             $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);
@@ -3976,7 +4008,7 @@ class UserRepository
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = ?
                 INNER JOIN role_permissions rp ON rp.role_id = r.id
                 INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
-                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
+                WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND {$slugIn}";
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($params2);
@@ -4008,12 +4040,14 @@ class UserRepository
         $lim = max(1, min(80, $limit));
         $seen = [];
         $pack = $this->technicalAccountExclusionPredicate('u');
+        $statusActive = SqlText::inLiterals($this->pdo(), 'u.status', ['active']);
+        $permSlug = SqlText::equals($this->pdo(), 'p.slug');
         $params = array_merge($pack['params'], [$slug]);
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             INNER JOIN role_permissions rp ON rp.role_id = r.id
             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-            WHERE u.status = 'active' AND {$pack['sql']} AND p.slug = ?
+            WHERE {$statusActive} AND {$pack['sql']} AND {$permSlug}
             LIMIT {$lim}";
         try {
             $stmt = $this->pdo()->prepare($sql);
@@ -4032,7 +4066,7 @@ class UserRepository
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
                 INNER JOIN role_permissions rp ON rp.role_id = r.id
                 INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
-                WHERE u.status = 'active' AND {$pack['sql']} AND p.slug = ?
+                WHERE {$statusActive} AND {$pack['sql']} AND {$permSlug}
                 LIMIT {$lim}";
             try {
                 $st = $this->pdo()->prepare($sql2);

@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Support\CooperationDictionary;
+use App\Support\SqlText;
 use PDO;
 
 class InterteamMissionRepository
@@ -45,7 +46,8 @@ class InterteamMissionRepository
         if (!$this->tableExists() || $slug === '') {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT * FROM interteam_missions WHERE slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $stmt = $this->pdo->prepare('SELECT * FROM interteam_missions WHERE ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -80,11 +82,13 @@ class InterteamMissionRepository
         if (!$this->tableExists() || $tenantId <= 0) {
             return [];
         }
-        $sql = 'SELECT DISTINCT m.id, m.title, m.slug, m.status, m.created_by_tenant_id
+        $missionActive = SqlText::equalsLiteral($this->pdo, 'm.status', 'active');
+        $partActive = SqlText::equalsLiteral($this->pdo, 'p.status', 'active');
+        $sql = "SELECT DISTINCT m.id, m.title, m.slug, m.status, m.created_by_tenant_id
             FROM interteam_missions m
-            INNER JOIN interteam_mission_participants p ON p.mission_id = m.id AND p.tenant_id = ? AND p.status = \'active\'
-            WHERE m.status = \'active\'
-            ORDER BY m.title ASC';
+            INNER JOIN interteam_mission_participants p ON p.mission_id = m.id AND p.tenant_id = ? AND {$partActive}
+            WHERE {$missionActive}
+            ORDER BY m.title ASC";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$tenantId]);
 
@@ -140,11 +144,13 @@ class InterteamMissionRepository
             return [];
         }
         $limit = max(1, min(200, $limit));
+        $missionActive = SqlText::equalsLiteral($this->pdo, 'm.status', 'active');
+        $partActive = SqlText::equalsLiteral($this->pdo, 'p.status', 'active');
         $sql = "SELECT g.mission_id, g.resource_id AS topic_id, g.home_tenant_id, m.slug AS mission_slug, m.title AS mission_title,
                 t.title AS topic_title, t.slug AS topic_slug
             FROM interteam_mission_forum_grants g
-            INNER JOIN interteam_missions m ON m.id = g.mission_id AND m.status = 'active'
-            INNER JOIN interteam_mission_participants p ON p.mission_id = g.mission_id AND p.tenant_id = ? AND p.status = 'active'
+            INNER JOIN interteam_missions m ON m.id = g.mission_id AND {$missionActive}
+            INNER JOIN interteam_mission_participants p ON p.mission_id = g.mission_id AND p.tenant_id = ? AND {$partActive}
             INNER JOIN forum_topics t ON t.id = g.resource_id AND t.tenant_id = g.home_tenant_id
             WHERE g.grant_type = 'topic' AND g.consumer_tenant_id = ?
             ORDER BY m.title ASC, t.updated_at DESC
@@ -160,9 +166,12 @@ class InterteamMissionRepository
         if (!$this->tableExists() || $missionSlug === '' || $topicId <= 0 || $consumerTenantId <= 0) {
             return null;
         }
+        $slugEq = SqlText::equals($this->pdo, 'm.slug');
+        $missionActive = SqlText::equalsLiteral($this->pdo, 'm.status', 'active');
+        $partActive = SqlText::equalsLiteral($this->pdo, 'p.status', 'active');
         $sql = "SELECT g.* FROM interteam_mission_forum_grants g
-            INNER JOIN interteam_missions m ON m.id = g.mission_id AND m.slug = ? AND m.status = 'active'
-            INNER JOIN interteam_mission_participants p ON p.mission_id = g.mission_id AND p.tenant_id = ? AND p.status = 'active'
+            INNER JOIN interteam_missions m ON m.id = g.mission_id AND {$slugEq} AND {$missionActive}
+            INNER JOIN interteam_mission_participants p ON p.mission_id = g.mission_id AND p.tenant_id = ? AND {$partActive}
             WHERE g.grant_type = 'topic' AND g.resource_id = ? AND g.consumer_tenant_id = ?
             LIMIT 1";
         $stmt = $this->pdo->prepare($sql);

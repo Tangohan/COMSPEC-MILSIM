@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories\Courrier;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class DocumentTemplateRepository
@@ -49,7 +50,8 @@ class DocumentTemplateRepository
 
     public function findBySlug(string $slug, ?int $tenantId = null): ?array
     {
-        $sql = 'SELECT * FROM document_templates WHERE slug = ?';
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $sql = 'SELECT * FROM document_templates WHERE ' . $slugEq;
         $params = [$slug];
         if ($tenantId !== null) {
             $sql .= ' AND (tenant_id IS NULL OR tenant_id = ?)';

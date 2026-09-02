@@ -141,6 +141,7 @@ final class PlatformStorageCatalog
             ['path' => 'public/uploads/recon', 'label' => 'Photos de reconnaissance', 'purgeable' => true],
             ['path' => 'public/uploads/intel', 'label' => 'Photos du poste', 'purgeable' => true],
             ['path' => 'public/uploads/sse', 'label' => 'Pièces SSE', 'purgeable' => false],
+            ['path' => 'public/uploads/login-accueil', 'label' => 'Photos d’accueil après connexion', 'purgeable' => false],
             ['path' => 'storage/documents', 'label' => 'Documents des communautés', 'purgeable' => false],
             ['path' => 'storage/logs', 'label' => 'Journaux serveur', 'purgeable' => true],
             ['path' => 'storage/cache', 'label' => 'Cache', 'purgeable' => true],

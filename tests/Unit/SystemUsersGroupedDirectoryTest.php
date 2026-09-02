@@ -38,7 +38,7 @@ final class SystemUsersGroupedDirectoryTest extends TestCase
             self::fail('listGroupedAccountsForPlatformDirectory introuvable.');
         }
         $body = $match[0];
-        self::assertStringContainsString('NOT ' . "SqlText::inLiterals(\$pdo, 'u.status', ['merged'])", $body);
+        self::assertStringContainsString("'NOT ' . SqlText::inLiterals(\$pdo, 'u.status', ['merged'])", $body);
         self::assertStringNotContainsString("t.slug <> 'default' OR NOT EXISTS", $body);
     }
 

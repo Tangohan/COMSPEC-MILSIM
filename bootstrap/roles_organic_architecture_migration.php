@@ -6,6 +6,9 @@ declare(strict_types=1);
  * Refonte organique des rôles : semantic_tier, affichage, postes, audit, packs.
  * Idempotent — safe à ré-exécuter.
  */
+
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 function run_roles_organic_architecture_migration(PDO $pdo): void
 {
     $hasColumn = function (string $table, string $column) use ($pdo): bool {
@@ -218,13 +221,13 @@ function run_roles_organic_architecture_migration(PDO $pdo): void
     ];
     foreach ($canonical as $slug => $lab) {
         try {
-            $st = $pdo->prepare('UPDATE roles SET name = ?, description = ? WHERE slug = ?');
+            $st = $pdo->prepare('UPDATE roles SET name = ?, description = ? WHERE ' . \App\Support\SqlText::equals($pdo, 'slug'));
             $st->execute([$lab['name'], $lab['description'], $slug]);
         } catch (\Throwable $_) {
         }
     }
     try {
-        $pdo->exec("UPDATE roles SET name = 'Gestionnaire de la plateforme', description = 'Administration transverse du système : accès global, maintenance, sécurité et supervision technique.' WHERE tenant_id IS NULL AND slug = 'site_super_admin'");
+        $pdo->exec('UPDATE roles SET name = \'Gestionnaire de la plateforme\', description = \'Administration transverse du système : accès global, maintenance, sécurité et supervision technique.\' WHERE tenant_id IS NULL AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'site_super_admin'));
     } catch (\Throwable $_) {
     }
 
@@ -241,7 +244,7 @@ function run_roles_organic_architecture_migration(PDO $pdo): void
     ];
     foreach ($tierMap as $slug => [$tier, $dg, $vis]) {
         try {
-            $st = $pdo->prepare('UPDATE roles SET semantic_tier = ?, display_group = ?, is_visual_only = ? WHERE slug = ?');
+            $st = $pdo->prepare('UPDATE roles SET semantic_tier = ?, display_group = ?, is_visual_only = ? WHERE ' . \App\Support\SqlText::equals($pdo, 'slug'));
             $st->execute([$tier, $dg, $vis, $slug]);
         } catch (\Throwable $_) {
         }
@@ -252,9 +255,8 @@ function run_roles_organic_architecture_migration(PDO $pdo): void
         'operations_officer', 'training_officer', 'intelligence_officer', 'logistics_officer', 'discipline_officer',
         'recruitment_officer', 'security_officer', 'auditor_internal',
     ];
-    $ph = implode(',', array_fill(0, count($functionSlugs), '?'));
     try {
-        $st = $pdo->prepare("UPDATE roles SET semantic_tier = 'function', display_group = 2, is_visual_only = 0 WHERE slug IN ({$ph})");
+        $st = $pdo->prepare('UPDATE roles SET semantic_tier = \'function\', display_group = 2, is_visual_only = 0 WHERE ' . \App\Support\SqlText::inPlaceholders($pdo, 'slug', count($functionSlugs)));
         $st->execute($functionSlugs);
     } catch (\Throwable $_) {
     }
@@ -263,16 +265,15 @@ function run_roles_organic_architecture_migration(PDO $pdo): void
         'founder', 'veteran', 'certified_instructor', 'elite_member', 'disciplinary_watch', 'probation_member',
         'suspended_status', 'honorary_member',
     ];
-    $ph2 = implode(',', array_fill(0, count($statusSlugs), '?'));
     try {
-        $st = $pdo->prepare("UPDATE roles SET semantic_tier = 'status', display_group = 3, is_visual_only = 1 WHERE slug IN ({$ph2})");
+        $st = $pdo->prepare('UPDATE roles SET semantic_tier = \'status\', display_group = 3, is_visual_only = 1 WHERE ' . \App\Support\SqlText::inPlaceholders($pdo, 'slug', count($statusSlugs)));
         $st->execute($statusSlugs);
     } catch (\Throwable $_) {
     }
 
     // Critical roles
     try {
-        $pdo->exec("UPDATE roles SET is_system_critical = 1 WHERE slug IN ('community_owner','site_super_admin')");
+        $pdo->exec('UPDATE roles SET is_system_critical = 1 WHERE ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['community_owner', 'site_super_admin']));
     } catch (\Throwable $_) {
     }
 
@@ -310,7 +311,7 @@ function run_roles_organic_architecture_migration(PDO $pdo): void
         $tenantId = (int) $tid;
         foreach ($newFunctionRoles as $row) {
             [$slug, $name, $desc, $layer] = $row;
-            $chk = $pdo->prepare('SELECT 1 FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $chk = $pdo->prepare('SELECT 1 FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $chk->execute([$tenantId, $slug]);
             if ($chk->fetchColumn()) {
                 continue;
@@ -325,7 +326,7 @@ function run_roles_organic_architecture_migration(PDO $pdo): void
         }
         foreach ($newStatusRoles as $row) {
             [$slug, $name, $desc, $layer] = $row;
-            $chk = $pdo->prepare('SELECT 1 FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $chk = $pdo->prepare('SELECT 1 FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $chk->execute([$tenantId, $slug]);
             if ($chk->fetchColumn()) {
                 continue;
@@ -348,7 +349,7 @@ function run_roles_organic_architecture_migration(PDO $pdo): void
         $slugIds = ['operations_officer', 'intelligence_officer', 'logistics_officer'];
         $ids = [];
         foreach ($slugIds as $s) {
-            $q = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $q = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $q->execute([$tenantId, $s]);
             $rid = $q->fetchColumn();
             if ($rid) {
@@ -372,9 +373,9 @@ function run_roles_organic_architecture_migration(PDO $pdo): void
 
     try {
         $pdo->exec(
-            "UPDATE roles c INNER JOIN roles p ON p.tenant_id = c.tenant_id AND p.slug = 'community_owner'
+            'UPDATE roles c INNER JOIN roles p ON p.tenant_id = c.tenant_id AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'p.slug', 'community_owner') . '
              SET c.parent_role_id = p.id
-             WHERE c.slug = 'deputy_commander' AND (c.parent_role_id IS NULL OR c.parent_role_id = 0)"
+             WHERE ' . \App\Support\SqlText::equalsLiteral($pdo, 'c.slug', 'deputy_commander') . ' AND (c.parent_role_id IS NULL OR c.parent_role_id = 0)'
         );
     } catch (\Throwable $_) {
     }

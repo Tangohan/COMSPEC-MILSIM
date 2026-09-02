@@ -181,6 +181,8 @@ class Container
                 self::get(\App\Repositories\TenantBrandingRepository::class),
                 self::get(\App\Services\Integrations\DiscordWebhookService::class),
                 self::get(\App\Services\Community\TenantTypeSwitchService::class),
+                self::get(\App\Services\Admin\RolePermissionService::class),
+                self::get(\App\Repositories\TenantLoginAccueilImageRepository::class),
             ),
             \App\Services\Community\TenantInitialSetupService::class => new \App\Services\Community\TenantInitialSetupService(
                 self::get(TenantRepository::class),
@@ -300,6 +302,10 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Services\Audit\AuditService::class)
             ),
+            \App\Repositories\TenantLoginAccueilImageRepository::class => new \App\Repositories\TenantLoginAccueilImageRepository(),
+            \App\Services\Auth\LoginAccueilBackgroundService::class => new \App\Services\Auth\LoginAccueilBackgroundService(
+                self::get(\App\Repositories\TenantLoginAccueilImageRepository::class)
+            ),
             \App\Controllers\Auth\AuthController::class => new \App\Controllers\Auth\AuthController(
                 self::get(AuthService::class),
                 self::get(RbacService::class),
@@ -314,6 +320,7 @@ class Container
                 self::get(\App\Services\Auth\LoginSecurityOtpService::class),
                 self::get(\App\Services\Auth\LoginWelcomeProfileService::class),
                 self::get(\App\Services\Auth\PasswordResetService::class),
+                self::get(\App\Services\Auth\LoginAccueilBackgroundService::class),
             ),
             \App\Services\Auth\LoginWelcomeProfileService::class => new \App\Services\Auth\LoginWelcomeProfileService(
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
@@ -1615,6 +1622,12 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+            ),
+            \App\Services\Personnel\PersonnelDutyPositionService::class => new \App\Services\Personnel\PersonnelDutyPositionService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\MemberIntegrationRepository::class),
+                \App\Core\Database::getPdo(),
             ),
             \App\Services\Cron\Jobs\MemberIntegrationDailyCronJob::class => new \App\Services\Cron\Jobs\MemberIntegrationDailyCronJob(
                 self::get(TenantRepository::class),

@@ -58,6 +58,38 @@ final class SenioritySummaryServiceTest extends TestCase
         self::assertSame($out[7]['days'], $out[7]['pre_platform_days']);
     }
 
+    public function testPersonnelSummaryPrefersCommunityOverLongerPrePlatform(): void
+    {
+        $repo = $this->createMock(SeniorityRepository::class);
+        $repo->method('schemaReady')->willReturn(true);
+        $repo->method('listVisibleDefinitionsForTenant')->willReturn([
+            ['id' => 1, 'code' => 'tenure_org_pre_platform', 'label' => 'Création de l’entité (avant la plateforme)', 'calc_mode' => 'from_start'],
+            ['id' => 2, 'code' => 'tenure_community', 'label' => 'Ancienneté dans la communauté', 'calc_mode' => 'from_start'],
+            ['id' => 3, 'code' => 'tenure_pre_platform', 'label' => 'Ancienneté antérieure à la plateforme', 'calc_mode' => 'from_start'],
+            ['id' => 4, 'code' => 'tenure_service', 'label' => 'Ancienneté de service cumulée', 'calc_mode' => 'from_start'],
+        ]);
+        $repo->method('listPeriodsForUserAndDefinition')->willReturnCallback(
+            static function (int $userId, int $definitionId): array {
+                return match ($definitionId) {
+                    1 => [],
+                    2 => [['start_date' => (new DateTimeImmutable('today'))->modify('-159 days')->format('Y-m-d')]],
+                    3 => [['start_date' => (new DateTimeImmutable('today'))->modify('-225 days')->format('Y-m-d')]],
+                    4 => [['start_date' => (new DateTimeImmutable('today'))->modify('-159 days')->format('Y-m-d')]],
+                    default => [],
+                };
+            }
+        );
+        $svc = new SenioritySummaryService($repo, new SeniorityEngine());
+        $out = $svc->personnelSenioritySummary(1, 7);
+        self::assertNotNull($out['global']);
+        self::assertSame('tenure_community', $out['global']['basis_code']);
+        self::assertSame('Ancienneté dans la communauté', $out['global']['basis_label']);
+        $labels = array_map(static fn (array $r): string => (string) $r['label'], $out['detail']);
+        self::assertContains('Ancienneté antérieure à la plateforme', $labels);
+        self::assertContains('Ancienneté de service cumulée', $labels);
+        self::assertNotContains('Création de l’entité (avant la plateforme)', $labels);
+    }
+
     private function service(): SenioritySummaryService
     {
         return new SenioritySummaryService(

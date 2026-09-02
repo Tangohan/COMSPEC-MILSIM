@@ -67,6 +67,13 @@ $navResStyle = in_array((string) ($navRes['submenu_style'] ?? 'minimal'), $navSt
 $navOpsImageEnabled = !array_key_exists('image_enabled', $navOps) || !empty($navOps['image_enabled']);
 $navResImageEnabled = !array_key_exists('image_enabled', $navRes) || !empty($navRes['image_enabled']);
 
+$loginAccueilImages = is_array($loginAccueilImages ?? null) ? $loginAccueilImages : [];
+$loginAccueilSlideshow = (bool) ($loginAccueilSlideshow ?? true);
+$loginAccueilMaxImages = (int) ($loginAccueilMaxImages ?? 8);
+$loginAccueilDefaultUrl = trim((string) ($loginAccueilDefaultUrl ?? \App\Support\LoginAccueilImageStorage::defaultPublicUrl()));
+$loginAccueilHint = trim((string) ($loginAccueilHint ?? \App\Support\LoginAccueilImageStorage::hintText()));
+$canAddLoginAccueil = count($loginAccueilImages) < $loginAccueilMaxImages;
+
 $navAccentLabels = [
     'sky' => 'Ciel',
     'amber' => 'Ambre',
@@ -157,11 +164,113 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
     $notice_body = 'De nouveaux réglages sont disponibles ici&nbsp;: représentation de la communauté (unité réelle ou fictive), '
         . 'bio du bandeau et texte «&nbsp;Qui sommes-nous&nbsp;?&nbsp;». '
         . 'Les options d\'inscription (créneaux, motivation, mode de candidature) ont leur propre page. '
+        . '<a href="#accueil-connexion">Images d’accueil</a> · '
         . '<a href="#representation-unite">Représentation</a> · <a href="#textes-publics">Textes publics</a> · '
         . '<a href="' . $h(url('back-office/community/inscription')) . '">Inscription</a> · '
         . '<a href="' . $h(url('back-office/community/presentation')) . '">Vitrine complète</a>';
     include base_path('views/partials/bo_dsfr_notice.php');
     ?>
+
+    <section class="ath-card ath-rise bo-setting-group" id="accueil-connexion">
+        <p class="bo-setting-group__kicker">Connexion</p>
+        <h2 class="bo-setting-group__title">Images d’accueil</h2>
+        <p class="bo-settings-note">
+            Ces photos s’affichent après connexion, sur l’écran de bienvenue. Sans image personnalisée, la photo de bienvenue du portail est utilisée.
+            Plusieurs images défilent à tour de rôle, dans l’ordre de la liste.
+        </p>
+
+        <?php if ($loginAccueilImages === []): ?>
+        <div class="bo-accueil-preview">
+            <img src="<?= $h($loginAccueilDefaultUrl) ?>" alt="" class="bo-accueil-preview__img">
+            <p class="bo-accueil-preview__caption">Photo actuelle : celle du portail (par défaut).</p>
+        </div>
+        <?php else: ?>
+        <ol class="bo-accueil-gallery">
+            <?php foreach ($loginAccueilImages as $idx => $img): ?>
+                <?php
+                $imgId = (int) ($img['id'] ?? 0);
+                $imgUrl = trim((string) ($img['url'] ?? ''));
+                $imgAlt = trim((string) ($img['alt'] ?? ''));
+                ?>
+                <li class="bo-accueil-gallery__item">
+                    <?php if ($imgUrl !== ''): ?>
+                        <img src="<?= $h($imgUrl) ?>" alt="<?= $h($imgAlt) ?>" class="bo-accueil-gallery__thumb">
+                    <?php endif; ?>
+                    <div class="bo-accueil-gallery__meta">
+                        <p class="bo-accueil-gallery__order">Image <?= (int) $idx + 1 ?></p>
+                        <div class="bo-accueil-gallery__actions">
+                            <?php if ($idx > 0): ?>
+                            <form method="post" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion/' . $imgId . '/ordre')) ?>">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="direction" value="up">
+                                <button type="submit" class="bo-accueil-btn">Monter</button>
+                            </form>
+                            <?php endif; ?>
+                            <?php if ($idx < count($loginAccueilImages) - 1): ?>
+                            <form method="post" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion/' . $imgId . '/ordre')) ?>">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="direction" value="down">
+                                <button type="submit" class="bo-accueil-btn">Descendre</button>
+                            </form>
+                            <?php endif; ?>
+                            <form method="post" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion/' . $imgId . '/supprimer')) ?>" onsubmit="return confirm('Retirer cette image d’accueil ?');">
+                                <?= \App\Core\Csrf::field() ?>
+                                <button type="submit" class="bo-accueil-btn bo-accueil-btn--danger">Retirer</button>
+                            </form>
+                        </div>
+                        <form method="post" enctype="multipart/form-data" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion/' . $imgId)) ?>" class="bo-accueil-gallery__edit">
+                            <?= \App\Core\Csrf::field() ?>
+                            <label class="bo-accueil-field">
+                                <span>Description courte (facultatif)</span>
+                                <input type="text" name="login_accueil_alt" maxlength="200" value="<?= $h($imgAlt) ?>" placeholder="Paysage nocturne, opérateurs en forêt">
+                            </label>
+                            <label class="bo-accueil-field">
+                                <span>Remplacer l’image</span>
+                                <input type="file" name="login_accueil_replace" class="bo-setting-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+                            </label>
+                            <button type="submit" class="bo-accueil-btn bo-accueil-btn--primary">Enregistrer</button>
+                        </form>
+                    </div>
+                </li>
+            <?php endforeach; ?>
+        </ol>
+        <?php endif; ?>
+
+        <?php if (count($loginAccueilImages) > 1): ?>
+        <form method="post" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion/defilement')) ?>" class="bo-accueil-slideshow">
+            <?= \App\Core\Csrf::field() ?>
+            <label class="bo-setting-remove">
+                <input type="hidden" name="login_accueil_slideshow" value="0">
+                <input type="checkbox" name="login_accueil_slideshow" value="1" <?= $loginAccueilSlideshow ? 'checked' : '' ?>>
+                Défiler automatiquement les images
+            </label>
+            <p class="bo-settings-note">Les photos changent toutes les dix secondes. Le défilement s’arrête si le visiteur a demandé moins d’animations.</p>
+            <button type="submit" class="bo-accueil-btn bo-accueil-btn--primary">Enregistrer le défilement</button>
+        </form>
+        <?php endif; ?>
+
+        <?php if ($canAddLoginAccueil): ?>
+        <form method="post" enctype="multipart/form-data" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion')) ?>" class="bo-accueil-add">
+            <?= \App\Core\Csrf::field() ?>
+            <div class="bo-setting-row bo-setting-row--stack">
+                <div class="bo-setting-row__copy">
+                    <div class="bo-setting-row__label">Ajouter une image</div>
+                    <div class="bo-setting-row__help"><?= $h($loginAccueilHint) ?> Jusqu’à <?= (int) $loginAccueilMaxImages ?> images.</div>
+                </div>
+                <div class="bo-setting-row__control">
+                    <input type="file" name="login_accueil_images[]" class="bo-setting-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple>
+                </div>
+            </div>
+            <label class="bo-accueil-field">
+                <span>Description courte pour ces nouvelles images (facultatif)</span>
+                <input type="text" name="login_accueil_alt" maxlength="200" placeholder="Opérateurs en vision nocturne">
+            </label>
+            <button type="submit" class="bo-accueil-btn bo-accueil-btn--primary">Ajouter</button>
+        </form>
+        <?php else: ?>
+        <p class="bo-settings-note">Nombre maximum d’images atteint. Retirez-en une pour en ajouter une autre.</p>
+        <?php endif; ?>
+    </section>
 
     <form method="post" enctype="multipart/form-data" action="<?= $h($formAction) ?>" id="bo-community-settings-form">
         <?= \App\Core\Csrf::field() ?>

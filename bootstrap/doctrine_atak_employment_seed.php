@@ -5,6 +5,9 @@ declare(strict_types=1);
 /**
  * Doctrine d'emploi ATAK / Overwatch Athena — seed idempotent par tenant.
  */
+
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 return function (PDO $pdo): void {
     if (!doctrineAtakTableExists($pdo, 'document_doctrines')) {
         return;
@@ -12,7 +15,7 @@ return function (PDO $pdo): void {
 
     echo "Doctrine ATAK : seed emploi Overwatch…\n";
 
-    $tenants = $pdo->query("SELECT id FROM tenants WHERE slug != 'default'")->fetchAll(PDO::FETCH_COLUMN);
+    $tenants = $pdo->query('SELECT id FROM tenants WHERE ' . \App\Support\SqlText::notEqualsLiteral($pdo, 'slug', 'default'))->fetchAll(PDO::FETCH_COLUMN);
     foreach ($tenants as $tid) {
         $tid = (int) $tid;
         if ($tid < 1) {
@@ -41,7 +44,7 @@ function seedAtakEmploymentDoctrine(PDO $pdo, int $tenantId): void
     $exists = $pdo->prepare(
         'SELECT dd.document_id FROM document_doctrines dd
          INNER JOIN documents d ON d.id = dd.document_id
-         WHERE dd.tenant_id = ? AND (dd.reference_code = ? OR d.slug = ?)
+         WHERE dd.tenant_id = ? AND (' . \App\Support\SqlText::equals($pdo, 'dd.reference_code') . ' OR ' . \App\Support\SqlText::equals($pdo, 'd.slug') . ')
          LIMIT 1'
     );
     $exists->execute([$tenantId, $referenceCode, $slug]);
@@ -52,7 +55,7 @@ function seedAtakEmploymentDoctrine(PDO $pdo, int $tenantId): void
         return;
     }
 
-    $cat = $pdo->prepare('SELECT id FROM document_categories WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $cat = $pdo->prepare('SELECT id FROM document_categories WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $cat->execute([$tenantId, 'doctrine']);
     $categoryId = (int) ($cat->fetchColumn() ?: 0);
     if ($categoryId < 1) {

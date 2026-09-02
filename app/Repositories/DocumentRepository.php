@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class DocumentRepository
@@ -95,11 +96,12 @@ class DocumentRepository
 
     public function findBySlug(string $slug, int $tenantId): ?array
     {
+        $slugEq = SqlText::equals($this->pdo, 'd.slug');
         $sql = 'SELECT d.*, dc.name AS category_name, dc.color AS category_color, dv.id AS version_id, dv.version_number, dv.file_path, dv.mime_type, dv.size, dv.checksum
                 FROM documents d
                 LEFT JOIN document_categories dc ON dc.id = d.document_category_id
                 LEFT JOIN document_versions dv ON dv.document_id = d.id AND dv.is_current = 1
-                WHERE d.tenant_id = ? AND d.slug = ?';
+                WHERE d.tenant_id = ? AND ' . $slugEq;
         $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -108,7 +110,8 @@ class DocumentRepository
 
     public function slugExists(int $tenantId, string $slug, ?int $excludeId = null): bool
     {
-        $sql = 'SELECT 1 FROM documents WHERE tenant_id = ? AND slug = ?';
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $sql = 'SELECT 1 FROM documents WHERE tenant_id = ? AND ' . $slugEq;
         $params = [$tenantId, $slug];
         if ($excludeId !== null) {
             $sql .= ' AND id != ?';
@@ -339,7 +342,7 @@ class DocumentRepository
         $sql = 'SELECT id, title, slug FROM documents WHERE tenant_id = ?';
         $params = [$tenantId];
         if ($search !== '') {
-            $sql .= ' AND (title LIKE ? OR slug LIKE ?)';
+            $sql .= ' AND (' . SqlText::like($this->pdo, 'title') . ' OR ' . SqlText::like($this->pdo, 'slug') . ')';
             $term = '%' . $search . '%';
             $params[] = $term;
             $params[] = $term;

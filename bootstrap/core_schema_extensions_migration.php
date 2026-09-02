@@ -8,6 +8,8 @@ declare(strict_types=1);
  * Anciennement assuré par l’outil Phinx (retiré du projet).
  */
 
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 /**
  * @param callable():void $flush
  */
@@ -764,13 +766,11 @@ SQL, 'planning_entries.entry_type enum');
 
     // --- Permission operational.board.view pour member (20260412120100) ---
     if ($tableExists($pdo, 'permissions') && $tableExists($pdo, 'roles') && $tableExists($pdo, 'role_permissions')) {
-        $execTry($pdo, <<<'SQL'
-INSERT IGNORE INTO role_permissions (role_id, permission_id)
+        $execTry($pdo, 'INSERT IGNORE INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM roles r
 INNER JOIN permissions p ON p.tenant_id = r.tenant_id
-WHERE r.slug = 'member' AND p.slug = 'operational.board.view'
-SQL, 'operational.board.view pour member');
+WHERE ' . \App\Support\SqlText::equalsLiteral($pdo, 'r.slug', 'member') . ' AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'p.slug', 'operational.board.view'), 'operational.board.view pour member');
     }
 
     // --- E-mail tenant (20260412000005) ---

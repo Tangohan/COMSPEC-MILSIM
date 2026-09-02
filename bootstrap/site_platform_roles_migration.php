@@ -6,6 +6,9 @@ declare(strict_types=1);
  * Rôles site : assistance, modérateur, modérateur senior (+ permissions globales associées).
  * Idempotent — exécuter après RBAC trois couches et schéma roles organique.
  */
+
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 function run_site_platform_roles_migration(PDO $pdo): void
 {
     $hasRbacScope = (bool) $pdo->query(
@@ -13,7 +16,7 @@ function run_site_platform_roles_migration(PDO $pdo): void
     )->fetchColumn();
 
     $ensureGlobalPermission = function (string $slug, string $name, string $module) use ($pdo, $hasRbacScope): int {
-        $st = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id IS NULL AND slug = ? LIMIT 1');
+        $st = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id IS NULL AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $st->execute([$slug]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
         if ($row) {
@@ -90,7 +93,7 @@ function run_site_platform_roles_migration(PDO $pdo): void
 
     foreach ($definitions as $def) {
         $slug = $def['slug'];
-        $st = $pdo->prepare('SELECT id FROM roles WHERE tenant_id IS NULL AND slug = ? LIMIT 1');
+        $st = $pdo->prepare('SELECT id FROM roles WHERE tenant_id IS NULL AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $st->execute([$slug]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
         if ($row) {
@@ -113,16 +116,16 @@ function run_site_platform_roles_migration(PDO $pdo): void
 
     try {
         $pdo->exec(
-            "UPDATE roles SET semantic_tier = 'function', display_group = 1, is_visual_only = 0
-             WHERE tenant_id IS NULL AND slug = 'site_moderator'"
+            'UPDATE roles SET semantic_tier = \'function\', display_group = 1, is_visual_only = 0
+             WHERE tenant_id IS NULL AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'site_moderator')
         );
         $pdo->exec(
-            "UPDATE roles SET semantic_tier = 'authority', display_group = 1, is_visual_only = 0
-             WHERE tenant_id IS NULL AND slug IN ('site_senior_moderator','site_support')"
+            'UPDATE roles SET semantic_tier = \'authority\', display_group = 1, is_visual_only = 0
+             WHERE tenant_id IS NULL AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['site_senior_moderator', 'site_support'])
         );
         $pdo->exec(
-            "UPDATE roles SET semantic_tier = 'function', display_group = 1, is_visual_only = 0
-             WHERE tenant_id IS NULL AND slug IN ('site_report_operator','site_report_supervisor')"
+            'UPDATE roles SET semantic_tier = \'function\', display_group = 1, is_visual_only = 0
+             WHERE tenant_id IS NULL AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['site_report_operator', 'site_report_supervisor'])
         );
     } catch (\Throwable) {
     }

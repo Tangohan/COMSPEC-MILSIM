@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class SubscriptionPlanRepository
@@ -18,7 +19,8 @@ class SubscriptionPlanRepository
 
     public function findBySlug(string $slug): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM subscription_plans WHERE slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $stmt = $this->pdo->prepare('SELECT * FROM subscription_plans WHERE ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;

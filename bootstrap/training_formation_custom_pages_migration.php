@@ -5,6 +5,9 @@ declare(strict_types=1);
 /**
  * Studio DOC HTML / Manuel — schéma complet multi-tenant, idempotent.
  */
+
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 return static function (PDO $pdo): void {
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS training_formation_custom_pages (
@@ -240,7 +243,7 @@ return static function (PDO $pdo): void {
     foreach ($tenantIds as $tenantIdRaw) {
         $tenantId = (int) $tenantIdRaw;
         foreach ($defaultThemes as [$name, $slug, $variant, $accent]) {
-            $stmt = $pdo->prepare('SELECT id FROM training_formation_custom_page_themes WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id FROM training_formation_custom_page_themes WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $stmt->execute([$tenantId, $slug]);
             if ($stmt->fetchColumn()) {
                 continue;
@@ -249,7 +252,7 @@ return static function (PDO $pdo): void {
             $ins->execute([$tenantId, $name, $slug, 'Thème système DOC HTML', $variant, $accent, json_encode(['accent' => $accent], JSON_UNESCAPED_UNICODE), json_encode(['layout' => 'standard'], JSON_UNESCAPED_UNICODE)]);
         }
         foreach ($defaultTemplates as [$name, $slug, $structure]) {
-            $stmt = $pdo->prepare('SELECT id FROM training_formation_custom_page_templates WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id FROM training_formation_custom_page_templates WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $stmt->execute([$tenantId, $slug]);
             if ($stmt->fetchColumn()) {
                 continue;

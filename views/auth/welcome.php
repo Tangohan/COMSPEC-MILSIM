@@ -6,7 +6,10 @@
 /** @var string $initials */
 /** @var list<array{label: string, value: string}> $accountFacts */
 /** @var string $enterUrl */
-/** @var string $lockBackgroundUrl */
+/** @var list<string> $lockBackgroundUrls */
+/** @var list<string> $lockBackgroundAlts */
+/** @var bool $lockBackgroundRotate */
+/** @var int $lockBackgroundIntervalMs */
 /** @var string $title */
 
 $brand = trim((string) ($brand ?? (function_exists('email_brand_name') ? email_brand_name() : 'Athena')));
@@ -17,7 +20,20 @@ $avatarUrl = is_string($avatarUrl ?? null) && $avatarUrl !== '' ? $avatarUrl : n
 $initials = trim((string) ($initials ?? 'A'));
 $accountFacts = is_array($accountFacts ?? null) ? $accountFacts : [];
 $enterUrl = (string) ($enterUrl ?? url('login/accueil'));
-$lockBackgroundUrl = (string) ($lockBackgroundUrl ?? asset_url('assets/images/WES_Operator_V2_re_05.jpg'));
+$legacyLockUrl = (string) ($lockBackgroundUrl ?? '');
+$lockBackgroundUrls = is_array($lockBackgroundUrls ?? null) ? $lockBackgroundUrls : [];
+if ($lockBackgroundUrls === [] && $legacyLockUrl !== '') {
+    $lockBackgroundUrls = [$legacyLockUrl];
+}
+if ($lockBackgroundUrls === []) {
+    $lockBackgroundUrls = [\App\Support\LoginAccueilImageStorage::defaultPublicUrl()];
+}
+$lockBackgroundAlts = is_array($lockBackgroundAlts ?? null) ? $lockBackgroundAlts : [];
+$lockBackgroundRotate = (bool) ($lockBackgroundRotate ?? (count($lockBackgroundUrls) > 1));
+$lockBackgroundIntervalMs = (int) ($lockBackgroundIntervalMs ?? 10000);
+if ($lockBackgroundIntervalMs < 4000 || $lockBackgroundIntervalMs > 20000) {
+    $lockBackgroundIntervalMs = 10000;
+}
 $error = \App\Core\Session::getFlash('error');
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $title = (string) ($title ?? 'Bienvenue');
@@ -57,15 +73,39 @@ $title = (string) ($title ?? 'Bienvenue');
             height: 100vh;
             height: 100dvh;
             width: 100vw;
+            background: #000;
+        }
+        .lock-slides {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .lock-slide {
+            position: absolute;
+            inset: 0;
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+        }
+        .lock-slide.is-active { opacity: 1; }
+        .lock::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 1;
             background:
                 linear-gradient(90deg, rgba(0, 14, 12, .76), rgba(0, 0, 0, .55) 52%, rgba(0, 18, 14, .58)),
-                radial-gradient(circle at 72% 36%, rgba(19, 123, 92, .22), transparent 34%),
-                url('<?= $h($lockBackgroundUrl) ?>') center / cover no-repeat;
+                radial-gradient(circle at 72% 36%, rgba(19, 123, 92, .22), transparent 34%);
+            pointer-events: none;
         }
         .lock::after {
             content: "";
             position: absolute;
             inset: 0;
+            z-index: 1;
             background: linear-gradient(180deg, rgba(0, 0, 0, .10), rgba(0, 0, 0, .22) 55%, rgba(0, 0, 0, .72));
             pointer-events: none;
         }
@@ -247,11 +287,18 @@ $title = (string) ($title ?? 'Bienvenue');
         @media (prefers-reduced-motion: reduce) {
             .profile-layer { transition: none; }
             .enter { transition: none; }
+            .lock-slide { transition: none; }
         }
     </style>
 </head>
 <body>
 <section class="lock" id="lock" role="main" aria-label="Écran d’accueil <?= $brandText ?>">
+    <div class="lock-slides" aria-hidden="true">
+        <?php foreach ($lockBackgroundUrls as $i => $slideUrl): ?>
+            <div class="lock-slide<?= $i === 0 ? ' is-active' : '' ?>"
+                 style="background-image:url('<?= $h((string) $slideUrl) ?>')"></div>
+        <?php endforeach; ?>
+    </div>
     <div class="brand"><span class="brand-dot" aria-hidden="true"></span> <?= $brandText ?></div>
 
     <?php if ($error): ?>
@@ -359,6 +406,19 @@ $title = (string) ($title ?? 'Bienvenue');
             }
             submitting = true;
         });
+    }
+
+    var slides = document.querySelectorAll('.lock-slide');
+    var rotate = <?= $lockBackgroundRotate ? 'true' : 'false' ?>;
+    var intervalMs = <?= (int) $lockBackgroundIntervalMs ?>;
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (rotate && slides.length > 1 && !reduceMotion) {
+        var slideIndex = 0;
+        window.setInterval(function () {
+            slides[slideIndex].classList.remove('is-active');
+            slideIndex = (slideIndex + 1) % slides.length;
+            slides[slideIndex].classList.add('is-active');
+        }, intervalMs);
     }
 })();
 </script>

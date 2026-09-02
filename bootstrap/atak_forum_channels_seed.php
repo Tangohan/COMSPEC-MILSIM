@@ -8,6 +8,9 @@ declare(strict_types=1);
  *
  * @return callable(PDO): void
  */
+
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 return static function (PDO $pdo): void {
     $tableExists = static function (PDO $pdo, string $table): bool {
         $st = $pdo->prepare(
@@ -168,13 +171,13 @@ MD
     ];
 
     $cats = $pdo->query(
-        "SELECT id, tenant_id, name FROM forum_categories WHERE slug = 'atak-comspec' ORDER BY id ASC"
+        'SELECT id, tenant_id, name FROM forum_categories WHERE ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'atak-comspec') . ' ORDER BY id ASC'
     );
     $categoryRows = $cats ? ($cats->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
 
     if ($categoryRows === []) {
         // Créer sous Support & Technique du tenant ATHENA (slug athena-sys) si possible
-        $tenantSt = $pdo->prepare('SELECT id FROM tenants WHERE slug = ? LIMIT 1');
+        $tenantSt = $pdo->prepare('SELECT id FROM tenants WHERE ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $tenantSt->execute(['athena-sys']);
         $tenantId = (int) ($tenantSt->fetchColumn() ?: 0);
         if ($tenantId < 1) {
@@ -183,7 +186,7 @@ MD
             return;
         }
         $parentSt = $pdo->prepare(
-            'SELECT id FROM forum_categories WHERE tenant_id = ? AND slug = ? AND parent_id IS NULL LIMIT 1'
+            'SELECT id FROM forum_categories WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' AND parent_id IS NULL LIMIT 1'
         );
         $parentSt->execute([$tenantId, 'support']);
         $parentId = (int) ($parentSt->fetchColumn() ?: 0);
@@ -218,11 +221,11 @@ MD
     }
 
     $resolveAuthor = static function (PDO $pdo, int $tenantId, bool $hasServiceAccount): int {
-        $sql = 'SELECT id FROM users WHERE tenant_id = ? AND status = \'active\'';
+        $sql = 'SELECT id FROM users WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'status', 'active');
         if ($hasServiceAccount) {
             $sql .= ' AND COALESCE(is_service_account, 0) = 0';
         }
-        $sql .= ' AND email <> ? ORDER BY id ASC LIMIT 1';
+        $sql .= ' AND ' . \App\Support\SqlText::notEquals($pdo, 'email') . ' ORDER BY id ASC LIMIT 1';
         $st = $pdo->prepare($sql);
         $st->execute([$tenantId, 'system.moderation@internal.local']);
         $id = (int) ($st->fetchColumn() ?: 0);
@@ -236,7 +239,7 @@ MD
     };
 
     $findTopic = $pdo->prepare(
-        'SELECT id FROM forum_topics WHERE tenant_id = ? AND category_id = ? AND slug = ? LIMIT 1'
+        'SELECT id FROM forum_topics WHERE tenant_id = ? AND category_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1'
     );
     $insertTopic = $pdo->prepare(
         'INSERT INTO forum_topics (tenant_id, category_id, user_id, title, slug, is_pinned, is_locked, is_archived, is_hidden, view_count, created_at, updated_at)

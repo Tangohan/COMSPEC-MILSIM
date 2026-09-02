@@ -525,4 +525,33 @@ final class ConfigurationUpdateProbes
             return false;
         }
     }
+
+    public function hasLoginAccueilImage(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare('SELECT 1 FROM tenant_login_accueil_images WHERE tenant_id = ? LIMIT 1');
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function hasDutyPositionsForActiveMembers(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $svc = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+
+            return $svc->countActiveMembersWithoutDuty($tenantId) === 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 }

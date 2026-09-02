@@ -283,6 +283,15 @@ if (_noteId isNotEqualTo "" && {_pieces isNotEqualTo []}) then {
                 uiSleep 2.2;
             };
 
+            // Même pipeline que le téléphone : recopie dans Documents\Arma 3 - COMSPEC\Captures.
+            if (!isNil "comspec_overwatch_connect_fnc_extResult") then {
+                private _staged = ["COMSPECExtension" callExtension ["StageCapture", [_target]]] call comspec_overwatch_connect_fnc_extResult;
+                if ((_staged isEqualType "") && {(count _staged) >= 4} && {(_staged select [0, 3]) isEqualTo "OK|"}) then {
+                    private _body = trim (_staged select [3, (count _staged) - 3]);
+                    if (_body isNotEqualTo "") then { _target = _body; };
+                };
+            };
+
             private _res = [
                 "UploadSseNoteAttachment",
                 [

@@ -32,6 +32,11 @@ final class MemberIntegrationEntryHook
             $svc->ensureForNewMember($tenantId, $userId, $actorUserId, $source, $context);
         } catch (Throwable) {
         }
+        try {
+            $duty = Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+            $duty->applyOnJoin($tenantId, $userId, $actorUserId);
+        } catch (Throwable) {
+        }
     }
 
     /**

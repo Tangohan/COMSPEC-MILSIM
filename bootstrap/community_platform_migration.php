@@ -6,6 +6,9 @@ declare(strict_types=1);
  * Migrations idempotentes : plans d'abonnement, colonnes tenants (facturation / propriétaire).
  * Appelée depuis run-migrations.php.
  */
+
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 function run_community_platform_migration(PDO $pdo): void
 {
     $pdo->exec("CREATE TABLE IF NOT EXISTS subscription_plans (
@@ -63,15 +66,15 @@ function run_community_platform_migration(PDO $pdo): void
         $ins->execute(['pro_plus', 'Pro+', 40, json_encode($planFeatureDefaults['pro_plus'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), null]);
         echo "Plans subscription_plans insérés (free, standard, pro, pro_plus).\n";
     } else {
-        $up = $pdo->prepare("UPDATE subscription_plans SET limits_json = ? WHERE slug = 'free' AND (limits_json IS NULL OR limits_json = '')");
+        $up = $pdo->prepare('UPDATE subscription_plans SET limits_json = ? WHERE ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'free') . ' AND (limits_json IS NULL OR limits_json = \'\')');
         $up->execute([$freeLimitsDefault]);
-        $stdRow = $pdo->query("SELECT features_json FROM subscription_plans WHERE slug = 'standard' LIMIT 1");
+        $stdRow = $pdo->query('SELECT features_json FROM subscription_plans WHERE ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'standard') . ' LIMIT 1');
         $stdFeat = $stdRow ? $stdRow->fetch(PDO::FETCH_ASSOC) : false;
         if (is_array($stdFeat)) {
             $fj = json_decode((string) ($stdFeat['features_json'] ?? '{}'), true);
             if (is_array($fj) && empty($fj['events'])) {
                 $fj['events'] = true;
-                $pdo->prepare('UPDATE subscription_plans SET features_json = ? WHERE slug = ?')->execute([
+                $pdo->prepare('UPDATE subscription_plans SET features_json = ? WHERE ' . \App\Support\SqlText::equals($pdo, 'slug'))->execute([
                     json_encode($fj, JSON_THROW_ON_ERROR),
                     'standard',
                 ]);
@@ -80,7 +83,7 @@ function run_community_platform_migration(PDO $pdo): void
         }
     }
 
-    $proPlusExists = $pdo->query("SELECT 1 FROM subscription_plans WHERE slug = 'pro_plus' LIMIT 1");
+    $proPlusExists = $pdo->query('SELECT 1 FROM subscription_plans WHERE ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'pro_plus') . ' LIMIT 1');
     if ($proPlusExists && !$proPlusExists->fetch()) {
         $insPp = $pdo->prepare('INSERT INTO subscription_plans (slug, name, sort_order, features_json, limits_json, created_at) VALUES (?, ?, ?, ?, NULL, NOW())');
         $insPp->execute(['pro_plus', 'Pro+', 40, json_encode($planFeatureDefaults['pro_plus'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]);
@@ -100,7 +103,7 @@ function run_community_platform_migration(PDO $pdo): void
     }
 
     $mergeMissingPlanFeatures = static function (PDO $pdoConn, string $slug, array $defaults): void {
-        $st = $pdoConn->prepare('SELECT features_json FROM subscription_plans WHERE slug = ? LIMIT 1');
+        $st = $pdoConn->prepare('SELECT features_json FROM subscription_plans WHERE ' . \App\Support\SqlText::equals($pdoConn, 'slug') . ' LIMIT 1');
         $st->execute([$slug]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
         if (!is_array($row)) {
@@ -118,7 +121,7 @@ function run_community_platform_migration(PDO $pdo): void
             }
         }
         if ($changed) {
-            $up = $pdoConn->prepare('UPDATE subscription_plans SET features_json = ? WHERE slug = ?');
+            $up = $pdoConn->prepare('UPDATE subscription_plans SET features_json = ? WHERE ' . \App\Support\SqlText::equals($pdoConn, 'slug'));
             $up->execute([json_encode($cur, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $slug]);
             echo "Plan {$slug} : clés de fonctionnalités complétées.\n";
         }
@@ -197,7 +200,7 @@ function run_community_platform_migration(PDO $pdo): void
         }
     }
 
-    $pdo->exec("UPDATE tenants SET plan_slug = 'free' WHERE plan_slug = '' OR plan_slug IS NULL");
+    $pdo->prepare('UPDATE tenants SET plan_slug = \'free\' WHERE ' . \App\Support\SqlText::equals($pdo, 'plan_slug') . ' OR plan_slug IS NULL')->execute(['']);
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS pending_community_creates (
         id int unsigned NOT NULL AUTO_INCREMENT,

@@ -349,6 +349,7 @@ return function (Router $router) {
     $router->post('/login/select-community', [AuthController::class, 'selectCommunity'], [GuestMiddleware::class]);
     $router->get('/login/accueil', [AuthController::class, 'showWelcome'], [AuthMiddleware::class]);
     $router->post('/login/accueil', [AuthController::class, 'enterWelcome'], [AuthMiddleware::class]);
+    $router->get('/login/accueil/fond/{tenantId}/{file}', [AuthController::class, 'streamWelcomeBackground'], [AuthMiddleware::class]);
     $router->get('/login/choisir-espace', [AuthController::class, 'showSelectPortal'], [AuthMiddleware::class]);
     $router->post('/login/choisir-espace', [AuthController::class, 'selectPortal'], [AuthMiddleware::class]);
     $router->post('/logout', [AuthController::class, 'logout']);
@@ -1025,6 +1026,11 @@ return function (Router $router) {
     $router->get('/back-office/organisation/structure', [OrganizationDashboardController::class, 'structureRecruitmentHub'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/parametres/accueil-connexion', [OrganizationSettingsController::class, 'storeLoginAccueilImage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/parametres/accueil-connexion/defilement', [OrganizationSettingsController::class, 'saveLoginAccueilSlideshow'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/parametres/accueil-connexion/{id}', [OrganizationSettingsController::class, 'replaceLoginAccueilImage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/parametres/accueil-connexion/{id}/supprimer', [OrganizationSettingsController::class, 'deleteLoginAccueilImage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/parametres/accueil-connexion/{id}/ordre', [OrganizationSettingsController::class, 'moveLoginAccueilImage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/profil', [OrganizationSettingsController::class, 'updateType'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/community', [OrganizationSettingsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community', [OrganizationSettingsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1075,6 +1081,7 @@ return function (Router $router) {
     $router->get('/back-office/users', [UserAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/users/create', [UserAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/store', [UserAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/users/duty-positions/backfill', [UserAdminController::class, 'backfillDutyPositions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/users/{id}', [UserAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/notify-profile', [UserAdminController::class, 'notifyProfileIncomplete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/resend-verification', [UserAdminController::class, 'resendVerificationEmail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1082,6 +1089,7 @@ return function (Router $router) {
     $router->post('/back-office/users/{id}/update', [UserAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/deactivate', [UserAdminController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/request-purge', [UserAdminController::class, 'requestPurge'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/users/{id}/duty-position', [UserAdminController::class, 'applyDutyPosition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/invitations', [InvitationAdminController::class, 'index'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->get('/back-office/invitations/envoyees', [InvitationAdminController::class, 'sent'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->post('/back-office/invitations', [InvitationAdminController::class, 'store'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);

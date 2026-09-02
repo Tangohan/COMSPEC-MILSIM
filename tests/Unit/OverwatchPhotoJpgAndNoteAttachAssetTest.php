@@ -52,12 +52,32 @@ final class OverwatchPhotoJpgAndNoteAttachAssetTest extends TestCase
 
         self::assertStringContainsString('uiSleep 2.2;', $submit);
         self::assertStringContainsString('UploadSseNoteAttachment', $submit);
+        self::assertStringContainsString('StageCapture', $submit);
         self::assertStringContainsString('ReadStableImageBytes', $cs);
         self::assertStringContainsString('new ByteArrayContent(bytes)', $cs);
         self::assertStringContainsString('multipart.Add(fileContent, "piece", fileName)', $cs);
+        self::assertStringContainsString('UploadKind = "sse_note"', $cs);
+        self::assertStringContainsString('ProcessSseNoteAttachmentUploadAsync', $cs);
+        self::assertStringContainsString('IsSseNoteCaptureName', $cs);
+        self::assertStringContainsString('newestFallback: null', $cs);
         self::assertStringContainsString('AddSeconds(-180)', $cs);
         self::assertStringNotContainsString('if (resolved != null || attempt >= 8)', $cs);
         self::assertStringContainsString('pièce jointe', $note);
         self::assertStringNotContainsString('endpoint', $note);
+    }
+
+    public function testNoteAttachmentUsesCapturesPipelineNotGameThreadRead(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $cs = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
+        $callback = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_extensionCallback.sqf');
+        $face = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sseCaptureFacePhoto.sqf');
+
+        self::assertStringContainsString('EnsurePhotoWorker()', $cs);
+        self::assertStringContainsString('MirrorCapture(resolved)', $cs);
+        self::assertStringContainsString('COMSPEC_Fiche_', $cs);
+        self::assertStringContainsString('case "SseNoteAttachment":', $callback);
+        self::assertStringContainsString('StageCapture', $face);
+        self::assertStringNotContainsString('FindNewestScreenshot(TimeSpan.FromSeconds(90))', $cs);
     }
 }

@@ -19,6 +19,30 @@ final class PortalAccessChoiceNoOrgTest extends TestCase
         self::assertFalse(PortalAccessChoice::isPlaceholderTenant(['slug' => 'alpha', 'name' => 'Unité Alpha']));
     }
 
+    public function testPersonFileHidesPlaceholderWhenALiveCommunityExists(): void
+    {
+        $soar = ['tenant_slug' => 'soar', 'tenant_name' => 'SOAR', 'id' => 10];
+        $placeholder = ['tenant_slug' => 'default', 'tenant_name' => "Pas d'organisation", 'id' => 10];
+
+        $visible = PortalAccessChoice::personFileDossiers([$soar, $placeholder]);
+        self::assertCount(1, $visible);
+        self::assertSame('soar', $visible[0]['tenant_slug']);
+
+        $orphanOnly = PortalAccessChoice::personFileDossiers([$placeholder]);
+        self::assertCount(1, $orphanOnly);
+        self::assertSame('default', $orphanOnly[0]['tenant_slug']);
+
+        $leftCommunity = [
+            'tenant_slug' => 'soar',
+            'tenant_name' => 'SOAR',
+            'status' => 'active',
+            'membership_status' => 'left',
+        ];
+        $afterLeave = PortalAccessChoice::personFileDossiers([$leftCommunity, $placeholder]);
+        self::assertCount(1, $afterLeave);
+        self::assertSame('default', $afterLeave[0]['tenant_slug']);
+    }
+
     public function testRedirectConstantsRemainStable(): void
     {
         self::assertSame('tba', PortalAccessChoice::PORTAL_TBA);

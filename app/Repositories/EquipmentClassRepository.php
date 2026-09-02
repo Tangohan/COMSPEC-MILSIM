@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class EquipmentClassRepository
@@ -41,7 +42,8 @@ class EquipmentClassRepository
 
     public function findBySlug(string $slug, int $tenantId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM equipment_classes WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $stmt = $this->pdo->prepare('SELECT * FROM equipment_classes WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -49,7 +51,8 @@ class EquipmentClassRepository
 
     public function slugExists(int $tenantId, string $slug, ?int $excludeId = null): bool
     {
-        $sql = 'SELECT 1 FROM equipment_classes WHERE tenant_id = ? AND slug = ?';
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $sql = 'SELECT 1 FROM equipment_classes WHERE tenant_id = ? AND ' . $slugEq;
         $params = [$tenantId, $slug];
         if ($excludeId !== null) {
             $sql .= ' AND id != ?';

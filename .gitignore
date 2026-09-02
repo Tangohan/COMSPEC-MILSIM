@@ -20,6 +20,8 @@ config/cdn_libraries.local.php
 !/storage/intel/.gitkeep
 /storage/atak_terrain/*
 !/storage/atak_terrain/.gitkeep
+/storage/snapshots/*
+!/storage/snapshots/.gitignore
 composer.lock
 
 # --- Exports / dumps de base : jamais dans le dépôt ---
