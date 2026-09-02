@@ -18,6 +18,20 @@ $effectifsLmsTitle = trim((string) ($effectifsLmsTitle ?? $title ?? 'Bureau effe
 <?php if (is_file(base_path('public/assets/css/img-fallback.css'))): ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/img-fallback.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <?php endif; ?>
+<?php foreach ((array) ($backOfficePageCss ?? []) as $pageCss): ?>
+    <?php $pageCss = ltrim(str_replace('\\', '/', (string) $pageCss), '/'); ?>
+    <?php if ($pageCss !== '' && !str_contains($pageCss, '..') && is_file(base_path('public/assets/css/' . $pageCss))): ?>
+<link href="<?= htmlspecialchars(asset_url('assets/css/' . $pageCss), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
+<?php endforeach; ?>
+<?php
+$alpinePath = is_file(base_path('public/assets/vendor/alpinejs/alpine.min.js'))
+    ? 'assets/vendor/alpinejs/alpine.min.js'
+    : (is_file(base_path('public/assets/js/alpine.min.js')) ? 'assets/js/alpine.min.js' : '');
+?>
+<?php if ($alpinePath !== ''): ?>
+<script defer src="<?= htmlspecialchars(asset_url($alpinePath), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php endif; ?>
 <?php if (is_file(base_path('public/assets/js/img-fallback.js'))): ?>
 <script src="<?= htmlspecialchars(asset_url('assets/js/img-fallback.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <?php endif; ?>

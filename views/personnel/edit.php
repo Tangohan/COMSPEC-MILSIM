@@ -23,8 +23,11 @@ $rpTutorChoices = is_array($rpTutorChoices ?? null) ? $rpTutorChoices : [];
 $roleplayEventTypes = is_array($roleplayEventTypes ?? null) ? $roleplayEventTypes : ['administratif'];
 
 $isMe = (int) ($targetUser['id'] ?? 0) === (int) (\App\Core\Session::get('user_id'));
+$effectifsEditContext = !empty($effectifsEditContext);
 $returnViewRh = trim((string) ($_GET['return_view'] ?? '')) === 'rh';
-$personnelBackUrl = $isMe ? url('personnel/me') : url('personnel/' . (int) ($targetUser['id'] ?? 0));
+$personnelBackUrl = $effectifsEditContext
+    ? effectifs_workspace_url('membres/' . (int) ($targetUser['id'] ?? 0))
+    : ($isMe ? url('personnel/me') : url('personnel/' . (int) ($targetUser['id'] ?? 0)));
 if ($returnViewRh) {
     $personnelBackUrl .= '?view=rh';
 }
@@ -139,13 +142,13 @@ $editValidTabIds = implode(',', array_map(
   <div class="pd-container">
     <header class="pd-header">
       <div>
-        <p class="pd-header__eyebrow">Dossier personnel</p>
+        <p class="pd-header__eyebrow"><?= $effectifsEditContext ? 'Bureau effectifs' : 'Dossier personnel' ?></p>
         <h1 class="pd-header__title">Éditer le dossier<?= trim((string) ($targetUser['display_name'] ?? '')) !== '' ? ' — ' . htmlspecialchars(trim((string) $targetUser['display_name']), ENT_QUOTES, 'UTF-8') : '' ?></h1>
         <p class="pd-header__sub">Identité, affectation, immersion et affichage — un onglet à la fois, comme un tableau de bord administratif.</p>
       </div>
       <div class="pd-header__actions">
-        <a href="<?= htmlspecialchars($personnelBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">← Fiche</a>
-        <?php if (\App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance())): ?>
+        <a href="<?= htmlspecialchars($personnelBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">← <?= $effectifsEditContext ? 'Fiche Effectifs' : 'Fiche' ?></a>
+        <?php if (!$effectifsEditContext && \App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance())): ?>
         <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) ($targetUser['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">Fiche Effectifs</a>
         <a href="<?= htmlspecialchars(url('back-office/users/' . (int) ($targetUser['id'] ?? 0) . '/edit'), ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">Compte</a>
         <?php endif; ?>

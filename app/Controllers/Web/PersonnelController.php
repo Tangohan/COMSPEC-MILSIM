@@ -1169,6 +1169,14 @@ class PersonnelController
         ]);
     }
 
+    /** Affiche l'éditeur de dossier directement dans le bureau Effectifs. */
+    public function editFromEffectifs(Request $request, array $params = []): Response
+    {
+        $params['_effectifs_context'] = true;
+
+        return $this->edit($request, $params);
+    }
+
     public function edit(Request $request, array $params = []): Response
     {
         $currentUser = $this->authService->user();
@@ -1185,6 +1193,13 @@ class PersonnelController
         $isSelf = ($currentUserId === (int) $target['id']);
         if (!$isSelf && !$this->canStaffEditPersonnel()) {
             return $this->personnelForbiddenResponse(false);
+        }
+        $fromEffectifs = !empty($params['_effectifs_context']);
+        // L'ancienne page personnel reste utilisable par un membre pour sa propre fiche.
+        // Pour une édition effectuée par l'équipe RH, Effectifs est désormais l'unique
+        // espace de travail ; les anciens favoris rejoignent donc l'URL canonique.
+        if (!$isSelf && !$fromEffectifs && EffectifsLmsAccess::allows(Gate::getInstance())) {
+            return Response::redirect(effectifs_workspace_url('membres/' . (int) $target['id'] . '/modifier'));
         }
         $uid = (int) $target['id'];
         $personnelProfile = $this->personnelProfileRepository->getByUserId($uid);
@@ -1319,9 +1334,12 @@ class PersonnelController
             }
         }
 
-        return Response::view('layout.main', [
+        return Response::view($fromEffectifs ? 'layout.effectifs_lms' : 'layout.main', [
             'content' => 'personnel.edit',
             'title' => 'Éditer le dossier',
+            'effectifsNav' => 'roster',
+            'effectifsEditContext' => $fromEffectifs,
+            'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
             'targetUser' => $target,
             'personnelProfile' => $personnelProfile,
             'displaySettings' => $displaySettings,
