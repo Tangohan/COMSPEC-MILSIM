@@ -25,11 +25,10 @@ use App\Support\LoginWelcomeGate;
 use App\Support\PortalAccessChoice;
 use App\Services\Auth\LoginSecurityOtpService;
 use App\Services\Auth\LoginWelcomeProfileService;
+use App\Services\Auth\PasswordResetService;
 
 class AuthController
 {
-    private const RESET_TOKEN_EXPIRE_HOURS = 1;
-
     /** Sélection de communauté après mot de passe (multi-tenant). */
     private const PENDING_COMMUNITY_TTL_SEC = 600;
 
@@ -49,6 +48,7 @@ class AuthController
         private IndicatorBlocklistService $indicatorBlocklist,
         private LoginSecurityOtpService $loginSecurityOtpService,
         private LoginWelcomeProfileService $loginWelcomeProfileService,
+        private PasswordResetService $passwordResetService,
     ) {}
 
     /**
@@ -693,6 +693,7 @@ class AuthController
             'title' => __('auth.title_forgot'),
             'error' => $error,
             'success' => $success,
+            'hoursValid' => PasswordResetService::TOKEN_TTL_HOURS,
         ]);
     }
 
@@ -712,29 +713,7 @@ class AuthController
             return Response::redirect(url('forgot-password'));
         }
 
-        $tenant = $this->tenantRepository->getDefaultTenant();
-        if (!$tenant) {
-            Session::flash('error', __('auth.flash_service_unavailable'));
-            return Response::redirect(url('forgot-password'));
-        }
-        $user = $this->userRepository->findFirstByEmailGlobal($email)
-            ?? $this->userRepository->findByEmail((int) $tenant['id'], $email);
-        if ($user && empty($user['is_service_account'])) {
-            $this->passwordResetRepository->deleteExpired();
-            $token = bin2hex(random_bytes(32));
-            $hash = hash('sha256', $token);
-            $expires = new \DateTimeImmutable('+' . self::RESET_TOKEN_EXPIRE_HOURS . ' hours');
-            $this->passwordResetRepository->create((int) $user['id'], $hash, $expires);
-            $resetUrl = url('reset-password') . '?token=' . $token;
-            $this->emailService->sendPasswordReset($email, $resetUrl, self::RESET_TOKEN_EXPIRE_HOURS, (int) $tenant['id']);
-            $this->auditService->log(
-                AuditAction::AUTH_PASSWORD_RESET_REQUESTED,
-                (int) $tenant['id'],
-                (int) $user['id'],
-                'user',
-                (int) $user['id']
-            );
-        }
+        $this->passwordResetService->requestLink($email);
         Session::flash('success', __('auth.flash_reset_sent'));
         return Response::redirect(url('forgot-password'));
     }
@@ -745,13 +724,7 @@ class AuthController
             return Response::redirect(url('dashboard'));
         }
         $token = trim((string) ($request->query('token') ?? $request->input('token') ?? ''));
-        if ($token === '') {
-            Session::flash('error', __('auth.flash_link_invalid'));
-            return Response::redirect(url('forgot-password'));
-        }
-        $hash = hash('sha256', $token);
-        $reset = $this->passwordResetRepository->findValidByToken($hash);
-        if (!$reset) {
+        if ($this->passwordResetService->findValidReset($token) === null) {
             Session::flash('error', __('auth.flash_link_invalid'));
             return Response::redirect(url('forgot-password'));
         }
@@ -760,6 +733,7 @@ class AuthController
             'title' => __('auth.title_reset'),
             'token' => $token,
             'error' => $error,
+            'hoursValid' => PasswordResetService::TOKEN_TTL_HOURS,
         ]);
     }
 
@@ -773,37 +747,17 @@ class AuthController
             return Response::redirect(url('forgot-password'));
         }
         $token = trim((string) $request->input('token'));
-        $hash = hash('sha256', $token);
-        $reset = $this->passwordResetRepository->findValidByToken($hash);
-        if (!$reset) {
+        $new = (string) $request->input('password');
+        $confirm = (string) $request->input('password_confirmation');
+        $result = $this->passwordResetService->complete($token, $new, $confirm);
+        if ($result === 'invalid') {
             Session::flash('error', __('auth.flash_link_invalid'));
             return Response::redirect(url('forgot-password'));
         }
-        $new = $request->input('password');
-        $confirm = $request->input('password_confirmation');
-        $v = new Validator(
-            ['password' => $new, 'password_confirmation' => $confirm],
-            ['password' => 'required|min:8', 'password_confirmation' => 'required']
-        );
-        if (!$v->validate() || $new !== $confirm) {
+        if ($result === 'mismatch') {
             Session::flash('error', __('auth.flash_passwords_mismatch'));
-            return Response::redirect(url('reset-password') . '?token=' . $token);
+            return Response::redirect(url('reset-password') . '?token=' . rawurlencode($token));
         }
-        $passwordHash = password_hash((string) $new, PASSWORD_ARGON2ID);
-        $user = $this->userRepository->findById((int) $reset['user_id']);
-        $tenantId = $user ? (int) $user['tenant_id'] : 0;
-        $this->userRepository->update((int) $reset['user_id'], $tenantId, ['password_hash' => $passwordHash]);
-        if ($user !== null && ($user['status'] ?? '') === 'pending_verification') {
-            $this->userRepository->markEmailVerified((int) $reset['user_id'], $tenantId);
-        }
-        $this->passwordResetRepository->deleteByToken($hash);
-        $this->auditService->log(
-            AuditAction::AUTH_PASSWORD_RESET_COMPLETED,
-            $tenantId,
-            (int) $reset['user_id'],
-            'user',
-            (int) $reset['user_id']
-        );
         Session::flash('success', __('auth.flash_password_reset_ok'));
         return Response::redirect(url('login'));
     }

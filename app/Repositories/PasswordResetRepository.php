@@ -38,6 +38,14 @@ class PasswordResetRepository
         $this->pdo->prepare('DELETE FROM password_resets WHERE token_hash = ?')->execute([$tokenHash]);
     }
 
+    public function deleteForUser(int $userId): void
+    {
+        if ($userId < 1) {
+            return;
+        }
+        $this->pdo->prepare('DELETE FROM password_resets WHERE user_id = ?')->execute([$userId]);
+    }
+
     public function deleteExpired(): void
     {
         $this->pdo->exec('DELETE FROM password_resets WHERE expires_at <= NOW()');

@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(383, '2026-09-02', 'Le mot de passe oublié a une page complète', 'Depuis la connexion, Mot de passe oublié ouvre un écran du même style. Vous indiquez l’adresse du compte, recevez un lien valable deux heures, puis choisissez un nouveau mot de passe. Le mot de passe s’applique à toutes vos communautés. Rechargez la page de connexion', [], [], [
+                'La page de récupération ne ressemblait pas au reste du portail, et l’enregistrement du nouveau mot de passe pouvait échouer après la réunion des comptes',
+            ], ['platform'], [
+                'Ouvrez Connexion, puis Mot de passe oublié. Après l’e-mail, suivez le lien et saisissez deux fois le nouveau mot de passe.',
+            ], 'Portail'),
             $pr(382, '2026-09-02', 'Les dossiers réapparaissent après la réunion des comptes', 'Après la mise à jour qui réunit les comptes d’une même adresse e-mail, les fiches (nom, indicatif, photo, dossier RH) se relisent dans la communauté en cours. Les informations restées sur l’ancien compte sont reprises, sans écraser ce qui a déjà été resaisi. Rechargez le dossier et le tableau de bord', [], [], [
                 'Les fiches s’affichaient vides alors que les informations étaient encore enregistrées sur l’ancien compte réuni',
             ], ['personnel', 'platform'], [
