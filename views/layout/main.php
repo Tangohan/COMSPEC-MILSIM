@@ -330,6 +330,7 @@ if (!empty($isBackOfficeShell)) {
 }
 ?>
 <body class="<?= htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8') ?>">
+    <?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
     <?php if (empty($communityReelsPage)): ?>
     <div class="grain" aria-hidden="true"></div>
     <?php endif; ?>
