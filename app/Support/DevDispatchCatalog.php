@@ -589,6 +589,16 @@ final class DevDispatchCatalog
             ], ['platform'], [
                 'Ouvrez Gestion documentaire, puis Modifier sur une fiche. Si un fichier est joint, utilisez Ouvrir le fichier, Télécharger ou Retirer le fichier.',
             ], 'Portail'),
+            $pr(377, '2026-09-02', 'La mise à jour du portail se termine à nouveau', 'L’écran de mise à niveau du portail s’arrêtait en cours de route. La mise à jour peut désormais aller jusqu’au bout, y compris lorsqu’un compte est rattaché à plusieurs communautés. Rechargez le portail', [], [], [
+                'L’écran de mise à jour du portail s’interrompait au milieu du parcours',
+            ], ['platform'], [
+                'Mise à jour du portail uniquement : rien à recharger en session. Relancez la mise à niveau depuis l’écran habituel si elle n’avait pas abouti.',
+            ], 'Portail 1.6.03'),
+            $pr(376, '2026-09-02', 'Le tableau de bord s’ouvre à nouveau après connexion', 'Après connexion, le tableau de bord se charge même lorsque le compte appartient à plusieurs communautés. Rechargez la page d’accueil', [], [], [
+                'Certains comptes ne pouvaient plus ouvrir le tableau de bord : la page restait bloquée sur une erreur',
+            ], ['platform'], [
+                'Connectez-vous, puis ouvrez le tableau de bord. Si une ancienne page d’erreur reste affichée, actualisez-la.',
+            ], 'Portail 1.6.03'),
             $pr(375, '2026-09-02', 'Les kits d’accès se cochent clairement avant l’enregistrement', 'Sur la page Kits d’accès, chaque carte affiche une case. Une carte retenue passe en Sélectionné et le pied de page indique combien de kits sont cochés. Enregistrez ensuite pour les attribuer aux membres', [], [], [
                 'Cliquer une carte ne changeait pas l’affichage : pas de case visible, le pied de page restait sur Aucun kit coché',
             ], ['personnel'], [

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Account;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 use Throwable;
 
@@ -626,7 +627,8 @@ final class AccountPurgeService
 
         $email = 'history.' . $tenantId . '@internal.local';
         try {
-            $stmt = $pdo->prepare('SELECT `id` FROM `users` WHERE `tenant_id` = ? AND LOWER(TRIM(`email`)) = ? LIMIT 1');
+            $emailEq = SqlText::normalizedEquals($pdo, '`email`');
+            $stmt = $pdo->prepare('SELECT `id` FROM `users` WHERE `tenant_id` = ? AND ' . $emailEq . ' LIMIT 1');
             $stmt->execute([$tenantId, strtolower($email)]);
             $existing = $stmt->fetchColumn();
             if ($existing !== false) {
@@ -661,7 +663,8 @@ final class AccountPurgeService
             return (int) $pdo->lastInsertId();
         } catch (Throwable) {
             try {
-                $stmt = $pdo->prepare('SELECT `id` FROM `users` WHERE `tenant_id` = ? AND LOWER(TRIM(`email`)) = ? LIMIT 1');
+                $emailEq = SqlText::normalizedEquals($pdo, '`email`');
+                $stmt = $pdo->prepare('SELECT `id` FROM `users` WHERE `tenant_id` = ? AND ' . $emailEq . ' LIMIT 1');
                 $stmt->execute([$tenantId, strtolower($email)]);
                 $again = $stmt->fetchColumn();
 

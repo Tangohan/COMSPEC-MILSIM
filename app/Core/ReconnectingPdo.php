@@ -76,7 +76,7 @@ final class ReconnectingPdo extends PDO
         if (defined('PDO::MYSQL_ATTR_INIT_COMMAND') && isset($this->options[PDO::MYSQL_ATTR_INIT_COMMAND])) {
             return;
         }
-        parent::exec("SET time_zone = '+00:00'");
+        parent::exec(Database::sessionInitSql());
     }
 
     /**

@@ -7,7 +7,12 @@ declare(strict_types=1);
  * Schéma idempotent : appartenances, fiches communauté, journal de fusion,
  * dossiers RH scopés (user_id, tenant_id). La fusion des doublons e-mail
  * n’est pas exécutée ici — voir UserIdentityMergeService.
+ *
+ * function_exists : le fichier est chargé par run-migrations.php (require_once)
+ * et peut l’être à nouveau dans la même requête par SilentSchemaMigration (annuaire,
+ * appartenances, fusion). Sans garde, PHP s’arrête (Cannot redeclare).
  */
+if (!function_exists('run_user_community_identity_migration')) {
 function run_user_community_identity_migration(PDO $pdo, ?callable $log = null): void
 {
     $say = static function (string $message) use ($log): void {
@@ -280,6 +285,7 @@ function run_user_community_identity_migration(PDO $pdo, ?callable $log = null):
              WHERE u.tenant_id IS NOT NULL AND u.tenant_id > 0"
         );
     }
+}
 }
 
 return static function (PDO $pdo, ?callable $log = null): void {
