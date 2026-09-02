@@ -263,8 +263,11 @@ class DocumentsController
         }
         $id = (int) ($params['id'] ?? 0);
         $doc = $this->documentRepository->findById($id, (int) $tenantId);
-        if (!$doc || empty($doc['file_path'])) {
-            return (new Response())->setStatusCode(404)->setBody('Document non trouvé');
+        if (!$doc) {
+            return $this->missingDocumentFilePage(null, $id);
+        }
+        if (empty($doc['file_path'])) {
+            return $this->missingDocumentFilePage($doc, $id);
         }
         if (!empty($doc['require_access_code']) && !$this->isAccessCodeUnlocked($id)) {
             return (new Response())->setStatusCode(423)->setBody('Code d\'accès requis');
@@ -286,7 +289,7 @@ class DocumentsController
         }
         $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
         if (!is_file($fullPath)) {
-            return (new Response())->setStatusCode(404)->setBody('Fichier absent');
+            return $this->missingDocumentFilePage($doc, $id);
         }
         $response = new Response();
         $response->header('Content-Type', $doc['mime_type'] ?: 'application/octet-stream');
@@ -314,8 +317,11 @@ class DocumentsController
         }
         $id = (int) ($params['id'] ?? 0);
         $doc = $this->documentRepository->findById($id, (int) $tenantId);
-        if (!$doc || empty($doc['file_path'])) {
-            return (new Response())->setStatusCode(404)->setBody('Document non trouvé');
+        if (!$doc) {
+            return $this->missingDocumentFilePage(null, $id);
+        }
+        if (empty($doc['file_path'])) {
+            return $this->missingDocumentFilePage($doc, $id);
         }
         if (!empty($doc['require_access_code']) && !$this->isAccessCodeUnlocked($id)) {
             return (new Response())->setStatusCode(423)->setBody('Code d\'accès requis');
@@ -344,7 +350,7 @@ class DocumentsController
         }
         $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
         if (!is_file($fullPath)) {
-            return (new Response())->setStatusCode(404)->setBody('Fichier absent');
+            return $this->missingDocumentFilePage($doc, $id);
         }
         $this->auditService->logDocumentDownloaded((int) $tenantId, $userId ? (int) $userId : 0, $id);
         if ($securitySessionToken !== '') {
@@ -654,6 +660,37 @@ class DocumentsController
             'doctrineQuick' => $doctrineQuick,
             'canManage' => $canManage,
         ]);
+    }
+
+    /**
+     * @param array<string, mixed>|null $document
+     */
+    private function missingDocumentFilePage(?array $document, int $documentId): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $doctrine = null;
+        if ($document !== null && $this->documentDoctrineRepository->tableExists()) {
+            $doctrine = $this->documentDoctrineRepository->findByDocumentId((int) ($document['id'] ?? $documentId), $tenantId);
+        }
+        $isDoctrine = is_array($doctrine);
+        $backHref = $isDoctrine
+            ? url('documents/doctrine/' . $documentId)
+            : ($documentId > 0 ? url('documents/' . $documentId) : url('documents'));
+        $response = Response::view('layout.main', [
+            'title' => 'Document indisponible',
+            'content' => 'documents/file_missing',
+            'missingHeading' => $document === null ? 'Document introuvable' : 'Fichier non consultable',
+            'missingLead' => $document === null
+                ? 'Cette fiche n’existe pas, ou elle n’est plus accessible dans votre communauté.'
+                : 'Le fichier n’est pas encore déposé, ou il n’est plus disponible. Vous pouvez revenir à la fiche ou ouvrir le référentiel.',
+            'missingTitle' => (string) ($document['title'] ?? ''),
+            'missingReference' => (string) ($doctrine['reference_code'] ?? ''),
+            'documentBackHref' => $backHref,
+            'referentialHref' => url('documents') . '?category_slug=doctrine',
+        ]);
+        $response->setStatusCode(404);
+
+        return $response;
     }
 
     /**

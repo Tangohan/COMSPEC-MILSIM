@@ -30,7 +30,9 @@ Les **modpacks** regroupent les **extensions** ou **collections de mods** valid�
 
 ## ATAK et environnement tactique
 
-**ATAK** (Android Tactical Assault Kit) désigne ici l’écosystème d’outils de carte et de coordination. Le portail propose :
+Manuel opérateur : **TM-A3-21**. Procédures : **SOP-A3-01**. Index C2 : `docs/README.md`.
+
+**ATAK** désigne ici l’écosystème d’outils de carte et de coordination du portail. Le portail propose :
 
 - Une page **d’accueil ATAK** avec liens vers ressources, tutoriels, téléchargement du **module** ou pack fourni par votre unité.
 - Une page de **configuration** ou d’**état** pour vérifier la liaison avec les services (selon ce qui est déployé pour votre communauté).

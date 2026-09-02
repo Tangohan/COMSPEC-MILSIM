@@ -89,7 +89,7 @@ Ces documents sont référencés mais situés ailleurs dans le projet :
 
 ### Documentation mod existante
 
-- `ROLEPLAY-ATAK-ENHANCED.md` : Guide détaillé du système (version originale)
+- `docs/archive/legacy-atak/ROLEPLAY-ATAK-ENHANCED.md` : note historique (absorbe dans TM-A3-21 / SOP-A3-01)
 - `ROLEPLAY-EFFETS-INGAME.md` : Catalogue des effets visuels/sonores
 - `ROLEPLAY-NOUVELLES-FONCTIONNALITES.md` : Fonctionnalités roleplay complètes
 - `ROLEPLAY-ZONES-GEOGRAPHIQUES.md` : Guide complet des zones

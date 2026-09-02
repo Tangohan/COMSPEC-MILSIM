@@ -1,22 +1,29 @@
 /**
- * Assistant Courrier : charge les snippets et insertion au curseur.
+ * Assistant rédactionnel : charge les formules et les insère au curseur.
  */
 (function () {
-  var root = document.getElementById('courrier-snippets-root');
+  var root = document.querySelector('[data-writing-assistant]') || document.getElementById('courrier-snippets-root');
   if (!root) return;
 
-  var api = window.COURRIER_SNIPPETS_API || '';
-  var docId = window.COURRIER_DOC_ID;
+  var api = root.getAttribute('data-api') || window.COURRIER_SNIPPETS_API || '';
+  var docId = root.getAttribute('data-doc-id') || window.COURRIER_DOC_ID || '';
   var locked = root.getAttribute('data-locked') === '1';
+  var targetId = root.getAttribute('data-target') || 'body-rendered';
+  var insertMode = root.getAttribute('data-insert-mode') || 'html';
+
+  function targetField() {
+    return document.getElementById(targetId);
+  }
 
   var toolbar = document.getElementById('courrier-insert-toolbar');
   if (toolbar && !locked) {
     toolbar.querySelectorAll('.courrier-insert-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var ta = document.getElementById('body-rendered');
         var kind = btn.getAttribute('data-kind') || 'para';
-        var html = kind === 'alinea' ? '<p class="courrier-alinea"></p>' : '<p></p>';
-        insertAtCursor(ta, html);
+        var chunk = insertMode === 'markdown'
+          ? (kind === 'alinea' ? '\n\n    ' : '\n\n')
+          : (kind === 'alinea' ? '<p class="courrier-alinea"></p>' : '<p></p>');
+        insertAtCursor(targetField(), chunk);
       });
     });
   }
@@ -33,16 +40,24 @@
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
+  function toMarkdown(html) {
+    var raw = String(html || '');
+    var tmp = document.createElement('div');
+    tmp.innerHTML = raw;
+    var text = (tmp.textContent || tmp.innerText || raw).trim();
+    return text !== '' ? text + '\n\n' : '';
+  }
+
   function groupLabel(phase) {
     if (phase === 'intro') return 'Introductions';
     if (phase === 'transition') return 'Transitions';
     if (phase === 'closure') return 'Clôtures';
-    return phase;
+    return 'Formules';
   }
 
   function render(snippets) {
     if (!snippets.length) {
-      root.innerHTML = '<p class="text-slate-400">Aucune formule (vérifiez ressources/courrier/snippets.json).</p>';
+      root.innerHTML = '<p class="writing-assistant__muted">Aucune formule n’est proposée pour le moment. Rédigez le texte à la main, ou réessayez plus tard.</p>';
       return;
     }
     var byPhase = {};
@@ -53,12 +68,12 @@
     });
     var html = '';
     Object.keys(byPhase).forEach(function (phase) {
-      html += '<div class="border-t border-slate-100 pt-2 first:border-t-0 first:pt-0">';
-      html += '<p class="font-semibold text-slate-600 mb-1">' + groupLabel(phase) + '</p>';
-      html += '<ul class="space-y-1">';
+      html += '<div class="writing-assistant__group">';
+      html += '<p class="writing-assistant__group-title">' + groupLabel(phase) + '</p>';
+      html += '<ul class="writing-assistant__items">';
       byPhase[phase].forEach(function (s) {
-        var esc = s.label.replace(/</g, '&lt;');
-        html += '<li><button type="button" class="text-left w-full px-2 py-1 rounded hover:bg-slate-100 text-slate-700 courrier-snippet-btn" data-html="' +
+        var esc = String(s.label || '').replace(/</g, '&lt;');
+        html += '<li><button type="button" class="writing-assistant__item courrier-snippet-btn" data-html="' +
           encodeURIComponent(s.html || '') + '">' + esc + '</button></li>';
       });
       html += '</ul></div>';
@@ -66,15 +81,15 @@
     root.innerHTML = html;
     root.querySelectorAll('.courrier-snippet-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var ta = document.getElementById('body-rendered');
         var raw = decodeURIComponent(btn.getAttribute('data-html') || '');
-        insertAtCursor(ta, raw);
+        var chunk = insertMode === 'markdown' ? toMarkdown(raw) : raw;
+        insertAtCursor(targetField(), chunk);
       });
     });
   }
 
   if (!api) {
-    root.innerHTML = '<p class="text-amber-600 text-xs">API snippets non configurée.</p>';
+    root.innerHTML = '<p class="writing-assistant__warn">L’assistant n’est pas disponible pour le moment.</p>';
     return;
   }
 
@@ -85,15 +100,14 @@
       render(data.snippets || []);
     })
     .catch(function () {
-      root.innerHTML = '<p class="text-rose-600 text-xs">Impossible de charger les formules.</p>';
+      root.innerHTML = '<p class="writing-assistant__warn">Les formules n’ont pas pu être chargées. Réessayez dans un instant.</p>';
     });
 
-  /* Suggestion intro si corps vide */
-  var ta = document.getElementById('body-rendered');
+  var ta = targetField();
   if (ta && !locked && (!ta.value || !ta.value.trim())) {
     var hint = document.createElement('p');
-    hint.className = 'text-xs text-slate-400 mt-1';
-    hint.textContent = 'Astuce : choisissez une introduction dans l’assistant à droite.';
+    hint.className = 'writing-assistant__tip';
+    hint.textContent = 'Astuce : commencez par une introduction proposée par l’assistant.';
     root.parentElement.appendChild(hint);
   }
 })();
