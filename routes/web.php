@@ -2006,6 +2006,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->delete('/api/units/{id}', [AtakApiController::class, 'unitsDelete']);
     $router->get('/api/atak/personnel', [AtakApiController::class, 'personnelDirectory']);
     $router->post('/api/atak/position', [AtakApiController::class, 'position']);
+    $router->post('/api/atak/operator/register', [AtakApiController::class, 'operatorRegister']);
+    $router->post('/api/atak/operator/sync', [AtakApiController::class, 'operatorSync']);
     $router->post('/api/atak/playtime', [AtakApiController::class, 'playtime']);
     $router->get('/api/chat', [AtakApiController::class, 'chatIndex']);
     $router->post('/api/chat', [AtakApiController::class, 'chatStore']);
