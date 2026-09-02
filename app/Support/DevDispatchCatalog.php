@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(380, '2026-09-02', 'Les alertes du dossier s’affichent sous le bandeau d’identité', 'Sur un dossier personnel, l’absence en cours et les actions du dossier apparaissent sous le bandeau sombre, après le nom. L’annonce d’ancienneté de la plateforme reste en haut, sous le menu. Rechargez la page du dossier', [], [], [
+                'L’absence en cours et les actions du dossier passaient au-dessus du bandeau Dossier personnel',
+            ], ['platform'], [
+                'Rechargez la page du dossier. L’ancienneté de plateforme reste sous le menu.',
+            ], 'Portail 1.6.04'),
             $pr(379, '2026-09-02', 'Un compte suffit pour plusieurs communautés', 'La même adresse e-mail n’ouvre plus plusieurs comptes. Vous vous connectez une fois, puis vous changez de communauté comme aujourd’hui. Chaque unité garde son propre dossier — grade, matricule, indicatif, fiche RH — sans mélange. Relancez la mise à jour du portail, puis reconnectez-vous', [
                 'Une seule identité de connexion : e-mail, mot de passe et Steam',
                 'Rejoindre une communauté ajoute une appartenance, sans créer un second compte',
