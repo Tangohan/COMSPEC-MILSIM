@@ -1401,11 +1401,11 @@ class PersonnelController
         $advancedEditActive = $isSelf
             && function_exists('user_has_advanced_fiche_edit')
             && user_has_advanced_fiche_edit((int) $target['id']);
-        $clearanceReview = trim((string) $request->input('clearance_reviewed_at'));
-        $readinessRaw = $request->input('readiness_score');
+        $existingProfile = $this->personnelProfileRepository->getByUserId((int) $target['id']) ?? [];
+        $clearanceReview = trim((string) $request->input('clearance_reviewed_at', $existingProfile['clearance_reviewed_at'] ?? ''));
+        $readinessRaw = $request->input('readiness_score', $existingProfile['readiness_score'] ?? null);
         $readinessScore = ($readinessRaw === null || $readinessRaw === '') ? null : max(0, min(100, (int) $readinessRaw));
         $roleplayFollowupConfig = $this->roleplayFollowupConfig($tenantId);
-        $existingProfile = $this->personnelProfileRepository->getByUserId((int) $target['id']) ?? [];
         $assignmentReason = $this->normalizeReasonLabel((string) $request->input('assignment_change_reason'));
         $jobRoleReason = $this->normalizeReasonLabel((string) $request->input('job_role_change_reason'));
 
@@ -1521,7 +1521,7 @@ class PersonnelController
             // clearance_level : hors élévation, sauf mode édition avancée 24 h (grant admin).
             'clearance_reviewed_at' => $clearanceReview !== '' ? $clearanceReview : null,
             'readiness_score' => $readinessScore !== null ? $readinessScore : 0,
-            'enlistment_date' => trim((string) $request->input('enlistment_date')) ?: null,
+            'enlistment_date' => trim((string) $request->input('enlistment_date', $existingProfile['enlistment_date'] ?? '')) ?: null,
             'equipment_class' => trim((string) $request->input('equipment_class')),
             'kit_assigned' => trim((string) $request->input('kit_assigned')),
             'radio_assigned' => trim((string) $request->input('radio_assigned')),
@@ -1608,12 +1608,15 @@ class PersonnelController
             $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
         }
         if ($advancedEditActive) {
-            $clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels();
-            $clearanceIn = trim((string) $request->input('clearance_level'));
-            if ($clearanceIn === '') {
-                $data['clearance_level'] = null;
-            } elseif (isset($clearanceLabels[$clearanceIn])) {
-                $data['clearance_level'] = $clearanceIn;
+            $clearanceRaw = $request->input('clearance_level');
+            if ($clearanceRaw !== null) {
+                $clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels();
+                $clearanceIn = trim((string) $clearanceRaw);
+                if ($clearanceIn === '') {
+                    $data['clearance_level'] = null;
+                } elseif (isset($clearanceLabels[$clearanceIn])) {
+                    $data['clearance_level'] = $clearanceIn;
+                }
             }
             $matriculeIn = trim((string) $request->input('matricule_internal'));
             if ($matriculeIn !== '') {
@@ -1947,7 +1950,7 @@ class PersonnelController
             ]);
         }
 
-        if ($isSelf || $canStaffEdit) {
+        if (($isSelf || $canStaffEdit) && $request->input('pre_platform_start_date') !== null) {
             $preRaw = trim((string) $request->input('pre_platform_start_date', ''));
             $preResult = Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class)
                 ->upsertPersonStartDate($tenantId, (int) $target['id'], $preRaw !== '' ? $preRaw : null);
