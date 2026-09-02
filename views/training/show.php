@@ -29,7 +29,7 @@ $image = 'https://media.defense.gov/2019/Sep/12/2002181666/2000/2000/0/190905-F-
 
     <nav class="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <a href="<?= $base ?>/" class="text-[11px] font-black tracking-[0.28em] uppercase hover:text-emerald-600 transition-colors">Athena Compsec</a>
+            <a href="<?= $base ?>/" class="text-[11px] font-black tracking-[0.28em] uppercase hover:text-emerald-600 transition-colors">Athena Comspec</a>
             <div class="flex items-center gap-6">
                 <a href="<?= url('formations') ?>" class="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900">Catalogue</a>
                 <a href="<?= url('dashboard') ?>" class="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900">Dashboard</a>
