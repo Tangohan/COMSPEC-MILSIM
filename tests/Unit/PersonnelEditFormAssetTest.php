@@ -74,4 +74,16 @@ final class PersonnelEditFormAssetTest extends TestCase
         self::assertStringContainsString('if (!$isSelf && !$this->canStaffEditPersonnel())', $controller);
         self::assertStringContainsString('if (!$isSelf && !$canStaffEdit)', $controller);
     }
+
+    public function testJobRolePersistenceSupportsLegacyPivotTablesAndReportsFailures(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $migration = (string) file_get_contents($root . '/bootstrap/personnel_profile_job_roles_migration.php');
+        $controller = (string) file_get_contents($root . '/app/Controllers/Web/PersonnelController.php');
+
+        self::assertStringContainsString("!\$hasColumn('personnel_profile_job_roles', 'role_detail')", $migration);
+        self::assertStringContainsString('ADD COLUMN role_detail VARCHAR(150)', $migration);
+        self::assertStringContainsString('les rôles métier n’ont pas pu être sauvegardés', $controller);
+        self::assertStringNotContainsString('catch (\\Throwable) {\n            }', $controller);
+    }
 }

@@ -58,6 +58,20 @@ function run_personnel_profile_job_roles_migration(PDO $pdo): void
         }
     }
 
+    // Les premières versions de la table pivot ne stockaient pas la précision
+    // saisie depuis le dossier. CREATE TABLE IF NOT EXISTS ne fait pas évoluer
+    // ces installations : l'INSERT de sauvegarde échouait alors sur role_detail.
+    if (!$hasColumn('personnel_profile_job_roles', 'role_detail')) {
+        try {
+            $pdo->exec(
+                'ALTER TABLE personnel_profile_job_roles
+                 ADD COLUMN role_detail VARCHAR(150) DEFAULT NULL AFTER sort_order'
+            );
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] personnel_profile_job_roles.role_detail : ' . $e->getMessage() . "\n";
+        }
+    }
+
     if ($hasTable('personnel_profiles') && $hasColumn('personnel_profiles', 'personnel_job_role_id')) {
         try {
             $pdo->exec(

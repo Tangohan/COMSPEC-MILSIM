@@ -1747,7 +1747,11 @@ class PersonnelController
             try {
                 $pivotResult = $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, (int) $target['id'], $jobRolesParsed);
                 $primaryRoleStr = $pivotResult['primary_role_display'];
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
+                error_log('Échec de sauvegarde des rôles métier du dossier #' . (int) $target['id'] . ' : ' . $e->getMessage());
+                Session::flash('error', 'Le dossier a été enregistré, mais les rôles métier n’ont pas pu être sauvegardés. Exécutez les migrations puis réessayez.');
+
+                return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
             }
         }
 
