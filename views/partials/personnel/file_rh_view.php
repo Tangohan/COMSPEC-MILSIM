@@ -89,6 +89,16 @@ $rhPriorityAlerts = array_values(array_filter(
 ));
 $rhAlertErrorCount = count(array_filter($rhPriorityAlerts, static fn (array $a): bool => ($a['level'] ?? '') === 'error'));
 $rhAlertWarnCount = count(array_filter($rhPriorityAlerts, static fn (array $a): bool => ($a['level'] ?? '') === 'warning'));
+$rhOperational = $personnelOperationalStatus;
+$rhOperationalTone = match ($rhOperational['tone']) {
+    'emerald' => 'border-emerald-200 bg-emerald-50 text-emerald-950',
+    'rose' => 'border-rose-200 bg-rose-50 text-rose-950',
+    default => 'border-amber-200 bg-amber-50 text-amber-950',
+};
+$rhClearanceReviewedAt = trim((string) ($personnelProfile['clearance_reviewed_at'] ?? ''));
+$rhClearanceReviewLabel = $rhClearanceReviewedAt !== ''
+    ? 'Dernière vérification le ' . date('d/m/Y', strtotime($rhClearanceReviewedAt))
+    : 'Date de vérification non renseignée';
 ?>
 <?php
 $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $personnelFileShell !== ''
@@ -130,7 +140,7 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
                     <?php endif; ?>
                 </div>
                 <div class="min-w-0 grow">
-                    <p class="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/90 mb-1">Vue RH — dossier personnel</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/90 mb-1">Dossier RH complet</p>
                     <h1 class="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight text-white truncate">
                         <?= htmlspecialchars((string) $displayName, ENT_QUOTES, 'UTF-8') ?>
                     </h1>
@@ -169,12 +179,12 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
                     <p class="text-sm font-semibold text-white"><?= $effectiveRankDisplay !== '' ? htmlspecialchars($effectiveRankDisplay, ENT_QUOTES, 'UTF-8') : '—' ?></p>
                 </div>
                 <div>
-                    <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Habilitation</p>
+                    <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Documents accessibles</p>
                     <p class="text-sm font-semibold text-emerald-400"><?= $clearanceLevel !== '' ? htmlspecialchars($clearanceLevel, ENT_QUOTES, 'UTF-8') : '—' ?></p>
                 </div>
                 <div>
-                    <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Préparation</p>
-                    <p class="text-sm font-semibold text-white"><?= $readiness !== null ? $readiness . ' %' : '—' ?></p>
+                    <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Situation actuelle</p>
+                    <p class="text-sm font-semibold text-white"><?= htmlspecialchars($rhOperational['label'], ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
                 <?php if (!empty($enlistmentFormatted)): ?>
                 <div>
@@ -188,6 +198,34 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
                 </div>
             </div>
         </div>
+    </section>
+
+    <section class="grid gap-4 lg:grid-cols-2" aria-label="Explication des indicateurs RH">
+        <article class="rounded-2xl border p-5 <?= $rhOperationalTone ?>">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] opacity-70">Puis-je être mobilisé maintenant ?</p>
+                    <h2 class="mt-1 text-xl font-black"><?= htmlspecialchars($rhOperational['label'], ENT_QUOTES, 'UTF-8') ?></h2>
+                    <p class="mt-1 text-sm opacity-80"><?= htmlspecialchars($rhOperational['summary'], ENT_QUOTES, 'UTF-8') ?></p>
+                </div>
+                <span class="rounded-full bg-white/70 px-3 py-1 text-xs font-bold"><?= (int) $rhOperational['score'] ?> % des éléments réunis</span>
+            </div>
+            <details class="mt-4 rounded-xl bg-white/60 px-4 py-3">
+                <summary class="cursor-pointer text-sm font-bold">Voir comment c’est calculé automatiquement</summary>
+                <p class="mt-2 text-xs leading-relaxed opacity-75">Le statut est recalculé à chaque ouverture à partir du compte, de l’affectation, des qualifications, des absences et de la décision « déployable ». Il n’y a aucune note à saisir.</p>
+                <ul class="mt-3 grid gap-2 sm:grid-cols-2">
+                    <?php foreach ($rhOperational['checks'] as $check): ?>
+                    <li class="flex items-center gap-2 text-xs"><span aria-hidden="true"><?= $check['ok'] ? '✓' : '○' ?></span><?= htmlspecialchars($check['label'], ENT_QUOTES, 'UTF-8') ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </details>
+        </article>
+        <article class="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sky-950">
+            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-700">Quels documents puis-je ouvrir ?</p>
+            <h2 class="mt-1 text-xl font-black"><?= $clearanceLevel !== '' ? htmlspecialchars($clearanceLevel, ENT_QUOTES, 'UTF-8') : 'À définir' ?></h2>
+            <p class="mt-2 text-sm leading-relaxed text-sky-900">L’habilitation documentaire indique le niveau maximal des documents protégés que ce membre peut consulter. Ce n’est ni un grade, ni une note de performance.</p>
+            <p class="mt-4 text-xs font-semibold text-sky-800"><?= htmlspecialchars($rhClearanceReviewLabel, ENT_QUOTES, 'UTF-8') ?></p>
+        </article>
     </section>
 
     <div class="flex flex-wrap items-center justify-between gap-3">
