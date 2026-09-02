@@ -584,12 +584,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
-            $pr(380, '2026-09-02', 'L’aperçu des documents PDF s’affiche à nouveau', 'Dans la bibliothèque, un document PDF s’ouvre de nouveau à l’écran. Si l’aperçu ne peut pas s’afficher, un message propose de le télécharger. Rechargez la page du document', [], [], [
-                'L’aperçu d’un PDF publié restait vide',
-                'Un échec d’affichage n’affiche plus une page hors ligne à la place du document',
-            ], ['platform'], [
-                'Ouvrez un document PDF publié dans la bibliothèque : les pages s’affichent, avec page suivante et zoom. Si ce n’est pas le cas, utilisez Télécharger.',
-            ], 'Portail 1.6.08'),
+            $pr(382, '2026-09-02', 'Les retours sur l’interface se lisent comme les autres pages d’administration', 'La page Retours sur l’interface reprend la présentation de l’administration du site : en-tête, synthèses, filtres et tableaux clairs. Chaque avis affiche un niveau de satisfaction. Vous pouvez filtrer par communauté, type de retour, écran et niveau, puis ouvrir les avis d’un écran', [
+                'Filtres communauté, type de retour, écran et niveau de satisfaction',
+                'Statut À améliorer, Correct ou Satisfaisant sur chaque note et chaque questionnaire',
+                'Action Voir les avis pour n’afficher que les retours d’un écran',
+            ], [
+                'La page quitte le fond sombre illisible : mêmes couleurs, tableaux et cartes que l’annuaire des communautés',
+            ], [], ['platform'], [
+                'Ouvrez Administration du site, puis Retours sur l’interface. Rien à recharger en session.',
+            ], 'Portail 1.6.03'),
             $pr(375, '2026-09-02', 'Les kits d’accès se cochent clairement avant l’enregistrement', 'Sur la page Kits d’accès, chaque carte affiche une case. Une carte retenue passe en Sélectionné et le pied de page indique combien de kits sont cochés. Enregistrez ensuite pour les attribuer aux membres', [], [], [
                 'Cliquer une carte ne changeait pas l’affichage : pas de case visible, le pied de page restait sur Aucun kit coché',
             ], ['personnel'], [

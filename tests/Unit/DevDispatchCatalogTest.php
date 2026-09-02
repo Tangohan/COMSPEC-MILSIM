@@ -578,10 +578,10 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($kitsPick);
         self::assertSame('00375', $kitsPick['number_pad']);
         self::assertStringContainsString('kits', strtolower((string) $kitsPick['title']));
-        $pdfPreview = DevDispatchCatalog::find('update', '380');
-        self::assertNotNull($pdfPreview);
-        self::assertSame('00380', $pdfPreview['number_pad']);
-        self::assertStringContainsString('pdf', strtolower((string) $pdfPreview['title']));
+        $uxFeedback = DevDispatchCatalog::find('update', '382');
+        self::assertNotNull($uxFeedback);
+        self::assertSame('00382', $uxFeedback['number_pad']);
+        self::assertStringContainsString('interface', strtolower((string) $uxFeedback['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);
