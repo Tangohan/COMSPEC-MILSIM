@@ -660,7 +660,8 @@ class PersonnelController
 
         $steamProfileSyncOffered = $this->steamWebApiService->isConfigured()
             && $steamIdResolved !== null
-            && $canEditProfile;
+            && $canEditProfile
+            && $personnelViewMode !== 'public';
 
         $armaPlaytime = null;
         if ($isSelf || $canStaffView) {

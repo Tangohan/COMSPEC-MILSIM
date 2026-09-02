@@ -1070,7 +1070,7 @@ if ($personnelFileIsRhGate) {
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Identifiant Steam</p>
                                 <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($steamId) ?></p>
-                                <?php if ($steamProfileSyncOffered): ?>
+                                <?php if ($steamProfileSyncOffered && $personnelViewMode !== 'public'): ?>
                                 <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/sync-steam'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 space-y-3 border-t border-slate-200/80 pt-4">
                                     <?= \App\Core\Csrf::field() ?>
                                     <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 sm:w-auto">Importer photo depuis Steam</button>

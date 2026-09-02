@@ -43,6 +43,8 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
 
         self::assertStringContainsString('$viewerIsPersonnelSubject', $file);
         self::assertStringContainsString('$canEditProfile && !empty($viewerIsPersonnelSubject)', $file);
+        self::assertStringContainsString('$steamProfileSyncOffered && $personnelViewMode !== \'public\'', $file);
+        self::assertStringContainsString('&& $personnelViewMode !== \'public\';', $controller);
         self::assertStringContainsString('file_page_notices.php', $file);
 
         self::assertStringContainsString('.personnel-file-hero__avatar-inset', $css);
