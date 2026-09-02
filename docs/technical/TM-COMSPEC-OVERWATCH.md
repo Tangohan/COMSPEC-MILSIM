@@ -38,7 +38,7 @@ The connect addon registers **hundreds** of `fn_*.sqf` files (`CfgFunctions` in 
 | Component | Source of truth | Observed |
 | --------- | --------------- | -------- |
 | connect | `versionStr` in `connect/config.cpp` | **1.5.13** |
-| atak_athena | `atak_athena/config.cpp` | **1.0.75** |
+| atak_athena | `atak_athena/config.cpp` | **1.0.76** |
 | sse_ace | `sse_ace/config.cpp` | **1.4.17** |
 | main / mavik_compat | respective `config.cpp` | **1.4.8** |
 | Extension | `Extension.cs` `ExtensionVersion` | **1.18.6** |

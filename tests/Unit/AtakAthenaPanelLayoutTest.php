@@ -48,7 +48,7 @@ final class AtakAthenaPanelLayoutTest extends TestCase
         self::assertStringContainsString('colorText[] = ATAK_LIST_TEXT', $hpp);
         self::assertStringContainsString('case "alerter"', $lay);
         self::assertStringContainsString('athena_selectHome', $cfg);
-        self::assertStringContainsString('1.0.75', $cfg);
+        self::assertStringContainsString('1.0.76', $cfg);
         self::assertStringContainsString('Compte :', $upd);
         self::assertStringContainsString('Compte non connecté', $upd);
         self::assertStringContainsString('Envoyer photos', $hpp);
