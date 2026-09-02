@@ -667,7 +667,7 @@ playSound3D ["A3\Sounds_F\sfx\alarm_independent.wss", objNull, false, [0,0,0], 2
 
 ### Documentation complémentaire
 
-- `ROLEPLAY-ATAK-ENHANCED.md` : Guide détaillé du système
+- `docs/archive/legacy-atak/ROLEPLAY-ATAK-ENHANCED.md` : note historique (TM-A3-21 / SOP-A3-01)
 - `ROLEPLAY-EFFETS-INGAME.md` : Catalogue des effets
 - `ROLEPLAY-ZONES-GEOGRAPHIQUES.md` : Guide complet des zones
 - `atak-roleplay-simulation.md` : Architecture technique

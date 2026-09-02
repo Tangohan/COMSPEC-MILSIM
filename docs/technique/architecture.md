@@ -1,5 +1,7 @@
 # Architecture applicative
 
+Publication contrôlée ATHENA C2 : **ATP-A3-01** (`docs/technical/ATP-ATHENA-SYSTEM-ARCHITECTURE.md`). Cette fiche reste le compagnon du monolithe PHP portail.
+
 ## Vue d’ensemble
 
 L’application est une **application web monolithique** en **PHP** servie depuis le répertoire `public/` (document root). Le flux principal est :

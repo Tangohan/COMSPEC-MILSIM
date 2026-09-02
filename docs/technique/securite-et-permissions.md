@@ -1,5 +1,7 @@
 # Sécurité et permissions
 
+Publication contrôlée ATHENA C2 : **SEC-A3-01** (`docs/technical/SEC-ATHENA-C2.md`).
+
 ## Authentification session
 
 - La session est démarrée dans le flux `Application` / middlewares ; l’identité utilisateur courante sert aux contrôleurs et au **RBAC**.
