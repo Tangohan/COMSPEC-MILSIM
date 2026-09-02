@@ -31,6 +31,7 @@ $kindUi = [
         'ok_label' => 'Programmé',
         'soon_label' => 'Bientôt',
         'late_label' => 'En retard',
+        'completed_field' => 'last_interview_completed_at',
         'plan_action' => 'Programmer',
         'reschedule_action' => 'Reporter',
         'complete_action' => 'Entretien fait',
@@ -45,6 +46,7 @@ $kindUi = [
         'ok_label' => 'Visite prévue',
         'soon_label' => 'À planifier bientôt',
         'late_label' => 'Visite en retard',
+        'completed_field' => 'last_medical_completed_at',
         'plan_action' => 'Planifier la visite',
         'reschedule_action' => 'Reporter la visite',
         'complete_action' => 'Visite faite',
@@ -59,6 +61,7 @@ $kindUi = [
         'ok_label' => 'Rotation prévue',
         'soon_label' => 'Rotation proche',
         'late_label' => 'Rotation en retard',
+        'completed_field' => 'last_rotation_completed_at',
         'plan_action' => 'Planifier la rotation',
         'reschedule_action' => 'Reporter la rotation',
         'complete_action' => 'Rotation faite',
@@ -68,8 +71,11 @@ $kindUi = [
     ],
 ];
 
-$resolveState = static function (?string $dateRaw, string $today, string $soon) use ($kindUi): array {
+$resolveState = static function (?string $dateRaw, ?string $completedAt, string $today, string $soon): array {
     if ($dateRaw === null || $dateRaw === '') {
+        if ($completedAt !== null && $completedAt !== '') {
+            return ['key' => 'completed', 'class' => 'is-completed'];
+        }
         return ['key' => 'empty', 'class' => 'is-empty'];
     }
     if ($dateRaw < $today) {
@@ -177,6 +183,7 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
     .rp-deadlines-cell__date.is-empty { color: #94a3b8; font-weight: 600; }
     .rp-deadlines-cell__date.is-soon { color: #b45309; }
     .rp-deadlines-cell__date.is-late { color: #9f1239; }
+    .rp-deadlines-cell__date.is-completed { color: #166534; }
     .rp-deadlines-state {
         display: inline-flex;
         align-items: center;
@@ -199,6 +206,21 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
         border-color: #a7f3d0;
         background: #ecfdf5;
         color: #047857;
+    }
+    .rp-deadlines-state.is-completed {
+        border-color: #86efac;
+        background: #f0fdf4;
+        color: #166534;
+    }
+    .rp-deadlines-blood-alert {
+        display: block;
+        border: 1px solid #fca5a5;
+        border-radius: 0.3rem;
+        background: #fef2f2;
+        padding: 0.35rem 0.45rem;
+        color: #991b1b;
+        font-size: 0.6875rem;
+        font-weight: 700;
     }
     .rp-deadlines-state.is-soon {
         border-color: #fcd34d;
@@ -389,27 +411,30 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
                         </td>
                         <?php foreach ($kindUi as $kindKey => $kindMeta):
                             $dateRaw = trim((string) ($row[$kindMeta['field']] ?? '')) ?: null;
-                            $state = $resolveState($dateRaw, $todayStr, $soonHorizon);
+                            $completedAt = trim((string) ($row[$kindMeta['completed_field']] ?? '')) ?: null;
+                            $state = $resolveState($dateRaw, $completedAt, $todayStr, $soonHorizon);
                             $stateKey = (string) $state['key'];
                             $stateClass = (string) $state['class'];
                             $stateLabel = match ($stateKey) {
                                 'late' => (string) $kindMeta['late_label'],
                                 'soon' => (string) $kindMeta['soon_label'],
                                 'ok' => (string) $kindMeta['ok_label'],
+                                'completed' => 'Réalisé',
                                 default => (string) $kindMeta['empty_label'],
                             };
-                            $openLabel = $stateKey === 'empty'
+                            $openLabel = in_array($stateKey, ['empty', 'completed'], true)
                                 ? (string) $kindMeta['plan_action']
                                 : (string) $kindMeta['reschedule_action'];
-                            $openClass = $stateKey === 'empty'
+                            $openClass = in_array($stateKey, ['empty', 'completed'], true)
                                 ? 'is-primary'
                                 : ($stateKey === 'late' ? 'is-late' : '');
+                            $displayDate = $stateKey === 'completed' ? $completedAt : $dateRaw;
                         ?>
                         <td>
                             <div class="rp-deadlines-cell">
                                 <div class="rp-deadlines-cell__head">
                                     <span class="rp-deadlines-state <?= $h($stateClass) ?>"><?= $h($stateLabel) ?></span>
-                                    <span class="rp-deadlines-cell__date <?= $h($stateClass) ?>"><?= $h($fmtDate($dateRaw)) ?></span>
+                                    <span class="rp-deadlines-cell__date <?= $h($stateClass) ?>"><?= $h($fmtDate($displayDate)) ?></span>
                                 </div>
                                 <?php if ($kindKey === 'medical'):
                                     $bloodShow = trim((string) (($row['blood_type_confirmed'] ?? '') !== '' ? $row['blood_type_confirmed'] : ($row['blood_type'] ?? '')));
@@ -421,6 +446,11 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
                                     <?php if ($armaBlood !== ''): ?> · Arma : <?= $h($armaBlood) ?><?php endif; ?>
                                     <?php if ($bloodWarn): ?> · à valider au bilan<?php endif; ?>
                                 </span>
+                                <?php if (!empty($row['blood_type_mismatch'])): ?>
+                                <span class="rp-deadlines-blood-alert" role="alert">
+                                    ⚠ Groupe sanguin discordant : jeu <?= $h($armaBlood) ?>, fiche <?= $h((string) ($row['blood_type'] ?? '')) ?>.
+                                </span>
+                                <?php endif; ?>
                                 <?php elseif ($kindKey === 'rotation'): ?>
                                 <span class="rp-deadlines-sheets__meta">
                                     <?= $h((string) ($row['rotation_kind_label'] ?? 'Service')) ?>
@@ -441,7 +471,7 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
                                         data-dialog-sub="<?= $h($kindMeta['dialog_sub']) ?>"
                                         data-date-label="<?= $h($kindMeta['date_label']) ?>"
                                         data-complete-label="<?= $h($kindMeta['complete_action']) ?>"
-                                        data-save-label="<?= $h($stateKey === 'empty' ? $kindMeta['plan_action'] : $kindMeta['reschedule_action']) ?>"
+                                        data-save-label="<?= $h(in_array($stateKey, ['empty', 'completed'], true) ? $kindMeta['plan_action'] : $kindMeta['reschedule_action']) ?>"
                                         data-action-url="<?= $h($actionUrl) ?>"
                                         data-blood-type="<?= $h((string) ($row['suggested_blood_type'] ?? '')) ?>"
                                         data-rotation-kind="<?= $h((string) ($row['rotation_kind'] ?? 'service')) ?>"
@@ -581,8 +611,9 @@ $resolveState = static function (?string $dateRaw, string $today, string $soon) 
             rotationWrap.hidden = !showRotation;
             rotationEl.value = showRotation ? (btn.getAttribute('data-rotation-kind') || 'service') : 'service';
         }
-        clearBtn.hidden = state === 'empty';
-        completeBtn.hidden = state === 'empty' || (kind === 'rotation' && !interviewReady);
+        clearBtn.hidden = state === 'empty' || state === 'completed';
+        // Une étape peut être réalisée immédiatement, sans planification préalable.
+        completeBtn.hidden = kind === 'rotation' && !interviewReady;
         saveBtn.hidden = kind === 'rotation' && !interviewReady;
         if (hintEl) {
             if (kind === 'rotation' && !interviewReady) {

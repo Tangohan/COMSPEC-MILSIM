@@ -244,6 +244,7 @@ final class RoleplayFollowupAdminController
             $bloodConfirmed = trim((string) ($p['rp_blood_type_confirmed'] ?? ''));
             $bloodArma = trim((string) ($p['rp_arma_blood_type'] ?? ''));
             $interviewDoneAt = trim((string) ($p['rp_last_interview_completed_at'] ?? '')) ?: null;
+            $medicalDoneAt = trim((string) ($p['rp_last_medical_completed_at'] ?? $p['rp_blood_type_confirmed_at'] ?? '')) ?: null;
             $rotationDoneAt = trim((string) ($p['rp_last_rotation_completed_at'] ?? '')) ?: null;
             $rotationKind = RoleplayDeadlinePolicy::normalizeRotationKind((string) ($p['rp_rotation_kind'] ?? 'service'));
 
@@ -263,9 +264,11 @@ final class RoleplayFollowupAdminController
                 'blood_type_confirmed' => $bloodConfirmed,
                 'blood_type_confirmed_at' => trim((string) ($p['rp_blood_type_confirmed_at'] ?? '')) ?: null,
                 'arma_blood_type' => $bloodArma,
+                'blood_type_mismatch' => RoleplayDeadlinePolicy::bloodTypeMismatch($bloodDossier, $bloodArma),
                 'blood_needs_confirmation' => RoleplayDeadlinePolicy::bloodTypeNeedsConfirmation($bloodDossier, $bloodConfirmed, $bloodArma),
                 'suggested_blood_type' => RoleplayDeadlinePolicy::suggestedBloodType($bloodDossier, $bloodConfirmed, $bloodArma),
                 'last_interview_completed_at' => $interviewDoneAt,
+                'last_medical_completed_at' => $medicalDoneAt,
                 'last_rotation_completed_at' => $rotationDoneAt,
                 'rotation_kind' => $rotationKind,
                 'rotation_kind_label' => RoleplayDeadlinePolicy::rotationKindLabel($rotationKind),
@@ -399,6 +402,7 @@ final class RoleplayFollowupAdminController
             $extra['blood_type'] = $bloodType;
             $extra['rp_blood_type_confirmed'] = $bloodType;
             $extra['rp_blood_type_confirmed_at'] = date('Y-m-d H:i:s');
+            $extra['rp_last_medical_completed_at'] = date('Y-m-d H:i:s');
             $bloodLine = 'Groupe sanguin constaté : ' . $bloodType . '.';
             if (RoleplayDeadlinePolicy::bloodTypeChanged($previousBlood, $bloodType)) {
                 $bloodLine = 'Groupe sanguin mis à jour : '
