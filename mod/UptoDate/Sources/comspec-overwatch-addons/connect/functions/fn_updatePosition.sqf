@@ -1,5 +1,6 @@
 /*
-    Remonte position + métadonnées vers Athena.
+    Remonte position + métadonnées temps réel vers Athena (pas la fiche opérateur).
+    Identité / visage / loadout / versions : fn_syncOperatorProfile.
     Params: [_unit, _force]
       _force : true = envoi manuel (ignore état mission, batch, backoff).
     Retour (si _force) : "ok" | "dead" | "origin" | ""

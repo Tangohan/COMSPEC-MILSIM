@@ -190,21 +190,35 @@ $timelineStatusFr = static function (?string $raw): string {
     .rp-followup-sheets__pop {
         position: relative;
     }
+    .rp-followup-sheets__table tbody tr:has(.rp-followup-sheets__pop[open]) td {
+        position: relative;
+        z-index: 6;
+    }
     .rp-followup-sheets__pop-panel {
         position: absolute;
-        z-index: 30;
+        z-index: 40;
         top: calc(100% + 0.35rem);
         right: 0;
         min-width: min(18rem, 90vw);
         max-width: min(20rem, 90vw);
-        max-height: min(70vh, 24rem);
-        overflow: auto;
         padding: 0.65rem;
         border: 1px solid #cbd5e1;
         border-radius: 0.5rem;
         background: #fff;
         box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
         white-space: normal;
+        overflow: visible;
+    }
+    .rp-followup-sheets__table tbody tr:last-child .rp-followup-sheets__pop-panel,
+    .rp-followup-sheets__table tbody tr:nth-last-child(2) .rp-followup-sheets__pop-panel {
+        top: auto;
+        bottom: calc(100% + 0.35rem);
+    }
+    .rp-followup-sheets__pop-panel.is-ported {
+        position: fixed;
+        z-index: 80;
+        right: auto;
+        bottom: auto;
     }
     .rp-followup-sheets__pop-form {
         display: grid;
@@ -463,3 +477,79 @@ $timelineStatusFr = static function (?string $raw): string {
         <?php endif; ?>
     </div>
 </div>
+<script>
+(function () {
+    var root = document.querySelector('.rp-followup-sheets');
+    if (!root) return;
+
+    function place(panel, anchor) {
+        var r = anchor.getBoundingClientRect();
+        var width = Math.min(320, Math.max(240, window.innerWidth - 16));
+        var left = r.right - width;
+        if (left < 8) left = 8;
+        if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
+        panel.style.width = width + 'px';
+        panel.style.left = left + 'px';
+        panel.style.right = 'auto';
+        var spaceBelow = window.innerHeight - r.bottom - 8;
+        var spaceAbove = r.top - 8;
+        var need = Math.min(Math.max(panel.offsetHeight || 220, 180), window.innerHeight * 0.72);
+        if (spaceBelow < need && spaceAbove > spaceBelow) {
+            panel.style.top = 'auto';
+            panel.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+        } else {
+            panel.style.bottom = 'auto';
+            panel.style.top = (r.bottom + 6) + 'px';
+        }
+    }
+
+    function restore(details, panel, marker) {
+        if (marker && marker.parentNode) {
+            marker.parentNode.insertBefore(panel, marker);
+            marker.parentNode.removeChild(marker);
+        }
+        panel.classList.remove('is-ported');
+        panel.style.position = '';
+        panel.style.top = '';
+        panel.style.bottom = '';
+        panel.style.left = '';
+        panel.style.right = '';
+        panel.style.width = '';
+        delete details._rpPopMarker;
+    }
+
+    root.querySelectorAll('.rp-followup-sheets__pop').forEach(function (details) {
+        var panel = details.querySelector('.rp-followup-sheets__pop-panel');
+        var summary = details.querySelector('summary');
+        if (!panel || !summary) return;
+
+        details.addEventListener('toggle', function () {
+            if (!details.open) {
+                restore(details, panel, details._rpPopMarker);
+                return;
+            }
+            root.querySelectorAll('.rp-followup-sheets__pop[open]').forEach(function (other) {
+                if (other !== details) other.removeAttribute('open');
+            });
+            var marker = document.createComment('rp-followup-pop');
+            details._rpPopMarker = marker;
+            details._rpPanel = panel;
+            panel.parentNode.insertBefore(marker, panel);
+            document.body.appendChild(panel);
+            panel.classList.add('is-ported');
+            place(panel, summary);
+        });
+    });
+
+    function relocateOpen() {
+        root.querySelectorAll('.rp-followup-sheets__pop[open]').forEach(function (details) {
+            var panel = details._rpPanel;
+            var summary = details.querySelector('summary');
+            if (panel && summary) place(panel, summary);
+        });
+    }
+    window.addEventListener('resize', relocateOpen);
+    window.addEventListener('scroll', relocateOpen, true);
+    root.addEventListener('scroll', relocateOpen);
+})();
+</script>

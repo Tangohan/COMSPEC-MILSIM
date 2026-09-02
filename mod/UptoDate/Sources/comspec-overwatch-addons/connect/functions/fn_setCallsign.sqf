@@ -34,4 +34,13 @@ if (_veh != player && {driver _veh == player}) then {
 
 [format ["[Athena] Callsign registered : %1 (%2)", _callsign, _source]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
+if (
+    missionNamespace getVariable ["COMSPEC_AthenaReady", false]
+    && {!isNil "comspec_overwatch_connect_fnc_operatorProfileTick"}
+) then {
+    [{
+        ["callsign_changed"] call comspec_overwatch_connect_fnc_operatorProfileTick;
+    }, [], 0.8] call CBA_fnc_waitAndExecute;
+};
+
 true

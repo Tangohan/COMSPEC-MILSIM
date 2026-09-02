@@ -18,4 +18,10 @@ private _msg = if (_name isEqualTo "") then {
 };
 [_msg, "arsenal", "ok", true] call comspec_overwatch_connect_fnc_announce;
 
+if (!isNil "comspec_overwatch_connect_fnc_operatorProfileTick") then {
+    [{
+        ["loadout_changed"] call comspec_overwatch_connect_fnc_operatorProfileTick;
+    }, [], 1] call CBA_fnc_waitAndExecute;
+};
+
 true

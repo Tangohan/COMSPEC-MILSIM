@@ -43,6 +43,7 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
 ?>
 </head>
 <body class="forum-mode-day bg-slate-50 text-slate-900 min-h-screen overflow-x-hidden font-sans antialiased" style="font-family: 'Inter', sans-serif;">
+    <?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
     <?php require base_path('views/partials/header_portal.php'); ?>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/portal-alerts.js"></script>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>

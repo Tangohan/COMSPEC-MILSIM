@@ -425,5 +425,10 @@ if (!isNil "comspec_overwatch_connect_fnc_getBloodType") then {
     private _bt = [] call comspec_overwatch_connect_fnc_getBloodType;
     if (_bt isNotEqualTo "") then {
         ["COMSPECExtension" callExtension ["SetBloodType", [_bt]]] call comspec_overwatch_connect_fnc_extResult;
+        if (!isNil "comspec_overwatch_connect_fnc_operatorProfileTick") then {
+            [{
+                ["blood_type_changed"] call comspec_overwatch_connect_fnc_operatorProfileTick;
+            }, [], 2] call CBA_fnc_waitAndExecute;
+        };
     };
 };
