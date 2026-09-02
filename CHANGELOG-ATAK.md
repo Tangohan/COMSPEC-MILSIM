@@ -9,6 +9,14 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## Athena 1.0.76 — 2026-09-02
+
+### Correction — Cartouche indicatif / rôle / groupe
+
+Sur la carte du téléphone, le cartouche d’identité (indicatif, rôle, groupe, grille) est de nouveau en bas à gauche. Il n’est plus coincé sous le tiroir d’applications. Relancer Arma complètement.
+
+---
+
 ## Portail 1.5.96 — 2026-09-02
 
 ### Correction — Barre de vue et bande Réseau / Journal

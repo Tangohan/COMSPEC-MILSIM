@@ -45,6 +45,6 @@ final class AtakTaskButtonsFontAssetTest extends TestCase
         self::assertStringNotContainsString("size='0.58'", $hpp);
         self::assertStringContainsString("COMSPEC_ATHENA_H(0.36)", $hpp);
         self::assertStringContainsString("COMSPEC_ATHENA_H(0.34)", $hpp);
-        self::assertStringContainsString('1.0.75', $cfg);
+        self::assertStringContainsString('1.0.76', $cfg);
     }
 }

@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(392, '2026-09-02', 'Le cartouche d’identité revient sur la carte du téléphone', 'Sur la carte du téléphone, l’indicatif, le rôle, le groupe et la grille s’affichent de nouveau en bas à gauche. Le cartouche n’est plus masqué par le tiroir d’applications. Relancer Arma complètement', [], [], [
+                'Le cartouche d’identité n’était plus visible : il avait été poussé sous le tiroir de droite',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Ouvrez la carte du téléphone : le cartouche Indicatif / Rôle / Groupe doit apparaître en bas à gauche.',
+            ], 'Athena 1.0.76'),
             $pr(390, '2026-09-02', 'La position de service se pose toute seule, de la formation au service actif', 'Un membre qui rejoint la communauté est d’abord En formation. Quand l’accueil est terminé, il passe En service actif. L’annuaire sépare cette position des fonctions (opérateur, instructeur…). Les responsables peuvent attribuer les positions manquantes d’un clic, ou passer un membre en service actif depuis sa fiche. Rechargez l’annuaire', [
                 'Position En formation dès l’arrivée dans la communauté',
                 'Passage automatique en service actif à la fin de l’accueil',

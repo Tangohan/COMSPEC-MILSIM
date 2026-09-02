@@ -1,11 +1,11 @@
 /*
     Tick HUD carte ATAK Enhanced :
-    - cartouche curseur (GRILLE, DIST, SOL, GIS, PORTÉE, écart d’altitude)
-    - cartouche unité suivie (Indicatif, Rôle, Groupe, Grille, altitude, vitesse)
+    - cartouche unité (Indicatif, Rôle, Groupe, Grille) en bas à gauche de la carte
+    - cartouche curseur (GRILLE, DIST, SOL, GIS, PORTÉE) en bas à droite de la carte visible
     - zoom +/− en haut à droite
     - restyle charbon / cyan du tiroir IceMan (fond, cases indicatif, outils)
-    Ne pas recouvrir la boussole native (haut gauche) ni les outils carte (bas gauche).
-    Les cartouches restent DANS le rectangle carte (jamais sur le tiroir droit).
+    Ne pas recouvrir la boussole native (haut gauche).
+    Les cartouches restent DANS le rectangle carte visible (jamais sous le tiroir droit).
 */
 if (!hasInterface) exitWith {};
 
@@ -61,6 +61,13 @@ if (isNull _mapCtrl || {!ctrlShown _mapCtrl}) exitWith { [_disp] call _fncHide; 
 (ctrlPosition _mapCtrl) params ["_mx", "_my", "_mw", "_mh"];
 if (_mw < 0.08 || {_mh < 0.08}) exitWith { [_disp] call _fncHide; };
 
+// Carte visible : le tiroir d'apps (4660) recouvre le bord droit si on
+// s'aligne sur ctrlPosition brute. Les cartouches restent à gauche du tiroir.
+private _visX = _mx;
+private _visY = _my;
+private _visW = _mw;
+private _visH = _mh;
+
 private _bgPanel = [0.071, 0.071, 0.071, 0.92];
 private _bgTile = [0.12, 0.12, 0.12, 0.94];
 private _cyan = [0.37, 0.78, 0.95, 1];
@@ -72,6 +79,12 @@ private _bgGroup = _disp displayCtrl 4660;
 if (!isNull _bgGroup) then {
     private _menuBg = _bgGroup controlsGroupCtrl 9;
     if (!isNull _menuBg) then { _menuBg ctrlSetBackgroundColor [0.055, 0.055, 0.055, 0.96]; };
+    if (ctrlShown _bgGroup) then {
+        (ctrlPosition _bgGroup) params ["_dx", "", "_dw"];
+        if (_dw > 0.02 && {_dx > (_visX + 0.04)} && {_dx < (_visX + _visW)}) then {
+            _visW = (_dx - _visX - 0.004) max 0.08;
+        };
+    };
 };
 {
     private _c = _disp displayCtrl _x;
@@ -136,17 +149,17 @@ private _zoomOut = [_disp, _idcZoomOut, "RscButton"] call _fncEnsure;
 
 if (isNull _heading || {isNull _cursorBox} || {isNull _unitBox}) exitWith {};
 
-private _pad = _mw * 0.012;
+private _pad = _visW * 0.012;
 // Cap : la boussole IceMan (2615 / 2616) occupe déjà le haut gauche — ne pas empiler un second cartouche.
 _heading ctrlShow false;
 _heading ctrlEnable false;
 
-private _zW = (_mw * 0.046) max 0.028;
-private _zH = (_mh * 0.055) max 0.028;
-private _zX = _mx + _mw - _pad - _zW;
-private _zY = _my + _pad;
+private _zW = (_visW * 0.046) max 0.028;
+private _zH = (_visH * 0.055) max 0.028;
+private _zX = _visX + _visW - _pad - _zW;
+private _zY = _visY + _pad;
 _zoomIn ctrlSetPosition [_zX, _zY, _zW, _zH];
-_zoomOut ctrlSetPosition [_zX, _zY + _zH + (_mh * 0.006), _zW, _zH];
+_zoomOut ctrlSetPosition [_zX, _zY + _zH + (_visH * 0.006), _zW, _zH];
 {
     _x params ["_btn", "_label"];
     _btn ctrlSetText _label;
@@ -172,20 +185,19 @@ if (isNil {_zoomOut getVariable "COMSPEC_ATAK_ZoomWired"}) then {
     }];
 };
 
-private _boxW = (_mw * 0.34) min 0.26;
-if (_boxW < 0.10) then { _boxW = (_mw * 0.40) max 0.09; };
-private _boxH = (_mh * 0.195) max 0.072;
-private _gapB = (_mw * 0.010) max 0.004;
-private _leftKeep = (_mw * 0.28) max 0.08;
-private _boxY = _my + _mh - _boxH - _pad;
-private _rightX = _mx + _mw - _pad - _boxW;
-private _cursorX = _rightX - _gapB - _boxW;
-private _unitX = _rightX;
+private _boxW = (_visW * 0.40) min 0.26;
+if (_boxW < 0.10) then { _boxW = (_visW * 0.46) max 0.09; };
+private _boxH = (_visH * 0.22) max 0.078;
+private _boxY = _visY + _visH - _boxH - _pad;
+// Identité (indicatif / rôle / groupe) : bas gauche de la carte, comme avant le décalage à droite.
+private _unitX = _visX + _pad;
 private _unitY = _boxY;
+// Curseur : bas droit de la carte visible, jamais sous le tiroir.
+private _cursorX = _visX + _visW - _pad - _boxW;
 private _cursorY = _boxY;
-if (_cursorX < (_mx + _leftKeep)) then {
-    _cursorX = _rightX;
-    _unitY = _boxY - _boxH - (_mh * 0.008);
+if ((_cursorX - _unitX) < (_boxW + (_visW * 0.008))) then {
+    _cursorX = _unitX;
+    _cursorY = _boxY - _boxH - (_visH * 0.008);
 };
 _cursorBox ctrlSetPosition [_cursorX, _cursorY, _boxW, _boxH];
 _cursorBox ctrlSetBackgroundColor _bgPanel;
@@ -197,8 +209,8 @@ _unitBox ctrlEnable false;
 
 private _acctLinked = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
 if (!_acctLinked && {!isNull _acctBanner}) then {
-    private _banH = (_mh * 0.038) max 0.018;
-    private _banY = (_unitY - _banH - (_mh * 0.004)) max (_my + _pad);
+    private _banH = (_visH * 0.038) max 0.018;
+    private _banY = (_unitY - _banH - (_visH * 0.004)) max (_visY + _pad);
     _acctBanner ctrlSetPosition [_unitX, _banY, _boxW, _banH];
     _acctBanner ctrlSetBackgroundColor [0.28, 0.14, 0.04, 0.94];
     _acctBanner ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.58' color='#FFD27A' align='center'>Compte non connecté</t>";
