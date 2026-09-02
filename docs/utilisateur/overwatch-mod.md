@@ -2,6 +2,8 @@
 
 Documentation utilisateur du terminal tactique Arma, intégrée au site Athena.
 
+Manuel opérateur contrôlé : **TM-A3-21** (`docs/manuals/TM-ATAK-OPERATOR.md`). Procédures : **SOP-A3-01**. Technique pack : **TM-A3-11**.
+
 ## Accès direct (membres connectés)
 
 | Ressource | Adresse |

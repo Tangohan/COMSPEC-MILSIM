@@ -32,9 +32,9 @@ $tenants = is_array($platformTenants ?? null) ? $platformTenants : [];
 
 $statusLabel = static function (string $status): string {
     return match ($status) {
-        'active' => 'Actif',
-        'inactive' => 'Désactivé',
-        'pending_verification' => 'E-mail à vérifier',
+        'active' => 'Compte actif',
+        'inactive' => 'Compte inactif',
+        'pending_verification' => 'En attente de vérification de l’e-mail',
         default => 'Inconnu',
     };
 };
@@ -227,7 +227,7 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                     <select id="platform-users-status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                         <option value="">Tous</option>
                         <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Compte actif</option>
-                        <option value="inactive" <?= $statusFilter === 'inactive' ? 'selected' : '' ?>>Compte désactivé</option>
+                        <option value="inactive" <?= $statusFilter === 'inactive' ? 'selected' : '' ?>>Compte inactif</option>
                         <option value="pending_verification" <?= $statusFilter === 'pending_verification' ? 'selected' : '' ?>>En attente de vérification de l’e-mail</option>
                         <option value="deleted" <?= $statusFilter === 'deleted' ? 'selected' : '' ?>>Comptes supprimés</option>
                     </select>
@@ -294,6 +294,9 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                                 <p class="mt-1 text-xs text-slate-500">
                                     <?= count($memberships) ?> communauté<?= count($memberships) > 1 ? 's' : '' ?>
                                     · <a href="<?= $h(url('admin/users/person') . '?email=' . rawurlencode($email)) ?>" class="font-semibold text-emerald-800 hover:underline">Dossier complet</a>
+                                    <?php if ($siteUid > 0): ?>
+                                        · <a href="<?= $h(url('admin/users/' . $siteUid . '/edit')) ?>" class="font-semibold text-emerald-800 hover:underline">Modifier</a>
+                                    <?php endif; ?>
                                 </p>
                             </div>
                             <?php if (!$isSelf && $siteUid > 0 && $siteTid > 0 && $alive !== []): ?>
@@ -376,6 +379,7 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                                                 </button>
                                             </form>
                                         <?php else: ?>
+                                            <a href="<?= $h(url('admin/users/' . $uid . '/edit')) ?>" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-950 hover:bg-emerald-100">Modifier</a>
                                             <?php if ($st === 'active'): ?>
                                                 <form method="post" action="<?= $h(url('admin/users/set-status')) ?>"
                                                       onsubmit="return confirm('Désactiver l’accès dans <?= $h(addslashes($tenantName)) ?> ?');">

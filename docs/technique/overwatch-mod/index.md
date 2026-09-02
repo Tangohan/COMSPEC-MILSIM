@@ -1,8 +1,12 @@
 ## Documentation technique — mod COMSPEC Overwatch
 
-Documentation destinée aux **moddeurs** et **intégrateurs** du pack Arma **@COMSPECOverwatch** (version documentée **1.4.11**).
+Documentation destinée aux **moddeurs** et **intégrateurs** du pack Arma **@COMSPECOverwatch**, servie sur `/documentation/references`.
 
-Cette page décrit l’architecture côté jeu (addons SQF + extension native), les dépendances et les notes de compilation. Elle ne couvre pas le fonctionnement interne du portail Athena, ni ses mécanismes d’authentification.
+**Références officielles ATHENA C2 :** COMSPEC Overwatch Technical Manual — **TM-A3-11** ; Interface Control Document — **ICD-A3-01** ; Capability Registry — **REG-A3-01**. Index : `docs/README.md`.
+
+Les numéros d’addon ci-dessous peuvent laguer par rapport à `connect/config.cpp` (**1.5.13**) et l’extension (**1.18.6**). Pour le contrat d’interface, utiliser TM-A3-11 / ICD-A3-01.
+
+Cette page décrit l’architecture côté jeu (addons SQF + extension native), les dépendances et les notes de compilation. Elle ne remplace pas les publications contrôlées.
 
 ## Public
 
@@ -47,10 +51,6 @@ Le mod **ne remplace pas** cTab ou BCE : il les **complète**.
 ## Document phare — positionnement technique
 
 → [Indépendance, couche sur les addons, interopérabilité et API](independance-couche-interoperabilite-api.md)
-
-## Prompt d’alignement portail → mod
-
-→ [Mettre en place les updates Athena nécessaires dans le mod](../atak-mod-updates-necessaires-prompt.md) (GPS visible, zones ATAK, rebuild, backlog)
 
 ## Périmètre de cette documentation
 
