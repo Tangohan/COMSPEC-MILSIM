@@ -53,6 +53,7 @@
 <IfModule mod_mime.c>
     AddType text/css .css
     AddType application/javascript .js .mjs
+    AddType application/wasm .wasm
     AddType application/manifest+json .webmanifest
     AddType video/mp4 .mp4
     AddType video/webm .webm

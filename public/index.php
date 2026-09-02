@@ -100,6 +100,7 @@ if ($isPublicAsset && !str_contains($requestPath, '..')) {
             'css' => 'text/css; charset=utf-8',
             'js' => 'application/javascript; charset=utf-8',
             'mjs' => 'application/javascript; charset=utf-8',
+            'wasm' => 'application/wasm',
             'json' => 'application/json; charset=utf-8',
             'webmanifest' => 'application/manifest+json; charset=utf-8',
             'map' => 'application/json; charset=utf-8',
@@ -165,6 +166,8 @@ if ($isPublicAsset && !str_contains($requestPath, '..')) {
         header('Content-Type: text/css; charset=utf-8');
     } elseif ($ext === 'js' || $ext === 'mjs') {
         header('Content-Type: application/javascript; charset=utf-8');
+    } elseif ($ext === 'wasm') {
+        header('Content-Type: application/wasm');
     }
     header('X-Content-Type-Options: nosniff');
     header('Cache-Control: no-store');
