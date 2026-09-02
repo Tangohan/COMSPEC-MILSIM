@@ -272,6 +272,15 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                             $alive[] = $m;
                         }
                     }
+                    $distinctLiveUserIds = [];
+                    foreach ($memberships as $m) {
+                        $uid = (int) ($m['id'] ?? 0);
+                        $st = (string) ($m['status'] ?? '');
+                        if ($uid > 0 && $st !== 'merged' && empty($m['deleted_at'])) {
+                            $distinctLiveUserIds[$uid] = true;
+                        }
+                    }
+                    $needsAccountMerge = count($distinctLiveUserIds) > 1;
                     $siteAnchor = $alive[0] ?? ($memberships[0] ?? null);
                     $siteUid = (int) ($siteAnchor['id'] ?? 0);
                     $siteTid = (int) ($siteAnchor['tenant_id'] ?? 0);
@@ -294,6 +303,9 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                                 <p class="mt-1 text-xs text-slate-500">
                                     <?= count($memberships) ?> communauté<?= count($memberships) > 1 ? 's' : '' ?>
                                     · <a href="<?= $h(url('admin/users/person') . '?email=' . rawurlencode($email)) ?>" class="font-semibold text-emerald-800 hover:underline">Dossier complet</a>
+                                    <?php if ($needsAccountMerge): ?>
+                                        · <a href="<?= $h(url('admin/users/person') . '?email=' . rawurlencode($email) . '#fusion-comptes') ?>" class="font-semibold text-amber-800 hover:underline">Fusionner les comptes</a>
+                                    <?php endif; ?>
                                     <?php if ($siteUid > 0): ?>
                                         · <a href="<?= $h(url('admin/users/' . $siteUid . '/edit')) ?>" class="font-semibold text-emerald-800 hover:underline">Modifier</a>
                                     <?php endif; ?>

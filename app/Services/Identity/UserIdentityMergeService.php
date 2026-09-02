@@ -8,6 +8,8 @@ use App\Repositories\UserCommunityMembershipRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Support\SilentSchemaMigration;
+use App\Support\SqlText;
+use InvalidArgumentException;
 use PDO;
 use Throwable;
 
@@ -93,7 +95,7 @@ final class UserIdentityMergeService
      * @param list<array<string, mixed>> $rows
      * @return array{survivor_id: int, merged: int, steam_collisions: list<array{absorbed_user_id: int, steam_id: string}>}
      */
-    public function mergeEmailGroup(string $email, array $rows): array
+    public function mergeEmailGroup(string $email, array $rows, ?int $survivorUserId = null): array
     {
         $email = UserIdentityMergeRules::normalizeEmail($email);
         $live = [];
@@ -107,7 +109,7 @@ final class UserIdentityMergeService
             return ['survivor_id' => (int) ($live[0]['id'] ?? 0), 'merged' => 0, 'steam_collisions' => []];
         }
 
-        $survivor = UserIdentityMergeRules::pickSurvivor($live);
+        $survivor = $this->resolveSurvivor($live, $survivorUserId);
         $survivorId = (int) $survivor['id'];
         $absorbed = array_values(array_filter(
             $live,
@@ -118,7 +120,7 @@ final class UserIdentityMergeService
         $this->pdo->beginTransaction();
         try {
             $this->applyIdentityFields($survivorId, $identity['fields']);
-            $this->memberships->ensureMembership(
+            $this->ensureMembershipWithProfile(
                 $survivorId,
                 (int) $survivor['tenant_id'],
                 UserIdentityMergeRules::communityProfileFromUserRow($survivor),
@@ -145,6 +147,174 @@ final class UserIdentityMergeService
     }
 
     /**
+     * Prévisualise une fusion pour l’administration plateforme.
+     *
+     * @return array{
+     *   mergeable: bool,
+     *   email: string,
+     *   suggested_survivor_id: int,
+     *   rows: list<array<string, mixed>>,
+     *   identity_fills: array<string, mixed>,
+     *   steam_collisions: list<array{absorbed_user_id: int, steam_id: string}>,
+     *   identity_table_fills: array<string, array<string, mixed>>,
+     *   rh_tenants: list<array{tenant_id: int, absorbed_user_id: int, action: string}>
+     * }
+     */
+    public function previewEmailMerge(string $email, ?int $survivorUserId = null): array
+    {
+        $email = UserIdentityMergeRules::normalizeEmail($email);
+        $rows = $this->fetchLiveRowsForEmail($email);
+        $empty = [
+            'mergeable' => false,
+            'email' => $email,
+            'suggested_survivor_id' => 0,
+            'rows' => $rows,
+            'identity_fills' => [],
+            'steam_collisions' => [],
+            'identity_table_fills' => [],
+            'rh_tenants' => [],
+        ];
+        if (count($rows) < 2) {
+            return $empty;
+        }
+
+        $survivor = $this->resolveSurvivor($rows, $survivorUserId);
+        $survivorId = (int) $survivor['id'];
+        $absorbed = array_values(array_filter(
+            $rows,
+            static fn (array $r): bool => (int) ($r['id'] ?? 0) !== $survivorId
+        ));
+        $identity = UserIdentityMergeRules::mergeIdentityOntoSurvivor($survivor, $absorbed);
+        $identityTableFills = [];
+        foreach ($absorbed as $row) {
+            $absorbedId = (int) ($row['id'] ?? 0);
+            if ($absorbedId < 1) {
+                continue;
+            }
+            foreach (UserIdentityMergeRules::IDENTITY_TABLE_MERGE_FIELDS as $table => $fields) {
+                if (!$this->tableExists($table)) {
+                    continue;
+                }
+                $survivorRow = $this->fetchOneToOneRow($table, $survivorId);
+                $absorbedRow = $this->fetchOneToOneRow($table, $absorbedId);
+                if ($survivorRow === null || $absorbedRow === null) {
+                    continue;
+                }
+                $fills = UserIdentityMergeRules::mergeRowFieldsOntoSurvivor($survivorRow, $absorbedRow, $fields);
+                if ($fills !== []) {
+                    $identityTableFills[$table] = array_merge($identityTableFills[$table] ?? [], $fills);
+                }
+            }
+        }
+
+        $rhTenants = [];
+        foreach ($absorbed as $row) {
+            $tenantId = (int) ($row['tenant_id'] ?? 0);
+            $absorbedId = (int) ($row['id'] ?? 0);
+            if ($tenantId < 1 || $absorbedId < 1) {
+                continue;
+            }
+            $rhTenants[] = [
+                'tenant_id' => $tenantId,
+                'absorbed_user_id' => $absorbedId,
+                'action' => 'remap_rh_and_references',
+            ];
+        }
+
+        return [
+            'mergeable' => true,
+            'email' => $email,
+            'suggested_survivor_id' => $survivorId,
+            'rows' => $rows,
+            'identity_fills' => $identity['fields'],
+            'steam_collisions' => $identity['steam_collisions'],
+            'identity_table_fills' => $identityTableFills,
+            'rh_tenants' => $rhTenants,
+        ];
+    }
+
+    /**
+     * Fusionne tous les comptes actifs partageant un e-mail (action admin).
+     *
+     * @return array{survivor_id: int, merged: int, steam_collisions: list<array{absorbed_user_id: int, steam_id: string}>}
+     */
+    public function mergeAccountsForEmail(string $email, ?int $survivorUserId = null): array
+    {
+        $this->ensureSchema();
+        $email = UserIdentityMergeRules::normalizeEmail($email);
+        $rows = $this->fetchLiveRowsForEmail($email);
+        if (count($rows) < 2) {
+            throw new InvalidArgumentException('Cette adresse ne comporte pas plusieurs comptes fusionnables.');
+        }
+
+        return $this->mergeEmailGroup($email, $rows, $survivorUserId);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function fetchLiveRowsForEmail(string $email): array
+    {
+        $email = UserIdentityMergeRules::normalizeEmail($email);
+        if (!UserIdentityMergeRules::isLiveHumanEmail($email)) {
+            return [];
+        }
+        $emailEq = SqlText::normalizedEquals($this->pdo, 'email');
+        $statusMerged = SqlText::inLiterals($this->pdo, 'status', ['merged']);
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM users
+             WHERE {$emailEq}
+               AND NOT {$statusMerged}
+               AND (is_service_account IS NULL OR is_service_account = 0)
+             ORDER BY id ASC"
+        );
+        $stmt->execute([$email]);
+        $rows = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            if (UserIdentityMergeRules::isServiceAccount($row)) {
+                continue;
+            }
+            if (!UserIdentityMergeRules::isLiveHumanEmail((string) ($row['email'] ?? ''))) {
+                continue;
+            }
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return array<string, mixed>
+     */
+    private function resolveSurvivor(array $rows, ?int $survivorUserId): array
+    {
+        if ($survivorUserId !== null && $survivorUserId > 0) {
+            foreach ($rows as $row) {
+                if ((int) ($row['id'] ?? 0) === $survivorUserId) {
+                    return $row;
+                }
+            }
+            throw new InvalidArgumentException('Compte survivant introuvable pour cette adresse.');
+        }
+
+        return UserIdentityMergeRules::pickSurvivor($rows);
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     */
+    private function ensureMembershipWithProfile(int $userId, int $tenantId, array $profile, ?int $sourceUserId = null): void
+    {
+        if ($this->memberships->hasMembership($userId, $tenantId)) {
+            $this->memberships->upsertProfileFillEmpty($userId, $tenantId, $profile);
+
+            return;
+        }
+        $this->memberships->ensureMembership($userId, $tenantId, $profile, $sourceUserId);
+    }
+
+    /**
      * @param array<string, mixed> $survivor
      * @param array<string, mixed> $absorbed
      * @param list<array{absorbed_user_id: int, steam_id: string}> $collisions
@@ -158,7 +328,7 @@ final class UserIdentityMergeService
             return;
         }
 
-        $this->memberships->ensureMembership(
+        $this->ensureMembershipWithProfile(
             $survivorId,
             $tenantId,
             UserIdentityMergeRules::communityProfileFromUserRow($absorbed),
@@ -345,9 +515,16 @@ final class UserIdentityMergeService
             if (!$this->tableExists($table) || !$this->columnExists($table, 'user_id')) {
                 continue;
             }
-            $hasSurvivor = $this->pdo->prepare("SELECT 1 FROM `{$table}` WHERE user_id = ? LIMIT 1");
-            $hasSurvivor->execute([$survivorId]);
-            if ($hasSurvivor->fetchColumn()) {
+            $survivorRow = $this->fetchOneToOneRow($table, $survivorId);
+            $absorbedRow = $this->fetchOneToOneRow($table, $absorbedId);
+            if ($survivorRow !== null && $absorbedRow !== null) {
+                $this->mergeIdentityOneToOneFields($table, $survivorId, $absorbedRow);
+                continue;
+            }
+            if ($survivorRow !== null) {
+                continue;
+            }
+            if ($absorbedRow === null) {
                 continue;
             }
             try {
@@ -355,6 +532,50 @@ final class UserIdentityMergeService
             } catch (Throwable) {
             }
         }
+    }
+
+    /**
+     * @param array<string, mixed> $absorbedRow
+     */
+    private function mergeIdentityOneToOneFields(string $table, int $survivorId, array $absorbedRow): void
+    {
+        $fields = UserIdentityMergeRules::IDENTITY_TABLE_MERGE_FIELDS[$table] ?? null;
+        if ($fields === null || $fields === []) {
+            return;
+        }
+        $survivorRow = $this->fetchOneToOneRow($table, $survivorId);
+        if ($survivorRow === null) {
+            return;
+        }
+        $fills = UserIdentityMergeRules::mergeRowFieldsOntoSurvivor($survivorRow, $absorbedRow, $fields);
+        if ($fills === []) {
+            return;
+        }
+        $set = [];
+        $params = [];
+        foreach ($fills as $key => $value) {
+            $set[] = '`' . $key . '` = ?';
+            $params[] = $value;
+        }
+        $params[] = $survivorId;
+        $this->pdo->prepare(
+            'UPDATE `' . $table . '` SET ' . implode(', ', $set) . ' WHERE user_id = ?'
+        )->execute($params);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function fetchOneToOneRow(string $table, int $userId): ?array
+    {
+        if ($userId < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare("SELECT * FROM `{$table}` WHERE user_id = ? LIMIT 1");
+        $st->execute([$userId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
     }
 
     private function tryAddGlobalEmailUnique(): void
