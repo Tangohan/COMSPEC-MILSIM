@@ -584,6 +584,12 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(380, '2026-09-02', 'L’aperçu des documents PDF s’affiche à nouveau', 'Dans la bibliothèque, un document PDF s’ouvre de nouveau à l’écran. Si l’aperçu ne peut pas s’afficher, un message propose de le télécharger. Rechargez la page du document', [], [], [
+                'L’aperçu d’un PDF publié restait vide',
+                'Un échec d’affichage n’affiche plus une page hors ligne à la place du document',
+            ], ['platform'], [
+                'Ouvrez un document PDF publié dans la bibliothèque : les pages s’affichent, avec page suivante et zoom. Si ce n’est pas le cas, utilisez Télécharger.',
+            ], 'Portail 1.6.08'),
             $pr(375, '2026-09-02', 'Les kits d’accès se cochent clairement avant l’enregistrement', 'Sur la page Kits d’accès, chaque carte affiche une case. Une carte retenue passe en Sélectionné et le pied de page indique combien de kits sont cochés. Enregistrez ensuite pour les attribuer aux membres', [], [], [
                 'Cliquer une carte ne changeait pas l’affichage : pas de case visible, le pied de page restait sur Aucun kit coché',
             ], ['personnel'], [
