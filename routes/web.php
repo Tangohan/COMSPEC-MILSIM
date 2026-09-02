@@ -107,6 +107,7 @@ use App\Controllers\Courrier\CourrierSignatureController;
 use App\Controllers\Courrier\CourrierNotificationController;
 use App\Controllers\Admin\System\SystemDashboardController;
 use App\Controllers\Admin\System\SystemTenantsController;
+use App\Controllers\Admin\System\SystemTenantInterventionController;
 use App\Controllers\Admin\System\SystemTenantRecoveryController;
 use App\Controllers\Admin\System\SystemAnalyticsController;
 use App\Controllers\Admin\System\SystemNewsletterAdminController;
@@ -954,6 +955,11 @@ return function (Router $router) {
     $router->post('/admin/system/updates/{id}/deploy', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'deploy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/updates/{id}/rollback', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/tenants', [SystemTenantsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/tenants/{id}/intervention', [SystemTenantInterventionController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/tenants/{id}/intervention/enter', [SystemTenantInterventionController::class, 'enter'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/tenants/{id}/intervention/journal', [SystemTenantInterventionController::class, 'journal'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/tenants/{id}/intervention/actions/{actionId}/rollback', [SystemTenantInterventionController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/tenant-intervention/leave', [SystemTenantInterventionController::class, 'leave'], [AuthMiddleware::class]);
     $router->get('/admin/tenants/{id}/edit', [SystemTenantsController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/identity', [SystemTenantsController::class, 'updateIdentity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/profil', [SystemTenantsController::class, 'updateType'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -2000,6 +2006,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->delete('/api/units/{id}', [AtakApiController::class, 'unitsDelete']);
     $router->get('/api/atak/personnel', [AtakApiController::class, 'personnelDirectory']);
     $router->post('/api/atak/position', [AtakApiController::class, 'position']);
+    $router->post('/api/atak/operator/register', [AtakApiController::class, 'operatorRegister']);
+    $router->post('/api/atak/operator/sync', [AtakApiController::class, 'operatorSync']);
     $router->post('/api/atak/playtime', [AtakApiController::class, 'playtime']);
     $router->get('/api/chat', [AtakApiController::class, 'chatIndex']);
     $router->post('/api/chat', [AtakApiController::class, 'chatStore']);

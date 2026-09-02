@@ -92,6 +92,7 @@ class CfgFunctions {
             class disconnect {};
             class playtimeTracker {};
             class updatePosition {};
+            class syncOperatorProfile {};
             class bftPlatform {};
             class applyNetworkProfile {};
             class sampleTerrain {};

@@ -134,6 +134,7 @@ $bootstrapFiles = [
     'personnel_capability_axes_migration.php',
     'rank_catalog_migration.php',
     'arma_playtime_migration.php',
+    'operator_game_registry_migration.php',
     'personnel_org_history_migration.php',
     'personnel_stage_bilans_migration.php',
     'member_integration_migration.php',
@@ -152,6 +153,7 @@ $bootstrapFiles = [
     'core_schema_extensions_migration.php',
     'forum_reporting_workflow_migration.php',
     'request_telemetry_migration.php',
+    'platform_admin_tenant_intervention_migration.php',
 ];
 foreach ($bootstrapFiles as $bf) {
     $path = $root . '/bootstrap/' . $bf;
@@ -276,6 +278,7 @@ run_tenant_member_number_migration($pdo);
 run_personnel_capability_axes_migration($pdo);
 run_rank_catalog_migration($pdo);
 run_arma_playtime_migration($pdo);
+run_operator_game_registry_migration($pdo);
 run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
 run_member_integration_migration($pdo);
@@ -304,6 +307,7 @@ try {
 }
 run_permissions_action_migration($pdo);
 run_request_telemetry_migration($pdo);
+migratePlatformAdminTenantIntervention($pdo);
 try {
     run_forum_reporting_workflow_migration($pdo);
 } catch (Throwable $e) {
