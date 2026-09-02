@@ -1024,6 +1024,140 @@ class CommunityEventRepository
         return is_array($rows) ? $rows : [];
     }
 
+    /**
+     * Comptages d’activités passées (fenêtre glissante) pour le taux de disponibilité.
+     * Une activité n’est retenue qu’après l’arrivée du membre (compte, ou date d’engagement plus tardive).
+     *
+     * @param list<int> $userIds
+     * @param array<int, string> $joinedAtByUser dates d’engagement éventuelles (YYYY-MM-DD)
+     * @return array<int, array{events:int,yes:int,checked_in:int}>
+     */
+    public function availabilityCountsForUsers(int $tenantId, array $userIds, int $windowDays = 90, array $joinedAtByUser = []): array
+    {
+        $userIds = array_values(array_unique(array_filter(
+            array_map(static fn ($id): int => (int) $id, $userIds),
+            static fn (int $id): bool => $id > 0
+        )));
+        if ($tenantId < 1 || $userIds === []) {
+            return [];
+        }
+        if (!$this->tableExists('community_events') || !$this->tableExists('community_event_rsvps')) {
+            return [];
+        }
+
+        $days = max(7, min(365, $windowDays));
+        $ph = implode(',', array_fill(0, count($userIds), '?'));
+
+        $createdAt = [];
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT id, created_at FROM users WHERE tenant_id = ? AND id IN ({$ph})"
+            );
+            $st->execute(array_merge([$tenantId], $userIds));
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $createdAt[(int) ($row['id'] ?? 0)] = (string) ($row['created_at'] ?? '');
+            }
+        } catch (\Throwable) {
+            return [];
+        }
+
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT id, starts_at FROM community_events
+                 WHERE tenant_id = ?
+                   AND cancelled_at IS NULL
+                   AND starts_at < NOW()
+                   AND starts_at >= DATE_SUB(NOW(), INTERVAL {$days} DAY)"
+            );
+            $st->execute([$tenantId]);
+            $events = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $eventIds = [];
+        foreach ($events as $event) {
+            $eid = (int) ($event['id'] ?? 0);
+            if ($eid > 0) {
+                $eventIds[] = $eid;
+            }
+        }
+
+        $rsvpByUser = [];
+        if ($eventIds !== []) {
+            $eph = implode(',', array_fill(0, count($eventIds), '?'));
+            try {
+                $st = $this->pdo->prepare(
+                    "SELECT user_id, event_id, status, checked_in_at
+                     FROM community_event_rsvps
+                     WHERE user_id IN ({$ph}) AND event_id IN ({$eph})"
+                );
+                $st->execute(array_merge($userIds, $eventIds));
+                foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $rsvp) {
+                    $uid = (int) ($rsvp['user_id'] ?? 0);
+                    $eid = (int) ($rsvp['event_id'] ?? 0);
+                    if ($uid < 1 || $eid < 1) {
+                        continue;
+                    }
+                    $rsvpByUser[$uid][$eid] = $rsvp;
+                }
+            } catch (\Throwable) {
+                $rsvpByUser = [];
+            }
+        }
+
+        $out = [];
+        foreach ($userIds as $uid) {
+            $joinTs = self::parseTimestamp($createdAt[$uid] ?? '');
+            $enlistTs = self::parseTimestamp((string) ($joinedAtByUser[$uid] ?? ''));
+            if ($enlistTs > $joinTs) {
+                $joinTs = $enlistTs;
+            }
+
+            $eventCount = 0;
+            $yesCount = 0;
+            $checkedInCount = 0;
+            foreach ($events as $event) {
+                $eid = (int) ($event['id'] ?? 0);
+                if ($eid < 1) {
+                    continue;
+                }
+                $startTs = self::parseTimestamp((string) ($event['starts_at'] ?? ''));
+                if ($joinTs > 0 && $startTs > 0 && $startTs < $joinTs) {
+                    continue;
+                }
+                $eventCount++;
+                $rsvp = $rsvpByUser[$uid][$eid] ?? null;
+                if (!is_array($rsvp) || (string) ($rsvp['status'] ?? '') !== 'yes') {
+                    continue;
+                }
+                $yesCount++;
+                if (trim((string) ($rsvp['checked_in_at'] ?? '')) !== '') {
+                    $checkedInCount++;
+                }
+            }
+
+            $out[$uid] = [
+                'events' => $eventCount,
+                'yes' => $yesCount,
+                'checked_in' => $checkedInCount,
+            ];
+        }
+
+        return $out;
+    }
+
+    private static function parseTimestamp(string $raw): int
+    {
+        $raw = trim($raw);
+        if ($raw === '' || str_starts_with($raw, '0000-00-00')) {
+            return 0;
+        }
+        $ts = strtotime($raw);
+
+        return $ts !== false ? $ts : 0;
+    }
+
     private function tableExists(string $table): bool
     {
         static $cache = [];

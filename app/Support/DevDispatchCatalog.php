@@ -584,6 +584,12 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(374, '2026-09-02', 'Le tableau des effectifs affiche la disponibilité sur 90 jours', 'Sur le tableau rapide du tableau de bord, chaque membre montre son taux de disponibilité : participations annoncées et présences validées sur les trois derniers mois, sous forme de barre colorée. Rechargez le tableau de bord', [
+                'Colonne Disponibilité, avec le pourcentage et une barre du rouge au vert',
+                'Un membre sans activité récente affiche un tiret, pas un taux à zéro',
+            ], [], [], ['personnel'], [
+                'Ouvrez le tableau de bord, rubrique Effectifs. Le détail s’affiche en survolant la barre.',
+            ], 'Portail 1.6.02'),
             $pr(373, '2026-09-02', 'Les responsables de communauté composent la vitrine de tenues', 'Choisir les tenues du tableau de bord relève de l’administration de l’organisation, pas de celle du site. Les gestionnaires de communauté y accèdent depuis le tableau de bord, sans compte d’administration du site. Rechargez le tableau de bord', [], [], [
                 'Les responsables d’organisation ne voyaient pas le lien Choisir les tenues, ou ne pouvaient pas ouvrir la page',
             ], ['platform'], [

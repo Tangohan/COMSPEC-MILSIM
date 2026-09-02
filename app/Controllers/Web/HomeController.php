@@ -406,6 +406,47 @@ class HomeController
                     // Module d’ancienneté absent : le tableau reste lisible sans cette colonne.
                 }
 
+                try {
+                    $availUserIds = [];
+                    $availJoinedAt = [];
+                    foreach ($dashboardEffectifsRows as $effRow) {
+                        if (!is_array($effRow)) {
+                            continue;
+                        }
+                        $effUid = (int) ($effRow['id'] ?? 0);
+                        if ($effUid < 1) {
+                            continue;
+                        }
+                        $availUserIds[] = $effUid;
+                        $enlist = trim((string) ($effRow['enlistment_date_resolved'] ?? $effRow['enlistment_date'] ?? $effRow['date_of_enlistment'] ?? ''));
+                        if ($enlist !== '') {
+                            $availJoinedAt[$effUid] = $enlist;
+                        }
+                    }
+                    $availCounts = \App\Core\Container::get(\App\Repositories\CommunityEventRepository::class)
+                        ->availabilityCountsForUsers(
+                            $tid,
+                            $availUserIds,
+                            \App\Services\Personnel\MemberAvailabilityRate::WINDOW_DAYS,
+                            $availJoinedAt
+                        );
+                    foreach ($dashboardEffectifsRows as &$effRow) {
+                        if (!is_array($effRow)) {
+                            continue;
+                        }
+                        $effUid = (int) ($effRow['id'] ?? 0);
+                        $counts = is_array($availCounts[$effUid] ?? null) ? $availCounts[$effUid] : [];
+                        $effRow['availability_90'] = \App\Services\Personnel\MemberAvailabilityRate::fromCounts(
+                            (int) ($counts['events'] ?? 0),
+                            (int) ($counts['yes'] ?? 0),
+                            (int) ($counts['checked_in'] ?? 0)
+                        );
+                    }
+                    unset($effRow);
+                } catch (\Throwable) {
+                    // Calendrier ou présences indisponibles : le tableau reste lisible sans cette colonne.
+                }
+
                 if ($allowsRecruitment) {
                     try {
                         $latestDossier = $enlistRepo->findLatestBySubmitter($tid, $uid);

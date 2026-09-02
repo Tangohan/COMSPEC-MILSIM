@@ -70,6 +70,34 @@ $statusBadge = static function (string $raw): string {
     };
 };
 
+$availabilityOf = static function (array $row): array {
+    $pack = $row['availability_90'] ?? null;
+
+    return is_array($pack) ? $pack : [];
+};
+
+$renderAvailability = static function (array $pack): void {
+    $hint = trim((string) ($pack['hint'] ?? 'Aucune activité sur les 90 derniers jours'));
+    $pct = $pack['availability_pct'] ?? null;
+    if (empty($pack['sample']) || $pct === null) {
+        echo '<span class="das-muted" title="' . htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') . '">—</span>';
+
+        return;
+    }
+    $pctInt = max(0, min(100, (int) $pct));
+    $hue = max(0, min(120, (int) ($pack['hue'] ?? 0)));
+    $label = trim((string) ($pack['label'] ?? ''));
+    if ($label === '') {
+        $label = $pctInt . ' %';
+    }
+    echo '<span class="dash-eff-avail" style="--avail-hue:' . $hue . ';--avail-pct:' . $pctInt . '%"'
+        . ' title="' . htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') . '"'
+        . ' aria-label="' . htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') . '">';
+    echo '<span class="dash-eff-avail__track" aria-hidden="true"><span class="dash-eff-avail__fill"></span></span>';
+    echo '<span class="dash-eff-avail__pct">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>';
+    echo '</span>';
+};
+
 $rowCount = count($rows);
 ?>
 <div class="das-stack">
@@ -141,6 +169,7 @@ $rowCount = count($rows);
                         $playtimeLabel = format_arma_playtime_french($playtimeSeconds);
                     }
                     $seniorityLabel = trim((string) ($row['seniority_label'] ?? ''));
+                    $availPack = $availabilityOf($row);
                     $cardBits = array_values(array_filter([
                         $gradeLabel !== '' ? $gradeLabel : null,
                         $assignment !== '' ? $assignment : null,
@@ -195,6 +224,12 @@ $rowCount = count($rows);
                                 <?php endif; ?>
                             </p>
                         <?php endif; ?>
+                        <?php if ($availPack !== []): ?>
+                            <div class="dash-eff-avail-wrap">
+                                <span class="dash-eff-avail-wrap__label">Disponibilité (90 j)</span>
+                                <?php $renderAvailability($availPack); ?>
+                            </div>
+                        <?php endif; ?>
                         <a href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>" class="das-btn das-btn--block">Ouvrir la fiche</a>
                     </li>
                 <?php endforeach; ?>
@@ -211,6 +246,7 @@ $rowCount = count($rows);
                             <th scope="col" class="das-hide-md">Fonction</th>
                             <th scope="col">Ancienneté</th>
                             <th scope="col" class="das-hide-lg">Temps en mission</th>
+                            <th scope="col" title="Participations annoncées et présences validées sur 90 jours">Disponibilité<span class="das-th-hint">90 j</span></th>
                             <?php if ($canSeeInactive): ?>
                             <th scope="col" class="das-hide-md">Statut</th>
                             <?php endif; ?>
@@ -256,6 +292,7 @@ $rowCount = count($rows);
                                 $playtimeLabel = format_arma_playtime_french($playtimeSeconds);
                             }
                             $seniorityLabel = trim((string) ($row['seniority_label'] ?? ''));
+                            $availPack = $availabilityOf($row);
                             ?>
                             <tr>
                                 <td class="das-sticky-col">
@@ -321,6 +358,9 @@ $rowCount = count($rows);
                                     <?php else: ?>
                                         <span class="das-muted">—</span>
                                     <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php $renderAvailability($availPack); ?>
                                 </td>
                                 <?php if ($canSeeInactive): ?>
                                 <td class="das-hide-md">
@@ -518,7 +558,7 @@ $rowCount = count($rows);
     .das-sheet--effectifs .das-sheet__table { min-width: 40rem; }
 }
 @media (min-width: 1400px) {
-    .das-sheet--effectifs .das-sheet__table { min-width: <?= $canSeeInactive ? '58rem' : '52rem' ?>; }
+    .das-sheet--effectifs .das-sheet__table { min-width: <?= $canSeeInactive ? '66rem' : '60rem' ?>; }
 }
 .das-sheet__table th,
 .das-sheet__table td {
@@ -680,6 +720,58 @@ $rowCount = count($rows);
     font-size: 0.8125rem;
     font-weight: 700;
     color: #1e3a5f;
+    white-space: nowrap;
+}
+.das-th-hint {
+    display: inline-block;
+    margin-left: 0.35rem;
+    font-size: 0.5625rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: #94a3b8;
+}
+.dash-eff-avail-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+}
+.dash-eff-avail-wrap__label {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+.dash-eff-avail {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 7.25rem;
+    max-width: 11rem;
+    --avail-hue: 0;
+    --avail-pct: 0%;
+}
+.dash-eff-avail__track {
+    flex: 1 1 4.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    min-width: 3.5rem;
+}
+.dash-eff-avail__fill {
+    display: block;
+    height: 100%;
+    width: var(--avail-pct);
+    border-radius: inherit;
+    background: hsl(var(--avail-hue), 72%, 42%);
+}
+.dash-eff-avail__pct {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: hsl(var(--avail-hue), 72%, 32%);
     white-space: nowrap;
 }
 
