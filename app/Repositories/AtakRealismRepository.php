@@ -816,6 +816,67 @@ final class AtakRealismRepository
     }
 
     /**
+     * Révoque le certificat courant du terminal (s’il existe) et en émet un nouveau.
+     *
+     * @return array{certificate: array<string, mixed>, replaced: bool}|null
+     */
+    public function regenerateCertificateForTerminal(int $tenantId, int $terminalId): ?array
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $terminalId < 1) {
+            return null;
+        }
+        $terminal = $this->findTerminalById($tenantId, $terminalId);
+        if ($terminal === null) {
+            return null;
+        }
+
+        $latest = $this->findLatestCertificateForTerminal($tenantId, $terminalId);
+        $replaced = false;
+        if ($latest !== null) {
+            $status = strtolower(trim((string) ($latest['status'] ?? '')));
+            if ($status !== 'revoked') {
+                $this->revokeCertificate(
+                    $tenantId,
+                    (int) ($latest['id'] ?? 0),
+                    'Remplacé par un nouveau certificat depuis le poste'
+                );
+                $replaced = true;
+            }
+        }
+
+        $from = is_array($latest) ? $latest : [];
+        $domainId = (int) ($from['crypto_domain_id'] ?? 0);
+        if ($domainId < 1) {
+            $domain = $this->ensureDefaultCryptoDomain($tenantId);
+            $domainId = (int) ($domain['id'] ?? 0);
+        }
+
+        $callsign = trim((string) ($terminal['operator_callsign'] ?? $terminal['terminal_label'] ?? ''));
+        $certificate = $this->issueCertificate($tenantId, [
+            'terminal_id' => $terminalId,
+            'user_id' => (int) ($terminal['user_id'] ?? ($from['user_id'] ?? 0)),
+            'authority_label' => trim((string) ($from['authority_label'] ?? '')) !== ''
+                ? (string) $from['authority_label']
+                : 'Autorité ATAK locale',
+            'certificate_type' => (string) ($from['certificate_type'] ?? 'device'),
+            'status' => 'active',
+            'crypto_domain_id' => $domainId,
+            'common_name' => $callsign,
+            'serial_number' => strtoupper(bin2hex(random_bytes(8))),
+            'fingerprint_sha256' => hash('sha256', random_bytes(32)),
+            'duration_days' => 365,
+        ]);
+        if ($certificate === []) {
+            return null;
+        }
+
+        return [
+            'certificate' => $certificate,
+            'replaced' => $replaced || $latest !== null,
+        ];
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function listCryptoDomains(int $tenantId): array

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Media;
 
+use App\Support\TerrainUploadedImage;
+
 /**
  * Compression / redimensionnement d’images uploadées.
  * Conserve une taille cible (ex. 5 Mo) en acceptant un upload plus lourd en amont.
@@ -51,7 +53,7 @@ final class ImageCompressionService
             return $this->result(false, null, 0, false, 'Envoi d’image impossible. Réessayez avec un autre fichier.');
         }
         $tmp = (string) $file['tmp_name'];
-        if ($tmp === '' || !is_uploaded_file($tmp)) {
+        if ($tmp === '' || !is_file($tmp)) {
             return $this->result(false, null, 0, false, 'Fichier image invalide.');
         }
         $size = (int) ($file['size'] ?? 0);
@@ -66,7 +68,7 @@ final class ImageCompressionService
                 null,
                 0,
                 false,
-                "Image trop lourde même pour compression (maximum {$mo} Mo à l’envoi)."
+                "Image trop lourde (maximum {$mo} Mo)."
             );
         }
 
@@ -77,8 +79,11 @@ final class ImageCompressionService
         }
 
         $destDirAbs = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $destDirAbs), DIRECTORY_SEPARATOR);
-        if (!is_dir($destDirAbs) && !@mkdir($destDirAbs, 0755, true) && !is_dir($destDirAbs)) {
-            return $this->result(false, null, 0, false, 'Stockage image indisponible.');
+        if (!is_dir($destDirAbs) && !@mkdir($destDirAbs, 0775, true) && !is_dir($destDirAbs)) {
+            return $this->result(false, null, 0, false, 'Impossible d’enregistrer l’image pour le moment.');
+        }
+        if (!is_writable($destDirAbs)) {
+            return $this->result(false, null, 0, false, 'Impossible d’enregistrer l’image pour le moment.');
         }
 
         $needsCompress = $size > $targetMaxBytes || $this->exceedsEdge($tmp, $maxEdgePx);
@@ -93,7 +98,7 @@ final class ImageCompressionService
             };
             $name = $filenamePrefix . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
             $abs = $destDirAbs . DIRECTORY_SEPARATOR . $name;
-            if (!@move_uploaded_file($tmp, $abs)) {
+            if (!TerrainUploadedImage::move($tmp, $abs)) {
                 return $this->result(false, null, 0, false, 'Impossible d’enregistrer l’image.');
             }
 
@@ -114,7 +119,7 @@ final class ImageCompressionService
                 };
                 $name = $filenamePrefix . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
                 $abs = $destDirAbs . DIRECTORY_SEPARATOR . $name;
-                if (@move_uploaded_file($tmp, $abs)) {
+                if (TerrainUploadedImage::move($tmp, $abs)) {
                     return $this->result(true, $relativeDir . '/' . $name, (int) filesize($abs), false, null);
                 }
             }
@@ -124,7 +129,7 @@ final class ImageCompressionService
                 null,
                 0,
                 false,
-                'Impossible de compresser cette image. Essayez un JPEG plus léger.'
+                'Impossible d’enregistrer cette photo. Essayez un JPG plus léger.'
             );
         }
 

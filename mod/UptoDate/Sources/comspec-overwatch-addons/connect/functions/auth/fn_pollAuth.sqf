@@ -140,7 +140,7 @@ for "_i" from 1 to 25 do {
 private _errTxt = switch (_err) do {
     case "INVALID_CREDENTIALS": { "Adresse e-mail ou mot de passe incorrect." };
     case "OTP_EXPIRED": { "Ce code n’est plus valable. Demandez-en un nouveau." };
-    case "STEAM_NOT_LINKED": { "Steam n’est pas associé à ce poste. Connectez-vous d’abord avec votre e-mail." };
+    case "STEAM_NOT_LINKED": { "Ce Steam n’est pas associé à un compte Athena. Connectez-vous une fois avec l’e-mail, ou faites lier Steam sur le portail." };
     case "ACCOUNT_DISABLED": { "Ce compte n’est plus autorisé." };
     case "TENANT_DISABLED": { "Cette communauté n’est plus accessible." };
     case "NO_TENANT": { "Aucune communauté n’est rattachée à ce compte." };

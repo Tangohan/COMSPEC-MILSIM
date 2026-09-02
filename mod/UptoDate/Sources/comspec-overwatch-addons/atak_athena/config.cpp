@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.67;
-        versionStr = "1.0.67";
-        versionAr[] = {1, 0, 67};
+        version = 1.0.75;
+        versionStr = "1.0.75";
+        versionAr[] = {1, 0, 75};
     };
 };
 
@@ -46,6 +46,9 @@ class CfgFunctions
             class athena_fixReportsLayout {};
             class athena_installReportsLayout {};
             class athena_sendPhoto {};
+            class athena_forcePhotoSend {};
+            class athena_showPhotoFolder {};
+            class athena_collectSessionLog {};
             class athena_sendSeekData {};
             class athena_resynchAll {};
             class athena_resynchOnOpened {};
@@ -119,6 +122,9 @@ class CfgFunctions
             class athena_taskSyncButtons {};
             class athena_syncOrdersToGroupChat {};
             class athena_openTask {};
+            class athena_bftUnitLabel {};
+            class athena_relabelBft {};
+            class athena_installBftLabels {};
         };
     };
     // Workaround BCE: Check_Layout uses undefined _line (Compat updateInterface)

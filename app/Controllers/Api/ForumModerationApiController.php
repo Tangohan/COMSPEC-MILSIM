@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
-use App\Core\Gate;
+use App\Authorization\DashboardPinsAccess;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -42,9 +42,7 @@ class ForumModerationApiController
 
         $isDashboardPinAction = in_array($action, ['pin_dashboard', 'unpin_dashboard'], true);
         $isModo = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
-        $canManageDashPins = Gate::getInstance()->allows('dashboard.pins.manage')
-            || Gate::getInstance()->allows('admin.organization')
-            || Gate::getInstance()->allows('admin.access');
+        $canManageDashPins = DashboardPinsAccess::canManage();
 
         if (!$isModo && !($isDashboardPinAction && $canManageDashPins)) {
             return Response::json(['success' => false, 'error' => 'Non autorisé'], 403);

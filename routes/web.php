@@ -176,6 +176,7 @@ use App\Controllers\Web\DossierOperateurController;
 use App\Controllers\Web\TenantMessagesController;
 use App\Controllers\Admin\Organization\InvitationAdminController;
 use App\Controllers\Admin\Organization\DashboardPinsAdminController;
+use App\Controllers\Admin\Organization\DashboardWardrobePinsAdminController;
 use App\Controllers\Admin\Organization\ModerationOrganizationController;
 use App\Controllers\Admin\Organization\OrganizationSecurityIndicatorsController;
 use App\Controllers\Admin\Organization\OrganizationAnalyticsController;
@@ -626,6 +627,7 @@ return function (Router $router) {
     $router->get('/documents/{id}/download', [DocumentsController::class, 'download'], $mwDocuments);
     $router->get('/documents/{slug}', [DocumentsController::class, 'show'], $mwDocuments);
     $router->get('/equipment', [ArsenalWardrobeController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/equipment/covers/{tenantId}/{file}', [ArsenalWardrobeController::class, 'streamCover'], [AuthMiddleware::class]);
     $router->get('/equipment/wardrobes', [ArsenalWardrobeController::class, 'redirectHub'], [AuthMiddleware::class]);
     $router->post('/equipment/collections', [ArsenalWardrobeController::class, 'storeCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/collections/{id}', [ArsenalWardrobeController::class, 'updateCollection'], [AuthMiddleware::class]);
@@ -1076,6 +1078,13 @@ return function (Router $router) {
     $router->post('/back-office/dashboard-pins/{id}/update', [DashboardPinsAdminController::class, 'update'], [AuthMiddleware::class]);
     $router->post('/back-office/dashboard-pins/{id}/delete', [DashboardPinsAdminController::class, 'delete'], [AuthMiddleware::class]);
     $router->post('/back-office/dashboard-pins/{id}/move', [DashboardPinsAdminController::class, 'move'], [AuthMiddleware::class]);
+    $router->get('/back-office/dashboard-tenues', [DashboardWardrobePinsAdminController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/back-office/dashboard-tenues/create', [DashboardWardrobePinsAdminController::class, 'create'], [AuthMiddleware::class]);
+    $router->post('/back-office/dashboard-tenues/store', [DashboardWardrobePinsAdminController::class, 'store'], [AuthMiddleware::class]);
+    $router->get('/back-office/dashboard-tenues/{id}/edit', [DashboardWardrobePinsAdminController::class, 'edit'], [AuthMiddleware::class]);
+    $router->post('/back-office/dashboard-tenues/{id}/update', [DashboardWardrobePinsAdminController::class, 'update'], [AuthMiddleware::class]);
+    $router->post('/back-office/dashboard-tenues/{id}/delete', [DashboardWardrobePinsAdminController::class, 'delete'], [AuthMiddleware::class]);
+    $router->post('/back-office/dashboard-tenues/{id}/move', [DashboardWardrobePinsAdminController::class, 'move'], [AuthMiddleware::class]);
     $mwTenantMemberModeration = [AuthMiddleware::class, OrganizationAdminMiddleware::class, TenantMemberModerationMiddleware::class];
     $router->get('/back-office/moderation', [ModerationOrganizationController::class, 'index'], $mwTenantMemberModeration);
     $router->get('/back-office/audit', [OrganizationAuditController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1197,6 +1206,10 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/competences/{id}', [CompetencyMatrixController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/competences/{id}/supprimer', [CompetencyMatrixController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles', [PersonnelJobRoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/personnel-job-roles/kits', [PersonnelJobRoleAdminController::class, 'kits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/personnel-job-roles/kits/save', [PersonnelJobRoleAdminController::class, 'saveKits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/personnel-job-roles/kits/assign', [PersonnelJobRoleAdminController::class, 'assignKitRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/personnel-job-roles/kits/unassign', [PersonnelJobRoleAdminController::class, 'unassignKitRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles/assignments', [PersonnelJobRoleAdminController::class, 'assignments'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles/assignments/member-permissions', [PersonnelJobRoleAdminController::class, 'memberJobRolePermissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/personnel-job-roles/assignments/save', [PersonnelJobRoleAdminController::class, 'saveAssignment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1373,6 +1386,7 @@ return function (Router $router) {
         'community',
         'alerts',
         'dashboard-pins',
+        'dashboard-tenues',
         'integrations',
     ] as $boLegacyTop) {
         $router->get('/backoffice/' . $boLegacyTop, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/' . $boLegacyTop)), [AuthMiddleware::class]);
@@ -1718,6 +1732,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
 
     // Bureau Courrier / Correspondance Officielle
     $router->get('/courrier', [CourrierDashboardController::class, 'index'], $mwCourrier);
+    $router->get('/courrier/signature', [CourrierSignatureController::class, 'manage'], $mwCourrier);
+    $router->post('/courrier/signature', [CourrierSignatureController::class, 'store'], $mwCourrier);
+    $router->post('/courrier/signature/{id}/default', [CourrierSignatureController::class, 'setDefault'], $mwCourrier);
+    $router->post('/courrier/signature/{id}/delete', [CourrierSignatureController::class, 'destroy'], $mwCourrier);
     $router->get('/courrier/editor', [CourrierEditorController::class, 'index'], $mwCourrier);
     $router->get('/courrier/editor/{id}', [CourrierEditorController::class, 'edit'], $mwCourrier);
     $router->get('/courrier/read/{id}', [\App\Controllers\Courrier\CourrierReadController::class, 'show'], $mwCourrier);
@@ -2051,6 +2069,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/terminals', [\App\Controllers\Api\AtakRealismApiController::class, 'terminals']);
     $router->post('/api/atak/terminals/compromise', [\App\Controllers\Api\AtakRealismApiController::class, 'compromise']);
     $router->post('/api/atak/terminals/clear-compromise', [\App\Controllers\Api\AtakRealismApiController::class, 'clearCompromise']);
+    $router->post('/api/atak/terminals/{id}/certificate/regenerate', [\App\Controllers\Api\AtakRealismApiController::class, 'regenerateCertificate']);
     $router->get('/api/atak/certificates', [\App\Controllers\Api\AtakRealismApiController::class, 'certificates']);
     $router->post('/api/atak/certificates', [\App\Controllers\Api\AtakRealismApiController::class, 'certificates']);
     $router->get('/api/atak/crypto-domains', [\App\Controllers\Api\AtakRealismApiController::class, 'cryptoDomains']);

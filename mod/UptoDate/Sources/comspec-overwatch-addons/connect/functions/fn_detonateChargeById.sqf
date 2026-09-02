@@ -1,5 +1,6 @@
 /*
     Trouve une charge par identifiant et la fait exploser sur son propriétaire.
+    Athena n’est prévenue qu’après la détonation réelle (voir detonateChargeLocal).
 */
 params [["_chargeId", "", [""]]];
 if (_chargeId isEqualTo "") exitWith { false };
@@ -17,19 +18,20 @@ if (isNull _exp) exitWith {
     private _n = (_tries getOrDefault [_chargeId, 0]) + 1;
     _tries set [_chargeId, _n];
     missionNamespace setVariable ["COMSPEC_ExplosiveDetonateTries", _tries, false];
-    _fired set [_chargeId, false];
-    missionNamespace setVariable ["COMSPEC_ExplosiveDetonateOrdered", _fired, false];
-    if (_n >= 8) then {
-        [objNull, 0, player, "detonated", _chargeId] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
+    if (_n >= 12) then {
+        ["WARN", "Explosives", "Charge ATAK introuvable en jeu — le poste reste en attente"] call comspec_overwatch_connect_fnc_log;
+        ["La charge n’a pas été trouvée en jeu. Le poste ne doit pas indiquer qu’elle a explosé.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+    } else {
+        _fired set [_chargeId, false];
+        missionNamespace setVariable ["COMSPEC_ExplosiveDetonateOrdered", _fired, false];
     };
     false
 };
 
-[_exp, _chargeId] remoteExecCall ["comspec_overwatch_connect_fnc_detonateChargeLocal", _exp];
+if (local _exp) then {
+    [_exp, _chargeId] call comspec_overwatch_connect_fnc_detonateChargeLocal;
+} else {
+    [_exp, _chargeId] remoteExecCall ["comspec_overwatch_connect_fnc_detonateChargeLocal", _exp];
+};
 
-private _outcomes = missionNamespace getVariable ["COMSPEC_ExplosiveOutcomes", createHashMap];
-if (!(_outcomes isEqualType createHashMap)) then { _outcomes = createHashMap; };
-_outcomes set [_chargeId, "detonated"];
-missionNamespace setVariable ["COMSPEC_ExplosiveOutcomes", _outcomes, false];
-[objNull, 0, player, "detonated", _chargeId] call comspec_overwatch_connect_fnc_reportExplosiveTimer;
 true

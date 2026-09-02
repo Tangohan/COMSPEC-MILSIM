@@ -56,8 +56,7 @@ player addEventHandler ["Killed", {
 }];
 
 player addEventHandler ["Respawn", {
-    [] call comspec_overwatch_connect_fnc_onPlayerRespawn;
-    // Nouvelle unité : rebind tracking sans empiler sur l’ancienne
+    // Grâce déjà posée par initATAK (Respawn / EntityRespawned) — ici on rebind seulement.
     [{
         [] call comspec_overwatch_connect_fnc_initVehicleTracking;
     }, [], 0.5] call CBA_fnc_waitAndExecute;

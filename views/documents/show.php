@@ -108,13 +108,8 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
         <?php require base_path('views/partials/document_screenshot_shield.php'); ?>
     </div>
     <script type="module">
-      /**
-       * Build ESM officiel (pdfjs-dist ≥ 4 expose GlobalWorkerOptions en import nommé).
-       * L’entrée npm/+esm pour la v3 ne mappe pas GlobalWorkerOptions → workerSrc plantait.
-       */
-      import { getDocument, GlobalWorkerOptions } from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.mjs';
-      const PDFJS_BUILD = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build';
-      GlobalWorkerOptions.workerSrc = PDFJS_BUILD + '/pdf.worker.min.mjs';
+      import { getDocument, GlobalWorkerOptions } from <?= json_encode(asset_url('assets/vendor/pdfjs/pdf.mjs')) ?>;
+      GlobalWorkerOptions.workerSrc = <?= json_encode(asset_url('assets/vendor/pdfjs/pdf.worker.min.mjs')) ?>;
       const url = <?= json_encode($fileUrl) ?>;
       const container = document.getElementById('doc-viewer');
       const pageCountEl = document.getElementById('doc-page-count');

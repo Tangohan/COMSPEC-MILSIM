@@ -134,6 +134,7 @@ $bootstrapFiles = [
     'personnel_org_history_migration.php',
     'personnel_stage_bilans_migration.php',
     'member_integration_migration.php',
+    'personnel_function_kits_migration.php',
     'personnel_absences_migration.php',
     'positions_admin_category_migration.php',
     'personnel_profile_extended_details_migration.php',
@@ -273,6 +274,7 @@ run_arma_playtime_migration($pdo);
 run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
 run_member_integration_migration($pdo);
+run_personnel_function_kits_migration($pdo);
 run_personnel_absences_migration($pdo);
 run_personnel_profile_extended_details_migration($pdo);
 run_personnel_profile_rp_identity_migration($pdo);
@@ -2015,6 +2017,20 @@ if ($stmt && !$stmt->fetch()) {
     echo "Variables grades courrier OK.\n";
 }
 
+$stmt = $pdo->query("SELECT 1 FROM document_variables_catalog WHERE code = 'tenant.name' LIMIT 1");
+if ($stmt && !$stmt->fetch()) {
+    echo "Ajout variables courrier (communauté / groupe)...\n";
+    $orgVars = [
+        ['tenant.name', 'Communauté', 'structure', 'Nom de la communauté', 'structure'],
+        ['group.name', 'Groupe', 'structure', 'Groupe d’affectation', 'structure'],
+    ];
+    $insVar = $pdo->prepare("INSERT INTO document_variables_catalog (tenant_id, code, label, source_type, description, category, is_active) VALUES (NULL, ?, ?, ?, ?, ?, 1)");
+    foreach ($orgVars as $v) {
+        $insVar->execute([$v[0], $v[1], $v[2], $v[3], $v[4]]);
+    }
+    echo "Variables communauté / groupe courrier OK.\n";
+}
+
 // Module Courrier : table user_signatures et colonnes signature sur courrier_documents
 $stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_signatures'");
 if ($stmt && !$stmt->fetch()) {
@@ -2420,6 +2436,13 @@ try {
     $tenantDashboardPinsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_dashboard_pins : ' . $e->getMessage() . "\n";
+}
+
+$dashboardWardrobePinsMigrate = require $root . '/bootstrap/dashboard_wardrobe_pins_migration.php';
+try {
+    $dashboardWardrobePinsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_dashboard_wardrobe_pins : ' . $e->getMessage() . "\n";
 }
 
 $forumTopicPinOnDashboardMigrate = require $root . '/bootstrap/forum_topic_pin_on_dashboard_migration.php';

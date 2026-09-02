@@ -49,6 +49,7 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         self::assertStringContainsString('ListWardrobes', $ext);
         self::assertStringContainsString('SyncWardrobe', $ext);
         self::assertStringContainsString('GetWardrobe', $ext);
+        self::assertStringContainsString('DeleteWardrobe', $ext);
         self::assertStringContainsString('BuildWardrobeSyncJson', $ext);
         self::assertStringContainsString('payload_text', $ext);
         self::assertStringNotContainsString('JsonSerializer.Serialize(syncObj)', $ext);
@@ -62,6 +63,9 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         self::assertStringContainsString('class arsenalInitOverlay', $cfg);
         self::assertStringContainsString('class arsenalItemPicture', $cfg);
         self::assertStringContainsString('class arsenalOverlayPreview', $cfg);
+        self::assertStringContainsString('class arsenalCollectionName', $cfg);
+        self::assertStringContainsString('class arsenalDeleteLocal', $cfg);
+        self::assertStringContainsString('class arsenalDeleteCloud', $cfg);
 
         $overlay = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalOverlayShow.sqf'
@@ -77,6 +81,10 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         self::assertStringContainsString('Envoyer toutes', $overlay);
         self::assertStringContainsString('Récupérer cette', $overlay);
         self::assertStringContainsString('Récupérer toutes', $overlay);
+        self::assertStringContainsString('Supprimer', $overlay);
+        self::assertStringContainsString('BIS_fnc_guiMessage', $overlay);
+        self::assertStringContainsString('arsenalDeleteLocal', $overlay);
+        self::assertStringContainsString('arsenalDeleteCloud', $overlay);
         self::assertStringContainsString('0.72 * safezoneH', $overlay);
         self::assertStringContainsString('arsenalPullAll', $overlay);
         self::assertStringNotContainsString('safeZoneW - 0.28', $overlay);
@@ -88,6 +96,25 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         self::assertStringContainsString('aucune tenue dans cet arsenal', $refresh);
         self::assertStringContainsString('_parts select 7', $refresh);
         self::assertStringContainsString('lbSetPicture', $refresh);
+        self::assertStringContainsString('arsenalCollectionName', $refresh);
+        self::assertStringContainsString('COMSPEC_ArsenalCollapsedLocal', $refresh);
+        self::assertStringContainsString('"▸"', $refresh);
+        self::assertStringContainsString('"▾"', $refresh);
+        $groupFn = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalCollectionName.sqf'
+        );
+        self::assertStringContainsString('Autres', $groupFn);
+        self::assertStringContainsString('find " - "', $groupFn);
+        $delLocal = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalDeleteLocal.sqf'
+        );
+        self::assertStringContainsString('ace_arsenal_saved_loadouts', $delLocal);
+        self::assertStringContainsString('saveProfileNamespace', $delLocal);
+        $delCloud = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalDeleteCloud.sqf'
+        );
+        self::assertStringContainsString('DeleteWardrobe', $delCloud);
+        self::assertStringContainsString('tenues que vous avez envoyées', $delCloud);
         $icons = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalLoadoutIcons.sqf'
         );

@@ -9,6 +9,62 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## Portail 1.5.96 — 2026-09-02
+
+### Correction — Barre de vue et bande Réseau / Journal
+
+La barre N, 2D, 3D et Zoom reste à droite, sous Outils, sans passer derrière la carte. Réseau et Journal s’affichent dans une bande lisible en bas. Rechargez la page du poste.
+
+---
+
+## Portail 1.5.95 — 2026-09-02
+
+### Correction — Fantômes hors liaison
+
+Un opérateur bloqué à l’écran de connexion, ou sans signal récent, n’est plus affiché En liaison. Les anciennes positions et les anciens indicatifs quittent la carte et le relief. Rechargez la page du poste.
+
+---
+
+## Portail 1.5.94 — 2026-09-02
+
+### Amélioration — Certificats sur les fiches terminaux
+
+L’onglet Terminaux du poste affiche l’état du certificat, sa référence et son échéance. Un compte connecté peut en émettre un nouveau ; l’ancien n’est plus accepté. Rechargez la page du poste.
+
+---
+
+## Overwatch 1.5.12 — 2026-09-02
+
+### Correction — Charge Uniquement depuis ATAK
+
+Une charge réglée sur Uniquement depuis ATAK saute désormais en jeu quand vous la déclenchez depuis la tablette ou le poste. Le poste n’affiche « A explosé » qu’après. Le choix n’apparaît plus deux fois dans ACE. Relancer Arma complètement.
+
+---
+
+## Carte du poste — 2026-09-02
+
+### Correction — Opérateurs illisibles sur la carte
+
+Les opérateurs en liaison affichent de nouveau leur indicatif sous le symbole, y compris à plat. Rechargez la page du poste.
+
+---
+
+## Overwatch 1.5.11 / Athena 1.0.75 — 2026-09-01
+
+### Amélioration — Compte non connecté
+
+Sans compte associé, un bandeau ambre « Compte non connecté » s’affiche sur la carte, au-dessus de l’indicatif, et en haut de la tuile Athena. Relancer Arma complètement.
+
+---
+
+## [1.5.51] / Overwatch 1.5.10 / Athena 1.0.72 — 2026-09-01
+
+### Corrigé — Boussole et outils carte
+
+La boussole en haut à gauche et les outils carte en bas à gauche ne sont plus recouverts. Les cartouches de grille et d’unité passent à droite. Relancer Arma complètement.
+
+---
+
 ## [1.5.50] / Overwatch 1.5.0 / Athena 1.0.63 — 2026-09-01
 
 ### Corrigé — Identité, chat et journal

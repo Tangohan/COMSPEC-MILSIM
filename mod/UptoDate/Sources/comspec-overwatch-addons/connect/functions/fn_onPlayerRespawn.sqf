@@ -47,7 +47,11 @@ missionNamespace setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
 [] call comspec_overwatch_connect_fnc_aceSweepPlayerSelfActions;
 missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
 
-["INFO", "Respawn", format ["Grâce %1s — médical / MessageBox / sync gelés", _graceSec]] call comspec_overwatch_connect_fnc_log;
+private _lastGraceLog = missionNamespace getVariable ["COMSPEC_RespawnGraceLoggedAt", -1e9];
+if ((diag_tickTime - _lastGraceLog) > 2) then {
+    missionNamespace setVariable ["COMSPEC_RespawnGraceLoggedAt", diag_tickTime, false];
+    ["INFO", "Respawn", format ["Grâce %1s — médical / MessageBox / sync gelés", _graceSec]] call comspec_overwatch_connect_fnc_log;
+};
 
 // Une seule ré-armement planifié (dernier respawn gagne)
 private _token = (missionNamespace getVariable ["COMSPEC_RespawnGraceToken", 0]) + 1;

@@ -156,9 +156,11 @@ export class MarkerManager {
     const entityForIcon = Object.assign({}, entity, {
       heading: headingRounded === '' ? null : headingRounded,
     });
-    const html = renderMarkerHtml(entityForIcon, lodOpts);
-    const extraH = lodOpts.showCallsign ? Math.round(labelPx * 1.7 + 10) : 8;
-    const sig = html + '|' + size + '|' + extraH;
+    const html = '<div class="tac-marker-wrap" style="--atak-unit-label-size:' + labelPx + 'px">'
+      + renderMarkerHtml(entityForIcon, lodOpts) + '</div>';
+    const extraH = lodOpts.showCallsign ? Math.round(labelPx * 1.8 + 12) : 8;
+    const labelW = lodOpts.showCallsign ? Math.max(size + 24, Math.round(labelPx * 8)) : size;
+    const sig = html + '|' + size + '|' + extraH + '|' + labelW;
     const posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
 
     let marker = this.markers.get(id);
@@ -176,15 +178,15 @@ export class MarkerManager {
     const icon = this.L.divIcon({
       className: 'tac-leaflet-marker atak-compact-marker',
       html: html,
-      iconSize: [size, size + extraH],
-      iconAnchor: [size / 2, size / 2],
+      iconSize: [labelW, size + extraH],
+      iconAnchor: [labelW / 2, size / 2],
     });
 
     if (marker) {
       marker.setLatLng(latlng);
       marker.setIcon(icon);
     } else {
-      marker = this.L.marker(latlng, { icon: icon, interactive: true, zIndexOffset: 400 });
+      marker = this.L.marker(latlng, { icon: icon, interactive: true, zIndexOffset: 850 });
       marker.on('click', () => {
         this._emitSelect(entity);
       });

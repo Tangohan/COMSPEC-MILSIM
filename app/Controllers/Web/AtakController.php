@@ -190,6 +190,7 @@ class AtakController
             'canPing' => true,
             // Compte connecté : la spécialité Médecin du profil de session débloque le triage.
             'canTriageMedical' => (bool) $currentUser,
+            'canManageCertificates' => (bool) $currentUser,
             /** Lecture BFT / médical / messagerie — membre ou session téléphone valide. */
             'canViewBft' => true,
             'canUseMedical' => true,
@@ -203,6 +204,7 @@ class AtakController
             $atakCaps['canDeleteUnitStaff'] = false;
             $atakCaps['canDeleteOwnUnit'] = false;
             $atakCaps['canTriageMedical'] = false;
+            $atakCaps['canManageCertificates'] = false;
         }
 
         $atakProfileHints = (new AtakSessionProfileHintService())->build($currentUser, $tenantId);
@@ -271,6 +273,7 @@ class AtakController
                 $atakCaps['canViewBft'] = true;
                 $atakCaps['canUseMedical'] = true;
                 $atakCaps['canChat'] = true;
+                $atakCaps['canManageCertificates'] = false;
                 $atakUserForJs = [
                     'id' => 0,
                     'tenantId' => $tenantId > 0 ? $tenantId : (int) ($pairing['tenant_id'] ?? 0),

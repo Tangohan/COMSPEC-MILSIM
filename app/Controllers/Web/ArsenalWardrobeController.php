@@ -54,6 +54,19 @@ class ArsenalWardrobeController
         return Response::redirect(url('equipment'));
     }
 
+    public function streamCover(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate();
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId] = $gate;
+        $coverTenantId = (int) ($params['tenantId'] ?? 0);
+        $file = basename(rawurldecode((string) ($params['file'] ?? '')));
+
+        return EquipmentCoverStorage::streamCover($tenantId, $coverTenantId, $file);
+    }
+
     public function showCollection(Request $request, array $params = []): Response
     {
         $gate = $this->gate();

@@ -112,4 +112,15 @@ final class SystemReservedPermissionsTest extends TestCase
         self::assertFalse(PermissionImplication::isGranted(['admin.organization'], 'admin.system'));
         self::assertFalse(PermissionImplication::isGranted(['admin.access'], 'site.support'));
     }
+
+    public function testOrganizationAdminImpliesDashboardPinsWithoutPlatformRights(): void
+    {
+        self::assertTrue(PermissionImplication::isGranted(['admin.organization'], 'dashboard.pins.manage'));
+        self::assertTrue(PermissionImplication::isGranted(['admin.access'], 'dashboard.pins.manage'));
+        self::assertFalse(PermissionImplication::isGranted(['admin.organization'], 'admin.system'));
+        self::assertFalse(PermissionImplication::isGranted(['admin.access'], 'admin.system'));
+        self::assertFalse(PermissionImplication::isGranted(['admin.organization'], 'site.support'));
+        self::assertFalse(PermissionImplication::isGranted(['dashboard.pins.manage'], 'admin.system'));
+        self::assertFalse(PermissionImplication::isGranted(['site.support'], 'dashboard.pins.manage'));
+    }
 }

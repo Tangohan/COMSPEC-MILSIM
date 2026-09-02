@@ -11,15 +11,28 @@
 }
 
 .personnel-file--gate {
-  padding-bottom: 1.15rem;
+  padding-bottom: 0.35rem;
 }
 
-body:has(.personnel-file--gate) > main {
-  min-height: 0;
+html:has(.personnel-file--gate),
+body:has(.personnel-file--gate),
+body.layout-page-compact:has(.personnel-file--gate) {
+  min-height: 0 !important;
+  height: auto !important;
 }
 
-.personnel-file-portal-main {
+body:has(.personnel-file--gate) > main,
+main:has(.personnel-file--gate),
+main.personnel-file-portal-main:has(.personnel-file--gate) {
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+body:has(.personnel-file--gate) .portal-footer {
+  margin-top: 0;
   min-height: 0;
+  flex-grow: 0;
+  flex-shrink: 0;
 }
 
 .personnel-file-gate__hero {

@@ -202,6 +202,10 @@ final class PermissionImplication
         if (str_starts_with($permission, 'media.')) {
             return true;
         }
+        // Vitrine et raccourcis du tableau de bord : administration de la communauté, pas de la plateforme.
+        if ($permission === 'dashboard.pins.manage') {
+            return true;
+        }
 
         return $permission === 'invitations.send';
     }

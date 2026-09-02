@@ -165,6 +165,9 @@ class HomeController
         $dashboardTenantLabel = null;
         $showcaseTrainingFeature = false;
         $showcaseItems = [];
+        $showcaseKitFeature = false;
+        $showcaseKitItems = [];
+        $canManageKitPins = false;
         $myEnlistmentsPending = [];
         $staffEnlistmentsPending = [];
         $showStaffEnlistments = false;
@@ -224,6 +227,22 @@ class HomeController
             if ($showcaseTrainingFeature) {
                 $rows = \App\Core\Container::get(\App\Repositories\TrainingCourseRepository::class)->listPublishedForDashboard($tid, 20);
                 $showcaseItems = self::buildTrainingShowcasePayload($rows);
+            }
+
+            $showcaseKitFeature = false;
+            $showcaseKitItems = [];
+            $canManageKitPins = false;
+            $allowsEquipment = \App\Services\Community\TenantTypeConfig::uriAllowed($dashboardTenantType, 'equipment')
+                && \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tid, 'equipment');
+            if ($allowsEquipment) {
+                try {
+                    $showcaseKitItems = \App\Core\Container::get(\App\Services\Dashboard\DashboardWardrobeShowcaseService::class)
+                        ->listForDashboard($tid);
+                } catch (\Throwable) {
+                    $showcaseKitItems = [];
+                }
+                $canManageKitPins = $currentUser !== null && \App\Authorization\DashboardPinsAccess::canManage();
+                $showcaseKitFeature = $showcaseKitItems !== [] || $canManageKitPins;
             }
 
             if ($currentUser) {
@@ -385,6 +404,47 @@ class HomeController
                     unset($effRow);
                 } catch (\Throwable) {
                     // Module d’ancienneté absent : le tableau reste lisible sans cette colonne.
+                }
+
+                try {
+                    $availUserIds = [];
+                    $availJoinedAt = [];
+                    foreach ($dashboardEffectifsRows as $effRow) {
+                        if (!is_array($effRow)) {
+                            continue;
+                        }
+                        $effUid = (int) ($effRow['id'] ?? 0);
+                        if ($effUid < 1) {
+                            continue;
+                        }
+                        $availUserIds[] = $effUid;
+                        $enlist = trim((string) ($effRow['enlistment_date_resolved'] ?? $effRow['enlistment_date'] ?? $effRow['date_of_enlistment'] ?? ''));
+                        if ($enlist !== '') {
+                            $availJoinedAt[$effUid] = $enlist;
+                        }
+                    }
+                    $availCounts = \App\Core\Container::get(\App\Repositories\CommunityEventRepository::class)
+                        ->availabilityCountsForUsers(
+                            $tid,
+                            $availUserIds,
+                            \App\Services\Personnel\MemberAvailabilityRate::WINDOW_DAYS,
+                            $availJoinedAt
+                        );
+                    foreach ($dashboardEffectifsRows as &$effRow) {
+                        if (!is_array($effRow)) {
+                            continue;
+                        }
+                        $effUid = (int) ($effRow['id'] ?? 0);
+                        $counts = is_array($availCounts[$effUid] ?? null) ? $availCounts[$effUid] : [];
+                        $effRow['availability_90'] = \App\Services\Personnel\MemberAvailabilityRate::fromCounts(
+                            (int) ($counts['events'] ?? 0),
+                            (int) ($counts['yes'] ?? 0),
+                            (int) ($counts['checked_in'] ?? 0)
+                        );
+                    }
+                    unset($effRow);
+                } catch (\Throwable) {
+                    // Calendrier ou présences indisponibles : le tableau reste lisible sans cette colonne.
                 }
 
                 if ($allowsRecruitment) {
@@ -685,6 +745,9 @@ class HomeController
             'dashboard_tenant_type' => $dashboardTenantType,
             'showcase_training_feature' => $showcaseTrainingFeature,
             'showcase_items' => $showcaseItems,
+            'showcase_kit_feature' => $showcaseKitFeature,
+            'showcase_kit_items' => $showcaseKitItems,
+            'can_manage_kit_pins' => $canManageKitPins,
             'my_enlistments_pending' => $myEnlistmentsPending,
             'staff_enlistments_pending' => $staffEnlistmentsPending,
             'show_staff_enlistments' => $showStaffEnlistments,

@@ -40,5 +40,22 @@ final class AtakC2UiCspAssetTest extends TestCase
         self::assertStringContainsString("btn('toggle-2d'", $controls);
         self::assertStringContainsString("btn('toggle-3d'", $controls);
         self::assertStringContainsString('tac-map-controls__label', $controls);
+        self::assertStringContainsString('.tac-ctx__section', $css);
+    }
+
+    public function testLiveShellSitsBelowOutilsAndStylesNetworkJournal(): void
+    {
+        $live = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-map-c2-live.css');
+        $bridge = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/map/atak-c2-bridge.js');
+        $panel = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/map/SelectedEntityPanel.js');
+
+        self::assertStringContainsString('--atak-c2-overlay-top', $live);
+        self::assertStringContainsString('top: var(--atak-c2-overlay-top, 0px)', $live);
+        self::assertStringContainsString('z-index: 25', $live);
+        self::assertStringContainsString('function syncC2OverlayTop(', $bridge);
+        self::assertStringContainsString("setProperty('--atak-c2-overlay-top'", $bridge);
+        self::assertStringContainsString('tac-ctx__section', $panel);
+        self::assertStringContainsString('>Réseau</span>', $panel);
+        self::assertStringContainsString('>Journal</span>', $panel);
     }
 }

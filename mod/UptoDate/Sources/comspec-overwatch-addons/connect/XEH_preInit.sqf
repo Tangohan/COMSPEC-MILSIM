@@ -670,6 +670,10 @@ private _savedFt = profileNamespace getVariable ["COMSPEC_FireTeamId", 0];
 if (_savedFt isEqualType 0 && {_savedFt > 0}) then {
     missionNamespace setVariable ["COMSPEC_FireTeamId", _savedFt, false];
 };
+private _savedBftMode = profileNamespace getVariable ["COMSPEC_BftLabelMode", "cs"];
+if (_savedBftMode in ["cs", "cs_role"]) then {
+    missionNamespace setVariable ["COMSPEC_BftLabelMode", _savedBftMode, false];
+};
 missionNamespace setVariable ["COMSPEC_HtmlAlerts", [], false];
 
 // Petit modèle (vue classique idd 9973) — désactivé temporairement (bascule auto coupait la tablette Athena).

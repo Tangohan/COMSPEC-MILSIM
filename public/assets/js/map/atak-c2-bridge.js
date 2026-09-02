@@ -90,6 +90,7 @@
       wireEntityPanel(SelectedEntityPanel);
       wireEntityFocus(map);
       keepLegacyToolbarChrome();
+      syncC2OverlayTop();
 
       /* Premier sync si unités déjà en mémoire */
       if (window.ATAKUnits && typeof window.ATAKUnits.getUnits === 'function') {
@@ -124,10 +125,24 @@
   function pushUnits(units) {
     state.lastUnits = Array.isArray(units) ? units : [];
     if (!state.manager) return;
+    var prefs = {};
+    try {
+      if (window.ATAKMap && typeof window.ATAKMap.getDisplayPrefs === 'function') {
+        prefs = window.ATAKMap.getDisplayPrefs() || {};
+      }
+    } catch (eP) { prefs = {}; }
     var entities = state.lastUnits.map(normalizeUnit).filter(function (e) {
-      return e && e.id != null && (e.x != null || e.lat != null);
+      if (!e || e.id == null || (e.x == null && e.lat == null)) return false;
+      if (e.status === 'LOST' && !e.keepLastKnown) return false;
+      if (e.status === 'STALE' && prefs.showDelayedUnits === false && !e.keepLastKnown) return false;
+      return true;
     });
     state.manager.setEntities(entities);
+    try {
+      if (window.ATAKMap && typeof window.ATAKMap.refreshMarkersAgainstUnits === 'function') {
+        window.ATAKMap.refreshMarkersAgainstUnits();
+      }
+    } catch (e0) { /* ignore */ }
 
     if (state.tracks && window.ATAKUnits && typeof window.ATAKUnits.getTrailBuffers === 'function') {
       try {
@@ -149,18 +164,35 @@
       var st = String(window.ATAKUnits.resolveLiveStatus(u) || '').toLowerCase();
       if (st === 'offline') live = 'LOST';
       else if (st === 'delayed') live = 'STALE';
-      else if (st === 'online') live = 'ONLINE';
+      else live = 'ONLINE';
     }
     var health = String(extra.health || u.health || '').toLowerCase();
     if (health === 'dead' || health === 'kia') live = 'KIA';
     else if (health === 'wounded' || health === 'injured' || health === 'unconscious') live = 'DEGRADED';
 
-    var x = u.pos_x != null ? parseFloat(u.pos_x) : (u.x != null ? parseFloat(u.x) : NaN);
-    var y = u.pos_y != null ? parseFloat(u.pos_y) : (u.y != null ? parseFloat(u.y) : NaN);
-    if ((isNaN(x) || isNaN(y)) && u.grid_ref) {
-      var parts = String(u.grid_ref).trim().split(/\s+/);
-      x = parseFloat(parts[0]);
-      y = parseFloat(parts[1]);
+    var keepLastKnown = !!(extra.ally_ai || extra.enemy_ai || extra.is_ai);
+    if (!keepLastKnown) {
+      var src = String(extra.source || '').toLowerCase();
+      keepLastKnown = src === 'ally' || src === 'enemy';
+    }
+    if (!keepLastKnown) {
+      var csAi = String(u.call_sign || u.callsign || '').toUpperCase();
+      keepLastKnown = csAi.indexOf('ALLY-') === 0 || csAi.indexOf('ENY-') === 0;
+    }
+
+    var ORIGIN_EPS = 0.5;
+    var x = u.pos_x != null && u.pos_x !== '' ? parseFloat(u.pos_x) : (u.x != null && u.x !== '' ? parseFloat(u.x) : NaN);
+    var y = u.pos_y != null && u.pos_y !== '' ? parseFloat(u.pos_y) : (u.y != null && u.y !== '' ? parseFloat(u.y) : NaN);
+    if (isNaN(x) || isNaN(y) || (Math.abs(x) < ORIGIN_EPS && Math.abs(y) < ORIGIN_EPS)) {
+      var parts = String(u.grid_ref || '').trim().split(/\s+/);
+      if (parts.length >= 2) {
+        x = parseFloat(parts[0]);
+        y = parseFloat(parts[1]);
+      }
+    }
+    if (isNaN(x) || isNaN(y) || (Math.abs(x) < ORIGIN_EPS && Math.abs(y) < ORIGIN_EPS)) {
+      x = NaN;
+      y = NaN;
     }
 
     var id = u.id != null && String(u.id) !== ''
@@ -178,11 +210,12 @@
 
     return {
       id: id,
-      callsign: u.call_sign || u.callsign || extra.callsign || id,
+      callsign: u.display_call_sign || u.call_sign || u.callsign || extra.callsign || id,
       role: u.role || extra.role || u.roleDescription || '',
       affiliation: normalizeAffiliation(extra.affiliation || extra.affil || u.affiliation || u.side || 'friend'),
       type: mapPlatformType(u, extra),
       status: live,
+      keepLastKnown: keepLastKnown,
       heading: headingRounded,
       speed: u.speed != null ? Math.round(Number(u.speed) || 0) : extra.speed,
       altitude: u.asl_z != null ? u.asl_z : (u.altitude != null ? u.altitude : extra.asl_z),
@@ -416,6 +449,33 @@
         tools.setAttribute('aria-hidden', 'false');
       }
     }
+    syncC2OverlayTop();
+  }
+
+  function syncC2OverlayTop() {
+    var wrap = document.querySelector('.atak-map-wrap');
+    var tools = document.getElementById('atak-map-tools');
+    if (!wrap) return;
+    var h = 0;
+    if (tools && !tools.classList.contains('is-collapsed') && tools.offsetParent !== null) {
+      h = Math.round(tools.getBoundingClientRect().height) || 0;
+    }
+    wrap.style.setProperty('--atak-c2-overlay-top', h + 'px');
+    if (state._overlayTopBound) return;
+    state._overlayTopBound = true;
+    if (typeof ResizeObserver !== 'undefined' && tools) {
+      try {
+        var ro = new ResizeObserver(function () { syncC2OverlayTop(); });
+        ro.observe(tools);
+      } catch (eRo) { /* ignore */ }
+    }
+    if (tools && typeof MutationObserver !== 'undefined') {
+      try {
+        var mo = new MutationObserver(function () { syncC2OverlayTop(); });
+        mo.observe(tools, { attributes: true, attributeFilter: ['class', 'hidden'] });
+      } catch (eMo) { /* ignore */ }
+    }
+    window.addEventListener('resize', function () { syncC2OverlayTop(); });
   }
 
   function ensureCss(href) {
@@ -423,7 +483,7 @@
     if (document.querySelector('link[data-atak-c2-css]')) return;
     var link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = href + (href.indexOf('?') >= 0 ? '&' : '?') + 'v=c2look2';
+    link.href = href + (href.indexOf('?') >= 0 ? '&' : '?') + 'v=c2look3';
     link.setAttribute('data-atak-c2-css', '1');
     document.head.appendChild(link);
   }

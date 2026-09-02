@@ -34,6 +34,7 @@ final class PersonnelRpIdentityAssetTest extends TestCase
         self::assertStringContainsString('>Nom</p>', $file);
         self::assertStringContainsString('Présentation du personnage', $file);
         self::assertStringNotContainsString('Identité civile / administrative', $file);
+        self::assertStringNotContainsString("'civil_identity' => 'Prénom et nom'", $file);
         self::assertStringNotContainsString('Bio (compte)', $file);
         self::assertStringNotContainsString('Nom affiché sur le compte', $file);
         self::assertStringNotContainsString('Nom de scène', $file);

@@ -3,6 +3,9 @@ $base = url('');
 $title = $title ?? 'Tableau de bord — Athena';
 $showcase_training_feature = $showcase_training_feature ?? false;
 $showcase_items = $showcase_items ?? [];
+$showcase_kit_feature = $showcase_kit_feature ?? false;
+$showcase_kit_items = $showcase_kit_items ?? [];
+$can_manage_kit_pins = !empty($can_manage_kit_pins);
 $dashboard_tenant_label = $dashboard_tenant_label ?? null;
 $dashboard_is_default_tenant = !empty($dashboard_is_default_tenant);
 $dashboard_tester_program = $dashboard_tester_program ?? null;
@@ -13,6 +16,10 @@ if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
 $showcase_json = json_encode($showcase_items, $showcaseJsonFlags);
 if (!is_string($showcase_json) || $showcase_json === '') {
     $showcase_json = '[]';
+}
+$showcase_kit_json = json_encode($showcase_kit_items, $showcaseJsonFlags);
+if (!is_string($showcase_kit_json) || $showcase_kit_json === '') {
+    $showcase_kit_json = '[]';
 }
 ?>
 <!DOCTYPE html>
@@ -59,6 +66,7 @@ if (!is_string($showcase_json) || $showcase_json === '') {
     }
     $loadAlpineDashboard = $alpineSrc !== '' && (
         (!empty($showcase_training_feature) && !empty($showcase_items))
+        || (!empty($showcase_kit_feature) && !empty($showcase_kit_items))
         || !$dashboard_is_default_tenant
         || !empty($candidate_enlistment_tracking ?? [])
         || !empty($my_applications_all ?? [])
@@ -75,6 +83,29 @@ if (!is_string($showcase_json) || $showcase_json === '') {
                     active: function () {
                         var self = this;
                         return this.courses.find(function (c) { return c.id === self.openModal; });
+                    },
+                    scrollTrack: function (dx) {
+                        var track = this.$refs.track;
+                        if (track) {
+                            track.scrollBy({ left: dx, behavior: 'smooth' });
+                        }
+                    }
+                };
+            });
+        });
+    </script>
+    <?php endif; ?>
+    <?php if (!empty($showcase_kit_feature) && !empty($showcase_kit_items)): ?>
+    <script>
+        window.__dashboardShowcaseKits = <?= $showcase_kit_json ?>;
+        document.addEventListener('alpine:init', function () {
+            Alpine.data('kitShowcase', function () {
+                return {
+                    openModal: null,
+                    kits: window.__dashboardShowcaseKits || [],
+                    active: function () {
+                        var self = this;
+                        return this.kits.find(function (k) { return k.id === self.openModal; });
                     },
                     scrollTrack: function (dx) {
                         var track = this.$refs.track;

@@ -125,15 +125,16 @@ if (_overlayKind in ["phone", "hcam", "hcam_pip", "tgp", "uav_pip"]) then {
 
 private _skipShot = false;
 private _lowPath = toLower _filePath;
-// JPEG BCE / SOAR déjà écrit : notifier ce fichier. Un PNG Arma en plus
-// (souvent jamais créé) produisait file_not_found (COMSPEC_….png).
+// JPEG BCE / Photo Library : le dossier annoncé est souvent inexistant
+// (srcdir_missing). On prend un PNG Arma ; Overwatch le recopie dans
+// Documents\Arma 3 - COMSPEC\Captures. On n’envoie jamais le JPEG fantôme.
 if ((_lowPath find ".jpg") >= 0 || {(_lowPath find ".jpeg") >= 0}) exitWith {
     [_filePath, _caption, _device, _feedId] spawn {
         params ["_path", "_caption", "_device", "_feedId"];
-        uiSleep 0.4;
-        [_path, _caption, _device, _feedId, true, false, true] call comspec_overwatch_connect_fnc_captureReconImage;
+        uiSleep 0.45;
+        [_path, _caption, _device, _feedId, false, true, false] call comspec_overwatch_connect_fnc_captureReconImage;
     };
-    [format ["Photo en file (%1)", _fileName]] call comspec_overwatch_connect_fnc_appendModuleLog;
+    [format ["Photo en file (%1) — copie dans Documents\\Arma 3 - COMSPEC\\Captures", _fileName]] call comspec_overwatch_connect_fnc_appendModuleLog;
     true
 };
 if (

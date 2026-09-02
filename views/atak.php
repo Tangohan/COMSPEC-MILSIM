@@ -20,6 +20,8 @@ $atakCaps = $atakCaps ?? [
     'canDeleteUnitStaff' => false,
     'canDeleteOwnUnit' => false,
     'canPing' => true,
+    'canTriageMedical' => false,
+    'canManageCertificates' => false,
 ];
 $currentUser = $currentUser ?? null;
 $atakUserForJs = $atakUserForJs ?? null;
@@ -131,6 +133,7 @@ if ($atakMapConfig) {
         'canDeleteOwnUnit' => false,
         'canPing' => true,
         'canTriageMedical' => false,
+        'canManageCertificates' => false,
     ]) ?>;
     window.ATAK_CAN_ISSUE_ORDERS = <?= !empty($currentUser) ? 'true' : 'false' ?>;
     window.ATAK_PROFILE_HINTS = <?= json_encode($atakProfileHints ?? [
@@ -1438,9 +1441,9 @@ if ($atakMapConfig) {
           <span class="atak-tab-label">État</span>
           <small class="atak-tab-desc">Personnel et logistique</small>
         </button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="terminaux" data-atak-section="forces" title="Terminaux ATAK — identifiants, santé et liaison">
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="terminaux" data-atak-section="forces" title="Terminaux ATAK — identifiants, certificat, santé et liaison">
           <span class="atak-tab-label">Terminaux</span>
-          <small class="atak-tab-desc">Identifiants, santé et liaison</small>
+          <small class="atak-tab-desc">Identifiants, certificat et liaison</small>
           <span class="atak-tab-badge" id="atak-terminals-tab-badge" hidden></span>
         </button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="replay" data-atak-section="journal" title="Relecture mission et bilan après-action">
@@ -2502,7 +2505,7 @@ if ($atakMapConfig) {
       </div>
       <div class="atak-tabs-content" id="tab-terminaux" role="tabpanel">
         <div class="atak-terminals-panel">
-          <p class="atak-panel-hint">Terminaux ATAK liés à cette mission : identifiant de suivi, état de liaison, santé, versions du pack lorsqu’elles sont connues, et adresse réseau.</p>
+          <p class="atak-panel-hint">Terminaux ATAK liés à cette mission : identifiant de suivi, état de liaison, santé, certificat, versions du pack lorsqu’elles sont connues, et adresse réseau.</p>
           <div class="atak-empty-state" id="atak-terminals-empty">
             <div class="atak-empty-state-icon" aria-hidden="true">▣</div>
             <p class="atak-empty-state-title">Aucun terminal en vue</p>

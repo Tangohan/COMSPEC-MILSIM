@@ -246,6 +246,13 @@ final class TenantBootstrapService
             }
 
             try {
+                $kitSvc = \App\Core\Container::get(\App\Services\Personnel\PersonnelFunctionKitService::class);
+                $kitSvc->markReviewedKeepingFullCatalog($tenantId, $newUserId);
+            } catch (\Throwable $e) {
+                // Table absente : non bloquant
+            }
+
+            try {
                 $configSvc = \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class);
                 $configSvc->markSatisfiedForNewTenant($tenantId, $newUserId);
                 // Portail SSE : rôles seedés + module prêt — pas d’action humaine obligatoire à la création.

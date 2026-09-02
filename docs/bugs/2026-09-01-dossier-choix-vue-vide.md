@@ -2,32 +2,32 @@
 
 ## Contexte
 
-L’écran de choix Vue publique / Vue RH (accès RH) laissait un grand espace blanc avant le pied de page, et le pied de page paraissait décroché.
+L’écran de choix Vue publique / Vue RH (accès RH) laissait un grand espace avant le pied de page.
 
 ## Symptôme
 
-Sous les deux cartes, une bande vide ; le pied de page n’enchaîne pas. Impression d’une page trop haute pour si peu de contenu.
+Sous les deux cartes, une bande vide ; le pied de page paraissait décroché ou trop haut, avec un trou en bas d’écran.
 
 ## Cause
 
-Le dossier était dans un bloc déjà cadré par la page, tout en forçant encore une hauteur d’écran et un large padding bas. Le pied de page ajoutait une marge haute.
+La page était encore forcée à la hauteur de l’écran (zone principale et fond de page), malgré un contenu court. Un padding haut prévu pour un bandeau fixe restait aussi sur le choix de vue, alors que le bandeau est déjà dans le flux.
 
 ## Correctif
 
-Le choix de vue n’étire plus la page. Les marges autour des cartes sont réduites. Le pied de page se colle au contenu.
+Le choix de vue n’étire plus la page. Le pied de page se colle aux cartes. Le padding haut inutile est retiré sur cet écran.
 
 ## Fichiers touchés
 
 - `views/personnel/file.php`
-- `views/partials/personnel/file_view_gate.php`
 - `views/layout/main.php`
+- `public/assets/css/personnel-file.css`
 - `public/assets/css/portal-footer.css`
 - `app/Controllers/Web/PersonnelController.php`
 
 ## Vérification
 
-Assertions d’assets : plus de `min-h-screen pt-20 pb-24` sur le dossier, classe compacte, paddings du choix réduits.
+Ouvrir un dossier avec accès RH, sans choisir la vue : les deux cartes, puis le pied de page, sans bande vide.
 
 ## Statut
 
-Corrigé
+corrigé

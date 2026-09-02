@@ -55,7 +55,22 @@ final class AtakPhoneSettingsIdentityAssetTest extends TestCase
         self::assertStringContainsString('[true] call comspec_overwatch_connect_fnc_getCallsign', $settings);
         self::assertStringContainsString('inGameGroupLabel', $settings);
         self::assertStringContainsString('Rester dans le groupe actuel', $settings);
-        self::assertStringContainsString('[true] call comspec_overwatch_connect_fnc_getCallsign', $hud);
+        self::assertStringContainsString('ctrlSetText _shown', $settings);
+        self::assertStringContainsString('COMSPEC_BftLabelMode', $settings);
+        self::assertStringContainsString('Indicatif et rôle', $settings);
+        $save = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_settingsSave.sqf'
+        );
+        $page = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/ui/settings_page.hpp'
+        );
+        self::assertStringContainsString('ctrlText _roleEdit', $save);
+        self::assertStringContainsString('COMSPEC_BftLabelMode', $save);
+        self::assertStringContainsString('class EditRole', $page);
+        self::assertStringNotContainsString('class ComboRole', $page);
+        self::assertStringContainsString('idc = 9850', $page);
+        self::assertStringContainsString('Affichage sur la carte', $page);
+        self::assertStringContainsString('athena_bftUnitLabel', $hud);
         self::assertStringContainsString('inGameGroupLabel', $hud);
         self::assertStringNotContainsString('name _man', $hud);
         $grp = (string) file_get_contents(

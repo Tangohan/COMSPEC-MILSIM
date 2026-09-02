@@ -35,7 +35,6 @@ if (!(missionNamespace getVariable ["COMSPEC_ChargeAceClassReady", false])) then
 
     if (_armAtak isNotEqualTo [] && {isClass (configFile >> "CfgVehicles" >> "ACE_Explosives_Place")}) then {
         ["ACE_Explosives_Place", 0, ["ACE_MainActions", "ACE_SetTrigger"], _armAtak, true] call ace_interact_menu_fnc_addActionToClass;
-        ["ACE_Explosives_Place", 0, ["ACE_MainActions"], _armAtak, true] call ace_interact_menu_fnc_addActionToClass;
     };
 
     private _modeAtak = [

@@ -26,6 +26,12 @@ final class AtakAthenaLoginOnDemandAssetTest extends TestCase
         $wait = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_waitAthenaReady.sqf'
         );
+        $init = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_initAuth.sqf'
+        );
+        $steam = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_loginSteam.sqf'
+        );
         $post = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/XEH_postInit.sqf'
         );
@@ -48,9 +54,16 @@ final class AtakAthenaLoginOnDemandAssetTest extends TestCase
         self::assertStringNotContainsString('accountLinkShow', $ace);
         self::assertStringNotContainsString('athena_showLinkDialog', $page);
         self::assertStringContainsString('tuile Connexion Athena', $wait);
-        self::assertStringContainsString('diag_tickTime + 4', $wait);
-        self::assertStringContainsString('COMSPEC_BootHandshakeDone', $post);
+        self::assertStringContainsString('diag_tickTime + 20', $wait);
+        self::assertStringContainsString('loginSteam', $wait);
+        self::assertStringContainsString('[true] call comspec_overwatch_connect_fnc_loginSteam', $init);
+        self::assertStringContainsString('findDisplay 46', $init);
+        self::assertStringContainsString('_silent', $steam);
+        self::assertStringContainsString('getPlayerUID player', $steam);
+        self::assertStringContainsString('AuthSteam', $steam);
         self::assertStringContainsString('COMSPEC_AthenaLoginSyncEH', $post);
+        self::assertStringContainsString('COMSPEC_MedicalAlertsArmed', $post);
         self::assertFileExists($root . '/docs/bugs/2026-09-01-atak-connexion-auto-debut.md');
+        self::assertFileExists($root . '/docs/bugs/2026-09-01-athena-steam-auto-boot.md');
     }
 }

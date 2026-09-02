@@ -1,4 +1,4 @@
-// App « Paramètres » — identité, équipe de feu, groupe, alerte téléphones.
+// App « Paramètres » — identité, rôle libre, affichage carte, équipe, groupe, alerte téléphones.
 #ifndef QUOTE
     #define QUOTE(var1) #var1
 #endif
@@ -64,9 +64,9 @@ class COMSPEC_ATAK_Settings: ATAK_Message
         {
             idc = 9841;
             x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(0.70));
+            y = QUOTE(COMSPEC_SET_H(0.68));
             w = QUOTE(COMSPEC_SET_W(2.84));
-            h = QUOTE(COMSPEC_SET_H(1.05));
+            h = QUOTE(COMSPEC_SET_H(0.78));
             text = "Chargement des paramètres…";
             colorBackground[] = SET_BG_STRIP;
             class Attributes
@@ -84,7 +84,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
         {
             idc = -1;
             x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(1.82));
+            y = QUOTE(COMSPEC_SET_H(1.52));
             w = QUOTE(COMSPEC_SET_W(2.84));
             h = QUOTE(COMSPEC_SET_H(0.28));
             text = "Indicatif";
@@ -101,7 +101,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
         {
             idc = 9842;
             x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(2.10));
+            y = QUOTE(COMSPEC_SET_H(1.78));
             w = QUOTE(COMSPEC_SET_W(2.84));
             h = QUOTE(COMSPEC_SET_H(0.42));
             colorBackground[] = SET_EDIT_BG;
@@ -116,49 +116,65 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             y = QUOTE(COMSPEC_SET_H(2.56));
             text = "Rôle";
         };
-        class ComboRole: RscCombo
+        class EditRole: EditCallsign
         {
             idc = 9843;
-            x = QUOTE(COMSPEC_SET_W(0.08));
             y = QUOTE(COMSPEC_SET_H(2.84));
+            tooltip = "Saisissez le rôle que vous voulez (Breacher, médecin, chef d’équipe…). Il apparaît auprès de l’équipe et, si vous le choisissez, sur la carte.";
+        };
+
+        class LblMapLabel: LblCallsign
+        {
+            y = QUOTE(COMSPEC_SET_H(3.30));
+            text = "Affichage sur la carte";
+        };
+        class ComboMapLabel: RscCombo
+        {
+            idc = 9850;
+            x = QUOTE(COMSPEC_SET_W(0.08));
+            y = QUOTE(COMSPEC_SET_H(3.58));
             w = QUOTE(COMSPEC_SET_W(2.84));
             h = QUOTE(COMSPEC_SET_H(0.42));
             colorBackground[] = SET_EDIT_BG;
             colorSelectBackground[] = {0.06, 0.22, 0.12, 1};
             sizeEx = QUOTE(COMSPEC_SET_H(0.26));
+            tooltip = "Ce que vous voyez sur les pions de la carte : l’indicatif seul, ou l’indicatif suivi du rôle.";
         };
 
         class LblFire: LblCallsign
         {
-            y = QUOTE(COMSPEC_SET_H(3.30));
+            y = QUOTE(COMSPEC_SET_H(4.04));
             text = "Équipe de feu";
         };
-        class ComboFire: ComboRole
+        class ComboFire: ComboMapLabel
         {
             idc = 9844;
-            y = QUOTE(COMSPEC_SET_H(3.58));
+            y = QUOTE(COMSPEC_SET_H(4.32));
+            tooltip = "";
         };
 
         class LblGroup: LblCallsign
         {
-            y = QUOTE(COMSPEC_SET_H(4.04));
+            y = QUOTE(COMSPEC_SET_H(4.78));
             text = "Groupe en jeu";
         };
-        class ComboGroup: ComboRole
+        class ComboGroup: ComboMapLabel
         {
             idc = 9845;
-            y = QUOTE(COMSPEC_SET_H(4.32));
+            y = QUOTE(COMSPEC_SET_H(5.04));
+            tooltip = "";
         };
 
         class LblProximity: LblCallsign
         {
-            y = QUOTE(COMSPEC_SET_H(4.78));
+            y = QUOTE(COMSPEC_SET_H(5.50));
             text = "Alerte téléphones suivis";
         };
-        class ComboProximity: ComboRole
+        class ComboProximity: ComboMapLabel
         {
             idc = 9849;
-            y = QUOTE(COMSPEC_SET_H(5.04));
+            y = QUOTE(COMSPEC_SET_H(5.76));
+            tooltip = "";
             onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_phoneProximitySave";
         };
 
@@ -166,10 +182,10 @@ class COMSPEC_ATAK_Settings: ATAK_Message
         {
             idc = 9847;
             x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(5.50));
+            y = QUOTE(COMSPEC_SET_H(6.22));
             w = QUOTE(COMSPEC_SET_W(2.84));
-            h = QUOTE(COMSPEC_SET_H(0.48));
-            text = "Indiquez votre indicatif d’opérateur (ex. YB1). Laissez vide si la fiche Effectifs n’en a pas. Ne saisissez pas le nom de la communauté.";
+            h = QUOTE(COMSPEC_SET_H(0.40));
+            text = "Indicatif, rôle libre, affichage carte, équipe et groupe. Enregistrez pour appliquer.";
             colorBackground[] = SET_BG_BODY;
             class Attributes
             {
@@ -177,7 +193,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 color = "#C8D8E0";
                 align = "left";
                 valign = "top";
-                size = "0.60";
+                size = "0.58";
             };
         };
 
@@ -185,10 +201,10 @@ class COMSPEC_ATAK_Settings: ATAK_Message
         {
             idc = 9846;
             x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(6.04));
+            y = QUOTE(COMSPEC_SET_H(6.66));
             w = QUOTE(COMSPEC_SET_W(1.80));
-            h = QUOTE(COMSPEC_SET_H(0.50));
-            size = QUOTE(COMSPEC_SET_H(0.28));
+            h = QUOTE(COMSPEC_SET_H(0.46));
+            size = QUOTE(COMSPEC_SET_H(0.26));
             text = "Enregistrer";
             colorBackground[] = SET_BTN;
             colorBackground2[] = SET_BTN;

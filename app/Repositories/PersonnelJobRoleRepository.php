@@ -626,7 +626,7 @@ class PersonnelJobRoleRepository
      *
      * @param 'fr'|'en' $organizationRoleLabelMode Intitulé principal : français ou anglais (si label_en renseigné).
      *
-     * @return list<array{id: int, label: string, name: string, segments: list<string>, search: string, label_en?: string}>
+     * @return list<array{id: int, slug: string, label: string, name: string, segments: list<string>, search: string, label_en?: string}>
      */
     public function listRoleOptionsForSelect(
         int $tenantId,
@@ -691,6 +691,7 @@ class PersonnelJobRoleRepository
             $search = mb_strtolower(implode(' ', $searchBits), 'UTF-8');
             $row = [
                 'id' => (int) $r['id'],
+                'slug' => (string) ($r['slug'] ?? ''),
                 'label' => $label,
                 'name' => $name,
                 'segments' => $segments,
@@ -700,6 +701,90 @@ class PersonnelJobRoleRepository
                 $row['label_en'] = $en;
             }
             $out[] = $row;
+        }
+
+        return $this->applyFunctionKitFilter($tenantId, $out);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $options
+     * @return list<array<string, mixed>>
+     */
+    private function applyFunctionKitFilter(int $tenantId, array $options): array
+    {
+        try {
+            if (!class_exists(\App\Core\Container::class) || $options === []) {
+                return $options;
+            }
+            $svc = \App\Core\Container::get(\App\Services\Personnel\PersonnelFunctionKitService::class);
+            if (!$svc instanceof \App\Services\Personnel\PersonnelFunctionKitService) {
+                return $options;
+            }
+
+            return $svc->filterRoleOptions($tenantId, $options);
+        } catch (\Throwable) {
+            return $options;
+        }
+    }
+
+    /** @return list<string> */
+    public function listAssignedJobRoleSlugsForTenant(int $tenantId): array
+    {
+        if (!$this->tablesExist() || $tenantId < 1 || !$this->pivotTableExists()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT DISTINCT r.slug
+             FROM personnel_profile_job_roles pj
+             INNER JOIN personnel_job_roles r ON r.id = pj.personnel_job_role_id AND r.tenant_id = pj.tenant_id
+             WHERE pj.tenant_id = ? AND r.slug IS NOT NULL AND TRIM(r.slug) <> \'\''
+        );
+        $stmt->execute([$tenantId]);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $slug = trim((string) ($row['slug'] ?? ''));
+            if ($slug !== '') {
+                $out[] = $slug;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<int> $roleIds
+     * @return array<int, list<array{user_id: int, display_name: string}>>
+     */
+    public function listHoldersByJobRoleIds(int $tenantId, array $roleIds): array
+    {
+        if (!$this->pivotTableExists() || $tenantId < 1) {
+            return [];
+        }
+        $roleIds = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $id): bool => $id > 0)));
+        if ($roleIds === []) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($roleIds), '?'));
+        $stmt = $this->pdo->prepare(
+            'SELECT pj.personnel_job_role_id, u.id AS user_id, u.display_name
+             FROM personnel_profile_job_roles pj
+             INNER JOIN users u ON u.id = pj.user_id AND u.tenant_id = pj.tenant_id
+             WHERE pj.tenant_id = ? AND pj.personnel_job_role_id IN (' . $ph . ')
+               AND u.status = \'active\'
+             ORDER BY u.display_name ASC'
+        );
+        $stmt->execute(array_merge([$tenantId], $roleIds));
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $rid = (int) ($row['personnel_job_role_id'] ?? 0);
+            $uid = (int) ($row['user_id'] ?? 0);
+            if ($rid < 1 || $uid < 1) {
+                continue;
+            }
+            $out[$rid][] = [
+                'user_id' => $uid,
+                'display_name' => trim((string) ($row['display_name'] ?? '')),
+            ];
         }
 
         return $out;

@@ -11832,3 +11832,9 @@ body.atak-light .atak-sse-person-card-meta {
 .atak-terminal-card__v--ok { color: #6ee7b7; }
 .atak-terminal-card__v--warn { color: #fcd34d; }
 .atak-terminal-card__v--danger { color: #fca5a5; }
+.atak-terminal-card__actions {
+  margin-top: 0.45rem;
+}
+.atak-terminal-card__actions .atak-ops-btn {
+  margin: 0;
+}

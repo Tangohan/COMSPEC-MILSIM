@@ -399,16 +399,33 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
   function unitsToMarkers(units) {
     const list = Array.isArray(units) ? units : [];
     const out = [];
+    let prefs = {};
+    try {
+      if (window.ATAKMap && typeof window.ATAKMap.getDisplayPrefs === 'function') {
+        prefs = window.ATAKMap.getDisplayPrefs() || {};
+      }
+    } catch (e) { prefs = {}; }
     for (let i = 0; i < list.length; i += 1) {
       const u = list[i];
       if (!u) continue;
+      const extra = extraOf(u);
+      const trackedAi = isTrackedAiUnit(u, extra);
+      let live = 'offline';
+      if (window.ATAKUnits && typeof window.ATAKUnits.resolveLiveStatus === 'function') {
+        live = String(window.ATAKUnits.resolveLiveStatus(u) || '').toLowerCase();
+      } else {
+        live = String(u.status || '').toLowerCase();
+      }
+      if (live === 'offline' && !trackedAi) continue;
+      if (live === 'delayed' && prefs.showDelayedUnits === false && !trackedAi) continue;
       const x = u.pos_x != null ? Number(u.pos_x) : (u.x != null ? Number(u.x) : NaN);
       const y = u.pos_y != null ? Number(u.pos_y) : (u.y != null ? Number(u.y) : NaN);
       if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      if (Math.abs(x) < 0.5 && Math.abs(y) < 0.5) continue;
       const mx = x - meshOrigin.x;
       const my = y - meshOrigin.y;
       if (mx < -50 || my < -50 || mx > meshOrigin.width + 50 || my > meshOrigin.depth + 50) continue;
-      const side = String(u.side || u.affiliation || '').toUpperCase();
+      const side = String(u.side || u.affiliation || extra.affiliation || '').toUpperCase();
       let type = 'unit';
       if (side === 'EAST' || side === 'HOSTILE' || side === 'OPFOR') type = 'hostile';
       else if (side === 'CIV' || side === 'CIVILIAN' || side === 'NEUTRAL') type = 'neutral';
@@ -416,11 +433,28 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
         id: u.id != null ? String(u.id) : ('u_' + i),
         x: mx,
         y: my,
-        label: u.call_sign || u.callsign || '',
+        label: u.display_call_sign || u.call_sign || u.callsign || '',
         type: type,
       });
     }
     return out;
+  }
+
+  function extraOf(u) {
+    try {
+      if (typeof u.extra === 'string') return JSON.parse(u.extra || '{}') || {};
+      if (u.extra && typeof u.extra === 'object') return u.extra;
+    } catch (e) {}
+    return {};
+  }
+
+  function isTrackedAiUnit(u, extra) {
+    extra = extra || {};
+    if (extra.ally_ai || extra.enemy_ai || extra.is_ai) return true;
+    var src = String(extra.source || '').toLowerCase();
+    if (src === 'ally' || src === 'enemy') return true;
+    var cs = String((u && (u.call_sign || u.callsign)) || '').toUpperCase();
+    return cs.indexOf('ALLY-') === 0 || cs.indexOf('ENY-') === 0;
   }
 
   function syncMarkersFromCache() {
@@ -700,6 +734,9 @@ if (typeof window !== 'undefined' && window.ATAK_TERRAIN3D_PREMIUM) {
     }
 
     window.addEventListener('atak:units-updated', onUnitsUpdated);
+    window.addEventListener('atak:display-prefs-changed', function () {
+      syncMarkersFromCache();
+    });
     window.addEventListener('atak:mapready', function () {
       captureLeafletView();
       if (state.enabled) setEnabled(true);

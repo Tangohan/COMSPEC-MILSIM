@@ -324,8 +324,6 @@ public static partial class Extension
         ApplySteamUid(steamId);
         var store = DpapiGameStore.Load();
         var pairing = store?.PairingToken ?? "";
-        if (pairing.Length < 32)
-            return FailGameAuth("STEAM_NOT_LINKED");
         var json = GamePostJson("/api/game/v1/auth/steam/exchange",
             $"{{\"steam_id\":\"{EscapeJson(_steamUid)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"pairing_token\":\"{EscapeJson(pairing)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(ExtensionVersion)}\"}}",
             withBearer: false);

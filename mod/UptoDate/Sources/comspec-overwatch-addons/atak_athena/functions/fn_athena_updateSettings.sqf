@@ -1,5 +1,5 @@
 /*
-    Remplit la page Paramètres (identité, équipe de feu, groupe).
+    Remplit la page Paramètres (identité, rôle libre, carte, équipe, groupe).
 */
 if (!hasInterface) exitWith {};
 
@@ -71,34 +71,35 @@ if (!isNull _sum) then {
 private _edit = [9842] call _ctrl;
 if (!isNull _edit) then { _edit ctrlSetText _cs; };
 
-private _roles = [
-    "Chef d'équipe",
-    "Fusilier",
-    "Médecin",
-    "Grenadier",
-    "Mitrailleur",
-    "Tireur de précision",
-    "Radio",
-    "Conducteur",
-    "Pilote",
-    "Observateur",
-    "Sapeur"
-];
-private _cbRole = [9843] call _ctrl;
-if (!isNull _cbRole) then {
-    lbClear _cbRole;
-    private _sel = 0;
-    {
-        private _i = _cbRole lbAdd _x;
-        _cbRole lbSetData [_i, _x];
-        if ((toLower _x) isEqualTo (toLower _role)) then { _sel = _i; };
-    } forEach _roles;
-    if (_role isNotEqualTo "" && {(_roles findIf { (toLower _x) isEqualTo (toLower _role) }) < 0}) then {
-        private _i = _cbRole lbAdd _role;
-        _cbRole lbSetData [_i, _role];
-        _sel = _i;
+private _roleEdit = [9843] call _ctrl;
+if (!isNull _roleEdit) then {
+    private _shown = _role;
+    if ((toLower _shown) isEqualTo "operator") then { _shown = ""; };
+    _roleEdit ctrlSetText _shown;
+};
+
+private _cbMap = [9850] call _ctrl;
+if (!isNull _cbMap) then {
+    missionNamespace setVariable ["COMSPEC_AtakBftLabelFilling", true, false];
+    private _mode = missionNamespace getVariable ["COMSPEC_BftLabelMode", ""];
+    if (_mode isEqualTo "") then {
+        _mode = profileNamespace getVariable ["COMSPEC_BftLabelMode", "cs"];
     };
-    _cbRole lbSetCurSel _sel;
+    if (!(_mode isEqualType "") || {!(_mode in ["cs", "cs_role"])}) then { _mode = "cs"; };
+    lbClear _cbMap;
+    private _mapOpts = [
+        ["cs", "Indicatif seul"],
+        ["cs_role", "Indicatif et rôle"]
+    ];
+    private _selM = 0;
+    {
+        _x params ["_code", "_label"];
+        private _i = _cbMap lbAdd _label;
+        _cbMap lbSetData [_i, _code];
+        if (_code isEqualTo _mode) then { _selM = _i; };
+    } forEach _mapOpts;
+    _cbMap lbSetCurSel _selM;
+    missionNamespace setVariable ["COMSPEC_AtakBftLabelFilling", false, false];
 };
 
 private _cbFire = [9844] call _ctrl;
@@ -202,9 +203,9 @@ if (!isNull _cbProx) then {
 private _fb = [9847] call _ctrl;
 if (!isNull _fb && {ctrlText _fb isEqualTo ""}) then {
     private _hint = if (_cs isEqualTo "") then {
-        "Indiquez votre indicatif d’opérateur (ex. YB1). Laissez vide si vous n’en avez pas encore. Ne saisissez pas le nom de la communauté."
+        "Indiquez votre indicatif (ex. YB1). Le rôle se saisit librement. Ne mettez pas le nom de la communauté dans l’indicatif."
     } else {
-        "Indiquez votre indicatif et votre rôle. L’équipe de feu et le groupe choisis apparaissent ensuite sur ATAK."
+        "Indicatif, rôle (texte libre), affichage sur la carte, équipe de feu et groupe. Enregistrez pour appliquer."
     };
     _fb ctrlSetStructuredText parseText format ["<t size='0.9'>%1</t>", _hint];
 };

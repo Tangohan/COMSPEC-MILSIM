@@ -263,6 +263,63 @@ final class AtakRealismApiController
         return Response::json(['ok' => true, 'terminal' => $terminal]);
     }
 
+    public function regenerateCertificate(Request $request, array $params = []): Response
+    {
+        if ($this->isGameClient()) {
+            return Response::json(['ok' => false, 'error' => 'Action réservée au poste de commandement.'], 403);
+        }
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Connexion requise.'], 401);
+        }
+        if (!$this->writeAllowed($request)) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée.'], 419);
+        }
+
+        $terminalId = (int) ($params['id'] ?? 0);
+        $result = $this->realismRepository->regenerateCertificateForTerminal($tenantId, $terminalId);
+        if ($result === null) {
+            return Response::json(['ok' => false, 'error' => 'Cet appareil est introuvable dans le parc.'], 404);
+        }
+
+        $cert = $result['certificate'];
+        $replaced = !empty($result['replaced']);
+        $ref = trim((string) ($cert['certificate_ref'] ?? ''));
+        $message = $replaced
+            ? 'Certificat renouvelé. L’opérateur en liaison le recevra d’ici quelques instants.'
+            : 'Certificat émis. L’opérateur en liaison le recevra d’ici quelques instants.';
+        if ($ref !== '') {
+            $message .= ' Référence : ' . $ref . '.';
+        }
+
+        try {
+            $activity = new AtakActivityLogService();
+            $body = $this->body($request);
+            $mapId = max(1, (int) ($body['map_id'] ?? $request->input('map_id', 1)));
+            $terminal = $this->realismRepository->findTerminalById($tenantId, $terminalId) ?? [];
+            $activity->record(
+                $tenantId,
+                $mapId,
+                AtakActivityLogService::TYPE_INTEL,
+                $replaced ? 'Certificat d’appareil renouvelé' : 'Certificat d’appareil émis',
+                (string) ($terminal['operator_callsign'] ?? $terminal['terminal_label'] ?? ''),
+                [
+                    'terminal_id' => $terminalId,
+                    'certificate_ref' => $ref,
+                    'source' => 'poste',
+                ]
+            );
+        } catch (\Throwable) {
+        }
+
+        return Response::json([
+            'ok' => true,
+            'certificate' => $cert,
+            'replaced' => $replaced,
+            'message' => $message,
+        ]);
+    }
+
     private function terminalStatusForGame(int $tenantId, string $terminalUid): Response
     {
         $terminal = $this->realismRepository->findTerminalByUid($tenantId, $terminalUid);

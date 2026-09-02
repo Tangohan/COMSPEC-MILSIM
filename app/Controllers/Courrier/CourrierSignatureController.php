@@ -7,17 +7,31 @@ namespace App\Controllers\Courrier;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Core\Csrf;
 use App\Repositories\Courrier\CourrierDocumentRepository;
 use App\Repositories\Courrier\UserSignatureRepository;
 use App\Services\Courrier\DocumentSignatureService;
+use App\Services\Platform\FeatureGateService;
+use App\Support\PlanFeatureDenial;
 
 class CourrierSignatureController
 {
     public function __construct(
         private CourrierDocumentRepository $documentRepository,
         private DocumentSignatureService $signatureService,
-        private UserSignatureRepository $signatureRepository
+        private UserSignatureRepository $signatureRepository,
+        private ?FeatureGateService $featureGate = null
     ) {
+        $this->featureGate ??= \App\Core\Container::get(FeatureGateService::class);
+    }
+
+    private function denyIfCourrierLocked(int $tenantId): ?Response
+    {
+        if (!$this->featureGate->allows($tenantId, 'courrier')) {
+            return PlanFeatureDenial::upgradeView('courrier', 'Standard');
+        }
+
+        return null;
     }
 
     /**
@@ -66,7 +80,7 @@ class CourrierSignatureController
                 $savedSignatureName
             );
         } catch (\Throwable $e) {
-            return Response::json(['success' => false, 'message' => $e->getMessage()], 400);
+            return Response::json(['success' => false, 'message' => 'La signature n’a pas pu être enregistrée. Recommencez.'], 400);
         }
 
         return Response::json(['success' => true, 'message' => 'Document signé.']);
@@ -221,5 +235,125 @@ class CourrierSignatureController
             readfile($fullPath);
         });
         return $response;
+    }
+
+    /**
+     * GET /courrier/signature — créer et enregistrer sa signature, hors d’un document.
+     */
+    public function manage(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $denied = $this->denyIfCourrierLocked($tenantId);
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        $list = $this->signatureRepository->listByUser($userId, $tenantId);
+        foreach ($list as &$row) {
+            $row['url'] = url('courrier/signatures/' . (int) $row['id'] . '/image');
+        }
+        unset($row);
+
+        return Response::view('layout.main', [
+            'title' => 'Ma signature — Bureau Courrier',
+            'content' => 'courrier/signature',
+            'courrier' => [
+                'signatures' => $list,
+            ],
+        ]);
+    }
+
+    /**
+     * POST /courrier/signature
+     */
+    public function store(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $denied = $this->denyIfCourrierLocked($tenantId);
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'La session a expiré. Recommencez.');
+            return Response::redirect(url('courrier/signature'));
+        }
+
+        $image = trim((string) $request->input('image_base64', ''));
+        $name = (string) $request->input('name', '');
+        $asDefault = (bool) $request->input('is_default');
+        if ($image === '') {
+            Session::flash('error', 'Dessinez votre signature dans le cadre avant d’enregistrer.');
+            return Response::redirect(url('courrier/signature'));
+        }
+
+        try {
+            $this->signatureService->saveUserSignature($userId, $tenantId, $image, $name, $asDefault);
+        } catch (\Throwable) {
+            Session::flash('error', 'La signature n’a pas pu être enregistrée. Dessinez-la à nouveau.');
+            return Response::redirect(url('courrier/signature'));
+        }
+
+        Session::flash('success', 'Votre signature est enregistrée. Vous pourrez la réutiliser pour signer un courrier.');
+        return Response::redirect(url('courrier/signature'));
+    }
+
+    /**
+     * POST /courrier/signature/{id}/default
+     */
+    public function setDefault(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'La session a expiré. Recommencez.');
+            return Response::redirect(url('courrier/signature'));
+        }
+        $sig = $this->signatureRepository->findById($id, $userId, $tenantId);
+        if (!$sig) {
+            Session::flash('error', 'Signature introuvable.');
+            return Response::redirect(url('courrier/signature'));
+        }
+        $this->signatureRepository->setDefault($id, $userId, $tenantId);
+        Session::flash('success', 'Cette signature sera proposée en premier lorsque vous signerez un courrier.');
+        return Response::redirect(url('courrier/signature'));
+    }
+
+    /**
+     * POST /courrier/signature/{id}/delete
+     */
+    public function destroy(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'La session a expiré. Recommencez.');
+            return Response::redirect(url('courrier/signature'));
+        }
+
+        try {
+            $this->signatureService->deleteUserSignature($id, $userId, $tenantId);
+        } catch (\Throwable) {
+            Session::flash('error', 'Cette signature n’a pas pu être retirée.');
+            return Response::redirect(url('courrier/signature'));
+        }
+
+        Session::flash('success', 'La signature a été retirée.');
+        return Response::redirect(url('courrier/signature'));
     }
 }

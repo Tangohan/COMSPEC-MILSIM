@@ -57,6 +57,7 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
         self::assertStringContainsString("'compactPortalMain'", $controller);
         self::assertStringContainsString('.personnel-file--gate', $css);
         self::assertStringContainsString('body:has(.personnel-file--gate)', $css);
+        self::assertStringContainsString('min-height: 0 !important', $css);
         self::assertStringContainsString('.personnel-file-gate__hero', $css);
         self::assertStringContainsString('.personnel-file-portal-main', $css);
 

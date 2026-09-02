@@ -13,5 +13,10 @@ if (!isNil "comspec_overwatch_connect_fnc_pollTacticalAlerts") then {
     [] call comspec_overwatch_connect_fnc_pollTacticalAlerts;
 };
 
+missionNamespace setVariable ["COMSPEC_Athena_SessionLogAt", -1e9, false];
 [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
-["ATHENA", "Inbox actualisée.", 3] call comspec_overwatch_connect_fnc_addScreenToast;
+[
+    "Journal actualisé.",
+    "ok",
+    3
+] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;

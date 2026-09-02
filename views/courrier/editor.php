@@ -145,19 +145,19 @@ $hm = $c['header_meta'] ?? ['header_line1' => '', 'header_unit' => '', 'header_s
                             <p class="text-xs font-bold text-slate-700 mb-2">En-tête papier (aperçu / PDF)</p>
                             <div class="space-y-2">
                                 <div>
-                                    <label class="block text-[10px] font-medium text-slate-500 mb-0.5">Ligne 1 (ex. ministère)</label>
-                                    <input type="text" name="header_line1" value="<?= htmlspecialchars($hm['header_line1'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="MINISTÈRE DE LA DÉFENSE" <?= $isLocked ? 'readonly' : '' ?>>
+                                    <label class="block text-[10px] font-medium text-slate-500 mb-0.5">Communauté</label>
+                                    <input type="text" name="header_line1" value="<?= htmlspecialchars($hm['header_line1'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="Nom de la communauté" <?= $isLocked ? 'readonly' : '' ?>>
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-medium text-slate-500 mb-0.5">Unité</label>
-                                    <input type="text" name="header_unit" value="<?= htmlspecialchars($hm['header_unit'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="92e RI — CERBERE" <?= $isLocked ? 'readonly' : '' ?>>
+                                    <input type="text" name="header_unit" value="<?= htmlspecialchars($hm['header_unit'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="Unité d’affectation" <?= $isLocked ? 'readonly' : '' ?>>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-medium text-slate-500 mb-0.5">Section</label>
-                                    <input type="text" name="header_section" value="<?= htmlspecialchars($hm['header_section'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="RH / S1" <?= $isLocked ? 'readonly' : '' ?>>
+                                    <label class="block text-[10px] font-medium text-slate-500 mb-0.5">Groupe</label>
+                                    <input type="text" name="header_section" value="<?= htmlspecialchars($hm['header_section'] ?? '') ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="Groupe ou fonction" <?= $isLocked ? 'readonly' : '' ?>>
                                 </div>
                             </div>
-                            <p class="mt-1 text-[10px] text-slate-400">Laisser vide pour utiliser le format du preset ou les valeurs par défaut.</p>
+                            <p class="mt-1 text-[10px] text-slate-400">Remplis d’après votre communauté, votre unité et votre groupe. Vous pouvez les modifier pour ce courrier.</p>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Référence</label>
@@ -275,8 +275,9 @@ $hm = $c['header_meta'] ?? ['header_line1' => '', 'header_unit' => '', 'header_s
                 <?php elseif (!empty($doc['signed_at'])): ?>
                 <p class="text-xs text-emerald-600">Document signé le <?= htmlspecialchars(date('d/m/Y H:i', strtotime($doc['signed_at']))) ?>.</p>
                 <?php else: ?>
-                <p class="text-xs text-slate-500">Workflow : valider le document pour pouvoir le signer.</p>
+                <p class="text-xs text-slate-500">Validez le document pour pouvoir le signer.</p>
                 <?php endif; ?>
+                <p class="mt-3"><a href="<?= $baseUrl ?>/courrier/signature" class="text-xs font-semibold text-slate-600 hover:underline">Créer ou modifier ma signature</a></p>
             </div>
             <?php endif; ?>
             <?php if ($doc && in_array($doc['status'] ?? '', ['draft', 'pending_validation', 'rejected'], true)): ?>

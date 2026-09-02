@@ -7,6 +7,7 @@ namespace App\Services\Courrier;
 use App\Repositories\Courrier\DocumentVariablesCatalogRepository;
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelProfileRepository;
+use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
@@ -24,7 +25,8 @@ class TemplateVariableService
         private GradeRepository $gradeRepository,
         private UnitRepository $unitRepository,
         private DocumentVariablesCatalogRepository $variablesCatalog,
-        private GradeDisplayService $gradeDisplayService
+        private GradeDisplayService $gradeDisplayService,
+        private TenantRepository $tenantRepository
     ) {
     }
 
@@ -34,8 +36,8 @@ class TemplateVariableService
      */
     public function buildContext(array $context): array
     {
-        $tenantId = $context['tenant_id'] ?? null;
-        $userId = $context['user_id'] ?? null;
+        $tenantId = isset($context['tenant_id']) ? (int) $context['tenant_id'] : 0;
+        $userId = isset($context['user_id']) ? (int) $context['user_id'] : 0;
         $unitId = $context['unit_id'] ?? null;
         $document = $context['document'] ?? [];
 
@@ -93,13 +95,22 @@ class TemplateVariableService
             $resolved['user.email'] = $user['email'] ?? '';
         }
 
-        $unitId = $unitId ?? ($personnelProfile['primary_unit_id'] ?? null);
+        $letterhead = $this->resolveLetterhead([
+            'tenant_id' => $tenantId,
+            'user_id' => $userId,
+            'unit_id' => $unitId,
+            'personnel_profile' => $personnelProfile,
+        ]);
+        $resolved['tenant.name'] = $this->displayOrDash($letterhead['tenant_name'] !== '' ? $letterhead['tenant_name'] : null);
+        $resolved['group.name'] = $this->displayOrDash($letterhead['group_name'] !== '' ? $letterhead['group_name'] : null);
+
+        $unitId = $this->resolveAssignedUnitId($tenantId, $userId, $unitId, $personnelProfile);
         if ($unitId && $tenantId) {
             $unit = $this->unitRepository->findById((int) $unitId, $tenantId);
             if ($unit) {
-                $resolved['unit.name'] = $this->displayOrDash($unit['name'] ?? null);
-                $resolved['unit.company'] = $this->displayOrDash($unit['name'] ?? null);
-                $resolved['unit.section'] = $this->displayOrDash($unit['type'] ?? null);
+                $resolved['unit.name'] = $this->displayOrDash($letterhead['unit_name'] !== '' ? $letterhead['unit_name'] : ($unit['name'] ?? null));
+                $resolved['unit.company'] = $this->displayOrDash($letterhead['unit_name'] !== '' ? $letterhead['unit_name'] : ($unit['name'] ?? null));
+                $resolved['unit.section'] = $this->displayOrDash($letterhead['group_name'] !== '' ? $letterhead['group_name'] : null);
                 $resolved['unit.address'] = $this->displayOrDash($unit['address'] ?? $unit['public_address'] ?? null);
                 $resolved['unit.city'] = $this->displayOrDash($unit['city'] ?? $unit['public_city'] ?? null);
                 if ($unit['commander_user_id'] ?? null) {
@@ -122,9 +133,9 @@ class TemplateVariableService
         }
 
         if (!isset($resolved['unit.name'])) {
-            $resolved['unit.name'] = '—';
-            $resolved['unit.company'] = '—';
-            $resolved['unit.section'] = '—';
+            $resolved['unit.name'] = $this->displayOrDash($letterhead['unit_name'] !== '' ? $letterhead['unit_name'] : null);
+            $resolved['unit.company'] = $resolved['unit.name'];
+            $resolved['unit.section'] = $this->displayOrDash($letterhead['group_name'] !== '' ? $letterhead['group_name'] : null);
             $resolved['unit.address'] = '—';
             $resolved['unit.city'] = '—';
         }
@@ -137,6 +148,124 @@ class TemplateVariableService
         }
 
         return $resolved;
+    }
+
+    /**
+     * Communauté, unité et groupe de l’opérateur, pour l’en-tête papier.
+     *
+     * @param array{user_id?: int|null, tenant_id?: int|null, unit_id?: int|null, personnel_profile?: array<string, mixed>|null} $context
+     * @return array{tenant_name: string, unit_name: string, group_name: string}
+     */
+    public function resolveLetterhead(array $context): array
+    {
+        $tenantId = (int) ($context['tenant_id'] ?? 0);
+        $userId = (int) ($context['user_id'] ?? 0);
+        $unitId = $context['unit_id'] ?? null;
+        $personnelProfile = is_array($context['personnel_profile'] ?? null) ? $context['personnel_profile'] : null;
+
+        $tenantName = '';
+        $affiliation = '';
+        if ($tenantId > 0) {
+            $tenant = $this->tenantRepository->findById($tenantId);
+            if (is_array($tenant)) {
+                $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
+                if ($slug !== 'default' && function_exists('community_display_name')) {
+                    $tenantName = trim(community_display_name($tenant));
+                    if ($tenantName === 'Pas d\'organisation') {
+                        $tenantName = '';
+                    }
+                } elseif ($slug !== 'default') {
+                    $tenantName = trim((string) ($tenant['name'] ?? ''));
+                }
+                $affiliation = $this->affiliationFromTenant($tenant);
+            }
+        }
+
+        if ($personnelProfile === null && $userId > 0) {
+            $personnelProfile = $this->personnelProfileRepository->getByUserId($userId);
+        }
+        $jobRole = trim((string) ($personnelProfile['primary_role'] ?? ''));
+        $assignedId = $this->resolveAssignedUnitId($tenantId, $userId, $unitId, $personnelProfile);
+        $chain = $assignedId > 0 && $tenantId > 0 ? $this->assignmentChain($tenantId, $assignedId) : [];
+
+        return CourrierLetterhead::fromAssignmentChain($chain, $tenantName, $affiliation, $jobRole);
+    }
+
+    /**
+     * @param array<string, mixed>|null $personnelProfile
+     */
+    private function resolveAssignedUnitId(int $tenantId, int $userId, mixed $unitId, ?array $personnelProfile): int
+    {
+        $fromArg = (int) ($unitId ?? 0);
+        if ($fromArg > 0) {
+            return $fromArg;
+        }
+        $fromProfile = (int) ($personnelProfile['primary_unit_id'] ?? 0);
+        if ($fromProfile > 0) {
+            return $fromProfile;
+        }
+        if ($tenantId < 1 || $userId < 1) {
+            return 0;
+        }
+        $ids = $this->unitRepository->unitIdsForUser($tenantId, $userId);
+
+        return (int) ($ids[0] ?? 0);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function assignmentChain(int $tenantId, int $unitId): array
+    {
+        $chain = [];
+        $seen = [];
+        $id = $unitId;
+        $guard = 0;
+        while ($id > 0 && $guard++ < 12 && !isset($seen[$id])) {
+            $seen[$id] = true;
+            $row = $this->unitRepository->findById($id, $tenantId);
+            if (!is_array($row)) {
+                break;
+            }
+            $chain[] = $row;
+            $id = (int) ($row['parent_id'] ?? 0);
+        }
+
+        return $chain;
+    }
+
+    /**
+     * @param array<string, mixed> $tenant
+     */
+    private function affiliationFromTenant(array $tenant): string
+    {
+        $raw = $tenant['settings'] ?? null;
+        $settings = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : []);
+        if (!is_array($settings)) {
+            return '';
+        }
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $aff = is_array($community['unit_affiliation'] ?? null) ? $community['unit_affiliation'] : [];
+        if ($aff === []) {
+            return '';
+        }
+        if (!empty($aff['is_real'])) {
+            $labels = $aff['unit_labels'] ?? [];
+            if (!is_array($labels)) {
+                return '';
+            }
+            $parts = [];
+            foreach ($labels as $label) {
+                $s = trim((string) $label);
+                if ($s !== '') {
+                    $parts[] = $s;
+                }
+            }
+
+            return implode(', ', $parts);
+        }
+
+        return trim((string) ($aff['fictional_label'] ?? ''));
     }
 
     /**

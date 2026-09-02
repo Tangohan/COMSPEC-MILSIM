@@ -94,7 +94,7 @@ private _shortcuts = [
 
         "\a3\ui_f\data\gui\rsc\rscdisplaymain\menu_options_ca.paa",
 
-        "Paramètres — indicatif, rôle, équipe de feu, groupe",
+        "Paramètres — indicatif, rôle libre, carte, équipe, groupe",
 
         "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Paramètres</t>",
 

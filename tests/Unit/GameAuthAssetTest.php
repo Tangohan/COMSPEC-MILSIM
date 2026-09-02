@@ -37,6 +37,7 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('acceptGameSessionToken', $auth);
         self::assertStringContainsString('/api/game/v1/auth/', $auth);
         self::assertStringContainsString('comspec_overwatch_connect_fnc_restoreSession', $sqfInit);
+        self::assertStringContainsString('loginSteam', $sqfInit);
         self::assertStringContainsString('plus une saisie joueur', $sqfConnect);
         self::assertStringNotContainsString('LinkBySteam', $sqfConnect);
         self::assertStringContainsString('CryptProtectData', $dll);
@@ -65,12 +66,16 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringNotContainsString('php://input', $ctrl);
     }
 
-    public function testSteamIdAloneIsNotASessionProof(): void
+    public function testSteamIdMustBeLinkedOnAnAthenaAccount(): void
     {
         $svc = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Game/GameAuthService.php');
-        self::assertStringContainsString('SteamID seul n’est jamais une preuve', $svc);
+        $dll = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/GameAuth.cs');
+        self::assertStringContainsString('resolveAccountByLinkedSteam', $svc);
+        self::assertStringContainsString('findBySteamId', $svc);
         self::assertStringContainsString('pairing_token', $svc);
-        self::assertStringContainsString('findPairing', $svc);
+        self::assertStringContainsString('STEAM_NOT_LINKED', $svc);
+        self::assertStringNotContainsString('if (pairing.Length < 32)', $dll);
+        self::assertStringContainsString('AuthSteam', $dll);
     }
 
     public function testPasswordAuthDoesNotRequireASteamIdToIssueTokens(): void

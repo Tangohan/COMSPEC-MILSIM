@@ -49,6 +49,10 @@ if (!isNull _group) then {
     };
 };
 
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_applyHomeLayout") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_applyHomeLayout;
+};
+
 if (_duration <= 0) exitWith {};
 
 [_token, _duration] spawn {

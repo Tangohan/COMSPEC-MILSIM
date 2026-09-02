@@ -280,7 +280,7 @@ if (_noteId isNotEqualTo "" && {_pieces isNotEqualTo []}) then {
             if (_target isEqualTo "") then {
                 _target = format ["COMSPEC_Fiche_%1_%2.png", _noteId, (floor (diag_tickTime * 1000)) toFixed 0];
                 screenshot _target;
-                uiSleep 1.25;
+                uiSleep 2.2;
             };
 
             private _res = [

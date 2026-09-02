@@ -369,9 +369,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         $announce_empty = 'Aucune alerte ni annonce pour le moment.';
         $announce_id = 'dashboard-announce';
         $announce_list_url = url('alertes');
-        $announce_manage_url = \App\Core\Gate::getInstance()->allows('dashboard.pins.manage')
-            || \App\Core\Gate::getInstance()->allows('admin.organization')
-            || \App\Core\Gate::getInstance()->allows('admin.access')
+        $announce_manage_url = \App\Authorization\DashboardPinsAccess::canManage()
             ? url('back-office/alerts')
             : null;
         require base_path('views/partials/announce_tiles.php');
@@ -533,6 +531,108 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                 <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900" x-text="active().title"></h2>
                                 <p class="mt-6 whitespace-pre-wrap text-sm leading-relaxed text-slate-600" x-text="active().description"></p>
                                 <a :href="active().course_url" class="cc-btn cc-btn-primary mt-8 w-full">Ouvrir la formation</a>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            <?php endif; ?>
+        </section>
+        <?php endif; ?>
+
+        <?php
+        $kitItems = is_array($showcase_kit_items ?? null) ? $showcase_kit_items : [];
+        $kitFeature = !empty($showcase_kit_feature);
+        $canManageKitPins = !empty($can_manage_kit_pins) || \App\Authorization\DashboardPinsAccess::canManage();
+        ?>
+        <?php if ($kitFeature): ?>
+        <section class="dash-showcase dash-showcase--kits" aria-labelledby="dash-kit-heading" <?php if ($kitItems !== []): ?>x-data="kitShowcase"<?php endif; ?>>
+            <div class="dash-showcase__head">
+                <div>
+                    <p class="dash-showcase__kicker">Équipement</p>
+                    <h2 id="dash-kit-heading" class="dash-showcase__title">Nos tenues<span class="dash-showcase__dot">.</span></h2>
+                </div>
+                <div class="dash-showcase__nav">
+                    <?php if ($canManageKitPins): ?>
+                    <a href="<?= url('back-office/dashboard-tenues') ?>" class="cc-card__link">Choisir les tenues</a>
+                    <?php endif; ?>
+                    <?php if ($kitItems !== []): ?>
+                    <button type="button" class="dash-showcase__nav-btn" @click="scrollTrack(-360)" aria-label="Défiler vers la gauche">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button type="button" class="dash-showcase__nav-btn" @click="scrollTrack(360)" aria-label="Défiler vers la droite">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php if ($kitItems === []): ?>
+                <div class="dash-showcase__empty">
+                    <p>Aucune tenue mise en avant pour le moment.</p>
+                    <?php if ($canManageKitPins): ?>
+                    <a href="<?= url('back-office/dashboard-tenues') ?>" class="cc-btn cc-btn-primary">Choisir les tenues</a>
+                    <?php else: ?>
+                    <a href="<?= url('equipment') ?>" class="cc-btn cc-btn-primary">Ouvrir l’équipement</a>
+                    <?php endif; ?>
+                </div>
+            <?php else: ?>
+                <div x-ref="track" class="dash-showcase__track no-scrollbar">
+                    <?php foreach ($kitItems as $kit): ?>
+                    <button type="button" class="dash-showcase__card<?= !empty($kit['has_figure']) ? ' dash-showcase__card--kit' : '' ?>" @click="openModal = <?= (int) $kit['id'] ?>">
+                        <?php if (!empty($kit['has_figure'])): ?>
+                            <?php if (!empty($kit['backdrop'])): ?>
+                            <img src="<?= htmlspecialchars((string) $kit['backdrop'], ENT_QUOTES, 'UTF-8') ?>" alt="" class="dash-showcase__card-bg" width="224" height="320" loading="lazy" decoding="async">
+                            <?php endif; ?>
+                            <img
+                                src="<?= htmlspecialchars((string) $kit['figure'], ENT_QUOTES, 'UTF-8') ?>"
+                                alt="<?= htmlspecialchars((string) $kit['title'], ENT_QUOTES, 'UTF-8') ?>"
+                                class="dash-showcase__card-figure"
+                                width="224"
+                                height="320"
+                                loading="lazy"
+                                decoding="async"
+                            >
+                        <?php elseif (!empty($kit['cover'])): ?>
+                            <img
+                                src="<?= htmlspecialchars((string) $kit['cover'], ENT_QUOTES, 'UTF-8') ?>"
+                                alt="<?= htmlspecialchars((string) $kit['title'], ENT_QUOTES, 'UTF-8') ?>"
+                                class="dash-showcase__card-img"
+                                width="224"
+                                height="320"
+                                loading="lazy"
+                                decoding="async"
+                            >
+                        <?php endif; ?>
+                        <span class="dash-showcase__card-veil" aria-hidden="true"></span>
+                        <span class="dash-showcase__card-body">
+                            <span class="dash-showcase__card-badge"><?= htmlspecialchars((string) $kit['badge_label'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="dash-showcase__card-title"><?= htmlspecialchars((string) $kit['title'], ENT_QUOTES, 'UTF-8') ?></span>
+                        </span>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+                <template x-if="openModal !== null">
+                    <div class="dash-showcase__modal fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" @click="openModal = null"></div>
+                        <div class="relative flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:flex-row">
+                            <button type="button" @click="openModal = null" class="absolute right-4 top-4 z-10 rounded-full bg-slate-100 p-2" aria-label="Fermer">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                            <div class="dash-showcase__modal-art h-56 w-full shrink-0 md:h-auto md:w-1/2" x-show="active()">
+                                <template x-if="active() && active().backdrop">
+                                    <img :src="active().backdrop" alt="" class="dash-showcase__modal-bg">
+                                </template>
+                                <img
+                                    x-show="active() && (active().figure || active().cover)"
+                                    :src="active() ? (active().figure || active().cover) : ''"
+                                    :alt="active() ? active().title : ''"
+                                    :class="active() && active().figure ? 'dash-showcase__modal-figure' : 'h-full w-full object-cover'"
+                                >
+                            </div>
+                            <div class="flex-1 overflow-y-auto p-8" x-show="active()">
+                                <p class="cc-kicker cc-kicker--primary" x-text="active() ? active().badge_label : ''"></p>
+                                <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900" x-text="active() ? active().title : ''"></h2>
+                                <p class="mt-6 whitespace-pre-wrap text-sm leading-relaxed text-slate-600" x-text="active() && active().notes ? active().notes : 'Aucune note pour cette tenue.'"></p>
+                                <a :href="active() ? active().href : '#'" class="cc-btn cc-btn-primary mt-8 w-full">Ouvrir la tenue</a>
                             </div>
                         </div>
                     </div>
@@ -730,7 +830,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                         <p class="cc-kicker cc-kicker--primary">Communauté</p>
                         <h2 class="cc-card__title">Épingles</h2>
                     </div>
-                    <?php if (\App\Core\Gate::getInstance()->allows('dashboard.pins.manage')): ?>
+                    <?php if (\App\Authorization\DashboardPinsAccess::canManage()): ?>
                         <a href="<?= url('back-office/dashboard-pins') ?>" class="cc-card__link">Gérer</a>
                     <?php endif; ?>
                 </div>

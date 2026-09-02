@@ -44,10 +44,13 @@ final class AtakAthenaPanelLayoutTest extends TestCase
         self::assertStringNotContainsString('packet_loss', $upd);
         self::assertStringContainsString('ctrlSetFontHeight', $lay);
         self::assertStringContainsString('ctrlPosition _group', $lay);
-        self::assertStringContainsString('sizeEx = QUOTE(0.034)', $hpp);
+        self::assertStringContainsString('sizeEx = QUOTE(0.030)', $hpp);
         self::assertStringContainsString('colorText[] = ATAK_LIST_TEXT', $hpp);
         self::assertStringContainsString('case "alerter"', $lay);
         self::assertStringContainsString('athena_selectHome', $cfg);
-        self::assertStringContainsString('1.0.67', $cfg);
+        self::assertStringContainsString('1.0.75', $cfg);
+        self::assertStringContainsString('Compte :', $upd);
+        self::assertStringContainsString('Compte non connecté', $upd);
+        self::assertStringContainsString('Envoyer photos', $hpp);
     }
 }

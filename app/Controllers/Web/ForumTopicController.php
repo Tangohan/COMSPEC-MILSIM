@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Authorization\DashboardPinsAccess;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\Csrf;
-use App\Core\Gate;
 use App\Repositories\ForumTopicRepository;
 use App\Repositories\ForumPostRepository;
 use App\Repositories\ForumCategoryRepository;
@@ -93,10 +93,7 @@ class ForumTopicController
         }
 
         $isModo = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
-        $canPinOnDashboard = $isModo
-            || Gate::getInstance()->allows('dashboard.pins.manage')
-            || Gate::getInstance()->allows('admin.organization')
-            || Gate::getInstance()->allows('admin.access');
+        $canPinOnDashboard = $isModo || DashboardPinsAccess::canManage();
         if (!empty($topic['is_hidden']) && !$isModo) {
             return (new Response())->setStatusCode(404)->setBody('Sujet non trouvé.');
         }

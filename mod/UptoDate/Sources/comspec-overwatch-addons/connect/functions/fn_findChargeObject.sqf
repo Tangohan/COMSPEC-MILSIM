@@ -25,4 +25,10 @@ if (!isNull _found) exitWith { _found };
 _found = [entities "TimeBombCore", _chargeId] call _scan;
 if (!isNull _found) exitWith { _found };
 _found = [entities "PipeBombBase", _chargeId] call _scan;
+if (!isNull _found) exitWith { _found };
+_found = [entities "MineBase", _chargeId] call _scan;
+if (!isNull _found) exitWith { _found };
+if (!isNull player) then {
+    _found = [nearestObjects [player, ["PipeBombBase", "TimeBombCore", "MineBase", "ACE_Explosives_Place"], 150], _chargeId] call _scan;
+};
 _found

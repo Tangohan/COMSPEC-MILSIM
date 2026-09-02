@@ -78,6 +78,23 @@ class CourrierEditorController
         return $prev;
     }
 
+    /**
+     * @param array<string, mixed> $document
+     * @param array{header_line1: string, header_unit: string, header_section: string} $header
+     * @return array<string, mixed>
+     */
+    private function documentWithHeaderMeta(array $document, array $header): array
+    {
+        $raw = $document['metadata_json'] ?? null;
+        $meta = [];
+        if ($raw !== null && $raw !== '') {
+            $meta = is_string($raw) ? (json_decode($raw, true) ?: []) : (is_array($raw) ? $raw : []);
+        }
+        $document['metadata_json'] = array_merge($meta, $header);
+
+        return $document;
+    }
+
     public function index(Request $request, array $params = []): Response
     {
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
@@ -90,7 +107,8 @@ class CourrierEditorController
         $presets = $this->presetRepository->listForTenant($tenantId);
         $variablesByCategory = $this->variableService->getAvailableVariables($tenantId);
         $defaultPreset = $this->presetRepository->getDefault($tenantId);
-        $defaults = $this->autoFillService->getDefaults(['user_id' => $userId, 'tenant_id' => $tenantId]);
+        $orgContext = ['user_id' => $userId, 'tenant_id' => $tenantId];
+        $defaults = $this->autoFillService->getDefaults($orgContext);
 
         return Response::view('layout.main', [
             'title' => 'Nouveau document — Bureau Courrier',
@@ -106,7 +124,11 @@ class CourrierEditorController
                 'completeness_score' => 0,
                 'preview_html' => '',
                 'classification_labels' => CourrierClassification::labels(),
-                'header_meta' => ['header_line1' => '', 'header_unit' => '', 'header_section' => ''],
+                'header_meta' => [
+                    'header_line1' => (string) ($defaults['header_line1'] ?? ''),
+                    'header_unit' => (string) ($defaults['header_unit'] ?? ''),
+                    'header_section' => (string) ($defaults['header_section'] ?? ''),
+                ],
             ],
         ]);
     }
@@ -142,14 +164,20 @@ class CourrierEditorController
             }
         }
 
+        $orgContext = ['user_id' => $userId, 'tenant_id' => $tenantId];
+        $headerMeta = $this->autoFillService->mergeLetterhead(
+            $this->parseHeaderMetaFromDocument($document),
+            $orgContext
+        );
+        $document = $this->documentWithHeaderMeta($document, $headerMeta);
+        $context['document'] = $document;
         $previewHtml = $this->builderService->buildPreviewHtml($document, $context);
         $alerts = $this->validationService->validate($document, $context, []);
         $completenessScore = $this->validationService->completenessScore($document, $alerts);
         $defaultPreset = $this->presetRepository->getDefault($tenantId);
-        $defaults = $this->autoFillService->getDefaults(['user_id' => $userId, 'tenant_id' => $tenantId]);
+        $defaults = $this->autoFillService->getDefaults($orgContext);
         $versions = $this->documentRepository->getVersions($id);
         $versions = array_slice($versions, 0, 10);
-        $headerMeta = $this->parseHeaderMetaFromDocument($document);
 
         return Response::view('layout.main', [
             'title' => ($document['title'] ?: 'Sans titre') . ' — Bureau Courrier',
@@ -251,7 +279,10 @@ class CourrierEditorController
                 'updated_at' => $document['updated_at'] ?? null,
             ];
             $this->documentRepository->createVersion($id, $snapshot, $userId);
-            $metadataMerged = $this->mergeMetadataFromRequest($request, $document);
+            $metadataMerged = $this->autoFillService->mergeLetterhead(
+                $this->mergeMetadataFromRequest($request, $document),
+                ['user_id' => $userId, 'tenant_id' => $tenantId]
+            );
             $this->documentRepository->update($id, [
                 'template_id' => $templateId,
                 'preset_id' => $presetId,
@@ -291,7 +322,10 @@ class CourrierEditorController
             ],
         ]);
 
-        $metadataMerged = $this->mergeMetadataFromRequest($request, null);
+        $metadataMerged = $this->autoFillService->mergeLetterhead(
+            $this->mergeMetadataFromRequest($request, null),
+            ['user_id' => $userId, 'tenant_id' => $tenantId]
+        );
         $newId = $this->documentRepository->create([
             'tenant_id' => $tenantId,
             'template_id' => $templateId,

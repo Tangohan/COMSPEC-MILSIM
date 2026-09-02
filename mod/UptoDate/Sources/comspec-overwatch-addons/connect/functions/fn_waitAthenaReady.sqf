@@ -1,6 +1,7 @@
 /*
-    Attend AUTH_READY (session Athena restaurée ou connexion réussie).
+    Attend AUTH_READY (session restaurée ou loginSteam).
     Aucun flux opérationnel tant que comspec_overwatch_auth_state != READY.
+    La fenêtre de connexion ne s’ouvre pas ici (tuile Connexion Athena en secours).
 */
 if (!hasInterface) exitWith { false };
 
@@ -12,7 +13,7 @@ missionNamespace setVariable ["COMSPEC_HandshakeQuiet", true, false];
 
 [] call comspec_overwatch_connect_fnc_initAuth;
 
-private _deadline = diag_tickTime + 4;
+private _deadline = diag_tickTime + 20;
 while {diag_tickTime < _deadline} do {
     if ([] call comspec_overwatch_connect_fnc_isReady) then { break };
     [] call comspec_overwatch_connect_fnc_applyBootstrap;
@@ -30,6 +31,6 @@ if ([] call comspec_overwatch_connect_fnc_isReady) then {
     missionNamespace setVariable ["COMSPEC_LinkDetail", "Connexion Athena requise", false];
     [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     ["WARN", "Athena", "Pas de session — les transmissions restent coupées"] call comspec_overwatch_connect_fnc_log;
-    ["Ouvrez le téléphone ATAK, tuile Connexion Athena, pour activer la carte, le suivi et les transmissions.", "link", "warn"] call comspec_overwatch_connect_fnc_announce;
+    ["Ouvrez le téléphone ATAK, tuile Connexion Athena, si la liaison Steam n’a pas abouti.", "link", "warn"] call comspec_overwatch_connect_fnc_announce;
     false
 };

@@ -18,7 +18,7 @@ private _pad = ((_w * 0.025) max 0.003);
 private _gap = ((_h * 0.012) max 0.0025);
 private _titleH = ((_h * 0.062) max 0.016);
 private _accentH = ((_h * 0.008) max 0.002);
-private _statusH = ((_h * 0.048) max 0.014);
+private _statusH = ((_h * 0.086) max 0.024);
 private _tabH = ((_h * 0.058) max 0.016);
 private _btnH = ((_h * 0.055) max 0.015);
 private _comboH = ((_h * 0.048) max 0.014);
@@ -42,8 +42,9 @@ private _fncPos = {
 private _alerter = [9720, 9724, 9723, 9736, 9737, 9738];
 private _rapporter = [9721, 9725, 9722, 9732, 9739, 9753];
 private _poste = [9750, 9751, 9752, 9734, 9735, 9731];
+private _journal = [9765, 9766];
 
-{ private _c = _group controlsGroupCtrl _x; if (!isNull _c) then { _c ctrlShow false; }; } forEach (_alerter + _rapporter + _poste + [9760, 9715]);
+{ private _c = _group controlsGroupCtrl _x; if (!isNull _c) then { _c ctrlShow false; }; } forEach (_alerter + _rapporter + _poste + _journal + [9760, 9715, 9712]);
 
 [_group, 9700, [0, 0, _w, _titleH], true] call _fncPos;
 private _y = _titleH;
@@ -89,6 +90,10 @@ switch (_home) do {
         _y = _y + _btnH + _gap;
     };
     default {
+        [_group, 9765, [_pad, _y, _btnW, _btnH], true] call _fncPos;
+        [_group, 9766, [_pad + _btnW + _btnGap, _y, _btnW, _btnH], true] call _fncPos;
+        [_group, 9731, [_pad + 2 * (_btnW + _btnGap), _y, _btnW, _btnH], true] call _fncPos;
+        _y = _y + _btnH + _gap;
         private _combo = [_group, 9760, [_pad, _y, _fullW, _comboH], true] call _fncPos;
         if (!isNull _combo) then {
             _combo ctrlSetFontHeight _font;
@@ -98,13 +103,26 @@ switch (_home) do {
     };
 };
 
+private _fbH = ((_h * 0.042) max 0.012);
+private _fb = _group controlsGroupCtrl 9712;
+private _fbData = missionNamespace getVariable ["COMSPEC_Athena_PanelFeedback", []];
+private _fbOn = (_fbData isEqualType []) && {(count _fbData) >= 3} && {diag_tickTime < (_fbData select 2)};
+if (_fbOn) then {
+    [_group, 9712, [_pad, _y, _fullW, _fbH], true] call _fncPos;
+    _y = _y + _fbH + _gap;
+} else {
+    if (!isNull _fb) then { _fb ctrlShow false; };
+};
+
 private _remain = (_h - _y - _pad) max 0.08;
-private _listH = (_remain * 0.58) max 0.05;
+private _listRatio = if (_home isEqualTo "fil") then { 0.74 } else { 0.58 };
+private _listH = (_remain * _listRatio) max 0.05;
 private _detH = (_remain - _listH - _gap) max 0.04;
 
 private _list = [_group, 9710, [_pad, _y, _fullW, _listH], true] call _fncPos;
 if (!isNull _list) then {
-    _list ctrlSetFontHeight _font;
+    private _listFont = if (_home isEqualTo "fil") then { ((_font * 0.88) max 0.022) } else { _font };
+    _list ctrlSetFontHeight _listFont;
     _list ctrlSetTextColor [0.94, 0.95, 0.96, 1];
 };
 _y = _y + _listH + _gap;
