@@ -108,7 +108,7 @@ final class DoctrineDemoCleanupTest extends TestCase
         ));
         self::assertFalse(DoctrineDemoCatalog::looksLikeDemoPlaceholder(
             'Fixe les règles d’emploi du terminal tactique Overwatch',
-            'doctrine/sic-atak-2026-001.md'
+            'doctrine/sic-atak-2026-001.pdf'
         ));
     }
 }

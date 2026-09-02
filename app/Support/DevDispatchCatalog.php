@@ -584,6 +584,13 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(378, '2026-09-02', 'La doctrine d’emploi ATAK est le manuel version 1.1', 'Le document à prendre en compte est le manuel d’emploi du poste Athena, version 1.1. Après la mise à jour du portail, ouvrez Documents, puis la doctrine ATAK', [
+                'Le document à ouvrir et à signer est le manuel d’emploi, version 1.1',
+            ], [], [
+                'Un texte court de démonstration tenait encore lieu de document',
+            ], ['platform'], [
+                'Après la mise à jour du portail, ouvrez Documents, puis Doctrine, puis la doctrine d’emploi d’ATAK. Un rechargement de page ne suffit pas.',
+            ], 'Portail 1.6.06'),
             $pr(377, '2026-09-02', 'Une seule tuile pour signaler une anomalie ou contacter l’administration', 'Sur le tableau de bord, signaler une anomalie et contacter l’administration du site se trouvent dans une même tuile, en haut. On choisit ensuite le destinataire. Rédiger un article reste au milieu, les documents à prendre en compte en dessous. Rechargez le tableau de bord', [
                 'Une tuile unique pour l’anomalie et le contact à l’administration du site',
                 'Un choix Anomalie ou Contacter l’administration avant d’ouvrir le formulaire',

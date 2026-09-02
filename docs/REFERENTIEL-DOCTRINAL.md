@@ -109,7 +109,7 @@ Fichier SQL : `migrations/20260902120000_doctrine_referential.sql`
 
 `doctrine_demo_cleanup.php` archive, pour chaque tenant, uniquement ces documents (référence **et** titre ou slug). Idempotent. Ne touche pas SIC/ATAK/2026-001, ni un dépôt utilisateur dont la référence ou le titre diffère, ni un média pédagogique (catégorie `media`).
 
-`doctrine_atak_employment_seed.php` ajoute idempotemment la doctrine **SIC/ATAK/2026-001** (*Doctrine d’emploi d’ATAK / Overwatch Athena*). Si un stub de démonstration existe déjà (résumé « Document de démonstration » ou fichier `storage/documents/demo/`), le texte officiel est substitué sans créer de prises en compte.
+`doctrine_atak_employment_seed.php` ajoute idempotemment la doctrine **SIC/ATAK/2026-001** (*Doctrine d’emploi d’ATAK / Overwatch Athena*). Le fichier à consulter est le manuel d’emploi Athena C2 version 1.1 (PDF). Un ancien stub ou un fichier markdown est remplacé par ce manuel, sans créer de prises en compte.
 
 Déploiement : `php run-migrations.php` (ou `setup-database.php`). Un rechargement de page ne suffit pas.
 

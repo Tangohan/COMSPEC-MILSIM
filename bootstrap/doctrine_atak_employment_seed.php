@@ -33,6 +33,31 @@ function doctrineAtakTableExists(PDO $pdo, string $table): bool
     }
 }
 
+function atakEmploymentDocumentsDir(): string
+{
+    return dirname(__DIR__) . '/storage/documents/';
+}
+
+function atakEmploymentOfficialPdfRelative(): string
+{
+    return 'doctrine/sic-atak-2026-001.pdf';
+}
+
+/** @return array{relative: string, checksum: string, mime: string, exists: bool} */
+function atakEmploymentOfficialPdfMeta(): array
+{
+    $relative = atakEmploymentOfficialPdfRelative();
+    $full = atakEmploymentDocumentsDir() . $relative;
+    $exists = is_file($full);
+
+    return [
+        'relative' => $relative,
+        'checksum' => $exists ? (string) hash_file('sha256', $full) : hash('sha256', 'SIC/ATAK/2026-001v1.1'),
+        'mime' => 'application/pdf',
+        'exists' => $exists,
+    ];
+}
+
 function seedAtakEmploymentDoctrine(PDO $pdo, int $tenantId): void
 {
     $referenceCode = 'SIC/ATAK/2026-001';
@@ -84,24 +109,21 @@ TXT;
         return;
     }
 
-    $filePath = 'doctrine/sic-atak-2026-001.md';
-    $checksum = is_file(dirname(__DIR__) . '/storage/documents/' . $filePath)
-        ? hash_file('sha256', dirname(__DIR__) . '/storage/documents/' . $filePath)
-        : hash('sha256', $referenceCode . 'v1.0');
+    $pdf = atakEmploymentOfficialPdfMeta();
 
     $insVer = $pdo->prepare(
         'INSERT INTO document_versions (
             document_id, version_number, version_major, version_minor, version_label,
             file_path, checksum, mime_type, is_current, published_at, change_summary, created_at
-         ) VALUES (?, 1, 1, 0, ?, ?, ?, ?, 1, NOW(), ?, NOW())'
+         ) VALUES (?, 1, 1, 1, ?, ?, ?, ?, 1, NOW(), ?, NOW())'
     );
     $insVer->execute([
         $docId,
-        'v1.0',
-        $filePath,
-        $checksum,
-        'text/markdown',
-        'Publication initiale — doctrine d’emploi ATAK / Overwatch Athena.',
+        'v1.1',
+        $pdf['relative'],
+        $pdf['checksum'],
+        $pdf['mime'],
+        'Manuel d’emploi Athena C2, version 1.1.',
     ]);
 
     $domainRow = $pdo->prepare('SELECT id FROM document_reference_domains WHERE tenant_id = ? AND doc_prefix = ? LIMIT 1');
@@ -158,10 +180,9 @@ TXT;
 }
 
 /**
- * Si la doctrine ATAK encore présente est le stub de démonstration
- * (résumé « Document de démonstration » ou fichier demo/), la remplace
- * par le texte officiel. Ne crée aucune prise en compte, ne change pas
- * le statut publié ni les audiences.
+ * Aligne la doctrine ATAK existante sur le manuel PDF v1.1.
+ * Remplace un stub de démonstration ou un ancien fichier (markdown, autre chemin).
+ * Ne crée aucune prise en compte, ne change pas les audiences.
  */
 function upgradeAtakEmploymentDoctrineIfDemoPlaceholder(PDO $pdo, int $tenantId, int $documentId): void
 {
@@ -169,8 +190,9 @@ function upgradeAtakEmploymentDoctrineIfDemoPlaceholder(PDO $pdo, int $tenantId,
         return;
     }
 
+    $pdf = atakEmploymentOfficialPdfMeta();
     $rowStmt = $pdo->prepare(
-        'SELECT dd.summary, dv.file_path
+        'SELECT dd.summary, dv.id AS version_id, dv.file_path, dv.checksum, dv.version_number
          FROM document_doctrines dd
          LEFT JOIN document_versions dv ON dv.document_id = dd.document_id AND dv.is_current = 1
          WHERE dd.document_id = ? AND dd.tenant_id = ?
@@ -182,22 +204,16 @@ function upgradeAtakEmploymentDoctrineIfDemoPlaceholder(PDO $pdo, int $tenantId,
         return;
     }
 
-    $summary = trim((string) ($row['summary'] ?? ''));
     $filePath = str_replace('\\', '/', (string) ($row['file_path'] ?? ''));
-    $isDemo = str_starts_with($summary, 'Document de démonstration')
-        || str_contains($filePath, 'storage/documents/demo/')
-        || str_contains($filePath, '/documents/demo/');
-    if (!$isDemo) {
+    $checksum = (string) ($row['checksum'] ?? '');
+    $alreadyOfficial = $filePath === $pdf['relative'] && $checksum === $pdf['checksum'];
+    if ($alreadyOfficial) {
         return;
     }
 
     $officialSummary = <<<'TXT'
 Fixe les règles d’emploi du terminal tactique Overwatch (mod Arma) et du poste de commandement web Athena : prérequis de liaison, emploi carte/marqueurs/ordres/MEDEVAC en mission, responsabilités opérateur et SIC, OPSEC et maintien des compétences. Prise en compte obligatoire pour tous les membres autorisés à l’OP numérique.
 TXT;
-    $officialFile = 'doctrine/sic-atak-2026-001.md';
-    $checksum = is_file(dirname(__DIR__) . '/storage/documents/' . $officialFile)
-        ? hash_file('sha256', dirname(__DIR__) . '/storage/documents/' . $officialFile)
-        : hash('sha256', 'SIC/ATAK/2026-001v1.0');
 
     try {
         $pdo->prepare(
@@ -212,16 +228,29 @@ TXT;
             $documentId,
             $tenantId,
         ]);
-        $pdo->prepare(
-            'UPDATE document_versions
-             SET file_path = ?, checksum = ?, mime_type = ?, change_summary = ?
-             WHERE document_id = ? AND is_current = 1'
-        )->execute([
-            $officialFile,
-            $checksum,
-            'text/markdown',
-            'Texte officiel de la doctrine d’emploi ATAK / Overwatch Athena.',
+
+        $versionId = (int) ($row['version_id'] ?? 0);
+        $currentNumber = (int) ($row['version_number'] ?? 1);
+        if ($versionId > 0) {
+            $pdo->prepare(
+                'UPDATE document_versions SET is_current = 0 WHERE document_id = ?'
+            )->execute([$documentId]);
+        }
+
+        $insVer = $pdo->prepare(
+            'INSERT INTO document_versions (
+                document_id, version_number, version_major, version_minor, version_label,
+                file_path, checksum, mime_type, is_current, published_at, change_summary, created_at
+             ) VALUES (?, ?, 1, 1, ?, ?, ?, ?, 1, NOW(), ?, NOW())'
+        );
+        $insVer->execute([
             $documentId,
+            max(1, $currentNumber) + ($versionId > 0 ? 1 : 0),
+            'v1.1',
+            $pdf['relative'],
+            $pdf['checksum'],
+            $pdf['mime'],
+            'Manuel d’emploi Athena C2, version 1.1.',
         ]);
     } catch (\Throwable) {
     }
