@@ -2181,6 +2181,9 @@ $forumModerationBotMigrate($pdo);
 $alertsMigrate = require $root . '/bootstrap/alerts_migration.php';
 $alertsMigrate($pdo);
 
+$doctrineReferentialMigrate = require $root . '/bootstrap/doctrine_referential_migration.php';
+$doctrineReferentialMigrate($pdo);
+
 $tenantAlertsVisualMigrate = require $root . '/bootstrap/tenant_alerts_visual_migration.php';
 try {
     $tenantAlertsVisualMigrate($pdo);
