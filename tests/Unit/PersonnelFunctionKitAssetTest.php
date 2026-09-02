@@ -21,6 +21,7 @@ final class PersonnelFunctionKitAssetTest extends TestCase
         self::assertStringContainsString('/back-office/personnel-job-roles/kits/save', $routes);
         self::assertStringContainsString('/back-office/personnel-job-roles/kits/assign', $routes);
         self::assertFileExists($root . '/views/admin/organization/personnel_job_roles/kits.php');
+        self::assertFileExists($root . '/public/assets/js/bo-kits-selection.js');
         self::assertFileExists($root . '/app/Services/Personnel/PersonnelFunctionKitCatalog.php');
         self::assertFileExists($root . '/app/Services/Personnel/PersonnelFunctionKitService.php');
         self::assertFileExists($root . '/app/Repositories/TenantFunctionKitRepository.php');
@@ -51,10 +52,16 @@ final class PersonnelFunctionKitAssetTest extends TestCase
     {
         $root = $this->root();
         $view = (string) file_get_contents($root . '/views/admin/organization/personnel_job_roles/kits.php');
+        $css = (string) file_get_contents($root . '/public/assets/css/back-office-catalog.css');
+        $js = (string) file_get_contents($root . '/public/assets/js/bo-kits-selection.js');
         self::assertStringContainsString('Qui peut faire quoi', $view);
         self::assertStringContainsString('Attribuer les kits', $view);
         self::assertStringContainsString('Enregistrer les kits', $view);
         self::assertStringContainsString('type="checkbox"', $view);
+        self::assertStringContainsString('data-bo-kits-hint', $view);
+        self::assertStringContainsString('bo-kits__card-state-on', $view);
+        self::assertStringContainsString('Sélectionné', $view);
+        self::assertStringContainsString('bo-kits-selection.js', $view);
         self::assertStringContainsString('Qui l’obtient ?', $view);
         self::assertStringContainsString('multi-sélection', $view);
         self::assertStringContainsString('kit_id', $view);
@@ -65,6 +72,12 @@ final class PersonnelFunctionKitAssetTest extends TestCase
         foreach (['json', 'sql', 'endpoint', 'schema', 'tenant_id', 'infanterie', 'slug'] as $banned) {
             self::assertStringNotContainsString($banned, $body, $banned);
         }
+        self::assertStringNotContainsString('.bo-kits__card input {' . "\n" . '  position: absolute;', $css);
+        self::assertStringContainsString('appearance: auto', $css);
+        self::assertStringContainsString('opacity: 1', $css);
+        self::assertStringContainsString('data-bo-kits-hint', $js);
+        self::assertStringContainsString('Aucun kit coché pour l’instant.', $js);
+        self::assertStringContainsString('sélectionné', $js);
     }
 
     public function testPortalSurfacesPointToKits(): void

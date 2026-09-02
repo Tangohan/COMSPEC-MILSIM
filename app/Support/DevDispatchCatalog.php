@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(375, '2026-09-02', 'Les kits d’accès se cochent clairement avant l’enregistrement', 'Sur la page Kits d’accès, chaque carte affiche une case. Une carte retenue passe en Sélectionné et le pied de page indique combien de kits sont cochés. Enregistrez ensuite pour les attribuer aux membres', [], [], [
+                'Cliquer une carte ne changeait pas l’affichage : pas de case visible, le pied de page restait sur Aucun kit coché',
+            ], ['personnel'], [
+                'Ouvrez Effectifs, puis Kits d’accès. Cochez les packs voulus : le compteur se met à jour, puis Enregistrer les kits.',
+            ], 'Portail 1.6.03'),
             $pr(374, '2026-09-02', 'Le tableau des effectifs affiche la disponibilité sur 90 jours', 'Sur le tableau rapide du tableau de bord, chaque membre montre son taux de disponibilité : participations annoncées et présences validées sur les trois derniers mois, sous forme de barre colorée. Rechargez le tableau de bord', [
                 'Colonne Disponibilité, avec le pourcentage et une barre du rouge au vert',
                 'Un membre sans activité récente affiche un tiret, pas un taux à zéro',
