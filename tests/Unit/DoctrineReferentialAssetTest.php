@@ -21,6 +21,8 @@ final class DoctrineReferentialAssetTest extends TestCase
         self::assertStringContainsString('doctrine-referential.css', $indexView);
         self::assertStringContainsString('data-doctrine-ack-form', $showView);
         self::assertStringContainsString('listPendingActionsForUser', $compliance);
+        self::assertStringContainsString('SIC/ATAK/2026-001', (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/doctrine_atak_employment_seed.php'));
+        self::assertStringContainsString('doctrine_atak_employment_seed', (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/doctrine_referential_migration.php'));
         self::assertStringContainsString('DoctrineDocumentsController', $routes);
         self::assertStringContainsString('back-office/documents/nomenclature', $routes);
     }

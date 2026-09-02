@@ -59,6 +59,11 @@ return function (PDO $pdo): void {
     if (is_callable($demoSeed)) {
         $demoSeed($pdo);
     }
+
+    $atakSeed = require dirname(__DIR__) . '/bootstrap/doctrine_atak_employment_seed.php';
+    if (is_callable($atakSeed)) {
+        $atakSeed($pdo);
+    }
 };
 
 function seedDefaultDoctrineCatalog(PDO $pdo): void
@@ -107,6 +112,9 @@ function seedDefaultDoctrineCatalog(PDO $pdo): void
         ],
         'ADM' => [
             ['ORG', 'Organisation'],
+        ],
+        'SIC' => [
+            ['ATAK', 'Système ATAK / C2'],
         ],
         'COM' => [
             ['INFO', 'Information'],
