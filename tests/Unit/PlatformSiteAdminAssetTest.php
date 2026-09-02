@@ -24,6 +24,7 @@ final class PlatformSiteAdminAssetTest extends TestCase
             'admin/system/cooperation/catalog',
             'admin/system/cooperation/announcements',
             'admin/system/military-referential',
+            'admin/system/tenant-recovery',
             'admin/system/updates',
             'admin/newsletter',
         ] as $path) {
@@ -36,6 +37,7 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertStringContainsString('Formules d’accès', $sidebar);
         self::assertStringContainsString('Types de coopération', $sidebar);
         self::assertStringContainsString('Référentiel militaire', $sidebar);
+        self::assertStringContainsString('Récupération communauté', $sidebar);
         self::assertStringContainsString('Administration complète du site', $directory);
         self::assertStringContainsString('Quatre postes, tout le site', $directory);
         self::assertStringContainsString('admin/system/demo-nda', $quick);
@@ -49,6 +51,17 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertStringContainsString('class="pa"', $dash);
         self::assertStringContainsString('platform-admin.css', $dashCtrl);
         self::assertStringNotContainsString('quick_actions_system.php', $dash);
+    }
+
+    public function testEveryPlatformAccountRouteUsesThePlatformShell(): void
+    {
+        $helpers = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/helpers.php');
+
+        self::assertMatchesRegularExpression(
+            "/\\$prefixes\\s*=\\s*\\[[^;]*'users'[^;]*\\];/s",
+            $helpers,
+            'Les pages /admin/users et leurs sous-routes doivent conserver la navigation plateforme.'
+        );
     }
 
     public function testCommunityFicheCoversIdentityTypeAndPlan(): void

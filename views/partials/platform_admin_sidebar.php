@@ -36,6 +36,7 @@ $paSubLink = static function (string $path, string $label, bool $active): void {
 
 $navDash = $p === 'admin';
 $navTenants = $p === 'admin/tenants' || str_starts_with($p, 'admin/tenants/');
+$navTenantRecovery = str_starts_with($p, 'admin/system/tenant-recovery');
 $navAnalytics = $p === 'admin/analytics';
 $navNewsletter = $p === 'admin/newsletter';
 $navOps = $p === 'admin/ops-center';
@@ -82,6 +83,7 @@ $alertsOpen = $navAlerts;
         <?php if ($isPlatformAdmin): ?>
             <?php $paSection('Communautés'); ?>
             <?php $paLink('admin/tenants', 'Annuaire des communautés', $navTenants); ?>
+            <?php $paLink('admin/system/tenant-recovery', 'Récupération communauté', $navTenantRecovery); ?>
             <?php $paLink('admin/system/subscription-plans', 'Formules d’accès', $navPlans); ?>
             <?php $paLink('admin/newsletter', 'Lettre d’information du site', $navNewsletter); ?>
             <?php $paLink('admin/system/demo-nda', 'Accès démo du site', $navDemoNda); ?>
