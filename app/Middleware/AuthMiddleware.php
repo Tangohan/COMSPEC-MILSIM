@@ -90,7 +90,27 @@ class AuthMiddleware
             }
         }
 
-        return $next($request);
+        $context = \App\Services\Tenant\TenantContext::class;
+        $originalTenantId = (int) $user['tenant_id'];
+        if (\App\Core\Gate::getInstance()->allows('admin.system')
+            && Session::get('platform_admin_tenant_context') === true
+            && (int) Session::get('platform_admin_id') === $userId) {
+            $context::verifyPlatformAdmin($userId);
+        }
+
+        if (!$context::isIntervention()) {
+            return $next($request);
+        }
+
+        // Compatibility bridge for legacy controllers. The browser never supplies this
+        // value: it comes from the server-created, revalidated intervention session.
+        Session::set('tenant_id', $context::id());
+        try {
+            return (new TenantAdminAuditMiddleware())($request, $next);
+        } finally {
+            Session::set('tenant_id', $originalTenantId);
+            $context::clearVerification();
+        }
     }
 
     private function clearAuthSession(): void
@@ -102,5 +122,9 @@ class AuthMiddleware
         Session::forget('callsign');
         Session::forget('role_id');
         Session::forget('rbac_unit_map');
+        Session::forgetMany([
+            'platform_admin_id', 'admin_tenant_id', 'admin_tenant_started_at',
+            'admin_tenant_session_id', 'admin_tenant_reason', 'platform_admin_tenant_context',
+        ]);
     }
 }
