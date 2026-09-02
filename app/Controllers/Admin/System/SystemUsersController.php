@@ -22,6 +22,7 @@ use App\Services\Account\AccountPurgeService;
 use App\Services\Admin\PlatformUserProfileService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Services\Identity\UserIdentityMergeService;
 use App\Repositories\AccountPurgeRequestRepository;
 
 /**
@@ -203,6 +204,14 @@ final class SystemUsersController
 
         $hasLiveOrg = $this->users->emailHasActiveNonDefaultMembership($email);
 
+        /** @var UserIdentityMergeService $mergeService */
+        $mergeService = Container::get(UserIdentityMergeService::class);
+        $survivorPreviewId = (int) $request->query('survivor_id', 0);
+        $mergePreview = $mergeService->previewEmailMerge(
+            $email,
+            $survivorPreviewId > 0 ? $survivorPreviewId : null
+        );
+
         return Response::view('layout.main', [
             'title' => 'Dossier personne',
             'content' => 'admin.system.user_person',
@@ -214,7 +223,70 @@ final class SystemUsersController
             'personCivil' => $civil,
             'personHasLiveOrg' => $hasLiveOrg,
             'personMemberships' => $dossierMemberships,
+            'personMergePreview' => $mergePreview,
         ]);
+    }
+
+    /**
+     * Fusionne plusieurs fiches users partageant le même e-mail en un compte survivant.
+     */
+    public function mergeAccounts(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('admin/users'));
+        }
+
+        $email = strtolower(trim((string) $request->input('email', '')));
+        $survivorUserId = (int) $request->input('survivor_user_id', 0);
+        $confirmation = strtolower(trim((string) $request->input('confirm_email', '')));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || $confirmation !== $email) {
+            Session::flash('error', 'Adresse de confirmation incorrecte : aucune fusion effectuée.');
+
+            return Response::redirect(
+                $email !== '' ? url('admin/users/person') . '?email=' . rawurlencode($email) : url('admin/users')
+            );
+        }
+
+        /** @var UserIdentityMergeService $mergeService */
+        $mergeService = Container::get(UserIdentityMergeService::class);
+        try {
+            $result = $mergeService->mergeAccountsForEmail(
+                $email,
+                $survivorUserId > 0 ? $survivorUserId : null
+            );
+        } catch (\Throwable $e) {
+            Session::flash('error', 'Fusion impossible : ' . $e->getMessage());
+
+            return Response::redirect(url('admin/users/person') . '?email=' . rawurlencode($email));
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $actorTenantId = (int) Session::get('tenant_id');
+        $this->audit->logChange(
+            AuditAction::USER_IDENTITY_MERGED,
+            $actorTenantId > 0 ? $actorTenantId : 0,
+            $actorId,
+            'user',
+            (int) $result['survivor_id'],
+            ['email' => $email],
+            [
+                'platform_directory' => true,
+                'merged_count' => (int) ($result['merged'] ?? 0),
+                'survivor_user_id' => (int) ($result['survivor_id'] ?? 0),
+                'steam_collisions' => $result['steam_collisions'] ?? [],
+            ],
+        );
+
+        $message = 'Fusion terminée — compte survivant #' . (int) $result['survivor_id']
+            . ', ' . (int) ($result['merged'] ?? 0) . ' fiche(s) absorbée(s).';
+        if (($result['steam_collisions'] ?? []) !== []) {
+            $message .= ' ' . count($result['steam_collisions']) . ' conflit(s) Steam ignoré(s) — voir le journal.';
+        }
+        Session::flash('success', $message);
+
+        return Response::redirect(url('admin/users/person') . '?email=' . rawurlencode($email));
     }
 
     public function edit(Request $request, array $params = []): Response

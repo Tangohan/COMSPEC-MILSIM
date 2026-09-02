@@ -97,6 +97,40 @@ final class UserCommunityMembershipRepository
     }
 
     /**
+     * Complète une fiche communauté existante sans écraser les champs déjà renseignés.
+     *
+     * @param array<string, mixed> $profile
+     */
+    public function upsertProfileFillEmpty(int $userId, int $tenantId, array $profile): void
+    {
+        if ($userId < 1 || $tenantId < 1 || !$this->tablesExist() || $profile === []) {
+            return;
+        }
+        $existing = $this->findProfile($userId, $tenantId) ?? [];
+        $fills = UserIdentityMergeRules::communityProfileFillEmpty($existing, $profile);
+        if ($fills === []) {
+            return;
+        }
+        if ($existing === []) {
+            $this->upsertProfile($userId, $tenantId, $fills);
+
+            return;
+        }
+        $set = [];
+        $params = [];
+        foreach ($fills as $key => $value) {
+            $set[] = '`' . $key . '` = ?';
+            $params[] = $value;
+        }
+        $params[] = $userId;
+        $params[] = $tenantId;
+        $this->pdo()->prepare(
+            'UPDATE user_community_profiles SET ' . implode(', ', $set) . ', updated_at = NOW()
+             WHERE user_id = ? AND tenant_id = ?'
+        )->execute($params);
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function findProfile(int $userId, int $tenantId): ?array

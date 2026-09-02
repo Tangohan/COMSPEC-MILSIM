@@ -974,6 +974,7 @@ return function (Router $router) {
     $router->get('/api/admin/user-search', [SystemUserLookupApiController::class, 'search'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users', [SystemUsersController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/person', [SystemUsersController::class, 'showPerson'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/merge', [SystemUsersController::class, 'mergeAccounts'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/{id}/edit', [SystemUsersController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/{id}/update', [SystemUsersController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/set-status', [SystemUsersController::class, 'setStatus'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
