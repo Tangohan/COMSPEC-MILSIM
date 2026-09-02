@@ -18,4 +18,9 @@
             <directory suffix=".php">app</directory>
         </include>
     </source>
+    <extensions>
+        <bootstrap class="DG\BypassFinals\PHPUnitExtension">
+            <parameter name="bypassReadOnly" value="false"/>
+        </bootstrap>
+    </extensions>
 </phpunit>
