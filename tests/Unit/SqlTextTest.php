@@ -43,6 +43,14 @@ final class SqlTextTest extends TestCase
         $status = SqlText::equals($pdo, 'u.status');
         self::assertStringContainsString('u.status COLLATE utf8mb4_unicode_ci', $status);
         self::assertStringContainsString('CONVERT(? USING utf8mb4)', $status);
+
+        $slugNotDefault = SqlText::notEqualsLiteral($pdo, 't.slug', 'default');
+        self::assertStringContainsString('t.slug COLLATE utf8mb4_unicode_ci', $slugNotDefault);
+        self::assertStringContainsString("'default' COLLATE utf8mb4_unicode_ci", $slugNotDefault);
+
+        $statusCase = SqlText::coalesceEqualsLiteral($pdo, 'p.status', 'u.status', 'active');
+        self::assertStringContainsString('COALESCE(p.status, u.status) COLLATE utf8mb4_unicode_ci', $statusCase);
+        self::assertStringContainsString("'active' COLLATE utf8mb4_unicode_ci", $statusCase);
     }
 
     public function testRejectsUnsafeColumnExpressions(): void
@@ -86,5 +94,26 @@ final class SqlTextTest extends TestCase
             'WHERE LOWER(TRIM(u.email)) = ? AND u.status = ?',
             $src
         );
+    }
+
+    public function testListAllMembershipsByEmailSourceUsesCollationSafeComparisons(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
+        self::assertStringContainsString('function listAllMembershipsByEmail', $src);
+        self::assertStringContainsString('SqlText::equalsLiteral($pdo, \'t.slug\', \'default\')', $src);
+        self::assertStringContainsString('SqlText::coalesceEqualsLiteral($pdo, \'p.status\', \'u.status\', \'active\')', $src);
+        self::assertStringNotContainsString("CASE WHEN t.slug = 'default' THEN 1 ELSE 0 END ASC", $src);
+    }
+
+    public function testEmailHasActiveNonDefaultMembershipUsesCollationSafeSlugFilter(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
+        self::assertStringContainsString('function emailHasActiveNonDefaultMembership', $src);
+        if (!preg_match('/function emailHasActiveNonDefaultMembership\b.*?^\    \}/ms', $src, $match)) {
+            self::fail('emailHasActiveNonDefaultMembership introuvable.');
+        }
+        $body = $match[0];
+        self::assertStringContainsString("SqlText::notEqualsLiteral(\$pdo, 't.slug', 'default')", $body);
+        self::assertStringNotContainsString("t.slug <> 'default'", $body);
     }
 }

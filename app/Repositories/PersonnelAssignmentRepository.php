@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use DateTimeImmutable;
 use PDO;
 
@@ -119,12 +120,13 @@ class PersonnelAssignmentRepository
 
     public function getPrimaryAssignment(int $userId): ?array
     {
+        $statusEq = SqlText::equals($this->pdo, 'pa.status');
         $stmt = $this->pdo->prepare(
-            'SELECT pa.*, u.name AS unit_name, u.slug AS unit_slug, u.commander_user_id
+            "SELECT pa.*, u.name AS unit_name, u.slug AS unit_slug, u.commander_user_id
              FROM personnel_assignments pa
              JOIN units u ON u.id = pa.unit_id
-             WHERE pa.user_id = ? AND pa.is_primary = 1 AND pa.status = ? AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())
-             LIMIT 1'
+             WHERE pa.user_id = ? AND pa.is_primary = 1 AND {$statusEq} AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())
+             LIMIT 1"
         );
         $stmt->execute([$userId, 'active']);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);

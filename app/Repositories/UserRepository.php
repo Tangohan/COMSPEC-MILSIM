@@ -2740,7 +2740,15 @@ class UserRepository
         $hasAthena = $this->hasAthenaIdentifierColumn();
         $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
         $athenaSelect = $hasAthena ? 'COALESCE(p.athena_identifier, u.athena_identifier)' : "''";
-        $emailEq = SqlText::normalizedEquals($this->pdo(), 'u.email');
+        $pdo = $this->pdo();
+        $emailEq = SqlText::normalizedEquals($pdo, 'u.email');
+        $defaultSlugOrder = 'CASE WHEN ' . SqlText::equalsLiteral($pdo, 't.slug', 'default') . ' THEN 1 ELSE 0 END ASC';
+        $membershipStatusOrder = 'CASE WHEN ' . SqlText::coalesceEqualsLiteral($pdo, 'p.status', 'u.status', 'active')
+            . ' THEN 0 WHEN ' . SqlText::coalesceEqualsLiteral($pdo, 'p.status', 'u.status', 'pending_verification')
+            . ' THEN 1 ELSE 2 END ASC';
+        $userStatusOrder = 'CASE WHEN ' . SqlText::equalsLiteral($pdo, 'u.status', 'active')
+            . ' THEN 0 WHEN ' . SqlText::equalsLiteral($pdo, 'u.status', 'pending_verification')
+            . ' THEN 1 ELSE 2 END ASC';
         if ($this->hasCommunityMembershipTable()) {
             $stmt = $this->pdo()->prepare(
                 "SELECT u.id, m.tenant_id, u.email,
@@ -2763,8 +2771,8 @@ class UserRepository
                  LEFT JOIN roles r ON r.id = COALESCE(p.role_id, u.role_id)
                  WHERE {$emailEq}
                  ORDER BY
-                    CASE WHEN t.slug = 'default' THEN 1 ELSE 0 END ASC,
-                    CASE WHEN COALESCE(p.status, u.status) = 'active' THEN 0 WHEN COALESCE(p.status, u.status) = 'pending_verification' THEN 1 ELSE 2 END ASC,
+                    {$defaultSlugOrder},
+                    {$membershipStatusOrder},
                     t.name ASC,
                     u.id ASC"
             );
@@ -2785,7 +2793,7 @@ class UserRepository
             }
         }
         $athenaSelect = $hasAthena ? 'u.athena_identifier' : "'' AS athena_identifier";
-        $emailEq = SqlText::normalizedEquals($this->pdo(), 'u.email');
+        $emailEq = SqlText::normalizedEquals($pdo, 'u.email');
         $stmt = $this->pdo()->prepare(
             "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.steam_id,
                     u.avatar_url, u.grade_id, u.role_id, u.created_at, u.updated_at, u.profile_slug,
@@ -2797,8 +2805,8 @@ class UserRepository
              LEFT JOIN roles r ON r.id = u.role_id
              WHERE {$emailEq}
              ORDER BY
-                CASE WHEN t.slug = 'default' THEN 1 ELSE 0 END ASC,
-                CASE WHEN u.status = 'active' THEN 0 WHEN u.status = 'pending_verification' THEN 1 ELSE 2 END ASC,
+                {$defaultSlugOrder},
+                {$userStatusOrder},
                 t.name ASC,
                 u.id ASC"
         );
@@ -2828,11 +2836,31 @@ class UserRepository
         }
         $hasDeletedAt = $this->hasDeletedAtColumn();
         $liveDeleted = $hasDeletedAt ? 'AND u.deleted_at IS NULL' : '';
-        $emailEq = SqlText::normalizedEquals($this->pdo(), 'u.email');
-        $statusActive = SqlText::inLiterals($this->pdo(), 'u.status', ['active']);
+        $pdo = $this->pdo();
+        $emailEq = SqlText::normalizedEquals($pdo, 'u.email');
+        $notDefaultSlug = SqlText::notEqualsLiteral($pdo, 't.slug', 'default');
+        if ($this->hasCommunityMembershipTable()) {
+            $membershipStatus = SqlText::inLiterals($pdo, 'm.status', ['active']);
+            $profileStatusActive = SqlText::coalesceInLiterals($pdo, 'p.status', 'u.status', ['active']);
+            $stmt = $this->pdo()->prepare(
+                "SELECT 1 FROM users u
+                 INNER JOIN user_community_memberships m ON m.user_id = u.id AND {$membershipStatus}
+                 INNER JOIN tenants t ON t.id = m.tenant_id AND {$notDefaultSlug}
+                 LEFT JOIN user_community_profiles p ON p.user_id = u.id AND p.tenant_id = m.tenant_id
+                 WHERE {$emailEq}
+                   AND {$profileStatusActive}
+                   {$liveDeleted}
+                 LIMIT 1"
+            );
+            $stmt->execute([$email]);
+            if ($stmt->fetchColumn()) {
+                return true;
+            }
+        }
+        $statusActive = SqlText::inLiterals($pdo, 'u.status', ['active']);
         $stmt = $this->pdo()->prepare(
             "SELECT 1 FROM users u
-             INNER JOIN tenants t ON t.id = u.tenant_id AND t.slug <> 'default'
+             INNER JOIN tenants t ON t.id = u.tenant_id AND {$notDefaultSlug}
              WHERE {$emailEq}
                AND {$statusActive}
                {$liveDeleted}

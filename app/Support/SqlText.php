@@ -83,6 +83,53 @@ final class SqlText
     }
 
     /**
+     * colonne = 'valeur' (littéral figé — slug, statut, etc.).
+     */
+    public static function equalsLiteral(PDO $pdo, string $columnExpr, string $value): string
+    {
+        self::assertColumnExpr($columnExpr);
+        self::assertTokenLiteral($value);
+        $quoted = "'" . str_replace("'", "''", $value) . "'";
+        if (!self::isMysqlFamily($pdo)) {
+            return $columnExpr . ' = ' . $quoted;
+        }
+
+        return '(' . $columnExpr . ' COLLATE ' . self::COLLATION . ') = (' . $quoted . ' COLLATE ' . self::COLLATION . ')';
+    }
+
+    /**
+     * colonne <> 'valeur' (littéral figé).
+     */
+    public static function notEqualsLiteral(PDO $pdo, string $columnExpr, string $value): string
+    {
+        self::assertColumnExpr($columnExpr);
+        self::assertTokenLiteral($value);
+        $quoted = "'" . str_replace("'", "''", $value) . "'";
+        if (!self::isMysqlFamily($pdo)) {
+            return $columnExpr . ' <> ' . $quoted;
+        }
+
+        return '(' . $columnExpr . ' COLLATE ' . self::COLLATION . ') <> (' . $quoted . ' COLLATE ' . self::COLLATION . ')';
+    }
+
+    /**
+     * COALESCE(a, b) = 'valeur' (littéral figé).
+     */
+    public static function coalesceEqualsLiteral(PDO $pdo, string $first, string $second, string $value): string
+    {
+        self::assertColumnExpr($first);
+        self::assertColumnExpr($second);
+        self::assertTokenLiteral($value);
+        $expr = 'COALESCE(' . $first . ', ' . $second . ')';
+        $quoted = "'" . str_replace("'", "''", $value) . "'";
+        if (!self::isMysqlFamily($pdo)) {
+            return $expr . ' = ' . $quoted;
+        }
+
+        return '(' . $expr . ' COLLATE ' . self::COLLATION . ') = (' . $quoted . ' COLLATE ' . self::COLLATION . ')';
+    }
+
+    /**
      * colonne = ? — un placeholder.
      */
     public static function equals(PDO $pdo, string $columnExpr): string
@@ -223,6 +270,13 @@ final class SqlText
     {
         if ($value === '' || !preg_match('/^[A-Za-z0-9.@_+-]+$/', $value)) {
             throw new InvalidArgumentException('Littéral e-mail invalide.');
+        }
+    }
+
+    private static function assertTokenLiteral(string $value): void
+    {
+        if ($value === '' || !preg_match('/^[a-z][a-z0-9_]*$/', $value)) {
+            throw new InvalidArgumentException('Littéral texte invalide.');
         }
     }
 }
