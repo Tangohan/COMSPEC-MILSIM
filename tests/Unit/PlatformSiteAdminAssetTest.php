@@ -27,10 +27,13 @@ final class PlatformSiteAdminAssetTest extends TestCase
             'admin/system/tenant-recovery',
             'admin/system/updates',
             'admin/newsletter',
+            'admin/system/deployment/communities',
         ] as $path) {
             self::assertStringContainsString($path, $sidebar, $path);
-            self::assertStringContainsString($path, $directory, $path);
-            self::assertStringContainsString($path, $nav, $path);
+            if ($path !== 'admin/system/deployment/communities') {
+                self::assertStringContainsString($path, $directory, $path);
+                self::assertStringContainsString($path, $nav, $path);
+            }
         }
 
         self::assertStringContainsString('Accès démo du site', $sidebar);
@@ -38,6 +41,7 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertStringContainsString('Types de coopération', $sidebar);
         self::assertStringContainsString('Référentiel militaire', $sidebar);
         self::assertStringContainsString('Récupération communauté', $sidebar);
+        self::assertStringContainsString('Communautés de test', $sidebar);
         self::assertStringContainsString('Administration complète du site', $directory);
         self::assertStringContainsString('Quatre postes, tout le site', $directory);
         self::assertStringContainsString('admin/system/demo-nda', $quick);
@@ -51,6 +55,15 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertStringContainsString('class="pa"', $dash);
         self::assertStringContainsString('platform-admin.css', $dashCtrl);
         self::assertStringNotContainsString('quick_actions_system.php', $dash);
+        self::assertStringNotContainsString('endif', $sidebar);
+        self::assertStringNotContainsString('$paLink', $sidebar);
+        self::assertStringNotContainsString('$paSection', $sidebar);
+        self::assertDoesNotMatchRegularExpression('/<\?php\s+if\b[^;{]*:/', $sidebar);
+        self::assertDoesNotMatchRegularExpression('/function\s*\([^)]*\)[^{]*\?>/', $sidebar);
+        $lint = [];
+        $code = 0;
+        exec('php -l ' . escapeshellarg($root . '/views/partials/platform_admin_sidebar.php') . ' 2>&1', $lint, $code);
+        self::assertSame(0, $code, implode("\n", $lint));
     }
 
     public function testEveryPlatformAccountRouteUsesThePlatformShell(): void
