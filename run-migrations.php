@@ -141,6 +141,7 @@ $bootstrapFiles = [
     'personnel_profile_rp_identity_migration.php',
     'personnel_personal_dossier_enhancements_migration.php',
     'user_deletion_request_migration.php',
+    'user_community_identity_migration.php',
     'user_advanced_edit_grants_migration.php',
     'hr_charter_lms_migration.php',
     'recon_pv_tammuc_migration.php',
@@ -280,6 +281,10 @@ run_personnel_profile_extended_details_migration($pdo);
 run_personnel_profile_rp_identity_migration($pdo);
 run_personnel_personal_dossier_enhancements_migration($pdo);
 run_user_deletion_request_migration($pdo);
+run_user_community_identity_migration($pdo, static function (string $m) use ($migrationFlush): void {
+    echo '  ' . $m . "\n";
+    $migrationFlush();
+});
 run_user_advanced_edit_grants_migration($pdo);
 run_hr_charter_lms_migration($pdo);
 run_recon_pv_tammuc_migration($pdo);
@@ -2561,6 +2566,23 @@ try {
 }
 
 require_once $root . '/bootstrap/autoload.php';
+
+try {
+    echo "Fusion des comptes partageant le même e-mail (une identité, dossiers RH séparés)...\n";
+    $merge = new \App\Services\Identity\UserIdentityMergeService(
+        $pdo,
+        new \App\Repositories\UserCommunityMembershipRepository($pdo)
+    );
+    $mergeSummary = $merge->mergeAllDuplicateEmails();
+    echo '  groupes=' . (int) ($mergeSummary['groups'] ?? 0)
+        . ' fiches réunies=' . (int) ($mergeSummary['merged'] ?? 0)
+        . ' collisions Steam=' . (int) ($mergeSummary['collisions'] ?? 0) . "\n";
+    foreach ($mergeSummary['errors'] ?? [] as $err) {
+        echo '  [ATTENTION] fusion : ' . $err . "\n";
+    }
+} catch (Throwable $e) {
+    echo '  [ATTENTION] user_identity_merge : ' . $e->getMessage() . "\n";
+}
 
 $organizationCatalogMigrate = require $root . '/bootstrap/organization_catalog_migration.php';
 try {

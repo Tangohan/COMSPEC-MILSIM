@@ -86,6 +86,7 @@ final class AuditActionLabel
         'deployment.tester_member_removed' => 'Déploiement — membre retiré d’une communauté de test',
         'deployment.campaign_created' => 'Déploiement — campagne de publication créée',
         'deployment.campaign_failed' => 'Déploiement — campagne de publication en échec',
+        'user.identity_merged' => 'Comptes du même e-mail réunis en une seule identité',
         'user.status_updated' => 'Statut du compte modifié',
         'user.deleted' => 'Compte supprimé (anonymisé)',
         'user.purged' => 'Compte supprimé définitivement',

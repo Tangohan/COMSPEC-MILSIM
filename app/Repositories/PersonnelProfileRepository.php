@@ -16,16 +16,33 @@ class PersonnelProfileRepository
         $this->pdo = Database::getPdo();
     }
 
-    public function getByUserId(int $userId): ?array
+    public function getByUserId(int $userId, ?int $tenantId = null): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM personnel_profiles WHERE user_id = ? LIMIT 1');
-        $stmt->execute([$userId]);
+        if ($tenantId !== null && $tenantId > 0 && $this->hasTenantIdColumn()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT * FROM personnel_profiles WHERE user_id = ? AND tenant_id = ? LIMIT 1'
+            );
+            $stmt->execute([$userId, $tenantId]);
+        } else {
+            $stmt = $this->pdo->prepare('SELECT * FROM personnel_profiles WHERE user_id = ? LIMIT 1');
+            $stmt->execute([$userId]);
+        }
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
             return null;
         }
 
         return $this->withPrimaryJobRoleBridge($row);
+    }
+
+    private function hasTenantIdColumn(): bool
+    {
+        $st = $this->pdo->query(
+            "SELECT 1 FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = 'tenant_id' LIMIT 1"
+        );
+
+        return $st !== false && (bool) $st->fetchColumn();
     }
 
     /**
@@ -82,8 +99,16 @@ class PersonnelProfileRepository
         return $row;
     }
 
-    public function ensureRecord(int $userId): void
+    public function ensureRecord(int $userId, ?int $tenantId = null): void
     {
+        if ($tenantId !== null && $tenantId > 0 && $this->hasTenantIdColumn()) {
+            $stmt = $this->pdo->prepare(
+                'INSERT IGNORE INTO personnel_profiles (user_id, tenant_id, created_at, updated_at) VALUES (?, ?, NOW(), NOW())'
+            );
+            $stmt->execute([$userId, $tenantId]);
+
+            return;
+        }
         $stmt = $this->pdo->prepare('INSERT IGNORE INTO personnel_profiles (user_id, created_at, updated_at) VALUES (?, NOW(), NOW())');
         $stmt->execute([$userId]);
     }
@@ -104,9 +129,16 @@ class PersonnelProfileRepository
 
     public function updatePortraitPath(int $userId, ?string $path): bool
     {
-        $this->ensureRecord($userId);
-        $stmt = $this->pdo->prepare('UPDATE personnel_profiles SET character_portrait_path = ?, updated_at = NOW() WHERE user_id = ?');
-        $stmt->execute([$path, $userId]);
+        $tenantId = $this->currentTenantIdForUser($userId);
+        $this->ensureRecord($userId, $tenantId);
+        $sql = 'UPDATE personnel_profiles SET character_portrait_path = ?, updated_at = NOW() WHERE user_id = ?';
+        $params = [$path, $userId];
+        if ($tenantId !== null && $this->hasTenantIdColumn()) {
+            $sql .= ' AND tenant_id = ?';
+            $params[] = $tenantId;
+        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         return $stmt->rowCount() > 0;
     }
 
@@ -142,11 +174,26 @@ class PersonnelProfileRepository
         if (empty($set)) {
             return true;
         }
+        $tenantId = $this->currentTenantIdForUser($userId);
+        $this->ensureRecord($userId, $tenantId);
+        $sql = 'UPDATE personnel_profiles SET ' . implode(', ', $set) . ', updated_at = NOW() WHERE user_id = ?';
         $params[] = $userId;
-        $this->ensureRecord($userId);
-        $stmt = $this->pdo->prepare('UPDATE personnel_profiles SET ' . implode(', ', $set) . ', updated_at = NOW() WHERE user_id = ?');
+        if ($tenantId !== null && $this->hasTenantIdColumn()) {
+            $sql .= ' AND tenant_id = ?';
+            $params[] = $tenantId;
+        }
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->rowCount() > 0;
+    }
+
+    private function currentTenantIdForUser(int $userId): ?int
+    {
+        $st = $this->pdo->prepare('SELECT tenant_id FROM users WHERE id = ? LIMIT 1');
+        $st->execute([$userId]);
+        $tid = (int) $st->fetchColumn();
+
+        return $tid > 0 ? $tid : null;
     }
 
     public function updateMatricule(int $userId, string $matricule): bool
