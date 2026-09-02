@@ -58,5 +58,7 @@ final class UserIdentityOneAccountAssetTest extends TestCase
         self::assertStringContainsString('user_identity_merges', $svc);
         self::assertStringContainsString('source_user_id', $mig);
         self::assertStringContainsString('personnel_profiles', $mig);
+        self::assertFileExists(dirname(__DIR__, 2) . '/app/Services/Identity/UserIdentityProfileRestoreService.php');
+        self::assertStringContainsString('UserIdentityProfileRestoreService', $svc);
     }
 }

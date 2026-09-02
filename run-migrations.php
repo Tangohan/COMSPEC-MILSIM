@@ -2600,6 +2600,13 @@ try {
     foreach ($mergeSummary['errors'] ?? [] as $err) {
         echo '  [ATTENTION] fusion : ' . $err . "\n";
     }
+    echo "Reprise des dossiers laissés sur les comptes réunis...\n";
+    $restore = new \App\Services\Identity\UserIdentityProfileRestoreService($pdo);
+    $restored = $restore->restoreAll();
+    echo '  fusions=' . (int) ($restored['merges'] ?? 0)
+        . ' dossiers RH=' . (int) ($restored['personnel'] ?? 0)
+        . ' fiches civiles=' . (int) ($restored['user_profiles'] ?? 0)
+        . ' fiches communauté=' . (int) ($restored['community_profiles'] ?? 0) . "\n";
 } catch (Throwable $e) {
     echo '  [ATTENTION] user_identity_merge : ' . $e->getMessage() . "\n";
 }

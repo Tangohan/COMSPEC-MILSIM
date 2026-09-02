@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(382, '2026-09-02', 'Les dossiers réapparaissent après la réunion des comptes', 'Après la mise à jour qui réunit les comptes d’une même adresse e-mail, les fiches (nom, indicatif, photo, dossier RH) se relisent dans la communauté en cours. Les informations restées sur l’ancien compte sont reprises, sans écraser ce qui a déjà été resaisi. Rechargez le dossier et le tableau de bord', [], [], [
+                'Les fiches s’affichaient vides alors que les informations étaient encore enregistrées sur l’ancien compte réuni',
+            ], ['personnel', 'platform'], [
+                'Mettez à jour le portail, puis ouvrez le dossier d’un membre. Si une ancienne page vide reste affichée, actualisez-la.',
+            ], 'Portail'),
             $pr(381, '2026-09-02', 'Le fichier joint se consulte et se retire depuis la fiche', 'Sur la page de modification d’un document, le fichier actuellement joint s’ouvre ou se télécharge. On peut le retirer sans supprimer la fiche. Rechargez la page du document', [], [], [
                 'Le fichier joint n’était ni consultable ni retirable depuis la modification de la fiche',
             ], ['platform'], [

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Core\Session;
+use App\Services\Identity\UserIdentityMergeRules;
 use PDO;
 
 /**
@@ -23,17 +25,42 @@ class PersonnelExtrasRepository
 
     public function getByUserId(int $userId, ?int $tenantId = null): ?array
     {
-        if ($tenantId !== null && $tenantId > 0 && $this->hasTenantIdColumn()) {
-            $stmt = $this->pdo->prepare(
-                'SELECT * FROM personnel_extras WHERE user_id = ? AND tenant_id = ? LIMIT 1'
-            );
-            $stmt->execute([$userId, $tenantId]);
-        } else {
-            $stmt = $this->pdo->prepare('SELECT * FROM personnel_extras WHERE user_id = ? LIMIT 1');
-            $stmt->execute([$userId]);
+        if ($userId < 1) {
+            return null;
         }
+        $preferredTenantId = ($tenantId !== null && $tenantId > 0)
+            ? $tenantId
+            : $this->preferredTenantId($userId);
+        if ($this->hasTenantIdColumn()) {
+            $stmt = $this->pdo->prepare('SELECT * FROM personnel_extras WHERE user_id = ?');
+            $stmt->execute([$userId]);
+            $row = UserIdentityMergeRules::pickPreferredDossierRow(
+                $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [],
+                $preferredTenantId
+            );
+
+            return $row ?: null;
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM personnel_extras WHERE user_id = ? LIMIT 1');
+        $stmt->execute([$userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
         return $row ?: null;
+    }
+
+    private function preferredTenantId(int $userId): int
+    {
+        try {
+            $sessionTid = (int) Session::get('tenant_id', 0);
+            if ($sessionTid > 0) {
+                return $sessionTid;
+            }
+        } catch (\Throwable) {
+        }
+        $st = $this->pdo->prepare('SELECT tenant_id FROM users WHERE id = ? LIMIT 1');
+        $st->execute([$userId]);
+
+        return (int) $st->fetchColumn();
     }
 
     private function hasTenantIdColumn(): bool

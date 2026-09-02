@@ -107,7 +107,7 @@ class UserRepository
             if (!array_key_exists($key, $profile)) {
                 continue;
             }
-            if ($key === 'display_name' && trim((string) ($profile[$key] ?? '')) === '') {
+            if (!UserIdentityMergeRules::shouldOverlayCommunityField($key, $profile[$key], $profile, $user)) {
                 continue;
             }
             $user[$key] = $profile[$key];

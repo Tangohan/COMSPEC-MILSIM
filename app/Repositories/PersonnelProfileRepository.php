@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Core\Session;
+use App\Services\Identity\UserIdentityMergeRules;
 use PDO;
 
 class PersonnelProfileRepository
@@ -18,16 +20,24 @@ class PersonnelProfileRepository
 
     public function getByUserId(int $userId, ?int $tenantId = null): ?array
     {
-        if ($tenantId !== null && $tenantId > 0 && $this->hasTenantIdColumn()) {
-            $stmt = $this->pdo->prepare(
-                'SELECT * FROM personnel_profiles WHERE user_id = ? AND tenant_id = ? LIMIT 1'
+        if ($userId < 1) {
+            return null;
+        }
+        $preferredTenantId = ($tenantId !== null && $tenantId > 0)
+            ? $tenantId
+            : ($this->preferredTenantId($userId) ?? 0);
+        if ($this->hasTenantIdColumn()) {
+            $stmt = $this->pdo->prepare('SELECT * FROM personnel_profiles WHERE user_id = ?');
+            $stmt->execute([$userId]);
+            $row = UserIdentityMergeRules::pickPreferredDossierRow(
+                $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [],
+                $preferredTenantId
             );
-            $stmt->execute([$userId, $tenantId]);
         } else {
             $stmt = $this->pdo->prepare('SELECT * FROM personnel_profiles WHERE user_id = ? LIMIT 1');
             $stmt->execute([$userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
         }
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
             return null;
         }
@@ -67,9 +77,10 @@ class PersonnelProfileRepository
         if ($userId < 1) {
             return $row;
         }
-        $tenantStmt = $this->pdo->prepare('SELECT tenant_id FROM users WHERE id = ? LIMIT 1');
-        $tenantStmt->execute([$userId]);
-        $tenantId = (int) $tenantStmt->fetchColumn();
+        $tenantId = (int) ($row['tenant_id'] ?? 0);
+        if ($tenantId < 1) {
+            $tenantId = $this->preferredTenantId($userId) ?? 0;
+        }
         if ($tenantId < 1) {
             return $row;
         }
@@ -129,7 +140,7 @@ class PersonnelProfileRepository
 
     public function updatePortraitPath(int $userId, ?string $path): bool
     {
-        $tenantId = $this->currentTenantIdForUser($userId);
+        $tenantId = $this->preferredTenantId($userId);
         $this->ensureRecord($userId, $tenantId);
         $sql = 'UPDATE personnel_profiles SET character_portrait_path = ?, updated_at = NOW() WHERE user_id = ?';
         $params = [$path, $userId];
@@ -174,7 +185,7 @@ class PersonnelProfileRepository
         if (empty($set)) {
             return true;
         }
-        $tenantId = $this->currentTenantIdForUser($userId);
+        $tenantId = $this->preferredTenantId($userId);
         $this->ensureRecord($userId, $tenantId);
         $sql = 'UPDATE personnel_profiles SET ' . implode(', ', $set) . ', updated_at = NOW() WHERE user_id = ?';
         $params[] = $userId;
@@ -187,8 +198,17 @@ class PersonnelProfileRepository
         return $stmt->rowCount() > 0;
     }
 
-    private function currentTenantIdForUser(int $userId): ?int
+    private function preferredTenantId(int $userId): ?int
     {
+        $sessionTid = 0;
+        try {
+            $sessionTid = (int) Session::get('tenant_id', 0);
+        } catch (\Throwable) {
+            $sessionTid = 0;
+        }
+        if ($sessionTid > 0) {
+            return $sessionTid;
+        }
         $st = $this->pdo->prepare('SELECT tenant_id FROM users WHERE id = ? LIMIT 1');
         $st->execute([$userId]);
         $tid = (int) $st->fetchColumn();
