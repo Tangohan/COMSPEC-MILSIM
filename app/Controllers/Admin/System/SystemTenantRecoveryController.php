@@ -182,7 +182,7 @@ final class SystemTenantRecoveryController
             $actorId,
             'tenant',
             $tenantId,
-            null,
+            [],
             [
                 'recovery' => true,
                 'name' => (string) ($normalized['name'] ?? ''),

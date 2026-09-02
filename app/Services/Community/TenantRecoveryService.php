@@ -122,7 +122,7 @@ final class TenantRecoveryService
             'table_counts' => $counts,
             'total_rows' => $total,
             'identity_hints' => $this->getIdentityHints($tenantId),
-            'recent_purges' => $this->listRecentPurgesNearIncident($tenantId),
+            'recent_purges' => $this->listRecentPurges(),
         ];
     }
 
@@ -517,7 +517,7 @@ final class TenantRecoveryService
     /**
      * @return list<array<string, mixed>>
      */
-    private function listRecentPurgesNearIncident(int $tenantId): array
+    private function listRecentPurges(): array
     {
         if (!$this->tableExists('audit_logs')) {
             return [];
