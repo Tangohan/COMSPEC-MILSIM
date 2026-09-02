@@ -1,5 +1,7 @@
 # Configuration et déploiement
 
+Publication contrôlée ATHENA C2 : **ATP-A3-11** (`docs/technical/ATP-ATHENA-DEPLOYMENT.md`).
+
 ## Variables d’environnement
 
 Le fichier **`.env`** (non versionné) reprend le modèle **`.env.example`**. Principales familles :

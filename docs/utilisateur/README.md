@@ -2,6 +2,8 @@
 
 Bienvenue dans la documentation **fonctionnelle** du portail **Athena**. Le **guide intégré** (page « Guide du portail », connecté) est la référence principale pour les membres et l’encadrement : manuel métier exhaustif, chapitre par chapitre. Les fiches Markdown ci-dessous complètent ou détaillent certains modules pour l’équipe projet.
 
+Pour **ATHENA C2 / ATAK / Overwatch**, les publications contrôlées sont TM-A3-21 (opérateur), SOP-A3-01 (procédures) et TM-A3-31 (administrateur). Index : [docs/README.md](../README.md).
+
 ## À qui s’adresse ce guide ?
 
 - **Membres** d’une communauté (lecture, participation, formations, documents autorisés).
