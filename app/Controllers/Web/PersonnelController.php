@@ -873,8 +873,8 @@ class PersonnelController
             'canAccessRhView' => $canAccessRhView,
             'personnelViewMode' => $personnelViewMode,
             'personnelFilePage' => true,
-            'layoutMainCompact' => $canAccessRhView && $personnelViewMode === '',
-            'compactPortalMain' => $canAccessRhView && $personnelViewMode === '',
+            'layoutMainCompact' => true,
+            'compactPortalMain' => true,
         ]);
     }
 

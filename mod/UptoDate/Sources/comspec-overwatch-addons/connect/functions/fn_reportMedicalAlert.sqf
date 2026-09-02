@@ -102,6 +102,9 @@ private _msg = format [
     _grid
 ];
 
+if !([] call comspec_overwatch_connect_fnc_isReady) then {
+    ["WARN", "Medical", "Alerte médicale non transmise au poste — liaison absente"] call comspec_overwatch_connect_fnc_log;
+};
 [player, "CHAT", _msg, "", "INFANTRY", 0.95] call comspec_overwatch_connect_fnc_sendIntel;
 
 private _alert = createHashMapFromArray [

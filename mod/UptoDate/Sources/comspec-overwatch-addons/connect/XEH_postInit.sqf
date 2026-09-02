@@ -124,7 +124,6 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
             params ["_st"];
             if (!(_st in ["ready", "linked"])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-            if (!(missionNamespace getVariable ["COMSPEC_BootHandshakeDone", false])) exitWith {};
             missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", true, false];
             [] call comspec_overwatch_connect_fnc_startSyncLoops;
         }] call CBA_fnc_addEventHandler;
@@ -162,8 +161,17 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         ["INFO", "Athena", format ["Handshake terminé ok=%1", _ok]] call comspec_overwatch_connect_fnc_log;
         missionNamespace setVariable ["COMSPEC_BootHandshakeDone", true, false];
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if !([] call comspec_overwatch_connect_fnc_isReady) then {
+            ["WARN", "Boot", "Session Athena absente — attente d’une connexion"] call comspec_overwatch_connect_fnc_log;
+            private _loginUntil = diag_tickTime + 600;
+            waitUntil {
+                ([] call comspec_overwatch_connect_fnc_isReady)
+                || {diag_tickTime > _loginUntil}
+            };
+        };
         if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {
-            ["WARN", "Boot", "Session Athena absente — sync au prochain login"] call comspec_overwatch_connect_fnc_log;
+            ["WARN", "Boot", "Toujours hors liaison — sync au prochain login"] call comspec_overwatch_connect_fnc_log;
+            missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", true, false];
         };
 
         private _deadline = diag_tickTime + 90;

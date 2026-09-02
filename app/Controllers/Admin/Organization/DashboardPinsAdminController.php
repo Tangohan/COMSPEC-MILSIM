@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin\Organization;
 
+use App\Authorization\DashboardPinsAccess;
 use App\Core\Csrf;
-use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -255,7 +255,7 @@ final class DashboardPinsAdminController
         if (!Session::get('user_id')) {
             return Response::redirect(url('login'));
         }
-        if (Gate::getInstance()->deny('dashboard.pins.manage')) {
+        if (!DashboardPinsAccess::canManage()) {
             Session::flash('error', 'Vous n’avez pas la permission de gérer les raccourcis du tableau de bord.');
 
             return Response::redirect(url('dashboard'));

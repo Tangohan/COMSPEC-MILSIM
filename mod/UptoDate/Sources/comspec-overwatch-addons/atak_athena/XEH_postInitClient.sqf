@@ -40,6 +40,10 @@ call _forceCamCapture;
 
 [] call comspec_overwatch_atak_athena_fnc_athena_installPhoneGeolocMap;
 [] call comspec_overwatch_atak_athena_fnc_athena_installMapHud;
+[] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels;
+[{ [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels; }, [], 1] call CBA_fnc_waitAndExecute;
+[{ [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels; }, [], 3] call CBA_fnc_waitAndExecute;
+[{ [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels; }, [], 8] call CBA_fnc_waitAndExecute;
 [] call comspec_overwatch_atak_athena_fnc_athena_installReportsLayout;
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installReportsLayout; }, [], 1] call CBA_fnc_waitAndExecute;
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installReportsLayout; }, [], 3] call CBA_fnc_waitAndExecute;

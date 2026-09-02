@@ -1,5 +1,5 @@
 /* Athena PWA — cache shell uniquement (jamais les pages HTML dynamiques). */
-const CACHE_NAME = 'athena-shell-v7';
+const CACHE_NAME = 'athena-shell-v8';
 const SHELL = [
   './manifest.webmanifest',
   './assets/css/design-system.css',
@@ -74,6 +74,11 @@ function shouldBypassServiceWorker(request) {
   } catch (e) {
     path = url;
   }
+  try {
+    if (new URL(url).origin !== self.location.origin) {
+      return true;
+    }
+  } catch (e) {}
   if (url.indexOf('/api/') !== -1 || path.indexOf('/api/') !== -1) {
     return true;
   }

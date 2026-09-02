@@ -122,7 +122,7 @@ class COMSPEC_AthenaAuth_Dialog {
             y = 0.542 * safezoneH + safezoneY;
             w = 0.34 * safezoneW;
             h = 0.034 * safezoneH;
-            action = "[] call comspec_overwatch_connect_fnc_loginSteam;";
+            action = "[false] spawn comspec_overwatch_connect_fnc_loginSteam;";
         };
         class OperatorPortrait: RscPictureKeepAspect {
             idc = 9431;

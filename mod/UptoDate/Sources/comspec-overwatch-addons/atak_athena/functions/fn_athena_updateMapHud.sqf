@@ -2,8 +2,9 @@
     Tick HUD carte ATAK Enhanced :
     - cartouche curseur (GRILLE, DIST, SOL, GIS, PORTÉE, écart d’altitude)
     - cartouche unité suivie (Indicatif, Rôle, Groupe, Grille, altitude, vitesse)
-    - cap en degres vrais, zoom +/−
+    - zoom +/− en haut à droite
     - restyle charbon / cyan du tiroir IceMan (fond, cases indicatif, outils)
+    Ne pas recouvrir la boussole native (haut gauche) ni les outils carte (bas gauche).
     Les cartouches restent DANS le rectangle carte (jamais sur le tiroir droit).
 */
 if (!hasInterface) exitWith {};
@@ -18,6 +19,7 @@ private _idcCursor = 99887811;
 private _idcUnit = 99887812;
 private _idcZoomIn = 99887820;
 private _idcZoomOut = 99887821;
+private _idcAcct = 99887813;
 
 private _fncHide = {
     params ["_d"];
@@ -25,7 +27,7 @@ private _fncHide = {
     {
         private _c = _d displayCtrl _x;
         if (!isNull _c) then { _c ctrlShow false; };
-    } forEach [99887810, 99887811, 99887812, 99887820, 99887821];
+    } forEach [99887810, 99887811, 99887812, 99887813, 99887820, 99887821];
 };
 
 if (isNull _disp) exitWith {};
@@ -96,7 +98,8 @@ if (!isNull _bgGroup) then {
 {
     private _c = _disp displayCtrl (17000 + _x);
     if (isNull _c) then { continue };
-    _c ctrlSetBackgroundColor [0.18, 0.14, 0.04, 0.88];
+    // Boussole native : fond transparent, sinon un carré sombre la recouvre.
+    _c ctrlSetBackgroundColor [0, 0, 0, 0];
     _c ctrlSetTextColor _yellow;
 } forEach [2615, 2616];
 
@@ -127,22 +130,21 @@ private _fncEnsure = {
 private _heading = [_disp, _idcHeading, "RscStructuredText"] call _fncEnsure;
 private _cursorBox = [_disp, _idcCursor, "RscStructuredText"] call _fncEnsure;
 private _unitBox = [_disp, _idcUnit, "RscStructuredText"] call _fncEnsure;
+private _acctBanner = [_disp, _idcAcct, "RscStructuredText"] call _fncEnsure;
 private _zoomIn = [_disp, _idcZoomIn, "RscButton"] call _fncEnsure;
 private _zoomOut = [_disp, _idcZoomOut, "RscButton"] call _fncEnsure;
 
 if (isNull _heading || {isNull _cursorBox} || {isNull _unitBox}) exitWith {};
 
 private _pad = _mw * 0.012;
-private _headW = (_mw * 0.16) max 0.07;
-private _headH = (_mh * 0.055) max 0.028;
-_heading ctrlSetPosition [_mx + _pad, _my + _pad, _headW, _headH];
-_heading ctrlSetBackgroundColor [0.16, 0.12, 0.02, 0.92];
+// Cap : la boussole IceMan (2615 / 2616) occupe déjà le haut gauche — ne pas empiler un second cartouche.
+_heading ctrlShow false;
 _heading ctrlEnable false;
 
 private _zW = (_mw * 0.046) max 0.028;
 private _zH = (_mh * 0.055) max 0.028;
-private _zX = _mx + _pad;
-private _zY = _my + _pad + _headH + (_mh * 0.012);
+private _zX = _mx + _mw - _pad - _zW;
+private _zY = _my + _pad;
 _zoomIn ctrlSetPosition [_zX, _zY, _zW, _zH];
 _zoomOut ctrlSetPosition [_zX, _zY + _zH + (_mh * 0.006), _zW, _zH];
 {
@@ -170,26 +172,45 @@ if (isNil {_zoomOut getVariable "COMSPEC_ATAK_ZoomWired"}) then {
     }];
 };
 
-private _boxW = (_mw * 0.38) min 0.32;
-if (_boxW < 0.12) then { _boxW = (_mw * 0.46) max 0.10; };
-private _boxH = (_mh * 0.22) max 0.082;
+private _boxW = (_mw * 0.34) min 0.26;
+if (_boxW < 0.10) then { _boxW = (_mw * 0.40) max 0.09; };
+private _boxH = (_mh * 0.195) max 0.072;
+private _gapB = (_mw * 0.010) max 0.004;
+private _leftKeep = (_mw * 0.28) max 0.08;
 private _boxY = _my + _mh - _boxH - _pad;
-_cursorBox ctrlSetPosition [_mx + _pad, _boxY, _boxW, _boxH];
+private _rightX = _mx + _mw - _pad - _boxW;
+private _cursorX = _rightX - _gapB - _boxW;
+private _unitX = _rightX;
+private _unitY = _boxY;
+private _cursorY = _boxY;
+if (_cursorX < (_mx + _leftKeep)) then {
+    _cursorX = _rightX;
+    _unitY = _boxY - _boxH - (_mh * 0.008);
+};
+_cursorBox ctrlSetPosition [_cursorX, _cursorY, _boxW, _boxH];
 _cursorBox ctrlSetBackgroundColor _bgPanel;
 _cursorBox ctrlEnable false;
 
-private _unitX = _mx + _pad + _boxW + (_mw * 0.012);
-private _unitMax = _mx + _mw - _pad;
-if ((_unitX + _boxW) > _unitMax) then {
-    _unitX = _unitMax - _boxW;
-};
-if (_unitX < (_mx + _pad + 0.04)) then {
-    // Carte trop etroite : empiler sous le curseur n'est pas possible ; coller a droite du curseur.
-    _unitX = _mx + _mw - _boxW - _pad;
-};
-_unitBox ctrlSetPosition [_unitX, _boxY, _boxW, _boxH];
+_unitBox ctrlSetPosition [_unitX, _unitY, _boxW, _boxH];
 _unitBox ctrlSetBackgroundColor _bgPanel;
 _unitBox ctrlEnable false;
+
+private _acctLinked = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
+if (!_acctLinked && {!isNull _acctBanner}) then {
+    private _banH = (_mh * 0.038) max 0.018;
+    private _banY = (_unitY - _banH - (_mh * 0.004)) max (_my + _pad);
+    _acctBanner ctrlSetPosition [_unitX, _banY, _boxW, _banH];
+    _acctBanner ctrlSetBackgroundColor [0.28, 0.14, 0.04, 0.94];
+    _acctBanner ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.58' color='#FFD27A' align='center'>Compte non connecté</t>";
+    _acctBanner ctrlEnable false;
+    _acctBanner ctrlShow true;
+    _acctBanner ctrlCommit 0;
+} else {
+    if (!isNull _acctBanner) then {
+        _acctBanner ctrlShow false;
+        _acctBanner ctrlCommit 0;
+    };
+};
 
 private _fncGrid = {
     params ["_pos"];
@@ -278,19 +299,9 @@ if (!(_unit isKindOf "CAManBase")) then {
     if (_crew isNotEqualTo []) then { _man = _crew select 0; };
 };
 
-private _cs = "";
-if (_man isEqualTo player) then {
-    if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
-        _cs = [true] call comspec_overwatch_connect_fnc_getCallsign;
-    };
-} else {
-    _cs = _man getVariable ["COMSPEC_Callsign", ""];
-};
+private _cs = [_man] call comspec_overwatch_atak_athena_fnc_athena_bftUnitLabel;
 if (!(_cs isEqualType "")) then { _cs = str _cs; };
 _cs = trim _cs;
-if (!isNil "comspec_overwatch_connect_fnc_isUsableCallsign") then {
-    if (!([_cs] call comspec_overwatch_connect_fnc_isUsableCallsign)) then { _cs = ""; };
-};
 if (_cs isEqualTo "") then { _cs = "—"; };
 
 private _role = "";
@@ -319,17 +330,12 @@ private _unitHtml = format [
     _spd
 ];
 
-private _hdgHtml = format [
-    "<t font='EtelkaMonospacePro' size='0.78' color='#FFD01F' align='center' valign='middle'>%1%2T</t>",
-    [_playerHdg, 3] call (missionNamespace getVariable ["CBA_fnc_formatNumber", {str (_this select 0)}]),
-    toString [176]
-];
-
-_heading ctrlSetStructuredText parseText _hdgHtml;
 _cursorBox ctrlSetStructuredText parseText _cursorHtml;
 _unitBox ctrlSetStructuredText parseText _unitHtml;
 
 {
     _x ctrlShow true;
     _x ctrlCommit 0;
-} forEach [_heading, _cursorBox, _unitBox, _zoomIn, _zoomOut];
+} forEach [_cursorBox, _unitBox, _zoomIn, _zoomOut];
+_heading ctrlShow false;
+_heading ctrlCommit 0;

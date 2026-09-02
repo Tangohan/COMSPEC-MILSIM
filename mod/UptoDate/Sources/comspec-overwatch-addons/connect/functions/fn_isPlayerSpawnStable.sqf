@@ -19,7 +19,4 @@ if (isMultiplayer) then {
 private _pos = getPosWorld player;
 if ((abs (_pos select 0) < 1) && {abs (_pos select 1) < 1}) exitWith { false };
 
-// Armé seulement après la fenêtre de stabilisation post-handshake (voir XEH_postInit)
-if (!(missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false])) exitWith { false };
-
 true

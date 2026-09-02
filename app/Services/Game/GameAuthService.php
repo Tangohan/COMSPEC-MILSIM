@@ -173,7 +173,9 @@ final class GameAuthService
     }
 
     /**
-     * SteamID seul n’est jamais une preuve : device + jeton de liaison Athena obligatoire.
+     * Connexion jeu par Steam déjà associé au compte Athena (fiche Effectifs ou compte).
+     * Un identifiant inconnu du poste reste refusé. Un jeton de poste, s’il est présent
+     * et valide, est honoré ; s’il manque, le Steam lié suffit.
      *
      * @param array<string, mixed> $body
      * @return array{ok: bool, status: int, payload: array<string, mixed>}
@@ -183,24 +185,19 @@ final class GameAuthService
         $deviceId = $this->sanitizeDeviceId((string) ($body['device_id'] ?? ''));
         $steamId = SteamId::normalize((string) ($body['steam_id'] ?? $body['steam_uid'] ?? ''));
         $pairing = trim((string) ($body['pairing_token'] ?? ''));
-        if ($deviceId === '' || !$this->hasSteamId($steamId) || strlen($pairing) < 32) {
+        if ($deviceId === '' || !$this->hasSteamId($steamId)) {
             return $this->fail('STEAM_NOT_LINKED', 401);
         }
-        $account = $this->accounts->findBySteamId($steamId);
-        if ($account === null) {
+        $account = $this->resolveAccountByLinkedSteam($steamId);
+        if ($account === null || (string) ($account['status'] ?? '') !== 'active') {
             return $this->fail('STEAM_NOT_LINKED', 401);
         }
-        $row = $this->accounts->findPairing((int) $account['id'], $deviceId);
-        if ($row === null) {
-            return $this->fail('STEAM_NOT_LINKED', 401);
+        if (strlen($pairing) >= 32) {
+            $row = $this->accounts->findPairing((int) $account['id'], $deviceId);
+            if ($row !== null && hash_equals((string) ($row['pairing_token_hash'] ?? ''), hash('sha256', $pairing))) {
+                $this->accounts->touchPairing((int) $row['id']);
+            }
         }
-        if (!hash_equals((string) $row['pairing_token_hash'], hash('sha256', $pairing))) {
-            return $this->fail('STEAM_NOT_LINKED', 401);
-        }
-        if (SteamId::normalize((string) ($row['steam_id'] ?? '')) !== $steamId) {
-            return $this->fail('STEAM_NOT_LINKED', 401);
-        }
-        $this->accounts->touchPairing((int) $row['id']);
         $body['steam_id'] = $steamId;
 
         return $this->issueForAccount($account, $body);
@@ -628,6 +625,46 @@ final class GameAuthService
     }
 
     /**
+     * Compte Athena déjà lié à cet identifiant Steam (compte ou fiche Effectifs).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function resolveAccountByLinkedSteam(string $steamId): ?array
+    {
+        if (!$this->hasSteamId($steamId)) {
+            return null;
+        }
+        $account = $this->accounts->findBySteamId($steamId);
+        if ($account !== null) {
+            return $account;
+        }
+        $user = $this->users->findBySteamId($steamId);
+        if ($user === null) {
+            return null;
+        }
+        $email = strtolower(trim((string) ($user['email'] ?? '')));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return null;
+        }
+        $account = $this->accounts->findByEmail($email);
+        if ($account === null) {
+            $account = $this->promoteAccountFromUsers($email, (string) ($user['password_hash'] ?? ''));
+        }
+        if ($account === null) {
+            return null;
+        }
+        $this->accounts->assignSteamIdIfEmpty((int) $account['id'], $steamId);
+        $account['steam_id'] = $steamId;
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        $userId = (int) ($user['id'] ?? 0);
+        if ($tenantId > 0 && $userId > 0) {
+            $this->accounts->ensureMembership((int) $account['id'], $tenantId, $userId);
+        }
+
+        return $account;
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     private function promoteAccountFromUsers(string $email, ?string $passwordHash): ?array
@@ -647,7 +684,7 @@ final class GameAuthService
         $primary = $users[0];
         $hash = $passwordHash ?: (string) ($primary['password_hash'] ?? '');
         if ($hash === '') {
-            return null;
+            $hash = password_hash(bin2hex(random_bytes(24)), PASSWORD_DEFAULT);
         }
         $steam = null;
         foreach ($users as $row) {

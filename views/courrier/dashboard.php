@@ -25,6 +25,9 @@ $h = static fn (string $s): string => $baseUrl . '/courrier/history?status=' . r
                 <span class="min-w-[1.25rem] h-6 px-1.5 rounded-full bg-sky-600 text-white text-xs font-bold flex items-center justify-center"><?= $nu > 99 ? '99+' : $nu ?></span>
                 <?php endif; ?>
             </a>
+            <a href="<?= $baseUrl ?>/courrier/signature" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-800 shadow-sm hover:border-sky-300 hover:bg-sky-50 transition-colors">
+                Ma signature
+            </a>
             <a href="<?= $baseUrl ?>/courrier/editor" class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-black uppercase tracking-wide shadow-md hover:bg-emerald-600 transition-colors">
                 Nouveau document
             </a>
@@ -134,6 +137,7 @@ $h = static fn (string $s): string => $baseUrl . '/courrier/history?status=' . r
     </div>
 
     <nav class="mt-12 flex flex-wrap gap-2 pt-8 border-t border-slate-200">
+        <a href="<?= $baseUrl ?>/courrier/signature" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">Ma signature</a>
         <a href="<?= $baseUrl ?>/courrier/templates" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">Modèles</a>
         <a href="<?= $baseUrl ?>/courrier/presets" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">Formats</a>
         <a href="<?= $baseUrl ?>/courrier/history" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">Historique complet</a>

@@ -42,7 +42,25 @@ final class AtakC2PlayerMarkerAppearanceAssetTest extends TestCase
         self::assertStringContainsString('var(--atak-unit-label-size, 11px)', $css);
         self::assertStringContainsString('overflow: visible !important', $css);
 
-        self::assertStringContainsString('labelSize: 11', $map);
+        self::assertStringContainsString('c2Ready', $map);
+        self::assertStringContainsString('dessiner les effectifs en secours', $map);
+        self::assertStringContainsString('showLabel: true', $map);
+        self::assertStringContainsString('refreshMarkersAgainstUnits', $map);
+
+        self::assertStringContainsString('ORIGIN_EPS', $bridge);
+        self::assertStringContainsString('grid_ref', $bridge);
+        self::assertStringContainsString("e.status === 'LOST' && !e.keepLastKnown", $bridge);
+        self::assertStringContainsString('keepLastKnown', $bridge);
+        self::assertStringContainsString('display_call_sign', $bridge);
+        self::assertStringContainsString("else live = 'ONLINE'", $bridge);
+
+        self::assertStringContainsString('labelW', $manager);
+        self::assertStringContainsString('tac-marker-wrap', $manager);
+        self::assertStringContainsString('zIndexOffset: 850', $manager);
+
+        self::assertStringContainsString('tac-marker-wrap', $css);
+        self::assertStringContainsString('overflow: visible', $css);
+        self::assertStringContainsString('width: max-content', $css);
         self::assertStringContainsString('iconSize: 20', $map);
         self::assertStringContainsString('clampNum(src.labelSize, 9, 16', $map);
 

@@ -52,7 +52,7 @@
 # Types MIME explicites (évite un fallback HTML côté hébergeur)
 <IfModule mod_mime.c>
     AddType text/css .css
-    AddType application/javascript .js
+    AddType application/javascript .js .mjs
     AddType application/manifest+json .webmanifest
     AddType video/mp4 .mp4
     AddType video/webm .webm

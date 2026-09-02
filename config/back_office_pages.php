@@ -60,6 +60,14 @@ return [
         ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres avancés'],
         ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Relais Discord par événement, transmissions terrain et jetons d’accès.'],
         ['path' => 'back-office/dashboard-pins', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Raccourcis du portail'],
+        ['path' => 'back-office/dashboard-tenues/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · TABLEAU DE BORD', 'title' => 'Mettre une tenue en avant', 'css' => ['dashboard-impact.css'], 'quick' => [
+            ['label' => 'Vitrine', 'href' => 'back-office/dashboard-tenues'],
+            ['label' => 'Tableau de bord', 'href' => 'dashboard'],
+        ]],
+        ['path' => 'back-office/dashboard-tenues', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · TABLEAU DE BORD', 'title' => 'Tenues du tableau de bord', 'subtitle' => 'Cartes du catalogue : tenues, PNG de personnage et photo de fond.', 'css' => ['dashboard-impact.css'], 'quick' => [
+            ['label' => 'Ajouter', 'href' => 'back-office/dashboard-tenues/create'],
+            ['label' => 'Tableau de bord', 'href' => 'dashboard'],
+        ]],
         ['path' => 'back-office/integration-membres/modeles/nouveau', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · INTÉGRATION', 'title' => 'Nouveau modèle de parcours', 'subtitle' => 'Nom, durée, règle de référent et étapes proposées aux nouvelles arrivées.', 'css' => ['member-integration.css'], 'quick' => [
             ['label' => 'Modèles', 'href' => 'back-office/integration-membres/modeles'],
             ['label' => 'Parcours', 'href' => 'back-office/integration-membres'],
@@ -133,15 +141,22 @@ return [
         ['path' => 'back-office/roles-functions', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CELLULE S1', 'title' => 'Doctrine des fonctions', 'subtitle' => 'Référentiel des fonctions, relations de commandement entre les rôles de la communauté et suivi des postes qui doivent être pourvus.', 'css' => ['back-office-doctrine.css'], 'quick' => [
             ['label' => 'Référentiel', 'href' => 'back-office/roles-functions/referentiel'],
             ['label' => 'Catalogue', 'href' => 'back-office/roles-functions/catalogue'],
+            ['label' => 'Kits', 'href' => 'back-office/personnel-job-roles/kits'],
             ['label' => 'Obligatoires', 'href' => 'back-office/roles-functions#rf-obligatoires'],
             ['label' => 'Graphe', 'href' => 'back-office/roles-functions#rf-graphe'],
         ]],
         ['path' => 'back-office/roles', 'group' => 'Système', 'kicker' => 'RÔLES · TABLE', 'title' => 'Table des rôles', 'subtitle' => 'Liste structurée par famille opérationnelle.', 'css' => ['back-office-roles.css']],
+        ['path' => 'back-office/personnel-job-roles/kits', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Kits de fonctions', 'subtitle' => 'Choisissez les domaines de votre communauté, puis désignez qui les assure.', 'css' => ['back-office-catalog.css'], 'quick' => [
+            ['label' => 'Attributions', 'href' => 'back-office/personnel-job-roles/assignments'],
+            ['label' => 'Référentiel', 'href' => 'back-office/personnel-job-roles'],
+        ]],
         ['path' => 'back-office/personnel-job-roles/assignments', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Attributions métier', 'subtitle' => 'Attribuez les emplois du référentiel à chaque membre de l’effectif.', 'quick' => [
+            ['label' => 'Kits de fonctions', 'href' => 'back-office/personnel-job-roles/kits'],
             ['label' => 'Référentiel', 'href' => 'back-office/personnel-job-roles'],
             ['label' => 'Nouvel emploi', 'href' => 'back-office/personnel-job-roles/roles/create'],
         ]],
         ['path' => 'back-office/personnel-job-roles', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Emplois & missions', 'subtitle' => 'Référentiel des emplois métier, catégories et droits associés.', 'quick' => [
+            ['label' => 'Kits de fonctions', 'href' => 'back-office/personnel-job-roles/kits'],
             ['label' => 'Affectations', 'href' => 'back-office/personnel-job-roles/assignments'],
             ['label' => 'Nouvel emploi', 'href' => 'back-office/personnel-job-roles/roles/create'],
         ]],

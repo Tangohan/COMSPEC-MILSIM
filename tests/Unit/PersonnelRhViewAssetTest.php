@@ -50,6 +50,8 @@ final class PersonnelRhViewAssetTest extends TestCase
         self::assertStringContainsString('layout-page-compact', $layout);
         self::assertStringContainsString('layoutMainCompact', $layout);
         self::assertStringContainsString('min-h-0', $layout);
+        self::assertStringContainsString("str_replace(' min-h-screen'", $layout);
         self::assertStringContainsString('body.layout-page-compact .portal-footer', $footerCss);
+        self::assertStringContainsString('body.layout-page-compact {', $footerCss);
     }
 }

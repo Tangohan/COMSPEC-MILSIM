@@ -1995,7 +1995,9 @@ window.ATAKMap = (function () {
     applyDisplayPrefsToMapDom();
 
     /* Refonte C2 : symbologie tactique via MarkerManager — pas de double rendu legacy. */
-    if (window.ATAK_MAP_C2_V2) {
+    var c2Ready = !!(window.ATAK_MAP_C2_V2 && window.ATAKMarkerManagerC2
+      && typeof window.ATAKMarkerManagerC2.setEntities === 'function');
+    if (window.ATAK_MAP_C2_V2 && c2Ready) {
       Object.keys(unitsById).forEach(function (k) {
         if (unitsLayer && unitsById[k]) {
           try { unitsLayer.removeLayer(unitsById[k]); } catch (e) {}
@@ -2007,10 +2009,16 @@ window.ATAKMap = (function () {
           detail: { units: lastUnitsListForMap, fromReplay: !!opts.fromReplay },
         }));
       } catch (e) { /* ignore */ }
-      if (window.ATAKMarkerManagerC2 && typeof window.ATAKMarkerManagerC2.setEntities === 'function') {
-        /* Bridge déjà prêt : le gestionnaire C2 écoute aussi atak:units-updated */
-      }
+      try { refreshMarkersAgainstUnits(); } catch (e2) { /* ignore */ }
       return;
+    }
+    if (window.ATAK_MAP_C2_V2 && !c2Ready) {
+      try {
+        window.dispatchEvent(new CustomEvent('atak:units-updated', {
+          detail: { units: lastUnitsListForMap, fromReplay: !!opts.fromReplay },
+        }));
+      } catch (e3) { /* ignore */ }
+      /* C2 pas encore prêt : dessiner les effectifs en secours, sinon la carte reste vide. */
     }
 
     var prefs = getDisplayPrefs();
@@ -2201,7 +2209,7 @@ window.ATAKMap = (function () {
             aircraftType: extra.aircraft_type || u.aircraft_type || '',
             callSign: labelCs,
             heading: headingRounded,
-            showLabel: inclinedView(),
+            showLabel: true,
             size: prefs.iconSize,
             health: health,
             className: healthClass,
@@ -2403,6 +2411,7 @@ window.ATAKMap = (function () {
     updateMarkerById: updateMarkerById,
     setAirAssets: setAirAssets,
     setUnitsMarkers: setUnitsMarkers,
+    refreshMarkersAgainstUnits: refreshMarkersAgainstUnits,
     setReplayActive: setReplayActive,
     isReplayActive: isReplayActive,
     getUnitMarkerPriority: getUnitMarkerPriority,

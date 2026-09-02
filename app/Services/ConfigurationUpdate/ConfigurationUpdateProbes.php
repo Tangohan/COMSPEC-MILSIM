@@ -468,4 +468,61 @@ final class ConfigurationUpdateProbes
             return false;
         }
     }
+
+    public function hasFunctionKitsReviewed(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            return (new \App\Repositories\TenantFunctionKitRepository($this->pdo))->hasReviewed($tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function equipmentShowcaseApplicable(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        $type = TenantTypeConfig::normalizeType(
+            (string) ($this->tenants->getTenantType($tenantId) ?? TenantTypeConfig::TYPE_FULL)
+        );
+        if (!TenantTypeConfig::uriAllowed($type, 'equipment')) {
+            return false;
+        }
+
+        return $this->hasArsenalWardrobe($tenantId);
+    }
+
+    public function hasArsenalWardrobe(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare('SELECT 1 FROM arsenal_wardrobes WHERE tenant_id = ? LIMIT 1');
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function hasDashboardWardrobePin(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare('SELECT 1 FROM tenant_dashboard_wardrobe_pins WHERE tenant_id = ? LIMIT 1');
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 }

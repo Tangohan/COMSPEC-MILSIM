@@ -213,9 +213,60 @@ private _fnc_isConnErr = {
     || {(_d find "queue_full") >= 0}
 };
 
+// format %1 sur un grand nombre → "1.1141e+06" (le PNG disque n’a jamais ce nom).
+private _fnc_shotStem = {
+    private _a = (floor diag_tickTime) toFixed 0;
+    private _b = (floor random 99999) toFixed 0;
+    format ["COMSPEC_%1_%2", _a, _b]
+};
+
+private _fnc_armaPngCapture = {
+    // screenshot Arma EXIGE .png — sinon échec silencieux (wiki BI).
+    // Retour booléen false = HDR trop bas ou dossier Screenshots saturé (250 Mo).
+    private _png = ([] call _fnc_shotStem) + ".png";
+    private _ret = screenshot _png;
+    missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
+    if (_ret isEqualType true && {!_ret}) exitWith { "" };
+    _png
+};
+
+private _fnc_isJpegPath = {
+    params ["_p"];
+    if (!(_p isEqualType "") || {_p isEqualTo ""}) exitWith { false };
+    private _l = toLower _p;
+    (_l find ".jpg") >= 0 || {(_l find ".jpeg") >= 0}
+};
+
+private _fnc_stagePath = {
+    params ["_hint"];
+    if (!(_hint isEqualType "") || {_hint isEqualTo ""}) exitWith { "" };
+    if (isNil "comspec_overwatch_connect_fnc_extResult") exitWith { "" };
+    private _raw = ["COMSPECExtension" callExtension ["StageCapture", [_hint]]] call comspec_overwatch_connect_fnc_extResult;
+    if (!(_raw isEqualType "")) exitWith { "" };
+    _raw = [_raw] call _fnc_stripExtQuotes;
+    if ((count _raw) < 4) exitWith { "" };
+    if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith { "" };
+    private _body = _raw select [3, (count _raw) - 3];
+    _body = trim _body;
+    if ([_body] call _fnc_isJpegPath) exitWith { "" };
+    _body
+};
+
 private _fnc_notifyPath = {
     params ["_uploadPath"];
     if (!(_uploadPath isEqualType "") || {_uploadPath isEqualTo ""}) exitWith { false };
+    // JPEG IceMan / BCE : chemin fantôme (srcdir_missing). On n’envoie jamais ce nom.
+    if ([_uploadPath] call _fnc_isJpegPath) then {
+        private _png = [] call _fnc_armaPngCapture;
+        if (_png isNotEqualTo "") then { _uploadPath = _png; };
+    };
+    if ([_uploadPath] call _fnc_isJpegPath) exitWith {
+        missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
+        missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
+        false
+    };
+    private _staged = [_uploadPath] call _fnc_stagePath;
+    if (_staged isNotEqualTo "") then { _uploadPath = _staged; };
     ["NotifyNewPhoto", "attempt", [_uploadPath] call _fnc_basename, nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
     private _raw = ["COMSPECExtension" callExtension [
         "NotifyNewPhoto",
@@ -254,23 +305,6 @@ private _fnc_notifyPath = {
         };
     };
     _ok
-};
-
-// format %1 sur un grand nombre → "1.1141e+06" (le PNG disque n’a jamais ce nom).
-private _fnc_shotStem = {
-    private _a = (floor diag_tickTime) toFixed 0;
-    private _b = (floor random 99999) toFixed 0;
-    format ["COMSPEC_%1_%2", _a, _b]
-};
-
-private _fnc_armaPngCapture = {
-    // screenshot Arma EXIGE .png — sinon échec silencieux (wiki BI).
-    // Retour booléen false = HDR trop bas ou dossier Screenshots saturé (250 Mo).
-    private _png = ([] call _fnc_shotStem) + ".png";
-    private _ret = screenshot _png;
-    missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
-    if (_ret isEqualType true && {!_ret}) exitWith { "" };
-    _png
 };
 
 // Overlay ATAK / casque / tourelle : le JPEG BCE peut être la vue soldat si la
@@ -408,28 +442,30 @@ if (
     true
 };
 
-// Chemin fourni (IceMan / BCE / Photo Library) : JPEG déjà écrit par
-// Arma_ScreenShot_Extension — ne PAS reclicher un PNG Arma (gel thread jeu).
-// skipArmaShot=true (bridge ATAK) : on notifie le .jpg tel quel.
-// PNG seulement en repli, hors de la frame du clic.
+// Chemin fourni (IceMan / BCE / Photo Library). Un JPEG annoncé n’est pas un
+// fichier : on recliche un PNG Arma (Screenshots / AppData) et on envoie ça.
 if (_path isNotEqualTo "") exitWith {
+    private _isJpeg = [_path] call _fnc_isJpegPath;
     private _png = _path;
-    if (!_skipArmaShot) then {
+    if (!_skipArmaShot || _isJpeg) then {
         _png = [] call _fnc_armaPngCapture;
     };
-    if (!_skipArmaShot && {_png isEqualTo ""}) exitWith {
+    if (!_skipArmaShot && {_png isEqualTo ""} && {!_isJpeg}) exitWith {
+        missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
+        missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
+        ["COMSPEC_Error", ["Capture refusée par le jeu — passez la qualité HDR au moins sur Moyen (options d’affichage), puis reprenez la photo."]] call comspec_overwatch_connect_fnc_showNotification;
+        false
+    };
+    if (_isJpeg && {(_png isEqualTo "") || {[_png] call _fnc_isJpegPath}}) exitWith {
         missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
         missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
         ["COMSPEC_Error", ["Capture refusée par le jeu — passez la qualité HDR au moins sur Moyen (options d’affichage), puis reprenez la photo."]] call comspec_overwatch_connect_fnc_showNotification;
         false
     };
     private _ok = [_png] call _fnc_notifyPath;
-    if (!_ok && {_path isNotEqualTo _png}) then {
-        _ok = [_path] call _fnc_notifyPath;
-    };
     // not_connected / unauthorized : ne pas reclicher ni relancer — ça inonde le journal.
     if (!_ok && {[] call _fnc_isConnErr}) exitWith { false };
-    if (!_ok && {_skipArmaShot} && {_jpegRetryOnce}) then {
+    if (!_ok && {_skipArmaShot} && {_jpegRetryOnce} && {!_isJpeg}) then {
         [_path, _caption, _device, _feedId] spawn {
             params ["_path", "_caption", "_device", "_feedId"];
             uiSleep 0.45;
@@ -521,9 +557,6 @@ if (_path isEqualTo "") exitWith {
         false
     };
     private _ok = [_png] call _fnc_notifyPath;
-    if (!_ok && {_resolved isNotEqualTo ""}) then {
-        _ok = [_resolved] call _fnc_notifyPath;
-    };
     if (!_ok && {!_skipArmaShot} && {!([ ] call _fnc_isConnErr)}) then {
         [_png, _caption, _device, _feedId] spawn {
             params ["_png", "_caption", "_device", "_feedId"];

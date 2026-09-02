@@ -25,6 +25,10 @@ if (_alertId isEqualTo "") exitWith {
     };
 };
 
+if (_silent && {(missionNamespace getVariable ["COMSPEC_MedicalSilentClosedId", ""]) isEqualTo _alertId}) exitWith {
+    missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
+};
+
 private _by = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_by isEqualTo "") then { _by = name player; };
 
@@ -67,6 +71,7 @@ if (!_silent) then {
         "medical"
     ] call comspec_overwatch_connect_fnc_logAtakEvent;
 } else {
+    missionNamespace setVariable ["COMSPEC_MedicalSilentClosedId", _alertId, false];
     [
         "INFO",
         "Medical",

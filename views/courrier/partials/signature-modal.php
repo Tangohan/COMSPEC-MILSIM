@@ -37,7 +37,7 @@ $documentId = (int) ($document_id ?? 0);
                             <option :value="String(s.id)" x-text="s.name || ('Signature #' + s.id)"></option>
                         </template>
                     </select>
-                    <p class="mt-1 text-xs text-slate-400" x-show="mySignatures.length === 0">Aucune signature enregistrée pour le moment.</p>
+                    <p class="mt-1 text-xs text-slate-400" x-show="mySignatures.length === 0">Aucune signature enregistrée. <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/courrier/signature" class="underline">Créer ma signature</a></p>
                 </div>
 
                 <div x-show="usePad" x-cloak>

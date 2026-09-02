@@ -481,7 +481,6 @@ $completenessCheckLabels = [
     'qualifications' => 'Qualification ou formation certifiée',
     'readiness' => 'Indicateur de disponibilité',
     'contact_email' => 'Adresse e-mail de contact',
-    'civil_identity' => 'Prénom et nom',
 ];
 $bannerPath = trim((string) ($personnelProfile['character_banner_path'] ?? ''));
 $bannerUrl = $bannerPath !== '' ? $baseUrl . '/' . ltrim($bannerPath, '/') : null;
@@ -564,13 +563,13 @@ $personnelFileRhContext = $personnelFileIsRhFull || $personnelFileIsRhGate;
 $personnelFileShell = $personnelFileIsRhFull
     ? 'w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12'
     : 'max-w-7xl mx-auto px-6 md:px-8';
-$personnelFileRootClass = 'personnel-file-root personnel-file pt-20';
+$personnelFileRootClass = 'personnel-file-root personnel-file';
 if ($personnelFileIsRhGate) {
-    $personnelFileRootClass .= ' personnel-file--rh-gate personnel-file--gate pb-6';
+    $personnelFileRootClass .= ' personnel-file--rh-gate personnel-file--gate';
 } elseif ($personnelFileIsRhFull) {
-    $personnelFileRootClass .= ' personnel-file--rh-full pb-10';
+    $personnelFileRootClass .= ' personnel-file--rh-full pt-20 pb-10';
 } else {
-    $personnelFileRootClass .= ' personnel-file--public pb-10';
+    $personnelFileRootClass .= ' personnel-file--public pt-20 pb-10';
 }
 ?>
 <div class="<?= htmlspecialchars($personnelFileRootClass, ENT_QUOTES, 'UTF-8') ?>">
@@ -1246,6 +1245,9 @@ if ($personnelFileIsRhGate) {
                         </div>
                         <ul class="grid gap-2 sm:grid-cols-2">
                             <?php foreach ($completenessCheckLabels as $cKey => $cLabel):
+                                if (!array_key_exists($cKey, $completenessDetails)) {
+                                    continue;
+                                }
                                 $ok = !empty($completenessDetails[$cKey]);
                                 ?>
                             <li class="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5 text-xs text-slate-800">

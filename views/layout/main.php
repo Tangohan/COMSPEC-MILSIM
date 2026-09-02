@@ -314,6 +314,7 @@ if ($communityShowcasePage) {
 }
 if (!empty($layoutMainCompact) || !empty($compactPortalMain)) {
     $bodyClasses .= ' layout-page-compact';
+    $bodyClasses = str_replace(' min-h-screen', '', $bodyClasses);
 }
 if ($showBottomNav) {
     $bodyClasses .= ' athena-has-bottom-nav';

@@ -10,7 +10,7 @@ params [
 if (!hasInterface) exitWith { false };
 
 _role = trim _role;
-if ((count _role) > 64) then { _role = _role select [0, 64]; };
+if ((count _role) > 80) then { _role = _role select [0, 80]; };
 
 missionNamespace setVariable ["COMSPEC_Role", _role, false];
 player setVariable ["COMSPEC_Role", _role, true];

@@ -52,7 +52,8 @@ $navRoleplayImmersionActive = $boNavRoleplayImmersion;
 $navRoleplaySectionActive = $boNavRoleplaySection;
 $navOrbatActive = $boNavEff || $boNavEffWorkspace;
 $navDoctrineActive = $boNavRolesFx;
-$navAttributionsActive = $boNavPjrAssignments || ($boNavPjr && !$boNavPjrAssignments);
+$navAttributionsActive = $boNavPjrAssignments || ($boNavPjr && !$boNavPjrAssignments && empty($boNavPjrKits));
+$navFunctionKitsActive = !empty($boNavPjrKits);
 $navFormationsActive = $boNavLmsRes || $boNavLmsSubPage;
 $navCommunityActive = $boNavOrgSettings;
 $navPublicPageActive = $boNavCommPres;
@@ -92,6 +93,7 @@ $roleplayChildren = array_values(array_filter([
 $orbatChildren = array_values(array_filter([
     ['label' => 'Structure & effectifs', 'href' => url('back-office/organisation-effectifs'), 'active' => $navOrbatActive],
     ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
+    ['label' => 'Kits de fonctions', 'href' => url('back-office/personnel-job-roles/kits'), 'active' => !empty($navFunctionKitsActive)],
     ['label' => 'Doctrine des fonctions', 'href' => url('back-office/roles-functions'), 'active' => $navDoctrineActive],
     ['label' => 'Attributions métier', 'href' => url('back-office/personnel-job-roles/assignments'), 'active' => $navAttributionsActive],
 ], static fn (?array $row): bool => is_array($row)));
@@ -166,7 +168,7 @@ $athNavGroups = [
                 'label' => 'Ordre de bataille',
                 'href' => url('back-office/organisation-effectifs'),
                 'icon' => 'orbat',
-                'active' => $navOrbatActive || $navDoctrineActive || $navAttributionsActive || !empty($boNavCatalog),
+                'active' => $navOrbatActive || $navDoctrineActive || $navAttributionsActive || !empty($navFunctionKitsActive) || !empty($boNavCatalog),
                 'children' => $orbatChildren,
             ],
             [

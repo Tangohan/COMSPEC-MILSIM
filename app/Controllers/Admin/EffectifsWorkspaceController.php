@@ -1277,6 +1277,11 @@ class EffectifsWorkspaceController
         $jobRoles = [];
         if ($this->personnelJobRoleRepository->tablesExist()) {
             $jobRoles = $this->personnelJobRoleRepository->listRolesWithCategory($tenantId);
+            try {
+                $kitSvc = \App\Core\Container::get(\App\Services\Personnel\PersonnelFunctionKitService::class);
+                $jobRoles = $kitSvc->filterRolesWithCategory($tenantId, $jobRoles);
+            } catch (\Throwable) {
+            }
         }
         $gate = Gate::getInstance();
 

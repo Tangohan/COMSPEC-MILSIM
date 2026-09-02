@@ -121,8 +121,12 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
-| GET | `/equipment` | EquipmentController::index | ✅ | |
-| GET | `/equipment/{slug}` | EquipmentController::show | ✅ | |
+| GET | `/equipment` | ArsenalWardrobeController::index | ✅ | Catalogue collections / tenues |
+| GET | `/equipment/covers/{tenantId}/{file}` | ArsenalWardrobeController::streamCover | ✅ | Photo de présentation hors dépôt public |
+| GET | `/equipment/collections/{id}` | ArsenalWardrobeController::showCollection | ✅ | |
+| GET | `/equipment/{slug}` | EquipmentController::show | ✅ | Fiche matériel |
+| GET | `/back-office/dashboard-tenues` | DashboardWardrobePinsAdminController::index | ✅ | Vitrine tenues du tableau de bord |
+| GET | `/back-office/dashboard-tenues/create` | DashboardWardrobePinsAdminController::create | ✅ | |
 | GET | `/modpacks` | ModpackController::index | ✅ | |
 | GET | `/modpacks/images/{id}` | ModpackController::image | ✅ | |
 | GET | `/modpacks/{id}/download` | ModpackController::download | ✅ | |
@@ -170,6 +174,10 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | Méthode | Chemin | Contrôleur | Statut | Notes |
 |---------|--------|------------|--------|-------|
 | GET | `/courrier` | CourrierDashboardController::index | ✅ | |
+| GET | `/courrier/signature` | CourrierSignatureController::manage | ✅ | |
+| POST | `/courrier/signature` | CourrierSignatureController::store | ✅ | |
+| POST | `/courrier/signature/{id}/default` | CourrierSignatureController::setDefault | ✅ | |
+| POST | `/courrier/signature/{id}/delete` | CourrierSignatureController::destroy | ✅ | |
 | GET | `/courrier/editor` | CourrierEditorController::index | ✅ | |
 | GET | `/courrier/editor/{id}` | CourrierEditorController::edit | ✅ | |
 | GET | `/courrier/read/{id}` | CourrierReadController::show | ✅ | |

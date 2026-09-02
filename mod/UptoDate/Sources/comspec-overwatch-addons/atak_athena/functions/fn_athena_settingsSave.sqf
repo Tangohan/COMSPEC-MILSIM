@@ -1,5 +1,5 @@
 /*
-    Enregistre indicatif, rôle, équipe de feu et rattachement de groupe.
+    Enregistre indicatif, rôle libre, affichage carte, équipe de feu et groupe.
 */
 if (!hasInterface) exitWith {};
 
@@ -28,14 +28,17 @@ if (_cs isEqualTo "") exitWith {
 
 [_cs, true, "settings"] call comspec_overwatch_connect_fnc_setCallsign;
 
-private _cbRole = [9843] call _ctrl;
-private _role = "";
-if (!isNull _cbRole) then {
-    private _ix = lbCurSel _cbRole;
-    if (_ix >= 0) then { _role = trim (_cbRole lbText _ix); };
-};
-if (_role isNotEqualTo "") then {
-    [_role, true] call comspec_overwatch_connect_fnc_setUnitRole;
+private _roleEdit = [9843] call _ctrl;
+private _role = if (!isNull _roleEdit) then { trim (ctrlText _roleEdit) } else { "" };
+[_role, true] call comspec_overwatch_connect_fnc_setUnitRole;
+
+private _cbMap = [9850] call _ctrl;
+if (!isNull _cbMap) then {
+    private _ix = lbCurSel _cbMap;
+    private _mode = if (_ix >= 0) then { _cbMap lbData _ix } else { "cs" };
+    if (!(_mode in ["cs", "cs_role"])) then { _mode = "cs"; };
+    missionNamespace setVariable ["COMSPEC_BftLabelMode", _mode, false];
+    profileNamespace setVariable ["COMSPEC_BftLabelMode", _mode];
 };
 
 private _cbFire = [9844] call _ctrl;
@@ -130,6 +133,9 @@ missionNamespace setVariable ["COMSPEC_lastGroup", "", false];
 missionNamespace setVariable ["COMSPEC_lastName", "", false];
 if (!isNil "comspec_overwatch_connect_fnc_updatePosition") then {
     [player, true] call comspec_overwatch_connect_fnc_updatePosition;
+};
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_relabelBft") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_relabelBft;
 };
 
 private _msg = format ["Identité enregistrée : %1", _cs];

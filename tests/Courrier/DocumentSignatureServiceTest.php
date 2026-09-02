@@ -53,4 +53,12 @@ final class DocumentSignatureServiceTest extends TestCase
         $h = $svc->computeContentHash($doc, '2026-01-01 12:00:00');
         $this->assertSame(64, strlen($h));
     }
+
+    public function testDisplayNameUsesReadableDefault(): void
+    {
+        self::assertSame('Signature principale', DocumentSignatureService::displayName(''));
+        self::assertSame('Signature principale', DocumentSignatureService::displayName('   '));
+        self::assertSame('Signature de rentrée', DocumentSignatureService::displayName("  Signature   de\trentrée "));
+        self::assertSame(80, mb_strlen(DocumentSignatureService::displayName(str_repeat('A', 120))));
+    }
 }

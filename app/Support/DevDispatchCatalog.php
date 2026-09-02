@@ -584,6 +584,176 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(373, '2026-09-02', 'Les responsables de communauté composent la vitrine de tenues', 'Choisir les tenues du tableau de bord relève de l’administration de l’organisation, pas de celle du site. Les gestionnaires de communauté y accèdent depuis le tableau de bord, sans compte d’administration du site. Rechargez le tableau de bord', [], [], [
+                'Les responsables d’organisation ne voyaient pas le lien Choisir les tenues, ou ne pouvaient pas ouvrir la page',
+            ], ['platform'], [
+                'Connectez-vous avec un compte de gestion de la communauté, ouvrez le tableau de bord, puis Choisir les tenues.',
+            ], 'Portail 1.6.01'),
+            $pr(372, '2026-09-02', 'Les tenues de la communauté s’affichent comme le catalogue', 'Sur le tableau de bord, les organisateurs choisissent les tenues mises en avant. Un personnage à fond transparent se place devant le fond, comme les cartes de formations. Rechargez le tableau de bord', [
+                'Rangée Nos tenues, sur le même modèle que le catalogue des formations',
+                'Personnage à fond transparent, avec une photo de fond si vous le souhaitez',
+            ], [], [], ['platform'], [
+                'Ouvrez le tableau de bord. Pour composer la rangée : Choisir les tenues, puis ajoutez une tenue et le personnage.',
+            ], 'Portail 1.6.00'),
+            $pr(371, '2026-09-02', 'Les photos de présentation des collections s’enregistrent à nouveau', 'Sur Équipement, la photo d’une collection ou d’une tenue s’enregistre même lorsque le dépôt habituel est indisponible. Rechargez la page Équipement', [], [], [
+                'L’envoi d’une photo de présentation échouait avec le message Stockage des photos indisponible pour le moment',
+            ], ['platform'], [
+                'Ouvrez Équipement, une collection, puis Modifier. Envoyez de nouveau la photo en JPG ou PNG.',
+            ], 'Portail 1.5.99'),
+            $pr(370, '2026-09-02', 'Des kits de fonctions pour choisir qui fait quoi en quelques clics', 'Les responsables d’effectifs cochent les domaines de la communauté — infanterie, santé, logistique, commandement. Les listes d’attribution se limitent à ces fonctions, et un tableau indique qui les assure. Si aucun domaine n’est choisi, le catalogue complet reste disponible. Rechargez la page Effectifs', [
+                'Choix des domaines de fonctions depuis Effectifs, en un enregistrement',
+                'Tableau Qui assure quoi pour désigner un membre à chaque fonction clé',
+            ], [
+                'Les listes d’emplois se limitent aux domaines retenus, sans masquer une fonction déjà attribuée',
+            ], [], ['personnel'], [
+                'Ouvrez Effectifs, Fonctions, puis Kits de fonctions. Cochez les domaines, enregistrez, puis désignez qui les assure.',
+            ], 'Portail 1.5.98'),
+            $pr(369, '2026-09-02', 'L’avancement du dossier ne demande plus un second prénom et nom', 'Sur la fiche, l’avancement du dossier ne signale plus Prénom et nom à compléter lorsque le prénom et le nom du personnage sont déjà renseignés. Rechargez la page du dossier', [], [], [
+                'Un second point Prénom et nom restait à compléter alors que l’identité du personnage était déjà remplie',
+            ], ['personnel'], [
+                'Ouvrez la fiche. Avancement du dossier : un seul point Prénom et nom du personnage, coché si l’identité est renseignée.',
+            ], 'Portail 1.5.97'),
+            $pr(368, '2026-09-02', 'La barre Vue reste visible sous Outils, Réseau et Journal sont lisibles', 'La barre N, 2D, 3D et Zoom reste à droite, sous Outils, sans passer derrière la carte. En bas, Réseau et Journal s’affichent dans une bande lisible. Rechargez la page du poste', [], [], [
+                'La barre de vue passait sous Outils et sous la carte',
+                'Réseau et Journal s’affichaient collés, sans présentation',
+            ], ['atak'], [
+                'Rechargez la page du poste (éventuellement vider le cache du navigateur). La barre de vue doit rester entière à droite, sous Outils. Réseau et Journal forment une bande en bas de la carte.',
+            ], 'Portail 1.5.96'),
+            $pr(367, '2026-09-02', 'Le poste n’affiche plus comme en liaison un opérateur sans signal', 'Un opérateur bloqué à l’écran de connexion, ou dont le signal n’est plus reçu, n’apparaît plus En liaison. Les anciennes positions et les anciens indicatifs quittent la carte et le relief. Rechargez la page du poste', [], [], [
+                'Les fiches Terminaux affichaient En liaison d’après le parc d’appareils, même sans signal récent',
+                'La carte et le relief gardaient les dernières positions et d’anciens indicatifs superposés',
+            ], ['atak'], [
+                'Rechargez la page du poste (éventuellement vider le cache du navigateur). Sans signal récent, la fiche passe Hors liaison et le contact disparaît de la carte.',
+            ], 'Portail 1.5.95'),
+            $pr(366, '2026-09-02', 'Les fiches terminaux du poste montrent le certificat et permettent de le renouveler', 'Sur l’onglet Terminaux du poste, chaque appareil indique l’état du certificat, sa référence et son échéance. Vous pouvez en émettre un nouveau : l’ancien n’est plus accepté. L’opérateur en liaison le reçoit ensuite', [
+                'État, référence et échéance du certificat sur chaque fiche terminal',
+                'Bouton pour émettre ou renouveler le certificat depuis le poste',
+            ], [], [], ['atak'], [
+                'Rechargez la page du poste. Ouvrez l’onglet Terminaux : le certificat apparaît sous les versions. Un compte connecté peut renouveler.',
+            ], 'Portail 1.5.94'),
+            $pr(365, '2026-09-02', 'Une charge ATAK n’est marquée explosée que lorsqu’elle saute en jeu', 'Quand vous déclenchez une charge réglée sur Uniquement depuis ATAK, elle saute en jeu. Le poste n’écrit A explosé qu’après. Le choix n’apparaît plus deux fois dans le menu ACE', [], [
+                'Une seule entrée Uniquement depuis ATAK dans la liste des déclencheurs ACE',
+            ], [
+                'Le poste indiquait qu’une charge avait explosé alors qu’elle était encore posée en jeu',
+                'Le choix Uniquement depuis ATAK apparaissait deux fois dans ACE',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Dans ACE, Uniquement depuis ATAK n’apparaît qu’une fois. Après un déclenchement depuis la tablette ou le poste, la charge doit sauter en jeu ; le poste passe à A explosé seulement ensuite.',
+            ], 'Overwatch 1.5.12'),
+            $pr(364, '2026-09-02', 'Les opérateurs redeviennent lisibles sur la carte du poste', 'Sur la carte du poste, chaque opérateur en liaison affiche son indicatif sous le symbole. Les positions restent visibles même si l’affichage tactique met un instant à se charger. Rechargez la page du poste', [
+                'Indicatif lisible sous chaque opérateur sur la carte du poste',
+            ], [], [
+                'Les symboles d’effectif restaient trop petits, sans nom, au milieu du reste de la carte',
+            ], ['atak'], [
+                'Rechargez la page du poste (éventuellement vider le cache du navigateur). Un opérateur en liaison doit apparaître sur la carte avec son indicatif, comme dans le tableau des effectifs.',
+            ], 'Portail 1.5.93'),
+            $pr(363, '2026-09-01', 'Un bandeau prévient quand le compte n’est pas connecté', 'Si le compte n’est pas associé, un bandeau « Compte non connecté » s’affiche sur la carte, au-dessus de l’indicatif, et en haut de la tuile Athena. Ouvrez Connexion Athena pour associer le compte', [
+                'Bandeau Compte non connecté sur la carte et sur Athena tant que le compte n’est pas associé',
+            ], [], [], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Sans compte associé, le bandeau ambre doit apparaître. Une fois en liaison, il disparaît.',
+            ], 'Overwatch 1.5.11 · Athena ATAK 1.0.75'),
+            $pr(362, '2026-09-01', 'Le rôle se saisit librement dans les paramètres du téléphone', 'Dans Paramètres, le rôle n’est plus une liste fermée : vous tapez ce que vous voulez (Breacher, médecin, chef d’équipe…). Un réglage permet d’afficher l’indicatif seul ou l’indicatif suivi du rôle sur la carte', [
+                'Saisie libre du rôle dans Paramètres',
+                'Affichage carte : indicatif seul, ou indicatif et rôle',
+            ], [], [], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Ouvrez Paramètres, saisissez votre rôle, choisissez l’affichage carte, puis Enregistrer.',
+            ], 'Overwatch 1.5.11 · Athena ATAK 1.0.74'),
+            $pr(361, '2026-09-01', 'Les photos du téléphone sont toutes copiées dans un même dossier', 'Chaque photo prise depuis le téléphone ou le casque est recopiée dans Documents\Arma 3 - COMSPEC\Captures. Le bouton Dossier photos copie ce chemin. Les clichés arrivent de nouveau au poste même si un autre outil photo annonce un fichier qui n’existe pas', [], [
+                'Un seul dossier de photos, indépendant du profil Arma et des autres outils',
+                'Dossier photos copie le chemin dans le presse-papiers',
+            ], [
+                'La photo était mise en file puis introuvable : le poste ne la recevait pas',
+                'Plusieurs dossiers possibles, sans indication claire de celui à ouvrir',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Prenez une photo : elle doit apparaître dans Documents\Arma 3 - COMSPEC\Captures, puis au poste. Sur Athena, Dossier photos copie ce chemin.',
+            ], 'Overwatch 1.5.11 · Athena ATAK 1.0.73'),
+            $pr(360, '2026-09-01', 'La boussole et les outils carte du téléphone ne sont plus recouverts', 'Sur la carte du téléphone, la boussole en haut à gauche et le menu des outils carte en bas à gauche restent utilisables. Les cartouches de grille et d’unité suivie sont décalés à droite. Le zoom plus et moins reste disponible en haut à droite', [], [], [
+                'Un carré sombre recouvrait la boussole',
+                'Le menu des outils carte passait sous les cartouches d’indicatif et de grille',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Ouvrez la carte du téléphone : la boussole doit être lisible en haut à gauche, et le bouton des outils carte en bas à gauche doit ouvrir le menu sans passer sous un encadré.',
+            ], 'Overwatch 1.5.10 · Athena ATAK 1.0.72'),
+            $pr(359, '2026-09-01', 'La tuile Athena affiche le journal de liaison, le compte et les photos', 'Ouvrir Athena sur le téléphone montre désormais le journal de la session : liaisons, erreurs et envois, ligne par ligne avec l’heure. Le bandeau indique le compte connecté et combien d’opérateurs sont en liaison. Depuis le même écran, on peut forcer l’envoi des photos et vérifier le dossier où elles sont enregistrées', [
+                'Journal de session dans la tuile Athena (liaison, erreurs, envois)',
+                'Compte connecté et nombre d’opérateurs en liaison dans le bandeau',
+                'Envoi forcé des photos depuis l’écran Journal',
+                'Vérification du dossier où les photos sont enregistrées',
+            ], [], [
+                'L’écran Journal restait vide alors que la session écrivait déjà les événements',
+                'Après une réapparition, la même ligne de grâce ou de clôture médicale se répétait',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Ouvrez la tuile Athena : le journal doit se remplir au fil de la mission. Le bandeau affiche votre compte. Envoyer photos et Dossier photos sont en haut de l’écran Journal.',
+            ], 'Overwatch 1.5.10 · Athena ATAK 1.0.71'),
+            $pr(358, '2026-09-01', 'Les adresses e-mail restent entre le titulaire et l’administration du site', 'Sur le portail, les adresses e-mail des membres ne s’affichent plus pour l’encadrement d’une communauté. Seule l’administration du site les voit en clair. Un organisateur peut demander la suppression d’un compte : un opérateur du site valide, l’accès est retiré, l’historique reste sous « Ancien membre »', [
+                'Les organisateurs peuvent demander la suppression d’un compte de leur communauté, y compris lorsqu’il est encore actif',
+            ], [
+                'Les adresses e-mail n’apparaissent plus dans les listes, fiches et exports, sauf pour l’administration du site',
+            ], [], ['personnel', 'platform'], [
+                'Pour voir une adresse, connectez-vous avec un compte d’administration du site. Pour retirer un membre : fiche membre, Demander la suppression du compte.',
+            ], 'Athena 1.0.59'),
+            $pr(357, '2026-09-01', 'Le signal d’urgence et les opérateurs à terre remontent de nouveau au poste', 'Un appui sur PANIC depuis le téléphone arrive au poste de commandement. Un opérateur inconscient ou hors combat est aussi signalé, même si la liaison Athena s’est établie après le début de mission. La tuile Connexion Athena reste le secours en cas de coupure', [
+                'Signal d’urgence du téléphone visible dans le journal de liaison du poste',
+                'Inconscient et hors combat signalés dès que la liaison est en place',
+            ], [], [
+                'Le téléphone enregistrait le signal, le poste ne recevait rien',
+                'Sans session dès le lancement, les alertes médicales ne partaient plus',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Une fois en liaison, appuyez sur PANIC : une ligne « Opérateur à terre » doit apparaître au poste. Un KO ACE doit aussi y figurer.',
+            ], 'Overwatch 1.5.9'),
+            $pr(356, '2026-09-01', 'La mission reconnaît votre Steam et charge Athena toute seule', 'Dès l’entrée en mission, Overwatch lit le compte Steam du joueur et récupère la fiche Athena déjà associée. Plus besoin de se connecter à la main à chaque partie. La tuile Connexion Athena reste disponible si la liaison a été coupée', [
+                'Reconnaissance du compte Steam au lancement de la mission',
+                'Chargement de la fiche et des données Athena sans saisie',
+            ], [], [
+                'Sans session enregistrée sur l’ordinateur, le joueur restait hors liaison, même si Steam était déjà associé à son compte',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Si votre Steam est lié au portail, vous devez arriver déjà identifié. En cas de coupure, ouvrez la tuile Connexion Athena.',
+            ], 'Overwatch 1.5.8'),
+            $pr(355, '2026-09-01', 'La carte du téléphone affiche l’indicatif, plus le numéro de groupe', 'Sur la carte ATAK, le symbole d’un opérateur reprend son indicatif (TA1, YB1…). Le numéro de groupe Arma et le nom d’éditeur ne s’affichent plus à la place. Le bandeau d’unité suivie et le symbole disent la même chose', [], [], [
+                'Le bandeau indiquait le bon indicatif, le symbole à côté montrait encore 01 ou le nom du groupe Arma',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Ouvrez la carte du téléphone : votre symbole doit afficher votre indicatif, comme le bandeau.',
+            ], 'Overwatch 1.5.7'),
+            $pr(354, '2026-09-01', 'Les photos et les pièces de fiche partent jusqu’au poste', 'Une photo prise en jeu s’enregistre bien dans le dossier de captures Arma, puis arrive au poste. Une fiche de renseignement emporte aussi sa photo jointe. Les clichés d’un autre pack qui n’existent pas sur le disque ne bloquent plus l’envoi', [
+                'Photo terrain : capture Arma envoyée au poste, même si un autre outil a annoncé un cliché introuvable',
+                'Fiche de renseignement : la photo jointe est bien reçue par le bureau SSE',
+            ], [], [
+                'Certaines photos restaient absentes du poste alors que le journal indiquait un envoi',
+                'La fiche partait, mais la pièce jointe était refusée',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Prenez une photo depuis le téléphone ou le casque : elle doit apparaître au poste. Envoyez une fiche avec photo : la pièce doit s’afficher sur la fiche.',
+            ], 'Overwatch 1.5.7'),
+            $pr(353, '2026-09-01', 'Les tenues de l’arsenal se regroupent par collection', 'Dans la fenêtre Athena de l’arsenal, vos tenues et celles de la communauté sont rangées par collection. Cliquez une collection pour l’ouvrir ou la refermer. Le bouton Supprimer retire la tenue choisie de votre arsenal, ou de la communauté si c’est vous qui l’avez envoyée', [
+                'Collections repliables à gauche (votre arsenal) et à droite (communauté)',
+                'Supprimer, avec une confirmation avant le retrait',
+            ], [], [
+                'Toutes les tenues s’affichaient en une seule liste, sans pouvoir en retirer',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. À l’arsenal, bouton Athena. Cliquez une collection pour voir les tenues. Choisissez-en une, puis Supprimer.',
+            ], 'Overwatch 1.5.6'),
+            $pr(352, '2026-09-01', 'Le choix de vue du dossier n’ouvre plus un vide sous les cartes', 'Sur le dossier personnel, après Vue publique et Vue RH, le pied de page arrive tout de suite. Plus de bande vide sous les cartes, ni de trou en bas d’écran', [], [], [
+                'Le choix de vue laissait encore un grand vide avant le pied de page',
+            ], ['personnel'], [
+                'Ouvrez un dossier avec accès RH, sans choisir la vue. Les deux cartes doivent coller au pied de page.',
+            ], 'Athena Effectifs'),
+            $pr(351, '2026-09-01', 'La signature s’enregistre depuis le bureau Courrier', 'Depuis le tableau de bord Courrier, vous dessinez et enregistrez votre signature. Elle est ensuite proposée lorsque vous signez un courrier, sans tout refaire à chaque fois', [
+                'Page Ma signature : dessin, nom, signature principale',
+                'Réutilisation à la signature d’un courrier',
+            ], [], [
+                'La signature ne pouvait s’enregistrer qu’au moment de signer un document',
+            ], ['platform'], [
+                'Ouvrez le bureau Courrier, puis Ma signature. Dessinez, enregistrez. En signant un courrier, choisissez Ma signature enregistrée.',
+            ], 'Athena Courrier'),
+            $pr(350, '2026-09-01', 'L’en-tête du courrier reprend la communauté, l’unité et le groupe', 'Dans le bureau Courrier, l’en-tête papier se remplit avec le nom de la communauté, l’unité d’affectation et le groupe de l’opérateur. Les exemples figés ne s’affichent plus à la place des vraies données', [
+                'Communauté, unité et groupe repris depuis la fiche de l’opérateur',
+            ], [], [
+                'L’en-tête proposait des exemples (ministère, unité d’illustration) au lieu des données de la communauté',
+            ], ['platform'], [
+                'Ouvrez un courrier. L’en-tête doit afficher votre communauté, votre unité et votre groupe. Vous pouvez encore les modifier pour ce document.',
+            ], 'Athena Courrier'),
+            $pr(349, '2026-09-01', 'L’aperçu PDF des documents s’ouvre sans script extérieur', 'Dans la bibliothèque, l’aperçu d’un PDF s’affiche même lorsque le site n’autorise que ses propres scripts. Plus besoin d’un chargement extérieur bloqué', [], [], [
+                'L’aperçu PDF restait vide : le lecteur était refusé par la politique de scripts du site',
+            ], ['platform'], [
+                'Ouvrez un PDF publié dans Documents. Les pages doivent s’afficher, avec le changement de page et le zoom.',
+            ], 'Athena Documents'),
             $pr(348, '2026-09-01', 'Les manuels se rédigent dans Athena, avec page de garde et signatures', 'Dans la bibliothèque, un document peut désormais s’écrire directement : page de garde, avant-propos avec signatures, puis le texte. Joindre un fichier déjà prêt reste possible', [
                 'Choix Joindre un fichier ou Rédiger le document à la création',
                 'Page de garde : numéros de publication, titre, date, diffusion, destruction, autorité émettrice',

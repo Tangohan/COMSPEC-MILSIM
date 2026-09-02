@@ -6,7 +6,6 @@
 params ["_kind", "_sender", "_pos", ["_msgBody", ""], ["_time", ""], ["_kindText", ""]];
 
 if (!hasInterface) exitWith {};
-if (!(["iceman_alerts"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {};
 
 // Miroir Athena→Iceman en cours : ne rien faire (anti-boucle)
 if (missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false]) exitWith {};
@@ -14,6 +13,9 @@ if (missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false])
 private _kindKey = toUpper _kind;
 if (_kindKey in ["CLEAR", "TIC CLEAR"]) then { _kindKey = "TIC_CLEAR"; };
 if (_kindKey in ["PANIC"]) then { _kindKey = "EAGLE_DOWN"; };
+// PANIC / à terre : toujours remonter au poste. Les autres types suivent le réglage communauté.
+private _isDistress = _kindKey isEqualTo "EAGLE_DOWN";
+if (!_isDistress && {!(["iceman_alerts"] call comspec_overwatch_connect_fnc_isModModuleEnabled)}) exitWith {};
 
 private _label = switch (_kindKey) do {
     case "TIC": { "Contact" };
@@ -31,7 +33,11 @@ private _summary = _msgBody;
 _summary = _summary replaceString ["<br/>", " | "];
 _summary = _summary replaceString ["<br>", " | "];
 
-private _isLocalSender = !isNull _sender && { _sender isEqualTo player };
+private _ctabUnit = missionNamespace getVariable ["cTab_player", objNull];
+if (isNull _ctabUnit) then { _ctabUnit = player; };
+private _isLocalSender = (!isNull _sender && {local _sender})
+    || {_sender isEqualTo player}
+    || {!isNull _ctabUnit && {_sender isEqualTo _ctabUnit} && {local _ctabUnit}};
 
 if (_isLocalSender) then {
     if (isNil "comspec_overwatch_connect_fnc_sendTacticalAlert") exitWith {};

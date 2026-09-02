@@ -218,7 +218,7 @@ final class TenantPermissionCatalog
     private static function dashboardDefinitions(): array
     {
         return [
-            ['slug' => 'dashboard.pins.manage', 'module' => 'dashboard', 'action' => 'manage', 'name' => 'Gérer les raccourcis du tableau de bord'],
+            ['slug' => 'dashboard.pins.manage', 'module' => 'dashboard', 'action' => 'manage', 'name' => 'Gérer les raccourcis et tenues du tableau de bord'],
         ];
     }
 

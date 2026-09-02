@@ -57,13 +57,17 @@ class UserSignatureRepository
         $this->pdo->prepare('UPDATE user_signatures SET is_default = 1 WHERE id = ? AND user_id = ? AND tenant_id = ?')->execute([$id, $userId, $tenantId]);
     }
 
-    public function delete(int $id, ?int $userId = null): bool
+    public function delete(int $id, ?int $userId = null, ?int $tenantId = null): bool
     {
         $sql = 'DELETE FROM user_signatures WHERE id = ?';
         $params = [$id];
         if ($userId !== null) {
             $sql .= ' AND user_id = ?';
             $params[] = $userId;
+        }
+        if ($tenantId !== null) {
+            $sql .= ' AND tenant_id = ?';
+            $params[] = $tenantId;
         }
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);

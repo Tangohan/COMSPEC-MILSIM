@@ -40,30 +40,58 @@ private _combo = _group controlsGroupCtrl 9760;
 if (!isNull _combo && {_home isEqualTo "fil"}) then {
     _combo setVariable ["COMSPEC_AthenaFilterUpdating", true];
     lbClear _combo;
-    private _filterTab = _tab;
-    if (_filterTab in ["notif", "alert"]) then { _filterTab = "urgences"; };
+    private _logFilter = missionNamespace getVariable ["COMSPEC_Athena_LogFilter", "all"];
+    if !(_logFilter in ["all", "error", "tx", "medical", "photo"]) then { _logFilter = "all"; };
     {
         _x params ["_id", "_lab"];
         private _i = _combo lbAdd _lab;
         _combo lbSetData [_i, _id];
-        if (_id isEqualTo _filterTab) then { _combo lbSetCurSel _i; };
+        if (_id isEqualTo _logFilter) then { _combo lbSetCurSel _i; };
     } forEach [
         ["all", "Tout le journal"],
-        ["photo", "Photos"],
-        ["order", "Ordres"],
-        ["messages", "Messages"],
-        ["urgences", "Urgences"],
-        ["bda", "Bilans"]
+        ["error", "Erreurs et alertes"],
+        ["tx", "Liaison et envois"],
+        ["medical", "Médical"],
+        ["photo", "Photos"]
     ];
     _combo setVariable ["COMSPEC_AthenaFilterUpdating", false];
 };
 
-private _statusTxt = if (_linked) then {
-    format ["<t color='#7dffb0'>●</t> <t color='#e8f4f0'>En liaison — %1</t>", _cs]
+private _acc = trim (str (missionNamespace getVariable ["comspec_profile_name", ""]));
+if (_acc isEqualTo "" || {(toLower _acc) in ["<null>", "any", "nil"]}) then { _acc = ""; };
+private _tenant = trim (str (missionNamespace getVariable ["comspec_tenant_name", ""]));
+if (_tenant isEqualTo "" || {(toLower _tenant) in ["<null>", "any", "nil"]}) then { _tenant = ""; };
+private _linkN = 0;
+if (!isNil "comspec_overwatch_connect_fnc_getUnitsList") then {
+    private _units = [] call comspec_overwatch_connect_fnc_getUnitsList;
+    if (_units isEqualType []) then { _linkN = count _units; };
+};
+if (_linkN < 1 && {hasInterface} && {!isNull player}) then { _linkN = 1; };
+private _peopleTxt = if (_linkN <= 1) then {
+    "1 opérateur en liaison"
 } else {
-    "<t color='#ffd27a'>● Hors liaison</t>  <t color='#8aa0b4'>Poste → Compte Athena</t>"
+    format ["%1 opérateurs en liaison", _linkN]
+};
+
+private _statusTxt = if (_linked) then {
+    private _who = if (_acc isEqualTo "") then { _cs } else { _acc };
+    private _org = if (_tenant isEqualTo "") then { "" } else { format [" · %1", _tenant] };
+    format [
+        "<t color='#7dffb0'>●</t> <t color='#e8f4f0'>Compte : %1%2</t><br/><t color='#8aa0b4'>%3 · %4</t>",
+        _who,
+        _org,
+        format ["En liaison — %1", _cs],
+        _peopleTxt
+    ]
+} else {
+    "<t color='#FFD27A'>Compte non connecté</t><br/><t color='#e8d8c0'>Ouvrez Connexion Athena pour associer le compte</t>"
 };
 if (!isNull _statusCtrl) then {
+    if (_linked) then {
+        _statusCtrl ctrlSetBackgroundColor [0.10, 0.10, 0.10, 0.94];
+    } else {
+        _statusCtrl ctrlSetBackgroundColor [0.28, 0.14, 0.04, 0.95];
+    };
     _statusCtrl ctrlSetStructuredText parseText _statusTxt;
 };
 
@@ -88,6 +116,9 @@ if (!isNull _fbCtrl) then {
 
 // Entrées : [kind, title, detail, sortKey, meta]
 private _entries = [];
+if (_home isEqualTo "fil") then {
+    _entries = [] call comspec_overwatch_atak_athena_fnc_athena_collectSessionLog;
+} else {
 
 // --- Alertes / BDA / groupe journalisés côté COMSPEC ---
 private _alerts = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
@@ -585,7 +616,16 @@ if (_tab isEqualTo "urgences" || {_tab isEqualTo "notif"} || {_tab isEqualTo "al
             [
                 "liaison",
                 "Compte Athena",
-                "<t color='#5a9e88'>Compte</t><br/><t color='#b8c8d4'>Liez votre compte Athena (code ou Steam) via le bouton « Compte Athena ».</t>",
+                if (_linked) then {
+                    private _who = trim (str (missionNamespace getVariable ["comspec_profile_name", ""]));
+                    if (_who isEqualTo "" || {(toLower _who) in ["<null>", "any", "nil"]}) then { _who = _cs; };
+                    format [
+                        "<t color='#7dffb0'>Compte associé</t><br/><t color='#b8c8d4'>%1</t><br/><t color='#8aa0b4'>La liaison est active. Les envois partent vers le poste.</t>",
+                        _who
+                    ]
+                } else {
+                    "<t color='#FFD27A'>Compte non connecté</t><br/><t color='#e8d8c0'>Ouvrez Connexion Athena (tuile ou bouton Poste) pour associer le compte. Tant que ce n’est pas fait, rien n’est transmis au poste.</t>"
+                },
                 "account",
                 []
             ]
@@ -595,6 +635,7 @@ if (_tab isEqualTo "urgences" || {_tab isEqualTo "notif"} || {_tab isEqualTo "al
             _entries = _entries select { (_x select 0) isEqualTo _tab };
         };
     };
+};
 };
 
 if (!isNull _listCtrl) then {
@@ -614,6 +655,10 @@ if (!isNull _listCtrl) then {
             case "medical": { _listCtrl lbSetColor [_idx, [0.95, 0.55, 0.45, 1]]; };
             case "notify": { _listCtrl lbSetColor [_idx, [0.75, 0.9, 0.75, 1]]; };
             case "modules": { _listCtrl lbSetColor [_idx, [0.55, 0.88, 0.68, 1]]; };
+            case "error": { _listCtrl lbSetColor [_idx, [0.98, 0.48, 0.42, 1]]; };
+            case "warn": { _listCtrl lbSetColor [_idx, [0.98, 0.82, 0.42, 1]]; };
+            case "debug": { _listCtrl lbSetColor [_idx, [0.55, 0.62, 0.70, 1]]; };
+            case "info": { _listCtrl lbSetColor [_idx, [0.88, 0.92, 0.94, 1]]; };
             default { _listCtrl lbSetColor [_idx, [0.95, 0.86, 0.62, 1]]; };
         };
     } forEach _entries;
@@ -632,28 +677,13 @@ if (!isNull _listCtrl) then {
                 case "alerter": { "Aucune alerte ni urgence médicale pour le moment." };
                 case "rapporter": { "Aucun compte rendu ni photo pour le moment." };
                 case "poste": { "Compte, adresse mobile et appui aérien se commandent ci-dessus." };
-                default {
-                    switch (_tab) do {
-                        case "bda": { "Aucun bilan des dégâts pour le moment." };
-                        case "photo": { "Aucune photo récente pour le moment." };
-                        case "order": { "Aucun ordre reçu pour le moment." };
-                        case "urgences": { "Aucune urgence pour le moment." };
-                        case "messages": { "Aucun message pour le moment." };
-                        default { "Le journal est vide pour le moment." };
-                    };
-                };
+                default { "Aucune ligne dans le journal de session pour le moment." };
             };
             private _hint = switch (_home) do {
                 case "alerter": { "Contact, fin de contact et opérateur à terre se transmettent par les boutons du haut." };
                 case "rapporter": { "FRAGO, bilan, SALUTE et photos se préparent depuis les boutons du haut." };
                 case "poste": { "Touchez une ligne pour lire le détail de la liaison." };
-                default {
-                    if (_tab isEqualTo "photo") then {
-                        "Prenez une vue dans Photos : elle remonte seule vers le poste."
-                    } else {
-                        "Touchez une ligne pour la lire ici. Filtrez le journal dans la liste du haut."
-                    };
-                };
+                default { "Les liaisons, erreurs et envois apparaissent ici au fil de la mission. Actualisez si besoin." };
             };
             _detailCtrl ctrlSetStructuredText parseText format [
                 "<t size='1.05' color='#e8f4f0'>%1</t><br/><br/><t size='0.95' color='#c8d0d6'>%2</t>",

@@ -35,6 +35,10 @@ final class AtakTerrain3dPremiumAssetTest extends TestCase
         self::assertStringContainsString('setHeightData', $js);
         self::assertStringContainsString("getElementById('atak-view-3d')", $js);
         self::assertStringContainsString("addEventListener('atak:units-updated'", $js);
+        self::assertStringContainsString('ATAKUnits.resolveLiveStatus', $js);
+        self::assertStringContainsString("live === 'offline' && !trackedAi", $js);
+        self::assertStringContainsString('display_call_sign', $js);
+        self::assertStringContainsString("addEventListener('atak:display-prefs-changed'", $js);
         self::assertStringContainsString('ATAKTerrain3DPremium', $js);
         self::assertStringContainsString('setLoading', $js);
         self::assertStringContainsString('terrain3d-loader', $js);

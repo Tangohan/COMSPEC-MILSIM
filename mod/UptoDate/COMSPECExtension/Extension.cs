@@ -29,7 +29,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.18.2";
+    private const string ExtensionVersion = "1.18.6";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -1870,6 +1870,44 @@ public static partial class Extension
             return "OK|" + body;
         }
 
+        // Dossier unique où Overwatch recopie les photos (hors ligne, toujours créé).
+        if (function == "GetPhotoSaveDir")
+        {
+            var primary = ComspecCaptureDir();
+            return string.IsNullOrWhiteSpace(primary)
+                ? "ERR|no_writable_path"
+                : "OK|" + SanitizeIdentityField(primary);
+        }
+
+        // Recopie une capture (nom ou chemin) dans le dossier COMSPEC et renvoie le chemin final.
+        if (function == "StageCapture")
+        {
+            return StageCaptureToComspec(args.Length > 0 ? args[0] : "");
+        }
+
+        // Dossiers où les captures sont réellement cherchées / recopiées (hors ligne).
+        // Une ligne par dossier, le premier est le dossier COMSPEC (toujours créé).
+        if (function == "GetScreenshotDirs")
+        {
+            var sb = new StringBuilder();
+            var primary = ComspecCaptureDir();
+            if (!string.IsNullOrWhiteSpace(primary))
+                sb.Append(SanitizeIdentityField(primary)).Append('\n');
+            foreach (var dir in EnumeratePhotoLookupDirs())
+            {
+                if (string.IsNullOrWhiteSpace(dir)) continue;
+                if (!string.IsNullOrWhiteSpace(primary)
+                    && string.Equals(dir, primary, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                sb.Append(SanitizeIdentityField(dir)).Append('\n');
+            }
+            var dirs = sb.ToString().Replace("\r", "");
+            var capDirs = MaxOutputBytes - 4;
+            if (dirs.Length > capDirs)
+                dirs = dirs.Substring(0, capDirs);
+            return "OK|" + dirs;
+        }
+
         // Alerte Windows : marche à suivre pour lier le compte Athena (bloquant, thread OK).
         if (function is "ShowAthenaLinkHelp")
         {
@@ -2672,6 +2710,13 @@ public static partial class Extension
                 var batchJson = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(batchJson)) return FormatAtakExtArray("ERROR", "payload empty");
                 return PostAtakJsonSync("/api/atak/wardrobes/sync", batchJson, token);
+            }
+            // Retire une tenue de la communauté. Args : [id]
+            if (function == "DeleteWardrobe" && args.Length >= 1)
+            {
+                var delId = (args[0] ?? "").Trim();
+                if (delId.Length < 1) return "ERR|invalid_id";
+                return PostAtakJsonSync("/api/atak/wardrobes/" + Uri.EscapeDataString(delId) + "/delete", "{}", token);
             }
             // Collections d’équipement. Lignes : id\tname\tslug\tvisibility\tcount
             if (function == "ListWardrobeCollections")
@@ -5973,9 +6018,19 @@ public static partial class Extension
         }
         catch { /* ignore */ }
 
+        var looksLikeJpeg = false;
+        try
+        {
+            var ext = Path.GetExtension(normalized);
+            looksLikeJpeg = ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
+                || ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
+        }
+        catch { /* ignore */ }
+
         var newestFallback = string.IsNullOrWhiteSpace(trimmedPath)
             || isNameOnly
-            || parentMissing;
+            || parentMissing
+            || looksLikeJpeg;
 
         var dedupKey = NormalizePhotoDedupKey(trimmedPath.Length > 0 ? trimmedPath : ("newest|" + author));
         if (!TryClaimPhotoDedup(dedupKey))
@@ -6161,7 +6216,7 @@ public static partial class Extension
                 resolved = FindNewestMatchingPrefix("COMSPEC_SSE_Face", TimeSpan.FromSeconds(
                     Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30)));
             if (resolved == null && attempt >= 1)
-                resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-30));
+                resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-180));
             if (resolved != null) break;
             try
             {
@@ -6172,9 +6227,9 @@ public static partial class Extension
                 if (parentMissing && !string.IsNullOrWhiteSpace(orphan))
                 {
                     resolved = FindScreenshotByFileName(orphan);
-                    if (resolved == null && attempt >= 2)
-                        resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-30));
-                    if (resolved != null || attempt >= 8)
+                    if (resolved == null && attempt >= 1)
+                        resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-180));
+                    if (resolved != null)
                         break;
                 }
             }
@@ -6225,7 +6280,9 @@ public static partial class Extension
                 InvokeCallback(cbName, "OK|duplicate|" + Path.GetFileName(resolved));
                 return;
             }
-            MirrorCapture(resolved);
+            var mirrored = MirrorCapture(resolved);
+            if (!string.IsNullOrWhiteSpace(mirrored))
+                resolved = mirrored;
         }
         catch
         {
@@ -6473,6 +6530,47 @@ public static partial class Extension
     }
 
     /// <summary>
+    /// Copie le fichier une fois sa taille stable — le POST async ne lit plus
+    /// un flux encore vide (pièce de fiche → 400 missing_file).
+    /// </summary>
+    private static byte[]? ReadStableImageBytes(string path, TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        long lastSize = -1;
+        var stableHits = 0;
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                var fi = new FileInfo(path);
+                if (fi.Exists && fi.Length >= 32)
+                {
+                    if (fi.Length == lastSize)
+                    {
+                        stableHits++;
+                        if (stableHits >= 2)
+                            return File.ReadAllBytes(path);
+                    }
+                    else
+                    {
+                        lastSize = fi.Length;
+                        stableHits = 0;
+                    }
+                }
+            }
+            catch { /* fichier encore verrouillé */ }
+            Thread.Sleep(120);
+        }
+        try
+        {
+            if (File.Exists(path) && new FileInfo(path).Length >= 32)
+                return File.ReadAllBytes(path);
+        }
+        catch { /* ignore */ }
+        return null;
+    }
+
+    /// <summary>
     /// Photo visage SSE : file async (même worker que NotifyNewPhoto).
     /// args[0]=personId, args[1]=path, args[2]=author, args[3]=angle, args[4..6]=pos.
     /// </summary>
@@ -6628,9 +6726,8 @@ public static partial class Extension
 
         try
         {
-            var fi = new FileInfo(resolved);
-            if (!fi.Exists) return "ERR|file_not_found";
-            if (fi.Length < 32) return "ERR|file_empty";
+            var bytes = ReadStableImageBytes(resolved, TimeSpan.FromSeconds(4));
+            if (bytes == null || bytes.Length < 32) return "ERR|file_empty";
             var multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent(author), "author");
             multipart.Add(new StringContent(kind), "kind");
@@ -6642,9 +6739,8 @@ public static partial class Extension
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "fiche_piece.png";
-            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
-            var fileContent = new StreamContent(fileStream);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
+            var fileContent = new ByteArrayContent(bytes);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, bytes));
             multipart.Add(fileContent, "piece", fileName);
             var path = "/api/sse/notes/" + Uri.EscapeDataString(noteId) + "/pieces";
             return QueueMultipartUpload(path, multipart);
@@ -6902,10 +6998,17 @@ public static partial class Extension
                 var parent = Path.GetDirectoryName(path);
                 if (!string.IsNullOrWhiteSpace(parent) && !Directory.Exists(parent))
                 {
-                    // Dernier espoir : même nom de fichier ailleurs (mod Workshop renommé).
+                    // Dossier annoncé mort (Photo Library / IceMan) : chercher le même nom
+                    // ailleurs, puis la capture la plus récente — y compris %LOCALAPPDATA%\Arma 3.
                     var orphanName = Path.GetFileName(path);
                     if (!string.IsNullOrWhiteSpace(orphanName))
-                        return FindScreenshotByFileName(orphanName);
+                    {
+                        var byName = FindScreenshotByFileName(orphanName);
+                        if (byName != null)
+                            return byName;
+                    }
+                    if (newestFallback.HasValue)
+                        return FindNewestScreenshot(newestFallback.Value);
                     return null;
                 }
             }
@@ -6986,7 +7089,7 @@ public static partial class Extension
             // Lister les dossiers réellement balayés : « dirs=3 » ne permet pas de savoir
             // lesquels, donc pas de savoir où Arma a réellement écrit la capture.
             var dirs = new List<string>();
-            foreach (var d in EnumerateScreenshotDirs())
+            foreach (var d in EnumeratePhotoLookupDirs())
             {
                 try
                 {
@@ -7013,9 +7116,8 @@ public static partial class Extension
             try
             {
                 FileInfo? newest = null;
-                foreach (var d in EnumerateScreenshotDirs())
+                foreach (var d in EnumeratePhotoLookupDirs())
                 {
-                    if (!IsScreenshotCaptureDir(d)) continue;
                     foreach (var f in EnumerateRecentImagesInDir(d))
                     {
                         try
@@ -7113,7 +7215,7 @@ public static partial class Extension
             || (path.StartsWith('\\') && !path.StartsWith("\\\\", StringComparison.Ordinal)))
         {
             var rel = path.TrimStart('\\');
-            foreach (var dir in EnumerateScreenshotDirs())
+            foreach (var dir in EnumeratePhotoLookupDirs())
             {
                 Add(Path.Combine(dir, Path.GetFileName(path)));
                 Add(Path.Combine(dir, rel));
@@ -7175,6 +7277,10 @@ public static partial class Extension
                 return parent != null
                     && parent.Equals("Arma 3 - COMSPEC", StringComparison.OrdinalIgnoreCase);
             }
+            // screenshot "foo.png" atterrit souvent à la racine de %LOCALAPPDATA%\Arma 3,
+            // pas dans Screenshots du profil. Ce n’est pas un scan récursif.
+            if (IsLocalArma3Root(dir))
+                return true;
             return false;
         }
         catch
@@ -7196,10 +7302,8 @@ public static partial class Extension
             names.Add(variant);
 
         var stem = Path.GetFileNameWithoutExtension(fileName);
-        foreach (var dir in EnumerateScreenshotDirs())
+        foreach (var dir in EnumeratePhotoLookupDirs())
         {
-            if (!IsScreenshotCaptureDir(dir)) continue;
-
             foreach (var name in names)
             {
                 try
@@ -7212,6 +7316,7 @@ public static partial class Extension
             }
 
             if (string.IsNullOrWhiteSpace(stem)) continue;
+            if (!IsScreenshotCaptureDir(dir) && !IsLocalArma3Root(dir)) continue;
             try
             {
                 foreach (var f in EnumerateFilesShallow(dir, stem + ".*", maxDepth: 1))
@@ -7229,20 +7334,6 @@ public static partial class Extension
             catch { /* ignore */ }
         }
 
-        // Nom seul : %LOCALAPPDATA%\Arma 3 (hors sous-dossier Screenshots, hors watcher).
-        foreach (var dir in EnumerateLooseScreenshotDirs())
-        {
-            foreach (var name in names)
-            {
-                try
-                {
-                    var readable = TryReadableImageFile(Path.Combine(dir, name));
-                    if (readable != null)
-                        return readable;
-                }
-                catch { /* ignore */ }
-            }
-        }
         return null;
     }
 
@@ -7325,39 +7416,152 @@ public static partial class Extension
 
     /// <summary>
     /// Recopie best-effort d’une capture résolue dans le dossier COMSPEC (jamais bloquant).
-    /// Conserve les 200 fichiers les plus récents.
+    /// Conserve les 200 fichiers les plus récents. Renvoie le chemin dans Captures si possible.
     /// </summary>
-    private static void MirrorCapture(string resolved)
+    private static string? MirrorCapture(string resolved)
     {
         try
         {
             var dir = ComspecCaptureDir();
-            if (dir == null) return;
+            if (dir == null) return resolved;
             var name = Path.GetFileName(resolved);
-            if (string.IsNullOrWhiteSpace(name)) return;
+            if (string.IsNullOrWhiteSpace(name)) return resolved;
 
             var srcDir = Path.GetDirectoryName(resolved);
             if (!string.IsNullOrWhiteSpace(srcDir)
                 && string.Equals(Path.GetFullPath(srcDir).TrimEnd('\\'), dir.TrimEnd('\\'),
                     StringComparison.OrdinalIgnoreCase))
-                return;
+                return resolved;
 
             var dest = Path.Combine(dir, name);
             if (!File.Exists(dest))
                 File.Copy(resolved, dest, false);
 
             var files = new DirectoryInfo(dir).GetFiles();
-            if (files.Length <= 200) return;
-            Array.Sort(files, (a, b) => b.LastWriteTimeUtc.CompareTo(a.LastWriteTimeUtc));
-            for (var i = 200; i < files.Length; i++)
+            if (files.Length > 200)
             {
-                try { files[i].Delete(); } catch { /* ignore */ }
+                Array.Sort(files, (a, b) => b.LastWriteTimeUtc.CompareTo(a.LastWriteTimeUtc));
+                for (var i = 200; i < files.Length; i++)
+                {
+                    try { files[i].Delete(); } catch { /* ignore */ }
+                }
             }
+
+            return File.Exists(dest) ? dest : resolved;
         }
         catch
         {
             // Le miroir ne doit jamais faire échouer un envoi.
+            return resolved;
         }
+    }
+
+    /// <summary>
+    /// SQF : après un cliché Arma, recopie dans Captures et renvoie le chemin final.
+    /// hint = nom ou chemin (optionnel). Sans nom : dernière image récente.
+    /// </summary>
+    private static string StageCaptureToComspec(string? hint)
+    {
+        try
+        {
+            string? resolved = null;
+            var raw = (hint ?? "").Trim().Trim('"').Trim('\'');
+            var ext = "";
+            try { ext = Path.GetExtension(raw); }
+            catch { ext = ""; }
+            var isJpeg = ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
+                || ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrWhiteSpace(raw))
+            {
+                if (isJpeg)
+                {
+                    // Un JPEG IceMan annoncé n’est pas une preuve de fichier.
+                    // On ne reprend pas une autre photo récente « pour remplir ».
+                    var leaf = Path.GetFileName(raw);
+                    if (!string.IsNullOrWhiteSpace(leaf))
+                        resolved = FindScreenshotByFileName(leaf);
+                }
+                else
+                {
+                    resolved = ResolveLocalImagePath(raw, TimeSpan.FromSeconds(45));
+                }
+            }
+
+            if (resolved == null && !isJpeg)
+                resolved = FindNewestScreenshot(TimeSpan.FromSeconds(45));
+            if (resolved == null)
+                return "ERR|file_not_found";
+            var dest = MirrorCapture(resolved);
+            if (string.IsNullOrWhiteSpace(dest))
+                dest = resolved;
+            return "OK|" + dest;
+        }
+        catch
+        {
+            return "ERR|stage_failed";
+        }
+    }
+
+    /// <summary>
+    /// %LOCALAPPDATA%\Arma 3 : Arma y pose souvent le PNG de <c>screenshot</c> à la racine.
+    /// </summary>
+    private static bool IsLocalArma3Root(string dir)
+    {
+        try
+        {
+            var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (string.IsNullOrWhiteSpace(local)) return false;
+            var arma = Path.GetFullPath(Path.Combine(local, "Arma 3"));
+            var full = Path.GetFullPath(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            return full.Equals(arma, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Tous les dossiers où une capture peut atterrir, y compris la racine locale Arma
+    /// et le dossier parent du profil (JPEG IceMan parfois à côté de Screenshots).
+    /// Jamais la racine Documents ni AppData\Local elle-même.
+    /// </summary>
+    private static IEnumerable<string> EnumeratePhotoLookupDirs()
+    {
+        var dirs = new List<string>();
+        void Add(string? p)
+        {
+            if (string.IsNullOrWhiteSpace(p) || !Directory.Exists(p)) return;
+            try { p = Path.GetFullPath(p); }
+            catch { return; }
+            if (!dirs.Contains(p, StringComparer.OrdinalIgnoreCase))
+                dirs.Add(p);
+        }
+
+        foreach (var d in EnumerateScreenshotDirs())
+            Add(d);
+        foreach (var d in EnumerateLooseScreenshotDirs())
+            Add(d);
+
+        foreach (var d in EnumerateScreenshotDirs())
+        {
+            if (!IsScreenshotCaptureDir(d) || IsLocalArma3Root(d)) continue;
+            try
+            {
+                var parent = Directory.GetParent(d)?.FullName;
+                if (string.IsNullOrWhiteSpace(parent)) continue;
+                var parentName = Path.GetFileName(parent.TrimEnd('\\'));
+                if (parentName.Equals("Local", StringComparison.OrdinalIgnoreCase)
+                    || parentName.Equals("Documents", StringComparison.OrdinalIgnoreCase)
+                    || parentName.Equals("OneDrive", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                Add(parent);
+            }
+            catch { /* ignore */ }
+        }
+
+        return dirs;
     }
 
     /// <summary>
@@ -7426,7 +7630,7 @@ public static partial class Extension
             const long softLimit = 180L * 1024 * 1024;
             foreach (var dir in EnumerateScreenshotDirs())
             {
-                if (!IsScreenshotCaptureDir(dir)) continue;
+                if (!IsScreenshotCaptureDir(dir) || IsLocalArma3Root(dir)) continue;
                 FileInfo[] files;
                 try { files = new DirectoryInfo(dir).GetFiles("*.*", SearchOption.TopDirectoryOnly); }
                 catch { continue; }
@@ -7541,9 +7745,8 @@ public static partial class Extension
         {
             FileInfo? best = null;
             var cutoff = DateTime.UtcNow - maxAge;
-            foreach (var dir in EnumerateScreenshotDirs())
+            foreach (var dir in EnumeratePhotoLookupDirs())
             {
-                if (!IsScreenshotCaptureDir(dir)) continue;
                 IEnumerable<string> files;
                 try { files = EnumerateRecentImagesInDir(dir); }
                 catch { continue; }
@@ -7631,7 +7834,11 @@ public static partial class Extension
         {
             var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             if (!string.IsNullOrWhiteSpace(local))
-                AddScreenshotsUnder(Path.Combine(local, "Arma 3"));
+            {
+                var armaLocal = Path.Combine(local, "Arma 3");
+                AddIfExists(armaLocal);
+                AddScreenshotsUnder(armaLocal);
+            }
         }
         catch { /* ignore */ }
         // Captures miroir COMSPEC (stable, hors Workshop) + Screenshots du même profil.
@@ -7689,9 +7896,8 @@ public static partial class Extension
         {
             FileInfo? best = null;
             var cutoff = DateTime.UtcNow - maxAge;
-            foreach (var dir in EnumerateScreenshotDirs())
+            foreach (var dir in EnumeratePhotoLookupDirs())
             {
-                if (!IsScreenshotCaptureDir(dir)) continue;
                 IEnumerable<string> files;
                 try
                 {
@@ -7728,9 +7934,8 @@ public static partial class Extension
         try
         {
             FileInfo? best = null;
-            foreach (var dir in EnumerateScreenshotDirs())
+            foreach (var dir in EnumeratePhotoLookupDirs())
             {
-                if (!IsScreenshotCaptureDir(dir)) continue;
                 IEnumerable<string> files;
                 try { files = EnumerateRecentImagesInDir(dir); }
                 catch { continue; }
@@ -7780,9 +7985,8 @@ public static partial class Extension
         try
         {
             var files = new List<FileInfo>();
-            foreach (var dir in EnumerateScreenshotDirs())
+            foreach (var dir in EnumeratePhotoLookupDirs())
             {
-                if (!IsScreenshotCaptureDir(dir)) continue;
                 IEnumerable<string> names;
                 try { names = EnumerateRecentImagesInDir(dir); }
                 catch { continue; }

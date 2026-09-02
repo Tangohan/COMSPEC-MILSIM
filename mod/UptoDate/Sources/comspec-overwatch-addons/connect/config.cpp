@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.505;
-        versionStr = "1.5.5";
-        versionAr[] = {1, 5, 5};
+        version = 1.512;
+        versionStr = "1.5.12";
+        versionAr[] = {1, 5, 12};
     };
 };
 
@@ -119,6 +119,9 @@ class CfgFunctions {
             class arsenalOverlayShow {};
             class arsenalOverlayRefresh {};
             class arsenalOverlayPreview {};
+            class arsenalCollectionName {};
+            class arsenalDeleteLocal {};
+            class arsenalDeleteCloud {};
             class arsenalInitOverlay {};
             class sendIntel {};
             class initACE {};

@@ -15,6 +15,7 @@ use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
+use App\Services\Personnel\PersonnelFunctionKitService;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Support\MosInputValidator;
@@ -30,6 +31,7 @@ class PersonnelJobRoleAdminController
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private TenantRepository $tenantRepository,
         private PersonnelStructureChangeNotificationService $structureChangeNotification,
+        private ?PersonnelFunctionKitService $functionKits = null,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -353,6 +355,7 @@ class PersonnelJobRoleAdminController
             'assignmentsPerPage' => $perPage,
             'assignmentsTotalPages' => $totalPages,
             'activeTab' => 'assignments',
+            'functionKitsActive' => $this->functionKits !== null && $this->functionKits->selectedKitIds($tenantId) !== [],
         ]);
     }
 
@@ -599,6 +602,248 @@ class PersonnelJobRoleAdminController
         Session::flash('success', 'Rôles métier du dossier mis à jour pour ' . trim((string) ($user['display_name'] ?? 'le membre')) . '.');
 
         return Response::redirect($this->assignmentsRedirectAfterSave($request));
+    }
+
+    public function kits(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if (!$this->canManageAssignments()) {
+            Session::flash('error', 'Vous n’avez pas les droits pour choisir les domaines de fonctions.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        if ($this->functionKits === null) {
+            return (new Response())->setStatusCode(503)->setBody('Service indisponible.');
+        }
+
+        $members = [];
+        try {
+            $members = $this->userRepository->listForTenant($tenantId, null, 'active', null, 400, 0);
+        } catch (\Throwable) {
+            $members = [];
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.personnel_job_roles.kits',
+            'title' => 'Kits de fonctions',
+            'kits' => $this->functionKits->kitsForDisplay($tenantId),
+            'board' => $this->functionKits->boardForTenant($tenantId),
+            'assignMembers' => $members,
+            'kitsReviewed' => $this->functionKits->isReviewed($tenantId),
+            'kitsSelected' => $this->functionKits->selectedKitIds($tenantId) !== [],
+            'activeTab' => 'kits',
+        ]);
+    }
+
+    public function saveKits(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/personnel-job-roles/kits'));
+        }
+        if (!$this->canManageAssignments() || $this->functionKits === null) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        $raw = $request->input('kit_ids');
+        $ids = is_array($raw) ? $raw : [];
+        $userId = (int) Session::get('user_id');
+        $this->functionKits->save($tenantId, $ids, $userId > 0 ? $userId : null);
+        $chosen = $this->functionKits->selectedKitIds($tenantId);
+        Session::flash(
+            'success',
+            $chosen === []
+                ? 'Choix enregistré : le catalogue complet reste disponible pour les attributions.'
+                : 'Les domaines de votre communauté sont enregistrés. Les listes d’attribution ne montrent plus que ces fonctions, ainsi que celles déjà attribuées.'
+        );
+
+        return Response::redirect(url('back-office/personnel-job-roles/kits'));
+    }
+
+    public function assignKitRole(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/personnel-job-roles/kits'));
+        }
+        if (!$this->canManageAssignments()) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        $userId = (int) $request->input('user_id', 0);
+        $roleId = (int) $request->input('job_role_id', 0);
+        if ($userId < 1 || $roleId < 1) {
+            Session::flash('error', 'Choisissez un membre et une fonction.');
+
+            return Response::redirect(url('back-office/personnel-job-roles/kits'));
+        }
+
+        $result = $this->appendJobRoleToUser($tenantId, $userId, $roleId);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/personnel-job-roles/kits'));
+    }
+
+    public function unassignKitRole(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/personnel-job-roles/kits'));
+        }
+        if (!$this->canManageAssignments()) {
+            Session::flash('error', 'Permission refusée.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        $userId = (int) $request->input('user_id', 0);
+        $roleId = (int) $request->input('job_role_id', 0);
+        if ($userId < 1 || $roleId < 1) {
+            Session::flash('error', 'Retrait impossible.');
+
+            return Response::redirect(url('back-office/personnel-job-roles/kits'));
+        }
+
+        $result = $this->removeJobRoleFromUser($tenantId, $userId, $roleId);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/personnel-job-roles/kits'));
+    }
+
+    /**
+     * @return array{ok: bool, message: string}
+     */
+    private function appendJobRoleToUser(int $tenantId, int $userId, int $roleId): array
+    {
+        $user = $this->userRepository->findById($userId, $tenantId);
+        if (!$user) {
+            return ['ok' => false, 'message' => 'Membre introuvable dans cette communauté.'];
+        }
+        $role = $this->jobRoleRepository->findRoleById($roleId, $tenantId);
+        if (!$role) {
+            return ['ok' => false, 'message' => 'Fonction introuvable.'];
+        }
+        if (!$this->jobRoleRepository->pivotTableExists()) {
+            return ['ok' => false, 'message' => 'Attributions indisponibles pour le moment.'];
+        }
+        $current = $this->jobRoleRepository->listPivotAssignmentsForUsers($tenantId, [$userId]);
+        $slots = [];
+        foreach ($current[$userId] ?? [] as $row) {
+            $rid = (int) ($row['personnel_job_role_id'] ?? 0);
+            if ($rid < 1) {
+                continue;
+            }
+            if ($rid === $roleId) {
+                return ['ok' => true, 'message' => 'Ce membre assure déjà cette fonction.'];
+            }
+            $slots[] = [
+                'personnel_job_role_id' => $rid,
+                'role_detail' => trim((string) ($row['role_detail'] ?? '')),
+                'is_primary' => !empty($row['is_primary']),
+            ];
+        }
+        $assignCfg = PersonnelJobRoleAssignmentsSettings::resolve($this->tenantRepository->getSettings($tenantId));
+        $max = (int) ($assignCfg['max_roles_per_member'] ?? 5);
+        if (count($slots) >= $max) {
+            return ['ok' => false, 'message' => 'Ce membre a déjà le nombre maximal de fonctions. Retirez-en une avant d’en ajouter.'];
+        }
+        $slots[] = [
+            'personnel_job_role_id' => $roleId,
+            'role_detail' => '',
+            'is_primary' => $slots === [],
+        ];
+
+        return $this->commitJobRoleSlots($tenantId, $userId, (string) ($user['display_name'] ?? ''), $slots);
+    }
+
+    /**
+     * @return array{ok: bool, message: string}
+     */
+    private function removeJobRoleFromUser(int $tenantId, int $userId, int $roleId): array
+    {
+        $user = $this->userRepository->findById($userId, $tenantId);
+        if (!$user) {
+            return ['ok' => false, 'message' => 'Membre introuvable dans cette communauté.'];
+        }
+        if (!$this->jobRoleRepository->pivotTableExists()) {
+            return ['ok' => false, 'message' => 'Attributions indisponibles pour le moment.'];
+        }
+        $current = $this->jobRoleRepository->listPivotAssignmentsForUsers($tenantId, [$userId]);
+        $slots = [];
+        $found = false;
+        foreach ($current[$userId] ?? [] as $row) {
+            $rid = (int) ($row['personnel_job_role_id'] ?? 0);
+            if ($rid < 1) {
+                continue;
+            }
+            if ($rid === $roleId) {
+                $found = true;
+                continue;
+            }
+            $slots[] = [
+                'personnel_job_role_id' => $rid,
+                'role_detail' => trim((string) ($row['role_detail'] ?? '')),
+                'is_primary' => !empty($row['is_primary']),
+            ];
+        }
+        if (!$found) {
+            return ['ok' => true, 'message' => 'Cette fonction n’était plus attribuée.'];
+        }
+
+        return $this->commitJobRoleSlots($tenantId, $userId, (string) ($user['display_name'] ?? ''), $slots);
+    }
+
+    /**
+     * @param list<array{personnel_job_role_id: int, role_detail: string, is_primary: bool}> $slots
+     * @return array{ok: bool, message: string}
+     */
+    private function commitJobRoleSlots(int $tenantId, int $userId, string $displayName, array $slots): array
+    {
+        $structureBefore = $this->structureChangeNotification->snapshot($tenantId, $userId);
+        $assignCfg = PersonnelJobRoleAssignmentsSettings::resolve($this->tenantRepository->getSettings($tenantId));
+        try {
+            $pivotResult = $this->jobRoleRepository->replaceUserPivotJobRoles($tenantId, $userId, $slots);
+        } catch (\Throwable) {
+            return ['ok' => false, 'message' => 'Enregistrement impossible.'];
+        }
+        $secondaryField = $pivotResult['secondary_role_display'];
+        $orbatRole = $pivotResult['primary_role_display'];
+        if ($assignCfg['append_secondaries_to_primary_display'] && $secondaryField !== '') {
+            $orbatRole = $orbatRole !== '' ? $orbatRole . ' · ' . $secondaryField : $secondaryField;
+        }
+        $orbatRole = $this->truncate100($orbatRole);
+        $profile = $this->personnelProfileRepository->getByUserId($userId) ?? [];
+        $primaryUnitId = isset($profile['primary_unit_id']) ? (int) $profile['primary_unit_id'] : 0;
+        if ($primaryUnitId > 0) {
+            try {
+                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier($userId, $primaryUnitId, $orbatRole);
+            } catch (\Throwable) {
+            }
+        }
+        try {
+            $actorId = (int) Session::get('user_id');
+            $this->structureChangeNotification->notifyFromSnapshots(
+                $tenantId,
+                $userId,
+                $actorId > 0 ? $actorId : null,
+                $structureBefore,
+                $this->structureChangeNotification->snapshot($tenantId, $userId)
+            );
+        } catch (\Throwable) {
+        }
+        $who = trim($displayName) !== '' ? trim($displayName) : 'le membre';
+
+        return ['ok' => true, 'message' => 'Fonction mise à jour pour ' . $who . '.'];
     }
 
     private function truncate100(string $s): string

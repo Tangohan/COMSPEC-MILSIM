@@ -165,6 +165,9 @@ class HomeController
         $dashboardTenantLabel = null;
         $showcaseTrainingFeature = false;
         $showcaseItems = [];
+        $showcaseKitFeature = false;
+        $showcaseKitItems = [];
+        $canManageKitPins = false;
         $myEnlistmentsPending = [];
         $staffEnlistmentsPending = [];
         $showStaffEnlistments = false;
@@ -224,6 +227,22 @@ class HomeController
             if ($showcaseTrainingFeature) {
                 $rows = \App\Core\Container::get(\App\Repositories\TrainingCourseRepository::class)->listPublishedForDashboard($tid, 20);
                 $showcaseItems = self::buildTrainingShowcasePayload($rows);
+            }
+
+            $showcaseKitFeature = false;
+            $showcaseKitItems = [];
+            $canManageKitPins = false;
+            $allowsEquipment = \App\Services\Community\TenantTypeConfig::uriAllowed($dashboardTenantType, 'equipment')
+                && \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tid, 'equipment');
+            if ($allowsEquipment) {
+                try {
+                    $showcaseKitItems = \App\Core\Container::get(\App\Services\Dashboard\DashboardWardrobeShowcaseService::class)
+                        ->listForDashboard($tid);
+                } catch (\Throwable) {
+                    $showcaseKitItems = [];
+                }
+                $canManageKitPins = $currentUser !== null && \App\Authorization\DashboardPinsAccess::canManage();
+                $showcaseKitFeature = $showcaseKitItems !== [] || $canManageKitPins;
             }
 
             if ($currentUser) {
@@ -685,6 +704,9 @@ class HomeController
             'dashboard_tenant_type' => $dashboardTenantType,
             'showcase_training_feature' => $showcaseTrainingFeature,
             'showcase_items' => $showcaseItems,
+            'showcase_kit_feature' => $showcaseKitFeature,
+            'showcase_kit_items' => $showcaseKitItems,
+            'can_manage_kit_pins' => $canManageKitPins,
             'my_enlistments_pending' => $myEnlistmentsPending,
             'staff_enlistments_pending' => $staffEnlistmentsPending,
             'show_staff_enlistments' => $showStaffEnlistments,

@@ -16,6 +16,7 @@ class DocumentBuilderService
         private TemplateRenderService $renderService,
         private DocumentPresetRepository $presetRepository,
         private DocumentTemplateRepository $templateRepository,
+        private ?TemplateVariableService $variableService = null,
         private DocumentRedactionService $redactionService = new DocumentRedactionService()
     ) {
     }
@@ -33,6 +34,7 @@ class DocumentBuilderService
             'document' => array_merge(is_array($context['document'] ?? null) ? $context['document'] : [], $document),
         ]));
         $document['body_rendered'] = $body;
+        $document = $this->applyOrgLetterhead($document, $context);
         $body = $this->redactionService->applyVisualMarkers($body);
         $body = $this->injectSignatureBlock($body, $document, $context);
         if (trim(strip_tags($body)) === '') {
@@ -97,6 +99,29 @@ class DocumentBuilderService
     }
 
     /**
+     * @param array<string, mixed> $document
+     * @param array{user_id?: int, tenant_id?: int, unit_id?: int} $context
+     * @return array<string, mixed>
+     */
+    private function applyOrgLetterhead(array $document, array $context): array
+    {
+        if ($this->variableService === null) {
+            return $document;
+        }
+        $meta = $this->documentMetadata($document);
+        $stored = [
+            'header_line1' => trim((string) ($meta['header_line1'] ?? '')),
+            'header_unit' => trim((string) ($meta['header_unit'] ?? '')),
+            'header_section' => trim((string) ($meta['header_section'] ?? '')),
+        ];
+        $org = CourrierLetterhead::fieldsFromOrg($this->variableService->resolveLetterhead($context));
+        $header = CourrierLetterhead::overlay($stored, $org);
+        $document['metadata_json'] = array_merge($meta, $header);
+
+        return $document;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function documentMetadata(array $document): array
@@ -134,19 +159,16 @@ class DocumentBuilderService
         $datePlace = trim((string) ($headerConfig['date_place'] ?? ''));
 
         $meta = $this->documentMetadata($document);
-        $hasMetaHeader = (trim((string) ($meta['header_line1'] ?? '')) !== '')
-            || (trim((string) ($meta['header_unit'] ?? '')) !== '')
-            || (trim((string) ($meta['header_section'] ?? '')) !== '');
+        $l1 = CourrierLetterhead::usable((string) ($meta['header_line1'] ?? ''));
+        $u = CourrierLetterhead::usable((string) ($meta['header_unit'] ?? ''));
+        $s = CourrierLetterhead::usable((string) ($meta['header_section'] ?? ''));
+        $hasMetaHeader = $l1 !== '' || $u !== '' || $s !== '';
 
         $out .= '<div class="courrier-envelope-header text-[10px] font-bold uppercase leading-tight mb-12">';
         if ($hasMetaHeader) {
-            $l1 = trim((string) ($meta['header_line1'] ?? ''));
-            if ($l1 === '') {
-                $l1 = 'MINISTÈRE DE LA DÉFENSE';
+            if ($l1 !== '') {
+                $out .= '<p>' . htmlspecialchars($l1) . '</p>';
             }
-            $u = trim((string) ($meta['header_unit'] ?? ''));
-            $s = trim((string) ($meta['header_section'] ?? ''));
-            $out .= '<p>' . htmlspecialchars($l1) . '</p>';
             $out .= '<p class="border-b-2 border-black w-fit mb-1">' . htmlspecialchars('UNITÉ : ' . ($u !== '' ? $u : '(à définir)')) . '</p>';
             $out .= '<p>' . htmlspecialchars('SECTION : ' . ($s !== '' ? $s : '(à définir)')) . '</p>';
         } elseif (is_array($lines) && count($lines) >= 3) {

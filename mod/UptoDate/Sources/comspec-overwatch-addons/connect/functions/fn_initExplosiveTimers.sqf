@@ -62,26 +62,6 @@ missionNamespace setVariable ["COMSPEC_ExplosiveKindFromClackers", _kindFromClac
         missionNamespace setVariable ["COMSPEC_LastAceExpMag", _magClassname, false];
     };
     if (isNull _placeholder) exitWith {};
-    if (_placeholder getVariable ["COMSPEC_atakActionOnPlaceholder", false]) exitWith {};
-    _placeholder setVariable ["COMSPEC_atakActionOnPlaceholder", true, false];
-    if (!isNil "ace_interact_menu_fnc_createAction" && {!isNil "ace_interact_menu_fnc_addActionToObject"}) then {
-        private _arm = [
-            "COMSPEC_ArmAtakObj",
-            "Uniquement depuis ATAK",
-            "\a3\ui_f\data\igui\cfg\simpletasks\types\destroy_ca.paa",
-            {
-                params ["_target", "_player"];
-                [_target, _player] call comspec_overwatch_connect_fnc_chargeArmAtak;
-            },
-            { true },
-            { [] }
-        ] call ace_interact_menu_fnc_createAction;
-        _arm = [_arm] call comspec_overwatch_connect_fnc_acePadAction;
-        if (_arm isNotEqualTo []) then {
-            [_placeholder, 0, ["ACE_MainActions", "ACE_SetTrigger"], _arm] call ace_interact_menu_fnc_addActionToObject;
-            [_placeholder, 0, ["ACE_MainActions"], _arm] call ace_interact_menu_fnc_addActionToObject;
-        };
-    };
 }] call CBA_fnc_addEventHandler;
 
 ["ace_explosives_place", {
@@ -198,6 +178,7 @@ if (!isNil "ace_explosives_fnc_addDetonateHandler") then {
         params ["_unit", "_range", "_explosive", "_fuse", "_triggerItem"];
         if (isNull _explosive) exitWith { true };
         if ((toLower (_explosive getVariable ["COMSPEC_triggerKind", ""])) isNotEqualTo "atak") exitWith { true };
+        if ((toLower (format ["%1", _triggerItem])) find "scripted" >= 0) exitWith { true };
         if (_explosive getVariable ["COMSPEC_atakFireOk", false]) exitWith { true };
         false
     }] call ace_explosives_fnc_addDetonateHandler;

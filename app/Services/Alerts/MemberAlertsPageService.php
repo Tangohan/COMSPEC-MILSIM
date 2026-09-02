@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Alerts;
 
-use App\Core\Gate;
+use App\Authorization\DashboardPinsAccess;
 use App\Repositories\ForumTopicRepository;
 use App\Services\Dashboard\TenantDashboardPinService;
 use App\Support\AlertDisplayStyle;
@@ -165,10 +165,7 @@ final class MemberAlertsPageService
             }
         }
 
-        $gate = Gate::getInstance();
-        $manageUrl = $gate->allows('dashboard.pins.manage')
-            || $gate->allows('admin.organization')
-            || $gate->allows('admin.access')
+        $manageUrl = DashboardPinsAccess::canManage()
             ? url('back-office/alerts')
             : null;
 

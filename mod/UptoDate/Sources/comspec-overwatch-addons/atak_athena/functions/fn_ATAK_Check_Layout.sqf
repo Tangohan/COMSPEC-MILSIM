@@ -106,11 +106,14 @@ if (!isNull _callSign && {!isNil "cTab_player"} && {!isNull cTab_player}) then {
     if (!(_bftGrp isEqualType "")) then { _bftGrp = str _bftGrp; };
     _bftGrp = trim _bftGrp;
     if (_bftGrp isEqualTo "") then { _bftGrp = "—"; };
-    private _bftIdx = 1;
-    if (!isNil "CBA_fnc_getGroupIndex") then {
-        _bftIdx = [cTab_player] call CBA_fnc_getGroupIndex;
+    private _bftCs = "";
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bftUnitLabel") then {
+        _bftCs = [cTab_player] call comspec_overwatch_atak_athena_fnc_athena_bftUnitLabel;
     };
-    _callSign ctrlSetText (format ["%1:%2", _bftGrp, _bftIdx]);
+    if (!(_bftCs isEqualType "")) then { _bftCs = str _bftCs; };
+    _bftCs = trim _bftCs;
+    if (_bftCs isEqualTo "") then { _bftCs = _bftGrp; };
+    _callSign ctrlSetText _bftCs;
 };
 
 private _tool = _disp displayCtrl (17000 + 1300);

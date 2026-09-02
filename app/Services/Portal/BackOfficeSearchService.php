@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Portal;
 
+use App\Authorization\DashboardPinsAccess;
 use App\Core\Gate;
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\DocumentRepository;
@@ -112,12 +113,14 @@ final class BackOfficeSearchService
             ['title' => 'Catalogue de l’organisation', 'subtitle' => 'Modèles, administration de la structure et journal des applications', 'href' => url('back-office/organisation/catalogue'), 'keywords' => 'catalogue modèles organisation kits infanterie gaming journal historique', 'ok' => $org],
             ['title' => 'Journal du catalogue', 'subtitle' => 'Historique complet des modèles appliqués à cette communauté', 'href' => url('back-office/organisation/catalogue/historique'), 'keywords' => 'journal historique catalogue applications modèles', 'ok' => $org],
             ['title' => 'Doctrine des fonctions', 'subtitle' => 'Emplois et rôles métier', 'href' => url('back-office/roles-functions'), 'keywords' => 'doctrine fonctions emplois', 'ok' => $org],
+            ['title' => 'Kits de fonctions', 'subtitle' => 'Choisir les domaines et qui les assure', 'href' => url('back-office/personnel-job-roles/kits'), 'keywords' => 'kits fonctions domaines infanterie santé logistique attributions s1', 'ok' => $org],
             ['title' => 'Attributions métier', 'subtitle' => 'Qui tient quel emploi', 'href' => url('back-office/personnel-job-roles/assignments'), 'keywords' => 'attributions emplois métier', 'ok' => $org],
             ['title' => 'Corrections de dossiers', 'subtitle' => 'Écarts à régulariser', 'href' => url('back-office/personnel/corrections'), 'keywords' => 'corrections dossiers profils', 'ok' => $org],
             ['title' => 'Identité de la communauté', 'subtitle' => 'Nom, options, présentation', 'href' => url('back-office/community'), 'keywords' => 'identité communauté paramètres', 'ok' => $org],
             ['title' => 'Paramètres d’inscription', 'subtitle' => 'Accueil des nouveaux', 'href' => url('back-office/community/inscription'), 'keywords' => 'inscription recrutement public', 'ok' => $org],
             ['title' => 'Page d’accueil publique', 'subtitle' => 'Vitrine de la communauté', 'href' => url('back-office/community/presentation'), 'keywords' => 'présentation page publique vitrine', 'ok' => $org],
             ['title' => 'Médias', 'subtitle' => 'Galerie de la communauté', 'href' => url('back-office/media'), 'keywords' => 'médias photos galerie', 'ok' => $org],
+            ['title' => 'Tenues du tableau de bord', 'subtitle' => 'Vitrine de tenues, comme le catalogue', 'href' => url('back-office/dashboard-tenues'), 'keywords' => 'tenues vitrine tableau de bord png personnage équipement catalogue', 'ok' => DashboardPinsAccess::canManage($gate)],
             ['title' => 'Annonces et alertes', 'subtitle' => 'Messages affichés aux membres', 'href' => url('back-office/alerts'), 'keywords' => 'annonces alertes bandeau', 'ok' => $org],
             ['title' => 'Intégration des nouveaux membres', 'subtitle' => 'Parcours d’arrivée', 'href' => url('back-office/integration-membres'), 'keywords' => 'intégration arrivée parcours onboarding membres', 'ok' => $org],
             ['title' => 'Indicateurs d’usage', 'subtitle' => 'Activité de la communauté', 'href' => url('back-office/analytics'), 'keywords' => 'indicateurs usage statistiques', 'ok' => $org],

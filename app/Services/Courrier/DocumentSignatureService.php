@@ -136,12 +136,46 @@ class DocumentSignatureService
     }
 
     /**
+     * Libellé affiché pour une signature enregistrée.
+     */
+    public static function displayName(string $name): string
+    {
+        $name = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
+        if ($name === '') {
+            return 'Signature principale';
+        }
+        if (mb_strlen($name) > 80) {
+            return mb_substr($name, 0, 80);
+        }
+
+        return $name;
+    }
+
+    /**
      * Enregistre une image de signature pour réutilisation (user_signatures + fichier).
      */
     public function saveUserSignature(int $userId, int $tenantId, string $sourcePathOrBase64, string $name = 'Signature principale', bool $isDefault = true): int
     {
         $relativePath = $this->storeUserSignatureImage($userId, $tenantId, $sourcePathOrBase64);
-        return $this->signatureRepository->create($userId, $tenantId, $name, $relativePath, $isDefault);
+        $existing = $this->signatureRepository->listByUser($userId, $tenantId);
+        if ($existing === []) {
+            $isDefault = true;
+        }
+
+        return $this->signatureRepository->create($userId, $tenantId, self::displayName($name), $relativePath, $isDefault);
+    }
+
+    public function deleteUserSignature(int $id, int $userId, int $tenantId): void
+    {
+        $sig = $this->signatureRepository->findById($id, $userId, $tenantId);
+        if (!$sig) {
+            throw new \RuntimeException('Signature introuvable.');
+        }
+        $fullPath = $this->getSignatureFilePath((string) $sig['file_path'], true);
+        $this->signatureRepository->delete($id, $userId, $tenantId);
+        if (is_file($fullPath)) {
+            unlink($fullPath);
+        }
     }
 
     /**
@@ -221,9 +255,18 @@ class DocumentSignatureService
                 $full = base_path(self::SIGNATURES_BASE . '/' . $pathOrBase64);
             }
             $data = file_get_contents($full);
+            if ($data === false) {
+                $data = null;
+            }
         }
         if ($data === null || $data === '') {
-            throw new \RuntimeException('Image de signature invalide.');
+            throw new \RuntimeException('Le dessin de signature n’a pas pu être enregistré. Recommencez.');
+        }
+        if (!str_starts_with($data, "\x89PNG")) {
+            throw new \RuntimeException('Le dessin de signature n’a pas pu être enregistré. Recommencez.');
+        }
+        if (strlen($data) > 800000) {
+            throw new \RuntimeException('La signature est trop lourde. Dessinez-la à nouveau, plus simplement.');
         }
         $filename = $userId . '_' . uniqid('', true) . '.png';
         $relativePath = $tenantId . '/' . $filename;

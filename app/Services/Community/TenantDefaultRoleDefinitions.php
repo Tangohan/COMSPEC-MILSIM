@@ -299,6 +299,14 @@ final class TenantDefaultRoleDefinitions
         ];
 
         return [
+            'community_owner' => [
+                'admin.organization',
+                'dashboard.pins.manage',
+            ],
+            'tenant_admin' => [
+                'admin.organization',
+                'dashboard.pins.manage',
+            ],
             'member' => [
                 'operational.board.view',
                 'organization.orbat.view',

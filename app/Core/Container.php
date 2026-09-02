@@ -463,6 +463,17 @@ class Container
                 self::get(\App\Repositories\Courrier\CourrierDocumentRepository::class),
                 self::get(\App\Services\Dashboard\TenantDashboardPinService::class)
             ),
+            \App\Repositories\ArsenalWardrobeRepository::class => new \App\Repositories\ArsenalWardrobeRepository(),
+            \App\Repositories\TenantDashboardWardrobePinRepository::class => new \App\Repositories\TenantDashboardWardrobePinRepository(),
+            \App\Services\Dashboard\DashboardWardrobeShowcaseService::class => new \App\Services\Dashboard\DashboardWardrobeShowcaseService(
+                self::get(\App\Repositories\TenantDashboardWardrobePinRepository::class),
+                self::get(\App\Repositories\ArsenalWardrobeRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\DashboardWardrobePinsAdminController::class => new \App\Controllers\Admin\Organization\DashboardWardrobePinsAdminController(
+                self::get(\App\Repositories\TenantDashboardWardrobePinRepository::class),
+                self::get(\App\Repositories\ArsenalWardrobeRepository::class),
+                self::get(\App\Services\Dashboard\DashboardWardrobeShowcaseService::class)
+            ),
             \App\Controllers\Admin\Organization\ModerationOrganizationController::class => new \App\Controllers\Admin\Organization\ModerationOrganizationController(
                 self::get(AuthService::class),
                 self::get(\App\Repositories\ModerationRepository::class),
@@ -783,6 +794,12 @@ class Container
             ),
             \App\Repositories\AccountPurgeRequestRepository::class => new \App\Repositories\AccountPurgeRequestRepository(),
             \App\Repositories\PersonnelJobRoleRepository::class => new \App\Repositories\PersonnelJobRoleRepository(),
+            \App\Repositories\TenantFunctionKitRepository::class => new \App\Repositories\TenantFunctionKitRepository(),
+            \App\Services\Personnel\PersonnelFunctionKitService::class => new \App\Services\Personnel\PersonnelFunctionKitService(
+                self::get(\App\Repositories\TenantFunctionKitRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class)
+            ),
             \App\Repositories\PlanningEntryRepository::class => new \App\Repositories\PlanningEntryRepository(),
             \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController::class => new \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController(
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
@@ -791,7 +808,8 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(TenantRepository::class),
-                self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class)
+                self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
+                self::get(\App\Services\Personnel\PersonnelFunctionKitService::class)
             ),
             \App\Controllers\Admin\Organization\HrCharterDocumentAdminController::class => new \App\Controllers\Admin\Organization\HrCharterDocumentAdminController(
                 self::get(\App\Repositories\HrCharterRepository::class),
@@ -2537,7 +2555,8 @@ class Container
                 self::get(\App\Repositories\GradeRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Repositories\Courrier\DocumentVariablesCatalogRepository::class),
-                self::get(\App\Services\GradeDisplayService::class)
+                self::get(\App\Services\GradeDisplayService::class),
+                self::get(TenantRepository::class)
             ),
             \App\Services\Courrier\TemplateRenderService::class => new \App\Services\Courrier\TemplateRenderService(
                 self::get(\App\Services\Courrier\TemplateVariableService::class)
@@ -2545,7 +2564,8 @@ class Container
             \App\Services\Courrier\DocumentBuilderService::class => new \App\Services\Courrier\DocumentBuilderService(
                 self::get(\App\Services\Courrier\TemplateRenderService::class),
                 self::get(\App\Repositories\Courrier\DocumentPresetRepository::class),
-                self::get(\App\Repositories\Courrier\DocumentTemplateRepository::class)
+                self::get(\App\Repositories\Courrier\DocumentTemplateRepository::class),
+                self::get(\App\Services\Courrier\TemplateVariableService::class)
             ),
             \App\Services\Courrier\DocumentValidationService::class => new \App\Services\Courrier\DocumentValidationService(
                 self::get(\App\Services\Courrier\TemplateRenderService::class)

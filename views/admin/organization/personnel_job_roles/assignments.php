@@ -66,6 +66,7 @@ if ($isAthShell):
     require base_path('views/partials/ath_kpis.php');
     ?>
 <div class="flex flex-wrap gap-2 ath-rise">
+    <a href="<?= url('back-office/personnel-job-roles/kits') ?>" class="ath-btn<?= $activeTab === 'kits' ? ' ath-btn--solid' : '' ?>">Kits de fonctions</a>
     <a href="<?= url('back-office/personnel-job-roles') ?>" class="ath-btn<?= $activeTab === 'referentiel' ? ' ath-btn--solid' : '' ?>">Référentiel</a>
     <a href="<?= url('back-office/personnel-job-roles/assignments') ?>" class="ath-btn<?= $activeTab === 'assignments' ? ' ath-btn--solid' : '' ?>">Attributions effectifs</a>
     <a href="<?= url('back-office/personnel-job-roles/roles/create') ?>" class="ath-btn">Nouvel emploi</a>
@@ -73,6 +74,12 @@ if ($isAthShell):
 <?php endif; ?>
 
 <div class="<?= $isAthShell ? 'pjr-assignments ath-dash-page' : 'mx-auto max-w-7xl px-6 py-12' ?>">
+    <?php if (!empty($functionKitsActive)): ?>
+    <p class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+        Les listes ci-dessous se limitent aux domaines choisis pour votre communauté, plus les fonctions déjà attribuées.
+        <a class="font-semibold underline" href="<?= $h(url('back-office/personnel-job-roles/kits')) ?>">Modifier les domaines</a>
+    </p>
+    <?php endif; ?>
     <?php if (!$isAthShell): ?>
     <?php require __DIR__ . '/_nav.php'; ?>
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">

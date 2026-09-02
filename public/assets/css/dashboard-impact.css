@@ -1872,6 +1872,63 @@ body.dashboard-shell main {
   color: #fff;
 }
 
+.dash-showcase__card--kit {
+  background:
+    radial-gradient(120% 80% at 50% 0%, #1e3a5f 0%, #0f172a 55%, #020617 100%);
+}
+
+.dash-showcase__card-bg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.55;
+}
+
+.dash-showcase__card-figure {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35));
+  transition: transform 0.45s ease;
+}
+
+.dash-showcase__card--kit:hover .dash-showcase__card-figure {
+  transform: translateY(-4px) scale(1.03);
+}
+
+.dash-showcase__modal-art {
+  position: relative;
+  background:
+    radial-gradient(120% 80% at 50% 0%, #1e3a5f 0%, #0f172a 55%, #020617 100%);
+  overflow: hidden;
+}
+
+.dash-showcase__modal-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.45;
+}
+
+.dash-showcase__modal-figure {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+}
+
 /* --------------------------------------------------------------------------
  * Bande identité opérationnelle (void / emerald) — remplace le badge plat
  * Desktop : une ligne compressée (métas + actions + switch).
