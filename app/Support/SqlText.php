@@ -142,6 +142,53 @@ final class SqlText
     }
 
     /**
+     * COALESCE(a, b) = ? — un placeholder.
+     */
+    public static function coalesceEquals(PDO $pdo, string $first, string $second): string
+    {
+        self::assertColumnExpr($first);
+        self::assertColumnExpr($second);
+        $expr = 'COALESCE(' . $first . ', ' . $second . ')';
+        if (!self::isMysqlFamily($pdo)) {
+            return $expr . ' = ?';
+        }
+
+        return '(' . $expr . ' COLLATE ' . self::COLLATION
+            . ') = (CONVERT(? USING utf8mb4) COLLATE ' . self::COLLATION . ')';
+    }
+
+    /**
+     * COALESCE(a, b) IN ('a', 'b') — littéraux métier figés.
+     *
+     * @param list<string> $literals
+     */
+    public static function coalesceInLiterals(PDO $pdo, string $first, string $second, array $literals): string
+    {
+        self::assertColumnExpr($first);
+        self::assertColumnExpr($second);
+        $expr = 'COALESCE(' . $first . ', ' . $second . ')';
+        if ($literals === []) {
+            throw new InvalidArgumentException('Liste IN vide.');
+        }
+        $quoted = [];
+        foreach ($literals as $literal) {
+            if (!is_string($literal) || !preg_match('/^[a-z][a-z0-9_]*$/', $literal)) {
+                throw new InvalidArgumentException('Littéral IN invalide.');
+            }
+            $quoted[] = "'" . $literal . "'";
+        }
+        if (!self::isMysqlFamily($pdo)) {
+            return $expr . ' IN (' . implode(', ', $quoted) . ')';
+        }
+        $coerced = [];
+        foreach ($quoted as $item) {
+            $coerced[] = $item . ' COLLATE ' . self::COLLATION;
+        }
+
+        return '(' . $expr . ' COLLATE ' . self::COLLATION . ') IN (' . implode(', ', $coerced) . ')';
+    }
+
+    /**
      * LOWER(TRIM(colonne)) IN (?,?,…) — autant de placeholders que $count.
      */
     public static function normalizedInPlaceholders(PDO $pdo, string $columnExpr, int $count): string

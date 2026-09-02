@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(381, '2026-09-02', 'Le fichier joint se consulte et se retire depuis la fiche', 'Sur la page de modification d’un document, le fichier actuellement joint s’ouvre ou se télécharge. On peut le retirer sans supprimer la fiche. Rechargez la page du document', [], [], [
+                'Le fichier joint n’était ni consultable ni retirable depuis la modification de la fiche',
+            ], ['platform'], [
+                'Ouvrez Gestion documentaire, puis Modifier sur une fiche. Si un fichier est joint, utilisez Ouvrir le fichier, Télécharger ou Retirer le fichier.',
+            ], 'Portail'),
             $pr(377, '2026-09-02', 'La mise à jour du portail se termine à nouveau', 'L’écran de mise à niveau du portail s’arrêtait en cours de route. La mise à jour peut désormais aller jusqu’au bout, y compris lorsqu’un compte est rattaché à plusieurs communautés. Rechargez le portail', [], [], [
                 'L’écran de mise à jour du portail s’interrompait au milieu du parcours',
             ], ['platform'], [
@@ -594,14 +599,11 @@ final class DevDispatchCatalog
             ], ['platform'], [
                 'Connectez-vous, puis ouvrez le tableau de bord. Si une ancienne page d’erreur reste affichée, actualisez-la.',
             ], 'Portail 1.6.03'),
-            $pr(375, '2026-09-02', 'Le tableau de bord Hatchet (H-60) se commande à nouveau', 'En s’asseyant aux commandes d’un hélicoptère Hatchet, le menu d’actions personnelles se referme. Clic et molette reviennent aux interrupteurs : la mise en route n’est plus bloquée par Overwatch ou le recueil SSE. Rechargez le pack jeu, puis relancez Arma complètement', [
-                'À l’embarquement, le menu d’actions se ferme tout seul',
-                'Tant que l’on est aux commandes d’un appareil Hatchet, le recueil sur l’équipage reste masqué',
-            ], [], [
-                'Les interrupteurs du cockpit ne répondaient plus : l’hélicoptère refusait de démarrer',
-            ], ['atak'], [
-                'Pack Overwatch 1.5.13 et SSE 0.7.20. Quittez Arma complètement, puis relancez. Aux commandes d’un H-60, suivez la mise en route habituelle (interrupteurs du tableau de bord).',
-            ], 'Overwatch 1.5.13 · SSE 0.7.20'),
+            $pr(375, '2026-09-02', 'Les kits d’accès se cochent clairement avant l’enregistrement', 'Sur la page Kits d’accès, chaque carte affiche une case. Une carte retenue passe en Sélectionné et le pied de page indique combien de kits sont cochés. Enregistrez ensuite pour les attribuer aux membres', [], [], [
+                'Cliquer une carte ne changeait pas l’affichage : pas de case visible, le pied de page restait sur Aucun kit coché',
+            ], ['personnel'], [
+                'Ouvrez Effectifs, puis Kits d’accès. Cochez les packs voulus : le compteur se met à jour, puis Enregistrer les kits.',
+            ], 'Portail 1.6.03'),
             $pr(374, '2026-09-02', 'Le tableau des effectifs affiche la disponibilité sur 90 jours', 'Sur le tableau rapide du tableau de bord, chaque membre montre son taux de disponibilité : participations annoncées et présences validées sur les trois derniers mois, sous forme de barre colorée. Rechargez le tableau de bord', [
                 'Colonne Disponibilité, avec le pourcentage et une barre du rouge au vert',
                 'Un membre sans activité récente affiche un tiret, pas un taux à zéro',
@@ -624,13 +626,13 @@ final class DevDispatchCatalog
             ], ['platform'], [
                 'Ouvrez Équipement, une collection, puis Modifier. Envoyez de nouveau la photo en JPG ou PNG.',
             ], 'Portail 1.5.99'),
-            $pr(370, '2026-09-02', 'Des kits de fonctions pour choisir qui fait quoi en quelques clics', 'Les responsables d’effectifs cochent les domaines de la communauté — infanterie, santé, logistique, commandement. Les listes d’attribution se limitent à ces fonctions, et un tableau indique qui les assure. Si aucun domaine n’est choisi, le catalogue complet reste disponible. Rechargez la page Effectifs', [
-                'Choix des domaines de fonctions depuis Effectifs, en un enregistrement',
-                'Tableau Qui assure quoi pour désigner un membre à chaque fonction clé',
+            $pr(370, '2026-09-02', 'Des kits d’accès pour choisir qui peut faire quoi', 'Les responsables cochent des packs simples — lecture, modification, recrutement, paramètres — puis les attribuent aux membres. Plusieurs kits se cumulent. Rechargez la page Kits d’accès', [
+                'Packs lecture / modification / recrutement / paramètres, multi-sélectionnables',
+                'Attribution directe aux membres : les droits s’ajoutent à leurs accès',
             ], [
-                'Les listes d’emplois se limitent aux domaines retenus, sans masquer une fonction déjà attribuée',
+                'Les listes d’emplois métier ne sont plus filtrées par domaine militaire',
             ], [], ['personnel'], [
-                'Ouvrez Effectifs, Fonctions, puis Kits de fonctions. Cochez les domaines, enregistrez, puis désignez qui les assure.',
+                'Ouvrez Effectifs, puis Kits d’accès. Cochez les kits, enregistrez, puis attribuez-les aux membres.',
             ], 'Portail 1.5.98'),
             $pr(369, '2026-09-02', 'L’avancement du dossier ne demande plus un second prénom et nom', 'Sur la fiche, l’avancement du dossier ne signale plus Prénom et nom à compléter lorsque le prénom et le nom du personnage sont déjà renseignés. Rechargez la page du dossier', [], [], [
                 'Un second point Prénom et nom restait à compléter alors que l’identité du personnage était déjà remplie',

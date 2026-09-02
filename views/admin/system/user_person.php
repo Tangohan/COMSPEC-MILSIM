@@ -16,9 +16,9 @@ $empty = static function (?string $v) use ($h): string {
 };
 $statusLabel = static function (string $status): string {
     return match ($status) {
-        'active' => 'Actif',
-        'inactive' => 'Désactivé',
-        'pending_verification' => 'E-mail à vérifier',
+        'active' => 'Compte actif',
+        'inactive' => 'Compte inactif',
+        'pending_verification' => 'En attente de vérification de l’e-mail',
         default => $status !== '' ? $status : 'Inconnu',
     };
 };
@@ -50,7 +50,7 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                     <?php else: ?>
                         <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Orphelin (plus d’orga active)</span>
                     <?php endif; ?>
-                    <p class="text-xs text-slate-500"><?= count($memberships) ?> fiche(s) communauté</p>
+                    <p class="text-xs text-slate-500"><?= count($memberships) ?> dossier(s) communautaire(s) — chacun reste séparé</p>
                 </div>
             </div>
 
@@ -109,8 +109,8 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                 <article class="rounded-xl border <?= $isDeleted ? 'border-rose-200 bg-rose-50/40' : ($isDefault ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white') ?> shadow-sm overflow-hidden">
                     <div class="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
                         <div>
-                            <h2 class="text-base font-bold text-slate-900"><?= $h($tenantName !== '' ? $tenantName : 'Communauté') ?></h2>
-                            <p class="text-xs text-slate-500 font-mono">slug: <?= $h($tenantSlug) ?> · user #<?= $uid ?> · tenant #<?= $tid ?></p>
+                            <h2 class="text-base font-bold text-slate-900">Dossier — <?= $h($tenantName !== '' ? $tenantName : 'Communauté') ?></h2>
+                            <p class="text-xs text-slate-500">Vous éditez le dossier de cette communauté uniquement. Grade, matricule et fiche RH des autres communautés ne sont pas concernés.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <?php if ($isDeleted): ?>
@@ -168,10 +168,13 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                             <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Créé / MAJ</p>
                             <p class="text-xs text-slate-600"><?= $h((string) ($m['created_at'] ?? '—')) ?> · <?= $h((string) ($m['updated_at'] ?? '—')) ?></p>
                         </div>
-                        <?php if (!$isDeleted && !$isDefault && $uid > 0): ?>
+                        <?php if (!$isDeleted && $uid > 0): ?>
                         <div class="sm:col-span-2 lg:col-span-3 flex flex-wrap gap-2 pt-1">
+                            <a href="<?= $h(url('admin/users/' . $uid . '/edit')) ?>" class="inline-flex rounded-lg bg-emerald-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-900">Modifier la fiche</a>
+                            <?php if (!$isDefault): ?>
                             <a href="<?= $h(url('personnel/' . $uid)) ?>" class="text-xs font-semibold text-emerald-800 hover:underline">Fiche personnel</a>
-                            <a href="<?= $h(url('back-office/users/' . $uid)) ?>" class="text-xs font-semibold text-slate-600 hover:underline">Fiche BO communauté</a>
+                            <a href="<?= $h(url('back-office/users/' . $uid)) ?>" class="text-xs font-semibold text-slate-600 hover:underline">Fiche communauté</a>
+                            <?php endif; ?>
                         </div>
                         <?php endif; ?>
                     </div>

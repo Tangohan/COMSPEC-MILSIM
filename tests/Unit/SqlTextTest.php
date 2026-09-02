@@ -24,6 +24,10 @@ final class SqlTextTest extends TestCase
             'u.status = ?',
             SqlText::equals($pdo, 'u.status')
         );
+        self::assertSame(
+            'COALESCE(p.status, u.status) = ?',
+            SqlText::coalesceEquals($pdo, 'p.status', 'u.status')
+        );
     }
 
     public function testMysqlForcesUnicodeCollationOnBothSides(): void

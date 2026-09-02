@@ -70,7 +70,7 @@ $year = (int) date('Y');
     </div>
 
     <div class="portal-footer__bar">
-        <p class="portal-footer__copy">© <?= $year ?> Athena Compsec. Tous droits réservés.</p>
+        <p class="portal-footer__copy">© <?= $year ?> Athena Comspec. Tous droits réservés.</p>
         <p class="portal-footer__tag">Outils de gestion pour communautés MILSIM.</p>
     </div>
 </footer>

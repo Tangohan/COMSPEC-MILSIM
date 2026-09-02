@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use App\Controllers\Web\HomeController;
 use App\Controllers\Web\HubController;
+use App\Controllers\Web\MiniArticlesController;
 use App\Controllers\Web\OperationWorkspaceController;
 use App\Controllers\Web\PersonnelController;
 use App\Controllers\Web\EnlistmentController;
 use App\Controllers\Web\EnlistmentCandidatePortalController;
 use App\Controllers\Web\DocumentsController;
+use App\Controllers\Web\DoctrineDocumentsController;
 use App\Controllers\Web\EquipmentController;
 use App\Controllers\Web\ArsenalWardrobeController;
 use App\Controllers\Web\TrainingController;
@@ -116,6 +118,7 @@ use App\Controllers\Admin\System\SystemMilitaryReferentialController;
 use App\Controllers\Admin\System\SystemCooperationAnnouncementsController;
 use App\Controllers\Admin\System\SystemSubscriptionPlansController;
 use App\Controllers\Admin\Organization\TenantAlertsController;
+use App\Controllers\Admin\Organization\TenantMiniArticlesController;
 use App\Controllers\Api\AlertDismissController;
 use App\Controllers\Api\MePreferencesApiController;
 use App\Controllers\Api\PlatformUxFeedbackApiController;
@@ -392,6 +395,8 @@ return function (Router $router) {
     $router->get('/jnet/effectifs', [JnetPortalController::class, 'roster'], [AuthMiddleware::class]);
     $router->get('/jnet/applications', [JnetPortalController::class, 'apps'], [AuthMiddleware::class]);
     $router->get('/publier', [\App\Controllers\Web\PublicationLauncherController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/articles', [MiniArticlesController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/articles/{slug}', [MiniArticlesController::class, 'show'], [AuthMiddleware::class]);
     $router->get('/roleplay', [\App\Controllers\Web\RoleplayPageController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/alertes', [MemberAlertsController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/deploiement', [PersonnelDeploymentController::class, 'index'], [AuthMiddleware::class]);
@@ -616,10 +621,13 @@ return function (Router $router) {
     $router->get('/documents/gestion/{id}/modifier', [AdminDocumentsController::class, 'edit'], $mwDocuments);
     $router->post('/documents/gestion/{id}/modifier', [AdminDocumentsController::class, 'update'], $mwDocuments);
     $router->post('/documents/gestion/{id}/nouvelle-version', [AdminDocumentsController::class, 'newVersion'], $mwDocuments);
+    $router->post('/documents/gestion/{id}/retirer-fichier', [AdminDocumentsController::class, 'detachFile'], $mwDocuments);
     $router->post('/documents/gestion/{id}/cycle', [AdminDocumentsController::class, 'lifecycleAction'], $mwDocuments);
     $router->post('/documents/gestion/{id}/archiver', [AdminDocumentsController::class, 'archive'], $mwDocuments);
     $router->get('/documents/gestion/{id}/historique', [AdminDocumentsController::class, 'history'], $mwDocuments);
     $router->get('/documents/gestion/{id}/acces', [AdminDocumentsController::class, 'access'], $mwDocuments);
+    $router->get('/documents/doctrine/{id}', [DoctrineDocumentsController::class, 'show'], $mwDocuments);
+    $router->post('/documents/doctrine/{id}/acknowledge', [DoctrineDocumentsController::class, 'acknowledge'], $mwDocuments);
     $router->post('/documents/{id}/unlock', [DocumentsController::class, 'unlock'], $mwDocuments);
     $router->post('/documents/{id}/signature', [DocumentsController::class, 'signature'], $mwDocuments);
     $router->post('/documents/{id}/access-track', [DocumentsController::class, 'accessTrack'], $mwDocuments);
@@ -966,6 +974,8 @@ return function (Router $router) {
     $router->get('/api/admin/user-search', [SystemUserLookupApiController::class, 'search'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users', [SystemUsersController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/person', [SystemUsersController::class, 'showPerson'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/users/{id}/edit', [SystemUsersController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/{id}/update', [SystemUsersController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/set-status', [SystemUsersController::class, 'setStatus'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/delete', [SystemUsersController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/purge', [SystemUsersController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1108,6 +1118,9 @@ return function (Router $router) {
     $router->get('/back-office/doctrine', [DoctrineAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine', [DoctrineAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/versions/{versionId}/activate', [DoctrineAdminController::class, 'activate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclature'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclatureSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/compliance', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'compliance'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys', [OrganizationIntegrationsController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys/{id}/update', [OrganizationIntegrationsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys/{id}/rotate', [OrganizationIntegrationsController::class, 'rotate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1277,6 +1290,13 @@ return function (Router $router) {
     $router->post('/back-office/alerts/{id}/delete', [TenantAlertsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/alerts/affichage-a-venir', [TenantAlertsController::class, 'updateUpcomingVisibility'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/alerts', [TenantAlertsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+
+    $router->get('/back-office/articles/create', [TenantMiniArticlesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/articles', [TenantMiniArticlesController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/articles/{id}/edit', [TenantMiniArticlesController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/articles/{id}/update', [TenantMiniArticlesController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/articles/{id}/delete', [TenantMiniArticlesController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/articles', [TenantMiniArticlesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/recrutement', [RecruitmentWorkspaceController::class, 'dashboard'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/recrutement/analyses', [RecruitmentWorkspaceController::class, 'analytics'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/recrutement/automod/restore-access', [RecruitmentWorkspaceController::class, 'automodRestoreAccess'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

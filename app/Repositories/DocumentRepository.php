@@ -78,7 +78,7 @@ class DocumentRepository
 
     public function findById(int $id, ?int $tenantId = null): ?array
     {
-        $sql = 'SELECT d.*, dv.id AS version_id, dv.version_number, dv.file_path, dv.mime_type, dv.size, dv.checksum
+        $sql = 'SELECT d.*, dv.id AS version_id, dv.version_number, dv.file_path, dv.original_name, dv.mime_type, dv.size, dv.checksum
                 FROM documents d
                 LEFT JOIN document_versions dv ON dv.document_id = d.id AND dv.is_current = 1
                 WHERE d.id = ?';

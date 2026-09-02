@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(180, $byKind['update']);
-        self::assertCount(186, $all);
+        self::assertSame(181, $byKind['update']);
+        self::assertCount(187, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -557,7 +557,7 @@ final class DevDispatchCatalogTest extends TestCase
         $functionKits = DevDispatchCatalog::find('update', '370');
         self::assertNotNull($functionKits);
         self::assertSame('00370', $functionKits['number_pad']);
-        self::assertStringContainsString('fonctions', strtolower((string) $functionKits['title']));
+        self::assertStringContainsString('accès', strtolower((string) $functionKits['title']));
         $coverStorage = DevDispatchCatalog::find('update', '371');
         self::assertNotNull($coverStorage);
         self::assertSame('00371', $coverStorage['number_pad']);
@@ -574,10 +574,10 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($availDash);
         self::assertSame('00374', $availDash['number_pad']);
         self::assertStringContainsString('disponibilité', strtolower((string) $availDash['title']));
-        $hatchetCockpit = DevDispatchCatalog::find('update', '375');
-        self::assertNotNull($hatchetCockpit);
-        self::assertSame('00375', $hatchetCockpit['number_pad']);
-        self::assertStringContainsString('hatchet', strtolower((string) $hatchetCockpit['title']));
+        $kitsPick = DevDispatchCatalog::find('update', '375');
+        self::assertNotNull($kitsPick);
+        self::assertSame('00375', $kitsPick['number_pad']);
+        self::assertStringContainsString('kits', strtolower((string) $kitsPick['title']));
         $dashboardLogin = DevDispatchCatalog::find('update', '376');
         self::assertNotNull($dashboardLogin);
         self::assertSame('00376', $dashboardLogin['number_pad']);
@@ -586,6 +586,10 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($upgradeResume);
         self::assertSame('00377', $upgradeResume['number_pad']);
         self::assertStringContainsString('mise à jour du portail', strtolower((string) $upgradeResume['title']));
+        $docEditFile = DevDispatchCatalog::find('update', '381');
+        self::assertNotNull($docEditFile);
+        self::assertSame('00381', $docEditFile['number_pad']);
+        self::assertStringContainsString('fichier', strtolower((string) $docEditFile['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

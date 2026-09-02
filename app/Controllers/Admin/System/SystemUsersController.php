@@ -19,6 +19,7 @@ use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Account\AccountDeletionService;
 use App\Services\Account\AccountPurgeService;
+use App\Services\Admin\PlatformUserProfileService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Repositories\AccountPurgeRequestRepository;
@@ -158,10 +159,10 @@ final class SystemUsersController
 
             $gradeId = (int) ($m['grade_id'] ?? 0);
             $grade = $gradeId > 0 ? $grades->findById($gradeId, $tid) : null;
-            $pp = $personnelProfiles->getByUserId($uid) ?? [];
-            $extras = $personnelExtras->getByUserId($uid) ?? [];
+            $pp = $personnelProfiles->getByUserId($uid, $tid) ?? [];
+            $extras = $personnelExtras->getByUserId($uid, $tid) ?? [];
             $primaryAssignment = $assignments->getPrimaryAssignment($uid);
-            $roleIds = $this->users->listOrganizationRoleIdsForUser($uid);
+            $roleIds = $this->users->listOrganizationRoleIdsForUser($uid, $tid);
             $roleNames = [];
             $roleName = trim((string) ($m['role_name'] ?? ''));
             if ($roleName !== '') {
@@ -214,6 +215,120 @@ final class SystemUsersController
             'personHasLiveOrg' => $hasLiveOrg,
             'personMemberships' => $dossierMemberships,
         ]);
+    }
+
+    public function edit(Request $request, array $params = []): Response
+    {
+        $userId = (int) ($params['id'] ?? 0);
+        if ($userId < 1) {
+            Session::flash('error', 'Fiche introuvable.');
+
+            return Response::redirect(url('admin/users'));
+        }
+
+        /** @var PlatformUserProfileService $editor */
+        $editor = Container::get(PlatformUserProfileService::class);
+        $pack = $editor->load($userId);
+        if ($pack === null) {
+            Session::flash('error', 'Compte introuvable.');
+
+            return Response::redirect(url('admin/users'));
+        }
+        $user = is_array($pack['user'] ?? null) ? $pack['user'] : [];
+        if (!empty($user['deleted_at'])) {
+            Session::flash('error', 'Ce compte a déjà été anonymisé : il ne peut plus être modifié.');
+            $email = strtolower(trim((string) ($user['email'] ?? '')));
+
+            return Response::redirect(
+                $email !== '' && !str_ends_with($email, '@deleted.invalid')
+                    ? url('admin/users/person') . '?email=' . rawurlencode($email)
+                    : url('admin/users')
+            );
+        }
+
+        $label = trim((string) ($user['display_name'] ?? ''));
+        if ($label === '') {
+            $label = trim((string) ($user['callsign'] ?? ''));
+        }
+        if ($label === '') {
+            $label = trim((string) ($user['email'] ?? ''));
+        }
+
+        return Response::view('layout.main', [
+            'title' => 'Modifier le compte — ' . ($label !== '' ? $label : 'fiche'),
+            'content' => 'admin.system.user_edit',
+            'platformEdit' => $pack,
+            'platformEditUserId' => $userId,
+        ]);
+    }
+
+    public function update(Request $request, array $params = []): Response
+    {
+        $userId = (int) ($params['id'] ?? 0);
+        $editUrl = url('admin/users/' . $userId . '/edit');
+        if ($userId < 1) {
+            Session::flash('error', 'Fiche introuvable.');
+
+            return Response::redirect(url('admin/users'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($editUrl);
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $actorTenantId = (int) Session::get('tenant_id');
+        $before = $this->users->findById($userId, null);
+        if ($before === null) {
+            Session::flash('error', 'Compte introuvable.');
+
+            return Response::redirect(url('admin/users'));
+        }
+
+        /** @var PlatformUserProfileService $editor */
+        $editor = Container::get(PlatformUserProfileService::class);
+        $result = $editor->save($userId, $actorId, $request->all());
+        if ($result['ok'] === false) {
+            Session::flash('error', (string) ($result['error'] ?? 'Enregistrement impossible.'));
+
+            return Response::redirect($editUrl);
+        }
+
+        $after = $this->users->findById($userId, null) ?? [];
+        $this->audit->logChange(
+            AuditAction::USER_PROFILE_UPDATED,
+            $actorTenantId > 0 ? $actorTenantId : (int) ($before['tenant_id'] ?? 0),
+            $actorId,
+            'user',
+            $userId,
+            [
+                'email' => (string) ($before['email'] ?? ''),
+                'display_name' => (string) ($before['display_name'] ?? ''),
+                'status' => (string) ($before['status'] ?? ''),
+                'callsign' => (string) ($before['callsign'] ?? ''),
+            ],
+            [
+                'email' => (string) ($after['email'] ?? ''),
+                'display_name' => (string) ($after['display_name'] ?? ''),
+                'status' => (string) ($after['status'] ?? ''),
+                'callsign' => (string) ($after['callsign'] ?? ''),
+                'platform_directory' => true,
+            ],
+        );
+
+        $notes = is_array($result['notes'] ?? null) ? $result['notes'] : [];
+        Session::flash(
+            'success',
+            'Fiche enregistrée.' . ($notes !== [] ? ' ' . implode(' ', $notes) : '')
+        );
+
+        $email = strtolower(trim((string) ($after['email'] ?? $before['email'] ?? '')));
+        if ($email !== '' && !str_ends_with($email, '@deleted.invalid')) {
+            return Response::redirect(url('admin/users/person') . '?email=' . rawurlencode($email));
+        }
+
+        return Response::redirect($editUrl);
     }
 
     public function setStatus(Request $request, array $params = []): Response

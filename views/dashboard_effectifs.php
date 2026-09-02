@@ -111,6 +111,7 @@ require base_path('views/partials/alert_banners.php');
             require base_path('views/partials/dashboard_member_rh.php');
         } ?>
         <?php require base_path('views/partials/dashboard_quick_articles.php'); ?>
+        <?php require base_path('views/partials/dashboard_mini_articles.php'); ?>
     </div>
     <?php endif; ?>
 

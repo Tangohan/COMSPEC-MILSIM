@@ -622,25 +622,41 @@ class UserAdminController
             Session::flash('error', 'Limite de membres du plan atteinte.');
             return Response::redirect($createUrl);
         }
-        $passwordPlaceholder = password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID);
-        $userId = $this->userRepository->create($tenantId, [
-            'email' => $email,
-            'password_hash' => $passwordPlaceholder,
-            'display_name' => $displayName !== '' ? $displayName : null,
-            'callsign' => $callsign ?: null,
-            'role_id' => $primaryRoleId,
-            'grade_id' => $gradeId,
-            'status' => 'pending_verification',
-            'nationality_code' => $nationalityCode,
-            'preferred_grade_format' => $preferredGradeFormat,
-            'professional_category_code' => $professionalCategoryCode,
-        ]);
-        $this->userProfileRepository->upsert($userId, [
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-        ]);
+        $existingGlobal = $this->userRepository->findFirstByEmailGlobal($email);
+        if ($existingGlobal) {
+            $userId = $this->userRepository->addMembershipToTenant(
+                (int) $existingGlobal['id'],
+                $tenantId,
+                (int) ($primaryRoleId ?? 0),
+                $gradeId,
+                [
+                    'display_name' => $displayName !== '' ? $displayName : null,
+                    'callsign' => $callsign ?: null,
+                ]
+            );
+        } else {
+            $passwordPlaceholder = password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID);
+            $userId = $this->userRepository->create($tenantId, [
+                'email' => $email,
+                'password_hash' => $passwordPlaceholder,
+                'display_name' => $displayName !== '' ? $displayName : null,
+                'callsign' => $callsign ?: null,
+                'role_id' => $primaryRoleId,
+                'grade_id' => $gradeId,
+                'status' => 'pending_verification',
+                'nationality_code' => $nationalityCode,
+                'preferred_grade_format' => $preferredGradeFormat,
+                'professional_category_code' => $professionalCategoryCode,
+            ]);
+        }
+        if ($existingGlobal === null) {
+            $this->userProfileRepository->upsert($userId, [
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+            ]);
+        }
         try {
-            $this->personnelProfileRepository->ensureRecord($userId);
+            $this->personnelProfileRepository->ensureRecord($userId, $tenantId);
             $this->personnelProfileRepository->update($userId, [
                 'character_name' => $displayName,
             ]);

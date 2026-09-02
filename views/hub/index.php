@@ -3,6 +3,11 @@ declare(strict_types=1);
 
 $hubSections = $hubSections ?? [];
 $hub_next_steps = $hub_next_steps ?? [];
+$hubAnnounceItems = is_array($hub_announce_items ?? null) ? $hub_announce_items : [];
+$hubAnnounceManageUrl = isset($hub_announce_manage_url) && is_string($hub_announce_manage_url) && $hub_announce_manage_url !== ''
+    ? $hub_announce_manage_url
+    : null;
+$hubHeroImage = asset_url('assets/images/fog-team.jpg');
 
 $hubIconPaths = [
     'dashboard' => 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z',
@@ -48,6 +53,108 @@ $featuredEntries = array_slice($featuredEntries, 0, 4);
 <style>
   .hub-portal { --hub-accent: #059669; --hub-ink: #0f172a; }
   .hub-portal a:focus-visible { outline: 2px solid var(--hub-accent); outline-offset: 2px; }
+  .hub-hero {
+    position: relative;
+    overflow: hidden;
+    min-height: clamp(18rem, 42vw, 26rem);
+    color: #fff;
+    background: #0b1220;
+  }
+  .hub-hero__media {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: center 35%;
+    transform: scale(1.04);
+    filter: grayscale(0.25) contrast(1.05) brightness(0.72);
+    animation: hub-hero-drift 18s ease-in-out infinite alternate;
+  }
+  .hub-hero__shade {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(2, 8, 18, 0.28) 0%, rgba(2, 8, 18, 0.55) 42%, rgba(2, 8, 18, 0.88) 100%),
+      radial-gradient(120% 80% at 12% 88%, rgba(5, 150, 105, 0.28), transparent 55%);
+    pointer-events: none;
+  }
+  .hub-hero__inner {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    min-height: inherit;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 2.25rem 1rem 2rem;
+  }
+  @media (min-width: 640px) {
+    .hub-hero__inner { padding: 2.75rem 1.5rem 2.35rem; }
+  }
+  @media (min-width: 1024px) {
+    .hub-hero__inner { padding: 3.25rem 2rem 2.75rem; }
+  }
+  .hub-hero__brand {
+    font-size: 0.6875rem; font-weight: 900; letter-spacing: 0.32em;
+    text-transform: uppercase; color: #6ee7b7;
+    opacity: 0; transform: translateY(10px);
+    animation: hub-hero-rise 0.7s ease 0.1s forwards;
+  }
+  .hub-hero__title {
+    margin-top: 0.65rem;
+    max-width: 18ch;
+    font-size: clamp(1.85rem, 4.2vw, 3rem);
+    font-weight: 900; letter-spacing: -0.03em; line-height: 1.05;
+    text-wrap: balance;
+    opacity: 0; transform: translateY(14px);
+    animation: hub-hero-rise 0.75s ease 0.2s forwards;
+  }
+  .hub-hero__lead {
+    margin-top: 0.85rem;
+    max-width: 36rem;
+    font-size: 0.95rem; line-height: 1.55; color: rgba(226, 232, 240, 0.88);
+    opacity: 0; transform: translateY(14px);
+    animation: hub-hero-rise 0.75s ease 0.32s forwards;
+  }
+  .hub-hero__actions {
+    margin-top: 1.35rem;
+    display: flex; flex-wrap: wrap; gap: 0.65rem;
+    opacity: 0; transform: translateY(14px);
+    animation: hub-hero-rise 0.75s ease 0.42s forwards;
+  }
+  .hub-hero__cta {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    border-radius: 0.65rem; padding: 0.7rem 1.05rem;
+    font-size: 0.8125rem; font-weight: 800; text-decoration: none;
+    transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .hub-hero__cta--solid { background: #059669; color: #fff; }
+  .hub-hero__cta--solid:hover { background: #047857; transform: translateY(-1px); }
+  .hub-hero__cta--ghost {
+    border: 1px solid rgba(255,255,255,0.28);
+    background: rgba(15, 23, 42, 0.35);
+    color: #f8fafc;
+    backdrop-filter: blur(6px);
+  }
+  .hub-hero__cta--ghost:hover {
+    border-color: rgba(110, 231, 183, 0.55);
+    background: rgba(5, 150, 105, 0.18);
+  }
+  .hub-hero__cta svg { width: 1rem; height: 1rem; }
+  @keyframes hub-hero-rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes hub-hero-drift {
+    from { transform: scale(1.04) translate3d(0, 0, 0); }
+    to { transform: scale(1.08) translate3d(-1.2%, -0.8%, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hub-hero__media,
+    .hub-hero__brand,
+    .hub-hero__title,
+    .hub-hero__lead,
+    .hub-hero__actions { animation: none !important; opacity: 1; transform: none; }
+  }
+  .hub-body { max-width: 72rem; margin: 0 auto; padding: 1.25rem 1rem 1.75rem; }
+  @media (min-width: 640px) { .hub-body { padding: 1.5rem 1.5rem 2rem; } }
+  @media (min-width: 1024px) { .hub-body { padding: 1.75rem 2rem 2.5rem; } }
   .hub-jump a {
     display: inline-flex; align-items: center; border-radius: 0.5rem;
     border: 1px solid #e2e8f0; background: #fff; padding: 0.35rem 0.7rem;
@@ -91,38 +198,54 @@ $featuredEntries = array_slice($featuredEntries, 0, 4);
   }
   .hub-link__icon svg { width: 0.95rem; height: 0.95rem; }
   .hub-link--featured .hub-link__icon { background: #059669; color: #fff; }
+  .hub-portal .dash-announce { margin-top: 0; margin-bottom: 1.25rem; }
 </style>
 
-<div class="hub-portal mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-  <header class="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-    <div class="min-w-0">
-      <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#059669]">Athena</p>
-      <h1 class="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
-        Centre de commandement
-      </h1>
-      <p class="mt-1 max-w-2xl text-sm text-slate-600">
+<div class="hub-portal">
+  <section class="hub-hero" aria-labelledby="hub-hero-title">
+    <img
+      class="hub-hero__media"
+      src="<?= htmlspecialchars($hubHeroImage, ENT_QUOTES, 'UTF-8') ?>"
+      alt=""
+      width="2048"
+      height="933"
+      decoding="async"
+      fetchpriority="high"
+    >
+    <div class="hub-hero__shade" aria-hidden="true"></div>
+    <div class="hub-hero__inner">
+      <p class="hub-hero__brand">Athena</p>
+      <h1 id="hub-hero-title" class="hub-hero__title">Centre de commandement</h1>
+      <p class="hub-hero__lead">
         Annuaire des espaces Athena : ouvrez l’outil dont vous avez besoin.
       </p>
+      <div class="hub-hero__actions">
+        <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="hub-hero__cta hub-hero__cta--solid">
+          Tableau de bord
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
+        </a>
+        <a href="<?= htmlspecialchars(url('centre-actions'), ENT_QUOTES, 'UTF-8') ?>" class="hub-hero__cta hub-hero__cta--ghost">
+          Ce qui demande attention
+        </a>
+      </div>
     </div>
-    <div class="flex shrink-0 flex-wrap gap-2">
-      <a
-        href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>"
-        class="inline-flex items-center gap-1.5 rounded-lg bg-[#059669] px-3.5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
-      >
-        Tableau de bord
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
-      </a>
-      <a
-        href="<?= htmlspecialchars(url('centre-actions'), ENT_QUOTES, 'UTF-8') ?>"
-        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-bold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50"
-      >
-        Ce qui demande attention
-      </a>
-    </div>
-  </header>
+  </section>
+
+  <div class="hub-body">
+  <?php
+  $announce_items = $hubAnnounceItems;
+  $announce_heading = 'Annonces';
+  $announce_kicker = 'Transmission';
+  $announce_empty = 'Aucune annonce active pour le moment.';
+  $announce_id = 'hub-announce';
+  $announce_list_url = url('alertes');
+  $announce_manage_url = $hubAnnounceManageUrl;
+  $announce_start_open = $hubAnnounceItems !== [];
+  require base_path('views/partials/announce_tiles.php');
+  ?>
 
   <?php if ($hubVisibleSections !== []): ?>
-  <nav class="hub-jump mt-4 flex flex-wrap gap-1.5" aria-label="Rubriques">
+  <nav class="hub-jump flex flex-wrap gap-1.5" aria-label="Rubriques">
     <?php foreach ($hubVisibleSections as $nav): ?>
     <a href="#<?= htmlspecialchars((string) ($nav['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
       <?= htmlspecialchars((string) ($nav['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
@@ -211,4 +334,5 @@ $featuredEntries = array_slice($featuredEntries, 0, 4);
   $next_steps_intro = 'Quelques pistes utiles pour enchaîner, selon les modules auxquels vous avez accès.';
   require base_path('views/partials/ui/next_steps_block.php');
   ?>
+  </div>
 </div>

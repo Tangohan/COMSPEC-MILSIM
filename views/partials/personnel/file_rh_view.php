@@ -109,60 +109,6 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
 }
 </style>
 <div class="<?= htmlspecialchars($rhShell, ENT_QUOTES, 'UTF-8') ?> space-y-5 pt-2 pb-8">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <a href="<?= htmlspecialchars($rhGateUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900">
-            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
-            Changer de vue
-        </a>
-        <div class="flex flex-wrap items-center gap-2">
-            <a href="<?= htmlspecialchars($rhPublicUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-                Vue publique
-            </a>
-            <?php if (!empty($canEditProfile)): ?>
-            <a href="<?= htmlspecialchars($rhEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
-                Modifier le dossier
-            </a>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <?php if ($personnelModerationStaffLines !== []): ?>
-    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800" role="region" aria-label="Restrictions d’accès">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600">Restrictions actives</p>
-        <ul class="mt-1.5 list-disc pl-5 space-y-0.5">
-            <?php foreach ($personnelModerationStaffLines as $line): ?>
-                <li><?= htmlspecialchars($line, ENT_QUOTES, 'UTF-8') ?></li>
-            <?php endforeach; ?>
-        </ul>
-    </div>
-    <?php endif; ?>
-
-    <?php if ($canViewAbsences && $personnelActiveAbsences !== []): ?>
-    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
-        <p class="font-semibold">Absence en cours</p>
-        <ul class="mt-1.5 space-y-1">
-            <?php foreach ($personnelActiveAbsences as $absRow): ?>
-                <?php
-                $absStart = (string) ($absRow['starts_on'] ?? '');
-                $absEnd = $absRow['ends_on'] ?? null;
-                $absStartTs = $absStart !== '' ? strtotime($absStart) : false;
-                $absStartFr = $absStartTs !== false ? date('d/m/Y', $absStartTs) : $absStart;
-                if ($absEnd === null || $absEnd === '') {
-                    $absPeriod = $absStartFr !== '' ? ('À partir du ' . $absStartFr) : 'Durée non précisée';
-                } else {
-                    $absEndTs = strtotime((string) $absEnd);
-                    $absEndFr = $absEndTs !== false ? date('d/m/Y', $absEndTs) : (string) $absEnd;
-                    $absPeriod = $absStartFr . ' → ' . $absEndFr;
-                }
-                $absReasonKey = (string) ($absRow['reason'] ?? 'autre');
-                $absReasonLab = (string) ($personnelAbsenceReasonLabels[$absReasonKey] ?? 'Autre');
-                ?>
-                <li><?= htmlspecialchars($absPeriod, ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars($absReasonLab, ENT_QUOTES, 'UTF-8') ?></li>
-            <?php endforeach; ?>
-        </ul>
-    </div>
-    <?php endif; ?>
-
     <!-- Hero RH -->
     <section class="w-full rounded-2xl bg-slate-900 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950/40 border border-slate-700/50 shadow-sm overflow-hidden">
         <div class="px-5 py-5 md:px-8 md:py-7 lg:px-10">
@@ -243,6 +189,30 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
             </div>
         </div>
     </section>
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <a href="<?= htmlspecialchars($rhGateUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+            Changer de vue
+        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="<?= htmlspecialchars($rhPublicUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                Vue publique
+            </a>
+            <?php if (!empty($canEditProfile)): ?>
+            <a href="<?= htmlspecialchars($rhEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
+                Modifier le dossier
+            </a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <?php
+    $personnelFileNoticesIncludeRhSwitcher = false;
+    $personnelFileNoticesIncludeOperatorTabs = false;
+    $personnelFileNoticesBare = true;
+    require base_path('views/partials/personnel/file_page_notices.php');
+    ?>
 
     <?php if ($rhPriorityAlerts !== [] || $rhOptionalMissingLabels !== []): ?>
     <details class="group rounded-xl border border-slate-200 bg-white shadow-sm" <?= $rhAlertErrorCount > 0 ? 'open' : '' ?>>
