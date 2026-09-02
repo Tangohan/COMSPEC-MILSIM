@@ -39,24 +39,8 @@ if (!$targetUser) {
 $p = $personnelProfile ?? [];
 $up = is_array($userProfile) ? $userProfile : [];
 $d = $displaySettings ?? [];
-$clearanceOptions = is_array($clearanceLevelOptions ?? null) ? $clearanceLevelOptions : [];
-$currentClearance = trim((string) ($p['clearance_level'] ?? ''));
-$clearanceReviewedAt = '';
-if (!empty($p['clearance_reviewed_at'])) {
-    $cr = date_create((string) $p['clearance_reviewed_at']);
-    $clearanceReviewedAt = $cr ? $cr->format('Y-m-d') : '';
-}
-$readinessScoreVal = isset($p['readiness_score']) ? (int) $p['readiness_score'] : 0;
 $score = (int) ($completeness['score'] ?? 0);
 $missingLabels = $completeness['missing_labels'] ?? [];
-$enlistmentDateVal = '';
-if (!empty($p['enlistment_date'])) {
-    $enlistmentDateVal = substr((string) $p['enlistment_date'], 0, 10);
-}
-$prePlatformDateVal = '';
-if (!empty($seniorityPrePlatformDate)) {
-    $prePlatformDateVal = substr((string) $seniorityPrePlatformDate, 0, 10);
-}
 $gradeLabel = '';
 if ($currentGrade) {
     $gradeLabel = trim((string) ($currentGrade['label_short'] ?? $currentGrade['short_name'] ?? $currentGrade['label_long'] ?? $currentGrade['name'] ?? ''));
@@ -76,7 +60,6 @@ $extraCallsigns = array_slice($extraCallsigns, 0, $extraCallsignSlots);
 $nicknamesText = implode("\n", array_map(static fn ($item) => trim((string) $item), $nicknames));
 $medalRackText = implode("\n", array_map(static fn ($item) => trim((string) $item), $medalRackItems));
 $advancedEditActive = !empty($advancedEditActive);
-$athenaIdDisplay = trim((string) ($targetUser['athena_identifier'] ?? ''));
 $tzOptions = \App\Services\Admin\PlatformUserProfileService::timezoneOptions();
 $langOptions = \App\Services\Admin\PlatformUserProfileService::interfaceLanguageOptions();
 $familyOptions = \App\Services\Admin\PlatformUserProfileService::familySituationOptions();
@@ -117,7 +100,7 @@ $editNavGroups = [
         'title' => 'Affectation',
         'items' => [
             ['id' => 'edit-orbat', 'label' => 'Unité &amp; rôle', 'show' => true],
-            ['id' => 'edit-habilitation', 'label' => 'Habilitation', 'show' => true],
+            ['id' => 'edit-habilitation', 'label' => 'Matricules', 'show' => true],
             ['id' => 'edit-suivi-immersion', 'label' => 'Suivi immersion', 'show' => !empty($roleplayFollowupConfig['enabled'])],
         ],
     ],
@@ -665,56 +648,10 @@ $editValidTabIds = implode(',', array_map(
 
         <section id="edit-habilitation" x-show="tab === 'edit-habilitation'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
-            <h2 class="text-base font-black tracking-tight text-slate-900">Habilitation &amp; disponibilité</h2>
-            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-slate-600">Niveau d’accès, dates et indicateur de disponibilité pour le dossier.</p>
+            <h2 class="text-base font-black tracking-tight text-slate-900">Matricules</h2>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-slate-600">Identifiants internes utilisés par votre organisation.</p>
           </div>
           <div class="grid gap-4 p-6 md:grid-cols-2">
-            <div>
-              <label class="mb-1 block text-xs font-bold text-slate-600">Niveau de clearance</label>
-              <?php if ($advancedEditActive): ?>
-              <select name="clearance_level" id="clearance_level" class="w-full rounded-xl border border-violet-200 bg-violet-50/40 px-3 py-2.5 text-sm">
-                <option value="">— Non défini —</option>
-                <?php foreach ($clearanceOptions as $ck => $clabel): ?>
-                <option value="<?= htmlspecialchars((string) $ck) ?>" <?= $currentClearance === (string) $ck ? 'selected' : '' ?>><?= htmlspecialchars((string) $clabel) ?></option>
-                <?php endforeach; ?>
-              </select>
-              <p class="mt-1 text-[11px] text-violet-700">Déverrouillé par le mode édition avancée (24 h). L’ID Athena reste inchangé.</p>
-              <?php else: ?>
-              <p class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
-                <?= $currentClearance !== '' ? htmlspecialchars($clearanceOptions[$currentClearance] ?? ($currentClearance . ' (valeur héritée)')) : '— Non défini —' ?>
-              </p>
-              <p class="mt-1 text-[11px] text-slate-500">
-                Se modifie via une demande d’élévation, examinée par une personne habilitée — pas directement ici, ce niveau conditionnant l’accès aux documents classifiés.
-                <?php if (!empty($targetUser['id'])): ?>
-                <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) $targetUser['id']), ENT_QUOTES, 'UTF-8') ?>" class="font-bold text-emerald-700 hover:underline">Ouvrir la fiche effectifs →</a>
-                <?php endif; ?>
-              </p>
-              <?php endif; ?>
-            </div>
-            <div>
-              <label for="enlistment_date" class="mb-1 block text-xs font-bold text-slate-600">Date d’incorporation</label>
-              <input type="date" name="enlistment_date" id="enlistment_date" value="<?= htmlspecialchars($enlistmentDateVal) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-              <p class="mt-1 text-[11px] text-slate-500">Entrée dans la communauté sur la plateforme (ou date d’enrôlement retenue pour le dossier).</p>
-            </div>
-            <div>
-              <label for="pre_platform_start_date" class="mb-1 block text-xs font-bold text-slate-600">Ancienneté antérieure à la plateforme</label>
-              <input type="date" name="pre_platform_start_date" id="pre_platform_start_date" value="<?= htmlspecialchars($prePlatformDateVal) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-              <p class="mt-1 text-[11px] text-slate-500">Date à laquelle la personne a rejoint l’entité <em>avant</em> l’ouverture du site. Laisser vide si non applicable.</p>
-            </div>
-            <div>
-              <label for="clearance_reviewed_at" class="mb-1 block text-xs font-bold text-slate-600">Dernière revue d’habilitation</label>
-              <input type="date" name="clearance_reviewed_at" id="clearance_reviewed_at" value="<?= htmlspecialchars($clearanceReviewedAt) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-            </div>
-            <div>
-              <label for="readiness_score" class="mb-1 block text-xs font-bold text-slate-600">Indicateur de disponibilité (0–100)</label>
-              <input type="number" name="readiness_score" id="readiness_score" min="0" max="100" value="<?= $readinessScoreVal ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-              <p class="mt-1 text-[11px] text-slate-500">Compte pour la complétude si &gt; 0 (sinon une formation certifiante peut suffire).</p>
-            </div>
-            <div class="md:col-span-2 rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
-              <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Identifiant plateforme</p>
-              <p class="mt-1 font-mono text-sm font-bold text-slate-900"><?= $athenaIdDisplay !== '' ? htmlspecialchars($athenaIdDisplay) : '—' ?></p>
-              <p class="mt-1 text-[11px] text-slate-500">Identifiant permanent attribué par la plateforme — non modifiable<?= !empty($advancedEditActive) ? ' (même en mode édition avancée)' : '' ?>.</p>
-            </div>
             <?php
             $tmnLabel = trim((string) ($tenantMemberNumberLabel ?? "Matricule d'organisation"));
             $tmnValue = trim((string) ($tenantMemberNumber ?? ''));

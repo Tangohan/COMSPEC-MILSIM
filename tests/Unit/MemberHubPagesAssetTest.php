@@ -29,7 +29,6 @@ final class MemberHubPagesAssetTest extends TestCase
         self::assertStringContainsString('membres/{id}/roles', $routes);
         self::assertStringContainsString('membres/{id}/grade', $routes);
         self::assertStringContainsString('Situation RH', $edit);
-        self::assertStringContainsString('pre_platform_start_date', $edit);
         self::assertStringContainsString('Enregistrer les rôles', $member);
         self::assertStringContainsString('Enregistrer le grade', $member);
         $personnelEdit = (string) file_get_contents(dirname(__DIR__, 2) . '/views/personnel/edit.php');
