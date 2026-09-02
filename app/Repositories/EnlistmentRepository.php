@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class EnlistmentRepository
@@ -471,10 +472,11 @@ class EnlistmentRepository
     public function listPendingSubmittedForSubmitter(int $tenantId, int $userId, string $userEmail): array
     {
         $emailNorm = strtolower(trim($userEmail));
+        $emailEq = SqlText::normalizedEquals($this->pdo, 'email');
         if ($this->hasAccountColumns()) {
             $stmt = $this->pdo->prepare(
                 "SELECT * FROM enlistments WHERE tenant_id = ? AND status = 'submitted'
-                 AND (submitter_user_id = ? OR LOWER(TRIM(email)) = ?)
+                 AND (submitter_user_id = ? OR {$emailEq})
                  ORDER BY created_at DESC LIMIT 20"
             );
             $stmt->execute([$tenantId, $userId, $emailNorm !== '' ? $emailNorm : '__none__']);
@@ -485,7 +487,7 @@ class EnlistmentRepository
             return [];
         }
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM enlistments WHERE tenant_id = ? AND status = 'submitted' AND LOWER(TRIM(email)) = ?
+            "SELECT * FROM enlistments WHERE tenant_id = ? AND status = 'submitted' AND {$emailEq}
              ORDER BY created_at DESC LIMIT 20"
         );
         $stmt->execute([$tenantId, $emailNorm]);
@@ -1018,12 +1020,13 @@ class EnlistmentRepository
     {
         $limit = max(1, min(50, $limit));
         $emailNorm = strtolower(trim($userEmail));
+        $emailEq = SqlText::normalizedEquals($this->pdo, 'e.email');
         if ($this->hasAccountColumns()) {
             $stmt = $this->pdo->prepare(
                 "SELECT e.*, t.name AS tenant_name, t.slug AS tenant_slug
                  FROM enlistments e
                  INNER JOIN tenants t ON t.id = e.tenant_id
-                 WHERE e.submitter_user_id = ? OR LOWER(TRIM(e.email)) = ?
+                 WHERE e.submitter_user_id = ? OR {$emailEq}
                  ORDER BY COALESCE(e.updated_at, e.created_at) DESC, e.id DESC
                  LIMIT {$limit}"
             );
@@ -1038,7 +1041,7 @@ class EnlistmentRepository
             "SELECT e.*, t.name AS tenant_name, t.slug AS tenant_slug
              FROM enlistments e
              INNER JOIN tenants t ON t.id = e.tenant_id
-             WHERE LOWER(TRIM(e.email)) = ?
+             WHERE {$emailEq}
              ORDER BY COALESCE(e.updated_at, e.created_at) DESC, e.id DESC
              LIMIT {$limit}"
         );
