@@ -81,10 +81,20 @@ final class UserCommunityMembershipRepository
             if (!array_key_exists($key, $profile)) {
                 continue;
             }
+            $value = $profile[$key];
+            if (in_array($key, ['athena_identifier', 'profile_slug'], true)) {
+                $trimmed = trim((string) ($value ?? ''));
+                $value = $trimmed === '' ? null : $trimmed;
+            }
             $cols[] = $key;
             $placeholders[] = '?';
-            $params[] = $profile[$key];
-            $updates[] = $key . ' = VALUES(' . $key . ')';
+            $params[] = $value;
+            if (!UserIdentityMergeRules::isEmptyIdentityValue($value)
+                && !($key === 'display_name' && is_string($value) && UserIdentityMergeRules::isMergedStubDisplayName($value))
+                && !($key === 'status' && strtolower(trim((string) $value)) === 'pending' && !UserIdentityMergeRules::communityProfileHasSubstance($profile))
+            ) {
+                $updates[] = $key . ' = VALUES(' . $key . ')';
+            }
         }
         $sql = 'INSERT INTO user_community_profiles (' . implode(', ', $cols) . ')
                 VALUES (' . implode(', ', $placeholders) . ')';

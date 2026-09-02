@@ -50,6 +50,10 @@ final class UserIdentityMergeService
             }
         }
         $this->tryAddGlobalEmailUnique();
+        $restore = new UserIdentityProfileRestoreService($this->pdo);
+        $restored = $restore->restoreAll();
+        $summary['restored_personnel'] = (int) ($restored['personnel'] ?? 0);
+        $summary['restored_profiles'] = (int) ($restored['user_profiles'] ?? 0);
 
         return $summary;
     }

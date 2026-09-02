@@ -102,13 +102,47 @@ function run_user_community_identity_migration(PDO $pdo, ?callable $log = null):
                 PRIMARY KEY (id),
                 UNIQUE KEY uk_ucp_user_tenant (user_id, tenant_id),
                 UNIQUE KEY uk_ucp_tenant_slug (tenant_id, profile_slug),
-                UNIQUE KEY uk_ucp_athena (athena_identifier),
+                UNIQUE KEY uk_ucp_tenant_athena (tenant_id, athena_identifier),
                 KEY idx_ucp_tenant_status (tenant_id, status),
                 CONSTRAINT fk_ucp_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT fk_ucp_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
         $say('user_community_profiles created');
+    }
+
+    if ($tableExists('user_community_profiles')) {
+        try {
+            $pdo->exec(
+                "UPDATE user_community_profiles
+                 SET athena_identifier = NULL
+                 WHERE athena_identifier IS NOT NULL AND TRIM(athena_identifier) = ''"
+            );
+            $pdo->exec(
+                "UPDATE user_community_profiles
+                 SET profile_slug = NULL
+                 WHERE profile_slug IS NOT NULL AND TRIM(profile_slug) = ''"
+            );
+        } catch (Throwable) {
+        }
+        if ($indexExists('user_community_profiles', 'uk_ucp_athena')) {
+            try {
+                $pdo->exec('ALTER TABLE user_community_profiles DROP INDEX uk_ucp_athena');
+                $say('uk_ucp_athena dropped (indicatif par communauté, pas global)');
+            } catch (Throwable $e) {
+                $say('uk_ucp_athena drop skipped: ' . $e->getMessage());
+            }
+        }
+        if (!$indexExists('user_community_profiles', 'uk_ucp_tenant_athena')) {
+            try {
+                $pdo->exec(
+                    'ALTER TABLE user_community_profiles ADD UNIQUE KEY uk_ucp_tenant_athena (tenant_id, athena_identifier)'
+                );
+                $say('uk_ucp_tenant_athena added');
+            } catch (Throwable $e) {
+                $say('uk_ucp_tenant_athena skipped: ' . $e->getMessage());
+            }
+        }
     }
 
     if (!$tableExists('user_identity_merges')) {

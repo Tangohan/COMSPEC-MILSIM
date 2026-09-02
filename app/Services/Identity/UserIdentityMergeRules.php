@@ -269,7 +269,7 @@ final class UserIdentityMergeRules
         return true;
     }
 
-    private static function isEmptyIdentityValue(mixed $value): bool
+    public static function isEmptyIdentityValue(mixed $value): bool
     {
         if ($value === null) {
             return true;
@@ -282,6 +282,142 @@ final class UserIdentityMergeRules
         }
 
         return $value === false;
+    }
+
+    public static function isMergedStubDisplayName(string $name): bool
+    {
+        $normalized = strtolower(trim($name));
+        if ($normalized === '') {
+            return false;
+        }
+
+        return str_contains($normalized, 'compte fusionn');
+    }
+
+    public static function communityProfileHasSubstance(array $profile): bool
+    {
+        foreach (['display_name', 'callsign', 'profile_slug', 'athena_identifier', 'tenant_member_number'] as $key) {
+            $value = $profile[$key] ?? null;
+            if ($key === 'display_name' && is_string($value) && self::isMergedStubDisplayName($value)) {
+                continue;
+            }
+            if (!self::isEmptyIdentityValue($value)) {
+                return true;
+            }
+        }
+        foreach (['role_id', 'grade_id', 'preferred_display_role_id'] as $key) {
+            if ((int) ($profile[$key] ?? 0) > 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     * @param array<string, mixed> $user
+     */
+    public static function shouldOverlayCommunityField(string $key, mixed $incoming, array $profile, array $user): bool
+    {
+        if ($key === 'status') {
+            $incomingStatus = strtolower(trim((string) ($incoming ?? '')));
+            if ($incomingStatus === '') {
+                return false;
+            }
+            if ($incomingStatus === 'pending' && !self::communityProfileHasSubstance($profile)) {
+                return false;
+            }
+
+            return true;
+        }
+        if (in_array($key, ['role_id', 'grade_id', 'preferred_display_role_id'], true)) {
+            return (int) $incoming > 0;
+        }
+        if ($key === 'display_name' && is_string($incoming) && self::isMergedStubDisplayName($incoming)) {
+            return false;
+        }
+
+        return !self::isEmptyIdentityValue($incoming);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return array<string, mixed>|null
+     */
+    public static function pickPreferredDossierRow(array $rows, int $preferredTenantId = 0): ?array
+    {
+        if ($rows === []) {
+            return null;
+        }
+        if ($preferredTenantId > 0) {
+            foreach ($rows as $row) {
+                if ((int) ($row['tenant_id'] ?? 0) === $preferredTenantId
+                    && self::dossierCompletenessScore($row) > 0) {
+                    return $row;
+                }
+            }
+        }
+        usort($rows, static function (array $a, array $b): int {
+            $score = self::dossierCompletenessScore($b) <=> self::dossierCompletenessScore($a);
+            if ($score !== 0) {
+                return $score;
+            }
+
+            return ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));
+        });
+
+        return $rows[0];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    public static function dossierCompletenessScore(array $row): int
+    {
+        $skip = ['id', 'user_id', 'tenant_id', 'created_at', 'updated_at'];
+        $score = 0;
+        foreach ($row as $key => $value) {
+            if (in_array((string) $key, $skip, true)) {
+                continue;
+            }
+            if ($key === 'display_name' && is_string($value) && self::isMergedStubDisplayName($value)) {
+                continue;
+            }
+            if (self::isEmptyIdentityValue($value)) {
+                continue;
+            }
+            $score++;
+            if (in_array((string) $key, ['character_name', 'callsign', 'character_portrait_path', 'first_name', 'last_name', 'display_name', 'bio'], true)) {
+                $score += 4;
+            }
+        }
+
+        return $score;
+    }
+
+    /**
+     * @param array<string, mixed> $target
+     * @param array<string, mixed> $source
+     * @return array<string, mixed>
+     */
+    public static function fillEmptyKeys(array $target, array $source): array
+    {
+        $out = [];
+        foreach ($source as $key => $value) {
+            $key = (string) $key;
+            if (in_array($key, ['id', 'user_id', 'created_at', 'updated_at'], true)) {
+                continue;
+            }
+            if ($key === 'display_name' && is_string($value) && self::isMergedStubDisplayName($value)) {
+                continue;
+            }
+            if (self::isEmptyIdentityValue($target[$key] ?? null) && !self::isEmptyIdentityValue($value)) {
+                $out[$key] = $value;
+            }
+        }
+
+        return $out;
     }
 
     /**
