@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(180, $byKind['update']);
-        self::assertCount(186, $all);
+        self::assertSame(179, $byKind['update']);
+        self::assertCount(185, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -574,20 +574,14 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($availDash);
         self::assertSame('00374', $availDash['number_pad']);
         self::assertStringContainsString('disponibilité', strtolower((string) $availDash['title']));
-        $oneAccount = DevDispatchCatalog::find('update', '379');
-        self::assertNotNull($oneAccount);
-        self::assertSame('00379', $oneAccount['number_pad']);
-        self::assertStringContainsString('communaut', strtolower((string) $oneAccount['title']));
-        $fileAlerts = DevDispatchCatalog::find('update', '380');
-        self::assertNotNull($fileAlerts);
-        self::assertSame('00380', $fileAlerts['number_pad']);
-        self::assertStringContainsString('bandeau', strtolower((string) $fileAlerts['title']));
-        self::assertStringContainsString('absence', strtolower((string) $fileAlerts['activity']));
-        $pdfPreview = DevDispatchCatalog::find('update', '383');
-        self::assertNotNull($pdfPreview);
-        self::assertSame('00383', $pdfPreview['number_pad']);
-        self::assertStringContainsString('pdf', strtolower((string) $pdfPreview['title']));
-        self::assertStringContainsString('bibliothèque', strtolower((string) $pdfPreview['activity']));
+        $kitsPick = DevDispatchCatalog::find('update', '375');
+        self::assertNotNull($kitsPick);
+        self::assertSame('00375', $kitsPick['number_pad']);
+        self::assertStringContainsString('kits', strtolower((string) $kitsPick['title']));
+        $docEditFile = DevDispatchCatalog::find('update', '381');
+        self::assertNotNull($docEditFile);
+        self::assertSame('00381', $docEditFile['number_pad']);
+        self::assertStringContainsString('fichier', strtolower((string) $docEditFile['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

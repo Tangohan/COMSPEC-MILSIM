@@ -584,25 +584,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
-            $pr(383, '2026-09-02', 'L’aperçu des documents PDF s’affiche à nouveau', 'Dans la bibliothèque, un document PDF s’ouvre de nouveau à l’écran. Si l’aperçu ne peut pas s’afficher, un message propose de le télécharger. Rechargez la page du document', [], [], [
-                'L’aperçu d’un PDF publié restait vide',
-                'Un échec d’affichage n’affiche plus une page hors ligne à la place du document',
+            $pr(381, '2026-09-02', 'Le fichier joint se consulte et se retire depuis la fiche', 'Sur la page de modification d’un document, le fichier actuellement joint s’ouvre ou se télécharge. On peut le retirer sans supprimer la fiche. Rechargez la page du document', [], [], [
+                'Le fichier joint n’était ni consultable ni retirable depuis la modification de la fiche',
             ], ['platform'], [
-                'Ouvrez un document PDF publié dans la bibliothèque : les pages s’affichent, avec page suivante et zoom. Si ce n’est pas le cas, utilisez Télécharger.',
-            ], 'Portail 1.6.05'),
-            $pr(380, '2026-09-02', 'Les alertes du dossier s’affichent sous le bandeau d’identité', 'Sur un dossier personnel, l’absence en cours et les actions du dossier apparaissent sous le bandeau sombre, après le nom. L’annonce d’ancienneté de la plateforme reste en haut, sous le menu. Rechargez la page du dossier', [], [], [
-                'L’absence en cours et les actions du dossier passaient au-dessus du bandeau Dossier personnel',
-            ], ['platform'], [
-                'Rechargez la page du dossier. L’ancienneté de plateforme reste sous le menu.',
-            ], 'Portail 1.6.04'),
-            $pr(379, '2026-09-02', 'Un compte suffit pour plusieurs communautés', 'La même adresse e-mail n’ouvre plus plusieurs comptes. Vous vous connectez une fois, puis vous changez de communauté comme aujourd’hui. Chaque unité garde son propre dossier — grade, matricule, indicatif, fiche RH — sans mélange. Relancez la mise à jour du portail, puis reconnectez-vous', [
-                'Une seule identité de connexion : e-mail, mot de passe et Steam',
-                'Rejoindre une communauté ajoute une appartenance, sans créer un second compte',
-                'L’administration du site voit une personne, avec un dossier clairement nommé par communauté',
-            ], [], [
-                'Une même personne apparaissait comme plusieurs comptes, un par communauté, avec des mots de passe éventuellement différents',
-            ], ['platform', 'personnel'], [
-                'Les membres n’ont rien à ressaisir. L’administration du site ouvre le dossier de la communauté qu’elle veut modifier, pas les autres.',
+                'Ouvrez Gestion documentaire, puis Modifier sur une fiche. Si un fichier est joint, utilisez Ouvrir le fichier, Télécharger ou Retirer le fichier.',
+            ], 'Portail'),
+            $pr(375, '2026-09-02', 'Les kits d’accès se cochent clairement avant l’enregistrement', 'Sur la page Kits d’accès, chaque carte affiche une case. Une carte retenue passe en Sélectionné et le pied de page indique combien de kits sont cochés. Enregistrez ensuite pour les attribuer aux membres', [], [], [
+                'Cliquer une carte ne changeait pas l’affichage : pas de case visible, le pied de page restait sur Aucun kit coché',
+            ], ['personnel'], [
+                'Ouvrez Effectifs, puis Kits d’accès. Cochez les packs voulus : le compteur se met à jour, puis Enregistrer les kits.',
             ], 'Portail 1.6.03'),
             $pr(374, '2026-09-02', 'Le tableau des effectifs affiche la disponibilité sur 90 jours', 'Sur le tableau rapide du tableau de bord, chaque membre montre son taux de disponibilité : participations annoncées et présences validées sur les trois derniers mois, sous forme de barre colorée. Rechargez le tableau de bord', [
                 'Colonne Disponibilité, avec le pourcentage et une barre du rouge au vert',

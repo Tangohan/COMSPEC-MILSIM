@@ -258,7 +258,7 @@ class DocumentsController
         if (!$tenantId) {
             return (new Response())->setStatusCode(403)->setBody('Non autorisé');
         }
-        if (Gate::getInstance()->deny('documents.view')) {
+        if ($this->denyAttachedFileGate()) {
             return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
         }
         $id = (int) ($params['id'] ?? 0);
@@ -269,31 +269,18 @@ class DocumentsController
         if (empty($doc['file_path'])) {
             return $this->missingDocumentFilePage($doc, $id);
         }
-        if (!empty($doc['require_access_code']) && !$this->isAccessCodeUnlocked($id)) {
-            return (new Response())->setStatusCode(423)->setBody('Code d\'accès requis');
-        }
-        if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
-            return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
-        }
-        if (!$this->canReadDocumentOrDoctrine($doc, (int) Session::get('user_id'), (int) $tenantId)) {
-            return (new Response())->setStatusCode(403)->setBody('Accès refusé');
-        }
-        if (($doc['status'] ?? '') !== 'published') {
-            return (new Response())->setStatusCode(404)->setBody('Document non disponible');
-        }
-        if ($this->isDocumentLifecycleBlocked($doc) && !$this->viewerMayBypassLifecycleBlock()) {
-            return (new Response())->setStatusCode(423)->setBody('Document bloqué : revue/correction/suppression requise.');
-        }
-        if ($this->isDocumentFileBlockedForViewer($doc)) {
-            return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
+        $denied = $this->denyAttachedFileAccess($doc, $id, (int) $tenantId, false, '');
+        if ($denied !== null) {
+            return $denied;
         }
         $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
         if (!is_file($fullPath)) {
             return $this->missingDocumentFilePage($doc, $id);
         }
         $response = new Response();
+        $downloadName = basename((string) ($doc['original_name'] ?? '')) ?: basename((string) $doc['file_path']);
         $response->header('Content-Type', $doc['mime_type'] ?: 'application/octet-stream');
-        $response->header('Content-Disposition', 'inline; filename="' . basename($doc['file_path']) . '"');
+        $response->header('Content-Disposition', 'inline; filename="' . $downloadName . '"');
         $response->header('Content-Length', (string) filesize($fullPath));
         $response->setBodyStream(static function () use ($fullPath): void {
             $h = fopen($fullPath, 'rb');
@@ -312,7 +299,7 @@ class DocumentsController
         if (!$tenantId) {
             return (new Response())->setStatusCode(403)->setBody('Non autorisé');
         }
-        if (Gate::getInstance()->deny('documents.view')) {
+        if ($this->denyAttachedFileGate()) {
             return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
         }
         $id = (int) ($params['id'] ?? 0);
@@ -323,43 +310,24 @@ class DocumentsController
         if (empty($doc['file_path'])) {
             return $this->missingDocumentFilePage($doc, $id);
         }
-        if (!empty($doc['require_access_code']) && !$this->isAccessCodeUnlocked($id)) {
-            return (new Response())->setStatusCode(423)->setBody('Code d\'accès requis');
-        }
-        if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
-            return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
-        }
-        if (!$this->canReadDocumentOrDoctrine($doc, (int) Session::get('user_id'), (int) $tenantId)) {
-            return (new Response())->setStatusCode(403)->setBody('Accès refusé');
-        }
-        if (($doc['status'] ?? '') !== 'published') {
-            return (new Response())->setStatusCode(404)->setBody('Document non disponible');
-        }
-        if ($this->isDocumentLifecycleBlocked($doc) && !$this->viewerMayBypassLifecycleBlock()) {
-            return (new Response())->setStatusCode(423)->setBody('Document bloqué : revue/correction/suppression requise.');
-        }
-        if ($this->isDocumentFileBlockedForViewer($doc)) {
-            return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
-        }
-        $securitySessionToken = trim((string) $request->input('security_session_token'));
-        if (!empty($doc['require_account_signature']) && !empty($doc['signature_mandatory_before_download'])) {
-            $session = $securitySessionToken !== '' ? $this->documentSecurityRepository->findSessionByToken($securitySessionToken) : null;
-            if (!$session || (int) ($session['document_id'] ?? 0) !== $id || empty($session['signature_completed_at'])) {
-                return (new Response())->setStatusCode(423)->setBody('Signature numérique requise avant téléchargement');
-            }
+        $denied = $this->denyAttachedFileAccess($doc, $id, (int) $tenantId, true, trim((string) $request->input('security_session_token')));
+        if ($denied !== null) {
+            return $denied;
         }
         $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
         if (!is_file($fullPath)) {
             return $this->missingDocumentFilePage($doc, $id);
         }
         $this->auditService->logDocumentDownloaded((int) $tenantId, $userId ? (int) $userId : 0, $id);
+        $securitySessionToken = trim((string) $request->input('security_session_token'));
         if ($securitySessionToken !== '') {
             $this->documentSecurityRepository->markDownloaded($securitySessionToken);
             $this->documentSecurityRepository->logEvent($securitySessionToken, $id, $userId ? (int) $userId : null, 'document_downloaded');
         }
         $response = new Response();
+        $downloadName = basename((string) ($doc['original_name'] ?? '')) ?: basename((string) $doc['file_path']);
         $response->header('Content-Type', $doc['mime_type'] ?: 'application/octet-stream');
-        $response->header('Content-Disposition', 'attachment; filename="' . basename($doc['file_path']) . '"');
+        $response->header('Content-Disposition', 'attachment; filename="' . $downloadName . '"');
         $response->header('Content-Length', (string) filesize($fullPath));
         $response->setBodyStream(static function () use ($fullPath): void {
             $h = fopen($fullPath, 'rb');
@@ -552,6 +520,74 @@ class DocumentsController
             ModerationArtifactState::QUARANTINED,
             ModerationArtifactState::REJECTED,
         ], true);
+    }
+
+    private function denyAttachedFileGate(): bool
+    {
+        $gate = Gate::getInstance();
+
+        return $gate->deny('documents.view')
+            && $gate->deny('documents.upload')
+            && $gate->deny('documents.update')
+            && $gate->deny('admin.access');
+    }
+
+    /**
+     * @param array<string, mixed> $doc
+     */
+    private function viewerMayManageAttachedFile(array $doc, int $userId, int $tenantId): bool
+    {
+        if ($this->viewerMayBypassLifecycleBlock()) {
+            return true;
+        }
+        if ($userId <= 0) {
+            return false;
+        }
+
+        return $this->documentAccessService->canEdit($doc, $userId, $tenantId);
+    }
+
+    /**
+     * Contrôles lecture publique. Les gestionnaires de la fiche (brouillon compris) passent.
+     *
+     * @param array<string, mixed> $doc
+     */
+    private function denyAttachedFileAccess(array $doc, int $id, int $tenantId, bool $forDownload, string $securitySessionToken): ?Response
+    {
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if ($this->viewerMayManageAttachedFile($doc, $userId, $tenantId)) {
+            if ($this->isDocumentFileBlockedForViewer($doc)) {
+                return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
+            }
+
+            return null;
+        }
+        if (!empty($doc['require_access_code']) && !$this->isAccessCodeUnlocked($id)) {
+            return (new Response())->setStatusCode(423)->setBody('Code d\'accès requis');
+        }
+        if ((int) ($doc['download_allowed'] ?? 1) !== 1) {
+            return (new Response())->setStatusCode(403)->setBody('Téléchargement non autorisé');
+        }
+        if (!$this->canReadDocumentOrDoctrine($doc, $userId, $tenantId)) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé');
+        }
+        if (($doc['status'] ?? '') !== 'published') {
+            return (new Response())->setStatusCode(404)->setBody('Document non disponible');
+        }
+        if ($this->isDocumentLifecycleBlocked($doc) && !$this->viewerMayBypassLifecycleBlock()) {
+            return (new Response())->setStatusCode(423)->setBody('Document bloqué : revue/correction/suppression requise.');
+        }
+        if ($this->isDocumentFileBlockedForViewer($doc)) {
+            return (new Response())->setStatusCode(403)->setBody('Fichier non disponible (modération)');
+        }
+        if ($forDownload && !empty($doc['require_account_signature']) && !empty($doc['signature_mandatory_before_download'])) {
+            $session = $securitySessionToken !== '' ? $this->documentSecurityRepository->findSessionByToken($securitySessionToken) : null;
+            if (!$session || (int) ($session['document_id'] ?? 0) !== $id || empty($session['signature_completed_at'])) {
+                return (new Response())->setStatusCode(423)->setBody('Signature numérique requise avant téléchargement');
+            }
+        }
+
+        return null;
     }
 
     private function viewerMayBypassLifecycleBlock(): bool

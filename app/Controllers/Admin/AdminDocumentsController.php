@@ -34,6 +34,7 @@ use App\Services\Documents\DocumentAccessService;
 use App\Services\Documents\DocumentUploadService;
 use App\Services\Moderation\ModerationBlockedException;
 use App\Services\Moderation\ModerationQuarantineException;
+use App\Support\DocumentAttachedFile;
 use App\Support\DocumentManuscript;
 
 class AdminDocumentsController
@@ -373,6 +374,13 @@ class AdminDocumentsController
             'manuscript' => DocumentManuscript::forView($doc, $issuing),
             'issuingAuthorityDefault' => $issuing,
             'documentFmPage' => true,
+            'hasAttachedFile' => DocumentAttachedFile::hasPointer($doc['file_path'] ?? null),
+            'attachedLabel' => DocumentAttachedFile::displayName(
+                isset($doc['original_name']) ? (string) $doc['original_name'] : null,
+                isset($doc['mime_type']) ? (string) $doc['mime_type'] : null
+            ),
+            'attachedKind' => DocumentAttachedFile::humanKind(isset($doc['mime_type']) ? (string) $doc['mime_type'] : null),
+            'attachedSize' => DocumentAttachedFile::humanSize(isset($doc['size']) ? (int) $doc['size'] : null),
         ]);
     }
 
@@ -519,6 +527,51 @@ class AdminDocumentsController
             return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
         }
         Session::set('success', 'Nouvelle version enregistrée.');
+        return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+    }
+
+    public function detachFile(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $gate = Gate::getInstance();
+        if ($gate->deny('admin.access') && $gate->deny('documents.update') && $gate->deny('documents.upload')) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::set('error', 'Session expirée.');
+            return Response::redirect(url('documents/gestion'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $doc = $this->documentRepository->findById($id, (int) $tenantId);
+        if (!$doc) {
+            return (new Response())->setStatusCode(404)->setBody('Document non trouvé.');
+        }
+        if (!$this->documentAccessService->canEdit($doc, (int) $userId, (int) $tenantId)) {
+            return (new Response())->setStatusCode(403)->setBody('Accès refusé à ce document.');
+        }
+        if ((string) $request->input('confirm_detach') !== '1') {
+            Session::set('error', 'Cochez la confirmation pour retirer le fichier joint.');
+            return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+        }
+        try {
+            $result = $this->uploadService->detachCurrentFile((int) $tenantId, $id);
+        } catch (\Throwable $e) {
+            Session::set('error', 'Le fichier n’a pas pu être retiré. Réessayez, ou contactez l’administration du site.');
+            return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+        }
+        if (empty($result['had_file'])) {
+            Session::set('error', 'Aucun fichier n’est joint à cette fiche.');
+            return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+        }
+        $this->documentAuditRepository->log($id, (int) $userId, 'file_detached', [
+            'version_id' => $doc['version_id'] ?? null,
+        ], ['file_cleared' => true]);
+        $this->auditService->logDocumentUpdated((int) $tenantId, (int) $userId, $id);
+        Session::set('success', 'Le fichier a été retiré. La fiche du document est conservée. Vous pouvez en joindre un autre ci-dessous.');
         return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
     }
 
