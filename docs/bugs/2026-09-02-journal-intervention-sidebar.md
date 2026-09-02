@@ -6,25 +6,26 @@ Pendant une intervention, le bandeau ambre propose Journal / Changements. Ces pa
 
 ## Symptôme
 
-Ouverture de `/admin/system/tenants/{id}/intervention/journal` : erreur « syntax error, unexpected end of file, expecting elseif or else or endif » (production, fichier `platform_admin_sidebar.php`).
+Ouverture de `/admin` ou du journal d’intervention : erreur « syntax error, unexpected end of file, expecting elseif or else or endif » (production, fichier `platform_admin_sidebar.php`, fin de fichier).
 
 ## Cause
 
-La barre latérale mélangeait une condition `if (...):` / `endif` avec une fonction qui fermait le PHP pour écrire du HTML. Un fichier incomplet ou ce mélange laissait une condition ouverte jusqu’à la fin du fichier. PHP s’arrêtait alors au chargement de n’importe quelle page d’administration du site, y compris le journal d’intervention.
+Sur `main` / la production, deux versions de la barre ont été fusionnées dans le même fichier : l’ancienne navigation (`if (...):` / `endif`, liens `$paLink`) et la nouvelle. Un `if ($isPlatformAdmin):` n’était jamais fermé. En plus, la fonction de lien fermait le PHP pour écrire du HTML, ce qui empêche PHP de refermer correctement les conditions.
+
+Toute page d’administration du site (`/admin`, journal d’intervention, etc.) plantait au chargement.
 
 ## Correctif
 
-La barre latérale n’utilise plus cette syntaxe : les conditions sont entre accolades, les liens sont écrits en PHP sans sortie HTML au milieu d’une fonction. Contrôle automatique de syntaxe ajouté.
+Une seule barre, syntaxe à accolades, liens écrits en PHP sans couper le fichier au milieu d’une fonction. Liens conservés : récupération communauté, communautés de test, alertes. Contrôle automatique de syntaxe.
 
 ## Fichiers touchés
 
 - `views/partials/platform_admin_sidebar.php`
-- `app/Controllers/Admin/System/SystemTenantInterventionController.php`
 - `tests/Unit/PlatformSiteAdminAssetTest.php`
 
 ## Vérification
 
-`php -l` sur la barre latérale. Depuis une intervention, ouvrir Journal : la page s’affiche, la barre latérale reste à droite.
+`php -l` sur la barre latérale : plus d’erreur. Contrôle automatique ajouté pour empêcher un `if (...):` orphelin et un HTML au milieu d’une fonction de lien.
 
 ## Statut
 

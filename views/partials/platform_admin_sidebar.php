@@ -60,6 +60,7 @@ $initials = count($words) > 1
             <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="true"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="m9 18 6-6-6-6"></path></svg><span class="ath-sidebar__group-label">COMMUNAUTÉS</span></button>
             <div class="ath-sidebar__group-body">
                 <?php $link('admin/tenants', 'Annuaire des communautés', 'users', $active('admin/tenants')); ?>
+                <?php $link('admin/system/tenant-recovery', 'Récupération communauté', 'users', $active('admin/system/tenant-recovery')); ?>
                 <?php $link('admin/system/subscription-plans', 'Formules d’accès', 'book', $active('admin/system/subscription-plans')); ?>
                 <?php $link('admin/newsletter', 'Lettre d’information', 'book', $active('admin/newsletter')); ?>
                 <?php $link('admin/system/demo-nda', 'Accès démo du site', 'shield', $active('admin/system/demo-nda')); ?>
@@ -87,7 +88,8 @@ $initials = count($words) > 1
                 <?php $link('admin/system/cooperation/announcements', 'Annonces de coopération', 'book', $active('admin/system/cooperation/announcements')); ?>
                 <?php $link('admin/system/military-referential', 'Référentiel militaire', 'book', $active('admin/system/military-referential')); ?>
                 <?php $link('admin/system/updates', 'Mises à jour plateforme', 'rocket', $active('admin/system/updates')); ?>
-                <?php $link('admin/system/deployment', 'Publications & canaux', 'rocket', $active('admin/system/deployment')); ?>
+                <?php $link('admin/system/deployment', 'Publications & canaux', 'rocket', $active('admin/system/deployment') && !$active('admin/system/deployment/communities')); ?>
+                <?php $link('admin/system/deployment/communities', 'Communautés de test', 'rocket', $active('admin/system/deployment/communities')); ?>
                 <?php $link('admin/system/alerts', 'Alertes plateforme', 'shield', $active('admin/system/alerts')); ?>
             </div>
         </div>
