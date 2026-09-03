@@ -584,6 +584,16 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(402, '2026-09-03', 'Le bureau effectifs se lit sur fond sombre', 'Sur l’annuaire des effectifs, l’alerte des fiches jumelles, les totaux, les filtres et les mentions manquantes restent lisibles. L’unité affichée est le dernier maillon, le chemin complet reste au survol. Rechargez le bureau effectifs', [
+                'Alerte des fiches jumelles dans le même registre sombre que le reste du bureau',
+                'Totaux cliquables : membres, actifs, sans unité, sans rôle, habilitation à revoir',
+            ], [
+                'Textes d’introduction et d’affectation plus courts',
+            ], [
+                'Les totaux et le bandeau d’alerte disparaissaient en blanc ou en jaune clair sur le fond sombre',
+            ], ['personnel'], [
+                'Ouvrez Bureau effectifs. Les totaux se lisent en blanc. S’il y a des fiches jumelles, le bandeau ambre propose d’ouvrir les fiches. Une ligne sans fonction ou sans unité apparaît en pastille ambre.',
+            ], 'Portail'),
             $pr(401, '2026-09-03', 'La position n’est plus refusée comme anonyme après une liaison Steam', 'Au lancement, l’identifiant Steam reste associé même si la liaison passe par le chemin de secours. Les positions sans identifiant attendent Steam au lieu d’être refusées en rafale. Relancer Arma complètement après le nouveau pack', [], [], [
                 'Une liaison de secours oubliait l’identifiant Steam, puis chaque position était refusée',
                 'Le journal Liaison se remplissait d’accès refusés sans identifiant',
