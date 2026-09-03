@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.79;
-        versionStr = "1.0.79";
-        versionAr[] = {1, 0, 79};
+        version = 1.0.80;
+        versionStr = "1.0.80";
+        versionAr[] = {1, 0, 80};
     };
 };
 

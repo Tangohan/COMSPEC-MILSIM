@@ -112,10 +112,7 @@ final class ComspecApiKeyAuth
         $raw = self::$rawJsonCache;
         if ($raw === null) {
             if (HttpJsonBody::isMultipart()) {
-                self::$rawJsonCache = '';
-                self::$jsonObjectCache = HttpJsonBody::postFields();
-
-                return self::$jsonObjectCache;
+                return HttpJsonBody::postFields();
             }
             $raw = HttpJsonBody::rawJson();
             self::$rawJsonCache = $raw;

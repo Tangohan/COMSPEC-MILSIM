@@ -1,36 +1,38 @@
-# Photo terrain — HTTP 400 missing_image
+# Photo terrain — refusée alors que le cliché existe
 
 ## Contexte
 
-Cliché trouvé sur le PC (`NotifyNewPhoto` OK) puis envoi vers le poste.
+Photo prise depuis le téléphone. Le journal indique que le cliché a bien été trouvé, puis que l’envoi vers le poste a échoué.
 
 ## Symptôme
 
-`PhotoUpload` échoue en HTTP 400. Le poste indique qu’aucune image n’a été reçue.
+La photo reste sur le PC. Le poste n’affiche rien dans Photos. Le journal montre un refus immédiat, y compris en renvoyant le même cliché.
 
 ## Cause
 
-Seule la partie image était bufferisée. Selon le handler HTTP .NET disponible sur le poste,
-le conteneur multipart complet pouvait encore partir en flux chunké. PHP ne remplissait alors
-pas `$_FILES`.
+L’envoi partait incomplet (taille inconnue, ou attente d’un accusé avant le fichier). Le poste ouvrait la requête trop tôt et ne voyait pas l’image.
+
+Un premier correctif ne remplissait que la partie image : le formulaire entier restait découpé. Insuffisant.
 
 ## Correctif
 
-Envoi du multipart complet en `ByteArrayContent`, avec son type (boundary inclus), son
-`Content-Length` réel et le transfert chunké explicitement désactivé. L'image reste sous le
-champ `image`. Journal serveur si le fichier manque encore.
+Toute la photo part d’un seul bloc, sans attente préalable. Si le poste reçoit encore le corps brut, il reconstitue l’image. Liaison 1.18.10 — relancer Arma complètement.
 
 ## Fichiers touchés
 
 - `mod/UptoDate/COMSPECExtension/Extension.cs`
-- `app/Controllers/Api/AtakApiController.php`
 - `app/Support/TerrainUploadedImage.php`
+- `app/Controllers/Api/AtakApiController.php`
+- `app/Controllers/Api/SseApiController.php`
+- `app/Controllers/Api/SseFieldNoteApiController.php`
+- `app/Support/ComspecApiKeyAuth.php`
 - `tests/Unit/OverwatchPhotoNotConnectedSpamAssetTest.php`
+- `tests/Unit/TerrainUploadedImageTest.php`
 
 ## Vérification
 
-Une photo prise depuis le téléphone apparaît au poste. Journal sans 400 `missing_image`.
+Une photo prise depuis le téléphone apparaît dans Photos au poste. Le journal n’affiche plus le refus immédiat.
 
 ## Statut
 
-corrigé
+corrigé (liaison 1.18.10)

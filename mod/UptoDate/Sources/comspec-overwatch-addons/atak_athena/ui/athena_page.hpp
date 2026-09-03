@@ -1,4 +1,4 @@
-// Panneau Athena dans ATAK — quatre écrans exclusifs (Journal, Alerter, Rapporter, Poste).
+// Panneau Athena dans ATAK — liaison + fiche. Les anciens écrans restent masqués.
 #ifndef QUOTE
     #define QUOTE(var1) #var1
 #endif
@@ -84,9 +84,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9701;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(0.74));
+            y = QUOTE(COMSPEC_ATHENA_H(2.20));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
-            h = QUOTE(COMSPEC_ATHENA_H(0.72));
+            h = QUOTE(COMSPEC_ATHENA_H(8.80));
             size = QUOTE(0.028);
             text = "";
             colorBackground[] = ATHENA_BG_STRIP;
@@ -94,11 +94,26 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             {
                 font = "RobotoCondensed";
                 color = "#C8CDD2";
-                align = "center";
-                valign = "middle";
+                align = "left";
+                valign = "top";
                 shadow = 1;
                 size = "1";
             };
+        };
+
+        class BtnConnect: COMSPEC_ATAK_Btn
+        {
+            idc = 9734;
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(1.54));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(0.58));
+            size = QUOTE(COMSPEC_ATHENA_H(0.36));
+            text = "Connexion";
+            colorBackground[] = ATHENA_BTN_ACCENT;
+            colorBackground2[] = ATHENA_BTN_ACCENT;
+            colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
+            onButtonClick = "[] call comspec_overwatch_connect_fnc_openLogin";
         };
 
         class HomeFil: COMSPEC_ATAK_Btn
@@ -110,6 +125,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             h = QUOTE(COMSPEC_ATHENA_H(0.52));
             size = QUOTE(COMSPEC_ATHENA_H(0.36));
             text = "Journal";
+            show = 0;
             colorBackground[] = ATHENA_TAB_ACTIVE;
             colorBackground2[] = ATHENA_TAB_ACTIVE;
             colorBackgroundFocused[] = ATHENA_TAB_ACTIVE;
@@ -153,7 +169,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             y = QUOTE(COMSPEC_ATHENA_H(2.16));
             w = QUOTE(COMSPEC_ATHENA_W(3));
             h = QUOTE(COMSPEC_ATHENA_H(9.70));
-            show = 1;
+            show = 0;
             class controls
             {
                 class BtnForcePhoto: COMSPEC_ATAK_Btn
@@ -459,36 +475,26 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                     colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
                     onButtonClick = "['BRIEFING'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
                 };
-                class BtnLink: COMSPEC_ATAK_Btn
-                {
-                    idc = 9734;
-                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(0.68));
-                    w = QUOTE(COMSPEC_ATHENA_W(0.92));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.50));
-                    size = QUOTE(COMSPEC_ATHENA_H(0.32));
-                    text = "Connexion Athena";
-                    colorBackground[] = ATHENA_BTN_ACCENT;
-                    colorBackground2[] = ATHENA_BTN_ACCENT;
-                    colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
-                    onButtonClick = "[] call comspec_overwatch_connect_fnc_openLogin";
-                };
-                class BtnPhoneQr: BtnLink
+                class BtnPhoneQr: BtnCas
                 {
                     idc = 9735;
-                    x = QUOTE(COMSPEC_ATHENA_W(1.04));
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(0.68));
                     text = "Adresse mobile";
                     onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_showPhoneConnect";
+                    class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
                 };
-                class BtnRefresh: BtnLink
+                class BtnRefresh: BtnCas
                 {
                     idc = 9731;
-                    x = QUOTE(COMSPEC_ATHENA_W(2.02));
+                    x = QUOTE(COMSPEC_ATHENA_W(1.04));
+                    y = QUOTE(COMSPEC_ATHENA_H(0.68));
                     text = "Actualiser";
                     colorBackground[] = ATHENA_BTN;
                     colorBackground2[] = ATHENA_BTN;
                     colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
                     onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_refresh";
+                    class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
                 };
             };
         };

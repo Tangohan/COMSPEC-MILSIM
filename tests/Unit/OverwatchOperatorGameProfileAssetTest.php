@@ -21,7 +21,7 @@ final class OverwatchOperatorGameProfileAssetTest extends TestCase
     public function testConnectRegistersOperatorProfileFunctionsAndBumpsVersion(): void
     {
         $cfg = $this->connect('config.cpp');
-        self::assertStringContainsString('versionStr = "1.5.14"', $cfg);
+        self::assertStringContainsString('versionStr = "1.5.16"', $cfg);
         foreach ([
             'class jsonValue',
             'class collectOperatorIdentity',
@@ -137,7 +137,7 @@ final class OverwatchOperatorGameProfileAssetTest extends TestCase
     public function testExtensionOperatorHandlersKeepSteamAndTenantAndTolerateMissingRoute(): void
     {
         $dll = (string) file_get_contents($this->root() . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('private const string ExtensionVersion = "1.18.9"', $dll);
+        self::assertStringContainsString('private const string ExtensionVersion = "1.18.10"', $dll);
         self::assertGreaterThanOrEqual(2, substr_count($dll, 'ApplySteamUid(args[3])'));
         self::assertStringContainsString('if (!isProxyContact && steamNorm.Length == 0)', $dll);
         self::assertStringContainsString('OperatorRegister', $dll);

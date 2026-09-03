@@ -30,6 +30,6 @@ final class SseZeusDomexMapPointAssetTest extends TestCase
         self::assertStringContainsString('isEqualType objNull', $pick);
         self::assertStringContainsString('(_pos select 0) isEqualType 0', $pick);
 
-        self::assertStringContainsString('0.7.19', $ver);
+        self::assertStringContainsString('0.7.20', $ver);
     }
 }

@@ -9,6 +9,50 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## Overwatch 1.5.16 — 2026-09-03
+
+### Correction — Photos en rafale
+
+Une photo prise depuis le téléphone n’écrit plus une série de copies identiques dans le dossier Captures. Un déclenchement = un fichier. Relancer Arma complètement.
+
+### Correction — Identifiant de groupe
+
+L’identifiant du groupe en jeu reprend l’indicatif de l’opérateur lorsque le champ contenait encore le nom de profil. Un nom de groupe déjà choisi n’est pas modifié. Relancer Arma complètement.
+
+---
+
+## Athena 1.0.80 — 2026-09-03
+
+### Correction — Photos en rafale
+
+Une photo prise depuis le téléphone n’écrit plus une série de copies identiques dans le dossier Captures. Relancer Arma complètement.
+
+### Correction — Bandeau sous l’heure
+
+Sous l’heure du téléphone, une bande noire affiche l’indicatif, le rôle, la grille et la radio.
+
+### Changement — Tuile Athena
+
+La tuile Athena ne garde qu’un bouton Connexion, qui devient Liaison OK une fois le compte associé. Un journal court indique si Steam n’est pas lié ou si le compte n’est pas connecté. Quand tout est en ordre, le nom, le prénom, le rôle, la fonction et l’affectation s’affichent. Relancer Arma complètement.
+
+---
+
+## Overwatch 1.18.10 — 2026-09-03
+
+### Correction — Photos terrain refusées
+
+Les photos prises depuis le téléphone arrivent de nouveau au poste. Le cliché n’est plus refusé alors qu’il existe déjà sur le PC. Relancer Arma complètement.
+
+---
+
+## Overwatch 1.5.15 / SSE 0.7.20 — 2026-09-03
+
+### Correction — Cockpit Hatchet
+
+En s’asseyant aux commandes d’un appareil Hatchet, le menu d’actions personnelles se referme. Clic et molette reviennent au tableau de bord : batterie, groupe auxiliaire et démarreurs répondent de nouveau. Relancer Arma complètement.
+
+---
+
 ## Overwatch 1.18.9 — 2026-09-03
 
 ### Correction — Identifiant Steam sur la liaison de secours

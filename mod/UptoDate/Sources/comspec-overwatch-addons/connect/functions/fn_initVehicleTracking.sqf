@@ -14,6 +14,10 @@ player addEventHandler ["GetInMan", {
     params ["_unit", "_role", "_vehicle", "_turret"];
     if (_vehicle isEqualTo _unit) exitWith {};
 
+    if (!isNil "comspec_overwatch_connect_fnc_hideAceMenu") then {
+        [] call comspec_overwatch_connect_fnc_hideAceMenu;
+    };
+
     private _trackingHandle = _vehicle getVariable ["COMSPEC_TrackingHandle", -1];
     if (_trackingHandle isEqualTo -1) then {
         private _handle = [{

@@ -62,6 +62,7 @@ private _state = createHashMapFromArray [
 private _processOne = {
     params ["_ent", "_profile", "_complexity", "_cluster", "_wantDigital", "_wantDocs", "_wantNetwork", "_state"];
     if (isNull _ent) exitWith {};
+    if (!isNil "comspec_sse_fnc_isHatchetVehicle" && {[_ent] call comspec_sse_fnc_isHatchetVehicle}) exitWith {};
     if (_ent getVariable ["comspec_sse_generating", false]) exitWith {};
 
     private _processed = _state getOrDefault ["processed", []];

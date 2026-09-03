@@ -120,11 +120,17 @@ if (!isNull _gunner) then {
 };
 _vehicleData set ["ammo_percent", _ammoPct];
 
-// Santé composants
-_vehicleData set ["engine_health", (1 - (_vehicle getHitPointDamage "HitEngine")) * 100];
+// Santé composants (sélecteur absent → 100, jamais d’écriture)
+private _fnc_hitPct = {
+    params ["_veh", "_sel"];
+    private _d = _veh getHitPointDamage _sel;
+    if (!(_d isEqualType 0) || {_d < 0}) exitWith { 100 };
+    (((1 - _d) max 0) min 1) * 100
+};
+_vehicleData set ["engine_health", [_vehicle, "HitEngine"] call _fnc_hitPct];
 _vehicleData set ["hull_health", (1 - (damage _vehicle)) * 100];
-_vehicleData set ["tracks_wheels_health", (1 - (_vehicle getHitPointDamage "HitLTrack")) * 100];
-_vehicleData set ["turret_health", (1 - (_vehicle getHitPointDamage "HitTurret")) * 100];
+_vehicleData set ["tracks_wheels_health", [_vehicle, "HitLTrack"] call _fnc_hitPct];
+_vehicleData set ["turret_health", [_vehicle, "HitTurret"] call _fnc_hitPct];
 
 // Statut
 private _status = "OPERATIONAL";

@@ -18,7 +18,7 @@ final class SseFacePhotoRoutingAssetTest extends TestCase
         self::assertStringContainsString('if (IsSseNoteCaptureName(fullPath)) return;', $cs);
         self::assertStringContainsString('/api/sse/persons/', $cs);
         self::assertStringContainsString('ProcessSseFacePhotoUploadAsync', $cs);
-        self::assertStringContainsString('1.18.9', $cs);
+        self::assertStringContainsString('1.18.10', $cs);
     }
 
     public function testPortalIgnoresFaceOnReconAndAcceptsMagicPngOnFiche(): void

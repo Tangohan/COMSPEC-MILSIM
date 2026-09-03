@@ -123,11 +123,10 @@ if (_overlayKind in ["phone", "hcam", "hcam_pip", "tgp", "uav_pip"]) then {
     if (_overlayKind in ["uav_pip", "tgp"]) then { _device = "DRONE"; };
 };
 
-private _skipShot = false;
+private _skipShot = true;
 private _lowPath = toLower _filePath;
 // JPEG BCE / Photo Library : le dossier annoncé est souvent inexistant
-// (srcdir_missing). On prend un PNG Arma ; Overwatch le recopie dans
-// Documents\Arma 3 - COMSPEC\Captures. On n’envoie jamais le JPEG fantôme.
+// (srcdir_missing). Un seul PNG Arma, jamais un second cliché pour le PNG.
 if ((_lowPath find ".jpg") >= 0 || {(_lowPath find ".jpeg") >= 0}) exitWith {
     [_filePath, _caption, _device, _feedId] spawn {
         params ["_path", "_caption", "_device", "_feedId"];
@@ -137,9 +136,14 @@ if ((_lowPath find ".jpg") >= 0 || {(_lowPath find ".jpeg") >= 0}) exitWith {
     [format ["Photo en file (%1) — copie dans Documents\\Arma 3 - COMSPEC\\Captures", _fileName]] call comspec_overwatch_connect_fnc_appendModuleLog;
     true
 };
+if ((_lowPath find ".png") >= 0 || {(_lowPath find ".webp") >= 0}) then {
+    _skipShot = true;
+};
 if (
     _overlayKind isNotEqualTo ""
     && {!(missionNamespace getVariable ["COMSPEC_OverlayCamPromoted", false])}
+    && {(_lowPath find ".png") < 0}
+    && {(_lowPath find ".webp") < 0}
 ) then {
     _skipShot = false;
 };

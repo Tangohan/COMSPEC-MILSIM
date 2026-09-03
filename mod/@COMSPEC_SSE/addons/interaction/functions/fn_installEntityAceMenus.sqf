@@ -9,6 +9,7 @@ params [
 
 if (!hasInterface) exitWith { false };
 if (isNull _entity) exitWith { false };
+if (!isNil "comspec_sse_fnc_isHatchetVehicle" && {[_entity] call comspec_sse_fnc_isHatchetVehicle}) exitWith { false };
 if (_entity getVariable ["comspec_sse_generating", false]) exitWith { false };
 if (isNil "ace_interact_menu_fnc_createAction" || {isNil "ace_interact_menu_fnc_addActionToObject"}) exitWith { false };
 
