@@ -1782,7 +1782,7 @@ class UserRepository
             $idParts[] = 'un_uu.id';
         }
         $unitSelect = 'COALESCE(' . implode(', ', $unitParts) . ') AS unit_name, COALESCE(' . implode(', ', $codeParts) . ') AS unit_code, COALESCE(' . implode(', ', $idParts) . ') AS unit_id';
-        $profileExtras = 'pp.character_name, pp.matricule_internal,
+        $profileExtras = 'pp.character_name, pp.matricule_internal, pp.radio_assigned,
                        pp.enlistment_date, pp.readiness_score, pp.clearance_level, pp.clearance_reviewed_at';
         if ($this->personnelProfilesHasColumn('character_portrait_path')) {
             $profileExtras .= ', pp.character_portrait_path';

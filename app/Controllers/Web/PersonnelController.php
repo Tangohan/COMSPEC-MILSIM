@@ -353,6 +353,15 @@ class PersonnelController
             return Response::redirect(url('personnel/me'));
         }
 
+        // L'annuaire historique est désormais une porte d'entrée vers le bureau Effectifs.
+        // On conserve la recherche afin que les favoris et liens partagés restent utiles.
+        if (EffectifsLmsAccess::allows(Gate::getInstance())) {
+            $query = trim((string) $request->query('q', ''));
+            $target = effectifs_workspace_url();
+
+            return Response::redirect($target . ($query !== '' ? '?' . http_build_query(['q' => $query]) : ''));
+        }
+
         $query = trim((string) $request->query('q', ''));
         $gate = Gate::getInstance();
         $canSeeInactive = EffectifsLmsAccess::allows($gate) || EffectifsLmsAccess::canManageStatus($gate);

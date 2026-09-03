@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\ElevationRequestRepository;
+use App\Repositories\BadgeRepository;
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
@@ -71,6 +72,7 @@ class EffectifsWorkspaceController
         private ?PersonnelOrgHistoryRepository $personnelOrgHistoryRepository = null,
         private ?PersonnelServiceHistoryRepository $personnelServiceHistoryRepository = null,
         private ?PersonnelStageBilanRepository $personnelStageBilanRepository = null,
+        private ?BadgeRepository $badgeRepository = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
         $this->personnelQualificationRepository ??= new PersonnelQualificationRepository();
@@ -88,6 +90,7 @@ class EffectifsWorkspaceController
         $this->personnelOrgHistoryRepository ??= new PersonnelOrgHistoryRepository();
         $this->personnelServiceHistoryRepository ??= new PersonnelServiceHistoryRepository();
         $this->personnelStageBilanRepository ??= new PersonnelStageBilanRepository();
+        $this->badgeRepository ??= new BadgeRepository();
     }
 
     /**
@@ -231,6 +234,7 @@ class EffectifsWorkspaceController
         $viewerId = (int) Session::get('user_id');
         $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients($tenantId, $viewerId);
         $rowIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows);
+        $badgesByUserId = $rowIds !== [] ? $this->badgeRepository->listForUsers($tenantId, $rowIds) : [];
         $elevationCooldownByUserId = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequestBatch(
             $rowIds,
             $viewerId
@@ -267,6 +271,7 @@ class EffectifsWorkspaceController
             'communityName' => $communityName,
             'elevationRecipientsCount' => count($elevationRecipients),
             'elevationCooldownByUserId' => $elevationCooldownByUserId,
+            'badgesByUserId' => $badgesByUserId,
             'canEditProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -1919,6 +1924,8 @@ class EffectifsWorkspaceController
                 'job_role_display' => $rich['job_role_display'] ?? null,
                 'character_name' => $rich['character_name'] ?? null,
                 'matricule_internal' => $rich['matricule_internal'] ?? null,
+                'service_number' => $rich['service_number'] ?? null,
+                'radio_assigned' => $rich['radio_assigned'] ?? null,
                 'enlistment_date_resolved' => $enlistmentResolved !== '' ? $enlistmentResolved : null,
                 'pre_platform_start' => trim((string) ($pack['pre_platform_start'] ?? '')) ?: null,
                 'seniority_days' => $seniorityDays,
