@@ -25,7 +25,7 @@ final class LegacyPersonnelRedirectController
 
     public function edit(Request $request, array $params = []): Response
     {
-        return Response::redirect(effectifs_workspace_url('membres/' . (int) ($params['id'] ?? 0) . '/modifier'));
+        return Response::redirect(effectifs_workspace_url('membres/' . (int) ($params['id'] ?? 0)));
     }
 
     public function create(Request $request, array $params = []): Response
