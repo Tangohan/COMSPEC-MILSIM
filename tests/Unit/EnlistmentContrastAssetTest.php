@@ -18,6 +18,16 @@ final class EnlistmentContrastAssetTest extends TestCase
         self::assertStringContainsString('--ce-muted: #c5d0de', $css);
     }
 
+    public function testEmptyAiScanHintsRemainHidden(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/community-enlistment.css');
+
+        self::assertMatchesRegularExpression(
+            '/\.ce-label-hint\[data-ai-hint\]\[hidden\]\s*\{\s*display:\s*none;\s*\}/',
+            $css
+        );
+    }
+
     public function testStaleEnlistmentPagesDropJnetChrome(): void
     {
         $success = (string) file_get_contents(dirname(__DIR__, 2) . '/views/enlistment/success.php');
