@@ -32,11 +32,11 @@ final class AtakQuickPictureAssetTest extends TestCase
         self::assertStringContainsString('_filePath = format', $bridge);
         self::assertStringContainsString('_base, _fileName', $bridge);
         self::assertStringContainsString('_path = if (_base isEqualTo "") then { _name }', $post);
-        self::assertStringContainsString('(_lowGiven find ".jpg") < 0', $capture);
+        self::assertStringContainsString('(_lowGiven find ".jpg") >= 0', $capture);
         self::assertStringContainsString('COMSPEC_OverlayCaptureRtt', $get);
 
         self::assertStringContainsString('AddSeconds(-180)', $dll);
-        self::assertStringContainsString('ExtensionVersion = "1.18.9"', $dll);
+        self::assertStringContainsString('ExtensionVersion = "1.18.10"', $dll);
 
         self::assertStringContainsString('Quick Picture', $note);
         self::assertStringContainsString('file_not_found', $note);

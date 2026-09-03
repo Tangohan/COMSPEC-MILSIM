@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(202, $byKind['update']);
-        self::assertCount(208, $all);
+        self::assertSame(205, $byKind['update']);
+        self::assertCount(211, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -675,6 +675,26 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($effectifsDark);
         self::assertSame('00402', $effectifsDark['number_pad']);
         self::assertStringContainsString('effectifs', strtolower((string) $effectifsDark['title']));
+        $hatchetCockpit = DevDispatchCatalog::find('update', '403');
+        self::assertNotNull($hatchetCockpit);
+        self::assertSame('00403', $hatchetCockpit['number_pad']);
+        self::assertStringContainsString('hatchet', strtolower((string) $hatchetCockpit['title']));
+        $photoUpload = DevDispatchCatalog::find('update', '404');
+        self::assertNotNull($photoUpload);
+        self::assertSame('00404', $photoUpload['number_pad']);
+        self::assertStringContainsString('photos', strtolower((string) $photoUpload['title']));
+        $athenaTile = DevDispatchCatalog::find('update', '405');
+        self::assertNotNull($athenaTile);
+        self::assertSame('00405', $athenaTile['number_pad']);
+        self::assertStringContainsString('athena', strtolower((string) $athenaTile['title']));
+        $groupIdCs = DevDispatchCatalog::find('update', '406');
+        self::assertNotNull($groupIdCs);
+        self::assertSame('00406', $groupIdCs['number_pad']);
+        self::assertStringContainsString('indicatif', strtolower((string) $groupIdCs['title']));
+        $photoBurst = DevDispatchCatalog::find('update', '407');
+        self::assertNotNull($photoBurst);
+        self::assertSame('00407', $photoBurst['number_pad']);
+        self::assertStringContainsString('captures', strtolower((string) $photoBurst['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

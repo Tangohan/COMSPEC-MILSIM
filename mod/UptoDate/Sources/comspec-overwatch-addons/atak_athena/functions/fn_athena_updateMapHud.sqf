@@ -1,6 +1,6 @@
 /*
     Tick HUD carte ATAK Enhanced :
-    - barre identité sous météo / heure (Indicatif, Rôle, Grille, Radio)
+    - bandeau identité noir juste sous l’heure (Indicatif, Rôle, Grille, Radio)
     - cartouche curseur (GRILLE, DIST, SOL, GIS, PORTÉE) en bas à droite
     - pas de boutons zoom +/− (ils se calaient sur le tiroir)
     Ne jamais restyler ni masquer le bouton natif des outils carte, ni le pied d’application IceMan.
@@ -191,40 +191,69 @@ _cursorBox ctrlSetBackgroundColor _bgPanel;
 _cursorBox ctrlEnable false;
 _cursorBox ctrlSetFade 0;
 
-// Barre identité : sous météo / heure, à droite de la boussole, style bandeau.
-private _barH = (_visH * 0.046) max 0.022;
-private _barY = _visY;
-private _barX = _visX;
-private _barW = _visW;
-private _comp = _disp displayCtrl (17000 + 2615);
-if (!isNull _comp) then {
-    (ctrlPosition _comp) params ["_cx", "_cy", "_cw", "_ch"];
-    if (_cw > 0.012) then {
-        _barX = (_cx + _cw + 0.006) max _visX;
-        _barW = ((_visX + _visW) - _barX) max 0.10;
-        _barY = _cy max _visY;
-        if (_ch > 0.014) then { _barH = (_ch * 0.72) max 0.020; };
+private _fncAbsPos = {
+    params ["_c"];
+    if (isNull _c) exitWith { [0, 0, 0, 0] };
+    (ctrlPosition _c) params ["_ax", "_ay", "_aw", "_ah"];
+    private _p = ctrlParentControlsGroup _c;
+    private _guard = 0;
+    while {!isNull _p && {_guard < 8}} do {
+        (ctrlPosition _p) params ["_px", "_py"];
+        _ax = _ax + _px;
+        _ay = _ay + _py;
+        _p = ctrlParentControlsGroup _p;
+        _guard = _guard + 1;
+    };
+    [_ax, _ay, _aw, _ah]
+};
+private _fncOsd = {
+    params ["_d", "_idc"];
+    private _c = _d displayCtrl (17000 + _idc);
+    if (isNull _c) then { _c = _d displayCtrl _idc; };
+    _c
+};
+
+// Bandeau noir juste sous l’heure (bas du bandeau OSD, centré sur l’horloge).
+private _barH = (_visH * 0.042) max 0.022;
+private _barW = (_visW * 0.72) min 0.50;
+private _barY = _visY + 0.001;
+private _barX = _visX + ((_visW - _barW) / 2);
+private _timeCtrl = [_disp, 2613] call _fncOsd;
+private _headerCtrl = _disp displayCtrl 1;
+if (isNull _headerCtrl) then { _headerCtrl = _disp displayCtrl (17000 + 1); };
+if (!isNull _timeCtrl) then {
+    ([_timeCtrl] call _fncAbsPos) params ["_tx", "_ty", "_tw", "_th"];
+    if (_tw > 0.02 && {_th > 0.006}) then {
+        _barH = (_th * 0.95) max 0.020;
+        _barY = _ty + _th + 0.002;
+        _barW = ((_tw * 3.4) max (_visW * 0.58)) min (_visW * 0.90);
+        _barX = _tx + (_tw / 2) - (_barW / 2);
     };
 };
+if (!isNull _headerCtrl) then {
+    ([_headerCtrl] call _fncAbsPos) params ["_hx", "_hy", "_hw", "_hh"];
+    // Bandeau OSD seulement (pas un groupe d’écran 17000+1 trop haut).
+    if (_hw > 0.12 && {_hh > 0.010} && {_hh < (_visH * 0.16)} && {(_hy + _hh) <= (_visY + 0.05)}) then {
+        _barY = _hy + _hh + 0.002;
+        if (_barW > (_hw * 0.94)) then { _barW = _hw * 0.90; };
+        if (_barX < _hx || {(_barX + _barW) > (_hx + _hw)}) then {
+            _barX = _hx + ((_hw - _barW) / 2);
+        };
+    };
+};
+if (_barY < _visY) then { _barY = _visY + 0.001; };
+if (_barX < _visX) then { _barX = _visX; };
+if ((_barX + _barW) > (_visX + _visW)) then {
+    _barW = ((_visX + _visW) - _barX) max 0.10;
+};
 _unitBox ctrlSetPosition [_barX, _barY, _barW, _barH];
-_unitBox ctrlSetBackgroundColor [0.04, 0.04, 0.04, 0.94];
+_unitBox ctrlSetBackgroundColor [0, 0, 0, 0.94];
 _unitBox ctrlSetFade 0;
 _unitBox ctrlEnable false;
 
-private _acctLinked = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
-if (!_acctLinked && {!isNull _acctBanner}) then {
-    private _banH = _barH;
-    _acctBanner ctrlSetPosition [_barX, _barY + _barH + 0.002, _barW min 0.22, _banH];
-    _acctBanner ctrlSetBackgroundColor [0.28, 0.14, 0.04, 0.94];
-    _acctBanner ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.52' color='#FFD27A' align='center'>Compte non connecté</t>";
-    _acctBanner ctrlEnable false;
-    _acctBanner ctrlShow true;
+if (!isNull _acctBanner) then {
+    _acctBanner ctrlShow false;
     _acctBanner ctrlCommit 0;
-} else {
-    if (!isNull _acctBanner) then {
-        _acctBanner ctrlShow false;
-        _acctBanner ctrlCommit 0;
-    };
 };
 
 private _fncGrid = {

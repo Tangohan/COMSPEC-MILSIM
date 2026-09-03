@@ -37,7 +37,7 @@ final class AtakIcemanHudAssetTest extends TestCase
         self::assertStringContainsString('athena_installMapHud', $cfg);
         self::assertStringContainsString('athena_updateMapHud', $cfg);
         self::assertStringContainsString('athena_mapHudZoom', $cfg);
-        self::assertStringContainsString('1.0.79', $cfg);
+        self::assertStringContainsString('1.0.80', $cfg);
         self::assertStringContainsString('athena_installMapHud', $post);
         self::assertStringContainsString('athena_updateMapHud', $layout);
 
@@ -53,7 +53,9 @@ final class AtakIcemanHudAssetTest extends TestCase
         self::assertStringContainsString('#5EC7F2', $upd);
         self::assertStringContainsString('99887811', $upd);
         self::assertStringContainsString('99887813', $upd);
-        self::assertStringContainsString('Compte non connecté', $upd);
+        self::assertStringContainsString('17000 + 2613', $upd);
+        self::assertStringContainsString('ctrlParentControlsGroup', $upd);
+        self::assertStringContainsString('_headerCtrl', $upd);
         self::assertStringContainsString('_barH', $upd);
         self::assertStringContainsString('_zoomOut ctrlShow false', $upd);
         self::assertStringNotContainsString('17000 + 1200', $upd);

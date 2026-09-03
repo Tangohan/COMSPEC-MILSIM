@@ -19,6 +19,7 @@ private _role = _auth getOrDefault ["role", ""];
 private _function = _auth getOrDefault ["function", ""];
 private _steamLinked = (_auth getOrDefault ["steam_linked", ""]) isEqualTo "1";
 private _steamNotice = _auth getOrDefault ["steam_notice", ""];
+missionNamespace setVariable ["COMSPEC_SteamLinked", _steamLinked, false];
 
 if (_modDet isEqualTo "") then { _modDet = [] call comspec_overwatch_connect_fnc_packVersion; };
 if (_extDet isEqualTo "") then { _extDet = "1.18.0"; };

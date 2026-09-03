@@ -584,6 +584,43 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(407, '2026-09-03', 'Un seul cliché dans le dossier Captures', 'Une photo prise depuis le téléphone n’écrit plus une rafale de copies identiques dans le dossier Captures. Relancer Arma complètement après le nouveau pack', [
+                'Un déclenchement n’écrit plus qu’un fichier',
+            ], [], [
+                'Le dossier Captures se remplissait de copies de la même vue',
+            ], ['atak'], [
+                'Prenez une photo depuis le téléphone : un seul fichier apparaît. Relancez Arma complètement. Les copies déjà présentes restent sur le disque ; vous pouvez les supprimer à la main.',
+            ], 'Overwatch 1.5.16'),
+            $pr(406, '2026-09-03', 'L’identifiant de groupe reprend l’indicatif', 'Sur le panneau Données techniques, l’identifiant du groupe affiche l’indicatif de l’opérateur, et non le nom de profil. Un nom de groupe déjà choisi reste en place. Relancer Arma complètement après le nouveau pack', [
+                'Identifiant de groupe = indicatif quand le nom de profil était encore affiché',
+            ], [], [
+                'Le champ Identifiant du groupe montrait le nom de profil',
+            ], ['atak'], [
+                'Ouvrez Données techniques : l’identifiant du groupe doit être l’indicatif, pas le nom de profil.',
+            ], 'Overwatch 1.5.16'),
+            $pr(405, '2026-09-03', 'La tuile Athena se limite à la liaison et à la fiche', 'Sous l’heure, une bande noire reprend l’indicatif, le rôle, la grille et la radio. Dans Athena, un bouton Connexion devient Liaison OK quand le compte est associé. Un journal court signale Steam non lié ou un compte non connecté. Quand tout est en ordre, le nom, le prénom, le rôle, la fonction et l’affectation s’affichent. Relancer Arma complètement après le nouveau pack', [
+                'Bandeau d’identité juste sous l’heure',
+                'Tuile Athena : Connexion, journal de liaison, fiche quand tout est prêt',
+            ], [], [
+                'Le bandeau d’identité n’était pas sous l’heure',
+                'La tuile Athena mélangeait journal, alertes, photos et poste',
+            ], ['atak'], [
+                'Ouvrez le téléphone, carte : sous l’heure, lisez indicatif, rôle, grille et radio. Ouvrez Athena : Connexion, puis Liaison OK et la fiche une fois associé.',
+            ], 'Athena 1.0.80'),
+            $pr(404, '2026-09-03', 'Les photos prises en mission arrivent de nouveau au poste', 'Les clichés du téléphone sont transmis jusqu’au poste de commandement. Relancer Arma complètement après le nouveau pack', [
+                'La photo part complète, déjà prête à être reçue au poste',
+            ], [], [
+                'Le cliché existait sur le PC mais le poste le refusait comme s’il n’avait rien reçu',
+            ], ['atak'], [
+                'Relancez Arma complètement. Prenez une photo depuis le téléphone : elle apparaît dans Photos au poste.',
+            ], 'liaison 1.18.10'),
+            $pr(403, '2026-09-03', 'Le tableau de bord Hatchet reprend le clic et la molette', 'En s’asseyant aux commandes d’un appareil Hatchet, le menu d’actions personnelles se referme. Clic et molette reviennent aux interrupteurs. La mise en route (batterie, groupe auxiliaire, démarreurs) n’est plus bloquée. Relancer Arma complètement après le nouveau pack', [
+                'Le menu d’actions personnelles se ferme à l’embarquement',
+            ], [], [
+                'Le clic et la molette restaient pris par le menu d’actions, le tableau de bord ne répondait plus',
+            ], ['atak'], [
+                'Asseyez-vous aux commandes d’un H-60. Le menu d’actions se ferme. Actionnez un interrupteur à la molette, puis la mise en route.',
+            ], 'Overwatch 1.5.15 · SSE 0.7.20'),
             $pr(402, '2026-09-03', 'Le bureau effectifs se lit sur fond sombre', 'Sur l’annuaire des effectifs, l’alerte des fiches jumelles, les totaux, les filtres et les mentions manquantes restent lisibles. L’unité affichée est le dernier maillon, le chemin complet reste au survol. Rechargez le bureau effectifs', [
                 'Alerte des fiches jumelles dans le même registre sombre que le reste du bureau',
                 'Totaux cliquables : membres, actifs, sans unité, sans rôle, habilitation à revoir',

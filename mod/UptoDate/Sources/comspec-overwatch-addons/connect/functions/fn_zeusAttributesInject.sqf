@@ -6,6 +6,7 @@
 params [["_display", displayNull]];
 if (!hasInterface) exitWith {};
 if (isNull _display) exitWith {};
+[_display] call comspec_overwatch_connect_fnc_fillZeusGroupId;
 if (isNull (findDisplay 312)) exitWith {};
 if (ctrlIDD _display == 312) exitWith {};
 if (!isNull (_display displayCtrl 86101)) exitWith {};

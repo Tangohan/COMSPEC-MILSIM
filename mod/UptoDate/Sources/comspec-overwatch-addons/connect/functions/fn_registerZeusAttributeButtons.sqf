@@ -10,6 +10,7 @@ private _hook = {
     params ["_display"];
     if (isNull _display) exitWith {};
     [{
+        [_this] call comspec_overwatch_connect_fnc_fillZeusGroupId;
         [_this] call comspec_overwatch_connect_fnc_zeusAttributesInject;
     }, _display, 0.12] call CBA_fnc_waitAndExecute;
 };

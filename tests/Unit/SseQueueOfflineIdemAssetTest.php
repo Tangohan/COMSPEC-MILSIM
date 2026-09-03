@@ -17,7 +17,7 @@ final class SseQueueOfflineIdemAssetTest extends TestCase
         self::assertStringContainsString('} forEach comspec_sse_txQueue;', $sqf);
         self::assertStringNotContainsString('findIf', $sqf);
         self::assertStringContainsString('_idemKey', $sqf);
-        self::assertStringContainsString('0.7.19', (string) file_get_contents(
+        self::assertStringContainsString('0.7.20', (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/main/script_mod.hpp'
         ));
     }

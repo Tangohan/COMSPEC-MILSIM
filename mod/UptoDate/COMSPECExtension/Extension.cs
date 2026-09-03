@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Net.Http.Headers;
@@ -29,7 +30,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.18.9";
+    private const string ExtensionVersion = "1.18.10";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -101,9 +102,16 @@ public static partial class Extension
 
     private static HttpClient CreateHttpClient(int timeoutSeconds)
     {
-        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(timeoutSeconds) };
+        var client = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(timeoutSeconds),
+            DefaultRequestVersion = HttpVersion.Version11,
+            DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower
+        };
         try
         {
+            // 100-continue : PHP / nginx voient un corps vide → 400 missing_image.
+            client.DefaultRequestHeaders.ExpectContinue = false;
             client.DefaultRequestHeaders.TryAddWithoutValidation(
                 "User-Agent",
                 "COMSPECExtension/" + ExtensionVersion);
@@ -113,6 +121,75 @@ public static partial class Extension
             // Construction : pas de course DefaultRequestHeaders.
         }
         return client;
+    }
+
+    private static HttpRequestMessage CreateUploadPost(Uri uri, HttpContent content)
+    {
+        return new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Version = HttpVersion.Version11,
+            VersionPolicy = HttpVersionPolicy.RequestVersionOrLower,
+            Content = content
+        };
+    }
+
+    /// <summary>
+    /// Sérialise le multipart en un seul bloc avec Content-Length.
+    /// Sans ça, HttpClient part en chunked / HTTP/2 et PHP ne remplit pas $_FILES.
+    /// </summary>
+    private static async Task<ByteArrayContent> ToKnownLengthMultipartAsync(MultipartFormDataContent multipart)
+    {
+        try
+        {
+            await using var buffer = new MemoryStream();
+            await multipart.CopyToAsync(buffer).ConfigureAwait(false);
+            var bytes = buffer.ToArray();
+            var content = new ByteArrayContent(bytes);
+            var ct = multipart.Headers.ContentType?.ToString();
+            if (!string.IsNullOrEmpty(ct))
+                content.Headers.TryAddWithoutValidation("Content-Type", ct);
+            content.Headers.ContentLength = bytes.Length;
+            return content;
+        }
+        finally
+        {
+            try { multipart.Dispose(); } catch { /* ignore */ }
+        }
+    }
+
+    private static async Task<string> ReadUtf8SnippetAsync(HttpResponseMessage resp, int maxChars = 240)
+    {
+        try
+        {
+            var bytes = await resp.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+            if (bytes.Length == 0) return "";
+            var n = Math.Min(bytes.Length, Math.Max(32, maxChars * 2));
+            var text = Encoding.UTF8.GetString(bytes, 0, n);
+            if (text.Length > maxChars) text = text.Substring(0, maxChars);
+            return text.Replace('\r', ' ').Replace('\n', ' ').Replace('|', '/');
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static string JsonErrorToken(string body)
+    {
+        if (string.IsNullOrEmpty(body)) return "";
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object
+                && doc.RootElement.TryGetProperty("error", out var err))
+            {
+                var s = (err.GetString() ?? "").Trim();
+                if (s.Length > 0 && s.Length <= 48)
+                    return s.Replace("|", "/");
+            }
+        }
+        catch { /* corps non JSON */ }
+        return "";
     }
 
     // --- Photo sidecar (queue + watcher) : callExtension ne fait que signaler ---
@@ -6375,7 +6452,6 @@ public static partial class Extension
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "recon.png";
-            // ByteArray + Content-Length : PHP ne remplit pas $_FILES avec un body chunked.
             byte[] imageBytes;
             await using (var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan))
             await using (var ms = new MemoryStream())
@@ -6393,7 +6469,6 @@ public static partial class Extension
             }
             var fileContent = new ByteArrayContent(imageBytes);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
-            fileContent.Headers.ContentLength = imageBytes.Length;
             multipart.Add(fileContent, "image", fileName);
 
             // Attendre le POST ici (worker déjà hors thread jeu) → ACK réel vers SQF.
@@ -6406,8 +6481,9 @@ public static partial class Extension
                 return;
             }
 
-            req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = multipart };
-            multipart = null; // ownership transferred to request
+            var body = await ToKnownLengthMultipartAsync(multipart).ConfigureAwait(false);
+            multipart = null;
+            req = CreateUploadPost(uri, body);
             AttachApiKeyHeader(req);
             using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
             var code = (int)resp.StatusCode;
@@ -6418,6 +6494,7 @@ public static partial class Extension
                 return;
             }
 
+            var apiErr = JsonErrorToken(await ReadUtf8SnippetAsync(resp).ConfigureAwait(false));
             NotePostError(code, uri.AbsoluteUri);
             if (code == 503 || code == 429)
             {
@@ -6429,7 +6506,8 @@ public static partial class Extension
             ReleasePhotoDedup(identityKey);
             if (code == 401 && _sessionToken.Length > 0)
                 _sessionToken = "";
-            InvokeCallback("PhotoUpload", $"ERR|http_{code}|{fileName}");
+            var extra = apiErr.Length > 0 ? "|" + apiErr : "";
+            InvokeCallback("PhotoUpload", $"ERR|http_{code}|{fileName}{extra}");
         }
         catch
         {
@@ -6713,9 +6791,14 @@ public static partial class Extension
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "sse_face.png";
-            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
-            var fileContent = new StreamContent(fileStream);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
+            var imageBytes = ReadStableImageBytes(resolved, TimeSpan.FromSeconds(4));
+            if (imageBytes == null || imageBytes.Length < 24)
+            {
+                RequeuePhotoWaitingForFlush(job, "SsePhotoUpload", fileName);
+                return;
+            }
+            var fileContent = new ByteArrayContent(imageBytes);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, imageBytes));
             multipart.Add(fileContent, "image", fileName);
 
             var apiPath = "/api/sse/persons/" + Uri.EscapeDataString(personId) + "/photos";
@@ -6728,8 +6811,9 @@ public static partial class Extension
                 return;
             }
 
-            req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = multipart };
+            var body = await ToKnownLengthMultipartAsync(multipart).ConfigureAwait(false);
             multipart = null;
+            req = CreateUploadPost(uri, body);
             AttachApiKeyHeader(req);
             using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
             var code = (int)resp.StatusCode;
@@ -6740,6 +6824,7 @@ public static partial class Extension
                 return;
             }
 
+            var apiErr = JsonErrorToken(await ReadUtf8SnippetAsync(resp).ConfigureAwait(false));
             NotePostError(code, uri.AbsoluteUri);
             if (code == 503 || code == 429)
             {
@@ -6751,7 +6836,8 @@ public static partial class Extension
             ReleasePhotoDedup(identityKey);
             if (code == 401 && _sessionToken.Length > 0)
                 _sessionToken = "";
-            InvokeCallback("SsePhotoUpload", $"ERR|http_{code}|{fileName}");
+            var extra = apiErr.Length > 0 ? "|" + apiErr : "";
+            InvokeCallback("SsePhotoUpload", $"ERR|http_{code}|{fileName}{extra}");
         }
         catch
         {
@@ -6869,8 +6955,9 @@ public static partial class Extension
                 return;
             }
 
-            req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = multipart };
+            var body = await ToKnownLengthMultipartAsync(multipart).ConfigureAwait(false);
             multipart = null;
+            req = CreateUploadPost(uri, body);
             AttachApiKeyHeader(req);
             using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
             var code = (int)resp.StatusCode;
@@ -6881,6 +6968,7 @@ public static partial class Extension
                 return;
             }
 
+            var apiErr = JsonErrorToken(await ReadUtf8SnippetAsync(resp).ConfigureAwait(false));
             NotePostError(code, uri.AbsoluteUri);
             if (code == 503 || code == 429)
             {
@@ -6892,7 +6980,8 @@ public static partial class Extension
             ReleasePhotoDedup(identityKey);
             if (code == 401 && _sessionToken.Length > 0)
                 _sessionToken = "";
-            InvokeCallback("SseNoteAttachment", $"ERR|http_{code}|{fileName}");
+            var extra = apiErr.Length > 0 ? "|" + apiErr : "";
+            InvokeCallback("SseNoteAttachment", $"ERR|http_{code}|{fileName}{extra}");
         }
         catch
         {
@@ -7054,58 +7143,35 @@ public static partial class Extension
             return "ERR|" + err;
         }
         var url = uri.AbsoluteUri;
-        try
+        _ = Task.Run(async () =>
         {
-            var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = multipart };
-            AttachApiKeyHeader(req);
-            _ = UploadHttpClient.SendAsync(req).ContinueWith(t =>
+            HttpRequestMessage? req = null;
+            try
             {
-                try
+                var body = await ToKnownLengthMultipartAsync(multipart).ConfigureAwait(false);
+                req = CreateUploadPost(uri, body);
+                AttachApiKeyHeader(req);
+                using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
+                var code = (int)resp.StatusCode;
+                if (resp.IsSuccessStatusCode)
                 {
-                    HttpResponseMessage? resp = null;
-                    if (t.Status == TaskStatus.RanToCompletion)
-                        resp = t.Result;
-                    if (resp == null)
-                    {
-                        NotePostError(0, url);
-                        return;
-                    }
-                    var code = (int)resp.StatusCode;
-                    if (resp.IsSuccessStatusCode)
-                    {
-                        NoteRateLimitCleared();
-                        return;
-                    }
-                    // Session périmée attachée en en-tête : oublier et retenter une fois sans jeton.
-                    if (code == 401 && _sessionToken.Length > 0)
-                    {
-                        _sessionToken = "";
-                        try
-                        {
-                            // Le contenu a déjà été consommé — pas de retry multipart ici.
-                            // Le soft-fail serveur (invalid_session_ignored) couvre le cas courant.
-                        }
-                        catch { /* ignore */ }
-                    }
-                    NotePostError(code, url);
+                    NoteRateLimitCleared();
+                    return;
                 }
-                catch
-                {
-                    NotePostError(-1, url);
-                }
-                finally
-                {
-                    try { req.Dispose(); } catch { /* ignore */ }
-                }
-            });
-            return "OK|queued";
-        }
-        catch
-        {
-            try { multipart.Dispose(); } catch { /* ignore */ }
-            NotePostError(-1, url);
-            return "ERR|network";
-        }
+                if (code == 401 && _sessionToken.Length > 0)
+                    _sessionToken = "";
+                NotePostError(code, url);
+            }
+            catch
+            {
+                NotePostError(-1, url);
+            }
+            finally
+            {
+                try { req?.Dispose(); } catch { /* ignore */ }
+            }
+        });
+        return "OK|queued";
     }
 
     private static readonly string[] ImageExtensions = [".png", ".jpg", ".jpeg"];

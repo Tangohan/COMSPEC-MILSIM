@@ -1070,9 +1070,7 @@ class AtakApiController
             return $this->jsonBodyCache;
         }
         if (HttpJsonBody::isMultipart()) {
-            $this->jsonBodyCache = HttpJsonBody::postFields();
-
-            return $this->jsonBodyCache;
+            return HttpJsonBody::postFields();
         }
         $raw = HttpJsonBody::rawJson();
         if ($raw === '') {
@@ -9645,17 +9643,24 @@ class AtakApiController
                 return $r;
             }
             $tenantId = $r;
+            $file = TerrainUploadedImage::fromGlobals();
             $actor = $this->guardArmaWrite($request, $tenantId, false);
             if ($actor instanceof Response) {
                 return $actor;
             }
-            $file = TerrainUploadedImage::fromGlobals();
+            if ($file === null && TerrainUploadedImage::declaredBodyExceedsPostMax()) {
+                return Response::json([
+                    'error' => 'file_too_large',
+                    'message' => 'La photo est trop lourde pour être transmise. Essayez une capture plus légère.',
+                ], 400);
+            }
             if ($file === null) {
                 error_log(sprintf(
-                    '[atak/recon-images] missing_image files=%s ct=%s cl=%s',
+                    '[atak/recon-images] missing_image files=%s ct=%s cl=%s post_max=%s',
                     implode(',', array_keys($_FILES)),
                     (string) ($_SERVER['CONTENT_TYPE'] ?? ''),
-                    (string) ($_SERVER['CONTENT_LENGTH'] ?? '')
+                    (string) ($_SERVER['CONTENT_LENGTH'] ?? ''),
+                    (string) ini_get('post_max_size')
                 ));
 
                 return Response::json([

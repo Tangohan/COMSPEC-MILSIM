@@ -150,7 +150,7 @@ if (["CAManBase", 0, ["ACE_MainActions"], _rootPerson] call _addClass) then {
 };
 
 // Self interaction (joueur uniquement)
-private _selfRoot = ["COMSPEC_SSE_SELF", "COMSPEC SSE", _icon, {}, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams, {}] call ace_interact_menu_fnc_createAction;
+private _selfRoot = ["COMSPEC_SSE_SELF", "COMSPEC SSE", _icon, {}, { !([] call comspec_sse_fnc_playerInHatchetVehicle) }, _noChildren, [], {[0,0,0]}, 1, _aceParams, {}] call ace_interact_menu_fnc_createAction;
 _selfRoot = [_selfRoot] call comspec_sse_fnc_acePadAction;
 if !(player getVariable ["comspec_sse_aceSelfInstalled", false]) then {
     player setVariable ["comspec_sse_aceSelfInstalled", true];

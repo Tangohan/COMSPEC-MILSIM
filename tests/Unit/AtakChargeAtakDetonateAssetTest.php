@@ -39,6 +39,6 @@ final class AtakChargeAtakDetonateAssetTest extends TestCase
         self::assertStringContainsString('#scripted', $local);
         self::assertStringContainsString('find "scripted"', $timers);
         self::assertStringContainsString('MineBase', $find);
-        self::assertStringContainsString('1.5.14', $cfg);
+        self::assertStringContainsString('1.5.16', $cfg);
     }
 }
