@@ -62,6 +62,17 @@ final class MilitaryOperationalRoleCatalogTest extends TestCase
         }
     }
 
+    public function testUnitSpecificSpecialOperationsRolesHaveDedicatedCategories(): void
+    {
+        $entries = [];
+        foreach (MilitaryOperationalRoleCatalog::entries() as $entry) {
+            $entries[$entry['slug']] = $entry;
+        }
+
+        self::assertSame('SOAR', $entries['aero_160th_soar_pilot']['subcategory']);
+        self::assertSame('B SQUADRON', $entries['sf_cag_b_squadron_operator']['subcategory']);
+    }
+
     public function testEachRootCategoryHasVisualIcon(): void
     {
         $visualsPath = dirname(__DIR__, 2) . '/config/role_catalog_visuals.php';
