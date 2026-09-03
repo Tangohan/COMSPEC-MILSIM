@@ -582,8 +582,11 @@ final class TenantCommunityProfileService
         $uni = $mode === 'computed'
             ? (string) ($computed['unites_public'] ?? '')
             : (string) ($manual['unites'] ?? '');
-        if ($uni === '' && isset($computed['unites_public']) && (string) $computed['unites_public'] !== '') {
-            $uni = (string) $computed['unites_public'];
+        $computedUnits = isset($computed['unites_public']) ? (string) $computed['unites_public'] : '';
+        // An old manual zero must not hide units that are actually rendered on
+        // the public showcase. Non-zero manual figures remain intentional.
+        if (($uni === '' || ((int) $uni === 0 && (int) $computedUnits > 0)) && $computedUnits !== '') {
+            $uni = $computedUnits;
         }
         if ($mode === 'computed') {
             $ap = $computed['activite_pct'] ?? null;
